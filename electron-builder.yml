@@ -1,0 +1,16 @@
+appId: com.mindaugas.diffbro
+productName: DiffBro
+directories:
+  output: dist
+files:
+  - build/**
+win:
+  target:
+    - nsis
+mac:
+  target:
+    - dmg
+  category: public.app-category.developer-tools
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

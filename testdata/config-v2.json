@@ -1,0 +1,13 @@
+{
+  "name": "diffbro-sample",
+  "version": "2.0.0",
+  "settings": {
+    "theme": "dark",
+    "fontSize": 14,
+    "autoSave": true
+  },
+  "plugins": ["linter", "formatter", "spellcheck"],
+  "experimental": {
+    "fastDiff": true
+  }
+}

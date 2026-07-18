@@ -1,17 +1,7 @@
-# Compiled
-*.elc
-
-# Packaging
-.cask/
-.eask/
-.eldev/
-.keg/
-
-# Built distribution
+node_modules/
+build/
 dist/
-
-# Backup files
+.claude/settings.local.json
+.DS_Store
+*.log
 *~
-
-# Undo-tree save-files
-*.~undo-tree
