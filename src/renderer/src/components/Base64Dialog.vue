@@ -1,12 +1,19 @@
 <script setup>
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import { base64Decode, base64Encode } from '../utils/base64'
 
 const store = useDiffStore()
+const snippets = useSnippetStore()
 const input = ref('')
 const output = ref('')
 const error = ref(null)
+
+function addToSnippets() {
+  snippets.startNewSnippetFrom(output.value || input.value, 'auto')
+  close()
+}
 
 function encode() {
   error.value = null
@@ -66,6 +73,9 @@ function close() {
       <textarea v-model="output" readonly spellcheck="false"></textarea>
       <p v-if="error" class="error">{{ error }}</p>
       <div class="actions">
+        <button class="ghost" :disabled="!output && !input" @click="addToSnippets">
+          Add to Snippets
+        </button>
         <button class="ghost" @click="close">Close</button>
       </div>
     </div>

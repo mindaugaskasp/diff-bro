@@ -93,7 +93,10 @@ async function onDrop(e) {
   const paths = Array.from(e.dataTransfer.files)
     .map((f) => window.api.getPathForFile(f))
     .filter(Boolean)
-  if (paths.length) await store.dropFiles(paths)
+  if (!paths.length) return
+  // If the drop landed on a specific file slot, target that side.
+  const targetSide = e.target.closest?.('[data-side]')?.dataset.side ?? null
+  await store.dropFiles(paths, targetSide)
 }
 </script>
 
@@ -168,12 +171,7 @@ async function onDrop(e) {
       <main class="content">
         <div v-if="store.mode !== 'paste'" class="file-slots-row">
           <div class="slot-half">
-            <FileSlot
-              side="left"
-              :file="store.left"
-              @pick="store.pick('left')"
-              @drop-path="(p) => store.drop('left', p)"
-            />
+            <FileSlot side="left" :file="store.left" @pick="store.pick('left')" />
           </div>
           <button
             class="ghost swap"
@@ -184,12 +182,7 @@ async function onDrop(e) {
             ⇄
           </button>
           <div class="slot-half">
-            <FileSlot
-              side="right"
-              :file="store.right"
-              @pick="store.pick('right')"
-              @drop-path="(p) => store.drop('right', p)"
-            />
+            <FileSlot side="right" :file="store.right" @pick="store.pick('right')" />
           </div>
         </div>
 
@@ -214,7 +207,7 @@ async function onDrop(e) {
     <SnippetEditorDialog v-if="snippets.editingSnippet" />
     <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />
     <SnippetDeleteDialog v-if="snippets.pendingDelete" />
-    <VaultCategoryDeleteDialog v-if="vault.pendingDeleteCategory" />
+    <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
 
     <transition name="fade">
       <div v-if="store.notice" class="notice">{{ store.notice }}</div>
@@ -240,7 +233,6 @@ async function onDrop(e) {
   gap: 16px;
   padding: 8px 12px;
   background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
 }
 .logo {
   flex: 1;
@@ -254,7 +246,6 @@ async function onDrop(e) {
   gap: 8px;
   padding: 8px 12px;
   background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
 }
 .slot-half {
   flex: 1;

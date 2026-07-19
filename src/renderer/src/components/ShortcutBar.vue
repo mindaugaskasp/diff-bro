@@ -41,7 +41,6 @@ function dismiss() {
   font-size: 11px;
   color: var(--text-hint);
   background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
   position: relative;
   white-space: nowrap;
   overflow: hidden;

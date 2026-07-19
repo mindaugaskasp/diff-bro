@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
 import SnippetsPanel from './SnippetsPanel.vue'
@@ -29,6 +29,18 @@ function toggle(id) {
   collapsed.value.has(id) ? collapsed.value.delete(id) : collapsed.value.add(id)
   collapsed.value = new Set(collapsed.value)
 }
+
+// Auto-expand (un-collapse) a category as soon as a diff is saved into it.
+watch(
+  () => vault.lastTouchedCategory,
+  (id) => {
+    if (id && collapsed.value.has(id)) {
+      const next = new Set(collapsed.value)
+      next.delete(id)
+      collapsed.value = next
+    }
+  }
+)
 
 function startAddCategory() {
   addingCategory.value = true
@@ -74,14 +86,7 @@ async function open(entry) {
       <span class="lock" title="Encrypted at rest, auto-expiring">🔒</span>
     </div>
     <div class="head-actions">
-      <button class="action" title="New category" @click="startAddCategory">+ New</button>
-      <button
-        class="action"
-        :title="`Import a shared diff (${MOD}+I)`"
-        @click="diff.importShared()"
-      >
-        Import
-      </button>
+      <button class="action" title="New category" @click="startAddCategory">+ New category</button>
     </div>
 
     <div v-if="addingCategory" class="add-category">
@@ -115,7 +120,13 @@ async function open(entry) {
         <button class="row-btn" title="Share as sealed file" @click="diff.shareEntry(entry.id)">
           ↑
         </button>
-        <button class="row-btn delete" title="Delete now" @click="vault.remove(entry.id)">×</button>
+        <button
+          class="row-btn delete"
+          title="Delete now"
+          @click="vault.requestDelete('entry', entry.id, entry.name)"
+        >
+          ×
+        </button>
       </li>
     </ul>
 
@@ -131,7 +142,7 @@ async function open(entry) {
             class="icon delete"
             :disabled="!vault.canDeleteCategory(category.id)"
             :title="deleteCategoryTitle(category)"
-            @click="vault.requestDeleteCategory(category.id, category.name)"
+            @click="vault.requestDelete('category', category.id, category.name)"
           >
             ×
           </button>
@@ -161,7 +172,11 @@ async function open(entry) {
             <button class="row-btn" title="Share as sealed file" @click="diff.shareEntry(entry.id)">
               ↑
             </button>
-            <button class="row-btn delete" title="Delete now" @click="vault.remove(entry.id)">
+            <button
+              class="row-btn delete"
+              title="Delete now"
+              @click="vault.requestDelete('entry', entry.id, entry.name)"
+            >
               ×
             </button>
           </li>
@@ -209,7 +224,13 @@ async function open(entry) {
           <span class="name">{{ entry.name }}</span>
           <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
         </button>
-        <button class="row-btn delete" title="Delete now" @click="vault.remove(entry.id)">×</button>
+        <button
+          class="row-btn delete"
+          title="Delete now"
+          @click="vault.requestDelete('entry', entry.id, entry.name)"
+        >
+          ×
+        </button>
       </li>
     </ul>
 

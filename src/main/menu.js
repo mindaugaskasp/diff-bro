@@ -6,15 +6,33 @@ import { BrowserWindow, Menu, app, ipcMain } from 'electron'
 // (CLAUDE.md): the native menu is hidden on Windows/Linux but stays installed
 // so its shortcuts keep working.
 
-function sendToFocused(action) {
+function focusedWindow() {
   // Fall back to the first window: under bare Xvfb (Docker test env, no
   // window manager) no window ever reports keyboard focus.
-  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-  win?.webContents.send('menu:action', action)
+  return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+}
+
+function sendToFocused(action) {
+  focusedWindow()?.webContents.send('menu:action', action)
+}
+
+// Clamped zoom (roughly 60%–250%) so it can never run away.
+const ZOOM_MIN = -2.5
+const ZOOM_MAX = 2.5
+function zoomBy(delta) {
+  const wc = focusedWindow()?.webContents
+  if (!wc) return
+  wc.setZoomLevel(Math.min(Math.max(wc.getZoomLevel() + delta, ZOOM_MIN), ZOOM_MAX))
+}
+function resetZoom() {
+  const wc = focusedWindow()?.webContents
+  if (wc) wc.setZoomLevel(0)
 }
 
 export function installMenu() {
   const isMac = process.platform === 'darwin'
+  // DevTools (and its accelerator) ship only in development builds.
+  const isDev = !app.isPackaged
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
     {
@@ -77,11 +95,10 @@ export function installMenu() {
           click: () => sendToFocused('toggle-theme')
         },
         { type: 'separator' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { role: 'resetZoom' },
-        { type: 'separator' },
-        { role: 'toggleDevTools' }
+        { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', click: () => zoomBy(0.5) },
+        { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', click: () => zoomBy(-0.5) },
+        { label: 'Reset Zoom', accelerator: 'CmdOrCtrl+0', click: resetZoom },
+        ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : [])
       ]
     },
     {
@@ -114,7 +131,13 @@ export function installMenu() {
 }
 
 // The custom in-app menu bar (Windows/Linux) cannot reach these two itself.
+// DevTools access is dev-only: in a packaged build the handler is a no-op so
+// the renderer can never open DevTools.
 export function registerMenuIpc() {
-  ipcMain.handle('app:toggleDevTools', (e) => e.sender.toggleDevTools())
+  ipcMain.handle('app:toggleDevTools', (e) => {
+    if (!app.isPackaged) e.sender.toggleDevTools()
+  })
   ipcMain.handle('app:quit', () => app.quit())
+  // Report packaged state so the renderer can hide dev-only menu entries.
+  ipcMain.handle('app:isPackaged', () => app.isPackaged)
 }

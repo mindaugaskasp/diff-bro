@@ -2,9 +2,16 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import { formatXml, validateXml } from '../utils/textFormats'
 
 const store = useDiffStore()
+const snippets = useSnippetStore()
+
+function addToSnippets() {
+  snippets.startNewSnippetFrom(input.value, 'xml')
+  close()
+}
 const container = ref(null)
 const input = ref('')
 let editor = null
@@ -73,6 +80,7 @@ function close() {
       <div class="actions">
         <button class="primary" :disabled="!status?.valid" @click="format">Format</button>
         <button class="ghost" :disabled="!input" @click="copy">Copy</button>
+        <button class="ghost" :disabled="!input" @click="addToSnippets">Add to Snippets</button>
         <button class="ghost" @click="close">Close</button>
       </div>
     </div>

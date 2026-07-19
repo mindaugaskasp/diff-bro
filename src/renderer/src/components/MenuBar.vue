@@ -8,6 +8,8 @@ import { MOD } from '../keys'
 // menu, whose accelerators still work — this bar is only the visual half.
 const store = useDiffStore()
 const open = ref(null)
+// DevTools is dev-only; hidden in packaged builds.
+const isPackaged = ref(true)
 
 const menus = [
   {
@@ -44,11 +46,11 @@ const menus = [
       },
       { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => store.toggleTheme() },
       { sep: true },
-      { label: 'Zoom In', run: () => window.api.zoom(1) },
-      { label: 'Zoom Out', run: () => window.api.zoom(-1) },
-      { label: 'Reset Zoom', run: () => window.api.zoom(0) },
-      { sep: true },
-      { label: 'Toggle Developer Tools', run: () => window.api.toggleDevTools() }
+      { label: 'Zoom In', keys: `${MOD}++`, run: () => window.api.zoom(1) },
+      { label: 'Zoom Out', keys: `${MOD}+-`, run: () => window.api.zoom(-1) },
+      { label: 'Reset Zoom', keys: `${MOD}+0`, run: () => window.api.zoom(0) },
+      { sep: true, devOnly: true },
+      { label: 'Toggle Developer Tools', devOnly: true, run: () => window.api.toggleDevTools() }
     ]
   },
   {
@@ -91,7 +93,10 @@ function activate(item) {
 function onKeydown(e) {
   if (e.key === 'Escape') open.value = null
 }
-onMounted(() => window.addEventListener('keydown', onKeydown))
+onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
+  isPackaged.value = await window.api.isPackaged()
+})
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
@@ -108,11 +113,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       </button>
       <div v-if="open === menu.id" class="dropdown">
         <template v-for="(item, i) in menu.items" :key="i">
-          <div v-if="item.sep" class="sep" />
-          <button v-else class="item" @click="activate(item)">
-            <span>{{ item.label }}</span>
-            <kbd v-if="item.keys">{{ item.keys }}</kbd>
-          </button>
+          <template v-if="!(item.devOnly && isPackaged)">
+            <div v-if="item.sep" class="sep" />
+            <button v-else class="item" @click="activate(item)">
+              <span>{{ item.label }}</span>
+              <kbd v-if="item.keys">{{ item.keys }}</kbd>
+            </button>
+          </template>
         </template>
       </div>
     </div>
@@ -127,7 +134,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: 2px;
   padding: 2px 6px;
   background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
   user-select: none;
   position: relative;
   z-index: 30;

@@ -85,18 +85,31 @@ export const useDiffStore = defineStore('diff', {
     async drop(side, path) {
       this.receive(side, await window.api.readFile(path))
     },
-    // Files dropped anywhere on the window (not a specific slot). Two or more
-    // files fill both sides in drop order; a single file fills the first
-    // empty side (left first), so dropping one then another builds the diff.
-    async dropFiles(paths) {
+    // Files dropped on the window. `targetSide` is set when the drop landed
+    // directly on one of the two file slots.
+    //   - 2+ files: fill both sides in drop order (replacing whatever's there).
+    //   - 1 file onto a specific slot: fill that slot.
+    //   - 1 file elsewhere while a comparison is already loaded: start over —
+    //     clear both sides, put the file on the left, and wait for the next
+    //     one (so a "third" dropped file begins a fresh comparison).
+    //   - 1 file otherwise: fill the first empty side (left, then right).
+    async dropFiles(paths, targetSide = null) {
       if (!paths.length) return
       if (paths.length >= 2) {
         await this.drop('left', paths[0])
         await this.drop('right', paths[1])
-      } else {
-        const side = !this.left ? 'left' : !this.right ? 'right' : 'left'
-        await this.drop(side, paths[0])
+        return
       }
+      if (targetSide) {
+        await this.drop(targetSide, paths[0])
+        return
+      }
+      if (this.left && this.right) {
+        this.clear()
+        await this.drop('left', paths[0])
+        return
+      }
+      await this.drop(!this.left ? 'left' : 'right', paths[0])
     },
     receive(side, file) {
       if (!file) return // dialog cancelled or large-file load declined
@@ -182,6 +195,10 @@ export const useDiffStore = defineStore('diff', {
       this.left = null
       this.right = null
       this.stats = null
+      // Also wipe paste-mode text so a cleared session never leaves the
+      // previous pasted content lingering behind.
+      this.pasteLeft = ''
+      this.pasteRight = ''
     },
     showNotice(text) {
       this.notice = text

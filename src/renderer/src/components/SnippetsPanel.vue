@@ -1,16 +1,49 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useDiffStore } from '../stores/diffStore'
 
 const store = useSnippetStore()
+const diff = useDiffStore()
 const expanded = ref(new Set())
 const addingCategory = ref(false)
 const newCategoryName = ref('')
+const filter = ref('')
 
 function toggle(id) {
   expanded.value.has(id) ? expanded.value.delete(id) : expanded.value.add(id)
   expanded.value = new Set(expanded.value) // new ref for reactivity
 }
+
+// While a filter is active every category is treated as expanded so matches
+// are never hidden inside a collapsed one.
+const isExpanded = (id) => (filter.value.trim() ? true : expanded.value.has(id))
+
+function matchesFilter(entry) {
+  const q = filter.value.trim().toLowerCase()
+  if (!q) return true
+  return (
+    entry.name.toLowerCase().includes(q) || (entry.language || 'auto').toLowerCase().includes(q)
+  )
+}
+const visibleIn = (categoryId) => store.inCategory(categoryId).filter(matchesFilter)
+const visibleFavorites = () => store.favorites.filter(matchesFilter)
+
+async function copySnippet(id) {
+  const content = await store.load(id)
+  if (content != null) {
+    await navigator.clipboard.writeText(content)
+    diff.showNotice('Copied snippet to clipboard.')
+  }
+}
+
+// Auto-expand a category as soon as a snippet is added to it.
+watch(
+  () => store.lastTouchedCategory,
+  (id) => {
+    if (id) expanded.value = new Set(expanded.value).add(id)
+  }
+)
 
 function startAddCategory() {
   addingCategory.value = true
@@ -84,20 +117,30 @@ function deleteCategoryTitle(category) {
       />
     </div>
 
+    <div v-if="store.entries.length" class="filter">
+      <input
+        v-model="filter"
+        type="search"
+        placeholder="Filter by name or syntax…"
+        spellcheck="false"
+      />
+    </div>
+
     <p v-if="!store.categories.length && !addingCategory" class="empty">
       Press <strong>New</strong> to add a category, then add snippets — saved encrypted, organized
       however you like, and exportable as a passphrase-protected file.
     </p>
 
-    <ul v-if="store.favorites.length" class="favorites-group">
+    <ul v-if="visibleFavorites().length" class="favorites-group">
       <li class="fav-head">★ Favorites</li>
-      <li v-for="entry in store.favorites" :key="entry.id" class="snippet favorite">
+      <li v-for="entry in visibleFavorites()" :key="entry.id" class="snippet favorite">
         <button class="star on" title="Unfavorite" @click="store.toggleFavorite(entry.id)">
           ★
         </button>
         <button class="entry" :title="`Open ${entry.name}`" @click="editSnippet(entry.id)">
           {{ entry.name }}
         </button>
+        <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">⧉</button>
         <button
           class="row-btn delete"
           title="Delete"
@@ -112,9 +155,9 @@ function deleteCategoryTitle(category) {
       <li v-for="category in store.categories" :key="category.id" class="category">
         <div class="category-head">
           <button class="cat-toggle" @click="toggle(category.id)">
-            <span class="chevron" :class="{ open: expanded.has(category.id) }">▸</span>
+            <span class="chevron" :class="{ open: isExpanded(category.id) }">▸</span>
             <span class="cat-name">{{ category.name }}</span>
-            <span class="count">{{ store.inCategory(category.id).length }}</span>
+            <span class="count">{{ visibleIn(category.id).length }}</span>
           </button>
           <button class="icon" title="New snippet" @click="newSnippet(category.id)">+</button>
           <button class="icon" title="Export this category" @click="exportCategory(category.id)">
@@ -129,10 +172,12 @@ function deleteCategoryTitle(category) {
             ×
           </button>
         </div>
-        <ul v-if="expanded.has(category.id)" class="snippet-list">
-          <li v-if="!store.inCategory(category.id).length" class="empty small">No snippets yet.</li>
+        <ul v-if="isExpanded(category.id)" class="snippet-list">
+          <li v-if="!visibleIn(category.id).length" class="empty small">
+            {{ filter.trim() ? 'No matches.' : 'No snippets yet.' }}
+          </li>
           <li
-            v-for="entry in store.inCategory(category.id)"
+            v-for="entry in visibleIn(category.id)"
             :key="entry.id"
             class="snippet"
             :class="{ favorite: entry.favorite }"
@@ -147,6 +192,9 @@ function deleteCategoryTitle(category) {
             </button>
             <button class="entry" :title="`Open ${entry.name}`" @click="editSnippet(entry.id)">
               {{ entry.name }}
+            </button>
+            <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">
+              ⧉
             </button>
             <button
               class="row-btn delete"
@@ -289,6 +337,22 @@ function deleteCategoryTitle(category) {
   font-size: 12.5px;
 }
 .add-category input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.filter {
+  padding: 0 10px 8px;
+}
+.filter input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 5px 8px;
+  font-size: 12.5px;
+}
+.filter input:focus {
   outline: none;
   border-color: var(--accent);
 }

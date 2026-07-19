@@ -27,7 +27,9 @@ const categoryId = ref(
 const languages = SNIPPET_LANGUAGES
 // 'auto' defers to the content-based detector; any other value is the
 // user's explicit syntax choice, remembered with the snippet.
-const chosenLanguage = ref(existingEntry?.language || 'auto')
+const chosenLanguage = ref(
+  existingEntry?.language || store.editingSnippet.initialLanguage || 'auto'
+)
 const language = computed(() =>
   chosenLanguage.value === 'auto' ? detectSnippetLanguage(content.value) : chosenLanguage.value
 )
@@ -49,6 +51,9 @@ onMounted(async () => {
   if (!isNew) {
     name.value = existingEntry?.name ?? ''
     content.value = (await store.load(store.editingSnippet.id)) ?? ''
+  } else if (store.editingSnippet.initialContent) {
+    // Prefilled from a Tools dialog's "Add to Snippets".
+    content.value = store.editingSnippet.initialContent
   }
   editor.setValue(content.value)
 })

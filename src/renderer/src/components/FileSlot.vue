@@ -1,32 +1,20 @@
 <script setup>
-import { ref } from 'vue'
-
 defineProps({
   side: { type: String, required: true },
   file: { type: Object, default: null }
 })
-const emit = defineEmits(['pick', 'drop-path'])
-
-const hover = ref(false)
-
-function onDrop(e) {
-  hover.value = false
-  const dropped = e.dataTransfer?.files?.[0]
-  if (!dropped) return
-  const path = window.api.getPathForFile(dropped)
-  if (path) emit('drop-path', path)
-}
+const emit = defineEmits(['pick'])
+// Drag & drop is handled once at the window level (App.vue); the slot only
+// tags itself with data-side so a drop landing on it targets that side.
 </script>
 
 <template>
   <button
     class="slot"
-    :class="{ hover, filled: !!file }"
+    :class="{ filled: !!file }"
+    :data-side="side"
     :title="file ? file.path : `Choose ${side} file`"
     @click="emit('pick')"
-    @dragover.prevent.stop="hover = true"
-    @dragleave="hover = false"
-    @drop.prevent.stop="onDrop"
   >
     <span v-if="file" class="name">{{ file.name }}</span>
     <span v-else class="placeholder">{{ side }} file…</span>

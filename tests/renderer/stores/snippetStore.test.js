@@ -188,7 +188,7 @@ describe('snippetStore', () => {
     expect(store.inCategory(catId)).toHaveLength(3) // first, second, + reimported first
   })
 
-  it('toggleFavorite pins a snippet to the top of its category', async () => {
+  it('toggleFavorite lifts a snippet out of its category into the Favorites group', async () => {
     const store = useSnippetStore()
     const catId = store.addCategory('SQL')
     await store.add(catId, 'first', 'SELECT 1')
@@ -197,8 +197,21 @@ describe('snippetStore', () => {
 
     expect(store.inCategory(catId).map((e) => e.name)).toEqual(['first', 'second', 'third'])
     store.toggleFavorite(thirdId)
-    expect(store.inCategory(catId).map((e) => e.name)).toEqual(['third', 'first', 'second'])
+    // 'third' leaves the category list and appears only in favorites.
+    expect(store.inCategory(catId).map((e) => e.name)).toEqual(['first', 'second'])
+    expect(store.favorites.map((e) => e.name)).toEqual(['third'])
     expect(localStorage.getItem('diffbro.snippets')).toContain('"favorite":true')
+  })
+
+  it('deleting an all-favorited category reassigns its snippets to Default', async () => {
+    const store = useSnippetStore()
+    const catId = store.addCategory('SQL')
+    const id = await store.add(catId, 'only', 'SELECT 1')
+    store.toggleFavorite(id) // lifts out; category now lists nothing
+    expect(store.canDeleteCategory(catId)).toBe(true)
+    expect(store.removeCategory(catId)).toBe(true)
+    expect(store.entries.find((e) => e.id === id).categoryId).toBe(store.defaultCategoryId)
+    expect(store.favorites.map((e) => e.name)).toEqual(['only'])
   })
 
   it('favorites getter collects favorited snippets across all categories', async () => {

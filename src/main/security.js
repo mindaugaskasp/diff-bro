@@ -12,7 +12,9 @@ import { DEV_URL } from './env'
 export function installNetworkKillSwitch() {
   // Deny every Chromium permission request (camera, geolocation, midi,
   // notifications, …) — nothing in this app needs any of them.
-  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) =>
+    callback(false)
+  )
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     const url = details.url
     const isLocalScheme =

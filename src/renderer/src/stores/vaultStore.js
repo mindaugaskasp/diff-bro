@@ -64,8 +64,11 @@ export const useVaultStore = defineStore('vault', {
     ...readState(),
     // re-render trigger for the expiry countdowns
     now: Date.now(),
-    // { id, name } of a category pending delete confirmation, or null
-    pendingDeleteCategory: null
+    // { type: 'category' | 'entry', id, name } pending delete confirmation.
+    pendingDelete: null,
+    // Bumps to a category id whenever a diff lands in it, so the sidebar can
+    // auto-expand it.
+    lastTouchedCategory: null
   }),
   getters: {
     // Favorites float to the top; otherwise insertion order is preserved
@@ -149,6 +152,7 @@ export const useVaultStore = defineStore('vault', {
         iv,
         data
       })
+      if (!from) this.lastTouchedCategory = categoryId
       this.persist()
       return id
     },
@@ -180,16 +184,20 @@ export const useVaultStore = defineStore('vault', {
       this.persist()
       return true
     },
-    requestDeleteCategory(id, name) {
-      this.pendingDeleteCategory = { id, name }
+    // Unified delete-confirmation for categories and individual diffs, so
+    // nothing is ever removed silently. type: 'category' | 'entry'.
+    requestDelete(type, id, name) {
+      this.pendingDelete = { type, id, name }
     },
-    confirmDeleteCategory() {
-      const pending = this.pendingDeleteCategory
-      this.pendingDeleteCategory = null
-      if (pending) this.removeCategory(pending.id)
+    confirmDelete() {
+      const pending = this.pendingDelete
+      this.pendingDelete = null
+      if (!pending) return
+      if (pending.type === 'category') this.removeCategory(pending.id)
+      else this.remove(pending.id)
     },
-    cancelDeleteCategory() {
-      this.pendingDeleteCategory = null
+    cancelDelete() {
+      this.pendingDelete = null
     },
     // Decrypt an entry and hand it to the main process, which signs it and
     // seals it for the chosen recipient.

@@ -99,6 +99,37 @@ describe('diffStore', () => {
     expect(store.right.name).toBe('second.txt')
   })
 
+  it('dropFiles targets a specific slot when a side is given', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    await store.dropFiles(['/tmp/only.txt'], 'right')
+    expect(store.right.name).toBe('only.txt')
+    expect(store.left).toBeNull()
+  })
+
+  it('dropFiles: a third single file starts a fresh comparison (clears, waits for right)', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    await store.dropFiles(['/tmp/a.txt', '/tmp/b.txt'])
+    expect(store.ready).toBe(true)
+    await store.dropFiles(['/tmp/c.txt']) // third file
+    expect(store.left.name).toBe('c.txt')
+    expect(store.right).toBeNull()
+  })
+
+  it('clear wipes loaded files and paste-mode text', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.pasteLeft = 'lingering left'
+    store.pasteRight = 'lingering right'
+    store.clear()
+    expect(store.left).toBeNull()
+    expect(store.right).toBeNull()
+    expect(store.pasteLeft).toBe('')
+    expect(store.pasteRight).toBe('')
+  })
+
   it('routes menu actions: toggle-split flips the view option', () => {
     const store = useDiffStore()
     const before = store.renderSideBySide

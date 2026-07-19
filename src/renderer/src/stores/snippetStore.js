@@ -66,26 +66,29 @@ export const useSnippetStore = defineStore('snippets', {
     editingSnippet: null,
     // { type: 'category' | 'snippet', id, name } while a delete confirmation
     // is open — null otherwise.
-    pendingDelete: null
+    pendingDelete: null,
+    // Bumps to a category id whenever a snippet lands in it, so the sidebar
+    // can auto-expand that category.
+    lastTouchedCategory: null
   }),
   getters: {
-    // Favorites float to the top within a category; otherwise insertion
-    // order is preserved (stable sort).
+    // Favorited snippets are lifted out into the pinned "Favorites" group at
+    // the top, so a category only lists its non-favorited snippets.
     inCategory: (s) => (categoryId) =>
-      s.entries
-        .filter((e) => e.categoryId === categoryId)
-        .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)),
+      s.entries.filter((e) => e.categoryId === categoryId && !e.favorite),
     // All favorited snippets across every category, for the pinned
-    // "Favorites" group at the top of the sidebar (visible even when the
-    // owning category is collapsed).
+    // "Favorites" group at the top of the sidebar.
     favorites: (s) => s.entries.filter((e) => e.favorite),
     defaultCategoryId: (s) => s.categories.find((c) => c.isDefault)?.id ?? null,
-    // A category is deletable only if it is not the Default one and holds no
-    // snippets — snippets must be moved or deleted out of it first.
-    canDeleteCategory: (s) => (id) => {
-      const category = s.categories.find((c) => c.id === id)
-      if (!category || category.isDefault) return false
-      return !s.entries.some((e) => e.categoryId === id)
+    // Deletable only if it is not Default and lists no (non-favorited)
+    // snippets. Favorited stragglers move to Default on delete (see
+    // removeCategory), so they don't block it.
+    canDeleteCategory() {
+      return (id) => {
+        const category = this.categories.find((c) => c.id === id)
+        if (!category || category.isDefault) return false
+        return !this.inCategory(id).length
+      }
     }
   },
   actions: {
@@ -101,6 +104,15 @@ export const useSnippetStore = defineStore('snippets', {
       this.persist()
       return id
     },
+    // Opens the snippet editor prefilled from a Tools dialog's output.
+    startNewSnippetFrom(content, language) {
+      this.editingSnippet = {
+        id: null,
+        categoryId: this.defaultCategoryId,
+        initialContent: content,
+        initialLanguage: language || 'auto'
+      }
+    },
     renameCategory(id, name) {
       const category = this.categories.find((c) => c.id === id)
       if (category && name.trim()) category.name = name.trim()
@@ -110,6 +122,10 @@ export const useSnippetStore = defineStore('snippets', {
     // in depth — the UI also gates this). Returns whether it deleted.
     removeCategory(id) {
       if (!this.canDeleteCategory(id)) return false
+      // Favorited stragglers (shown in the Favorites group, not the category
+      // list) fall back to Default so they never point at a deleted category.
+      const def = this.defaultCategoryId
+      for (const e of this.entries) if (e.categoryId === id) e.categoryId = def
       this.categories = this.categories.filter((c) => c.id !== id)
       this.persist()
       return true
@@ -133,6 +149,7 @@ export const useSnippetStore = defineStore('snippets', {
         iv,
         data
       })
+      this.lastTouchedCategory = categoryId
       this.persist()
       return id
     },

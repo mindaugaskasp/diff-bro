@@ -3,20 +3,24 @@ import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 
 const vault = useVaultStore()
-const pending = computed(() => vault.pendingDeleteCategory)
+const pending = computed(() => vault.pendingDelete)
+const isCategory = computed(() => pending.value?.type === 'category')
 </script>
 
 <template>
   <div v-if="pending" class="backdrop">
     <div class="dialog">
-      <h3>Delete category?</h3>
+      <h3>{{ isCategory ? 'Delete category?' : 'Delete saved diff?' }}</h3>
       <p class="note">
-        Delete the category <strong>“{{ pending.name }}”</strong>? Saved diffs already expire on
-        their own; the category itself is removed now. This can’t be undone.
+        Delete <strong>“{{ pending.name }}”</strong>?
+        <template v-if="isCategory">
+          Saved diffs already expire on their own; the category itself is removed now.
+        </template>
+        This can’t be undone.
       </p>
       <div class="actions">
-        <button class="danger" @click="vault.confirmDeleteCategory()">Delete</button>
-        <button class="ghost" @click="vault.cancelDeleteCategory()">Cancel</button>
+        <button class="danger" @click="vault.confirmDelete()">Delete</button>
+        <button class="ghost" @click="vault.cancelDelete()">Cancel</button>
       </div>
     </div>
   </div>
