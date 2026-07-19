@@ -28,6 +28,12 @@ jobs:
           node-version: 20
           cache: npm
 
+      # package-lock.json is written by npm 11 (see Makefile's `install`
+      # target / docker/Dockerfile) — node-version 20's bundled npm 10
+      # resolves optional platform packages differently and `npm ci` then
+      # rejects the lock as out of sync. One resolver everywhere.
+      - run: npm install -g npm@11
+
       - run: npm ci
 
       # Lint + tests before spending build minutes on a packaged installer.
