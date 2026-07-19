@@ -26,6 +26,7 @@ const menus = [
       { label: 'Copy My Public Key', run: () => store.copyPublicKey() },
       { label: 'Export My Public Key…', run: () => store.exportPublicKey() },
       { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
+      { label: 'Manage Trusted Keys…', run: () => store.handleMenuAction('manage-keys') },
       { sep: true },
       { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => store.swap() },
       { label: 'Clear', keys: `${MOD}+K`, run: () => store.clear() },

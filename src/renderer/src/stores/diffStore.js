@@ -61,6 +61,8 @@ export const useDiffStore = defineStore('diff', {
     // { key, fingerprint, label } while the drag-drop "name this trusted
     // key" dialog is open — null otherwise.
     pendingTrustedKey: null,
+    // Trusted-keys management dialog visibility.
+    showTrustedKeysDialog: false,
     // Tools menu dialog visibility.
     showBase64Dialog: false,
     showJsonToolDialog: false,
@@ -238,6 +240,9 @@ export const useDiffStore = defineStore('diff', {
           return this.copyPublicKey()
         case 'add-trusted-key':
           return this.addTrustedKey()
+        case 'manage-keys':
+          this.showTrustedKeysDialog = true
+          return
         case 'tools-base64':
           this.showBase64Dialog = true
           return
@@ -297,10 +302,21 @@ export const useDiffStore = defineStore('diff', {
           `Public key copied (fingerprint ${res.fingerprint}). Paste it into a password manager or send it to whoever should trust your shared diffs.`
         )
     },
+    // Pick a key file via dialog, then require a name before adding (same
+    // naming dialog as the drag-drop path).
     async addTrustedKey() {
       const res = await window.api.addTrustedKey()
-      if (res.ok) this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
-      else if (res.error) this.showNotice('That file is not a valid public key.')
+      if (res.ok) {
+        this.pendingTrustedKey = {
+          key: res.key,
+          fingerprint: res.fingerprint,
+          label: res.defaultLabel
+        }
+      } else if (res.error === 'own-key') {
+        this.showNotice("That's your own public key — you don't need to trust yourself.")
+      } else if (res.error) {
+        this.showNotice('That file is not a valid public key.')
+      }
     },
     // A .diffbrokey dropped onto the window: validate it, then open the
     // naming dialog so the user can label the trusted host before adding.
@@ -312,6 +328,8 @@ export const useDiffStore = defineStore('diff', {
           fingerprint: res.fingerprint,
           label: res.defaultLabel
         }
+      } else if (res.error === 'own-key') {
+        this.showNotice("That's your own public key — you don't need to trust yourself.")
       } else {
         this.showNotice('That file is not a valid Diff Bro public key.')
       }

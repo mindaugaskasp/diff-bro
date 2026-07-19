@@ -64,6 +64,7 @@ export function installMenu() {
         { label: 'Copy My Public Key', click: () => sendToFocused('copy-pubkey') },
         { label: 'Export My Public Key…', click: () => sendToFocused('export-pubkey') },
         { label: 'Add Trusted Key…', click: () => sendToFocused('add-trusted-key') },
+        { label: 'Manage Trusted Keys…', click: () => sendToFocused('manage-keys') },
         { type: 'separator' },
         {
           label: 'Swap Sides',

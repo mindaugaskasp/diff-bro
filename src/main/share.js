@@ -172,12 +172,14 @@ export function registerShareIpc() {
     })
     if (canceled || !filePaths.length) return { canceled: true }
 
+    let parsed
     try {
-      const { key, fp, defaultLabel } = await parseKeyFileAt(filePaths[0])
-      return { ok: true, key, fingerprint: fp, defaultLabel }
+      parsed = await parseKeyFileAt(filePaths[0])
     } catch {
       return { error: 'not-a-key' }
     }
+    if (parsed.fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
+    return { ok: true, key: parsed.key, fingerprint: parsed.fp, defaultLabel: parsed.defaultLabel }
   })
 
   // List, rename and remove trusted keys for the management UI.
@@ -199,12 +201,15 @@ export function registerShareIpc() {
   // Read + validate a dragged-in .diffbrokey by path WITHOUT storing it, so
   // the renderer can prompt for a name first. Public key material only.
   ipcMain.handle('share:readKeyFile', async (e, path) => {
+    let parsed
     try {
-      const { key, fp, defaultLabel } = await parseKeyFileAt(path)
-      return { ok: true, key, fingerprint: fp, defaultLabel }
+      parsed = await parseKeyFileAt(path)
     } catch {
       return { error: 'not-a-key' }
     }
+    // You can't (and needn't) trust your own key.
+    if (parsed.fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
+    return { ok: true, key: parsed.key, fingerprint: parsed.fp, defaultLabel: parsed.defaultLabel }
   })
 
   // Commit a trusted key the user reviewed/named in the drag-drop dialog.
@@ -213,6 +218,7 @@ export function registerShareIpc() {
   ipcMain.handle('share:addTrustedKeyNamed', async (e, key, label) => {
     if (key?.format !== KEY_FORMAT || !key.sign || !key.box) return { error: 'not-a-key' }
     const fp = fingerprint(key.sign, key.box)
+    if (fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
     await storeTrusted(key, fp, label)
     return { ok: true, label: (label || fp).trim() || fp, fingerprint: fp }
   })
