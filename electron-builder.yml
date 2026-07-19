@@ -15,6 +15,10 @@ mac:
   target:
     - dmg
   category: public.app-category.developer-tools
+  # No Apple Developer cert yet (see DEVELOPMENT_PLAN.md Phase 3) — without
+  # this, electron-builder searches the runner's keychain for a signing
+  # identity and fails outright on CI instead of producing an unsigned DMG.
+  identity: null
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

@@ -125,9 +125,11 @@ First run: `npm install && npm run dev`
       Actions has free macOS runners for public repos). Notarization requires
       an Apple Developer account ($99/yr); unnotarized apps need right-click →
       Open on first launch.
-- [ ] GitHub Actions workflow: build both platforms on tag push, attach
-      installers to a GitHub Release
-- [ ] Makefile command to package Apple / Windows installers      
+- [x] GitHub Actions workflow: build both platforms on tag push, attach
+      installers to a GitHub Release (`.github/workflows/release.yml`,
+      triggered on `v*.*.*` tags)
+- [x] Makefile command to package Apple / Windows installers
+      (`make package-win`, `make package-mac`)
 - Auto-update: **deliberately excluded.** The app is offline-only; updates
       are installed manually from downloaded installers.
 

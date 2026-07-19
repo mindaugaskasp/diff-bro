@@ -59,9 +59,49 @@ Source is bind-mounted with hot reload; sample files to diff are in
 
 ## Packaging
 
+Both targets bundle main/preload/renderer to `build/` (via `electron-vite
+build`, not electron-builder's default output dir) and then package an
+installer into `dist/`.
+
 ```bash
-npm run build:win   # NSIS installer -> dist/
-npm run build:mac   # DMG -> dist/ (run on macOS)
+npm run build:win   # NSIS installer -> dist/  (run on Windows; make package-win)
+npm run build:mac   # DMG -> dist/              (must run on macOS; make package-mac)
+```
+
+electron-builder can't cross-package a mac installer from Windows or vice
+versa — build each target on that OS.
+
+### Windows: enable Developer Mode first
+
+`build:win` downloads and extracts electron-builder's `winCodeSign` cache
+(it bundles both mac and Windows signing tools, even for a Windows-only
+build), which contains macOS `.dylib` files stored as symlinks. Creating a
+symlink on Windows requires `SeCreateSymbolicLinkPrivilege`, which normal
+user accounts don't have unless Developer Mode is on — without it the build
+fails with `Cannot create symbolic link: A required privilege is not held
+by the client.`
+
+Enable it once via **Settings → Privacy & security → For developers →
+Developer Mode**, then re-run the build. No admin/elevation needed
+afterward, and it's a one-time machine setting. If a build already failed
+partway through, delete the partial cache first so it re-extracts cleanly:
+
+```powershell
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign"
+```
+
+### Releasing
+
+Pushing a tag matching `v*.*.*` runs
+[`.github/workflows/release.yml`](.github/workflows/release.yml): lint +
+tests, then `build:win` and `build:mac` in parallel on GitHub-hosted Windows
+and macOS runners, and attaches both installers to a GitHub Release for that
+tag. Builds are unsigned (no code-signing cert / Apple Developer account yet
+— see `DEVELOPMENT_PLAN.md` Phase 3), and there is deliberately no
+auto-update — installers are the only distribution path.
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
 ```
 
 ## Architecture

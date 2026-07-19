@@ -83,6 +83,15 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   cleaned up from `testdata/` after verification; only `config-v1.json`
   and `config-v2.json` belong there.
 - After dependency changes, the Docker env needs `make rebuild`
-  (volume-shadowed `node_modules`).
+  (volume-shadowed `node_modules`). Prefer `make install` for adding or
+  updating dependencies — it writes `package-lock.json` with the
+  container's npm, which is pinned to the same major as the host's
+  (npm 11). npm majors disagree about optional/platform packages in the
+  lock, and a lock written by one fails `npm ci` under the other; keep
+  host npm and the Dockerfile's `npm install -g npm@11` in step.
+- `@emnapi/core` / `@emnapi/runtime` are pinned in devDependencies only to
+  work around npm dropping them from the lock (they are transitive
+  optionals of vitest's wasm toolchain) — do not remove them just because
+  nothing imports them.
 - Update `README.md` (including the mermaid diagram) and
   `DEVELOPMENT_PLAN.md` when architecture or feature status changes.

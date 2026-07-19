@@ -14,8 +14,8 @@
     "format": "prettier --write \"src/**/*.{js,vue,css}\" \"tests/**/*.js\" \"*.mjs\"",
     "check": "npm run lint && npm test",
     "postinstall": "electron-builder install-app-deps",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
+    "build:win": "npm run build && electron-builder --win --publish never",
+    "build:mac": "npm run build && electron-builder --mac --publish never",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"
   },
@@ -26,6 +26,8 @@
     "vue": "^3.5.13"
   },
   "devDependencies": {
+    "@emnapi/core": "^1.11.2",
+    "@emnapi/runtime": "^1.11.2",
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "electron": "^39.8.10",

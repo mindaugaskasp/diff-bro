@@ -20,6 +20,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Match the host's npm major version: npm 10 and 11 disagree about which
+# optional/platform packages belong in package-lock.json, and a lock written
+# by one fails `npm ci` under the other. One resolver everywhere.
+RUN npm install -g npm@11
+
 # Install dependencies at image-build time so the node_modules volume that
 # shadows the host's (Windows) node_modules starts out populated with the
 # Linux Electron binaries.
