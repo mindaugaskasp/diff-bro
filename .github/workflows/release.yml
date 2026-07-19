@@ -36,6 +36,14 @@ jobs:
 
       - run: npm ci
 
+      # electron-builder names installers from package.json's `version`, not
+      # the git tag — so a v0.1.1 tag would otherwise ship "…Setup 0.1.0.exe".
+      # Make the tag authoritative by writing its version into package.json
+      # before packaging (no commit; CI checkout is disposable).
+      - name: Sync version to the release tag
+        shell: bash
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
       # Lint + tests before spending build minutes on a packaged installer.
       - run: npm run check
 

@@ -18,6 +18,7 @@ import SnippetEditorDialog from './components/SnippetEditorDialog.vue'
 import SnippetPassphraseDialog from './components/SnippetPassphraseDialog.vue'
 import SnippetDeleteDialog from './components/SnippetDeleteDialog.vue'
 import VaultCategoryDeleteDialog from './components/VaultCategoryDeleteDialog.vue'
+import AddTrustedKeyDialog from './components/AddTrustedKeyDialog.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useVaultStore } from './stores/vaultStore'
 import { MOD, isMac } from './keys'
@@ -94,6 +95,13 @@ async function onDrop(e) {
     .map((f) => window.api.getPathForFile(f))
     .filter(Boolean)
   if (!paths.length) return
+  // A dropped public key opens the "name this trusted key" dialog instead
+  // of loading a diff.
+  const keyPath = paths.find((p) => p.toLowerCase().endsWith('.diffbrokey'))
+  if (keyPath) {
+    await store.receiveDroppedKey(keyPath)
+    return
+  }
   // If the drop landed on a specific file slot, target that side.
   const targetSide = e.target.closest?.('[data-side]')?.dataset.side ?? null
   await store.dropFiles(paths, targetSide)
@@ -200,6 +208,7 @@ async function onDrop(e) {
 
     <SaveDiffDialog v-if="store.showSaveDialog" />
     <ShareDiffDialog v-if="store.shareEntryId" />
+    <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
     <Base64Dialog v-if="store.showBase64Dialog" />
     <JsonToolDialog v-if="store.showJsonToolDialog" />
     <XmlToolDialog v-if="store.showXmlToolDialog" />

@@ -23,6 +23,12 @@ contextBridge.exposeInMainWorld('api', {
   exportPublicKey: () => ipcRenderer.invoke('share:exportPublicKey'),
   copyPublicKey: () => ipcRenderer.invoke('share:copyPublicKey'),
   addTrustedKey: () => ipcRenderer.invoke('share:addTrustedKey'),
+  // Drag-drop key import: validate a .diffbrokey by path, then commit it
+  // with a user-chosen name.
+  readKeyFile: (path) => ipcRenderer.invoke('share:readKeyFile', path),
+  addTrustedKeyNamed: (key, label) => ipcRenderer.invoke('share:addTrustedKeyNamed', key, label),
+  renameTrusted: (fp, label) => ipcRenderer.invoke('share:renameTrusted', fp, label),
+  removeTrusted: (fp) => ipcRenderer.invoke('share:removeTrusted', fp),
   // Snippets export/import: passphrase-protected + signed, no recipient
   // setup needed (see snippetSealing.js).
   exportSnippets: (bundle, passphrase, defaultName) =>

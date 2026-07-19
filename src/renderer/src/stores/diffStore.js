@@ -58,6 +58,9 @@ export const useDiffStore = defineStore('diff', {
     theme: localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark',
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
+    // { key, fingerprint, label } while the drag-drop "name this trusted
+    // key" dialog is open — null otherwise.
+    pendingTrustedKey: null,
     // Tools menu dialog visibility.
     showBase64Dialog: false,
     showJsonToolDialog: false,
@@ -298,6 +301,31 @@ export const useDiffStore = defineStore('diff', {
       const res = await window.api.addTrustedKey()
       if (res.ok) this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
       else if (res.error) this.showNotice('That file is not a valid public key.')
+    },
+    // A .diffbrokey dropped onto the window: validate it, then open the
+    // naming dialog so the user can label the trusted host before adding.
+    async receiveDroppedKey(path) {
+      const res = await window.api.readKeyFile(path)
+      if (res.ok) {
+        this.pendingTrustedKey = {
+          key: res.key,
+          fingerprint: res.fingerprint,
+          label: res.defaultLabel
+        }
+      } else {
+        this.showNotice('That file is not a valid Diff Bro public key.')
+      }
+    },
+    async confirmTrustedKey(label) {
+      const pending = this.pendingTrustedKey
+      this.pendingTrustedKey = null
+      if (!pending) return
+      const res = await window.api.addTrustedKeyNamed(pending.key, label)
+      if (res.ok) this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
+      else this.showNotice('Could not add that key.')
+    },
+    cancelTrustedKey() {
+      this.pendingTrustedKey = null
     }
   }
 })

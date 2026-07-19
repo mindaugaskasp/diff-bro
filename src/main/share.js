@@ -60,6 +60,27 @@ async function readTrusted() {
   }
 }
 
+// Read + validate a .diffbrokey file at `path`. Returns the public key
+// material, a recomputed fingerprint (never trust the stated one), and a
+// default label from the filename. Throws on anything malformed/oversized.
+async function parseKeyFileAt(path) {
+  const { size } = await stat(path)
+  if (size > MAX_KEY_FILE_BYTES) throw new Error('too large')
+  const key = JSON.parse(await readFile(path, 'utf-8'))
+  if (key.format !== KEY_FORMAT || !key.sign || !key.box) throw new Error('bad format')
+  return {
+    key: { format: key.format, sign: key.sign, box: key.box },
+    fp: fingerprint(key.sign, key.box),
+    defaultLabel: basename(path).replace(/\.diffbrokey$/i, '')
+  }
+}
+
+async function storeTrusted(key, fp, label) {
+  const trusted = (await readTrusted()).filter((t) => t.fingerprint !== fp)
+  trusted.push({ fingerprint: fp, label: (label || fp).trim() || fp, sign: key.sign, box: key.box })
+  await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
+}
+
 export function registerShareIpc() {
   ipcMain.handle('share:listTrusted', async () => {
     return (await readTrusted()).map(({ fingerprint: fp, label }) => ({ fingerprint: fp, label }))
@@ -119,7 +140,9 @@ export function registerShareIpc() {
     const { pub } = await getIdentity()
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Export my public key',
-      defaultPath: `diffbro-${pub.fingerprint}.diffbrokey`,
+      // Always prefixed "exported-key" so recipients can tell an exported
+      // public key apart from other .diffbrokey files at a glance.
+      defaultPath: `exported-key-${pub.fingerprint}.diffbrokey`,
       filters: [{ name: 'Diff Bro public key', extensions: ['diffbrokey'] }]
     })
     if (canceled || !filePath) return { canceled: true }
@@ -138,7 +161,9 @@ export function registerShareIpc() {
     return { ok: true, fingerprint: pub.fingerprint }
   })
 
-  // Trust a peer's public keys (received out of band).
+  // Pick a peer's public-key file and validate it, but DON'T store it yet —
+  // the renderer prompts for a name first (a trusted host must always be
+  // named), then commits via share:addTrustedKeyNamed. Public key only.
   ipcMain.handle('share:addTrustedKey', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Add trusted public key',
@@ -147,20 +172,48 @@ export function registerShareIpc() {
     })
     if (canceled || !filePaths.length) return { canceled: true }
 
-    let key, fp
     try {
-      const { size } = await stat(filePaths[0])
-      if (size > MAX_KEY_FILE_BYTES) throw new Error('too large')
-      key = JSON.parse(await readFile(filePaths[0], 'utf-8'))
-      if (key.format !== KEY_FORMAT || !key.sign || !key.box) throw new Error('bad format')
-      fp = fingerprint(key.sign, key.box) // recompute — never trust the stated one
+      const { key, fp, defaultLabel } = await parseKeyFileAt(filePaths[0])
+      return { ok: true, key, fingerprint: fp, defaultLabel }
     } catch {
       return { error: 'not-a-key' }
     }
-    const label = basename(filePaths[0]).replace(/\.diffbrokey$/i, '')
-    const trusted = (await readTrusted()).filter((t) => t.fingerprint !== fp)
-    trusted.push({ fingerprint: fp, label, sign: key.sign, box: key.box })
+  })
+
+  // List, rename and remove trusted keys for the management UI.
+  ipcMain.handle('share:renameTrusted', async (e, fp, label) => {
+    const trusted = await readTrusted()
+    const entry = trusted.find((t) => t.fingerprint === fp)
+    if (!entry) return { error: 'unknown' }
+    entry.label = (label || fp).trim() || fp
     await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
-    return { ok: true, label, fingerprint: fp }
+    return { ok: true, label: entry.label, fingerprint: fp }
+  })
+
+  ipcMain.handle('share:removeTrusted', async (e, fp) => {
+    const trusted = (await readTrusted()).filter((t) => t.fingerprint !== fp)
+    await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
+    return { ok: true }
+  })
+
+  // Read + validate a dragged-in .diffbrokey by path WITHOUT storing it, so
+  // the renderer can prompt for a name first. Public key material only.
+  ipcMain.handle('share:readKeyFile', async (e, path) => {
+    try {
+      const { key, fp, defaultLabel } = await parseKeyFileAt(path)
+      return { ok: true, key, fingerprint: fp, defaultLabel }
+    } catch {
+      return { error: 'not-a-key' }
+    }
+  })
+
+  // Commit a trusted key the user reviewed/named in the drag-drop dialog.
+  // The fingerprint is recomputed from the key material — the renderer's is
+  // never trusted.
+  ipcMain.handle('share:addTrustedKeyNamed', async (e, key, label) => {
+    if (key?.format !== KEY_FORMAT || !key.sign || !key.box) return { error: 'not-a-key' }
+    const fp = fingerprint(key.sign, key.box)
+    await storeTrusted(key, fp, label)
+    return { ok: true, label: (label || fp).trim() || fp, fingerprint: fp }
   })
 }
