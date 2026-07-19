@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { textAdapter } from '../src/renderer/src/adapters/textAdapter'
-import { resolveAdapter } from '../src/renderer/src/adapters'
+import { textAdapter } from '../../../src/renderer/src/adapters/textAdapter'
+import { resolveAdapter } from '../../../src/renderer/src/adapters'
 
 describe('textAdapter', () => {
   it('is the fallback for every file', () => {

@@ -19,6 +19,39 @@ mac:
   # this, electron-builder searches the runner's keychain for a signing
   # identity and fails outright on CI instead of producing an unsigned DMG.
   identity: null
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
+  # Deliberately no `executableArgs: --no-sandbox` here: the .deb ships
+  # chrome-sandbox SUID and the AppImage falls back to Electron's namespace
+  # sandbox, so the OS sandbox stays on (CLAUDE.md rule 1).
+deb:
+  # dpkg requires a "Name <email>" maintainer. Kept here rather than as an
+  # `author` object in package.json so the address stays packaging metadata.
+  maintainer: Mindaugas Kasparavičius <kasp.mindaugas@gmail.com>
+dmg:
+  # Set explicitly: relying on electron-builder's buildResources auto-detection
+  # silently fell back to its stock 540x380 backdrop, producing a DMG that
+  # built fine and looked wrong. background@2x.png beside it supplies retina.
+  # Both are rendered from resources/dmg-background.svg — edit the SVG, never
+  # the PNGs. These coordinates are the centres of the two drop wells
+  # drawn in that artwork, so the icons land inside them; changing one without
+  # the other leaves the icons floating.
+  background: resources/background.png
+  window:
+    width: 640
+    height: 400
+  iconSize: 128
+  contents:
+    - x: 180
+      y: 208
+      type: file
+    - x: 460
+      y: 208
+      type: link
+      path: /Applications
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

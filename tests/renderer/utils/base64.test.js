@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { base64Decode, base64Encode } from '../src/renderer/src/utils/base64'
+import { base64Decode, base64Encode } from '../../../src/renderer/src/utils/base64'
 
 describe('base64Encode / base64Decode', () => {
   it('round-trips plain ASCII text', () => {

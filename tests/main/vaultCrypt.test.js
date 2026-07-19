@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { randomBytes } from 'crypto'
-import { vaultDecrypt, vaultEncrypt } from '../src/main/vaultCrypt'
+import { vaultDecrypt, vaultEncrypt } from '../../src/main/vaultCrypt'
 
 const KEY = randomBytes(32)
 const AAD = 'id-1|1000|2000|'

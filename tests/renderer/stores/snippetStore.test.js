@@ -5,10 +5,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
-import { vaultDecrypt, vaultEncrypt } from '../src/main/vaultCrypt'
-import { createIdentityKeys } from '../src/main/sealing'
-import { openSnippets, sealSnippets } from '../src/main/snippetSealing'
-import { useSnippetStore } from '../src/renderer/src/stores/snippetStore'
+import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
+import { createIdentityKeys } from '../../../src/main/sealing'
+import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
+import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 
 const KEY = randomBytes(32)
 const IDENTITY = createIdentityKeys()

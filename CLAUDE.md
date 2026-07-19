@@ -51,7 +51,7 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   `npm run format` rather than hand-formatting, and never commit code that
   fails `npm run check`.
 - Vue SFCs use `<script setup>`, scoped styles, and CSS variables from
-  `style.css` for every color — hardcoded colors break the light/dark
+  `styles/tokens.css` for every color — hardcoded colors break the light/dark
   theme. New UI must be checked in both themes.
 - Comments explain *why* or state invariants; never narrate what the next
   line does. Match the density and tone of the surrounding file.
@@ -64,8 +64,11 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 
 ## Testing rules
 
-- Vitest, tests in `tests/*.test.js`, jsdom environment (`tests/setup.js`
-  provides localStorage — Node's built-in one is broken in workers).
+- Vitest, jsdom environment (`tests/setup.js` provides localStorage — Node's
+  built-in one is broken in workers). The tree under `tests/` mirrors `src/`:
+  `tests/main/`, `tests/renderer/{stores,utils,adapters}/`. A new test goes
+  in the directory matching its subject's source path. Fixtures live in
+  `tests/data/`.
 - Every behavior change in `src/main/sealing.js`, `vaultCrypt.js`, the
   Pinia stores, or the adapters needs a test in the same change. Crypto
   code additionally needs negative tests (tamper, wrong key, expiry).
@@ -80,7 +83,7 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 
 - **Never `git commit` unless explicitly asked.**
 - Temp/test artifacts (generated key files, `.diffbro` files) must be
-  cleaned up from `testdata/` after verification; only `config-v1.json`
+  cleaned up from `tests/data/` after verification; only `config-v1.json`
   and `config-v2.json` belong there.
 - After dependency changes, the Docker env needs `make rebuild`
   (volume-shadowed `node_modules`). Prefer `make install` for adding or

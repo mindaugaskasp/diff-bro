@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Files consumed by the Linux container must keep LF even on a Windows
+# checkout: CRLF in a shebang line makes the kernel look for `/bin/bash\r`
+# and the entrypoint dies before Xvfb ever starts. Same for make recipes,
+# whose trailing \r would be passed on to the shell.
+*.sh text eol=lf
+docker/Dockerfile text eol=lf
+Makefile text eol=lf

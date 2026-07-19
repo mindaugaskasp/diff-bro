@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectSnippetLanguage } from '../src/renderer/src/utils/detectLanguage'
+import { detectSnippetLanguage } from '../../../src/renderer/src/utils/detectLanguage'
 
 describe('detectSnippetLanguage', () => {
   it('returns plaintext for empty content', () => {

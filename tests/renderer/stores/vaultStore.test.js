@@ -4,8 +4,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
-import { vaultDecrypt, vaultEncrypt } from '../src/main/vaultCrypt'
-import { useVaultStore } from '../src/renderer/src/stores/vaultStore'
+import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
+import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 
 const KEY = randomBytes(32)
 const PAYLOAD = { mode: 'paste', pasteLeft: 'secret left', pasteRight: 'secret right' }

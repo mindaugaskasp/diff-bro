@@ -29,7 +29,7 @@ First run: `npm install && npm run dev`
       container-local volumes so Linux and host binaries never mix
 - [x] `DIFFBRO_DOCKER=1` switches main process to `--no-sandbox` +
       software rendering (container-only, never on desktop)
-- [x] `testdata/` samples mounted for in-container diffing
+- [x] `tests/data/` samples mounted for in-container diffing
       (see `docker/README.md` for details and limitations)
 
 ## Phase 1 – Text diff MVP (~2–3 days)
@@ -111,7 +111,9 @@ First run: `npm install && npm run dev`
 - [x] Re-read files on window focus (quiet re-read: no large-file prompt,
       silent skip if the file vanished; toast when the diff was reloaded)
 - [x] Window state persistence (size/position/maximized in
-      `userData/window-state.json`, restored only onto a connected display)
+      `userData/window-state.json`, restored only onto a connected display);
+      resizable with a 940×640 minimum so the sidebar and both diff panes
+      stay usable
 - [x] App icon: `resources/icon.png` rasterized from the logo; used as the
       win/linux window icon (`?asset` import) and picked up by
       electron-builder (`buildResources: resources`) for installer icons
@@ -128,8 +130,16 @@ First run: `npm install && npm run dev`
 - [x] GitHub Actions workflow: build both platforms on tag push, attach
       installers to a GitHub Release (`.github/workflows/release.yml`,
       triggered on `v*.*.*` tags)
-- [x] Makefile command to package Apple / Windows installers
-      (`make package-win`, `make package-mac`)
+- [x] Makefile command to package Apple / Windows / Linux installers
+      (`make package-win`, `make package-linux` — both via the amd64 `builder`
+      compose service, since electron-builder's `makensis` is x86_64-only and
+      NSIS shells out to wine; `make package-mac` runs on the host because a
+      DMG needs `hdiutil`)
+- [x] Linux target: AppImage + `.deb` (`npm run build:linux`); `.deb` needs
+      `deb.maintainer` because dpkg requires a "Name &lt;email&gt;" field
+- [x] Themed DMG backdrop rendered from `resources/dmg-background.svg` to
+      `background.png`/`background@2x.png`, with the drop-well coordinates
+      mirrored in `electron-builder.yml`'s `dmg.contents`
 - Auto-update: **deliberately excluded.** The app is offline-only; updates
       are installed manually from downloaded installers.
 

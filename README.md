@@ -42,8 +42,8 @@ everything stays on-machine).
 On Windows and Linux the app draws its own themed menu bar (File / View /
 Tools) instead of the dated native one; macOS keeps the system menu bar.
 All menu accelerators work on every platform either way. Only one window
-can be open at a time, and it's fixed-size (not resizable, but can still be
-moved and maximized).
+can be open at a time. It is resizable, with a 940×640 floor so the sidebar
+and both diff panes stay usable.
 
 Saved diffs can be **shared between machines** as sealed `.diffbro` files:
 each file is signed (Ed25519) and then encrypted (X25519 ECDH with a fresh
@@ -63,7 +63,13 @@ npm run dev
 npm run check   # ESLint + Vitest — run before every change lands
 ```
 
-Tests live in `tests/` and cover the sealing crypto (roundtrip, tampering,
+Without a local Node install, the same flow runs entirely in Docker —
+`make dev` (app + noVNC) and `make check` (lint + tests); see
+[`docker/README.md`](docker/README.md) and `make help`.
+
+Tests live in `tests/`, mirroring `src/` (`tests/main/`,
+`tests/renderer/{stores,utils,adapters}/`), and cover the sealing crypto
+(roundtrip, tampering,
 recipient binding, expiry), the vault crypto (AAD-authenticated metadata),
 the Pinia stores, and the adapter registry. The crypto is deliberately split
 into pure modules (`src/main/sealing.js`, `src/main/vaultCrypt.js`) so it is
@@ -83,21 +89,27 @@ With GNU make available, `make help` lists all shortcuts (`test-env`,
 `down`, `rebuild`, `logs`, `shell`, `clean`, …).
 
 Source is bind-mounted with hot reload; sample files to diff are in
-`testdata/`. See [docker/README.md](docker/README.md) for details.
+`tests/data/`. See [docker/README.md](docker/README.md) for details.
 
 ## Packaging
 
-Both targets bundle main/preload/renderer to `build/` (via `electron-vite
-build`, not electron-builder's default output dir) and then package an
+Every target bundles main/preload/renderer to `build/` (via `electron-vite
+build`, not electron-builder's default output dir) and then packages an
 installer into `dist/`.
 
 ```bash
-npm run build:win   # NSIS installer -> dist/  (run on Windows; make package-win)
-npm run build:mac   # DMG -> dist/              (must run on macOS; make package-mac)
+npm run build:win     # NSIS installer -> dist/
+npm run build:mac     # DMG -> dist/            (macOS host only)
+npm run build:linux   # AppImage + .deb -> dist/
 ```
 
-electron-builder can't cross-package a mac installer from Windows or vice
-versa — build each target on that OS.
+The Windows and Linux installers can be built from the container without a
+local Node install — `make package-win` and `make package-linux` run them in
+an amd64 service, because electron-builder's bundled `makensis` is x86_64-only
+and its NSIS steps shell out to wine. A DMG needs macOS's `hdiutil`, so
+`make package-mac` is the one target that runs on the host. The DMG's window
+size, icon positions and backdrop live in `electron-builder.yml`; the backdrop
+itself is rendered from `resources/dmg-background.svg`.
 
 ### Windows: enable Developer Mode first
 

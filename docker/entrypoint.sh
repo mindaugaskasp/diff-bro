@@ -26,6 +26,14 @@ done
 # typing / menu accelerators never reach the app.
 openbox &
 
+# Chromium probes both dbus buses on startup and, finding neither, logs a wall
+# of errors that read like fatal failures but are not. Starting them is purely
+# cosmetic — it keeps the log readable so real problems stand out.
+mkdir -p /run/dbus
+rm -f /run/dbus/pid
+dbus-daemon --system --fork
+eval "$(dbus-launch --sh-syntax)"
+
 echo "Starting x11vnc..."
 x11vnc -display "$DISPLAY" -nopw -forever -shared -quiet -listen localhost &
 
@@ -36,7 +44,7 @@ echo ""
 echo "============================================================"
 echo "  DiffBro is starting."
 echo "  Open http://localhost:6080/vnc.html in your browser."
-echo "  Test files from ./testdata are available at /app/testdata."
+echo "  Test files from ./tests/data are available at /app/tests/data."
 echo "============================================================"
 echo ""
 

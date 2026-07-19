@@ -1,12 +1,18 @@
 services:
-  diffbro:
+  node:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: dev
     ports:
       # Bound to loopback only: the noVNC session is unauthenticated, so it
       # must never be reachable from the LAN.
       - '127.0.0.1:6080:6080' # noVNC — open http://localhost:6080/vnc.html
+      # Vite's port is deliberately NOT published. electron-vite binds it to the
+      # container's own loopback, so a mapping yields ERR_EMPTY_RESPONSE — and
+      # even reachable it would only serve the renderer, which calls
+      # window.api (preload) on mount and dies instantly in a plain browser.
+      # The app is viewed through noVNC above, not over HTTP.
     volumes:
       # Live source for HMR inside the container
       - .:/app
@@ -17,9 +23,37 @@ services:
       - build:/app/build
     environment:
       - DIFFBRO_DOCKER=1
+      - ELECTRON_DISABLE_SANDBOX=1
+      # Set here, not just in the entrypoint: `docker compose exec` sessions
+      # do not inherit the entrypoint's exports, so xdotool/scrot and any
+      # manually started Electron would otherwise find no X server.
+      - DISPLAY=:99
     # Chromium needs more shared memory than Docker's 64 MB default
     shm_size: 1gb
+
+  # Windows packaging only (`make package-win`) — never started by `up`.
+  # electron-builder ships an x86_64-only `makensis`, so on an Apple Silicon
+  # host the arm64 container cannot run it ("rosetta error: failed to open
+  # elf"). Pinning amd64 also makes the NSIS installer come out x64 instead
+  # of quietly inheriting the host's arm64.
+  builder:
+    profiles: ['packaging']
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: packaging
+    entrypoint: ['npm']
+    command: ['run', 'build:win']
+    volumes:
+      - .:/app
+      # Separate from the dev volumes: amd64 binaries must not mix with the
+      # arm64 ones the `node` service installed.
+      - node_modules_amd64:/app/node_modules
+      - build_amd64:/app/build
 
 volumes:
   node_modules:
   build:
+  node_modules_amd64:
+  build_amd64:

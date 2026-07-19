@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useDiffStore } from '../src/renderer/src/stores/diffStore'
+import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 
 beforeEach(() => {
   setActivePinia(createPinia())

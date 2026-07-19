@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createCipheriv, createDecipheriv, scryptSync } from 'crypto'
-import { createIdentityKeys } from '../src/main/sealing'
-import { openSnippets, sealSnippets, SNIPPET_FORMAT } from '../src/main/snippetSealing'
+import { createIdentityKeys } from '../../src/main/sealing'
+import { openSnippets, sealSnippets, SNIPPET_FORMAT } from '../../src/main/snippetSealing'
 
 const BUNDLE = {
   categories: [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALGORITHMS, decryptText, encryptText, TEXT_CRYPT_FORMAT } from '../src/main/textCrypt'
+import { ALGORITHMS, decryptText, encryptText, TEXT_CRYPT_FORMAT } from '../../src/main/textCrypt'
 
 describe('encryptText / decryptText', () => {
   for (const algo of ALGORITHMS) {

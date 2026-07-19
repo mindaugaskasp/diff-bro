@@ -7,7 +7,7 @@ import {
   openSealed,
   sealEntry,
   ttlError
-} from '../src/main/sealing'
+} from '../../src/main/sealing'
 
 const NOW = 1_800_000_000_000
 

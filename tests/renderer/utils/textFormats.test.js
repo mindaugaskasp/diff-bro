@@ -5,7 +5,7 @@ import {
   formatXml,
   validateJson,
   validateXml
-} from '../src/renderer/src/utils/textFormats'
+} from '../../../src/renderer/src/utils/textFormats'
 
 describe('detectTextFormat', () => {
   it('returns null for empty or plain-text content', () => {
