@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   shareExport: (entry, recipientFp) => ipcRenderer.invoke('share:export', entry, recipientFp),
   shareImport: () => ipcRenderer.invoke('share:import'),
   exportPublicKey: () => ipcRenderer.invoke('share:exportPublicKey'),
+  copyPublicKey: () => ipcRenderer.invoke('share:copyPublicKey'),
   addTrustedKey: () => ipcRenderer.invoke('share:addTrustedKey'),
   // Snippets export/import: passphrase-protected + signed, no recipient
   // setup needed (see snippetSealing.js).

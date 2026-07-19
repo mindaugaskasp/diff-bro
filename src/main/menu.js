@@ -43,6 +43,7 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+I',
           click: () => sendToFocused('import-shared')
         },
+        { label: 'Copy My Public Key', click: () => sendToFocused('copy-pubkey') },
         { label: 'Export My Public Key…', click: () => sendToFocused('export-pubkey') },
         { label: 'Add Trusted Key…', click: () => sendToFocused('add-trusted-key') },
         { type: 'separator' },

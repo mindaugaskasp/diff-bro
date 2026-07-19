@@ -12,6 +12,7 @@ const recipients = ref([])
 const selected = ref(null)
 const myFingerprint = ref('')
 const exportedPath = ref(null)
+const copied = ref(false)
 
 onMounted(async () => {
   // Asking for the fingerprint creates this install's keypairs on first use.
@@ -28,6 +29,11 @@ async function refresh(preferFp) {
 async function exportKey() {
   const res = await window.api.exportPublicKey()
   if (res.ok) exportedPath.value = res.path
+}
+
+async function copyKey() {
+  const res = await window.api.copyPublicKey()
+  if (res.ok) copied.value = true
 }
 
 async function addKey() {
@@ -82,20 +88,28 @@ function close() {
         >); the private half never leaves this machine.
       </p>
 
-      <div class="step" :class="{ done: exportedPath }">
-        <span class="badge">{{ exportedPath ? '✓' : '1' }}</span>
+      <div class="step" :class="{ done: exportedPath || copied }">
+        <span class="badge">{{ exportedPath || copied ? '✓' : '1' }}</span>
         <div class="step-body">
           <strong>Give them your key</strong>
-          <span v-if="exportedPath" class="step-hint"
+          <span v-if="copied" class="step-hint"
+            >Copied — paste it into your password manager or straight into a message.</span
+          >
+          <span v-else-if="exportedPath" class="step-hint"
             >Saved — now send that file to them (chat, USB, anything).</span
           >
           <span v-else class="step-hint"
-            >Save your public key file and send it to them any way you like.</span
+            >Copy it to the clipboard, or save it as a file — either way, send it to them.</span
           >
         </div>
-        <button type="button" class="ghost small" @click="exportKey">
-          {{ exportedPath ? 'Save again…' : 'Save my key…' }}
-        </button>
+        <div class="step-actions">
+          <button type="button" class="ghost small" @click="copyKey">
+            {{ copied ? 'Copied ✓' : 'Copy key' }}
+          </button>
+          <button type="button" class="ghost small" @click="exportKey">
+            {{ exportedPath ? 'Save again…' : 'Save as file…' }}
+          </button>
+        </div>
       </div>
 
       <div class="step">
@@ -199,6 +213,14 @@ code {
 }
 .step.done {
   border-color: #238636;
+}
+/* Keeps the two key-handoff buttons together at the row's right edge and
+   stops them from stretching when the hint text wraps. */
+.step-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  margin-left: auto;
 }
 .badge {
   flex-shrink: 0;

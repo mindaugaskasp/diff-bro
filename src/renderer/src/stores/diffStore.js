@@ -214,6 +214,8 @@ export const useDiffStore = defineStore('diff', {
           return this.importShared()
         case 'export-pubkey':
           return this.exportPublicKey()
+        case 'copy-pubkey':
+          return this.copyPublicKey()
         case 'add-trusted-key':
           return this.addTrustedKey()
         case 'tools-base64':
@@ -266,6 +268,13 @@ export const useDiffStore = defineStore('diff', {
       if (res.ok)
         this.showNotice(
           `Public key saved (fingerprint ${res.fingerprint}). Give this file to machines that should trust your shared diffs.`
+        )
+    },
+    async copyPublicKey() {
+      const res = await window.api.copyPublicKey()
+      if (res.ok)
+        this.showNotice(
+          `Public key copied (fingerprint ${res.fingerprint}). Paste it into a password manager or send it to whoever should trust your shared diffs.`
         )
     },
     async addTrustedKey() {

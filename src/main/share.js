@@ -6,7 +6,7 @@
 // files (public halves only) out of band and import them via "Add Trusted
 // Key" — the exchange must happen in BOTH directions before sharing works,
 // because a share file is addressed to one specific recipient.
-import { app, dialog, ipcMain, safeStorage } from 'electron'
+import { app, clipboard, dialog, ipcMain, safeStorage } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, join } from 'path'
 import {
@@ -125,6 +125,17 @@ export function registerShareIpc() {
     if (canceled || !filePath) return { canceled: true }
     await writeFile(filePath, JSON.stringify(pub, null, 2))
     return { ok: true, path: filePath, fingerprint: pub.fingerprint }
+  })
+
+  // Same payload as the .diffbrokey file, on the clipboard instead of on disk,
+  // so it can be pasted straight into a password manager or chat. Public
+  // halves only — this is the same data the export dialog writes, and the
+  // private key still never leaves this process (CLAUDE.md rule 4).
+  // clipboard.writeText behaves identically on Windows, macOS and Linux.
+  ipcMain.handle('share:copyPublicKey', async () => {
+    const { pub } = await getIdentity()
+    clipboard.writeText(JSON.stringify(pub, null, 2))
+    return { ok: true, fingerprint: pub.fingerprint }
   })
 
   // Trust a peer's public keys (received out of band).

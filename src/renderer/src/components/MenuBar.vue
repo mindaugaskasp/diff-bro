@@ -21,6 +21,7 @@ const menus = [
       { label: 'Share Diff…', keys: `${MOD}+E`, run: () => store.shareCurrent() },
       { sep: true },
       { label: 'Import Shared Diff…', keys: `${MOD}+I`, run: () => store.importShared() },
+      { label: 'Copy My Public Key', run: () => store.copyPublicKey() },
       { label: 'Export My Public Key…', run: () => store.exportPublicKey() },
       { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
       { sep: true },
