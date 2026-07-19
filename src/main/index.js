@@ -99,8 +99,9 @@ function createWindow() {
     height: state.height ?? 900,
     x: state.x,
     y: state.y,
-    minWidth: 900,
-    minHeight: 600,
+    // Fixed size: drag-to-resize is disabled, but move/maximize still work
+    // (and window-state persistence above still tracks position + maximized).
+    resizable: false,
     backgroundColor: '#0d1117',
     // macOS gets its icon from the app bundle; win/linux take it here.
     ...(process.platform !== 'darwin' ? { icon: appIcon } : {}),
@@ -333,15 +334,29 @@ async function readFileForRenderer(win, filePath, opts = {}) {
   return { path: filePath, name, content, encoding, size }
 }
 
-app.whenReady().then(() => {
-  installNetworkKillSwitch()
-  installMenu()
-  registerShareIpc()
-  createWindow()
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+// Only one instance/window: a second launch (double-clicking the exe again,
+// or the installer's "run after install" while one is already open) hands
+// its args off here and quits instead of opening a second window.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (!win) return
+    if (win.isMinimized()) win.restore()
+    win.focus()
   })
-})
+
+  app.whenReady().then(() => {
+    installNetworkKillSwitch()
+    installMenu()
+    registerShareIpc()
+    createWindow()
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
