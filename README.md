@@ -1,24 +1,45 @@
+<p align="center">
+  <img src="resources/logo.svg" width="140" alt="DiffBro — chill about diffs, serious about security">
+</p>
+
 # DiffBro
 
 Desktop file diff viewer (GitHub-style rendering) for Windows and macOS.
 Electron + Vue 3 + Pinia + Monaco diff editor.
 
 Features: split/unified diff with word-level highlights, paste-text mode,
-diff stats, shortcut hint bar, and a saved-diffs sidebar — saved comparisons
-are AES-256-GCM encrypted at rest (key held via the OS keychain) and
-auto-expire after at most 24 hours.
+diff stats, light/dark theme, live re-diff when a loaded file changes on
+disk, shortcut hint bar, window-state persistence, and a saved-diffs
+sidebar — saved comparisons are AES-256-GCM encrypted at rest (key held via
+the OS keychain) and auto-expire after at most 24 hours.
 
-Saved diffs can be **shared between machines** as Ed25519-signed `.diffbro`
-files: the receiver imports the sender's public key once (File → Add
-Trusted Key), unknown or tampered files are rejected, and the signed
-absolute expiry means a shared diff dies at the same moment everywhere.
+On Windows and Linux the app draws its own themed menu bar (File / View)
+instead of the dated native one; macOS keeps the system menu bar. All menu
+accelerators work on every platform either way.
+
+Saved diffs can be **shared between machines** as sealed `.diffbro` files:
+each file is signed (Ed25519) and then encrypted (X25519 ECDH with a fresh
+ephemeral key per file + AES-256-GCM) for one selected recipient — nobody
+else can read it, every file uses a different key, and any tampering
+(including extending the expiry) is rejected. The Share button walks
+first-time users through the one-time key exchange (keys are generated
+automatically; peers swap `.diffbrokey` public-key files once in both
+directions), and the signed absolute expiry means a shared diff dies
+at the same moment everywhere, 24 h max.
 
 ## Development
 
 ```bash
 npm install
 npm run dev
+npm run check   # ESLint + Vitest — run before every change lands
 ```
+
+Tests live in `tests/` and cover the sealing crypto (roundtrip, tampering,
+recipient binding, expiry), the vault crypto (AAD-authenticated metadata),
+the Pinia stores, and the adapter registry. The crypto is deliberately split
+into pure modules (`src/main/sealing.js`, `src/main/vaultCrypt.js`) so it is
+unit-testable without Electron. Coding rules are in `CLAUDE.md`.
 
 ## Testing in Docker (no installer needed)
 
@@ -51,7 +72,7 @@ flowchart LR
         menu["App menu<br/>shortcuts"]
         fileio["File access<br/>dialogs · fs reads<br/>binary/size/encoding checks"]
         killswitch["Network kill switch<br/>blocks all non-local requests"]
-        vaultkey["Vault key<br/>per-install AES key<br/>via OS keychain (safeStorage)"]
+        vaultkey["Vault crypto<br/>AES-256-GCM encrypt/decrypt<br/>key via OS keychain (safeStorage)<br/>key never leaves main"]
     end
 
     subgraph preload["Preload (contextBridge)"]
@@ -63,7 +84,7 @@ flowchart LR
         adapters["Adapter registry<br/>textAdapter (docx/pdf/image later)"]
         viewer["DiffViewer<br/>Monaco diff editor"]
         paste["PasteInput<br/>paste-text mode"]
-        vault["Saved-diffs vault<br/>AES-GCM in localStorage<br/>auto-expiry ≤ 24 h"]
+        vault["Saved-diffs vault<br/>ciphertext in localStorage<br/>auto-expiry ≤ 24 h"]
     end
 
     disk[("Local files")]
@@ -77,7 +98,7 @@ flowchart LR
     paste --> store
     viewer -- "diff stats" --> store
     vault -- "restore snapshot" --> store
-    api -- "invoke vault:key" --> vaultkey
+    api -- "invoke vault:encrypt / vault:decrypt" --> vaultkey
 ```
 
 Key rules encoded in that picture:

@@ -21,7 +21,11 @@ const store = useDiffStore()
       ></textarea>
     </div>
     <div class="actions">
-      <button class="primary" :disabled="!store.pasteLeft && !store.pasteRight" @click="store.comparePasted">
+      <button
+        class="primary"
+        :disabled="!store.pasteLeft && !store.pasteRight"
+        @click="store.comparePasted"
+      >
         Compare
       </button>
       <button class="ghost" @click="store.togglePasteMode">Cancel</button>

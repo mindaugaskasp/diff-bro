@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Headless display + browser access; openbox provides window focus,
     # without it keyboard input never reaches the Electron window
     xvfb x11vnc novnc websockify openbox \
+    # In-container test tooling: synthetic input + screenshots
+    xdotool scrot \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

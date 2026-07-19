@@ -4,27 +4,50 @@ import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
+import MenuBar from './components/MenuBar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import SaveDiffDialog from './components/SaveDiffDialog.vue'
 import ShareDiffDialog from './components/ShareDiffDialog.vue'
-import { MOD } from './keys'
+import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
 
+store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
+// Live re-diff: whenever the window regains focus, re-read loaded files so
+// external edits show up without reopening anything.
+window.addEventListener('focus', () => store.refreshFromDisk())
 </script>
 
 <template>
   <div class="app">
+    <MenuBar v-if="!isMac" />
     <ShortcutBar />
 
     <header class="toolbar">
       <span class="logo">DiffBro</span>
 
       <div class="slots">
-        <FileSlot side="left" :file="store.left" @pick="store.pick('left')" @drop-path="(p) => store.drop('left', p)" />
-        <button class="ghost" :title="`Swap sides (${MOD}+Shift+S)`" :disabled="!store.ready" @click="store.swap">⇄</button>
-        <FileSlot side="right" :file="store.right" @pick="store.pick('right')" @drop-path="(p) => store.drop('right', p)" />
+        <FileSlot
+          side="left"
+          :file="store.left"
+          @pick="store.pick('left')"
+          @drop-path="(p) => store.drop('left', p)"
+        />
+        <button
+          class="ghost"
+          :title="`Swap sides (${MOD}+Shift+S)`"
+          :disabled="!store.ready"
+          @click="store.swap"
+        >
+          ⇄
+        </button>
+        <FileSlot
+          side="right"
+          :file="store.right"
+          @pick="store.pick('right')"
+          @drop-path="(p) => store.drop('right', p)"
+        />
       </div>
 
       <span v-if="store.ready && store.stats" class="stats">
@@ -34,11 +57,11 @@ window.api.onMenuAction((action) => store.handleMenuAction(action))
 
       <div class="options">
         <label>
-          <input type="checkbox" v-model="store.renderSideBySide" />
+          <input v-model="store.renderSideBySide" type="checkbox" />
           Split view
         </label>
         <label>
-          <input type="checkbox" v-model="store.ignoreTrimWhitespace" />
+          <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
           Ignore whitespace
         </label>
         <button
@@ -57,7 +80,24 @@ window.api.onMenuAction((action) => store.handleMenuAction(action))
         >
           Save
         </button>
-        <button class="ghost" :disabled="!store.left && !store.right" @click="store.clear">Clear</button>
+        <button
+          class="ghost"
+          title="Share this diff as a sealed file for one trusted recipient"
+          :disabled="!store.canSave"
+          @click="store.shareCurrent()"
+        >
+          Share
+        </button>
+        <button class="ghost" :disabled="!store.left && !store.right" @click="store.clear">
+          Clear
+        </button>
+        <button
+          class="ghost"
+          :title="`Switch to ${store.theme === 'dark' ? 'light' : 'dark'} theme (${MOD}+D)`"
+          @click="store.toggleTheme()"
+        >
+          {{ store.theme === 'dark' ? '☀' : '🌙' }}
+        </button>
       </div>
     </header>
 

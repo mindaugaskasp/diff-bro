@@ -1,0 +1,181 @@
+<script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useDiffStore } from '../stores/diffStore'
+import { MOD } from '../keys'
+
+// Themed replacement for the native File/View menu bar on Windows/Linux
+// (macOS keeps the system menu bar). Items mirror the hidden application
+// menu, whose accelerators still work — this bar is only the visual half.
+const store = useDiffStore()
+const open = ref(null)
+
+const menus = [
+  {
+    id: 'file',
+    label: 'File',
+    items: [
+      { label: 'Open Left…', keys: `${MOD}+1`, run: () => store.handleMenuAction('open-left') },
+      { label: 'Open Right…', keys: `${MOD}+2`, run: () => store.handleMenuAction('open-right') },
+      { sep: true },
+      { label: 'Save Diff…', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
+      { label: 'Share Diff…', keys: `${MOD}+E`, run: () => store.shareCurrent() },
+      { sep: true },
+      { label: 'Import Shared Diff…', keys: `${MOD}+I`, run: () => store.importShared() },
+      { label: 'Export My Public Key…', run: () => store.exportPublicKey() },
+      { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
+      { sep: true },
+      { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => store.swap() },
+      { label: 'Clear', keys: `${MOD}+K`, run: () => store.clear() },
+      { sep: true },
+      { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() },
+      { sep: true },
+      { label: 'Quit', run: () => window.api.quit() }
+    ]
+  },
+  {
+    id: 'view',
+    label: 'View',
+    items: [
+      {
+        label: 'Toggle Split View',
+        keys: `${MOD}+\\`,
+        run: () => store.handleMenuAction('toggle-split')
+      },
+      { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => store.toggleTheme() },
+      { sep: true },
+      { label: 'Zoom In', run: () => window.api.zoom(1) },
+      { label: 'Zoom Out', run: () => window.api.zoom(-1) },
+      { label: 'Reset Zoom', run: () => window.api.zoom(0) },
+      { sep: true },
+      { label: 'Toggle Developer Tools', run: () => window.api.toggleDevTools() }
+    ]
+  }
+]
+
+function toggle(id) {
+  open.value = open.value === id ? null : id
+}
+
+function activate(item) {
+  open.value = null
+  item.run()
+}
+
+function onKeydown(e) {
+  if (e.key === 'Escape') open.value = null
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+</script>
+
+<template>
+  <nav class="menubar">
+    <div v-for="menu in menus" :key="menu.id" class="menu">
+      <button
+        class="top"
+        :class="{ open: open === menu.id }"
+        @click="toggle(menu.id)"
+        @mouseenter="open && (open = menu.id)"
+      >
+        {{ menu.label }}
+      </button>
+      <div v-if="open === menu.id" class="dropdown">
+        <template v-for="(item, i) in menu.items" :key="i">
+          <div v-if="item.sep" class="sep" />
+          <button v-else class="item" @click="activate(item)">
+            <span>{{ item.label }}</span>
+            <kbd v-if="item.keys">{{ item.keys }}</kbd>
+          </button>
+        </template>
+      </div>
+    </div>
+  </nav>
+  <div v-if="open" class="backdrop" @click="open = null" @contextmenu.prevent="open = null" />
+</template>
+
+<style scoped>
+.menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  position: relative;
+  z-index: 30;
+}
+.menu {
+  position: relative;
+}
+.top {
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 12.5px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.top:hover,
+.top.open {
+  background: var(--bg-hover, #21262d);
+}
+.top.open {
+  color: var(--accent);
+}
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 240px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: left;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.item:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.item:hover kbd {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.item kbd {
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--text-hint);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--border);
+}
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+</style>

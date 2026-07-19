@@ -4,7 +4,9 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - '6080:6080' # noVNC — open http://localhost:6080/vnc.html
+      # Bound to loopback only: the noVNC session is unauthenticated, so it
+      # must never be reachable from the LAN.
+      - '127.0.0.1:6080:6080' # noVNC — open http://localhost:6080/vnc.html
     volumes:
       # Live source for HMR inside the container
       - .:/app

@@ -46,15 +46,20 @@ async function open(entry) {
     <div class="head">
       <span>Saved diffs</span>
       <span class="head-actions">
-        <button class="icon" :title="`Import a shared diff (${MOD}+I)`" @click="diff.importShared()">⤓</button>
+        <button
+          class="icon"
+          :title="`Import a shared diff (${MOD}+I)`"
+          @click="diff.importShared()"
+        >
+          ⤓
+        </button>
         <span class="lock" title="Encrypted at rest, auto-expiring">🔒</span>
       </span>
     </div>
 
     <p v-if="!own.length" class="empty">
-      Nothing saved. Load two files and press <kbd>{{ MOD }}+S</kbd> to keep a
-      diff around — encrypted, and gone automatically after at most
-      24&nbsp;hours.
+      Nothing saved. Load two files and press <kbd>{{ MOD }}+S</kbd> to keep a diff around —
+      encrypted, and gone automatically after at most 24&nbsp;hours.
     </p>
 
     <ul v-else>
@@ -63,25 +68,36 @@ async function open(entry) {
           <span class="name">{{ entry.name }}</span>
           <span class="ttl">{{ remaining(entry) }}</span>
         </button>
-        <button class="share" title="Share as sealed file" @click="diff.shareEntry(entry.id)">⤒</button>
+        <button class="share" title="Share as sealed file" @click="diff.shareEntry(entry.id)">
+          ⤒
+        </button>
         <button class="delete" title="Delete now" @click="vault.remove(entry.id)">×</button>
       </li>
     </ul>
 
-    <template v-if="imported.length">
-      <div class="head sub">
-        <span>Imported diffs</span>
-      </div>
-      <ul>
-        <li v-for="entry in imported" :key="entry.id">
-          <button class="entry" :title="`Open ${entry.name} (from ${entry.from})`" @click="open(entry)">
-            <span class="name">{{ entry.name }}</span>
-            <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
-          </button>
-          <button class="delete" title="Delete now" @click="vault.remove(entry.id)">×</button>
-        </li>
-      </ul>
-    </template>
+    <div class="head sub">
+      <span>Imported diffs</span>
+      <button class="icon" :title="`Import a shared diff (${MOD}+I)`" @click="diff.importShared()">
+        ⤓
+      </button>
+    </div>
+    <p v-if="!imported.length" class="empty">
+      Diffs shared with you appear here. Press <kbd>{{ MOD }}+I</kbd> to open a sealed
+      <code>.diffbro</code> file — it expires at the same moment as the sender's copy.
+    </p>
+    <ul v-else>
+      <li v-for="entry in imported" :key="entry.id">
+        <button
+          class="entry"
+          :title="`Open ${entry.name} (from ${entry.from})`"
+          @click="open(entry)"
+        >
+          <span class="name">{{ entry.name }}</span>
+          <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
+        </button>
+        <button class="delete" title="Delete now" @click="vault.remove(entry.id)">×</button>
+      </li>
+    </ul>
   </aside>
 </template>
 
@@ -172,10 +188,13 @@ li {
 }
 .ttl {
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-hint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.empty code {
+  font-size: 11px;
 }
 .share,
 .delete {

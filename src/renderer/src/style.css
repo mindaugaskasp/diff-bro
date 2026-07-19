@@ -1,15 +1,33 @@
 :root {
   --bg: #0d1117;
   --bg-panel: #161b22;
+  --bg-hover: #21262d;
   --border: #30363d;
   --text: #e6edf3;
   --text-dim: #8b949e;
+  /* between --text and --text-dim: for hint text that must stay readable */
+  --text-hint: #c3cdd7;
   --accent: #2f81f7;
 }
 
-* { box-sizing: border-box; }
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-panel: #f6f8fa;
+  --bg-hover: #eaeef2;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  --text-hint: #454c54;
+  --accent: #0969da;
+}
 
-html, body, #app {
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
   margin: 0;
   height: 100%;
   background: var(--bg);

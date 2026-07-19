@@ -4,9 +4,11 @@ import { useVaultStore } from './vaultStore'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a DiffBro shared diff.',
-  'not-for-you': 'This shared diff is sealed for a different machine — it can only be opened by its addressed recipient.',
+  'not-for-you':
+    'This shared diff is sealed for a different machine — it can only be opened by its addressed recipient.',
   tampered: 'Rejected: the file was modified in transit (or is corrupted) — decryption failed.',
-  'unknown-signer': 'Sealed correctly, but signed by an unknown sender — add their public key first (File → Add Trusted Key).',
+  'unknown-signer':
+    'Sealed correctly, but signed by an unknown sender — add their public key first (File → Add Trusted Key).',
   'bad-signature': 'Signature check failed — the file was modified or corrupted.',
   expired: 'This shared diff has already expired.',
   'invalid-ttl': 'Rejected: shared diffs cannot live longer than 24 hours.',
@@ -15,9 +17,15 @@ const SHARE_ERRORS = {
 
 let noticeTimer = null
 
+const THEME_KEY = 'diffbro.theme'
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme
+}
+
 export const useDiffStore = defineStore('diff', {
   state: () => ({
-    left: null,   // { path, name, content, encoding, size }
+    left: null, // { path, name, content, encoding, size }
     right: null,
     renderSideBySide: true,
     ignoreTrimWhitespace: false,
@@ -31,6 +39,9 @@ export const useDiffStore = defineStore('diff', {
     notice: null,
     // save-diff dialog visibility
     showSaveDialog: false,
+    // when true, the save dialog flows straight into the share dialog
+    saveThenShare: false,
+    theme: localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark',
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null
   }),
@@ -53,7 +64,9 @@ export const useDiffStore = defineStore('diff', {
     receive(side, file) {
       if (!file) return // dialog cancelled or large-file load declined
       if (file.error === 'binary') {
-        this.showNotice(`"${file.name}" looks like a binary file — only text files can be compared.`)
+        this.showNotice(
+          `"${file.name}" looks like a binary file — only text files can be compared.`
+        )
         return
       }
       this[side] = file
@@ -66,6 +79,31 @@ export const useDiffStore = defineStore('diff', {
     },
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
+    },
+    initTheme() {
+      applyTheme(this.theme)
+    },
+    toggleTheme() {
+      this.theme = this.theme === 'dark' ? 'light' : 'dark'
+      localStorage.setItem(THEME_KEY, this.theme)
+      applyTheme(this.theme)
+    },
+    // Re-read both sides from disk (quietly — no large-file prompt) so the
+    // diff follows external edits. Called when the window regains focus.
+    async refreshFromDisk() {
+      for (const side of ['left', 'right']) {
+        const path = this[side]?.path
+        if (!path) continue
+        try {
+          const file = await window.api.readFile(path, { quiet: true })
+          if (file && !file.error && file.content !== this[side].content) {
+            this[side] = file
+            this.showNotice(`"${file.name}" changed on disk — diff reloaded.`)
+          }
+        } catch {
+          // File gone or unreadable now; keep showing the last loaded state.
+        }
+      }
     },
     swap() {
       ;[this.left, this.right] = [this.right, this.left]
@@ -104,25 +142,48 @@ export const useDiffStore = defineStore('diff', {
     },
     handleMenuAction(action) {
       switch (action) {
-        case 'open-left': return this.pick('left')
-        case 'open-right': return this.pick('right')
-        case 'save': if (this.canSave) this.showSaveDialog = true; return
-        case 'swap': return this.swap()
-        case 'clear': return this.clear()
-        case 'toggle-paste': return this.togglePasteMode()
-        case 'toggle-split': this.renderSideBySide = !this.renderSideBySide; return
-        case 'import-shared': return this.importShared()
-        case 'export-pubkey': return this.exportPublicKey()
-        case 'add-trusted-key': return this.addTrustedKey()
+        case 'open-left':
+          return this.pick('left')
+        case 'open-right':
+          return this.pick('right')
+        case 'save':
+          if (this.canSave) this.showSaveDialog = true
+          return
+        case 'share-current':
+          return this.shareCurrent()
+        case 'swap':
+          return this.swap()
+        case 'clear':
+          return this.clear()
+        case 'toggle-paste':
+          return this.togglePasteMode()
+        case 'toggle-split':
+          this.renderSideBySide = !this.renderSideBySide
+          return
+        case 'toggle-theme':
+          return this.toggleTheme()
+        case 'import-shared':
+          return this.importShared()
+        case 'export-pubkey':
+          return this.exportPublicKey()
+        case 'add-trusted-key':
+          return this.addTrustedKey()
       }
     },
-    // Opens the recipient picker (a share file is sealed for one recipient).
-    async shareEntry(id) {
-      const trusted = await window.api.listTrustedKeys()
-      if (!trusted.length) {
-        this.showNotice('No trusted keys yet — import the recipient’s public key first (File → Add Trusted Key).')
+    // One-click share of whatever is on screen: save first (a share file
+    // needs a name and an expiry), then flow straight into the recipient
+    // picker. The share dialog itself handles first-time key setup.
+    shareCurrent() {
+      if (!this.canSave) {
+        this.showNotice('Nothing to share yet — load two files or paste some text first.')
         return
       }
+      this.saveThenShare = true
+      this.showSaveDialog = true
+    },
+    // Opens the recipient picker (a share file is sealed for one recipient).
+    // With no trusted keys yet, the dialog walks through the one-time setup.
+    shareEntry(id) {
       this.shareEntryId = id
     },
     async shareTo(recipientFp) {
@@ -134,12 +195,18 @@ export const useDiffStore = defineStore('diff', {
     },
     async importShared() {
       const res = await useVaultStore().importShared()
-      if (res.ok) this.showNotice(`Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`)
+      if (res.ok)
+        this.showNotice(
+          `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
+        )
       else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
     },
     async exportPublicKey() {
       const res = await window.api.exportPublicKey()
-      if (res.ok) this.showNotice(`Public key saved (fingerprint ${res.fingerprint}). Give this file to machines that should trust your shared diffs.`)
+      if (res.ok)
+        this.showNotice(
+          `Public key saved (fingerprint ${res.fingerprint}). Give this file to machines that should trust your shared diffs.`
+        )
     },
     async addTrustedKey() {
       const res = await window.api.addTrustedKey()

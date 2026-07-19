@@ -20,16 +20,27 @@ onMounted(() => {
 })
 
 async function save() {
-  await vault.save(name.value.trim(), ttl.value, diff.snapshot())
+  const id = await vault.save(name.value.trim(), ttl.value, diff.snapshot())
   diff.showSaveDialog = false
-  diff.showNotice(`Saved (encrypted) — expires in ${ttl.value} h.`)
+  if (diff.saveThenShare) {
+    // "Share" flow: continue straight into the recipient picker.
+    diff.saveThenShare = false
+    diff.shareEntryId = id
+  } else {
+    diff.showNotice(`Saved (encrypted) — expires in ${ttl.value} h.`)
+  }
+}
+
+function cancel() {
+  diff.showSaveDialog = false
+  diff.saveThenShare = false
 }
 </script>
 
 <template>
-  <div class="backdrop" @click.self="diff.showSaveDialog = false">
+  <div class="backdrop" @click.self="cancel">
     <form class="dialog" @submit.prevent="save">
-      <h3>Save diff</h3>
+      <h3>{{ diff.saveThenShare ? 'Share diff — step 1 of 2: save it' : 'Save diff' }}</h3>
       <label>
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
@@ -43,12 +54,13 @@ async function save() {
         </select>
       </label>
       <p class="note">
-        Stored encrypted on this machine only and deleted automatically — 24
-        hours is the maximum.
+        Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.
       </p>
       <div class="actions">
-        <button type="submit" class="primary">Save</button>
-        <button type="button" class="ghost" @click="diff.showSaveDialog = false">Cancel</button>
+        <button type="submit" class="primary">
+          {{ diff.saveThenShare ? 'Next: choose recipient' : 'Save' }}
+        </button>
+        <button type="button" class="ghost" @click="cancel">Cancel</button>
       </div>
     </form>
   </div>

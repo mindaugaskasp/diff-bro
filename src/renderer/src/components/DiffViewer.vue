@@ -24,7 +24,7 @@ function setModels() {
 
 onMounted(() => {
   editor = monaco.editor.createDiffEditor(container.value, {
-    theme: 'vs-dark',
+    theme: store.theme === 'light' ? 'vs' : 'vs-dark',
     automaticLayout: true,
     readOnly: true,
     originalEditable: false,
@@ -38,8 +38,10 @@ onMounted(() => {
     let additions = 0
     let deletions = 0
     for (const c of changes) {
-      if (c.modifiedEndLineNumber > 0) additions += c.modifiedEndLineNumber - c.modifiedStartLineNumber + 1
-      if (c.originalEndLineNumber > 0) deletions += c.originalEndLineNumber - c.originalStartLineNumber + 1
+      if (c.modifiedEndLineNumber > 0)
+        additions += c.modifiedEndLineNumber - c.modifiedStartLineNumber + 1
+      if (c.originalEndLineNumber > 0)
+        deletions += c.originalEndLineNumber - c.originalStartLineNumber + 1
     }
     store.stats = { additions, deletions }
   })
@@ -52,6 +54,10 @@ watch(
   ([split, ignoreWs]) => {
     editor?.updateOptions({ renderSideBySide: split, ignoreTrimWhitespace: ignoreWs })
   }
+)
+watch(
+  () => store.theme,
+  (theme) => monaco.editor.setTheme(theme === 'light' ? 'vs' : 'vs-dark')
 )
 
 onBeforeUnmount(() => {

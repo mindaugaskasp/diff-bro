@@ -39,7 +39,7 @@ function dismiss() {
   gap: 14px;
   padding: 2px 28px 2px 8px;
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-hint);
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
   position: relative;
@@ -55,9 +55,10 @@ kbd {
   font-family: inherit;
   font-size: 10px;
   padding: 0 4px;
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: 3px;
-  background: var(--bg);
+  background: var(--bg-hover);
 }
 .close {
   position: absolute;

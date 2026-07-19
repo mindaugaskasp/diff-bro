@@ -2,6 +2,10 @@ appId: com.mindaugas.diffbro
 productName: DiffBro
 directories:
   output: dist
+  # NB: our compiled output lives in build/, so point buildResources away
+  # from electron-builder's default ("build"). icon.png here is auto-converted
+  # to .ico / .icns at package time.
+  buildResources: resources
 files:
   - build/**
 win:

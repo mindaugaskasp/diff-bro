@@ -34,3 +34,9 @@ dev: ## Run the app natively on this machine (needs npm install first)
 
 build: ## Bundle main/preload/renderer without packaging an installer
 	npm run build
+
+package-win: ## Build the Windows NSIS installer -> dist/
+	npm run build:win
+
+package-mac: ## Build the macOS DMG -> dist/ (must run on macOS)
+	npm run build:mac
