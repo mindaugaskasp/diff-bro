@@ -3,10 +3,12 @@ import { readFile, stat, writeFile } from 'fs/promises'
 import { readFileSync } from 'fs'
 import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from './vaultCrypt'
+import { decryptText, encryptText } from './textCrypt'
 import { basename, join } from 'path'
 import chardet from 'chardet'
 import iconv from 'iconv-lite'
 import { registerShareIpc } from './share'
+import { registerSnippetIpc } from './snippets'
 import appIcon from '../../resources/icon.png?asset'
 
 const DEV_URL = process.env['ELECTRON_RENDERER_URL'] // set only in `npm run dev`
@@ -224,6 +226,31 @@ function installMenu() {
         { type: 'separator' },
         { role: 'toggleDevTools' }
       ]
+    },
+    {
+      label: 'Tools',
+      submenu: [
+        {
+          label: 'Base64 Encode/Decode…',
+          accelerator: 'CmdOrCtrl+Shift+B',
+          click: () => sendToFocused('tools-base64')
+        },
+        {
+          label: 'JSON Format/Validate…',
+          accelerator: 'CmdOrCtrl+Shift+J',
+          click: () => sendToFocused('tools-json')
+        },
+        {
+          label: 'XML Format/Validate…',
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => sendToFocused('tools-xml')
+        },
+        {
+          label: 'Encrypt/Decrypt Text…',
+          accelerator: 'CmdOrCtrl+Shift+X',
+          click: () => sendToFocused('tools-crypt')
+        }
+      ]
     }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
@@ -275,6 +302,15 @@ ipcMain.handle('vault:encrypt', async (e, plaintext, aad) =>
 
 // null when the entry fails authentication (tampered metadata, rotated key).
 ipcMain.handle('vault:decrypt', async (e, box, aad) => vaultDecrypt(await getVaultKey(), box, aad))
+
+// --- Tools menu: local passphrase-based text encrypt/decrypt (scratch use,
+// unrelated to the vault/share crypto above). Pure logic lives in
+// textCrypt.js; the passphrase never leaves this round trip and the app
+// never persists it.
+ipcMain.handle('crypto:encryptText', (e, plaintext, passphrase, algorithm) =>
+  encryptText(plaintext, passphrase, algorithm)
+)
+ipcMain.handle('crypto:decryptText', (e, blob, passphrase) => decryptText(blob, passphrase))
 
 // --- Custom in-app menu bar (Windows/Linux) needs these two escapes ---
 
@@ -351,6 +387,7 @@ if (!app.requestSingleInstanceLock()) {
     installNetworkKillSwitch()
     installMenu()
     registerShareIpc()
+    registerSnippetIpc()
     createWindow()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

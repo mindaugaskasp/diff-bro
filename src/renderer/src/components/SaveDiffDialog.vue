@@ -9,6 +9,10 @@ const vault = useVaultStore()
 const name = ref('')
 const ttl = ref(DEFAULT_TTL_HOURS)
 const nameInput = ref(null)
+// '__new__' reveals an input to create a category on the fly.
+const NEW_CATEGORY = '__new__'
+const categoryId = ref(vault.defaultCategoryId)
+const newCategoryName = ref('')
 
 onMounted(() => {
   name.value =
@@ -20,7 +24,13 @@ onMounted(() => {
 })
 
 async function save() {
-  const id = await vault.save(name.value.trim(), ttl.value, diff.snapshot())
+  let targetCategory = categoryId.value
+  if (targetCategory === NEW_CATEGORY) {
+    targetCategory = newCategoryName.value.trim()
+      ? vault.addCategory(newCategoryName.value)
+      : vault.defaultCategoryId
+  }
+  const id = await vault.save(name.value.trim(), ttl.value, diff.snapshot(), targetCategory)
   diff.showSaveDialog = false
   if (diff.saveThenShare) {
     // "Share" flow: continue straight into the recipient picker.
@@ -38,12 +48,31 @@ function cancel() {
 </script>
 
 <template>
-  <div class="backdrop" @click.self="cancel">
+  <div class="backdrop">
     <form class="dialog" @submit.prevent="save">
-      <h3>{{ diff.saveThenShare ? 'Share diff — step 1 of 2: save it' : 'Save diff' }}</h3>
+      <div class="dialog-header">
+        <h3>{{ diff.saveThenShare ? 'Share diff — step 1 of 2: save it' : 'Save diff' }}</h3>
+        <button type="button" class="close-x" aria-label="Close" @click="cancel">×</button>
+      </div>
       <label>
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
+      </label>
+      <label>
+        Category
+        <select v-model="categoryId">
+          <option v-for="c in vault.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+          <option :value="NEW_CATEGORY">+ New category…</option>
+        </select>
+      </label>
+      <label v-if="categoryId === NEW_CATEGORY">
+        New category name
+        <input
+          v-model="newCategoryName"
+          type="text"
+          spellcheck="false"
+          placeholder="Category name…"
+        />
       </label>
       <label>
         Expires after
@@ -86,9 +115,27 @@ function cancel() {
   flex-direction: column;
   gap: 10px;
 }
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 h3 {
   margin: 0;
   font-size: 14px;
+}
+.close-x {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.close-x:hover {
+  color: var(--text);
 }
 label {
   display: flex;

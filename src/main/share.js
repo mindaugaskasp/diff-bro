@@ -28,7 +28,7 @@ const privPath = () => join(app.getPath('userData'), 'identity.key')
 const pubPath = () => join(app.getPath('userData'), 'identity.pub')
 const trustPath = () => join(app.getPath('userData'), 'trusted-keys.json')
 
-async function getIdentity() {
+export async function getIdentity() {
   try {
     const [rawPriv, rawPub] = await Promise.all([
       readFile(privPath()),
@@ -84,7 +84,7 @@ export function registerShareIpc() {
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Share diff (sealed for one recipient)',
       defaultPath: `${entry.name.replace(/[^\w.-]+/g, '_')}.diffbro`,
-      filters: [{ name: 'DiffBro shared diff', extensions: ['diffbro'] }]
+      filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
     })
     if (canceled || !filePath) return { canceled: true }
 
@@ -98,7 +98,7 @@ export function registerShareIpc() {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Import shared diff',
       properties: ['openFile'],
-      filters: [{ name: 'DiffBro shared diff', extensions: ['diffbro'] }]
+      filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
     })
     if (canceled || !filePaths.length) return { canceled: true }
 
@@ -120,7 +120,7 @@ export function registerShareIpc() {
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Export my public key',
       defaultPath: `diffbro-${pub.fingerprint}.diffbrokey`,
-      filters: [{ name: 'DiffBro public key', extensions: ['diffbrokey'] }]
+      filters: [{ name: 'Diff Bro public key', extensions: ['diffbrokey'] }]
     })
     if (canceled || !filePath) return { canceled: true }
     await writeFile(filePath, JSON.stringify(pub, null, 2))
@@ -132,7 +132,7 @@ export function registerShareIpc() {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Add trusted public key',
       properties: ['openFile'],
-      filters: [{ name: 'DiffBro public key', extensions: ['diffbrokey'] }]
+      filters: [{ name: 'Diff Bro public key', extensions: ['diffbrokey'] }]
     })
     if (canceled || !filePaths.length) return { canceled: true }
 

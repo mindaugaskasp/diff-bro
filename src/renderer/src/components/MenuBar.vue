@@ -49,6 +49,32 @@ const menus = [
       { sep: true },
       { label: 'Toggle Developer Tools', run: () => window.api.toggleDevTools() }
     ]
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    items: [
+      {
+        label: 'Base64 Encode/Decode…',
+        keys: `${MOD}+Shift+B`,
+        run: () => store.handleMenuAction('tools-base64')
+      },
+      {
+        label: 'JSON Format/Validate…',
+        keys: `${MOD}+Shift+J`,
+        run: () => store.handleMenuAction('tools-json')
+      },
+      {
+        label: 'XML Format/Validate…',
+        keys: `${MOD}+Shift+M`,
+        run: () => store.handleMenuAction('tools-xml')
+      },
+      {
+        label: 'Encrypt/Decrypt Text…',
+        keys: `${MOD}+Shift+X`,
+        run: () => store.handleMenuAction('tools-crypt')
+      }
+    ]
   }
 ]
 

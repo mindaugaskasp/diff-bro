@@ -1,5 +1,5 @@
 appId: com.mindaugas.diffbro
-productName: DiffBro
+productName: Diff Bro
 directories:
   output: dist
   # NB: our compiled output lives in build/, so point buildResources away

@@ -1,4 +1,5 @@
 <script setup>
+import { onBeforeUnmount, ref } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
@@ -8,47 +9,107 @@ import MenuBar from './components/MenuBar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import SaveDiffDialog from './components/SaveDiffDialog.vue'
 import ShareDiffDialog from './components/ShareDiffDialog.vue'
+import FormatHintBanner from './components/FormatHintBanner.vue'
+import Base64Dialog from './components/Base64Dialog.vue'
+import JsonToolDialog from './components/JsonToolDialog.vue'
+import XmlToolDialog from './components/XmlToolDialog.vue'
+import EncryptDecryptDialog from './components/EncryptDecryptDialog.vue'
+import SnippetEditorDialog from './components/SnippetEditorDialog.vue'
+import SnippetPassphraseDialog from './components/SnippetPassphraseDialog.vue'
+import SnippetDeleteDialog from './components/SnippetDeleteDialog.vue'
+import VaultCategoryDeleteDialog from './components/VaultCategoryDeleteDialog.vue'
+import { useSnippetStore } from './stores/snippetStore'
+import { useVaultStore } from './stores/vaultStore'
 import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
+const snippets = useSnippetStore()
+const vault = useVaultStore()
 
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
 // Live re-diff: whenever the window regains focus, re-read loaded files so
 // external edits show up without reopening anything.
 window.addEventListener('focus', () => store.refreshFromDisk())
+
+// --- Resizable sidebar (drag the divider between the sidebar and the diff) ---
+const SIDEBAR_KEY = 'diffbro.sidebarWidth'
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 640
+const clampSidebar = (w) => Math.min(Math.max(w, SIDEBAR_MIN), SIDEBAR_MAX)
+
+const sidebarWidth = ref(clampSidebar(Number(localStorage.getItem(SIDEBAR_KEY)) || 220))
+
+let dragStartX = 0
+let dragStartWidth = 0
+
+function onResizeMove(e) {
+  sidebarWidth.value = clampSidebar(dragStartWidth + (e.clientX - dragStartX))
+}
+function onResizeEnd() {
+  window.removeEventListener('mousemove', onResizeMove)
+  window.removeEventListener('mouseup', onResizeEnd)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+  localStorage.setItem(SIDEBAR_KEY, String(Math.round(sidebarWidth.value)))
+}
+function startResize(e) {
+  dragStartX = e.clientX
+  dragStartWidth = sidebarWidth.value
+  // Suppress text selection and keep the resize cursor during the drag.
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  window.addEventListener('mousemove', onResizeMove)
+  window.addEventListener('mouseup', onResizeEnd)
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('mousemove', onResizeMove)
+  window.removeEventListener('mouseup', onResizeEnd)
+})
+
+// --- Drag & drop files anywhere on the window ---
+// A dragenter/dragleave counter avoids the flicker you'd get from child
+// elements firing dragleave as the cursor moves over them.
+const dragDepth = ref(0)
+const dragActive = ref(false)
+
+function hasFiles(e) {
+  return Array.from(e.dataTransfer?.types ?? []).includes('Files')
+}
+function onDragEnter(e) {
+  if (!hasFiles(e)) return
+  dragDepth.value += 1
+  dragActive.value = true
+}
+function onDragLeave() {
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+  if (dragDepth.value === 0) dragActive.value = false
+}
+async function onDrop(e) {
+  dragDepth.value = 0
+  dragActive.value = false
+  if (!hasFiles(e)) return
+  const paths = Array.from(e.dataTransfer.files)
+    .map((f) => window.api.getPathForFile(f))
+    .filter(Boolean)
+  if (paths.length) await store.dropFiles(paths)
+}
 </script>
 
 <template>
-  <div class="app">
+  <div
+    class="app"
+    @dragenter.prevent="onDragEnter"
+    @dragover.prevent
+    @dragleave="onDragLeave"
+    @drop.prevent="onDrop"
+  >
     <MenuBar v-if="!isMac" />
     <ShortcutBar />
 
     <header class="toolbar">
-      <span class="logo">DiffBro</span>
-
-      <div class="slots">
-        <FileSlot
-          side="left"
-          :file="store.left"
-          @pick="store.pick('left')"
-          @drop-path="(p) => store.drop('left', p)"
-        />
-        <button
-          class="ghost"
-          :title="`Swap sides (${MOD}+Shift+S)`"
-          :disabled="!store.ready"
-          @click="store.swap"
-        >
-          ⇄
-        </button>
-        <FileSlot
-          side="right"
-          :file="store.right"
-          @pick="store.pick('right')"
-          @drop-path="(p) => store.drop('right', p)"
-        />
-      </div>
+      <span class="logo">Diff Bro</span>
 
       <span v-if="store.ready && store.stats" class="stats">
         <span class="add">+{{ store.stats.additions }}</span>
@@ -102,10 +163,42 @@ window.addEventListener('focus', () => store.refreshFromDisk())
     </header>
 
     <div class="body">
-      <SavedDiffs />
+      <SavedDiffs :style="{ width: sidebarWidth + 'px' }" />
+      <div class="resizer" title="Drag to resize" @mousedown="startResize"></div>
       <main class="content">
+        <div v-if="store.mode !== 'paste'" class="file-slots-row">
+          <div class="slot-half">
+            <FileSlot
+              side="left"
+              :file="store.left"
+              @pick="store.pick('left')"
+              @drop-path="(p) => store.drop('left', p)"
+            />
+          </div>
+          <button
+            class="ghost swap"
+            :title="`Swap sides (${MOD}+Shift+S)`"
+            :disabled="!store.ready"
+            @click="store.swap"
+          >
+            ⇄
+          </button>
+          <div class="slot-half">
+            <FileSlot
+              side="right"
+              :file="store.right"
+              @pick="store.pick('right')"
+              @drop-path="(p) => store.drop('right', p)"
+            />
+          </div>
+        </div>
+
         <PasteInput v-if="store.mode === 'paste'" />
-        <DiffViewer v-else-if="store.ready" />
+        <template v-else-if="store.ready">
+          <FormatHintBanner side="left" />
+          <FormatHintBanner side="right" />
+          <DiffViewer />
+        </template>
         <div v-else class="empty">
           <p>Choose or drop two files to compare.</p>
         </div>
@@ -114,9 +207,23 @@ window.addEventListener('focus', () => store.refreshFromDisk())
 
     <SaveDiffDialog v-if="store.showSaveDialog" />
     <ShareDiffDialog v-if="store.shareEntryId" />
+    <Base64Dialog v-if="store.showBase64Dialog" />
+    <JsonToolDialog v-if="store.showJsonToolDialog" />
+    <XmlToolDialog v-if="store.showXmlToolDialog" />
+    <EncryptDecryptDialog v-if="store.showCryptDialog" />
+    <SnippetEditorDialog v-if="snippets.editingSnippet" />
+    <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />
+    <SnippetDeleteDialog v-if="snippets.pendingDelete" />
+    <VaultCategoryDeleteDialog v-if="vault.pendingDeleteCategory" />
 
     <transition name="fade">
       <div v-if="store.notice" class="notice">{{ store.notice }}</div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="dragActive" class="drop-overlay">
+        <div class="drop-card">Drop up to two files to compare</div>
+      </div>
     </transition>
   </div>
 </template>
@@ -136,15 +243,24 @@ window.addEventListener('focus', () => store.refreshFromDisk())
   border-bottom: 1px solid var(--border);
 }
 .logo {
+  flex: 1;
+  min-width: 0;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
-.slots {
+.file-slots-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.slot-half {
   flex: 1;
   min-width: 0;
+  display: flex;
+  justify-content: center;
 }
 .stats {
   display: flex;
@@ -192,10 +308,21 @@ window.addEventListener('focus', () => store.refreshFromDisk())
   min-height: 0;
   display: flex;
 }
+.resizer {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: var(--border);
+  transition: background 0.12s;
+}
+.resizer:hover {
+  background: var(--accent);
+}
 .content {
   flex: 1;
   min-width: 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .empty {
   height: 100%;
@@ -224,5 +351,25 @@ window.addEventListener('focus', () => store.refreshFromDisk())
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 14%, rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+.drop-card {
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 28px 44px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 </style>

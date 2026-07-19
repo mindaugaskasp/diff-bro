@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
+import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 
 const SHARE_ERRORS = {
-  'not-a-share-file': 'That file is not a DiffBro shared diff.',
+  'not-a-share-file': 'That file is not a Diff Bro shared diff.',
   'not-for-you':
     'This shared diff is sealed for a different machine — it can only be opened by its addressed recipient.',
   tampered: 'Rejected: the file was modified in transit (or is corrupted) — decryption failed.',
@@ -21,6 +22,19 @@ const THEME_KEY = 'diffbro.theme'
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme
+}
+
+// Format-suggestion banner: null once dismissed for the *current* content
+// (dismissedContent tracks the exact string that was dismissed, so editing
+// or re-loading the side clears the dismissal), null once already pretty.
+function formatHintFor(file, dismissedContent) {
+  if (!file?.content || file.content === dismissedContent) return null
+  const detected = detectTextFormat(file.content)
+  if (!detected) return null
+  if (!detected.valid) return detected // carries kind, error, and line/column when known
+  const pretty = detected.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
+  if (pretty.trim() === file.content.trim()) return null // already pretty
+  return { kind: detected.kind, valid: true }
 }
 
 export const useDiffStore = defineStore('diff', {
@@ -43,7 +57,15 @@ export const useDiffStore = defineStore('diff', {
     saveThenShare: false,
     theme: localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark',
     // entry id currently in the share dialog (null = closed)
-    shareEntryId: null
+    shareEntryId: null,
+    // Tools menu dialog visibility.
+    showBase64Dialog: false,
+    showJsonToolDialog: false,
+    showXmlToolDialog: false,
+    showCryptDialog: false,
+    // content string last dismissed per side, so the format-hint banner
+    // stays gone until that side's content actually changes.
+    dismissedFormatHint: { left: null, right: null }
   }),
   getters: {
     ready: (s) => !!s.left && !!s.right,
@@ -51,7 +73,9 @@ export const useDiffStore = defineStore('diff', {
     // or text typed/pasted into the paste panes (even before Compare).
     canSave: (s) => (s.mode === 'paste' ? !!(s.pasteLeft || s.pasteRight) : s.ready),
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
-    rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null)
+    rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
+    leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
+    rightFormatHint: (s) => formatHintFor(s.right, s.dismissedFormatHint.right)
   },
   actions: {
     async pick(side) {
@@ -60,6 +84,19 @@ export const useDiffStore = defineStore('diff', {
     },
     async drop(side, path) {
       this.receive(side, await window.api.readFile(path))
+    },
+    // Files dropped anywhere on the window (not a specific slot). Two or more
+    // files fill both sides in drop order; a single file fills the first
+    // empty side (left first), so dropping one then another builds the diff.
+    async dropFiles(paths) {
+      if (!paths.length) return
+      if (paths.length >= 2) {
+        await this.drop('left', paths[0])
+        await this.drop('right', paths[1])
+      } else {
+        const side = !this.left ? 'left' : !this.right ? 'right' : 'left'
+        await this.drop(side, paths[0])
+      }
     },
     receive(side, file) {
       if (!file) return // dialog cancelled or large-file load declined
@@ -107,6 +144,17 @@ export const useDiffStore = defineStore('diff', {
     },
     swap() {
       ;[this.left, this.right] = [this.right, this.left]
+    },
+    // Pretty-print `side` in place using whichever format its hint detected.
+    formatSide(side) {
+      const file = this[side]
+      const hint = side === 'left' ? this.leftFormatHint : this.rightFormatHint
+      if (!file || !hint?.valid) return
+      const pretty = hint.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
+      this[side] = { ...file, content: pretty }
+    },
+    dismissFormatHint(side) {
+      this.dismissedFormatHint[side] = this[side]?.content ?? null
     },
     // Snapshot of everything a saved diff needs to be restored later —
     // including in-progress paste-mode text.
@@ -168,6 +216,18 @@ export const useDiffStore = defineStore('diff', {
           return this.exportPublicKey()
         case 'add-trusted-key':
           return this.addTrustedKey()
+        case 'tools-base64':
+          this.showBase64Dialog = true
+          return
+        case 'tools-json':
+          this.showJsonToolDialog = true
+          return
+        case 'tools-xml':
+          this.showXmlToolDialog = true
+          return
+        case 'tools-crypt':
+          this.showCryptDialog = true
+          return
       }
     },
     // One-click share of whatever is on screen: save first (a share file

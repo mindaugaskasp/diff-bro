@@ -8,6 +8,14 @@
   /* between --text and --text-dim: for hint text that must stay readable */
   --text-hint: #c3cdd7;
   --accent: #2f81f7;
+  /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
+     deliberately more saturated than the rest of the palette. */
+  --warning-bg: #d29922;
+  --warning-border: #9a6700;
+  --warning-text: #1a1300;
+  --danger-bg: #f85149;
+  --danger-border: #da3633;
+  --danger-text: #ffffff;
 }
 
 :root[data-theme='light'] {
@@ -19,6 +27,12 @@
   --text-dim: #656d76;
   --text-hint: #454c54;
   --accent: #0969da;
+  --warning-bg: #f0b429;
+  --warning-border: #bf8700;
+  --warning-text: #3b2900;
+  --danger-bg: #f85149;
+  --danger-border: #cf222e;
+  --danger-text: #ffffff;
 }
 
 * {

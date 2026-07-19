@@ -33,7 +33,7 @@ async function exportKey() {
 async function addKey() {
   const res = await window.api.addTrustedKey()
   if (res.ok) await refresh(res.fingerprint)
-  else if (res.error) diff.showNotice('That file is not a valid DiffBro public key.')
+  else if (res.error) diff.showNotice('That file is not a valid Diff Bro public key.')
 }
 
 function close() {
@@ -42,10 +42,13 @@ function close() {
 </script>
 
 <template>
-  <div class="backdrop" @click.self="close">
+  <div class="backdrop">
     <!-- Normal case: at least one trusted recipient exists. -->
     <form v-if="recipients.length" class="dialog" @submit.prevent="diff.shareTo(selected)">
-      <h3>Share diff</h3>
+      <div class="dialog-header">
+        <h3>Share diff</h3>
+        <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
+      </div>
       <label>
         Seal for recipient
         <select v-model="selected">
@@ -68,7 +71,10 @@ function close() {
 
     <!-- First-time setup: no trusted keys yet. -->
     <div v-else class="dialog">
-      <h3>Share diff — one-time setup</h3>
+      <div class="dialog-header">
+        <h3>Share diff — one-time setup</h3>
+        <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
+      </div>
       <p class="note">
         Shared diffs are sealed for one specific person, so you and your bro first swap public keys
         — once, in both directions. Your keys already exist (created automatically, fingerprint
@@ -132,9 +138,27 @@ function close() {
   flex-direction: column;
   gap: 10px;
 }
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 h3 {
   margin: 0;
   font-size: 14px;
+}
+.close-x {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.close-x:hover {
+  color: var(--text);
 }
 label {
   display: flex;

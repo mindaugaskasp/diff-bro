@@ -18,29 +18,96 @@ export const TTL_OPTIONS = [
 // The entry's plaintext metadata is bound to the ciphertext as AES-GCM
 // additional authenticated data: anyone editing localStorage to, say,
 // extend expiresAt just makes the entry undecryptable (and it gets purged).
+// categoryId, like the entry name and favorite flag, is plaintext
+// organizational metadata and deliberately NOT part of the AAD.
 const entryAad = (id, createdAt, expiresAt, from) =>
   [id, createdAt, expiresAt, from ?? ''].join('|')
 
-function readEntries() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? []
-  } catch {
-    return []
+const IMPORTED_CATEGORY = 'imported'
+
+// Categories persist independently of the diffs in them: expiry purges a
+// diff but never its category. The "Default" category is the non-deletable
+// fallback (marked isDefault so it survives rename). A reserved, hidden
+// "imported" category holds diffs received from others.
+function readState() {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  let categories = []
+  let entries = []
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        entries = parsed // legacy shape: a bare entries array
+      } else {
+        categories = Array.isArray(parsed.categories) ? parsed.categories : []
+        entries = Array.isArray(parsed.entries) ? parsed.entries : []
+      }
+    } catch {
+      // keep empty defaults
+    }
   }
+  if (!categories.some((c) => c.isDefault)) {
+    categories.unshift({ id: crypto.randomUUID(), name: 'Default', isDefault: true })
+  }
+  const defaultId = categories.find((c) => c.isDefault).id
+  // Legacy / imported entries with no category land in Default (own) or the
+  // reserved imported bucket (shared-in).
+  for (const e of entries) {
+    if (!e.categoryId) e.categoryId = e.from ? IMPORTED_CATEGORY : defaultId
+  }
+  return { categories, entries }
 }
 
 export const useVaultStore = defineStore('vault', {
   state: () => ({
-    entries: readEntries(), // [{ id, name, createdAt, expiresAt, iv, data }]
+    // { id, name, createdAt, expiresAt, categoryId, favorite, iv, data }
+    ...readState(),
     // re-render trigger for the expiry countdowns
-    now: Date.now()
+    now: Date.now(),
+    // { id, name } of a category pending delete confirmation, or null
+    pendingDeleteCategory: null
   }),
   getters: {
-    active: (s) => s.entries.filter((e) => e.expiresAt > s.now)
+    // Favorites float to the top; otherwise insertion order is preserved
+    // (stable sort). Favoriting is plaintext metadata, same as the name.
+    active: (s) =>
+      s.entries
+        .filter((e) => e.expiresAt > s.now)
+        .slice()
+        .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)),
+    defaultCategoryId: (s) => s.categories.find((c) => c.isDefault)?.id ?? null,
+    // Favorited own diffs are lifted out of their category into a pinned
+    // "Favorites" group at the top, so a category never shows its own
+    // favorites.
+    favoritesOwn() {
+      return this.active.filter((e) => !e.from && e.favorite)
+    },
+    // Own (not shared-in), non-favorited active diffs in one category.
+    activeInCategory() {
+      return (categoryId) =>
+        this.active.filter((e) => !e.from && !e.favorite && e.categoryId === categoryId)
+    },
+    // Shared-in diffs are shown in their own flat "External diffs" section.
+    importedActive() {
+      return this.active.filter((e) => e.from)
+    },
+    // Deletable only if it is not Default and shows no diffs of its own
+    // (favorited diffs have moved to the Favorites group and don't block
+    // deletion; removeCategory reassigns any stragglers to Default).
+    canDeleteCategory() {
+      return (id) => {
+        const category = this.categories.find((c) => c.id === id)
+        if (!category || category.isDefault) return false
+        return !this.activeInCategory(id).length
+      }
+    }
   },
   actions: {
     persist() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.entries))
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ categories: this.categories, entries: this.entries })
+      )
     },
     tick() {
       this.now = Date.now()
@@ -48,17 +115,24 @@ export const useVaultStore = defineStore('vault', {
       this.entries = this.entries.filter((e) => e.expiresAt > this.now)
       if (this.entries.length !== before) this.persist()
     },
-    async save(name, ttlHours, payload) {
+    async save(name, ttlHours, payload, categoryId) {
       const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
-      return this._add(name, payload, Date.now(), Date.now() + hours * 3600_000, null)
+      return this._add(
+        name,
+        payload,
+        Date.now(),
+        Date.now() + hours * 3600_000,
+        null,
+        categoryId ?? this.defaultCategoryId
+      )
     },
     // Entry received from another machine: keep the sender's absolute
     // timestamps so it expires at the same moment everywhere (the 24 h cap
     // was already enforced during signature verification in main).
     async addShared(name, payload, createdAt, expiresAt, from) {
-      await this._add(name, payload, createdAt, expiresAt, from)
+      await this._add(name, payload, createdAt, expiresAt, from, IMPORTED_CATEGORY)
     },
-    async _add(name, payload, createdAt, expiresAt, from) {
+    async _add(name, payload, createdAt, expiresAt, from, categoryId) {
       const id = crypto.randomUUID()
       const { iv, data } = await window.api.vaultEncrypt(
         JSON.stringify(payload),
@@ -70,11 +144,52 @@ export const useVaultStore = defineStore('vault', {
         createdAt,
         expiresAt,
         from: from ?? null,
+        categoryId,
+        favorite: false,
         iv,
         data
       })
       this.persist()
       return id
+    },
+    addCategory(name) {
+      const id = crypto.randomUUID()
+      this.categories.push({ id, name: (name || 'Untitled').trim() || 'Untitled' })
+      this.persist()
+      return id
+    },
+    renameCategory(id, name) {
+      const category = this.categories.find((c) => c.id === id)
+      if (category && name.trim()) {
+        category.name = name.trim()
+        this.persist()
+      }
+    },
+    // Refuses the Default category and any category still holding active
+    // diffs (defense in depth — the UI gates this too). Returns whether it
+    // deleted.
+    removeCategory(id) {
+      if (!this.canDeleteCategory(id)) return false
+      // Any favorited stragglers still tagged to this category (they live in
+      // the Favorites group, not the category list) fall back to Default so
+      // they never point at a deleted category. categoryId is plaintext
+      // metadata (not in the AAD), so this needs no re-encryption.
+      const def = this.defaultCategoryId
+      for (const e of this.entries) if (e.categoryId === id) e.categoryId = def
+      this.categories = this.categories.filter((c) => c.id !== id)
+      this.persist()
+      return true
+    },
+    requestDeleteCategory(id, name) {
+      this.pendingDeleteCategory = { id, name }
+    },
+    confirmDeleteCategory() {
+      const pending = this.pendingDeleteCategory
+      this.pendingDeleteCategory = null
+      if (pending) this.removeCategory(pending.id)
+    },
+    cancelDeleteCategory() {
+      this.pendingDeleteCategory = null
     },
     // Decrypt an entry and hand it to the main process, which signs it and
     // seals it for the chosen recipient.
@@ -124,6 +239,13 @@ export const useVaultStore = defineStore('vault', {
     remove(id) {
       this.entries = this.entries.filter((e) => e.id !== id)
       this.persist()
+    },
+    toggleFavorite(id) {
+      const entry = this.entries.find((e) => e.id === id)
+      if (entry) {
+        entry.favorite = !entry.favorite
+        this.persist()
+      }
     }
   }
 })

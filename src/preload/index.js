@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld('api', {
   // the key never enters the renderer.
   vaultEncrypt: (plaintext, aad) => ipcRenderer.invoke('vault:encrypt', plaintext, aad),
   vaultDecrypt: (box, aad) => ipcRenderer.invoke('vault:decrypt', box, aad),
+  // Tools menu: local passphrase-based text encrypt/decrypt (unrelated to
+  // the vault above) — same main-process-only crypto rule applies.
+  encryptText: (plaintext, passphrase, algorithm) =>
+    ipcRenderer.invoke('crypto:encryptText', plaintext, passphrase, algorithm),
+  decryptText: (blob, passphrase) => ipcRenderer.invoke('crypto:decryptText', blob, passphrase),
   // Sealed diff sharing (sign-then-encrypt, keys managed in main).
   listTrustedKeys: () => ipcRenderer.invoke('share:listTrusted'),
   myFingerprint: () => ipcRenderer.invoke('share:myFingerprint'),
@@ -17,6 +22,11 @@ contextBridge.exposeInMainWorld('api', {
   shareImport: () => ipcRenderer.invoke('share:import'),
   exportPublicKey: () => ipcRenderer.invoke('share:exportPublicKey'),
   addTrustedKey: () => ipcRenderer.invoke('share:addTrustedKey'),
+  // Snippets export/import: passphrase-protected + signed, no recipient
+  // setup needed (see snippetSealing.js).
+  exportSnippets: (bundle, passphrase, defaultName) =>
+    ipcRenderer.invoke('snippets:export', bundle, passphrase, defaultName),
+  importSnippets: (passphrase) => ipcRenderer.invoke('snippets:import', passphrase),
   // Used by the custom in-app menu bar (Windows/Linux).
   zoom: (dir) => {
     if (dir === 0) webFrame.setZoomLevel(0)

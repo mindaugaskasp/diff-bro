@@ -24,9 +24,9 @@ function onDrop(e) {
     :class="{ hover, filled: !!file }"
     :title="file ? file.path : `Choose ${side} file`"
     @click="emit('pick')"
-    @dragover.prevent="hover = true"
+    @dragover.prevent.stop="hover = true"
     @dragleave="hover = false"
-    @drop.prevent="onDrop"
+    @drop.prevent.stop="onDrop"
   >
     <span v-if="file" class="name">{{ file.name }}</span>
     <span v-else class="placeholder">{{ side }} file…</span>

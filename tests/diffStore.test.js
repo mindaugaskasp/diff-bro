@@ -76,6 +76,29 @@ describe('diffStore', () => {
     expect(store.ready).toBe(true)
   })
 
+  it('dropFiles loads two dropped files into left and right', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({
+      path,
+      name: path.split('/').pop(),
+      content: `c:${path}`
+    })
+    await store.dropFiles(['/tmp/a.txt', '/tmp/b.txt'])
+    expect(store.left.name).toBe('a.txt')
+    expect(store.right.name).toBe('b.txt')
+    expect(store.ready).toBe(true)
+  })
+
+  it('dropFiles with one file fills the first empty side (left, then right)', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    await store.dropFiles(['/tmp/first.txt'])
+    expect(store.left.name).toBe('first.txt')
+    expect(store.right).toBeNull()
+    await store.dropFiles(['/tmp/second.txt'])
+    expect(store.right.name).toBe('second.txt')
+  })
+
   it('routes menu actions: toggle-split flips the view option', () => {
     const store = useDiffStore()
     const before = store.renderSideBySide
@@ -108,6 +131,66 @@ describe('diffStore', () => {
     store.shareCurrent()
     expect(store.showSaveDialog).toBe(true)
     expect(store.saveThenShare).toBe(true)
+  })
+
+  it('routes menu actions: tools-base64, tools-json, tools-xml, tools-crypt open their dialogs', () => {
+    const store = useDiffStore()
+    store.handleMenuAction('tools-base64')
+    expect(store.showBase64Dialog).toBe(true)
+    store.handleMenuAction('tools-json')
+    expect(store.showJsonToolDialog).toBe(true)
+    store.handleMenuAction('tools-xml')
+    expect(store.showXmlToolDialog).toBe(true)
+    store.handleMenuAction('tools-crypt')
+    expect(store.showCryptDialog).toBe(true)
+  })
+
+  it('surfaces a format hint for JSON/XML-shaped content and none for plain text', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.right = { path: '/tmp/b.txt', name: 'b.txt', content: 'just some text' }
+    expect(store.leftFormatHint).toEqual({ kind: 'json', valid: true })
+    expect(store.rightFormatHint).toBeNull()
+  })
+
+  it('has no format hint for content that is already pretty-printed', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{\n  "a": 1\n}' }
+    expect(store.leftFormatHint).toBeNull()
+  })
+
+  it('surfaces an invalid-format hint (no Format action) for malformed JSON', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a": 1,}' }
+    expect(store.leftFormatHint.kind).toBe('json')
+    expect(store.leftFormatHint.valid).toBe(false)
+  })
+
+  it('formatSide pretty-prints the content in place', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.formatSide('left')
+    expect(store.left.content).toBe('{\n  "a": 1\n}')
+    expect(store.leftFormatHint).toBeNull() // now pretty, hint clears itself
+  })
+
+  it('formatSide is a no-op when the hint is invalid or missing', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a": 1,}' }
+    store.formatSide('left')
+    expect(store.left.content).toBe('{"a": 1,}') // unchanged, still invalid
+    store.formatSide('right') // no right file at all
+    expect(store.right).toBeNull()
+  })
+
+  it('dismissFormatHint hides the hint until the content changes again', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    expect(store.leftFormatHint).not.toBeNull()
+    store.dismissFormatHint('left')
+    expect(store.leftFormatHint).toBeNull()
+    store.left = { ...store.left, content: '{"b":2}' }
+    expect(store.leftFormatHint).not.toBeNull() // new content, dismissal doesn't carry over
   })
 
   it('toggleTheme flips the theme, persists it, and stamps the document', () => {
