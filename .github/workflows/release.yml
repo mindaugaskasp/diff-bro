@@ -106,3 +106,48 @@ jobs:
           # tag push is a real release, never a draft/prerelease.
           draft: false
           prerelease: false
+
+  # Keep the Homebrew cask in step with the release so `brew upgrade` works.
+  # Regenerates the cask (version + sha256 of the just-released DMG) and pushes
+  # it to the tap repo. Skips cleanly if HOMEBREW_TAP_TOKEN isn't configured, so
+  # the release itself never fails on it.
+  homebrew:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Regenerate the cask from the released DMG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release download "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" --pattern 'Diff-Bro-macOS.dmg' --dir dist
+          node scripts/gen-homebrew-cask.mjs "${version}" --dmg dist/Diff-Bro-macOS.dmg
+
+      - name: Publish the cask to the Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          # Tap repo holding the cask; users run `brew tap <owner>/<name>`. The
+          # repo itself must be named `homebrew-<name>`.
+          TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO || 'mindaugaskasp/homebrew-tap' }}
+        run: |
+          if [ -z "${TAP_TOKEN}" ]; then
+            echo "HOMEBREW_TAP_TOKEN not set — skipping tap update."
+            echo "Configure a PAT with write access to ${TAP_REPO} to enable it."
+            exit 0
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" tap
+          mkdir -p tap/Casks
+          cp packaging/homebrew/diff-bro.rb tap/Casks/diff-bro.rb
+          cd tap
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add Casks/diff-bro.rb
+          git commit -m "diff-bro ${version}" || { echo 'cask unchanged'; exit 0; }
+          git push

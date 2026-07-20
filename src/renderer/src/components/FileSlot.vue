@@ -1,7 +1,10 @@
 <script setup>
 defineProps({
   side: { type: String, required: true },
-  file: { type: Object, default: null }
+  file: { type: Object, default: null },
+  // True when this slot is empty and the other side already has a file, so we
+  // can visibly prompt for the second file.
+  awaiting: { type: Boolean, default: false }
 })
 const emit = defineEmits(['pick'])
 // Drag & drop is handled once at the window level (App.vue); the slot only
@@ -11,13 +14,15 @@ const emit = defineEmits(['pick'])
 <template>
   <button
     class="slot"
-    :class="{ filled: !!file }"
+    :class="{ filled: !!file, awaiting }"
     :data-side="side"
     :title="file ? file.path : `Choose ${side} file`"
     @click="emit('pick')"
   >
     <span v-if="file" class="name">{{ file.name }}</span>
-    <span v-else class="placeholder">{{ side }} file…</span>
+    <span v-else class="placeholder">{{
+      awaiting ? `drop the ${side} file here` : `${side} file…`
+    }}</span>
   </button>
 </template>
 
@@ -40,6 +45,24 @@ const emit = defineEmits(['pick'])
 }
 .slot.hover {
   border-color: var(--accent);
+}
+/* The still-needed side: accent dashed border + a gentle pulse to draw the eye. */
+.slot.awaiting {
+  border-color: var(--accent);
+  color: var(--accent);
+  animation: awaiting-pulse 1.6s ease-in-out infinite;
+}
+@keyframes awaiting-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.slot.awaiting .placeholder {
+  text-transform: none;
 }
 .name,
 .placeholder {

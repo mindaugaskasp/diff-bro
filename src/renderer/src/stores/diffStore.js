@@ -62,6 +62,12 @@ export const useDiffStore = defineStore('diff', {
     showSaveDialog: false,
     // when true, the save dialog flows straight into the share dialog
     saveThenShare: false,
+    // Dropped file paths waiting on the "replace current diff?" confirmation
+    // (a drop that would discard a complete, already-loaded comparison) — null
+    // when no prompt is open. `replaceAfterSave` carries them through the save
+    // dialog when the user chooses "Save first".
+    pendingReplace: null,
+    replaceAfterSave: null,
     theme: localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark',
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
@@ -112,21 +118,51 @@ export const useDiffStore = defineStore('diff', {
     //   - 1 file otherwise: fill the first empty side (left, then right).
     async dropFiles(paths, targetSide = null) {
       if (!paths.length) return
+      // Dropping on a specific slot is a deliberate single-side change.
+      if (targetSide && paths.length === 1) {
+        await this.drop(targetSide, paths[0])
+        return
+      }
+      // Would this discard a complete comparison? Ask first, rather than
+      // silently replacing it.
+      if (this.left && this.right) {
+        this.pendingReplace = paths.slice(0, 2)
+        return
+      }
       if (paths.length >= 2) {
         await this.drop('left', paths[0])
         await this.drop('right', paths[1])
         return
       }
-      if (targetSide) {
-        await this.drop(targetSide, paths[0])
-        return
-      }
-      if (this.left && this.right) {
-        this.clear()
-        await this.drop('left', paths[0])
-        return
-      }
+      // First file of a new comparison — load it and wait for the second.
       await this.drop(!this.left ? 'left' : 'right', paths[0])
+    },
+    // Clear and load the replacement file(s). One file lands on the left and
+    // waits for a second; two files fill both sides.
+    async _loadReplacement(paths) {
+      this.clear()
+      await this.drop('left', paths[0])
+      if (paths.length >= 2) await this.drop('right', paths[1])
+    },
+    async confirmReplace() {
+      const paths = this.pendingReplace
+      this.pendingReplace = null
+      if (paths) await this._loadReplacement(paths)
+    },
+    // "Save first": keep the pending paths, open the save dialog; the save
+    // dialog calls finishReplaceAfterSave() once the current diff is saved.
+    saveThenReplace() {
+      this.replaceAfterSave = this.pendingReplace
+      this.pendingReplace = null
+      this.showSaveDialog = true
+    },
+    async finishReplaceAfterSave() {
+      const paths = this.replaceAfterSave
+      this.replaceAfterSave = null
+      if (paths) await this._loadReplacement(paths)
+    },
+    cancelReplace() {
+      this.pendingReplace = null
     },
     receive(side, file) {
       if (!file) return // dialog cancelled or large-file load declined

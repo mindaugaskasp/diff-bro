@@ -107,14 +107,50 @@ describe('diffStore', () => {
     expect(store.left).toBeNull()
   })
 
-  it('dropFiles: a third single file starts a fresh comparison (clears, waits for right)', async () => {
+  it('dropFiles: a third single file prompts before replacing a complete diff', async () => {
     const store = useDiffStore()
     window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
     await store.dropFiles(['/tmp/a.txt', '/tmp/b.txt'])
     expect(store.ready).toBe(true)
-    await store.dropFiles(['/tmp/c.txt']) // third file
+    await store.dropFiles(['/tmp/c.txt']) // third file -> confirmation, not silent replace
+    expect(store.pendingReplace).toEqual(['/tmp/c.txt'])
+    expect(store.left.name).toBe('a.txt') // still the old diff until confirmed
+    await store.confirmReplace()
     expect(store.left.name).toBe('c.txt')
     expect(store.right).toBeNull()
+  })
+
+  it('dropFiles: dropping two files onto a complete diff also prompts, then fills both', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    await store.dropFiles(['/tmp/a.txt', '/tmp/b.txt'])
+    await store.dropFiles(['/tmp/c.txt', '/tmp/d.txt'])
+    expect(store.pendingReplace).toEqual(['/tmp/c.txt', '/tmp/d.txt'])
+    expect(store.left.name).toBe('a.txt')
+    await store.confirmReplace()
+    expect(store.left.name).toBe('c.txt')
+    expect(store.right.name).toBe('d.txt')
+  })
+
+  it('dropFiles onto a specific slot replaces just that side without prompting', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    await store.dropFiles(['/tmp/a.txt', '/tmp/b.txt'])
+    await store.dropFiles(['/tmp/new.txt'], 'left')
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('new.txt')
+    expect(store.right.name).toBe('b.txt')
+  })
+
+  it('cancelReplace drops the pending replacement, keeping the current diff', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    await store.dropFiles(['/tmp/a.txt', '/tmp/b.txt'])
+    await store.dropFiles(['/tmp/c.txt'])
+    store.cancelReplace()
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('a.txt')
+    expect(store.right.name).toBe('b.txt')
   })
 
   it('clear wipes loaded files and paste-mode text', () => {

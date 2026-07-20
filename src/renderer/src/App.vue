@@ -9,6 +9,7 @@ import MenuBar from './components/MenuBar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import SaveDiffDialog from './components/SaveDiffDialog.vue'
 import ShareDiffDialog from './components/ShareDiffDialog.vue'
+import ReplaceDiffDialog from './components/ReplaceDiffDialog.vue'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import Base64Dialog from './components/Base64Dialog.vue'
 import JsonToolDialog from './components/JsonToolDialog.vue'
@@ -144,43 +145,56 @@ async function onDrop(e) {
       </span>
 
       <div class="options">
-        <label>
-          <input v-model="store.renderSideBySide" type="checkbox" />
-          Split view
-        </label>
-        <label>
-          <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
-          Ignore whitespace
-        </label>
+        <!-- Diff display toggles -->
+        <div class="group">
+          <label>
+            <input v-model="store.renderSideBySide" type="checkbox" />
+            Split view
+          </label>
+          <label>
+            <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
+            Ignore whitespace
+          </label>
+        </div>
+
+        <span class="divider" />
+
+        <!-- Document actions -->
+        <div class="group actions">
+          <button
+            class="ghost"
+            :class="{ active: store.mode === 'paste' }"
+            :title="`Compare pasted text (${MOD}+T)`"
+            @click="store.togglePasteMode"
+          >
+            Paste text
+          </button>
+          <button
+            class="save"
+            :title="`Save this diff, encrypted and auto-expiring (${MOD}+S)`"
+            :disabled="!store.canSave"
+            @click="store.showSaveDialog = true"
+          >
+            Save
+          </button>
+          <button
+            class="ghost"
+            title="Share this diff as a sealed file for one trusted recipient"
+            :disabled="!store.canSave"
+            @click="store.shareCurrent()"
+          >
+            Share
+          </button>
+          <button class="ghost" :disabled="!store.left && !store.right" @click="store.clear">
+            Clear
+          </button>
+        </div>
+
+        <span class="divider" />
+
+        <!-- Appearance -->
         <button
-          class="ghost"
-          :class="{ active: store.mode === 'paste' }"
-          :title="`Compare pasted text (${MOD}+T)`"
-          @click="store.togglePasteMode"
-        >
-          Paste text
-        </button>
-        <button
-          class="ghost"
-          :title="`Save this diff, encrypted and auto-expiring (${MOD}+S)`"
-          :disabled="!store.canSave"
-          @click="store.showSaveDialog = true"
-        >
-          Save
-        </button>
-        <button
-          class="ghost"
-          title="Share this diff as a sealed file for one trusted recipient"
-          :disabled="!store.canSave"
-          @click="store.shareCurrent()"
-        >
-          Share
-        </button>
-        <button class="ghost" :disabled="!store.left && !store.right" @click="store.clear">
-          Clear
-        </button>
-        <button
-          class="ghost"
+          class="icon-btn"
           :title="`Switch to ${store.theme === 'dark' ? 'light' : 'dark'} theme (${MOD}+D)`"
           @click="store.toggleTheme()"
         >
@@ -195,7 +209,12 @@ async function onDrop(e) {
       <main class="content">
         <div v-if="store.mode !== 'paste'" class="file-slots-row">
           <div class="slot-half">
-            <FileSlot side="left" :file="store.left" @pick="store.pick('left')" />
+            <FileSlot
+              side="left"
+              :file="store.left"
+              :awaiting="!store.left && !!store.right"
+              @pick="store.pick('left')"
+            />
           </div>
           <button
             class="ghost swap"
@@ -206,7 +225,12 @@ async function onDrop(e) {
             ⇄
           </button>
           <div class="slot-half">
-            <FileSlot side="right" :file="store.right" @pick="store.pick('right')" />
+            <FileSlot
+              side="right"
+              :file="store.right"
+              :awaiting="!store.right && !!store.left"
+              @pick="store.pick('right')"
+            />
           </div>
         </div>
 
@@ -216,6 +240,16 @@ async function onDrop(e) {
           <FormatHintBanner side="right" />
           <DiffViewer />
         </template>
+        <!-- One side loaded: make it obvious a second file is still needed. -->
+        <div v-else-if="store.left || store.right" class="empty waiting">
+          <p class="waiting-title">
+            Loaded <strong>{{ (store.left || store.right).name }}</strong>
+          </p>
+          <p>
+            Now drop or choose the
+            <strong>{{ store.left ? 'right' : 'left' }}</strong> file to compare.
+          </p>
+        </div>
         <div v-else class="empty">
           <p>Choose or drop two files to compare.</p>
         </div>
@@ -223,6 +257,7 @@ async function onDrop(e) {
     </div>
 
     <SaveDiffDialog v-if="store.showSaveDialog" />
+    <ReplaceDiffDialog v-if="store.pendingReplace" />
     <ShareDiffDialog v-if="store.shareEntryId" />
     <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
     <ShareKeyDialog v-if="store.showShareKeyDialog" />
@@ -300,9 +335,25 @@ async function onDrop(e) {
 .options {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   color: var(--text-dim);
   white-space: nowrap;
+}
+/* Logical clusters (display toggles · actions · appearance), each separated by
+   a divider, so the toolbar reads as groups rather than one glued-together row. */
+.group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.group.actions {
+  gap: 8px;
+}
+.divider {
+  width: 1px;
+  align-self: stretch;
+  margin: -8px 2px; /* bleed to the toolbar's top/bottom padding for a full line */
+  background: var(--border);
 }
 .options label {
   display: flex;
@@ -325,6 +376,38 @@ async function onDrop(e) {
 .ghost:disabled {
   opacity: 0.4;
   cursor: default;
+}
+/* Save is the primary action — accent-filled so it stands out in the group. */
+.save {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 600;
+  padding: 4px 14px;
+  cursor: pointer;
+}
+.save:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.save:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* Theme toggle: a quiet icon button, set apart from the action buttons. */
+.icon-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  border-color: var(--border);
+  background: var(--bg-hover);
 }
 .body {
   flex: 1;
@@ -350,9 +433,18 @@ async function onDrop(e) {
 .empty {
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   color: var(--text-dim);
+}
+.empty.waiting .waiting-title {
+  font-size: 15px;
+  color: var(--text);
+}
+.empty.waiting strong {
+  color: var(--accent);
 }
 .notice {
   position: fixed;

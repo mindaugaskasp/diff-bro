@@ -84,6 +84,33 @@ xattr -dr com.apple.quarantine "/Applications/Diff Bro.app"
 (or right-click → **Open** on first launch). There is deliberately no
 auto-update — installers are the only distribution path.
 
+## Homebrew (macOS)
+
+Diff Bro installs as a Homebrew **cask** from a personal **tap** — a separate
+repo named `homebrew-<name>` (e.g. `mindaugaskasp/homebrew-tap`, tapped as
+`mindaugaskasp/tap`). The cask ([packaging/homebrew/diff-bro.rb](../packaging/homebrew/diff-bro.rb))
+points at the tagged release DMG and pins its `sha256`.
+
+**Automated on release.** The `homebrew` job in `release.yml` runs after the
+GitHub Release is published: it downloads the released `Diff-Bro-macOS.dmg`,
+regenerates the cask (version + sha256) via
+[`scripts/gen-homebrew-cask.mjs`](../scripts/gen-homebrew-cask.mjs), and pushes
+it to the tap — so `brew upgrade --cask diff-bro` always gets the latest. It
+skips cleanly unless two things are configured:
+
+- a repo **secret** `HOMEBREW_TAP_TOKEN` — a PAT with write access to the tap repo;
+- optionally a repo **variable** `HOMEBREW_TAP_REPO` (defaults to
+  `mindaugaskasp/homebrew-tap`).
+
+**One-time setup:** create the `homebrew-tap` repo, add the token, then let the
+next release populate `Casks/diff-bro.rb` (or seed it once with `make brew-cask`
++ a manual copy). Regenerate locally anytime with `make brew-cask`
+(`VERSION=x.y.z` and/or `DMG=dist/Diff-Bro-macOS.dmg` to override the source).
+
+Because the build isn't notarized yet, the cask's caveats tell users to install
+with `--no-quarantine` (or run the `xattr` line). Submitting to the **official**
+homebrew-cask isn't an option until the app is signed + notarized (Phase 3).
+
 ## CI dependency-warning guard
 
 `release.yml` captures the `npm ci` log and runs

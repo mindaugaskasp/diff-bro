@@ -13,7 +13,7 @@ VNC_URL := http://localhost:6080/vnc.html
 RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
 .PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
-        clean dev check test lint build package-win package-linux package-mac audit-fix
+        clean dev check test lint build package-win package-linux package-mac audit-fix brew-cask
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -123,3 +123,11 @@ package-mac: ## Build the macOS DMG -> dist/ (must run natively on macOS)
 		echo "       run 'npm install' here for the native build."; \
 		exit 1; }
 	npm run build:mac
+
+# Regenerate the Homebrew cask (packaging/homebrew/diff-bro.rb) with the current
+# version and the sha256 of the released DMG. Runs on the host (plain node, no
+# deps). By default it downloads the tagged release asset; pass a local DMG with
+# DMG=dist/Diff-Bro-macOS.dmg to hash that instead. Override the version with
+# VERSION=x.y.z. CI does this automatically on release (see release.yml).
+brew-cask: ## Regenerate the Homebrew cask for the current (or VERSION=x.y.z) release
+	node scripts/gen-homebrew-cask.mjs $(VERSION) $(if $(DMG),--dmg $(DMG),)

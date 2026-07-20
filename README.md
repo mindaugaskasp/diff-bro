@@ -26,6 +26,16 @@ Grab the latest installer for your OS — no account, no telemetry, no auto-upda
 
 Or browse [**all releases**](https://github.com/mindaugaskasp/diff-bro/releases/latest).
 
+**macOS via Homebrew** (updates with `brew upgrade`):
+
+```bash
+brew tap mindaugaskasp/tap
+brew install --cask --no-quarantine diff-bro
+```
+
+`--no-quarantine` skips the Gatekeeper prompt described below (the build isn't
+notarized yet). The cask is refreshed automatically on every release.
+
 Builds are **unsigned** for now (no Apple/Microsoft cert yet):
 
 - **Windows** — SmartScreen warns; click **More info → Run anyway**.

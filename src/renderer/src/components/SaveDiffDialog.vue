@@ -35,6 +35,7 @@ async function save() {
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
     diff.saveThenShare = false
+    diff.replaceAfterSave = null
     diff.showNotice(
       'Couldn’t save: the saved-diff key couldn’t be unlocked (the OS keychain may be locked). Try again once it’s available.'
     )
@@ -44,6 +45,10 @@ async function save() {
     // "Share" flow: continue straight into the recipient picker.
     diff.saveThenShare = false
     diff.shareEntryId = id
+  } else if (diff.replaceAfterSave) {
+    // "Save first" from the replace prompt: saved, now load the dropped file(s).
+    diff.showNotice('Saved (encrypted). Loading the dropped file…')
+    await diff.finishReplaceAfterSave()
   } else {
     diff.showNotice(`Saved (encrypted) — expires in ${ttl.value} h.`)
   }
@@ -52,6 +57,8 @@ async function save() {
 function cancel() {
   diff.showSaveDialog = false
   diff.saveThenShare = false
+  // Cancelling the save abandons a pending "save-then-replace" too.
+  diff.replaceAfterSave = null
 }
 </script>
 
