@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
+import { loadPersisted, savePersisted } from '../persist'
 
 // Snippets are a personal, non-expiring text library — encrypted at rest
 // with the same install-specific vault key as saved diffs (vault:encrypt /
 // vault:decrypt IPC; the key never enters this store), but with no
 // expiresAt: unlike a saved diff, a snippet is meant to stick around until
 // you delete it. Category names are plaintext organizational metadata,
-// same trust level as a saved diff's `name`.
-const STORAGE_KEY = 'diffbro.snippets'
+// same trust level as a saved diff's `name`. Persistence goes through the
+// durable file store (persist.js) so snippets survive an app reinstall.
 const DEFAULT_CATEGORY_NAME = 'Default'
 
 // The "Default" category always exists as the fallback home for new
@@ -25,9 +26,9 @@ function ensureDefault(state) {
 }
 
 function readState() {
-  const raw = localStorage.getItem(STORAGE_KEY)
+  const raw = loadPersisted('snippets')
   let state = { categories: [], entries: [] }
-  if (raw !== null) {
+  if (raw != null) {
     try {
       const parsed = JSON.parse(raw)
       state = {
@@ -39,7 +40,7 @@ function readState() {
     }
   }
   ensureDefault(state)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  savePersisted('snippets', JSON.stringify(state))
   return state
 }
 
@@ -98,8 +99,8 @@ export const useSnippetStore = defineStore('snippets', {
   },
   actions: {
     persist() {
-      localStorage.setItem(
-        STORAGE_KEY,
+      savePersisted(
+        'snippets',
         JSON.stringify({ categories: this.categories, entries: this.entries })
       )
     },

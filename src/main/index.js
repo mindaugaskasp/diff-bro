@@ -10,6 +10,7 @@
 import { app, BrowserWindow } from 'electron'
 import { applyHeadlessSwitches, installNetworkKillSwitch } from './security'
 import { createWindow } from './window'
+import { registerAppDataIpc } from './appData'
 import { installMenu, registerMenuIpc } from './menu'
 import { registerVaultIpc } from './vault'
 import { registerFileIpc } from './files'
@@ -35,6 +36,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     installNetworkKillSwitch()
+    registerAppDataIpc()
     installMenu()
     registerMenuIpc()
     registerVaultIpc()

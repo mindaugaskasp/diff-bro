@@ -62,6 +62,17 @@ contextBridge.exposeInMainWorld('api', {
   toggleDevTools: () => ipcRenderer.invoke('app:toggleDevTools'),
   isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
   quit: () => ipcRenderer.invoke('app:quit'),
+  // Durable key/value store backed by files in the configurable data directory
+  // (so data survives a reinstall). Loads are synchronous so the Pinia stores
+  // can read their state during setup, exactly like localStorage did.
+  storeLoad: (name) => ipcRenderer.sendSync('store:load', name),
+  storeSave: (name, contents) => ipcRenderer.invoke('store:save', name, contents),
+  // Data-location settings.
+  dataDirGet: () => ipcRenderer.invoke('datadir:get'),
+  dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),
+  dataDirReset: () => ipcRenderer.invoke('datadir:reset'),
+  dataDirReveal: () => ipcRenderer.invoke('datadir:reveal'),
+  relaunch: () => ipcRenderer.invoke('app:relaunch'),
   // App-menu actions (Open Left, Swap, …) arrive from the main process.
   onMenuAction: (handler) => {
     ipcRenderer.on('menu:action', (_e, action) => handler(action))

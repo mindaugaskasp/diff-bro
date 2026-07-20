@@ -1,0 +1,24 @@
+name: CI
+
+# Lint + tests on every push and PR to main, so a broken build is caught before
+# it can ever be tagged for release. The release workflow re-runs `npm run check`
+# too, but this gives fast feedback and blocks merges.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npm run check # ESLint + Vitest
+      - run: npm run build # ensure it bundles

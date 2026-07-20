@@ -6,9 +6,10 @@
 // files (public halves only) out of band and import them via "Add Trusted
 // Key" — the exchange must happen in BOTH directions before sharing works,
 // because a share file is addressed to one specific recipient.
-import { app, clipboard, dialog, ipcMain, safeStorage } from 'electron'
+import { clipboard, dialog, ipcMain, safeStorage } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join } from 'path'
+import { dataFile } from './appData'
 import {
   KEY_FORMAT,
   cleanLabel,
@@ -31,9 +32,9 @@ const PLAIN_PREFIX = 'plain:'
 const MAX_SHARE_FILE_BYTES = 64 * 1024 * 1024
 const MAX_KEY_FILE_BYTES = 64 * 1024
 
-const privPath = () => join(app.getPath('userData'), 'identity.key')
-const pubPath = () => join(app.getPath('userData'), 'identity.pub')
-const trustPath = () => join(app.getPath('userData'), 'trusted-keys.json')
+const privPath = () => dataFile('identity.key')
+const pubPath = () => dataFile('identity.pub')
+const trustPath = () => dataFile('trusted-keys.json')
 
 // The identity files exist but can't be loaded right now (locked keychain,
 // DPAPI error after a profile move, corruption). Minting a fresh identity here

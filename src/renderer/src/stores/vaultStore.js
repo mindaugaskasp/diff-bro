@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
+import { loadPersisted, savePersisted } from '../persist'
 
 // Saved diffs are a security-sensitive convenience: content is AES-256-GCM
 // encrypted with an install-specific key held by the main process (backed by
 // the OS keychain), and every entry auto-expires — default 1 hour, hard cap
 // 24 hours. Only the entry name and timestamps are stored in plaintext.
 // All crypto runs in the main process (vault:encrypt / vault:decrypt IPC);
-// this store never sees the key.
-const STORAGE_KEY = 'diffbro.vault'
+// this store never sees the key. Persistence goes through the durable file
+// store (persist.js) so saved diffs survive an app reinstall.
 export const DEFAULT_TTL_HOURS = 1
 export const MAX_TTL_HOURS = 24
 export const TTL_OPTIONS = [
@@ -30,7 +31,7 @@ const IMPORTED_CATEGORY = 'imported'
 // fallback (marked isDefault so it survives rename). A reserved, hidden
 // "imported" category holds diffs received from others.
 function readState() {
-  const raw = localStorage.getItem(STORAGE_KEY)
+  const raw = loadPersisted('vault')
   let categories = []
   let entries = []
   if (raw) {
@@ -111,10 +112,7 @@ export const useVaultStore = defineStore('vault', {
   },
   actions: {
     persist() {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ categories: this.categories, entries: this.entries })
-      )
+      savePersisted('vault', JSON.stringify({ categories: this.categories, entries: this.entries }))
     },
     tick() {
       this.now = Date.now()

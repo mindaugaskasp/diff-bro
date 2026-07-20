@@ -86,6 +86,8 @@ export const useDiffStore = defineStore('diff', {
     showXmlToolDialog: false,
     showSqlToolDialog: false,
     showCryptDialog: false,
+    // Settings dialog (data location) visibility.
+    showSettingsDialog: false,
     // content string last dismissed per side, so the format-hint banner
     // stays gone until that side's content actually changes.
     dismissedFormatHint: { left: null, right: null }
@@ -299,6 +301,9 @@ export const useDiffStore = defineStore('diff', {
           return
         case 'config-restore':
           this.configMode = 'restore'
+          return
+        case 'settings':
+          this.showSettingsDialog = true
           return
         case 'tools-base64':
           this.showBase64Dialog = true

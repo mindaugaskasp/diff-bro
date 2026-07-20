@@ -52,10 +52,12 @@ flowchart TB
 ### Directory map
 
 - `src/main` — Electron main: window, menu, file dialogs + reads (binary/size
-  detection, `chardet`/`iconv-lite` encoding), and the pure, unit-tested crypto
-  cores: `sealing.js` (sealed diff sharing), `vaultCrypt.js` (saved-diff vault),
-  `snippetSealing.js` (snippet export), `textCrypt.js` (Tools encrypt/decrypt),
-  `configBackup.js` (config backup). `share.js` is the thin Electron glue.
+  detection, `chardet`/`iconv-lite` encoding), `appData.js` (the configurable
+  data directory + file-backed store where diffs/snippets/keys live, so data
+  survives a reinstall), and the pure, unit-tested crypto cores: `sealing.js`
+  (sealed diff sharing), `vaultCrypt.js` (saved-diff vault), `snippetSealing.js`
+  (snippet export), `textCrypt.js` (Tools encrypt/decrypt), `configBackup.js`
+  (config backup). `share.js` is the thin Electron glue.
 - `src/preload` — the `contextBridge` `window.api`.
 - `src/renderer` — the Vue app: `adapters/`, `stores/` (Pinia), and
   `components/` (viewer, sidebar, dialogs), plus pure `utils/`

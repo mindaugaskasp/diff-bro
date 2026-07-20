@@ -1,7 +1,7 @@
-import { app, ipcMain, safeStorage } from 'electron'
+import { ipcMain, safeStorage } from 'electron'
 import { readFile, writeFile } from 'fs/promises'
 import { randomBytes } from 'crypto'
-import { join } from 'path'
+import { dataFile } from './appData'
 import { vaultDecrypt, vaultEncrypt } from './vaultCrypt'
 
 // ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ async function generateVaultKey(keyPath) {
 }
 
 async function loadVaultKey() {
-  const keyPath = join(app.getPath('userData'), 'vault.key')
+  const keyPath = dataFile('vault.key')
   let raw
   try {
     raw = await readFile(keyPath)

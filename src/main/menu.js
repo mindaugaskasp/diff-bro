@@ -57,6 +57,8 @@ export function installMenu() {
           click: () => sendToFocused('import-shared')
         },
         { type: 'separator' },
+        { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => sendToFocused('settings') },
+        { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },

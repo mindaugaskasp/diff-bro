@@ -27,15 +27,24 @@ compromised renderer can't turn `file:read` into an arbitrary-file-read primitiv
 
 Saved comparisons are AES-256-GCM encrypted at rest with an install-specific key
 held by the OS keychain (`safeStorage`). The entry's plaintext metadata is bound
-as GCM AAD, so tampering (e.g. extending an expiry in localStorage) makes the
-entry undecryptable. Every entry auto-expires — default 1 h, hard cap 24 h.
+as GCM AAD, so tampering (e.g. extending an expiry) makes the entry
+undecryptable. Every entry auto-expires — default 1 h, hard cap 24 h.
+
+**Where data lives.** Saved diffs (`vault.json`), snippets (`snippets.json`),
+and the key files (`identity.*`, `trusted-keys.json`, `vault.key`) are written
+as files in a **configurable data directory** (Settings → Data folder), which
+defaults to `userData`. Pointing it at a folder you control — under Documents,
+say — means the data **survives an app reinstall** that wipes `userData`; the
+folder is self-contained, so re-pointing at it after reinstall restores
+everything. Writes are atomic (temp file + rename) so a crash can't corrupt a
+store. Only a pointer to the location stays in `userData`.
 
 **Metadata is not encrypted.** Only diff/snippet *content* is encrypted. The
 entry name, category names, timestamps, favorite flag, and a shared diff's
-sender label are stored in plaintext in `localStorage` (they organize the UI and
-form the AAD). Names can leak content — e.g. `prod-secrets-rotation.diff` — so
-avoid putting sensitive information in names if the machine's `localStorage`
-(under `userData`) might be read by someone else.
+sender label are stored in plaintext in `vault.json` / `snippets.json` (they
+organize the UI and form the AAD). Names can leak content — e.g.
+`prod-secrets-rotation.diff` — so avoid putting sensitive information in names if
+the data directory might be read by someone else.
 
 **Key loss is not silent.** The vault and identity keys are regenerated only on a
 genuinely first run (the key file is absent). If a key file *exists* but can't be

@@ -24,6 +24,7 @@ import AddTrustedKeyDialog from './components/AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './components/TrustedKeysDialog.vue'
 import ShareKeyDialog from './components/ShareKeyDialog.vue'
 import ConfigBackupDialog from './components/ConfigBackupDialog.vue'
+import SettingsDialog from './components/SettingsDialog.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useVaultStore } from './stores/vaultStore'
 import { MOD, isMac } from './keys'
@@ -262,6 +263,7 @@ async function onDrop(e) {
     <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
     <ShareKeyDialog v-if="store.showShareKeyDialog" />
     <ConfigBackupDialog v-if="store.configMode" />
+    <SettingsDialog v-if="store.showSettingsDialog" />
     <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
     <Base64Dialog v-if="store.showBase64Dialog" />
     <JsonToolDialog v-if="store.showJsonToolDialog" />

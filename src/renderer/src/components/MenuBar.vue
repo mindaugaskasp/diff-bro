@@ -23,6 +23,8 @@ const menus = [
       { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
       { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
       { sep: true },
+      { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },
+      { sep: true },
       { label: 'Quit', run: () => window.api.quit() }
     ]
   },
