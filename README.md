@@ -25,9 +25,20 @@ Grab the latest installer for your OS — no account, no telemetry, no auto-upda
 | **macOS** | [**Diff-Bro-macOS.dmg**](https://github.com/mindaugaskasp/diff-bro/releases/latest/download/Diff-Bro-macOS.dmg) |
 
 Or browse [**all releases**](https://github.com/mindaugaskasp/diff-bro/releases/latest).
-Builds are unsigned for now — on Windows click through SmartScreen ("More info →
-Run anyway"); on macOS see the Gatekeeper note in
-[docs/packaging.md](docs/packaging.md).
+
+Builds are **unsigned** for now (no Apple/Microsoft cert yet):
+
+- **Windows** — SmartScreen warns; click **More info → Run anyway**.
+- **macOS** — Gatekeeper says *"Diff Bro is damaged and can't be opened."* It
+  isn't damaged — that's just how recent macOS reports an unsigned,
+  un-notarized app that was quarantined on download. Drag it to **Applications**,
+  then run once in Terminal:
+
+  ```bash
+  xattr -dr com.apple.quarantine "/Applications/Diff Bro.app"
+  ```
+
+  and open it normally. More detail in [docs/packaging.md](docs/packaging.md).
 
 ## Features
 
