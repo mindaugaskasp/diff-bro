@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ACCEPTED_KEY_FORMATS,
+  KEY_FORMAT,
+  MAX_LABEL_LEN,
   MAX_TTL_MS,
   SHARE_FORMAT,
+  cleanLabel,
   createIdentityKeys,
   decodePublicKey,
   encodePublicKey,
   fingerprint,
+  isAcceptedKeyFormat,
   openSealed,
   sealEntry,
   shareFilename,
@@ -44,14 +49,71 @@ describe('format versioning / revocation', () => {
   it('refuses a sealed file whose format version does not match this release', () => {
     const { seal, bob, bobTrustsAlice } = makePeers()
     const file = seal()
-    const wrongVersion = { ...file, format: 'diffbro-share/1' }
+    // The immediately-previous share format (64-bit fingerprints) is revoked.
+    const wrongVersion = { ...file, format: 'diffbro-share/2' }
     expect(openSealed(wrongVersion, bob, bobTrustsAlice)).toEqual({ error: 'not-a-share-file' })
   })
 
   it('the current sealed format still opens (sanity)', () => {
     const { seal, bob, bobTrustsAlice } = makePeers()
     expect(openSealed(seal(), bob, bobTrustsAlice).ok).toBe(true)
-    expect(SHARE_FORMAT).toBe('diffbro-share/2')
+    expect(SHARE_FORMAT).toBe('diffbro-share/3')
+  })
+})
+
+describe('key-file format acceptance (backward compatibility)', () => {
+  it('accepts the current and the previous key format, rejects others', () => {
+    expect(ACCEPTED_KEY_FORMATS).toContain(KEY_FORMAT)
+    expect(isAcceptedKeyFormat('diffbro-key/2')).toBe(true)
+    expect(isAcceptedKeyFormat('diffbro-key/1')).toBe(true) // pre-128-bit exports
+    expect(isAcceptedKeyFormat('diffbro-key/0')).toBe(false)
+    expect(isAcceptedKeyFormat(SHARE_FORMAT)).toBe(false)
+    expect(isAcceptedKeyFormat(undefined)).toBe(false)
+  })
+
+  it('a legacy diffbro-key/1 file stays importable and recomputes a 128-bit fingerprint', () => {
+    const { pub } = createIdentityKeys()
+    // Simulate a key file written by a pre-bump build: old format tag + the
+    // old 64-bit fingerprint, same key material.
+    const legacyFile = JSON.stringify(
+      { format: 'diffbro-key/1', sign: pub.sign, box: pub.box, fingerprint: 'deadbeefdeadbeef' },
+      null,
+      2
+    )
+    const decoded = decodePublicKey(legacyFile)
+    expect(isAcceptedKeyFormat(decoded.format)).toBe(true)
+    // The stored (64-bit) fingerprint is ignored; the recomputed one is 128-bit
+    // and matches what the current build derives for these keys.
+    const recomputed = fingerprint(decoded.sign, decoded.box)
+    expect(recomputed).toMatch(/^[0-9a-f]{32}$/)
+    expect(recomputed).toBe(pub.fingerprint)
+  })
+})
+
+describe('cleanLabel (untrusted key display label)', () => {
+  it('trims and collapses whitespace, keeps normal text incl. punctuation', () => {
+    expect(cleanLabel('  Alice — laptop  ')).toBe('Alice — laptop')
+    expect(cleanLabel('a\t b   c')).toBe('a b c')
+  })
+  it('strips control characters and newlines (no multi-line labels)', () => {
+    expect(cleanLabel('line1\nline2\r\ttab\x00nul')).toBe('line1 line2 tab nul')
+  })
+  it('hard-caps the length', () => {
+    expect(cleanLabel('x'.repeat(500))).toHaveLength(MAX_LABEL_LEN)
+  })
+  it('returns empty string for non-strings', () => {
+    for (const v of [undefined, null, 42, {}, []]) expect(cleanLabel(v)).toBe('')
+  })
+})
+
+describe('public key carries an optional display label', () => {
+  it('round-trips a label embedded on the public key', () => {
+    const { pub } = createIdentityKeys()
+    const labeled = { ...pub, label: 'Alice — laptop' }
+    const decoded = decodePublicKey(encodePublicKey(labeled))
+    expect(decoded.label).toBe('Alice — laptop')
+    // The label is cosmetic: it does not affect the fingerprint.
+    expect(fingerprint(decoded.sign, decoded.box)).toBe(pub.fingerprint)
   })
 })
 
@@ -100,7 +162,7 @@ describe('identity', () => {
   it('creates keys whose stated fingerprint matches a recomputation', () => {
     const { pub } = createIdentityKeys()
     expect(fingerprint(pub.sign, pub.box)).toBe(pub.fingerprint)
-    expect(pub.fingerprint).toMatch(/^[0-9a-f]{16}$/)
+    expect(pub.fingerprint).toMatch(/^[0-9a-f]{32}$/)
   })
 
   it('gives every install a distinct fingerprint', () => {

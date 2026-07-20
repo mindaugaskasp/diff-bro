@@ -51,7 +51,9 @@ const IMPORT_ERRORS = {
   'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
   'wrong-passphrase': 'Wrong passphrase, or the file is corrupted.',
   'bad-signature': 'Signature check failed — the file was modified or corrupted.',
-  corrupted: 'The file could not be read after decryption.'
+  corrupted: 'The file could not be read after decryption.',
+  malformed: 'That snippets file is not shaped like a valid export and was rejected.',
+  'too-large': 'That snippets file exceeds the allowed size limits and was rejected.'
 }
 
 export const useSnippetStore = defineStore('snippets', {
@@ -69,7 +71,10 @@ export const useSnippetStore = defineStore('snippets', {
     pendingDelete: null,
     // Bumps to a category id whenever a snippet lands in it, so the sidebar
     // can auto-expand that category.
-    lastTouchedCategory: null
+    lastTouchedCategory: null,
+    // Set when the vault key can't be loaded — surfaced, never a reason to
+    // drop snippets (which, unlike diffs, don't expire and can't be re-fetched).
+    keyError: null
   }),
   getters: {
     // Favorited snippets are lifted out into the pinned "Favorites" group at
@@ -135,10 +140,13 @@ export const useSnippetStore = defineStore('snippets', {
     async add(categoryId, name, content, language) {
       const id = crypto.randomUUID()
       const createdAt = Date.now()
-      const { iv, data } = await window.api.vaultEncrypt(
-        content,
-        entryAad(id, categoryId, createdAt)
-      )
+      const box = await window.api.vaultEncrypt(content, entryAad(id, categoryId, createdAt))
+      // Key unavailable — don't persist an undecryptable snippet.
+      if (box?.error) {
+        this.keyError = box.error
+        return null
+      }
+      const { iv, data } = box
       this.entries.push({
         id,
         categoryId,
@@ -160,11 +168,17 @@ export const useSnippetStore = defineStore('snippets', {
         { iv: entry.iv, data: entry.data },
         entryAad(entry.id, entry.categoryId, entry.createdAt)
       )
+      // Key couldn't be loaded — keep the snippet, surface the problem.
+      if (content && typeof content === 'object' && content.error) {
+        this.keyError = content.error
+        return null
+      }
       if (content === null) {
-        // Undecryptable (tampered metadata / rotated key / corrupted) — drop it.
+        // Undecryptable with a valid key: genuine tamper/corruption — drop it.
         this.remove(id)
         return null
       }
+      this.keyError = null
       return content
     },
     // categoryId is optional — passing a different one moves the snippet to
@@ -174,10 +188,16 @@ export const useSnippetStore = defineStore('snippets', {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
       const newCategoryId = categoryId ?? entry.categoryId
-      const { iv, data } = await window.api.vaultEncrypt(
+      const box = await window.api.vaultEncrypt(
         content,
         entryAad(entry.id, newCategoryId, entry.createdAt)
       )
+      // Key unavailable — leave the existing (still-decryptable) entry as-is.
+      if (box?.error) {
+        this.keyError = box.error
+        return
+      }
+      const { iv, data } = box
       entry.categoryId = newCategoryId
       entry.name = (name || entry.name).trim() || entry.name
       if (language) entry.language = language
@@ -257,6 +277,16 @@ export const useSnippetStore = defineStore('snippets', {
         if (!res.canceled) res.message = IMPORT_ERRORS[res.error] ?? 'Import failed.'
         return res
       }
+      // The embedded signature only proves the bundle wasn't altered after
+      // signing — the verifying key travels INSIDE the file, so it does NOT
+      // prove the signer is anyone you trust. Cross-check the fingerprint
+      // against trusted keys and label it "unverified" otherwise; never
+      // present the returned signer as a verified identity.
+      const trusted = (await window.api.listTrustedKeys?.()) ?? []
+      const match = trusted.find((t) => t.fingerprint === res.signer)
+      res.signerNote = match
+        ? `Signed by trusted key "${match.label}".`
+        : `Signed by ${res.signer ?? 'an unknown key'} — unverified (not in your trusted keys).`
       for (const category of res.bundle?.categories ?? []) {
         let categoryId = this.categories.find((c) => c.name === category.name)?.id
         if (!categoryId) categoryId = this.addCategory(category.name)

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
+import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 
 const store = useSnippetStore()
 const diff = useDiffStore()
@@ -16,11 +17,19 @@ const exportCategoryName = computed(
 
 async function submit() {
   if (!passphrase.value || busy.value) return
+  // Enforce a minimum only when creating a file; import must accept whatever
+  // the file was made with.
+  if (mode.value === 'export' && passphraseTooShort(passphrase.value)) {
+    diff.showNotice(PASSPHRASE_HINT)
+    return
+  }
   busy.value = true
   try {
     if (mode.value === 'import') {
       const res = await store.importSnippets(passphrase.value)
-      if (!res.canceled) diff.showNotice(res.ok ? 'Snippets imported.' : res.message)
+      if (!res.canceled) {
+        diff.showNotice(res.ok ? `Snippets imported. ${res.signerNote ?? ''}`.trim() : res.message)
+      }
     } else {
       const res = exportAll.value
         ? await store.exportAll(passphrase.value)

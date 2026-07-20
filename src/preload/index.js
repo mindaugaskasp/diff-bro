@@ -5,7 +5,15 @@ contextBridge.exposeInMainWorld('api', {
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   // Electron >= 32: File objects in the renderer no longer expose .path,
   // so drag & drop must resolve paths through webUtils in the preload.
-  getPathForFile: (file) => webUtils.getPathForFile(file),
+  // Resolving here also registers the path with main as a genuine drop, so
+  // `file:read` will serve it — a path the renderer invents never comes
+  // through webUtils and stays unreadable (see files.js). IPC is FIFO, so
+  // this registration lands before the renderer's subsequent read request.
+  getPathForFile: (file) => {
+    const path = webUtils.getPathForFile(file)
+    if (path) ipcRenderer.invoke('file:allowDropPath', path)
+    return path
+  },
   // Saved-diff vault crypto. All AES-GCM work happens in the main process;
   // the key never enters the renderer.
   vaultEncrypt: (plaintext, aad) => ipcRenderer.invoke('vault:encrypt', plaintext, aad),
@@ -20,8 +28,9 @@ contextBridge.exposeInMainWorld('api', {
   myFingerprint: () => ipcRenderer.invoke('share:myFingerprint'),
   shareExport: (entry, recipientFp) => ipcRenderer.invoke('share:export', entry, recipientFp),
   shareImport: () => ipcRenderer.invoke('share:import'),
-  exportPublicKey: () => ipcRenderer.invoke('share:exportPublicKey'),
-  copyPublicKey: () => ipcRenderer.invoke('share:copyPublicKey'),
+  myKeyLabel: () => ipcRenderer.invoke('share:myLabel'),
+  exportPublicKey: (label) => ipcRenderer.invoke('share:exportPublicKey', label),
+  copyPublicKey: (label) => ipcRenderer.invoke('share:copyPublicKey', label),
   addTrustedKey: () => ipcRenderer.invoke('share:addTrustedKey'),
   // Drag-drop key import: validate a .diffbrokey by path, then commit it
   // with a user-chosen name.

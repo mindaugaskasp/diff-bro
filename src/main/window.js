@@ -72,6 +72,11 @@ export function createWindow() {
       // that sandboxed preloads are allowed (ipcRenderer, contextBridge,
       // webFrame, webUtils), so full Node access is unnecessary.
       sandbox: true,
+      // No DevTools in a packaged build — this disables them at the source
+      // (any accelerator, the Inspect context item, and openDevTools all
+      // become no-ops), not just the menu entry, so a production build
+      // exposes no console into the renderer.
+      devTools: !app.isPackaged,
       // Chromium's spellchecker downloads dictionaries from Google - keep off.
       spellcheck: false
     }

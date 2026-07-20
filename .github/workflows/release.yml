@@ -8,7 +8,28 @@ on:
       - 'v*.*.*'
 
 jobs:
+  # Fail the whole release fast, on one cheap runner, if any known
+  # vulnerability is present — before spending Windows/macOS build minutes.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11
+      - run: npm ci
+      # Blocks the release when npm audit finds a vulnerability at or above the
+      # threshold. Audits against package-lock.json, i.e. the exact versions
+      # that ship in CI. `moderate` covers the actionable set (moderate / high /
+      # critical) while ignoring unfixable low-severity dev-tool noise; change
+      # to `--audit-level=low` to fail on any advisory at all.
+      - name: Audit dependencies for known vulnerabilities
+        run: npm audit --audit-level=moderate
+
   build:
+    needs: audit
     strategy:
       fail-fast: false
       matrix:
@@ -44,10 +65,11 @@ jobs:
         shell: bash
         run: node scripts/check-install-warnings.mjs npm-ci.log
 
-      # electron-builder names installers from package.json's `version`, not
-      # the git tag — so a v0.1.1 tag would otherwise ship "…Setup 0.1.0.exe".
-      # Make the tag authoritative by writing its version into package.json
-      # before packaging (no commit; CI checkout is disposable).
+      # Make the git tag authoritative for the app's reported version (About /
+      # package.json) by writing it in before packaging. The installer FILENAME
+      # is intentionally version-less (see electron-builder.yml artifactName) so
+      # the "download latest" URLs stay stable, so this only affects the version
+      # the app reports, not the filename. No commit; CI checkout is disposable.
       - name: Sync version to the release tag
         shell: bash
         run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version

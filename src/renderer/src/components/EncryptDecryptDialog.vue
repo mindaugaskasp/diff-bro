@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 
 const store = useDiffStore()
 const input = ref('')
 const output = ref('')
 const passphrase = ref('')
-const algorithm = ref('aes-256-gcm')
 const error = ref(null)
 const busy = ref(false)
 
@@ -16,9 +16,13 @@ async function encrypt() {
     error.value = 'Enter a passphrase first.'
     return
   }
+  if (passphraseTooShort(passphrase.value)) {
+    error.value = PASSPHRASE_HINT
+    return
+  }
   busy.value = true
   try {
-    output.value = await window.api.encryptText(input.value, passphrase.value, algorithm.value)
+    output.value = await window.api.encryptText(input.value, passphrase.value)
   } finally {
     busy.value = false
   }
@@ -69,7 +73,7 @@ function close() {
       </div>
       <p class="note">
         Local only — the passphrase and text never leave this machine and are not saved anywhere.
-        Decrypt auto-detects the algorithm from the encrypted blob.
+        Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.
       </p>
       <label>
         Input
@@ -83,13 +87,6 @@ function close() {
         <label class="grow">
           Passphrase
           <input v-model="passphrase" type="password" autocomplete="off" spellcheck="false" />
-        </label>
-        <label>
-          Algorithm (encrypt only)
-          <select v-model="algorithm">
-            <option value="aes-256-gcm">AES-256-GCM (recommended)</option>
-            <option value="aes-256-cbc">AES-256-CBC (legacy, no integrity check)</option>
-          </select>
         </label>
       </div>
       <div class="actions">

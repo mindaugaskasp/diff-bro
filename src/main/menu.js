@@ -100,8 +100,7 @@ export function installMenu() {
     {
       label: 'Security',
       submenu: [
-        { label: 'Copy My Public Key', click: () => sendToFocused('copy-pubkey') },
-        { label: 'Export My Public Key…', click: () => sendToFocused('export-pubkey') },
+        { label: 'Share My Public Key…', click: () => sendToFocused('export-pubkey') },
         { type: 'separator' },
         { label: 'Add Trusted Key…', click: () => sendToFocused('add-trusted-key') },
         { label: 'Manage Trusted Keys…', click: () => sendToFocused('manage-keys') },

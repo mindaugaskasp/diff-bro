@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { createCipheriv, createDecipheriv, scryptSync } from 'crypto'
+import { createCipheriv, createDecipheriv } from 'crypto'
 import { createIdentityKeys } from '../../src/main/sealing'
-import { openSnippets, sealSnippets, SNIPPET_FORMAT } from '../../src/main/snippetSealing'
+import { deriveKey } from '../../src/main/kdf'
+import {
+  SNIPPET_FORMAT,
+  SNIPPET_LIMITS,
+  openSnippets,
+  sealSnippets,
+  validateSnippetBundle
+} from '../../src/main/snippetSealing'
 
 const BUNDLE = {
   categories: [
@@ -11,49 +18,50 @@ const BUNDLE = {
 }
 
 describe('sealSnippets / openSnippets', () => {
-  it('round-trips a bundle with the correct passphrase', () => {
+  it('round-trips a bundle with the correct passphrase', async () => {
     const sender = createIdentityKeys()
-    const file = sealSnippets(BUNDLE, 'correct horse battery staple', sender)
-    const result = openSnippets(file, 'correct horse battery staple')
+    const file = await sealSnippets(BUNDLE, 'correct horse battery staple', sender)
+    const result = await openSnippets(file, 'correct horse battery staple')
     expect(result).toEqual({ ok: true, bundle: BUNDLE, signer: sender.pub.fingerprint })
   })
 
-  it('carries the expected format tag', () => {
+  it('carries the expected format tag and pinned scrypt cost', async () => {
     const sender = createIdentityKeys()
-    const file = sealSnippets(BUNDLE, 'pw', sender)
+    const file = await sealSnippets(BUNDLE, 'pw', sender)
     expect(file.format).toBe(SNIPPET_FORMAT)
+    expect(file.kdf).toEqual({ N: 2 ** 17, r: 8, p: 1 })
   })
 
-  it('fails to open with the wrong passphrase', () => {
+  it('fails to open with the wrong passphrase', async () => {
     const sender = createIdentityKeys()
-    const file = sealSnippets(BUNDLE, 'right-passphrase', sender)
-    const result = openSnippets(file, 'wrong-passphrase')
+    const file = await sealSnippets(BUNDLE, 'right-passphrase', sender)
+    const result = await openSnippets(file, 'wrong-passphrase')
     expect(result.ok).toBeUndefined()
     expect(result.error).toBeTruthy()
   })
 
-  it('rejects a file with a tampered ciphertext (GCM auth tag)', () => {
+  it('rejects a file with a tampered ciphertext (GCM auth tag)', async () => {
     const sender = createIdentityKeys()
-    const file = sealSnippets(BUNDLE, 'pw', sender)
+    const file = await sealSnippets(BUNDLE, 'pw', sender)
     const bytes = Buffer.from(file.ciphertext, 'base64')
     bytes[0] ^= 0xff
     file.ciphertext = bytes.toString('base64')
-    expect(openSnippets(file, 'pw').ok).toBeUndefined()
+    expect((await openSnippets(file, 'pw')).ok).toBeUndefined()
   })
 
-  it('rejects a file whose signature does not match the embedded key (forged after signing)', () => {
+  it('rejects a file whose signature does not match the embedded key (forged after signing)', async () => {
     // Sign with alice, then splice in bob's public key to try to make the
     // signature look like it came from someone else — decrypts fine (same
     // passphrase), but signature verification against the swapped key fails.
     const alice = createIdentityKeys()
     const bob = createIdentityKeys()
-    const file = sealSnippets(BUNDLE, 'pw', alice)
+    const file = await sealSnippets(BUNDLE, 'pw', alice)
 
     // Re-encrypt an envelope with bob's key substituted for alice's, reusing
-    // the same salt/iv so decryption still succeeds and only the embedded
-    // signerKey differs.
+    // the same salt/iv (and the same pinned scrypt cost) so decryption still
+    // succeeds and only the embedded signerKey differs.
     const salt = Buffer.from(file.salt, 'base64')
-    const key = scryptSync('pw', salt, 32)
+    const key = await deriveKey('pw', salt)
     const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(file.iv, 'base64'))
     decipher.setAuthTag(Buffer.from(file.tag, 'base64'))
     const inner = JSON.parse(
@@ -76,18 +84,107 @@ describe('sealSnippets / openSnippets', () => {
       ciphertext: ciphertext.toString('base64')
     }
 
-    expect(openSnippets(tampered, 'pw')).toEqual({ error: 'bad-signature' })
+    expect(await openSnippets(tampered, 'pw')).toEqual({ error: 'bad-signature' })
   })
 
-  it('rejects a file with an unrecognized format tag', () => {
-    expect(openSnippets({ format: 'something-else' }, 'pw')).toEqual({
+  it('rejects a file with an unrecognized format tag', async () => {
+    expect(await openSnippets({ format: 'something-else' }, 'pw')).toEqual({
       error: 'not-a-snippet-file'
     })
   })
 
-  it('rejects malformed input without throwing', () => {
-    expect(openSnippets(null, 'pw')).toEqual({ error: 'not-a-snippet-file' })
-    expect(openSnippets({}, 'pw')).toEqual({ error: 'not-a-snippet-file' })
-    expect(() => openSnippets('not an object', 'pw')).not.toThrow()
+  it('rejects malformed input without throwing', async () => {
+    expect(await openSnippets(null, 'pw')).toEqual({ error: 'not-a-snippet-file' })
+    expect(await openSnippets({}, 'pw')).toEqual({ error: 'not-a-snippet-file' })
+    await expect(openSnippets('not an object', 'pw')).resolves.toBeTruthy()
+  })
+
+  it('rejects a decryptable-but-malformed bundle (hostile sender, right passphrase)', async () => {
+    // A file can be perfectly decryptable and correctly signed yet still carry
+    // a bundle we must not trust: the passphrase gates confidentiality, not shape.
+    const sender = createIdentityKeys()
+    const file = await sealSnippets(
+      { categories: [{ name: 'x', snippets: [{ name: 'n', content: 12345 }] }] },
+      'pw',
+      sender
+    )
+    expect(await openSnippets(file, 'pw')).toEqual({ error: 'malformed' })
+  })
+
+  it('rejects a decryptable bundle that exceeds the size caps', async () => {
+    const sender = createIdentityKeys()
+    const huge = 'a'.repeat(SNIPPET_LIMITS.contentBytes + 1)
+    const file = await sealSnippets(
+      { categories: [{ name: 'x', snippets: [{ name: 'big', content: huge }] }] },
+      'pw',
+      sender
+    )
+    expect(await openSnippets(file, 'pw')).toEqual({ error: 'too-large' })
+  })
+})
+
+describe('validateSnippetBundle', () => {
+  const ok = (bundle) => expect(validateSnippetBundle(bundle)).toBeNull()
+  const bad = (bundle, code) => expect(validateSnippetBundle(bundle)).toBe(code)
+
+  it('accepts a well-formed bundle', () => {
+    ok({ categories: [] })
+    ok({ categories: [{ name: 'c', snippets: [] }] })
+    ok({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x', language: 'sql' }] }] })
+    ok({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x' }] }] }) // language optional
+  })
+
+  it('rejects non-object / wrong-shape bundles as malformed', () => {
+    for (const b of [null, undefined, 'str', 42, {}, { categories: 'nope' }]) bad(b, 'malformed')
+  })
+
+  it('rejects wrong field types as malformed', () => {
+    bad({ categories: [{ name: 5, snippets: [] }] }, 'malformed')
+    bad({ categories: [{ name: 'c', snippets: {} }] }, 'malformed')
+    bad({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 7 }] }] }, 'malformed')
+    bad({ categories: [{ name: 'c', snippets: [{ name: 5, content: 'x' }] }] }, 'malformed')
+    bad(
+      { categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x', language: 9 }] }] },
+      'malformed'
+    )
+  })
+
+  it('enforces count and size caps as too-large', () => {
+    bad(
+      { categories: Array(SNIPPET_LIMITS.categories + 1).fill({ name: 'c', snippets: [] }) },
+      'too-large'
+    )
+    bad(
+      {
+        categories: [
+          {
+            name: 'c',
+            snippets: Array(SNIPPET_LIMITS.snippetsPerCategory + 1).fill({
+              name: 'n',
+              content: 'x'
+            })
+          }
+        ]
+      },
+      'too-large'
+    )
+    bad(
+      {
+        categories: [
+          {
+            name: 'c',
+            snippets: [{ name: 'n', content: 'a'.repeat(SNIPPET_LIMITS.contentBytes + 1) }]
+          }
+        ]
+      },
+      'too-large'
+    )
+  })
+
+  it('enforces the whole-bundle total content cap', () => {
+    const chunk = 'a'.repeat(SNIPPET_LIMITS.contentBytes)
+    const perCat = { name: 'c', snippets: [{ name: 'n', content: chunk }] }
+    const count = Math.ceil(SNIPPET_LIMITS.totalContentBytes / SNIPPET_LIMITS.contentBytes) + 1
+    bad({ categories: Array(count).fill(perCat) }, 'too-large')
   })
 })

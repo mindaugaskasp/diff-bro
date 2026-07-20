@@ -157,6 +157,30 @@ describe('vaultStore', () => {
     expect(vault.entries).toHaveLength(0)
   })
 
+  it('does NOT purge entries when the vault key is unavailable — it surfaces instead', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('precious', 1, PAYLOAD)
+    // The main process can't load the key (e.g. locked keychain): decrypt
+    // returns a distinct error object, not null. The entry must survive.
+    window.api.vaultDecrypt = async () => ({ error: 'vault-key-unavailable' })
+    await expect(vault.load(id)).resolves.toBeNull()
+    expect(vault.entries).toHaveLength(1) // NOT purged
+    expect(vault.keyError).toBe('vault-key-unavailable')
+
+    // Once the key comes back, the same entry loads cleanly and clears the flag.
+    window.api.vaultDecrypt = async (box, aad) => vaultDecrypt(KEY, box, aad)
+    await expect(vault.load(id)).resolves.toEqual(PAYLOAD)
+    expect(vault.keyError).toBeNull()
+  })
+
+  it('save returns null and persists nothing when the vault key is unavailable', async () => {
+    const vault = useVaultStore()
+    window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
+    await expect(vault.save('nope', 1, PAYLOAD)).resolves.toBeNull()
+    expect(vault.entries).toHaveLength(0)
+    expect(vault.keyError).toBe('vault-key-unavailable')
+  })
+
   it('remove() deletes an entry immediately', async () => {
     const vault = useVaultStore()
     const id = await vault.save('gone soon', 1, PAYLOAD)

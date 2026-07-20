@@ -1,19 +1,19 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 
 // Recipient picker with built-in first-time setup: if this install has no
 // trusted keys yet, the dialog walks through the one-time key exchange
 // (keys themselves are generated automatically — the user never has to
-// think about "generating keys").
+// think about "generating keys"). Both halves of that exchange reuse the same
+// flows as the Security menu — the "Share my key" dialog (which names the key)
+// and the "Add trusted key" naming dialog — so there's one way to do each.
 const diff = useDiffStore()
 
 const recipients = ref([])
 const selected = ref(null)
 const selectedFingerprint = computed(() => selected.value)
 const myFingerprint = ref('')
-const exportedPath = ref(null)
-const copied = ref(false)
 
 onMounted(async () => {
   // Asking for the fingerprint creates this install's keypairs on first use.
@@ -27,21 +27,16 @@ async function refresh(preferFp) {
     preferFp ?? selected.value ?? recipients.value[recipients.value.length - 1]?.fingerprint ?? null
 }
 
-async function exportKey() {
-  const res = await window.api.exportPublicKey()
-  if (res.ok) exportedPath.value = res.path
-}
-
-async function copyKey() {
-  const res = await window.api.copyPublicKey()
-  if (res.ok) copied.value = true
-}
-
-async function addKey() {
-  const res = await window.api.addTrustedKey()
-  if (res.ok) await refresh(res.fingerprint)
-  else if (res.error) diff.showNotice('That file is not a valid Diff Bro public key.')
-}
+// The trusted key is committed from the "Add trusted key" naming dialog, not
+// here — so refresh the recipient list once that dialog closes (a newly added
+// key becomes the selected recipient, and the first-time view flips to the
+// normal picker).
+watch(
+  () => diff.pendingTrustedKey,
+  (val, old) => {
+    if (old && !val) refresh()
+  }
+)
 
 function close() {
   diff.shareEntryId = null
@@ -70,7 +65,9 @@ function close() {
         including its expiry time — is rejected. It expires at the same moment as your local copy.
       </p>
       <div class="actions">
-        <button type="button" class="ghost small" @click="addKey">Add recipient…</button>
+        <button type="button" class="ghost small" @click="diff.addTrustedKey()">
+          Add recipient…
+        </button>
         <span class="spacer" />
         <button type="submit" class="primary" :disabled="!selected">Create file</button>
         <button type="button" class="ghost" @click="close">Cancel</button>
@@ -90,28 +87,15 @@ function close() {
         >); the private half never leaves this machine.
       </p>
 
-      <div class="step" :class="{ done: exportedPath || copied }">
-        <span class="badge">{{ exportedPath || copied ? '✓' : '1' }}</span>
+      <div class="step">
+        <span class="badge">1</span>
         <div class="step-body">
           <strong>Give them your key</strong>
-          <span v-if="copied" class="step-hint"
-            >Copied — paste it into your password manager or straight into a message.</span
-          >
-          <span v-else-if="exportedPath" class="step-hint"
-            >Saved — now send that file to them (chat, USB, anything).</span
-          >
-          <span v-else class="step-hint"
-            >Copy it to the clipboard, or save it as a file — either way, send it to them.</span
-          >
+          <span class="step-hint">Name it and send it — they import it to receive your diffs.</span>
         </div>
-        <div class="step-actions">
-          <button type="button" class="ghost small" @click="copyKey">
-            {{ copied ? 'Copied ✓' : 'Copy key' }}
-          </button>
-          <button type="button" class="ghost small" @click="exportKey">
-            {{ exportedPath ? 'Save again…' : 'Save as file…' }}
-          </button>
-        </div>
+        <button type="button" class="ghost small" @click="diff.showShareKeyDialog = true">
+          Share my key…
+        </button>
       </div>
 
       <div class="step">
@@ -120,7 +104,9 @@ function close() {
           <strong>Add their key</strong>
           <span class="step-hint">Open the <code>.diffbrokey</code> file they sent you.</span>
         </div>
-        <button type="button" class="primary small" @click="addKey">Add their key…</button>
+        <button type="button" class="primary small" @click="diff.addTrustedKey()">
+          Add their key…
+        </button>
       </div>
 
       <p class="note">
@@ -219,17 +205,6 @@ code {
   border-radius: 8px;
   padding: 10px;
 }
-.step.done {
-  border-color: #238636;
-}
-/* Keeps the two key-handoff buttons together at the row's right edge and
-   stops them from stretching when the hint text wraps. */
-.step-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 6px;
-  margin-left: auto;
-}
 .badge {
   flex-shrink: 0;
   width: 22px;
@@ -242,11 +217,6 @@ code {
   font-weight: 700;
   background: var(--bg);
   border: 1px solid var(--border);
-}
-.step.done .badge {
-  background: #238636;
-  border-color: #238636;
-  color: #fff;
 }
 .step-body {
   flex: 1;

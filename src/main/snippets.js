@@ -14,20 +14,28 @@ const MAX_SNIPPET_FILE_BYTES = 64 * 1024 * 1024
 export function registerSnippetIpc() {
   // bundle: { categories: [{ name, snippets: [{ name, content }] }] }
   ipcMain.handle('snippets:export', async (e, bundle, passphrase, defaultName) => {
+    // Never trust the shapes a (possibly compromised) renderer sends: guard
+    // before they reach a string sink or the crypto core (CLAUDE.md rule 6).
+    if (typeof passphrase !== 'string' || !passphrase || !bundle || typeof bundle !== 'object') {
+      return { error: 'bad-request' }
+    }
+    const safeName =
+      typeof defaultName === 'string' && defaultName ? defaultName : 'diffbro-snippets'
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Export snippets',
-      defaultPath: `${defaultName.replace(/[^\w.-]+/g, '_')}.diffbrosnip`,
+      defaultPath: `${safeName.replace(/[^\w.-]+/g, '_')}.diffbrosnip`,
       filters: [{ name: 'Diff Bro snippets', extensions: ['diffbrosnip'] }]
     })
     if (canceled || !filePath) return { canceled: true }
 
     const identity = await getIdentity()
-    const file = sealSnippets(bundle, passphrase, identity)
+    const file = await sealSnippets(bundle, passphrase, identity)
     await writeFile(filePath, JSON.stringify(file, null, 2))
     return { ok: true, path: filePath }
   })
 
   ipcMain.handle('snippets:import', async (e, passphrase) => {
+    if (typeof passphrase !== 'string' || !passphrase) return { error: 'wrong-passphrase' }
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Import snippets',
       properties: ['openFile'],
@@ -44,6 +52,6 @@ export function registerSnippetIpc() {
       return { error: 'not-a-snippet-file' }
     }
 
-    return openSnippets(file, passphrase)
+    return await openSnippets(file, passphrase)
   })
 }

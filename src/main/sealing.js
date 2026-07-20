@@ -27,23 +27,60 @@ import {
 // Versioned wire formats. These are the ONLY versions this release writes and
 // accepts — both key parsing and openSealed require an exact match, so a file
 // in any other version is refused. Rotation / revocation policy: if a format
-// is ever found vulnerable, bump its version here (e.g. `diffbro-key/2`) and
+// is ever found vulnerable, bump its version here (e.g. `diffbro-key/3`) and
 // ship it in a new release. From that release on, files in the old version
 // stop opening (exact-match rejection) and every new file is written in the
 // new version — a compromised format can't be reused. `HKDF_INFO` and the GCM
 // AAD are tied to SHARE_FORMAT, so a share-format bump also re-keys/re-binds.
-export const KEY_FORMAT = 'diffbro-key/1'
-export const SHARE_FORMAT = 'diffbro-share/2'
+//
+// key/2 + share/3 widened the fingerprint from 64 to 128 bits (see
+// `fingerprint`). New files are written in these versions.
+export const KEY_FORMAT = 'diffbro-key/2'
+export const SHARE_FORMAT = 'diffbro-share/3'
 export const MAX_TTL_MS = 24 * 3600 * 1000
+
+// Public-key FILES stay importable across the version bump: a key file only
+// carries key material, and the fingerprint is always RECOMPUTED at 128 bits
+// on import (never trusted from the file), so an older-format key has no
+// weaker binding to reuse — accepting it just re-labels the same keys. Shares
+// are the opposite: SHARE_FORMAT is matched exactly, because a share's 64-bit
+// binding was baked into its signature and GCM AAD, so old shares must be
+// rejected outright.
+export const ACCEPTED_KEY_FORMATS = ['diffbro-key/2', 'diffbro-key/1']
+export const isAcceptedKeyFormat = (fmt) => ACCEPTED_KEY_FORMATS.includes(fmt)
+
+// A public key may carry an optional self-chosen display label so a recipient
+// sees a human name ("Alice — laptop") instead of a hex fingerprint when
+// importing. The label is a COSMETIC HINT ONLY: it is not part of the
+// fingerprint and is never used for any trust decision, so it stays untrusted
+// input — collapse whitespace/control chars and hard-cap the length here.
+export const MAX_LABEL_LEN = 80
+export function cleanLabel(value) {
+  if (typeof value !== 'string') return ''
+  // Turn any C0 control char or DEL into a space (so a label can't be
+  // multi-line or carry terminal control codes), collapse whitespace, trim,
+  // hard-cap. Vue renders this as text, so it's defense in depth.
+  let out = ''
+  for (const ch of value) {
+    const c = ch.codePointAt(0)
+    out += c < 0x20 || c === 0x7f ? ' ' : ch
+  }
+  return out.replace(/\s+/g, ' ').trim().slice(0, MAX_LABEL_LEN)
+}
 
 const HKDF_INFO = SHARE_FORMAT
 
-// Fingerprint covers both public keys, so neither can be swapped alone.
+// Fingerprint covers both public keys, so neither can be swapped alone. It is
+// the anchor for every trust decision — trusted-key lookup, the recipient
+// binding in the signature (payload ‖ recipient-fp), and the GCM AAD — so it
+// must be wide enough to resist a crafted-keypair second preimage. 128 bits
+// (32 hex chars) keeps a targeted second preimage at ~2^128 and collisions
+// (adversary controls both keys) at ~2^64.
 export function fingerprint(signPem, boxPem) {
   const h = createHash('sha256')
   h.update(createPublicKey(signPem).export({ type: 'spki', format: 'der' }))
   h.update(createPublicKey(boxPem).export({ type: 'spki', format: 'der' }))
-  return h.digest('hex').slice(0, 16)
+  return h.digest('hex').slice(0, 32)
 }
 
 // Fresh Ed25519 (signing) + X25519 (key agreement) identity.

@@ -20,7 +20,8 @@ function add() {
         </button>
       </div>
       <p class="note">
-        Give this host a name you'll recognize when picking a share recipient. Fingerprint
+        Adding <strong>someone else's</strong> public key so you can receive diffs they share. The
+        name is prefilled from what they called their key — keep it or rename it. Fingerprint
         <code>{{ diff.pendingTrustedKey?.fingerprint }}</code
         >.
       </p>

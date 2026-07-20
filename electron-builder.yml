@@ -8,12 +8,40 @@ directories:
   buildResources: resources
 files:
   - build/**
+# Ship the app inside an ASAR and flip the Electron fuses that harden the
+# packaged binary (electron-builder rewrites the fuse bits at pack time):
+#   runAsNode / enableNodeCliInspectArguments / enableNodeOptionsEnvironmentVariable
+#     off  — stop `ELECTRON_RUN_AS_NODE=1 "Diff Bro.exe" script.js` from turning
+#            the trusted, installed binary into a generic Node interpreter (a
+#            LOLBin malware likes to hide behind).
+#   onlyLoadAppFromAsar + enableEmbeddedAsarIntegrityValidation
+#     on   — the runtime refuses to load app code from anywhere but the ASAR
+#            and validates the ASAR's hash, so a tampered bundle won't run.
+#   enableCookieEncryption
+#     on   — at-rest encryption for the Chromium cookie store.
+# Signing (Windows Authenticode + macOS notarization) is the remaining
+# prerequisite for enterprise trust — tracked in DEVELOPMENT_PLAN.md Phase 3.
+asar: true
+electronFuses:
+  runAsNode: false
+  enableNodeCliInspectArguments: false
+  enableNodeOptionsEnvironmentVariable: false
+  onlyLoadAppFromAsar: true
+  enableEmbeddedAsarIntegrityValidation: true
+  enableCookieEncryption: true
 win:
   target:
     - nsis
+  # Version-less, space-free installer name so a "download latest" URL is
+  # stable across releases:
+  #   github.com/<repo>/releases/latest/download/Diff-Bro-Setup-Windows.exe
+  # The version still lives in the tag, the release, and the app's About.
+  artifactName: Diff-Bro-Setup-Windows.${ext}
 mac:
   target:
     - dmg
+  # Stable name, as above — .../releases/latest/download/Diff-Bro-macOS.dmg
+  artifactName: Diff-Bro-macOS.${ext}
   category: public.app-category.developer-tools
   # No Apple Developer cert yet (see DEVELOPMENT_PLAN.md Phase 3) — without
   # this, electron-builder searches the runner's keychain for a signing

@@ -1,72 +1,82 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 
 const diff = useDiffStore()
-const passphrase = ref('')
+const label = ref('')
+const fingerprint = ref('')
 const busy = ref(false)
-const isBackup = computed(() => diff.configMode === 'backup')
 
-async function submit() {
-  if (!passphrase.value || busy.value) return
-  // A backup creates the file, so require a minimum-length passphrase; a
-  // restore must accept whatever the backup was made with.
-  if (isBackup.value && passphraseTooShort(passphrase.value)) {
-    diff.showNotice(PASSPHRASE_HINT)
-    return
-  }
+onMounted(async () => {
+  // Prefill the name the user set before (if any) and show this key's
+  // fingerprint so they can read it out to the other person out of band.
+  label.value = (await window.api.myKeyLabel()) ?? ''
+  fingerprint.value = (await window.api.myFingerprint()) ?? ''
+})
+
+async function save() {
+  if (busy.value) return
   busy.value = true
   try {
-    if (isBackup.value) await diff.runConfigBackup(passphrase.value)
-    else await diff.runConfigRestore(passphrase.value)
-    close()
+    await diff.runExportKey(label.value)
   } finally {
     busy.value = false
   }
 }
-
+async function copy() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    await diff.runCopyKey(label.value)
+  } finally {
+    busy.value = false
+  }
+}
 function close() {
-  diff.configMode = null
-  passphrase.value = ''
+  diff.showShareKeyDialog = false
 }
 </script>
 
 <template>
   <div class="backdrop">
-    <form class="dialog" @submit.prevent="submit">
+    <div class="dialog">
       <div class="dialog-header">
-        <h3>{{ isBackup ? 'Back up configuration' : 'Restore configuration' }}</h3>
+        <h3>Share my public key</h3>
         <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
       </div>
+
       <p class="note">
-        <template v-if="isBackup">
-          Encrypts your identity keys, trusted hosts, snippets and settings into one
-          passphrase-protected file. Saved diffs are not included. Keep the passphrase safe — it's
-          the only way to restore.
-        </template>
-        <template v-else>
-          Restores identity keys, trusted hosts, snippets and settings from a backup file. Enter the
-          passphrase it was created with. This overwrites your current identity keys.
-        </template>
+        This is <strong>your</strong> public key — hand it to the other person so they can receive
+        diffs you share. To receive <em>their</em> diffs, use
+        <strong>Security → Add Trusted Key</strong> on the file <em>they</em> send you. You never
+        import your own key.
       </p>
+
       <label>
-        Passphrase
+        Name others will see
         <input
-          v-model="passphrase"
-          type="password"
-          autocomplete="off"
+          v-model="label"
+          type="text"
           spellcheck="false"
-          autofocus
+          maxlength="80"
+          placeholder="e.g. Alice — laptop"
         />
       </label>
+      <p class="hint">
+        Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part
+        of the key's identity.
+      </p>
+
+      <p v-if="fingerprint" class="fp">
+        Fingerprint: <code>{{ fingerprint }}</code>
+      </p>
+
       <div class="actions">
-        <button type="submit" class="primary" :disabled="!passphrase || busy">
-          {{ isBackup ? 'Back up' : 'Restore' }}
-        </button>
-        <button type="button" class="ghost" @click="close">Cancel</button>
+        <button class="primary" :disabled="busy" @click="save">Save to file…</button>
+        <button class="ghost" :disabled="busy" @click="copy">Copy to clipboard</button>
+        <button class="ghost" @click="close">Close</button>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -78,14 +88,15 @@ function close() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 30;
+  z-index: 40;
 }
 .dialog {
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
-  width: 380px;
+  width: 420px;
+  max-width: 90vw;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -114,9 +125,12 @@ h3 {
 }
 .note {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
   line-height: 1.5;
+}
+.note strong {
+  color: var(--text);
 }
 label {
   display: flex;
@@ -137,10 +151,26 @@ input:focus {
   outline: none;
   border-color: var(--accent);
 }
+.hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.fp {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.fp code {
+  color: var(--text);
+  font-size: 11px;
+}
 .actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  margin-top: 4px;
 }
 .primary {
   background: var(--accent);
@@ -162,5 +192,9 @@ input:focus {
   color: var(--text);
   padding: 6px 12px;
   cursor: pointer;
+}
+.ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 </style>

@@ -32,6 +32,14 @@ async function save() {
   }
   const id = await vault.save(name.value.trim(), ttl.value, diff.snapshot(), targetCategory)
   diff.showSaveDialog = false
+  // null id means the vault key couldn't be unlocked — nothing was saved.
+  if (!id) {
+    diff.saveThenShare = false
+    diff.showNotice(
+      'Couldn’t save: the saved-diff key couldn’t be unlocked (the OS keychain may be locked). Try again once it’s available.'
+    )
+    return
+  }
   if (diff.saveThenShare) {
     // "Share" flow: continue straight into the recipient picker.
     diff.saveThenShare = false

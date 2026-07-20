@@ -1,11 +1,35 @@
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { readFile, stat } from 'fs/promises'
-import { basename } from 'path'
+import { basename, resolve, sep } from 'path'
 import chardet from 'chardet'
 import iconv from 'iconv-lite'
 
 // Warn before loading files bigger than this (Monaco slows down well past it).
 const LARGE_FILE_BYTES = 10 * 1024 * 1024
+
+// Provenance allowlist. `file:read` is only ever meant to serve a path the
+// user actually chose — via the open dialog, or by physically dragging a file
+// onto the window. CLAUDE.md's threat model assumes the renderer can be
+// compromised (see vault.js), and a raw path argument from a compromised
+// renderer would turn `file:read` into an arbitrary-file-read primitive: SSH
+// keys, browser profiles, cloud tokens — and, on installs with no OS keychain
+// (the `plain:` fallback), vault.key / identity.key themselves, defeating the
+// "key never enters the renderer" guarantee. So a path is readable only after
+// it has been registered here through a trusted channel.
+const allowedPaths = new Set()
+
+function allow(filePath) {
+  if (typeof filePath === 'string' && filePath) allowedPaths.add(resolve(filePath))
+}
+
+// Belt and braces: never serve anything inside userData (vault.key,
+// identity.key, trusted-keys.json, config) regardless of how the path was
+// obtained. Nothing the user opens or drops legitimately lives there.
+function isUnderUserData(filePath) {
+  const abs = resolve(filePath)
+  const base = resolve(app.getPath('userData'))
+  return abs === base || abs.startsWith(base + sep)
+}
 
 async function readFileForRenderer(win, filePath, opts = {}) {
   const name = basename(filePath)
@@ -52,11 +76,27 @@ export function registerFileIpc() {
       properties: ['openFile']
     })
     if (canceled || !filePaths.length) return null
+    allow(filePaths[0]) // the user picked it — now it (and quiet re-reads) may be read
     return readFileForRenderer(win, filePaths[0])
   })
 
-  // Read a path directly (drag & drop, and quiet focus-refresh re-reads)
-  ipcMain.handle('file:read', async (e, filePath, opts) =>
-    readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
-  )
+  // Registers a path the preload resolved from a REAL OS drag-drop
+  // (webUtils.getPathForFile on an actual dropped File). The preload calls
+  // this before the renderer asks to read the file, so a genuinely dropped
+  // path becomes readable while a path the renderer merely invents never
+  // passes through here and stays denied.
+  ipcMain.handle('file:allowDropPath', (e, filePath) => {
+    allow(filePath)
+    return true
+  })
+
+  // Read a path directly (drag & drop, and quiet focus-refresh re-reads).
+  // Only paths that came from the open dialog or a real drop are honoured.
+  ipcMain.handle('file:read', async (e, filePath, opts) => {
+    if (typeof filePath !== 'string' || !allowedPaths.has(resolve(filePath))) {
+      return { error: 'not-permitted' }
+    }
+    if (isUnderUserData(filePath)) return { error: 'not-permitted' }
+    return readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
+  })
 }

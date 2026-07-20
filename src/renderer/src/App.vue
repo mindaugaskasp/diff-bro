@@ -21,6 +21,7 @@ import SnippetDeleteDialog from './components/SnippetDeleteDialog.vue'
 import VaultCategoryDeleteDialog from './components/VaultCategoryDeleteDialog.vue'
 import AddTrustedKeyDialog from './components/AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './components/TrustedKeysDialog.vue'
+import ShareKeyDialog from './components/ShareKeyDialog.vue'
 import ConfigBackupDialog from './components/ConfigBackupDialog.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useVaultStore } from './stores/vaultStore'
@@ -214,6 +215,7 @@ async function onDrop(e) {
     <SaveDiffDialog v-if="store.showSaveDialog" />
     <ShareDiffDialog v-if="store.shareEntryId" />
     <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
+    <ShareKeyDialog v-if="store.showShareKeyDialog" />
     <ConfigBackupDialog v-if="store.configMode" />
     <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
     <Base64Dialog v-if="store.showBase64Dialog" />

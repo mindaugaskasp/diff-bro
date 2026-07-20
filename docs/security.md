@@ -12,12 +12,39 @@ allows the local Vite server), backed by a strict CSP, `sandbox: true`,
 `contextIsolation`, a deny-all permission handler, and a `will-navigate` block.
 No telemetry, no auto-update, no CDN assets.
 
+## File access (compromised-renderer threat model)
+
+All filesystem access lives in the main process; the renderer only asks. Because
+the threat model assumes the renderer can be compromised, `file:read` will not
+serve an arbitrary path: a path is readable only after it was returned by the
+open dialog or registered from a **real** OS drag-drop (the preload registers it
+via `webUtils.getPathForFile` before the read is requested). A path the renderer
+merely invents is refused, and reads under `userData` are denied outright — so a
+compromised renderer can't turn `file:read` into an arbitrary-file-read primitive
+(SSH keys, tokens, or the key files themselves on installs with no OS keychain).
+
 ## Saved diffs (vault)
 
 Saved comparisons are AES-256-GCM encrypted at rest with an install-specific key
 held by the OS keychain (`safeStorage`). The entry's plaintext metadata is bound
 as GCM AAD, so tampering (e.g. extending an expiry in localStorage) makes the
 entry undecryptable. Every entry auto-expires — default 1 h, hard cap 24 h.
+
+**Metadata is not encrypted.** Only diff/snippet *content* is encrypted. The
+entry name, category names, timestamps, favorite flag, and a shared diff's
+sender label are stored in plaintext in `localStorage` (they organize the UI and
+form the AAD). Names can leak content — e.g. `prod-secrets-rotation.diff` — so
+avoid putting sensitive information in names if the machine's `localStorage`
+(under `userData`) might be read by someone else.
+
+**Key loss is not silent.** The vault and identity keys are regenerated only on a
+genuinely first run (the key file is absent). If a key file *exists* but can't be
+loaded right now — a locked keychain, a DPAPI error after a profile move, a
+recoverable corruption — the main process surfaces a distinct
+`vault-key-unavailable` / `identity-unavailable` error and **never overwrites the
+file**. The renderer keeps every saved diff and snippet intact and shows a
+"try again once it's unlocked" notice, rather than purging entries or minting a
+new identity (which would silently break every peer's trust).
 
 ## Sharing diffs (sealed `.diffbro` files)
 
@@ -35,16 +62,27 @@ on import. **Trusted keys must be named**: importing or dropping a `.diffbrokey`
 prompts for a label, and adding your own key is rejected. Manage names via
 **Security → Manage Trusted Keys**.
 
+**No replay protection (by design).** Within its ≤ 24 h TTL a `.diffbro` file can
+be imported repeatedly, and a re-delivered old share is indistinguishable from a
+new one. Sealing guarantees confidentiality, sender authenticity, recipient
+binding, and integrity — but not freshness or once-only delivery. Treat a share
+as "this sender sent me this content, valid until its expiry", not "this is new."
+
 ## Keys and formats
 
 - Identity private keys are wrapped by the OS keychain in `userData` and never
   cross IPC. Public keys are exported/copied in an obfuscated `dbk1:` envelope
   (a public key isn't secret — this just stops casual text-editor readability;
   legacy plain-JSON keys are still accepted).
-- Wire formats are versioned (`diffbro-key/1`, `diffbro-share/2`) and matched
+- Every trust decision keys off a **128-bit fingerprint** (32 hex chars) over
+  both public keys — trusted-key lookup, the recipient binding in the signature,
+  and the GCM AAD. 128 bits keeps a targeted crafted-keypair second preimage at
+  ~2¹²⁸ and collisions (adversary controls both keys) at ~2⁶⁴.
+- Wire formats are versioned (`diffbro-key/2`, `diffbro-share/3`) and matched
   exactly. **Rotation:** if a format is found vulnerable, bump its version
   constant in `src/main/sealing.js` and ship a release — old-format files then
-  stop opening and all new files use the new version.
+  stop opening and all new files use the new version. (The current versions
+  revoked the earlier 64-bit-fingerprint key/share formats.)
 
 ## Configuration backup
 
@@ -58,7 +96,20 @@ written only in the main process and only leaves it inside the encrypted blob.
 
 The snippet library is encrypted at rest with the same vault key (no expiry). A
 category (or the whole library) can be exported as a passphrase-protected,
-**signed** `.diffbrosnip` file — no recipient key exchange needed.
+**signed** `.diffbrosnip` file — no recipient key exchange needed. On import, a
+decryptable file is still treated as hostile (the passphrase gates
+confidentiality, not the sender's honesty): the main process validates the
+bundle's shape and enforces count/size caps (`validateSnippetBundle`) before the
+renderer touches it, so a malformed-but-decryptable file can't half-write state
+or blow the localStorage quota. The same check guards the config-restore path.
+
+## Tools → Encrypt/Decrypt Text
+
+The local passphrase text tool uses **authenticated AES-256-GCM only**
+(scrypt-derived key, random salt/IV embedded in a self-describing blob). An
+unauthenticated mode (CBC) was removed: without a MAC, a tampered blob can
+decrypt "successfully" to attacker-influenced garbage — a footgun for a tool
+reached for precisely when integrity matters.
 
 ---
 

@@ -16,7 +16,11 @@ const SHARE_ERRORS = {
   'invalid-ttl': 'Rejected: shared diffs cannot live longer than 24 hours.',
   'unknown-recipient': 'Recipient not found among trusted keys.',
   renamed:
-    'This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.'
+    'This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.',
+  'identity-unavailable':
+    'Your identity key couldn’t be unlocked (the OS keychain may be locked). Nothing was changed — unlock it and try again.',
+  'vault-key-unavailable':
+    'The saved-diff key couldn’t be unlocked (the OS keychain may be locked). Your saved diffs and snippets are intact — unlock it and try again.'
 }
 
 let noticeTimer = null
@@ -66,6 +70,8 @@ export const useDiffStore = defineStore('diff', {
     pendingTrustedKey: null,
     // Trusted-keys management dialog visibility.
     showTrustedKeysDialog: false,
+    // "Share my public key" dialog visibility (name + export/copy your key).
+    showShareKeyDialog: false,
     // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
     configMode: null,
     // Tools menu dialog visibility.
@@ -130,6 +136,9 @@ export const useDiffStore = defineStore('diff', {
         )
         return
       }
+      // Any other error shape (e.g. a path main refused to serve) is not a
+      // loadable file — never assign it to a side.
+      if (file.error) return
       this[side] = file
       this.mode = 'files'
     },
@@ -241,9 +250,9 @@ export const useDiffStore = defineStore('diff', {
         case 'import-shared':
           return this.importShared()
         case 'export-pubkey':
-          return this.exportPublicKey()
         case 'copy-pubkey':
-          return this.copyPublicKey()
+          this.showShareKeyDialog = true
+          return
         case 'add-trusted-key':
           return this.addTrustedKey()
         case 'manage-keys':
@@ -303,19 +312,25 @@ export const useDiffStore = defineStore('diff', {
         )
       else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
     },
-    async exportPublicKey() {
-      const res = await window.api.exportPublicKey()
-      if (res.ok)
+    // Export / copy THIS install's public key, tagged with the display name
+    // the user typed so recipients recognize it. Called by ShareKeyDialog.
+    async runExportKey(label) {
+      const res = await window.api.exportPublicKey(label)
+      if (res.ok) {
+        this.showShareKeyDialog = false
         this.showNotice(
-          `Public key saved (fingerprint ${res.fingerprint}). Give this file to machines that should trust your shared diffs.`
+          `Your public key was saved. Send this file to the other person — they import it. To receive their diffs, import THEIR key (Security → Add Trusted Key).`
         )
+      }
     },
-    async copyPublicKey() {
-      const res = await window.api.copyPublicKey()
-      if (res.ok)
+    async runCopyKey(label) {
+      const res = await window.api.copyPublicKey(label)
+      if (res.ok) {
+        this.showShareKeyDialog = false
         this.showNotice(
-          `Public key copied (fingerprint ${res.fingerprint}). Paste it into a password manager or send it to whoever should trust your shared diffs.`
+          `Your public key was copied. Send it to the other person — they import it. To receive their diffs, import THEIR key.`
         )
+      }
     },
     // Pick a key file via dialog, then require a name before adding (same
     // naming dialog as the drag-drop path).

@@ -68,7 +68,11 @@ export const useVaultStore = defineStore('vault', {
     pendingDelete: null,
     // Bumps to a category id whenever a diff lands in it, so the sidebar can
     // auto-expand it.
-    lastTouchedCategory: null
+    lastTouchedCategory: null,
+    // Set when the main process can't load the vault key (locked keychain,
+    // etc). Distinct from a per-entry auth failure: we must NOT purge the
+    // entries — the key may come back — so we surface this and hold.
+    keyError: null
   }),
   getters: {
     // Favorites float to the top; otherwise insertion order is preserved
@@ -137,10 +141,16 @@ export const useVaultStore = defineStore('vault', {
     },
     async _add(name, payload, createdAt, expiresAt, from, categoryId) {
       const id = crypto.randomUUID()
-      const { iv, data } = await window.api.vaultEncrypt(
+      const box = await window.api.vaultEncrypt(
         JSON.stringify(payload),
         entryAad(id, createdAt, expiresAt, from)
       )
+      // Key unavailable — don't persist a half-formed (undecryptable) entry.
+      if (box?.error) {
+        this.keyError = box.error
+        return null
+      }
+      const { iv, data } = box
       this.entries.push({
         id,
         name: name || 'Untitled diff',
@@ -231,12 +241,19 @@ export const useVaultStore = defineStore('vault', {
         { iv: entry.iv, data: entry.data },
         entryAad(entry.id, entry.createdAt, entry.expiresAt, entry.from)
       )
+      // Key couldn't be loaded (locked keychain, etc): keep every entry and
+      // surface the problem — the key may come back. NEVER purge here.
+      if (plaintext && typeof plaintext === 'object' && plaintext.error) {
+        this.keyError = plaintext.error
+        return null
+      }
       if (plaintext === null) {
-        // Undecryptable (tampered metadata / key rotated / corrupted) —
-        // drop the entry.
+        // Undecryptable with a valid key: genuine tampered metadata /
+        // corruption for THIS entry — drop it (AAD tamper-evidence).
         this.remove(id)
         return null
       }
+      this.keyError = null
       try {
         return JSON.parse(plaintext)
       } catch {

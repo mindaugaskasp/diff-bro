@@ -16,6 +16,22 @@ out to wine). A DMG needs macOS's `hdiutil`, so `make package-mac` runs on the
 host. The DMG window size, icon positions and backdrop live in
 `electron-builder.yml` (backdrop rendered from `resources/dmg-background.svg`).
 
+## Binary hardening (fuses + ASAR)
+
+`electron-builder.yml` sets `asar: true` and flips the Electron fuses that harden
+the packaged binary at pack time:
+
+- `runAsNode`, `enableNodeCliInspectArguments`, `enableNodeOptionsEnvironmentVariable`
+  **off** — stops `ELECTRON_RUN_AS_NODE=1 "Diff Bro.exe" script.js` turning the
+  installed, trusted binary into a generic Node interpreter (a LOLBin).
+- `onlyLoadAppFromAsar` + `enableEmbeddedAsarIntegrityValidation` **on** — the
+  runtime refuses to load app code from anywhere but the ASAR and validates its
+  hash, so a tampered bundle won't run.
+- `enableCookieEncryption` **on**.
+
+Code signing (Windows Authenticode + macOS notarization) is the remaining
+prerequisite — see below and `DEVELOPMENT_PLAN.md` Phase 3.
+
 ## Windows: enable Developer Mode first
 
 `build:win` extracts electron-builder's `winCodeSign` cache, which contains
@@ -34,14 +50,20 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSig
 ## Releasing
 
 Pushing a tag matching `v*.*.*` runs
-[`.github/workflows/release.yml`](../.github/workflows/release.yml): it lints +
-tests, syncs `package.json`'s version to the tag (so the installer filename
-matches the tag), builds Windows and macOS installers in parallel, and attaches
-them to a GitHub Release.
+[`.github/workflows/release.yml`](../.github/workflows/release.yml): it audits
+dependencies, lints + tests, syncs `package.json`'s version to the tag (so the
+app reports the right version), builds Windows and macOS installers in parallel,
+and attaches them to a GitHub Release.
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
+
+Installers are named **version-lessly** (`Diff-Bro-Setup-Windows.exe`,
+`Diff-Bro-macOS.dmg` — see `artifactName` in `electron-builder.yml`) so the
+"download latest" URLs in the README stay stable across releases:
+`…/releases/latest/download/<name>`. The version still lives in the tag, the
+release title, and the app's About — just not the filename.
 
 Builds are **unsigned** (no code-signing cert / Apple Developer account yet — see
 `DEVELOPMENT_PLAN.md` Phase 3): Windows shows a SmartScreen warning, and macOS
@@ -62,3 +84,11 @@ auto-update — installers are the only distribution path.
 which fails the build on any new deprecation / engine warning that isn't in its
 reviewed allowlist (the current allowlisted ones are build-time-only transitive
 deps of electron-builder's native-rebuild toolchain, which this app never runs).
+
+## CI vulnerability gate
+
+A dedicated `audit` job runs `npm audit --audit-level=moderate` on a cheap
+runner before any packaging, and `build` `needs:` it — so a tag push with a
+known moderate/high/critical vulnerability in the dependency tree fails the
+release fast, before spending Windows/macOS build minutes. Tighten the threshold
+to `--audit-level=low` to block on any advisory at all.

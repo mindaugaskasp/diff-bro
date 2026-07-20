@@ -7,20 +7,21 @@
 // passphrase (scrypt-derived key, random salt embedded). No TTL, no signing:
 // it's a personal backup meant to be restored by its owner. Diffs are
 // deliberately NOT included (they are ephemeral and auto-expiring).
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto'
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
+import { SCRYPT_PARAMS, deriveKey, scryptParamsFor } from './kdf'
 
 export const CONFIG_FORMAT = 'diffbro-config/1'
-const SCRYPT_KEYLEN = 32
 
-export function sealConfig(bundle, passphrase) {
+export async function sealConfig(bundle, passphrase) {
   const payload = Buffer.from(JSON.stringify(bundle))
   const salt = randomBytes(16)
-  const key = scryptSync(passphrase, salt, SCRYPT_KEYLEN)
+  const key = await deriveKey(passphrase, salt)
   const iv = randomBytes(12)
   const cipher = createCipheriv('aes-256-gcm', key, iv)
   const ciphertext = Buffer.concat([cipher.update(payload), cipher.final()])
   const envelope = {
     format: CONFIG_FORMAT,
+    kdf: SCRYPT_PARAMS,
     salt: salt.toString('base64'),
     iv: iv.toString('base64'),
     tag: cipher.getAuthTag().toString('base64'),
@@ -30,24 +31,26 @@ export function sealConfig(bundle, passphrase) {
 }
 
 // Returns { ok: true, bundle } or { ok: false, error }.
-export function openConfig(blob, passphrase) {
+export async function openConfig(blob, passphrase) {
   let envelope
   try {
     envelope = JSON.parse(Buffer.from(blob, 'base64').toString('utf8'))
   } catch {
     return { ok: false, error: 'not-a-config-file' }
   }
+  const params = scryptParamsFor(envelope)
   if (
     envelope?.format !== CONFIG_FORMAT ||
     typeof envelope.salt !== 'string' ||
     typeof envelope.iv !== 'string' ||
     typeof envelope.tag !== 'string' ||
-    typeof envelope.ciphertext !== 'string'
+    typeof envelope.ciphertext !== 'string' ||
+    params === null
   ) {
     return { ok: false, error: 'not-a-config-file' }
   }
   try {
-    const key = scryptSync(passphrase, Buffer.from(envelope.salt, 'base64'), SCRYPT_KEYLEN)
+    const key = await deriveKey(passphrase, Buffer.from(envelope.salt, 'base64'), params)
     const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(envelope.iv, 'base64'))
     decipher.setAuthTag(Buffer.from(envelope.tag, 'base64'))
     const plain = Buffer.concat([

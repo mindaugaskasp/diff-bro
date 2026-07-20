@@ -58,8 +58,7 @@ const menus = [
     id: 'security',
     label: 'Security',
     items: [
-      { label: 'Copy My Public Key', run: () => store.copyPublicKey() },
-      { label: 'Export My Public Key…', run: () => store.exportPublicKey() },
+      { label: 'Share My Public Key…', run: () => (store.showShareKeyDialog = true) },
       { sep: true },
       { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
       { label: 'Manage Trusted Keys…', run: () => store.handleMenuAction('manage-keys') },

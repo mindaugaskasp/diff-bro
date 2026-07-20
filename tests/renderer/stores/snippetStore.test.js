@@ -23,7 +23,7 @@ beforeEach(() => {
     vaultEncrypt: async (plaintext, aad) => vaultEncrypt(KEY, plaintext, aad),
     vaultDecrypt: async (box, aad) => vaultDecrypt(KEY, box, aad),
     exportSnippets: async (bundle, passphrase) => {
-      lastExportedFile = sealSnippets(bundle, passphrase, IDENTITY)
+      lastExportedFile = await sealSnippets(bundle, passphrase, IDENTITY)
       return { ok: true, path: '/tmp/fake.diffbrosnip' }
     },
     importSnippets: async (passphrase) => {
@@ -152,6 +152,22 @@ describe('snippetStore', () => {
     store.entries[0].categoryId = 'someone-elses-category'
     await expect(store.load(id)).resolves.toBeNull()
     expect(store.entries).toHaveLength(0)
+  })
+
+  it('does NOT drop a snippet when the vault key is unavailable — it surfaces instead', async () => {
+    const store = useSnippetStore()
+    const catId = store.addCategory('Cat')
+    const id = await store.add(catId, 'keep', 'never lose me')
+    // Key can't be loaded: decrypt returns an error object, not null. Snippets
+    // don't expire and can't be re-fetched, so they must never be purged here.
+    window.api.vaultDecrypt = async () => ({ error: 'vault-key-unavailable' })
+    await expect(store.load(id)).resolves.toBeNull()
+    expect(store.entries).toHaveLength(1) // NOT dropped
+    expect(store.keyError).toBe('vault-key-unavailable')
+
+    window.api.vaultDecrypt = async (box, aad) => vaultDecrypt(KEY, box, aad)
+    await expect(store.load(id)).resolves.toBe('never lose me')
+    expect(store.keyError).toBeNull()
   })
 
   it('exports a category and reimports it into a fresh store, passphrase-protected', async () => {
