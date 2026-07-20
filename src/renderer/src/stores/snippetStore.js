@@ -211,13 +211,34 @@ export const useSnippetStore = defineStore('snippets', {
       }
     },
     // --- export / import ---
+    // ALL snippets in the category (favorited ones are only lifted out for
+    // display, not for export), with their chosen language.
     async _bundleCategory(category) {
       const snippets = []
-      for (const entry of this.inCategory(category.id)) {
+      for (const entry of this.entries.filter((e) => e.categoryId === category.id)) {
         const content = await this.load(entry.id)
-        if (content !== null) snippets.push({ name: entry.name, content })
+        if (content !== null) {
+          snippets.push({ name: entry.name, content, language: entry.language ?? 'auto' })
+        }
       }
       return { name: category.name, snippets }
+    },
+    // Full plaintext bundle of the whole library, for the config backup.
+    async fullBundle() {
+      const categories = []
+      for (const category of this.categories) categories.push(await this._bundleCategory(category))
+      return { categories }
+    },
+    // Merge an in-memory bundle back in (used by config restore). Categories
+    // are matched by name; snippets are appended.
+    async restoreBundle(bundle) {
+      for (const category of bundle?.categories ?? []) {
+        let categoryId = this.categories.find((c) => c.name === category.name)?.id
+        if (!categoryId) categoryId = this.addCategory(category.name)
+        for (const snippet of category.snippets ?? []) {
+          await this.add(categoryId, snippet.name, snippet.content, snippet.language)
+        }
+      }
     },
     async exportCategory(categoryId, passphrase) {
       const category = this.categories.find((c) => c.id === categoryId)
@@ -240,7 +261,7 @@ export const useSnippetStore = defineStore('snippets', {
         let categoryId = this.categories.find((c) => c.name === category.name)?.id
         if (!categoryId) categoryId = this.addCategory(category.name)
         for (const snippet of category.snippets ?? []) {
-          await this.add(categoryId, snippet.name, snippet.content)
+          await this.add(categoryId, snippet.name, snippet.content, snippet.language)
         }
       }
       return res

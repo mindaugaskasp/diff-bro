@@ -8,15 +8,19 @@
 // because a share file is addressed to one specific recipient.
 import { app, clipboard, dialog, ipcMain, safeStorage } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
-import { basename, join } from 'path'
+import { basename, dirname, join } from 'path'
 import {
   KEY_FORMAT,
   createIdentityKeys,
+  decodePublicKey,
+  encodePublicKey,
   fingerprint,
   openSealed,
   sealEntry,
+  shareFilename,
   ttlError
 } from './sealing'
+import { openConfig, sealConfig } from './configBackup'
 
 const PLAIN_PREFIX = 'plain:'
 
@@ -41,14 +45,20 @@ export async function getIdentity() {
     return { priv: JSON.parse(privJson), pub: JSON.parse(rawPub) }
   } catch {
     const { priv, pub } = createIdentityKeys()
-    const privJson = JSON.stringify(priv)
-    const out = safeStorage.isEncryptionAvailable()
-      ? safeStorage.encryptString(privJson)
-      : Buffer.from(PLAIN_PREFIX + privJson)
-    await writeFile(privPath(), out, { mode: 0o600 })
-    await writeFile(pubPath(), JSON.stringify(pub, null, 2))
+    await persistIdentity(priv, pub)
     return { priv, pub }
   }
+}
+
+// Write the identity keypair, private half wrapped by the OS keychain
+// (safeStorage) where available. Shared by first-run generation and restore.
+async function persistIdentity(priv, pub) {
+  const privJson = JSON.stringify(priv)
+  const out = safeStorage.isEncryptionAvailable()
+    ? safeStorage.encryptString(privJson)
+    : Buffer.from(PLAIN_PREFIX + privJson)
+  await writeFile(privPath(), out, { mode: 0o600 })
+  await writeFile(pubPath(), JSON.stringify(pub, null, 2))
 }
 
 async function readTrusted() {
@@ -66,7 +76,7 @@ async function readTrusted() {
 async function parseKeyFileAt(path) {
   const { size } = await stat(path)
   if (size > MAX_KEY_FILE_BYTES) throw new Error('too large')
-  const key = JSON.parse(await readFile(path, 'utf-8'))
+  const key = decodePublicKey(await readFile(path, 'utf-8'))
   if (key.format !== KEY_FORMAT || !key.sign || !key.box) throw new Error('bad format')
   return {
     key: { format: key.format, sign: key.sign, box: key.box },
@@ -102,17 +112,22 @@ export function registerShareIpc() {
     const invalid = ttlError(entry)
     if (invalid) return { error: invalid }
 
+    const { priv, pub } = await getIdentity()
+    const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipient)
+    // The filename is a hash of the ciphertext (hides the diff's name/size
+    // signature; import rejects a renamed file), so we only let the user pick
+    // WHERE to save — the basename is forced.
+    const forcedName = shareFilename(file)
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: 'Share diff (sealed for one recipient)',
-      defaultPath: `${entry.name.replace(/[^\w.-]+/g, '_')}.diffbro`,
+      defaultPath: forcedName,
       filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
     })
     if (canceled || !filePath) return { canceled: true }
 
-    const { priv, pub } = await getIdentity()
-    const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipient)
-    await writeFile(filePath, JSON.stringify(file, null, 2))
-    return { ok: true, path: filePath, to: recipient.label }
+    const outPath = join(dirname(filePath), forcedName)
+    await writeFile(outPath, JSON.stringify(file, null, 2))
+    return { ok: true, path: outPath, to: recipient.label }
   })
 
   ipcMain.handle('share:import', async () => {
@@ -132,6 +147,12 @@ export function registerShareIpc() {
       return { error: 'not-a-share-file' }
     }
 
+    // Integrity is tied to the filename: a shared diff must keep the hashed
+    // name it was written with. A renamed file is refused.
+    if (file?.ciphertext && basename(filePaths[0]) !== shareFilename(file)) {
+      return { error: 'renamed' }
+    }
+
     return openSealed(file, await getIdentity(), await readTrusted())
   })
 
@@ -146,7 +167,7 @@ export function registerShareIpc() {
       filters: [{ name: 'Diff Bro public key', extensions: ['diffbrokey'] }]
     })
     if (canceled || !filePath) return { canceled: true }
-    await writeFile(filePath, JSON.stringify(pub, null, 2))
+    await writeFile(filePath, encodePublicKey(pub))
     return { ok: true, path: filePath, fingerprint: pub.fingerprint }
   })
 
@@ -157,7 +178,7 @@ export function registerShareIpc() {
   // clipboard.writeText behaves identically on Windows, macOS and Linux.
   ipcMain.handle('share:copyPublicKey', async () => {
     const { pub } = await getIdentity()
-    clipboard.writeText(JSON.stringify(pub, null, 2))
+    clipboard.writeText(encodePublicKey(pub))
     return { ok: true, fingerprint: pub.fingerprint }
   })
 
@@ -221,5 +242,54 @@ export function registerShareIpc() {
     if (fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
     await storeTrusted(key, fp, label)
     return { ok: true, label: (label || fp).trim() || fp, fingerprint: fp }
+  })
+
+  // --- Configuration backup / restore (passphrase-encrypted) ---
+  // Bundles this install's identity keypair, the trusted-keys list, the
+  // snippet library (passed in decrypted by the renderer) and UI settings.
+  // The private identity key is read and written HERE and only ever leaves
+  // this process inside the passphrase-encrypted blob (CLAUDE.md rule 4).
+  // Diffs are deliberately excluded — they are ephemeral and auto-expiring.
+  ipcMain.handle('config:backup', async (e, snippets, settings, passphrase) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'Back up configuration',
+      defaultPath: 'diffbro-config-backup.diffbroconf',
+      filters: [{ name: 'Diff Bro configuration', extensions: ['diffbroconf'] }]
+    })
+    if (canceled || !filePath) return { canceled: true }
+
+    const identity = await getIdentity()
+    const trusted = await readTrusted()
+    const blob = sealConfig({ identity, trusted, snippets, settings }, passphrase)
+    await writeFile(filePath, blob)
+    return { ok: true, path: filePath }
+  })
+
+  ipcMain.handle('config:restore', async (e, passphrase) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title: 'Restore configuration',
+      properties: ['openFile'],
+      filters: [{ name: 'Diff Bro configuration', extensions: ['diffbroconf'] }]
+    })
+    if (canceled || !filePaths.length) return { canceled: true }
+
+    let blob
+    try {
+      const { size } = await stat(filePaths[0])
+      if (size > MAX_SHARE_FILE_BYTES) return { error: 'not-a-config-file' }
+      blob = await readFile(filePaths[0], 'utf-8')
+    } catch {
+      return { error: 'not-a-config-file' }
+    }
+
+    const res = openConfig(blob, passphrase)
+    if (!res.ok) return { error: res.error }
+
+    const { identity, trusted, snippets, settings } = res.bundle
+    if (identity?.priv && identity?.pub) await persistIdentity(identity.priv, identity.pub)
+    if (Array.isArray(trusted)) await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
+    // Snippets + settings go back to the renderer to re-import locally
+    // (re-encrypted under this machine's vault key).
+    return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
   })
 }

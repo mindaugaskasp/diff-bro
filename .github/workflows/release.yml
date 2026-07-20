@@ -25,16 +25,24 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       # package-lock.json is written by npm 11 (see Makefile's `install`
-      # target / docker/Dockerfile) — node-version 20's bundled npm 10
-      # resolves optional platform packages differently and `npm ci` then
-      # rejects the lock as out of sync. One resolver everywhere.
+      # target / docker/Dockerfile) — Node's bundled npm 10 resolves
+      # optional platform packages differently and `npm ci` then rejects the
+      # lock as out of sync. One resolver everywhere.
       - run: npm install -g npm@11
 
-      - run: npm ci
+      # Install with the output captured so the guard below can flag any
+      # NEW deprecation / engine warnings (see scripts/check-install-warnings.mjs).
+      - name: Install dependencies
+        shell: bash
+        run: npm ci 2>&1 | tee npm-ci.log
+
+      - name: Guard against unexpected install warnings
+        shell: bash
+        run: node scripts/check-install-warnings.mjs npm-ci.log
 
       # electron-builder names installers from package.json's `version`, not
       # the git tag — so a v0.1.1 tag would otherwise ship "…Setup 0.1.0.exe".

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
+import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 
 const SHARE_ERRORS = {
@@ -13,7 +14,9 @@ const SHARE_ERRORS = {
   'bad-signature': 'Signature check failed — the file was modified or corrupted.',
   expired: 'This shared diff has already expired.',
   'invalid-ttl': 'Rejected: shared diffs cannot live longer than 24 hours.',
-  'unknown-recipient': 'Recipient not found among trusted keys.'
+  'unknown-recipient': 'Recipient not found among trusted keys.',
+  renamed:
+    'This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.'
 }
 
 let noticeTimer = null
@@ -63,10 +66,13 @@ export const useDiffStore = defineStore('diff', {
     pendingTrustedKey: null,
     // Trusted-keys management dialog visibility.
     showTrustedKeysDialog: false,
+    // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
+    configMode: null,
     // Tools menu dialog visibility.
     showBase64Dialog: false,
     showJsonToolDialog: false,
     showXmlToolDialog: false,
+    showSqlToolDialog: false,
     showCryptDialog: false,
     // content string last dismissed per side, so the format-hint banner
     // stays gone until that side's content actually changes.
@@ -243,6 +249,12 @@ export const useDiffStore = defineStore('diff', {
         case 'manage-keys':
           this.showTrustedKeysDialog = true
           return
+        case 'config-backup':
+          this.configMode = 'backup'
+          return
+        case 'config-restore':
+          this.configMode = 'restore'
+          return
         case 'tools-base64':
           this.showBase64Dialog = true
           return
@@ -251,6 +263,9 @@ export const useDiffStore = defineStore('diff', {
           return
         case 'tools-xml':
           this.showXmlToolDialog = true
+          return
+        case 'tools-sql':
+          this.showSqlToolDialog = true
           return
         case 'tools-crypt':
           this.showCryptDialog = true
@@ -344,6 +359,26 @@ export const useDiffStore = defineStore('diff', {
     },
     cancelTrustedKey() {
       this.pendingTrustedKey = null
+    },
+    // --- configuration backup / restore ---
+    async runConfigBackup(passphrase) {
+      const snippets = await useSnippetStore().fullBundle()
+      const settings = { theme: this.theme }
+      const res = await window.api.backupConfig(snippets, settings, passphrase)
+      if (res.ok) this.showNotice(`Configuration backed up to ${res.path}`)
+      else if (!res.canceled) this.showNotice('Backup failed.')
+    },
+    async runConfigRestore(passphrase) {
+      const res = await window.api.restoreConfig(passphrase)
+      if (res.ok) {
+        if (res.snippets) await useSnippetStore().restoreBundle(res.snippets)
+        if (res.settings?.theme && res.settings.theme !== this.theme) this.toggleTheme()
+        this.showNotice('Configuration restored — identity keys and trusted hosts are updated.')
+      } else if (res.error === 'wrong-passphrase') {
+        this.showNotice('Wrong passphrase, or the file is corrupted.')
+      } else if (res.error) {
+        this.showNotice('That file is not a Diff Bro configuration backup.')
+      }
     }
   }
 })

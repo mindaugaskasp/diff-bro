@@ -3,9 +3,12 @@ import {
   MAX_TTL_MS,
   SHARE_FORMAT,
   createIdentityKeys,
+  decodePublicKey,
+  encodePublicKey,
   fingerprint,
   openSealed,
   sealEntry,
+  shareFilename,
   ttlError
 } from '../../src/main/sealing'
 
@@ -36,6 +39,62 @@ function makePeers() {
     )
   return { alice, bob, bobTrustsAlice, seal }
 }
+
+describe('format versioning / revocation', () => {
+  it('refuses a sealed file whose format version does not match this release', () => {
+    const { seal, bob, bobTrustsAlice } = makePeers()
+    const file = seal()
+    const wrongVersion = { ...file, format: 'diffbro-share/1' }
+    expect(openSealed(wrongVersion, bob, bobTrustsAlice)).toEqual({ error: 'not-a-share-file' })
+  })
+
+  it('the current sealed format still opens (sanity)', () => {
+    const { seal, bob, bobTrustsAlice } = makePeers()
+    expect(openSealed(seal(), bob, bobTrustsAlice).ok).toBe(true)
+    expect(SHARE_FORMAT).toBe('diffbro-share/2')
+  })
+})
+
+describe('public-key obfuscation', () => {
+  it('encodes to an opaque, non-JSON envelope and round-trips', () => {
+    const { pub } = createIdentityKeys()
+    const encoded = encodePublicKey(pub)
+    expect(encoded.startsWith('dbk1:')).toBe(true)
+    expect(encoded).not.toContain('BEGIN PUBLIC KEY') // not plainly readable
+    expect(() => JSON.parse(encoded)).toThrow() // not JSON in a text editor
+    expect(decodePublicKey(encoded)).toEqual(pub)
+  })
+
+  it('still decodes a legacy plain-JSON key file (backward compatible)', () => {
+    const { pub } = createIdentityKeys()
+    expect(decodePublicKey(JSON.stringify(pub, null, 2))).toEqual(pub)
+  })
+})
+
+describe('shareFilename', () => {
+  it('derives a fixed-length .diffbro name from the ciphertext', () => {
+    const { seal } = makePeers()
+    const name = shareFilename(seal())
+    expect(name).toMatch(/^[0-9a-f]{32}\.diffbro$/)
+  })
+
+  it('reveals nothing about the entry name (two names -> different files, same shape)', () => {
+    const { seal } = makePeers()
+    const a = shareFilename(seal(makeEntry({ name: 'quarterly-financials' })))
+    const b = shareFilename(seal(makeEntry({ name: 'x' })))
+    expect(a).toMatch(/^[0-9a-f]{32}\.diffbro$/)
+    expect(b).toMatch(/^[0-9a-f]{32}\.diffbro$/)
+    expect(a).not.toBe(b) // different ciphertext (fresh ephemeral key each seal)
+  })
+
+  it('changes if the ciphertext is altered (so a tampered file also renames)', () => {
+    const { seal } = makePeers()
+    const file = seal()
+    const before = shareFilename(file)
+    const after = shareFilename({ ...file, ciphertext: file.ciphertext.slice(1) })
+    expect(after).not.toBe(before)
+  })
+})
 
 describe('identity', () => {
   it('creates keys whose stated fingerprint matches a recomputation', () => {

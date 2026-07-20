@@ -49,23 +49,20 @@ export function installMenu() {
           click: () => sendToFocused('open-right')
         },
         { type: 'separator' },
-        { label: 'Save Diff…', accelerator: 'CmdOrCtrl+S', click: () => sendToFocused('save') },
+        { label: 'Save', accelerator: 'CmdOrCtrl+S', click: () => sendToFocused('save') },
+        { label: 'Share', accelerator: 'CmdOrCtrl+E', click: () => sendToFocused('share-current') },
         {
-          label: 'Share Diff…',
-          accelerator: 'CmdOrCtrl+E',
-          click: () => sendToFocused('share-current')
-        },
-        { type: 'separator' },
-        {
-          label: 'Import Shared Diff…',
+          label: 'Import',
           accelerator: 'CmdOrCtrl+I',
           click: () => sendToFocused('import-shared')
         },
-        { label: 'Copy My Public Key', click: () => sendToFocused('copy-pubkey') },
-        { label: 'Export My Public Key…', click: () => sendToFocused('export-pubkey') },
-        { label: 'Add Trusted Key…', click: () => sendToFocused('add-trusted-key') },
-        { label: 'Manage Trusted Keys…', click: () => sendToFocused('manage-keys') },
         { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
         {
           label: 'Swap Sides',
           accelerator: 'CmdOrCtrl+Shift+S',
@@ -77,9 +74,7 @@ export function installMenu() {
           label: 'Paste Text Mode',
           accelerator: 'CmdOrCtrl+T',
           click: () => sendToFocused('toggle-paste')
-        },
-        { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' }
+        }
       ]
     },
     {
@@ -103,6 +98,19 @@ export function installMenu() {
       ]
     },
     {
+      label: 'Security',
+      submenu: [
+        { label: 'Copy My Public Key', click: () => sendToFocused('copy-pubkey') },
+        { label: 'Export My Public Key…', click: () => sendToFocused('export-pubkey') },
+        { type: 'separator' },
+        { label: 'Add Trusted Key…', click: () => sendToFocused('add-trusted-key') },
+        { label: 'Manage Trusted Keys…', click: () => sendToFocused('manage-keys') },
+        { type: 'separator' },
+        { label: 'Back Up Configuration…', click: () => sendToFocused('config-backup') },
+        { label: 'Restore Configuration…', click: () => sendToFocused('config-restore') }
+      ]
+    },
+    {
       label: 'Tools',
       submenu: [
         {
@@ -119,6 +127,11 @@ export function installMenu() {
           label: 'XML Format/Validate…',
           accelerator: 'CmdOrCtrl+Shift+M',
           click: () => sendToFocused('tools-xml')
+        },
+        {
+          label: 'SQL Format/Validate…',
+          accelerator: 'CmdOrCtrl+Shift+Q',
+          click: () => sendToFocused('tools-sql')
         },
         {
           label: 'Encrypt/Decrypt Text…',

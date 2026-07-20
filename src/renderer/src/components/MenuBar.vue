@@ -19,21 +19,21 @@ const menus = [
       { label: 'Open Left…', keys: `${MOD}+1`, run: () => store.handleMenuAction('open-left') },
       { label: 'Open Right…', keys: `${MOD}+2`, run: () => store.handleMenuAction('open-right') },
       { sep: true },
-      { label: 'Save Diff…', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
-      { label: 'Share Diff…', keys: `${MOD}+E`, run: () => store.shareCurrent() },
+      { label: 'Save', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
+      { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
+      { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
       { sep: true },
-      { label: 'Import Shared Diff…', keys: `${MOD}+I`, run: () => store.importShared() },
-      { label: 'Copy My Public Key', run: () => store.copyPublicKey() },
-      { label: 'Export My Public Key…', run: () => store.exportPublicKey() },
-      { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
-      { label: 'Manage Trusted Keys…', run: () => store.handleMenuAction('manage-keys') },
-      { sep: true },
+      { label: 'Quit', run: () => window.api.quit() }
+    ]
+  },
+  {
+    id: 'edit',
+    label: 'Edit',
+    items: [
       { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => store.swap() },
       { label: 'Clear', keys: `${MOD}+K`, run: () => store.clear() },
       { sep: true },
-      { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() },
-      { sep: true },
-      { label: 'Quit', run: () => window.api.quit() }
+      { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() }
     ]
   },
   {
@@ -55,6 +55,20 @@ const menus = [
     ]
   },
   {
+    id: 'security',
+    label: 'Security',
+    items: [
+      { label: 'Copy My Public Key', run: () => store.copyPublicKey() },
+      { label: 'Export My Public Key…', run: () => store.exportPublicKey() },
+      { sep: true },
+      { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
+      { label: 'Manage Trusted Keys…', run: () => store.handleMenuAction('manage-keys') },
+      { sep: true },
+      { label: 'Back Up Configuration…', run: () => store.handleMenuAction('config-backup') },
+      { label: 'Restore Configuration…', run: () => store.handleMenuAction('config-restore') }
+    ]
+  },
+  {
     id: 'tools',
     label: 'Tools',
     items: [
@@ -72,6 +86,11 @@ const menus = [
         label: 'XML Format/Validate…',
         keys: `${MOD}+Shift+M`,
         run: () => store.handleMenuAction('tools-xml')
+      },
+      {
+        label: 'SQL Format/Validate…',
+        keys: `${MOD}+Shift+Q`,
+        run: () => store.handleMenuAction('tools-sql')
       },
       {
         label: 'Encrypt/Decrypt Text…',

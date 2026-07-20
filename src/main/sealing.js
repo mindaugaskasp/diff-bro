@@ -24,11 +24,19 @@ import {
   verify
 } from 'crypto'
 
+// Versioned wire formats. These are the ONLY versions this release writes and
+// accepts — both key parsing and openSealed require an exact match, so a file
+// in any other version is refused. Rotation / revocation policy: if a format
+// is ever found vulnerable, bump its version here (e.g. `diffbro-key/2`) and
+// ship it in a new release. From that release on, files in the old version
+// stop opening (exact-match rejection) and every new file is written in the
+// new version — a compromised format can't be reused. `HKDF_INFO` and the GCM
+// AAD are tied to SHARE_FORMAT, so a share-format bump also re-keys/re-binds.
 export const KEY_FORMAT = 'diffbro-key/1'
 export const SHARE_FORMAT = 'diffbro-share/2'
 export const MAX_TTL_MS = 24 * 3600 * 1000
 
-const HKDF_INFO = 'diffbro-share/2'
+const HKDF_INFO = SHARE_FORMAT
 
 // Fingerprint covers both public keys, so neither can be swapped alone.
 export function fingerprint(signPem, boxPem) {
@@ -72,6 +80,25 @@ const deriveKey = (ecdhSecret, salt) =>
 const signedData = (payload, recipientFp) => Buffer.concat([payload, Buffer.from(recipientFp)])
 const aadFor = (recipientFp) => Buffer.from(`${SHARE_FORMAT}|${recipientFp}`)
 
+// .diffbrokey obfuscation. A public key isn't secret (it's meant to be
+// shared), so this is deliberately obfuscation, not encryption: it just keeps
+// the file from being plainly readable/parseable in a text editor. New
+// exports get the `dbk1:` base64 envelope; import still accepts legacy plain
+// JSON so keys exchanged with older versions keep working. The fingerprint is
+// always recomputed from the decoded key material, so the encoding is never
+// trusted for integrity.
+const KEY_ENVELOPE_PREFIX = 'dbk1:'
+export function encodePublicKey(pub) {
+  return KEY_ENVELOPE_PREFIX + Buffer.from(JSON.stringify(pub)).toString('base64')
+}
+export function decodePublicKey(text) {
+  const t = String(text).trim()
+  if (t.startsWith(KEY_ENVELOPE_PREFIX)) {
+    return JSON.parse(Buffer.from(t.slice(KEY_ENVELOPE_PREFIX.length), 'base64').toString('utf8'))
+  }
+  return JSON.parse(t) // legacy plain-JSON key file
+}
+
 export function hasShareShape(file) {
   return !!(
     file &&
@@ -81,6 +108,17 @@ export function hasShareShape(file) {
     file.iv &&
     file.tag &&
     file.ciphertext
+  )
+}
+
+// The on-disk filename is derived from the (GCM-authenticated) ciphertext, so
+// it reveals nothing about the diff's name/content and lets the opener detect
+// a renamed file: import recomputes this and refuses to read a mismatch. The
+// ciphertext is already tamper-evident via its GCM tag, so this only needs to
+// bind the name to the bytes, not re-authenticate them.
+export function shareFilename(file) {
+  return (
+    createHash('sha256').update(String(file.ciphertext)).digest('hex').slice(0, 32) + '.diffbro'
   )
 }
 

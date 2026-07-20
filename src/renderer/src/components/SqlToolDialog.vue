@@ -3,35 +3,24 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
-import { formatJson, validateJson } from '../utils/textFormats'
+import { formatSql, validateSql } from '../utils/sqlFormat'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
-
-function addToSnippets() {
-  snippets.startNewSnippetFrom(input.value, 'json')
-  close()
-}
 const container = ref(null)
 const input = ref('')
 let editor = null
 
-// Recomputed on every keystroke via the editor's change event below — cheap
-// (JSON.parse), and drives both the status line and Monaco's own inline
-// error squiggle (the json.worker wired in monaco-setup.js does that part
-// automatically once the model's language is 'json').
-const status = computed(() => (input.value.trim() ? validateJson(input.value) : null))
+const status = computed(() => (input.value.trim() ? validateSql(input.value) : null))
 const statusText = computed(() => {
   if (!status.value) return ''
-  if (status.value.valid) return 'Valid JSON'
-  const loc = status.value.line ? ` (line ${status.value.line}, column ${status.value.column})` : ''
-  return `Invalid${loc}: ${status.value.error}`
+  return status.value.valid ? 'Looks valid' : `Invalid: ${status.value.error}`
 })
 
 onMounted(() => {
   editor = monaco.editor.create(container.value, {
     value: input.value,
-    language: 'json',
+    language: 'sql',
     theme: store.theme === 'light' ? 'vs' : 'vs-dark',
     automaticLayout: true,
     minimap: { enabled: false },
@@ -44,7 +33,6 @@ onMounted(() => {
   })
 })
 
-// Keep the editor in sync when `format()` rewrites `input` programmatically.
 watch(input, (value) => {
   if (editor && editor.getValue() !== value) editor.setValue(value)
 })
@@ -58,7 +46,7 @@ onBeforeUnmount(() => {
 })
 
 function format() {
-  if (status.value?.valid) input.value = formatJson(input.value)
+  input.value = formatSql(input.value)
 }
 
 async function copy() {
@@ -66,8 +54,13 @@ async function copy() {
   store.showNotice('Copied to clipboard.')
 }
 
+function addToSnippets() {
+  snippets.startNewSnippetFrom(input.value, 'sql')
+  close()
+}
+
 function close() {
-  store.showJsonToolDialog = false
+  store.showSqlToolDialog = false
 }
 </script>
 
@@ -75,15 +68,19 @@ function close() {
   <div class="backdrop">
     <div class="dialog">
       <div class="dialog-header">
-        <h3>JSON Format / Validate</h3>
+        <h3>SQL Format / Validate</h3>
         <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
       </div>
       <div ref="container" class="editor"></div>
       <p v-if="status" class="status" :class="{ valid: status.valid, invalid: !status.valid }">
         {{ statusText }}
       </p>
+      <p class="note">
+        Best-effort formatting/validation — not a full SQL parser, so treat "looks valid" as a smoke
+        test, not a guarantee.
+      </p>
       <div class="actions">
-        <button class="primary" :disabled="!status?.valid" @click="format">Format</button>
+        <button class="primary" :disabled="!input" @click="format">Format</button>
         <button class="ghost" :disabled="!input" @click="copy">Copy</button>
         <button class="ghost" :disabled="!input" @click="addToSnippets">Add to Snippets</button>
         <button class="ghost" @click="close">Close</button>
@@ -151,6 +148,12 @@ h3 {
 }
 .status.invalid {
   color: var(--danger-bg);
+}
+.note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
 }
 .actions {
   display: flex;

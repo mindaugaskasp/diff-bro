@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 
 // Recipient picker with built-in first-time setup: if this install has no
@@ -10,6 +10,7 @@ const diff = useDiffStore()
 
 const recipients = ref([])
 const selected = ref(null)
+const selectedFingerprint = computed(() => selected.value)
 const myFingerprint = ref('')
 const exportedPath = ref(null)
 const copied = ref(false)
@@ -59,10 +60,11 @@ function close() {
         Seal for recipient
         <select v-model="selected">
           <option v-for="r in recipients" :key="r.fingerprint" :value="r.fingerprint">
-            {{ r.label }} ({{ r.fingerprint }})
+            {{ r.label }} · {{ r.fingerprint.slice(0, 8) }}…
           </option>
         </select>
       </label>
+      <p v-if="selectedFingerprint" class="fp-hint">Fingerprint: {{ selectedFingerprint }}</p>
       <p class="note">
         The file is encrypted so only this recipient can open it, and signed so any modification —
         including its expiry time — is rejected. It expires at the same moment as your local copy.
@@ -198,6 +200,12 @@ select:focus {
   font-size: 11px;
   color: var(--text-dim);
   line-height: 1.5;
+}
+.fp-hint {
+  margin: -4px 0 0;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--text-hint);
 }
 code {
   color: var(--text);

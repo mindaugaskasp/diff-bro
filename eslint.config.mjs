@@ -29,7 +29,7 @@ export default [
 
   // Main + preload: Node process, Electron allowed.
   {
-    files: ['src/main/**', 'src/preload/**', 'electron.vite.config.mjs'],
+    files: ['src/main/**', 'src/preload/**', 'electron.vite.config.mjs', 'scripts/**'],
     languageOptions: { globals: { ...globals.node } }
   },
 

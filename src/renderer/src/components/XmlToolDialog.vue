@@ -32,6 +32,7 @@ onMounted(() => {
     automaticLayout: true,
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
+    contextmenu: false,
     fontSize: 12.5
   })
   editor.onDidChangeModelContent(() => {

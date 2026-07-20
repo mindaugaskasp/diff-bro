@@ -4,7 +4,9 @@
 #   packaging — adds wine so electron-builder can produce the Windows installer.
 #               amd64 only; see docker/README.md.
 # Neither service may rely on the default (last) stage — both set `target:`.
-FROM node:20-bookworm-slim AS dev
+# Node 22: electron-builder's rebuild toolchain (@electron/rebuild,
+# node-abi) declares engines >=22.12, so Node 20 emits EBADENGINE warnings.
+FROM node:22-bookworm-slim AS dev
 
 ENV DEBIAN_FRONTEND=noninteractive
 

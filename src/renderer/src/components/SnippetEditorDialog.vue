@@ -42,6 +42,7 @@ onMounted(async () => {
     automaticLayout: true,
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
+    contextmenu: false,
     fontSize: 12.5
   })
   editor.onDidChangeModelContent(() => {
@@ -95,6 +96,20 @@ async function save() {
 function close() {
   store.editingSnippet = null
 }
+
+// Dropping a file onto the editor loads its contents (handled here, with
+// capture + stop, so the window-level diff drop handler never sees it).
+async function onDropFile(e) {
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+  const path = window.api.getPathForFile(file)
+  if (!path) return
+  const res = await window.api.readFile(path)
+  if (res && !res.error && res.content != null) {
+    content.value = res.content
+    if (!name.value.trim()) name.value = res.name
+  }
+}
 </script>
 
 <template>
@@ -117,7 +132,7 @@ function close() {
         </label>
       </div>
       <div class="editor-header">
-        <span>Content</span>
+        <span>Content <span class="drop-hint">— or drop a file here</span></span>
         <label class="lang-picker">
           Syntax
           <select v-model="chosenLanguage">
@@ -126,7 +141,12 @@ function close() {
           <span v-if="chosenLanguage === 'auto'" class="lang-detected">→ {{ language }}</span>
         </label>
       </div>
-      <div ref="container" class="editor"></div>
+      <div
+        ref="container"
+        class="editor"
+        @dragover.capture.prevent.stop
+        @drop.capture.prevent.stop="onDropFile"
+      ></div>
       <div class="actions">
         <button class="primary" :disabled="!name.trim() || saving" @click="save">Save</button>
         <button class="ghost" @click="close">Cancel</button>
@@ -213,6 +233,10 @@ select:focus {
   justify-content: space-between;
   font-size: 12px;
   color: var(--text-dim);
+}
+.drop-hint {
+  color: var(--text-hint);
+  font-size: 11px;
 }
 .lang-picker {
   flex-direction: row;

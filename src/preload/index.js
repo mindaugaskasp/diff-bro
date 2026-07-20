@@ -29,6 +29,11 @@ contextBridge.exposeInMainWorld('api', {
   addTrustedKeyNamed: (key, label) => ipcRenderer.invoke('share:addTrustedKeyNamed', key, label),
   renameTrusted: (fp, label) => ipcRenderer.invoke('share:renameTrusted', fp, label),
   removeTrusted: (fp) => ipcRenderer.invoke('share:removeTrusted', fp),
+  // Configuration backup/restore (passphrase-encrypted; identity keys stay
+  // in the main process, only travelling inside the encrypted blob).
+  backupConfig: (snippets, settings, passphrase) =>
+    ipcRenderer.invoke('config:backup', snippets, settings, passphrase),
+  restoreConfig: (passphrase) => ipcRenderer.invoke('config:restore', passphrase),
   // Snippets export/import: passphrase-protected + signed, no recipient
   // setup needed (see snippetSealing.js).
   exportSnippets: (bundle, passphrase, defaultName) =>

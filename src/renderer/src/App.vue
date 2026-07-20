@@ -13,6 +13,7 @@ import FormatHintBanner from './components/FormatHintBanner.vue'
 import Base64Dialog from './components/Base64Dialog.vue'
 import JsonToolDialog from './components/JsonToolDialog.vue'
 import XmlToolDialog from './components/XmlToolDialog.vue'
+import SqlToolDialog from './components/SqlToolDialog.vue'
 import EncryptDecryptDialog from './components/EncryptDecryptDialog.vue'
 import SnippetEditorDialog from './components/SnippetEditorDialog.vue'
 import SnippetPassphraseDialog from './components/SnippetPassphraseDialog.vue'
@@ -20,6 +21,7 @@ import SnippetDeleteDialog from './components/SnippetDeleteDialog.vue'
 import VaultCategoryDeleteDialog from './components/VaultCategoryDeleteDialog.vue'
 import AddTrustedKeyDialog from './components/AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './components/TrustedKeysDialog.vue'
+import ConfigBackupDialog from './components/ConfigBackupDialog.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useVaultStore } from './stores/vaultStore'
 import { MOD, isMac } from './keys'
@@ -80,7 +82,9 @@ function hasFiles(e) {
   return Array.from(e.dataTransfer?.types ?? []).includes('Files')
 }
 function onDragEnter(e) {
-  if (!hasFiles(e)) return
+  // The snippet editor handles its own file drops; don't show the diff
+  // drop overlay over it.
+  if (!hasFiles(e) || snippets.editingSnippet) return
   dragDepth.value += 1
   dragActive.value = true
 }
@@ -91,7 +95,7 @@ function onDragLeave() {
 async function onDrop(e) {
   dragDepth.value = 0
   dragActive.value = false
-  if (!hasFiles(e)) return
+  if (!hasFiles(e) || snippets.editingSnippet) return
   const paths = Array.from(e.dataTransfer.files)
     .map((f) => window.api.getPathForFile(f))
     .filter(Boolean)
@@ -210,10 +214,12 @@ async function onDrop(e) {
     <SaveDiffDialog v-if="store.showSaveDialog" />
     <ShareDiffDialog v-if="store.shareEntryId" />
     <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
+    <ConfigBackupDialog v-if="store.configMode" />
     <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
     <Base64Dialog v-if="store.showBase64Dialog" />
     <JsonToolDialog v-if="store.showJsonToolDialog" />
     <XmlToolDialog v-if="store.showXmlToolDialog" />
+    <SqlToolDialog v-if="store.showSqlToolDialog" />
     <EncryptDecryptDialog v-if="store.showCryptDialog" />
     <SnippetEditorDialog v-if="snippets.editingSnippet" />
     <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />
