@@ -4,7 +4,7 @@
 
 # Diff Bro
 
-An **offline-only** desktop diff viewer for Windows and macOS — GitHub-style
+An **offline-only** desktop diff viewer / sharing app for Windows and macOS — GitHub-style
 rendering, serious about privacy. Electron + Vue 3 + Pinia + Monaco.
 
 It never makes a network request: files stay on your machine, enforced by a
