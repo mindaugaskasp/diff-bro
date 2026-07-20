@@ -87,7 +87,18 @@ function deleteCategoryTitle(category) {
       <span>Snippets</span>
     </div>
     <div class="head-actions">
-      <button class="action" title="New category" @click="startAddCategory">+ New</button>
+      <button
+        class="action primary"
+        title="Create a new snippet"
+        @click="newSnippet(store.defaultCategoryId)"
+      >
+        + New snippet
+      </button>
+    </div>
+    <div class="head-actions secondary">
+      <button class="action" title="Add a category to organize snippets" @click="startAddCategory">
+        + Category
+      </button>
       <button
         class="action"
         title="Export all snippets to a passphrase-protected file"
@@ -126,9 +137,9 @@ function deleteCategoryTitle(category) {
       />
     </div>
 
-    <p v-if="!store.categories.length && !addingCategory" class="empty">
-      Press <strong>New</strong> to add a category, then add snippets — saved encrypted, organized
-      however you like, and exportable as a passphrase-protected file.
+    <p v-if="!store.entries.length && !addingCategory" class="empty">
+      Press <strong>New snippet</strong> to create one — saved encrypted, organized into categories,
+      and exportable as a passphrase-protected file.
     </p>
 
     <ul v-if="visibleFavorites().length" class="favorites-group">
@@ -233,8 +244,11 @@ function deleteCategoryTitle(category) {
 .head-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 0 10px 8px;
+}
+.head-actions.secondary {
+  gap: 6px;
 }
 .action {
   flex: 1;
@@ -257,6 +271,20 @@ function deleteCategoryTitle(category) {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--bg-hover);
+}
+/* Primary "New snippet" — the main action, so it reads clearly above the
+   secondary category/export/import row. */
+.action.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 8px;
+}
+.action.primary:hover {
+  filter: brightness(1.08);
+  color: #fff;
 }
 .icon {
   display: inline-flex;

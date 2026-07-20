@@ -4,8 +4,12 @@ import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { formatSql, validateSql } from '../utils/sqlFormat'
+import { useFileTextDrop } from '../composables/useFileDrop'
 
 const store = useDiffStore()
+const { onDropFile } = useFileTextDrop((text) => {
+  input.value = text
+})
 const snippets = useSnippetStore()
 const container = ref(null)
 const input = ref('')
@@ -71,7 +75,13 @@ function close() {
         <h3>SQL Format / Validate</h3>
         <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
       </div>
-      <div ref="container" class="editor"></div>
+      <div
+        ref="container"
+        class="editor"
+        title="Drop a file here to load it"
+        @dragover.capture.prevent.stop
+        @drop.capture.prevent.stop="onDropFile"
+      ></div>
       <p v-if="status" class="status" :class="{ valid: status.valid, invalid: !status.valid }">
         {{ statusText }}
       </p>

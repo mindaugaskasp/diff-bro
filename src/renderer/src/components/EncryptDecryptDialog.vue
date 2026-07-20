@@ -2,9 +2,13 @@
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
+import { useFileTextDrop } from '../composables/useFileDrop'
 
 const store = useDiffStore()
 const input = ref('')
+const { onDropFile } = useFileTextDrop((text) => {
+  input.value = text
+})
 const output = ref('')
 const passphrase = ref('')
 const error = ref(null)
@@ -80,7 +84,9 @@ function close() {
         <textarea
           v-model="input"
           spellcheck="false"
-          placeholder="Plain text to encrypt, or an encrypted blob to decrypt…"
+          placeholder="Plain text to encrypt, or an encrypted blob to decrypt… (or drop a file here)"
+          @dragover.capture.prevent.stop
+          @drop.capture.prevent.stop="onDropFile"
         ></textarea>
       </label>
       <div class="row">

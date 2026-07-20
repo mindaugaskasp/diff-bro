@@ -3,10 +3,14 @@ import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { base64Decode, base64Encode } from '../utils/base64'
+import { useFileTextDrop } from '../composables/useFileDrop'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
 const input = ref('')
+const { onDropFile } = useFileTextDrop((text) => {
+  input.value = text
+})
 const output = ref('')
 const error = ref(null)
 
@@ -55,7 +59,13 @@ function close() {
       </div>
       <label>
         Input
-        <textarea v-model="input" spellcheck="false" placeholder="Text or Base64…"></textarea>
+        <textarea
+          v-model="input"
+          spellcheck="false"
+          placeholder="Text or Base64… (or drop a file here)"
+          @dragover.capture.prevent.stop
+          @drop.capture.prevent.stop="onDropFile"
+        ></textarea>
       </label>
       <div class="actions">
         <button class="primary" @click="encode">Encode →</button>

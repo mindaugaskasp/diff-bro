@@ -1,4 +1,4 @@
-import { BrowserWindow, app, screen } from 'electron'
+import { BrowserWindow, Menu, app, screen } from 'electron'
 import { writeFile } from 'fs/promises'
 import { readFileSync } from 'fs'
 import { join } from 'path'
@@ -89,6 +89,27 @@ export function createWindow() {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   win.webContents.on('will-navigate', (e, url) => {
     if (!DEV_URL || !url.startsWith(DEV_URL)) e.preventDefault()
+  })
+
+  // Native right-click menu: Cut/Copy/Paste in editable fields (so the snippet
+  // editor, paste panes, and tool inputs behave like any OS text field), and
+  // Copy in read-only content like the diff viewer. Uses menu roles, so the
+  // clipboard works on every platform regardless of the app menu.
+  win.webContents.on('context-menu', (_e, params) => {
+    const { editFlags, isEditable, selectionText } = params
+    const items = []
+    if (isEditable) {
+      items.push(
+        { role: 'cut', enabled: editFlags.canCut },
+        { role: 'copy', enabled: editFlags.canCopy },
+        { role: 'paste', enabled: editFlags.canPaste }
+      )
+    } else if (selectionText?.trim()) {
+      items.push({ role: 'copy', enabled: editFlags.canCopy })
+    }
+    if (!items.length) return
+    items.push({ type: 'separator' }, { role: 'selectAll' })
+    Menu.buildFromTemplate(items).popup({ window: win })
   })
 
   // autoHideMenuBar still reveals the native bar on Alt — suppress that too.

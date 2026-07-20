@@ -4,9 +4,13 @@ import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { formatJson, validateJson } from '../utils/textFormats'
+import { useFileTextDrop } from '../composables/useFileDrop'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
+const { onDropFile } = useFileTextDrop((text) => {
+  input.value = text
+})
 
 function addToSnippets() {
   snippets.startNewSnippetFrom(input.value, 'json')
@@ -78,7 +82,13 @@ function close() {
         <h3>JSON Format / Validate</h3>
         <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
       </div>
-      <div ref="container" class="editor"></div>
+      <div
+        ref="container"
+        class="editor"
+        title="Drop a file here to load it"
+        @dragover.capture.prevent.stop
+        @drop.capture.prevent.stop="onDropFile"
+      ></div>
       <p v-if="status" class="status" :class="{ valid: status.valid, invalid: !status.valid }">
         {{ statusText }}
       </p>

@@ -97,6 +97,19 @@ function close() {
   store.editingSnippet = null
 }
 
+async function copyContent() {
+  if (!content.value) return
+  await navigator.clipboard.writeText(content.value)
+  diff.showNotice('Copied snippet to clipboard.')
+}
+
+// Clear the editor — handy for wiping pasted content before it's saved.
+function clearContent() {
+  content.value = ''
+  editor?.setValue('')
+  editor?.focus()
+}
+
 // Dropping a file onto the editor loads its contents (handled here, with
 // capture + stop, so the window-level diff drop handler never sees it).
 async function onDropFile(e) {
@@ -148,6 +161,18 @@ async function onDropFile(e) {
         @drop.capture.prevent.stop="onDropFile"
       ></div>
       <div class="actions">
+        <button class="ghost small" :disabled="!content" title="Copy content" @click="copyContent">
+          Copy
+        </button>
+        <button
+          class="ghost small"
+          :disabled="!content"
+          title="Clear the editor (e.g. remove pasted content)"
+          @click="clearContent"
+        >
+          Clear
+        </button>
+        <span class="spacer" />
         <button class="primary" :disabled="!name.trim() || saving" @click="save">Save</button>
         <button class="ghost" @click="close">Cancel</button>
       </div>
@@ -260,8 +285,16 @@ select:focus {
 }
 .actions {
   display: flex;
+  align-items: center;
   gap: 8px;
   justify-content: flex-end;
+}
+.spacer {
+  flex: 1;
+}
+.ghost.small {
+  padding: 4px 10px;
+  font-size: 12px;
 }
 .primary {
   background: var(--accent);

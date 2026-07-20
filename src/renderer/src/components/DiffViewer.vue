@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 
@@ -9,86 +9,80 @@ const container = ref(null)
 let editor = null
 let leftModel = null
 let rightModel = null
-
-// --- Search state ---
-const query = ref('')
-const isRegex = ref(false)
-const matchCount = ref(0)
-const currentIndex = ref(0) // 1-based; 0 = none
-const searchError = ref(false)
-let matches = [] // [{ side: 'original' | 'modified', range }]
 let origDecos = null
 let modDecos = null
 
-function subEditor(side) {
-  return side === 'original' ? editor.getOriginalEditor() : editor.getModifiedEditor()
-}
+// Each side searches only its own model, with its own query, match count, and
+// navigation — the left and right panes are independent.
+function makeSearch(getModel, getSubEditor, getDecos) {
+  const state = reactive({
+    query: '',
+    isRegex: false,
+    matchCount: 0,
+    currentIndex: 0,
+    error: false
+  })
+  let matches = []
 
-function clearMatches() {
-  matches = []
-  matchCount.value = 0
-  currentIndex.value = 0
-  origDecos?.set([])
-  modDecos?.set([])
-}
-
-function runSearch() {
-  if (!editor || !leftModel || !rightModel) return
-  searchError.value = false
-  const q = query.value
-  if (!q) {
-    clearMatches()
-    return
+  function clear() {
+    matches = []
+    state.matchCount = 0
+    state.currentIndex = 0
+    getDecos()?.set([])
   }
-  const collect = (model, side) => {
+  function apply() {
+    getDecos()?.set(
+      matches.map((range, i) => ({
+        range,
+        options: {
+          className: i === state.currentIndex - 1 ? 'dv-find-current' : 'dv-find-match',
+          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+        }
+      }))
+    )
+  }
+  function reveal(idx) {
+    const range = matches[idx]
+    if (range) getSubEditor()?.revealRangeInCenterIfOutsideViewport(range)
+  }
+  function run() {
+    state.error = false
+    const model = getModel()
+    if (!state.query || !model) return clear()
     try {
       // findMatches(search, searchScope, isRegex, matchCase, wordSeparators, captureMatches)
-      return model
-        .findMatches(q, false, isRegex.value, false, null, false)
-        .map((m) => ({ side, range: m.range }))
+      matches = model
+        .findMatches(state.query, false, state.isRegex, false, null, false)
+        .map((m) => m.range)
     } catch {
-      searchError.value = true
-      return []
+      state.error = true
+      matches = []
     }
+    state.matchCount = matches.length
+    state.currentIndex = matches.length ? 1 : 0
+    apply()
+    if (matches.length) reveal(0)
   }
-  matches = [...collect(leftModel, 'original'), ...collect(rightModel, 'modified')]
-  matchCount.value = matches.length
-  currentIndex.value = matches.length ? 1 : 0
-  applyDecorations()
-  if (matches.length) reveal(0)
+  function step(delta) {
+    if (!state.matchCount) return
+    state.currentIndex =
+      ((state.currentIndex - 1 + delta + state.matchCount) % state.matchCount) + 1
+    apply()
+    reveal(state.currentIndex - 1)
+  }
+  return Object.assign(state, { run, step })
 }
 
-function applyDecorations() {
-  const build = (side) =>
-    matches
-      .map((m, i) =>
-        m.side === side
-          ? {
-              range: m.range,
-              options: {
-                className: i === currentIndex.value - 1 ? 'dv-find-current' : 'dv-find-match',
-                stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
-              }
-            }
-          : null
-      )
-      .filter(Boolean)
-  origDecos?.set(build('original'))
-  modDecos?.set(build('modified'))
-}
-
-function reveal(idx) {
-  const m = matches[idx]
-  if (!m) return
-  subEditor(m.side).revealRangeInCenterIfOutsideViewport(m.range)
-}
-
-function step(delta) {
-  if (!matchCount.value) return
-  currentIndex.value = ((currentIndex.value - 1 + delta + matchCount.value) % matchCount.value) + 1
-  applyDecorations()
-  reveal(currentIndex.value - 1)
-}
+const leftSearch = makeSearch(
+  () => leftModel,
+  () => editor?.getOriginalEditor(),
+  () => origDecos
+)
+const rightSearch = makeSearch(
+  () => rightModel,
+  () => editor?.getModifiedEditor(),
+  () => modDecos
+)
 
 function setModels() {
   const left = store.leftComparable
@@ -100,7 +94,9 @@ function setModels() {
   leftModel = monaco.editor.createModel(left.text, left.language)
   rightModel = monaco.editor.createModel(right.text, right.language)
   editor.setModel({ original: leftModel, modified: rightModel })
-  runSearch() // re-apply an active query to the new content
+  // Re-apply any active queries to the new content.
+  leftSearch.run()
+  rightSearch.run()
 }
 
 onMounted(() => {
@@ -133,7 +129,8 @@ onMounted(() => {
 })
 
 watch(() => [store.left, store.right], setModels)
-watch([query, isRegex], runSearch)
+watch(() => [leftSearch.query, leftSearch.isRegex], leftSearch.run)
+watch(() => [rightSearch.query, rightSearch.isRegex], rightSearch.run)
 watch(
   () => [store.renderSideBySide, store.ignoreTrimWhitespace],
   ([split, ignoreWs]) => {
@@ -155,29 +152,48 @@ onBeforeUnmount(() => {
 <template>
   <div class="diff-viewer">
     <div class="search">
-      <input
-        v-model="query"
-        type="search"
-        class="search-input"
-        :class="{ error: searchError }"
-        placeholder="Search both sides…"
-        spellcheck="false"
-        @keyup.enter="step(1)"
-        @keyup.escape="query = ''"
-      />
-      <label class="regex" title="Regular expression">
-        <input v-model="isRegex" type="checkbox" />
-        .*
-      </label>
-      <span class="count">
-        <template v-if="searchError">bad regex</template>
-        <template v-else-if="query && matchCount">{{ currentIndex }}/{{ matchCount }}</template>
-        <template v-else-if="query">no matches</template>
-      </span>
-      <button class="nav" :disabled="!matchCount" title="Previous match" @click="step(-1)">
-        ‹
-      </button>
-      <button class="nav" :disabled="!matchCount" title="Next match" @click="step(1)">›</button>
+      <div
+        v-for="s in [
+          { ref: leftSearch, label: 'left' },
+          { ref: rightSearch, label: 'right' }
+        ]"
+        :key="s.label"
+        class="side"
+      >
+        <span class="side-label">{{ s.label }}</span>
+        <input
+          v-model="s.ref.query"
+          type="search"
+          class="search-input"
+          :class="{ error: s.ref.error }"
+          :placeholder="`Search ${s.label} side…`"
+          spellcheck="false"
+          @keyup.enter="s.ref.step(1)"
+          @keyup.escape="s.ref.query = ''"
+        />
+        <label class="regex" title="Regular expression">
+          <input v-model="s.ref.isRegex" type="checkbox" />
+          .*
+        </label>
+        <span class="count">
+          <template v-if="s.ref.error">bad regex</template>
+          <template v-else-if="s.ref.query && s.ref.matchCount"
+            >{{ s.ref.currentIndex }}/{{ s.ref.matchCount }}</template
+          >
+          <template v-else-if="s.ref.query">none</template>
+        </span>
+        <button
+          class="nav"
+          :disabled="!s.ref.matchCount"
+          title="Previous match"
+          @click="s.ref.step(-1)"
+        >
+          ‹
+        </button>
+        <button class="nav" :disabled="!s.ref.matchCount" title="Next match" @click="s.ref.step(1)">
+          ›
+        </button>
+      </div>
     </div>
     <div ref="container" class="diff-container"></div>
   </div>
@@ -192,15 +208,28 @@ onBeforeUnmount(() => {
 }
 .search {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
+  gap: 10px;
+  padding: 6px 10px;
   background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.side-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-hint);
 }
 .search-input {
   flex: 1;
   min-width: 0;
-  max-width: 380px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -225,9 +254,10 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .count {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-dim);
-  min-width: 64px;
+  min-width: 48px;
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 .nav {

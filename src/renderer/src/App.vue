@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
@@ -82,10 +82,20 @@ const dragActive = ref(false)
 function hasFiles(e) {
   return Array.from(e.dataTransfer?.types ?? []).includes('Files')
 }
+// The snippet editor and the Tools dialogs handle their own file drops (into
+// their input), so the window-level diff drop must stand down while one is
+// open — otherwise a drop on the dialog's backdrop would load a diff behind it.
+const dropSuppressed = computed(
+  () =>
+    !!snippets.editingSnippet ||
+    store.showBase64Dialog ||
+    store.showJsonToolDialog ||
+    store.showXmlToolDialog ||
+    store.showSqlToolDialog ||
+    store.showCryptDialog
+)
 function onDragEnter(e) {
-  // The snippet editor handles its own file drops; don't show the diff
-  // drop overlay over it.
-  if (!hasFiles(e) || snippets.editingSnippet) return
+  if (!hasFiles(e) || dropSuppressed.value) return
   dragDepth.value += 1
   dragActive.value = true
 }
@@ -96,7 +106,7 @@ function onDragLeave() {
 async function onDrop(e) {
   dragDepth.value = 0
   dragActive.value = false
-  if (!hasFiles(e) || snippets.editingSnippet) return
+  if (!hasFiles(e) || dropSuppressed.value) return
   const paths = Array.from(e.dataTransfer.files)
     .map((f) => window.api.getPathForFile(f))
     .filter(Boolean)
@@ -252,6 +262,8 @@ async function onDrop(e) {
   gap: 16px;
   padding: 8px 12px;
   background: var(--bg-panel);
+  /* Distinct separator so the stacked bars don't blend into one dark mass. */
+  border-bottom: 1px solid var(--border);
 }
 .logo {
   flex: 1;
@@ -262,9 +274,10 @@ async function onDrop(e) {
 .file-slots-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 12px;
+  padding: 10px 12px;
   background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
 }
 .slot-half {
   flex: 1;
@@ -287,7 +300,7 @@ async function onDrop(e) {
 .options {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   color: var(--text-dim);
   white-space: nowrap;
 }

@@ -35,6 +35,23 @@ describe('detectTextFormat', () => {
     expect(result.kind).toBe('xml')
     expect(result.valid).toBe(false)
   })
+
+  it('does NOT treat an HTML document as XML (void elements are not a mismatch)', () => {
+    // Regression: HTML's unclosed void elements (<meta>, <br>, …) made the XML
+    // validator report a bogus "</head> expected </meta>" mismatch.
+    const html =
+      '<!DOCTYPE html>\n<html>\n<head><meta charset="utf-8"><title>Hi</title></head>\n<body><br><img src="x"></body>\n</html>'
+    expect(detectTextFormat(html)).toBeNull()
+    // Also with no doctype, and case-insensitively.
+    expect(detectTextFormat('<html><head><meta></head></html>')).toBeNull()
+    expect(detectTextFormat('<!doctype HTML><HTML></HTML>')).toBeNull()
+  })
+
+  it('still treats a real XHTML document (served as XML) as XML', () => {
+    const xhtml =
+      '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "x.dtd">\n<html><head><title>t</title></head></html>'
+    expect(detectTextFormat(xhtml)?.kind).toBe('xml')
+  })
 })
 
 describe('validateJson / formatJson', () => {

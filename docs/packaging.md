@@ -24,10 +24,17 @@ the packaged binary at pack time:
 - `runAsNode`, `enableNodeCliInspectArguments`, `enableNodeOptionsEnvironmentVariable`
   **off** — stops `ELECTRON_RUN_AS_NODE=1 "Diff Bro.exe" script.js` turning the
   installed, trusted binary into a generic Node interpreter (a LOLBin).
-- `onlyLoadAppFromAsar` + `enableEmbeddedAsarIntegrityValidation` **on** — the
-  runtime refuses to load app code from anywhere but the ASAR and validates its
-  hash, so a tampered bundle won't run.
+- `onlyLoadAppFromAsar` **on** — the runtime refuses to load app code from
+  anywhere but the ASAR.
 - `enableCookieEncryption` **on**.
+
+`enableEmbeddedAsarIntegrityValidation` is intentionally **off** until real
+signing lands: it binds the ASAR hash to the code signature, and on an
+unsigned / ad-hoc-signed macOS build that makes a quarantined app fail to launch
+as *"Diff Bro is damaged"* even after the user clears quarantine. electron-builder
+flips fuses *before* re-applying the ad-hoc macOS signature, so the flip order is
+fine — the integrity fuse specifically needs a Developer ID signature to be safe.
+Turn it back on together with signing (`DEVELOPMENT_PLAN.md` Phase 3).
 
 Code signing (Windows Authenticode + macOS notarization) is the remaining
 prerequisite — see below and `DEVELOPMENT_PLAN.md` Phase 3.

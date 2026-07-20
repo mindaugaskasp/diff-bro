@@ -37,7 +37,10 @@ function dismiss() {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 2px 28px 2px 8px;
+  /* Top margin keeps the strip off the window title bar — on macOS this bar is
+     the first thing under the native title bar (no in-app menu bar there). */
+  margin-top: 6px;
+  padding: 4px 28px 4px 8px;
   font-size: 11px;
   color: var(--text-hint);
   background: var(--bg-panel);

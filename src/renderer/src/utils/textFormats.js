@@ -9,8 +9,25 @@ export function detectTextFormat(content) {
   if (!trimmed) return null
   const first = trimmed[0]
   if (first === '{' || first === '[') return { kind: 'json', ...validateJson(trimmed) }
-  if (first === '<') return { kind: 'xml', ...validateXml(trimmed) }
+  if (first === '<') {
+    // HTML is not XML: its void elements (<meta>, <br>, <img>, <link>, …) are
+    // never closed, so the XML tag-stack validator would wrongly report a
+    // mismatch (e.g. "</head> expected </meta>"). Don't offer XML
+    // validation/formatting for an HTML document.
+    if (isHtml(trimmed)) return null
+    return { kind: 'xml', ...validateXml(trimmed) }
+  }
   return null
+}
+
+// A full HTML document: an HTML5 doctype, or a root <html> tag. XHTML served as
+// real XML starts with an <?xml …?> declaration or an XHTML DOCTYPE and is left
+// to the XML path on purpose.
+function isHtml(trimmed) {
+  if (/^<!doctype\s+html\b/i.test(trimmed)) {
+    return !/\bDTD\s+XHTML\b/i.test(trimmed) // XHTML doctype -> treat as XML
+  }
+  return /^<html[\s>]/i.test(trimmed)
 }
 
 export function validateJson(content) {

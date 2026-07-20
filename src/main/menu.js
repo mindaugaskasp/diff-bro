@@ -39,12 +39,12 @@ export function installMenu() {
       label: 'File',
       submenu: [
         {
-          label: 'Open Left…',
+          label: 'Open Left',
           accelerator: 'CmdOrCtrl+1',
           click: () => sendToFocused('open-left')
         },
         {
-          label: 'Open Right…',
+          label: 'Open Right',
           accelerator: 'CmdOrCtrl+2',
           click: () => sendToFocused('open-right')
         },
@@ -63,6 +63,22 @@ export function installMenu() {
     {
       label: 'Edit',
       submenu: [
+        // macOS routes clipboard shortcuts (Cmd+C/V/X/A) through the app menu:
+        // without these roles, Cmd+V does nothing in text inputs (e.g. the
+        // snippet editor). Windows/Linux get clipboard from Chromium directly,
+        // and this native menu is hidden there, so the roles are macOS-only.
+        ...(isMac
+          ? [
+              { role: 'undo' },
+              { role: 'redo' },
+              { type: 'separator' },
+              { role: 'cut' },
+              { role: 'copy' },
+              { role: 'paste' },
+              { role: 'selectAll' },
+              { type: 'separator' }
+            ]
+          : []),
         {
           label: 'Swap Sides',
           accelerator: 'CmdOrCtrl+Shift+S',
@@ -100,40 +116,40 @@ export function installMenu() {
     {
       label: 'Security',
       submenu: [
-        { label: 'Share My Public Key…', click: () => sendToFocused('export-pubkey') },
+        { label: 'Share My Public Key', click: () => sendToFocused('export-pubkey') },
         { type: 'separator' },
-        { label: 'Add Trusted Key…', click: () => sendToFocused('add-trusted-key') },
-        { label: 'Manage Trusted Keys…', click: () => sendToFocused('manage-keys') },
+        { label: 'Add Trusted Key', click: () => sendToFocused('add-trusted-key') },
+        { label: 'Manage Trusted Keys', click: () => sendToFocused('manage-keys') },
         { type: 'separator' },
-        { label: 'Back Up Configuration…', click: () => sendToFocused('config-backup') },
-        { label: 'Restore Configuration…', click: () => sendToFocused('config-restore') }
+        { label: 'Back Up Configuration', click: () => sendToFocused('config-backup') },
+        { label: 'Restore Configuration', click: () => sendToFocused('config-restore') }
       ]
     },
     {
       label: 'Tools',
       submenu: [
         {
-          label: 'Base64 Encode/Decode…',
+          label: 'Base64 Encode/Decode',
           accelerator: 'CmdOrCtrl+Shift+B',
           click: () => sendToFocused('tools-base64')
         },
         {
-          label: 'JSON Format/Validate…',
+          label: 'JSON Format/Validate',
           accelerator: 'CmdOrCtrl+Shift+J',
           click: () => sendToFocused('tools-json')
         },
         {
-          label: 'XML Format/Validate…',
+          label: 'XML Format/Validate',
           accelerator: 'CmdOrCtrl+Shift+M',
           click: () => sendToFocused('tools-xml')
         },
         {
-          label: 'SQL Format/Validate…',
+          label: 'SQL Format/Validate',
           accelerator: 'CmdOrCtrl+Shift+Q',
           click: () => sendToFocused('tools-sql')
         },
         {
-          label: 'Encrypt/Decrypt Text…',
+          label: 'Encrypt/Decrypt Text',
           accelerator: 'CmdOrCtrl+Shift+X',
           click: () => sendToFocused('tools-crypt')
         }

@@ -9,25 +9,31 @@ directories:
 files:
   - build/**
 # Ship the app inside an ASAR and flip the Electron fuses that harden the
-# packaged binary (electron-builder rewrites the fuse bits at pack time):
+# packaged binary (electron-builder rewrites the fuse bits at pack time, then
+# re-applies an ad-hoc macOS signature so flipping happens *before* signing):
 #   runAsNode / enableNodeCliInspectArguments / enableNodeOptionsEnvironmentVariable
 #     off  — stop `ELECTRON_RUN_AS_NODE=1 "Diff Bro.exe" script.js` from turning
 #            the trusted, installed binary into a generic Node interpreter (a
 #            LOLBin malware likes to hide behind).
-#   onlyLoadAppFromAsar + enableEmbeddedAsarIntegrityValidation
-#     on   — the runtime refuses to load app code from anywhere but the ASAR
-#            and validates the ASAR's hash, so a tampered bundle won't run.
+#   onlyLoadAppFromAsar
+#     on   — the runtime refuses to load app code from anywhere but the ASAR.
 #   enableCookieEncryption
 #     on   — at-rest encryption for the Chromium cookie store.
-# Signing (Windows Authenticode + macOS notarization) is the remaining
-# prerequisite for enterprise trust — tracked in DEVELOPMENT_PLAN.md Phase 3.
+#
+# enableEmbeddedAsarIntegrityValidation is deliberately OFF until we ship a
+# real Developer ID signature + notarization. That fuse binds the ASAR hash to
+# the app's code signature; on an unsigned / ad-hoc-signed build it makes a
+# quarantined macOS app fail to launch as "Diff Bro is damaged" *even after*
+# the user clears the quarantine flag. Turn it back on together with signing
+# (DEVELOPMENT_PLAN.md Phase 3). `onlyLoadAppFromAsar` + the LOLBin fuses above
+# are the load-integrity hardening that works without signing.
 asar: true
 electronFuses:
   runAsNode: false
   enableNodeCliInspectArguments: false
   enableNodeOptionsEnvironmentVariable: false
   onlyLoadAppFromAsar: true
-  enableEmbeddedAsarIntegrityValidation: true
+  enableEmbeddedAsarIntegrityValidation: false
   enableCookieEncryption: true
 win:
   target:

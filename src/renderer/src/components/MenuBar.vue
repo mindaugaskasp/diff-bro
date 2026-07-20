@@ -16,8 +16,8 @@ const menus = [
     id: 'file',
     label: 'File',
     items: [
-      { label: 'Open Left…', keys: `${MOD}+1`, run: () => store.handleMenuAction('open-left') },
-      { label: 'Open Right…', keys: `${MOD}+2`, run: () => store.handleMenuAction('open-right') },
+      { label: 'Open Left', keys: `${MOD}+1`, run: () => store.handleMenuAction('open-left') },
+      { label: 'Open Right', keys: `${MOD}+2`, run: () => store.handleMenuAction('open-right') },
       { sep: true },
       { label: 'Save', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
       { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
@@ -58,13 +58,13 @@ const menus = [
     id: 'security',
     label: 'Security',
     items: [
-      { label: 'Share My Public Key…', run: () => (store.showShareKeyDialog = true) },
+      { label: 'Share My Public Key', run: () => (store.showShareKeyDialog = true) },
       { sep: true },
-      { label: 'Add Trusted Key…', run: () => store.addTrustedKey() },
-      { label: 'Manage Trusted Keys…', run: () => store.handleMenuAction('manage-keys') },
+      { label: 'Add Trusted Key', run: () => store.addTrustedKey() },
+      { label: 'Manage Trusted Keys', run: () => store.handleMenuAction('manage-keys') },
       { sep: true },
-      { label: 'Back Up Configuration…', run: () => store.handleMenuAction('config-backup') },
-      { label: 'Restore Configuration…', run: () => store.handleMenuAction('config-restore') }
+      { label: 'Back Up Configuration', run: () => store.handleMenuAction('config-backup') },
+      { label: 'Restore Configuration', run: () => store.handleMenuAction('config-restore') }
     ]
   },
   {
@@ -72,27 +72,27 @@ const menus = [
     label: 'Tools',
     items: [
       {
-        label: 'Base64 Encode/Decode…',
+        label: 'Base64 Encode/Decode',
         keys: `${MOD}+Shift+B`,
         run: () => store.handleMenuAction('tools-base64')
       },
       {
-        label: 'JSON Format/Validate…',
+        label: 'JSON Format/Validate',
         keys: `${MOD}+Shift+J`,
         run: () => store.handleMenuAction('tools-json')
       },
       {
-        label: 'XML Format/Validate…',
+        label: 'XML Format/Validate',
         keys: `${MOD}+Shift+M`,
         run: () => store.handleMenuAction('tools-xml')
       },
       {
-        label: 'SQL Format/Validate…',
+        label: 'SQL Format/Validate',
         keys: `${MOD}+Shift+Q`,
         run: () => store.handleMenuAction('tools-sql')
       },
       {
-        label: 'Encrypt/Decrypt Text…',
+        label: 'Encrypt/Decrypt Text',
         keys: `${MOD}+Shift+X`,
         run: () => store.handleMenuAction('tools-crypt')
       }
