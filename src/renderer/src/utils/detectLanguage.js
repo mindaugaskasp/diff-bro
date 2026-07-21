@@ -2,6 +2,7 @@
 // Wrong guesses only cost coloring quality, not correctness, so this is a
 // deliberately cheap heuristic rather than a real parser for every format.
 import { validateJson } from './textFormats'
+import { looksLikeMermaid } from './mermaid'
 
 // Syntaxes offered in the snippet editor's language picker. `id` is the
 // Monaco language id (all bundled with monaco-editor); 'auto' means "let
@@ -9,6 +10,7 @@ import { validateJson } from './textFormats'
 export const SNIPPET_LANGUAGES = [
   { id: 'auto', label: 'Auto-detect' },
   { id: 'plaintext', label: 'Plain text' },
+  { id: 'mermaid', label: 'Mermaid diagram' },
   { id: 'json', label: 'JSON' },
   { id: 'sql', label: 'SQL' },
   { id: 'markdown', label: 'Markdown' },
@@ -40,6 +42,10 @@ export function detectSnippetLanguage(content) {
   if (!trimmed) return 'plaintext'
 
   if ((trimmed[0] === '{' || trimmed[0] === '[') && validateJson(trimmed).valid) return 'json'
+
+  // Distinctive diagram keywords ('flowchart', 'sequenceDiagram', …) — checked
+  // before markdown, whose ``` fences could otherwise claim a fenced diagram.
+  if (looksLikeMermaid(trimmed)) return 'mermaid'
 
   if (SQL_START.test(trimmed)) return 'sql'
 

@@ -1,0 +1,70 @@
+// Pure Mermaid helpers — no `mermaid` import, so this stays unit-testable and
+// adds nothing to the bundle. The heavy library is loaded lazily elsewhere
+// (composables/useMermaid.js), only once a diagram is actually rendered.
+
+// The leading keyword of every Mermaid diagram type we recognize for
+// auto-detection. Matched against the first non-empty, non-directive line so a
+// pasted diagram is offered the Mermaid syntax without the user picking it.
+const MERMAID_KEYWORDS = [
+  'flowchart',
+  'graph',
+  'sequenceDiagram',
+  'classDiagram',
+  'stateDiagram',
+  'stateDiagram-v2',
+  'erDiagram',
+  'journey',
+  'gantt',
+  'pie',
+  'quadrantChart',
+  'requirementDiagram',
+  'gitGraph',
+  'mindmap',
+  'timeline',
+  'zenuml',
+  'sankey-beta',
+  'xychart-beta',
+  'block-beta',
+  'packet-beta',
+  'architecture-beta',
+  'kanban',
+  'radar-beta',
+  'C4Context'
+]
+const KEYWORD_RE = new RegExp(`^(?:${MERMAID_KEYWORDS.join('|')})\\b`)
+
+// True when `text` opens like a Mermaid diagram. Skips a leading YAML
+// frontmatter block (`---`) and `%%` directives/comments, matching only the
+// first real content line so it stays a cheap, false-positive-averse heuristic.
+export function looksLikeMermaid(text) {
+  const lines = String(text ?? '').split('\n')
+  let i = 0
+  // Optional --- frontmatter --- block.
+  if (lines[i]?.trim() === '---') {
+    i++
+    while (i < lines.length && lines[i].trim() !== '---') i++
+    i++ // past the closing ---
+  }
+  for (; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (!line || line.startsWith('%%')) continue // blank or directive/comment
+    return KEYWORD_RE.test(line)
+  }
+  return false
+}
+
+// Diagram theme paired to the app theme (decided in project memory): the dark
+// UI gets Mermaid's dark theme, the light UI its clean default — so diagram
+// text never blends into the canvas. Callers re-render when the app theme flips.
+export function mermaidThemeFor(appTheme) {
+  return appTheme === 'light' ? 'default' : 'dark'
+}
+
+// Per-render DOM id. Mermaid needs a unique, CSS-selector-safe id for the
+// temporary node it measures against; a monotonic counter keeps them distinct
+// within a session.
+let seq = 0
+export function nextDiagramId() {
+  seq += 1
+  return `mermaid-${seq}`
+}

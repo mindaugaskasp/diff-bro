@@ -90,6 +90,8 @@ export const useDiffStore = defineStore('diff', {
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,
+    // Mermaid diagram viewer: { name, code } while open, null when closed.
+    mermaidView: null,
     // content string last dismissed per side, so the format-hint banner
     // stays gone until that side's content actually changes.
     dismissedFormatHint: { left: null, right: null }
@@ -192,6 +194,13 @@ export const useDiffStore = defineStore('diff', {
     },
     initTheme() {
       applyTheme(this.theme)
+    },
+    // Open the Mermaid viewer for a diagram's decrypted source.
+    openMermaid(name, code) {
+      this.mermaidView = { name, code }
+    },
+    closeMermaid() {
+      this.mermaidView = null
     },
     toggleTheme() {
       this.theme = this.theme === 'dark' ? 'light' : 'dark'

@@ -66,9 +66,11 @@ Builds are **unsigned** for now (no Apple/Microsoft cert yet):
   organized into categories, favoritable.
 - **Share** a saved diff as a sealed, signed `.diffbro` file for one recipient;
   manage named trusted keys under the **Security** menu.
-- **Snippets** — an encrypted, categorized, non-expiring text library with
+- **Snippets** — an encrypted, tagged, non-expiring text library with
   per-snippet syntax (JSON / SQL / Markdown / YAML / Python / Bash / PHP / …),
-  filter + copy, and passphrase-protected export/import.
+  filter + copy, and passphrase-protected export/import. **Mermaid** snippets
+  render to a diagram — a live preview while editing plus a resizable
+  zoom/pan viewer, themed to match the app, all offline.
 - **Tools** — Base64, and JSON / XML / SQL format+validate (Monaco-highlighted,
   with "Add to Snippets"), plus a passphrase text Encrypt/Decrypt.
 - **Config backup/restore** — one passphrase-encrypted file for your keys,

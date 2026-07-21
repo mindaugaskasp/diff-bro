@@ -107,7 +107,7 @@ First run: `npm install && npm run dev`
       `npm run check` = lint + tests; CLAUDE.md encodes the guidelines.
 - [x] Light/dark theme toggle (Monaco `vs` / `vs-dark` + CSS variables on
       `:root[data-theme]`; toolbar button + View menu + Ctrl/Cmd+D; choice
-      persisted in localStorage)
+      persisted through the durable data-dir store, so it survives a reinstall)
 - [x] Re-read files on window focus (quiet re-read: no large-file prompt,
       silent skip if the file vanished; toast when the diff was reloaded)
 - [x] Window state persistence (size/position/maximized in
@@ -117,6 +117,21 @@ First run: `npm install && npm run dev`
 - [x] App icon: `resources/icon.png` rasterized from the logo; used as the
       win/linux window icon (`?asset` import) and picked up by
       electron-builder (`buildResources: resources`) for installer icons
+
+## Phase 2.5 – Snippets & Mermaid diagrams ✅
+
+- [x] Encrypted, tagged snippet library ("quiet shelves" sidebar: ★ Favorites +
+      All snippets, newest-first, collapsible tag filter that composes with
+      search, hover preview that decrypts on demand)
+- [x] Mermaid diagram rendering for `mermaid` snippets — lazy-loaded (dynamic
+      `import`, its own build chunks; nothing added to the main bundle), runs
+      **offline under the strict CSP with no `unsafe-eval`** (verified against
+      every diagram type in real Chromium before adopting the dep). SVG is
+      inserted via `DOMParser` + `replaceChildren`, never `innerHTML`/`v-html`;
+      `securityLevel: 'strict'` (DOMPurify) is never lowered.
+- [x] Live preview in the snippet editor + a resizable, zoom/pan diagram viewer;
+      diagram theme paired to the app theme (dark → `dark`, light → `default`),
+      re-rendered on theme switch so text never blends into the canvas
 
 ## Phase 3 – Packaging & distribution (~1–2 days + cert wait times)
 

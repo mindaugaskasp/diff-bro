@@ -84,6 +84,11 @@ async function copySnippet(id) {
     diff.showNotice('Copied snippet to clipboard.')
   }
 }
+// Decrypt a Mermaid snippet and open it in the resizable diagram viewer.
+async function viewDiagram(entry) {
+  const code = await store.load(entry.id)
+  if (code != null) diff.openMermaid(entry.name, code)
+}
 
 // --- hover preview: decrypt on demand, debounced, briefly cached ---
 // Snippets are encrypted at rest, so a preview costs a vault:decrypt. The 350 ms
@@ -270,6 +275,14 @@ function exportTag() {
             </button>
             <span class="when">{{ ago(entry.createdAt) }}</span>
             <span class="rowacts">
+              <button
+                v-if="entry.language === 'mermaid'"
+                class="row-btn"
+                title="View diagram"
+                @click="viewDiagram(entry)"
+              >
+                ◈
+              </button>
               <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">⧉</button>
               <button
                 class="row-btn delete"
@@ -316,6 +329,14 @@ function exportTag() {
             </button>
             <span class="when">{{ ago(entry.createdAt) }}</span>
             <span class="rowacts">
+              <button
+                v-if="entry.language === 'mermaid'"
+                class="row-btn"
+                title="View diagram"
+                @click="viewDiagram(entry)"
+              >
+                ◈
+              </button>
               <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">⧉</button>
               <button
                 class="row-btn delete"

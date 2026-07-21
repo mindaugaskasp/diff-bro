@@ -7,6 +7,7 @@ import { detectSnippetLanguage, SNIPPET_LANGUAGES } from '../utils/detectLanguag
 import { formatJson, formatXml } from '../utils/textFormats'
 import { formatSql } from '../utils/sqlFormat'
 import TagGlyph from './TagGlyph.vue'
+import MermaidDiagram from './MermaidDiagram.vue'
 
 const store = useSnippetStore()
 const diff = useDiffStore()
@@ -87,6 +88,11 @@ const chosenLanguage = ref(
 const language = computed(() =>
   chosenLanguage.value === 'auto' ? detectSnippetLanguage(content.value) : chosenLanguage.value
 )
+// Mermaid snippets get a live diagram preview and an expand-to-viewer button.
+const isMermaid = computed(() => language.value === 'mermaid')
+function expandDiagram() {
+  if (content.value.trim()) diff.openMermaid(name.value.trim() || 'Diagram', content.value)
+}
 
 onMounted(async () => {
   editor = monaco.editor.create(container.value, {
@@ -276,6 +282,23 @@ async function onDropFile(e) {
         @dragover.capture.prevent.stop
         @drop.capture.prevent.stop="onDropFile"
       ></div>
+      <div v-if="isMermaid" class="mmd-preview">
+        <div class="mmd-preview-head">
+          <span>Diagram preview</span>
+          <button
+            type="button"
+            class="ghost small"
+            :disabled="!content.trim()"
+            title="Open the full, resizable diagram viewer"
+            @click="expandDiagram"
+          >
+            ⤢ Expand
+          </button>
+        </div>
+        <div class="mmd-preview-body">
+          <MermaidDiagram :code="content" />
+        </div>
+      </div>
       <div class="actions">
         <button
           class="ghost small"
@@ -505,6 +528,29 @@ select:focus {
   border-radius: 6px;
   overflow: hidden;
   height: 280px;
+}
+.mmd-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mmd-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 6px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.mmd-preview-body {
+  height: 180px;
+  padding: 8px;
+  overflow: auto;
 }
 .actions {
   display: flex;
