@@ -6,11 +6,15 @@
 // securityLevel MUST stay 'strict': Mermaid runs its output through DOMPurify
 // at that level, so a diagram authored from imported/shared text can't smuggle
 // script or event handlers into the SVG. Never lower it to 'loose'/'antiscript'.
-import { mermaidThemeFor, nextDiagramId } from '../utils/mermaid'
+import { mermaidThemeFor, nextDiagramId, stripMermaidFence } from '../utils/mermaid'
 
 const BASE_CONFIG = {
   startOnLoad: false,
   securityLevel: 'strict',
+  // Without this, a failed render leaves Mermaid's own "Syntax error in text"
+  // bomb SVG attached to the document — it escapes the diagram container and
+  // hides the caller's error message. Errors surface only as a thrown error.
+  suppressErrorRendering: true,
   // Pure-SVG labels (no <foreignObject>/HTML), which render crisply and keep
   // the output trivially safe to insert without innerHTML.
   flowchart: { htmlLabels: false }
@@ -33,6 +37,6 @@ export async function renderMermaid(code, appTheme) {
   // Re-apply config each render so a theme flip takes effect (initialize is the
   // supported way to change the active theme).
   mermaid.initialize({ ...BASE_CONFIG, theme: mermaidThemeFor(appTheme) })
-  const { svg } = await mermaid.render(nextDiagramId(), code)
+  const { svg } = await mermaid.render(nextDiagramId(), stripMermaidFence(code).trim())
   return svg
 }

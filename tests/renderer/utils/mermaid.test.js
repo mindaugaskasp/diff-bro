@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { looksLikeMermaid, mermaidThemeFor, nextDiagramId } from '../../../src/renderer/src/utils/mermaid'
+import {
+  looksLikeMermaid,
+  mermaidThemeFor,
+  nextDiagramId,
+  stripMermaidFence
+} from '../../../src/renderer/src/utils/mermaid'
 import { detectSnippetLanguage } from '../../../src/renderer/src/utils/detectLanguage'
 
 describe('looksLikeMermaid', () => {
@@ -22,6 +27,29 @@ describe('looksLikeMermaid', () => {
     expect(looksLikeMermaid('# Heading\nsome markdown')).toBe(false)
     // A keyword must start the line, not merely appear in it.
     expect(looksLikeMermaid('the graph shows growth')).toBe(false)
+  })
+})
+
+describe('stripMermaidFence', () => {
+  const code = 'flowchart TD\n    A[Coffee] -->|brews| B{Monday?}'
+
+  it('peels a wrapping ```mermaid fence', () => {
+    expect(stripMermaidFence('```mermaid\n' + code + '\n```')).toBe(code)
+    expect(stripMermaidFence('```\n' + code + '\n```')).toBe(code)
+    expect(stripMermaidFence('\n\n```mermaid\n' + code + '\n```\n\n')).toBe(code)
+  })
+
+  it('leaves unfenced and foreign-tagged text alone', () => {
+    expect(stripMermaidFence(code)).toBe(code)
+    const js = '```js\nconst a = 1\n```'
+    expect(stripMermaidFence(js)).toBe(js)
+    const unclosed = '```mermaid\n' + code
+    expect(stripMermaidFence(unclosed)).toBe(unclosed)
+  })
+
+  it('makes fenced diagrams detectable', () => {
+    expect(looksLikeMermaid('```mermaid\n' + code + '\n```')).toBe(true)
+    expect(detectSnippetLanguage('```mermaid\n' + code + '\n```')).toBe('mermaid')
   })
 })
 

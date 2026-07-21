@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, app, ipcMain } from 'electron'
+import { BrowserWindow, Menu, app, ipcMain, systemPreferences } from 'electron'
 
 // --- App menu: file actions forwarded to the renderer over IPC ---
 //
@@ -29,8 +29,19 @@ function resetZoom() {
   if (wc) wc.setZoomLevel(0)
 }
 
+// AppKit injects "Start Dictation" and "Emoji & Symbols" into any menu titled
+// "Edit". Both are dead ends here: dictation is a network service this app must
+// never touch, and the character palette cannot insert into a sandboxed
+// renderer, so it silently does nothing. Suppress them before the menu is built.
+function disableInjectedMacMenuItems() {
+  if (process.platform !== 'darwin') return
+  systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true)
+  systemPreferences.setUserDefault('NSDisabledCharacterPaletteMenuItem', 'boolean', true)
+}
+
 export function installMenu() {
   const isMac = process.platform === 'darwin'
+  disableInjectedMacMenuItems()
   // DevTools (and its accelerator) ship only in development builds.
   const isDev = !app.isPackaged
   const template = [
@@ -123,8 +134,13 @@ export function installMenu() {
         { label: 'Add Trusted Key', click: () => sendToFocused('add-trusted-key') },
         { label: 'Manage Trusted Keys', click: () => sendToFocused('manage-keys') },
         { type: 'separator' },
-        { label: 'Back Up Configuration', click: () => sendToFocused('config-backup') },
-        { label: 'Restore Configuration', click: () => sendToFocused('config-restore') }
+        {
+          label: 'Configuration',
+          submenu: [
+            { label: 'Back Up', click: () => sendToFocused('config-backup') },
+            { label: 'Restore', click: () => sendToFocused('config-restore') }
+          ]
+        }
       ]
     },
     {

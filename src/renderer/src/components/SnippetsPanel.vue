@@ -262,6 +262,13 @@ function exportTag() {
           >
             <button class="star on" title="Unfavorite" @click="store.toggleFavorite(entry.id)">★</button>
             <button class="entry" @click="editSnippet(entry.id)">
+              <span
+                v-if="entry.language === 'mermaid'"
+                class="mmd"
+                title="Mermaid diagram — opens in the diagram viewer"
+                aria-label="Mermaid diagram"
+                >◈</span
+              >
               <span class="nm">{{ entry.name }}</span>
               <span class="dots">
                 <span
@@ -316,6 +323,13 @@ function exportTag() {
               ☆
             </button>
             <button class="entry" @click="editSnippet(entry.id)">
+              <span
+                v-if="entry.language === 'mermaid'"
+                class="mmd"
+                title="Mermaid diagram — opens in the diagram viewer"
+                aria-label="Mermaid diagram"
+                >◈</span
+              >
               <span class="nm">{{ entry.name }}</span>
               <span class="dots">
                 <span
@@ -729,6 +743,14 @@ function exportTag() {
 }
 .row:hover .entry {
   color: var(--text);
+}
+/* Resting marker for diagram snippets — the ◈ action button only shows on
+   hover, so without this a Mermaid row looks like any other. */
+.mmd {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--accent);
 }
 .nm {
   flex: 1;

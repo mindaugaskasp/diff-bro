@@ -33,11 +33,32 @@ const MERMAID_KEYWORDS = [
 ]
 const KEYWORD_RE = new RegExp(`^(?:${MERMAID_KEYWORDS.join('|')})\\b`)
 
+const FENCE_OPEN_RE = /^```[ \t]*([\w-]*)[ \t]*$/
+const FENCE_CLOSE_RE = /^```[ \t]*$/
+
+// Diagrams are usually copied out of chat or docs wrapped in a Markdown code
+// fence. Mermaid treats the fence lines as diagram text and fails to parse, so
+// a wrapping ```mermaid (or bare ```) block is peeled off before detection and
+// rendering. Anything else — including a fence tagged for another language — is
+// returned untouched.
+export function stripMermaidFence(text) {
+  const src = String(text ?? '')
+  const lines = src.split('\n')
+  let start = 0
+  let end = lines.length
+  while (start < end && !lines[start].trim()) start++
+  while (end > start && !lines[end - 1].trim()) end--
+  const open = lines[start]?.trim().match(FENCE_OPEN_RE)
+  if (!open || (open[1] && open[1].toLowerCase() !== 'mermaid')) return src
+  if (end - 1 <= start || !FENCE_CLOSE_RE.test(lines[end - 1].trim())) return src
+  return lines.slice(start + 1, end - 1).join('\n')
+}
+
 // True when `text` opens like a Mermaid diagram. Skips a leading YAML
 // frontmatter block (`---`) and `%%` directives/comments, matching only the
 // first real content line so it stays a cheap, false-positive-averse heuristic.
 export function looksLikeMermaid(text) {
-  const lines = String(text ?? '').split('\n')
+  const lines = stripMermaidFence(text).split('\n')
   let i = 0
   // Optional --- frontmatter --- block.
   if (lines[i]?.trim() === '---') {

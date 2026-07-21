@@ -71,12 +71,18 @@ function removeTag(t) {
   tags.value = tags.value.filter((x) => x !== t)
 }
 function onTagKey(e) {
-  if (e.key === 'Enter') {
+  // Space and comma commit the tag the same way Enter does, so a tag never
+  // stays as uncommitted text in the input.
+  if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
     e.preventDefault()
     if (tagInput.value.trim()) addTag(tagInput.value)
   } else if (e.key === 'Backspace' && !tagInput.value && tags.value.length) {
     tags.value.pop()
   }
+}
+// Leaving the field commits whatever was typed rather than silently dropping it.
+function onTagBlur() {
+  if (tagInput.value.trim()) addTag(tagInput.value)
 }
 
 const languages = SNIPPET_LANGUAGES
@@ -248,6 +254,7 @@ async function onDropFile(e) {
             :disabled="!canAddMore"
             spellcheck="false"
             @keydown="onTagKey"
+            @blur="onTagBlur"
           />
         </div>
         <div class="cap" :class="{ full: !canAddMore }">
@@ -260,6 +267,7 @@ async function onDropFile(e) {
             type="button"
             class="sugg"
             :style="{ '--tc': store.colorOf(s) }"
+            @mousedown.prevent
             @click="addTag(s)"
           >
             <TagGlyph :color="store.colorOf(s)" />{{ s }}

@@ -66,6 +66,12 @@ mac:
   # this, electron-builder searches the runner's keychain for a signing
   # identity and fails outright on CI instead of producing an unsigned DMG.
   identity: null
+  # Keep AppKit from injecting its Dictation / Emoji & Symbols items into the
+  # Edit menu (see disableInjectedMacMenuItems in src/main/menu.js) — in the
+  # bundle this takes effect on first launch, before any user default is set.
+  extendInfo:
+    NSDisabledDictationMenuItem: true
+    NSDisabledCharacterPaletteMenuItem: true
 linux:
   target:
     - AppImage

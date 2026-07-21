@@ -65,8 +65,13 @@ const menus = [
       { label: 'Add Trusted Key', run: () => store.addTrustedKey() },
       { label: 'Manage Trusted Keys', run: () => store.handleMenuAction('manage-keys') },
       { sep: true },
-      { label: 'Back Up Configuration', run: () => store.handleMenuAction('config-backup') },
-      { label: 'Restore Configuration', run: () => store.handleMenuAction('config-restore') }
+      {
+        label: 'Configuration',
+        items: [
+          { label: 'Back Up', run: () => store.handleMenuAction('config-backup') },
+          { label: 'Restore', run: () => store.handleMenuAction('config-restore') }
+        ]
+      }
     ]
   },
   {
@@ -102,17 +107,25 @@ const menus = [
   }
 ]
 
+// Label of the submenu currently flown out, scoped to the open dropdown.
+const openSub = ref(null)
+
 function toggle(id) {
   open.value = open.value === id ? null : id
+  openSub.value = null
 }
 
 function activate(item) {
   open.value = null
+  openSub.value = null
   item.run()
 }
 
 function onKeydown(e) {
-  if (e.key === 'Escape') open.value = null
+  if (e.key === 'Escape') {
+    open.value = null
+    openSub.value = null
+  }
 }
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
@@ -128,7 +141,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         class="top"
         :class="{ open: open === menu.id }"
         @click="toggle(menu.id)"
-        @mouseenter="open && (open = menu.id)"
+        @mouseenter="open && ((open = menu.id), (openSub = null))"
       >
         {{ menu.label }}
       </button>
@@ -136,7 +149,24 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <template v-for="(item, i) in menu.items" :key="i">
           <template v-if="!(item.devOnly && isPackaged)">
             <div v-if="item.sep" class="sep" />
-            <button v-else class="item" @click="activate(item)">
+            <div v-else-if="item.items" class="submenu" @mouseenter="openSub = item.label">
+              <button class="item" @click="openSub = openSub === item.label ? null : item.label">
+                <span>{{ item.label }}</span>
+                <span class="arrow" aria-hidden="true">›</span>
+              </button>
+              <div v-if="openSub === item.label" class="dropdown flyout">
+                <button
+                  v-for="sub in item.items"
+                  :key="sub.label"
+                  class="item"
+                  @click="activate(sub)"
+                >
+                  <span>{{ sub.label }}</span>
+                  <kbd v-if="sub.keys">{{ sub.keys }}</kbd>
+                </button>
+              </div>
+            </div>
+            <button v-else class="item" @click="activate(item)" @mouseenter="openSub = null">
               <span>{{ item.label }}</span>
               <kbd v-if="item.keys">{{ item.keys }}</kbd>
             </button>
@@ -221,6 +251,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   border: 1px solid var(--border);
   border-radius: 3px;
   padding: 0 4px;
+}
+.submenu {
+  position: relative;
+  display: flex;
+}
+.submenu > .item {
+  flex: 1;
+}
+.flyout {
+  top: -6px;
+  left: 100%;
+  min-width: 160px;
+  margin-left: 2px;
+}
+.arrow {
+  color: var(--text-hint);
+  font-size: 13px;
+}
+.item:hover .arrow {
+  color: #fff;
 }
 .sep {
   height: 1px;
