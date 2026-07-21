@@ -84,17 +84,26 @@ cask "diff-bro" do
     "~/Library/Saved Application State/com.mindaugas.diffbro.savedState",
   ]
 
-  # The build is not yet signed/notarized (see DEVELOPMENT_PLAN.md Phase 3), so
-  # Gatekeeper quarantines it. Homebrew 6 removed \`--no-quarantine\` (the flag
-  # now errors out, and HOMEBREW_CASK_OPTS no longer honours it either), so
-  # clearing the flag afterwards is the only route left.
+  # ALPHA build: not signed or notarized (see DEVELOPMENT_PLAN.md Phase 3), so
+  # macOS quarantines it and Gatekeeper reports it "damaged". We clear the
+  # quarantine flag in postflight so \`brew install\` just works. This bypasses
+  # Gatekeeper's check on THIS app — an accepted trade only because Homebrew has
+  # already verified the download against the pinned sha256 above, and the
+  # caveat below tells users plainly what they're installing. \`must_succeed:
+  # false\` keeps a no-op strip (flag already absent) from failing the install.
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Diff Bro.app"],
+                   must_succeed: false
+  end
+
   caveats <<~EOS
-    Diff Bro is not yet signed or notarized, so macOS quarantines it on
-    install and may report it as "damaged". Clear the flag once:
+    ⚠️  ALPHA / development build — NOT signed or notarized by Apple.
 
-      xattr -dr com.apple.quarantine "#{appdir}/Diff Bro.app"
-
-    then open it normally.
+    On install, Diff Bro's Gatekeeper quarantine flag is cleared automatically
+    so the app will open. That means macOS does NOT vet this build for you —
+    only install it if you trust this source. Expect rough edges and breaking
+    changes between releases.
   EOS
 end
 `

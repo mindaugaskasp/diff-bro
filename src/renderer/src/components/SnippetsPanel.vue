@@ -315,20 +315,24 @@ function exportTag() {
   display: flex;
   flex-direction: column;
 }
+/* Matches the section-header band in SavedDiffs.vue so Snippets reads as a
+   sibling section (recessed strip framed by hairlines, gap above the seam). */
 .head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 9px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 .head.sub {
-  margin-top: 10px;
-  border-top: 1px solid var(--border);
+  margin-top: 12px;
 }
 .head-actions {
   display: flex;
@@ -544,16 +548,22 @@ function exportTag() {
   color: var(--text-hint);
   font-weight: 500;
 }
+/* Selected = a raised tint, not a solid block. A moderate fill plus a
+   full-strength border and inset ring reads clearly as "active" while staying
+   easy on the eyes in both themes (the old solid var(--tc) was glaring). */
 .chip[aria-pressed='true'] {
-  background: var(--tc);
-  color: #fff;
+  background: color-mix(in srgb, var(--tc) 24%, transparent);
   border-color: var(--tc);
+  color: color-mix(in srgb, var(--tc) 78%, var(--text));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 50%, transparent);
 }
 .chip[aria-pressed='true'] .ct {
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--tc) 55%, var(--text));
 }
 .chip.def[aria-pressed='true'] {
-  background: var(--text-dim);
+  background: color-mix(in srgb, var(--text-dim) 20%, transparent);
+  border-color: var(--text-dim);
+  color: var(--text);
 }
 /* Quick Access shelf */
 .tagbar.quick {

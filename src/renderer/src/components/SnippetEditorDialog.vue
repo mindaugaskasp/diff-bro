@@ -125,6 +125,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  clearTimeout(clearTimer)
   editor?.dispose()
 })
 
@@ -163,8 +164,20 @@ async function copyContent() {
   diff.showNotice('Copied snippet to clipboard.')
 }
 
-// Clear the editor — handy for wiping pasted content before it's saved.
+// Clear the editor — handy for wiping pasted content before it's saved. Clearing
+// can discard a lot of typing, so it's a two-step confirm: the first click arms
+// the button, a second within 3 s actually clears (auto-disarms otherwise).
+const clearArmed = ref(false)
+let clearTimer = null
 function clearContent() {
+  if (!content.value) return
+  if (!clearArmed.value) {
+    clearArmed.value = true
+    clearTimer = setTimeout(() => (clearArmed.value = false), 3000)
+    return
+  }
+  clearTimeout(clearTimer)
+  clearArmed.value = false
   content.value = ''
   editor?.setValue('')
   editor?.focus()
@@ -281,11 +294,16 @@ async function onDropFile(e) {
         </button>
         <button
           class="ghost small"
+          :class="{ armed: clearArmed }"
           :disabled="!content"
-          title="Clear the editor (e.g. remove pasted content)"
+          :title="
+            clearArmed
+              ? 'Click again to clear the editor'
+              : 'Clear the editor (e.g. remove pasted content)'
+          "
           @click="clearContent"
         >
-          Clear
+          {{ clearArmed ? 'Confirm clear' : 'Clear' }}
         </button>
         <span class="spacer" />
         <button class="primary" :disabled="!name.trim() || saving" @click="save">Save</button>
@@ -500,6 +518,12 @@ select:focus {
 .ghost.small {
   padding: 4px 10px;
   font-size: 12px;
+}
+/* Armed clear: a danger cue so the second, destructive click is deliberate. */
+.ghost.small.armed {
+  border-color: var(--danger-border);
+  color: var(--danger-bg);
+  font-weight: 600;
 }
 .primary {
   background: var(--accent);

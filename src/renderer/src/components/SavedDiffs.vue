@@ -258,20 +258,30 @@ async function open(entry) {
   flex-direction: column;
   overflow-y: auto;
 }
+/* Section header band: a recessed strip (--bg is a step off the panel in both
+   themes) framed by hairlines, so Saved / External / Snippets read as distinct
+   blocks rather than one continuous list. */
 .head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 9px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+/* The first section sits flush at the top; later ones get a gap of panel
+   background above the band to open up the seam between sections. */
+.head:first-child {
+  border-top: none;
 }
 .head.sub {
-  margin-top: 10px;
-  border-top: 1px solid var(--border);
+  margin-top: 12px;
 }
 .head-actions {
   display: flex;
