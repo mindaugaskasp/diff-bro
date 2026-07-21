@@ -3,6 +3,7 @@ import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
+import { loadPersisted, savePersisted } from '../persist'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -24,8 +25,6 @@ const SHARE_ERRORS = {
 }
 
 let noticeTimer = null
-
-const THEME_KEY = 'diffbro.theme'
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme
@@ -68,7 +67,10 @@ export const useDiffStore = defineStore('diff', {
     // dialog when the user chooses "Save first".
     pendingReplace: null,
     replaceAfterSave: null,
-    theme: localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark',
+    // Persisted through the durable data-dir store (persist.js), same as vault
+    // and snippets, so the choice survives a reinstall that wipes userData; the
+    // old localStorage 'diffbro.theme' key is migrated forward automatically.
+    theme: loadPersisted('theme') === 'light' ? 'light' : 'dark',
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
     // { key, fingerprint, label } while the drag-drop "name this trusted
@@ -193,7 +195,7 @@ export const useDiffStore = defineStore('diff', {
     },
     toggleTheme() {
       this.theme = this.theme === 'dark' ? 'light' : 'dark'
-      localStorage.setItem(THEME_KEY, this.theme)
+      savePersisted('theme', this.theme)
       applyTheme(this.theme)
     },
     // Re-read both sides from disk (quietly — no large-file prompt) so the

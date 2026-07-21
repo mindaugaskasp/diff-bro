@@ -31,9 +31,14 @@ function entryTitle(entry) {
   return `Open "${entry.name}"${from}${loc}`
 }
 
-const imported = computed(() => vault.importedActive)
+// Shared-in diffs split into a ★ Favorites shelf + the rest.
+const importedFavs = computed(() => vault.importedFavorites)
+const importedOthers = computed(() => vault.importedOthers)
+const hasImported = computed(() => importedFavs.value.length || importedOthers.value.length)
 
-// Categories start expanded (diffs visible); track only the collapsed ones.
+// Top-level sections collapse; categories start expanded (track collapsed only).
+const savedOpen = ref(true)
+const externalOpen = ref(true)
 const collapsed = ref(new Set())
 const addingCategory = ref(false)
 const newCategoryName = ref('')
@@ -95,13 +100,15 @@ async function open(entry) {
 
 <template>
   <aside class="saved">
-    <div class="head">
-      <span>Saved diffs</span>
+    <div class="head section-head" @click="savedOpen = !savedOpen">
+      <span class="chev" :class="{ open: savedOpen }">▸</span>
+      <span class="section-title">Saved diffs</span>
       <span class="lock" title="Encrypted at rest, auto-expiring">🔒</span>
     </div>
-    <div class="head-actions">
-      <button class="action" title="New category" @click="startAddCategory">+ New category</button>
-    </div>
+    <div v-show="savedOpen" class="section-body">
+      <div class="head-actions">
+        <button class="action" title="New category" @click="startAddCategory">+ New category</button>
+      </div>
 
     <div v-if="addingCategory" class="add-category">
       <input
@@ -197,52 +204,68 @@ async function open(entry) {
         </ul>
       </li>
     </ul>
+    </div>
 
-    <div class="head sub">
-      <span>External diffs</span>
+    <div class="head sub section-head" @click="externalOpen = !externalOpen">
+      <span class="chev" :class="{ open: externalOpen }">▸</span>
+      <span class="section-title">External diffs</span>
     </div>
-    <div class="head-actions">
-      <button
-        class="action"
-        :title="`Import a shared diff (${MOD}+I)`"
-        @click="diff.importShared()"
-      >
-        Import
-      </button>
+    <div v-show="externalOpen" class="section-body">
+      <div class="head-actions">
+        <button
+          class="action"
+          :title="`Import a shared diff (${MOD}+I)`"
+          @click="diff.importShared()"
+        >
+          Import
+        </button>
+      </div>
+      <p v-if="!hasImported" class="empty">
+        Diffs shared by someone else appear here — each is signed by its sender and shown separately
+        from your own saved diffs. Press <kbd>{{ MOD }}+I</kbd> to open a sealed
+        <code>.diffbro</code> file; it expires at the same moment as the sender's copy.
+      </p>
+
+      <!-- Favorited shared-in diffs pin to their own shelf, kept inside this
+           section (not merged with your own favorites). Star only pins; expiry
+           is still bound to the sender's copy. -->
+      <ul v-if="importedFavs.length" class="favorites-group">
+        <li class="fav-head">★ Favorites</li>
+        <li v-for="entry in importedFavs" :key="entry.id" class="diff favorite">
+          <button class="star on" title="Unfavorite" @click="vault.toggleFavorite(entry.id)">★</button>
+          <button class="entry" :title="entryTitle(entry)" @click="open(entry)">
+            <span class="name">{{ entry.name }}</span>
+            <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
+          </button>
+          <button
+            class="row-btn delete"
+            title="Delete now"
+            @click="vault.requestDelete('entry', entry.id, entry.name)"
+          >
+            ×
+          </button>
+        </li>
+      </ul>
+
+      <ul v-if="importedOthers.length">
+        <li v-for="entry in importedOthers" :key="entry.id" class="diff">
+          <button class="star" title="Favorite (pin to top)" @click="vault.toggleFavorite(entry.id)">
+            ☆
+          </button>
+          <button class="entry" :title="entryTitle(entry)" @click="open(entry)">
+            <span class="name">{{ entry.name }}</span>
+            <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
+          </button>
+          <button
+            class="row-btn delete"
+            title="Delete now"
+            @click="vault.requestDelete('entry', entry.id, entry.name)"
+          >
+            ×
+          </button>
+        </li>
+      </ul>
     </div>
-    <p v-if="!imported.length" class="empty">
-      Diffs shared by someone else appear here — each is signed by its sender and shown separately
-      from your own saved diffs. Press <kbd>{{ MOD }}+I</kbd> to open a sealed
-      <code>.diffbro</code> file; it expires at the same moment as the sender's copy.
-    </p>
-    <ul v-else>
-      <li
-        v-for="entry in imported"
-        :key="entry.id"
-        class="diff"
-        :class="{ favorite: entry.favorite }"
-      >
-        <button
-          class="star"
-          :class="{ on: entry.favorite }"
-          :title="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
-          @click="vault.toggleFavorite(entry.id)"
-        >
-          {{ entry.favorite ? '★' : '☆' }}
-        </button>
-        <button class="entry" :title="entryTitle(entry)" @click="open(entry)">
-          <span class="name">{{ entry.name }}</span>
-          <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
-        </button>
-        <button
-          class="row-btn delete"
-          title="Delete now"
-          @click="vault.requestDelete('entry', entry.id, entry.name)"
-        >
-          ×
-        </button>
-      </li>
-    </ul>
 
     <SnippetsPanel />
   </aside>
@@ -282,6 +305,23 @@ async function open(entry) {
 }
 .head.sub {
   margin-top: 12px;
+}
+.section-head {
+  cursor: pointer;
+  user-select: none;
+  gap: 8px;
+}
+.section-title {
+  flex: 1;
+}
+.chev {
+  display: inline-block;
+  font-size: 9px;
+  color: var(--text-dim);
+  transition: transform 0.12s;
+}
+.chev.open {
+  transform: rotate(90deg);
 }
 .head-actions {
   display: flex;

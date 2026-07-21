@@ -37,7 +37,6 @@ describe('snippetStore — tags model', () => {
     const store = useSnippetStore()
     expect(store.entries).toEqual([])
     expect(store.tags).toEqual({})
-    expect(store.pinnedTags).toEqual([])
     expect(store.defaultCount).toBe(0)
   })
 
@@ -122,15 +121,13 @@ describe('snippetStore — tags model', () => {
     expect(store.entries[0].tags).toContain('new')
   })
 
-  it('deleteTag removes it from every snippet (but deletes no snippets) and unpins it', async () => {
+  it('deleteTag removes it from every snippet (but deletes no snippets)', async () => {
     const store = useSnippetStore()
     await store.add('a', 'x', 'auto', ['gone', 'stay'])
-    store.pinTag('gone')
     store.deleteTag('gone')
     expect(store.tags.gone).toBeUndefined()
     expect(store.entries).toHaveLength(1)
     expect(store.entries[0].tags).toEqual(['stay'])
-    expect(store.pinnedTags).not.toContain('gone')
   })
 
   it('recolorTag only accepts palette colors', async () => {
@@ -140,28 +137,6 @@ describe('snippetStore — tags model', () => {
     expect(store.tags.t.color).toBe(TAG_PALETTE[3])
     store.recolorTag('t', '#123456') // not in palette — ignored
     expect(store.tags.t.color).toBe(TAG_PALETTE[3])
-  })
-
-  // --- Quick Access pinning ---
-  it('pins, reorders, and unpins tags for the Quick Access shelf', async () => {
-    const store = useSnippetStore()
-    await store.add('a', 'x', 'auto', ['one', 'two', 'three'])
-    store.pinTag('one')
-    store.pinTag('two')
-    store.pinTag('three')
-    expect(store.pinnedTags).toEqual(['one', 'two', 'three'])
-    // Move 'three' before 'one'.
-    store.pinTag('three', 'one')
-    expect(store.pinnedTags).toEqual(['three', 'one', 'two'])
-    store.unpinTag('one')
-    expect(store.pinnedTags).toEqual(['three', 'two'])
-    expect(store.pinnedShelf.map((t) => t.name)).toEqual(['three', 'two'])
-  })
-
-  it('refuses to pin a tag that does not exist', () => {
-    const store = useSnippetStore()
-    store.pinTag('ghost')
-    expect(store.pinnedTags).toEqual([])
   })
 
   // --- delete flow ---
@@ -207,13 +182,30 @@ describe('snippetStore — tags model', () => {
   it('favorites collects favorited snippets and lifts them out of the main list', async () => {
     const store = useSnippetStore()
     const a = await store.add('a', 'x', 'auto', ['t'])
-    await store.add('b', 'x', 'auto', ['t'])
+    const b = await store.add('b', 'x', 'auto', ['t'])
+    // add() stamps createdAt from Date.now(), too fast apart to differ reliably;
+    // pin explicit times so the newest-first order is deterministic.
+    store.entries.find((e) => e.id === a).createdAt = 1000
+    store.entries.find((e) => e.id === b).createdAt = 2000
     expect(store.favorites).toHaveLength(0)
-    expect(store.listed.map((e) => e.name)).toEqual(['a', 'b'])
+    expect(store.listed.map((e) => e.name)).toEqual(['b', 'a']) // newest first
     store.toggleFavorite(a)
     expect(store.favorites.map((e) => e.name)).toEqual(['a'])
     expect(store.listed.map((e) => e.name)).toEqual(['b'])
     expect(localStorage.getItem('diffbro.snippets')).toContain('"favorite":true')
+  })
+
+  it('orders both the Favorites and All shelves newest-created first', async () => {
+    const store = useSnippetStore()
+    const ids = {}
+    for (const n of ['old', 'mid', 'new']) ids[n] = await store.add(n, 'x', 'auto', [])
+    const at = { old: 1000, mid: 2000, new: 3000 }
+    for (const e of store.entries) e.createdAt = at[e.name]
+    expect(store.listed.map((e) => e.name)).toEqual(['new', 'mid', 'old'])
+    store.toggleFavorite(ids.old)
+    store.toggleFavorite(ids.new)
+    expect(store.favorites.map((e) => e.name)).toEqual(['new', 'old'])
+    expect(store.listed.map((e) => e.name)).toEqual(['mid'])
   })
 
   // --- export / import ---

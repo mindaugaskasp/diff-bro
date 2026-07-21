@@ -17,9 +17,21 @@ const LARGE_FILE_BYTES = 10 * 1024 * 1024
 // "key never enters the renderer" guarantee. So a path is readable only after
 // it has been registered here through a trusted channel.
 const allowedPaths = new Set()
+// Bound the allowlist so a long session can't grow it without limit, and so a
+// path doesn't stay readable forever after the user has moved on. The current
+// comparison's two paths are always the most recently allowed (re-inserting
+// refreshes recency), so FIFO eviction of the oldest entry never revokes a
+// path still in use, including its quiet focus-refresh re-reads.
+const MAX_ALLOWED_PATHS = 64
 
 function allow(filePath) {
-  if (typeof filePath === 'string' && filePath) allowedPaths.add(resolve(filePath))
+  if (typeof filePath !== 'string' || !filePath) return
+  const abs = resolve(filePath)
+  allowedPaths.delete(abs) // re-add moves it to the end of the Set's order
+  allowedPaths.add(abs)
+  if (allowedPaths.size > MAX_ALLOWED_PATHS) {
+    allowedPaths.delete(allowedPaths.values().next().value)
+  }
 }
 
 // Belt and braces: never serve anything inside userData (vault.key,

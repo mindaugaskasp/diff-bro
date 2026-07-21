@@ -95,9 +95,19 @@ export const useVaultStore = defineStore('vault', {
       return (categoryId) =>
         this.active.filter((e) => !e.from && !e.favorite && e.categoryId === categoryId)
     },
-    // Shared-in diffs are shown in their own flat "External diffs" section.
+    // Shared-in diffs are shown in their own "External diffs" section.
     importedActive() {
       return this.active.filter((e) => e.from)
+    },
+    // Favorited shared-in diffs get their own ★ shelf at the top of the External
+    // section — kept separate from your own saved-diff favorites on purpose
+    // (they're signed by someone else). Favoriting only pins; it can't extend
+    // the sender-bound expiry.
+    importedFavorites() {
+      return this.importedActive.filter((e) => e.favorite)
+    },
+    importedOthers() {
+      return this.importedActive.filter((e) => !e.favorite)
     },
     // Deletable only if it is not Default and shows no diffs of its own
     // (favorited diffs have moved to the Favorites group and don't block
@@ -169,13 +179,6 @@ export const useVaultStore = defineStore('vault', {
       this.categories.push({ id, name: (name || 'Untitled').trim() || 'Untitled' })
       this.persist()
       return id
-    },
-    renameCategory(id, name) {
-      const category = this.categories.find((c) => c.id === id)
-      if (category && name.trim()) {
-        category.name = name.trim()
-        this.persist()
-      }
     },
     // Refuses the Default category and any category still holding active
     // diffs (defense in depth — the UI gates this too). Returns whether it

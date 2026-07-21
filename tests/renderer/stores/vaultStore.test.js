@@ -53,6 +53,26 @@ describe('vaultStore', () => {
     expect(vault.entries[0]).toMatchObject({ createdAt, expiresAt, from: 'alice' })
   })
 
+  it('splits shared-in diffs into a Favorites shelf and the rest (own diffs excluded)', async () => {
+    const vault = useVaultStore()
+    const soon = Date.now() + 3600_000
+    await vault.save('mine', 1, PAYLOAD) // own diff — never in the External shelves
+    await vault.addShared('from alice', PAYLOAD, Date.now(), soon, 'alice')
+    const bob = await (async () => {
+      await vault.addShared('from bob', PAYLOAD, Date.now(), soon, 'bob')
+      return vault.entries.find((e) => e.from === 'bob').id
+    })()
+    expect(vault.importedFavorites).toHaveLength(0)
+    expect(vault.importedOthers.map((e) => e.name).sort()).toEqual(['from alice', 'from bob'])
+    vault.toggleFavorite(bob)
+    expect(vault.importedFavorites.map((e) => e.name)).toEqual(['from bob'])
+    expect(vault.importedOthers.map((e) => e.name)).toEqual(['from alice'])
+    // an own favorited diff must NOT leak into the external shelves
+    expect([...vault.importedFavorites, ...vault.importedOthers].some((e) => e.from === null)).toBe(
+      false
+    )
+  })
+
   it('tick() purges expired entries from state and storage', async () => {
     const vault = useVaultStore()
     await vault.save('doomed', 1, PAYLOAD)

@@ -67,8 +67,7 @@ function migrate(parsed) {
   if (parsed && parsed.tags && Array.isArray(parsed.entries) && !parsed.categories) {
     return {
       tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
-      entries: parsed.entries,
-      pinnedTags: Array.isArray(parsed.pinnedTags) ? parsed.pinnedTags : []
+      entries: parsed.entries
     }
   }
   const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
@@ -85,7 +84,7 @@ function migrate(parsed) {
     const { categoryId, ...rest } = e
     return { ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] }
   })
-  return { tags, entries, pinnedTags: [] }
+  return { tags, entries }
 }
 
 function readState() {
@@ -136,10 +135,12 @@ export const useSnippetStore = defineStore('snippets', {
     keyError: null
   }),
   getters: {
-    favorites: (s) => s.entries.filter((e) => e.favorite),
-    // Non-favorited snippets in insertion order (favorites float to their own
-    // pinned group in the UI).
-    listed: (s) => s.entries.filter((e) => !e.favorite),
+    // Both shelves are ordered newest-created-first, so the freshest snippet is
+    // always at the top of its shelf.
+    favorites: (s) => s.entries.filter((e) => e.favorite).sort((a, b) => b.createdAt - a.createdAt),
+    // Non-favorited snippets, newest-created first (favorites float to their own
+    // shelf in the UI).
+    listed: (s) => s.entries.filter((e) => !e.favorite).sort((a, b) => b.createdAt - a.createdAt),
     // Tags actually in use, most-recent first, with usage counts. Tags with no
     // snippets (e.g. created then abandoned in the editor) stay in the registry
     // — reusing their color — but don't clutter the shelf.
@@ -153,39 +154,11 @@ export const useSnippetStore = defineStore('snippets', {
     },
     // How many snippets carry no tags (the Default catch-all).
     defaultCount: (s) => s.entries.filter((e) => !e.tags.length).length,
-    colorOf: (s) => (name) => s.tags[cleanTag(name)]?.color ?? null,
-    // Pinned tags (Quick Access), in the user's arranged order, existing only.
-    pinnedShelf: (s) => {
-      const counts = {}
-      for (const e of s.entries) for (const t of e.tags) counts[t] = (counts[t] || 0) + 1
-      return s.pinnedTags
-        .filter((n) => s.tags[n])
-        .map((n) => ({ name: n, color: s.tags[n].color, count: counts[n] || 0 }))
-    }
+    colorOf: (s) => (name) => s.tags[cleanTag(name)]?.color ?? null
   },
   actions: {
     persist() {
-      savePersisted(
-        'snippets',
-        JSON.stringify({ tags: this.tags, entries: this.entries, pinnedTags: this.pinnedTags })
-      )
-    },
-    // Pin a tag to the Quick Access shelf, or move it before `beforeName`
-    // (null = append). Reordering just re-pins.
-    pinTag(name, beforeName = null) {
-      const n = cleanTag(name)
-      if (!n || !this.tags[n]) return
-      const list = this.pinnedTags.filter((t) => t !== n)
-      const before = beforeName ? cleanTag(beforeName) : null
-      const idx = before ? list.indexOf(before) : -1
-      if (idx >= 0) list.splice(idx, 0, n)
-      else list.push(n)
-      this.pinnedTags = list
-      this.persist()
-    },
-    unpinTag(name) {
-      this.pinnedTags = this.pinnedTags.filter((t) => t !== cleanTag(name))
-      this.persist()
+      savePersisted('snippets', JSON.stringify({ tags: this.tags, entries: this.entries }))
     },
     // Register any missing tags (using the caller's chosen color when given,
     // else the next palette color — this is where a tag typed in the editor is
@@ -318,9 +291,6 @@ export const useSnippetStore = defineStore('snippets', {
           if (!e.tags.includes(n) && e.tags.length < MAX_TAGS) e.tags.push(n)
         }
       }
-      this.pinnedTags = this.pinnedTags
-        .map((t) => (t === o ? n : t))
-        .filter((t, i, a) => a.indexOf(t) === i)
       this.persist()
     },
     deleteTag(name) {
@@ -331,7 +301,6 @@ export const useSnippetStore = defineStore('snippets', {
         const i = e.tags.indexOf(n)
         if (i > -1) e.tags.splice(i, 1)
       }
-      this.pinnedTags = this.pinnedTags.filter((t) => t !== n)
       this.persist()
     },
     // --- delete confirmation flow (snippet | tag) ---
