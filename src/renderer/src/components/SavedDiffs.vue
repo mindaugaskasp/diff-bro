@@ -8,14 +8,28 @@ import { MOD } from '../keys'
 const vault = useVaultStore()
 const diff = useDiffStore()
 
+// Saved diffs are encrypted rows inside vault.json in the (configurable) data
+// folder — shown on hover so it's clear where they actually live on disk.
+const dataDir = ref('')
+
 let timer = null
 onMounted(() => {
   vault.tick()
   // 1 s tick: keeps the countdowns live and purges entries the moment
   // they expire.
   timer = setInterval(() => vault.tick(), 1000)
+  window.api.dataDirGet?.().then((res) => {
+    if (res?.dir) dataDir.value = res.dir
+  })
 })
 onBeforeUnmount(() => clearInterval(timer))
+
+// Tooltip: what the entry is + where it's stored (Settings → Data folder).
+function entryTitle(entry) {
+  const from = entry.from ? ` (from ${entry.from})` : ''
+  const loc = dataDir.value ? `\nSaved in ${dataDir.value}` : ''
+  return `Open "${entry.name}"${from}${loc}`
+}
 
 const imported = computed(() => vault.importedActive)
 
@@ -113,7 +127,7 @@ async function open(entry) {
         <button class="star on" title="Unfavorite" @click="vault.toggleFavorite(entry.id)">
           ★
         </button>
-        <button class="entry" :title="`Open ${entry.name}`" @click="open(entry)">
+        <button class="entry" :title="entryTitle(entry)" @click="open(entry)">
           <span class="name">{{ entry.name }}</span>
           <span class="ttl">{{ remaining(entry) }}</span>
         </button>
@@ -165,7 +179,7 @@ async function open(entry) {
             >
               {{ entry.favorite ? '★' : '☆' }}
             </button>
-            <button class="entry" :title="`Open ${entry.name}`" @click="open(entry)">
+            <button class="entry" :title="entryTitle(entry)" @click="open(entry)">
               <span class="name">{{ entry.name }}</span>
               <span class="ttl">{{ remaining(entry) }}</span>
             </button>
@@ -216,11 +230,7 @@ async function open(entry) {
         >
           {{ entry.favorite ? '★' : '☆' }}
         </button>
-        <button
-          class="entry"
-          :title="`Open ${entry.name} (from ${entry.from})`"
-          @click="open(entry)"
-        >
+        <button class="entry" :title="entryTitle(entry)" @click="open(entry)">
           <span class="name">{{ entry.name }}</span>
           <span class="ttl">{{ remaining(entry) }} · from {{ entry.from }}</span>
         </button>
@@ -240,7 +250,7 @@ async function open(entry) {
 
 <style scoped>
 .saved {
-  width: 220px;
+  width: 256px;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-panel);

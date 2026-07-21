@@ -1,52 +1,113 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 
-// Snippets are a personal, non-expiring text library — encrypted at rest
-// with the same install-specific vault key as saved diffs (vault:encrypt /
-// vault:decrypt IPC; the key never enters this store), but with no
-// expiresAt: unlike a saved diff, a snippet is meant to stick around until
-// you delete it. Category names are plaintext organizational metadata,
-// same trust level as a saved diff's `name`. Persistence goes through the
-// durable file store (persist.js) so snippets survive an app reinstall.
-const DEFAULT_CATEGORY_NAME = 'Default'
+// Snippets are a personal, non-expiring text library — encrypted at rest with
+// the same install-specific vault key as saved diffs (vault:encrypt /
+// vault:decrypt IPC; the key never enters this store). Organization is by
+// TAGS: each snippet carries up to 5 color-coded tags; a snippet with no tags
+// lives under the permanent "Default" catch-all. Tags are plaintext
+// organizational metadata, same trust level as a snippet's name — deliberately
+// NOT part of the AAD, so retagging never re-encrypts. Persistence goes through
+// the durable file store (persist.js) so snippets survive an app reinstall.
 
-// The "Default" category always exists as the fallback home for new
-// snippets and can never be deleted, so every install is guaranteed a
-// place to put a snippet. It's marked with `isDefault` rather than a
-// reserved id so it survives export/import and rename.
-function ensureDefault(state) {
-  if (!state.categories.some((c) => c.isDefault)) {
-    state.categories.unshift({
-      id: crypto.randomUUID(),
-      name: DEFAULT_CATEGORY_NAME,
-      isDefault: true
-    })
+// Predefined 20-color palette, tuned to read on both themes. A new tag takes
+// the next unused color; past 20 tags colors cycle.
+export const TAG_PALETTE = [
+  '#4c8dff',
+  '#39c5cf',
+  '#3fb950',
+  '#56d364',
+  '#d29922',
+  '#e0823d',
+  '#f85149',
+  '#db61a2',
+  '#a371f7',
+  '#6cb6ff',
+  '#2da44e',
+  '#e3b341',
+  '#ff7b72',
+  '#bc8cff',
+  '#76e3ea',
+  '#f0883e',
+  '#ffa8cc',
+  '#8957e5',
+  '#cf222e',
+  '#8b949e'
+]
+export const MAX_TAGS = 5
+
+export const cleanTag = (name) =>
+  String(name ?? '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 40)
+const cleanName = (name, fallback = 'Untitled snippet') => String(name ?? '').trim() || fallback
+
+// Next unused palette color; cycles once every color is taken.
+function nextColor(tags) {
+  const used = new Set(Object.values(tags).map((t) => t.color))
+  return (
+    TAG_PALETTE.find((c) => !used.has(c)) ??
+    TAG_PALETTE[Object.keys(tags).length % TAG_PALETTE.length]
+  )
+}
+// Monotonic recency rank — higher is more recent, so the shelf shows new /
+// just-used tags first. Derived from stored ranks so it survives a reload.
+function nextRank(tags) {
+  const ranks = Object.values(tags).map((t) => t.rank)
+  return (ranks.length ? Math.max(...ranks) : 0) + 1
+}
+
+// Migrate the persisted blob to the tags shape. Old shape is
+// { categories:[{id,name,isDefault}], entries:[{...,categoryId}] }. Crucially,
+// the AAD stays `[id, aadSalt, createdAt]` with aadSalt = the entry's original
+// categoryId, so existing ciphertext still decrypts — this migration only
+// reshapes metadata and never touches (or risks) the encrypted content.
+function migrate(parsed) {
+  if (parsed && parsed.tags && Array.isArray(parsed.entries) && !parsed.categories) {
+    return {
+      tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
+      entries: parsed.entries,
+      pinnedTags: Array.isArray(parsed.pinnedTags) ? parsed.pinnedTags : []
+    }
   }
-  return state
+  const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
+  const catById = new Map(categories.map((c) => [c.id, c]))
+  const tags = {}
+  for (const c of categories) {
+    if (c.isDefault) continue
+    const n = cleanTag(c.name)
+    if (n && !tags[n]) tags[n] = { color: nextColor(tags), rank: nextRank(tags) }
+  }
+  const entries = (Array.isArray(parsed?.entries) ? parsed.entries : []).map((e) => {
+    const cat = catById.get(e.categoryId)
+    const tagName = cat && !cat.isDefault ? cleanTag(cat.name) : null
+    const { categoryId, ...rest } = e
+    return { ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] }
+  })
+  return { tags, entries, pinnedTags: [] }
 }
 
 function readState() {
   const raw = loadPersisted('snippets')
-  let state = { categories: [], entries: [] }
+  let parsed = null
   if (raw != null) {
     try {
-      const parsed = JSON.parse(raw)
-      state = {
-        categories: Array.isArray(parsed?.categories) ? parsed.categories : [],
-        entries: Array.isArray(parsed?.entries) ? parsed.entries : []
-      }
+      parsed = JSON.parse(raw)
     } catch {
-      state = { categories: [], entries: [] }
+      parsed = null
     }
   }
-  ensureDefault(state)
-  savePersisted('snippets', JSON.stringify(state))
+  const state = migrate(parsed)
+  savePersisted('snippets', JSON.stringify(state)) // write the migrated shape back
   return state
 }
 
-// Binds each snippet's ciphertext to its id/category/creation time, same
-// tamper-binding pattern as vaultStore's entryAad.
-const entryAad = (id, categoryId, createdAt) => [id, categoryId, createdAt].join('|')
+// Binds each snippet's ciphertext to immutable per-snippet values (id + a
+// stable salt + creation time). aadSalt is the old categoryId on migrated
+// snippets and a fresh UUID on new ones — either way it never changes, so tags
+// stay free metadata.
+const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
 
 const IMPORT_ERRORS = {
   'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
@@ -59,106 +120,121 @@ const IMPORT_ERRORS = {
 
 export const useSnippetStore = defineStore('snippets', {
   state: () => ({
+    // tags: { name: { color, rank } };  entries: [{ id, aadSalt, name,
+    // createdAt, language, favorite, tags:[name], iv, data }]
     ...readState(),
-    // { categoryId } for a single category, or { categoryId: 'all' } — null
-    // when the export passphrase dialog is closed.
+    // { all: true } to export everything, { tag } for one tag ('' = Default) —
+    // null when the export passphrase dialog is closed.
     pendingExport: null,
     pendingImport: false,
-    // { id: null } for a new snippet, or { id } to edit an existing one —
-    // null when the editor dialog is closed.
+    // { id: null, ... } for a new snippet, or { id } to edit — null when closed.
     editingSnippet: null,
-    // { type: 'category' | 'snippet', id, name } while a delete confirmation
-    // is open — null otherwise.
+    // { type: 'snippet' | 'tag', id, name } while a delete confirmation is open.
     pendingDelete: null,
-    // Bumps to a category id whenever a snippet lands in it, so the sidebar
-    // can auto-expand that category.
-    lastTouchedCategory: null,
-    // Set when the vault key can't be loaded — surfaced, never a reason to
-    // drop snippets (which, unlike diffs, don't expire and can't be re-fetched).
+    // Set when the vault key can't be loaded — surfaced, never a reason to drop
+    // snippets (which, unlike diffs, don't expire and can't be re-fetched).
     keyError: null
   }),
   getters: {
-    // Favorited snippets are lifted out into the pinned "Favorites" group at
-    // the top, so a category only lists its non-favorited snippets.
-    inCategory: (s) => (categoryId) =>
-      s.entries.filter((e) => e.categoryId === categoryId && !e.favorite),
-    // All favorited snippets across every category, for the pinned
-    // "Favorites" group at the top of the sidebar.
     favorites: (s) => s.entries.filter((e) => e.favorite),
-    defaultCategoryId: (s) => s.categories.find((c) => c.isDefault)?.id ?? null,
-    // Deletable only if it is not Default and lists no (non-favorited)
-    // snippets. Favorited stragglers move to Default on delete (see
-    // removeCategory), so they don't block it.
-    canDeleteCategory() {
-      return (id) => {
-        const category = this.categories.find((c) => c.id === id)
-        if (!category || category.isDefault) return false
-        return !this.inCategory(id).length
-      }
+    // Non-favorited snippets in insertion order (favorites float to their own
+    // pinned group in the UI).
+    listed: (s) => s.entries.filter((e) => !e.favorite),
+    // Tags actually in use, most-recent first, with usage counts. Tags with no
+    // snippets (e.g. created then abandoned in the editor) stay in the registry
+    // — reusing their color — but don't clutter the shelf.
+    tagList: (s) => {
+      const counts = {}
+      for (const e of s.entries) for (const t of e.tags) counts[t] = (counts[t] || 0) + 1
+      return Object.entries(s.tags)
+        .filter(([name]) => counts[name])
+        .map(([name, { color, rank }]) => ({ name, color, rank, count: counts[name] }))
+        .sort((a, b) => b.rank - a.rank)
+    },
+    // How many snippets carry no tags (the Default catch-all).
+    defaultCount: (s) => s.entries.filter((e) => !e.tags.length).length,
+    colorOf: (s) => (name) => s.tags[cleanTag(name)]?.color ?? null,
+    // Pinned tags (Quick Access), in the user's arranged order, existing only.
+    pinnedShelf: (s) => {
+      const counts = {}
+      for (const e of s.entries) for (const t of e.tags) counts[t] = (counts[t] || 0) + 1
+      return s.pinnedTags
+        .filter((n) => s.tags[n])
+        .map((n) => ({ name: n, color: s.tags[n].color, count: counts[n] || 0 }))
     }
   },
   actions: {
     persist() {
       savePersisted(
         'snippets',
-        JSON.stringify({ categories: this.categories, entries: this.entries })
+        JSON.stringify({ tags: this.tags, entries: this.entries, pinnedTags: this.pinnedTags })
       )
     },
-    addCategory(name) {
-      const id = crypto.randomUUID()
-      this.categories.push({ id, name: (name || 'Untitled').trim() || 'Untitled' })
+    // Pin a tag to the Quick Access shelf, or move it before `beforeName`
+    // (null = append). Reordering just re-pins.
+    pinTag(name, beforeName = null) {
+      const n = cleanTag(name)
+      if (!n || !this.tags[n]) return
+      const list = this.pinnedTags.filter((t) => t !== n)
+      const before = beforeName ? cleanTag(beforeName) : null
+      const idx = before ? list.indexOf(before) : -1
+      if (idx >= 0) list.splice(idx, 0, n)
+      else list.push(n)
+      this.pinnedTags = list
       this.persist()
-      return id
     },
-    // Opens the snippet editor prefilled from a Tools dialog's output.
+    unpinTag(name) {
+      this.pinnedTags = this.pinnedTags.filter((t) => t !== cleanTag(name))
+      this.persist()
+    },
+    // Register any missing tags (using the caller's chosen color when given,
+    // else the next palette color — this is where a tag typed in the editor is
+    // FIRST persisted, only when the snippet is saved), touch used ones to
+    // "now", and return the cleaned, de-duplicated, capped applied list.
+    _applyTags(names, colors = {}) {
+      const out = []
+      for (const raw of names ?? []) {
+        const n = cleanTag(raw)
+        if (!n || out.includes(n) || out.length >= MAX_TAGS) continue
+        if (!this.tags[n]) {
+          const c = TAG_PALETTE.includes(colors[n]) ? colors[n] : nextColor(this.tags)
+          this.tags[n] = { color: c, rank: nextRank(this.tags) }
+        } else this.tags[n].rank = nextRank(this.tags)
+        out.push(n)
+      }
+      return out
+    },
+    // Opens the snippet editor prefilled from a Tools dialog's "Add to Snippets".
     startNewSnippetFrom(content, language) {
       this.editingSnippet = {
         id: null,
-        categoryId: this.defaultCategoryId,
         initialContent: content,
-        initialLanguage: language || 'auto'
+        initialLanguage: language || 'auto',
+        initialTags: []
       }
     },
-    renameCategory(id, name) {
-      const category = this.categories.find((c) => c.id === id)
-      if (category && name.trim()) category.name = name.trim()
-      this.persist()
-    },
-    // Refuses to delete the Default category or any non-empty one (defense
-    // in depth — the UI also gates this). Returns whether it deleted.
-    removeCategory(id) {
-      if (!this.canDeleteCategory(id)) return false
-      // Favorited stragglers (shown in the Favorites group, not the category
-      // list) fall back to Default so they never point at a deleted category.
-      const def = this.defaultCategoryId
-      for (const e of this.entries) if (e.categoryId === id) e.categoryId = def
-      this.categories = this.categories.filter((c) => c.id !== id)
-      this.persist()
-      return true
-    },
-    // language is the chosen syntax for highlighting ('auto' lets the editor
-    // detect it); plaintext metadata, not part of the AAD.
-    async add(categoryId, name, content, language) {
+    async add(name, content, language, tags = [], tagColors = {}) {
       const id = crypto.randomUUID()
       const createdAt = Date.now()
-      const box = await window.api.vaultEncrypt(content, entryAad(id, categoryId, createdAt))
+      const aadSalt = crypto.randomUUID()
+      const box = await window.api.vaultEncrypt(content, entryAad(id, aadSalt, createdAt))
       // Key unavailable — don't persist an undecryptable snippet.
       if (box?.error) {
         this.keyError = box.error
         return null
       }
-      const { iv, data } = box
+      const applied = this._applyTags(tags, tagColors)
       this.entries.push({
         id,
-        categoryId,
-        name: (name || 'Untitled snippet').trim() || 'Untitled snippet',
+        aadSalt,
+        name: cleanName(name),
         createdAt,
         language: language || 'auto',
         favorite: false,
-        iv,
-        data
+        tags: applied,
+        iv: box.iv,
+        data: box.data
       })
-      this.lastTouchedCategory = categoryId
       this.persist()
       return id
     },
@@ -167,7 +243,7 @@ export const useSnippetStore = defineStore('snippets', {
       if (!entry) return null
       const content = await window.api.vaultDecrypt(
         { iv: entry.iv, data: entry.data },
-        entryAad(entry.id, entry.categoryId, entry.createdAt)
+        entryAad(entry.id, entry.aadSalt, entry.createdAt)
       )
       // Key couldn't be loaded — keep the snippet, surface the problem.
       if (content && typeof content === 'object' && content.error) {
@@ -182,47 +258,30 @@ export const useSnippetStore = defineStore('snippets', {
       this.keyError = null
       return content
     },
-    // categoryId is optional — passing a different one moves the snippet to
-    // that category (which also re-binds the AAD, since categoryId is part
-    // of it).
-    async update(id, name, content, categoryId, language) {
+    // tags is optional — pass to replace the snippet's tags (the AAD is
+    // unchanged, so this is a plain metadata + content update, no re-key).
+    async update(id, name, content, language, tags, tagColors = {}) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
-      const newCategoryId = categoryId ?? entry.categoryId
       const box = await window.api.vaultEncrypt(
         content,
-        entryAad(entry.id, newCategoryId, entry.createdAt)
+        entryAad(entry.id, entry.aadSalt, entry.createdAt)
       )
       // Key unavailable — leave the existing (still-decryptable) entry as-is.
       if (box?.error) {
         this.keyError = box.error
         return
       }
-      const { iv, data } = box
-      entry.categoryId = newCategoryId
-      entry.name = (name || entry.name).trim() || entry.name
+      entry.name = cleanName(name, entry.name)
       if (language) entry.language = language
-      entry.iv = iv
-      entry.data = data
+      if (tags !== undefined) entry.tags = this._applyTags(tags, tagColors)
+      entry.iv = box.iv
+      entry.data = box.data
       this.persist()
     },
     remove(id) {
       this.entries = this.entries.filter((e) => e.id !== id)
       this.persist()
-    },
-    // --- delete confirmation flow ---
-    requestDelete(type, id, name) {
-      this.pendingDelete = { type, id, name }
-    },
-    confirmDelete() {
-      const pending = this.pendingDelete
-      this.pendingDelete = null
-      if (!pending) return
-      if (pending.type === 'category') this.removeCategory(pending.id)
-      else this.remove(pending.id)
-    },
-    cancelDelete() {
-      this.pendingDelete = null
     },
     toggleFavorite(id) {
       const entry = this.entries.find((e) => e.id === id)
@@ -231,46 +290,129 @@ export const useSnippetStore = defineStore('snippets', {
         this.persist()
       }
     },
+    // --- tag management ---
+    touchTag(name) {
+      const t = this.tags[cleanTag(name)]
+      if (t) {
+        t.rank = nextRank(this.tags)
+        this.persist()
+      }
+    },
+    recolorTag(name, color) {
+      const t = this.tags[cleanTag(name)]
+      if (t && TAG_PALETTE.includes(color)) {
+        t.color = color
+        this.persist()
+      }
+    },
+    renameTag(oldName, newName) {
+      const o = cleanTag(oldName)
+      const n = cleanTag(newName)
+      if (!this.tags[o] || !n || o === n) return
+      if (!this.tags[n]) this.tags[n] = { color: this.tags[o].color, rank: nextRank(this.tags) }
+      delete this.tags[o]
+      for (const e of this.entries) {
+        const i = e.tags.indexOf(o)
+        if (i > -1) {
+          e.tags.splice(i, 1)
+          if (!e.tags.includes(n) && e.tags.length < MAX_TAGS) e.tags.push(n)
+        }
+      }
+      this.pinnedTags = this.pinnedTags
+        .map((t) => (t === o ? n : t))
+        .filter((t, i, a) => a.indexOf(t) === i)
+      this.persist()
+    },
+    deleteTag(name) {
+      const n = cleanTag(name)
+      if (!this.tags[n]) return
+      delete this.tags[n]
+      for (const e of this.entries) {
+        const i = e.tags.indexOf(n)
+        if (i > -1) e.tags.splice(i, 1)
+      }
+      this.pinnedTags = this.pinnedTags.filter((t) => t !== n)
+      this.persist()
+    },
+    // --- delete confirmation flow (snippet | tag) ---
+    requestDelete(type, id, name) {
+      this.pendingDelete = { type, id, name }
+    },
+    confirmDelete() {
+      const pending = this.pendingDelete
+      this.pendingDelete = null
+      if (!pending) return
+      if (pending.type === 'tag') this.deleteTag(pending.id)
+      else this.remove(pending.id)
+    },
+    cancelDelete() {
+      this.pendingDelete = null
+    },
     // --- export / import ---
-    // ALL snippets in the category (favorited ones are only lifted out for
-    // display, not for export), with their chosen language.
-    async _bundleCategory(category) {
+    // A plaintext bundle { snippets:[{name,content,language,tags}], tags:{name:{color}} }.
+    async _bundle(entries) {
       const snippets = []
-      for (const entry of this.entries.filter((e) => e.categoryId === category.id)) {
+      for (const entry of entries) {
         const content = await this.load(entry.id)
         if (content !== null) {
-          snippets.push({ name: entry.name, content, language: entry.language ?? 'auto' })
+          snippets.push({
+            name: entry.name,
+            content,
+            language: entry.language ?? 'auto',
+            tags: [...entry.tags]
+          })
         }
       }
-      return { name: category.name, snippets }
+      const tags = {}
+      for (const s of snippets)
+        for (const t of s.tags) if (this.tags[t]) tags[t] = { color: this.tags[t].color }
+      return { snippets, tags }
     },
-    // Full plaintext bundle of the whole library, for the config backup.
     async fullBundle() {
-      const categories = []
-      for (const category of this.categories) categories.push(await this._bundleCategory(category))
-      return { categories }
+      return this._bundle(this.entries)
     },
-    // Merge an in-memory bundle back in (used by config restore). Categories
-    // are matched by name; snippets are appended.
+    // Merge an in-memory bundle back in (config restore / import). Tag colors
+    // are registered without clobbering existing ones; snippets are appended.
+    // Also accepts a legacy { categories:[...] } bundle so old exports still
+    // import — each category folds into a tag of the same name.
     async restoreBundle(bundle) {
-      for (const category of bundle?.categories ?? []) {
-        let categoryId = this.categories.find((c) => c.name === category.name)?.id
-        if (!categoryId) categoryId = this.addCategory(category.name)
-        for (const snippet of category.snippets ?? []) {
-          await this.add(categoryId, snippet.name, snippet.content, snippet.language)
+      if (Array.isArray(bundle?.categories)) {
+        for (const category of bundle.categories) {
+          const tag = cleanTag(category.name)
+          const tags = tag && tag !== 'default' ? [tag] : []
+          for (const s of category.snippets ?? []) {
+            await this.add(s.name, s.content, s.language, tags)
+          }
+        }
+        return
+      }
+      for (const [name, meta] of Object.entries(bundle?.tags ?? {})) {
+        const n = cleanTag(name)
+        if (n && !this.tags[n]) {
+          this.tags[n] = {
+            color: TAG_PALETTE.includes(meta?.color) ? meta.color : nextColor(this.tags),
+            rank: nextRank(this.tags)
+          }
         }
       }
-    },
-    async exportCategory(categoryId, passphrase) {
-      const category = this.categories.find((c) => c.id === categoryId)
-      if (!category) return { error: 'missing' }
-      const bundle = { categories: [await this._bundleCategory(category)] }
-      return window.api.exportSnippets(bundle, passphrase, category.name)
+      for (const s of bundle?.snippets ?? []) {
+        await this.add(s.name, s.content, s.language, Array.isArray(s.tags) ? s.tags : [])
+      }
     },
     async exportAll(passphrase) {
-      const categories = []
-      for (const category of this.categories) categories.push(await this._bundleCategory(category))
-      return window.api.exportSnippets({ categories }, passphrase, 'diffbro-snippets')
+      return window.api.exportSnippets(
+        await this._bundle(this.entries),
+        passphrase,
+        'diffbro-snippets'
+      )
+    },
+    // Export the snippets carrying one tag ('' or null = the Default catch-all).
+    async exportTag(name, passphrase) {
+      const n = cleanTag(name)
+      const entries = n
+        ? this.entries.filter((e) => e.tags.includes(n))
+        : this.entries.filter((e) => !e.tags.length)
+      return window.api.exportSnippets(await this._bundle(entries), passphrase, n || 'default')
     },
     async importSnippets(passphrase) {
       const res = await window.api.importSnippets(passphrase)
@@ -280,21 +422,14 @@ export const useSnippetStore = defineStore('snippets', {
       }
       // The embedded signature only proves the bundle wasn't altered after
       // signing — the verifying key travels INSIDE the file, so it does NOT
-      // prove the signer is anyone you trust. Cross-check the fingerprint
-      // against trusted keys and label it "unverified" otherwise; never
-      // present the returned signer as a verified identity.
+      // prove the signer is trusted. Cross-check against trusted keys and label
+      // it "unverified" otherwise; never present the signer as verified.
       const trusted = (await window.api.listTrustedKeys?.()) ?? []
       const match = trusted.find((t) => t.fingerprint === res.signer)
       res.signerNote = match
         ? `Signed by trusted key "${match.label}".`
         : `Signed by ${res.signer ?? 'an unknown key'} — unverified (not in your trusted keys).`
-      for (const category of res.bundle?.categories ?? []) {
-        let categoryId = this.categories.find((c) => c.name === category.name)?.id
-        if (!categoryId) categoryId = this.addCategory(category.name)
-        for (const snippet of category.snippets ?? []) {
-          await this.add(categoryId, snippet.name, snippet.content, snippet.language)
-        }
-      }
+      await this.restoreBundle(res.bundle)
       return res
     }
   }

@@ -1,12 +1,19 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
-import { useSnippetStore } from '../stores/snippetStore'
+import { useSnippetStore, MAX_TAGS, TAG_PALETTE, cleanTag } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { detectSnippetLanguage, SNIPPET_LANGUAGES } from '../utils/detectLanguage'
+import { formatJson, formatXml } from '../utils/textFormats'
+import { formatSql } from '../utils/sqlFormat'
+import TagGlyph from './TagGlyph.vue'
 
 const store = useSnippetStore()
 const diff = useDiffStore()
+
+// Pretty-printers for the syntaxes the Tools menu also formats. Keyed by the
+// Monaco language id the editor resolves to (see `language` below).
+const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql }
 const container = ref(null)
 const name = ref('')
 const content = ref('')
@@ -14,15 +21,62 @@ const isNew = store.editingSnippet.id == null
 const saving = ref(false)
 let editor = null
 
-// New snippets default to the category they were launched from, falling
-// back to Default; editing a snippet preloads its current category, and
-// changing this selector moves it.
+// Up to 5 color-coded tags; no tags means the Default catch-all.
 const existingEntry = isNew ? null : store.entries.find((e) => e.id === store.editingSnippet.id)
-const categoryId = ref(
-  isNew
-    ? (store.editingSnippet.categoryId ?? store.defaultCategoryId)
-    : (existingEntry?.categoryId ?? store.defaultCategoryId)
+const tags = ref(
+  isNew ? [...(store.editingSnippet.initialTags ?? [])] : [...(existingEntry?.tags ?? [])]
 )
+const tagInput = ref('')
+const tagInputEl = ref(null)
+// Colors chosen for tags typed here that don't exist yet — kept locally and
+// only written to the registry when the snippet is saved, so abandoning the
+// editor never creates a stray tag.
+const tentativeColors = ref({})
+const canAddMore = computed(() => tags.value.length < MAX_TAGS)
+// Existing tags not already applied, matching what's typed, recent-first.
+const suggestions = computed(() => {
+  const q = tagInput.value.trim().toLowerCase()
+  return store.tagList
+    .map((t) => t.name)
+    .filter((n) => !tags.value.includes(n) && n.includes(q))
+    .slice(0, 8)
+})
+// Display color: the registry color if the tag exists, else its tentative one.
+function colorFor(t) {
+  return store.colorOf(t) || tentativeColors.value[t] || 'var(--text-dim)'
+}
+function nextTentativeColor() {
+  const used = new Set([
+    ...Object.values(store.tags).map((t) => t.color),
+    ...Object.values(tentativeColors.value)
+  ])
+  return TAG_PALETTE.find((c) => !used.has(c)) ?? TAG_PALETTE[0]
+}
+function addTag(raw) {
+  if (!canAddMore.value) return
+  const n = cleanTag(raw)
+  if (!n || tags.value.includes(n)) {
+    tagInput.value = ''
+    return
+  }
+  // New tag: reserve a tentative color (not persisted until save).
+  if (!store.colorOf(n) && !tentativeColors.value[n]) {
+    tentativeColors.value = { ...tentativeColors.value, [n]: nextTentativeColor() }
+  }
+  tags.value.push(n)
+  tagInput.value = ''
+}
+function removeTag(t) {
+  tags.value = tags.value.filter((x) => x !== t)
+}
+function onTagKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    if (tagInput.value.trim()) addTag(tagInput.value)
+  } else if (e.key === 'Backspace' && !tagInput.value && tags.value.length) {
+    tags.value.pop()
+  }
+}
 
 const languages = SNIPPET_LANGUAGES
 // 'auto' defers to the content-based detector; any other value is the
@@ -79,15 +133,21 @@ async function save() {
   // so a second click before it resolves would create a duplicate.
   if (!name.value.trim() || saving.value) return
   saving.value = true
+  // Only pass colors for tags that don't exist yet — the store registers them
+  // now (first persistence of a tag happens on save, never before).
+  const newColors = {}
+  for (const t of tags.value)
+    if (!store.colorOf(t) && tentativeColors.value[t]) newColors[t] = tentativeColors.value[t]
   if (isNew) {
-    await store.add(categoryId.value, name.value, content.value, chosenLanguage.value)
+    await store.add(name.value, content.value, chosenLanguage.value, tags.value, newColors)
   } else {
     await store.update(
       store.editingSnippet.id,
       name.value,
       content.value,
-      categoryId.value,
-      chosenLanguage.value
+      chosenLanguage.value,
+      tags.value,
+      newColors
     )
   }
   close()
@@ -108,6 +168,20 @@ function clearContent() {
   content.value = ''
   editor?.setValue('')
   editor?.focus()
+}
+
+// Pretty-print the content when the snippet's syntax is one we can format
+// (JSON / XML / SQL). Uses the same formatters as the Tools menu; invalid JSON
+// is reported rather than mangled.
+const canFormat = computed(() => !!content.value.trim() && !!FORMATTERS[language.value])
+function formatContent() {
+  const fmt = FORMATTERS[language.value]
+  if (!fmt) return
+  try {
+    content.value = fmt(content.value)
+  } catch {
+    diff.showNotice(`Couldn't format — the content isn't valid ${language.value.toUpperCase()}.`)
+  }
 }
 
 // Dropping a file onto the editor loads its contents (handled here, with
@@ -137,12 +211,41 @@ async function onDropFile(e) {
           Name
           <input v-model="name" type="text" spellcheck="false" placeholder="Snippet name…" />
         </label>
-        <label>
-          Category
-          <select v-model="categoryId">
-            <option v-for="c in store.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-          </select>
-        </label>
+      </div>
+      <div class="tag-section">
+        <div class="field-label">
+          Tags <span class="hint">— up to {{ MAX_TAGS }}, or leave empty for Default</span>
+        </div>
+        <div class="tagfield" @click="tagInputEl?.focus()">
+          <span v-for="t in tags" :key="t" class="etag" :style="{ '--tc': colorFor(t) }">
+            <TagGlyph :color="colorFor(t)" />{{ t }}
+            <button type="button" class="x" @click.stop="removeTag(t)">×</button>
+          </span>
+          <input
+            ref="tagInputEl"
+            v-model="tagInput"
+            class="taginput"
+            :placeholder="canAddMore ? 'add a tag…' : ''"
+            :disabled="!canAddMore"
+            spellcheck="false"
+            @keydown="onTagKey"
+          />
+        </div>
+        <div class="cap" :class="{ full: !canAddMore }">
+          {{ tags.length }} of {{ MAX_TAGS }}{{ canAddMore ? '' : ' — remove one to add another' }}
+        </div>
+        <div v-if="suggestions.length && canAddMore" class="suggest">
+          <button
+            v-for="s in suggestions"
+            :key="s"
+            type="button"
+            class="sugg"
+            :style="{ '--tc': store.colorOf(s) }"
+            @click="addTag(s)"
+          >
+            <TagGlyph :color="store.colorOf(s)" />{{ s }}
+          </button>
+        </div>
       </div>
       <div class="editor-header">
         <span>Content <span class="drop-hint">— or drop a file here</span></span>
@@ -161,6 +264,18 @@ async function onDropFile(e) {
         @drop.capture.prevent.stop="onDropFile"
       ></div>
       <div class="actions">
+        <button
+          class="ghost small"
+          :disabled="!canFormat"
+          :title="
+            canFormat
+              ? `Pretty-print as ${language.toUpperCase()}`
+              : 'Formatting is available for JSON, XML, or SQL'
+          "
+          @click="formatContent"
+        >
+          Format
+        </button>
         <button class="ghost small" :disabled="!content" title="Copy content" @click="copyContent">
           Copy
         </button>
@@ -251,6 +366,96 @@ input:focus,
 select:focus {
   outline: none;
   border-color: var(--accent);
+}
+.tag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.field-label .hint {
+  color: var(--text-hint);
+}
+.tagfield {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px;
+  min-height: 40px;
+  cursor: text;
+}
+.etag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 6px 4px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  background: color-mix(in srgb, var(--tc) 16%, transparent);
+  color: color-mix(in srgb, var(--tc) 74%, var(--text));
+}
+.etag .x {
+  cursor: pointer;
+  opacity: 0.7;
+  font-weight: 700;
+  padding: 0 1px;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+}
+.etag .x:hover {
+  opacity: 1;
+}
+.taginput {
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 12.5px;
+  padding: 4px;
+  min-width: 90px;
+  flex: 1;
+  font-family: inherit;
+}
+.taginput:focus {
+  outline: none;
+}
+.cap {
+  font-size: 11.5px;
+  color: var(--text-hint);
+}
+.cap.full {
+  color: #d29922;
+}
+.suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sugg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  background: color-mix(in srgb, var(--tc) 12%, transparent);
+  color: color-mix(in srgb, var(--tc) 72%, var(--text));
+  font-family: inherit;
 }
 .editor-header {
   display: flex;

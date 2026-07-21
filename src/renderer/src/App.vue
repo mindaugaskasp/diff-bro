@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
@@ -39,41 +39,8 @@ window.api.onMenuAction((action) => store.handleMenuAction(action))
 // external edits show up without reopening anything.
 window.addEventListener('focus', () => store.refreshFromDisk())
 
-// --- Resizable sidebar (drag the divider between the sidebar and the diff) ---
-const SIDEBAR_KEY = 'diffbro.sidebarWidth'
-const SIDEBAR_MIN = 180
-const SIDEBAR_MAX = 640
-const clampSidebar = (w) => Math.min(Math.max(w, SIDEBAR_MIN), SIDEBAR_MAX)
-
-const sidebarWidth = ref(clampSidebar(Number(localStorage.getItem(SIDEBAR_KEY)) || 220))
-
-let dragStartX = 0
-let dragStartWidth = 0
-
-function onResizeMove(e) {
-  sidebarWidth.value = clampSidebar(dragStartWidth + (e.clientX - dragStartX))
-}
-function onResizeEnd() {
-  window.removeEventListener('mousemove', onResizeMove)
-  window.removeEventListener('mouseup', onResizeEnd)
-  document.body.style.cursor = ''
-  document.body.style.userSelect = ''
-  localStorage.setItem(SIDEBAR_KEY, String(Math.round(sidebarWidth.value)))
-}
-function startResize(e) {
-  dragStartX = e.clientX
-  dragStartWidth = sidebarWidth.value
-  // Suppress text selection and keep the resize cursor during the drag.
-  document.body.style.cursor = 'col-resize'
-  document.body.style.userSelect = 'none'
-  window.addEventListener('mousemove', onResizeMove)
-  window.addEventListener('mouseup', onResizeEnd)
-}
-
-onBeforeUnmount(() => {
-  window.removeEventListener('mousemove', onResizeMove)
-  window.removeEventListener('mouseup', onResizeEnd)
-})
+// The sidebar is a fixed width (see SavedDiffs.vue) — deliberately not
+// resizable, so the layout stays predictable across sessions.
 
 // --- Drag & drop files anywhere on the window ---
 // A dragenter/dragleave counter avoids the flicker you'd get from child
@@ -205,8 +172,7 @@ async function onDrop(e) {
     </header>
 
     <div class="body">
-      <SavedDiffs :style="{ width: sidebarWidth + 'px' }" />
-      <div class="resizer" title="Drag to resize" @mousedown="startResize"></div>
+      <SavedDiffs />
       <main class="content">
         <div v-if="store.mode !== 'paste'" class="file-slots-row">
           <div class="slot-half">
@@ -415,15 +381,6 @@ async function onDrop(e) {
   flex: 1;
   min-height: 0;
   display: flex;
-}
-.resizer {
-  flex: 0 0 5px;
-  cursor: col-resize;
-  background: var(--border);
-  transition: background 0.12s;
-}
-.resizer:hover {
-  background: var(--accent);
 }
 .content {
   flex: 1;

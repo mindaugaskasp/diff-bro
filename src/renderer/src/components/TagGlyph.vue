@@ -1,0 +1,30 @@
+<script setup>
+// The tag icon shown next to every tag. Colored via the `color` prop (falls
+// back to currentColor so it inherits when unset).
+defineProps({ color: { type: String, default: 'currentColor' } })
+</script>
+
+<template>
+  <svg
+    class="tglyph"
+    viewBox="0 0 24 24"
+    :style="{ color }"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z" />
+    <circle cx="7.3" cy="7.3" r="1.25" fill="currentColor" stroke="none" />
+  </svg>
+</template>
+
+<style scoped>
+.tglyph {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+</style>

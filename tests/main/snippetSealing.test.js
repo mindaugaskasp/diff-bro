@@ -11,10 +11,11 @@ import {
 } from '../../src/main/snippetSealing'
 
 const BUNDLE = {
-  categories: [
-    { name: 'SQL', snippets: [{ name: 'find user', content: 'SELECT * FROM users' }] },
-    { name: 'Notes', snippets: [{ name: 'todo', content: '# Todo\n- [ ] ship it' }] }
-  ]
+  snippets: [
+    { name: 'find user', content: 'SELECT * FROM users', language: 'sql', tags: ['sql'] },
+    { name: 'todo', content: '# Todo\n- [ ] ship it', language: 'markdown', tags: [] }
+  ],
+  tags: { sql: { color: '#4c8dff' } }
 }
 
 describe('sealSnippets / openSnippets', () => {
@@ -103,22 +104,14 @@ describe('sealSnippets / openSnippets', () => {
     // A file can be perfectly decryptable and correctly signed yet still carry
     // a bundle we must not trust: the passphrase gates confidentiality, not shape.
     const sender = createIdentityKeys()
-    const file = await sealSnippets(
-      { categories: [{ name: 'x', snippets: [{ name: 'n', content: 12345 }] }] },
-      'pw',
-      sender
-    )
+    const file = await sealSnippets({ snippets: [{ name: 'n', content: 12345 }] }, 'pw', sender)
     expect(await openSnippets(file, 'pw')).toEqual({ error: 'malformed' })
   })
 
   it('rejects a decryptable bundle that exceeds the size caps', async () => {
     const sender = createIdentityKeys()
     const huge = 'a'.repeat(SNIPPET_LIMITS.contentBytes + 1)
-    const file = await sealSnippets(
-      { categories: [{ name: 'x', snippets: [{ name: 'big', content: huge }] }] },
-      'pw',
-      sender
-    )
+    const file = await sealSnippets({ snippets: [{ name: 'big', content: huge }] }, 'pw', sender)
     expect(await openSnippets(file, 'pw')).toEqual({ error: 'too-large' })
   })
 })
@@ -127,64 +120,54 @@ describe('validateSnippetBundle', () => {
   const ok = (bundle) => expect(validateSnippetBundle(bundle)).toBeNull()
   const bad = (bundle, code) => expect(validateSnippetBundle(bundle)).toBe(code)
 
-  it('accepts a well-formed bundle', () => {
+  it('accepts a well-formed tags bundle', () => {
+    ok({ snippets: [] })
+    ok({ snippets: [{ name: 'n', content: 'x' }] }) // language + tags optional
+    ok({ snippets: [{ name: 'n', content: 'x', language: 'sql', tags: ['a', 'b'] }] })
+    ok({ snippets: [{ name: 'n', content: 'x', tags: ['a'] }], tags: { a: { color: '#4c8dff' } } })
+  })
+
+  it('still accepts a legacy categories bundle (old exports)', () => {
     ok({ categories: [] })
-    ok({ categories: [{ name: 'c', snippets: [] }] })
     ok({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x', language: 'sql' }] }] })
-    ok({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x' }] }] }) // language optional
   })
 
   it('rejects non-object / wrong-shape bundles as malformed', () => {
-    for (const b of [null, undefined, 'str', 42, {}, { categories: 'nope' }]) bad(b, 'malformed')
+    for (const b of [null, undefined, 'str', 42, {}, { snippets: 'nope' }]) bad(b, 'malformed')
   })
 
   it('rejects wrong field types as malformed', () => {
-    bad({ categories: [{ name: 5, snippets: [] }] }, 'malformed')
-    bad({ categories: [{ name: 'c', snippets: {} }] }, 'malformed')
-    bad({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 7 }] }] }, 'malformed')
-    bad({ categories: [{ name: 'c', snippets: [{ name: 5, content: 'x' }] }] }, 'malformed')
-    bad(
-      { categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x', language: 9 }] }] },
-      'malformed'
-    )
+    bad({ snippets: [{ name: 5, content: 'x' }] }, 'malformed')
+    bad({ snippets: [{ name: 'n', content: 7 }] }, 'malformed')
+    bad({ snippets: [{ name: 'n', content: 'x', language: 9 }] }, 'malformed')
+    bad({ snippets: [{ name: 'n', content: 'x', tags: 'not-array' }] }, 'malformed')
+    bad({ snippets: [{ name: 'n', content: 'x', tags: [5] }] }, 'malformed')
+    bad({ snippets: [], tags: 'nope' }, 'malformed')
   })
 
   it('enforces count and size caps as too-large', () => {
     bad(
-      { categories: Array(SNIPPET_LIMITS.categories + 1).fill({ name: 'c', snippets: [] }) },
+      { snippets: Array(SNIPPET_LIMITS.snippets + 1).fill({ name: 'n', content: 'x' }) },
       'too-large'
     )
     bad(
       {
-        categories: [
-          {
-            name: 'c',
-            snippets: Array(SNIPPET_LIMITS.snippetsPerCategory + 1).fill({
-              name: 'n',
-              content: 'x'
-            })
-          }
+        snippets: [
+          { name: 'n', content: 'x', tags: Array(SNIPPET_LIMITS.tagsPerSnippet + 1).fill('t') }
         ]
       },
       'too-large'
     )
     bad(
-      {
-        categories: [
-          {
-            name: 'c',
-            snippets: [{ name: 'n', content: 'a'.repeat(SNIPPET_LIMITS.contentBytes + 1) }]
-          }
-        ]
-      },
+      { snippets: [{ name: 'n', content: 'a'.repeat(SNIPPET_LIMITS.contentBytes + 1) }] },
       'too-large'
     )
   })
 
   it('enforces the whole-bundle total content cap', () => {
     const chunk = 'a'.repeat(SNIPPET_LIMITS.contentBytes)
-    const perCat = { name: 'c', snippets: [{ name: 'n', content: chunk }] }
+    const one = { name: 'n', content: chunk }
     const count = Math.ceil(SNIPPET_LIMITS.totalContentBytes / SNIPPET_LIMITS.contentBytes) + 1
-    bad({ categories: Array(count).fill(perCat) }, 'too-large')
+    bad({ snippets: Array(count).fill(one) }, 'too-large')
   })
 })

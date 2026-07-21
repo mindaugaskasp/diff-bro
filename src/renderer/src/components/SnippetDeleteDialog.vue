@@ -4,7 +4,8 @@ import { useSnippetStore } from '../stores/snippetStore'
 
 const store = useSnippetStore()
 const pending = computed(() => store.pendingDelete)
-const label = computed(() => (pending.value?.type === 'category' ? 'category' : 'snippet'))
+const isTag = computed(() => pending.value?.type === 'tag')
+const label = computed(() => (isTag.value ? 'tag' : 'snippet'))
 </script>
 
 <template>
@@ -12,7 +13,11 @@ const label = computed(() => (pending.value?.type === 'category' ? 'category' : 
     <div class="dialog">
       <h3>Delete {{ label }}?</h3>
       <p class="note">
-        Delete the {{ label }} <strong>“{{ pending.name }}”</strong>? This can’t be undone.
+        Delete the {{ label }} <strong>“{{ pending.name }}”</strong>?
+        <template v-if="isTag">
+          It's removed from every snippet, but no snippets are deleted.
+        </template>
+        <template v-else> This can’t be undone. </template>
       </p>
       <div class="actions">
         <button class="danger" @click="store.confirmDelete()">Delete</button>

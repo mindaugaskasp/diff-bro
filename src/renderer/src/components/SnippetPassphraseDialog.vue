@@ -10,10 +10,8 @@ const passphrase = ref('')
 const busy = ref(false)
 
 const mode = computed(() => (store.pendingImport ? 'import' : 'export'))
-const exportAll = computed(() => store.pendingExport?.categoryId === 'all')
-const exportCategoryName = computed(
-  () => store.categories.find((c) => c.id === store.pendingExport?.categoryId)?.name
-)
+const exportAll = computed(() => store.pendingExport?.all === true)
+const exportTagName = computed(() => store.pendingExport?.tag || 'Default')
 
 async function submit() {
   if (!passphrase.value || busy.value) return
@@ -33,7 +31,7 @@ async function submit() {
     } else {
       const res = exportAll.value
         ? await store.exportAll(passphrase.value)
-        : await store.exportCategory(store.pendingExport.categoryId, passphrase.value)
+        : await store.exportTag(store.pendingExport.tag, passphrase.value)
       if (!res.canceled) diff.showNotice(res.ok ? `Exported to ${res.path}` : 'Export failed.')
     }
     close()
@@ -59,7 +57,7 @@ function close() {
               ? 'Import Snippets'
               : exportAll
                 ? 'Export All Snippets'
-                : `Export "${exportCategoryName}"`
+                : `Export "${exportTagName}" tag`
           }}
         </h3>
         <button type="button" class="close-x" aria-label="Close" @click="close">×</button>

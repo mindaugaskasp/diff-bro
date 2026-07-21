@@ -35,7 +35,11 @@ export const SNIPPET_FORMAT = 'diffbro-snippets/1'
 // ~5 MB localStorage quota so every later persist() throws and the store stops
 // saving entirely. Caps are generous for real use but bounded.
 export const SNIPPET_LIMITS = {
-  categories: 200,
+  snippets: 5000, // whole-library cap (tags bundle)
+  tagsPerSnippet: 5,
+  totalTags: 500, // tag-registry cap
+  tagBytes: 64,
+  categories: 200, // legacy bundle caps
   snippetsPerCategory: 1000,
   nameBytes: 512,
   languageBytes: 64,
@@ -46,39 +50,80 @@ export const SNIPPET_LIMITS = {
 const byteLen = (s) => Buffer.byteLength(s, 'utf8')
 
 // Returns null when `bundle` is a well-formed, within-caps snippet bundle, or
-// an error code ('malformed' | 'too-large') otherwise. Pure and unit-tested.
+// an error code ('malformed' | 'too-large') otherwise. Accepts the current
+// tags shape { snippets:[...], tags:{...} } and the legacy categories shape
+// { categories:[...] } so old exports still import. Pure and unit-tested.
+//
+// A decryptable file is NOT a trustworthy one: the passphrase gates
+// confidentiality, not the sender's honesty, so an imported bundle is hostile
+// input — validated in shape and size before anything downstream touches it.
 export function validateSnippetBundle(bundle, limits = SNIPPET_LIMITS) {
-  if (!bundle || typeof bundle !== 'object' || !Array.isArray(bundle.categories)) {
+  if (!bundle || typeof bundle !== 'object') return 'malformed'
+  if (Array.isArray(bundle.snippets)) return validateTagsBundle(bundle, limits)
+  if (Array.isArray(bundle.categories)) return validateLegacyBundle(bundle, limits)
+  return 'malformed'
+}
+
+function validateSnippetShape(s, limits) {
+  if (!s || typeof s !== 'object') return 'malformed'
+  if (typeof s.name !== 'string' || byteLen(s.name) > limits.nameBytes) return 'malformed'
+  if (typeof s.content !== 'string') return 'malformed'
+  if (
+    s.language != null &&
+    (typeof s.language !== 'string' || byteLen(s.language) > limits.languageBytes)
+  ) {
     return 'malformed'
   }
-  if (bundle.categories.length > limits.categories) return 'too-large'
+  return null
+}
 
-  let totalContent = 0
+function validateTagsBundle(bundle, limits) {
+  if (bundle.snippets.length > limits.snippets) return 'too-large'
+  if (bundle.tags != null) {
+    if (typeof bundle.tags !== 'object') return 'malformed'
+    const names = Object.keys(bundle.tags)
+    if (names.length > limits.totalTags) return 'too-large'
+    for (const n of names) {
+      if (byteLen(n) > limits.tagBytes) return 'malformed'
+      const meta = bundle.tags[n]
+      if (meta != null && typeof meta !== 'object') return 'malformed'
+      if (meta?.color != null && (typeof meta.color !== 'string' || byteLen(meta.color) > 16)) {
+        return 'malformed'
+      }
+    }
+  }
+  let total = 0
+  for (const s of bundle.snippets) {
+    const err = validateSnippetShape(s, limits)
+    if (err) return err
+    if (s.tags != null) {
+      if (!Array.isArray(s.tags)) return 'malformed'
+      if (s.tags.length > limits.tagsPerSnippet) return 'too-large'
+      for (const t of s.tags)
+        if (typeof t !== 'string' || byteLen(t) > limits.tagBytes) return 'malformed'
+    }
+    total += byteLen(s.content)
+    if (byteLen(s.content) > limits.contentBytes || total > limits.totalContentBytes)
+      return 'too-large'
+  }
+  return null
+}
+
+function validateLegacyBundle(bundle, limits) {
+  if (bundle.categories.length > limits.categories) return 'too-large'
+  let total = 0
   for (const category of bundle.categories) {
     if (!category || typeof category !== 'object') return 'malformed'
-    if (typeof category.name !== 'string' || byteLen(category.name) > limits.nameBytes) {
+    if (typeof category.name !== 'string' || byteLen(category.name) > limits.nameBytes)
       return 'malformed'
-    }
     if (!Array.isArray(category.snippets)) return 'malformed'
     if (category.snippets.length > limits.snippetsPerCategory) return 'too-large'
-
     for (const snippet of category.snippets) {
-      if (!snippet || typeof snippet !== 'object') return 'malformed'
-      if (typeof snippet.name !== 'string' || byteLen(snippet.name) > limits.nameBytes) {
-        return 'malformed'
-      }
-      if (typeof snippet.content !== 'string') return 'malformed'
-      // language is optional; when present it must be a short string.
-      if (
-        snippet.language != null &&
-        (typeof snippet.language !== 'string' || byteLen(snippet.language) > limits.languageBytes)
-      ) {
-        return 'malformed'
-      }
-      const size = byteLen(snippet.content)
-      if (size > limits.contentBytes) return 'too-large'
-      totalContent += size
-      if (totalContent > limits.totalContentBytes) return 'too-large'
+      const err = validateSnippetShape(snippet, limits)
+      if (err) return err
+      total += byteLen(snippet.content)
+      if (byteLen(snippet.content) > limits.contentBytes || total > limits.totalContentBytes)
+        return 'too-large'
     }
   }
   return null
