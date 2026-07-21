@@ -17,24 +17,29 @@ session-level kill-switch, a strict CSP, and a sandboxed renderer. See
 
 ## Download
 
-Grab the latest installer for your OS — no account, no telemetry, no auto-update:
+Grab the latest installer for your OS from the
+[**latest release**](https://github.com/mindaugaskasp/diff-bro/releases/latest)
+— no account, no telemetry, no auto-update:
 
 | OS | Download |
 | --- | --- |
-| **Windows** (10/11) | [**Diff-Bro-Setup-Windows.exe**](https://github.com/mindaugaskasp/diff-bro/releases/latest/download/Diff-Bro-Setup-Windows.exe) |
-| **macOS** | [**Diff-Bro-macOS.dmg**](https://github.com/mindaugaskasp/diff-bro/releases/latest/download/Diff-Bro-macOS.dmg) |
+| **Windows** (10/11) | `diff-bro-Setup-v<version>.exe` |
+| **macOS** (Apple silicon, 12+) | `diff-bro-v<version>.dmg` |
 
-Or browse [**all releases**](https://github.com/mindaugaskasp/diff-bro/releases/latest).
+Installer filenames carry the version, so a download stays identifiable once
+it's off the release page.
 
 **macOS via Homebrew** (updates with `brew upgrade`):
 
 ```bash
 brew tap mindaugaskasp/tap
-brew install --cask --no-quarantine diff-bro
+brew install --cask diff-bro
+xattr -dr com.apple.quarantine "/Applications/Diff Bro.app"
 ```
 
-`--no-quarantine` skips the Gatekeeper prompt described below (the build isn't
-notarized yet). The cask is refreshed automatically on every release.
+The third line clears the Gatekeeper quarantine described below (the build
+isn't notarized yet); Homebrew 6 removed the `--no-quarantine` flag that used
+to skip it. The cask is refreshed automatically on every release.
 
 Builds are **unsigned** for now (no Apple/Microsoft cert yet):
 

@@ -9,8 +9,8 @@ directories:
 files:
   - build/**
 # Ship the app inside an ASAR and flip the Electron fuses that harden the
-# packaged binary (electron-builder rewrites the fuse bits at pack time, then
-# re-applies an ad-hoc macOS signature so flipping happens *before* signing):
+# packaged binary (electron-builder rewrites the fuse bits at pack time, before
+# any signing step, so the flipped bits are what gets signed):
 #   runAsNode / enableNodeCliInspectArguments / enableNodeOptionsEnvironmentVariable
 #     off  — stop `ELECTRON_RUN_AS_NODE=1 "Diff Bro.exe" script.js` from turning
 #            the trusted, installed binary into a generic Node interpreter (a
@@ -35,19 +35,32 @@ electronFuses:
   onlyLoadAppFromAsar: true
   enableEmbeddedAsarIntegrityValidation: false
   enableCookieEncryption: true
+  # Required on Apple silicon: patching the fuse wire rewrites the Electron
+  # binary and thereby breaks the linker-signed ad-hoc signature it ships with.
+  # `mac.identity: null` means electron-builder signs nothing afterwards, so
+  # without this the shipped .app has a broken signature — arm64 macOS refuses
+  # to launch it ("Diff Bro is damaged") and `codesign --verify` fails with
+  # "code has no resources but signature indicates they must be present".
+  # @electron/fuses re-signs the whole bundle ad-hoc right after flipping.
+  resetAdHocDarwinSignature: true
 win:
   target:
     - nsis
-  # Version-less, space-free installer name so a "download latest" URL is
-  # stable across releases:
-  #   github.com/<repo>/releases/latest/download/Diff-Bro-Setup-Windows.exe
-  # The version still lives in the tag, the release, and the app's About.
-  artifactName: Diff-Bro-Setup-Windows.${ext}
+  # Space-free, version-stamped installer names. ${version} comes from
+  # package.json, which release.yml rewrites from the git tag before packaging,
+  # so the filename always matches the release it belongs to — a downloaded
+  # installer is identifiable long after it leaves the release page.
+  #
+  # The trade-off: GitHub's /releases/latest/download/<name> shortcut needs a
+  # filename that never changes, so it cannot be used any more. README links to
+  # the releases page instead, and the Homebrew cask builds its URL from the
+  # tag (see scripts/gen-homebrew-cask.mjs, which must stay in sync with the
+  # mac name below).
+  artifactName: diff-bro-Setup-v${version}.${ext}
 mac:
   target:
     - dmg
-  # Stable name, as above — .../releases/latest/download/Diff-Bro-macOS.dmg
-  artifactName: Diff-Bro-macOS.${ext}
+  artifactName: diff-bro-v${version}.${ext}
   category: public.app-category.developer-tools
   # No Apple Developer cert yet (see DEVELOPMENT_PLAN.md Phase 3) — without
   # this, electron-builder searches the runner's keychain for a signing

@@ -27,13 +27,21 @@ the packaged binary at pack time:
 - `onlyLoadAppFromAsar` **on** — the runtime refuses to load app code from
   anywhere but the ASAR.
 - `enableCookieEncryption` **on**.
+- `resetAdHocDarwinSignature` **on** — mandatory on Apple silicon. Flipping the
+  fuse wire rewrites the Electron binary and invalidates the linker-signed
+  ad-hoc signature it ships with, and `mac.identity: null` means
+  electron-builder signs nothing afterwards. Without it the DMG contains an app
+  whose signature is structurally broken (`codesign --verify` reports *"code has
+  no resources but signature indicates they must be present"*), which macOS
+  reports as *"damaged"* and which clearing quarantine does **not** fix. With it,
+  `@electron/fuses` re-signs the whole bundle ad-hoc right after the flip.
 
 `enableEmbeddedAsarIntegrityValidation` is intentionally **off** until real
 signing lands: it binds the ASAR hash to the code signature, and on an
 unsigned / ad-hoc-signed macOS build that makes a quarantined app fail to launch
-as *"Diff Bro is damaged"* even after the user clears quarantine. electron-builder
-flips fuses *before* re-applying the ad-hoc macOS signature, so the flip order is
-fine — the integrity fuse specifically needs a Developer ID signature to be safe.
+as *"Diff Bro is damaged"* even after the user clears quarantine. The fuses are
+flipped *before* the ad-hoc re-signature, so the flip order is fine — the
+integrity fuse specifically needs a Developer ID signature to be safe.
 Turn it back on together with signing (`DEVELOPMENT_PLAN.md` Phase 3).
 
 Code signing (Windows Authenticode + macOS notarization) is the remaining
@@ -66,11 +74,18 @@ and attaches them to a GitHub Release.
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-Installers are named **version-lessly** (`Diff-Bro-Setup-Windows.exe`,
-`Diff-Bro-macOS.dmg` — see `artifactName` in `electron-builder.yml`) so the
-"download latest" URLs in the README stay stable across releases:
-`…/releases/latest/download/<name>`. The version still lives in the tag, the
-release title, and the app's About — just not the filename.
+Installers are **version-stamped** (`diff-bro-Setup-v0.1.8.exe`,
+`diff-bro-v0.1.8.dmg` — see `artifactName` in `electron-builder.yml`), so a
+downloaded file stays identifiable once it's away from the release page.
+`${version}` resolves from `package.json`, which the *Sync version to the
+release tag* step rewrites from the tag before packaging.
+
+Because the filename changes every release, GitHub's
+`…/releases/latest/download/<name>` shortcut no longer works — it requires a
+fixed name. The README links to the releases page instead. Three places must
+change together when the name does: `electron-builder.yml`, the `asset()` /
+`ASSET_TEMPLATE` pair in `scripts/gen-homebrew-cask.mjs`, and the
+`gh release download --pattern` in the `homebrew` job of `release.yml`.
 
 Builds are **unsigned** (no code-signing cert / Apple Developer account yet — see
 `DEVELOPMENT_PLAN.md` Phase 3): Windows shows a SmartScreen warning, and macOS
@@ -92,7 +107,7 @@ repo named `homebrew-<name>` (e.g. `mindaugaskasp/homebrew-tap`, tapped as
 points at the tagged release DMG and pins its `sha256`.
 
 **Automated on release.** The `homebrew` job in `release.yml` runs after the
-GitHub Release is published: it downloads the released `Diff-Bro-macOS.dmg`,
+GitHub Release is published: it downloads the released `diff-bro-v<version>.dmg`,
 regenerates the cask (version + sha256) via
 [`scripts/gen-homebrew-cask.mjs`](../scripts/gen-homebrew-cask.mjs), and pushes
 it to the tap — so `brew upgrade --cask diff-bro` always gets the latest. It
@@ -105,11 +120,24 @@ skips cleanly unless two things are configured:
 **One-time setup:** create the `homebrew-tap` repo, add the token, then let the
 next release populate `Casks/diff-bro.rb` (or seed it once with `make brew-cask`
 + a manual copy). Regenerate locally anytime with `make brew-cask`
-(`VERSION=x.y.z` and/or `DMG=dist/Diff-Bro-macOS.dmg` to override the source).
+(`VERSION=x.y.z` and/or `DMG=dist/diff-bro-v0.1.8.dmg` to override the source).
 
-Because the build isn't notarized yet, the cask's caveats tell users to install
-with `--no-quarantine` (or run the `xattr` line). Submitting to the **official**
-homebrew-cask isn't an option until the app is signed + notarized (Phase 3).
+Because the build isn't notarized yet, the cask's caveats tell users to clear
+the quarantine flag with `xattr` after installing. Homebrew 6 **removed**
+`brew install --cask --no-quarantine` — the flag now errors out as an invalid
+option, and the `HOMEBREW_CASK_OPTS` route is dead code (`cask_opts_quarantine?`
+has no callers), so every cask install is quarantined. That makes the ad-hoc
+signature from `resetAdHocDarwinSignature` load-bearing: without it, clearing
+quarantine does not rescue the app.
+
+The cask declares `depends_on arch: :arm64` and `depends_on macos: :monterey`
+(a bare symbol is Homebrew's ">=" form) to match the arm64-only DMG and the
+app's `LSMinimumSystemVersion`, so `brew install` fails fast on an unsupported
+Mac. Without the `macos` stanza `brew audit` crashes outright. Validate a
+change with `brew style` and `brew audit --cask --online` against a local tap.
+
+Submitting to the **official** homebrew-cask isn't an option until the app is
+signed + notarized (Phase 3).
 
 ## CI dependency-warning guard
 

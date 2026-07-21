@@ -1,26 +1,46 @@
-<!-- Finder DMG backdrop. Deliberately LIGHT: Finder renders the two icon
-     captions ("Diff Bro" and "Applications") in the *system* label color, which
-     is black in light mode — unreadable on a dark backdrop — and it reveals a
-     white window background if the user resizes the DMG window. A light backdrop
-     keeps the captions readable and lets that resize "creep" blend in. Colors
-     come from the app's light theme / GitHub-style palette.
+<!-- Finder DMG backdrop. Two constraints drive this design:
 
-     640x400 at 1x; background@2x.png carries the retina copy. The icon
-     positions in electron-builder.yml must stay in sync with the two drop
-     wells drawn below (centres 180,208 and 460,208). -->
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
+     1. LIGHT, not dark. The DMG window renders in the light appearance even
+        when the user's system is in dark mode, so Finder draws the two icon
+        captions ("Diff Bro" and "Applications") in black. A dark backdrop
+        makes them unreadable.
+     2. The canvas is 1600x1000 but the LAYOUT lives in the top-left 640x400,
+        which is the window size set in electron-builder.yml. Finder draws this
+        image at natural size anchored top-left and does not scale it, so a
+        user resizing the window past 640x400 would otherwise expose the bare
+        white window background. The extra canvas is filled pure white and the
+        artwork fades to pure white before the 640x400 edge, so the seam
+        between image and window background is invisible at any window size.
+        (A Finder window cannot be made non-resizable — there is no such
+        property in the .DS_Store or the AppleScript Finder dictionary — so
+        making the resize harmless is the available fix.)
+
+     Never edit background.png / background@2x.png directly: run
+     `npm run render:dmg-bg` (scripts/render-dmg-background.mjs), which
+     rasterizes this file at 1x and 2x. The icon positions in
+     electron-builder.yml must stay in sync with the two drop wells drawn
+     below (centres 180,208 and 460,208). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
   <defs>
-    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#eef2f6"/>
-    </linearGradient>
+    <!-- Soft vignette confined to the visible window area. It fades to fully
+         transparent (i.e. to the white base) well inside 640x400 so that the
+         revealed canvas on resize matches Finder's own white. -->
+    <radialGradient id="paper" cx="320" cy="200" r="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e7edf3" stop-opacity="1"/>
+      <stop offset="0.55" stop-color="#eff3f7" stop-opacity="1"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="arrow" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#58a6ff" stop-opacity="0.55"/>
       <stop offset="1" stop-color="#0969da" stop-opacity="1"/>
     </linearGradient>
   </defs>
 
-  <rect width="640" height="400" fill="url(#paper)"/>
+  <rect width="1600" height="1000" fill="#ffffff"/>
+  <!-- Spans the whole canvas, not just the window: clipping the tint to
+       640x400 left a hard rectangular seam exactly where the window edge
+       falls, which is the artefact this layout exists to avoid. -->
+  <rect width="1600" height="1000" fill="url(#paper)"/>
 
   <!-- The app's signature: a green add line and a red delete line, kept far
        enough from the icon wells not to compete with them. -->

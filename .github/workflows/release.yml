@@ -125,9 +125,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${GITHUB_REF_NAME#v}"
+          # Filename carries the version (electron-builder.yml artifactName),
+          # so the pattern has to be built from the tag too.
           gh release download "${GITHUB_REF_NAME}" \
-            --repo "${GITHUB_REPOSITORY}" --pattern 'Diff-Bro-macOS.dmg' --dir dist
-          node scripts/gen-homebrew-cask.mjs "${version}" --dmg dist/Diff-Bro-macOS.dmg
+            --repo "${GITHUB_REPOSITORY}" --pattern "diff-bro-v${version}.dmg" --dir dist
+          node scripts/gen-homebrew-cask.mjs "${version}" --dmg "dist/diff-bro-v${version}.dmg"
 
       - name: Publish the cask to the Homebrew tap
         env:
