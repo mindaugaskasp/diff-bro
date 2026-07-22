@@ -6,12 +6,6 @@ ul {
 .lock {
   font-size: var(--font-md);
 }
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 10px;
-}
 .add-category {
   padding: 0 10px 8px;
 }

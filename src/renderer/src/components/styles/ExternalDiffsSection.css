@@ -3,12 +3,6 @@ ul {
   margin: 0;
   padding: 0;
 }
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 10px;
-}
 .empty {
   padding: 4px 10px;
   font-size: var(--font-md);

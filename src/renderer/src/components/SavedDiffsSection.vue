@@ -94,7 +94,7 @@ function onDrop(targetId) {
     </SectionHeader>
 
     <div v-show="open" class="section-body">
-      <div class="head-actions">
+      <div class="section-actions">
         <button class="btn btn-sm btn-block" title="New category" @click="startAddCategory">
           + New category
         </button>

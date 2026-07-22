@@ -63,7 +63,7 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
     </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <div class="head-actions">
+      <div class="section-actions">
         <button
           class="btn btn-sm btn-block btn-primary"
           title="Create a new snippet"

@@ -1,0 +1,59 @@
+/* Color themes. Kept separate from tokens.css on purpose: tokens.css holds the
+   theme-independent structure (spacing, radius, type, control heights) that must
+   never change between themes, while THIS file holds only the palette. To add a
+   new theme, add a `:root[data-theme='name']` block here that redefines every
+   token the default (dark) block sets — nothing structural, so alignment and
+   sizing stay identical across themes. The theme toggle stamps data-theme on
+   :root; the store persists the choice (see diffStore.applyTheme). */
+
+/* Default (dark). */
+:root {
+  --bg: #0d1117;
+  --bg-panel: #161b22;
+  --bg-hover: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  /* between --text and --text-dim: for hint text that must stay readable */
+  --text-hint: #c3cdd7;
+  --accent: #2f81f7;
+  /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
+     deliberately more saturated than the rest of the palette. */
+  --warning-bg: #d29922;
+  --warning-border: #9a6700;
+  --warning-text: #1a1300;
+  --danger-bg: #f85149;
+  --danger-border: #da3633;
+  --danger-text: #ffffff;
+  /* "this parsed / these lines were added" green — readable on both panels. */
+  --success-text: #3fb950;
+  /* Modal scrim — the same dim in both themes, so the app behind reads as
+     inactive without the overlay changing character. */
+  --scrim: rgba(0, 0, 0, 0.5);
+  /* Favorites gold: the pinned-shelf tint and its stars. */
+  --favorite: #d29922;
+  /* Text on an accent/danger fill — white in both themes, still a token so no
+     component hardcodes it. */
+  --text-on-accent: #ffffff;
+}
+
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-panel: #f6f8fa;
+  --bg-hover: #eaeef2;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  --text-hint: #454c54;
+  --accent: #0969da;
+  --warning-bg: #f0b429;
+  --warning-border: #bf8700;
+  --warning-text: #3b2900;
+  --danger-bg: #f85149;
+  --danger-border: #cf222e;
+  --danger-text: #ffffff;
+  --success-text: #1a7f37;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --favorite: #bf8700;
+  --text-on-accent: #ffffff;
+}

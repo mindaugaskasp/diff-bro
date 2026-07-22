@@ -87,6 +87,24 @@
   width: 100%;
 }
 
+/* --- Sidebar section rhythm ---------------------------------------------
+   App-wide spacing for the reorderable sidebar sections, so the inset around a
+   section's action row (e.g. "+ New category", "Import", "+ New snippet") is
+   controlled in one place. Adding a button or a whole new section can no longer
+   drift out of alignment — it opts into these classes instead of restating
+   pixel padding. Values come from the rhythm tokens in tokens.css. */
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--pad-section-top) var(--pad-inset-x) var(--pad-section-bottom);
+}
+/* Left/right inset that lines a section's own controls up with its action row. */
+.section-inset {
+  padding-left: var(--pad-inset-x);
+  padding-right: var(--pad-inset-x);
+}
+
 /* Solid destructive action — confirmation dialogs only, never a first resort. */
 .btn-destructive {
   background: var(--danger-bg);

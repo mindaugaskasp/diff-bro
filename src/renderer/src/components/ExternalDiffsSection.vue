@@ -30,7 +30,7 @@ const hasImported = computed(() => importedFavs.value.length || importedOthers.v
       @toggle="open = !open"
     />
     <div v-show="open" class="section-body">
-      <div class="head-actions">
+      <div class="section-actions">
         <button
           class="btn btn-sm btn-block"
           :title="`Import a shared diff (${MOD}+I)`"

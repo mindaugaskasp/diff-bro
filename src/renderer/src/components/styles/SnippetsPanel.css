@@ -6,12 +6,6 @@
      often, but not always, the last section — order is user-controlled). */
   padding-bottom: var(--space-4);
 }
-.head-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-}
 /* Collapse chevron for the shelf sub-headers (the section header owns its own). */
 .chev {
   display: inline-block;

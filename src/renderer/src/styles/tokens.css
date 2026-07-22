@@ -1,12 +1,9 @@
-/* Theme tokens. Every color in the app resolves through one of these — a
-   hardcoded color anywhere else breaks the light/dark switch. Dark is the
-   default; the light block is re-applied by the theme toggle stamping
-   data-theme on :root, so it must redefine every token the dark block sets. */
-
-/* Shape, size and type scale. These are theme-independent, so they live outside
-   the two color blocks — but the rule is the same: component styles pick from
-   this scale instead of inventing values, which is what keeps two buttons in
-   two panels the same size. The shared control classes are in ui.css. */
+/* Structural design tokens: the theme-INDEPENDENT scale every component builds
+   on — radius, type ramp, control heights, and the spacing rhythm. Colors live
+   in themes.css so a new color theme never touches structure or alignment.
+   A hardcoded value anywhere in components/styles is rejected by
+   scripts/check-style-tokens.mjs — add a token here instead. The shared control
+   and layout classes are in ui.css. */
 :root {
   --radius-sm: 4px;
   --radius: 6px;
@@ -25,59 +22,18 @@
   /* Control heights: sidebar/toolbar controls, then dialog buttons. */
   --control-h-sm: 26px;
   --control-h: 30px;
+  /* Spacing rhythm. Prefer these over ad-hoc pixel padding so panels and
+     buttons share one rhythm and never drift apart. */
   --space-1: 4px;
   --space-2: 6px;
   --space-3: 10px;
   --space-4: 16px;
-}
-
-:root {
-  --bg: #0d1117;
-  --bg-panel: #161b22;
-  --bg-hover: #21262d;
-  --border: #30363d;
-  --text: #e6edf3;
-  --text-dim: #8b949e;
-  /* between --text and --text-dim: for hint text that must stay readable */
-  --text-hint: #c3cdd7;
-  --accent: #2f81f7;
-  /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
-     deliberately more saturated than the rest of the palette. */
-  --warning-bg: #d29922;
-  --warning-border: #9a6700;
-  --warning-text: #1a1300;
-  --danger-bg: #f85149;
-  --danger-border: #da3633;
-  --danger-text: #ffffff;
-  /* "this parsed / these lines were added" green — readable on both panels. */
-  --success-text: #3fb950;
-  /* Modal scrim — the same dim in both themes, so the app behind reads as
-     inactive without the overlay changing character. */
-  --scrim: rgba(0, 0, 0, 0.5);
-  /* Favorites gold: the pinned-shelf tint and its stars. */
-  --favorite: #d29922;
-  /* Text on an accent/danger fill — white in both themes, still a token so no
-     component hardcodes it. */
-  --text-on-accent: #ffffff;
-}
-
-:root[data-theme='light'] {
-  --bg: #ffffff;
-  --bg-panel: #f6f8fa;
-  --bg-hover: #eaeef2;
-  --border: #d0d7de;
-  --text: #1f2328;
-  --text-dim: #656d76;
-  --text-hint: #454c54;
-  --accent: #0969da;
-  --warning-bg: #f0b429;
-  --warning-border: #bf8700;
-  --warning-text: #3b2900;
-  --danger-bg: #f85149;
-  --danger-border: #cf222e;
-  --danger-text: #ffffff;
-  --success-text: #1a7f37;
-  --scrim: rgba(0, 0, 0, 0.5);
-  --favorite: #bf8700;
-  --text-on-accent: #ffffff;
+  /* Named application rhythm, composed from the scale above. One place controls
+     the inset every sidebar section, its action row, and its body use, so a new
+     section (or a new button in one) can never end up glued to its neighbour —
+     the class is .section-actions / .section-inset in ui.css. */
+  --pad-inset-x: var(--space-3);
+  --pad-section-top: var(--space-3);
+  --pad-section-bottom: var(--space-2);
+  --gap-section: 12px;
 }
