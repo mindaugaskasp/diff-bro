@@ -9,12 +9,14 @@
 // a search box and are the easiest lever for an accidental (or hostile) ReDoS.
 export const MAX_REGEX_LENGTH = 200
 
-// A quantifier applied to a group whose body already ends in a quantifier —
+// A quantifier applied to a GROUP whose body already ends in a quantifier —
 // e.g. (a+)+, (a*)*, (\d+){2,} — is the classic catastrophic-backtracking shape.
 // Detecting it exactly needs a parser; this signature catches the common forms
-// (inner quantifier, group close, outer quantifier) without rejecting ordinary
-// quantified groups like (abc)+.
-const NESTED_QUANTIFIER = /[*+][)\]]\s*[*+{]/
+// (inner quantifier, group close ')', outer quantifier) without rejecting
+// ordinary quantified groups like (abc)+. Only ')' counts, never ']': a '*'/'+'
+// before a character-class close is a literal, so patterns like [-+]+ or [ab*]+
+// are linear and must not be refused.
+const NESTED_QUANTIFIER = /[*+]\)\s*[*+{]/
 
 // Returns { ok: true } for a pattern that is safe to compile and run, or
 // { ok: false, error } describing why it was refused.

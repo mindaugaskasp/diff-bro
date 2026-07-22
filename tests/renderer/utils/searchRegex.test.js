@@ -9,6 +9,13 @@ describe('checkRegex', () => {
     expect(checkRegex('[a-z]+').ok).toBe(true)
   })
 
+  it('does not mistake a quantified character class for a nested quantifier', () => {
+    // A '*'/'+' before ']' is a literal inside the class, so these are linear.
+    expect(checkRegex('[-+]+').ok).toBe(true)
+    expect(checkRegex('[ab*]+').ok).toBe(true)
+    expect(checkRegex('[/*]+').ok).toBe(true)
+  })
+
   it('rejects an empty pattern', () => {
     expect(checkRegex('')).toEqual({ ok: false, error: 'empty' })
     expect(checkRegex(null).ok).toBe(false)
