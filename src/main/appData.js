@@ -80,6 +80,18 @@ function readStore(name) {
   }
 }
 
+// The renderer's settings store persists preferences as plaintext settings.json
+// through the same key/value store. The main process reads it directly (fresh
+// each call, so a changed setting takes effect without a restart) for the few
+// limits it has to enforce itself — e.g. the large-file warning threshold.
+export function readSettings() {
+  try {
+    return JSON.parse(readStore('settings') ?? '{}') || {}
+  } catch {
+    return {}
+  }
+}
+
 function writeStore(name, contents) {
   writeFileAtomic(join(getDataDir(), `${name}.json`), String(contents))
 }

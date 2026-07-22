@@ -39,6 +39,29 @@ h4 {
   font-size: var(--font-sm);
   color: var(--text-hint);
 }
+/* Interface rows: label on the left, control on the right — overrides the
+   dialog's default column-stacked label layout. */
+.row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.row.toggle {
+  justify-content: flex-start;
+  cursor: pointer;
+}
+.row span {
+  color: var(--text);
+}
+.row input[type='number'] {
+  width: 88px;
+  text-align: right;
+}
+section + section {
+  margin-top: var(--space-4);
+}
 .footer {
   display: flex;
   justify-content: flex-end;

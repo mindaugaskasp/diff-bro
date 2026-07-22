@@ -1,9 +1,15 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import {
+  useSettingsStore,
+  MAX_COMPARISON_FILE_MB_CAP,
+  MAX_SNIPPET_SIZE_KB_CAP
+} from '../stores/settingsStore'
 import BaseDialog from './BaseDialog.vue'
 
 const diff = useDiffStore()
+const settings = useSettingsStore()
 const dir = ref('')
 const isDefault = ref(true)
 const busy = ref(false)
@@ -65,6 +71,43 @@ function close() {
       </div>
       <p class="hint">Changing the folder restarts Diff Bro.</p>
     </section>
+
+    <section>
+      <h4>Interface</h4>
+      <label class="row toggle">
+        <input
+          type="checkbox"
+          :checked="settings.showShortcutBar"
+          @change="settings.setShowShortcutBar($event.target.checked)"
+        />
+        <span>Show the keyboard-shortcut bar over diffs</span>
+      </label>
+      <label class="row">
+        <span>Max comparison file (MB)</span>
+        <input
+          type="number"
+          min="1"
+          :max="MAX_COMPARISON_FILE_MB_CAP"
+          :value="settings.maxComparisonFileMb"
+          @change="settings.setMaxComparisonFileMb($event.target.value)"
+        />
+      </label>
+      <label class="row">
+        <span>Max snippet size (KB)</span>
+        <input
+          type="number"
+          min="16"
+          :max="MAX_SNIPPET_SIZE_KB_CAP"
+          :value="settings.maxSnippetSizeKb"
+          @change="settings.setMaxSnippetSizeKb($event.target.value)"
+        />
+      </label>
+      <p class="hint">
+        Higher limits let you diff or store bigger content, at the cost of speed — raise them only if
+        you need to.
+      </p>
+    </section>
+
     <template #actions>
       <button class="btn btn-ghost" @click="close">Close</button>
     </template>

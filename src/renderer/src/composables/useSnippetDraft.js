@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { formatJson, formatXml } from '../utils/textFormats'
 import { formatSql } from '../utils/sqlFormat'
@@ -35,6 +36,7 @@ function initialFields(editing, existing) {
 export function useSnippetDraft() {
   const store = useSnippetStore()
   const diff = useDiffStore()
+  const settings = useSettingsStore()
 
   const editing = store.editingSnippet
   const isNew = editing.id == null
@@ -66,6 +68,15 @@ export function useSnippetDraft() {
     // Guard against a fast double-click: the store call is async (IPC round
     // trip), so a second click before it resolves would create a duplicate.
     if (!name.value.trim() || saving.value) return
+    // Keep the app stable: refuse a snippet larger than the configured limit
+    // (Settings → Interface). Measured in bytes so multibyte content counts.
+    const bytes = new TextEncoder().encode(content.value).length
+    if (bytes > settings.maxSnippetSizeBytes) {
+      diff.showNotice(
+        `That snippet is ${(bytes / 1024).toFixed(0)} KB — over the ${settings.maxSnippetSizeKb} KB limit. Raise it in Settings if you really need to.`
+      )
+      return
+    }
     saving.value = true
     const fields = {
       name: name.value,
