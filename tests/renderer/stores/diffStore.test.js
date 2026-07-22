@@ -76,6 +76,40 @@ describe('diffStore', () => {
     expect(store.ready).toBe(true)
   })
 
+  it('partial paste: compares pasted text against a loaded file', () => {
+    const store = useDiffStore()
+    store.mode = 'paste'
+    store.pasteLeft = 'typed original'
+    store.receivePasteFile('right', { name: 'changed.txt', content: 'file body' })
+    expect(store.canSave).toBe(true)
+    store.comparePasted()
+    expect(store.mode).toBe('files')
+    expect(store.left).toMatchObject({ name: 'Left (pasted)', content: 'typed original' })
+    expect(store.right).toMatchObject({ name: 'changed.txt', content: 'file body' })
+  })
+
+  it('receivePasteFile rejects a binary file and keeps the side as a textarea', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { error: 'binary', name: 'blob.bin' })
+    expect(store.pasteLeftFile).toBeNull()
+    expect(store.notice).toContain('blob.bin')
+  })
+
+  it('clearPasteFile returns a paste side to its textarea', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { name: 'a.txt', content: 'x' })
+    expect(store.pasteLeftFile).not.toBeNull()
+    store.clearPasteFile('left')
+    expect(store.pasteLeftFile).toBeNull()
+  })
+
+  it('pastePickFile loads the chosen file into one side', async () => {
+    const store = useDiffStore()
+    window.api.openFile = async (side) => ({ name: `${side}.txt`, content: 'picked' })
+    await store.pastePickFile('right')
+    expect(store.pasteRightFile).toEqual({ name: 'right.txt', content: 'picked' })
+  })
+
   it('dropFiles loads two dropped files into left and right', async () => {
     const store = useDiffStore()
     window.api.readFile = async (path) => ({

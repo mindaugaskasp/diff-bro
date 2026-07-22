@@ -85,6 +85,11 @@ export const useDiffStore = defineStore('diff', {
     mode: 'files',
     pasteLeft: '',
     pasteRight: '',
+    // In paste mode each side can instead hold a dropped/loaded file
+    // ({ name, content }) — so pasted text on one side can be compared against a
+    // real file on the other ("partial paste"). null = that side is a textarea.
+    pasteLeftFile: null,
+    pasteRightFile: null,
     // { additions, deletions } from the diff editor, null before first diff
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
@@ -133,8 +138,11 @@ export const useDiffStore = defineStore('diff', {
   getters: {
     ready: (s) => !!s.left && !!s.right,
     // A diff is saveable once there is anything to keep: two loaded files,
-    // or text typed/pasted into the paste panes (even before Compare).
-    canSave: (s) => (s.mode === 'paste' ? !!(s.pasteLeft || s.pasteRight) : s.ready),
+    // or text/files put into the paste panes (even before Compare).
+    canSave: (s) =>
+      s.mode === 'paste'
+        ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
+        : s.ready,
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
     rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
     leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
@@ -219,12 +227,38 @@ export const useDiffStore = defineStore('diff', {
       this.mode = 'files'
     },
     comparePasted() {
-      this.left = { path: null, name: 'Left (pasted)', content: this.pasteLeft }
-      this.right = { path: null, name: 'Right (pasted)', content: this.pasteRight }
+      // Each side is whichever the user provided: a loaded file, else the
+      // textarea's pasted text.
+      const l = this.pasteLeftFile ?? { name: 'Left (pasted)', content: this.pasteLeft }
+      const r = this.pasteRightFile ?? { name: 'Right (pasted)', content: this.pasteRight }
+      this.left = { path: null, name: l.name, content: l.content }
+      this.right = { path: null, name: r.name, content: r.content }
       this.mode = 'files'
     },
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
+    },
+    // Load a file into one paste side without leaving paste mode (partial
+    // paste). `file` is a LoadedFile from the open dialog or a dropped file.
+    receivePasteFile(side, file) {
+      if (!file) return
+      if (file.error === 'binary') {
+        this.showNotice(
+          `"${file.name}" looks like a binary file — only text files can be compared.`
+        )
+        return
+      }
+      if (file.error) return
+      this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = {
+        name: file.name,
+        content: file.content
+      }
+    },
+    async pastePickFile(side) {
+      this.receivePasteFile(side, await window.api.openFile(side))
+    },
+    clearPasteFile(side) {
+      this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = null
     },
     initTheme() {
       applyTheme(this.theme)
@@ -281,6 +315,8 @@ export const useDiffStore = defineStore('diff', {
         right: this.right,
         pasteLeft: this.pasteLeft,
         pasteRight: this.pasteRight,
+        pasteLeftFile: this.pasteLeftFile,
+        pasteRightFile: this.pasteRightFile,
         renderSideBySide: this.renderSideBySide,
         ignoreTrimWhitespace: this.ignoreTrimWhitespace
       }
@@ -290,6 +326,8 @@ export const useDiffStore = defineStore('diff', {
       this.right = payload.right
       this.pasteLeft = payload.pasteLeft ?? ''
       this.pasteRight = payload.pasteRight ?? ''
+      this.pasteLeftFile = payload.pasteLeftFile ?? null
+      this.pasteRightFile = payload.pasteRightFile ?? null
       this.renderSideBySide = payload.renderSideBySide ?? true
       this.ignoreTrimWhitespace = payload.ignoreTrimWhitespace ?? false
       this.mode = payload.mode ?? 'files'
@@ -298,10 +336,12 @@ export const useDiffStore = defineStore('diff', {
       this.left = null
       this.right = null
       this.stats = null
-      // Also wipe paste-mode text so a cleared session never leaves the
-      // previous pasted content lingering behind.
+      // Also wipe paste-mode text and files so a cleared session never leaves
+      // the previous content lingering behind.
       this.pasteLeft = ''
       this.pasteRight = ''
+      this.pasteLeftFile = null
+      this.pasteRightFile = null
     },
     showNotice(text) {
       this.notice = text

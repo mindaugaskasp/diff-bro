@@ -31,7 +31,13 @@ window.addEventListener('focus', () => store.refreshFromDisk())
 // one of them is open.
 const dropSuppressed = computed(
   () =>
-    !!snippets.editingSnippet || store.showBase64Dialog || !!store.textTool || store.showCryptDialog
+    !!snippets.editingSnippet ||
+    store.showBase64Dialog ||
+    !!store.textTool ||
+    store.showCryptDialog ||
+    // Paste mode's panes capture their own file drops (partial paste), so the
+    // window-level diff drop stands down to avoid a competing overlay.
+    store.mode === 'paste'
 )
 const {
   active: dragActive,
