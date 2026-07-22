@@ -1,0 +1,7 @@
+.note code {
+  color: var(--text);
+  font-size: var(--font-sm);
+}
+.spacer {
+  flex: 1;
+}

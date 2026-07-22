@@ -1,0 +1,25 @@
+.output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  margin-bottom: -4px;
+}
+.inline-actions {
+  display: flex;
+  gap: 6px;
+}
+.small {
+  padding: 3px 9px;
+  font-size: var(--font-sm);
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.error {
+  margin: 0;
+  font-size: var(--font-md);
+  color: var(--danger-bg);
+}

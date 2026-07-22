@@ -71,6 +71,22 @@ const STRIP_PATTERNS = [
   /<!DOCTYPE[^>]*>/gi
 ]
 
+// One tag's effect on the open-element stack. Returns an error result when a
+// closing tag doesn't match what's open, else null.
+function trackTag({ stack, full, name, selfClose, loc }) {
+  if (!full.startsWith('</')) {
+    if (!selfClose) stack.push({ name, ...loc })
+    return null
+  }
+  const expected = stack.pop()
+  if (expected?.name === name) return null
+  return {
+    valid: false,
+    error: `Mismatched closing tag </${name}>${expected ? ` (expected </${expected.name}>)` : ''}`,
+    ...loc
+  }
+}
+
 export function validateXml(content) {
   let scan = content
   for (const re of STRIP_PATTERNS) scan = scan.replace(re, '')
@@ -91,18 +107,8 @@ export function validateXml(content) {
     const loc = idx === -1 ? {} : locateOffset(content, idx)
     if (idx !== -1) searchFrom = idx + full.length
 
-    if (full.startsWith('</')) {
-      const expected = stack.pop()
-      if (expected?.name !== name) {
-        return {
-          valid: false,
-          error: `Mismatched closing tag </${name}>${expected ? ` (expected </${expected.name}>)` : ''}`,
-          ...loc
-        }
-      }
-    } else if (!selfClose) {
-      stack.push({ name, ...loc })
-    }
+    const mismatch = trackTag({ stack, full, name, selfClose, loc })
+    if (mismatch) return mismatch
   }
   if (!sawElement) return { valid: false, error: 'No XML elements found' }
   if (stack.length) {

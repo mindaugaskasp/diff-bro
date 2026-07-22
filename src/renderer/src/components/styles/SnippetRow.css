@@ -1,0 +1,106 @@
+/* Row presentation for SnippetRow.vue — shared by both snippet shelves.
+   The favourite-shelf tint stays in SnippetsPanel.css: it is the parent
+   that knows which shelf a row sits in. */
+/* Row presentation for SnippetRow.vue — shared by both snippet shelves. */
+.row {
+  display: flex;
+  align-items: center;
+}
+.star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-lg);
+  line-height: 1;
+  padding: 0 4px 0 8px;
+}
+.star:hover {
+  color: var(--favorite);
+}
+.star.on {
+  color: var(--favorite);
+}
+.entry {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 5px 4px 5px 6px;
+  cursor: pointer;
+  font-size: var(--font-md);
+}
+.row:hover .entry {
+  color: var(--text);
+}
+/* Resting marker for diagram snippets — the ◈ action button only shows on
+   hover, so without this a Mermaid row looks like any other. */
+.mmd {
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  line-height: 1;
+  color: var(--accent);
+}
+.nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dots {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.dot.faint {
+  opacity: 0.4;
+}
+.when {
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+  font-variant-numeric: tabular-nums;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+/* Swap the age for copy/delete on hover, so the resting row stays quiet. */
+.rowacts {
+  display: none;
+  align-items: center;
+  flex-shrink: 0;
+}
+.row:hover .when {
+  display: none;
+}
+.row:hover .rowacts {
+  display: flex;
+}
+.row-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-lg);
+  padding: 0 6px;
+}
+.row-btn:hover {
+  color: var(--accent);
+}
+.row-btn.delete:hover {
+  color: var(--danger-bg);
+}

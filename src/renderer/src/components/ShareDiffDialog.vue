@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import BaseDialog from './BaseDialog.vue'
 
 // Recipient picker with built-in first-time setup: if this install has no
 // trusted keys yet, the dialog walks through the one-time key exchange
@@ -44,13 +45,9 @@ function close() {
 </script>
 
 <template>
-  <div class="backdrop">
-    <!-- Normal case: at least one trusted recipient exists. -->
-    <form v-if="recipients.length" class="dialog" @submit.prevent="diff.shareTo(selected)">
-      <div class="dialog-header">
-        <h3>Share diff</h3>
-        <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
-      </div>
+  <!-- Normal case: at least one trusted recipient exists. -->
+  <BaseDialog v-if="recipients.length" width="400px" title="Share diff" @close="close">
+    <form class="dialog-form" @submit.prevent="diff.shareTo(selected)">
       <label>
         Seal for recipient
         <select v-model="selected">
@@ -60,210 +57,59 @@ function close() {
         </select>
       </label>
       <p v-if="selectedFingerprint" class="fp-hint">Fingerprint: {{ selectedFingerprint }}</p>
-      <p class="note">
+      <p class="dialog-note">
         The file is encrypted so only this recipient can open it, and signed so any modification —
         including its expiry time — is rejected. It expires at the same moment as your local copy.
       </p>
-      <div class="actions">
-        <button type="button" class="ghost small" @click="diff.addTrustedKey()">
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-sm btn-ghost" @click="diff.addTrustedKey()">
           Add recipient…
         </button>
         <span class="spacer" />
-        <button type="submit" class="primary" :disabled="!selected">Create file</button>
-        <button type="button" class="ghost" @click="close">Cancel</button>
+        <button type="submit" class="btn btn-primary" :disabled="!selected">Create file</button>
+        <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
       </div>
     </form>
+  </BaseDialog>
 
-    <!-- First-time setup: no trusted keys yet. -->
-    <div v-else class="dialog">
-      <div class="dialog-header">
-        <h3>Share diff — one-time setup</h3>
-        <button type="button" class="close-x" aria-label="Close" @click="close">×</button>
-      </div>
-      <p class="note">
-        Shared diffs are sealed for one specific person, so you and your bro first swap public keys
-        — once, in both directions. Your keys already exist (created automatically, fingerprint
-        <code>{{ myFingerprint }}</code
-        >); the private half never leaves this machine.
-      </p>
+  <!-- First-time setup: no trusted keys yet. -->
+  <BaseDialog v-else width="400px" title="Share diff — one-time setup" @close="close">
+    <p class="dialog-note">
+      Shared diffs are sealed for one specific person, so you and your bro first swap public keys —
+      once, in both directions. Your keys already exist (created automatically, fingerprint
+      <code>{{ myFingerprint }}</code
+      >); the private half never leaves this machine.
+    </p>
 
-      <div class="step">
-        <span class="badge">1</span>
-        <div class="step-body">
-          <strong>Give them your key</strong>
-          <span class="step-hint">Name it and send it — they import it to receive your diffs.</span>
-        </div>
-        <button type="button" class="ghost small" @click="diff.showShareKeyDialog = true">
-          Share my key…
-        </button>
+    <div class="step">
+      <span class="badge">1</span>
+      <div class="step-body">
+        <strong>Give them your key</strong>
+        <span class="step-hint">Name it and send it — they import it to receive your diffs.</span>
       </div>
-
-      <div class="step">
-        <span class="badge">2</span>
-        <div class="step-body">
-          <strong>Add their key</strong>
-          <span class="step-hint">Open the <code>.diffbrokey</code> file they sent you.</span>
-        </div>
-        <button type="button" class="primary small" @click="diff.addTrustedKey()">
-          Add their key…
-        </button>
-      </div>
-
-      <p class="note">
-        As soon as their key is added you can pick them as a recipient — this dialog updates
-        automatically.
-      </p>
-      <div class="actions">
-        <button type="button" class="ghost" @click="close">Cancel</button>
-      </div>
+      <button type="button" class="btn btn-sm btn-ghost" @click="diff.showShareKeyDialog = true">
+        Share my key…
+      </button>
     </div>
-  </div>
-</template>
 
-<style scoped>
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 40;
-}
-.dialog {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-h3 {
-  margin: 0;
-  font-size: 14px;
-}
-.close-x {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 20px;
-  line-height: 1;
-  padding: 0 4px;
-  cursor: pointer;
-}
-.close-x:hover {
-  color: var(--text);
-}
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-dim);
-}
-select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 6px 8px;
-  font-size: 13px;
-}
-select:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.note {
-  margin: 0;
-  font-size: 11px;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-.fp-hint {
-  margin: -4px 0 0;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 10.5px;
-  color: var(--text-hint);
-}
-code {
-  color: var(--text);
-  font-size: 10.5px;
-}
-.step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px;
-}
-.badge {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--bg);
-  border: 1px solid var(--border);
-}
-.step-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 12.5px;
-}
-.step-hint {
-  font-size: 11px;
-  color: var(--text-dim);
-  line-height: 1.4;
-}
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-}
-.spacer {
-  flex: 1;
-}
-.primary {
-  background: var(--accent);
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  padding: 6px 14px;
-  cursor: pointer;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.primary:disabled {
-  opacity: 0.4;
-}
-.ghost {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 6px 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.small {
-  padding: 4px 10px;
-  font-size: 12px;
-}
-</style>
+    <div class="step">
+      <span class="badge">2</span>
+      <div class="step-body">
+        <strong>Add their key</strong>
+        <span class="step-hint">Open the <code>.diffbrokey</code> file they sent you.</span>
+      </div>
+      <button type="button" class="btn btn-sm btn-primary" @click="diff.addTrustedKey()">
+        Add their key…
+      </button>
+    </div>
+
+    <p class="dialog-note">
+      As soon as their key is added you can pick them as a recipient — this dialog updates
+      automatically.
+    </p>
+    <template #actions>
+      <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+    </template>
+  </BaseDialog>
+</template>
+<style scoped src="./styles/ShareDiffDialog.css"></style>

@@ -7,8 +7,10 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 
 - `npm run dev` — run natively. `make test-env` / `npm run docker:up` — full
   app in Docker with noVNC at http://localhost:6080/vnc.html (loopback only).
-- `npm run check` — lint + tests. **Run it before declaring any task done.**
-- `npm test` / `npm run lint` / `npm run format` — individually.
+- `npm run check` — lint + style-token guard + tests with coverage
+  thresholds. **Run it before declaring any task done.**
+- `npm test` / `npm run test:coverage` / `npm run lint` /
+  `npm run check:styles` / `npm run format` — individually.
 - `npm run build` — bundles to `build/` (NOT electron-builder's default;
   `buildResources` is `resources/`). Installers: `build:win` / `build:mac`.
 
@@ -50,9 +52,33 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   and ESLint (`eslint.config.mjs`) are the style authority — run
   `npm run format` rather than hand-formatting, and never commit code that
   fails `npm run check`.
-- Vue SFCs use `<script setup>`, scoped styles, and CSS variables from
-  `styles/tokens.css` for every color — hardcoded colors break the light/dark
-  theme. New UI must be checked in both themes.
+- Vue SFCs use `<script setup>` and keep their CSS in a sibling file, linked
+  as `<style scoped src="./styles/<Name>.css">`. A component is capped at
+  **250 lines**, its template at 120 and its script at 100 (ESLint
+  `max-lines` + `vue/max-lines-per-block`) — past that, split the markup into
+  child components and move logic into `composables/` or `utils/`. Raising a
+  cap is not the fix.
+- Layering, ESLint-enforced: `utils/` is pure (no Vue, no stores, no
+  components) so it stays unit-testable; `composables/` may use Vue and
+  stores but never imports a component. `complexity`, `max-depth` and
+  `max-params` (4 — pass an options object instead) apply everywhere, and
+  `eslint-plugin-sonarjs` flags duplicated functions and cognitive load.
+- The design system lives in `styles/`: `tokens.css` (colors + the
+  radius/type/spacing/control-height scale) and `ui.css` (shared `.btn*`
+  classes and the `.dialog*` layer). Buttons opt into `.btn` + a variant.
+  `npm run check:styles` (scripts/check-style-tokens.mjs) fails the build on a
+  hardcoded color, font-size or radius in `components/styles/` — add a token
+  rather than a literal, or `/* token-exempt: reason */` when a literal is
+  genuinely right. New UI must be checked in both themes.
+- Every modal is a `BaseDialog` (backdrop, header, `#actions` slot, Escape,
+  focus trap). Its panel is BaseDialog's, so a dialog sizes itself with the
+  `width` prop — scoped CSS cannot reach into a child. `:escape-closes="false"`
+  for dialogs holding unsaved input. New format/validate tools are a `TEXT_TOOLS`
+  entry (`utils/textTools.js`), never another dialog component.
+- Objects that cross a boundary (props, composable returns) get a typedef in
+  `src/renderer/src/types.js` and a JSDoc annotation; a prop typed `Object`
+  documents nothing, so pair it with a `shaped(...)` validator from
+  `utils/props.js`.
 - Comments explain *why* or state invariants; never narrate what the next
   line does. Match the density and tone of the surrounding file.
 - New file formats go through the adapter registry
@@ -64,6 +90,12 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 
 ## Testing rules
 
+- Coverage has a floor (`vitest.config.mjs`: 88% statements / 78% branches /
+  85% functions / 90% lines over the main-process cores, stores, utils and
+  adapters) and `npm run check` enforces it. It is a ratchet: raise it as
+  coverage rises, never lower it to make a red run green. Electron glue and
+  `.vue` files are deliberately outside the measured set — they are verified
+  in the Docker env.
 - Vitest, jsdom environment (`tests/setup.js` provides localStorage — Node's
   built-in one is broken in workers). The tree under `tests/` mirrors `src/`:
   `tests/main/`, `tests/renderer/{stores,utils,adapters}/`. A new test goes

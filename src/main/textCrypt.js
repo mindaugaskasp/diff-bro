@@ -42,6 +42,20 @@ export async function encryptText(plaintext, passphrase, algorithm = 'aes-256-gc
   return Buffer.from(JSON.stringify(envelope)).toString('base64')
 }
 
+// The envelope's shape, checked before any key derivation runs on it.
+// `params === null` means the kdf field itself was malformed.
+function hasEnvelopeShape(envelope, params) {
+  return (
+    envelope?.format === TEXT_CRYPT_FORMAT &&
+    ALGORITHMS.includes(envelope.algo) &&
+    typeof envelope.salt === 'string' &&
+    typeof envelope.iv === 'string' &&
+    typeof envelope.ciphertext === 'string' &&
+    typeof envelope.tag === 'string' &&
+    params !== null
+  )
+}
+
 // Returns { ok: true, plaintext } or { ok: false, error }. Never distinguishes
 // "wrong passphrase" from "corrupted data" from "not a blob we made" — all
 // collapse to the same generic failure, same as vaultDecrypt.
@@ -53,15 +67,7 @@ export async function decryptText(blob, passphrase) {
     return { ok: false, error: 'Not a valid encrypted blob.' }
   }
   const params = scryptParamsFor(envelope)
-  if (
-    envelope?.format !== TEXT_CRYPT_FORMAT ||
-    !ALGORITHMS.includes(envelope.algo) ||
-    typeof envelope.salt !== 'string' ||
-    typeof envelope.iv !== 'string' ||
-    typeof envelope.ciphertext !== 'string' ||
-    typeof envelope.tag !== 'string' ||
-    params === null // malformed kdf params
-  ) {
+  if (!hasEnvelopeShape(envelope, params)) {
     return { ok: false, error: 'Not a valid encrypted blob.' }
   }
 

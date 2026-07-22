@@ -3,6 +3,34 @@
    default; the light block is re-applied by the theme toggle stamping
    data-theme on :root, so it must redefine every token the dark block sets. */
 
+/* Shape, size and type scale. These are theme-independent, so they live outside
+   the two color blocks — but the rule is the same: component styles pick from
+   this scale instead of inventing values, which is what keeps two buttons in
+   two panels the same size. The shared control classes are in ui.css. */
+:root {
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+  /* Type ramp: micro labels → dialog titles. Nothing outside this list;
+     scripts/check-style-tokens.mjs enforces it. */
+  --font-2xs: 9px;
+  --font-xs: 10.5px;
+  --font-sm: 11.5px;
+  --font-md: 12.5px;
+  --font-lg: 14px;
+  --font-xl: 16px;
+  --font-2xl: 20px;
+  /* Control heights: sidebar/toolbar controls, then dialog buttons. */
+  --control-h-sm: 26px;
+  --control-h: 30px;
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 10px;
+  --space-4: 16px;
+}
+
 :root {
   --bg: #0d1117;
   --bg-panel: #161b22;
@@ -21,6 +49,16 @@
   --danger-bg: #f85149;
   --danger-border: #da3633;
   --danger-text: #ffffff;
+  /* "this parsed / these lines were added" green — readable on both panels. */
+  --success-text: #3fb950;
+  /* Modal scrim — the same dim in both themes, so the app behind reads as
+     inactive without the overlay changing character. */
+  --scrim: rgba(0, 0, 0, 0.5);
+  /* Favorites gold: the pinned-shelf tint and its stars. */
+  --favorite: #d29922;
+  /* Text on an accent/danger fill — white in both themes, still a token so no
+     component hardcodes it. */
+  --text-on-accent: #ffffff;
 }
 
 :root[data-theme='light'] {
@@ -38,4 +76,8 @@
   --danger-bg: #f85149;
   --danger-border: #cf222e;
   --danger-text: #ffffff;
+  --success-text: #1a7f37;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --favorite: #bf8700;
+  --text-on-accent: #ffffff;
 }

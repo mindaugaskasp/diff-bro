@@ -1,0 +1,18 @@
+.note strong {
+  color: var(--text);
+}
+.hint {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.fp {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.fp code {
+  color: var(--text);
+  font-size: var(--font-sm);
+}

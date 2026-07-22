@@ -1,3 +1,4 @@
+import { toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
@@ -43,6 +44,36 @@ function formatHintFor(file, dismissedContent) {
   return { kind: detected.kind, valid: true }
 }
 
+// Menu action → what it does to the store. A table rather than a switch: the
+// accelerators in src/main/menu.js and MenuBar.vue name these strings, so this
+// is the single list of everything a menu can trigger.
+const MENU_ACTIONS = {
+  'open-left': (s) => s.pick('left'),
+  'open-right': (s) => s.pick('right'),
+  save: (s) => {
+    if (s.canSave) s.showSaveDialog = true
+  },
+  'share-current': (s) => s.shareCurrent(),
+  swap: (s) => s.swap(),
+  clear: (s) => s.clear(),
+  'toggle-paste': (s) => s.togglePasteMode(),
+  'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
+  'toggle-theme': (s) => s.toggleTheme(),
+  'import-shared': (s) => s.importShared(),
+  'export-pubkey': (s) => (s.showShareKeyDialog = true),
+  'copy-pubkey': (s) => (s.showShareKeyDialog = true),
+  'add-trusted-key': (s) => s.addTrustedKey(),
+  'manage-keys': (s) => (s.showTrustedKeysDialog = true),
+  'config-backup': (s) => (s.configMode = 'backup'),
+  'config-restore': (s) => (s.configMode = 'restore'),
+  settings: (s) => (s.showSettingsDialog = true),
+  'tools-base64': (s) => (s.showBase64Dialog = true),
+  'tools-json': (s) => (s.textTool = 'json'),
+  'tools-xml': (s) => (s.textTool = 'xml'),
+  'tools-sql': (s) => (s.textTool = 'sql'),
+  'tools-crypt': (s) => (s.showCryptDialog = true)
+}
+
 export const useDiffStore = defineStore('diff', {
   state: () => ({
     left: null, // { path, name, content, encoding, size }
@@ -84,9 +115,9 @@ export const useDiffStore = defineStore('diff', {
     configMode: null,
     // Tools menu dialog visibility.
     showBase64Dialog: false,
-    showJsonToolDialog: false,
-    showXmlToolDialog: false,
-    showSqlToolDialog: false,
+    // Which format/validate tool is open ('json' | 'xml' | 'sql'), null when
+    // none — one dialog serves all of them (see utils/textTools.js).
+    textTool: null,
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,
@@ -275,63 +306,7 @@ export const useDiffStore = defineStore('diff', {
       noticeTimer = setTimeout(() => (this.notice = null), 5000)
     },
     handleMenuAction(action) {
-      switch (action) {
-        case 'open-left':
-          return this.pick('left')
-        case 'open-right':
-          return this.pick('right')
-        case 'save':
-          if (this.canSave) this.showSaveDialog = true
-          return
-        case 'share-current':
-          return this.shareCurrent()
-        case 'swap':
-          return this.swap()
-        case 'clear':
-          return this.clear()
-        case 'toggle-paste':
-          return this.togglePasteMode()
-        case 'toggle-split':
-          this.renderSideBySide = !this.renderSideBySide
-          return
-        case 'toggle-theme':
-          return this.toggleTheme()
-        case 'import-shared':
-          return this.importShared()
-        case 'export-pubkey':
-        case 'copy-pubkey':
-          this.showShareKeyDialog = true
-          return
-        case 'add-trusted-key':
-          return this.addTrustedKey()
-        case 'manage-keys':
-          this.showTrustedKeysDialog = true
-          return
-        case 'config-backup':
-          this.configMode = 'backup'
-          return
-        case 'config-restore':
-          this.configMode = 'restore'
-          return
-        case 'settings':
-          this.showSettingsDialog = true
-          return
-        case 'tools-base64':
-          this.showBase64Dialog = true
-          return
-        case 'tools-json':
-          this.showJsonToolDialog = true
-          return
-        case 'tools-xml':
-          this.showXmlToolDialog = true
-          return
-        case 'tools-sql':
-          this.showSqlToolDialog = true
-          return
-        case 'tools-crypt':
-          this.showCryptDialog = true
-          return
-      }
+      MENU_ACTIONS[action]?.(this)
     },
     // One-click share of whatever is on screen: save first (a share file
     // needs a name and an expiry), then flow straight into the recipient
@@ -418,11 +393,25 @@ export const useDiffStore = defineStore('diff', {
     },
     async confirmTrustedKey(label) {
       const pending = this.pendingTrustedKey
-      this.pendingTrustedKey = null
       if (!pending) return
-      const res = await window.api.addTrustedKeyNamed(pending.key, label)
-      if (res.ok) this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
-      else this.showNotice('Could not add that key.')
+      // toRaw: the pending key lives in reactive state, and a Proxy can't cross
+      // the structured-clone boundary — sending one rejects the IPC call.
+      let res
+      try {
+        res = await window.api.addTrustedKeyNamed(toRaw(pending.key), label)
+      } catch {
+        res = { error: 'ipc' }
+      }
+      // Cleared only once the key is actually stored: TrustedKeysDialog re-reads
+      // the list when this goes null, and clearing first raced the write — the
+      // manager came back without the key that had just been added.
+      this.pendingTrustedKey = null
+      if (res.ok) {
+        this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
+        // Land in the manager: the new key is visible next to the existing ones,
+        // with rename and remove at hand.
+        this.showTrustedKeysDialog = true
+      } else this.showNotice('Could not add that key.')
     },
     cancelTrustedKey() {
       this.pendingTrustedKey = null

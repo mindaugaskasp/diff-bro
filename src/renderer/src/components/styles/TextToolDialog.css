@@ -1,0 +1,17 @@
+.editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 280px;
+}
+.status {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+.status.valid {
+  color: var(--success-text);
+}
+.status.invalid {
+  color: var(--danger-bg);
+}

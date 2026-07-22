@@ -1,0 +1,8 @@
+/* Monaco renders match decorations into its own DOM, which scoped styles
+   can't reach — these rules are deliberately global. */
+.dv-find-match {
+  background: rgba(210, 153, 34, 0.35);
+}
+.dv-find-current {
+  background: rgba(210, 153, 34, 0.75);
+}

@@ -1,0 +1,105 @@
+.menubar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: var(--bg-panel);
+  user-select: none;
+  position: relative;
+  z-index: 30;
+}
+.menu {
+  position: relative;
+}
+.top {
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--font-md);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.top:hover,
+.top.open {
+  background: var(--bg-hover, var(--bg-hover));
+}
+.top.open {
+  color: var(--accent);
+}
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 240px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 5px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--font-md);
+  text-align: left;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.item:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.item:hover kbd {
+  /* The shortcut chip sits on the accent fill, so it shades the on-accent text
+     rather than picking a color of its own. */
+  color: color-mix(in srgb, var(--text-on-accent) 85%, transparent);
+  border-color: color-mix(in srgb, var(--text-on-accent) 35%, transparent);
+}
+.item kbd {
+  font-family: inherit;
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+}
+.submenu {
+  position: relative;
+  display: flex;
+}
+.submenu > .item {
+  flex: 1;
+}
+.flyout {
+  top: -6px;
+  left: 100%;
+  min-width: 160px;
+  margin-left: 2px;
+}
+.arrow {
+  color: var(--text-hint);
+  font-size: var(--font-md);
+}
+.item:hover .arrow {
+  color: var(--text-on-accent);
+}
+.sep {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--border);
+}
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}

@@ -1,0 +1,163 @@
+/* Tag filter chips and the manage-tag popover (SnippetTagBar.vue). */
+/* tag filter bar */
+.tagbar {
+  margin: 0 10px 4px;
+}
+.tagbar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.tagbar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-hint);
+}
+.tagbar-toggle .chev {
+  font-size: var(--font-2xs);
+}
+.active-count {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--accent);
+  font-size: var(--font-xs);
+}
+.clear {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-xs);
+  padding: 0;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  background: color-mix(in srgb, var(--tc) 12%, transparent);
+  color: color-mix(in srgb, var(--tc) 72%, var(--text));
+  font-family: inherit;
+  transition:
+    opacity 0.12s,
+    filter 0.12s;
+}
+.chip.def {
+  --tc: var(--text-dim);
+  color: var(--text-dim);
+  background: none;
+  border-color: var(--border);
+}
+.chip .ct {
+  color: var(--text-hint);
+  font-weight: 500;
+}
+.chip.on {
+  background: color-mix(in srgb, var(--tc) 24%, transparent);
+  border-color: var(--tc);
+  color: color-mix(in srgb, var(--tc) 78%, var(--text));
+  box-shadow: inset 0 0 0 1px var(--tc);
+}
+.chip.def.on {
+  background: color-mix(in srgb, var(--text-dim) 20%, transparent);
+  border-color: var(--text-dim);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--text-dim);
+}
+/* Soften every non-selected chip while a filter is active, so the active pops. */
+.tagbar.has-active .chip:not(.on) {
+  opacity: 0.34;
+  filter: saturate(0.45);
+}
+.tagbar.has-active .chip:not(.on):hover {
+  opacity: 0.9;
+  filter: none;
+}
+/* manage popover */
+.manage-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.manage {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  width: 236px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.manage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.rename {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 6px 8px;
+  font-size: var(--font-md);
+}
+.rename:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.swatch[aria-pressed='true'] {
+  border-color: var(--text);
+}
+.manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.spacer {
+  flex: 1;
+}

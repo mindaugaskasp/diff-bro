@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
+import { makeSearch } from '../composables/useDiffSearch'
 
 const store = useDiffStore()
 const container = ref(null)
@@ -11,67 +12,6 @@ let leftModel = null
 let rightModel = null
 let origDecos = null
 let modDecos = null
-
-// Each side searches only its own model, with its own query, match count, and
-// navigation — the left and right panes are independent.
-function makeSearch(getModel, getSubEditor, getDecos) {
-  const state = reactive({
-    query: '',
-    isRegex: false,
-    matchCount: 0,
-    currentIndex: 0,
-    error: false
-  })
-  let matches = []
-
-  function clear() {
-    matches = []
-    state.matchCount = 0
-    state.currentIndex = 0
-    getDecos()?.set([])
-  }
-  function apply() {
-    getDecos()?.set(
-      matches.map((range, i) => ({
-        range,
-        options: {
-          className: i === state.currentIndex - 1 ? 'dv-find-current' : 'dv-find-match',
-          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
-        }
-      }))
-    )
-  }
-  function reveal(idx) {
-    const range = matches[idx]
-    if (range) getSubEditor()?.revealRangeInCenterIfOutsideViewport(range)
-  }
-  function run() {
-    state.error = false
-    const model = getModel()
-    if (!state.query || !model) return clear()
-    try {
-      // findMatches(search, searchScope, isRegex, matchCase, wordSeparators, captureMatches)
-      matches = model
-        .findMatches(state.query, false, state.isRegex, false, null, false)
-        .map((m) => m.range)
-    } catch {
-      state.error = true
-      matches = []
-    }
-    state.matchCount = matches.length
-    state.currentIndex = matches.length ? 1 : 0
-    apply()
-    if (matches.length) reveal(0)
-  }
-  function step(delta) {
-    if (!state.matchCount) return
-    state.currentIndex =
-      ((state.currentIndex - 1 + delta + state.matchCount) % state.matchCount) + 1
-    apply()
-    reveal(state.currentIndex - 1)
-  }
-  return Object.assign(state, { run, step })
-}
 
 const leftSearch = makeSearch(
   () => leftModel,
@@ -199,99 +139,6 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style scoped>
-.diff-viewer {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.search {
-  display: flex;
-  gap: 10px;
-  padding: 6px 10px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
-}
-.side {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.side-label {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-hint);
-}
-.search-input {
-  flex: 1;
-  min-width: 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 4px 8px;
-  font-size: 12.5px;
-}
-.search-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.search-input.error {
-  border-color: var(--danger-bg);
-}
-.regex {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 12px;
-  color: var(--text-dim);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  cursor: pointer;
-}
-.count {
-  font-size: 11px;
-  color: var(--text-dim);
-  min-width: 48px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.nav {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 15px;
-  line-height: 1;
-  padding: 1px 8px;
-}
-.nav:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.nav:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.diff-container {
-  width: 100%;
-  flex: 1;
-  min-height: 0;
-}
-</style>
-
-<!-- Global (unscoped): Monaco renders match decorations into its own DOM,
-     which scoped styles can't reach. -->
-<style>
-.dv-find-match {
-  background: rgba(210, 153, 34, 0.35);
-}
-.dv-find-current {
-  background: rgba(210, 153, 34, 0.75);
-}
-</style>
+<style scoped src="./styles/DiffViewer.css"></style>
+<!-- Global (unscoped): Monaco owns the DOM these rules target. -->
+<style src="./styles/DiffViewer.global.css"></style>

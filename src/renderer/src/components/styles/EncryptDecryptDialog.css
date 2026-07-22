@@ -1,0 +1,23 @@
+/* Encrypted blobs are long — a little more room than the shared default. */
+textarea {
+  height: 100px;
+}
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.row .grow {
+  flex: 1;
+}
+textarea:focus,
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.error {
+  margin: 0;
+  font-size: var(--font-md);
+  color: var(--danger-bg);
+}

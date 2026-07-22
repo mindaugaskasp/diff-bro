@@ -8,7 +8,11 @@ import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { createIdentityKeys } from '../../../src/main/sealing'
 import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
-import { TAG_PALETTE, useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import {
+  TAG_PALETTE,
+  languageOf,
+  useSnippetStore
+} from '../../../src/renderer/src/stores/snippetStore'
 
 const KEY = randomBytes(32)
 const IDENTITY = createIdentityKeys()
@@ -32,6 +36,45 @@ beforeEach(() => {
   }
 })
 
+describe('snippetStore — effective language', () => {
+  const DIAGRAM = 'flowchart TD\n  A --> B'
+
+  it('records the detected language so an auto snippet still resolves', async () => {
+    const store = useSnippetStore()
+    await store.add({ name: 'diagram', content: DIAGRAM, language: 'auto', tags: [] })
+    expect(store.entries[0].language).toBe('auto')
+    expect(languageOf(store.entries[0])).toBe('mermaid')
+  })
+
+  it('keeps an explicit choice over detection', async () => {
+    const store = useSnippetStore()
+    await store.add({ name: 'as text', content: DIAGRAM, language: 'plaintext', tags: [] })
+    expect(languageOf(store.entries[0])).toBe('plaintext')
+  })
+
+  it('re-detects when the content is edited', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'note', content: 'just a note', language: 'auto', tags: [] })
+    expect(languageOf(store.entries[0])).toBe('plaintext')
+    await store.update(id, { name: 'note', content: DIAGRAM, language: 'auto' })
+    expect(languageOf(store.entries[0])).toBe('mermaid')
+  })
+
+  it('backfills detection for an older entry the first time it is decrypted', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'legacy', content: DIAGRAM, language: 'auto', tags: [] })
+    delete store.entries[0].detected // as an entry saved by an older build reads
+    expect(languageOf(store.entries[0])).toBe('plaintext')
+    await store.load(id)
+    expect(languageOf(store.entries[0])).toBe('mermaid')
+  })
+
+  it('falls back to plaintext for entries saved before detection was recorded', () => {
+    expect(languageOf({ language: 'auto' })).toBe('plaintext')
+    expect(languageOf({ language: 'json' })).toBe('json')
+  })
+})
+
 describe('snippetStore — tags model', () => {
   it('starts empty (no categories; Default is the implicit catch-all)', () => {
     const store = useSnippetStore()
@@ -42,7 +85,12 @@ describe('snippetStore — tags model', () => {
 
   it('adds a tagged snippet, encrypted at rest, and registers its tags', async () => {
     const store = useSnippetStore()
-    const id = await store.add('find user', 'SELECT * FROM users', 'sql', ['sql', 'postgres'])
+    const id = await store.add({
+      name: 'find user',
+      content: 'SELECT * FROM users',
+      language: 'sql',
+      tags: ['sql', 'postgres']
+    })
     expect(store.entries).toHaveLength(1)
     expect(store.entries[0].tags).toEqual(['sql', 'postgres'])
     expect(store.tags.sql).toBeTruthy()
@@ -56,22 +104,33 @@ describe('snippetStore — tags model', () => {
 
   it('a snippet with no tags is the Default catch-all', async () => {
     const store = useSnippetStore()
-    await store.add('loose note', 'hello', 'auto', [])
+    await store.add({ name: 'loose note', content: 'hello', language: 'auto', tags: [] })
     expect(store.entries[0].tags).toEqual([])
     expect(store.defaultCount).toBe(1)
   })
 
   it('caps a snippet at 5 tags and de-duplicates', async () => {
     const store = useSnippetStore()
-    await store.add('x', 'y', 'auto', ['a', 'b', 'a', 'c', 'd', 'e', 'f'])
+    await store.add({
+      name: 'x',
+      content: 'y',
+      language: 'auto',
+      tags: ['a', 'b', 'a', 'c', 'd', 'e', 'f']
+    })
     expect(store.entries[0].tags).toEqual(['a', 'b', 'c', 'd', 'e'])
   })
 
   it('assigns distinct palette colors and honors caller-chosen colors', async () => {
     const store = useSnippetStore()
-    await store.add('one', 'x', 'auto', ['red-ish'], { 'red-ish': TAG_PALETTE[6] })
+    await store.add({
+      name: 'one',
+      content: 'x',
+      language: 'auto',
+      tags: ['red-ish'],
+      tagColors: { 'red-ish': TAG_PALETTE[6] }
+    })
     expect(store.tags['red-ish'].color).toBe(TAG_PALETTE[6])
-    await store.add('two', 'x', 'auto', ['auto-color'])
+    await store.add({ name: 'two', content: 'x', language: 'auto', tags: ['auto-color'] })
     // Auto-assigned from the palette, and different from the taken one.
     expect(TAG_PALETTE).toContain(store.tags['auto-color'].color)
     expect(store.tags['auto-color'].color).not.toBe(TAG_PALETTE[6])
@@ -79,8 +138,13 @@ describe('snippetStore — tags model', () => {
 
   it('update() re-encrypts content, renames, changes syntax, and retags', async () => {
     const store = useSnippetStore()
-    const id = await store.add('todo', 'old', 'auto', ['a'])
-    await store.update(id, 'renamed', 'new content', 'python', ['b', 'c'])
+    const id = await store.add({ name: 'todo', content: 'old', language: 'auto', tags: ['a'] })
+    await store.update(id, {
+      name: 'renamed',
+      content: 'new content',
+      language: 'python',
+      tags: ['b', 'c']
+    })
     const e = store.entries[0]
     expect(e.name).toBe('renamed')
     expect(e.language).toBe('python')
@@ -90,19 +154,19 @@ describe('snippetStore — tags model', () => {
 
   it('retagging does NOT re-key (the AAD is fixed to id + salt + createdAt)', async () => {
     const store = useSnippetStore()
-    const id = await store.add('s', 'payload', 'auto', ['x'])
+    const id = await store.add({ name: 's', content: 'payload', language: 'auto', tags: ['x'] })
     const salt = store.entries[0].aadSalt
-    await store.update(id, 's', 'payload', 'auto', ['y', 'z'])
+    await store.update(id, { name: 's', content: 'payload', language: 'auto', tags: ['y', 'z'] })
     expect(store.entries[0].aadSalt).toBe(salt) // unchanged
     await expect(store.load(id)).resolves.toBe('payload')
   })
 
   it('tagList is recency-ordered and counts usage; defaultCount tracks untagged', async () => {
     const store = useSnippetStore()
-    await store.add('a', 'x', 'auto', ['first'])
-    await store.add('b', 'x', 'auto', ['second'])
-    await store.add('c', 'x', 'auto', ['second']) // second is more used AND more recent
-    await store.add('d', 'x', 'auto', []) // Default
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['first'] })
+    await store.add({ name: 'b', content: 'x', language: 'auto', tags: ['second'] })
+    await store.add({ name: 'c', content: 'x', language: 'auto', tags: ['second'] }) // second is more used AND more recent
+    await store.add({ name: 'd', content: 'x', language: 'auto', tags: [] }) // Default
     const names = store.tagList.map((t) => t.name)
     expect(names[0]).toBe('second') // most recently used first
     expect(store.tagList.find((t) => t.name === 'second').count).toBe(2)
@@ -112,8 +176,8 @@ describe('snippetStore — tags model', () => {
   // --- tag management ---
   it('renameTag moves the tag on every snippet and in the registry', async () => {
     const store = useSnippetStore()
-    await store.add('a', 'x', 'auto', ['old'])
-    await store.add('b', 'x', 'auto', ['old', 'keep'])
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['old'] })
+    await store.add({ name: 'b', content: 'x', language: 'auto', tags: ['old', 'keep'] })
     store.renameTag('old', 'new')
     expect(store.tags.old).toBeUndefined()
     expect(store.tags.new).toBeTruthy()
@@ -123,7 +187,7 @@ describe('snippetStore — tags model', () => {
 
   it('deleteTag removes it from every snippet (but deletes no snippets)', async () => {
     const store = useSnippetStore()
-    await store.add('a', 'x', 'auto', ['gone', 'stay'])
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['gone', 'stay'] })
     store.deleteTag('gone')
     expect(store.tags.gone).toBeUndefined()
     expect(store.entries).toHaveLength(1)
@@ -132,7 +196,7 @@ describe('snippetStore — tags model', () => {
 
   it('recolorTag only accepts palette colors', async () => {
     const store = useSnippetStore()
-    await store.add('a', 'x', 'auto', ['t'])
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['t'] })
     store.recolorTag('t', TAG_PALETTE[3])
     expect(store.tags.t.color).toBe(TAG_PALETTE[3])
     store.recolorTag('t', '#123456') // not in palette — ignored
@@ -142,7 +206,7 @@ describe('snippetStore — tags model', () => {
   // --- delete flow ---
   it('requestDelete/confirmDelete removes a snippet; a tag delete removes the tag', async () => {
     const store = useSnippetStore()
-    const id = await store.add('doomed', 'x', 'auto', ['t'])
+    const id = await store.add({ name: 'doomed', content: 'x', language: 'auto', tags: ['t'] })
     store.requestDelete('snippet', id, 'doomed')
     store.cancelDelete()
     expect(store.entries).toHaveLength(1)
@@ -150,7 +214,12 @@ describe('snippetStore — tags model', () => {
     store.confirmDelete()
     expect(store.entries).toHaveLength(0)
 
-    const id2 = await store.add('has-tag', 'x', 'auto', ['victim'])
+    const id2 = await store.add({
+      name: 'has-tag',
+      content: 'x',
+      language: 'auto',
+      tags: ['victim']
+    })
     store.requestDelete('tag', 'victim', 'victim')
     store.confirmDelete()
     expect(store.tags.victim).toBeUndefined()
@@ -160,7 +229,7 @@ describe('snippetStore — tags model', () => {
   // --- crypto safety ---
   it('drops a snippet whose salt was tampered with (AAD mismatch)', async () => {
     const store = useSnippetStore()
-    const id = await store.add('victim', 'secret', 'auto', [])
+    const id = await store.add({ name: 'victim', content: 'secret', language: 'auto', tags: [] })
     store.entries[0].aadSalt = 'tampered'
     await expect(store.load(id)).resolves.toBeNull()
     expect(store.entries).toHaveLength(0)
@@ -168,7 +237,12 @@ describe('snippetStore — tags model', () => {
 
   it('never drops a snippet when the vault key is unavailable — it surfaces instead', async () => {
     const store = useSnippetStore()
-    const id = await store.add('keep', 'never lose me', 'auto', [])
+    const id = await store.add({
+      name: 'keep',
+      content: 'never lose me',
+      language: 'auto',
+      tags: []
+    })
     window.api.vaultDecrypt = async () => ({ error: 'vault-key-unavailable' })
     await expect(store.load(id)).resolves.toBeNull()
     expect(store.entries).toHaveLength(1)
@@ -181,8 +255,8 @@ describe('snippetStore — tags model', () => {
   // --- favorites ---
   it('favorites collects favorited snippets and lifts them out of the main list', async () => {
     const store = useSnippetStore()
-    const a = await store.add('a', 'x', 'auto', ['t'])
-    const b = await store.add('b', 'x', 'auto', ['t'])
+    const a = await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['t'] })
+    const b = await store.add({ name: 'b', content: 'x', language: 'auto', tags: ['t'] })
     // add() stamps createdAt from Date.now(), too fast apart to differ reliably;
     // pin explicit times so the newest-first order is deterministic.
     store.entries.find((e) => e.id === a).createdAt = 1000
@@ -198,7 +272,8 @@ describe('snippetStore — tags model', () => {
   it('orders both the Favorites and All shelves newest-created first', async () => {
     const store = useSnippetStore()
     const ids = {}
-    for (const n of ['old', 'mid', 'new']) ids[n] = await store.add(n, 'x', 'auto', [])
+    for (const n of ['old', 'mid', 'new'])
+      ids[n] = await store.add({ name: n, content: 'x', language: 'auto', tags: [] })
     const at = { old: 1000, mid: 2000, new: 3000 }
     for (const e of store.entries) e.createdAt = at[e.name]
     expect(store.listed.map((e) => e.name)).toEqual(['new', 'mid', 'old'])
@@ -211,7 +286,12 @@ describe('snippetStore — tags model', () => {
   // --- export / import ---
   it('exports all and reimports into a fresh store with tags + colors intact', async () => {
     const store = useSnippetStore()
-    await store.add('find user', 'SELECT * FROM users', 'sql', ['sql'])
+    await store.add({
+      name: 'find user',
+      content: 'SELECT * FROM users',
+      language: 'sql',
+      tags: ['sql']
+    })
     const color = store.tags.sql.color
     expect((await store.exportAll('my-passphrase')).ok).toBe(true)
 
@@ -228,8 +308,8 @@ describe('snippetStore — tags model', () => {
 
   it('exportTag exports only snippets carrying that tag', async () => {
     const store = useSnippetStore()
-    await store.add('keep', 'A', 'auto', ['wanted'])
-    await store.add('skip', 'B', 'auto', ['other'])
+    await store.add({ name: 'keep', content: 'A', language: 'auto', tags: ['wanted'] })
+    await store.add({ name: 'skip', content: 'B', language: 'auto', tags: ['other'] })
     await store.exportTag('wanted', 'pw')
 
     setActivePinia(createPinia())
@@ -262,7 +342,7 @@ describe('snippetStore — tags model', () => {
 
   it('importSnippets surfaces a friendly message on the wrong passphrase', async () => {
     const store = useSnippetStore()
-    await store.add('x', 'y', 'auto', [])
+    await store.add({ name: 'x', content: 'y', language: 'auto', tags: [] })
     await store.exportAll('right-pw')
     const res = await store.importSnippets('wrong-pw')
     expect(res.ok).toBeUndefined()

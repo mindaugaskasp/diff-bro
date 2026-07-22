@@ -1,0 +1,71 @@
+.fields {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.fields .grow {
+  flex: 1;
+}
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+}
+.drop-hint {
+  color: var(--text-hint);
+  font-size: var(--font-sm);
+}
+.lang-picker {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.lang-picker select {
+  padding: 2px 6px;
+  font-size: var(--font-md);
+}
+.lang-detected {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 280px;
+}
+.mmd-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.mmd-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 6px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.mmd-preview-body {
+  height: 180px;
+  padding: 8px;
+  overflow: auto;
+}
+.spacer {
+  flex: 1;
+}
+/* Armed clear: a danger cue so the second, destructive click is deliberate. */
+.ghost.small.armed {
+  border-color: var(--danger-border);
+  color: var(--danger-bg);
+  font-weight: 600;
+}

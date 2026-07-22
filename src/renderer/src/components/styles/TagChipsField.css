@@ -1,0 +1,91 @@
+/* Tag chips field (TagChipsField.vue). */
+.tag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
+  font-size: var(--font-md);
+  color: var(--text-dim);
+}
+.field-label .hint {
+  color: var(--text-hint);
+}
+.tagfield {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px;
+  min-height: 40px;
+  cursor: text;
+}
+.etag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 6px 4px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  background: color-mix(in srgb, var(--tc) 16%, transparent);
+  color: color-mix(in srgb, var(--tc) 74%, var(--text));
+}
+.etag .x {
+  cursor: pointer;
+  opacity: 0.7;
+  font-weight: 700;
+  padding: 0 1px;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: var(--font-md);
+  line-height: 1;
+}
+.etag .x:hover {
+  opacity: 1;
+}
+.taginput {
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: var(--font-md);
+  padding: 4px;
+  min-width: 90px;
+  flex: 1;
+  font-family: inherit;
+}
+.taginput:focus {
+  outline: none;
+}
+.cap {
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.cap.full {
+  color: var(--favorite);
+}
+.suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sugg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+  background: color-mix(in srgb, var(--tc) 12%, transparent);
+  color: color-mix(in srgb, var(--tc) 72%, var(--text));
+  font-family: inherit;
+}

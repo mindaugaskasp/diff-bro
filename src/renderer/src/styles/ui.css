@@ -1,0 +1,204 @@
+/* Shared control classes. Global on purpose: a scoped block in one SFC can't
+   keep another SFC's button the same size, which is how the sidebar ended up
+   with three subtly different "action" buttons. Every button in the app opts
+   into `.btn` (+ a variant/size) and adds only what is genuinely local.
+
+   Scoped component rules carry an extra attribute selector, so they still win
+   where a component really needs an override — keep those to layout (width,
+   flex, margin), not to size, radius or color. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-h);
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--font-md);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The one affirmative action of a dialog or panel — at most one per group. */
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  filter: brightness(1.12);
+}
+
+/* Secondary action: reads as a control only on hover. */
+.btn-ghost {
+  background: none;
+  color: var(--text-dim);
+}
+
+.btn-danger:hover:not(:disabled) {
+  border-color: var(--danger-border);
+  color: var(--danger-bg);
+}
+
+/* Sidebar / toolbar scale. */
+.btn-sm {
+  height: var(--control-h-sm);
+  padding: 0 10px;
+  font-size: var(--font-sm);
+}
+
+/* Square, borderless glyph button (header affordances, row actions). */
+.btn-icon {
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  color: var(--text-dim);
+  font-size: var(--font-lg);
+}
+
+/* Fills its slot — the default for the stacked sidebar actions. */
+.btn-block {
+  width: 100%;
+}
+
+/* Solid destructive action — confirmation dialogs only, never a first resort. */
+.btn-destructive {
+  background: var(--danger-bg);
+  border-color: var(--danger-bg);
+  color: var(--danger-text);
+  font-weight: 600;
+}
+.btn-destructive:hover:not(:disabled) {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+  filter: brightness(1.08);
+}
+
+/* --- Dialog layer -------------------------------------------------------
+   Every modal is the same box: a dimmed backdrop, a panel with a header row,
+   optional note, body, and a right-aligned action row. A dialog's own stylesheet
+   should only need its width and whatever is genuinely unique to it. The element
+   selectors below are global on purpose — they reach into scoped components
+   without every dialog restating them. */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 420px;
+  max-width: 92vw;
+  padding: var(--space-4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.dialog h3 {
+  margin: 0;
+  font-size: var(--font-lg);
+}
+.dialog-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 var(--space-1);
+  cursor: pointer;
+}
+.dialog-close:hover {
+  color: var(--text);
+}
+.dialog-note {
+  margin: 0;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.dialog-note strong {
+  color: var(--text);
+}
+/* A dialog whose body is a <form> (so Enter submits) still wants the dialog's
+   own column layout. */
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.dialog-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+.dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-md);
+  color: var(--text-dim);
+}
+.dialog input,
+.dialog select,
+.dialog textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: var(--font-md);
+}
+/* Dialog textareas are all code-ish input: monospace, user-resizable, and tall
+   enough to be worth typing into. */
+.dialog textarea {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  resize: vertical;
+  height: 90px;
+}
+.dialog input:focus,
+.dialog select:focus,
+.dialog textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}

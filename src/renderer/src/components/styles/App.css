@@ -1,0 +1,91 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.file-slots-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.slot-half {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Anchors the floating ShortcutBar to the diff area, not the window. */
+  position: relative;
+}
+.empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-dim);
+}
+.empty.waiting .waiting-title {
+  font-size: var(--font-xl);
+  color: var(--text);
+}
+.empty.waiting strong {
+  color: var(--accent);
+}
+.notice {
+  position: fixed;
+  /* Stacks above the floating ShortcutBar instead of landing on top of it. */
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  padding: 10px 16px;
+  max-width: 70%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 14%, rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+.drop-card {
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-xl);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: var(--font-xl);
+  font-weight: 600;
+  padding: 28px 44px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}

@@ -1,0 +1,177 @@
+.saved {
+  width: 256px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+/* Section header band: a recessed strip (--bg is a step off the panel in both
+   themes) framed by hairlines, so Saved / External / Snippets read as distinct
+   blocks rather than one continuous list. */
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 10px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+/* The first section sits flush at the top; later ones get a gap of panel
+   background above the band to open up the seam between sections. */
+.head:first-child {
+  border-top: none;
+}
+.head.sub {
+  margin-top: 12px;
+}
+.section-head {
+  cursor: pointer;
+  user-select: none;
+  gap: 8px;
+}
+.section-title {
+  flex: 1;
+}
+.chev {
+  display: inline-block;
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  transition: transform 0.12s;
+}
+.chev.open {
+  transform: rotate(90deg);
+}
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px 8px;
+}
+.add-category {
+  padding: 0 10px 8px;
+}
+.add-category input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 5px 8px;
+  font-size: var(--font-md);
+}
+.add-category input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.empty {
+  padding: 4px 10px;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.empty.small {
+  padding: 4px 10px 4px 30px;
+  font-size: var(--font-sm);
+}
+.empty kbd {
+  font-size: var(--font-xs);
+  padding: 0 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.category-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 6px;
+  border-top: 1px solid var(--border);
+}
+.cat-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 6px 4px 6px 10px;
+  cursor: pointer;
+  font-size: var(--font-md);
+}
+.cat-toggle:hover {
+  background: var(--bg);
+}
+.chevron {
+  display: inline-block;
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+  transition: transform 0.1s;
+}
+.chevron.open {
+  transform: rotate(90deg);
+}
+.cat-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.count {
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-lg);
+  line-height: 1;
+  padding: 0;
+}
+.icon.delete:hover:not(:disabled) {
+  color: var(--danger-bg);
+  border-color: var(--danger-bg);
+}
+.icon:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.favorites-group {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fav-head {
+  padding: 6px 10px 3px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--favorite);
+}
+.empty code {
+  font-size: var(--font-sm);
+}

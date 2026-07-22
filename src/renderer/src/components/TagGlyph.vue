@@ -21,10 +21,4 @@ defineProps({ color: { type: String, default: 'currentColor' } })
   </svg>
 </template>
 
-<style scoped>
-.tglyph {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-</style>
+<style scoped src="./styles/TagGlyph.css"></style>

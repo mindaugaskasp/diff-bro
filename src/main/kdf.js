@@ -34,16 +34,21 @@ const isPow2 = (n) => Number.isInteger(n) && n > 1 && (n & (n - 1)) === 0
 // legacy defaults when no `kdf` is present (older file), the validated params
 // when present, or null when the `kdf` field is malformed/out of bounds (so
 // the caller can reject the file rather than derive with attacker-chosen cost).
+// Every bound an attacker-supplied cost must satisfy. Kept separate so the
+// resolver above stays a two-line decision and these limits read as one list.
+function withinScryptBounds({ N, r, p }) {
+  if (!isPow2(N) || N > MAX_N) return false
+  if (!Number.isInteger(r) || r < 1 || r > 16) return false
+  if (!Number.isInteger(p) || p < 1 || p > 4) return false
+  return 128 * N * r <= MAXMEM
+}
+
 export function scryptParamsFor(envelope) {
   const k = envelope?.kdf
   if (k == null) return LEGACY_PARAMS
   if (typeof k !== 'object') return null
   const { N, r, p } = k
-  if (!isPow2(N) || N > MAX_N) return null
-  if (!Number.isInteger(r) || r < 1 || r > 16) return null
-  if (!Number.isInteger(p) || p < 1 || p > 4) return null
-  if (128 * N * r > MAXMEM) return null
-  return { N, r, p }
+  return withinScryptBounds({ N, r, p }) ? { N, r, p } : null
 }
 
 // Derive a key. `params` defaults to the pinned cost (for sealing); pass the

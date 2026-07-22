@@ -58,7 +58,12 @@ async function doRender() {
 // Mermaid errors are prefixed and can be long; trim to a readable hint.
 function cleanError(e) {
   const msg = e?.message ? e.message : String(e)
-  return msg.replace(/^error:\s*/i, '').trim().slice(0, 400) || 'Could not render this diagram.'
+  return (
+    msg
+      .replace(/^error:\s*/i, '')
+      .trim()
+      .slice(0, 400) || 'Could not render this diagram.'
+  )
 }
 
 function schedule() {
@@ -81,63 +86,4 @@ onBeforeUnmount(() => clearTimeout(timer))
   </div>
 </template>
 
-<style scoped>
-.mermaid-diagram {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-.host {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-.host.hidden {
-  display: none;
-}
-.host :deep(svg) {
-  max-width: 100%;
-  max-height: 100%;
-  height: auto;
-}
-.err {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-width: 90%;
-  padding: 12px 14px;
-  border: 1px solid var(--danger-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--danger-bg) 12%, transparent);
-  font-size: 12px;
-  color: var(--text);
-}
-.err-title {
-  font-weight: 700;
-  color: var(--danger-bg);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.err-msg {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  line-height: 1.4;
-  color: var(--text-dim);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.loading {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  font-size: 10.5px;
-  color: var(--text-hint);
-}
-</style>
+<style scoped src="./styles/MermaidDiagram.css"></style>

@@ -205,9 +205,11 @@ describe('diffStore', () => {
     store.handleMenuAction('tools-base64')
     expect(store.showBase64Dialog).toBe(true)
     store.handleMenuAction('tools-json')
-    expect(store.showJsonToolDialog).toBe(true)
+    expect(store.textTool).toBe('json')
     store.handleMenuAction('tools-xml')
-    expect(store.showXmlToolDialog).toBe(true)
+    expect(store.textTool).toBe('xml')
+    store.handleMenuAction('tools-sql')
+    expect(store.textTool).toBe('sql')
     store.handleMenuAction('tools-crypt')
     expect(store.showCryptDialog).toBe(true)
   })
@@ -269,5 +271,298 @@ describe('diffStore', () => {
     expect(document.documentElement.dataset.theme).toBe('light')
     store.toggleTheme()
     expect(store.theme).toBe('dark')
+  })
+  it('adds a trusted key before clearing the pending state, then opens the manager', async () => {
+    const store = useDiffStore()
+    const seen = []
+    window.api = {
+      addTrustedKeyNamed: async (key, label) => {
+        // The naming dialog must still be up while the key is being stored —
+        // TrustedKeysDialog re-reads its list the moment this clears.
+        seen.push(store.pendingTrustedKey?.fingerprint ?? null)
+        return { ok: true, label, fingerprint: 'AB:CD', key }
+      }
+    }
+    store.pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
+    await store.confirmTrustedKey('Alice — laptop')
+    expect(seen).toEqual(['AB:CD'])
+    expect(store.pendingTrustedKey).toBeNull()
+    expect(store.showTrustedKeysDialog).toBe(true)
+    expect(store.notice).toContain('Alice — laptop')
+  })
+
+  it('leaves the manager closed when the key could not be added', async () => {
+    const store = useDiffStore()
+    window.api = { addTrustedKeyNamed: async () => ({ error: 'bad-key' }) }
+    store.pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
+    await store.confirmTrustedKey('Alice')
+    expect(store.pendingTrustedKey).toBeNull()
+    expect(store.showTrustedKeysDialog).toBe(false)
+  })
+  it('every menu action in the table runs without touching an unmapped one', () => {
+    const store = useDiffStore()
+    // An unknown action must be a no-op, not a throw: menu strings come from
+    // two places (main's menu and MenuBar.vue) and drift is survivable.
+    expect(() => store.handleMenuAction('no-such-action')).not.toThrow()
+    store.handleMenuAction('settings')
+    expect(store.showSettingsDialog).toBe(true)
+    store.handleMenuAction('manage-keys')
+    expect(store.showTrustedKeysDialog).toBe(true)
+    store.handleMenuAction('export-pubkey')
+    expect(store.showShareKeyDialog).toBe(true)
+    store.handleMenuAction('config-backup')
+    expect(store.configMode).toBe('backup')
+    store.handleMenuAction('config-restore')
+    expect(store.configMode).toBe('restore')
+    store.handleMenuAction('toggle-split')
+    expect(store.renderSideBySide).toBe(false)
+  })
+
+  it('save from the menu only opens the dialog when there is something to save', () => {
+    const store = useDiffStore()
+    store.handleMenuAction('save')
+    expect(store.showSaveDialog).toBe(false)
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.handleMenuAction('save')
+    expect(store.showSaveDialog).toBe(true)
+  })
+
+  it('snapshot/restore round-trips a paste-mode session', () => {
+    const store = useDiffStore()
+    store.mode = 'paste'
+    store.pasteLeft = 'left text'
+    store.pasteRight = 'right text'
+    store.ignoreTrimWhitespace = true
+    const snap = store.snapshot()
+
+    const fresh = useDiffStore()
+    fresh.clear()
+    fresh.restore(snap)
+    expect(fresh.mode).toBe('paste')
+    expect(fresh.pasteLeft).toBe('left text')
+    expect(fresh.pasteRight).toBe('right text')
+    expect(fresh.ignoreTrimWhitespace).toBe(true)
+  })
+
+  it('restore fills in defaults for fields an older saved diff lacks', () => {
+    const store = useDiffStore()
+    store.restore({ left: FILE('a.txt'), right: FILE('b.txt') })
+    expect(store.mode).toBe('files')
+    expect(store.pasteLeft).toBe('')
+    expect(store.renderSideBySide).toBe(true)
+    expect(store.ignoreTrimWhitespace).toBe(false)
+  })
+
+  it('formatSide pretty-prints in place, and only when the hint says it is valid', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"a":' } // invalid
+    store.formatSide('left')
+    store.formatSide('right')
+    expect(store.left.content).toBe('{\n  "a": 1\n}')
+    expect(store.right.content).toBe('{"a":') // untouched — never mangle bad input
+  })
+
+  it('refreshFromDisk reloads a side whose content changed and says so', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    window.api = {
+      readFile: async (path) => ({ path, name: 'a.txt', content: 'edited elsewhere' })
+    }
+    await store.refreshFromDisk()
+    expect(store.left.content).toBe('edited elsewhere')
+    expect(store.notice).toContain('changed on disk')
+  })
+
+  it('refreshFromDisk leaves the last good state when the file is gone', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    window.api = {
+      readFile: async () => {
+        throw new Error('ENOENT')
+      }
+    }
+    await store.refreshFromDisk()
+    expect(store.left.content).toBe('content of a.txt')
+  })
+
+  it('swap exchanges the two sides', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.swap()
+    expect(store.left.name).toBe('b.txt')
+    expect(store.right.name).toBe('a.txt')
+  })
+
+  it('clear wipes both sides, the stats and any pasted text', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.stats = { additions: 1, deletions: 2 }
+    store.pasteLeft = 'x'
+    store.pasteRight = 'y'
+    store.clear()
+    expect(store.left).toBeNull()
+    expect(store.right).toBeNull()
+    expect(store.stats).toBeNull()
+    expect(store.pasteLeft).toBe('')
+    expect(store.pasteRight).toBe('')
+  })
+
+  it('a dropped public key opens the naming dialog instead of loading a diff', async () => {
+    const store = useDiffStore()
+    window.api = {
+      readKeyFile: async () => ({
+        ok: true,
+        key: { format: 'k', sign: 's', box: 'b' },
+        fingerprint: 'AB:CD',
+        defaultLabel: 'Alice'
+      })
+    }
+    await store.receiveDroppedKey('/tmp/alice.diffbrokey')
+    expect(store.pendingTrustedKey).toMatchObject({ fingerprint: 'AB:CD', label: 'Alice' })
+    expect(store.left).toBeNull()
+  })
+
+  it('refuses your own key with an explanation rather than adding it', async () => {
+    const store = useDiffStore()
+    window.api = { readKeyFile: async () => ({ error: 'own-key' }) }
+    await store.receiveDroppedKey('/tmp/mine.diffbrokey')
+    expect(store.pendingTrustedKey).toBeNull()
+    expect(store.notice).toContain('your own public key')
+  })
+
+  it('dropping two files fills both sides in drop order', async () => {
+    const store = useDiffStore()
+    window.api = {
+      readFile: async (path) => ({ path, name: path.split('/').pop(), content: path })
+    }
+    await store.dropFiles(['/tmp/one.txt', '/tmp/two.txt'])
+    expect(store.left.name).toBe('one.txt')
+    expect(store.right.name).toBe('two.txt')
+  })
+
+  it('dropping onto a complete comparison asks before discarding it', async () => {
+    const store = useDiffStore()
+    window.api = {
+      readFile: async (path) => ({ path, name: path.split('/').pop(), content: path })
+    }
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    await store.dropFiles(['/tmp/new.txt'])
+    expect(store.pendingReplace).toEqual(['/tmp/new.txt'])
+    expect(store.left.name).toBe('a.txt') // nothing replaced yet
+
+    await store.confirmReplace()
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('new.txt')
+    expect(store.right).toBeNull() // waiting for the second file
+  })
+
+  it('a single dropped file targets the slot it was dropped on', async () => {
+    const store = useDiffStore()
+    window.api = {
+      readFile: async (path) => ({ path, name: path.split('/').pop(), content: path })
+    }
+    await store.dropFiles(['/tmp/right.txt'], 'right')
+    expect(store.right.name).toBe('right.txt')
+    expect(store.left).toBeNull()
+  })
+
+  it('showNotice replaces the previous message', () => {
+    const store = useDiffStore()
+    store.showNotice('first')
+    store.showNotice('second')
+    expect(store.notice).toBe('second')
+  })
+  it('key export/copy close the dialog and explain the next step', async () => {
+    const store = useDiffStore()
+    store.showShareKeyDialog = true
+    window.api = { exportPublicKey: async () => ({ ok: true }) }
+    await store.runExportKey('Alice — laptop')
+    expect(store.showShareKeyDialog).toBe(false)
+    expect(store.notice).toContain('Add Trusted Key')
+
+    store.showShareKeyDialog = true
+    window.api = { copyPublicKey: async () => ({ ok: true }) }
+    await store.runCopyKey('Alice — laptop')
+    expect(store.showShareKeyDialog).toBe(false)
+    expect(store.notice).toContain('copied')
+  })
+
+  it('a cancelled key export leaves the dialog open', async () => {
+    const store = useDiffStore()
+    store.showShareKeyDialog = true
+    window.api = { exportPublicKey: async () => ({ canceled: true }) }
+    await store.runExportKey('x')
+    expect(store.showShareKeyDialog).toBe(true)
+  })
+
+  it('addTrustedKey turns each failure into its own message', async () => {
+    const store = useDiffStore()
+    window.api = { addTrustedKey: async () => ({ error: 'own-key' }) }
+    await store.addTrustedKey()
+    expect(store.notice).toContain('your own public key')
+    expect(store.pendingTrustedKey).toBeNull()
+
+    window.api = { addTrustedKey: async () => ({ error: 'not-a-key' }) }
+    await store.addTrustedKey()
+    expect(store.notice).toContain('not a valid public key')
+
+    window.api = { addTrustedKey: async () => ({ canceled: true }) }
+    store.notice = null
+    await store.addTrustedKey()
+    expect(store.notice).toBeNull() // cancelling says nothing
+  })
+
+  it('cancelTrustedKey drops the pending key without adding it', () => {
+    const store = useDiffStore()
+    store.pendingTrustedKey = { key: 'k', fingerprint: 'AB', label: 'Alice' }
+    store.cancelTrustedKey()
+    expect(store.pendingTrustedKey).toBeNull()
+  })
+
+  it('config backup reports where the file went, and names the failure otherwise', async () => {
+    const store = useDiffStore()
+    window.api = { backupConfig: async () => ({ ok: true, path: '/tmp/cfg.diffbroconf' }) }
+    await store.runConfigBackup('passphrase')
+    expect(store.notice).toContain('/tmp/cfg.diffbroconf')
+
+    window.api = { backupConfig: async () => ({ error: 'nope' }) }
+    await store.runConfigBackup('passphrase')
+    expect(store.notice).toBe('Backup failed.')
+
+    window.api = { backupConfig: async () => ({ canceled: true }) }
+    store.notice = null
+    await store.runConfigBackup('passphrase')
+    expect(store.notice).toBeNull()
+  })
+
+  it('config restore applies the backed-up theme and distinguishes a wrong passphrase', async () => {
+    const store = useDiffStore()
+    expect(store.theme).toBe('dark')
+    window.api = {
+      restoreConfig: async () => ({ ok: true, snippets: null, settings: { theme: 'light' } })
+    }
+    await store.runConfigRestore('passphrase')
+    expect(store.theme).toBe('light')
+    expect(store.notice).toContain('Configuration restored')
+
+    window.api = { restoreConfig: async () => ({ error: 'wrong-passphrase' }) }
+    await store.runConfigRestore('nope')
+    expect(store.notice).toContain('Wrong passphrase')
+
+    window.api = { restoreConfig: async () => ({ error: 'not-a-config-file' }) }
+    await store.runConfigRestore('nope')
+    expect(store.notice).toContain('not a Diff Bro configuration backup')
+  })
+
+  it('shareCurrent refuses when there is nothing loaded', () => {
+    const store = useDiffStore()
+    store.shareCurrent()
+    expect(store.showSaveDialog).toBe(false)
+    expect(store.notice).toContain('Nothing to share yet')
   })
 })

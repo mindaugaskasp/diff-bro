@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
+import { detectSnippetLanguage } from '../utils/detectLanguage'
 
 // Snippets are a personal, non-expiring text library — encrypted at rest with
 // the same install-specific vault key as saved diffs (vault:encrypt /
@@ -63,8 +64,22 @@ function nextRank(tags) {
 // the AAD stays `[id, aadSalt, createdAt]` with aadSalt = the entry's original
 // categoryId, so existing ciphertext still decrypts — this migration only
 // reshapes metadata and never touches (or risks) the encrypted content.
+const isTagShape = (parsed) =>
+  !!parsed && !!parsed.tags && Array.isArray(parsed.entries) && !parsed.categories
+
+// Every non-default category becomes a tag of the same name.
+function tagsFromCategories(categories) {
+  const tags = {}
+  for (const c of categories) {
+    if (c.isDefault) continue
+    const n = cleanTag(c.name)
+    if (n && !tags[n]) tags[n] = { color: nextColor(tags), rank: nextRank(tags) }
+  }
+  return tags
+}
+
 function migrate(parsed) {
-  if (parsed && parsed.tags && Array.isArray(parsed.entries) && !parsed.categories) {
+  if (isTagShape(parsed)) {
     return {
       tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
       entries: parsed.entries
@@ -72,19 +87,13 @@ function migrate(parsed) {
   }
   const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
   const catById = new Map(categories.map((c) => [c.id, c]))
-  const tags = {}
-  for (const c of categories) {
-    if (c.isDefault) continue
-    const n = cleanTag(c.name)
-    if (n && !tags[n]) tags[n] = { color: nextColor(tags), rank: nextRank(tags) }
-  }
   const entries = (Array.isArray(parsed?.entries) ? parsed.entries : []).map((e) => {
     const cat = catById.get(e.categoryId)
     const tagName = cat && !cat.isDefault ? cleanTag(cat.name) : null
     const { categoryId, ...rest } = e
     return { ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] }
   })
-  return { tags, entries }
+  return { tags: tagsFromCategories(categories), entries }
 }
 
 function readState() {
@@ -107,6 +116,17 @@ function readState() {
 // snippets and a fresh UUID on new ones — either way it never changes, so tags
 // stay free metadata.
 const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
+
+// A snippet's effective syntax. Content is encrypted at rest, so the sidebar
+// can't re-detect it — `detected` is recorded whenever the content is written
+// and stands in for a snippet left on 'auto'. Entries saved before this field
+// existed simply read as plaintext until their next save.
+/**
+ * @param {import('../types').SnippetEntry} entry
+ * @returns {string} Monaco language id the snippet resolves to
+ */
+export const languageOf = (entry) =>
+  entry?.language && entry.language !== 'auto' ? entry.language : (entry?.detected ?? 'plaintext')
 
 const IMPORT_ERRORS = {
   'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
@@ -186,7 +206,7 @@ export const useSnippetStore = defineStore('snippets', {
         initialTags: []
       }
     },
-    async add(name, content, language, tags = [], tagColors = {}) {
+    async add({ name, content, language, tags = [], tagColors = {} }) {
       const id = crypto.randomUUID()
       const createdAt = Date.now()
       const aadSalt = crypto.randomUUID()
@@ -203,6 +223,7 @@ export const useSnippetStore = defineStore('snippets', {
         name: cleanName(name),
         createdAt,
         language: language || 'auto',
+        detected: detectSnippetLanguage(content),
         favorite: false,
         tags: applied,
         iv: box.iv,
@@ -229,11 +250,18 @@ export const useSnippetStore = defineStore('snippets', {
         return null
       }
       this.keyError = null
+      // Backfill for snippets saved before `detected` existed: this is the one
+      // place their plaintext is in hand, and the hover preview decrypts every
+      // row the pointer settles on, so the sidebar fills in as it is used.
+      if (entry.detected === undefined) {
+        entry.detected = detectSnippetLanguage(content)
+        this.persist()
+      }
       return content
     },
     // tags is optional — pass to replace the snippet's tags (the AAD is
     // unchanged, so this is a plain metadata + content update, no re-key).
-    async update(id, name, content, language, tags, tagColors = {}) {
+    async update(id, { name, content, language, tags, tagColors = {} }) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
       const box = await window.api.vaultEncrypt(
@@ -246,6 +274,7 @@ export const useSnippetStore = defineStore('snippets', {
         return
       }
       entry.name = cleanName(name, entry.name)
+      entry.detected = detectSnippetLanguage(content)
       if (language) entry.language = language
       if (tags !== undefined) entry.tags = this._applyTags(tags, tagColors)
       entry.iv = box.iv
@@ -345,27 +374,37 @@ export const useSnippetStore = defineStore('snippets', {
     // Also accepts a legacy { categories:[...] } bundle so old exports still
     // import — each category folds into a tag of the same name.
     async restoreBundle(bundle) {
-      if (Array.isArray(bundle?.categories)) {
-        for (const category of bundle.categories) {
-          const tag = cleanTag(category.name)
-          const tags = tag && tag !== 'default' ? [tag] : []
-          for (const s of category.snippets ?? []) {
-            await this.add(s.name, s.content, s.language, tags)
-          }
-        }
-        return
-      }
-      for (const [name, meta] of Object.entries(bundle?.tags ?? {})) {
-        const n = cleanTag(name)
-        if (n && !this.tags[n]) {
-          this.tags[n] = {
-            color: TAG_PALETTE.includes(meta?.color) ? meta.color : nextColor(this.tags),
-            rank: nextRank(this.tags)
-          }
-        }
-      }
+      if (Array.isArray(bundle?.categories)) return this._restoreLegacyBundle(bundle.categories)
+      this._registerBundleTags(bundle?.tags)
       for (const s of bundle?.snippets ?? []) {
-        await this.add(s.name, s.content, s.language, Array.isArray(s.tags) ? s.tags : [])
+        await this.add({
+          name: s.name,
+          content: s.content,
+          language: s.language,
+          tags: Array.isArray(s.tags) ? s.tags : []
+        })
+      }
+    },
+    // Colors from the bundle are honored only for tags this install doesn't
+    // already know — a restore never repaints existing tags.
+    _registerBundleTags(tags) {
+      for (const [name, meta] of Object.entries(tags ?? {})) {
+        const n = cleanTag(name)
+        if (!n || this.tags[n]) continue
+        this.tags[n] = {
+          color: TAG_PALETTE.includes(meta?.color) ? meta.color : nextColor(this.tags),
+          rank: nextRank(this.tags)
+        }
+      }
+    },
+    // Pre-tags export: each category folds into a tag of the same name.
+    async _restoreLegacyBundle(categories) {
+      for (const category of categories) {
+        const tag = cleanTag(category.name)
+        const tags = tag && tag !== 'default' ? [tag] : []
+        for (const s of category.snippets ?? []) {
+          await this.add({ name: s.name, content: s.content, language: s.language, tags })
+        }
       }
     },
     async exportAll(passphrase) {

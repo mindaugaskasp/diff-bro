@@ -36,6 +36,21 @@ const KEYWORD_RE = new RegExp(`^(?:${MERMAID_KEYWORDS.join('|')})\\b`)
 const FENCE_OPEN_RE = /^```[ \t]*([\w-]*)[ \t]*$/
 const FENCE_CLOSE_RE = /^```[ \t]*$/
 
+// Index range of the non-blank lines, so surrounding blank lines never decide
+// whether something is fenced.
+function trimmedRange(lines) {
+  let start = 0
+  let end = lines.length
+  while (start < end && !lines[start].trim()) start++
+  while (end > start && !lines[end - 1].trim()) end--
+  return [start, end]
+}
+
+const opensMermaidFence = (line) => {
+  const m = line?.trim().match(FENCE_OPEN_RE)
+  return !!m && (!m[1] || m[1].toLowerCase() === 'mermaid')
+}
+
 // Diagrams are usually copied out of chat or docs wrapped in a Markdown code
 // fence. Mermaid treats the fence lines as diagram text and fails to parse, so
 // a wrapping ```mermaid (or bare ```) block is peeled off before detection and
@@ -44,12 +59,8 @@ const FENCE_CLOSE_RE = /^```[ \t]*$/
 export function stripMermaidFence(text) {
   const src = String(text ?? '')
   const lines = src.split('\n')
-  let start = 0
-  let end = lines.length
-  while (start < end && !lines[start].trim()) start++
-  while (end > start && !lines[end - 1].trim()) end--
-  const open = lines[start]?.trim().match(FENCE_OPEN_RE)
-  if (!open || (open[1] && open[1].toLowerCase() !== 'mermaid')) return src
+  const [start, end] = trimmedRange(lines)
+  if (!opensMermaidFence(lines[start])) return src
   if (end - 1 <= start || !FENCE_CLOSE_RE.test(lines[end - 1].trim())) return src
   return lines.slice(start + 1, end - 1).join('\n')
 }

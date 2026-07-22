@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useVaultStore, DEFAULT_TTL_HOURS, TTL_OPTIONS } from '../stores/vaultStore'
+import BaseDialog from './BaseDialog.vue'
 
 const diff = useDiffStore()
 const vault = useVaultStore()
@@ -63,12 +64,12 @@ function cancel() {
 </script>
 
 <template>
-  <div class="backdrop">
-    <form class="dialog" @submit.prevent="save">
-      <div class="dialog-header">
-        <h3>{{ diff.saveThenShare ? 'Share diff — step 1 of 2: save it' : 'Save diff' }}</h3>
-        <button type="button" class="close-x" aria-label="Close" @click="cancel">×</button>
-      </div>
+  <BaseDialog
+    width="340px"
+    :title="diff.saveThenShare ? 'Share diff — step 1 of 2: save it' : 'Save diff'"
+    @close="cancel"
+  >
+    <form class="dialog-form" @submit.prevent="save">
       <label>
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
@@ -97,108 +98,17 @@ function cancel() {
           </option>
         </select>
       </label>
-      <p class="note">
+      <p class="dialog-note">
         Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.
       </p>
-      <div class="actions">
-        <button type="submit" class="primary">
+      <div class="dialog-actions">
+        <button type="submit" class="btn btn-primary">
           {{ diff.saveThenShare ? 'Next: choose recipient' : 'Save' }}
         </button>
-        <button type="button" class="ghost" @click="cancel">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="cancel">Cancel</button>
       </div>
     </form>
-  </div>
+  </BaseDialog>
 </template>
 
-<style scoped>
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-.dialog {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  width: 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-h3 {
-  margin: 0;
-  font-size: 14px;
-}
-.close-x {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 20px;
-  line-height: 1;
-  padding: 0 4px;
-  cursor: pointer;
-}
-.close-x:hover {
-  color: var(--text);
-}
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-dim);
-}
-input,
-select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 6px 8px;
-  font-size: 13px;
-}
-input:focus,
-select:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.note {
-  margin: 0;
-  font-size: 11px;
-  color: var(--text-dim);
-  line-height: 1.4;
-}
-.actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-.primary {
-  background: var(--accent);
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  padding: 6px 14px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.ghost {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  padding: 6px 12px;
-  cursor: pointer;
-}
-</style>
+<style scoped src="./styles/SaveDiffDialog.css"></style>

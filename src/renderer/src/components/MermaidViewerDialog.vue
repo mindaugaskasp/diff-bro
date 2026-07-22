@@ -68,7 +68,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <template>
-  <div v-if="view" class="backdrop" @click.self="close">
+  <div v-if="view" class="viewer-backdrop" @click.self="close">
     <div class="panel" :class="{ maxed }">
       <div class="head">
         <span class="title">{{ view.name || 'Diagram' }}</span>
@@ -77,11 +77,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <span class="pct" @click="fit">{{ pct }}%</span>
           <button class="tbtn" title="Zoom in" @click="zoom(1.2)">+</button>
           <button class="tbtn wide" title="Fit to window" @click="fit">Fit</button>
-          <button
-            class="tbtn"
-            :title="maxed ? 'Restore size' : 'Maximize'"
-            @click="maxed = !maxed"
-          >
+          <button class="tbtn" :title="maxed ? 'Restore size' : 'Maximize'" @click="maxed = !maxed">
             {{ maxed ? '❐' : '⛶' }}
           </button>
           <button class="tbtn close" title="Close (Esc)" @click="close">×</button>
@@ -110,126 +106,4 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   </div>
 </template>
 
-<style scoped>
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-.panel {
-  display: flex;
-  flex-direction: column;
-  width: min(880px, 90vw);
-  height: min(620px, 82vh);
-  min-width: 360px;
-  min-height: 260px;
-  max-width: 96vw;
-  max-height: 92vh;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  resize: both;
-}
-.panel.maxed {
-  width: 96vw;
-  height: 92vh;
-}
-.head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
-.title {
-  flex: 1;
-  min-width: 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tools {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.tbtn {
-  min-width: 26px;
-  height: 24px;
-  padding: 0 6px;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 13px;
-  line-height: 1;
-  font-family: inherit;
-}
-.tbtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.tbtn.wide {
-  font-size: 11px;
-}
-.tbtn.close {
-  font-size: 16px;
-}
-.pct {
-  min-width: 42px;
-  text-align: center;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
-  cursor: pointer;
-  user-select: none;
-}
-.pct:hover {
-  color: var(--accent);
-}
-.stage {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  touch-action: none;
-  /* A quiet grid so a transparent diagram canvas reads as a surface. */
-  background:
-    linear-gradient(var(--bg) 0 0) padding-box,
-    var(--bg);
-}
-.stage:active {
-  cursor: grabbing;
-}
-.transform {
-  transform-origin: center center;
-  transition: transform 0.04s linear;
-  max-width: 100%;
-  max-height: 100%;
-  display: flex;
-}
-.foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 5px 12px;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-  font-size: 10.5px;
-  color: var(--text-hint);
-}
-</style>
+<style scoped src="./styles/MermaidViewerDialog.css"></style>

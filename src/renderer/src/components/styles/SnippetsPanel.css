@@ -1,0 +1,161 @@
+.snippets-section {
+  display: flex;
+  flex-direction: column;
+}
+/* Section header band — matches SavedDiffs.vue, now a collapse toggle. */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.head.sub {
+  margin-top: 12px;
+}
+.section-head {
+  cursor: pointer;
+  user-select: none;
+}
+.section-title {
+  flex: 1;
+}
+.chev {
+  display: inline-block;
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  transition: transform 0.12s;
+}
+.chev.open {
+  transform: rotate(90deg);
+}
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+}
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 10px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 6px 0 8px;
+}
+.filter input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 5px 0;
+  font-size: var(--font-md);
+}
+.filter input:focus {
+  outline: none;
+}
+.filter:focus-within {
+  border-color: var(--accent);
+}
+.xbox {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-xl);
+  line-height: 1;
+  padding: 0 2px;
+}
+.xbox:hover {
+  color: var(--text);
+}
+.empty {
+  padding: 4px 10px 10px;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.empty.small {
+  padding: 8px 10px;
+  font-size: var(--font-sm);
+  list-style: none;
+}
+/* shelves */
+.shelf {
+  margin-top: 4px;
+}
+.shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px 4px;
+  font-family: inherit;
+}
+.shelf-head .chev {
+  font-size: var(--font-2xs);
+}
+.shelf-title {
+  flex: 1;
+  text-align: left;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-hint);
+}
+.shelf.fav .shelf-title {
+  color: var(--favorite);
+}
+.sort-note {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-dim);
+  font-size: var(--font-2xs);
+}
+.shelf-count {
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+  font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0 6px;
+}
+.close-x {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: var(--font-2xl);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+/* Rows are SnippetRow.vue; these reach it as the child root element. */
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.shelf.fav .row {
+  background: color-mix(in srgb, var(--favorite) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--favorite);
+}
+.shelf.fav .row:hover {
+  background: color-mix(in srgb, var(--favorite) 15%, transparent);
+}

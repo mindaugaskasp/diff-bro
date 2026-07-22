@@ -49,7 +49,13 @@ describe('vaultStore', () => {
     const vault = useVaultStore()
     const createdAt = Date.now() - 1000
     const expiresAt = Date.now() + 1000
-    await vault.addShared('from afar', PAYLOAD, createdAt, expiresAt, 'alice')
+    await vault.addShared({
+      name: 'from afar',
+      payload: PAYLOAD,
+      createdAt,
+      expiresAt,
+      from: 'alice'
+    })
     expect(vault.entries[0]).toMatchObject({ createdAt, expiresAt, from: 'alice' })
   })
 
@@ -57,9 +63,21 @@ describe('vaultStore', () => {
     const vault = useVaultStore()
     const soon = Date.now() + 3600_000
     await vault.save('mine', 1, PAYLOAD) // own diff — never in the External shelves
-    await vault.addShared('from alice', PAYLOAD, Date.now(), soon, 'alice')
+    await vault.addShared({
+      name: 'from alice',
+      payload: PAYLOAD,
+      createdAt: Date.now(),
+      expiresAt: soon,
+      from: 'alice'
+    })
     const bob = await (async () => {
-      await vault.addShared('from bob', PAYLOAD, Date.now(), soon, 'bob')
+      await vault.addShared({
+        name: 'from bob',
+        payload: PAYLOAD,
+        createdAt: Date.now(),
+        expiresAt: soon,
+        from: 'bob'
+      })
       return vault.entries.find((e) => e.from === 'bob').id
     })()
     expect(vault.importedFavorites).toHaveLength(0)
@@ -226,5 +244,86 @@ describe('vaultStore', () => {
     const thirdId = await vault.save('third', 1, PAYLOAD)
     vault.toggleFavorite(thirdId)
     expect(vault.active.map((e) => e.name)).toEqual(['third', 'first', 'second'])
+  })
+  it('share seals the decrypted payload for the chosen recipient', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('to share', 1, PAYLOAD)
+    let sealed = null
+    window.api.shareExport = async (entry, recipientFp) => {
+      sealed = { entry, recipientFp }
+      return { ok: true, to: 'Alice', path: '/tmp/x.diffbro' }
+    }
+    const res = await vault.share(id, 'AB:CD')
+    expect(res.ok).toBe(true)
+    expect(sealed.recipientFp).toBe('AB:CD')
+    // The recipient gets the plaintext snapshot plus the sender's timestamps.
+    expect(sealed.entry.snapshot).toEqual(PAYLOAD)
+    expect(sealed.entry.name).toBe('to share')
+  })
+
+  it('share reports missing rather than sealing an entry that is gone or expired', async () => {
+    const vault = useVaultStore()
+    await expect(vault.share('nope', 'AB:CD')).resolves.toEqual({ error: 'missing' })
+
+    const id = await vault.save('doomed', 1, PAYLOAD)
+    vault.entries[0].expiresAt = Date.now() - 1
+    await expect(vault.share(id, 'AB:CD')).resolves.toEqual({ error: 'missing' })
+  })
+
+  it('importShared files the received diff under the sender, keeping its expiry', async () => {
+    const vault = useVaultStore()
+    const createdAt = Date.now() - 5000
+    const expiresAt = Date.now() + 5000
+    window.api.shareImport = async () => ({
+      ok: true,
+      from: 'alice',
+      entry: { name: 'hers', snapshot: PAYLOAD, createdAt, expiresAt }
+    })
+    const res = await vault.importShared()
+    expect(res.ok).toBe(true)
+    expect(vault.entries[0]).toMatchObject({ name: 'hers', from: 'alice', createdAt, expiresAt })
+  })
+
+  it('a failed import adds nothing', async () => {
+    const vault = useVaultStore()
+    window.api.shareImport = async () => ({ error: 'not-for-you' })
+    const res = await vault.importShared()
+    expect(res.error).toBe('not-for-you')
+    expect(vault.entries).toHaveLength(0)
+  })
+
+  it('the delete confirmation is what actually removes a diff or a category', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('victim', 1, PAYLOAD)
+    vault.requestDelete('entry', id, 'victim')
+    expect(vault.entries).toHaveLength(1) // asking is not doing
+    vault.cancelDelete()
+    expect(vault.pendingDelete).toBeNull()
+    expect(vault.entries).toHaveLength(1)
+
+    vault.requestDelete('entry', id, 'victim')
+    vault.confirmDelete()
+    expect(vault.entries).toHaveLength(0)
+
+    const cat = vault.addCategory('Temp')
+    vault.requestDelete('category', cat, 'Temp')
+    vault.confirmDelete()
+    expect(vault.categories.some((c) => c.id === cat)).toBe(false)
+  })
+
+  it('confirmDelete with nothing pending is a no-op', async () => {
+    const vault = useVaultStore()
+    await vault.save('safe', 1, PAYLOAD)
+    vault.confirmDelete()
+    expect(vault.entries).toHaveLength(1)
+  })
+
+  it('surfaces a key failure instead of dropping the entry', async () => {
+    const vault = useVaultStore()
+    window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
+    const id = await vault.save('unsaveable', 1, PAYLOAD)
+    expect(id).toBeNull()
+    expect(vault.entries).toHaveLength(0)
+    expect(vault.keyError).toBe('vault-key-unavailable')
   })
 })

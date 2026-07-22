@@ -30,23 +30,24 @@ const IMPORTED_CATEGORY = 'imported'
 // diff but never its category. The "Default" category is the non-deletable
 // fallback (marked isDefault so it survives rename). A reserved, hidden
 // "imported" category holds diffs received from others.
-function readState() {
-  const raw = loadPersisted('vault')
-  let categories = []
-  let entries = []
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        entries = parsed // legacy shape: a bare entries array
-      } else {
-        categories = Array.isArray(parsed.categories) ? parsed.categories : []
-        entries = Array.isArray(parsed.entries) ? parsed.entries : []
-      }
-    } catch {
-      // keep empty defaults
+// Parse the persisted blob, tolerating the legacy shape (a bare entries array)
+// and anything unreadable (start empty rather than throw at import time).
+function parsePersistedVault(raw) {
+  if (!raw) return { categories: [], entries: [] }
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return { categories: [], entries: parsed }
+    return {
+      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+      entries: Array.isArray(parsed.entries) ? parsed.entries : []
     }
+  } catch {
+    return { categories: [], entries: [] }
   }
+}
+
+function readState() {
+  const { categories, entries } = parsePersistedVault(loadPersisted('vault'))
   if (!categories.some((c) => c.isDefault)) {
     categories.unshift({ id: crypto.randomUUID(), name: 'Default', isDefault: true })
   }
@@ -132,22 +133,22 @@ export const useVaultStore = defineStore('vault', {
     },
     async save(name, ttlHours, payload, categoryId) {
       const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
-      return this._add(
+      return this._add({
         name,
         payload,
-        Date.now(),
-        Date.now() + hours * 3600_000,
-        null,
-        categoryId ?? this.defaultCategoryId
-      )
+        createdAt: Date.now(),
+        expiresAt: Date.now() + hours * 3600_000,
+        from: null,
+        categoryId: categoryId ?? this.defaultCategoryId
+      })
     },
     // Entry received from another machine: keep the sender's absolute
     // timestamps so it expires at the same moment everywhere (the 24 h cap
     // was already enforced during signature verification in main).
-    async addShared(name, payload, createdAt, expiresAt, from) {
-      await this._add(name, payload, createdAt, expiresAt, from, IMPORTED_CATEGORY)
+    async addShared(entry) {
+      await this._add({ ...entry, categoryId: IMPORTED_CATEGORY })
     },
-    async _add(name, payload, createdAt, expiresAt, from, categoryId) {
+    async _add({ name, payload, createdAt, expiresAt, from, categoryId }) {
       const id = crypto.randomUUID()
       const box = await window.api.vaultEncrypt(
         JSON.stringify(payload),
@@ -231,7 +232,7 @@ export const useVaultStore = defineStore('vault', {
       const res = await window.api.shareImport()
       if (res.ok) {
         const { name, snapshot, createdAt, expiresAt } = res.entry
-        await this.addShared(name, snapshot, createdAt, expiresAt, res.from)
+        await this.addShared({ name, payload: snapshot, createdAt, expiresAt, from: res.from })
       }
       return res
     },

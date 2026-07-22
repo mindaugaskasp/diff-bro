@@ -39,6 +39,7 @@ export const SNIPPET_LIMITS = {
   tagsPerSnippet: 5,
   totalTags: 500, // tag-registry cap
   tagBytes: 64,
+  colorBytes: 16, // a hex color, nothing longer
   categories: 200, // legacy bundle caps
   snippetsPerCategory: 1000,
   nameBytes: 512,
@@ -77,54 +78,85 @@ function validateSnippetShape(s, limits) {
   return null
 }
 
-function validateTagsBundle(bundle, limits) {
-  if (bundle.snippets.length > limits.snippets) return 'too-large'
-  if (bundle.tags != null) {
-    if (typeof bundle.tags !== 'object') return 'malformed'
-    const names = Object.keys(bundle.tags)
-    if (names.length > limits.totalTags) return 'too-large'
-    for (const n of names) {
-      if (byteLen(n) > limits.tagBytes) return 'malformed'
-      const meta = bundle.tags[n]
-      if (meta != null && typeof meta !== 'object') return 'malformed'
-      if (meta?.color != null && (typeof meta.color !== 'string' || byteLen(meta.color) > 16)) {
-        return 'malformed'
-      }
-    }
-  }
-  let total = 0
-  for (const s of bundle.snippets) {
-    const err = validateSnippetShape(s, limits)
+// The tag registry that ships with an export: { name: { color } }.
+function validateTagRegistry(tags, limits) {
+  if (tags == null) return null
+  if (typeof tags !== 'object') return 'malformed'
+  const names = Object.keys(tags)
+  if (names.length > limits.totalTags) return 'too-large'
+  for (const n of names) {
+    if (byteLen(n) > limits.tagBytes) return 'malformed'
+    const err = validateTagMeta(tags[n], limits)
     if (err) return err
-    if (s.tags != null) {
-      if (!Array.isArray(s.tags)) return 'malformed'
-      if (s.tags.length > limits.tagsPerSnippet) return 'too-large'
-      for (const t of s.tags)
-        if (typeof t !== 'string' || byteLen(t) > limits.tagBytes) return 'malformed'
-    }
-    total += byteLen(s.content)
-    if (byteLen(s.content) > limits.contentBytes || total > limits.totalContentBytes)
-      return 'too-large'
   }
   return null
 }
 
+function validateTagMeta(meta, limits) {
+  if (meta == null) return null
+  if (typeof meta !== 'object') return 'malformed'
+  if (meta.color == null) return null
+  return typeof meta.color === 'string' && byteLen(meta.color) <= limits.colorBytes
+    ? null
+    : 'malformed'
+}
+
+// The tags applied to one snippet.
+function validateSnippetTags(tags, limits) {
+  if (tags == null) return null
+  if (!Array.isArray(tags)) return 'malformed'
+  if (tags.length > limits.tagsPerSnippet) return 'too-large'
+  for (const t of tags) {
+    if (typeof t !== 'string' || byteLen(t) > limits.tagBytes) return 'malformed'
+  }
+  return null
+}
+
+function validateTagsBundle(bundle, limits) {
+  if (bundle.snippets.length > limits.snippets) return 'too-large'
+  const tagsErr = validateTagRegistry(bundle.tags, limits)
+  if (tagsErr) return tagsErr
+  let total = 0
+  for (const s of bundle.snippets) {
+    const err = validateSnippetShape(s, limits) || validateSnippetTags(s.tags, limits)
+    if (err) return err
+    total += byteLen(s.content)
+    if (byteLen(s.content) > limits.contentBytes || total > limits.totalContentBytes) {
+      return 'too-large'
+    }
+  }
+  return null
+}
+
+// Pre-tags export shape: snippets nested under categories. `budget` carries the
+// running content total across categories, so the whole-file cap still applies.
+function validateLegacyCategory(category, limits, budget) {
+  if (!category || typeof category !== 'object') return 'malformed'
+  if (typeof category.name !== 'string' || byteLen(category.name) > limits.nameBytes) {
+    return 'malformed'
+  }
+  if (!Array.isArray(category.snippets)) return 'malformed'
+  if (category.snippets.length > limits.snippetsPerCategory) return 'too-large'
+  for (const snippet of category.snippets) {
+    const err = validateSnippetShape(snippet, limits) || chargeContent(snippet, limits, budget)
+    if (err) return err
+  }
+  return null
+}
+
+// Count one snippet's content against the per-snippet and whole-bundle caps.
+function chargeContent(snippet, limits, budget) {
+  const size = byteLen(snippet.content)
+  budget.total += size
+  return size > limits.contentBytes || budget.total > limits.totalContentBytes ? 'too-large' : null
+}
+
 function validateLegacyBundle(bundle, limits) {
   if (bundle.categories.length > limits.categories) return 'too-large'
-  let total = 0
+  const budget = { total: 0 }
   for (const category of bundle.categories) {
-    if (!category || typeof category !== 'object') return 'malformed'
-    if (typeof category.name !== 'string' || byteLen(category.name) > limits.nameBytes)
-      return 'malformed'
-    if (!Array.isArray(category.snippets)) return 'malformed'
-    if (category.snippets.length > limits.snippetsPerCategory) return 'too-large'
-    for (const snippet of category.snippets) {
-      const err = validateSnippetShape(snippet, limits)
-      if (err) return err
-      total += byteLen(snippet.content)
-      if (byteLen(snippet.content) > limits.contentBytes || total > limits.totalContentBytes)
-        return 'too-large'
-    }
+    const err = validateLegacyCategory(category, limits, budget)
+    if (err) return err
   }
   return null
 }
@@ -161,18 +193,36 @@ export async function sealSnippets(bundle, passphrase, sender) {
 }
 
 // Returns { ok, bundle, signer } or { error }.
+// The envelope's own shape, before any crypto runs on it.
+function hasEnvelopeShape(file, params) {
+  return (
+    file?.format === SNIPPET_FORMAT &&
+    typeof file.salt === 'string' &&
+    typeof file.iv === 'string' &&
+    typeof file.tag === 'string' &&
+    typeof file.ciphertext === 'string' &&
+    params !== null
+  )
+}
+
+// Signature check over the payload, using the key the file carries. Failure of
+// any kind (malformed key, bad base64, wrong signature) is a rejection.
+function payloadSignatureOk(inner) {
+  try {
+    return verify(
+      null,
+      Buffer.from(inner.payload, 'base64'),
+      createPublicKey(inner.signerKey),
+      Buffer.from(inner.signature, 'base64')
+    )
+  } catch {
+    return false
+  }
+}
+
 export async function openSnippets(file, passphrase) {
   const params = scryptParamsFor(file)
-  if (
-    file?.format !== SNIPPET_FORMAT ||
-    typeof file.salt !== 'string' ||
-    typeof file.iv !== 'string' ||
-    typeof file.tag !== 'string' ||
-    typeof file.ciphertext !== 'string' ||
-    params === null
-  ) {
-    return { error: 'not-a-snippet-file' }
-  }
+  if (!hasEnvelopeShape(file, params)) return { error: 'not-a-snippet-file' }
 
   let inner
   try {
@@ -190,18 +240,7 @@ export async function openSnippets(file, passphrase) {
     return { error: 'wrong-passphrase' }
   }
 
-  let signatureOk
-  try {
-    signatureOk = verify(
-      null,
-      Buffer.from(inner.payload, 'base64'),
-      createPublicKey(inner.signerKey),
-      Buffer.from(inner.signature, 'base64')
-    )
-  } catch {
-    signatureOk = false
-  }
-  if (!signatureOk) return { error: 'bad-signature' }
+  if (!payloadSignatureOk(inner)) return { error: 'bad-signature' }
 
   let bundle
   try {

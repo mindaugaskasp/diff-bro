@@ -68,9 +68,14 @@ export async function getIdentity() {
     throw new IdentityUnavailable()
   }
 
-  let identity
+  const identity = decodeIdentity(privRes.value, pubRes.value)
+  return upgradeIdentityFormat(identity)
+}
+
+// Unwrap the stored keypair. Anything unreadable is surfaced, never
+// regenerated — regenerating would discard a recoverable key.
+function decodeIdentity(rawPriv, rawPub) {
   try {
-    const rawPriv = privRes.value
     const isPlain = rawPriv.subarray(0, PLAIN_PREFIX.length).toString() === PLAIN_PREFIX
     // A plaintext identity key while the keychain works is anomalous (we always
     // wrap when we can) — treat it as planted and refuse, rather than adopting
@@ -79,28 +84,28 @@ export async function getIdentity() {
     const privJson = isPlain
       ? rawPriv.subarray(PLAIN_PREFIX.length).toString()
       : safeStorage.decryptString(rawPriv)
-    identity = { priv: JSON.parse(privJson), pub: JSON.parse(pubRes.value) }
+    return { priv: JSON.parse(privJson), pub: JSON.parse(rawPub) }
   } catch {
-    // Present but undecryptable/corrupt — surface, don't regenerate.
     throw new IdentityUnavailable()
   }
+}
 
-  // Upgrade an identity written by an older release (e.g. diffbro-key/1 with a
-  // 64-bit fingerprint) to the current format and 128-bit fingerprint, keeping
-  // the SAME key material. Without this, this install would keep exporting and
-  // sealing under the old format — which current peers reject — so a key it
-  // exports can't even be re-imported. Runs once: the next load already matches.
+// Upgrade an identity written by an older release (e.g. diffbro-key/1 with a
+// 64-bit fingerprint) to the current format and 128-bit fingerprint, keeping the
+// SAME key material. Without this, this install would keep exporting and sealing
+// under the old format — which current peers reject — so a key it exports can't
+// even be re-imported. Runs once: the next load already matches.
+async function upgradeIdentityFormat(identity) {
   const currentFp = fingerprint(identity.pub.sign, identity.pub.box)
-  if (identity.pub.format !== KEY_FORMAT || identity.pub.fingerprint !== currentFp) {
-    identity.pub = {
-      format: KEY_FORMAT,
-      sign: identity.pub.sign,
-      box: identity.pub.box,
-      fingerprint: currentFp
-    }
-    await persistIdentity(identity.priv, identity.pub)
+  if (identity.pub.format === KEY_FORMAT && identity.pub.fingerprint === currentFp) return identity
+  const pub = {
+    format: KEY_FORMAT,
+    sign: identity.pub.sign,
+    box: identity.pub.box,
+    fingerprint: currentFp
   }
-  return identity
+  await persistIdentity(identity.priv, pub)
+  return { priv: identity.priv, pub }
 }
 
 // Write the identity keypair, private half wrapped by the OS keychain
@@ -424,27 +429,35 @@ export function registerShareIpc() {
     })
     if (canceled || !filePaths.length) return { canceled: true }
 
-    let blob
-    try {
-      const { size } = await stat(filePaths[0])
-      if (size > MAX_SHARE_FILE_BYTES) return { error: 'not-a-config-file' }
-      blob = await readFile(filePaths[0], 'utf-8')
-    } catch {
-      return { error: 'not-a-config-file' }
-    }
+    const blob = await readConfigFile(filePaths[0])
+    if (blob == null) return { error: 'not-a-config-file' }
 
     const res = await openConfig(blob, passphrase)
     if (!res.ok) return { error: res.error }
-
-    const { identity, trusted, snippets, settings } = res.bundle
-    // A decryptable backup is still validated before anything is applied — the
-    // snippet bundle gets the same shape/size checks as a snippet import, so a
-    // malformed-but-decryptable config can't half-write state or blow the quota.
-    if (snippets != null && validateSnippetBundle(snippets)) return { error: 'malformed' }
-    if (identity?.priv && identity?.pub) await persistIdentity(identity.priv, identity.pub)
-    if (Array.isArray(trusted)) await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
-    // Snippets + settings go back to the renderer to re-import locally
-    // (re-encrypted under this machine's vault key).
-    return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
+    return applyRestoredConfig(res.bundle)
   })
+}
+
+// Size-capped read of a chosen backup file. null on anything unreadable or
+// oversized — the caller turns that into a user-facing rejection.
+async function readConfigFile(path) {
+  try {
+    const { size } = await stat(path)
+    if (size > MAX_SHARE_FILE_BYTES) return null
+    return await readFile(path, 'utf-8')
+  } catch {
+    return null
+  }
+}
+
+// A decryptable backup is still validated before anything is applied — the
+// snippet bundle gets the same shape/size checks as a snippet import, so a
+// malformed-but-decryptable config can't half-write state or blow the quota.
+async function applyRestoredConfig({ identity, trusted, snippets, settings }) {
+  if (snippets != null && validateSnippetBundle(snippets)) return { error: 'malformed' }
+  if (identity?.priv && identity?.pub) await persistIdentity(identity.priv, identity.pub)
+  if (Array.isArray(trusted)) await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
+  // Snippets + settings go back to the renderer to re-import locally
+  // (re-encrypted under this machine's vault key).
+  return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
 }
