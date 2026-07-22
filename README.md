@@ -59,11 +59,18 @@ Builds are **unsigned** for now (no Apple/Microsoft cert yet):
 
 - **Diff** two files or pasted text — split/inline, word-level highlights,
   syntax highlighting, live re-diff when a file changes on disk, and an in-view
-  search (plain / regex, match count, jump-to-match).
+  search with match-case, whole-word, and safety-limited regex, match count and
+  jump-to-match.
+- **Paste mode** compares two pasted snippets, or mixes the two — paste one
+  side and drop/choose a real file on the other (partial paste).
 - **Drag & drop** files onto the window (two at once builds the diff; a third
   starts over). Fixed, single window; light/dark themes; clamped zoom.
 - **Saved diffs** — AES-256-GCM encrypted at rest, auto-expiring (≤ 24 h),
-  organized into categories, favoritable.
+  organized into drag-reorderable categories, favoritable. Categories are a
+  local organizing tool and never travel with a shared diff.
+- **Rearrangeable sidebar** — reorder the Saved / External / Snippets sections
+  to taste; the order (and other preferences) persist in a plaintext
+  `settings.json`.
 - **Share** a saved diff as a sealed, signed `.diffbro` file for one recipient;
   manage named trusted keys under the **Security** menu.
 - **Snippets** — an encrypted, tagged, non-expiring text library with
@@ -71,8 +78,12 @@ Builds are **unsigned** for now (no Apple/Microsoft cert yet):
   filter + copy, and passphrase-protected export/import. **Mermaid** snippets
   render to a diagram — a live preview while editing plus a resizable
   zoom/pan viewer, themed to match the app, all offline.
-- **Tools** — Base64, and JSON / XML / SQL format+validate (Monaco-highlighted,
-  with "Add to Snippets"), plus a passphrase text Encrypt/Decrypt.
+- **Tools** — grouped by format (Base64, and JSON / XML / SQL format+validate,
+  Monaco-highlighted, with "Add to Snippets"), plus a passphrase text
+  Encrypt/Decrypt. **Help → Keyboard Shortcuts** lists every binding for your OS.
+- **Settings** — plaintext `settings.json` (data folder, shortcut-bar
+  visibility, and user-raisable comparison-file / snippet size limits with safe
+  defaults).
 - **Config backup/restore** — one passphrase-encrypted file for your keys,
   trusted hosts, snippets and settings (not diffs).
 

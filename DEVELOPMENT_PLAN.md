@@ -133,6 +133,26 @@ First run: `npm install && npm run dev`
       diagram theme paired to the app theme (dark → `dark`, light → `default`),
       re-rendered on theme switch so text never blends into the canvas
 
+## Phase 2.6 – UI/UX refinements ✅
+
+- [x] Plaintext `settings.json` store (`stores/settingsStore.js`): reorderable
+      sidebar sections, drag-reorderable saved-diff categories, shortcut-bar
+      visibility, and user-raisable comparison-file / snippet size limits with
+      safe defaults and hard ceilings (main enforces the file limit from it)
+- [x] Reorderable sidebar sections behind a shared `SectionHeader`; Saved /
+      External / Snippets each extracted into a self-contained component
+- [x] Diff search gains match-case, whole-word, and safety-limited regex
+      (`utils/searchRegex.js` refuses over-long / catastrophic patterns)
+- [x] Partial paste mode: diff pasted text against a dropped/chosen file
+- [x] Tools menu grouped per format (Base64 / JSON / XML / SQL / Text
+      Encryption); Help → Keyboard Shortcuts lists bindings for the host OS
+- [x] Categories are local-only — never offered or sent in the share flow
+- [x] Color palette split into `styles/themes.css` (structure stays in
+      `tokens.css`), plus app-wide `.section-actions` spacing so no section's
+      buttons drift out of alignment
+- [x] Mermaid "Expand" opens a full-window viewer above all dialogs (the
+      snippet editor closes first)
+
 ## Phase 3 – Packaging & distribution (~1–2 days + cert wait times)
 
 - [ ] Windows: NSIS installer via `npm run build:win`. Unsigned builds trigger

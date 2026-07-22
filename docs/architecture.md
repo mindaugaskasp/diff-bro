@@ -9,7 +9,7 @@ crypto, keys) lives in **main**; the **preload** exposes only a small, validated
 flowchart TB
     subgraph R["Renderer — Vue 3 (sandboxed: no Node, no Electron)"]
         ui["UI<br/>DiffViewer · Saved diffs · Snippets · Tools dialogs"]
-        stores["Pinia stores<br/>diff · vault · snippets"]
+        stores["Pinia stores<br/>diff · vault · snippets · settings"]
         adapters["Adapter registry<br/>text → { kind, … } comparable"]
         ui --> stores --> adapters
     end
@@ -54,7 +54,9 @@ flowchart TB
 - `src/main` — Electron main: window, menu, file dialogs + reads (binary/size
   detection, `chardet`/`iconv-lite` encoding), `appData.js` (the configurable
   data directory + file-backed store where diffs/snippets/keys live, so data
-  survives a reinstall), and the pure, unit-tested crypto cores: `sealing.js`
+  survives a reinstall; it also reads the renderer's plaintext `settings.json`
+  for the few limits main enforces, like the large-file threshold), and the
+  pure, unit-tested crypto cores: `sealing.js`
   (sealed diff sharing), `vaultCrypt.js` (saved-diff vault), `snippetSealing.js`
   (snippet export), `textCrypt.js` (Tools encrypt/decrypt), `configBackup.js`
   (config backup). `share.js` is the thin Electron glue.
