@@ -10,8 +10,6 @@ const store = useDiffStore()
 
 <template>
   <header class="toolbar">
-    <span class="logo">Diff Bro</span>
-
     <span v-if="store.ready && store.stats" class="stats">
       <span class="add">+{{ store.stats.additions }}</span>
       <span class="del">−{{ store.stats.deletions }}</span>

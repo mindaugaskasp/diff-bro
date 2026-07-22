@@ -69,8 +69,14 @@ onMounted(() => {
 })
 
 watch(() => [store.left, store.right], setModels)
-watch(() => [leftSearch.query, leftSearch.isRegex], leftSearch.run)
-watch(() => [rightSearch.query, rightSearch.isRegex], rightSearch.run)
+watch(
+  () => [leftSearch.query, leftSearch.isRegex, leftSearch.matchCase, leftSearch.wholeWord],
+  leftSearch.run
+)
+watch(
+  () => [rightSearch.query, rightSearch.isRegex, rightSearch.matchCase, rightSearch.wholeWord],
+  rightSearch.run
+)
 watch(
   () => [store.renderSideBySide, store.ignoreTrimWhitespace],
   ([split, ignoreWs]) => {
@@ -111,7 +117,15 @@ onBeforeUnmount(() => {
           @keyup.enter="s.ref.step(1)"
           @keyup.escape="s.ref.query = ''"
         />
-        <label class="regex" title="Regular expression">
+        <label class="opt" title="Match case">
+          <input v-model="s.ref.matchCase" type="checkbox" />
+          Aa
+        </label>
+        <label class="opt" title="Whole word">
+          <input v-model="s.ref.wholeWord" type="checkbox" />
+          ⌈W⌋
+        </label>
+        <label class="opt" title="Regular expression (limited for safety)">
           <input v-model="s.ref.isRegex" type="checkbox" />
           .*
         </label>

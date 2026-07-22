@@ -73,32 +73,65 @@ export function buildMenus(store) {
     {
       id: 'tools',
       label: 'Tools',
+      // Grouped by format (Tools → Base64 → …) to mirror the native menu.
       items: [
         {
-          label: 'Base64 Encode/Decode',
-          keys: `${MOD}+Shift+B`,
-          run: () => store.handleMenuAction('tools-base64')
+          label: 'Base64',
+          items: [
+            {
+              label: 'Encode / Decode',
+              keys: `${MOD}+Shift+B`,
+              run: () => store.handleMenuAction('tools-base64')
+            }
+          ]
         },
         {
-          label: 'JSON Format/Validate',
-          keys: `${MOD}+Shift+J`,
-          run: () => store.handleMenuAction('tools-json')
+          label: 'JSON',
+          items: [
+            {
+              label: 'Format / Validate',
+              keys: `${MOD}+Shift+J`,
+              run: () => store.handleMenuAction('tools-json')
+            }
+          ]
         },
         {
-          label: 'XML Format/Validate',
-          keys: `${MOD}+Shift+M`,
-          run: () => store.handleMenuAction('tools-xml')
+          label: 'XML',
+          items: [
+            {
+              label: 'Format / Validate',
+              keys: `${MOD}+Shift+M`,
+              run: () => store.handleMenuAction('tools-xml')
+            }
+          ]
         },
         {
-          label: 'SQL Format/Validate',
-          keys: `${MOD}+Shift+Q`,
-          run: () => store.handleMenuAction('tools-sql')
+          label: 'SQL',
+          items: [
+            {
+              label: 'Format / Validate',
+              keys: `${MOD}+Shift+Q`,
+              run: () => store.handleMenuAction('tools-sql')
+            }
+          ]
         },
         {
-          label: 'Encrypt/Decrypt Text',
-          keys: `${MOD}+Shift+X`,
-          run: () => store.handleMenuAction('tools-crypt')
+          label: 'Text Encryption',
+          items: [
+            {
+              label: 'Encrypt / Decrypt',
+              keys: `${MOD}+Shift+X`,
+              run: () => store.handleMenuAction('tools-crypt')
+            }
+          ]
         }
+      ]
+    },
+    {
+      id: 'help',
+      label: 'Help',
+      items: [
+        { label: 'Keyboard Shortcuts', run: () => store.handleMenuAction('shortcuts') }
       ]
     }
   ]

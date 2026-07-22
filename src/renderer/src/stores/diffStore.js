@@ -71,7 +71,8 @@ const MENU_ACTIONS = {
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
-  'tools-crypt': (s) => (s.showCryptDialog = true)
+  'tools-crypt': (s) => (s.showCryptDialog = true),
+  shortcuts: (s) => (s.showShortcutsDialog = true)
 }
 
 export const useDiffStore = defineStore('diff', {
@@ -121,6 +122,8 @@ export const useDiffStore = defineStore('diff', {
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,
+    // Help → Keyboard Shortcuts dialog visibility.
+    showShortcutsDialog: false,
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
     // content string last dismissed per side, so the format-hint banner

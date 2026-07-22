@@ -25,9 +25,12 @@
   border-bottom: 1px solid var(--border);
 }
 /* The first section sits flush at the top; later ones get a gap of panel
-   background above the band to open up the seam between sections. */
+   background above the band to open up the seam between sections. Its label is
+   raised to line up with the Left/Right file-slot labels across the divider —
+   those sit at 10px (row padding) + 6px (slot padding) from the top. */
 .head:first-child {
   border-top: none;
+  padding-top: 16px;
 }
 .head.sub {
   margin-top: 12px;

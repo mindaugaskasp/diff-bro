@@ -42,7 +42,7 @@
 .search-input.error {
   border-color: var(--danger-bg);
 }
-.regex {
+.opt {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -50,6 +50,11 @@
   color: var(--text-dim);
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
   cursor: pointer;
+  white-space: nowrap;
+}
+/* A checked toggle reads as active, so it's obvious which constraints are on. */
+.opt:has(input:checked) {
+  color: var(--accent);
 }
 .count {
   font-size: var(--font-sm);

@@ -8,12 +8,6 @@
   /* Distinct separator so the stacked bars don't blend into one dark mass. */
   border-bottom: 1px solid var(--border);
 }
-.logo {
-  flex: 1;
-  min-width: 0;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
 .stats {
   display: flex;
   gap: 8px;
@@ -32,6 +26,9 @@
   gap: 12px;
   color: var(--text-dim);
   white-space: nowrap;
+  /* With the app title removed, the option clusters hold the right edge; stats
+     (when a diff is loaded) stay on the left. */
+  margin-left: auto;
 }
 /* Logical clusters (display toggles · actions · appearance), each separated by
    a divider, so the toolbar reads as groups rather than one glued-together row. */

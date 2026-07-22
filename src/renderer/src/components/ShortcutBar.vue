@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { MOD } from '../keys'
+import { SHORTCUT_BAR } from '../utils/shortcuts'
 
 // Translucent hint pill floating over the bottom of the diff area — it never
 // takes layout space and never covers the top of the content, where the diff
@@ -8,15 +8,7 @@ import { MOD } from '../keys'
 const DISMISS_KEY = 'diffbro.shortcutBarDismissed'
 const dismissed = ref(localStorage.getItem(DISMISS_KEY) === '1')
 
-const shortcuts = [
-  [`${MOD}+1`, 'open left'],
-  [`${MOD}+2`, 'open right'],
-  [`${MOD}+S`, 'save diff'],
-  [`${MOD}+Shift+S`, 'swap'],
-  [`${MOD}+T`, 'paste text'],
-  [`${MOD}+\\`, 'split view'],
-  [`${MOD}+K`, 'clear']
-]
+const shortcuts = SHORTCUT_BAR
 
 function dismiss() {
   dismissed.value = true

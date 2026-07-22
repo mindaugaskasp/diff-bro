@@ -1,6 +1,10 @@
 .snippets-section {
   display: flex;
   flex-direction: column;
+  /* This is the last section in the scrolling sidebar; reserve space beneath it
+     so the final snippets never sit flush against the window's bottom edge,
+     even when the list is scrolled all the way down. */
+  padding-bottom: var(--space-4);
 }
 /* Section header band — matches SavedDiffs.vue, now a collapse toggle. */
 .head {

@@ -7,7 +7,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 30;
+  /* Above every dialog (30) and the drop overlay (50): the diagram viewer is a
+     standalone window that should cover the diff panes and any dialog. */
+  z-index: 60;
 }
 .panel {
   display: flex;

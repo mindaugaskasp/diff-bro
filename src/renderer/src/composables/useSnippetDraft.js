@@ -99,7 +99,13 @@ export function useSnippetDraft() {
   }
 
   function expandDiagram() {
-    if (content.value.trim()) diff.openMermaid(name.value.trim() || 'Diagram', content.value)
+    if (!content.value.trim()) return
+    // Close the editor first: the viewer and this dialog are siblings at the
+    // same stacking level, so leaving the editor open would render it on top of
+    // the diagram and nothing would appear to happen. The full-window viewer
+    // stands on its own.
+    diff.openMermaid(name.value.trim() || 'Diagram', content.value)
+    close()
   }
 
   return {
