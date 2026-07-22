@@ -38,6 +38,16 @@ describe('settingsStore', () => {
     expect(useSettingsStore().sectionOrder).toEqual(['snippets', 'saved', 'external'])
   })
 
+  it('records the one-time example-seed decision and persists it', () => {
+    const s = useSettingsStore()
+    expect(s.examplesSeeded).toBe(false) // fresh install: not yet decided
+    s.markExamplesSeeded()
+    expect(s.examplesSeeded).toBe(true)
+    // survives a reload, so the example is never seeded twice
+    setActivePinia(createPinia())
+    expect(useSettingsStore().examplesSeeded).toBe(true)
+  })
+
   it('repairs a corrupt or partial persisted section order', () => {
     localStorage.setItem(
       'diffbro.settings',

@@ -5,6 +5,7 @@
 // and behave identically.
 import { computed } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   sectionId: { type: String, required: true },
@@ -24,10 +25,10 @@ const canDown = computed(
 </script>
 
 <template>
-  <div class="head section-head" :class="{ first }" @click="$emit('toggle')">
-    <span class="chev" :class="{ open }">▸</span>
+  <div class="head section-head band band-row" :class="{ first }" @click="$emit('toggle')">
+    <AppIcon class="chev" :class="{ open }" name="chevron-right" />
     <span class="section-title">{{ title }}</span>
-    <slot name="actions" />
+    <span v-if="$slots.actions" class="actions-slot"><slot name="actions" /></span>
     <span class="reorder">
       <button
         class="reorder-btn"
@@ -35,7 +36,7 @@ const canDown = computed(
         title="Move section up"
         @click.stop="settings.moveSection(sectionId, -1)"
       >
-        ▲
+        <AppIcon name="chevron-up" />
       </button>
       <button
         class="reorder-btn"
@@ -43,7 +44,7 @@ const canDown = computed(
         title="Move section down"
         @click.stop="settings.moveSection(sectionId, 1)"
       >
-        ▼
+        <AppIcon name="chevron-down" />
       </button>
     </span>
   </div>

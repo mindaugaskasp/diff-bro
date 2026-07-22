@@ -5,6 +5,7 @@ import { reactive } from 'vue'
 import { useSnippetStore, MAX_TAGS } from '../stores/snippetStore'
 import { useTagInput } from '../composables/useTagInput'
 import TagGlyph from './TagGlyph.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   // Tags the snippet already carries; the field owns them from here on.
@@ -30,7 +31,7 @@ defineExpose(field)
     <div class="tagfield" @click="field.inputEl?.focus()">
       <span v-for="t in field.tags" :key="t" class="etag" :style="{ '--tc': field.colorFor(t) }">
         <TagGlyph :color="field.colorFor(t)" />{{ t }}
-        <button type="button" class="x" @click.stop="field.remove(t)">×</button>
+        <button type="button" class="x" @click.stop="field.remove(t)"><AppIcon name="x" /></button>
       </span>
       <input
         :ref="(el) => (field.inputEl = el)"

@@ -5,7 +5,9 @@
 // panel itself is CSS-resizable so users can size it to the diagram.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useBackdropClose } from '../composables/useBackdropClose'
 import MermaidDiagram from './MermaidDiagram.vue'
+import AppIcon from './AppIcon.vue'
 
 const diff = useDiffStore()
 const view = computed(() => diff.mermaidView) // { name, code }
@@ -60,6 +62,9 @@ function close() {
   diff.closeMermaid()
 }
 
+// Close on a backdrop click, but not when a resize drag merely releases there.
+const { onPointerDown: onBackdropDown, onClick: onBackdropClick } = useBackdropClose(close)
+
 function onKey(e) {
   if (e.key === 'Escape') close()
 }
@@ -68,19 +73,23 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
 <template>
-  <div v-if="view" class="viewer-backdrop" @click.self="close">
+  <div v-if="view" class="viewer-backdrop" @pointerdown="onBackdropDown" @click="onBackdropClick">
     <div class="panel" :class="{ maxed }">
       <div class="head">
         <span class="title">{{ view.name || 'Diagram' }}</span>
         <div class="tools">
-          <button class="tbtn" title="Zoom out" @click="zoom(1 / 1.2)">−</button>
+          <button class="tbtn" title="Zoom out" @click="zoom(1 / 1.2)">
+            <AppIcon name="minus" />
+          </button>
           <span class="pct" @click="fit">{{ pct }}%</span>
-          <button class="tbtn" title="Zoom in" @click="zoom(1.2)">+</button>
+          <button class="tbtn" title="Zoom in" @click="zoom(1.2)"><AppIcon name="plus" /></button>
           <button class="tbtn wide" title="Fit to window" @click="fit">Fit</button>
           <button class="tbtn" :title="maxed ? 'Restore size' : 'Maximize'" @click="maxed = !maxed">
-            {{ maxed ? '❐' : '⛶' }}
+            <AppIcon :name="maxed ? 'restore' : 'maximize'" />
           </button>
-          <button class="tbtn close" title="Close (Esc)" @click="close">×</button>
+          <button class="tbtn close" title="Close (Esc)" @click="close">
+            <AppIcon name="x" />
+          </button>
         </div>
       </div>
       <div

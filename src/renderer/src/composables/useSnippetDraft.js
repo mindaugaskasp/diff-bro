@@ -65,9 +65,10 @@ export function useSnippetDraft() {
 
   // `tags` and `tagColors` come from the tag field, which owns them.
   async function save({ tags, tagColors }) {
-    // Guard against a fast double-click: the store call is async (IPC round
-    // trip), so a second click before it resolves would create a duplicate.
-    if (!name.value.trim() || saving.value) return
+    // A snippet needs both a name and content; the button is disabled without
+    // them, this guards the Enter/programmatic path. The `saving` check guards a
+    // fast double-click, whose async store call would otherwise duplicate.
+    if (!name.value.trim() || !content.value.trim() || saving.value) return
     // Keep the app stable: refuse a snippet larger than the configured limit
     // (Settings → Interface). Measured in bytes so multibyte content counts.
     const bytes = new TextEncoder().encode(content.value).length
@@ -105,7 +106,7 @@ export function useSnippetDraft() {
 
   async function copyContent() {
     if (!content.value) return
-    await navigator.clipboard.writeText(content.value)
+    await window.api.copyText(content.value)
     diff.showNotice('Copied snippet to clipboard.')
   }
 

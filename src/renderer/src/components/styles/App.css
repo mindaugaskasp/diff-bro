@@ -3,11 +3,12 @@
   flex-direction: column;
   height: 100vh;
 }
+/* Layout + skin only — display/align/height come from .band .band-row so this
+   row and the first sidebar header stay the same height (see ui.css). Vertical
+   padding is deliberately absent: the band height centers the slots. */
 .file-slots-row {
-  display: flex;
-  align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 0 12px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
 }

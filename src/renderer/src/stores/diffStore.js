@@ -5,6 +5,7 @@ import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { loadPersisted, savePersisted } from '../persist'
+import { isDarkTheme, normalizeTheme } from '../utils/themes'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -107,7 +108,8 @@ export const useDiffStore = defineStore('diff', {
     // Persisted through the durable data-dir store (persist.js), same as vault
     // and snippets, so the choice survives a reinstall that wipes userData; the
     // old localStorage 'diffbro.theme' key is migrated forward automatically.
-    theme: loadPersisted('theme') === 'light' ? 'light' : 'dark',
+    // Default is Light (see utils/themes.js); an unknown stored id normalizes.
+    theme: normalizeTheme(loadPersisted('theme')),
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
     // { key, fingerprint, label } while the drag-drop "name this trusted
@@ -270,10 +272,17 @@ export const useDiffStore = defineStore('diff', {
     closeMermaid() {
       this.mermaidView = null
     },
-    toggleTheme() {
-      this.theme = this.theme === 'dark' ? 'light' : 'dark'
+    // Select any of the named themes (Settings picker). Unknown ids fall back
+    // to the default rather than leaving the app unstyled.
+    setTheme(id) {
+      this.theme = normalizeTheme(id)
       savePersisted('theme', this.theme)
       applyTheme(this.theme)
+    },
+    // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
+    // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
+    toggleTheme() {
+      this.setTheme(isDarkTheme(this.theme) ? 'light' : 'dark')
     },
     // Re-read both sides from disk (quietly — no large-file prompt) so the
     // diff follows external edits. Called when the window regains focus.
@@ -471,7 +480,7 @@ export const useDiffStore = defineStore('diff', {
       const res = await window.api.restoreConfig(passphrase)
       if (res.ok) {
         if (res.snippets) await useSnippetStore().restoreBundle(res.snippets)
-        if (res.settings?.theme && res.settings.theme !== this.theme) this.toggleTheme()
+        if (res.settings?.theme) this.setTheme(res.settings.theme)
         this.showNotice('Configuration restored — identity keys and trusted hosts are updated.')
       } else if (res.error === 'wrong-passphrase') {
         this.showNotice('Wrong passphrase, or the file is corrupted.')

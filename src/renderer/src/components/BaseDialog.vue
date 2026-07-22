@@ -5,6 +5,7 @@
 // Escape closes by default. Dialogs holding unsaved input (the snippet editor)
 // pass :escape-closes="false" so a stray keypress can't discard typing.
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -71,7 +72,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
           aria-label="Close"
           @click="emit('close')"
         >
-          ×
+          <AppIcon name="x" />
         </button>
       </div>
       <slot />

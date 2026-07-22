@@ -7,10 +7,7 @@
   flex-direction: column;
   overflow-y: auto;
 }
-/* A gap of panel background between consecutive sections, opening up the seam
-   without depending on which section is first (order is user-controlled). The
-   selector reaches each section component's root element (Vue stamps the parent
-   scope id onto child roots). */
-.sidebar-section + .sidebar-section {
-  margin-top: 12px;
-}
+/* Sections stack flush — each header carries a single top hairline (see
+   SectionHeader.css), so consecutive sections are separated by one line with no
+   gap. A gap here would show as panel background hanging below a collapsed
+   header, which reads as a bug. */

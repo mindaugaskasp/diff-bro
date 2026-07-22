@@ -22,6 +22,14 @@
   /* Control heights: sidebar/toolbar controls, then dialog buttons. */
   --control-h-sm: 26px;
   --control-h: 30px;
+  /* Vertical band rhythm. A "band" is a full-width horizontal strip (the file
+     slots row, a section header, the toolbar) that vertically centers its
+     content with flexbox — never fake-aligned with top padding. --band-row is
+     the shared height of the row bands: the file-slots row and EVERY sidebar
+     section header. One height means the first header lines up with the file
+     inputs across the divider, and all the section headers match each other.
+     See .band in ui.css. */
+  --band-row: 52px;
   /* Spacing rhythm. Prefer these over ad-hoc pixel padding so panels and
      buttons share one rhythm and never drift apart. */
   --space-1: 4px;

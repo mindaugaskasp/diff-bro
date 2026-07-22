@@ -7,6 +7,7 @@ import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useDataDir } from '../composables/useDataDir'
 import { shaped } from '../utils/props'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').VaultEntry>} */
@@ -51,7 +52,7 @@ async function open() {
       :title="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
       @click="vault.toggleFavorite(entry.id)"
     >
-      {{ entry.favorite ? '★' : '☆' }}
+      <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />
     </button>
     <button class="entry" :title="title" @click="open">
       <span class="name">{{ entry.name }}</span>
@@ -66,14 +67,14 @@ async function open() {
       title="Share as sealed file"
       @click="diff.shareEntry(entry.id)"
     >
-      ↑
+      <AppIcon name="share" />
     </button>
     <button
       class="row-btn delete"
       title="Delete now"
       @click="vault.requestDelete('entry', entry.id, entry.name)"
     >
-      ×
+      <AppIcon name="x" />
     </button>
   </li>
 </template>

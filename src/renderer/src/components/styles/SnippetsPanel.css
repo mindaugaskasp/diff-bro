@@ -64,8 +64,13 @@
   list-style: none;
 }
 /* shelves */
+/* A hairline above each shelf sets the tag filter apart from the snippet lists
+   (and the shelves from each other) — the tag chips and the rows otherwise
+   blend together. */
 .shelf {
-  margin-top: 4px;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
 }
 .shelf-head {
   display: flex;

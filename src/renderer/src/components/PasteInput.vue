@@ -5,6 +5,7 @@
 // the window-level diff drop never sees it.
 import { useDiffStore } from '../stores/diffStore'
 import { useFileTextDrop } from '../composables/useFileDrop'
+import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
 
@@ -28,7 +29,7 @@ const rightDrop = useFileTextDrop((content, name) =>
           <span class="pane-label">Original</span>
           <template v-if="store.pasteLeftFile">
             <span class="file-name" :title="store.pasteLeftFile.name"
-              >📄 {{ store.pasteLeftFile.name }}</span
+              ><AppIcon name="file" /> {{ store.pasteLeftFile.name }}</span
             >
             <button class="link" @click="store.clearPasteFile('left')">use text</button>
           </template>
@@ -53,7 +54,7 @@ const rightDrop = useFileTextDrop((content, name) =>
           <span class="pane-label">Changed</span>
           <template v-if="store.pasteRightFile">
             <span class="file-name" :title="store.pasteRightFile.name"
-              >📄 {{ store.pasteRightFile.name }}</span
+              ><AppIcon name="file" /> {{ store.pasteRightFile.name }}</span
             >
             <button class="link" @click="store.clearPasteFile('right')">use text</button>
           </template>

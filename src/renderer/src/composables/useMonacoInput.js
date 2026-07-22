@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
+import { isDarkTheme } from '../utils/themes'
 
 // A Monaco editor bound to a `content` ref: two-way value sync, live language
 // switching, and the app theme mirrored into the editor. Callers own the ref, so
@@ -18,7 +19,7 @@ export function useMonacoInput({ container, content, language, options = {} }) {
   const ready = ref(false)
   let editor = null
 
-  const monacoTheme = () => (diff.theme === 'light' ? 'vs' : 'vs-dark')
+  const monacoTheme = () => (isDarkTheme(diff.theme) ? 'vs-dark' : 'vs')
 
   onMounted(() => {
     editor = monaco.editor.create(container.value, {

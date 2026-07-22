@@ -1,11 +1,12 @@
 // Pure Mermaid helpers — no `mermaid` import, so this stays unit-testable and
 // adds nothing to the bundle. The heavy library is loaded lazily elsewhere
 // (composables/useMermaid.js), only once a diagram is actually rendered.
+import { isDarkTheme } from './themes'
 
 // The leading keyword of every Mermaid diagram type we recognize for
 // auto-detection. Matched against the first non-empty, non-directive line so a
 // pasted diagram is offered the Mermaid syntax without the user picking it.
-const MERMAID_KEYWORDS = [
+export const MERMAID_KEYWORDS = [
   'flowchart',
   'graph',
   'sequenceDiagram',
@@ -85,11 +86,11 @@ export function looksLikeMermaid(text) {
   return false
 }
 
-// Diagram theme paired to the app theme (decided in project memory): the dark
-// UI gets Mermaid's dark theme, the light UI its clean default — so diagram
-// text never blends into the canvas. Callers re-render when the app theme flips.
+// Diagram theme paired to the app theme: dark-ground themes get Mermaid's dark
+// theme, light-ground ones its clean default — so diagram text never blends into
+// the canvas. Callers re-render when the app theme flips.
 export function mermaidThemeFor(appTheme) {
-  return appTheme === 'light' ? 'default' : 'dark'
+  return isDarkTheme(appTheme) ? 'dark' : 'default'
 }
 
 // Per-render DOM id. Mermaid needs a unique, CSS-selector-safe id for the

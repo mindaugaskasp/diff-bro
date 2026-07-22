@@ -57,7 +57,8 @@ describe('mermaidThemeFor', () => {
   it('pairs the diagram theme to the app theme', () => {
     expect(mermaidThemeFor('light')).toBe('default')
     expect(mermaidThemeFor('dark')).toBe('dark')
-    expect(mermaidThemeFor(undefined)).toBe('dark') // dark is the default UI
+    expect(mermaidThemeFor('neon')).toBe('dark') // a dark-ground theme
+    expect(mermaidThemeFor(undefined)).toBe('default') // Light is the default ground
   })
 })
 

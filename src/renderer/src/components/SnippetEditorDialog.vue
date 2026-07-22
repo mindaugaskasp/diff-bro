@@ -12,6 +12,7 @@ import { useArmedAction } from '../composables/useArmedAction'
 import TagChipsField from './TagChipsField.vue'
 import MermaidDiagram from './MermaidDiagram.vue'
 import BaseDialog from './BaseDialog.vue'
+import AppIcon from './AppIcon.vue'
 
 const languages = SNIPPET_LANGUAGES
 const container = ref(null)
@@ -63,6 +64,7 @@ function saveSnippet() {
       <label class="grow">
         Name
         <input v-model="name" type="text" spellcheck="false" placeholder="Snippet name…" />
+        <span v-if="!name.trim()" class="required-hint">A snippet needs a name to save.</span>
       </label>
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" />
@@ -82,6 +84,7 @@ function saveSnippet() {
       @dragover.capture.prevent.stop
       @drop.capture.prevent.stop="onDropFile"
     ></div>
+    <p v-if="!content.trim()" class="required-hint">A snippet needs content to save.</p>
     <div v-if="isMermaid" class="mmd-preview">
       <div class="mmd-preview-head">
         <span>Diagram preview</span>
@@ -92,7 +95,7 @@ function saveSnippet() {
           title="Open the full, resizable diagram viewer"
           @click="expandDiagram"
         >
-          ⤢ Expand
+          <AppIcon name="expand" /> Expand
         </button>
       </div>
       <div class="mmd-preview-body">
@@ -134,7 +137,11 @@ function saveSnippet() {
         {{ clearArmed ? 'Confirm clear' : 'Clear' }}
       </button>
       <span class="spacer" />
-      <button class="btn btn-primary" :disabled="!name.trim() || saving" @click="saveSnippet">
+      <button
+        class="btn btn-primary"
+        :disabled="!name.trim() || !content.trim() || saving"
+        @click="saveSnippet"
+      >
         Save
       </button>
       <button class="btn btn-ghost" @click="close">Cancel</button>

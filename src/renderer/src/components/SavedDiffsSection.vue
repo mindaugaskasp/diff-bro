@@ -9,6 +9,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
+import AppIcon from './AppIcon.vue'
 
 defineProps({ first: { type: Boolean, default: false } })
 
@@ -89,7 +90,7 @@ function onDrop(targetId) {
       @toggle="open = !open"
     >
       <template #actions>
-        <span class="lock" title="Encrypted at rest, auto-expiring">🔒</span>
+        <AppIcon class="lock" name="lock" title="Encrypted at rest, auto-expiring" />
       </template>
     </SectionHeader>
 
@@ -119,7 +120,7 @@ function onDrop(targetId) {
       </p>
 
       <ul v-if="vault.favoritesOwn.length" class="favorites-group">
-        <li class="fav-head">★ Favorites</li>
+        <li class="fav-head"><AppIcon name="star-filled" /> Favorites</li>
         <SavedDiffRow v-for="entry in vault.favoritesOwn" :key="entry.id" :entry="entry" />
       </ul>
 
@@ -136,9 +137,14 @@ function onDrop(targetId) {
           @drop.prevent="onDrop(category.id)"
         >
           <div class="category-head">
-            <span class="grip" title="Drag to reorder">⠿</span>
+            <AppIcon class="grip" name="grip" title="Drag to reorder" />
             <button class="cat-toggle" @click="toggle(category.id)">
-              <span class="chevron" :class="{ open: isExpanded(category.id) }">▸</span>
+              <AppIcon
+                class="chevron"
+                :class="{ open: isExpanded(category.id) }"
+                name="chevron-right"
+              />
+              <AppIcon class="folder" name="folder" />
               <span class="cat-name">{{ category.name }}</span>
               <span class="count">{{ vault.activeInCategory(category.id).length }}</span>
             </button>
@@ -148,7 +154,7 @@ function onDrop(targetId) {
               :title="deleteCategoryTitle(category)"
               @click="vault.requestDelete('category', category.id, category.name)"
             >
-              ×
+              <AppIcon name="x" />
             </button>
           </div>
           <ul v-if="isExpanded(category.id)" class="diff-list">

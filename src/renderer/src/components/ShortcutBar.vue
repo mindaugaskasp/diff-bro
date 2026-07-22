@@ -1,6 +1,7 @@
 <script setup>
 import { useSettingsStore } from '../stores/settingsStore'
 import { SHORTCUT_BAR } from '../utils/shortcuts'
+import AppIcon from './AppIcon.vue'
 
 // Translucent hint pill floating over the bottom of the diff area — it never
 // takes layout space and never covers the top of the content, where the diff
@@ -20,7 +21,7 @@ function dismiss() {
     <span v-for="[keys, label] in shortcuts" :key="keys" class="hint">
       <kbd>{{ keys }}</kbd> {{ label }}
     </span>
-    <button class="close" title="Hide shortcuts" @click="dismiss">×</button>
+    <button class="close" title="Hide shortcuts" @click="dismiss"><AppIcon name="x" /></button>
   </div>
 </template>
 

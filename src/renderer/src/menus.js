@@ -131,7 +131,9 @@ export function buildMenus(store) {
       id: 'help',
       label: 'Help',
       items: [
-        { label: 'Keyboard Shortcuts', run: () => store.handleMenuAction('shortcuts') }
+        { label: 'Keyboard Shortcuts', run: () => store.handleMenuAction('shortcuts') },
+        { sep: true },
+        { label: 'Report an Issue', run: () => window.api.reportIssue() }
       ]
     }
   ]

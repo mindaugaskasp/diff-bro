@@ -18,7 +18,10 @@ function close() {
 
 <template>
   <BaseDialog width="440px" title="Keyboard shortcuts" @close="close">
-    <p class="dialog-note">Shortcuts for <strong>{{ platform }}</strong>.</p>
+    <p class="dialog-note">
+      Shortcuts for <strong>{{ platform }}</strong
+      >.
+    </p>
     <div class="groups">
       <section v-for="g in groups" :key="g.group" class="group">
         <h4>{{ g.group }}</h4>

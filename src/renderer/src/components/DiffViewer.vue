@@ -3,6 +3,8 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { makeSearch } from '../composables/useDiffSearch'
+import { isDarkTheme } from '../utils/themes'
+import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
 const container = ref(null)
@@ -41,7 +43,7 @@ function setModels() {
 
 onMounted(() => {
   editor = monaco.editor.createDiffEditor(container.value, {
-    theme: store.theme === 'light' ? 'vs' : 'vs-dark',
+    theme: isDarkTheme(store.theme) ? 'vs-dark' : 'vs',
     automaticLayout: true,
     readOnly: true,
     originalEditable: false,
@@ -85,7 +87,7 @@ watch(
 )
 watch(
   () => store.theme,
-  (theme) => monaco.editor.setTheme(theme === 'light' ? 'vs' : 'vs-dark')
+  (theme) => monaco.editor.setTheme(isDarkTheme(theme) ? 'vs-dark' : 'vs')
 )
 
 onBeforeUnmount(() => {
@@ -123,7 +125,7 @@ onBeforeUnmount(() => {
         </label>
         <label class="opt" title="Whole word">
           <input v-model="s.ref.wholeWord" type="checkbox" />
-          ⌈W⌋
+          W
         </label>
         <label class="opt" title="Regular expression (limited for safety)">
           <input v-model="s.ref.isRegex" type="checkbox" />
@@ -142,10 +144,10 @@ onBeforeUnmount(() => {
           title="Previous match"
           @click="s.ref.step(-1)"
         >
-          ‹
+          <AppIcon name="chevron-left" />
         </button>
         <button class="nav" :disabled="!s.ref.matchCount" title="Next match" @click="s.ref.step(1)">
-          ›
+          <AppIcon name="chevron-right" />
         </button>
       </div>
     </div>

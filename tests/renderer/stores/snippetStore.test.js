@@ -9,6 +9,7 @@ import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { createIdentityKeys } from '../../../src/main/sealing'
 import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
 import {
+  EXAMPLE_SNIPPET,
   TAG_PALETTE,
   languageOf,
   useSnippetStore
@@ -34,6 +35,30 @@ beforeEach(() => {
       return openSnippets(lastExportedFile, passphrase)
     }
   }
+})
+
+describe('snippetStore — first-run example', () => {
+  it('seeds the Mermaid example through the normal encrypted add path', async () => {
+    const store = useSnippetStore()
+    const id = await store.seedExample()
+    expect(id).toBeTruthy()
+    expect(store.entries).toHaveLength(1)
+    const [entry] = store.entries
+    expect(entry.name).toBe(EXAMPLE_SNIPPET.name)
+    expect(languageOf(entry)).toBe('mermaid')
+    // stored encrypted, decrypts back to the example content
+    const raw = localStorage.getItem('diffbro.snippets')
+    expect(raw).not.toContain('flowchart')
+    await expect(store.load(id)).resolves.toBe(EXAMPLE_SNIPPET.content)
+  })
+
+  it('reports null (and seeds nothing) when the vault key is unavailable', async () => {
+    const store = useSnippetStore()
+    window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
+    const id = await store.seedExample()
+    expect(id).toBeNull()
+    expect(store.entries).toHaveLength(0)
+  })
 })
 
 describe('snippetStore — effective language', () => {

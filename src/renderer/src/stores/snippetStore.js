@@ -117,6 +117,24 @@ function readState() {
 // stay free metadata.
 const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
 
+// Seeded once into a brand-new, empty library so a first-time user meets the
+// snippet feature with something real: a Mermaid diagram that both renders in
+// the preview and describes what snippets do. It goes through the normal add()
+// path, so it is encrypted at rest like any other snippet and can be edited or
+// deleted freely.
+export const EXAMPLE_SNIPPET = {
+  name: 'Example — Mermaid diagram',
+  language: 'mermaid',
+  tags: ['example'],
+  content: `flowchart TD
+    A[New snippet] --> B{Syntax?}
+    B -- Mermaid --> C[Live diagram preview]
+    B -- Anything else --> D[Syntax-highlighted text]
+    C --> E[Expand for a zoomable view]
+    C --> F[Encrypted at rest, like every snippet]
+    D --> F`
+}
+
 // A snippet's effective syntax. Content is encrypted at rest, so the sidebar
 // can't re-detect it — `detected` is recorded whenever the content is written
 // and stands in for a snippet left on 'auto'. Entries saved before this field
@@ -196,6 +214,11 @@ export const useSnippetStore = defineStore('snippets', {
         out.push(n)
       }
       return out
+    },
+    // Add the starter snippet. Returns its id, or null if the vault key wasn't
+    // available (so the caller can leave the first-run flag unset and retry).
+    async seedExample() {
+      return this.add({ ...EXAMPLE_SNIPPET })
     },
     // Opens the snippet editor prefilled from a Tools dialog's "Add to Snippets".
     startNewSnippetFrom(content, language) {

@@ -8,6 +8,7 @@ import { useDiffStore } from '../stores/diffStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
+import AppIcon from './AppIcon.vue'
 
 defineProps({ first: { type: Boolean, default: false } })
 
@@ -46,7 +47,7 @@ const hasImported = computed(() => importedFavs.value.length || importedOthers.v
       </p>
 
       <ul v-if="importedFavs.length" class="favorites-group">
-        <li class="fav-head">★ Favorites</li>
+        <li class="fav-head"><AppIcon name="star-filled" /> Favorites</li>
         <SavedDiffRow v-for="entry in importedFavs" :key="entry.id" :entry="entry" />
       </ul>
 

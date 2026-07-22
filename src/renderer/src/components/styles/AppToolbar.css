@@ -1,7 +1,6 @@
 /* Top bar (AppToolbar.vue). */
+/* A band (.band gives display/align — see ui.css); this adds only its skin. */
 .toolbar {
-  display: flex;
-  align-items: center;
   gap: 16px;
   padding: 8px 12px;
   background: var(--bg-panel);

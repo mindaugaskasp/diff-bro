@@ -9,7 +9,7 @@ const store = useDiffStore()
 </script>
 
 <template>
-  <header class="toolbar">
+  <header class="toolbar band">
     <span v-if="store.ready && store.stats" class="stats">
       <span class="add">+{{ store.stats.additions }}</span>
       <span class="del">−{{ store.stats.deletions }}</span>
@@ -60,17 +60,6 @@ const store = useDiffStore()
           Clear
         </button>
       </div>
-
-      <span class="divider" />
-
-      <!-- Appearance -->
-      <button
-        class="icon-btn"
-        :title="`Switch to ${store.theme === 'dark' ? 'light' : 'dark'} theme (${MOD}+D)`"
-        @click="store.toggleTheme()"
-      >
-        {{ store.theme === 'dark' ? '☀' : '🌙' }}
-      </button>
     </div>
   </header>
 </template>

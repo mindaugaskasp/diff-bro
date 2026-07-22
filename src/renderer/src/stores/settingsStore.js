@@ -25,7 +25,10 @@ export const DEFAULT_SETTINGS = {
   shelfOrder: {},
   showShortcutBar: true,
   maxComparisonFileMb: DEFAULT_MAX_COMPARISON_FILE_MB,
-  maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB
+  maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
+  // Whether the one-time first-run example snippet decision has been made (see
+  // App.vue). Recorded for everyone once, so the example is never re-seeded.
+  examplesSeeded: false
 }
 
 const clampNumber = (value, fallback, min, max) => {
@@ -71,7 +74,8 @@ function readState() {
       DEFAULT_MAX_SNIPPET_SIZE_KB,
       16,
       MAX_SNIPPET_SIZE_KB_CAP
-    )
+    ),
+    examplesSeeded: parsed.examplesSeeded === true
   }
 }
 
@@ -91,9 +95,16 @@ export const useSettingsStore = defineStore('settings', {
           shelfOrder: this.shelfOrder,
           showShortcutBar: this.showShortcutBar,
           maxComparisonFileMb: this.maxComparisonFileMb,
-          maxSnippetSizeKb: this.maxSnippetSizeKb
+          maxSnippetSizeKb: this.maxSnippetSizeKb,
+          examplesSeeded: this.examplesSeeded
         })
       )
+    },
+    // Record that the one-time first-run example decision has been made.
+    markExamplesSeeded() {
+      if (this.examplesSeeded) return
+      this.examplesSeeded = true
+      this.persist()
     },
     // Move a section one step up or down (delta -1 / +1). No-op at the ends.
     moveSection(id, delta) {

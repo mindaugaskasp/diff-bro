@@ -7,6 +7,26 @@
    where a component really needs an override — keep those to layout (width,
    flex, margin), not to size, radius or color. */
 
+/* --- Horizontal bands ---------------------------------------------------
+   A band is any full-width strip that lays controls out in a row: the toolbar,
+   the file-slots row, every section header. The rule, app-wide: a band centers
+   its content vertically with flexbox and NEVER fakes alignment with top
+   padding — magic top-padding drifts the moment a font size or line-height
+   changes, which is exactly how the sidebar header stopped lining up with the
+   file inputs. Give a band a height (or min-height) and let `align-items:
+   center` place the content; use padding only for horizontal inset.
+
+   `.band-row` additionally pins the height to --band-row, the shared height of
+   the TOP band in each column — so the file-slots row and the first section
+   header line up across the divider by construction. */
+.band {
+  display: flex;
+  align-items: center;
+}
+.band-row {
+  min-height: var(--band-row);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

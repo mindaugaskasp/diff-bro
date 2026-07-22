@@ -60,7 +60,7 @@ function useOutputAsInput() {
 }
 
 async function copyOutput() {
-  await navigator.clipboard.writeText(output.value)
+  await window.api.copyText(output.value)
   store.showNotice('Copied to clipboard.')
 }
 
