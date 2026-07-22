@@ -1,50 +1,25 @@
 .snippets-section {
   display: flex;
   flex-direction: column;
-  /* This is the last section in the scrolling sidebar; reserve space beneath it
-     so the final snippets never sit flush against the window's bottom edge,
-     even when the list is scrolled all the way down. */
+  /* Reserve space beneath the section so the final snippets never sit flush
+     against the window's bottom edge, even scrolled all the way down (this is
+     often, but not always, the last section — order is user-controlled). */
   padding-bottom: var(--space-4);
-}
-/* Section header band — matches SavedDiffs.vue, now a collapse toggle. */
-.head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 10px;
-  font-size: var(--font-sm);
-  font-weight: 700;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.head.sub {
-  margin-top: 12px;
-}
-.section-head {
-  cursor: pointer;
-  user-select: none;
-}
-.section-title {
-  flex: 1;
-}
-.chev {
-  display: inline-block;
-  font-size: var(--font-2xs);
-  color: var(--text-dim);
-  transition: transform 0.12s;
-}
-.chev.open {
-  transform: rotate(90deg);
 }
 .head-actions {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
+}
+/* Collapse chevron for the shelf sub-headers (the section header owns its own). */
+.chev {
+  display: inline-block;
+  color: var(--text-dim);
+  transition: transform 0.12s;
+}
+.chev.open {
+  transform: rotate(90deg);
 }
 .filter {
   display: flex;

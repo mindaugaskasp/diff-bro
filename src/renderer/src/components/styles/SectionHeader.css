@@ -1,0 +1,59 @@
+/* Section header band: a recessed strip framed by hairlines so Saved / External
+   / Snippets read as distinct blocks. Shared by every reorderable section. */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+/* The topmost section sits flush and lifts its label to line up with the
+   Left/Right file-slot labels across the divider (10px row + 6px slot). */
+.head.first {
+  border-top: none;
+  padding-top: 16px;
+}
+.section-title {
+  flex: 1;
+}
+.chev {
+  display: inline-block;
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  transition: transform 0.12s;
+}
+.chev.open {
+  transform: rotate(90deg);
+}
+/* Up/down section move controls — quiet until hovered. */
+.reorder {
+  display: inline-flex;
+  gap: 2px;
+}
+.reorder-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-2xs);
+  line-height: 1;
+  padding: 2px 4px;
+}
+.reorder-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.reorder-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}

@@ -9,6 +9,9 @@ import { useSnippetPreview } from '../composables/useSnippetPreview'
 import SnippetRow from './SnippetRow.vue'
 import SnippetTagBar from './SnippetTagBar.vue'
 import SnippetPreviewCard from './SnippetPreviewCard.vue'
+import SectionHeader from './SectionHeader.vue'
+
+defineProps({ first: { type: Boolean, default: false } })
 
 const store = useSnippetStore()
 
@@ -33,25 +36,31 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
 </script>
 
 <template>
-  <div class="snippets-section">
-    <div class="head sub section-head" @click="sectionOpen = !sectionOpen">
-      <span class="chev" :class="{ open: sectionOpen }">▸</span>
-      <span class="section-title">Snippets</span>
-      <button
-        class="btn btn-icon"
-        title="Export all snippets to a passphrase-protected file"
-        @click.stop="store.pendingExport = { all: true }"
-      >
-        ↑
-      </button>
-      <button
-        class="btn btn-icon"
-        title="Import snippets from a file"
-        @click.stop="store.pendingImport = true"
-      >
-        ↓
-      </button>
-    </div>
+  <section class="snippets-section sidebar-section">
+    <SectionHeader
+      section-id="snippets"
+      title="Snippets"
+      :open="sectionOpen"
+      :first="first"
+      @toggle="sectionOpen = !sectionOpen"
+    >
+      <template #actions>
+        <button
+          class="btn btn-icon"
+          title="Export all snippets to a passphrase-protected file"
+          @click.stop="store.pendingExport = { all: true }"
+        >
+          ↑
+        </button>
+        <button
+          class="btn btn-icon"
+          title="Import snippets from a file"
+          @click.stop="store.pendingImport = true"
+        >
+          ↓
+        </button>
+      </template>
+    </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
       <div class="head-actions">
@@ -128,7 +137,7 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
         </ul>
       </div>
     </div>
-  </div>
+  </section>
 
   <SnippetPreviewCard v-if="preview" :preview="preview" />
 </template>
