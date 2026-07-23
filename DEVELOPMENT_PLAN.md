@@ -1,7 +1,7 @@
 # DiffBro – Development Plan
 
 Goal: cross-platform (Windows + macOS) desktop diff viewer with GitHub-style
-rendering. Text files first; Word, PDF, and image comparison later via the
+rendering. Text files first; Word and Excel comparison later via the
 adapter pattern.
 
 Stack: Electron + electron-vite + Vue 3 + Pinia + Monaco diff editor +
@@ -154,9 +154,12 @@ First run: `npm install && npm run dev`
       every diagram type in real Chromium before adopting the dep). SVG is
       inserted via `DOMParser` + `replaceChildren`, never `innerHTML`/`v-html`;
       `securityLevel: 'strict'` (DOMPurify) is never lowered.
-- [x] Live preview in the snippet editor + a resizable, zoom/pan diagram viewer;
-      diagram theme paired to the app theme (dark → `dark`, light → `default`),
-      re-rendered on theme switch so text never blends into the canvas
+- [x] Live preview in the snippet editor + a zoom/pan diagram viewer, drag-resizable
+      from any of its four corners (`useResizable` + pure `utils/resizeRect.js`) and
+      auto-maximised when the app window enters fullscreen (main pushes
+      `window:fullscreen`, `useFullScreen` relays it); diagram theme paired to the
+      app theme (dark → `dark`, light → `default`), re-rendered on theme switch so
+      text never blends into the canvas
 - [x] Auto-detect for the snippet editor's syntax picker
       (`utils/detectLanguage.js`): distinctive, low-ambiguity signals for every
       offered language (JSON, Mermaid, SQL, Markdown, YAML/K8s, Python, shell,
@@ -174,7 +177,11 @@ First run: `npm install && npm run dev`
       visibility, and user-raisable comparison-file / snippet size limits with
       safe defaults and hard ceilings (main enforces the file limit from it)
 - [x] Reorderable sidebar sections behind a shared `SectionHeader`; Saved /
-      External / Snippets each extracted into a self-contained component
+      External / Snippets each extracted into a self-contained component. Reorder
+      by dragging a whole header (`useSectionReorder`) or via its up/down
+      steppers; a single toolbar padlock freezes the arrangement
+      (`settings.sectionsLocked`, persisted — locked headers drop the drag handle
+      and steppers)
 - [x] Diff search gains match-case, whole-word, and safety-limited regex
       (`utils/searchRegex.js` refuses over-long / catastrophic patterns)
 - [x] Partial paste mode: diff pasted text against a dropped/chosen file
@@ -226,21 +233,51 @@ First run: `npm install && npm run dev`
 - [ ] Extend `file:read` IPC to return a Buffer for binary formats
 - [ ] Note limitation in UI: content diff, not formatting diff
 
-## Phase 5 – PDF (~3–4 days)
+## Phase 5 – Excel spreadsheets (~5–7 days)
 
-- [ ] `pdfAdapter`: extract text with `pdfjs-dist` (renderer-side is fine)
-- [ ] Normalize extraction artifacts: hyphenation, line-order in multi-column
-      layouts, page markers
-- [ ] Out of scope initially: scanned PDFs (would need tesseract.js OCR) and
-      visual/pixel diff of rendered pages — decide later if needed
+A **structured grid diff** (not text extraction): sheet tabs, aligned grids,
+cell/row/column-level highlighting. `.xlsx` only (zip-of-XML); legacy `.xls`
+(BIFF) is out of scope.
 
-## Phase 6 – Images (~2 days)
-
-- [ ] `imageAdapter` returning `{ kind: 'image', dataUrl }` — first non-text
-      comparable kind
-- [ ] New `ImageDiffViewer.vue`: side-by-side, overlay slider, and pixel-diff
-      mode via `pixelmatch` (render highlighted-difference canvas)
-- [ ] Router in the content area: pick viewer component by comparable `kind`
+- [x] **Parser spike (Phase 0):** custom, minimal, read-only OOXML reader in the
+      **main process** on `fflate` (zip) + `saxen` (streaming SAX) — chosen over
+      SheetJS (npm frozen at 0.18.5 with unpatched CVE-2023-30533 +
+      CVE-2024-22363; fixes CDN-only) and exceljs (21 MB, write surface). Lives
+      in `src/main/xlsx/`, fully unit-tested (`tests/main/xlsx/`, 16 cases incl.
+      bomb / DOCTYPE / cell-budget / proto-pollution). Security by *not parsing*:
+      only `workbook.xml`, its rels, `sharedStrings.xml`, and `worksheets/sheetN.xml`
+      are inflated; formulas (`<f>`) are never read or evaluated; external links,
+      VBA, drawings, media, styles are never touched. Caps: decompression-bomb
+      (input/entry/total/ratio), per-sheet cell budget; `DOCTYPE` rejected (XXE).
+- [x] `file:read` detects `.xlsx` (extension + `PK` zip magic) before the binary
+      sniff and parses it in main, returning `{ kind:'spreadsheet', sheets }` or a
+      polite `{ error:'xlsx' }` (`src/main/files.js`). Shares the binary read path
+      with the Word/`docx` phase.
+- [x] `xlsxAdapter` returning `{ kind: 'spreadsheet', sheets }`; registered ahead
+      of textAdapter (`adapters/xlsxAdapter.js`).
+- [x] **Router in the content area:** `App.vue` picks the viewer by
+      `store.comparableKind` (`DiffViewer` for text, `SpreadsheetDiffViewer` for
+      spreadsheets).
+- [x] `SpreadsheetDiffViewer.vue` (+ `SheetTabBar`, `SpreadsheetGrid`): sheet tabs
+      with per-sheet change counts, two aligned grids sharing one scroll region,
+      changed-cell / added-row / removed-row highlighting, and a status strip.
+- [x] Row-alignment algorithm (`utils/alignRows.js`, unit-tested): LCS over row
+      signatures with key-column pairing so an inserted/deleted row doesn't
+      cascade; O(n·m) LCS under a 4M-product budget, else O(n) positional.
+- [x] Hang protection: the grid caps rendered rows at `RENDER_ROW_CAP` (3000) with
+      a "first N rows shown" note — no virtualization yet. Text already has its
+      guards (10 MB file-size prompt on load + `MAX_DIFF_LINES` on the patch).
+      Stress benchmark: `tests/stress/diff-stress.test.js` (opt-in, `STRESS=1`).
+      Measured on this machine: parse+align stays smooth to 10k rows (~99 ms),
+      "ok" to 50k (~0.5 s), sluggish at 100k / 5.5 MB (~1 s); the DOM render is the
+      real viewing ceiling (Docker-measured).
+- [ ] Note limitation in UI: value diff, not formatting; dates read as serials
+      (styles deliberately not parsed).
+- [ ] Follow-up: true row virtualization for the grid (replace `RENDER_ROW_CAP`);
+      swap the synchronous unzip for `fflate` streaming `Unzip` with a hard
+      byte-abort so the bomb bound is enforced *during* inflation.
+- [ ] E2E (`e2e/spreadsheet.spec.mjs`) written — verify under `make e2e` (Docker),
+      it can't launch Electron on the host.
 
 ---
 
@@ -270,9 +307,9 @@ the machine where the app runs. Measures already implemented in the scaffold:
   Google).
 - **External navigation blocked**: `setWindowOpenHandler` denies all popups;
   `will-navigate` is restricted to the app itself.
-- **No CDN assets**: Monaco (and later mammoth/pdfjs/pixelmatch) are bundled
-  from npm at build time. `npm install` needs network on the *dev* machine
-  only; the packaged app does not.
+- **No CDN assets**: Monaco (and mammoth for docx, fflate + saxen for xlsx) are
+  bundled from npm at build time. `npm install` needs network on the *dev*
+  machine only; the packaged app does not.
 - **No telemetry, no crash reporting, no auto-update** — none included, keep
   it that way. When adding any dependency, check it makes no network calls.
 
@@ -290,5 +327,4 @@ Verification checklist before each release:
   the editor chunk.
 - **Very large files**: Monaco handles a few MB well; beyond that, consider
   a jsdiff + virtual-scroll fallback view.
-- **macOS builds require macOS**: plan on GitHub Actions early if you don't
-  have a Mac available.
+

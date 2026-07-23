@@ -4,9 +4,11 @@ defineProps({
   side: { type: String, required: true },
   /** @type {import('vue').PropType<import('../types').LoadedFile|null>} */
   file: {
+    // A text file carries `content`; a spreadsheet carries `sheets` instead —
+    // the slot only ever reads `name`/`path`, so that's all it requires.
     type: Object,
     default: null,
-    validator: (v) => v === null || shaped('name', 'content')(v)
+    validator: (v) => v === null || shaped('name')(v)
   },
   // True when this slot is empty and the other side already has a file, so we
   // can visibly prompt for the second file.

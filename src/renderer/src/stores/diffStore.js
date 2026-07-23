@@ -6,7 +6,8 @@ import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { toUnifiedDiff } from '../utils/unifiedDiff'
 import { loadPersisted, savePersisted } from '../persist'
-import { isDarkTheme, normalizeTheme } from '../utils/themes'
+import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
+import { useSettingsStore } from './settingsStore'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -44,6 +45,45 @@ function formatHintFor(file, dismissedContent) {
   const pretty = detected.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
   if (pretty.trim() === file.content.trim()) return null // already pretty
   return { kind: detected.kind, valid: true }
+}
+
+// Merge the two per-side format hints into ONE banner so the diff never carries
+// two stacked strips. Pure (takes the two hints, returns render data or null) so
+// the store getter stays thin and this stays unit-testable.
+function mergeFormatBanner(left, right) {
+  const shown = []
+  if (left) shown.push({ side: 'left', label: 'Left', hint: left })
+  if (right) shown.push({ side: 'right', label: 'Right', hint: right })
+  if (!shown.length) return null
+
+  const kindLabel = (h) => (h.kind === 'json' ? 'JSON' : 'XML')
+  const loc = (h) => (h.line ? ` at line ${h.line}, column ${h.column}` : '')
+  const clause = ({ label, hint }) =>
+    hint.valid
+      ? `${label} looks like ${kindLabel(hint)} — pretty-print?`
+      : `${label} looks like ${kindLabel(hint)} but doesn't parse${loc(hint)}${
+          hint.error ? `: ${hint.error}` : ''
+        }`
+
+  const valid = shown.filter((x) => x.hint.valid)
+  let message
+  if (valid.length === 2) {
+    message =
+      left.kind === right.kind
+        ? `Both sides look like ${kindLabel(left)} — pretty-print?`
+        : 'Both sides look like structured data — pretty-print?'
+  } else {
+    message = shown.map(clause).join(' · ')
+  }
+
+  return {
+    message,
+    invalid: valid.length === 0, // red only when nothing here is actionable
+    formatBoth: valid.length === 2,
+    formatSide: valid.length === 1 ? valid[0].side : null,
+    formatLabel: valid.length === 1 && shown.length === 2 ? `Format ${valid[0].label}` : 'Format',
+    dismissSides: shown.map((x) => x.side)
+  }
 }
 
 // Menu action → what it does to the store. A table rather than a switch: the
@@ -93,6 +133,11 @@ export const useDiffStore = defineStore('diff', {
     // real file on the other ("partial paste"). null = that side is a textarea.
     pasteLeftFile: null,
     pasteRightFile: null,
+    // Ctrl/Cmd+V paste-to-compare flow: null | 'enter' | 'overwrite' controls
+    // which confirmation is showing; pendingPasteText holds the clipboard text
+    // between the "both sides full" confirm and the overwrite.
+    pastePrompt: null,
+    pendingPasteText: '',
     // { additions, deletions } from the diff editor, null before first diff
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
@@ -118,10 +163,13 @@ export const useDiffStore = defineStore('diff', {
     // nothing and the replace prompt is skipped. Any edit to either side clears
     // it (see receive/comparePasted/swap/formatSide).
     diffSaved: false,
-    // Persisted through the durable data-dir store (persist.js), same as vault
-    // and snippets, so the choice survives a reinstall that wipes userData; the
-    // old localStorage 'diffbro.theme' key is migrated forward automatically.
-    // Default is Light (see utils/themes.js); an unknown stored id normalizes.
+    // The user's PERSISTED choice (Appearance picker), through the durable
+    // data-dir store — survives a reinstall; the old localStorage 'diffbro.theme'
+    // key migrates forward. Default Light; unknown ids normalize.
+    userTheme: normalizeTheme(loadPersisted('theme')),
+    // The ACTIVE, applied theme components read. Equals userTheme, unless the
+    // "rotate daily" Fun option is on, when it's the day's random theme
+    // (resolveActiveTheme). Kept separate so turning rotation off reverts cleanly.
     theme: normalizeTheme(loadPersisted('theme')),
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
@@ -164,8 +212,18 @@ export const useDiffStore = defineStore('diff', {
         : s.ready,
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
     rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
+    // Which viewer the loaded comparison needs: 'text' (Monaco) or 'spreadsheet'
+    // (grid). Text is the default so an empty/paste state routes to Monaco.
+    comparableKind() {
+      return this.leftComparable?.kind ?? this.rightComparable?.kind ?? 'text'
+    },
     leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
-    rightFormatHint: (s) => formatHintFor(s.right, s.dismissedFormatHint.right)
+    rightFormatHint: (s) => formatHintFor(s.right, s.dismissedFormatHint.right),
+    // One merged banner for both sides (see mergeFormatBanner) — null when neither
+    // side has a pending hint.
+    formatBanner() {
+      return mergeFormatBanner(this.leftFormatHint, this.rightFormatHint)
+    }
   },
   actions: {
     async pick(side) {
@@ -276,6 +334,10 @@ export const useDiffStore = defineStore('diff', {
         )
         return
       }
+      if (file.error === 'xlsx') {
+        this.showNotice(`"${file.name}" could not be read as a spreadsheet — ${file.message}.`)
+        return
+      }
       // Any other error shape (e.g. a path main refused to serve) is not a
       // loadable file — never assign it to a side.
       if (file.error) return
@@ -297,6 +359,48 @@ export const useDiffStore = defineStore('diff', {
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
     },
+    // --- Ctrl/Cmd+V paste-to-compare (see usePasteShortcut) ---
+    // Step 1: a paste gesture landed outside any input. Ask before touching the
+    // clipboard — it's only read once the user confirms.
+    requestPasteFromClipboard() {
+      if (this.pastePrompt) return // a confirm is already up
+      this.pastePrompt = 'enter'
+    },
+    // Step 2: confirmed. Read the clipboard (main process), enter paste mode, and
+    // drop the text into the first empty side. If BOTH sides already hold text,
+    // escalate to the overwrite confirm rather than clobbering unsaved work.
+    async confirmPasteEnter() {
+      const text = (await window.api?.readText?.()) ?? ''
+      if (!text.trim()) {
+        this.pastePrompt = null
+        this.showNotice('The clipboard is empty — nothing to paste.')
+        return
+      }
+      this.mode = 'paste'
+      const leftFull = !!(this.pasteLeft || this.pasteLeftFile)
+      const rightFull = !!(this.pasteRight || this.pasteRightFile)
+      if (!leftFull) {
+        this.pasteLeft = text
+        this.pastePrompt = null
+      } else if (!rightFull) {
+        this.pasteRight = text
+        this.pastePrompt = null
+      } else {
+        this.pendingPasteText = text
+        this.pastePrompt = 'overwrite'
+      }
+    },
+    // Both sides were full and the user agreed to overwrite: replace the left
+    // side with the pasted text, keeping the right to compare against.
+    confirmPasteOverwrite() {
+      this.pasteLeft = this.pendingPasteText
+      this.pendingPasteText = ''
+      this.pastePrompt = null
+    },
+    cancelPaste() {
+      this.pendingPasteText = ''
+      this.pastePrompt = null
+    },
     // Load a file into one paste side without leaving paste mode (partial
     // paste). `file` is a LoadedFile from the open dialog or a dropped file.
     receivePasteFile(side, file) {
@@ -305,6 +409,10 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice(
           `"${file.name}" looks like a binary file — only text files can be compared.`
         )
+        return
+      }
+      if (file.kind === 'spreadsheet') {
+        this.showNotice(`"${file.name}" is a spreadsheet — open it as a file comparison, not in paste mode.`)
         return
       }
       if (file.error) return
@@ -323,6 +431,14 @@ export const useDiffStore = defineStore('diff', {
       this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = null
     },
     initTheme() {
+      this.resolveActiveTheme()
+    },
+    // Compute and apply the active theme: the day's random theme when the "rotate
+    // daily" Fun option is on, otherwise the user's saved choice. Idempotent —
+    // safe to call on window focus so the theme rolls over at midnight.
+    resolveActiveTheme() {
+      const rotate = useSettingsStore().rotateThemeDaily
+      this.theme = rotate ? themeForDay() : this.userTheme
       applyTheme(this.theme)
     },
     // Open the Mermaid viewer for a diagram's decrypted source.
@@ -335,14 +451,16 @@ export const useDiffStore = defineStore('diff', {
     // Select any of the named themes (Settings picker). Unknown ids fall back
     // to the default rather than leaving the app unstyled.
     setTheme(id) {
-      this.theme = normalizeTheme(id)
-      savePersisted('theme', this.theme)
-      applyTheme(this.theme)
+      this.userTheme = normalizeTheme(id)
+      savePersisted('theme', this.userTheme)
+      // While rotating, the pick is saved for later but the active theme stays
+      // the day's; otherwise it applies immediately.
+      this.resolveActiveTheme()
     },
     // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
     // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
     toggleTheme() {
-      this.setTheme(isDarkTheme(this.theme) ? 'light' : 'dark')
+      this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
     },
     // Re-read one slot quietly (no large-file prompt); returns the file name if
     // its on-disk content actually changed, else null. Paste-file slots keep
@@ -414,6 +532,15 @@ export const useDiffStore = defineStore('diff', {
     },
     dismissFormatHint(side) {
       this.dismissedFormatHint[side] = this[side]?.content ?? null
+    },
+    // Format every side the merged banner offers (both are valid).
+    formatBoth() {
+      this.formatSide('left')
+      this.formatSide('right')
+    },
+    // Dismiss the merged banner: silence each side it currently covers.
+    dismissFormatHints(sides) {
+      for (const side of sides) this.dismissFormatHint(side)
     },
     // Snapshot of everything a saved diff needs to be restored later —
     // including in-progress paste-mode text.
@@ -575,7 +702,7 @@ export const useDiffStore = defineStore('diff', {
     // --- configuration backup / restore ---
     async runConfigBackup(passphrase) {
       const snippets = await useSnippetStore().fullBundle()
-      const settings = { theme: this.theme }
+      const settings = { theme: this.userTheme }
       const res = await window.api.backupConfig(snippets, settings, passphrase)
       if (res.ok) this.showNotice(`Configuration backed up to ${res.path}`)
       else if (!res.canceled) this.showNotice('Backup failed.')

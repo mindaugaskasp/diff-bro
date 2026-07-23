@@ -6,13 +6,31 @@
 // gets a typedef here and a `@type {import('../types').X}` on the prop.
 
 /**
- * A file loaded into one side of the comparison.
+ * A file loaded into one side of the comparison. Text files carry `content`;
+ * spreadsheets (parsed in the main process) carry `kind:'spreadsheet'` + `sheets`
+ * instead — the adapter registry keys off that (see adapters/).
  * @typedef {object} LoadedFile
  * @property {string} path      absolute path it was read from
  * @property {string} name      basename, shown in the slot
- * @property {string} content   decoded text
+ * @property {string} [content] decoded text (text files; absent for spreadsheets)
+ * @property {'spreadsheet'} [kind]  non-text format, set by main
+ * @property {SheetGrid[]} [sheets]  parsed worksheets when kind === 'spreadsheet'
  * @property {string} [encoding]
  * @property {number} [size]    bytes on disk
+ */
+
+/**
+ * One worksheet from a spreadsheet: a dense grid of cell values.
+ * @typedef {object} SheetGrid
+ * @property {string} name
+ * @property {Array<Array<string|number|boolean|null>>} rows
+ */
+
+/**
+ * The comparable produced by xlsxAdapter for the (upcoming) grid viewer.
+ * @typedef {object} SpreadsheetComparable
+ * @property {'spreadsheet'} kind
+ * @property {SheetGrid[]} sheets
  */
 
 /**
@@ -99,6 +117,15 @@
  * @property {string} [error]
  * @property {number} [line]    1-based, when the parser could locate it
  * @property {number} [column]
+ */
+
+/**
+ * A viewport-space rectangle in CSS pixels (the Mermaid viewer panel).
+ * @typedef {object} Rect
+ * @property {number} left
+ * @property {number} top
+ * @property {number} width
+ * @property {number} height
  */
 
 export {}

@@ -1,9 +1,12 @@
 // Adapter registry. Every adapter turns a raw file into comparable content:
-//   { kind: 'text', text: string, language: string }
-// Future adapters (docx, pdf, image) plug in here without touching the viewer.
+//   text:        { kind: 'text', text: string, language: string }
+//   spreadsheet: { kind: 'spreadsheet', sheets: SheetGrid[] }
+// Order matters: the first matching adapter wins, and textAdapter matches
+// everything, so it stays last. Future adapters (docx, …) plug in ahead of it.
+import { xlsxAdapter } from './xlsxAdapter'
 import { textAdapter } from './textAdapter'
 
-const adapters = [textAdapter]
+const adapters = [xlsxAdapter, textAdapter]
 
 export function resolveAdapter(file) {
   return adapters.find((a) => a.matches(file)) ?? textAdapter

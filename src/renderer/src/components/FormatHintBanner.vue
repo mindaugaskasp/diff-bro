@@ -1,30 +1,28 @@
 <script setup>
+// One banner for both sides. When both are minified JSON/XML it reads "Both
+// sides look like JSON — pretty-print?" with a single Format-both action; a
+// mixed or single-side case names the side(s). The merge lives in the store
+// (diffStore.formatBanner) so this stays a thin renderer.
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 
-const props = defineProps({ side: { type: String, required: true } })
 const store = useDiffStore()
-
-const hint = computed(() => (props.side === 'left' ? store.leftFormatHint : store.rightFormatHint))
-const sideLabel = computed(() => (props.side === 'left' ? 'Left' : 'Right'))
-const kindLabel = computed(() => (hint.value?.kind === 'json' ? 'JSON' : 'XML'))
-const location = computed(() =>
-  hint.value?.line ? ` at line ${hint.value.line}, column ${hint.value.column}` : ''
-)
+const banner = computed(() => store.formatBanner)
 </script>
 
 <template>
-  <div v-if="hint" class="hint" :class="{ invalid: !hint.valid }">
-    <span v-if="hint.valid">
-      <strong>{{ sideLabel }}</strong> looks like {{ kindLabel }} — pretty-print it?
-    </span>
-    <span v-else>
-      <strong>{{ sideLabel }}</strong> looks like {{ kindLabel }} but doesn't parse{{ location
-      }}{{ hint.error ? `: ${hint.error}` : '' }}
-    </span>
+  <div v-if="banner" class="hint" :class="{ invalid: banner.invalid }">
+    <span class="msg">{{ banner.message }}</span>
     <div class="actions">
-      <button v-if="hint.valid" class="format" @click="store.formatSide(side)">Format</button>
-      <button class="dismiss" @click="store.dismissFormatHint(side)">Dismiss</button>
+      <button v-if="banner.formatBoth" class="format" @click="store.formatBoth()">Format both</button>
+      <button
+        v-else-if="banner.formatSide"
+        class="format"
+        @click="store.formatSide(banner.formatSide)"
+      >
+        {{ banner.formatLabel }}
+      </button>
+      <button class="dismiss" @click="store.dismissFormatHints(banner.dismissSides)">Dismiss</button>
     </div>
   </div>
 </template>

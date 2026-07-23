@@ -65,14 +65,25 @@ contextBridge.exposeInMainWorld('api', {
   // Opens the project's "new issue" page (a fixed URL, chosen in main) in the
   // OS browser. No URL crosses from the renderer.
   reportIssue: () => ipcRenderer.invoke('app:reportIssue'),
+  // Local error log (written by the main process, never sent anywhere). The
+  // renderer forwards its own uncaught errors and can read/clear/reveal the log
+  // and choose where it's stored.
+  logError: (record) => ipcRenderer.invoke('log:error', record),
+  readLog: () => ipcRenderer.invoke('log:read'),
+  clearLog: () => ipcRenderer.invoke('log:clear'),
+  revealLog: () => ipcRenderer.invoke('log:reveal'),
+  logDirGet: () => ipcRenderer.invoke('log:getDir'),
+  logDirChoose: () => ipcRenderer.invoke('log:chooseDir'),
+  logDirReset: () => ipcRenderer.invoke('log:resetDir'),
   // Durable key/value store backed by files in the configurable data directory
   // (so data survives a reinstall). Loads are synchronous so the Pinia stores
   // can read their state during setup, exactly like localStorage did.
   storeLoad: (name) => ipcRenderer.sendSync('store:load', name),
   storeSave: (name, contents) => ipcRenderer.invoke('store:save', name, contents),
-  // Write text to the OS clipboard from the main process (navigator.clipboard
-  // is blocked by the deny-all permission handler; see src/main/clipboard.js).
+  // Write/read the OS clipboard from the main process (navigator.clipboard is
+  // blocked by the deny-all permission handler; see src/main/clipboard.js).
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
+  readText: () => ipcRenderer.invoke('clipboard:read'),
   // Data-location settings.
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),
@@ -82,5 +93,10 @@ contextBridge.exposeInMainWorld('api', {
   // App-menu actions (Open Left, Swap, …) arrive from the main process.
   onMenuAction: (handler) => {
     ipcRenderer.on('menu:action', (_e, action) => handler(action))
+  },
+  // App-window fullscreen state changes (main pushes true/false). Read by the
+  // Mermaid viewer so it can fill the window when the app goes fullscreen.
+  onFullScreenChange: (handler) => {
+    ipcRenderer.on('window:fullscreen', (_e, value) => handler(value))
   }
 })

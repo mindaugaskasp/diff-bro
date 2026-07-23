@@ -3,8 +3,12 @@ import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
+import { usePasteShortcut } from './composables/usePasteShortcut'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
+import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
+import SupportedFormats from './components/SupportedFormats.vue'
+import NyanLane from './components/NyanLane.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
 import MenuBar from './components/MenuBar.vue'
@@ -21,9 +25,16 @@ const settings = useSettingsStore()
 
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
+// Ctrl/Cmd+V outside a text field offers to jump into paste mode (two-step
+// confirm before the clipboard is read — see the store's paste actions).
+usePasteShortcut(() => store.requestPasteFromClipboard())
 // Live re-diff: whenever the window regains focus, re-read loaded files so
 // external edits show up without reopening anything.
-window.addEventListener('focus', () => store.refreshFromDisk())
+window.addEventListener('focus', () => {
+  store.refreshFromDisk()
+  // Roll the daily theme over if the date changed while the app sat open.
+  store.resolveActiveTheme()
+})
 
 // First run: greet a brand-new, empty library with the example snippet, then
 // record the one-time decision so it is never re-seeded — and never injected
@@ -72,6 +83,9 @@ const {
     <MenuBar v-if="!isMac" />
 
     <AppToolbar />
+    <!-- Nyan theme only: a slim rainbow lane where the reward cat flies on a
+         match/save. Self-contained; absent in every other theme. -->
+    <NyanLane v-if="store.theme === 'nyan'" />
 
     <div class="body">
       <SavedDiffs />
@@ -104,10 +118,13 @@ const {
         </div>
 
         <PasteInput v-if="store.mode === 'paste'" />
+        <!-- Content router: pick the viewer by comparable kind. -->
         <template v-else-if="store.ready">
-          <FormatHintBanner side="left" />
-          <FormatHintBanner side="right" />
-          <DiffViewer />
+          <template v-if="store.comparableKind === 'text'">
+            <FormatHintBanner />
+            <DiffViewer />
+          </template>
+          <SpreadsheetDiffViewer v-else />
         </template>
         <!-- One side loaded: make it obvious a second file is still needed. -->
         <div v-else-if="store.left || store.right" class="empty waiting">
@@ -120,7 +137,8 @@ const {
           </p>
         </div>
         <div v-else class="empty">
-          <p>Choose or drop two files to compare.</p>
+          <p class="empty-title">Choose or drop two files to compare.</p>
+          <SupportedFormats />
         </div>
 
         <ShortcutBar />

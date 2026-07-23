@@ -4,6 +4,22 @@
   display: flex;
   flex-direction: column;
 }
+/* Sits directly over the diff panes: a quiet confirmation that there is nothing
+   to compare, in the success accent so it reads as a benign end-state. */
+.identical-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--success-text);
+}
+.identical-row .ok {
+  flex: none;
+}
 .search {
   display: flex;
   gap: 10px;

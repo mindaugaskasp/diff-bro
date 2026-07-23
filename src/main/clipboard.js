@@ -21,4 +21,13 @@ export function registerClipboardIpc() {
     clipboard.writeText(text)
     return { ok: true }
   })
+
+  // Reading is also main-side (navigator.clipboard is blocked, rule 1/3). Only
+  // ever invoked after an explicit user gesture + confirm (the Ctrl/Cmd+V
+  // paste-to-compare flow), and capped so a huge clipboard can't be dumped in.
+  ipcMain.handle('clipboard:read', () => {
+    const text = clipboard.readText()
+    if (typeof text !== 'string') return ''
+    return text.length > MAX_CLIPBOARD_BYTES ? text.slice(0, MAX_CLIPBOARD_BYTES) : text
+  })
 }

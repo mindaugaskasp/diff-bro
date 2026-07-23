@@ -1,61 +1,53 @@
 <script setup>
-// Full-screen-ish, resizable Mermaid viewer. Opened from the snippet editor's
+// Full-screen-ish, movable Mermaid viewer. Opened from the snippet editor's
 // live preview or a Mermaid snippet row (diffStore.mermaidView). Supports
-// zoom (buttons + Ctrl/⌘-wheel), drag-to-pan, Fit, and a maximize toggle; the
-// panel itself is CSS-resizable so users can size it to the diagram.
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+// zoom (buttons + Ctrl/⌘-wheel), drag-to-pan, Fit, a maximize toggle, and
+// drag-resize from any of its four corners (useResizable). When the app window
+// itself goes fullscreen the panel maximises to fill it (useFullScreen).
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useBackdropClose } from '../composables/useBackdropClose'
+import { useResizable } from '../composables/useResizable'
+import { useFullScreen } from '../composables/useFullScreen'
+import { useZoomPan } from '../composables/useZoomPan'
 import MermaidDiagram from './MermaidDiagram.vue'
 import AppIcon from './AppIcon.vue'
 
 const diff = useDiffStore()
 const view = computed(() => diff.mermaidView) // { name, code }
+const isFullScreen = useFullScreen()
 
-const scale = ref(1)
-const tx = ref(0)
-const ty = ref(0)
+const DEFAULT_W = 880
+const DEFAULT_H = 620
+const MIN = { width: 360, height: 260 }
+const CORNERS = ['nw', 'ne', 'sw', 'se']
+
+const { rect, setCentered, beginResize } = useResizable({ min: MIN })
+const { scale, tx, ty, pct, zoom, fit, onWheel, onDown, onMove, onUp } = useZoomPan()
 const maxed = ref(false)
 
-const SCALE_MIN = 0.2
-const SCALE_MAX = 8
-const pct = computed(() => Math.round(scale.value * 100))
+const panelStyle = computed(() => ({
+  left: `${rect.left}px`,
+  top: `${rect.top}px`,
+  width: `${rect.width}px`,
+  height: `${rect.height}px`
+}))
 
-function clamp(v) {
-  return Math.min(SCALE_MAX, Math.max(SCALE_MIN, v))
+function fitPanel() {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  if (maxed.value) setCentered(vw * 0.96, vh * 0.92)
+  else setCentered(Math.min(DEFAULT_W, vw * 0.9), Math.min(DEFAULT_H, vh * 0.82))
 }
-function zoom(factor) {
-  scale.value = clamp(scale.value * factor)
+function toggleMaxed() {
+  maxed.value = !maxed.value
+  fitPanel()
 }
-function fit() {
-  // The diagram is constrained to the viewport by CSS (max-width/height 100%),
-  // so scale 1 with no offset is the fitted view.
-  scale.value = 1
-  tx.value = 0
-  ty.value = 0
-}
-function onWheel(e) {
-  if (!e.ctrlKey && !e.metaKey) return // plain scroll left for the OS/trackpad
-  e.preventDefault()
-  zoom(e.deltaY < 0 ? 1.1 : 1 / 1.1)
-}
-
-// Drag to pan.
-let dragging = false
-let startX = 0
-let startY = 0
-function onDown(e) {
-  dragging = true
-  startX = e.clientX - tx.value
-  startY = e.clientY - ty.value
-}
-function onMove(e) {
-  if (!dragging) return
-  tx.value = e.clientX - startX
-  ty.value = e.clientY - startY
-}
-function onUp() {
-  dragging = false
+// A manual corner drag means the user wants a custom size; drop the maxed flag
+// so the maximize button offers to fill again rather than to restore.
+function startResize(corner, e) {
+  maxed.value = false
+  beginResize(corner, e)
 }
 
 function close() {
@@ -68,13 +60,34 @@ const { onPointerDown: onBackdropDown, onClick: onBackdropClick } = useBackdropC
 function onKey(e) {
   if (e.key === 'Escape') close()
 }
-onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+// Keep a maximised panel filling the window as it (or the OS fullscreen) resizes.
+function onWindowResize() {
+  if (maxed.value) fitPanel()
+}
+// Entering app fullscreen fills the window; leaving it does not shrink a panel
+// the user may have grown, so only react on the way in.
+watch(isFullScreen, (on) => {
+  if (on) {
+    maxed.value = true
+    fitPanel()
+  }
+})
+
+onMounted(() => {
+  maxed.value = isFullScreen.value
+  fitPanel()
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('resize', onWindowResize)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('resize', onWindowResize)
+})
 </script>
 
 <template>
   <div v-if="view" class="viewer-backdrop" @pointerdown="onBackdropDown" @click="onBackdropClick">
-    <div class="panel" :class="{ maxed }">
+    <div class="panel" :style="panelStyle">
       <div class="head">
         <span class="title">{{ view.name || 'Diagram' }}</span>
         <div class="tools">
@@ -84,7 +97,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <span class="pct" @click="fit">{{ pct }}%</span>
           <button class="tbtn" title="Zoom in" @click="zoom(1.2)"><AppIcon name="plus" /></button>
           <button class="tbtn wide" title="Fit to window" @click="fit">Fit</button>
-          <button class="tbtn" :title="maxed ? 'Restore size' : 'Maximize'" @click="maxed = !maxed">
+          <button
+            class="tbtn"
+            :title="maxed ? 'Restore size' : 'Maximize'"
+            @click="toggleMaxed"
+          >
             <AppIcon :name="maxed ? 'restore' : 'maximize'" />
           </button>
           <button class="tbtn close" title="Close (Esc)" @click="close">
@@ -109,8 +126,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </div>
       <div class="foot">
         <span class="hint">Drag to pan · Ctrl/⌘ + scroll to zoom · click % to fit</span>
-        <span class="resize-hint">↘ drag corner to resize</span>
+        <span class="resize-hint">drag any corner to resize</span>
       </div>
+      <span
+        v-for="c in CORNERS"
+        :key="c"
+        class="resize-handle"
+        :class="c"
+        @pointerdown="startResize(c, $event)"
+      />
     </div>
   </div>
 </template>

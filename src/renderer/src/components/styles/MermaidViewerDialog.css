@@ -11,25 +11,48 @@
      standalone window that should cover the diff panes and any dialog. */
   z-index: 60;
 }
+/* JS-positioned (useResizable): the panel carries an inline left/top/width/height
+   so it can be dragged bigger from any corner and moved to fill the window. The
+   backdrop's flex-centering is only the fallback before the first layout tick. */
 .panel {
+  position: absolute;
   display: flex;
   flex-direction: column;
-  width: min(880px, 90vw);
-  height: min(620px, 82vh);
-  min-width: 360px;
-  min-height: 260px;
-  max-width: 96vw;
-  max-height: 92vh;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
   overflow: hidden;
-  resize: both;
 }
-.panel.maxed {
-  width: 96vw;
-  height: 92vh;
+/* Four invisible corner grips. Each sits just inside its corner and shows the
+   matching diagonal resize cursor; the opposite corner stays pinned as you drag
+   (geometry in utils/resizeRect). */
+.resize-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  z-index: 1;
+  touch-action: none;
+}
+.resize-handle.nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+.resize-handle.se {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}
+.resize-handle.ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+.resize-handle.sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
 }
 .head {
   display: flex;

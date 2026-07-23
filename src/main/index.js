@@ -18,9 +18,12 @@ import { registerFileIpc } from './files'
 import { registerTextToolsIpc } from './textTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
+import { installCrashHooks, registerLoggerIpc } from './logger'
 
 // Must run before app ready, while the command line is still mutable.
 applyHeadlessSwitches()
+// Record main-process crashes as early as possible, before anything else runs.
+installCrashHooks()
 
 // Only one instance/window. A second launch hands its args (and its version)
 // off to the running instance and quits instead of opening a second window.
@@ -58,6 +61,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerTextToolsIpc()
     registerShareIpc()
     registerSnippetIpc()
+    registerLoggerIpc()
     createWindow()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

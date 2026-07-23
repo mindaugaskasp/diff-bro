@@ -29,9 +29,11 @@
   },
   "dependencies": {
     "chardet": "^2.0.0",
+    "fflate": "^0.8.3",
     "iconv-lite": "^0.6.3",
     "mermaid": "^11.16.0",
     "pinia": "^2.2.6",
+    "saxen": "^11.1.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {

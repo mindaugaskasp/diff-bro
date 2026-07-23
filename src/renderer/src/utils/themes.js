@@ -36,6 +36,24 @@ export const THEMES = [
     label: 'Contrast',
     dark: false,
     swatch: { bg: '#ffffff', accent: '#1633d4', add: '#05702f', del: '#c20000' }
+  },
+  {
+    id: 'nord',
+    label: 'Nord',
+    dark: true,
+    swatch: { bg: '#3b4252', accent: '#88c0d0', add: '#a3be8c', del: '#bf616a' }
+  },
+  {
+    id: 'sepia',
+    label: 'Sepia',
+    dark: false,
+    swatch: { bg: '#dfcea6', accent: '#9c4f1f', add: '#5a6f28', del: '#933a22' }
+  },
+  {
+    id: 'nyan',
+    label: 'Nyan',
+    dark: true,
+    swatch: { bg: '#231033', accent: '#ff2ecb', add: '#63ff4d', del: '#ff5470' }
   }
 ]
 
@@ -47,3 +65,13 @@ export const isValidTheme = (id) => BY_ID.has(id)
 // Unknown/absent ids fall back to the default rather than breaking the UI.
 export const normalizeTheme = (id) => (BY_ID.has(id) ? id : DEFAULT_THEME)
 export const isDarkTheme = (id) => BY_ID.get(id)?.dark ?? false
+
+// The theme for a given calendar day — random-looking but STABLE within a day,
+// so the "rotate daily" option doesn't reshuffle on every launch, only at the
+// date rollover. Deterministic hash of the local Y-M-D → an index into THEMES.
+export function themeForDay(date = new Date()) {
+  const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+  let hash = 0
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0
+  return THEMES[hash % THEMES.length].id
+}

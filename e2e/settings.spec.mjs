@@ -18,9 +18,13 @@ test.describe('Settings domain panes', () => {
     await expect(page.getByRole('heading', { name: 'Data folder' })).toBeVisible()
     await expect(page.getByTitle('Use the Light theme')).toBeHidden()
 
-    // Limits pane.
+    // Limits pane (per-file-type size caps).
     await page.getByRole('button', { name: 'Limits', exact: true }).click()
-    await expect(page.getByText('Max comparison file (MB)')).toBeVisible()
+    await expect(page.getByText('Max Spreadsheet (.xlsx) file (MB)')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Data folder' })).toBeHidden()
+
+    // Logs pane.
+    await page.getByRole('button', { name: 'Logs', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Logs' })).toBeVisible()
   })
 })

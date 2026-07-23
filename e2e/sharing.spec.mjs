@@ -89,11 +89,14 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     expect(sealed).toBeTruthy()
 
     // 4. Bob imports it — it lands in External diffs, credited to Alice.
+    const external = pageB.locator('.sidebar-section', { hasText: 'External diffs' })
+    const externalHelp = external.getByText(/Diffs shared by someone else appear here/)
+    await expect(externalHelp).toBeVisible() // empty-state help, before any import
     await stubOpenDialog(appB, join(exchange, sealed))
     await pageB.getByRole('button', { name: 'Import', exact: true }).click()
     await expect(pageB.getByText(/Imported "Shared work" from Alice/)).toBeVisible()
-    const external = pageB.locator('.sidebar-section', { hasText: 'External diffs' })
     await expect(external.getByText('Shared work')).toBeVisible()
+    await expect(externalHelp).toBeHidden() // the help text clears once a diff is there
 
     // 5. Manage trusted keys on Alice: rename Bob, then remove him.
     await openMenu(pageA, 'Security', 'Manage Trusted Keys')

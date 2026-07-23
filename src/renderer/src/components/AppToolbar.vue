@@ -2,21 +2,31 @@
 // Top bar: diff stats, the display toggles, the document actions, and the
 // theme switch. Every action here has a menu twin (src/main/menu.js and
 // MenuBar.vue) — this is the pointer-friendly half.
+import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
+const settings = useSettingsStore()
+
+// The button names its destination, so it's explicit that pressing it again in
+// paste mode returns to comparing files.
+const inPaste = computed(() => store.mode === 'paste')
+const pasteToggleLabel = computed(() => (inPaste.value ? 'File mode' : 'Paste text'))
+const pasteToggleTitle = computed(() =>
+  inPaste.value ? `Back to comparing files (${MOD}+T)` : `Compare pasted text (${MOD}+T)`
+)
 </script>
 
 <template>
   <header class="toolbar band">
-    <span v-if="store.ready && store.stats" class="stats">
-      <span v-if="store.identical" class="identical">No differences</span>
-      <template v-else>
-        <span class="add">+{{ store.stats.additions }}</span>
-        <span class="del">−{{ store.stats.deletions }}</span>
-      </template>
+    <!-- Change counts only; the "no differences" state reads as a row label over
+         the diff panes (DiffViewer), not as an empty +0/−0 here. -->
+    <span v-if="store.ready && store.stats && !store.identical" class="stats">
+      <span class="add">+{{ store.stats.additions }}</span>
+      <span class="del">−{{ store.stats.deletions }}</span>
     </span>
 
     <div class="options">
@@ -38,11 +48,11 @@ const store = useDiffStore()
       <div class="group actions">
         <button
           class="btn btn-ghost"
-          :class="{ active: store.mode === 'paste' }"
-          :title="`Compare pasted text (${MOD}+T)`"
+          :class="{ active: inPaste }"
+          :title="pasteToggleTitle"
           @click="store.togglePasteMode"
         >
-          Paste text
+          {{ pasteToggleLabel }}
         </button>
         <button
           class="btn btn-primary"
@@ -70,6 +80,24 @@ const store = useDiffStore()
         </button>
         <button class="btn btn-ghost" :disabled="!store.left && !store.right" @click="store.clear">
           Clear
+        </button>
+      </div>
+
+      <span class="divider" />
+
+      <!-- Sidebar controls -->
+      <div class="group">
+        <button
+          class="icon-btn"
+          :class="{ active: settings.sectionsLocked }"
+          :title="
+            settings.sectionsLocked
+              ? 'Unlock sidebar section order'
+              : 'Lock sidebar section order'
+          "
+          @click="settings.toggleSectionsLock()"
+        >
+          <AppIcon :name="settings.sectionsLocked ? 'lock' : 'unlock'" />
         </button>
       </div>
     </div>

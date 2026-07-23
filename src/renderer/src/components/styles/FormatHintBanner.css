@@ -1,3 +1,8 @@
+/* Theme-tied: a subtle strip tinted from the active theme's ACCENT (a helpful
+   suggestion, not a loud warning), so it adopts each theme's identity — blue in
+   Light, pink in Nyan, orange in Solar — instead of a fixed amber. The invalid
+   state tints from danger instead. Colour lives on color-mix lines (allowed by
+   the style-token guard) and theme tokens. */
 .hint {
   display: flex;
   align-items: center;
@@ -5,14 +10,16 @@
   gap: 12px;
   padding: 6px 14px;
   font-size: var(--font-md);
-  background: var(--warning-bg);
-  border-bottom: 1px solid var(--warning-border);
-  color: var(--warning-text);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-panel));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
 }
 .hint.invalid {
-  background: var(--danger-bg);
-  border-bottom-color: var(--danger-border);
-  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger-bg) 16%, var(--bg-panel));
+  border-bottom-color: color-mix(in srgb, var(--danger-border) 55%, transparent);
+}
+.msg {
+  min-width: 0; /* let a long invalid-parse message wrap instead of shoving the actions off */
 }
 .actions {
   display: flex;
@@ -27,18 +34,23 @@
   font-size: var(--font-md);
   font-weight: 600;
 }
+/* The action carries the strong theme colour; the strip stays subtle. */
 .format {
-  background: var(--warning-text);
-  border: none;
-  color: var(--warning-bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--text-on-accent);
 }
 .hint.invalid .format {
-  background: var(--danger-text);
-  color: var(--danger-bg);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
 }
 .dismiss {
   background: none;
-  border: 1px solid currentColor;
-  color: inherit;
-  opacity: 0.85;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.dismiss:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }

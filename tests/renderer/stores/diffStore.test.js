@@ -37,6 +37,80 @@ describe('diffStore', () => {
     expect(store.notice).toContain('blob.bin')
   })
 
+  it('rejects an unreadable spreadsheet with a notice and leaves the slot empty', () => {
+    const store = useDiffStore()
+    store.receive('left', { error: 'xlsx', name: 'book.xlsx', message: 'DOCTYPE not allowed' })
+    expect(store.left).toBeNull()
+    expect(store.notice).toContain('book.xlsx')
+    expect(store.notice).toContain('DOCTYPE not allowed')
+  })
+
+  it('loads a parsed spreadsheet and routes it to the grid viewer', () => {
+    const store = useDiffStore()
+    const sheets = [{ name: 'S1', rows: [['Region', 100]] }]
+    store.receive('left', { path: '/tmp/l.xlsx', name: 'l.xlsx', kind: 'spreadsheet', sheets })
+    store.receive('right', { path: '/tmp/r.xlsx', name: 'r.xlsx', kind: 'spreadsheet', sheets })
+    expect(store.ready).toBe(true)
+    expect(store.comparableKind).toBe('spreadsheet')
+    expect(store.leftComparable).toEqual({ kind: 'spreadsheet', sheets })
+  })
+
+  it('comparableKind is text for the empty and text-file states', () => {
+    const store = useDiffStore()
+    expect(store.comparableKind).toBe('text')
+    store.left = FILE('a.txt')
+    expect(store.comparableKind).toBe('text')
+  })
+
+  it('refuses a spreadsheet dropped into paste mode', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] })
+    expect(store.pasteLeftFile).toBeNull()
+    expect(store.notice).toContain('book.xlsx')
+  })
+
+  it('paste-to-compare: confirming reads the clipboard into the first empty side', async () => {
+    window.api = { readText: () => Promise.resolve('pasted body') }
+    const store = useDiffStore()
+    store.requestPasteFromClipboard()
+    expect(store.pastePrompt).toBe('enter')
+    await store.confirmPasteEnter()
+    expect(store.mode).toBe('paste')
+    expect(store.pasteLeft).toBe('pasted body')
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: fills the right side when the left already has content', async () => {
+    window.api = { readText: () => Promise.resolve('second') }
+    const store = useDiffStore()
+    store.pasteLeft = 'first'
+    await store.confirmPasteEnter()
+    expect(store.pasteRight).toBe('second')
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: both sides full escalates to the overwrite confirm', async () => {
+    window.api = { readText: () => Promise.resolve('third') }
+    const store = useDiffStore()
+    store.pasteLeft = 'first'
+    store.pasteRight = 'second'
+    await store.confirmPasteEnter()
+    expect(store.pastePrompt).toBe('overwrite')
+    expect(store.pasteLeft).toBe('first') // nothing clobbered yet
+    store.confirmPasteOverwrite()
+    expect(store.pasteLeft).toBe('third') // left replaced, right kept
+    expect(store.pasteRight).toBe('second')
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: an empty clipboard notices and does not enter a prompt', async () => {
+    window.api = { readText: () => Promise.resolve('   ') }
+    const store = useDiffStore()
+    await store.confirmPasteEnter()
+    expect(store.pastePrompt).toBeNull()
+    expect(store.notice).toContain('clipboard is empty')
+  })
+
   it('swap exchanges the two sides', () => {
     const store = useDiffStore()
     store.left = FILE('a.txt')
@@ -296,6 +370,53 @@ describe('diffStore', () => {
     expect(store.leftFormatHint).not.toBeNull() // new content, dismissal doesn't carry over
   })
 
+  it('merges both sides into one banner with a Format-both action', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"b":2}' }
+    const banner = store.formatBanner
+    expect(banner.message).toBe('Both sides look like JSON — pretty-print?')
+    expect(banner.formatBoth).toBe(true)
+    expect(banner.invalid).toBe(false)
+    expect(banner.dismissSides).toEqual(['left', 'right'])
+
+    store.formatBoth()
+    expect(store.left.content).toBe('{\n  "a": 1\n}')
+    expect(store.right.content).toBe('{\n  "b": 2\n}')
+    expect(store.formatBanner).toBeNull() // both pretty now, banner clears itself
+  })
+
+  it('names the single formattable side when the other is invalid', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"b": 2,}' }
+    const banner = store.formatBanner
+    expect(banner.formatBoth).toBe(false)
+    expect(banner.formatSide).toBe('left')
+    expect(banner.formatLabel).toBe('Format Left')
+    expect(banner.invalid).toBe(false) // still actionable — the left side can format
+    expect(banner.message).toContain("doesn't parse")
+  })
+
+  it('is a red, actionless banner when both sides are invalid, and dismiss silences both', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a": 1,}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"b": 2,}' }
+    const banner = store.formatBanner
+    expect(banner.invalid).toBe(true)
+    expect(banner.formatBoth).toBe(false)
+    expect(banner.formatSide).toBeNull()
+
+    store.dismissFormatHints(banner.dismissSides)
+    expect(store.formatBanner).toBeNull()
+  })
+
+  it('has no banner when neither side has a hint', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.txt', name: 'a.txt', content: 'plain' }
+    expect(store.formatBanner).toBeNull()
+  })
+
   it('defaults to Light and toggleTheme flips the ground, persisting + stamping', () => {
     const store = useDiffStore()
     expect(store.theme).toBe('light') // Light is the default
@@ -319,6 +440,30 @@ describe('diffStore', () => {
     store.setTheme('bogus')
     expect(store.theme).toBe('light')
   })
+
+  it('daily rotation overrides the active theme but keeps the saved choice, reverting when off', async () => {
+    const { useSettingsStore } = await import('../../../src/renderer/src/stores/settingsStore')
+    const settings = useSettingsStore()
+    const store = useDiffStore()
+    store.setTheme('neon') // the user's saved pick
+
+    settings.setRotateThemeDaily(true)
+    store.resolveActiveTheme()
+    const { themeForDay } = await import('../../../src/renderer/src/utils/themes')
+    expect(store.theme).toBe(themeForDay()) // active is the day's theme
+    expect(store.userTheme).toBe('neon') // saved choice untouched
+
+    // Picking a theme while rotating saves it but doesn't override today's theme.
+    store.setTheme('solar')
+    expect(store.userTheme).toBe('solar')
+    expect(store.theme).toBe(themeForDay())
+
+    // Turning rotation off reverts to the saved choice.
+    settings.setRotateThemeDaily(false)
+    store.resolveActiveTheme()
+    expect(store.theme).toBe('solar')
+  })
+
   it('adds a trusted key before clearing the pending state, then opens the manager', async () => {
     const store = useDiffStore()
     const seen = []

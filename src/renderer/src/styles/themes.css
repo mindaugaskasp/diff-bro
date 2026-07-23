@@ -102,6 +102,79 @@
   --text-on-accent: #04121a;
 }
 
+/* Nord — the low-saturation arctic palette; calm frost-blue accent on slate,
+   soft green/red for add/remove. Easy on the eyes for long sessions. */
+:root[data-theme='nord'] {
+  --bg: #2e3440;
+  --bg-panel: #3b4252;
+  --bg-hover: #434c5e;
+  --border: #4c566a;
+  --text: #eceff4;
+  --text-dim: #9aa5b8;
+  --text-hint: #d8dee9;
+  --accent: #88c0d0;
+  --warning-bg: #ebcb8b;
+  --warning-border: #d0a85f;
+  --warning-text: #2e3440;
+  --danger-bg: #bf616a;
+  --danger-border: #a54c55;
+  --danger-text: #eceff4;
+  --success-text: #a3be8c;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --favorite: #ebcb8b;
+  --text-on-accent: #2e3440;
+}
+
+/* Sepia — a deep, saturated PARCHMENT (distinct from Solar's pale sunny cream):
+   walnut ink on aged tan, burnt-sienna accent, moss-green additions. A vintage
+   low-glare pick for long reading. */
+:root[data-theme='sepia'] {
+  --bg: #e9dcbe;
+  --bg-panel: #dfcea6;
+  --bg-hover: #d3bf90;
+  --border: #c3ad7e;
+  --text: #3a2e15;
+  --text-dim: #7d6840;
+  --text-hint: #574524;
+  --accent: #9c4f1f;
+  --warning-bg: #cc9324;
+  --warning-border: #9a6712;
+  --warning-text: #33260a;
+  --danger-bg: #ab4429;
+  --danger-border: #933a22;
+  --danger-text: #ffffff;
+  --success-text: #5a6f28;
+  --scrim: rgba(42, 32, 14, 0.44);
+  --favorite: #a3760a;
+  --text-on-accent: #ffffff;
+}
+
+/* Nyan — playful but usable: a readable deep-violet base with hot-pink accent
+   and lime/rose diff colors. The chaos (the rainbow lane + reward cat) lives in
+   non-content chrome (see NyanLane), so diffs stay legible. */
+:root[data-theme='nyan'] {
+  --bg: #160a20;
+  --bg-panel: #231033;
+  --bg-hover: #2e1642;
+  /* Brighter than the ground so button/input/divider edges read clearly on the
+     deep-violet panels (the muted violet was too low-contrast). */
+  --border: #7a3fa6;
+  --text: #f4e9ff;
+  --text-dim: #b79fcf;
+  --text-hint: #dcc9f0;
+  --accent: #ff2ecb;
+  --warning-bg: #ffd23f;
+  --warning-border: #d9a400;
+  --warning-text: #2a1400;
+  --danger-bg: #ff5470;
+  --danger-border: #e03a58;
+  --danger-text: #1a0410;
+  --success-text: #63ff4d;
+  --scrim: rgba(10, 2, 16, 0.55);
+  --favorite: #ffd23f;
+  --text-on-accent: #1a0410;
+}
+
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {
