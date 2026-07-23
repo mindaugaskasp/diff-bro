@@ -108,9 +108,13 @@ First run: `npm install && npm run dev`
 - [x] End-to-end suite in `e2e/` (Playwright `_electron`, `make e2e`): drives
       the built app in an isolated `--user-data-dir`, no bundled browser / no
       network. Covers launch smoke, the Settings domain-pane rail, theme apply +
-      persistence across a relaunch, and the snippet copy "Copied" flash. Caught
-      a real shipping bug — `navigator.clipboard.writeText` is denied by the
-      deny-all permission handler, so all clipboard writes now go through the
+      persistence across a relaunch, the snippet copy "Copied" flash + the real
+      OS-clipboard write, paste-compare diffing with Monaco stats, saving a diff
+      and reopening it after a relaunch (the full vault encrypt→store→decrypt
+      round-trip), the Share two-step flow into first-time key setup, and Mermaid
+      rendering in both the diagram viewer and the snippet editor's live preview.
+      Caught a real shipping bug — `navigator.clipboard.writeText` is denied by
+      the deny-all permission handler, so all clipboard writes now go through the
       main process (`src/main/clipboard.js`, `window.api.copyText`).
 - [x] Five selectable themes (Light default, Dark, Solar, Neon, Contrast) —
       registry in `utils/themes.js`, palette per theme on `:root[data-theme]`,
@@ -144,6 +148,15 @@ First run: `npm install && npm run dev`
 - [x] Live preview in the snippet editor + a resizable, zoom/pan diagram viewer;
       diagram theme paired to the app theme (dark → `dark`, light → `default`),
       re-rendered on theme switch so text never blends into the canvas
+- [x] Auto-detect for the snippet editor's syntax picker
+      (`utils/detectLanguage.js`): distinctive, low-ambiguity signals for every
+      offered language (JSON, Mermaid, SQL, Markdown, YAML/K8s, Python, shell,
+      PHP, JS, TS, XML, HTML, CSS, Dockerfile, Go, Rust, Java), ordered
+      most-distinctive-first with anti-false-positive guards (a fenced block is
+      Markdown not its inner code; TS before JS; HTML-only tags before generic
+      XML; code braces disqualify CSS/YAML). Best-effort — a miss lands on
+      plaintext rather than mis-coloring. Covered by a positive-plus-negative
+      test matrix in `tests/renderer/utils/detectLanguage.test.js`.
 
 ## Phase 2.6 – UI/UX refinements ✅
 
