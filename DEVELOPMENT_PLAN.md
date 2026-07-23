@@ -105,9 +105,24 @@ First run: `npm install && npm run dev`
       adapters); ESLint flat config with security rules (renderer banned
       from Node/Electron imports, no v-html/eval) + Prettier;
       `npm run check` = lint + tests; CLAUDE.md encodes the guidelines.
-- [x] Light/dark theme toggle (Monaco `vs` / `vs-dark` + CSS variables on
-      `:root[data-theme]`; toolbar button + View menu + Ctrl/Cmd+D; choice
-      persisted through the durable data-dir store, so it survives a reinstall)
+- [x] End-to-end suite in `e2e/` (Playwright `_electron`, `make e2e`): drives
+      the built app in an isolated `--user-data-dir`, no bundled browser / no
+      network. Covers launch smoke, the Settings domain-pane rail, theme apply +
+      persistence across a relaunch, the snippet copy "Copied" flash + the real
+      OS-clipboard write, paste-compare diffing with Monaco stats, saving a diff
+      and reopening it after a relaunch (the full vault encrypt→store→decrypt
+      round-trip), the Share two-step flow into first-time key setup, and Mermaid
+      rendering in both the diagram viewer and the snippet editor's live preview.
+      Caught a real shipping bug — `navigator.clipboard.writeText` is denied by
+      the deny-all permission handler, so all clipboard writes now go through the
+      main process (`src/main/clipboard.js`, `window.api.copyText`).
+- [x] Five selectable themes (Light default, Dark, Solar, Neon, Contrast) —
+      registry in `utils/themes.js`, palette per theme on `:root[data-theme]`,
+      Monaco/Mermaid ground keyed off `isDarkTheme`; picked in Settings →
+      Appearance (swatch previews), Ctrl/Cmd+D still flips light↔dark; choice
+      persisted through the durable data-dir store, so it survives a reinstall
+- [x] Settings split into domain panes behind a left rail (Appearance /
+      Storage / Limits) so the window stays scannable
 - [x] Re-read files on window focus (quiet re-read: no large-file prompt,
       silent skip if the file vanished; toast when the diff was reloaded)
 - [x] Window state persistence (size/position/maximized in
@@ -122,7 +137,8 @@ First run: `npm install && npm run dev`
 
 - [x] Encrypted, tagged snippet library ("quiet shelves" sidebar: ★ Favorites +
       All snippets, newest-first, collapsible tag filter that composes with
-      search, hover preview that decrypts on demand)
+      search, hover preview that decrypts on demand; copy-to-clipboard shows a
+      transient "Copied" flash at the row via unit-tested `useCopyFeedback`)
 - [x] Mermaid diagram rendering for `mermaid` snippets — lazy-loaded (dynamic
       `import`, its own build chunks; nothing added to the main bundle), runs
       **offline under the strict CSP with no `unsafe-eval`** (verified against
@@ -132,6 +148,38 @@ First run: `npm install && npm run dev`
 - [x] Live preview in the snippet editor + a resizable, zoom/pan diagram viewer;
       diagram theme paired to the app theme (dark → `dark`, light → `default`),
       re-rendered on theme switch so text never blends into the canvas
+- [x] Auto-detect for the snippet editor's syntax picker
+      (`utils/detectLanguage.js`): distinctive, low-ambiguity signals for every
+      offered language (JSON, Mermaid, SQL, Markdown, YAML/K8s, Python, shell,
+      PHP, JS, TS, XML, HTML, CSS, Dockerfile, Go, Rust, Java), ordered
+      most-distinctive-first with anti-false-positive guards (a fenced block is
+      Markdown not its inner code; TS before JS; HTML-only tags before generic
+      XML; code braces disqualify CSS/YAML). Best-effort — a miss lands on
+      plaintext rather than mis-coloring. Covered by a positive-plus-negative
+      test matrix in `tests/renderer/utils/detectLanguage.test.js`.
+
+## Phase 2.6 – UI/UX refinements ✅
+
+- [x] Plaintext `settings.json` store (`stores/settingsStore.js`): reorderable
+      sidebar sections, drag-reorderable saved-diff categories, shortcut-bar
+      visibility, and user-raisable comparison-file / snippet size limits with
+      safe defaults and hard ceilings (main enforces the file limit from it)
+- [x] Reorderable sidebar sections behind a shared `SectionHeader`; Saved /
+      External / Snippets each extracted into a self-contained component
+- [x] Diff search gains match-case, whole-word, and safety-limited regex
+      (`utils/searchRegex.js` refuses over-long / catastrophic patterns)
+- [x] Partial paste mode: diff pasted text against a dropped/chosen file
+- [x] Tools menu grouped per format (Base64 / JSON / XML / SQL / Text
+      Encryption); Help → Keyboard Shortcuts lists bindings for the host OS
+- [x] Help → Report an Issue confirms before leaving the offline sandbox, then
+      hands the fixed repo issue URL to the OS browser (the only outward link;
+      the URL is fixed in main, the renderer can only trigger it)
+- [x] Categories are local-only — never offered or sent in the share flow
+- [x] Color palette split into `styles/themes.css` (structure stays in
+      `tokens.css`), plus app-wide `.section-actions` spacing so no section's
+      buttons drift out of alignment
+- [x] Mermaid "Expand" opens a full-window viewer above all dialogs (the
+      snippet editor closes first)
 
 ## Phase 3 – Packaging & distribution (~1–2 days + cert wait times)
 

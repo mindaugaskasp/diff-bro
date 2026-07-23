@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { buildMenus } from '../menus'
+import AppIcon from './AppIcon.vue'
 
 // Themed replacement for the native File/View menu bar on Windows/Linux
 // (macOS keeps the system menu bar). Items mirror the hidden application
@@ -57,7 +58,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <div v-else-if="item.items" class="submenu" @mouseenter="openSub = item.label">
               <button class="item" @click="openSub = openSub === item.label ? null : item.label">
                 <span>{{ item.label }}</span>
-                <span class="arrow" aria-hidden="true">›</span>
+                <AppIcon class="arrow" name="chevron-right" />
               </button>
               <div v-if="openSub === item.label" class="dropdown flyout">
                 <button

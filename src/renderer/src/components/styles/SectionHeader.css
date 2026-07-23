@@ -1,0 +1,76 @@
+/* Section header band. Every header is a .band .band-row, so its height is
+   --band-row and its content is flex-centred — the headers match each other and
+   the file inputs. Padding is horizontal only; the band height owns the vertical
+   rhythm.
+
+   A single top hairline separates one section from the previous one — no
+   bottom border and no gap between sections, so a collapsed header stacks
+   cleanly against its neighbour instead of leaving a "hanging" strip of panel
+   background below it. The header's dark fill against the panel-grey body is
+   what sets it apart from its own content. */
+.head {
+  gap: 8px;
+  padding: 0 10px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+/* The topmost section sits flush with the top of the sidebar; the shared band
+   height already lines "SAVED DIFFS" up with "Left File…" across the divider. */
+.head.first {
+  border-top: none;
+}
+.section-title {
+  flex: 1;
+}
+.chev {
+  display: inline-block;
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  transition: transform 0.12s;
+}
+.chev.open {
+  transform: rotate(90deg);
+}
+/* Right-side controls (the actions slot + reorder arrows) share one centerline.
+   Each glyph is flex-centered in an equal-height box so differing glyph metrics
+   — an emoji vs the geometric arrows — can't drift off the row's center. */
+.head > .actions-slot,
+.reorder {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  line-height: 1;
+}
+.reorder {
+  gap: 2px;
+}
+.reorder-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 18px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-2xs);
+  line-height: 1;
+  padding: 0 2px;
+}
+.reorder-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.reorder-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}

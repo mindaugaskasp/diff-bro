@@ -1,0 +1,43 @@
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 62vh;
+  overflow-y: auto;
+}
+.group h4 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.group li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-md);
+}
+.label {
+  color: var(--text);
+}
+kbd {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  white-space: nowrap;
+}

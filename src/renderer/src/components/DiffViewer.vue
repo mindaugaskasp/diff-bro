@@ -3,6 +3,8 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { makeSearch } from '../composables/useDiffSearch'
+import { isDarkTheme } from '../utils/themes'
+import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
 const container = ref(null)
@@ -41,7 +43,7 @@ function setModels() {
 
 onMounted(() => {
   editor = monaco.editor.createDiffEditor(container.value, {
-    theme: store.theme === 'light' ? 'vs' : 'vs-dark',
+    theme: isDarkTheme(store.theme) ? 'vs-dark' : 'vs',
     automaticLayout: true,
     readOnly: true,
     originalEditable: false,
@@ -69,8 +71,14 @@ onMounted(() => {
 })
 
 watch(() => [store.left, store.right], setModels)
-watch(() => [leftSearch.query, leftSearch.isRegex], leftSearch.run)
-watch(() => [rightSearch.query, rightSearch.isRegex], rightSearch.run)
+watch(
+  () => [leftSearch.query, leftSearch.isRegex, leftSearch.matchCase, leftSearch.wholeWord],
+  leftSearch.run
+)
+watch(
+  () => [rightSearch.query, rightSearch.isRegex, rightSearch.matchCase, rightSearch.wholeWord],
+  rightSearch.run
+)
 watch(
   () => [store.renderSideBySide, store.ignoreTrimWhitespace],
   ([split, ignoreWs]) => {
@@ -79,7 +87,7 @@ watch(
 )
 watch(
   () => store.theme,
-  (theme) => monaco.editor.setTheme(theme === 'light' ? 'vs' : 'vs-dark')
+  (theme) => monaco.editor.setTheme(isDarkTheme(theme) ? 'vs-dark' : 'vs')
 )
 
 onBeforeUnmount(() => {
@@ -111,7 +119,15 @@ onBeforeUnmount(() => {
           @keyup.enter="s.ref.step(1)"
           @keyup.escape="s.ref.query = ''"
         />
-        <label class="regex" title="Regular expression">
+        <label class="opt" title="Match case">
+          <input v-model="s.ref.matchCase" type="checkbox" />
+          Aa
+        </label>
+        <label class="opt" title="Whole word">
+          <input v-model="s.ref.wholeWord" type="checkbox" />
+          W
+        </label>
+        <label class="opt" title="Regular expression (limited for safety)">
           <input v-model="s.ref.isRegex" type="checkbox" />
           .*
         </label>
@@ -128,10 +144,10 @@ onBeforeUnmount(() => {
           title="Previous match"
           @click="s.ref.step(-1)"
         >
-          ‹
+          <AppIcon name="chevron-left" />
         </button>
         <button class="nav" :disabled="!s.ref.matchCount" title="Next match" @click="s.ref.step(1)">
-          ›
+          <AppIcon name="chevron-right" />
         </button>
       </div>
     </div>

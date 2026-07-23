@@ -1,9 +1,48 @@
-h4 {
-  margin: 0 0 6px;
+/* Left rail navigates domains; the pane shows one at a time so the window
+   stays scannable instead of one long scroll. */
+.settings-body {
+  display: flex;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  width: 128px;
+  border-right: 1px solid var(--border);
+  padding-right: var(--space-3);
+}
+.nav-item {
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
   font-size: var(--font-md);
 }
-.note strong {
+.nav-item:hover {
+  background: var(--bg-hover);
   color: var(--text);
+}
+.nav-item.active {
+  background: var(--bg-hover);
+  color: var(--text);
+  font-weight: 600;
+}
+/* Reserve the tallest pane's height so switching domains doesn't resize the
+   dialog under the pointer. */
+.settings-pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 232px;
+}
+h4 {
+  margin: 0 0 8px;
+  font-size: var(--font-md);
 }
 .path {
   display: flex;
@@ -39,9 +78,64 @@ h4 {
   font-size: var(--font-sm);
   color: var(--text-hint);
 }
-.footer {
+/* Interface rows: label on the left, control on the right — overrides the
+   dialog's default column-stacked label layout. */
+.row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+.row.toggle {
+  justify-content: flex-start;
+  margin-top: var(--space-3);
+  cursor: pointer;
+}
+.row span {
+  color: var(--text);
+}
+.row input[type='number'] {
+  width: 88px;
+  text-align: right;
+}
+/* Theme picker — a swatch preview (ground + accent/add/remove dots) per theme. */
+.theme-grid {
   display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.theme-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 10px 4px 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-size: var(--font-md);
+}
+.theme-opt:hover {
+  border-color: var(--accent);
+}
+.theme-opt.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.theme-opt .swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 40px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.theme-opt .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
 }

@@ -62,11 +62,17 @@ contextBridge.exposeInMainWorld('api', {
   toggleDevTools: () => ipcRenderer.invoke('app:toggleDevTools'),
   isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
   quit: () => ipcRenderer.invoke('app:quit'),
+  // Opens the project's "new issue" page (a fixed URL, chosen in main) in the
+  // OS browser. No URL crosses from the renderer.
+  reportIssue: () => ipcRenderer.invoke('app:reportIssue'),
   // Durable key/value store backed by files in the configurable data directory
   // (so data survives a reinstall). Loads are synchronous so the Pinia stores
   // can read their state during setup, exactly like localStorage did.
   storeLoad: (name) => ipcRenderer.sendSync('store:load', name),
   storeSave: (name, contents) => ipcRenderer.invoke('store:save', name, contents),
+  // Write text to the OS clipboard from the main process (navigator.clipboard
+  // is blocked by the deny-all permission handler; see src/main/clipboard.js).
+  copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
   // Data-location settings.
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),

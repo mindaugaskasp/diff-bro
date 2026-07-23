@@ -34,6 +34,11 @@ WORKDIR /app
 # by one fails `npm ci` under the other. One resolver everywhere.
 RUN npm install -g npm@11
 
+# The E2E suite drives the app's own Electron (playwright's `_electron`), never
+# a bundled browser — so skip Playwright's ~400 MB Chromium/Firefox/WebKit
+# download at install time. Keeps the image lean and the build offline-light.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
 # Install dependencies at image-build time so the node_modules volume that
 # shadows the host's (Windows) node_modules starts out populated with the
 # Linux Electron binaries.

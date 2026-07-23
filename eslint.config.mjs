@@ -159,5 +159,16 @@ export default [
   {
     files: ['tests/**', 'vitest.config.mjs', 'eslint.config.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } }
+  },
+
+  // E2E: Playwright driver code runs in Node and launches the built Electron
+  // app; `test`/`expect` are imported. Page-evaluated callbacks reference
+  // browser globals, so allow both. A fixture that depends on no other fixture
+  // takes Playwright's mandatory `{}` first argument — that empty pattern is the
+  // framework idiom, not a mistake.
+  {
+    files: ['e2e/**', 'playwright.config.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'no-empty-pattern': 'off' }
   }
 ]

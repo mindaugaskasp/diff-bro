@@ -1,0 +1,33 @@
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.empty {
+  padding: 4px 10px;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.empty kbd {
+  font-size: var(--font-xs);
+  padding: 0 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.empty code {
+  font-size: var(--font-sm);
+}
+.favorites-group {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fav-head {
+  padding: 6px 10px 3px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--favorite);
+}

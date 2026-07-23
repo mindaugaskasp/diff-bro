@@ -11,8 +11,50 @@
   display: flex;
   gap: 10px;
 }
+/* Each side is a header (label + load/clear) stacked over its input. */
+.pane-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.pane-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-hint);
+}
+.file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.link {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  padding: 0;
+}
+.link:hover {
+  text-decoration: underline;
+}
 .pane {
   flex: 1;
+  min-height: 0;
   resize: none;
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -27,11 +69,17 @@
   outline: none;
   border-color: var(--accent);
 }
+/* A loaded file is shown read-only in place of the textarea. */
+.file-view {
+  margin: 0;
+  overflow: auto;
+  white-space: pre;
+}
 .actions {
   display: flex;
   gap: 10px;
+  /* Centered under the two equal-width panes, and clear of the floating
+     ShortcutBar that centers on the same bottom edge. */
   justify-content: center;
-  /* Clears the floating ShortcutBar, which is centered on the same edge —
-     without this the pill sits on top of Compare/Cancel. */
   margin-bottom: 44px;
 }

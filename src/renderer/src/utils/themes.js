@@ -1,0 +1,49 @@
+// The selectable colour themes. Pure data + helpers (no Vue/store), so the
+// store, the Monaco wiring, and the Mermaid renderer all share one source of
+// truth for what a theme is and whether it sits on a dark or light ground.
+//
+// `dark` drives the editor/diagram theme: dark-ground themes get Monaco's
+// vs-dark and Mermaid's dark theme; light-ground themes get vs / default. The
+// palette itself lives in styles/themes.css, keyed by the same id.
+// `swatch` is just for the Settings picker's preview chips.
+export const THEMES = [
+  {
+    id: 'light',
+    label: 'Light',
+    dark: false,
+    swatch: { bg: '#ffffff', accent: '#0969da', add: '#1a7f37', del: '#cf222e' }
+  },
+  {
+    id: 'dark',
+    label: 'Dark',
+    dark: true,
+    swatch: { bg: '#161b22', accent: '#2f81f7', add: '#3fb950', del: '#f85149' }
+  },
+  {
+    id: 'solar',
+    label: 'Solar',
+    dark: false,
+    swatch: { bg: '#fbf2dd', accent: '#e8590c', add: '#2f9e44', del: '#e03131' }
+  },
+  {
+    id: 'neon',
+    label: 'Neon',
+    dark: true,
+    swatch: { bg: '#111829', accent: '#22d3ee', add: '#4ade80', del: '#fb7185' }
+  },
+  {
+    id: 'contrast',
+    label: 'Contrast',
+    dark: false,
+    swatch: { bg: '#ffffff', accent: '#1633d4', add: '#05702f', del: '#c20000' }
+  }
+]
+
+export const DEFAULT_THEME = 'light'
+
+const BY_ID = new Map(THEMES.map((t) => [t.id, t]))
+
+export const isValidTheme = (id) => BY_ID.has(id)
+// Unknown/absent ids fall back to the default rather than breaking the UI.
+export const normalizeTheme = (id) => (BY_ID.has(id) ? id : DEFAULT_THEME)
+export const isDarkTheme = (id) => BY_ID.get(id)?.dark ?? false

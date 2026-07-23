@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
+import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
@@ -16,12 +17,25 @@ import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
+const settings = useSettingsStore()
 
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
 // Live re-diff: whenever the window regains focus, re-read loaded files so
 // external edits show up without reopening anything.
 window.addEventListener('focus', () => store.refreshFromDisk())
+
+// First run: greet a brand-new, empty library with the example snippet, then
+// record the one-time decision so it is never re-seeded — and never injected
+// next to an existing user's own snippets.
+onMounted(async () => {
+  if (settings.examplesSeeded) return
+  if (snippets.entries.length === 0) {
+    const id = await snippets.seedExample()
+    if (!id) return // vault key not ready — leave the flag unset and retry next launch
+  }
+  settings.markExamplesSeeded()
+})
 
 // The sidebar is a fixed width (see SavedDiffs.vue) — deliberately not
 // resizable, so the layout stays predictable across sessions.
@@ -31,7 +45,13 @@ window.addEventListener('focus', () => store.refreshFromDisk())
 // one of them is open.
 const dropSuppressed = computed(
   () =>
-    !!snippets.editingSnippet || store.showBase64Dialog || !!store.textTool || store.showCryptDialog
+    !!snippets.editingSnippet ||
+    store.showBase64Dialog ||
+    !!store.textTool ||
+    store.showCryptDialog ||
+    // Paste mode's panes capture their own file drops (partial paste), so the
+    // window-level diff drop stands down to avoid a competing overlay.
+    store.mode === 'paste'
 )
 const {
   active: dragActive,
@@ -56,7 +76,7 @@ const {
     <div class="body">
       <SavedDiffs />
       <main class="content">
-        <div v-if="store.mode !== 'paste'" class="file-slots-row">
+        <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row">
           <div class="slot-half">
             <FileSlot
               side="left"

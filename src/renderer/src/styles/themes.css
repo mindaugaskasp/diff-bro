@@ -1,0 +1,126 @@
+/* Colour themes. Kept separate from tokens.css on purpose: tokens.css holds the
+   theme-independent structure (spacing, radius, type, control heights) that must
+   never change between themes, while THIS file holds only the palette. The theme
+   toggle stamps data-theme on :root; the store persists the choice (see
+   diffStore.applyTheme / utils/themes.js). To add a theme, add a
+   `:root[data-theme='name']` block that redefines every token below — nothing
+   structural, so alignment and sizing stay identical across themes.
+
+   The DEFAULT is Light: it lives on the bare :root, so a theme id with no block
+   (or before JS runs) renders light rather than flashing dark. */
+:root {
+  --bg: #ffffff;
+  --bg-panel: #f6f8fa;
+  --bg-hover: #eaeef2;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  /* between --text and --text-dim: for hint text that must stay readable */
+  --text-hint: #454c54;
+  --accent: #0969da;
+  /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
+     deliberately more saturated than the rest of the palette. */
+  --warning-bg: #f0b429;
+  --warning-border: #bf8700;
+  --warning-text: #3b2900;
+  --danger-bg: #f85149;
+  --danger-border: #cf222e;
+  --danger-text: #ffffff;
+  /* "this parsed / these lines were added" green — readable on both panels. */
+  --success-text: #1a7f37;
+  /* Modal scrim — dims the app behind a dialog. */
+  --scrim: rgba(0, 0, 0, 0.5);
+  /* Favorites gold: the pinned-shelf tint and its stars. */
+  --favorite: #bf8700;
+  /* Text on an accent/danger fill — a token so no component hardcodes it. */
+  --text-on-accent: #ffffff;
+}
+
+/* Dark — low-glare GitHub-night. */
+:root[data-theme='dark'] {
+  --bg: #0d1117;
+  --bg-panel: #161b22;
+  --bg-hover: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-hint: #c3cdd7;
+  --accent: #2f81f7;
+  --warning-bg: #d29922;
+  --warning-border: #9a6700;
+  --warning-text: #1a1300;
+  --danger-bg: #f85149;
+  --danger-border: #da3633;
+  --danger-text: #ffffff;
+  --success-text: #3fb950;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --favorite: #d29922;
+  --text-on-accent: #ffffff;
+}
+
+/* Solar — warm, high-key light; vivid orange accent, amber favourites. */
+:root[data-theme='solar'] {
+  --bg: #fffdf6;
+  --bg-panel: #fbf2dd;
+  --bg-hover: #f3e6c4;
+  --border: #e7d6ac;
+  --text: #3a2c0f;
+  --text-dim: #8a7638;
+  --text-hint: #6b5620;
+  --accent: #e8590c;
+  --warning-bg: #f59f00;
+  --warning-border: #c77800;
+  --warning-text: #3a2400;
+  --danger-bg: #e03131;
+  --danger-border: #c92a2a;
+  --danger-text: #ffffff;
+  --success-text: #2f9e44;
+  --scrim: rgba(58, 40, 12, 0.42);
+  --favorite: #f08c00;
+  --text-on-accent: #ffffff;
+}
+
+/* Neon — electric cyan and neon add/remove on deep navy. */
+:root[data-theme='neon'] {
+  --bg: #090d18;
+  --bg-panel: #111829;
+  --bg-hover: #1b2540;
+  --border: #26344f;
+  --text: #e9f2ff;
+  --text-dim: #8098c0;
+  --text-hint: #b9c9e6;
+  --accent: #22d3ee;
+  --warning-bg: #fbbf24;
+  --warning-border: #d99e00;
+  --warning-text: #1a1400;
+  --danger-bg: #fb7185;
+  --danger-border: #f43f5e;
+  --danger-text: #0b0f1a;
+  --success-text: #4ade80;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --favorite: #fde047;
+  --text-on-accent: #04121a;
+}
+
+/* Contrast — maximum legibility: black on white, saturated accent, heavy
+   borders. An accessibility-grade pick. */
+:root[data-theme='contrast'] {
+  --bg: #ffffff;
+  --bg-panel: #f2f2f2;
+  --bg-hover: #e2e2e2;
+  --border: #111111;
+  --text: #000000;
+  --text-dim: #333333;
+  --text-hint: #1a1a1a;
+  --accent: #1633d4;
+  --warning-bg: #ffcc00;
+  --warning-border: #b38f00;
+  --warning-text: #000000;
+  --danger-bg: #cc0000;
+  --danger-border: #990000;
+  --danger-text: #ffffff;
+  --success-text: #05702f;
+  --scrim: rgba(0, 0, 0, 0.55);
+  --favorite: #a35c00;
+  --text-on-accent: #ffffff;
+}

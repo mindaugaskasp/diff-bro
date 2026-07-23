@@ -20,6 +20,7 @@ import TrustedKeysDialog from './TrustedKeysDialog.vue'
 import ShareKeyDialog from './ShareKeyDialog.vue'
 import ConfigBackupDialog from './ConfigBackupDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
+import KeyboardShortcutsDialog from './KeyboardShortcutsDialog.vue'
 import MermaidViewerDialog from './MermaidViewerDialog.vue'
 
 const store = useDiffStore()
@@ -35,6 +36,7 @@ const vault = useVaultStore()
   <ShareKeyDialog v-if="store.showShareKeyDialog" />
   <ConfigBackupDialog v-if="store.configMode" />
   <SettingsDialog v-if="store.showSettingsDialog" />
+  <KeyboardShortcutsDialog v-if="store.showShortcutsDialog" />
   <MermaidViewerDialog v-if="store.mermaidView" />
   <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
   <Base64Dialog v-if="store.showBase64Dialog" />

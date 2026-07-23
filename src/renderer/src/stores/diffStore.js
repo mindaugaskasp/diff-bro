@@ -5,6 +5,7 @@ import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { loadPersisted, savePersisted } from '../persist'
+import { isDarkTheme, normalizeTheme } from '../utils/themes'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -71,7 +72,8 @@ const MENU_ACTIONS = {
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
-  'tools-crypt': (s) => (s.showCryptDialog = true)
+  'tools-crypt': (s) => (s.showCryptDialog = true),
+  shortcuts: (s) => (s.showShortcutsDialog = true)
 }
 
 export const useDiffStore = defineStore('diff', {
@@ -84,6 +86,11 @@ export const useDiffStore = defineStore('diff', {
     mode: 'files',
     pasteLeft: '',
     pasteRight: '',
+    // In paste mode each side can instead hold a dropped/loaded file
+    // ({ name, content }) — so pasted text on one side can be compared against a
+    // real file on the other ("partial paste"). null = that side is a textarea.
+    pasteLeftFile: null,
+    pasteRightFile: null,
     // { additions, deletions } from the diff editor, null before first diff
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
@@ -101,7 +108,8 @@ export const useDiffStore = defineStore('diff', {
     // Persisted through the durable data-dir store (persist.js), same as vault
     // and snippets, so the choice survives a reinstall that wipes userData; the
     // old localStorage 'diffbro.theme' key is migrated forward automatically.
-    theme: loadPersisted('theme') === 'light' ? 'light' : 'dark',
+    // Default is Light (see utils/themes.js); an unknown stored id normalizes.
+    theme: normalizeTheme(loadPersisted('theme')),
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
     // { key, fingerprint, label } while the drag-drop "name this trusted
@@ -121,6 +129,8 @@ export const useDiffStore = defineStore('diff', {
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,
+    // Help → Keyboard Shortcuts dialog visibility.
+    showShortcutsDialog: false,
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
     // content string last dismissed per side, so the format-hint banner
@@ -130,8 +140,11 @@ export const useDiffStore = defineStore('diff', {
   getters: {
     ready: (s) => !!s.left && !!s.right,
     // A diff is saveable once there is anything to keep: two loaded files,
-    // or text typed/pasted into the paste panes (even before Compare).
-    canSave: (s) => (s.mode === 'paste' ? !!(s.pasteLeft || s.pasteRight) : s.ready),
+    // or text/files put into the paste panes (even before Compare).
+    canSave: (s) =>
+      s.mode === 'paste'
+        ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
+        : s.ready,
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
     rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
     leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
@@ -216,12 +229,38 @@ export const useDiffStore = defineStore('diff', {
       this.mode = 'files'
     },
     comparePasted() {
-      this.left = { path: null, name: 'Left (pasted)', content: this.pasteLeft }
-      this.right = { path: null, name: 'Right (pasted)', content: this.pasteRight }
+      // Each side is whichever the user provided: a loaded file, else the
+      // textarea's pasted text.
+      const l = this.pasteLeftFile ?? { name: 'Left (pasted)', content: this.pasteLeft }
+      const r = this.pasteRightFile ?? { name: 'Right (pasted)', content: this.pasteRight }
+      this.left = { path: null, name: l.name, content: l.content }
+      this.right = { path: null, name: r.name, content: r.content }
       this.mode = 'files'
     },
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
+    },
+    // Load a file into one paste side without leaving paste mode (partial
+    // paste). `file` is a LoadedFile from the open dialog or a dropped file.
+    receivePasteFile(side, file) {
+      if (!file) return
+      if (file.error === 'binary') {
+        this.showNotice(
+          `"${file.name}" looks like a binary file — only text files can be compared.`
+        )
+        return
+      }
+      if (file.error) return
+      this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = {
+        name: file.name,
+        content: file.content
+      }
+    },
+    async pastePickFile(side) {
+      this.receivePasteFile(side, await window.api.openFile(side))
+    },
+    clearPasteFile(side) {
+      this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = null
     },
     initTheme() {
       applyTheme(this.theme)
@@ -233,10 +272,17 @@ export const useDiffStore = defineStore('diff', {
     closeMermaid() {
       this.mermaidView = null
     },
-    toggleTheme() {
-      this.theme = this.theme === 'dark' ? 'light' : 'dark'
+    // Select any of the named themes (Settings picker). Unknown ids fall back
+    // to the default rather than leaving the app unstyled.
+    setTheme(id) {
+      this.theme = normalizeTheme(id)
       savePersisted('theme', this.theme)
       applyTheme(this.theme)
+    },
+    // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
+    // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
+    toggleTheme() {
+      this.setTheme(isDarkTheme(this.theme) ? 'light' : 'dark')
     },
     // Re-read both sides from disk (quietly — no large-file prompt) so the
     // diff follows external edits. Called when the window regains focus.
@@ -278,6 +324,8 @@ export const useDiffStore = defineStore('diff', {
         right: this.right,
         pasteLeft: this.pasteLeft,
         pasteRight: this.pasteRight,
+        pasteLeftFile: this.pasteLeftFile,
+        pasteRightFile: this.pasteRightFile,
         renderSideBySide: this.renderSideBySide,
         ignoreTrimWhitespace: this.ignoreTrimWhitespace
       }
@@ -287,6 +335,8 @@ export const useDiffStore = defineStore('diff', {
       this.right = payload.right
       this.pasteLeft = payload.pasteLeft ?? ''
       this.pasteRight = payload.pasteRight ?? ''
+      this.pasteLeftFile = payload.pasteLeftFile ?? null
+      this.pasteRightFile = payload.pasteRightFile ?? null
       this.renderSideBySide = payload.renderSideBySide ?? true
       this.ignoreTrimWhitespace = payload.ignoreTrimWhitespace ?? false
       this.mode = payload.mode ?? 'files'
@@ -295,10 +345,12 @@ export const useDiffStore = defineStore('diff', {
       this.left = null
       this.right = null
       this.stats = null
-      // Also wipe paste-mode text so a cleared session never leaves the
-      // previous pasted content lingering behind.
+      // Also wipe paste-mode text and files so a cleared session never leaves
+      // the previous content lingering behind.
       this.pasteLeft = ''
       this.pasteRight = ''
+      this.pasteLeftFile = null
+      this.pasteRightFile = null
     },
     showNotice(text) {
       this.notice = text
@@ -428,7 +480,7 @@ export const useDiffStore = defineStore('diff', {
       const res = await window.api.restoreConfig(passphrase)
       if (res.ok) {
         if (res.snippets) await useSnippetStore().restoreBundle(res.snippets)
-        if (res.settings?.theme && res.settings.theme !== this.theme) this.toggleTheme()
+        if (res.settings?.theme) this.setTheme(res.settings.theme)
         this.showNotice('Configuration restored — identity keys and trusted hosts are updated.')
       } else if (res.error === 'wrong-passphrase') {
         this.showNotice('Wrong passphrase, or the file is corrupted.')

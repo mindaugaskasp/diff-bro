@@ -1,0 +1,9 @@
+/* Sizes to the surrounding text/button, so an icon drops in where a glyph was
+   without extra sizing rules. Colour comes from currentColor. */
+.app-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+}

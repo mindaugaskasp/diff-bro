@@ -9,6 +9,10 @@ import { useSnippetPreview } from '../composables/useSnippetPreview'
 import SnippetRow from './SnippetRow.vue'
 import SnippetTagBar from './SnippetTagBar.vue'
 import SnippetPreviewCard from './SnippetPreviewCard.vue'
+import SectionHeader from './SectionHeader.vue'
+import AppIcon from './AppIcon.vue'
+
+defineProps({ first: { type: Boolean, default: false } })
 
 const store = useSnippetStore()
 
@@ -33,28 +37,34 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
 </script>
 
 <template>
-  <div class="snippets-section">
-    <div class="head sub section-head" @click="sectionOpen = !sectionOpen">
-      <span class="chev" :class="{ open: sectionOpen }">▸</span>
-      <span class="section-title">Snippets</span>
-      <button
-        class="btn btn-icon"
-        title="Export all snippets to a passphrase-protected file"
-        @click.stop="store.pendingExport = { all: true }"
-      >
-        ↑
-      </button>
-      <button
-        class="btn btn-icon"
-        title="Import snippets from a file"
-        @click.stop="store.pendingImport = true"
-      >
-        ↓
-      </button>
-    </div>
+  <section class="snippets-section sidebar-section">
+    <SectionHeader
+      section-id="snippets"
+      title="Snippets"
+      :open="sectionOpen"
+      :first="first"
+      @toggle="sectionOpen = !sectionOpen"
+    >
+      <template #actions>
+        <button
+          class="btn btn-icon"
+          title="Export all snippets to a passphrase-protected file"
+          @click.stop="store.pendingExport = { all: true }"
+        >
+          <AppIcon name="arrow-up" />
+        </button>
+        <button
+          class="btn btn-icon"
+          title="Import snippets from a file"
+          @click.stop="store.pendingImport = true"
+        >
+          <AppIcon name="arrow-down" />
+        </button>
+      </template>
+    </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <div class="head-actions">
+      <div class="section-actions">
         <button
           class="btn btn-sm btn-block btn-primary"
           title="Create a new snippet"
@@ -71,7 +81,9 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
           placeholder="Filter by name or tag…"
           spellcheck="false"
         />
-        <button v-if="query.trim()" class="xbox" title="Clear search" @click="query = ''">×</button>
+        <button v-if="query.trim()" class="xbox" title="Clear search" @click="query = ''">
+          <AppIcon name="x" />
+        </button>
       </div>
 
       <p v-if="!store.entries.length" class="empty">
@@ -91,8 +103,8 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
       <!-- ★ Favorites shelf -->
       <div v-if="visibleFavorites.length" class="shelf fav" :class="{ collapsed: !favOpen }">
         <button class="shelf-head" @click="favOpen = !favOpen">
-          <span class="chev" :class="{ open: favOpen }">▸</span>
-          <span class="shelf-title">★ Favorites</span>
+          <AppIcon class="chev" :class="{ open: favOpen }" name="chevron-right" />
+          <span class="shelf-title"><AppIcon name="star-filled" /> Favorites</span>
           <span class="shelf-count">{{ visibleFavorites.length }}</span>
         </button>
         <ul v-show="favOpen" class="rows">
@@ -110,7 +122,7 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
       <!-- All snippets shelf (newest first) -->
       <div v-if="store.entries.length" class="shelf" :class="{ collapsed: !allOpen }">
         <button class="shelf-head" @click="allOpen = !allOpen">
-          <span class="chev" :class="{ open: allOpen }">▸</span>
+          <AppIcon class="chev" :class="{ open: allOpen }" name="chevron-right" />
           <span class="shelf-title"
             >All snippets <span class="sort-note">· newest first</span></span
           >
@@ -128,7 +140,7 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
         </ul>
       </div>
     </div>
-  </div>
+  </section>
 
   <SnippetPreviewCard v-if="preview" :preview="preview" />
 </template>

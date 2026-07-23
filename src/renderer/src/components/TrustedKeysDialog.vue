@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import BaseDialog from './BaseDialog.vue'
+import AppIcon from './AppIcon.vue'
 
 const diff = useDiffStore()
 const keys = ref([])
@@ -75,8 +76,8 @@ function close() {
           <span v-else class="label">{{ k.label }}</span>
           <span class="fp">{{ k.fingerprint }}</span>
         </div>
-        <button class="icon" title="Rename" @click="startRename(k)">✎</button>
-        <button class="icon delete" title="Remove" @click="remove(k)">×</button>
+        <button class="icon" title="Rename" @click="startRename(k)"><AppIcon name="edit" /></button>
+        <button class="icon delete" title="Remove" @click="remove(k)"><AppIcon name="x" /></button>
       </li>
     </ul>
 

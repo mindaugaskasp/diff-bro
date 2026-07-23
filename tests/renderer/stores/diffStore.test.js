@@ -76,6 +76,40 @@ describe('diffStore', () => {
     expect(store.ready).toBe(true)
   })
 
+  it('partial paste: compares pasted text against a loaded file', () => {
+    const store = useDiffStore()
+    store.mode = 'paste'
+    store.pasteLeft = 'typed original'
+    store.receivePasteFile('right', { name: 'changed.txt', content: 'file body' })
+    expect(store.canSave).toBe(true)
+    store.comparePasted()
+    expect(store.mode).toBe('files')
+    expect(store.left).toMatchObject({ name: 'Left (pasted)', content: 'typed original' })
+    expect(store.right).toMatchObject({ name: 'changed.txt', content: 'file body' })
+  })
+
+  it('receivePasteFile rejects a binary file and keeps the side as a textarea', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { error: 'binary', name: 'blob.bin' })
+    expect(store.pasteLeftFile).toBeNull()
+    expect(store.notice).toContain('blob.bin')
+  })
+
+  it('clearPasteFile returns a paste side to its textarea', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { name: 'a.txt', content: 'x' })
+    expect(store.pasteLeftFile).not.toBeNull()
+    store.clearPasteFile('left')
+    expect(store.pasteLeftFile).toBeNull()
+  })
+
+  it('pastePickFile loads the chosen file into one side', async () => {
+    const store = useDiffStore()
+    window.api.openFile = async (side) => ({ name: `${side}.txt`, content: 'picked' })
+    await store.pastePickFile('right')
+    expect(store.pasteRightFile).toEqual({ name: 'right.txt', content: 'picked' })
+  })
+
   it('dropFiles loads two dropped files into left and right', async () => {
     const store = useDiffStore()
     window.api.readFile = async (path) => ({
@@ -262,15 +296,28 @@ describe('diffStore', () => {
     expect(store.leftFormatHint).not.toBeNull() // new content, dismissal doesn't carry over
   })
 
-  it('toggleTheme flips the theme, persists it, and stamps the document', () => {
+  it('defaults to Light and toggleTheme flips the ground, persisting + stamping', () => {
     const store = useDiffStore()
+    expect(store.theme).toBe('light') // Light is the default
+    store.toggleTheme()
     expect(store.theme).toBe('dark')
+    expect(localStorage.getItem('diffbro.theme')).toBe('dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
     store.toggleTheme()
     expect(store.theme).toBe('light')
-    expect(localStorage.getItem('diffbro.theme')).toBe('light')
-    expect(document.documentElement.dataset.theme).toBe('light')
+  })
+
+  it('setTheme applies any named theme and normalizes an unknown one to Light', () => {
+    const store = useDiffStore()
+    store.setTheme('neon')
+    expect(store.theme).toBe('neon')
+    expect(document.documentElement.dataset.theme).toBe('neon')
+    expect(localStorage.getItem('diffbro.theme')).toBe('neon')
+    // Ctrl+D from a dark-ground theme flips to Light.
     store.toggleTheme()
-    expect(store.theme).toBe('dark')
+    expect(store.theme).toBe('light')
+    store.setTheme('bogus')
+    expect(store.theme).toBe('light')
   })
   it('adds a trusted key before clearing the pending state, then opens the manager', async () => {
     const store = useDiffStore()
@@ -542,12 +589,12 @@ describe('diffStore', () => {
 
   it('config restore applies the backed-up theme and distinguishes a wrong passphrase', async () => {
     const store = useDiffStore()
-    expect(store.theme).toBe('dark')
+    expect(store.theme).toBe('light')
     window.api = {
-      restoreConfig: async () => ({ ok: true, snippets: null, settings: { theme: 'light' } })
+      restoreConfig: async () => ({ ok: true, snippets: null, settings: { theme: 'neon' } })
     }
     await store.runConfigRestore('passphrase')
-    expect(store.theme).toBe('light')
+    expect(store.theme).toBe('neon')
     expect(store.notice).toContain('Configuration restored')
 
     window.api = { restoreConfig: async () => ({ error: 'wrong-passphrase' }) }

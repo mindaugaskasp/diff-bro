@@ -38,7 +38,7 @@ function format() {
   if (canFormat.value) input.value = tool.value.format(input.value)
 }
 async function copy() {
-  await navigator.clipboard.writeText(input.value)
+  await window.api.copyText(input.value)
   store.showNotice('Copied to clipboard.')
 }
 function addToSnippets() {

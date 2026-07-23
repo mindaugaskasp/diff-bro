@@ -74,22 +74,28 @@ function cancel() {
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
       </label>
-      <label>
-        Category
-        <select v-model="categoryId">
-          <option v-for="c in vault.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-          <option :value="NEW_CATEGORY">+ New category…</option>
-        </select>
-      </label>
-      <label v-if="categoryId === NEW_CATEGORY">
-        New category name
-        <input
-          v-model="newCategoryName"
-          type="text"
-          spellcheck="false"
-          placeholder="Category name…"
-        />
-      </label>
+      <!-- Categories are a local organizing tool only. In the share flow the
+           diff is still saved locally (into Default), but the recipient never
+           receives a category, so offering one here would be misleading — and
+           forcing a category onto someone else's copy is exactly what we avoid. -->
+      <template v-if="!diff.saveThenShare">
+        <label>
+          Category
+          <select v-model="categoryId">
+            <option v-for="c in vault.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+            <option :value="NEW_CATEGORY">+ New category…</option>
+          </select>
+        </label>
+        <label v-if="categoryId === NEW_CATEGORY">
+          New category name
+          <input
+            v-model="newCategoryName"
+            type="text"
+            spellcheck="false"
+            placeholder="Category name…"
+          />
+        </label>
+      </template>
       <label>
         Expires after
         <select v-model.number="ttl">

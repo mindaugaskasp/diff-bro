@@ -1,0 +1,156 @@
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lock {
+  font-size: var(--font-md);
+}
+.add-category {
+  padding: 0 10px 8px;
+}
+.add-category input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 5px 8px;
+  font-size: var(--font-md);
+}
+.add-category input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.empty {
+  padding: 4px 10px;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.empty.small {
+  padding: 4px 10px 4px 30px;
+  font-size: var(--font-sm);
+}
+.empty kbd {
+  font-size: var(--font-xs);
+  padding: 0 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.empty code {
+  font-size: var(--font-sm);
+}
+.category-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 6px;
+  border-top: 1px solid var(--border);
+}
+/* Highlight the whole row on hover — the grip and delete controls sit inside it,
+   so hovering anywhere lights the full shelf header, not just the toggle. */
+.category-head:hover {
+  background: var(--bg);
+}
+/* Drag affordance for reordering categories — quiet until the row is hovered so
+   the folder/name reads first. */
+.grip {
+  padding-left: 8px;
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+  cursor: grab;
+  opacity: 0.3;
+}
+.category-head:hover .grip {
+  opacity: 0.75;
+}
+/* Folder-tree treatment: an accent folder names the category as a group; the
+   bolder name sets it above the diff rows, and .diff-list draws the guide rail
+   the diffs hang off. */
+.folder {
+  color: var(--accent);
+  font-size: var(--font-md);
+}
+.category.dragging {
+  opacity: 0.5;
+}
+.cat-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 6px 4px 6px 4px;
+  cursor: pointer;
+  font-size: var(--font-md);
+}
+.chevron {
+  display: inline-block;
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+  transition: transform 0.1s;
+}
+.chevron.open {
+  transform: rotate(90deg);
+}
+.cat-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.count {
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+  font-variant-numeric: tabular-nums;
+}
+/* The tree rail: a hairline down the left that the category's diffs indent off,
+   so they read as belonging to the folder above. */
+.diff-list {
+  margin: 2px 0 var(--space-2) 18px;
+  padding-left: 4px;
+  border-left: 1.5px solid var(--border);
+}
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-lg);
+  line-height: 1;
+  padding: 0;
+}
+.icon.delete:hover:not(:disabled) {
+  color: var(--danger-bg);
+  border-color: var(--danger-bg);
+}
+.icon:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.favorites-group {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fav-head {
+  padding: 6px 10px 3px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--favorite);
+}

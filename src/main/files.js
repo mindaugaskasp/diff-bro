@@ -3,9 +3,18 @@ import { readFile, stat } from 'fs/promises'
 import { basename, resolve, sep } from 'path'
 import chardet from 'chardet'
 import iconv from 'iconv-lite'
+import { readSettings } from './appData'
 
-// Warn before loading files bigger than this (Monaco slows down well past it).
-const LARGE_FILE_BYTES = 10 * 1024 * 1024
+// Warn before loading files bigger than the user's configured comparison limit
+// (Monaco slows down well past it). The default is a safe 10 MB; the user can
+// raise it in Settings, accepting the performance hit. Read fresh each time so
+// the choice applies without a restart, and floored so a bad value can't
+// disable the guard entirely.
+const DEFAULT_LARGE_FILE_MB = 10
+function largeFileBytes() {
+  const mb = Number(readSettings().maxComparisonFileMb)
+  return (Number.isFinite(mb) && mb >= 1 ? mb : DEFAULT_LARGE_FILE_MB) * 1024 * 1024
+}
 
 // Provenance allowlist. `file:read` is only ever meant to serve a path the
 // user actually chose — via the open dialog, or by physically dragging a file
@@ -47,7 +56,7 @@ async function readFileForRenderer(win, filePath, opts = {}) {
   const name = basename(filePath)
 
   const { size } = await stat(filePath)
-  if (size > LARGE_FILE_BYTES) {
+  if (size > largeFileBytes()) {
     // quiet mode (focus refresh) must never pop a dialog — skip the reload.
     if (opts.quiet) return null
     const { response } = await dialog.showMessageBox(win, {

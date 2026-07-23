@@ -13,7 +13,7 @@ VNC_URL := http://localhost:6080/vnc.html
 RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
 .PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
-        clean dev check test lint build package-win package-linux package-mac audit-fix brew-cask
+        clean dev check test e2e lint build package-win package-linux package-mac audit-fix brew-cask
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -83,6 +83,12 @@ check: ## Lint + tests in the container (run before declaring a task done)
 test: ## Run the test suite in the container
 	$(RUN_NPM) -- test
 
+# Unlike `check`/`test`, E2E needs the virtual display, so it runs INSIDE the
+# up container (which owns Xvfb :99) rather than a one-off `run` container.
+# `up` is a dependency so the display is guaranteed to be there first.
+e2e: up ## Build + drive the app end-to-end with Playwright in the running container
+	docker compose exec -T $(SERVICE) npm run test:e2e
+
 lint: ## Run ESLint in the container
 	$(RUN_NPM) -- run lint
 
@@ -124,10 +130,6 @@ package-mac: ## Build the macOS DMG -> dist/ (must run natively on macOS)
 		exit 1; }
 	npm run build:mac
 
-# Regenerate the Homebrew cask (packaging/homebrew/diff-bro.rb) with the current
-# version and the sha256 of the released DMG. Runs on the host (plain node, no
-# deps). By default it downloads the tagged release asset; pass a local DMG with
-# DMG=dist/Diff-Bro-macOS.dmg to hash that instead. Override the version with
-# VERSION=x.y.z. CI does this automatically on release (see release.yml).
+# Regenerate the Homebrew cask (packaging/homebrew/diff-bro.rb) with the current tag version
 brew-cask: ## Regenerate the Homebrew cask for the current (or VERSION=x.y.z) release
 	node scripts/gen-homebrew-cask.mjs $(VERSION) $(if $(DMG),--dmg $(DMG),)

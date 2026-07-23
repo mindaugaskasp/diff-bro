@@ -6,6 +6,7 @@ import { useSnippetStore, TAG_PALETTE } from '../stores/snippetStore'
 import { DEFAULT_TAG } from '../composables/useSnippetFilters'
 import { arrayOfShape } from '../utils/props'
 import TagGlyph from './TagGlyph.vue'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').TagChip[]>} */
@@ -56,7 +57,7 @@ function exportTag() {
   <div class="tagbar" :class="{ collapsed: !open, 'has-active': active.size }">
     <div class="tagbar-head">
       <button class="tagbar-toggle" @click="open = !open">
-        <span class="chev" :class="{ open }">▸</span>
+        <AppIcon class="chev" :class="{ open }" name="chevron-right" />
         <span>Tags</span>
         <span v-if="active.size" class="active-count">· {{ active.size }} active</span>
       </button>
@@ -86,7 +87,7 @@ function exportTag() {
     <div class="manage" @click.stop>
       <div class="manage-head">
         <span>Manage tag</span>
-        <button class="dialog-close" @click="closeManage">×</button>
+        <button class="dialog-close" @click="closeManage"><AppIcon name="x" /></button>
       </div>
       <input
         v-model="renameValue"

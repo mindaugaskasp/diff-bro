@@ -1,4 +1,29 @@
-import { BrowserWindow, Menu, app, ipcMain, systemPreferences } from 'electron'
+import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } from 'electron'
+
+// Where "Report an Issue" sends the user. The URL is fixed here in the main
+// process — the renderer can ask to open it but can never pass a URL of its own,
+// so this adds no open-any-URL surface. shell.openExternal hands the address to
+// the OS browser; the app itself still makes no network request, so the offline
+// guarantee (and the network kill switch, CSP, will-navigate block …) is intact.
+const ISSUE_URL = 'https://github.com/mindaugaskasp/diff-bro/issues/new'
+
+// Report an Issue is the one action that leaves the offline sandbox — it hands
+// the fixed URL to the OS browser, which does connect to the internet. Confirm
+// first so that departure is always the user's explicit choice, never a silent
+// side effect of a menu click.
+async function promptAndOpenIssue(win) {
+  const parent = win ?? BrowserWindow.getFocusedWindow()
+  const { response } = await dialog.showMessageBox(parent, {
+    type: 'question',
+    buttons: ['Cancel', 'Open in browser'],
+    defaultId: 1,
+    cancelId: 0,
+    title: 'Report an Issue',
+    message: 'Open the issue tracker in your browser?',
+    detail: `Diff Bro itself stays offline. This opens your web browser (which does connect to the internet) at:\n\n${ISSUE_URL}`
+  })
+  if (response === 1) shell.openExternal(ISSUE_URL)
+}
 
 // --- App menu: file actions forwarded to the renderer over IPC ---
 //
@@ -33,10 +58,15 @@ function resetZoom() {
 // "Edit". Both are dead ends here: dictation is a network service this app must
 // never touch, and the character palette cannot insert into a sandboxed
 // renderer, so it silently does nothing. Suppress them before the menu is built.
+// AppKit also injects an "AutoFill" submenu (Passwords/Contacts) into text
+// Edit menus on recent macOS. It is a dead end in a sandboxed, offline app —
+// there is nothing to autofill and Passwords is a network-backed service this
+// app must never touch — so suppress it alongside dictation and the palette.
 function disableInjectedMacMenuItems() {
   if (process.platform !== 'darwin') return
   systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true)
   systemPreferences.setUserDefault('NSDisabledCharacterPaletteMenuItem', 'boolean', true)
+  systemPreferences.setUserDefault('NSDisabledAutoFillMenuItem', 'boolean', true)
 }
 
 export function installMenu() {
@@ -145,32 +175,68 @@ export function installMenu() {
     },
     {
       label: 'Tools',
+      // Grouped by format so each tool's operations live under their own
+      // heading (Tools → Base64 → …), leaving room to grow per format.
       submenu: [
         {
-          label: 'Base64 Encode/Decode',
-          accelerator: 'CmdOrCtrl+Shift+B',
-          click: () => sendToFocused('tools-base64')
+          label: 'Base64',
+          submenu: [
+            {
+              label: 'Encode / Decode',
+              accelerator: 'CmdOrCtrl+Shift+B',
+              click: () => sendToFocused('tools-base64')
+            }
+          ]
         },
         {
-          label: 'JSON Format/Validate',
-          accelerator: 'CmdOrCtrl+Shift+J',
-          click: () => sendToFocused('tools-json')
+          label: 'JSON',
+          submenu: [
+            {
+              label: 'Format / Validate',
+              accelerator: 'CmdOrCtrl+Shift+J',
+              click: () => sendToFocused('tools-json')
+            }
+          ]
         },
         {
-          label: 'XML Format/Validate',
-          accelerator: 'CmdOrCtrl+Shift+M',
-          click: () => sendToFocused('tools-xml')
+          label: 'XML',
+          submenu: [
+            {
+              label: 'Format / Validate',
+              accelerator: 'CmdOrCtrl+Shift+M',
+              click: () => sendToFocused('tools-xml')
+            }
+          ]
         },
         {
-          label: 'SQL Format/Validate',
-          accelerator: 'CmdOrCtrl+Shift+Q',
-          click: () => sendToFocused('tools-sql')
+          label: 'SQL',
+          submenu: [
+            {
+              label: 'Format / Validate',
+              accelerator: 'CmdOrCtrl+Shift+Q',
+              click: () => sendToFocused('tools-sql')
+            }
+          ]
         },
         {
-          label: 'Encrypt/Decrypt Text',
-          accelerator: 'CmdOrCtrl+Shift+X',
-          click: () => sendToFocused('tools-crypt')
+          label: 'Text Encryption',
+          submenu: [
+            {
+              label: 'Encrypt / Decrypt',
+              accelerator: 'CmdOrCtrl+Shift+X',
+              click: () => sendToFocused('tools-crypt')
+            }
+          ]
         }
+      ]
+    },
+    {
+      role: 'help',
+      label: 'Help',
+      submenu: [
+        { label: 'Keyboard Shortcuts', click: () => sendToFocused('shortcuts') },
+        { type: 'separator' },
+        { label: 'Report an Issue', click: (_item, win) => promptAndOpenIssue(win) }
       ]
     }
   ]
@@ -185,6 +251,12 @@ export function registerMenuIpc() {
     if (!app.isPackaged) e.sender.toggleDevTools()
   })
   ipcMain.handle('app:quit', () => app.quit())
+  // The custom menu bar (Windows/Linux) can't call shell itself. The URL is
+  // fixed above; the renderer only triggers it, never chooses it — and the
+  // confirm prompt still gates the actual browser launch.
+  ipcMain.handle('app:reportIssue', (e) =>
+    promptAndOpenIssue(BrowserWindow.fromWebContents(e.sender))
+  )
   // Report packaged state so the renderer can hide dev-only menu entries.
   ipcMain.handle('app:isPackaged', () => app.isPackaged)
 }

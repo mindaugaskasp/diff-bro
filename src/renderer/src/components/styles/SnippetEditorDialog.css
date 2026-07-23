@@ -69,3 +69,12 @@
   color: var(--danger-bg);
   font-weight: 600;
 }
+/* Required-field hints (name + content) — explain why Save is disabled. */
+.required-hint {
+  margin: 0;
+  /* Line the hint up with the field's TEXT column (input border 1px + its 8px
+     inner padding), not the field's border, so it reads as part of the field. */
+  padding-left: 9px;
+  color: var(--danger-bg);
+  font-size: var(--font-sm);
+}

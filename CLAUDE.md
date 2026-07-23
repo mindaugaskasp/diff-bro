@@ -70,6 +70,24 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   hardcoded color, font-size or radius in `components/styles/` — add a token
   rather than a literal, or `/* token-exempt: reason */` when a literal is
   genuinely right. New UI must be checked in both themes.
+- **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
+  section header, dialog header) is a *band*: it carries `.band` and vertically
+  centres its content with flexbox. Never fake vertical alignment with top
+  padding — it drifts the instant a font size or line-height changes (that is
+  what twice broke the sidebar/file-input alignment). Bands that sit at the
+  same vertical position across the sidebar/main divider share a height so
+  their content lines up by construction: the file-slots row and EVERY sidebar
+  section header add `.band-row` (height `--band-row`), so the headers all
+  match each other and the first lines up with the file inputs. Controls
+  sharing a band row must be
+  equal-height flex-centred boxes.
+- **Icons are SVG, never Unicode glyphs.** A symbol like ◈ / ⧉ / 🔒 tofus into a
+  `[]` box on any font that lacks it, which kept happening. Every icon comes
+  from `<AppIcon name="…" />`, whose geometry lives in `src/renderer/src/icons.js`
+  (Feather/Lucide-style 24×24, sizes to 1em, inherits `currentColor`). Add a new
+  icon by adding an entry to that map — never reach for a glyph character. Text
+  glyphs used as *prose* (⌘ in a shortcut label, ↔ in a diff name, the − on the
+  deletions count) stay text; only standalone/interactive icons are SVG.
 - Every modal is a `BaseDialog` (backdrop, header, `#actions` slot, Escape,
   focus trap). Its panel is BaseDialog's, so a dialog sizes itself with the
   `width` prop — scoped CSS cannot reach into a child. `:escape-closes="false"`
@@ -98,9 +116,19 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   in the Docker env.
 - Vitest, jsdom environment (`tests/setup.js` provides localStorage — Node's
   built-in one is broken in workers). The tree under `tests/` mirrors `src/`:
-  `tests/main/`, `tests/renderer/{stores,utils,adapters}/`. A new test goes
-  in the directory matching its subject's source path. Fixtures live in
-  `tests/data/`.
+  `tests/main/`, `tests/renderer/{stores,utils,adapters,composables}/`. A new
+  test goes in the directory matching its subject's source path. Fixtures live
+  in `tests/data/`.
+- **Interaction bugs split two ways, and each has a home — this is how the
+  recurring UI regressions get caught.** *Event logic* (does a backdrop click
+  close only when the press began on the backdrop? does Space commit a tag?
+  does Escape leave the snippet editor open?) is pulled OUT of the `.vue` file
+  into a `composables/` unit and unit-tested there — never left inline where
+  nothing exercises it. The Mermaid-viewer resize-closes bug became
+  `useBackdropClose` + `useBackdropClose.test.js`; follow that pattern for any
+  new event guard. *Layout* (alignment, sizing, overlap) can't be asserted in
+  jsdom — verify it in the Docker env with screenshots, and encode the
+  invariant as a shared class/token (see the band system) so it can't drift.
 - Every behavior change in `src/main/sealing.js`, `vaultCrypt.js`, the
   Pinia stores, or the adapters needs a test in the same change. Crypto
   code additionally needs negative tests (tamper, wrong key, expiry).
@@ -110,6 +138,17 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 - UI-level changes are verified in the Docker test env (screenshots via
   `xdotool`/`scrot` inside the container; keyboard via `xdotool`, not the
   noVNC page — see `docker/README.md`).
+- **End-to-end** tests live in `e2e/` (Playwright driving the app's OWN
+  Electron via `_electron` — no bundled browser, no network). `make e2e`
+  builds then runs them INSIDE the up container (they need Xvfb :99, so they
+  can't use the one-off `make check`/`test` container). Each test launches its
+  own Electron against a throwaway `--user-data-dir`, so runs never touch the
+  developer's real data and never fight the single-instance lock. Reach for E2E
+  for a flow only a real launch exercises (preload/IPC round-trips, persistence
+  across relaunch, OS-clipboard writes) — the kind of bug jsdom can't see. E2E
+  is trusted-click, so `navigator.clipboard` writes there hit the deny-all
+  permission handler and fail: clipboard writes go through `window.api.copyText`
+  (main process, `src/main/clipboard.js`), never `navigator.clipboard`.
 
 ## Workflow
 
@@ -128,5 +167,10 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   work around npm dropping them from the lock (they are transitive
   optionals of vitest's wasm toolchain) — do not remove them just because
   nothing imports them.
+- Playwright drives the app's own Electron, never a bundled browser, so its
+  ~400 MB browser download is skipped via `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`
+  (set in `docker/Dockerfile` before `npm ci`, and pass it when adding/updating
+  deps). Never run `playwright install` — it would pull Chromium/Firefox/WebKit
+  the suite doesn't use.
 - Update `README.md` (including the mermaid diagram) and
   `DEVELOPMENT_PLAN.md` when architecture or feature status changes.
