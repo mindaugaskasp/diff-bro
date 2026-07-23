@@ -26,7 +26,13 @@ jobs:
   # End-to-end tests drive the app's OWN Electron (Playwright `_electron`) under a
   # virtual display — no bundled browser, no network, same as the Docker test env.
   # 22.04 keeps the pre-t64 apt package names the app's Electron links against.
+  #
+  # E2E is the behavioural source of truth: it runs as the merge gate on pull
+  # requests to main only (not on post-merge pushes — main is reached through a
+  # PR). Make it a required status check in the branch-protection rule for main
+  # so a red run blocks the merge.
   e2e:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     env:
       # Never let Playwright pull Chromium/Firefox/WebKit — the suite uses none.
