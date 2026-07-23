@@ -107,7 +107,7 @@ describe('diffStore', () => {
     const store = useDiffStore()
     window.api.openFile = async (side) => ({ name: `${side}.txt`, content: 'picked' })
     await store.pastePickFile('right')
-    expect(store.pasteRightFile).toEqual({ name: 'right.txt', content: 'picked' })
+    expect(store.pasteRightFile).toEqual({ name: 'right.txt', content: 'picked', path: null })
   })
 
   it('dropFiles loads two dropped files into left and right', async () => {
@@ -611,5 +611,185 @@ describe('diffStore', () => {
     store.shareCurrent()
     expect(store.showSaveDialog).toBe(false)
     expect(store.notice).toContain('Nothing to share yet')
+  })
+
+  it('identical is true only for two loaded sides whose diff has no changes', () => {
+    const store = useDiffStore()
+    expect(store.identical).toBe(false) // nothing loaded
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.identical).toBe(false) // stats not computed yet
+    store.stats = { additions: 2, deletions: 1 }
+    expect(store.identical).toBe(false)
+    store.stats = { additions: 0, deletions: 0 }
+    expect(store.identical).toBe(true)
+  })
+
+  it('copyDiff writes a unified patch to the clipboard', async () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.txt', name: 'a.txt', content: 'one\ntwo\nthree\n' }
+    store.right = { path: '/tmp/b.txt', name: 'b.txt', content: 'one\nTWO\nthree\n' }
+    let copied = null
+    window.api.copyText = async (t) => {
+      copied = t
+      return { ok: true }
+    }
+    await store.copyDiff()
+    expect(copied).toContain('--- a.txt')
+    expect(copied).toContain('+++ b.txt')
+    expect(copied).toContain('-two')
+    expect(copied).toContain('+TWO')
+    expect(store.notice).toContain('copied')
+  })
+
+  it('copyDiff says the sides are identical instead of copying nothing', async () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.txt', name: 'a.txt', content: 'same\n' }
+    store.right = { path: '/tmp/b.txt', name: 'b.txt', content: 'same\n' }
+    let called = false
+    window.api.copyText = async () => ((called = true), { ok: true })
+    await store.copyDiff()
+    expect(called).toBe(false)
+    expect(store.notice).toContain('identical')
+  })
+
+  it('copyDiff refuses when both sides are not loaded', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    await store.copyDiff()
+    expect(store.notice).toContain('before copying')
+  })
+
+  it('refreshFromDisk coalesces multiple changed files into one notice', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    window.api.readFile = async (path) => ({
+      path,
+      name: path.split('/').pop(),
+      content: `NEW ${path}`
+    })
+    await store.refreshFromDisk()
+    expect(store.left.content).toBe('NEW /tmp/a.txt')
+    expect(store.right.content).toBe('NEW /tmp/b.txt')
+    expect(store.notice).toBe('2 files changed on disk — diff reloaded.')
+  })
+
+  it('refreshFromDisk also follows a partial-paste file and keeps its shape', async () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { name: 'src.txt', content: 'old body', path: '/tmp/src.txt' })
+    window.api.readFile = async (path) => ({ path, name: 'src.txt', content: 'fresh body' })
+    await store.refreshFromDisk()
+    expect(store.pasteLeftFile).toEqual({
+      name: 'src.txt',
+      content: 'fresh body',
+      path: '/tmp/src.txt'
+    })
+    expect(store.notice).toContain('src.txt')
+  })
+
+  it('a partial-paste file without a path is never re-read from disk', async () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { name: 'typed.txt', content: 'x' }) // no path
+    let read = false
+    window.api.readFile = async () => ((read = true), { error: 'not-permitted' })
+    await store.refreshFromDisk()
+    expect(read).toBe(false)
+    expect(store.pasteLeftFile.content).toBe('x')
+  })
+
+  // --- overwrite guard for an active, unsaved comparison ---
+
+  it('opening a file into an unsaved complete comparison asks before replacing', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt') // ready, and never saved
+    window.api.openFile = async (side) => ({
+      path: `/tmp/new-${side}.txt`,
+      name: `new-${side}.txt`,
+      content: 'new'
+    })
+    await store.pick('left')
+    expect(store.pendingPick).toMatchObject({ side: 'left' })
+    expect(store.left.name).toBe('a.txt') // nothing replaced until confirmed
+    store.confirmPick()
+    expect(store.left.name).toBe('new-left.txt')
+    expect(store.pendingPick).toBeNull()
+  })
+
+  it('opening a file into a SAVED comparison replaces it without a prompt', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.markSaved()
+    window.api.openFile = async () => ({ path: '/tmp/x.txt', name: 'x.txt', content: 'new' })
+    await store.pick('left')
+    expect(store.pendingPick).toBeNull()
+    expect(store.left.name).toBe('x.txt') // replaced directly — nothing to lose
+    expect(store.diffSaved).toBe(false) // and it's unsaved work again
+  })
+
+  it('completing an incomplete comparison never prompts', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt') // only one side loaded → not ready
+    window.api.openFile = async () => ({ path: '/tmp/b.txt', name: 'b.txt', content: 'x' })
+    await store.pick('right')
+    expect(store.pendingPick).toBeNull()
+    expect(store.right.name).toBe('b.txt')
+  })
+
+  it('cancelPick keeps the current comparison', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    window.api.openFile = async () => ({ path: '/tmp/x', name: 'x', content: 'y' })
+    await store.pick('left')
+    store.cancelPick()
+    expect(store.pendingPick).toBeNull()
+    expect(store.left.name).toBe('a.txt')
+  })
+
+  it('saveThenPick opens the save dialog, then finishPickAfterSave applies the pick', async () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    window.api.openFile = async () => ({ path: '/tmp/x', name: 'x.txt', content: 'y' })
+    await store.pick('right')
+    store.saveThenPick()
+    expect(store.pendingPick).toBeNull()
+    expect(store.pickAfterSave).toMatchObject({ side: 'right' })
+    expect(store.showSaveDialog).toBe(true)
+    store.finishPickAfterSave()
+    expect(store.right.name).toBe('x.txt')
+    expect(store.pickAfterSave).toBeNull()
+  })
+
+  it('drag-drop over a SAVED comparison replaces without prompting', async () => {
+    const store = useDiffStore()
+    window.api.readFile = async (path) => ({ path, name: path.split('/').pop(), content: 'x' })
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.markSaved()
+    await store.dropFiles(['/tmp/c.txt', '/tmp/d.txt'])
+    expect(store.pendingReplace).toBeNull() // no prompt
+    expect(store.left.name).toBe('c.txt')
+    expect(store.right.name).toBe('d.txt')
+  })
+
+  it('restore marks the diff saved; editing a side makes it unsaved again', () => {
+    const store = useDiffStore()
+    store.restore({ left: FILE('a.txt'), right: FILE('b.txt') })
+    expect(store.diffSaved).toBe(true)
+    store.receive('left', FILE('c.txt'))
+    expect(store.diffSaved).toBe(false)
+  })
+
+  it('swap marks the comparison unsaved', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.markSaved()
+    store.swap()
+    expect(store.diffSaved).toBe(false)
   })
 })

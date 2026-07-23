@@ -30,7 +30,7 @@ const vault = useVaultStore()
 
 <template>
   <SaveDiffDialog v-if="store.showSaveDialog" />
-  <ReplaceDiffDialog v-if="store.pendingReplace" />
+  <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
   <ShareDiffDialog v-if="store.shareEntryId" />
   <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
   <ShareKeyDialog v-if="store.showShareKeyDialog" />

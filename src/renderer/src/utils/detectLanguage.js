@@ -74,7 +74,8 @@ function looksLikeDockerfile(t) {
 }
 
 // Code keywords that mean "this brace block is a program, not a CSS rule".
-const NOT_CSS = /\b(function|const|let|var|interface|class|enum|import|export|return|def|func|fn|public|private|protected)\b|=>/
+const NOT_CSS =
+  /\b(function|const|let|var|interface|class|enum|import|export|return|def|func|fn|public|private|protected)\b|=>/
 const CSS_AT_RULE = /@(media|import|font-face|keyframes|supports|charset|namespace)\b/i
 const CSS_RULE = /(^|[};])\s*[*.#:@]?[\w-][^\n{}]*\{[^{}]*[\w-]+\s*:\s*[^{}]+;?\s*\}/m
 function looksLikeCss(t) {
@@ -104,7 +105,8 @@ function looksLikeRust(t) {
   )
 }
 
-const JAVA_DECL = /\b(public|private|protected)\s+(static\s+|final\s+|abstract\s+)*(class|interface|enum)\s+\w+/
+const JAVA_DECL =
+  /\b(public|private|protected)\s+(static\s+|final\s+|abstract\s+)*(class|interface|enum)\s+\w+/
 function looksLikeJava(t) {
   return (
     JAVA_DECL.test(t) ||

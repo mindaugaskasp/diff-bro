@@ -30,6 +30,11 @@ export function buildMenus(store) {
       items: [
         { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => store.swap() },
         { label: 'Clear', keys: `${MOD}+K`, run: () => store.clear() },
+        {
+          label: 'Copy Diff as Patch',
+          keys: `${MOD}+Shift+C`,
+          run: () => store.handleMenuAction('copy-diff')
+        },
         { sep: true },
         { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() }
       ]

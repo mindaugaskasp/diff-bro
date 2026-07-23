@@ -15,7 +15,9 @@ electron-builder.
 - [x] Vue 3 + Pinia wired up
 - [x] Monaco diff editor with worker configuration for Vite
 - [x] Secure IPC: contextIsolation on, nodeIntegration off, file access in main
-- [x] Adapter registry with text adapter (language detection by extension)
+- [x] Adapter registry with text adapter (language detection by extension,
+      falling back to content sniffing for extensionless files and pasted text
+      so paste-mode diffs and files like `Dockerfile` still get syntax coloring)
 - [x] electron-builder config (NSIS for Windows, DMG for macOS)
 
 First run: `npm install && npm run dev`
@@ -46,7 +48,14 @@ First run: `npm install && npm run dev`
 - [x] App menu: Open Left (Ctrl+1) / Open Right (Ctrl+2) / Swap (Ctrl+Shift+S)
       / Clear (Ctrl+K) / Paste mode (Ctrl+T) / Toggle split (Ctrl+\)
 - [x] Diff stats in toolbar (n additions, m deletions) via
-      `editor.getLineChanges()` on `onDidUpdateDiff`
+      `editor.getLineChanges()` on `onDidUpdateDiff`; two loaded sides with no
+      changes surface an explicit "No differences" state instead of a bare +0/−0
+- [x] Copy diff as a git-style unified patch (toolbar / Edit menu /
+      Ctrl+Shift+C): a pure line-level LCS in `utils/unifiedDiff.js` (guarded for
+      size), copied via the main-process clipboard (`window.api.copyText`)
+- [x] Live re-diff on focus follows the two comparison sides *and* a partial-paste
+      loaded file (any slot with a real path), coalescing multiple changes into a
+      single "reloaded" notice
 
 ## Phase 2 – Polish (~2–3 days)
 
@@ -169,6 +178,10 @@ First run: `npm install && npm run dev`
 - [x] Diff search gains match-case, whole-word, and safety-limited regex
       (`utils/searchRegex.js` refuses over-long / catastrophic patterns)
 - [x] Partial paste mode: diff pasted text against a dropped/chosen file
+- [x] Unsaved-work guards: replacing an active comparison (drop new files, or
+      open one into a loaded slot) confirms first, unless it's already saved
+      (`diffStore.diffSaved`); the snippet editor confirms before Cancel/×
+      discards a dirty draft (`useSnippetDraft` — unit + e2e tested)
 - [x] Tools menu grouped per format (Base64 / JSON / XML / SQL / Text
       Encryption); Help → Keyboard Shortcuts lists bindings for the host OS
 - [x] Help → Report an Issue confirms before leaving the offline sandbox, then

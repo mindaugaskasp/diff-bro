@@ -30,7 +30,10 @@ const {
   isMermaid,
   canFormat,
   save,
-  close,
+  confirmingDiscard,
+  requestClose,
+  keepEditing,
+  discardDraft,
   formatContent,
   copyContent,
   expandDiagram
@@ -58,7 +61,7 @@ function saveSnippet() {
     width="560px"
     :title="isNew ? 'New Snippet' : 'Edit Snippet'"
     :escape-closes="false"
-    @close="close"
+    @close="requestClose"
   >
     <div class="fields">
       <label class="grow">
@@ -144,8 +147,18 @@ function saveSnippet() {
       >
         Save
       </button>
-      <button class="btn btn-ghost" @click="close">Cancel</button>
+      <button class="btn btn-ghost" @click="requestClose">Cancel</button>
     </template>
+
+    <!-- Unsaved-changes guard: shown over the actions when a dirty draft is
+         about to be discarded via Cancel or ×. -->
+    <div v-if="confirmingDiscard" class="discard-confirm" role="alertdialog">
+      <span>Discard this snippet? Your unsaved content will be lost.</span>
+      <div class="discard-actions">
+        <button class="btn btn-sm btn-ghost" @click="keepEditing">Keep editing</button>
+        <button class="btn btn-sm btn-danger" @click="discardDraft">Discard</button>
+      </div>
+    </div>
   </BaseDialog>
 </template>
 

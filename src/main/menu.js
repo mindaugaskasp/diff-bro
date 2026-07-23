@@ -128,6 +128,11 @@ export function installMenu() {
           click: () => sendToFocused('swap')
         },
         { label: 'Clear', accelerator: 'CmdOrCtrl+K', click: () => sendToFocused('clear') },
+        {
+          label: 'Copy Diff as Patch',
+          accelerator: 'CmdOrCtrl+Shift+C',
+          click: () => sendToFocused('copy-diff')
+        },
         { type: 'separator' },
         {
           label: 'Paste Text Mode',

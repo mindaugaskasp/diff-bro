@@ -11,7 +11,9 @@ export function useFileTextDrop(apply) {
     const path = window.api.getPathForFile(file)
     if (!path) return
     const res = await window.api.readFile(path)
-    if (res && !res.error && res.content != null) apply(res.content, res.name)
+    // `path` is passed through as a third arg for callers that keep it (e.g.
+    // partial-paste live reload); tool inputs simply ignore it.
+    if (res && !res.error && res.content != null) apply(res.content, res.name, res.path)
   }
   return { onDropFile }
 }

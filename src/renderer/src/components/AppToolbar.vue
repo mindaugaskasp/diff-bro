@@ -4,6 +4,7 @@
 // MenuBar.vue) — this is the pointer-friendly half.
 import { useDiffStore } from '../stores/diffStore'
 import { MOD } from '../keys'
+import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
 </script>
@@ -11,8 +12,11 @@ const store = useDiffStore()
 <template>
   <header class="toolbar band">
     <span v-if="store.ready && store.stats" class="stats">
-      <span class="add">+{{ store.stats.additions }}</span>
-      <span class="del">−{{ store.stats.deletions }}</span>
+      <span v-if="store.identical" class="identical">No differences</span>
+      <template v-else>
+        <span class="add">+{{ store.stats.additions }}</span>
+        <span class="del">−{{ store.stats.deletions }}</span>
+      </template>
     </span>
 
     <div class="options">
@@ -55,6 +59,14 @@ const store = useDiffStore()
           @click="store.shareCurrent()"
         >
           Share
+        </button>
+        <button
+          class="btn btn-ghost"
+          :title="`Copy this diff as a unified patch (${MOD}+Shift+C)`"
+          :disabled="!store.ready"
+          @click="store.copyDiff()"
+        >
+          <AppIcon name="copy" /> Copy diff
         </button>
         <button class="btn btn-ghost" :disabled="!store.left && !store.right" @click="store.clear">
           Clear

@@ -22,4 +22,29 @@ describe('textAdapter', () => {
     const out = textAdapter.toComparable({ name: 'a.js', content: 'const x = 1' })
     expect(out).toEqual({ kind: 'text', text: 'const x = 1', language: 'javascript' })
   })
+
+  it('sniffs content when the extension is unknown or absent', () => {
+    // Extensionless files that developers diff all the time.
+    expect(
+      textAdapter.toComparable({ name: 'Dockerfile', content: 'FROM node:20\nRUN npm ci' }).language
+    ).toBe('dockerfile')
+    // Pasted text arrives with a synthetic name that has no real extension.
+    expect(textAdapter.toComparable({ name: 'Left (pasted)', content: '{"a": 1}' }).language).toBe(
+      'json'
+    )
+    expect(
+      textAdapter.toComparable({ name: 'script', content: '#!/bin/bash\necho hi' }).language
+    ).toBe('shell')
+  })
+
+  it('lets a known extension win over content sniffing', () => {
+    // A .txt holding JSON stays plaintext — the extension is the author's intent.
+    expect(textAdapter.toComparable({ name: 'notes.md', content: '{"a": 1}' }).language).toBe(
+      'markdown'
+    )
+  })
+
+  it('tolerates missing content', () => {
+    expect(textAdapter.toComparable({ name: 'noext' }).language).toBe('plaintext')
+  })
 })
