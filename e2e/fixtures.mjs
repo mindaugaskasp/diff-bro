@@ -32,7 +32,17 @@ export const test = base.extend({
   app: async ({}, use) => {
     const userDataDir = freshUserDataDir()
     const app = await launchApp(userDataDir)
+    // Trace the whole run (with screenshots); keep it only when the test fails,
+    // attached so it shows up in the HTML report and as a CI artifact. Electron
+    // has its own BrowserContext, so tracing is wired here rather than via the
+    // config's `use.trace`, which only covers Playwright-launched browsers.
+    await app.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
     await use(app)
+    const info = test.info()
+    const failed = info.status !== info.expectedStatus
+    const tracePath = info.outputPath('trace.zip')
+    await app.context().tracing.stop(failed ? { path: tracePath } : {})
+    if (failed) await info.attach('trace', { path: tracePath, contentType: 'application/zip' })
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
   },
@@ -46,6 +56,37 @@ export async function openSettings(page) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
   await page.getByText('Settings', { exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+}
+
+// Navigate the in-app menu bar (Windows/Linux — the Docker env is Linux). Pass a
+// leaf item under a top menu, or a submenu + leaf for the nested Tools/Security
+// groups. Targets by structural class + text so kbd hints in the label don't
+// interfere. Only the open dropdown/flyout is in the DOM, so text is unambiguous.
+export async function openMenu(page, top, sub, leaf) {
+  await page.getByRole('button', { name: top, exact: true }).click()
+  if (leaf) {
+    // The submenu opens its flyout on hover; clicking the toggle would fire
+    // mouseenter (opens) then the click handler (toggles shut), so hover only.
+    await page.locator('.submenu', { hasText: sub }).hover()
+    await page.locator('.flyout .item', { hasText: leaf }).click()
+  } else {
+    await page.locator('.dropdown .item', { hasText: sub }).click()
+  }
+}
+
+// Replace the native save/open dialogs in the MAIN process so file flows are
+// deterministic (no un-driveable OS dialog). The handlers call dialog.show*Dialog
+// at invoke time, so reassigning the property takes effect immediately.
+export async function stubSaveDialog(app, filePath) {
+  await app.evaluate(({ dialog }, fp) => {
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: fp })
+  }, filePath)
+}
+export async function stubOpenDialog(app, filePaths) {
+  const list = Array.isArray(filePaths) ? filePaths : [filePaths]
+  await app.evaluate(({ dialog }, fps) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: fps })
+  }, list)
 }
 
 export { expect }

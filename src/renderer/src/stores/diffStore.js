@@ -4,6 +4,7 @@ import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
+import { toUnifiedDiff } from '../utils/unifiedDiff'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme } from '../utils/themes'
 
@@ -57,6 +58,7 @@ const MENU_ACTIONS = {
   'share-current': (s) => s.shareCurrent(),
   swap: (s) => s.swap(),
   clear: (s) => s.clear(),
+  'copy-diff': (s) => s.copyDiff(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
   'toggle-theme': (s) => s.toggleTheme(),
@@ -105,6 +107,17 @@ export const useDiffStore = defineStore('diff', {
     // dialog when the user chooses "Save first".
     pendingReplace: null,
     replaceAfterSave: null,
+    // Picked file (via Open / clicking a slot) waiting on the "replace current
+    // diff?" confirmation, when it would overwrite a side of a complete, unsaved
+    // comparison — { side, file }. `pickAfterSave` carries it through the save
+    // dialog when the user chooses "Save first". null when no prompt is open.
+    pendingPick: null,
+    pickAfterSave: null,
+    // True once the current comparison has been saved to the vault (or opened
+    // from a saved diff) and not changed since — so overwriting it loses
+    // nothing and the replace prompt is skipped. Any edit to either side clears
+    // it (see receive/comparePasted/swap/formatSide).
+    diffSaved: false,
     // Persisted through the durable data-dir store (persist.js), same as vault
     // and snippets, so the choice survives a reinstall that wipes userData; the
     // old localStorage 'diffbro.theme' key is migrated forward automatically.
@@ -139,6 +152,10 @@ export const useDiffStore = defineStore('diff', {
   }),
   getters: {
     ready: (s) => !!s.left && !!s.right,
+    // Two loaded sides with a computed diff of no changes — surfaced as an
+    // affirmative "identical" state so an empty +0/−0 doesn't read as "did it
+    // run?". With Ignore-whitespace on, this also covers whitespace-only diffs.
+    identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
     // A diff is saveable once there is anything to keep: two loaded files,
     // or text/files put into the paste panes (even before Compare).
     canSave: (s) =>
@@ -153,6 +170,14 @@ export const useDiffStore = defineStore('diff', {
   actions: {
     async pick(side) {
       const file = await window.api.openFile(side)
+      if (!file) return // dialog cancelled
+      // Replacing a side of a complete, unsaved comparison would discard it —
+      // ask first. A saved comparison is safe to overwrite, so it skips the
+      // prompt; a binary file falls through to receive(), which rejects it.
+      if (this.ready && !this.diffSaved && !file.error) {
+        this.pendingPick = { side, file }
+        return
+      }
       this.receive(side, file)
     },
     async drop(side, path) {
@@ -173,10 +198,14 @@ export const useDiffStore = defineStore('diff', {
         await this.drop(targetSide, paths[0])
         return
       }
-      // Would this discard a complete comparison? Ask first, rather than
-      // silently replacing it.
+      // Would this discard a complete comparison? Ask first — unless it's
+      // already saved, in which case replacing it loses nothing.
       if (this.left && this.right) {
-        this.pendingReplace = paths.slice(0, 2)
+        if (!this.diffSaved) {
+          this.pendingReplace = paths.slice(0, 2)
+          return
+        }
+        await this._loadReplacement(paths.slice(0, 2))
         return
       }
       if (paths.length >= 2) {
@@ -214,6 +243,31 @@ export const useDiffStore = defineStore('diff', {
     cancelReplace() {
       this.pendingReplace = null
     },
+    // --- file-load (Open / slot click) overwrite of an active comparison ---
+    confirmPick() {
+      const p = this.pendingPick
+      this.pendingPick = null
+      if (p) this.receive(p.side, p.file)
+    },
+    saveThenPick() {
+      this.pickAfterSave = this.pendingPick
+      this.pendingPick = null
+      this.showSaveDialog = true
+    },
+    finishPickAfterSave() {
+      const p = this.pickAfterSave
+      this.pickAfterSave = null
+      if (p) this.receive(p.side, p.file)
+    },
+    cancelPick() {
+      this.pendingPick = null
+    },
+    // The current comparison now matches a vault entry (just saved, or opened
+    // from a saved diff): overwriting it is safe, so the replace prompt is
+    // skipped until the next edit.
+    markSaved() {
+      this.diffSaved = true
+    },
     receive(side, file) {
       if (!file) return // dialog cancelled or large-file load declined
       if (file.error === 'binary') {
@@ -227,6 +281,8 @@ export const useDiffStore = defineStore('diff', {
       if (file.error) return
       this[side] = file
       this.mode = 'files'
+      // A newly loaded side is unsaved work again.
+      this.diffSaved = false
     },
     comparePasted() {
       // Each side is whichever the user provided: a loaded file, else the
@@ -236,6 +292,7 @@ export const useDiffStore = defineStore('diff', {
       this.left = { path: null, name: l.name, content: l.content }
       this.right = { path: null, name: r.name, content: r.content }
       this.mode = 'files'
+      this.diffSaved = false
     },
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
@@ -251,9 +308,12 @@ export const useDiffStore = defineStore('diff', {
         return
       }
       if (file.error) return
+      // Keep the path so a partial-paste file follows external edits on focus
+      // (refreshFromDisk), exactly like a loaded comparison side does.
       this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = {
         name: file.name,
-        content: file.content
+        content: file.content,
+        path: file.path ?? null
       }
     },
     async pastePickFile(side) {
@@ -284,25 +344,64 @@ export const useDiffStore = defineStore('diff', {
     toggleTheme() {
       this.setTheme(isDarkTheme(this.theme) ? 'light' : 'dark')
     },
-    // Re-read both sides from disk (quietly — no large-file prompt) so the
-    // diff follows external edits. Called when the window regains focus.
-    async refreshFromDisk() {
-      for (const side of ['left', 'right']) {
-        const path = this[side]?.path
-        if (!path) continue
-        try {
-          const file = await window.api.readFile(path, { quiet: true })
-          if (file && !file.error && file.content !== this[side].content) {
-            this[side] = file
-            this.showNotice(`"${file.name}" changed on disk — diff reloaded.`)
-          }
-        } catch {
-          // File gone or unreadable now; keep showing the last loaded state.
-        }
+    // Re-read one slot quietly (no large-file prompt); returns the file name if
+    // its on-disk content actually changed, else null. Paste-file slots keep
+    // their trimmed { name, content, path } shape; comparison sides take the
+    // full loaded-file object.
+    async _reloadSlot(slot) {
+      const current = this[slot]
+      if (!current?.path) return null
+      try {
+        const file = await window.api.readFile(current.path, { quiet: true })
+        if (!file || file.error || file.content === current.content) return null
+        this[slot] = slot.startsWith('paste')
+          ? { name: file.name, content: file.content, path: file.path }
+          : file
+        return file.name
+      } catch {
+        // File gone or unreadable now; keep showing the last loaded state.
+        return null
       }
+    },
+    // Follow external edits when the window regains focus: both comparison
+    // sides and either partial-paste source. One coalesced notice covers all of
+    // them, so two files changing at once can't race the single toast timer.
+    async refreshFromDisk() {
+      const changed = []
+      for (const slot of ['left', 'right', 'pasteLeftFile', 'pasteRightFile']) {
+        const name = await this._reloadSlot(slot)
+        if (name) changed.push(name)
+      }
+      if (changed.length === 1) {
+        this.showNotice(`"${changed[0]}" changed on disk — diff reloaded.`)
+      } else if (changed.length > 1) {
+        this.showNotice(`${changed.length} files changed on disk — diff reloaded.`)
+      }
+    },
+    // Copy the current comparison as a git-style unified diff (File → Copy diff,
+    // toolbar, Ctrl+Shift+C). The on-screen diff is Monaco's; this recomputes a
+    // patch that applies cleanly (see utils/unifiedDiff.js). Clipboard write goes
+    // through the main process — navigator.clipboard is denied here (CLAUDE.md).
+    async copyDiff() {
+      if (!this.ready) {
+        this.showNotice('Load two files (or compare pasted text) before copying a diff.')
+        return
+      }
+      // ready guarantees both sides are loaded file objects with names.
+      const res = toUnifiedDiff(this.leftComparable.text, this.rightComparable.text, {
+        leftLabel: this.left.name,
+        rightLabel: this.right.name
+      })
+      if (res.error === 'too-large')
+        return this.showNotice('This diff is too large to copy as a patch.')
+      if (!res.patch) return this.showNotice('The two sides are identical — nothing to copy.')
+      const out = await window.api.copyText(res.patch)
+      this.showNotice(out?.ok ? 'Unified diff copied to clipboard.' : 'Could not copy the diff.')
     },
     swap() {
       ;[this.left, this.right] = [this.right, this.left]
+      // A swapped comparison no longer matches the saved snapshot's side order.
+      this.diffSaved = false
     },
     // Pretty-print `side` in place using whichever format its hint detected.
     formatSide(side) {
@@ -311,6 +410,7 @@ export const useDiffStore = defineStore('diff', {
       if (!file || !hint?.valid) return
       const pretty = hint.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
       this[side] = { ...file, content: pretty }
+      this.diffSaved = false
     },
     dismissFormatHint(side) {
       this.dismissedFormatHint[side] = this[side]?.content ?? null
@@ -340,11 +440,15 @@ export const useDiffStore = defineStore('diff', {
       this.renderSideBySide = payload.renderSideBySide ?? true
       this.ignoreTrimWhitespace = payload.ignoreTrimWhitespace ?? false
       this.mode = payload.mode ?? 'files'
+      // Opened from a saved diff: it already exists in the vault, so replacing
+      // it later needs no "you'll lose it" prompt.
+      this.diffSaved = true
     },
     clear() {
       this.left = null
       this.right = null
       this.stats = null
+      this.diffSaved = false
       // Also wipe paste-mode text and files so a cleared session never leaves
       // the previous content lingering behind.
       this.pasteLeft = ''

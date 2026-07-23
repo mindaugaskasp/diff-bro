@@ -9,11 +9,11 @@ import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
 
-const leftDrop = useFileTextDrop((content, name) =>
-  store.receivePasteFile('left', { name, content })
+const leftDrop = useFileTextDrop((content, name, path) =>
+  store.receivePasteFile('left', { name, content, path })
 )
-const rightDrop = useFileTextDrop((content, name) =>
-  store.receivePasteFile('right', { name, content })
+const rightDrop = useFileTextDrop((content, name, path) =>
+  store.receivePasteFile('right', { name, content, path })
 )
 </script>
 

@@ -1,30 +1,36 @@
 <script setup>
+// Shown before an active, UNSAVED comparison is overwritten — by dropping new
+// files (pendingReplace) or by opening a file into a loaded slot (pendingPick).
+// A saved comparison skips this entirely (see diffStore.diffSaved).
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import BaseDialog from './BaseDialog.vue'
 
 const diff = useDiffStore()
 
+const isPick = computed(() => !!diff.pendingPick)
 const current = computed(() => `${diff.left?.name ?? '?'} ↔ ${diff.right?.name ?? '?'}`)
-const dropped = computed(() => {
-  const n = diff.pendingReplace?.length ?? 0
-  return n >= 2 ? 'two new files' : 'a new file'
+const incoming = computed(() => {
+  if (diff.pendingPick) return `a new ${diff.pendingPick.side} file`
+  return (diff.pendingReplace?.length ?? 0) >= 2 ? 'two new files' : 'a new file'
 })
+
+const onCancel = () => (isPick.value ? diff.cancelPick() : diff.cancelReplace())
+const onSaveFirst = () => (isPick.value ? diff.saveThenPick() : diff.saveThenReplace())
+const onConfirm = () => (isPick.value ? diff.confirmPick() : diff.confirmReplace())
 </script>
 
 <template>
-  <BaseDialog width="420px" title="Replace current comparison?" @close="diff.cancelReplace()">
+  <BaseDialog width="420px" title="Replace current comparison?" @close="onCancel">
     <p class="dialog-note">
-      You dropped {{ dropped }}. Loading it will discard the comparison you have open (<code>{{
-        current
-      }}</code
+      Loading {{ incoming }} will discard the comparison you have open (<code>{{ current }}</code
       >). Save it first if you want to keep it.
     </p>
     <template #actions>
-      <button class="btn btn-ghost" @click="diff.cancelReplace()">Cancel</button>
+      <button class="btn btn-ghost" @click="onCancel">Cancel</button>
       <span class="spacer" />
-      <button class="btn btn-ghost" @click="diff.saveThenReplace()">Save first</button>
-      <button class="btn btn-destructive" @click="diff.confirmReplace()">Replace anyway</button>
+      <button class="btn btn-ghost" @click="onSaveFirst">Save first</button>
+      <button class="btn btn-destructive" @click="onConfirm">Replace anyway</button>
     </template>
   </BaseDialog>
 </template>

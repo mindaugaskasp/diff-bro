@@ -48,8 +48,18 @@ export function useSnippetDraft() {
   const saving = ref(false)
   const initialTags = initial.tags
 
+  // Baseline for the unsaved-changes guard: the fields as first shown. For an
+  // existing snippet the real content arrives only after decryption, so the
+  // baseline updates when it lands — an untouched snippet is never "dirty".
+  const baselineName = ref(initial.name)
+  const baselineContent = ref(initial.content)
+
   // An existing snippet's content has to be decrypted before it can be shown.
-  if (!isNew) store.load(editing.id).then((text) => (content.value = text ?? ''))
+  if (!isNew)
+    store.load(editing.id).then((text) => {
+      content.value = text ?? ''
+      baselineContent.value = text ?? ''
+    })
 
   // 'auto' defers to the content-based detector; any other value is the user's
   // explicit syntax choice, remembered with the snippet.
@@ -61,6 +71,27 @@ export function useSnippetDraft() {
 
   function close() {
     store.editingSnippet = null
+  }
+
+  // Unsaved-changes guard. The editor's only exits are Cancel and the × (Escape
+  // is disabled, the backdrop is inert), and both would silently drop typed or
+  // pasted code. When the draft differs from what was first shown, a close
+  // request asks to confirm instead of closing; an untouched draft closes at
+  // once.
+  const isDirty = computed(
+    () => name.value !== baselineName.value || content.value !== baselineContent.value
+  )
+  const confirmingDiscard = ref(false)
+  function requestClose() {
+    if (isDirty.value) confirmingDiscard.value = true
+    else close()
+  }
+  function keepEditing() {
+    confirmingDiscard.value = false
+  }
+  function discardDraft() {
+    confirmingDiscard.value = false
+    close()
   }
 
   // `tags` and `tagColors` come from the tag field, which owns them.
@@ -132,6 +163,11 @@ export function useSnippetDraft() {
     canFormat,
     save,
     close,
+    isDirty,
+    confirmingDiscard,
+    requestClose,
+    keepEditing,
+    discardDraft,
     formatContent,
     copyContent,
     expandDiagram

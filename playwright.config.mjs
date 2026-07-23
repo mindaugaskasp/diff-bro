@@ -19,5 +19,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   timeout: 30_000,
   expect: { timeout: 8_000 },
-  reporter: process.env.CI ? [['list'], ['github']] : [['list']]
+  // On CI also emit a self-contained HTML report (uploaded as an artifact) so a
+  // failure can be inspected without re-running; locally the list reporter is
+  // enough. Traces/screenshots are captured per-test in e2e/fixtures.mjs (the
+  // `use.trace` option doesn't apply to Electron's own context).
+  reporter: process.env.CI
+    ? [['list'], ['github'], ['html', { open: 'never' }]]
+    : [['list']]
 })

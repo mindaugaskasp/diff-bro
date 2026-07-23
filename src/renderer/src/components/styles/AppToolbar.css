@@ -19,6 +19,9 @@
 .stats .del {
   color: var(--danger-bg);
 }
+.stats .identical {
+  color: var(--text-dim);
+}
 .options {
   display: flex;
   align-items: center;

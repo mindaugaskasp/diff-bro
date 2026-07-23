@@ -78,3 +78,22 @@
   color: var(--danger-bg);
   font-size: var(--font-sm);
 }
+/* Unsaved-changes guard bar — a danger-accented confirm shown before a dirty
+   draft is discarded via Cancel or ×. */
+.discard-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  font-size: var(--font-md);
+}
+.discard-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}

@@ -22,6 +22,7 @@ export const SHORTCUT_GROUPS = [
     items: [
       { keys: `${MOD}+Shift+S`, label: 'Swap sides' },
       { keys: `${MOD}+K`, label: 'Clear' },
+      { keys: `${MOD}+Shift+C`, label: 'Copy diff as patch' },
       { keys: `${MOD}+T`, label: 'Paste text mode' }
     ]
   },

@@ -117,7 +117,9 @@ describe('detectSnippetLanguage — programming languages', () => {
   })
 
   it('detects Go', () => {
-    expect(detect('package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("hi")\n}')).toBe('go')
+    expect(detect('package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("hi")\n}')).toBe(
+      'go'
+    )
   })
 
   it('detects Rust', () => {

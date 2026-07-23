@@ -1,3 +1,10 @@
+import { detectSnippetLanguage } from '../utils/detectLanguage'
+
+// Content detection is capped to a prefix: the signals it looks for sit near the
+// top of a file, and running the JSON validator across a multi-MB paste would
+// cost far more than the syntax coloring is worth.
+const DETECT_LIMIT = 50_000
+
 const EXT_TO_LANGUAGE = {
   js: 'javascript',
   mjs: 'javascript',
@@ -35,10 +42,12 @@ export const textAdapter = {
   matches: () => true,
   toComparable(file) {
     const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    return {
-      kind: 'text',
-      text: file.content,
-      language: EXT_TO_LANGUAGE[ext] ?? 'plaintext'
-    }
+    // A known extension is authoritative. Otherwise — an extensionless file
+    // (Dockerfile, Makefile, a shell script named `deploy`) or pasted text,
+    // whose synthetic name carries no real extension — sniff the content so the
+    // diff is still highlighted rather than dumped as plaintext.
+    const language =
+      EXT_TO_LANGUAGE[ext] ?? detectSnippetLanguage(file.content?.slice(0, DETECT_LIMIT) ?? '')
+    return { kind: 'text', text: file.content, language }
   }
 }
