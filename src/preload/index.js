@@ -82,5 +82,10 @@ contextBridge.exposeInMainWorld('api', {
   // App-menu actions (Open Left, Swap, …) arrive from the main process.
   onMenuAction: (handler) => {
     ipcRenderer.on('menu:action', (_e, action) => handler(action))
+  },
+  // App-window fullscreen state changes (main pushes true/false). Read by the
+  // Mermaid viewer so it can fill the window when the app goes fullscreen.
+  onFullScreenChange: (handler) => {
+    ipcRenderer.on('window:fullscreen', (_e, value) => handler(value))
   }
 })

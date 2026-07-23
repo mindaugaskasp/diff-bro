@@ -35,11 +35,13 @@ a hard promise: it never touches the network.
 - **Saved diffs** — encrypted, auto-expiring, organized into categories.
 - **Share** a diff as a sealed, signed file only its intended recipient can open.
 - **Snippets** — an encrypted, tagged text library with per-language
-  highlighting and live **Mermaid** diagram rendering.
+  highlighting and live **Mermaid** diagram rendering, in a viewer you can drag
+  bigger from any corner (and that fills the window when the app goes fullscreen).
 - **Tools** — Base64, JSON / XML / SQL format + validate, and passphrase text
   encryption.
-- **Yours to arrange** — five themes, a rearrangeable sidebar, and adjustable
-  limits, all remembered between sessions.
+- **Yours to arrange** — five themes, a sidebar whose sections you drag to
+  reorder (and can lock in place), and adjustable limits, all remembered between
+  sessions.
 
 <table>
   <tr>

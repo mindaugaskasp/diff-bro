@@ -39,9 +39,10 @@ test('Copy diff writes a unified patch to the OS clipboard', async ({ app, page 
 test('identical sides show a No differences state and copy nothing', async ({ page }) => {
   await pasteCompare(page, 'same\nlines\n', 'same\nlines\n')
 
-  await expect(page.locator('.stats .identical')).toHaveText('No differences')
-  await expect(page.locator('.stats .add')).toBeHidden()
-  await expect(page.locator('.stats .del')).toBeHidden()
+  // The "no differences" note is a row label over the diff panes, not a toolbar
+  // stat — and the toolbar shows no empty +0/−0 counts in that state.
+  await expect(page.locator('.diff-viewer .identical-row')).toContainText('No differences')
+  await expect(page.locator('.stats')).toBeHidden()
 
   // Copy diff on an identical comparison explains itself rather than copying an
   // empty patch.

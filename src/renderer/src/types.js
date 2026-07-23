@@ -101,4 +101,13 @@
  * @property {number} [column]
  */
 
+/**
+ * A viewport-space rectangle in CSS pixels (the Mermaid viewer panel).
+ * @typedef {object} Rect
+ * @property {number} left
+ * @property {number} top
+ * @property {number} width
+ * @property {number} height
+ */
+
 export {}

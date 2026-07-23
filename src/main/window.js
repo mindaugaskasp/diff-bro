@@ -119,6 +119,14 @@ export function createWindow() {
   if (state.maximized) win.maximize()
   trackWindowState(win)
 
+  // Push the app-window fullscreen state to the renderer so views that fill the
+  // window (the Mermaid viewer) can maximise themselves in step with it. No
+  // renderer-observable DOM signal exists for OS-level window fullscreen, so it
+  // comes from these BrowserWindow events.
+  const sendFullScreen = () => win.webContents.send('window:fullscreen', win.isFullScreen())
+  win.on('enter-full-screen', sendFullScreen)
+  win.on('leave-full-screen', sendFullScreen)
+
   if (DEV_URL) {
     win.loadURL(DEV_URL)
   } else {

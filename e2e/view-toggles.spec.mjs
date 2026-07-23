@@ -12,10 +12,22 @@ async function pasteCompare(page, left, right) {
 
 test('ignore-whitespace turns a whitespace-only diff into "No differences"', async ({ page }) => {
   await pasteCompare(page, 'alpha\nbeta', 'alpha \nbeta') // trailing space, line 1
-  await expect(page.locator('.stats .identical')).toBeHidden() // a change, for now
+  const identical = page.locator('.diff-viewer .identical-row')
+  await expect(identical).toBeHidden() // a change, for now
 
   await page.getByLabel('Ignore whitespace').check()
-  await expect(page.locator('.stats .identical')).toHaveText('No differences')
+  await expect(identical).toContainText('No differences')
+})
+
+test('the Paste text button names its destination so the toggle is explicit', async ({ page }) => {
+  const toggle = page.locator('.toolbar .actions button').filter({ hasText: /Paste text|File mode/ })
+  await expect(toggle).toHaveText('Paste text') // files mode: offers paste
+  await toggle.click()
+  await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
+  await expect(toggle).toHaveText('File mode') // now offers the way back
+  await toggle.click()
+  await expect(toggle).toHaveText('Paste text') // back to files mode
+  await expect(page.getByPlaceholder('Paste original text here')).toBeHidden()
 })
 
 test('Swap flips additions and deletions', async ({ page }) => {

@@ -60,6 +60,11 @@ export const ICONS = {
     { t: 'rect', x: 4, y: 11, width: 16, height: 10, rx: 2 },
     { t: 'path', d: 'M8 11V7a4 4 0 0 1 8 0v4' }
   ],
+  // Open padlock — the shackle swung clear of the body.
+  unlock: [
+    { t: 'rect', x: 4, y: 11, width: 16, height: 10, rx: 2 },
+    { t: 'path', d: 'M8 11V7a4 4 0 0 1 7.7-2.3' }
+  ],
   edit: [
     { t: 'path', d: 'M12 20h9' },
     { t: 'path', d: 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z' }
@@ -95,6 +100,7 @@ export const ICONS = {
     { t: 'path', d: 'M3 16h3a2 2 0 0 1 2 2v3' },
     { t: 'path', d: 'M16 21v-3a2 2 0 0 1 2-2h3' }
   ],
+  check: [{ t: 'path', d: 'M20 6 9 17l-5-5' }],
   minus: [{ t: 'path', d: 'M5 12h14' }],
   plus: [
     { t: 'path', d: 'M5 12h14' },

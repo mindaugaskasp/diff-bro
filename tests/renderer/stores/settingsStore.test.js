@@ -89,4 +89,37 @@ describe('settingsStore', () => {
     setActivePinia(createPinia())
     expect(useSettingsStore().showShortcutBar).toBe(false)
   })
+
+  it('drag-reorders a section to land just before its drop target', () => {
+    const s = useSettingsStore()
+    s.reorderSections('snippets', 'saved') // drop snippets before saved
+    expect(s.sectionOrder).toEqual(['snippets', 'saved', 'external'])
+    s.reorderSections('external', 'snippets') // external before snippets
+    expect(s.sectionOrder).toEqual(['external', 'snippets', 'saved'])
+  })
+
+  it('ignores a reorder onto itself or an unknown id', () => {
+    const s = useSettingsStore()
+    s.reorderSections('saved', 'saved')
+    s.reorderSections('bogus', 'saved')
+    s.reorderSections('saved', 'bogus')
+    expect(s.sectionOrder).toEqual(SECTIONS)
+  })
+
+  it('locks section order: move and reorder become no-ops until unlocked', () => {
+    const s = useSettingsStore()
+    expect(s.sectionsLocked).toBe(false)
+    s.toggleSectionsLock()
+    expect(s.sectionsLocked).toBe(true)
+    s.moveSection('snippets', -1)
+    s.reorderSections('snippets', 'saved')
+    expect(s.sectionOrder).toEqual(SECTIONS) // frozen
+    // survives a reload
+    setActivePinia(createPinia())
+    const reloaded = useSettingsStore()
+    expect(reloaded.sectionsLocked).toBe(true)
+    reloaded.toggleSectionsLock()
+    reloaded.moveSection('snippets', -1)
+    expect(reloaded.sectionOrder).toEqual(['saved', 'snippets', 'external'])
+  })
 })

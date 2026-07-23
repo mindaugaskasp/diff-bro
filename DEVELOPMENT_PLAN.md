@@ -154,9 +154,12 @@ First run: `npm install && npm run dev`
       every diagram type in real Chromium before adopting the dep). SVG is
       inserted via `DOMParser` + `replaceChildren`, never `innerHTML`/`v-html`;
       `securityLevel: 'strict'` (DOMPurify) is never lowered.
-- [x] Live preview in the snippet editor + a resizable, zoom/pan diagram viewer;
-      diagram theme paired to the app theme (dark → `dark`, light → `default`),
-      re-rendered on theme switch so text never blends into the canvas
+- [x] Live preview in the snippet editor + a zoom/pan diagram viewer, drag-resizable
+      from any of its four corners (`useResizable` + pure `utils/resizeRect.js`) and
+      auto-maximised when the app window enters fullscreen (main pushes
+      `window:fullscreen`, `useFullScreen` relays it); diagram theme paired to the
+      app theme (dark → `dark`, light → `default`), re-rendered on theme switch so
+      text never blends into the canvas
 - [x] Auto-detect for the snippet editor's syntax picker
       (`utils/detectLanguage.js`): distinctive, low-ambiguity signals for every
       offered language (JSON, Mermaid, SQL, Markdown, YAML/K8s, Python, shell,
@@ -174,7 +177,11 @@ First run: `npm install && npm run dev`
       visibility, and user-raisable comparison-file / snippet size limits with
       safe defaults and hard ceilings (main enforces the file limit from it)
 - [x] Reorderable sidebar sections behind a shared `SectionHeader`; Saved /
-      External / Snippets each extracted into a self-contained component
+      External / Snippets each extracted into a self-contained component. Reorder
+      by dragging a whole header (`useSectionReorder`) or via its up/down
+      steppers; a single toolbar padlock freezes the arrangement
+      (`settings.sectionsLocked`, persisted — locked headers drop the drag handle
+      and steppers)
 - [x] Diff search gains match-case, whole-word, and safety-limited regex
       (`utils/searchRegex.js` refuses over-long / catastrophic patterns)
 - [x] Partial paste mode: diff pasted text against a dropped/chosen file

@@ -105,8 +105,7 @@ const {
 
         <PasteInput v-if="store.mode === 'paste'" />
         <template v-else-if="store.ready">
-          <FormatHintBanner side="left" />
-          <FormatHintBanner side="right" />
+          <FormatHintBanner />
           <DiffViewer />
         </template>
         <!-- One side loaded: make it obvious a second file is still needed. -->

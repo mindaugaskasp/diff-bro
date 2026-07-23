@@ -19,9 +19,6 @@
 .stats .del {
   color: var(--danger-bg);
 }
-.stats .identical {
-  color: var(--text-dim);
-}
 .options {
   display: flex;
   align-items: center;
@@ -68,4 +65,9 @@
 .icon-btn:hover {
   border-color: var(--border);
   background: var(--bg-hover);
+}
+/* Locked state: the padlock reads as "on" in the accent colour. */
+.icon-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
 }

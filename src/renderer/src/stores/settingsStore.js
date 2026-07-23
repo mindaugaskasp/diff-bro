@@ -21,6 +21,9 @@ export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 
 export const DEFAULT_SETTINGS = {
   sectionOrder: [...SECTIONS],
+  // Freezes section reordering (both the drag-and-drop and the up/down controls)
+  // so a settled sidebar layout can't be nudged by accident.
+  sectionsLocked: false,
   // { [sectionId]: [shelfId, …] } — a section absent here uses its natural order.
   shelfOrder: {},
   showShortcutBar: true,
@@ -60,6 +63,7 @@ function readState() {
   }
   return {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
+    sectionsLocked: parsed.sectionsLocked === true,
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     showShortcutBar,
@@ -92,6 +96,7 @@ export const useSettingsStore = defineStore('settings', {
         'settings',
         JSON.stringify({
           sectionOrder: this.sectionOrder,
+          sectionsLocked: this.sectionsLocked,
           shelfOrder: this.shelfOrder,
           showShortcutBar: this.showShortcutBar,
           maxComparisonFileMb: this.maxComparisonFileMb,
@@ -108,12 +113,27 @@ export const useSettingsStore = defineStore('settings', {
     },
     // Move a section one step up or down (delta -1 / +1). No-op at the ends.
     moveSection(id, delta) {
+      if (this.sectionsLocked) return
       const order = [...this.sectionOrder]
       const from = order.indexOf(id)
       const to = from + delta
       if (from === -1 || to < 0 || to >= order.length) return
       order.splice(to, 0, order.splice(from, 1)[0])
       this.sectionOrder = order
+      this.persist()
+    },
+    // Drag-and-drop reorder: drop section `fromId` so it lands just before
+    // `toId`. No-op when locked or when either id is unknown.
+    reorderSections(fromId, toId) {
+      if (this.sectionsLocked || fromId === toId) return
+      if (!this.sectionOrder.includes(fromId) || !this.sectionOrder.includes(toId)) return
+      const order = this.sectionOrder.filter((id) => id !== fromId)
+      order.splice(order.indexOf(toId), 0, fromId)
+      this.sectionOrder = order
+      this.persist()
+    },
+    toggleSectionsLock() {
+      this.sectionsLocked = !this.sectionsLocked
       this.persist()
     },
     // Persist the shelf order for a section (item drag-reorder). ids is the full

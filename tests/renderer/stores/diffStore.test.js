@@ -296,6 +296,53 @@ describe('diffStore', () => {
     expect(store.leftFormatHint).not.toBeNull() // new content, dismissal doesn't carry over
   })
 
+  it('merges both sides into one banner with a Format-both action', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"b":2}' }
+    const banner = store.formatBanner
+    expect(banner.message).toBe('Both sides look like JSON — pretty-print?')
+    expect(banner.formatBoth).toBe(true)
+    expect(banner.invalid).toBe(false)
+    expect(banner.dismissSides).toEqual(['left', 'right'])
+
+    store.formatBoth()
+    expect(store.left.content).toBe('{\n  "a": 1\n}')
+    expect(store.right.content).toBe('{\n  "b": 2\n}')
+    expect(store.formatBanner).toBeNull() // both pretty now, banner clears itself
+  })
+
+  it('names the single formattable side when the other is invalid', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a":1}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"b": 2,}' }
+    const banner = store.formatBanner
+    expect(banner.formatBoth).toBe(false)
+    expect(banner.formatSide).toBe('left')
+    expect(banner.formatLabel).toBe('Format Left')
+    expect(banner.invalid).toBe(false) // still actionable — the left side can format
+    expect(banner.message).toContain("doesn't parse")
+  })
+
+  it('is a red, actionless banner when both sides are invalid, and dismiss silences both', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.json', name: 'a.json', content: '{"a": 1,}' }
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: '{"b": 2,}' }
+    const banner = store.formatBanner
+    expect(banner.invalid).toBe(true)
+    expect(banner.formatBoth).toBe(false)
+    expect(banner.formatSide).toBeNull()
+
+    store.dismissFormatHints(banner.dismissSides)
+    expect(store.formatBanner).toBeNull()
+  })
+
+  it('has no banner when neither side has a hint', () => {
+    const store = useDiffStore()
+    store.left = { path: '/tmp/a.txt', name: 'a.txt', content: 'plain' }
+    expect(store.formatBanner).toBeNull()
+  })
+
   it('defaults to Light and toggleTheme flips the ground, persisting + stamping', () => {
     const store = useDiffStore()
     expect(store.theme).toBe('light') // Light is the default

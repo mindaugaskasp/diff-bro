@@ -46,6 +46,45 @@ function formatHintFor(file, dismissedContent) {
   return { kind: detected.kind, valid: true }
 }
 
+// Merge the two per-side format hints into ONE banner so the diff never carries
+// two stacked strips. Pure (takes the two hints, returns render data or null) so
+// the store getter stays thin and this stays unit-testable.
+function mergeFormatBanner(left, right) {
+  const shown = []
+  if (left) shown.push({ side: 'left', label: 'Left', hint: left })
+  if (right) shown.push({ side: 'right', label: 'Right', hint: right })
+  if (!shown.length) return null
+
+  const kindLabel = (h) => (h.kind === 'json' ? 'JSON' : 'XML')
+  const loc = (h) => (h.line ? ` at line ${h.line}, column ${h.column}` : '')
+  const clause = ({ label, hint }) =>
+    hint.valid
+      ? `${label} looks like ${kindLabel(hint)} — pretty-print?`
+      : `${label} looks like ${kindLabel(hint)} but doesn't parse${loc(hint)}${
+          hint.error ? `: ${hint.error}` : ''
+        }`
+
+  const valid = shown.filter((x) => x.hint.valid)
+  let message
+  if (valid.length === 2) {
+    message =
+      left.kind === right.kind
+        ? `Both sides look like ${kindLabel(left)} — pretty-print?`
+        : 'Both sides look like structured data — pretty-print?'
+  } else {
+    message = shown.map(clause).join(' · ')
+  }
+
+  return {
+    message,
+    invalid: valid.length === 0, // red only when nothing here is actionable
+    formatBoth: valid.length === 2,
+    formatSide: valid.length === 1 ? valid[0].side : null,
+    formatLabel: valid.length === 1 && shown.length === 2 ? `Format ${valid[0].label}` : 'Format',
+    dismissSides: shown.map((x) => x.side)
+  }
+}
+
 // Menu action → what it does to the store. A table rather than a switch: the
 // accelerators in src/main/menu.js and MenuBar.vue name these strings, so this
 // is the single list of everything a menu can trigger.
@@ -165,7 +204,12 @@ export const useDiffStore = defineStore('diff', {
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
     rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
     leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
-    rightFormatHint: (s) => formatHintFor(s.right, s.dismissedFormatHint.right)
+    rightFormatHint: (s) => formatHintFor(s.right, s.dismissedFormatHint.right),
+    // One merged banner for both sides (see mergeFormatBanner) — null when neither
+    // side has a pending hint.
+    formatBanner() {
+      return mergeFormatBanner(this.leftFormatHint, this.rightFormatHint)
+    }
   },
   actions: {
     async pick(side) {
@@ -414,6 +458,15 @@ export const useDiffStore = defineStore('diff', {
     },
     dismissFormatHint(side) {
       this.dismissedFormatHint[side] = this[side]?.content ?? null
+    },
+    // Format every side the merged banner offers (both are valid).
+    formatBoth() {
+      this.formatSide('left')
+      this.formatSide('right')
+    },
+    // Dismiss the merged banner: silence each side it currently covers.
+    dismissFormatHints(sides) {
+      for (const side of sides) this.dismissFormatHint(side)
     },
     // Snapshot of everything a saved diff needs to be restored later —
     // including in-progress paste-mode text.
