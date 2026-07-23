@@ -125,27 +125,54 @@
   --text-on-accent: #2e3440;
 }
 
-/* Sepia — warm low-glare "paper" theme; ink-brown on aged paper, restrained
-   green/red. The e-reader pick, great for reviewing long prose. */
+/* Sepia — a deep, saturated PARCHMENT (distinct from Solar's pale sunny cream):
+   walnut ink on aged tan, burnt-sienna accent, moss-green additions. A vintage
+   low-glare pick for long reading. */
 :root[data-theme='sepia'] {
-  --bg: #f4ecd8;
-  --bg-panel: #eadfc6;
-  --bg-hover: #e2d4b4;
-  --border: #d5c4a0;
-  --text: #463a28;
-  --text-dim: #8a7a5c;
-  --text-hint: #6b5c3e;
-  --accent: #9a5b2c;
-  --warning-bg: #d99a2b;
-  --warning-border: #a86a1a;
-  --warning-text: #3a2a10;
-  --danger-bg: #b6503a;
-  --danger-border: #a5442f;
+  --bg: #e9dcbe;
+  --bg-panel: #dfcea6;
+  --bg-hover: #d3bf90;
+  --border: #c3ad7e;
+  --text: #3a2e15;
+  --text-dim: #7d6840;
+  --text-hint: #574524;
+  --accent: #9c4f1f;
+  --warning-bg: #cc9324;
+  --warning-border: #9a6712;
+  --warning-text: #33260a;
+  --danger-bg: #ab4429;
+  --danger-border: #933a22;
   --danger-text: #ffffff;
-  --success-text: #4b7a3a;
-  --scrim: rgba(50, 40, 24, 0.4);
-  --favorite: #b8860b;
+  --success-text: #5a6f28;
+  --scrim: rgba(42, 32, 14, 0.44);
+  --favorite: #a3760a;
   --text-on-accent: #ffffff;
+}
+
+/* Nyan — playful but usable: a readable deep-violet base with hot-pink accent
+   and lime/rose diff colors. The chaos (the rainbow lane + reward cat) lives in
+   non-content chrome (see NyanLane), so diffs stay legible. */
+:root[data-theme='nyan'] {
+  --bg: #160a20;
+  --bg-panel: #231033;
+  --bg-hover: #2e1642;
+  /* Brighter than the ground so button/input/divider edges read clearly on the
+     deep-violet panels (the muted violet was too low-contrast). */
+  --border: #7a3fa6;
+  --text: #f4e9ff;
+  --text-dim: #b79fcf;
+  --text-hint: #dcc9f0;
+  --accent: #ff2ecb;
+  --warning-bg: #ffd23f;
+  --warning-border: #d9a400;
+  --warning-text: #2a1400;
+  --danger-bg: #ff5470;
+  --danger-border: #e03a58;
+  --danger-text: #1a0410;
+  --success-text: #63ff4d;
+  --scrim: rgba(10, 2, 16, 0.55);
+  --favorite: #ffd23f;
+  --text-on-accent: #1a0410;
 }
 
 /* Contrast — maximum legibility: black on white, saturated accent, heavy

@@ -42,7 +42,8 @@ a hard promise: it never touches the network.
   bigger from any corner (and that fills the window when the app goes fullscreen).
 - **Tools** — Base64, JSON / XML / SQL format + validate, and passphrase text
   encryption.
-- **Yours to arrange** — five themes, a sidebar whose sections you drag to
+- **Yours to arrange** — eight themes (incl. Nord, Sepia, and a playful Nyan with
+  a reward cat), a sidebar whose sections you drag to
   reorder (and can lock in place), and adjustable limits, all remembered between
   sessions.
 

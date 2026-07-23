@@ -20,20 +20,11 @@ Palette token names: `--bg --bg-panel --bg-hover --border --text --text-dim
 
 ---
 
-## Useful (ship-quality — pure token swaps)
+## Useful
 
-### Nord `id: nord` (dark)
-Calm arctic palette, easy on the eyes for long sessions.
-- bg `#2e3440` · panel `#3b4252` · hover `#434c5e` · border `#4c566a`
-- text `#eceff4` · dim `#9aa5b8` · accent `#88c0d0`
-- success/add `#a3be8c` · danger/del `#bf616a` · favorite `#ebcb8b`
-- `isDarkTheme` → true.
-
-### Sepia Paper `id: sepia` (light)
-Warm low-glare "e-reader" theme; great for prose/contracts.
-- bg `#f4ecd8` · panel `#eadfc6` · hover `#e2d4b4` · border `#d5c4a0`
-- text `#463a28` · dim `#8a7a5c` · accent `#9a5b2c`
-- success/add `#4b7a3a` · danger/del `#a5442f` · favorite `#b8860b`
+- ~~**Nord** `id: nord`~~ — ✅ **SHIPPED** (themes.css + themes.js).
+- ~~**Sepia** `id: sepia`~~ — ✅ **SHIPPED** (deepened to a saturated parchment so
+  it stands apart from Solar's pale cream).
 
 ---
 
@@ -70,7 +61,16 @@ Black ground, green phosphor text, faint scanlines + glow.
   opacity) + `text-shadow` glow. Keep the overlay subtle (readability). Respect
   `prefers-reduced-motion` if any flicker is added. `isDarkTheme` → true.
 
-### Nyan `id: nyan` (dark) — **make it USEFUL but a bit distracting**
+### Nyan `id: nyan` (dark) — ✅ **SHIPPED** (Trail × Achievement combo)
+
+Built as the "Trail × Achievement" combo from the variants pitch
+(https://claude.ai/code/artifact/0b961526-e8e7-4a9d-b05d-4337f30d66de):
+a readable deep-violet base (chaos kept out of content), plus `NyanLane.vue` — a
+slim rainbow lane under the toolbar (`App.vue`, nyan theme only) where the cat
+streaks across trailing a smoke-dissipating rainbow on a "No differences!" match
+or a saved diff (`useNyanReward` rising-edge trigger). Honors
+`prefers-reduced-motion`.
+
 Per feedback: NOT the unusable full-screen scrolling-rainbow-puke from the pitch.
 Keep a **readable base** so diffing actually works, and confine the chaos to
 non-content chrome:
@@ -90,6 +90,7 @@ non-content chrome:
 
 ## Suggested order
 
-1. **Nord**, **Sepia** — pure token swaps, immediate value.
+1. ~~**Nord**, **Sepia**~~ — ✅ shipped.
 2. **Win98**, **Platinum** — add the shared per-skin bevel/pinstripe mechanism.
 3. **CRT**, **Nyan** — the overlay + animation layer (and a stern review for Nyan).
+   See the expanded Nyan variant ideas artifact linked at the top.

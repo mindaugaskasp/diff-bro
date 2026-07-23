@@ -36,6 +36,24 @@ export const THEMES = [
     label: 'Contrast',
     dark: false,
     swatch: { bg: '#ffffff', accent: '#1633d4', add: '#05702f', del: '#c20000' }
+  },
+  {
+    id: 'nord',
+    label: 'Nord',
+    dark: true,
+    swatch: { bg: '#3b4252', accent: '#88c0d0', add: '#a3be8c', del: '#bf616a' }
+  },
+  {
+    id: 'sepia',
+    label: 'Sepia',
+    dark: false,
+    swatch: { bg: '#dfcea6', accent: '#9c4f1f', add: '#5a6f28', del: '#933a22' }
+  },
+  {
+    id: 'nyan',
+    label: 'Nyan',
+    dark: true,
+    swatch: { bg: '#231033', accent: '#ff2ecb', add: '#63ff4d', del: '#ff5470' }
   }
 ]
 

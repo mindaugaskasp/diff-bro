@@ -148,7 +148,7 @@ function close() {
               :checked="settings.rotateThemeDaily"
               @change="toggleDailyTheme($event.target.checked)"
             />
-            <span>Rotate the app theme daily — a new random theme each day 🎲</span>
+            <span>Rotate the app theme daily — a new random theme each day</span>
           </label>
           <p class="hint">
             Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily
