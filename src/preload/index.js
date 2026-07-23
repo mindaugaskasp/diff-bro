@@ -80,9 +80,10 @@ contextBridge.exposeInMainWorld('api', {
   // can read their state during setup, exactly like localStorage did.
   storeLoad: (name) => ipcRenderer.sendSync('store:load', name),
   storeSave: (name, contents) => ipcRenderer.invoke('store:save', name, contents),
-  // Write text to the OS clipboard from the main process (navigator.clipboard
-  // is blocked by the deny-all permission handler; see src/main/clipboard.js).
+  // Write/read the OS clipboard from the main process (navigator.clipboard is
+  // blocked by the deny-all permission handler; see src/main/clipboard.js).
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
+  readText: () => ipcRenderer.invoke('clipboard:read'),
   // Data-location settings.
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),

@@ -47,3 +47,13 @@ export const isValidTheme = (id) => BY_ID.has(id)
 // Unknown/absent ids fall back to the default rather than breaking the UI.
 export const normalizeTheme = (id) => (BY_ID.has(id) ? id : DEFAULT_THEME)
 export const isDarkTheme = (id) => BY_ID.get(id)?.dark ?? false
+
+// The theme for a given calendar day — random-looking but STABLE within a day,
+// so the "rotate daily" option doesn't reshuffle on every launch, only at the
+// date rollover. Deterministic hash of the local Y-M-D → an index into THEMES.
+export function themeForDay(date = new Date()) {
+  const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+  let hash = 0
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0
+  return THEMES[hash % THEMES.length].id
+}

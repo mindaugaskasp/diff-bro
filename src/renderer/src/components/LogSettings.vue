@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useArmedAction } from '../composables/useArmedAction'
 
 // The "Logs" settings pane: where the local error log lives, plus reveal/clear.
 // All fs work is in the main process (window.api.log*) — the renderer only
@@ -37,11 +38,18 @@ async function reset() {
 function reveal() {
   window.api.revealLog()
 }
-async function clear() {
+
+// Deleting the logs is destructive and irreversible, so it's a two-step confirm
+// (first click arms, second click within the window actually clears).
+async function doClear() {
   await window.api.clearLog()
   cleared.value = true
   setTimeout(() => (cleared.value = false), 1500)
 }
+const { armed: clearArmed, trigger: requestClear } = useArmedAction(doClear)
+const clearLabel = computed(() =>
+  cleared.value ? 'Cleared' : clearArmed.value ? 'Confirm clear' : 'Clear logs'
+)
 </script>
 
 <template>
@@ -58,7 +66,18 @@ async function clear() {
     </div>
     <div class="dialog-actions">
       <button class="btn btn-ghost" :disabled="busy" @click="reveal">Reveal</button>
-      <button class="btn btn-ghost" @click="clear">{{ cleared ? 'Cleared' : 'Clear logs' }}</button>
+      <button
+        class="btn btn-ghost"
+        :class="{ armed: clearArmed }"
+        :title="
+          clearArmed
+            ? 'Click again to permanently delete every log file'
+            : 'Delete all local log files'
+        "
+        @click="requestClear"
+      >
+        {{ clearLabel }}
+      </button>
       <button class="btn btn-ghost" :disabled="busy || isDefault" @click="reset">Use default</button>
       <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
     </div>

@@ -11,6 +11,20 @@ function messageOf(reason) {
   return String(reason ?? 'Unknown error')
 }
 
+// Benign framework noise that is NOT a crash and must never log or raise the
+// dialog: Monaco cancels in-flight work by rejecting with a Canceled /
+// CancellationError on normal model switches/disposal; ResizeObserver emits a
+// harmless loop notice; a cross-origin script error arrives as an opaque
+// "Script error." with no detail worth reporting. Matched on name+message so a
+// cancellation is caught however Monaco labels it.
+const IGNORED = [/cancell?ed/i, /CancellationError/i, /ResizeObserver loop/i, /^Script error\.?$/i]
+
+function isIgnorable(err) {
+  const reason = err?.reason ?? err?.error ?? err
+  const text = `${reason?.name ?? ''} ${reason?.message ?? reason ?? ''}`.trim()
+  return IGNORED.some((re) => re.test(text))
+}
+
 // Normalise the many shapes an error arrives as (Error, string, ErrorEvent,
 // PromiseRejectionEvent) into { message, stack, context }.
 function toRecord(err, context) {
@@ -29,6 +43,7 @@ export const useErrorStore = defineStore('error', {
   }),
   actions: {
     capture(err, context = '') {
+      if (isIgnorable(err)) return
       const record = toRecord(err, context)
       const sig = `${record.context}|${record.message}`
       const now = Date.now()

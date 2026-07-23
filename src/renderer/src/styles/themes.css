@@ -102,6 +102,52 @@
   --text-on-accent: #04121a;
 }
 
+/* Nord — the low-saturation arctic palette; calm frost-blue accent on slate,
+   soft green/red for add/remove. Easy on the eyes for long sessions. */
+:root[data-theme='nord'] {
+  --bg: #2e3440;
+  --bg-panel: #3b4252;
+  --bg-hover: #434c5e;
+  --border: #4c566a;
+  --text: #eceff4;
+  --text-dim: #9aa5b8;
+  --text-hint: #d8dee9;
+  --accent: #88c0d0;
+  --warning-bg: #ebcb8b;
+  --warning-border: #d0a85f;
+  --warning-text: #2e3440;
+  --danger-bg: #bf616a;
+  --danger-border: #a54c55;
+  --danger-text: #eceff4;
+  --success-text: #a3be8c;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --favorite: #ebcb8b;
+  --text-on-accent: #2e3440;
+}
+
+/* Sepia — warm low-glare "paper" theme; ink-brown on aged paper, restrained
+   green/red. The e-reader pick, great for reviewing long prose. */
+:root[data-theme='sepia'] {
+  --bg: #f4ecd8;
+  --bg-panel: #eadfc6;
+  --bg-hover: #e2d4b4;
+  --border: #d5c4a0;
+  --text: #463a28;
+  --text-dim: #8a7a5c;
+  --text-hint: #6b5c3e;
+  --accent: #9a5b2c;
+  --warning-bg: #d99a2b;
+  --warning-border: #a86a1a;
+  --warning-text: #3a2a10;
+  --danger-bg: #b6503a;
+  --danger-border: #a5442f;
+  --danger-text: #ffffff;
+  --success-text: #4b7a3a;
+  --scrim: rgba(50, 40, 24, 0.4);
+  --favorite: #b8860b;
+  --text-on-accent: #ffffff;
+}
+
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {

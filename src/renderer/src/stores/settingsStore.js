@@ -42,6 +42,9 @@ export const DEFAULT_SETTINGS = {
   // { [sectionId]: [shelfId, …] } — a section absent here uses its natural order.
   shelfOrder: {},
   showShortcutBar: true,
+  // Fun: pick a new random theme each day (overrides the Appearance choice while
+  // on; turning it off reverts to that choice). Off by default.
+  rotateThemeDaily: false,
   fileSizeLimitsMb: defaultFileLimits(),
   maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
   // Whether the one-time first-run example snippet decision has been made (see
@@ -100,6 +103,7 @@ function readState() {
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     showShortcutBar,
+    rotateThemeDaily: parsed.rotateThemeDaily === true,
     fileSizeLimitsMb: readFileLimits(parsed),
     maxSnippetSizeKb: clampNumber(
       parsed.maxSnippetSizeKb,
@@ -133,6 +137,7 @@ export const useSettingsStore = defineStore('settings', {
           sectionsLocked: this.sectionsLocked,
           shelfOrder: this.shelfOrder,
           showShortcutBar: this.showShortcutBar,
+          rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
           // Legacy mirror: an older build (or main's fallback) still honours the
           // text limit through the pre-per-type key.
@@ -190,6 +195,10 @@ export const useSettingsStore = defineStore('settings', {
     },
     setShowShortcutBar(value) {
       this.showShortcutBar = !!value
+      this.persist()
+    },
+    setRotateThemeDaily(value) {
+      this.rotateThemeDaily = !!value
       this.persist()
     },
     setFileSizeLimitMb(type, value) {

@@ -29,8 +29,11 @@ a hard promise: it never touches the network.
 - **Diff** two files or pasted text — split or inline, word-level highlights,
   syntax highlighting, in-view search, and a live re-diff when a file changes on
   disk. Copy the result as a git-style unified patch.
+- **Excel (.xlsx) comparison** — a structured **grid** diff with sheet tabs and
+  cell / row-level highlighting, aligned so an inserted row doesn't cascade.
+  Parsed entirely offline by a small custom reader (no heavyweight dependency).
 - **Paste mode** for quick throwaway comparisons, including pasted text against a
-  real file.
+  real file — or just hit **Ctrl/Cmd+V** to paste straight into a comparison.
 - **Drag & drop** files onto the window; it warns before discarding unsaved work.
 - **Saved diffs** — encrypted, auto-expiring, organized into categories.
 - **Share** a diff as a sealed, signed file only its intended recipient can open.
@@ -43,6 +46,11 @@ a hard promise: it never touches the network.
   reorder (and can lock in place), and adjustable limits, all remembered between
   sessions.
 
+<p align="center">
+  <img src="docs/screenshots/spreadsheet-diff.png" width="820" alt="Two Excel files compared as aligned grids: changed cells boxed, a removed row and an added row shown as striped gaps, with per-sheet change counts">
+  <br><em>Excel (.xlsx) files compared as aligned grids — changed cells boxed, added/removed rows aligned.</em>
+</p>
+
 <table>
   <tr>
     <td width="50%" valign="top">
@@ -53,6 +61,13 @@ a hard promise: it never touches the network.
       <img src="docs/screenshots/save-encrypted.png" alt="Save dialog: name, category, and an expiry of at most 24 hours">
       <p align="center"><em>Saved diffs are encrypted on-device and auto-expire.</em></p>
     </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types: Excel, JSON, XML, YAML, CSV, Markdown, and any text or code file">
+      <p align="center"><em>Drop or choose two files — Excel, JSON/XML, or any text.</em></p>
+    </td>
+    <td width="50%" valign="top"></td>
   </tr>
 </table>
 
@@ -102,5 +117,8 @@ No local Node? The same flow runs in Docker: `make dev`, `make check`,
   sandbox blocks (with diagrams).
 - [Security model](docs/security.md) — offline guarantee, sharing, keys, backup.
 - [Packaging & releasing](docs/packaging.md) — installers, signing notes, CI.
+- [Chocolatey release](docs/chocolatey.md) — plan + package skeleton for
+  `choco install diffbro`.
+- [Glossary](docs/glossary.md) — every term and abbreviation (IPC, CSP, GCM, …).
 - Coding standards live in [CLAUDE.md](CLAUDE.md); roadmap in
   [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md).

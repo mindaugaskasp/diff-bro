@@ -1,3 +1,11 @@
+/* An armed destructive button (two-step confirm — see useArmedAction), used by
+   Clear logs: turns danger-coloured while it waits for the confirming click. */
+.btn.armed {
+  border-color: var(--danger-border);
+  color: var(--danger-bg);
+  font-weight: 600;
+}
+
 /* Left rail navigates domains; the pane shows one at a time so the window
    stays scannable instead of one long scroll. */
 .settings-body {

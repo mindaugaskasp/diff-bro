@@ -69,6 +69,48 @@ describe('diffStore', () => {
     expect(store.notice).toContain('book.xlsx')
   })
 
+  it('paste-to-compare: confirming reads the clipboard into the first empty side', async () => {
+    window.api = { readText: () => Promise.resolve('pasted body') }
+    const store = useDiffStore()
+    store.requestPasteFromClipboard()
+    expect(store.pastePrompt).toBe('enter')
+    await store.confirmPasteEnter()
+    expect(store.mode).toBe('paste')
+    expect(store.pasteLeft).toBe('pasted body')
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: fills the right side when the left already has content', async () => {
+    window.api = { readText: () => Promise.resolve('second') }
+    const store = useDiffStore()
+    store.pasteLeft = 'first'
+    await store.confirmPasteEnter()
+    expect(store.pasteRight).toBe('second')
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: both sides full escalates to the overwrite confirm', async () => {
+    window.api = { readText: () => Promise.resolve('third') }
+    const store = useDiffStore()
+    store.pasteLeft = 'first'
+    store.pasteRight = 'second'
+    await store.confirmPasteEnter()
+    expect(store.pastePrompt).toBe('overwrite')
+    expect(store.pasteLeft).toBe('first') // nothing clobbered yet
+    store.confirmPasteOverwrite()
+    expect(store.pasteLeft).toBe('third') // left replaced, right kept
+    expect(store.pasteRight).toBe('second')
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: an empty clipboard notices and does not enter a prompt', async () => {
+    window.api = { readText: () => Promise.resolve('   ') }
+    const store = useDiffStore()
+    await store.confirmPasteEnter()
+    expect(store.pastePrompt).toBeNull()
+    expect(store.notice).toContain('clipboard is empty')
+  })
+
   it('swap exchanges the two sides', () => {
     const store = useDiffStore()
     store.left = FILE('a.txt')
@@ -398,6 +440,30 @@ describe('diffStore', () => {
     store.setTheme('bogus')
     expect(store.theme).toBe('light')
   })
+
+  it('daily rotation overrides the active theme but keeps the saved choice, reverting when off', async () => {
+    const { useSettingsStore } = await import('../../../src/renderer/src/stores/settingsStore')
+    const settings = useSettingsStore()
+    const store = useDiffStore()
+    store.setTheme('neon') // the user's saved pick
+
+    settings.setRotateThemeDaily(true)
+    store.resolveActiveTheme()
+    const { themeForDay } = await import('../../../src/renderer/src/utils/themes')
+    expect(store.theme).toBe(themeForDay()) // active is the day's theme
+    expect(store.userTheme).toBe('neon') // saved choice untouched
+
+    // Picking a theme while rotating saves it but doesn't override today's theme.
+    store.setTheme('solar')
+    expect(store.userTheme).toBe('solar')
+    expect(store.theme).toBe(themeForDay())
+
+    // Turning rotation off reverts to the saved choice.
+    settings.setRotateThemeDaily(false)
+    store.resolveActiveTheme()
+    expect(store.theme).toBe('solar')
+  })
+
   it('adds a trusted key before clearing the pending state, then opens the manager', async () => {
     const store = useDiffStore()
     const seen = []

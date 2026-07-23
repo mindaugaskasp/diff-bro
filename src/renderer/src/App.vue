@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
+import { usePasteShortcut } from './composables/usePasteShortcut'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
@@ -23,9 +24,16 @@ const settings = useSettingsStore()
 
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
+// Ctrl/Cmd+V outside a text field offers to jump into paste mode (two-step
+// confirm before the clipboard is read — see the store's paste actions).
+usePasteShortcut(() => store.requestPasteFromClipboard())
 // Live re-diff: whenever the window regains focus, re-read loaded files so
 // external edits show up without reopening anything.
-window.addEventListener('focus', () => store.refreshFromDisk())
+window.addEventListener('focus', () => {
+  store.refreshFromDisk()
+  // Roll the daily theme over if the date changed while the app sat open.
+  store.resolveActiveTheme()
+})
 
 // First run: greet a brand-new, empty library with the example snippet, then
 // record the one-time decision so it is never re-seeded — and never injected
@@ -125,7 +133,7 @@ const {
           </p>
         </div>
         <div v-else class="empty">
-          <p class="empty-title">Choose or drop two files to compare</p>
+          <p class="empty-title">Choose or drop two files to compare.</p>
           <SupportedFormats />
         </div>
 

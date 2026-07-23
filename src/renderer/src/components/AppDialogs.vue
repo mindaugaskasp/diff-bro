@@ -7,6 +7,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useVaultStore } from '../stores/vaultStore'
 import { useErrorStore } from '../stores/errorStore'
 import ErrorReportDialog from './ErrorReportDialog.vue'
+import PasteConfirmDialog from './PasteConfirmDialog.vue'
 import SaveDiffDialog from './SaveDiffDialog.vue'
 import ShareDiffDialog from './ShareDiffDialog.vue'
 import ReplaceDiffDialog from './ReplaceDiffDialog.vue'
@@ -50,4 +51,5 @@ const errors = useErrorStore()
   <SnippetDeleteDialog v-if="snippets.pendingDelete" />
   <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
   <ErrorReportDialog v-if="errors.visible" />
+  <PasteConfirmDialog v-if="store.pastePrompt" />
 </template>

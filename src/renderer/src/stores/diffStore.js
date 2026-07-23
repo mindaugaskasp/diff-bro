@@ -6,7 +6,8 @@ import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { toUnifiedDiff } from '../utils/unifiedDiff'
 import { loadPersisted, savePersisted } from '../persist'
-import { isDarkTheme, normalizeTheme } from '../utils/themes'
+import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
+import { useSettingsStore } from './settingsStore'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -132,6 +133,11 @@ export const useDiffStore = defineStore('diff', {
     // real file on the other ("partial paste"). null = that side is a textarea.
     pasteLeftFile: null,
     pasteRightFile: null,
+    // Ctrl/Cmd+V paste-to-compare flow: null | 'enter' | 'overwrite' controls
+    // which confirmation is showing; pendingPasteText holds the clipboard text
+    // between the "both sides full" confirm and the overwrite.
+    pastePrompt: null,
+    pendingPasteText: '',
     // { additions, deletions } from the diff editor, null before first diff
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
@@ -157,10 +163,13 @@ export const useDiffStore = defineStore('diff', {
     // nothing and the replace prompt is skipped. Any edit to either side clears
     // it (see receive/comparePasted/swap/formatSide).
     diffSaved: false,
-    // Persisted through the durable data-dir store (persist.js), same as vault
-    // and snippets, so the choice survives a reinstall that wipes userData; the
-    // old localStorage 'diffbro.theme' key is migrated forward automatically.
-    // Default is Light (see utils/themes.js); an unknown stored id normalizes.
+    // The user's PERSISTED choice (Appearance picker), through the durable
+    // data-dir store — survives a reinstall; the old localStorage 'diffbro.theme'
+    // key migrates forward. Default Light; unknown ids normalize.
+    userTheme: normalizeTheme(loadPersisted('theme')),
+    // The ACTIVE, applied theme components read. Equals userTheme, unless the
+    // "rotate daily" Fun option is on, when it's the day's random theme
+    // (resolveActiveTheme). Kept separate so turning rotation off reverts cleanly.
     theme: normalizeTheme(loadPersisted('theme')),
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
@@ -350,6 +359,48 @@ export const useDiffStore = defineStore('diff', {
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
     },
+    // --- Ctrl/Cmd+V paste-to-compare (see usePasteShortcut) ---
+    // Step 1: a paste gesture landed outside any input. Ask before touching the
+    // clipboard — it's only read once the user confirms.
+    requestPasteFromClipboard() {
+      if (this.pastePrompt) return // a confirm is already up
+      this.pastePrompt = 'enter'
+    },
+    // Step 2: confirmed. Read the clipboard (main process), enter paste mode, and
+    // drop the text into the first empty side. If BOTH sides already hold text,
+    // escalate to the overwrite confirm rather than clobbering unsaved work.
+    async confirmPasteEnter() {
+      const text = (await window.api?.readText?.()) ?? ''
+      if (!text.trim()) {
+        this.pastePrompt = null
+        this.showNotice('The clipboard is empty — nothing to paste.')
+        return
+      }
+      this.mode = 'paste'
+      const leftFull = !!(this.pasteLeft || this.pasteLeftFile)
+      const rightFull = !!(this.pasteRight || this.pasteRightFile)
+      if (!leftFull) {
+        this.pasteLeft = text
+        this.pastePrompt = null
+      } else if (!rightFull) {
+        this.pasteRight = text
+        this.pastePrompt = null
+      } else {
+        this.pendingPasteText = text
+        this.pastePrompt = 'overwrite'
+      }
+    },
+    // Both sides were full and the user agreed to overwrite: replace the left
+    // side with the pasted text, keeping the right to compare against.
+    confirmPasteOverwrite() {
+      this.pasteLeft = this.pendingPasteText
+      this.pendingPasteText = ''
+      this.pastePrompt = null
+    },
+    cancelPaste() {
+      this.pendingPasteText = ''
+      this.pastePrompt = null
+    },
     // Load a file into one paste side without leaving paste mode (partial
     // paste). `file` is a LoadedFile from the open dialog or a dropped file.
     receivePasteFile(side, file) {
@@ -380,6 +431,14 @@ export const useDiffStore = defineStore('diff', {
       this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = null
     },
     initTheme() {
+      this.resolveActiveTheme()
+    },
+    // Compute and apply the active theme: the day's random theme when the "rotate
+    // daily" Fun option is on, otherwise the user's saved choice. Idempotent —
+    // safe to call on window focus so the theme rolls over at midnight.
+    resolveActiveTheme() {
+      const rotate = useSettingsStore().rotateThemeDaily
+      this.theme = rotate ? themeForDay() : this.userTheme
       applyTheme(this.theme)
     },
     // Open the Mermaid viewer for a diagram's decrypted source.
@@ -392,14 +451,16 @@ export const useDiffStore = defineStore('diff', {
     // Select any of the named themes (Settings picker). Unknown ids fall back
     // to the default rather than leaving the app unstyled.
     setTheme(id) {
-      this.theme = normalizeTheme(id)
-      savePersisted('theme', this.theme)
-      applyTheme(this.theme)
+      this.userTheme = normalizeTheme(id)
+      savePersisted('theme', this.userTheme)
+      // While rotating, the pick is saved for later but the active theme stays
+      // the day's; otherwise it applies immediately.
+      this.resolveActiveTheme()
     },
     // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
     // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
     toggleTheme() {
-      this.setTheme(isDarkTheme(this.theme) ? 'light' : 'dark')
+      this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
     },
     // Re-read one slot quietly (no large-file prompt); returns the file name if
     // its on-disk content actually changed, else null. Paste-file slots keep
@@ -641,7 +702,7 @@ export const useDiffStore = defineStore('diff', {
     // --- configuration backup / restore ---
     async runConfigBackup(passphrase) {
       const snippets = await useSnippetStore().fullBundle()
-      const settings = { theme: this.theme }
+      const settings = { theme: this.userTheme }
       const res = await window.api.backupConfig(snippets, settings, passphrase)
       if (res.ok) this.showNotice(`Configuration backed up to ${res.path}`)
       else if (!res.canceled) this.showNotice('Backup failed.')

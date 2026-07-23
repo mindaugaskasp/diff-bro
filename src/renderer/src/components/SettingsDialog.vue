@@ -22,8 +22,16 @@ const TABS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'storage', label: 'Storage' },
   { id: 'limits', label: 'Limits' },
-  { id: 'logs', label: 'Logs' }
+  { id: 'logs', label: 'Logs' },
+  { id: 'fun', label: 'Fun' }
 ]
+
+// Toggle daily theme rotation, then re-resolve the active theme so it applies
+// (or reverts to the Appearance choice) immediately.
+function toggleDailyTheme(on) {
+  settings.setRotateThemeDaily(on)
+  diff.resolveActiveTheme()
+}
 const tab = ref('appearance')
 
 async function refresh() {
@@ -131,6 +139,22 @@ function close() {
         </section>
 
         <LogSettings v-else-if="tab === 'logs'" />
+
+        <section v-else-if="tab === 'fun'">
+          <h4>Fun</h4>
+          <label class="row toggle">
+            <input
+              type="checkbox"
+              :checked="settings.rotateThemeDaily"
+              @change="toggleDailyTheme($event.target.checked)"
+            />
+            <span>Rotate the app theme daily — a new random theme each day 🎲</span>
+          </label>
+          <p class="hint">
+            Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily
+            theme is the same all day and changes at midnight.
+          </p>
+        </section>
 
         <section v-else>
           <h4>Limits</h4>

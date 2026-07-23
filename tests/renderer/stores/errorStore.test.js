@@ -47,6 +47,17 @@ describe('errorStore', () => {
     expect(s.lastError.message).toBe('two')
   })
 
+  it('ignores benign framework noise (Monaco Canceled, ResizeObserver, opaque script error)', () => {
+    const s = useErrorStore()
+    s.capture(new Error('Canceled'), 'unhandledrejection')
+    const cancellation = Object.assign(new Error('operation cancelled'), { name: 'CancellationError' })
+    s.capture({ reason: cancellation }, 'unhandledrejection')
+    s.capture('ResizeObserver loop completed with undelivered notifications', 'window.error')
+    s.capture('Script error.', 'window.error')
+    expect(s.visible).toBe(false)
+    expect(window.api.logError).not.toHaveBeenCalled()
+  })
+
   it('never throws when the log bridge is unavailable', () => {
     window.api = {}
     const s = useErrorStore()

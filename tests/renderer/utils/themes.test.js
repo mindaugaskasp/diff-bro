@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   THEMES,
   DEFAULT_THEME,
+  themeForDay,
   isValidTheme,
   isDarkTheme,
   normalizeTheme
@@ -37,5 +38,22 @@ describe('themes registry', () => {
         expect(t.swatch[k]).toMatch(/^#[0-9a-f]{6}$/i)
       }
     }
+  })
+})
+
+describe('themeForDay', () => {
+  it('is stable within a day and returns a valid theme id', () => {
+    const d = new Date(2026, 6, 23)
+    const a = themeForDay(d)
+    const b = themeForDay(new Date(2026, 6, 23, 18, 30))
+    expect(a).toBe(b) // same calendar day -> same theme
+    expect(isValidTheme(a)).toBe(true)
+  })
+
+  it('varies across days and covers the registry over time', () => {
+    const seen = new Set()
+    for (let i = 0; i < 60; i++) seen.add(themeForDay(new Date(2026, 0, 1 + i)))
+    expect(seen.size).toBeGreaterThan(1) // not stuck on one theme
+    for (const id of seen) expect(isValidTheme(id)).toBe(true)
   })
 })

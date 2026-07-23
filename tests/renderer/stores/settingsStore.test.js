@@ -111,6 +111,14 @@ describe('settingsStore', () => {
     expect(useSettingsStore().fileSizeLimitMb('spreadsheet')).toBe(60)
   })
 
+  it('daily theme rotation defaults off and persists when toggled', () => {
+    const s = useSettingsStore()
+    expect(s.rotateThemeDaily).toBe(false)
+    s.setRotateThemeDaily(true)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().rotateThemeDaily).toBe(true)
+  })
+
   it('toggles the shortcut bar and persists it', () => {
     useSettingsStore().setShowShortcutBar(false)
     setActivePinia(createPinia())
