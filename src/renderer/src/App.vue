@@ -5,6 +5,8 @@ import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
+import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
+import SupportedFormats from './components/SupportedFormats.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
 import MenuBar from './components/MenuBar.vue'
@@ -104,9 +106,13 @@ const {
         </div>
 
         <PasteInput v-if="store.mode === 'paste'" />
+        <!-- Content router: pick the viewer by comparable kind. -->
         <template v-else-if="store.ready">
-          <FormatHintBanner />
-          <DiffViewer />
+          <template v-if="store.comparableKind === 'text'">
+            <FormatHintBanner />
+            <DiffViewer />
+          </template>
+          <SpreadsheetDiffViewer v-else />
         </template>
         <!-- One side loaded: make it obvious a second file is still needed. -->
         <div v-else-if="store.left || store.right" class="empty waiting">
@@ -119,7 +125,8 @@ const {
           </p>
         </div>
         <div v-else class="empty">
-          <p>Choose or drop two files to compare.</p>
+          <p class="empty-title">Choose or drop two files to compare</p>
+          <SupportedFormats />
         </div>
 
         <ShortcutBar />

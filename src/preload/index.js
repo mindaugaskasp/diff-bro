@@ -65,6 +65,16 @@ contextBridge.exposeInMainWorld('api', {
   // Opens the project's "new issue" page (a fixed URL, chosen in main) in the
   // OS browser. No URL crosses from the renderer.
   reportIssue: () => ipcRenderer.invoke('app:reportIssue'),
+  // Local error log (written by the main process, never sent anywhere). The
+  // renderer forwards its own uncaught errors and can read/clear/reveal the log
+  // and choose where it's stored.
+  logError: (record) => ipcRenderer.invoke('log:error', record),
+  readLog: () => ipcRenderer.invoke('log:read'),
+  clearLog: () => ipcRenderer.invoke('log:clear'),
+  revealLog: () => ipcRenderer.invoke('log:reveal'),
+  logDirGet: () => ipcRenderer.invoke('log:getDir'),
+  logDirChoose: () => ipcRenderer.invoke('log:chooseDir'),
+  logDirReset: () => ipcRenderer.invoke('log:resetDir'),
   // Durable key/value store backed by files in the configurable data directory
   // (so data survives a reinstall). Loads are synchronous so the Pinia stores
   // can read their state during setup, exactly like localStorage did.

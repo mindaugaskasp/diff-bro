@@ -37,6 +37,38 @@ describe('diffStore', () => {
     expect(store.notice).toContain('blob.bin')
   })
 
+  it('rejects an unreadable spreadsheet with a notice and leaves the slot empty', () => {
+    const store = useDiffStore()
+    store.receive('left', { error: 'xlsx', name: 'book.xlsx', message: 'DOCTYPE not allowed' })
+    expect(store.left).toBeNull()
+    expect(store.notice).toContain('book.xlsx')
+    expect(store.notice).toContain('DOCTYPE not allowed')
+  })
+
+  it('loads a parsed spreadsheet and routes it to the grid viewer', () => {
+    const store = useDiffStore()
+    const sheets = [{ name: 'S1', rows: [['Region', 100]] }]
+    store.receive('left', { path: '/tmp/l.xlsx', name: 'l.xlsx', kind: 'spreadsheet', sheets })
+    store.receive('right', { path: '/tmp/r.xlsx', name: 'r.xlsx', kind: 'spreadsheet', sheets })
+    expect(store.ready).toBe(true)
+    expect(store.comparableKind).toBe('spreadsheet')
+    expect(store.leftComparable).toEqual({ kind: 'spreadsheet', sheets })
+  })
+
+  it('comparableKind is text for the empty and text-file states', () => {
+    const store = useDiffStore()
+    expect(store.comparableKind).toBe('text')
+    store.left = FILE('a.txt')
+    expect(store.comparableKind).toBe('text')
+  })
+
+  it('refuses a spreadsheet dropped into paste mode', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] })
+    expect(store.pasteLeftFile).toBeNull()
+    expect(store.notice).toContain('book.xlsx')
+  })
+
   it('swap exchanges the two sides', () => {
     const store = useDiffStore()
     store.left = FILE('a.txt')

@@ -1,0 +1,13 @@
+.err-msg {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger-bg) 12%, transparent);
+  color: var(--text);
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-sm);
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+}

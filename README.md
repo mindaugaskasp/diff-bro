@@ -98,6 +98,8 @@ No local Node? The same flow runs in Docker: `make dev`, `make check`,
 ## Docs
 
 - [Architecture](docs/architecture.md) — processes, trust boundary, directory map.
+- [IPC & security](docs/ipc-security.md) — how renderer↔main talk, and what the
+  sandbox blocks (with diagrams).
 - [Security model](docs/security.md) — offline guarantee, sharing, keys, backup.
 - [Packaging & releasing](docs/packaging.md) — installers, signing notes, CI.
 - Coding standards live in [CLAUDE.md](CLAUDE.md); roadmap in

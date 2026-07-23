@@ -11,13 +11,28 @@ import { loadPersisted, savePersisted } from '../persist'
 // The three reorderable sidebar sections, in their default top-to-bottom order.
 export const SECTIONS = ['saved', 'external', 'snippets']
 
-// Safe defaults that keep the app responsive. Both are user-raisable (the point
-// of exposing them), but each has a hard ceiling so a typo can't wedge the app
-// trying to diff or render something enormous.
-export const DEFAULT_MAX_COMPARISON_FILE_MB = 10
+// Comparison-file size limits, PER FILE TYPE. Each is a soft "load anyway?"
+// prompt threshold the user can raise, and `cap` is the hard ceiling the app
+// enforces (also the slider max). Different types degrade differently: Monaco
+// gets sluggish with large text well before a .xlsx (compressed, and the grid
+// only renders a capped window), so their sensible middle grounds differ. Add a
+// new type here (e.g. `docx`) and the Settings pane + main-process guard both
+// pick it up. Main mirrors these numbers in src/main/files.js (it can't import a
+// Pinia store) — keep the two in sync.
+export const FILE_TYPE_LIMITS = {
+  text: { label: 'Text & code', default: 10, cap: 200 },
+  spreadsheet: { label: 'Spreadsheet (.xlsx)', default: 25, cap: 100 }
+}
+
+// Snippet size guard: user-raisable with a hard ceiling, same rationale.
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
-export const MAX_COMPARISON_FILE_MB_CAP = 500
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
+
+function defaultFileLimits() {
+  const out = {}
+  for (const [type, spec] of Object.entries(FILE_TYPE_LIMITS)) out[type] = spec.default
+  return out
+}
 
 export const DEFAULT_SETTINGS = {
   sectionOrder: [...SECTIONS],
@@ -27,7 +42,7 @@ export const DEFAULT_SETTINGS = {
   // { [sectionId]: [shelfId, …] } — a section absent here uses its natural order.
   shelfOrder: {},
   showShortcutBar: true,
-  maxComparisonFileMb: DEFAULT_MAX_COMPARISON_FILE_MB,
+  fileSizeLimitsMb: defaultFileLimits(),
   maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
   // Whether the one-time first-run example snippet decision has been made (see
   // App.vue). Recorded for everyone once, so the example is never re-seeded.
@@ -49,6 +64,24 @@ function sanitizeSectionOrder(order) {
   return kept
 }
 
+// Resolve each type's limit from the stored map, migrating the pre-per-type
+// single `maxComparisonFileMb` into the text bucket. Every value is clamped to
+// its type's [1, cap], so a stale or hand-edited file can't exceed the ceiling.
+function readFileLimits(parsed) {
+  const stored =
+    parsed.fileSizeLimitsMb && typeof parsed.fileSizeLimitsMb === 'object'
+      ? parsed.fileSizeLimitsMb
+      : {}
+  const legacy = Number(parsed.maxComparisonFileMb)
+  const out = {}
+  for (const [type, spec] of Object.entries(FILE_TYPE_LIMITS)) {
+    const legacySeed = type === 'text' && Number.isFinite(legacy) ? legacy : spec.default
+    const raw = stored[type] ?? legacySeed
+    out[type] = clampNumber(raw, spec.default, 1, spec.cap)
+  }
+  return out
+}
+
 function readState() {
   let parsed
   try {
@@ -67,12 +100,7 @@ function readState() {
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     showShortcutBar,
-    maxComparisonFileMb: clampNumber(
-      parsed.maxComparisonFileMb,
-      DEFAULT_MAX_COMPARISON_FILE_MB,
-      1,
-      MAX_COMPARISON_FILE_MB_CAP
-    ),
+    fileSizeLimitsMb: readFileLimits(parsed),
     maxSnippetSizeKb: clampNumber(
       parsed.maxSnippetSizeKb,
       DEFAULT_MAX_SNIPPET_SIZE_KB,
@@ -88,7 +116,13 @@ export const useSettingsStore = defineStore('settings', {
   getters: {
     // Sections in the user's chosen order (always all three, sanitized).
     orderedSections: (s) => s.sectionOrder,
-    maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024
+    maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024,
+    // The configured MB limit for a file type (falls back to its default).
+    fileSizeLimitMb: (s) => (type) =>
+      s.fileSizeLimitsMb[type] ?? FILE_TYPE_LIMITS[type]?.default ?? 10,
+    fileSizeLimitBytes() {
+      return (type) => this.fileSizeLimitMb(type) * 1024 * 1024
+    }
   },
   actions: {
     persist() {
@@ -99,7 +133,10 @@ export const useSettingsStore = defineStore('settings', {
           sectionsLocked: this.sectionsLocked,
           shelfOrder: this.shelfOrder,
           showShortcutBar: this.showShortcutBar,
-          maxComparisonFileMb: this.maxComparisonFileMb,
+          fileSizeLimitsMb: this.fileSizeLimitsMb,
+          // Legacy mirror: an older build (or main's fallback) still honours the
+          // text limit through the pre-per-type key.
+          maxComparisonFileMb: this.fileSizeLimitsMb.text,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           examplesSeeded: this.examplesSeeded
         })
@@ -155,13 +192,13 @@ export const useSettingsStore = defineStore('settings', {
       this.showShortcutBar = !!value
       this.persist()
     },
-    setMaxComparisonFileMb(value) {
-      this.maxComparisonFileMb = clampNumber(
-        value,
-        DEFAULT_MAX_COMPARISON_FILE_MB,
-        1,
-        MAX_COMPARISON_FILE_MB_CAP
-      )
+    setFileSizeLimitMb(type, value) {
+      const spec = FILE_TYPE_LIMITS[type]
+      if (!spec) return
+      this.fileSizeLimitsMb = {
+        ...this.fileSizeLimitsMb,
+        [type]: clampNumber(value, spec.default, 1, spec.cap)
+      }
       this.persist()
     },
     setMaxSnippetSizeKb(value) {

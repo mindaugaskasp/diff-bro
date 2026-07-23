@@ -3,11 +3,12 @@ import { onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import {
   useSettingsStore,
-  MAX_COMPARISON_FILE_MB_CAP,
+  FILE_TYPE_LIMITS,
   MAX_SNIPPET_SIZE_KB_CAP
 } from '../stores/settingsStore'
 import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
+import LogSettings from './LogSettings.vue'
 
 const diff = useDiffStore()
 const settings = useSettingsStore()
@@ -20,7 +21,8 @@ const busy = ref(false)
 const TABS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'storage', label: 'Storage' },
-  { id: 'limits', label: 'Limits' }
+  { id: 'limits', label: 'Limits' },
+  { id: 'logs', label: 'Logs' }
 ]
 const tab = ref('appearance')
 
@@ -128,16 +130,18 @@ function close() {
           <p class="hint">Changing the folder restarts Diff Bro.</p>
         </section>
 
+        <LogSettings v-else-if="tab === 'logs'" />
+
         <section v-else>
           <h4>Limits</h4>
-          <label class="row">
-            <span>Max comparison file (MB)</span>
+          <label v-for="(spec, type) in FILE_TYPE_LIMITS" :key="type" class="row">
+            <span>Max {{ spec.label }} file (MB)</span>
             <input
               type="number"
               min="1"
-              :max="MAX_COMPARISON_FILE_MB_CAP"
-              :value="settings.maxComparisonFileMb"
-              @change="settings.setMaxComparisonFileMb($event.target.value)"
+              :max="spec.cap"
+              :value="settings.fileSizeLimitMb(type)"
+              @change="settings.setFileSizeLimitMb(type, $event.target.value)"
             />
           </label>
           <label class="row">

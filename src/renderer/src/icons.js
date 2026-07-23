@@ -116,5 +116,12 @@ export const ICONS = {
       t: 'path',
       d: 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z'
     }
-  ]
+  ],
+  // Grid — marks the spreadsheet (.xlsx) format in the supported-types hint.
+  table: [
+    { t: 'rect', x: 3, y: 4, width: 18, height: 16, rx: 2 },
+    { t: 'path', d: 'M3 10h18M3 15h18M9 4v16M15 4v16' }
+  ],
+  // Angle brackets — marks code/markup formats (JSON, XML, and the like).
+  code: [{ t: 'path', d: 'm8 8-4 4 4 4M16 8l4 4-4 4' }]
 }

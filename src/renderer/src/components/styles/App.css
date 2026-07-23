@@ -41,6 +41,10 @@
   gap: 4px;
   color: var(--text-dim);
 }
+.empty-title {
+  font-size: var(--font-xl);
+  color: var(--text);
+}
 .empty.waiting .waiting-title {
   font-size: var(--font-xl);
   color: var(--text);

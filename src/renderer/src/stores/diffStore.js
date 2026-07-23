@@ -203,6 +203,11 @@ export const useDiffStore = defineStore('diff', {
         : s.ready,
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
     rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
+    // Which viewer the loaded comparison needs: 'text' (Monaco) or 'spreadsheet'
+    // (grid). Text is the default so an empty/paste state routes to Monaco.
+    comparableKind() {
+      return this.leftComparable?.kind ?? this.rightComparable?.kind ?? 'text'
+    },
     leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
     rightFormatHint: (s) => formatHintFor(s.right, s.dismissedFormatHint.right),
     // One merged banner for both sides (see mergeFormatBanner) — null when neither
@@ -320,6 +325,10 @@ export const useDiffStore = defineStore('diff', {
         )
         return
       }
+      if (file.error === 'xlsx') {
+        this.showNotice(`"${file.name}" could not be read as a spreadsheet — ${file.message}.`)
+        return
+      }
       // Any other error shape (e.g. a path main refused to serve) is not a
       // loadable file — never assign it to a side.
       if (file.error) return
@@ -349,6 +358,10 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice(
           `"${file.name}" looks like a binary file — only text files can be compared.`
         )
+        return
+      }
+      if (file.kind === 'spreadsheet') {
+        this.showNotice(`"${file.name}" is a spreadsheet — open it as a file comparison, not in paste mode.`)
         return
       }
       if (file.error) return

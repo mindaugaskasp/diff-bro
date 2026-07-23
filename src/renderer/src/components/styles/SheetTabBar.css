@@ -1,0 +1,48 @@
+.sheet-tabs {
+  gap: 2px;
+  padding: 0 var(--space-2);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex: none;
+}
+.sheet-tabs .tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-h);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sheet-tabs .tab:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.sheet-tabs .tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.sheet-tabs .tab .badge {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  /* changed-count chip: the warning bg/text pairing is contrast-guaranteed in
+     both themes (that's what the tokens are for). */
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+.sheet-tabs .tab .badge.only {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+.sheet-tabs .tab.missing .name {
+  font-style: italic;
+}

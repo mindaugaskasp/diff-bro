@@ -4,16 +4,31 @@ import { basename, resolve, sep } from 'path'
 import chardet from 'chardet'
 import iconv from 'iconv-lite'
 import { readSettings } from './appData'
+import { readXlsx } from './xlsx/index'
 
-// Warn before loading files bigger than the user's configured comparison limit
-// (Monaco slows down well past it). The default is a safe 10 MB; the user can
-// raise it in Settings, accepting the performance hit. Read fresh each time so
-// the choice applies without a restart, and floored so a bad value can't
-// disable the guard entirely.
-const DEFAULT_LARGE_FILE_MB = 10
-function largeFileBytes() {
-  const mb = Number(readSettings().maxComparisonFileMb)
-  return (Number.isFinite(mb) && mb >= 1 ? mb : DEFAULT_LARGE_FILE_MB) * 1024 * 1024
+// Per-file-type size guards. Mirrors the renderer's FILE_TYPE_LIMITS
+// (stores/settingsStore.js) — the renderer owns the slider UI; main enforces
+// independently so a hand-edited settings.json can't wedge the app. Keep the
+// numbers in sync with that file. `cap` is the hard ceiling: for .xlsx it's also
+// the reader's compressed-input limit, so "Load anyway" works up to the same
+// number the slider maxes at, and the two can never disagree.
+const TYPE_LIMITS = {
+  text: { default: 10, cap: 200 },
+  spreadsheet: { default: 25, cap: 100 }
+}
+
+function fileTypeFor(name) {
+  return /\.xlsx$/i.test(name) ? 'spreadsheet' : 'text'
+}
+
+// The soft prompt threshold in bytes for a type: the user's setting, floored so
+// a bad value can't disable the guard and capped at the type's ceiling. Read
+// fresh each time so a change applies without a restart.
+function limitBytesFor(type) {
+  const spec = TYPE_LIMITS[type] ?? TYPE_LIMITS.text
+  const configured = Number(readSettings().fileSizeLimitsMb?.[type])
+  const mb = Number.isFinite(configured) && configured >= 1 ? Math.min(configured, spec.cap) : spec.default
+  return mb * 1024 * 1024
 }
 
 // Provenance allowlist. `file:read` is only ever meant to serve a path the
@@ -52,11 +67,31 @@ function isUnderUserData(filePath) {
   return abs === base || abs.startsWith(base + sep)
 }
 
+// Local zip signature ("PK\x03\x04"). Gated on the .xlsx extension too, so a
+// plain .zip the user drops isn't treated as a spreadsheet.
+const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04])
+function looksLikeXlsx(name, buffer) {
+  return /\.xlsx$/i.test(name) && buffer.length >= 4 && buffer.subarray(0, 4).equals(ZIP_MAGIC)
+}
+
+function readXlsxForRenderer(buffer, filePath, name, size) {
+  try {
+    // The reader's compressed-input ceiling is the spreadsheet cap, so it agrees
+    // with the size prompt: anything the user could "Load anyway" also parses.
+    const { sheets } = readXlsx(buffer, { maxInputBytes: TYPE_LIMITS.spreadsheet.cap * 1024 * 1024 })
+    return { path: filePath, name, size, kind: 'spreadsheet', sheets }
+  } catch (err) {
+    // XlsxError (bomb / doctype / unzip / format / parse) or anything
+    // unexpected — not a loadable comparison; surface a polite reason.
+    return { error: 'xlsx', name, path: filePath, message: err?.message ?? 'unreadable spreadsheet' }
+  }
+}
+
 async function readFileForRenderer(win, filePath, opts = {}) {
   const name = basename(filePath)
 
   const { size } = await stat(filePath)
-  if (size > largeFileBytes()) {
+  if (size > limitBytesFor(fileTypeFor(name))) {
     // quiet mode (focus refresh) must never pop a dialog — skip the reload.
     if (opts.quiet) return null
     const { response } = await dialog.showMessageBox(win, {
@@ -72,6 +107,11 @@ async function readFileForRenderer(win, filePath, opts = {}) {
   }
 
   const buffer = await readFile(filePath)
+
+  // .xlsx is a zip (so it trips the binary sniff below): detect it first and
+  // parse to a spreadsheet grid in the main process. Parsing stays here, never
+  // in the renderer — it's hostile binary input (see src/main/xlsx/).
+  if (looksLikeXlsx(name, buffer)) return readXlsxForRenderer(buffer, filePath, name, size)
 
   // Binary detection: a NUL byte in the first 8 KB means this is not text.
   if (buffer.subarray(0, 8192).includes(0)) {

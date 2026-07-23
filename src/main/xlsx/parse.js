@@ -1,0 +1,94 @@
+import { Parser, decode } from 'saxen'
+import { XlsxError, rejectDoctype } from './errors'
+
+// One place to build a SAX parser whose XML errors surface as XlsxError('parse')
+// rather than saxen's default throw of a bare string.
+function newParser(onOpen, onClose, onText) {
+  const p = new Parser()
+  if (onOpen) p.on('openTag', onOpen)
+  if (onClose) p.on('closeTag', onClose)
+  if (onText) p.on('text', onText)
+  p.on('error', (err) => {
+    throw new XlsxError('parse', `malformed XML: ${err}`)
+  })
+  return p
+}
+
+// The shared string table: <sst><si>…</si>…</sst>. An <si> may hold rich-text
+// runs (<r><t>…</t></r>), whose <t> fragments concatenate; phonetic runs
+// (<rPh>) carry pronunciation, not content, so their <t> is skipped.
+export function parseSharedStrings(xml) {
+  rejectDoctype(xml)
+  const strings = []
+  let cur = null
+  let inT = false
+  let phonetic = 0
+  const p = newParser(
+    (name) => {
+      if (name === 'si') cur = ''
+      else if (name === 'rPh') phonetic++
+      else if (name === 't' && !phonetic) inT = true
+    },
+    (name) => {
+      if (name === 't') inT = false
+      else if (name === 'rPh') phonetic--
+      else if (name === 'si') {
+        strings.push(cur ?? '')
+        cur = null
+      }
+    },
+    (val, decodeEntities) => {
+      if (inT) cur += decodeEntities(val)
+    }
+  )
+  p.parse(xml)
+  return strings
+}
+
+// workbook.xml lists sheets in display order with a relationship id that
+// _rels/workbook.xml.rels maps to the actual worksheet path.
+export function parseWorkbook(xml) {
+  rejectDoctype(xml)
+  const sheets = []
+  const p = newParser((name, getAttrs) => {
+    if (name !== 'sheet') return
+    const a = getAttrs()
+    sheets.push({ name: decode(a['name'] ?? ''), rid: a['r:id'] ?? a['r:Id'] ?? '' })
+  })
+  p.parse(xml)
+  return sheets
+}
+
+// Relationship ids are attacker-controlled strings used as keys, so they go in a
+// Map — never plain-object property assignment (prototype-pollution safe).
+export function parseRels(xml) {
+  rejectDoctype(xml)
+  const map = new Map()
+  const p = newParser((name, getAttrs) => {
+    if (name !== 'Relationship') return
+    const a = getAttrs()
+    if (a['Id'] && a['Target']) map.set(a['Id'], a['Target'])
+  })
+  p.parse(xml)
+  return map
+}
+
+// "B12" -> 1 (0-based column). Bijective base-26 over the leading letters;
+// returns -1 when the ref has no letter prefix.
+export function colToIndex(ref) {
+  let col = 0
+  let seen = false
+  for (let i = 0; i < ref.length; i++) {
+    const ch = ref.charCodeAt(i)
+    if (ch < 65 || ch > 90) break
+    col = col * 26 + (ch - 64)
+    seen = true
+  }
+  return seen ? col - 1 : -1
+}
+
+// Relationship targets are relative to xl/ ("worksheets/sheet1.xml") or absolute
+// from the package root ("/xl/worksheets/sheet1.xml").
+export function resolveTarget(target) {
+  return target.startsWith('/') ? target.slice(1) : `xl/${target}`
+}

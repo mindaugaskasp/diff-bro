@@ -1,0 +1,67 @@
+.sheet-viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The two grids share one horizontal scroll region so a wide sheet scrolls as a
+   unit and the sides never drift out of column alignment. */
+.grids {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow: auto;
+  align-content: start;
+}
+.grids > :first-child {
+  border-right: 2px solid var(--border);
+}
+
+.identical-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--success-text);
+  font-size: var(--font-md);
+}
+.identical-row .ok {
+  flex: none;
+}
+
+.status {
+  gap: var(--space-4);
+  padding: 0 var(--space-3);
+  min-height: var(--control-h);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+}
+.status .chg {
+  color: var(--warning-border);
+  font-weight: 600;
+}
+.status .add {
+  color: var(--success-text);
+  font-weight: 600;
+}
+.status .del {
+  color: var(--danger-border);
+  font-weight: 600;
+}
+.status .only {
+  font-style: italic;
+}
+.status .capped {
+  color: var(--warning-border);
+  font-style: italic;
+}
+.status .right {
+  margin-left: auto;
+}

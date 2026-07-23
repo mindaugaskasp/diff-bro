@@ -32,6 +32,8 @@ export default defineConfig({
         'src/main/textCrypt.js',
         'src/main/kdf.js',
         'src/main/configBackup.js',
+        'src/main/logFormat.js',
+        'src/main/xlsx/**',
         'src/renderer/src/stores/**',
         'src/renderer/src/utils/**',
         'src/renderer/src/adapters/**'
