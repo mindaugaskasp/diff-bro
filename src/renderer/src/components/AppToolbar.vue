@@ -95,9 +95,7 @@ const pasteToggleTitle = computed(() =>
           class="icon-btn"
           :class="{ active: settings.sectionsLocked }"
           :title="
-            settings.sectionsLocked
-              ? 'Unlock sidebar section order'
-              : 'Lock sidebar section order'
+            settings.sectionsLocked ? 'Unlock sidebar section order' : 'Lock sidebar section order'
           "
           @click="settings.toggleSectionsLock()"
         >

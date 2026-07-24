@@ -97,14 +97,35 @@ function emitGap(gap, leftRows, rightRows, keyColumn) {
       const j = queue.shift()
       used.add(j)
       const changed = changedCells(leftRows[i], rightRows[j])
-      out.push({ status: 'changed', left: leftRows[i], right: rightRows[j], leftIndex: i, rightIndex: j, changed })
+      out.push({
+        status: 'changed',
+        left: leftRows[i],
+        right: rightRows[j],
+        leftIndex: i,
+        rightIndex: j,
+        changed
+      })
     } else {
-      out.push({ status: 'removed', left: leftRows[i], right: null, leftIndex: i, rightIndex: null, changed: [] })
+      out.push({
+        status: 'removed',
+        left: leftRows[i],
+        right: null,
+        leftIndex: i,
+        rightIndex: null,
+        changed: []
+      })
     }
   }
   for (const j of ins) {
     if (!used.has(j)) {
-      out.push({ status: 'added', left: null, right: rightRows[j], leftIndex: null, rightIndex: j, changed: [] })
+      out.push({
+        status: 'added',
+        left: null,
+        right: rightRows[j],
+        leftIndex: null,
+        rightIndex: j,
+        changed: []
+      })
     }
   }
   return out

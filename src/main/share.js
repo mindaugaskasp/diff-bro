@@ -193,6 +193,27 @@ const guardIdentity =
     }
   }
 
+// Read, size-check, filename-integrity-check and open a sealed diff at `path`.
+// Shared by the dialog importer (share:import) and the drag-drop importer
+// (share:importPath): the path is the only difference, and both must apply the
+// same guards to an untrusted file before openSealed does the crypto vetting.
+async function openSharedFileAt(path) {
+  let file
+  try {
+    const { size } = await stat(path)
+    if (size > MAX_SHARE_FILE_BYTES) return { error: 'not-a-share-file' }
+    file = JSON.parse(await readFile(path, 'utf-8'))
+  } catch {
+    return { error: 'not-a-share-file' }
+  }
+  // Integrity is tied to the filename: a shared diff must keep the hashed name
+  // it was written with. A renamed file is refused.
+  if (file?.ciphertext && basename(path) !== shareFilename(file)) {
+    return { error: 'renamed' }
+  }
+  return openSealed(file, await getIdentity(), await readTrusted())
+}
+
 export function registerShareIpc() {
   ipcMain.handle('share:listTrusted', async () => {
     return (await readTrusted()).map(({ fingerprint: fp, label }) => ({ fingerprint: fp, label }))
@@ -252,24 +273,16 @@ export function registerShareIpc() {
         filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
       })
       if (canceled || !filePaths.length) return { canceled: true }
-
-      let file
-      try {
-        const { size } = await stat(filePaths[0])
-        if (size > MAX_SHARE_FILE_BYTES) return { error: 'not-a-share-file' }
-        file = JSON.parse(await readFile(filePaths[0], 'utf-8'))
-      } catch {
-        return { error: 'not-a-share-file' }
-      }
-
-      // Integrity is tied to the filename: a shared diff must keep the hashed
-      // name it was written with. A renamed file is refused.
-      if (file?.ciphertext && basename(filePaths[0]) !== shareFilename(file)) {
-        return { error: 'renamed' }
-      }
-
-      return openSealed(file, await getIdentity(), await readTrusted())
+      return openSharedFileAt(filePaths[0])
     })
+  )
+
+  // Drag-drop variant: a .diffbro dropped on the window. Same untrusted-file
+  // guards as the dialog path — the path is webUtils-resolved (a genuine user
+  // drop), but the file's contents are still hostile until openSealed vets them.
+  ipcMain.handle(
+    'share:importPath',
+    guardIdentity((e, path) => openSharedFileAt(path))
   )
 
   // This install's current key display label (what recipients see on import).

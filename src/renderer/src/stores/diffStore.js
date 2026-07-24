@@ -453,7 +453,9 @@ export const useDiffStore = defineStore('diff', {
         return
       }
       if (file.kind === 'spreadsheet') {
-        this.showNotice(`"${file.name}" is a spreadsheet — open it as a file comparison, not in paste mode.`)
+        this.showNotice(
+          `"${file.name}" is a spreadsheet — open it as a file comparison, not in paste mode.`
+        )
         return
       }
       if (file.error) return
@@ -669,6 +671,22 @@ export const useDiffStore = defineStore('diff', {
           `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
         )
       else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+    },
+    // A .diffbro dropped on the window: import it as a sealed external diff and
+    // open it straight away, so the user sees what they just dropped (a drop is
+    // a direct "show me this" gesture, unlike the File → Import menu path).
+    async receiveDroppedSharedDiff(path) {
+      const vault = useVaultStore()
+      const res = await vault.importSharedFromPath(path)
+      if (!res.ok) {
+        if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+        return
+      }
+      const payload = await vault.load(res.id)
+      if (payload) this.restore(payload)
+      this.showNotice(
+        `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
+      )
     },
     // Export / copy THIS install's public key, tagged with the display name
     // the user typed so recipients recognize it. Called by ShareKeyDialog.

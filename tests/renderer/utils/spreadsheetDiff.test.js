@@ -20,8 +20,20 @@ describe('columnName', () => {
 
 describe('diffWorkbooks', () => {
   it('pairs sheets by name and rolls up per-sheet stats', () => {
-    const left = [sheet('Budget', [['a', 1], ['b', 2], ['c', 3]])]
-    const right = [sheet('Budget', [['a', 1], ['b', 9], ['d', 4]])]
+    const left = [
+      sheet('Budget', [
+        ['a', 1],
+        ['b', 2],
+        ['c', 3]
+      ])
+    ]
+    const right = [
+      sheet('Budget', [
+        ['a', 1],
+        ['b', 9],
+        ['d', 4]
+      ])
+    ]
     const [s] = diffWorkbooks(left, right)
     expect(s.present).toBe('both')
     expect(s.stats).toEqual({ changed: 1, added: 1, removed: 1 })

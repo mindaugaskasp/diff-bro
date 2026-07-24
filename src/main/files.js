@@ -27,7 +27,8 @@ function fileTypeFor(name) {
 function limitBytesFor(type) {
   const spec = TYPE_LIMITS[type] ?? TYPE_LIMITS.text
   const configured = Number(readSettings().fileSizeLimitsMb?.[type])
-  const mb = Number.isFinite(configured) && configured >= 1 ? Math.min(configured, spec.cap) : spec.default
+  const mb =
+    Number.isFinite(configured) && configured >= 1 ? Math.min(configured, spec.cap) : spec.default
   return mb * 1024 * 1024
 }
 
@@ -78,12 +79,19 @@ function readXlsxForRenderer(buffer, filePath, name, size) {
   try {
     // The reader's compressed-input ceiling is the spreadsheet cap, so it agrees
     // with the size prompt: anything the user could "Load anyway" also parses.
-    const { sheets } = readXlsx(buffer, { maxInputBytes: TYPE_LIMITS.spreadsheet.cap * 1024 * 1024 })
+    const { sheets } = readXlsx(buffer, {
+      maxInputBytes: TYPE_LIMITS.spreadsheet.cap * 1024 * 1024
+    })
     return { path: filePath, name, size, kind: 'spreadsheet', sheets }
   } catch (err) {
     // XlsxError (bomb / doctype / unzip / format / parse) or anything
     // unexpected — not a loadable comparison; surface a polite reason.
-    return { error: 'xlsx', name, path: filePath, message: err?.message ?? 'unreadable spreadsheet' }
+    return {
+      error: 'xlsx',
+      name,
+      path: filePath,
+      message: err?.message ?? 'unreadable spreadsheet'
+    }
   }
 }
 

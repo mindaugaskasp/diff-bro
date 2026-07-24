@@ -23,7 +23,5 @@ export default defineConfig({
   // failure can be inspected without re-running; locally the list reporter is
   // enough. Traces/screenshots are captured per-test in e2e/fixtures.mjs (the
   // `use.trace` option doesn't apply to Electron's own context).
-  reporter: process.env.CI
-    ? [['list'], ['github'], ['html', { open: 'never' }]]
-    : [['list']]
+  reporter: process.env.CI ? [['list'], ['github'], ['html', { open: 'never' }]] : [['list']]
 })

@@ -146,7 +146,7 @@ export const useVaultStore = defineStore('vault', {
     // timestamps so it expires at the same moment everywhere (the 24 h cap
     // was already enforced during signature verification in main).
     async addShared(entry) {
-      await this._add({ ...entry, categoryId: IMPORTED_CATEGORY })
+      return this._add({ ...entry, categoryId: IMPORTED_CATEGORY })
     },
     async _add({ name, payload, createdAt, expiresAt, from, categoryId }) {
       const id = crypto.randomUUID()
@@ -229,12 +229,26 @@ export const useVaultStore = defineStore('vault', {
       )
     },
     async importShared() {
-      const res = await window.api.shareImport()
-      if (res.ok) {
-        const { name, snapshot, createdAt, expiresAt } = res.entry
-        await this.addShared({ name, payload: snapshot, createdAt, expiresAt, from: res.from })
-      }
-      return res
+      return this._ingestShared(await window.api.shareImport())
+    },
+    // Drag-drop variant: import a sealed .diffbro by path (see useFileDrop).
+    async importSharedFromPath(path) {
+      return this._ingestShared(await window.api.shareImportPath(path))
+    },
+    // Persist a successfully-opened share into the imported-diffs category and
+    // hand back the new entry's id so the caller can open it. Shared by both
+    // import paths, so their success handling can't drift apart.
+    async _ingestShared(res) {
+      if (!res.ok) return res
+      const { name, snapshot, createdAt, expiresAt } = res.entry
+      const id = await this.addShared({
+        name,
+        payload: snapshot,
+        createdAt,
+        expiresAt,
+        from: res.from
+      })
+      return { ...res, id }
     },
     async load(id) {
       const entry = this.entries.find((e) => e.id === id)

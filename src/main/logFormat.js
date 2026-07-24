@@ -14,7 +14,9 @@ const MAX_STACK = 16_000
 const MAX_CONTEXT = 1_000
 
 function oneLine(value, max) {
-  const s = String(value ?? '').replace(/\s+/g, ' ').trim()
+  const s = String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
   return s.length > max ? `${s.slice(0, max)}…(truncated)` : s
 }
 

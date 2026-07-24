@@ -29,7 +29,8 @@ const time = (fn) => {
   const out = fn()
   return { ms: Number(process.hrtime.bigint() - t) / 1e6, out }
 }
-const verdict = (ms) => (ms < 100 ? 'smooth' : ms < SLUGGISH_MS ? 'ok' : ms < HANG_MS ? 'sluggish' : 'HANG')
+const verdict = (ms) =>
+  ms < 100 ? 'smooth' : ms < SLUGGISH_MS ? 'ok' : ms < HANG_MS ? 'sluggish' : 'HANG'
 const padL = (s, n) => String(s).padStart(n)
 
 function sheetXml(rowCount, mutate = null) {
@@ -39,7 +40,8 @@ function sheetXml(rowCount, mutate = null) {
     for (let c = 0; c < COLS; c++) {
       const ref = String.fromCharCode(65 + c) + i
       if (c === 0) row += `<c r="${ref}" t="inlineStr"><is><t>row-${i}</t></is></c>`
-      else row += `<c r="${ref}"><v>${(i * 31 + c * 7) % 1000 + (mutate?.(i) && c === 3 ? 500 : 0)}</v></c>`
+      else
+        row += `<c r="${ref}"><v>${((i * 31 + c * 7) % 1000) + (mutate?.(i) && c === 3 ? 500 : 0)}</v></c>`
     }
     body += row + '</row>'
   }
@@ -68,7 +70,14 @@ describe.skipIf(!RUN)('spreadsheet stress — parse + align', () => {
   it('reports the size/latency curve and stays usable to ~10k rows', { timeout: 120_000 }, () => {
     const counts = [1_000, 5_000, 10_000, 25_000, 50_000, 100_000]
     console.log(`\nSpreadsheet — ${COLS} cols, ~5% rows changed`)
-    console.log('rows'.padEnd(9) + padL('MB', 8) + padL('parse', 8) + padL('align', 8) + padL('total', 8) + '  verdict')
+    console.log(
+      'rows'.padEnd(9) +
+        padL('MB', 8) +
+        padL('parse', 8) +
+        padL('align', 8) +
+        padL('total', 8) +
+        '  verdict'
+    )
     let tenK = 0
     for (const rows of counts) {
       const left = buildXlsx(sheetXml(rows))

@@ -18,8 +18,7 @@ const props = defineProps({
 defineEmits(['toggle'])
 
 const settings = useSettingsStore()
-const { onDragStart, onDragOver, onDragEnd, onDrop, isDropTarget, isDragging } =
-  useSectionReorder()
+const { onDragStart, onDragOver, onDragEnd, onDrop, isDropTarget, isDragging } = useSectionReorder()
 
 const locked = computed(() => settings.sectionsLocked)
 const index = computed(() => settings.orderedSections.indexOf(props.sectionId))

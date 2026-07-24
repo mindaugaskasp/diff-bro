@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('api', {
   myFingerprint: () => ipcRenderer.invoke('share:myFingerprint'),
   shareExport: (entry, recipientFp) => ipcRenderer.invoke('share:export', entry, recipientFp),
   shareImport: () => ipcRenderer.invoke('share:import'),
+  // Drag-drop variant: import a sealed .diffbro dropped on the window, by path.
+  shareImportPath: (path) => ipcRenderer.invoke('share:importPath', path),
   myKeyLabel: () => ipcRenderer.invoke('share:myLabel'),
   exportPublicKey: (label) => ipcRenderer.invoke('share:exportPublicKey', label),
   copyPublicKey: (label) => ipcRenderer.invoke('share:copyPublicKey', label),

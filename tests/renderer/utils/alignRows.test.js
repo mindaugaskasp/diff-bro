@@ -79,8 +79,14 @@ describe('alignRows', () => {
   })
 
   it('falls back to positional alignment past the LCS size budget', () => {
-    const left = [['a', 1], ['b', 2]]
-    const right = [['a', 1], ['b', 9]]
+    const left = [
+      ['a', 1],
+      ['b', 2]
+    ]
+    const right = [
+      ['a', 1],
+      ['b', 9]
+    ]
     // Force the fallback path; it still produces a same + a changed row.
     const entries = alignRows(left, right, { maxProduct: 0 })
     expect(statuses(entries)).toEqual(['same', 'changed'])

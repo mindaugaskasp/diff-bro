@@ -847,6 +847,34 @@ describe('diffStore', () => {
     expect(store.notice).toContain('before copying')
   })
 
+  it('receiveDroppedSharedDiff imports a dropped .diffbro and opens it', async () => {
+    const store = useDiffStore()
+    const createdAt = Date.now() - 5000
+    const expiresAt = Date.now() + 5000
+    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
+    window.api.shareImportPath = async () => ({
+      ok: true,
+      from: 'alice',
+      entry: { name: 'from-drop', snapshot, createdAt, expiresAt }
+    })
+    // Minimal vault crypto round-trip so the just-imported entry re-opens.
+    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+    window.api.vaultDecrypt = async (box) => box.data
+    await store.receiveDroppedSharedDiff('/tmp/x.diffbro')
+    expect(store.left).toMatchObject({ name: 'l.txt' })
+    expect(store.right).toMatchObject({ name: 'r.txt' })
+    expect(store.diffSaved).toBe(true) // opened from the vault — no unsaved prompt
+    expect(store.notice).toContain('from-drop')
+  })
+
+  it('receiveDroppedSharedDiff surfaces an import error and opens nothing', async () => {
+    const store = useDiffStore()
+    window.api.shareImportPath = async () => ({ error: 'not-for-you' })
+    await store.receiveDroppedSharedDiff('/tmp/x.diffbro')
+    expect(store.left).toBeNull()
+    expect(store.notice).toContain('different machine')
+  })
+
   it('copyDiff refuses a spreadsheet comparison instead of crashing', async () => {
     const store = useDiffStore()
     const sheets = [{ name: 'S1', rows: [['Region', 100]] }]

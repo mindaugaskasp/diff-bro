@@ -97,11 +97,7 @@ onBeforeUnmount(() => {
           <span class="pct" @click="fit">{{ pct }}%</span>
           <button class="tbtn" title="Zoom in" @click="zoom(1.2)"><AppIcon name="plus" /></button>
           <button class="tbtn wide" title="Fit to window" @click="fit">Fit</button>
-          <button
-            class="tbtn"
-            :title="maxed ? 'Restore size' : 'Maximize'"
-            @click="toggleMaxed"
-          >
+          <button class="tbtn" :title="maxed ? 'Restore size' : 'Maximize'" @click="toggleMaxed">
             <AppIcon :name="maxed ? 'restore' : 'maximize'" />
           </button>
           <button class="tbtn close" title="Close (Esc)" @click="close">

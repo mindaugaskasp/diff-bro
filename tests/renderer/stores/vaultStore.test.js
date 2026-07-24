@@ -292,6 +292,35 @@ describe('vaultStore', () => {
     expect(vault.entries).toHaveLength(0)
   })
 
+  it('importSharedFromPath files the dropped diff and returns its new id', async () => {
+    const vault = useVaultStore()
+    const createdAt = Date.now() - 5000
+    const expiresAt = Date.now() + 5000
+    window.api.shareImportPath = async (path) => ({
+      ok: true,
+      from: 'alice',
+      entry: {
+        name: path.endsWith('.diffbro') ? 'dropped' : 'x',
+        snapshot: PAYLOAD,
+        createdAt,
+        expiresAt
+      }
+    })
+    const res = await vault.importSharedFromPath('/tmp/whatever.diffbro')
+    expect(res.ok).toBe(true)
+    expect(res.id).toBe(vault.entries[0].id)
+    expect(vault.entries[0]).toMatchObject({ name: 'dropped', from: 'alice', createdAt, expiresAt })
+  })
+
+  it('a failed importSharedFromPath adds nothing and carries no id', async () => {
+    const vault = useVaultStore()
+    window.api.shareImportPath = async () => ({ error: 'not-a-share-file' })
+    const res = await vault.importSharedFromPath('/tmp/nope.diffbro')
+    expect(res.error).toBe('not-a-share-file')
+    expect(res.id).toBeUndefined()
+    expect(vault.entries).toHaveLength(0)
+  })
+
   it('the delete confirmation is what actually removes a diff or a category', async () => {
     const vault = useVaultStore()
     const id = await vault.save('victim', 1, PAYLOAD)

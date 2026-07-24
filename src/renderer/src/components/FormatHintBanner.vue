@@ -14,7 +14,9 @@ const banner = computed(() => store.formatBanner)
   <div v-if="banner" class="hint" :class="{ invalid: banner.invalid }">
     <span class="msg">{{ banner.message }}</span>
     <div class="actions">
-      <button v-if="banner.formatBoth" class="format" @click="store.formatBoth()">Format both</button>
+      <button v-if="banner.formatBoth" class="format" @click="store.formatBoth()">
+        Format both
+      </button>
       <button
         v-else-if="banner.formatSide"
         class="format"
@@ -22,7 +24,9 @@ const banner = computed(() => store.formatBanner)
       >
         {{ banner.formatLabel }}
       </button>
-      <button class="dismiss" @click="store.dismissFormatHints(banner.dismissSides)">Dismiss</button>
+      <button class="dismiss" @click="store.dismissFormatHints(banner.dismissSides)">
+        Dismiss
+      </button>
     </div>
   </div>
 </template>

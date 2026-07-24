@@ -83,7 +83,17 @@ export function parseSheet(xml, sharedStrings, opts = {}) {
   rejectDoctype(xml)
   const maxCells = opts.maxCells ?? SHEET_DEFAULTS.maxCells
   const rows = []
-  const st = { row: null, col: -1, type: '', v: '', t: '', inV: false, inT: false, inF: false, cells: 0 }
+  const st = {
+    row: null,
+    col: -1,
+    type: '',
+    v: '',
+    t: '',
+    inV: false,
+    inT: false,
+    inF: false,
+    cells: 0
+  }
   const ctx = { rows, sharedStrings, maxCells }
   const p = new Parser()
   p.on('openTag', (name, getAttrs) => onOpen(st, name, getAttrs))

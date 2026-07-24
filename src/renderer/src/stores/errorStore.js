@@ -28,7 +28,8 @@ function isIgnorable(err) {
 // Normalise the many shapes an error arrives as (Error, string, ErrorEvent,
 // PromiseRejectionEvent) into { message, stack, context }.
 function toRecord(err, context) {
-  if (err instanceof Error) return { message: err.message || String(err), stack: err.stack, context }
+  if (err instanceof Error)
+    return { message: err.message || String(err), stack: err.stack, context }
   if (typeof err === 'string') return { message: err, context }
   const reason = err?.reason ?? err?.error ?? err
   return { message: messageOf(reason), stack: reason?.stack, context }

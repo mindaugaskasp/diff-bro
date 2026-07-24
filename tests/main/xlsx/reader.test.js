@@ -115,7 +115,9 @@ describe('readXlsx — security refusals', () => {
   })
 
   it('refuses when the whole file exceeds the input cap', () => {
-    expect(() => readXlsx(sampleWorkbook(), { maxInputBytes: 5 })).toThrowError(/maximum .xlsx size/i)
+    expect(() => readXlsx(sampleWorkbook(), { maxInputBytes: 5 })).toThrowError(
+      /maximum .xlsx size/i
+    )
   })
 
   it('enforces the per-sheet cell budget', () => {
@@ -146,7 +148,8 @@ describe('readXlsx — security refusals', () => {
 
   it('does not pollute Object.prototype from hostile relationship ids or names', () => {
     const buf = buildXlsx({
-      'xl/workbook.xml': `${XML}<workbook xmlns:r="r"><sheets>` +
+      'xl/workbook.xml':
+        `${XML}<workbook xmlns:r="r"><sheets>` +
         '<sheet name="__proto__" sheetId="1" r:id="__proto__"/></sheets></workbook>',
       'xl/_rels/workbook.xml.rels':
         `${XML}<Relationships><Relationship Id="__proto__" Type="${REL}" ` +

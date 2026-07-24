@@ -50,7 +50,9 @@ describe('errorStore', () => {
   it('ignores benign framework noise (Monaco Canceled, ResizeObserver, opaque script error)', () => {
     const s = useErrorStore()
     s.capture(new Error('Canceled'), 'unhandledrejection')
-    const cancellation = Object.assign(new Error('operation cancelled'), { name: 'CancellationError' })
+    const cancellation = Object.assign(new Error('operation cancelled'), {
+      name: 'CancellationError'
+    })
     s.capture({ reason: cancellation }, 'unhandledrejection')
     s.capture('ResizeObserver loop completed with undelivered notifications', 'window.error')
     s.capture('Script error.', 'window.error')

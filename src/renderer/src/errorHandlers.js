@@ -12,5 +12,7 @@ export function installErrorHandlers(app, pinia) {
     if (e.error) store.capture(e.error, 'window.error')
     else if (e.message) store.capture(e.message, 'window.error')
   })
-  window.addEventListener('unhandledrejection', (e) => store.capture(e.reason, 'unhandledrejection'))
+  window.addEventListener('unhandledrejection', (e) =>
+    store.capture(e.reason, 'unhandledrejection')
+  )
 }

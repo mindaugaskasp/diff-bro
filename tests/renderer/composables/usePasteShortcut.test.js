@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { isEditableTarget, isPasteChord } from '../../../src/renderer/src/composables/usePasteShortcut'
+import {
+  isEditableTarget,
+  isPasteChord
+} from '../../../src/renderer/src/composables/usePasteShortcut'
 
 describe('isPasteChord', () => {
-  const chord = (over) => ({ key: 'v', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...over })
+  const chord = (over) => ({
+    key: 'v',
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    shiftKey: false,
+    ...over
+  })
 
   it('accepts Ctrl+V and Cmd+V', () => {
     expect(isPasteChord(chord({ ctrlKey: true }))).toBe(true)

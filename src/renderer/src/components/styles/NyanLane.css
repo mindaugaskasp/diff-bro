@@ -13,7 +13,15 @@
   position: absolute;
   inset: 0;
   opacity: 0.14;
-  background: repeating-linear-gradient(90deg, #ff2e2e 0 16px, #ff9f2e 16px 32px, #ffe62e 32px 48px, #39ff14 48px 64px, #2ec9ff 64px 80px, #b14fff 80px 96px);
+  background: repeating-linear-gradient(
+    90deg,
+    #ff2e2e 0 16px,
+    #ff9f2e 16px 32px,
+    #ffe62e 32px 48px,
+    #39ff14 48px 64px,
+    #2ec9ff 64px 80px,
+    #b14fff 80px 96px
+  );
 }
 
 /* The cat + a fixed-length rainbow ribbon glide across as one, looping. Animated
@@ -44,7 +52,15 @@
 .flyer .trail {
   width: 210px;
   height: 18px;
-  background: repeating-linear-gradient(180deg, #ff2e2e 0 3px, #ff9f2e 3px 6px, #ffe62e 6px 9px, #39ff14 9px 12px, #2ec9ff 12px 15px, #b14fff 15px 18px);
+  background: repeating-linear-gradient(
+    180deg,
+    #ff2e2e 0 3px,
+    #ff9f2e 3px 6px,
+    #ffe62e 6px 9px,
+    #39ff14 9px 12px,
+    #2ec9ff 12px 15px,
+    #b14fff 15px 18px
+  );
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%);
   mask-image: linear-gradient(90deg, transparent, #000 55%);
 }

@@ -19,7 +19,9 @@ describe('settingsStore', () => {
     expect(s.showShortcutBar).toBe(true)
     expect(s.fileSizeLimitMb('text')).toBe(FILE_TYPE_LIMITS.text.default)
     expect(s.fileSizeLimitMb('spreadsheet')).toBe(FILE_TYPE_LIMITS.spreadsheet.default)
-    expect(s.fileSizeLimitBytes('spreadsheet')).toBe(FILE_TYPE_LIMITS.spreadsheet.default * 1024 * 1024)
+    expect(s.fileSizeLimitBytes('spreadsheet')).toBe(
+      FILE_TYPE_LIMITS.spreadsheet.default * 1024 * 1024
+    )
     expect(s.maxSnippetSizeKb).toBeGreaterThan(0)
   })
 

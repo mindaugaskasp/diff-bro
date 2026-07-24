@@ -78,7 +78,9 @@ const clearLabel = computed(() =>
       >
         {{ clearLabel }}
       </button>
-      <button class="btn btn-ghost" :disabled="busy || isDefault" @click="reset">Use default</button>
+      <button class="btn btn-ghost" :disabled="busy || isDefault" @click="reset">
+        Use default
+      </button>
       <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
     </div>
   </section>

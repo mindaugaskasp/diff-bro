@@ -53,6 +53,15 @@ export function useWindowFileDrop(store, suppressed) {
       await store.receiveDroppedKey(keyPath)
       return
     }
+    // A dropped sealed diff is imported as an external diff and opened, rather
+    // than being mistaken for a file to compare. Checked after .diffbrokey so
+    // the more specific extension wins (.diffbrokey also ends in "key", not
+    // "diffbro", so order only matters for clarity here).
+    const sharedPath = paths.find((p) => p.toLowerCase().endsWith('.diffbro'))
+    if (sharedPath) {
+      await store.receiveDroppedSharedDiff(sharedPath)
+      return
+    }
     // If the drop landed on a specific file slot, target that side.
     const targetSide = e.target.closest?.('[data-side]')?.dataset.side ?? null
     await store.dropFiles(paths, targetSide)
