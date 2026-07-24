@@ -7,6 +7,9 @@ import { useSettingsStore } from '../stores/settingsStore'
 // itself is the store's reorderSections (unit-tested); this is only the wiring,
 // pulled out of the .vue so the drag guards can be exercised without mounting.
 const dragId = ref(null)
+// The header the cursor is currently over during a drag — so the drop indicator
+// follows the cursor to ONE header instead of lighting up all of them.
+const hoverId = ref(null)
 
 export function useSectionReorder() {
   const settings = useSettingsStore()
@@ -20,19 +23,29 @@ export function useSectionReorder() {
       e.dataTransfer.setData('text/plain', id)
     }
   }
+  // Fired continuously by dragover on whichever header is under the cursor.
+  function onDragOver(id) {
+    if (dragId.value !== null) hoverId.value = id
+  }
   function onDragEnd() {
     dragId.value = null
+    hoverId.value = null
   }
   function onDrop(targetId) {
     const from = dragId.value
     dragId.value = null
+    hoverId.value = null
     if (from) settings.reorderSections(from, targetId)
   }
-  // True for a section that is a live drop target (a drag is in flight and this
-  // isn't the section being dragged) — drives the drop-highlight class.
+  // The single header the section would drop before: a drag is in flight, the
+  // cursor is over THIS header, and it isn't the one being dragged.
   function isDropTarget(id) {
-    return dragId.value !== null && dragId.value !== id
+    return dragId.value !== null && id === hoverId.value && id !== dragId.value
+  }
+  // The header currently being dragged (so it can dim to show what's moving).
+  function isDragging(id) {
+    return dragId.value === id
   }
 
-  return { dragId, onDragStart, onDragEnd, onDrop, isDropTarget }
+  return { dragId, onDragStart, onDragOver, onDragEnd, onDrop, isDropTarget, isDragging }
 }

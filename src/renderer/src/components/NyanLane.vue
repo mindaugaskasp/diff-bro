@@ -1,28 +1,33 @@
 <script setup>
+import { ref } from 'vue'
+import { NYAN_CATS } from '../assets/nyanCat'
+
 // A slim rainbow lane under the toolbar, present only in the Nyan theme (App.vue
 // mounts it with v-if). The cat loops across it continuously, trailing a rainbow
-// that dissipates like smoke behind it — pure ambient whimsy, kept in the chrome
-// so it never touches the diff. Decorative → aria-hidden, no logic to test.
+// (CSS) that dissipates like smoke behind it — pure ambient whimsy, kept in the
+// chrome so it never touches the diff. Decorative → aria-hidden.
+// Cat art: CC0 freesvg.org Nyan cat + recolored flavors, inlined as data URLs.
+
+// Rotate the flavor on each completed pass — the nyan-fly loop restarts while the
+// cat is off-screen, so the swap is invisible and a different cat runs by each
+// time. Random, never repeating the current one back-to-back.
+const idx = ref(Math.floor(Math.random() * NYAN_CATS.length))
+function nextCat(e) {
+  // <style scoped> renames @keyframes with a hash suffix (nyan-fly-<hash>), so
+  // match the prefix — and this still excludes the fast nyan-bob iterations.
+  if (!e.animationName.startsWith('nyan-fly')) return
+  if (NYAN_CATS.length < 2) return
+  let n = idx.value
+  while (n === idx.value) n = Math.floor(Math.random() * NYAN_CATS.length)
+  idx.value = n
+}
 </script>
 
 <template>
   <div class="nyan-lane" aria-hidden="true">
-    <div class="flyer">
+    <div class="flyer" @animationiteration="nextCat">
       <div class="trail"></div>
-      <svg class="nyan-body" viewBox="0 0 54 30">
-        <rect x="14" y="7" width="27" height="16" rx="3" fill="#f7c8d8" stroke="#c04a6a" stroke-width="2" />
-        <circle cx="22" cy="13" r="1.5" fill="#3a2a30" />
-        <circle cx="31" cy="13" r="1.5" fill="#3a2a30" />
-        <circle cx="20" cy="16.5" r="1.5" fill="#ff9dc0" />
-        <circle cx="33" cy="16.5" r="1.5" fill="#ff9dc0" />
-        <rect x="24" y="16.5" width="4" height="2" fill="#c04a6a" />
-        <rect x="39" y="9" width="11" height="13" rx="3" fill="#9aa0a6" />
-        <path d="M40 9 l3 -4 l3 4 z M47 9 l3 -4 l3 4 z" fill="#9aa0a6" />
-        <circle cx="45" cy="14.5" r="1.3" fill="#111" />
-        <circle cx="49" cy="14.5" r="1.3" fill="#111" />
-        <rect x="16" y="23" width="4" height="4" fill="#6b7075" />
-        <rect x="34" y="23" width="4" height="4" fill="#6b7075" />
-      </svg>
+      <img class="nyan-body" :src="NYAN_CATS[idx]" alt="" />
     </div>
   </div>
 </template>

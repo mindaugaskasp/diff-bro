@@ -31,11 +31,14 @@ function setModels() {
   const right = store.rightComparable
   if (!left || !right || !editor) return
 
-  leftModel?.dispose()
-  rightModel?.dispose()
+  const prevLeft = leftModel
+  const prevRight = rightModel
   leftModel = monaco.editor.createModel(left.text, left.language)
   rightModel = monaco.editor.createModel(right.text, right.language)
   editor.setModel({ original: leftModel, modified: rightModel })
+  // Dispose OLD models only AFTER setModel switched — an attached model throws.
+  prevLeft?.dispose()
+  prevRight?.dispose()
   // Re-apply any active queries to the new content.
   leftSearch.run()
   rightSearch.run()
@@ -91,9 +94,10 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  // Editor first (releases its models); disposing attached models throws.
+  editor?.dispose()
   leftModel?.dispose()
   rightModel?.dispose()
-  editor?.dispose()
 })
 </script>
 

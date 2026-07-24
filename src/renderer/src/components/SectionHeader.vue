@@ -18,7 +18,8 @@ const props = defineProps({
 defineEmits(['toggle'])
 
 const settings = useSettingsStore()
-const { onDragStart, onDragEnd, onDrop, isDropTarget } = useSectionReorder()
+const { onDragStart, onDragOver, onDragEnd, onDrop, isDropTarget, isDragging } =
+  useSectionReorder()
 
 const locked = computed(() => settings.sectionsLocked)
 const index = computed(() => settings.orderedSections.indexOf(props.sectionId))
@@ -27,18 +28,19 @@ const canDown = computed(
   () => !locked.value && index.value > -1 && index.value < settings.orderedSections.length - 1
 )
 const dropTarget = computed(() => isDropTarget(props.sectionId))
+const dragging = computed(() => isDragging(props.sectionId))
 </script>
 
 <template>
   <div
     class="head section-head band band-row"
-    :class="{ first, 'drop-target': dropTarget, draggable: !locked }"
+    :class="{ first, 'drop-target': dropTarget, dragging, draggable: !locked }"
     :draggable="!locked"
     :title="locked ? null : 'Drag to reorder — lock in the toolbar to freeze'"
     @click="$emit('toggle')"
     @dragstart="onDragStart(sectionId, $event)"
     @dragend="onDragEnd"
-    @dragover.prevent
+    @dragover.prevent="onDragOver(sectionId)"
     @drop.prevent="onDrop(sectionId)"
   >
     <AppIcon class="chev" :class="{ open }" name="chevron-right" />

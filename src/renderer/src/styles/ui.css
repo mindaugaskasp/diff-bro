@@ -66,11 +66,14 @@
   color: var(--text-on-accent);
   font-weight: 600;
 }
+/* Hover shifts the accent toward its own text colour, so the change is clearly
+   visible on EVERY theme's accent — darkens on a light-text accent (Nyan's hot
+   pink), lightens on a dark-text one — where a flat brightness() filter was
+   nearly invisible on already-bright accents. */
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
   color: var(--text-on-accent);
-  filter: brightness(1.12);
 }
 
 /* Secondary action: reads as a control only on hover. */

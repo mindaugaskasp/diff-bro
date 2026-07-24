@@ -19,12 +19,12 @@ function confirm() {
     @close="store.cancelPaste()"
   >
     <p v-if="overwrite" class="dialog-note">
-      Both paste fields already have content. Paste your clipboard into the left side, replacing it?
-      The unsaved text there will be lost.
+      Both sides already have content. Paste your clipboard into the left side, replacing it? What's
+      there will be lost.
     </p>
     <p v-else class="dialog-note">
-      Switch to paste mode and paste your clipboard into the comparison? Your clipboard is only read
-      after you confirm.
+      Paste your clipboard into the comparison to diff it? It fills the empty side (or starts a paste
+      comparison), and is only read after you confirm.
     </p>
     <template #actions>
       <button class="btn btn-ghost" @click="store.cancelPaste()">Cancel</button>
