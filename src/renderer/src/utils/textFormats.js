@@ -8,8 +8,16 @@ export function detectTextFormat(content) {
   const trimmed = content.trim()
   if (!trimmed) return null
   const first = trimmed[0]
-  if (first === '{' || first === '[') return { kind: 'json', ...validateJson(trimmed) }
-  if (first === '<') {
+  const last = trimmed[trimmed.length - 1]
+  // Require the MATCHING closing bracket too. A leading '{'/'['/'<' alone also
+  // matches things that aren't JSON/XML — e.g. a log line "[2026-…Z] [renderer]
+  // …" — which then wrongly showed a "looks like JSON but doesn't parse" banner.
+  // Valid JSON objects/arrays and XML documents always close, so this loses no
+  // real detection.
+  if ((first === '{' && last === '}') || (first === '[' && last === ']')) {
+    return { kind: 'json', ...validateJson(trimmed) }
+  }
+  if (first === '<' && last === '>') {
     // HTML is not XML: its void elements (<meta>, <br>, <img>, <link>, …) are
     // never closed, so the XML tag-stack validator would wrongly report a
     // mismatch (e.g. "</head> expected </meta>"). Don't offer XML

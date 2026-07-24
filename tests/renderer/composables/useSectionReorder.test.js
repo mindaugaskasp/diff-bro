@@ -21,14 +21,25 @@ describe('useSectionReorder', () => {
     expect(useSettingsStore().sectionOrder).toEqual(['snippets', 'saved', 'external'])
   })
 
-  it('marks other sections as drop targets while a drag is in flight', () => {
+  it('marks only the hovered header as the drop target, following the cursor', () => {
     const r = useSectionReorder()
     expect(r.isDropTarget('saved')).toBe(false) // nothing dragging yet
     r.onDragStart('saved', dragEvent())
-    expect(r.isDropTarget('saved')).toBe(false) // not the one being dragged
-    expect(r.isDropTarget('external')).toBe(true)
-    r.onDragEnd()
+    expect(r.isDragging('saved')).toBe(true)
+    // Before the cursor is over any header, nothing is marked.
     expect(r.isDropTarget('external')).toBe(false)
+    // Hover external → only it is the target; the dragged one never is.
+    r.onDragOver('external')
+    expect(r.isDropTarget('external')).toBe(true)
+    expect(r.isDropTarget('snippets')).toBe(false)
+    expect(r.isDropTarget('saved')).toBe(false)
+    // Move the cursor to snippets → the marker follows.
+    r.onDragOver('snippets')
+    expect(r.isDropTarget('snippets')).toBe(true)
+    expect(r.isDropTarget('external')).toBe(false)
+    r.onDragEnd()
+    expect(r.isDropTarget('snippets')).toBe(false)
+    expect(r.isDragging('saved')).toBe(false)
   })
 
   it('does nothing while the order is locked', () => {

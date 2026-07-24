@@ -14,6 +14,14 @@ describe('detectTextFormat', () => {
     expect(detectTextFormat('just some text')).toBeNull()
   })
 
+  it('does not flag text that merely opens with a bracket/angle (e.g. log lines)', () => {
+    // A leading '[' or '<' without a matching close is not JSON/XML — this used
+    // to raise a bogus "looks like JSON but doesn't parse" banner on log text.
+    expect(detectTextFormat('[2026-07-24T05:42:54Z] [renderer] TextModel disposed\n  at foo')).toBeNull()
+    expect(detectTextFormat('[INFO] starting up')).toBeNull()
+    expect(detectTextFormat('<3 you too')).toBeNull()
+  })
+
   it('detects valid JSON', () => {
     expect(detectTextFormat('{"a": 1}')).toEqual({ kind: 'json', valid: true })
     expect(detectTextFormat('[1, 2, 3]')).toEqual({ kind: 'json', valid: true })

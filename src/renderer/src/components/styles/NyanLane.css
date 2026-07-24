@@ -51,17 +51,20 @@
 /* Pull the cat left so its pop-tart body (which starts ~26% into the SVG box)
    meets the trail — no gap between rainbow and cat. */
 .flyer .nyan-body {
-  width: 44px;
-  margin-left: -12px;
-  animation: nyan-bob 1.1s ease-in-out infinite alternate;
+  display: block;
+  width: 42px;
+  height: auto;
+  margin-left: -6px;
+  /* Peppy, frequent bob (the Nyan bounce) — kept smooth via ease-in-out, just
+     fast. Independent of the slow horizontal glide above. */
+  animation: nyan-bob 0.4s ease-in-out infinite alternate;
 }
-/* Smooth (not stepped), gentle low-amplitude bob. */
 @keyframes nyan-bob {
   from {
-    transform: translateY(-1.5px);
+    transform: translateY(-2.5px);
   }
   to {
-    transform: translateY(1.5px);
+    transform: translateY(2.5px);
   }
 }
 

@@ -111,6 +111,48 @@ describe('diffStore', () => {
     expect(store.notice).toContain('clipboard is empty')
   })
 
+  it('paste-to-compare: with one file loaded, fills the EMPTY side and keeps the file', async () => {
+    window.api = { readText: () => Promise.resolve('pasted body') }
+    const store = useDiffStore()
+    store.left = FILE('a.txt') // files mode, only the left loaded
+    await store.confirmPasteEnter()
+    expect(store.mode).toBe('files') // stays in files mode, no paste-mode detour
+    expect(store.left.name).toBe('a.txt') // loaded file untouched
+    expect(store.right).toEqual({ path: null, name: 'Right (pasted)', content: 'pasted body' })
+    expect(store.ready).toBe(true) // immediate comparison
+    expect(store.pastePrompt).toBeNull()
+  })
+
+  it('paste-to-compare: mirrors for a right-only file (pastes into left)', async () => {
+    window.api = { readText: () => Promise.resolve('L') }
+    const store = useDiffStore()
+    store.right = FILE('b.txt')
+    await store.confirmPasteEnter()
+    expect(store.left).toEqual({ path: null, name: 'Left (pasted)', content: 'L' })
+    expect(store.right.name).toBe('b.txt')
+  })
+
+  it('paste-to-compare: both files loaded confirms, then overwrite replaces the left file', async () => {
+    window.api = { readText: () => Promise.resolve('new left') }
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    await store.confirmPasteEnter()
+    expect(store.pastePrompt).toBe('overwrite')
+    expect(store.left.name).toBe('a.txt') // nothing clobbered yet
+    store.confirmPasteOverwrite()
+    expect(store.left).toEqual({ path: null, name: 'Left (pasted)', content: 'new left' })
+    expect(store.right.name).toBe('b.txt') // right kept
+  })
+
+  it('paste-to-compare: refuses (no prompt) when a spreadsheet is loaded', () => {
+    const store = useDiffStore()
+    store.left = { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] }
+    store.requestPasteFromClipboard()
+    expect(store.pastePrompt).toBeNull()
+    expect(store.notice).toMatch(/spreadsheet/i)
+  })
+
   it('swap exchanges the two sides', () => {
     const store = useDiffStore()
     store.left = FILE('a.txt')

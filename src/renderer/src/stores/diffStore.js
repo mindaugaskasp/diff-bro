@@ -86,6 +86,12 @@ function mergeFormatBanner(left, right) {
   }
 }
 
+// A synthetic "pasted" comparison side — no path, so it's never re-read from
+// disk on focus (unlike a real file slot).
+function pastedSide(side, text) {
+  return { path: null, name: `${side === 'left' ? 'Left' : 'Right'} (pasted)`, content: text }
+}
+
 // Menu action → what it does to the store. A table rather than a switch: the
 // accelerators in src/main/menu.js and MenuBar.vue name these strings, so this
 // is the single list of everything a menu can trigger.
@@ -364,6 +370,11 @@ export const useDiffStore = defineStore('diff', {
     // clipboard — it's only read once the user confirms.
     requestPasteFromClipboard() {
       if (this.pastePrompt) return // a confirm is already up
+      // A spreadsheet can't be diffed against pasted text — don't even prompt.
+      if (this.left?.kind === 'spreadsheet' || this.right?.kind === 'spreadsheet') {
+        this.showNotice('Paste-to-compare works with text, not a spreadsheet.')
+        return
+      }
       this.pastePrompt = 'enter'
     },
     // Step 2: confirmed. Read the clipboard (main process), enter paste mode, and
@@ -376,6 +387,30 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice('The clipboard is empty — nothing to paste.')
         return
       }
+      // With a comparison already loaded in files mode, paste relative to THAT
+      // (fill the empty side, keeping the loaded file) — not the empty paste
+      // textareas, which would orphan the loaded file.
+      if (this.mode === 'files' && (this.left || this.right)) {
+        this.pasteIntoComparison(text)
+      } else {
+        this.pasteIntoPasteFields(text)
+      }
+    },
+    // Files mode with something loaded: drop the pasted text into the empty side
+    // for an immediate diff; if both sides are full, confirm before overwriting.
+    pasteIntoComparison(text) {
+      if (this.left && this.right) {
+        this.pendingPasteText = text
+        this.pastePrompt = 'overwrite'
+        return
+      }
+      const side = this.left ? 'right' : 'left'
+      this[side] = pastedSide(side, text)
+      this.diffSaved = false
+      this.pastePrompt = null
+    },
+    // Empty state or already in paste mode: fill the first empty paste field.
+    pasteIntoPasteFields(text) {
       this.mode = 'paste'
       const leftFull = !!(this.pasteLeft || this.pasteLeftFile)
       const rightFull = !!(this.pasteRight || this.pasteRightFile)
@@ -390,12 +425,18 @@ export const useDiffStore = defineStore('diff', {
         this.pastePrompt = 'overwrite'
       }
     },
-    // Both sides were full and the user agreed to overwrite: replace the left
-    // side with the pasted text, keeping the right to compare against.
+    // Both sides were full and the user agreed to overwrite: replace the LEFT
+    // side with the pasted text, keeping the right — in whichever mode.
     confirmPasteOverwrite() {
-      this.pasteLeft = this.pendingPasteText
+      const text = this.pendingPasteText
       this.pendingPasteText = ''
       this.pastePrompt = null
+      if (this.mode === 'files') {
+        this.left = pastedSide('left', text)
+        this.diffSaved = false
+      } else {
+        this.pasteLeft = text
+      }
     },
     cancelPaste() {
       this.pendingPasteText = ''

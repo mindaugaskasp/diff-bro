@@ -35,7 +35,11 @@ dbus-daemon --system --fork
 eval "$(dbus-launch --sh-syntax)"
 
 echo "Starting x11vnc..."
-x11vnc -display "$DISPLAY" -nopw -forever -shared -quiet -listen localhost &
+# -noxdamage: under Xvfb the X DAMAGE extension reports incomplete regions for
+# fast-moving content (e.g. the Nyan lane), leaving ghost trails in the noVNC
+# view. Full-screen polling costs a little CPU but repaints cleanly. Purely a
+# test-view fix — the shipped app never runs under VNC.
+x11vnc -display "$DISPLAY" -nopw -forever -shared -quiet -noxdamage -listen localhost &
 
 echo "Starting noVNC on http://localhost:6080/vnc.html ..."
 websockify --web=/usr/share/novnc 6080 localhost:5900 &
