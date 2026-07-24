@@ -546,6 +546,13 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice('Load two files (or compare pasted text) before copying a diff.')
         return
       }
+      // A unified text patch can't represent a spreadsheet grid — its comparable
+      // carries `sheets`, not `text`, so bail with a notice instead of feeding
+      // `undefined` into the differ.
+      if (this.comparableKind !== 'text') {
+        this.showNotice('Copy diff is only available for text comparisons.')
+        return
+      }
       // ready guarantees both sides are loaded file objects with names.
       const res = toUnifiedDiff(this.leftComparable.text, this.rightComparable.text, {
         leftLabel: this.left.name,

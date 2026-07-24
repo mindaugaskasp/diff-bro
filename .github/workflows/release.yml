@@ -28,8 +28,48 @@ jobs:
       - name: Audit dependencies for known vulnerabilities
         run: npm audit --audit-level=moderate
 
+  # E2E is the behavioural source of truth. On PRs it's the merge gate (see
+  # ci.yml); at release time we re-run it as a safety net so a tag can never
+  # ship without it — a direct push to main or a tag on an arbitrary commit
+  # would otherwise bypass the PR gate entirely. Same setup as ci.yml's e2e job.
+  e2e:
+    runs-on: ubuntu-22.04
+    env:
+      # Never let Playwright pull Chromium/Firefox/WebKit — the suite uses none.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      # Container/CI switch: --no-sandbox + software rendering (see security.js).
+      DIFFBRO_DOCKER: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11
+      - run: npm ci
+      # Electron's runtime libraries + Xvfb (the same set the Docker test env installs).
+      - name: Install Electron runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 \
+            libdrm2 libgbm1 libasound2 libx11-xcb1 libxcb-dri3-0 libsecret-1-0 xvfb
+      - name: Run end-to-end tests under Xvfb
+        run: xvfb-run -a npm run test:e2e # electron-vite build && playwright test
+      # Report + per-failure traces (with screenshots) for inspection after the run.
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
   build:
-    needs: audit
+    needs: [audit, e2e]
     strategy:
       fail-fast: false
       matrix:

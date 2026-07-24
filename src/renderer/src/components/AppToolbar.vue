@@ -72,8 +72,12 @@ const pasteToggleTitle = computed(() =>
         </button>
         <button
           class="btn btn-ghost"
-          :title="`Copy this diff as a unified patch (${MOD}+Shift+C)`"
-          :disabled="!store.ready"
+          :title="
+            store.comparableKind === 'text'
+              ? `Copy this diff as a unified patch (${MOD}+Shift+C)`
+              : 'Copy diff is only available for text comparisons'
+          "
+          :disabled="!store.ready || store.comparableKind !== 'text'"
           @click="store.copyDiff()"
         >
           <AppIcon name="copy" /> Copy diff

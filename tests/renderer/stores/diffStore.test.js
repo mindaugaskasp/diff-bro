@@ -847,6 +847,18 @@ describe('diffStore', () => {
     expect(store.notice).toContain('before copying')
   })
 
+  it('copyDiff refuses a spreadsheet comparison instead of crashing', async () => {
+    const store = useDiffStore()
+    const sheets = [{ name: 'S1', rows: [['Region', 100]] }]
+    store.left = { path: '/tmp/l.xlsx', name: 'l.xlsx', kind: 'spreadsheet', sheets }
+    store.right = { path: '/tmp/r.xlsx', name: 'r.xlsx', kind: 'spreadsheet', sheets }
+    let called = false
+    window.api.copyText = async () => ((called = true), { ok: true })
+    await store.copyDiff()
+    expect(called).toBe(false)
+    expect(store.notice).toContain('text comparisons')
+  })
+
   it('refreshFromDisk coalesces multiple changed files into one notice', async () => {
     const store = useDiffStore()
     store.left = FILE('a.txt')
