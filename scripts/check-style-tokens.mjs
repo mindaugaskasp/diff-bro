@@ -40,7 +40,8 @@ const RULES = [
 ]
 
 // Shadows and overlay scrims are intentionally raw rgba(): they are effects,
-// not palette colors, and both themes want the same translucent black.
+// not palette colors, and both themes want the same translucent black. Same for
+// gradients — their colour stops are a spectrum, not palette tokens.
 const ALLOWED_LINE = /box-shadow|text-shadow|backdrop-filter|color-mix|linear-gradient/
 
 function filesToCheck() {
@@ -56,8 +57,21 @@ function filesToCheck() {
 function violations(file) {
   const lines = readFileSync(join(root, file), 'utf8').split('\n')
   const found = []
+  // Prettier wraps a long allowed declaration (e.g. a multi-stop
+  // linear-gradient) across several lines, leaving the colour stops on their own
+  // lines with no `linear-gradient` text to match. An allowed declaration exempts
+  // ALL of its lines, so once one opens without terminating (`;`) we skip through
+  // to the line that closes it.
+  let inAllowedBlock = false
   lines.forEach((line, i) => {
-    if (ALLOWED_LINE.test(line)) return
+    if (inAllowedBlock) {
+      if (line.includes(';')) inAllowedBlock = false
+      return
+    }
+    if (ALLOWED_LINE.test(line)) {
+      if (!line.includes(';')) inAllowedBlock = true
+      return
+    }
     if (/token-exempt/.test(lines[i - 1] ?? '')) return
     for (const rule of RULES) {
       if (rule.re.test(line)) {
