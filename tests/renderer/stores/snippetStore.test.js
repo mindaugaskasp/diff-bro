@@ -98,6 +98,26 @@ describe('snippetStore — effective language', () => {
     expect(languageOf({ language: 'auto' })).toBe('plaintext')
     expect(languageOf({ language: 'json' })).toBe('json')
   })
+
+  it('auto-tags a saved snippet with its detected format', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'cfg', content: '{"a": 1, "b": 2}', language: 'auto' })
+    expect(store.entries.find((e) => e.id === id).tags).toContain('json')
+  })
+
+  it('auto-tags with the explicit language, alongside the user tags', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'q', content: 'SELECT 1', language: 'sql', tags: ['wip'] })
+    expect(store.entries.find((e) => e.id === id).tags).toEqual(
+      expect.arrayContaining(['sql', 'wip'])
+    )
+  })
+
+  it('adds no format tag for a plaintext snippet', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'note', content: 'hello world', language: 'plaintext' })
+    expect(store.entries.find((e) => e.id === id).tags).toHaveLength(0)
+  })
 })
 
 describe('snippetStore — tags model', () => {

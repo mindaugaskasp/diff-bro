@@ -26,7 +26,9 @@ const title = computed(() => {
 })
 
 // Live countdown — vault.now ticks once a second, which also purges expiries.
+// A kept (non-expiring) diff has no countdown.
 const remaining = computed(() => {
+  if (props.entry.expiresAt === null) return 'kept'
   const ms = props.entry.expiresAt - vault.now
   if (ms <= 0) return 'expired'
   const h = Math.floor(ms / 3600_000)

@@ -3,6 +3,7 @@
 // container; the decrypted text renders through interpolation only.
 import { useSnippetStore } from '../stores/snippetStore'
 import { shaped } from '../utils/props'
+import MermaidDiagram from './MermaidDiagram.vue'
 
 defineProps({
   /** From useSnippetPreview. @type {import('vue').PropType<import('../types').SnippetPreview>} */
@@ -14,10 +15,17 @@ const store = useSnippetStore()
 <template>
   <div class="preview" :style="preview.style">
     <div class="pv-head">
-      <span class="pv-name">{{ preview.name }}</span>
+      <span class="pv-titlewrap">
+        <span class="pv-label">Title</span>
+        <span class="pv-name">{{ preview.name }}</span>
+      </span>
       <span v-if="preview.lang" class="pv-lang">{{ preview.lang }}</span>
     </div>
-    <pre class="pv-body">{{ preview.text }}</pre>
+    <!-- A Mermaid snippet previews as its rendered diagram, not its source. -->
+    <div v-if="preview.lang === 'mermaid'" class="pv-diagram">
+      <MermaidDiagram :code="preview.text" :debounce="0" />
+    </div>
+    <pre v-else class="pv-body">{{ preview.text }}</pre>
     <div class="pv-foot">
       <span class="pv-tags">
         <span v-for="t in preview.tags" :key="t" class="pv-tag">

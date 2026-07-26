@@ -41,22 +41,41 @@
   letter-spacing: 0.5px;
   color: var(--text-hint);
 }
-.search-input {
+/* The input sits in a bordered box alongside a magnifying-glass glyph, so it
+   reads as a search field at a glance (matches the sidebar filter). */
+.search-box {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  padding: 0 8px;
+}
+.search-box:focus-within {
+  border-color: var(--accent);
+}
+.search-box.error {
+  border-color: var(--danger-bg);
+}
+.search-glyph {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.search-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
   color: var(--text);
-  padding: 4px 8px;
+  padding: 4px 0;
   font-size: var(--font-md);
 }
 .search-input:focus {
   outline: none;
-  border-color: var(--accent);
-}
-.search-input.error {
-  border-color: var(--danger-bg);
 }
 .opt {
   display: flex;

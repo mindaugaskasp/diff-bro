@@ -1,3 +1,5 @@
+/* One flat, uniform track for the cat to run over — no rainbow wash behind it
+   (only the cat's own trailing ribbon is rainbow). */
 .nyan-lane {
   position: relative;
   height: 26px;
@@ -5,23 +7,6 @@
   overflow: hidden;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
-}
-/* Faint idle rainbow hairline. All color literals sit on the gradient lines,
-   which the style-token guard allows (kept single-line so the guard sees it). */
-.nyan-lane::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.14;
-  background: repeating-linear-gradient(
-    90deg,
-    #ff2e2e 0 16px,
-    #ff9f2e 16px 32px,
-    #ffe62e 32px 48px,
-    #39ff14 48px 64px,
-    #2ec9ff 64px 80px,
-    #b14fff 80px 96px
-  );
 }
 
 /* The cat + a fixed-length rainbow ribbon glide across as one, looping. Animated

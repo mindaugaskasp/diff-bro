@@ -26,6 +26,15 @@ const entryAad = (id, createdAt, expiresAt, from) =>
 
 const IMPORTED_CATEGORY = 'imported'
 
+// Category names are normalized to a single leading capital followed by
+// lowercase (e.g. "RELEASE notes" → "Release notes"), so the folder tree reads
+// consistently no matter how the name was typed. Empty falls back to "Untitled".
+function normalizeCategoryName(raw) {
+  const trimmed = (raw || '').trim()
+  if (!trimmed) return 'Untitled'
+  return trimmed[0].toUpperCase() + trimmed.slice(1).toLowerCase()
+}
+
 // Categories persist independently of the diffs in them: expiry purges a
 // diff but never its category. The "Default" category is the non-deletable
 // fallback (marked isDefault so it survives rename). A reserved, hidden
@@ -79,9 +88,10 @@ export const useVaultStore = defineStore('vault', {
   getters: {
     // Favorites float to the top; otherwise insertion order is preserved
     // (stable sort). Favoriting is plaintext metadata, same as the name.
+    // expiresAt === null is a "kept" (non-expiring) diff — always active.
     active: (s) =>
       s.entries
-        .filter((e) => e.expiresAt > s.now)
+        .filter((e) => e.expiresAt === null || e.expiresAt > s.now)
         .slice()
         .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)),
     defaultCategoryId: (s) => s.categories.find((c) => c.isDefault)?.id ?? null,
@@ -95,6 +105,11 @@ export const useVaultStore = defineStore('vault', {
     activeInCategory() {
       return (categoryId) =>
         this.active.filter((e) => !e.from && !e.favorite && e.categoryId === categoryId)
+    },
+    // Every active own diff filed under a category, favorited ones included — so
+    // the delete confirmation can warn that removing the category deletes them.
+    diffsInCategory() {
+      return (categoryId) => this.active.filter((e) => !e.from && e.categoryId === categoryId)
     },
     // Shared-in diffs are shown in their own "External diffs" section.
     importedActive() {
@@ -110,14 +125,13 @@ export const useVaultStore = defineStore('vault', {
     importedOthers() {
       return this.importedActive.filter((e) => !e.favorite)
     },
-    // Deletable only if it is not Default and shows no diffs of its own
-    // (favorited diffs have moved to the Favorites group and don't block
-    // deletion; removeCategory reassigns any stragglers to Default).
+    // Any category except Default can be deleted. Deleting one also deletes the
+    // diffs filed under it (removeCategory); the confirmation warns when it
+    // holds any.
     canDeleteCategory() {
       return (id) => {
         const category = this.categories.find((c) => c.id === id)
-        if (!category || category.isDefault) return false
-        return !this.activeInCategory(id).length
+        return !!category && !category.isDefault
       }
     }
   },
@@ -128,16 +142,23 @@ export const useVaultStore = defineStore('vault', {
     tick() {
       this.now = Date.now()
       const before = this.entries.length
-      this.entries = this.entries.filter((e) => e.expiresAt > this.now)
+      this.entries = this.entries.filter((e) => e.expiresAt === null || e.expiresAt > this.now)
       if (this.entries.length !== before) this.persist()
     },
+    // ttlHours === null saves a "kept" diff that never expires (the save dialog's
+    // "Secure" toggle off); any number saves an auto-expiring ("secure") diff,
+    // capped at 24 h. Shared copies always expire regardless (see share()).
     async save(name, ttlHours, payload, categoryId) {
-      const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
+      let expiresAt = null
+      if (ttlHours !== null) {
+        const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
+        expiresAt = Date.now() + hours * 3600_000
+      }
       return this._add({
         name,
         payload,
         createdAt: Date.now(),
-        expiresAt: Date.now() + hours * 3600_000,
+        expiresAt,
         from: null,
         categoryId: categoryId ?? this.defaultCategoryId
       })
@@ -177,21 +198,16 @@ export const useVaultStore = defineStore('vault', {
     },
     addCategory(name) {
       const id = crypto.randomUUID()
-      this.categories.push({ id, name: (name || 'Untitled').trim() || 'Untitled' })
+      this.categories.push({ id, name: normalizeCategoryName(name) })
       this.persist()
       return id
     },
-    // Refuses the Default category and any category still holding active
-    // diffs (defense in depth — the UI gates this too). Returns whether it
-    // deleted.
+    // Refuses only the Default category. Deleting a category also deletes every
+    // diff filed under it (favorited ones included) — the confirmation warns
+    // when it holds any. Returns whether it deleted.
     removeCategory(id) {
       if (!this.canDeleteCategory(id)) return false
-      // Any favorited stragglers still tagged to this category (they live in
-      // the Favorites group, not the category list) fall back to Default so
-      // they never point at a deleted category. categoryId is plaintext
-      // metadata (not in the AAD), so this needs no re-encryption.
-      const def = this.defaultCategoryId
-      for (const e of this.entries) if (e.categoryId === id) e.categoryId = def
+      this.entries = this.entries.filter((e) => e.categoryId !== id)
       this.categories = this.categories.filter((c) => c.id !== id)
       this.persist()
       return true
@@ -218,13 +234,14 @@ export const useVaultStore = defineStore('vault', {
       if (!entry) return { error: 'missing' }
       const payload = await this.load(id)
       if (!payload) return { error: 'missing' }
+      // Sealed shares MUST carry a finite, ≤24 h expiry (sealing.js enforces it
+      // both signing and opening). A kept (non-expiring) diff therefore gets a
+      // fresh 24 h window for its shared copy — the local original is untouched.
+      const now = Date.now()
+      const createdAt = entry.expiresAt === null ? now : entry.createdAt
+      const expiresAt = entry.expiresAt ?? now + MAX_TTL_HOURS * 3600_000
       return window.api.shareExport(
-        {
-          name: entry.name,
-          createdAt: entry.createdAt,
-          expiresAt: entry.expiresAt,
-          snapshot: payload
-        },
+        { name: entry.name, createdAt, expiresAt, snapshot: payload },
         recipientFp
       )
     },
@@ -252,7 +269,7 @@ export const useVaultStore = defineStore('vault', {
     },
     async load(id) {
       const entry = this.entries.find((e) => e.id === id)
-      if (!entry || entry.expiresAt <= Date.now()) return null
+      if (!entry || (entry.expiresAt !== null && entry.expiresAt <= Date.now())) return null
       const plaintext = await window.api.vaultDecrypt(
         { iv: entry.iv, data: entry.data },
         entryAad(entry.id, entry.createdAt, entry.expiresAt, entry.from)

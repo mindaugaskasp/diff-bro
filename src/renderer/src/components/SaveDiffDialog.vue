@@ -8,6 +8,8 @@ const diff = useDiffStore()
 const vault = useVaultStore()
 
 const name = ref('')
+// Secure = auto-expiring (the app's default). Off keeps the diff indefinitely.
+const secure = ref(true)
 const ttl = ref(DEFAULT_TTL_HOURS)
 const nameInput = ref(null)
 // '__new__' reveals an input to create a category on the fly.
@@ -25,13 +27,21 @@ onMounted(() => {
 })
 
 async function save() {
+  // Saving from paste mode should also run the comparison, so the user lands on
+  // the diff they just kept instead of staying on the two input boxes.
+  const wasPaste = diff.mode === 'paste'
   let targetCategory = categoryId.value
   if (targetCategory === NEW_CATEGORY) {
     targetCategory = newCategoryName.value.trim()
       ? vault.addCategory(newCategoryName.value)
       : vault.defaultCategoryId
   }
-  const id = await vault.save(name.value.trim(), ttl.value, diff.snapshot(), targetCategory)
+  const id = await vault.save(
+    name.value.trim(),
+    secure.value ? ttl.value : null,
+    diff.snapshot(),
+    targetCategory
+  )
   diff.showSaveDialog = false
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
@@ -59,7 +69,17 @@ async function save() {
     diff.showNotice('Saved (encrypted). Loading the file…')
     diff.finishPickAfterSave()
   } else {
-    diff.showNotice(`Saved (encrypted) — expires in ${ttl.value} h.`)
+    // Initiate the comparison for a paste-mode save (comparePasted clears the
+    // saved flag, so re-mark it — nothing has changed since the save).
+    if (wasPaste) {
+      diff.comparePasted()
+      diff.markSaved()
+    }
+    diff.showNotice(
+      secure.value
+        ? `Saved (encrypted) — expires in ${ttl.value} h.`
+        : 'Saved (encrypted) — kept until you delete it.'
+    )
   }
 }
 
@@ -105,7 +125,11 @@ function cancel() {
           />
         </label>
       </template>
-      <label>
+      <label class="toggle">
+        <input v-model="secure" type="checkbox" />
+        <span><strong>Secure</strong> — auto-expiring (deletes itself)</span>
+      </label>
+      <label v-if="secure">
         Expires after
         <select v-model.number="ttl">
           <option v-for="opt in TTL_OPTIONS" :key="opt.hours" :value="opt.hours">
@@ -114,7 +138,11 @@ function cancel() {
         </select>
       </label>
       <p class="dialog-note">
-        Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.
+        {{
+          secure
+            ? 'Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.'
+            : 'Stored encrypted on this machine only and kept until you delete it — no expiry.'
+        }}
       </p>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary">

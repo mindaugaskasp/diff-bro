@@ -16,7 +16,11 @@
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  background: var(--bg);
+  /* An elevated fill lifts the header off the panel-grey body so each section
+     reads as a distinct block; a single top hairline separates it from the
+     section above. That tonal step is the whole lift — no drop shadow, which
+     read as a redundant second line on themes with a bright --border. */
+  background: var(--bg-elevated);
   border-top: 1px solid var(--border);
   cursor: pointer;
   user-select: none;
@@ -26,8 +30,41 @@
 .head.first {
   border-top: none;
 }
+/* Unified sidebar: the header is a quiet group label — no elevated band, no
+   drag handle. It still toggles the group's collapse. */
+.head.unified {
+  background: transparent;
+  border-top: none;
+  min-height: 0;
+  padding: 10px 10px 3px;
+  font-size: var(--font-2xs);
+  color: var(--text-hint);
+  cursor: pointer;
+}
+.head.unified .section-icon {
+  width: 16px;
+  height: 16px;
+  background: none;
+  color: var(--text-dim);
+}
 .section-title {
   flex: 1;
+}
+/* Per-section identity chip: a distinct icon silhouette in an accent-tinted
+   square, so Saved / External / Snippets are told apart by shape at a glance
+   (not by reading the label). One accent token, uniform tint — the SHAPE is
+   what differs per section, which stays correct in every theme. */
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  font-size: var(--font-sm);
+  flex: none;
 }
 .chev {
   display: inline-block;
@@ -38,18 +75,14 @@
 .chev.open {
   transform: rotate(90deg);
 }
-/* Right-side controls (the actions slot + reorder arrows) share one centerline.
-   Each glyph is flex-centered in an equal-height box so differing glyph metrics
-   — an emoji vs the geometric arrows — can't drift off the row's center. */
-.head > .actions-slot,
-.reorder {
+/* Right-side controls (the actions slot) sit on the row's centerline: each glyph
+   is flex-centered in an equal-height box so differing glyph metrics can't drift
+   off center. */
+.head > .actions-slot {
   display: inline-flex;
   align-items: center;
   height: 18px;
   line-height: 1;
-}
-.reorder {
-  gap: 2px;
 }
 /* The whole header is the drag handle when unlocked — the grab cursor is the
    only affordance needed. A plain click still toggles the section collapsed. */
@@ -59,37 +92,79 @@
 .head.draggable:active {
   cursor: grabbing;
 }
-/* Only the header under the cursor gets marked (the drop lands ABOVE it): a bold
-   accent insertion bar at its top edge plus a light accent tint, so where the
-   section will land reads at a glance instead of every header lighting up. */
+/* Only the header under the cursor gets marked (the drop lands ABOVE it): the
+   whole header is boxed with a dashed accent outline plus a light accent tint,
+   so the drop AREA reads at a glance instead of every header lighting up. The
+   outline (not a border) is inset with a negative offset so it never nudges the
+   band height or the content baseline — layout can't drift on hover. */
 .head.drop-target {
-  box-shadow: inset 0 3px 0 0 var(--accent);
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 /* The header being dragged dims, so it's clear which section is moving. */
 .head.dragging {
   opacity: 0.4;
 }
-.reorder-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 18px;
-  min-width: 18px;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--font-2xs);
-  line-height: 1;
-  padding: 0 2px;
+/* Toggling the sidebar lock plays a one-shot cue on EVERY header, so the state
+   change is unmistakable: unlocking wiggles them (they're draggable now), locking
+   snaps them firm. prefers-reduced-motion parks both. */
+.head.cue-unlock {
+  animation: section-cue-unlock 0.5s ease;
 }
-.reorder-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+.head.cue-lock {
+  animation: section-cue-lock 0.32s ease;
 }
-.reorder-btn:disabled {
-  opacity: 0.25;
-  cursor: default;
+@keyframes section-cue-unlock {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  20% {
+    transform: translateX(-3px) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateX(3px) rotate(0.6deg);
+  }
+  80% {
+    transform: translateX(-2px) rotate(-0.3deg);
+  }
+}
+@keyframes section-cue-lock {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .head.cue-unlock,
+  .head.cue-lock {
+    animation: none;
+  }
+}
+/* When a section settles into its new slot after a drag, its header pulses once
+   — a brief accent wash that draws the eye to WHERE the moved section landed, so
+   the reorder registers without re-reading the order. prefers-reduced-motion
+   parks the animation but keeps the code path. */
+.head.settling {
+  animation: section-settle 0.6s ease;
+}
+@keyframes section-settle {
+  0% {
+    background: color-mix(in srgb, var(--accent) 34%, var(--bg));
+  }
+  100% {
+    background: var(--bg-elevated);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .head.settling {
+    animation: none;
+  }
 }

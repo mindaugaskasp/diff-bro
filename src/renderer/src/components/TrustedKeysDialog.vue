@@ -36,6 +36,7 @@ async function commitRename() {
   }
 }
 async function remove(k) {
+  if (diff.lastAddedTrustedFp === k.fingerprint) diff.lastAddedTrustedFp = null
   await window.api.removeTrusted(k.fingerprint)
   await refresh()
 }
@@ -44,6 +45,8 @@ function addKey() {
   diff.addTrustedKey()
 }
 function close() {
+  // Drop the "just added" highlight so re-opening the manager later starts clean.
+  diff.lastAddedTrustedFp = null
   diff.showTrustedKeysDialog = false
 }
 </script>
@@ -59,27 +62,41 @@ function close() {
       No trusted keys yet. Add someone's <code>.diffbrokey</code> (or drop it onto the window).
     </p>
 
-    <ul v-else class="keys">
-      <li v-for="k in keys" :key="k.fingerprint" class="key">
-        <div class="key-body">
-          <input
-            v-if="editingFp === k.fingerprint"
-            v-model="editLabel"
-            class="rename"
-            type="text"
-            spellcheck="false"
-            autofocus
-            @keyup.enter="commitRename"
-            @keyup.escape="editingFp = null"
-            @blur="commitRename"
-          />
-          <span v-else class="label">{{ k.label }}</span>
-          <span class="fp">{{ k.fingerprint }}</span>
-        </div>
-        <button class="icon" title="Rename" @click="startRename(k)"><AppIcon name="edit" /></button>
-        <button class="icon delete" title="Remove" @click="remove(k)"><AppIcon name="x" /></button>
-      </li>
-    </ul>
+    <template v-else>
+      <div class="keys-head">
+        <span class="col-name">Host</span>
+        <span class="count">{{ keys.length }} {{ keys.length === 1 ? 'key' : 'keys' }}</span>
+      </div>
+      <ul class="keys">
+        <li
+          v-for="k in keys"
+          :key="k.fingerprint"
+          class="key"
+          :class="{ added: diff.lastAddedTrustedFp === k.fingerprint }"
+        >
+          <div class="key-body">
+            <input
+              v-if="editingFp === k.fingerprint"
+              v-model="editLabel"
+              class="rename"
+              type="text"
+              spellcheck="false"
+              autofocus
+              @keyup.enter="commitRename"
+              @keyup.escape="editingFp = null"
+              @blur="commitRename"
+            />
+            <span v-else class="label">{{ k.label }}</span>
+            <span class="fp">{{ k.fingerprint }}</span>
+          </div>
+          <span v-if="diff.lastAddedTrustedFp === k.fingerprint" class="added-badge">Added</span>
+          <button class="icon" title="Rename" @click="startRename(k)">
+            <AppIcon name="edit" />
+          </button>
+          <button class="icon delete" title="Remove" @click="remove(k)"><AppIcon name="x" /></button>
+        </li>
+      </ul>
+    </template>
 
     <template #actions>
       <button class="btn btn-primary" @click="addKey">Add key…</button>

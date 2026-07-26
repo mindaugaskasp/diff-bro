@@ -182,6 +182,9 @@ export const useDiffStore = defineStore('diff', {
     // { key, fingerprint, label } while the drag-drop "name this trusted
     // key" dialog is open — null otherwise.
     pendingTrustedKey: null,
+    // Fingerprint of the key added in the most recent confirmTrustedKey, so the
+    // manager can highlight it as freshly added. Cleared when the manager closes.
+    lastAddedTrustedFp: null,
     // Trusted-keys management dialog visibility.
     showTrustedKeysDialog: false,
     // "Share my public key" dialog visibility (name + export/copy your key).
@@ -206,6 +209,15 @@ export const useDiffStore = defineStore('diff', {
   }),
   getters: {
     ready: (s) => !!s.left && !!s.right,
+    // Is a comparison currently on screen? In files mode either side loaded
+    // counts; in paste mode any filled field does. Used to decide whether a
+    // menu-imported sealed diff may take over the view (it may not, if the user
+    // is looking at something) — a dropped .diffbro is an explicit gesture and
+    // ignores this.
+    hasActive: (s) =>
+      s.mode === 'paste'
+        ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
+        : !!(s.left || s.right),
     // Two loaded sides with a computed diff of no changes — surfaced as an
     // affirmative "identical" state so an empty +0/−0 doesn't read as "did it
     // run?". With Ignore-whitespace on, this also covers whitespace-only diffs.
@@ -664,29 +676,45 @@ export const useDiffStore = defineStore('diff', {
       if (res.ok) this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)
       else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
     },
+    // File → Import (menu / the External-diffs "Import" button): import a sealed
+    // diff and OPEN it — but only when nothing is on screen. If the user is
+    // already looking at a diff, importing silently swapping it out would be a
+    // surprise, so keep their view and tell them it's waiting in External diffs.
     async importShared() {
       const res = await useVaultStore().importShared()
-      if (res.ok)
-        this.showNotice(
-          `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
-        )
-      else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
-    },
-    // A .diffbro dropped on the window: import it as a sealed external diff and
-    // open it straight away, so the user sees what they just dropped (a drop is
-    // a direct "show me this" gesture, unlike the File → Import menu path).
-    async receiveDroppedSharedDiff(path) {
-      const vault = useVaultStore()
-      const res = await vault.importSharedFromPath(path)
       if (!res.ok) {
         if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
         return
       }
-      const payload = await vault.load(res.id)
-      if (payload) this.restore(payload)
+      if (this.hasActive) {
+        this.showNotice(
+          `Imported "${res.entry.name}" from ${res.from} into External diffs — kept your current diff open; select it there to view.`
+        )
+        return
+      }
+      await this._openImported(res)
+      this.showNotice(`Opened "${res.entry.name}" from ${res.from} — same expiry as on the sender.`)
+    },
+    // A .diffbro dropped on the window: import it as a sealed external diff and
+    // open it straight away, so the user sees what they just dropped (a drop is
+    // a direct "show me this" gesture, unlike the File → Import menu path, so it
+    // ignores hasActive on purpose).
+    async receiveDroppedSharedDiff(path) {
+      const res = await useVaultStore().importSharedFromPath(path)
+      if (!res.ok) {
+        if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+        return
+      }
+      await this._openImported(res)
       this.showNotice(
         `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
       )
+    },
+    // Decrypt a just-imported share out of the vault and show it. Shared by the
+    // drop and (when the view is free) menu-import paths so opening can't drift.
+    async _openImported(res) {
+      const payload = await useVaultStore().load(res.id)
+      if (payload) this.restore(payload)
     },
     // Export / copy THIS install's public key, tagged with the display name
     // the user typed so recipients recognize it. Called by ShareKeyDialog.
@@ -757,8 +785,10 @@ export const useDiffStore = defineStore('diff', {
       this.pendingTrustedKey = null
       if (res.ok) {
         this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
-        // Land in the manager: the new key is visible next to the existing ones,
-        // with rename and remove at hand.
+        // Land in the manager with the new key flagged, so the add reads as done
+        // at a glance — not just a toast that fades. The manager highlights the
+        // matching row and clears the flag when it closes.
+        this.lastAddedTrustedFp = res.fingerprint
         this.showTrustedKeysDialog = true
       } else this.showNotice('Could not add that key.')
     },

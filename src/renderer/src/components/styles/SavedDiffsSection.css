@@ -3,24 +3,66 @@ ul {
   margin: 0;
   padding: 0;
 }
-.lock {
-  font-size: var(--font-md);
-}
+/* Matches the snippets filter bar: input flush-left with a trailing X to close
+   the row without creating a category. */
 .add-category {
-  padding: 0 10px 8px;
-}
-.add-category input {
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  padding: 0 6px 0 8px;
+}
+.add-category:focus-within {
+  border-color: var(--accent);
+}
+.add-category input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
   color: var(--text);
-  padding: 5px 8px;
+  padding: 5px 0;
   font-size: var(--font-md);
 }
 .add-category input:focus {
   outline: none;
-  border-color: var(--accent);
+}
+.add-category .xbox {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-xl);
+  line-height: 1;
+  padding: 0 2px;
+}
+.add-category .xbox:hover {
+  color: var(--text);
+}
+/* "New category" affordance at the head of the tree — accent-tinted so it reads
+   as an add action rather than a category, and it row-highlights on hover like
+   the folders below it. */
+.add-cat-row {
+  list-style: none;
+}
+.add-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: 600;
+  text-align: left;
+}
+.add-cat:hover {
+  background: var(--bg-hover);
 }
 .empty {
   padding: 4px 10px;
@@ -41,17 +83,20 @@ ul {
 .empty code {
   font-size: var(--font-sm);
 }
+/* A folder NODE in the directory tree, not a banded subsection: no fill and no
+   divider, so consecutive categories read as sibling folders at one level (the
+   chevron + accent folder glyph carry the identity). Its diffs indent below it
+   as leaves. */
 .category-head {
   display: flex;
   align-items: center;
   gap: 4px;
   padding-right: 6px;
-  border-top: 1px solid var(--border);
 }
 /* Highlight the whole row on hover — the grip and delete controls sit inside it,
-   so hovering anywhere lights the full shelf header, not just the toggle. */
+   so hovering anywhere lights the full folder row, not just the toggle. */
 .category-head:hover {
-  background: var(--bg);
+  background: var(--bg-hover);
 }
 /* Drag affordance for reordering categories — quiet until the row is hovered so
    the folder/name reads first. */
@@ -111,12 +156,47 @@ ul {
   color: var(--text-hint);
   font-variant-numeric: tabular-nums;
 }
-/* The tree rail: a hairline down the left that the category's diffs indent off,
-   so they read as belonging to the folder above. */
+/* Directory-tree treatment: the category is a folder and its diffs hang off a
+   guide rail as leaves. A vertical rail runs down under the folder glyph; each
+   leaf draws an elbow (├─) out to it, and the last leaf trims the rail to the
+   elbow so the branch closes cleanly (└─) instead of dangling. The rail/elbow
+   are absolutely-positioned pseudos, so they never disturb the row's flexbox. */
 .diff-list {
-  margin: 2px 0 var(--space-2) 18px;
-  padding-left: 4px;
-  border-left: 1.5px solid var(--border);
+  margin: 0 0 var(--space-2);
+  padding: 0 0 0 20px;
+  list-style: none;
+}
+.diff-list .diff {
+  position: relative;
+  padding-left: 14px;
+}
+.diff-list .diff::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--border);
+}
+.diff-list .diff:last-child::before {
+  bottom: auto;
+  height: 19px;
+}
+.diff-list .diff::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 19px;
+  width: 10px;
+  border-top: 1px solid var(--border);
+}
+/* Leaves read as tree nodes, not a bordered list, so the per-row hairlines that
+   suit the flat External list are dropped here (reach into SavedDiffRow's own
+   scope for its row parts). */
+.diff-list .diff :deep(.entry),
+.diff-list .diff :deep(.star),
+.diff-list .diff :deep(.row-btn) {
+  border-top: none;
 }
 .icon {
   display: inline-flex;
@@ -141,16 +221,29 @@ ul {
   opacity: 0.3;
   cursor: default;
 }
-.favorites-group {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.fav-head {
-  padding: 6px 10px 3px;
-  font-size: var(--font-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+/* Favorites: the pinned golden folder at the top of the tree. A golden glyph and
+   name plus a faint golden wash mark it apart from the accent-blue categories. */
+.folder.gold {
   color: var(--favorite);
+}
+.favorites .cat-name {
+  color: var(--favorite);
+  font-weight: 700;
+}
+.favorites .category-head {
+  background: color-mix(in srgb, var(--favorite) 8%, transparent);
+}
+.favorites .category-head:hover {
+  background: color-mix(in srgb, var(--favorite) 15%, transparent);
+}
+/* The Favorites folder isn't reorderable; the ghost grip only reserves the
+   column so its folder glyph lines up with the draggable categories below. */
+.grip.ghost {
+  visibility: hidden;
+  cursor: default;
+}
+/* Favorited leaves already sit under the golden folder — drop the left accent
+   bar SavedDiffRow gives them so it doesn't collide with the tree's guide rail. */
+.diff-list .diff.favorite {
+  box-shadow: none;
 }

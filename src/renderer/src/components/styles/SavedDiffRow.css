@@ -7,6 +7,15 @@
   background: color-mix(in srgb, var(--favorite) 12%, transparent);
   box-shadow: inset 3px 0 0 var(--favorite);
 }
+/* Whole-row hover highlight — a distinct background so pointing at a row reads
+   at a glance, not just a faint text-colour shift. Favorited rows deepen their
+   own gold instead of going grey. */
+.diff:hover {
+  background: var(--bg-hover);
+}
+.diff.favorite:hover {
+  background: color-mix(in srgb, var(--favorite) 22%, transparent);
+}
 .entry {
   flex: 1;
   min-width: 0;
@@ -20,9 +29,6 @@
   color: var(--text);
   padding: 6px 4px 6px 10px;
   cursor: pointer;
-}
-.entry:hover {
-  background: var(--bg);
 }
 .name {
   font-size: var(--font-md);
@@ -53,7 +59,6 @@
 }
 .star:hover {
   color: var(--favorite);
-  background: var(--bg-hover);
 }
 .star.on {
   color: var(--favorite);

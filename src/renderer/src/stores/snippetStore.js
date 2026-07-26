@@ -146,6 +146,15 @@ export const EXAMPLE_SNIPPET = {
 export const languageOf = (entry) =>
   entry?.language && entry.language !== 'auto' ? entry.language : (entry?.detected ?? 'plaintext')
 
+// The format a snippet resolves to, as a tag name — its explicit language, else
+// the auto-detected one. Plaintext/unknown yields no tag. Applied automatically
+// on save so every snippet is findable by its format (a JSON snippet gets a
+// "json" tag, etc.).
+export function formatTagFor(language, content) {
+  const lang = language && language !== 'auto' ? language : detectSnippetLanguage(content)
+  return lang && lang !== 'plaintext' ? lang : null
+}
+
 const IMPORT_ERRORS = {
   'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
   'wrong-passphrase': 'Wrong passphrase, or the file is corrupted.',
@@ -239,7 +248,8 @@ export const useSnippetStore = defineStore('snippets', {
         this.keyError = box.error
         return null
       }
-      const applied = this._applyTags(tags, tagColors)
+      const ft = formatTagFor(language, content)
+      const applied = this._applyTags(ft ? [ft, ...tags] : tags, tagColors)
       this.entries.push({
         id,
         aadSalt,

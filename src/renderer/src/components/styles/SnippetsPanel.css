@@ -1,10 +1,6 @@
 .snippets-section {
   display: flex;
   flex-direction: column;
-  /* Reserve space beneath the section so the final snippets never sit flush
-     against the window's bottom edge, even scrolled all the way down (this is
-     often, but not always, the last section — order is user-controlled). */
-  padding-bottom: var(--space-4);
 }
 /* Collapse chevron for the shelf sub-headers (the section header owns its own). */
 .chev {
@@ -19,11 +15,15 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 0 10px 8px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0 6px 0 8px;
+}
+.search-glyph {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
 }
 .filter input {
   flex: 1;
@@ -63,6 +63,22 @@
   font-size: var(--font-sm);
   list-style: none;
 }
+/* The tag filter, relocated to the foot of the section. A generous top margin
+   plus a hairline divider sets it well below the snippet lists, so it reads as a
+   secondary "filter footer" and never competes with the snippets for attention
+   at the top of the section (where the search box remains the primary filter). */
+/* The tag filter sits at the foot of the section, below the snippet lists it
+   filters — a clear top margin + divider set it apart, with no empty stretch
+   above it. */
+.tags-footer {
+  margin-top: var(--space-4);
+  /* Breathing room below the tags so they don't crowd the next section when
+     Snippets is reordered above another one. */
+  margin-bottom: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
 /* shelves */
 /* A hairline above each shelf sets the tag filter apart from the snippet lists
    (and the shelves from each other) — the tag chips and the rows otherwise
@@ -72,16 +88,39 @@
   padding-top: var(--space-2);
   border-top: 1px solid var(--border);
 }
+.shelf-head-row {
+  display: flex;
+  align-items: center;
+}
 .shelf-head {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 7px;
-  width: 100%;
   background: none;
   border: none;
   cursor: pointer;
   padding: 6px 10px 4px;
   font-family: inherit;
+}
+/* Magnifier by the "All snippets" header — the only affordance for the search
+   box, which stays hidden until it's pressed. */
+.shelf-search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 4px 10px;
+  font-size: var(--font-md);
+}
+.shelf-search:hover,
+.shelf-search.on {
+  color: var(--accent);
 }
 .shelf-head .chev {
   font-size: var(--font-2xs);

@@ -5,9 +5,92 @@
   background: var(--bg-panel);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden; /* the body scrolls, not the whole aside */
 }
-/* Sections stack flush — each header carries a single top hairline (see
-   SectionHeader.css), so consecutive sections are separated by one line with no
-   gap. A gap here would show as panel background hanging below a collapsed
-   header, which reads as a bug. */
+/* Fixed control strip: search + the segmented group filter. */
+.usb-controls {
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.usb-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 6px 0 8px;
+}
+.usb-search:focus-within {
+  border-color: var(--accent);
+}
+.usb-glyph {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.usb-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 5px 0;
+  font-size: var(--font-md);
+}
+.usb-search input:focus {
+  outline: none;
+}
+.usb-x {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-xl);
+  line-height: 1;
+  padding: 0 2px;
+}
+.usb-x:hover {
+  color: var(--text);
+}
+/* Segmented filter — one control names what the list is showing. */
+.usb-seg {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+}
+.usb-seg button {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 0;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  font-family: inherit;
+}
+.usb-seg button.on {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 14%, transparent);
+}
+.usb-seg button:hover:not(.on) {
+  color: var(--text);
+}
+.usb-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-4);
+}

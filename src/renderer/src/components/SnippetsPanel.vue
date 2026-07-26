@@ -2,7 +2,7 @@
 // Snippets sidebar: a filter bar over two shelves (★ favorites, then the rest).
 // Filtering lives in useSnippetFilters, hover previews in useSnippetPreview, and
 // a row's own markup in SnippetRow — this file is layout and nothing else.
-import { ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
 import { useSnippetPreview } from '../composables/useSnippetPreview'
@@ -12,7 +12,11 @@ import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
 import AppIcon from './AppIcon.vue'
 
-defineProps({ first: { type: Boolean, default: false } })
+const props = defineProps({
+  first: { type: Boolean, default: false },
+  unified: { type: Boolean, default: false },
+  search: { type: String, default: '' }
+})
 
 const store = useSnippetStore()
 
@@ -34,6 +38,39 @@ const {
 } = useSnippetFilters()
 
 const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
+
+// In the unified sidebar the shell owns the search — mirror its query into the
+// snippet filter so typing there narrows the snippets too.
+watch(
+  () => props.search,
+  (v) => {
+    if (props.unified) query.value = v
+  },
+  { immediate: true }
+)
+
+// The search box is hidden until the magnifier by the "All snippets" header is
+// pressed — so the resting section stays uncluttered. Toggling it open focuses
+// the field and expands the list; toggling closed clears the filter.
+const searchOpen = ref(false)
+const searchInput = ref(null)
+async function toggleSearch() {
+  searchOpen.value = !searchOpen.value
+  if (searchOpen.value) {
+    allOpen.value = true
+    await nextTick()
+    searchInput.value?.focus()
+  } else {
+    query.value = ''
+  }
+}
+
+// The "+" lives in the header; expand the section (its editor mounts in the
+// body) and open a blank snippet.
+function newSnippet() {
+  sectionOpen.value = true
+  store.editingSnippet = { id: null }
+}
 </script>
 
 <template>
@@ -41,11 +78,16 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
     <SectionHeader
       section-id="snippets"
       title="Snippets"
+      icon="code"
       :open="sectionOpen"
       :first="first"
+      :unified="unified"
       @toggle="sectionOpen = !sectionOpen"
     >
       <template #actions>
+        <button class="btn btn-icon" title="New snippet" @click.stop="newSnippet">
+          <AppIcon name="plus" />
+        </button>
         <button
           class="btn btn-icon"
           title="Export all snippets to a passphrase-protected file"
@@ -64,41 +106,10 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
     </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <div class="section-actions">
-        <button
-          class="btn btn-sm btn-block btn-primary"
-          title="Create a new snippet"
-          @click="store.editingSnippet = { id: null }"
-        >
-          + New snippet
-        </button>
-      </div>
-
-      <div v-if="store.entries.length" class="filter" :class="{ 'has-text': query.trim() }">
-        <input
-          v-model="query"
-          type="search"
-          placeholder="Filter by name or tag…"
-          spellcheck="false"
-        />
-        <button v-if="query.trim()" class="xbox" title="Clear search" @click="query = ''">
-          <AppIcon name="x" />
-        </button>
-      </div>
-
       <p v-if="!store.entries.length" class="empty">
-        Press <strong>New snippet</strong> to create one — saved encrypted, tagged however you like,
-        and exportable as a passphrase-protected file.
+        Use the <strong>+</strong> in this section's header to create one — saved encrypted, tagged
+        however you like, and exportable as a passphrase-protected file.
       </p>
-
-      <SnippetTagBar
-        v-if="store.entries.length"
-        :chips="tagChips"
-        :active="activeTags"
-        :filtering="filtering"
-        @toggle="toggleTag"
-        @clear="clearFilters"
-      />
 
       <!-- ★ Favorites shelf -->
       <div v-if="visibleFavorites.length" class="shelf fav" :class="{ collapsed: !favOpen }">
@@ -121,13 +132,42 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
 
       <!-- All snippets shelf (newest first) -->
       <div v-if="store.entries.length" class="shelf" :class="{ collapsed: !allOpen }">
-        <button class="shelf-head" @click="allOpen = !allOpen">
-          <AppIcon class="chev" :class="{ open: allOpen }" name="chevron-right" />
-          <span class="shelf-title"
-            >All snippets <span class="sort-note">· newest first</span></span
+        <div class="shelf-head-row">
+          <button class="shelf-head" @click="allOpen = !allOpen">
+            <AppIcon class="chev" :class="{ open: allOpen }" name="chevron-right" />
+            <span class="shelf-title"
+              >All snippets <span class="sort-note">· newest first</span></span
+            >
+            <span class="shelf-count">{{ visibleListed.length }}</span>
+          </button>
+          <button
+            v-if="!unified"
+            class="shelf-search"
+            :class="{ on: searchOpen }"
+            title="Search snippets"
+            @click="toggleSearch"
           >
-          <span class="shelf-count">{{ visibleListed.length }}</span>
-        </button>
+            <AppIcon name="search" />
+          </button>
+        </div>
+        <div
+          v-if="searchOpen && !unified"
+          class="filter sidebar-field"
+          :class="{ 'has-text': query.trim() }"
+        >
+          <AppIcon class="search-glyph" name="search" />
+          <input
+            ref="searchInput"
+            v-model="query"
+            type="search"
+            placeholder="Filter by name or tag…"
+            spellcheck="false"
+            @keyup.escape="toggleSearch"
+          />
+          <button v-if="query.trim()" class="xbox" title="Clear search" @click="query = ''">
+            <AppIcon name="x" />
+          </button>
+        </div>
         <ul v-show="allOpen" class="rows">
           <li v-if="!anyVisible" class="empty small">No snippets match — try removing a filter.</li>
           <SnippetRow
@@ -138,6 +178,17 @@ const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
             @mouseleave="onRowLeave"
           />
         </ul>
+      </div>
+
+      <!-- Tag filter at the FOOT of the section; wrapper owns the spacing/divider. -->
+      <div v-if="store.entries.length" class="tags-footer">
+        <SnippetTagBar
+          :chips="tagChips"
+          :active="activeTags"
+          :filtering="filtering"
+          @toggle="toggleTag"
+          @clear="clearFilters"
+        />
       </div>
     </div>
   </section>

@@ -1,0 +1,23 @@
+/* The "Secure" control is an inline checkbox row, overriding the stacked column
+   layout the dialog gives its other labels. */
+.toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.toggle input[type='checkbox'] {
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.toggle strong {
+  font-weight: 700;
+}

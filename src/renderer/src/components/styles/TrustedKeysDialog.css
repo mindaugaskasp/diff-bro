@@ -6,6 +6,25 @@
 code {
   font-size: var(--font-sm);
 }
+/* A small caption row above the list so it reads as a titled table of hosts,
+   with a live count on the right. */
+.keys-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 2px 4px;
+}
+.col-name {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+}
+.count {
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+}
 .keys {
   list-style: none;
   margin: 0;
@@ -24,6 +43,37 @@ code {
 }
 .key:last-child {
   border-bottom: none;
+}
+/* The row for the key that was just added: a persistent accent tint (so it's
+   obvious which one is new after the dialog opens) plus a one-shot wash that
+   fades in, drawing the eye there the moment the manager appears. */
+.key.added {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: key-added-flash 1s ease;
+}
+@keyframes key-added-flash {
+  0% {
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .key.added {
+    animation: none;
+  }
+}
+.added-badge {
+  flex: none;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
 }
 .key-body {
   flex: 1;

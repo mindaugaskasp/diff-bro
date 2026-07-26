@@ -4,12 +4,10 @@
 // MenuBar.vue) — this is the pointer-friendly half.
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import { useSettingsStore } from '../stores/settingsStore'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
-const settings = useSettingsStore()
 
 // The button names its destination, so it's explicit that pressing it again in
 // paste mode returns to comparing files.
@@ -82,24 +80,13 @@ const pasteToggleTitle = computed(() =>
         >
           <AppIcon name="copy" /> Copy diff
         </button>
-        <button class="btn btn-ghost" :disabled="!store.left && !store.right" @click="store.clear">
-          Clear
-        </button>
-      </div>
-
-      <span class="divider" />
-
-      <!-- Sidebar controls -->
-      <div class="group">
         <button
-          class="icon-btn"
-          :class="{ active: settings.sectionsLocked }"
-          :title="
-            settings.sectionsLocked ? 'Unlock sidebar section order' : 'Lock sidebar section order'
-          "
-          @click="settings.toggleSectionsLock()"
+          class="btn btn-ghost"
+          :title="`Clear both files (${MOD}+K)`"
+          :disabled="!store.left && !store.right"
+          @click="store.clear"
         >
-          <AppIcon :name="settings.sectionsLocked ? 'lock' : 'unlock'" />
+          Clear
         </button>
       </div>
     </div>

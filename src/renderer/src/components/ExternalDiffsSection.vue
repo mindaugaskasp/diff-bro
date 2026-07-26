@@ -10,15 +10,28 @@ import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
-defineProps({ first: { type: Boolean, default: false } })
+const props = defineProps({
+  first: { type: Boolean, default: false },
+  unified: { type: Boolean, default: false },
+  search: { type: String, default: '' }
+})
 
 const vault = useVaultStore()
 const diff = useDiffStore()
 
 const open = ref(true)
-const importedFavs = computed(() => vault.importedFavorites)
-const importedOthers = computed(() => vault.importedOthers)
+const q = computed(() => props.search.trim().toLowerCase())
+const filt = (list) => (q.value ? list.filter((e) => e.name.toLowerCase().includes(q.value)) : list)
+const importedFavs = computed(() => filt(vault.importedFavorites))
+const importedOthers = computed(() => filt(vault.importedOthers))
 const hasImported = computed(() => importedFavs.value.length || importedOthers.value.length)
+
+// The "+" lives in the header; expand the section so the imported diff is in
+// view, then run the import flow.
+function startImport() {
+  open.value = true
+  diff.importShared()
+}
 </script>
 
 <template>
@@ -26,24 +39,22 @@ const hasImported = computed(() => importedFavs.value.length || importedOthers.v
     <SectionHeader
       section-id="external"
       title="External diffs"
+      icon="share"
       :open="open"
       :first="first"
+      :unified="unified"
       @toggle="open = !open"
-    />
-    <div v-show="open" class="section-body">
-      <div class="section-actions">
-        <button
-          class="btn btn-sm btn-block"
-          :title="`Import a shared diff (${MOD}+I)`"
-          @click="diff.importShared()"
-        >
-          Import
+    >
+      <template #actions>
+        <button class="btn btn-icon" :title="`Import a shared diff (${MOD}+I)`" @click.stop="startImport">
+          <AppIcon name="plus" />
         </button>
-      </div>
+      </template>
+    </SectionHeader>
+    <div v-show="open" class="section-body">
       <p v-if="!hasImported" class="empty">
-        Diffs shared by someone else appear here — each is signed by its sender and shown separately
-        from your own saved diffs. Press <kbd>{{ MOD }}+I</kbd> to open a sealed
-        <code>.diffbro</code> file; it expires at the same moment as the sender's copy.
+        Sealed diffs others share with you land here — open a <code>.diffbro</code> with the
+        <strong>+</strong> in this section's header (or <kbd>{{ MOD }}+I</kbd>).
       </p>
 
       <ul v-if="importedFavs.length" class="favorites-group">

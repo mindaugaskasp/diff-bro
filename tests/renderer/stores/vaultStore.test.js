@@ -45,6 +45,37 @@ describe('vaultStore', () => {
     expect(entry.expiresAt - entry.createdAt).toBeLessThanOrEqual(24 * 3600_000)
   })
 
+  it('ttlHours null saves a kept (non-expiring) diff that survives tick and loads', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('kept', null, PAYLOAD)
+    expect(vault.entries[0].expiresAt).toBeNull()
+    expect(vault.active).toHaveLength(1)
+    vault.tick() // the purge pass must never remove a null-expiry entry
+    expect(vault.entries.some((e) => e.id === id)).toBe(true)
+    await expect(vault.load(id)).resolves.toEqual(PAYLOAD)
+  })
+
+  it('sharing a kept diff seals it with a fresh ≤24 h expiry', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => ((sealed = entry), { ok: true, to: 'bob' })
+    const id = await vault.save('kept', null, PAYLOAD)
+    await vault.share(id, 'FP')
+    expect(sealed.expiresAt).toBeGreaterThan(Date.now())
+    expect(sealed.expiresAt - sealed.createdAt).toBeLessThanOrEqual(24 * 3600_000)
+  })
+
+  it('sharing a secure diff keeps its own timestamps', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => ((sealed = entry), { ok: true })
+    const id = await vault.save('secure', 1, PAYLOAD)
+    const entry = vault.entries[0]
+    await vault.share(id, 'FP')
+    expect(sealed.expiresAt).toBe(entry.expiresAt)
+    expect(sealed.createdAt).toBe(entry.createdAt)
+  })
+
   it('keeps the sender timestamps on imported entries (simultaneous expiry)', async () => {
     const vault = useVaultStore()
     const createdAt = Date.now() - 1000
@@ -109,6 +140,15 @@ describe('vaultStore', () => {
     expect(vault.removeCategory(vault.defaultCategoryId)).toBe(false)
   })
 
+  it('normalizes a category name to one leading capital then lowercase', () => {
+    const vault = useVaultStore()
+    const nameOf = (id) => vault.categories.find((c) => c.id === id).name
+    expect(nameOf(vault.addCategory('RELEASE notes'))).toBe('Release notes')
+    expect(nameOf(vault.addCategory('  work stuff  '))).toBe('Work stuff')
+    expect(nameOf(vault.addCategory('API'))).toBe('Api')
+    expect(nameOf(vault.addCategory('   '))).toBe('Untitled')
+  })
+
   it('save files a diff into a chosen category, and activeInCategory reflects it', async () => {
     const vault = useVaultStore()
     const cat = vault.addCategory('Work')
@@ -117,16 +157,21 @@ describe('vaultStore', () => {
     expect(vault.activeInCategory(vault.defaultCategoryId)).toHaveLength(0)
   })
 
-  it('refuses to delete a category holding active diffs, allows it once emptied', async () => {
+  it('deleting a category deletes the diffs filed under it', async () => {
     const vault = useVaultStore()
     const cat = vault.addCategory('Temp')
     const id = await vault.save('x', 1, PAYLOAD, cat)
-    expect(vault.canDeleteCategory(cat)).toBe(false)
-    expect(vault.removeCategory(cat)).toBe(false)
-    vault.remove(id)
-    expect(vault.canDeleteCategory(cat)).toBe(true)
+    expect(vault.diffsInCategory(cat).map((e) => e.name)).toEqual(['x'])
+    expect(vault.canDeleteCategory(cat)).toBe(true) // any non-Default category
     expect(vault.removeCategory(cat)).toBe(true)
     expect(vault.categories.some((c) => c.id === cat)).toBe(false)
+    expect(vault.entries.some((e) => e.id === id)).toBe(false) // the diff is gone too
+  })
+
+  it('never deletes the Default category', () => {
+    const vault = useVaultStore()
+    expect(vault.canDeleteCategory(vault.defaultCategoryId)).toBe(false)
+    expect(vault.removeCategory(vault.defaultCategoryId)).toBe(false)
   })
 
   it('lifts favorited own diffs into favoritesOwn and out of their category', async () => {
@@ -139,15 +184,15 @@ describe('vaultStore', () => {
     expect(vault.favoritesOwn.map((e) => e.name)).toEqual(['fav'])
   })
 
-  it('deleting an all-favorited category reassigns its stragglers to Default', async () => {
+  it('deleting a category also deletes its favorited diffs (they count as its diffs)', async () => {
     const vault = useVaultStore()
     const cat = vault.addCategory('C')
     const id = await vault.save('fav', 1, PAYLOAD, cat)
-    vault.toggleFavorite(id) // moves to Favorites; category now shows empty
-    expect(vault.canDeleteCategory(cat)).toBe(true)
+    vault.toggleFavorite(id) // shows under the Favorites folder, still filed in C
+    expect(vault.diffsInCategory(cat).map((e) => e.name)).toEqual(['fav']) // still counts
     expect(vault.removeCategory(cat)).toBe(true)
-    expect(vault.entries.find((e) => e.id === id).categoryId).toBe(vault.defaultCategoryId)
-    expect(vault.favoritesOwn.map((e) => e.name)).toEqual(['fav'])
+    expect(vault.entries.some((e) => e.id === id)).toBe(false)
+    expect(vault.favoritesOwn).toHaveLength(0)
   })
 
   it('keeps the category after its diff expires (category persists independently)', async () => {

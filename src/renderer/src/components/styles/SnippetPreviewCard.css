@@ -3,8 +3,10 @@
 .preview {
   position: fixed;
   z-index: 30;
-  width: 320px;
-  max-width: 44vw;
+  width: 640px;
+  max-width: 60vw;
+  /* Never taller than the screen; the body/diagram cap themselves in vh below. */
+  max-height: 90vh;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -20,8 +22,20 @@
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
-.pv-name {
+.pv-titlewrap {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pv-label {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.pv-name {
   min-width: 0;
   font-size: var(--font-md);
   font-weight: 600;
@@ -49,7 +63,15 @@
   color: var(--text);
   white-space: pre;
   overflow: hidden;
-  max-height: 168px;
+  max-height: min(340px, 66vh);
+}
+/* Rendered-diagram preview: a fixed-height stage the MermaidDiagram fills, its
+   SVG scaling down to fit (so a big diagram still reads as a tiny thumbnail). */
+.pv-diagram {
+  height: min(360px, 66vh);
+  padding: 10px;
+  background: var(--bg);
+  box-sizing: border-box;
 }
 .pv-foot {
   display: flex;

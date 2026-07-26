@@ -6,6 +6,11 @@ import BaseDialog from './BaseDialog.vue'
 const vault = useVaultStore()
 const pending = computed(() => vault.pendingDelete)
 const isCategory = computed(() => pending.value?.type === 'category')
+// A category delete now takes the diffs filed under it with it — warn only when
+// there actually are any (an empty category loses nothing).
+const catHasDiffs = computed(
+  () => isCategory.value && vault.diffsInCategory(pending.value.id).length > 0
+)
 </script>
 
 <template>
@@ -17,11 +22,12 @@ const isCategory = computed(() => pending.value?.type === 'category')
     @close="vault.cancelDelete()"
   >
     <p class="dialog-note">
-      Delete <strong>“{{ pending.name }}”</strong>?
       <template v-if="isCategory">
-        Saved diffs already expire on their own; the category itself is removed now.
+        Delete category <strong>“{{ pending.name }}”</strong>?<template v-if="catHasDiffs">
+          Saved diffs will also be deleted. This can’t be undone.</template
+        >
       </template>
-      This can’t be undone.
+      <template v-else> Delete <strong>“{{ pending.name }}”</strong>? This can’t be undone. </template>
     </p>
     <template #actions>
       <button class="btn btn-destructive" @click="vault.confirmDelete()">Delete</button>

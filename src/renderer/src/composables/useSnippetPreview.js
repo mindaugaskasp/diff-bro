@@ -5,9 +5,9 @@ import { useSnippetStore, languageOf } from '../stores/snippetStore'
 // Snippets are encrypted at rest, so a preview costs a vault:decrypt — the delay
 // means only the row the pointer settles on is decrypted, not every row it
 // sweeps past. Contents render through text interpolation only, never v-html.
-const HOVER_DELAY_MS = 350
+const HOVER_DELAY_MS = 180
 const MAX_PREVIEW_CHARS = 4000
-const CARD_WIDTH = 320
+const CARD_WIDTH = 640
 
 /**
  * @returns {{ preview: import('vue').Ref<import('../types').SnippetPreview|null>,
@@ -21,13 +21,16 @@ export function useSnippetPreview() {
   let hoverTimer = null
   let pendingId = null
 
-  // Place the card just outside the sidebar, clamped to the viewport.
+  // Place the card just outside the sidebar, clamped to the viewport. The card
+  // can be tall (up to 90vh), so reserve enough room that it never runs off the
+  // bottom edge.
   function cardStyle(row) {
     const r = row.getBoundingClientRect()
     const gap = 8
     let left = r.right + gap
     if (left + CARD_WIDTH > window.innerWidth - 8) left = Math.max(8, r.left - CARD_WIDTH - gap)
-    const top = Math.min(r.top, window.innerHeight - 230)
+    const reserve = Math.min(480, window.innerHeight - 16)
+    const top = Math.min(r.top, window.innerHeight - reserve)
     return { left: `${left}px`, top: `${Math.max(8, top)}px` }
   }
 

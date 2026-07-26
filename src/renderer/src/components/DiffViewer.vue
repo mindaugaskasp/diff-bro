@@ -119,16 +119,18 @@ onBeforeUnmount(() => {
         class="side"
       >
         <span class="side-label">{{ s.label }}</span>
-        <input
-          v-model="s.ref.query"
-          type="search"
-          class="search-input"
-          :class="{ error: s.ref.error }"
-          :placeholder="`Search ${s.label} side…`"
-          spellcheck="false"
-          @keyup.enter="s.ref.step(1)"
-          @keyup.escape="s.ref.query = ''"
-        />
+        <div class="search-box" :class="{ error: s.ref.error }">
+          <AppIcon class="search-glyph" name="search" />
+          <input
+            v-model="s.ref.query"
+            type="search"
+            class="search-input"
+            :placeholder="`Search ${s.label} side…`"
+            spellcheck="false"
+            @keyup.enter="s.ref.step(1)"
+            @keyup.escape="s.ref.query = ''"
+          />
+        </div>
         <label class="opt" title="Match case">
           <input v-model="s.ref.matchCase" type="checkbox" />
           Aa
