@@ -211,7 +211,7 @@ export const useSnippetStore = defineStore('snippets', {
     // else the next palette color — this is where a tag typed in the editor is
     // FIRST persisted, only when the snippet is saved), touch used ones to
     // "now", and return the cleaned, de-duplicated, capped applied list.
-    _applyTags(names, colors = {}) {
+    registerTags(names, colors = {}) {
       const out = []
       for (const raw of names ?? []) {
         const n = cleanTag(raw)
@@ -249,7 +249,7 @@ export const useSnippetStore = defineStore('snippets', {
         return null
       }
       const ft = formatTagFor(language, content)
-      const applied = this._applyTags(ft ? [ft, ...tags] : tags, tagColors)
+      const applied = this.registerTags(ft ? [ft, ...tags] : tags, tagColors)
       this.entries.push({
         id,
         aadSalt,
@@ -309,7 +309,7 @@ export const useSnippetStore = defineStore('snippets', {
       entry.name = cleanName(name, entry.name)
       entry.detected = detectSnippetLanguage(content)
       if (language) entry.language = language
-      if (tags !== undefined) entry.tags = this._applyTags(tags, tagColors)
+      if (tags !== undefined) entry.tags = this.registerTags(tags, tagColors)
       entry.iv = box.iv
       entry.data = box.data
       this.persist()

@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
+import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 
 const KEY = randomBytes(32)
 const PAYLOAD = { mode: 'paste', pasteLeft: 'secret left', pasteRight: 'secret right' }
@@ -131,97 +132,67 @@ describe('vaultStore', () => {
     expect(JSON.parse(localStorage.getItem('diffbro.vault')).entries).toEqual([])
   })
 
-  it('seeds a persisted, non-deletable Default category and files saves into it', async () => {
+  it('lists own non-favorited diffs in ownActive, and favorited ones in favoritesOwn', async () => {
     const vault = useVaultStore()
-    expect(vault.categories.some((c) => c.isDefault && c.name === 'Default')).toBe(true)
-    const id = await vault.save('d', 1, PAYLOAD)
-    expect(vault.entries.find((e) => e.id === id).categoryId).toBe(vault.defaultCategoryId)
-    expect(vault.canDeleteCategory(vault.defaultCategoryId)).toBe(false)
-    expect(vault.removeCategory(vault.defaultCategoryId)).toBe(false)
+    await vault.save('plain', 1, PAYLOAD)
+    const favId = await vault.save('starred', 1, PAYLOAD)
+    vault.toggleFavorite(favId)
+    expect(vault.ownActive.map((e) => e.name)).toEqual(['plain'])
+    expect(vault.favoritesOwn.map((e) => e.name)).toEqual(['starred'])
   })
 
-  it('normalizes a category name to one leading capital then lowercase', () => {
+  it('applies user tags to a saved diff, registered in the shared tag registry', async () => {
     const vault = useVaultStore()
-    const nameOf = (id) => vault.categories.find((c) => c.id === id).name
-    expect(nameOf(vault.addCategory('RELEASE notes'))).toBe('Release notes')
-    expect(nameOf(vault.addCategory('  work stuff  '))).toBe('Work stuff')
-    expect(nameOf(vault.addCategory('API'))).toBe('Api')
-    expect(nameOf(vault.addCategory('   '))).toBe('Untitled')
+    const snippets = useSnippetStore()
+    const id = await vault.save('tagged', 1, PAYLOAD, ['work', 'wip'])
+    expect(vault.entries.find((e) => e.id === id).tags).toEqual(
+      expect.arrayContaining(['work', 'wip'])
+    )
+    // the tags now exist in the shared (snippet) registry with colors
+    expect(snippets.colorOf('work')).toBeTruthy()
   })
 
-  it('save files a diff into a chosen category, and activeInCategory reflects it', async () => {
+  it('setTags retags a saved diff in place', async () => {
     const vault = useVaultStore()
-    const cat = vault.addCategory('Work')
-    await vault.save('work diff', 1, PAYLOAD, cat)
-    expect(vault.activeInCategory(cat).map((e) => e.name)).toEqual(['work diff'])
-    expect(vault.activeInCategory(vault.defaultCategoryId)).toHaveLength(0)
+    const id = await vault.save('t', 1, PAYLOAD, ['a'])
+    vault.setTags(id, ['b', 'c'])
+    expect(vault.entries.find((e) => e.id === id).tags).toEqual(['b', 'c'])
   })
 
-  it('deleting a category deletes the diffs filed under it', async () => {
+  it('auto-tags an imported diff "imported"', async () => {
     const vault = useVaultStore()
-    const cat = vault.addCategory('Temp')
-    const id = await vault.save('x', 1, PAYLOAD, cat)
-    expect(vault.diffsInCategory(cat).map((e) => e.name)).toEqual(['x'])
-    expect(vault.canDeleteCategory(cat)).toBe(true) // any non-Default category
-    expect(vault.removeCategory(cat)).toBe(true)
-    expect(vault.categories.some((c) => c.id === cat)).toBe(false)
-    expect(vault.entries.some((e) => e.id === id)).toBe(false) // the diff is gone too
+    await vault.addShared({
+      name: 'from alice',
+      payload: PAYLOAD,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 3600_000,
+      from: 'alice'
+    })
+    expect(vault.entries.find((e) => e.from === 'alice').tags).toContain('imported')
   })
 
-  it('never deletes the Default category', () => {
-    const vault = useVaultStore()
-    expect(vault.canDeleteCategory(vault.defaultCategoryId)).toBe(false)
-    expect(vault.removeCategory(vault.defaultCategoryId)).toBe(false)
-  })
-
-  it('lifts favorited own diffs into favoritesOwn and out of their category', async () => {
-    const vault = useVaultStore()
-    const cat = vault.addCategory('C')
-    const id = await vault.save('fav', 1, PAYLOAD, cat)
-    expect(vault.activeInCategory(cat).map((e) => e.name)).toEqual(['fav'])
-    vault.toggleFavorite(id)
-    expect(vault.activeInCategory(cat)).toHaveLength(0)
-    expect(vault.favoritesOwn.map((e) => e.name)).toEqual(['fav'])
-  })
-
-  it('deleting a category also deletes its favorited diffs (they count as its diffs)', async () => {
-    const vault = useVaultStore()
-    const cat = vault.addCategory('C')
-    const id = await vault.save('fav', 1, PAYLOAD, cat)
-    vault.toggleFavorite(id) // shows under the Favorites folder, still filed in C
-    expect(vault.diffsInCategory(cat).map((e) => e.name)).toEqual(['fav']) // still counts
-    expect(vault.removeCategory(cat)).toBe(true)
-    expect(vault.entries.some((e) => e.id === id)).toBe(false)
-    expect(vault.favoritesOwn).toHaveLength(0)
-  })
-
-  it('keeps the category after its diff expires (category persists independently)', async () => {
-    const vault = useVaultStore()
-    const cat = vault.addCategory('Keep')
-    await vault.save('doomed', 1, PAYLOAD, cat)
-    vault.entries[0].expiresAt = Date.now() - 1
-    vault.tick()
-    expect(vault.activeInCategory(cat)).toHaveLength(0)
-    expect(vault.categories.some((c) => c.id === cat)).toBe(true)
-  })
-
-  it('migrates a legacy bare-array vault into { categories, entries } with a Default', () => {
-    const legacy = [
-      {
-        id: 'old1',
-        name: 'legacy diff',
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 3600_000,
-        from: null,
-        iv: 'x',
-        data: 'y'
-      }
-    ]
+  it('migrates a legacy category vault into flat entries (categoryId dropped)', () => {
+    const legacy = {
+      categories: [{ id: 'c1', name: 'Default', isDefault: true }],
+      entries: [
+        {
+          id: 'old1',
+          name: 'legacy diff',
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 3600_000,
+          from: null,
+          categoryId: 'c1',
+          iv: 'x',
+          data: 'y'
+        }
+      ]
+    }
     localStorage.setItem('diffbro.vault', JSON.stringify(legacy))
     setActivePinia(createPinia())
     const vault = useVaultStore()
-    expect(vault.categories.some((c) => c.isDefault)).toBe(true)
-    expect(vault.entries[0].categoryId).toBe(vault.defaultCategoryId)
+    expect(vault.entries).toHaveLength(1)
+    expect(vault.entries[0].categoryId).toBeUndefined()
+    expect(vault.entries[0].tags).toEqual([])
   })
 
   it('refuses to load an expired entry', async () => {
@@ -366,23 +337,18 @@ describe('vaultStore', () => {
     expect(vault.entries).toHaveLength(0)
   })
 
-  it('the delete confirmation is what actually removes a diff or a category', async () => {
+  it('the delete confirmation is what actually removes a diff', async () => {
     const vault = useVaultStore()
     const id = await vault.save('victim', 1, PAYLOAD)
-    vault.requestDelete('entry', id, 'victim')
+    vault.requestDelete(id, 'victim')
     expect(vault.entries).toHaveLength(1) // asking is not doing
     vault.cancelDelete()
     expect(vault.pendingDelete).toBeNull()
     expect(vault.entries).toHaveLength(1)
 
-    vault.requestDelete('entry', id, 'victim')
+    vault.requestDelete(id, 'victim')
     vault.confirmDelete()
     expect(vault.entries).toHaveLength(0)
-
-    const cat = vault.addCategory('Temp')
-    vault.requestDelete('category', cat, 'Temp')
-    vault.confirmDelete()
-    expect(vault.categories.some((c) => c.id === cat)).toBe(false)
   })
 
   it('confirmDelete with nothing pending is a no-op', async () => {

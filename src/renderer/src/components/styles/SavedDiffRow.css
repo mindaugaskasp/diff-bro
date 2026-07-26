@@ -37,11 +37,26 @@
   text-overflow: ellipsis;
 }
 .ttl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--font-sm);
   color: var(--text-hint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Tag dots — colored from the shared registry, so a diff reads its tags at a
+   glance the way a snippet does. */
+.tags {
+  display: inline-flex;
+  gap: 3px;
+  flex: none;
+}
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 .star {
   display: flex;

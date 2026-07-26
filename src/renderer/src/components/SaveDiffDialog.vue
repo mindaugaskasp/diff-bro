@@ -12,10 +12,6 @@ const name = ref('')
 const secure = ref(true)
 const ttl = ref(DEFAULT_TTL_HOURS)
 const nameInput = ref(null)
-// '__new__' reveals an input to create a category on the fly.
-const NEW_CATEGORY = '__new__'
-const categoryId = ref(vault.defaultCategoryId)
-const newCategoryName = ref('')
 
 onMounted(() => {
   name.value =
@@ -30,18 +26,9 @@ async function save() {
   // Saving from paste mode should also run the comparison, so the user lands on
   // the diff they just kept instead of staying on the two input boxes.
   const wasPaste = diff.mode === 'paste'
-  let targetCategory = categoryId.value
-  if (targetCategory === NEW_CATEGORY) {
-    targetCategory = newCategoryName.value.trim()
-      ? vault.addCategory(newCategoryName.value)
-      : vault.defaultCategoryId
-  }
-  const id = await vault.save(
-    name.value.trim(),
-    secure.value ? ttl.value : null,
-    diff.snapshot(),
-    targetCategory
-  )
+  // Tags: the diff's detected format is auto-added in the store; user tags come
+  // later via the sidebar. (No category — organization is by tag now.)
+  const id = await vault.save(name.value.trim(), secure.value ? ttl.value : null, diff.snapshot())
   diff.showSaveDialog = false
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
@@ -103,28 +90,6 @@ function cancel() {
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
       </label>
-      <!-- Categories are a local organizing tool only. In the share flow the
-           diff is still saved locally (into Default), but the recipient never
-           receives a category, so offering one here would be misleading — and
-           forcing a category onto someone else's copy is exactly what we avoid. -->
-      <template v-if="!diff.saveThenShare">
-        <label>
-          Category
-          <select v-model="categoryId">
-            <option v-for="c in vault.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-            <option :value="NEW_CATEGORY">+ New category…</option>
-          </select>
-        </label>
-        <label v-if="categoryId === NEW_CATEGORY">
-          New category name
-          <input
-            v-model="newCategoryName"
-            type="text"
-            spellcheck="false"
-            placeholder="Category name…"
-          />
-        </label>
-      </template>
       <label class="toggle">
         <input v-model="secure" type="checkbox" />
         <span><strong>Secure</strong> — auto-expiring (deletes itself)</span>
