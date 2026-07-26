@@ -1,8 +1,9 @@
 import { test, expect } from './fixtures.mjs'
 
 // Geometry of the resizable Mermaid viewer — the parts jsdom can't measure (no
-// layout). The window's own maximize follows OS fullscreen, and the panel can be
-// dragged bigger from any corner. Both ride on the seeded example diagram.
+// layout). It opens filling the app; Restore shrinks it to a windowed size, OS
+// fullscreen re-fills it, and the panel can be dragged bigger from any corner.
+// All ride on the seeded example diagram.
 
 async function openViewer(page) {
   const row = page.getByText('Example — Mermaid diagram')
@@ -14,11 +15,24 @@ async function openViewer(page) {
   return panel
 }
 
-test('the viewer fills the window when the app enters fullscreen', async ({ app, page }) => {
+// The viewer opens maximized, so shrink it to a windowed size first — both the
+// resize and the fullscreen-refill checks need room to grow into.
+async function restoreWindowed(page, panel, innerW) {
+  await page.getByRole('button', { name: 'Restore size' }).click()
+  await expect.poll(async () => (await panel.boundingBox()).width).toBeLessThan(innerW * 0.95)
+}
+
+test('the viewer opens filling the app, and refills after restore + fullscreen', async ({
+  app,
+  page
+}) => {
   const panel = await openViewer(page)
-  const before = await panel.boundingBox()
   const innerW = await page.evaluate(() => window.innerWidth)
-  expect(before.width).toBeLessThan(innerW * 0.95) // starts windowed
+  // Opens maximized (full app size) by default.
+  expect((await panel.boundingBox()).width).toBeGreaterThanOrEqual(innerW * 0.9)
+
+  await restoreWindowed(page, panel, innerW)
+  const windowed = await panel.boundingBox()
 
   // window.js pushes `window:fullscreen` on enter-full-screen. Xvfb can't truly
   // fullscreen, so drive the exact same main→renderer signal.
@@ -26,13 +40,14 @@ test('the viewer fills the window when the app enters fullscreen', async ({ app,
     BrowserWindow.getAllWindows()[0].webContents.send('window:fullscreen', true)
   })
 
-  await expect.poll(async () => (await panel.boundingBox()).width).toBeGreaterThan(before.width)
-  const after = await panel.boundingBox()
-  expect(after.width).toBeGreaterThanOrEqual(innerW * 0.9)
+  await expect.poll(async () => (await panel.boundingBox()).width).toBeGreaterThan(windowed.width)
+  expect((await panel.boundingBox()).width).toBeGreaterThanOrEqual(innerW * 0.9)
 })
 
 test('the viewer resizes by dragging its SE corner, pinning the NW corner', async ({ page }) => {
   const panel = await openViewer(page)
+  const innerW = await page.evaluate(() => window.innerWidth)
+  await restoreWindowed(page, panel, innerW)
   const before = await panel.boundingBox()
 
   const handle = page.locator('.resize-handle.se')
