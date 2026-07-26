@@ -24,7 +24,8 @@ const sectionOpen = ref(true)
 
 // Tag filtering + search live in the shell (props); this just mirrors the query.
 const { query, visibleFavorites, visibleListed } = useSnippetFilters()
-const { preview, onRowEnter, onRowLeave } = useSnippetPreview()
+const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, openDiagram } =
+  useSnippetPreview()
 
 watch(() => props.search, (v) => (query.value = v), { immediate: true })
 const byTag = (list) => (props.tag ? list.filter((e) => e.tags.includes(props.tag)) : list)
@@ -96,7 +97,14 @@ function newSnippet() {
     </div>
   </section>
 
-  <SnippetPreviewCard v-if="preview" :preview="preview" />
+  <SnippetPreviewCard
+    v-if="preview"
+    :preview="preview"
+    @mouseenter="onCardEnter"
+    @mouseleave="onCardLeave"
+    @edit="openEditor"
+    @view="openDiagram"
+  />
 </template>
 
 <style scoped src="./styles/SnippetsPanel.css"></style>

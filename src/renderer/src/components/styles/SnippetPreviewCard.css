@@ -5,6 +5,7 @@
   z-index: 30;
   width: 640px;
   max-width: 60vw;
+  min-width: 0;
   /* Never taller than the screen; the body/diagram cap themselves in vh below. */
   max-height: 90vh;
   background: var(--bg-panel);
@@ -12,7 +13,20 @@
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
   overflow: hidden;
+  /* Passive by default (mermaid); the interactive class lets the pointer enter
+     the card to click its actions. */
   pointer-events: none;
+}
+.preview.interactive {
+  pointer-events: auto;
+}
+/* A text snippet hugs its content width instead of the fixed diagram width — a
+   two-line config shouldn't sprawl to 640px. Grows with the widest line up to a
+   cap; the diagram card keeps the fixed width its stage needs. */
+.preview.fit {
+  width: max-content;
+  min-width: 240px;
+  max-width: min(640px, 60vw);
 }
 .pv-head {
   display: flex;
@@ -55,8 +69,13 @@
   padding: 1px 5px;
 }
 .pv-body {
+  display: block;
+  width: 100%;
   margin: 0;
   padding: 9px 11px;
+  background: none;
+  border: none;
+  text-align: left;
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
   font-size: var(--font-sm);
   line-height: 1.5;
@@ -64,14 +83,26 @@
   white-space: pre;
   overflow: hidden;
   max-height: min(340px, 66vh);
+  cursor: pointer;
+}
+.interactive .pv-body:hover {
+  background: var(--bg-hover);
 }
 /* Rendered-diagram preview: a fixed-height stage the MermaidDiagram fills, its
-   SVG scaling down to fit (so a big diagram still reads as a tiny thumbnail). */
+   SVG scaling down to fit (so a big diagram still reads as a tiny thumbnail).
+   It's a button — clicking opens the full-screen viewer. */
 .pv-diagram {
+  display: block;
+  width: 100%;
   height: min(360px, 66vh);
   padding: 10px;
   background: var(--bg);
+  border: none;
   box-sizing: border-box;
+  cursor: pointer;
+}
+.pv-diagram:hover {
+  background: var(--bg-hover);
 }
 .pv-foot {
   display: flex;
@@ -81,9 +112,31 @@
   border-top: 1px solid var(--border);
 }
 .pv-tags {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+/* "Open in editor" — the enlarged, editable window for a non-mermaid snippet. */
+.pv-open {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  font-family: inherit;
+}
+.pv-open:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .pv-tag {
   display: inline-flex;

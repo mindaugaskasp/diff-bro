@@ -121,6 +121,16 @@ export function buildMenus(store) {
           ]
         },
         {
+          label: 'Find & Replace',
+          items: [
+            {
+              label: 'Replace…',
+              keys: `${MOD}+Shift+R`,
+              run: () => store.handleMenuAction('tools-find-replace')
+            }
+          ]
+        },
+        {
           label: 'Text Encryption',
           items: [
             {

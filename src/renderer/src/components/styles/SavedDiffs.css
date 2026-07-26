@@ -144,3 +144,37 @@
   overflow-y: auto;
   padding-bottom: var(--space-4);
 }
+/* Tool launcher pinned to the bottom — flex:none keeps it out of the scroll, so
+   it's always visible under the list regardless of how far the list scrolls. */
+.usb-tools {
+  flex: none;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.usb-tools-label {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-right: 2px;
+}
+.usb-tool {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 10px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  font-family: inherit;
+}
+.usb-tool:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}

@@ -35,16 +35,16 @@ a hard promise: it never touches the network.
 - **Paste mode** for quick throwaway comparisons, including pasted text against a
   real file — or just hit **Ctrl/Cmd+V** to paste straight into a comparison.
 - **Drag & drop** files onto the window; it warns before discarding unsaved work.
-- **Saved diffs** — encrypted, auto-expiring, organized into categories.
+- **Saved diffs** — encrypted, optionally auto-expiring, and tagged.
 - **Share** a diff as a sealed, signed file only its intended recipient can open.
 - **Snippets** — an encrypted, tagged text library with per-language
   highlighting and live **Mermaid** diagram rendering, in a viewer you can drag
   bigger from any corner (and that fills the window when the app goes fullscreen).
-- **Tools** — Base64, JSON / XML / SQL format + validate, and passphrase text
-  encryption.
+- **Tools** — Base64, JSON / XML / SQL format + validate, find & replace
+  (characters, words, or regex), and passphrase text encryption.
 - **Yours to arrange** — eight themes (incl. Nord, Sepia, and a playful Nyan with
-  a reward cat), a sidebar whose sections you drag to
-  reorder (and can lock in place), and adjustable limits, all remembered between
+  a reward cat), one tag namespace shared across diffs and snippets, a sidebar
+  that filters by section and tag, and adjustable limits, all remembered between
   sessions.
 
 <p align="center">

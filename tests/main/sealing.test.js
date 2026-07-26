@@ -227,6 +227,22 @@ describe('openSealed', () => {
     expect(res.entry).toEqual(entry)
   })
 
+  it('carries the entry tags through the signed+encrypted roundtrip', () => {
+    const { bob, bobTrustsAlice, seal } = makePeers()
+    const res = openSealed(seal(makeEntry({ tags: ['release', 'json'] })), bob, bobTrustsAlice, NOW)
+    expect(res.ok).toBe(true)
+    expect(res.entry.tags).toEqual(['release', 'json'])
+  })
+
+  it('a tampered tag list breaks the signature (tags are authenticated)', () => {
+    const { bob, bobTrustsAlice, seal } = makePeers()
+    const file = seal(makeEntry({ tags: ['release'] }))
+    // The payload is inside the GCM ciphertext, so any edit fails decryption
+    // before signature checking — either way the file must be rejected.
+    const tampered = { ...file, ciphertext: Buffer.from(file.ciphertext, 'base64').toString('hex') }
+    expect(openSealed(tampered, bob, bobTrustsAlice, NOW).ok).not.toBe(true)
+  })
+
   it('rejects files that are not share files', () => {
     const { bob, bobTrustsAlice } = makePeers()
     for (const junk of [null, {}, { format: 'nope' }, { format: SHARE_FORMAT }]) {

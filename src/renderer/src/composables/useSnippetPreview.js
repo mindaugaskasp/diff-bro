@@ -1,5 +1,6 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
+import { useDiffStore } from '../stores/diffStore'
 
 // Hover preview for a snippet row: decrypt on demand, debounced, briefly cached.
 // Snippets are encrypted at rest, so a preview costs a vault:decrypt — the delay
@@ -16,9 +17,11 @@ const CARD_WIDTH = 640
  */
 export function useSnippetPreview() {
   const store = useSnippetStore()
+  const diff = useDiffStore()
   const preview = ref(null) // { id, name, tags, lang, text, style }
   const cache = new Map()
   let hoverTimer = null
+  let closeTimer = null
   let pendingId = null
 
   // Place the card just outside the sidebar, clamped to the viewport. The card
@@ -36,6 +39,7 @@ export function useSnippetPreview() {
 
   async function onRowEnter(entry, e) {
     clearTimeout(hoverTimer)
+    clearTimeout(closeTimer)
     const row = e.currentTarget
     hoverTimer = setTimeout(async () => {
       pendingId = entry.id
@@ -58,10 +62,32 @@ export function useSnippetPreview() {
       }
     }, HOVER_DELAY_MS)
   }
+  // Leaving the row schedules a close, but on a short delay so the pointer can
+  // travel INTO the card (which cancels it via onCardEnter) to interact with it.
   function onRowLeave() {
     clearTimeout(hoverTimer)
     pendingId = null
+    clearTimeout(closeTimer)
+    closeTimer = setTimeout(() => (preview.value = null), 160)
+  }
+  const onCardEnter = () => clearTimeout(closeTimer)
+  function onCardLeave() {
+    clearTimeout(closeTimer)
+    closeTimer = setTimeout(() => (preview.value = null), 90)
+  }
+  // Open the hovered snippet in the full editor (its enlarged, editable window).
+  function openEditor() {
+    if (preview.value) store.editingSnippet = { id: preview.value.id }
     preview.value = null
+  }
+  // Open the hovered Mermaid snippet in the full-screen zoomable viewer. Reload
+  // the full source — the preview text is truncated to MAX_PREVIEW_CHARS.
+  async function openDiagram() {
+    if (!preview.value) return
+    const { id, name } = preview.value
+    preview.value = null
+    const code = await store.load(id)
+    if (code != null) diff.openMermaid(name, code)
   }
 
   // The editor is the ONLY path that mutates snippet content, so dropping the
@@ -74,7 +100,10 @@ export function useSnippetPreview() {
       if (!v) cache.clear()
     }
   )
-  onBeforeUnmount(() => clearTimeout(hoverTimer))
+  onBeforeUnmount(() => {
+    clearTimeout(hoverTimer)
+    clearTimeout(closeTimer)
+  })
 
-  return { preview, onRowEnter, onRowLeave }
+  return { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, openDiagram }
 }

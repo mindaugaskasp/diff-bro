@@ -190,8 +190,12 @@ export const useVaultStore = defineStore('vault', {
       const now = Date.now()
       const createdAt = entry.expiresAt === null ? now : entry.createdAt
       const expiresAt = entry.expiresAt ?? now + MAX_TTL_HOURS * 3600_000
+      // Tags travel with the diff (inside the signed+encrypted payload), so the
+      // recipient sees them. The auto "imported" tag is local-only — never send
+      // it, or a re-shared diff would accumulate "imported" tags.
+      const tags = entry.tags.filter((t) => t !== 'imported')
       return window.api.shareExport(
-        { name: entry.name, createdAt, expiresAt, snapshot: payload },
+        { name: entry.name, createdAt, expiresAt, snapshot: payload, tags },
         recipientFp
       )
     },
@@ -206,12 +210,15 @@ export const useVaultStore = defineStore('vault', {
     // caller can open it. Shared by both import paths so they can't drift apart.
     async _ingestShared(res) {
       if (!res.ok) return res
-      const { name, snapshot, createdAt, expiresAt } = res.entry
+      const { name, snapshot, createdAt, expiresAt, tags } = res.entry
       const id = await this.addShared({
         name,
         payload: snapshot,
         createdAt,
         expiresAt,
+        // Sender tags are untrusted — addShared → registerTags cleans and caps
+        // them (and prepends the local "imported" tag).
+        tags: Array.isArray(tags) ? tags : [],
         from: res.from
       })
       return { ...res, id }

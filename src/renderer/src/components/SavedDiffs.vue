@@ -6,6 +6,8 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useDiffStore } from '../stores/diffStore'
+import { TEXT_TOOLS } from '../utils/textTools'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
@@ -13,6 +15,24 @@ import AppIcon from './AppIcon.vue'
 
 const vault = useVaultStore()
 const snippets = useSnippetStore()
+const diff = useDiffStore()
+
+// Tools pinned to the sidebar foot for one-click access — the same dialogs the
+// Tools menu opens, in the same order. Base64 has its own dialog flag; the
+// format/validate tools come from the TEXT_TOOLS registry (the single source).
+const TOOLS = [
+  { label: 'Base64', title: 'Base64 Encode / Decode', open: () => (diff.showBase64Dialog = true) },
+  ...Object.keys(TEXT_TOOLS).map((id) => ({
+    label: id.toUpperCase(),
+    title: TEXT_TOOLS[id].title,
+    open: () => (diff.textTool = id)
+  })),
+  {
+    label: 'Replace',
+    title: 'Find & Replace (characters, words, or regex)',
+    open: () => (diff.showFindReplaceDialog = true)
+  }
+]
 let timer = null
 onMounted(() => {
   vault.tick()
@@ -36,7 +56,12 @@ const allOn = computed(() => visible.value.size === SECTIONS.length)
 const shows = (id) => visible.value.has(id)
 function toggleSection(id) {
   const next = new Set(visible.value)
-  next.has(id) ? next.delete(id) : next.add(id)
+  if (next.has(id)) {
+    if (next.size === 1) return // at least one section must stay shown
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
   visible.value = next
 }
 function showAll() {
@@ -128,6 +153,18 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
         :tag="activeTag"
         :fav-only="favOnly"
       />
+    </div>
+    <div class="usb-tools band">
+      <span class="usb-tools-label">Tools</span>
+      <button
+        v-for="t in TOOLS"
+        :key="t.label"
+        class="usb-tool"
+        :title="t.title"
+        @click="t.open()"
+      >
+        {{ t.label }}
+      </button>
     </div>
   </aside>
 </template>

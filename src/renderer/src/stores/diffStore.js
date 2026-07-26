@@ -120,6 +120,7 @@ const MENU_ACTIONS = {
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
+  'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)
 }
@@ -196,6 +197,7 @@ export const useDiffStore = defineStore('diff', {
     // Which format/validate tool is open ('json' | 'xml' | 'sql'), null when
     // none — one dialog serves all of them (see utils/textTools.js).
     textTool: null,
+    showFindReplaceDialog: false,
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,

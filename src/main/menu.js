@@ -41,6 +41,15 @@ function sendToFocused(action) {
   focusedWindow()?.webContents.send('menu:action', action)
 }
 
+// Clipboard/undo items driven by explicit clicks rather than Electron `role`s.
+// A role maps to AppKit's standard text selectors (cut:/copy:/paste:/…), which
+// is exactly what makes AppKit tag the Edit menu as a text menu and inject its
+// Writing Tools / AutoFill / Emoji & Symbols / Dictation submenus. Routing the
+// same action through webContents keeps Cmd+C/V/X/A/Z working in the renderer's
+// inputs (Monaco, the snippet editor, tag fields) without that tagging, so none
+// of those dead-end system submenus appear.
+const clip = (method) => (_item, win) => (win ?? focusedWindow())?.webContents[method]()
+
 // Clamped zoom (roughly 60%–250%) so it can never run away.
 const ZOOM_MIN = -2.5
 const ZOOM_MAX = 2.5
@@ -112,13 +121,13 @@ export function installMenu() {
         // and this native menu is hidden there, so the roles are macOS-only.
         ...(isMac
           ? [
-              { role: 'undo' },
-              { role: 'redo' },
+              { label: 'Undo', accelerator: 'CmdOrCtrl+Z', click: clip('undo') },
+              { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', click: clip('redo') },
               { type: 'separator' },
-              { role: 'cut' },
-              { role: 'copy' },
-              { role: 'paste' },
-              { role: 'selectAll' },
+              { label: 'Cut', accelerator: 'CmdOrCtrl+X', click: clip('cut') },
+              { label: 'Copy', accelerator: 'CmdOrCtrl+C', click: clip('copy') },
+              { label: 'Paste', accelerator: 'CmdOrCtrl+V', click: clip('paste') },
+              { label: 'Select All', accelerator: 'CmdOrCtrl+A', click: clip('selectAll') },
               { type: 'separator' }
             ]
           : []),
@@ -220,6 +229,16 @@ export function installMenu() {
               label: 'Format / Validate',
               accelerator: 'CmdOrCtrl+Shift+Q',
               click: () => sendToFocused('tools-sql')
+            }
+          ]
+        },
+        {
+          label: 'Find & Replace',
+          submenu: [
+            {
+              label: 'Replace…',
+              accelerator: 'CmdOrCtrl+Shift+R',
+              click: () => sendToFocused('tools-find-replace')
             }
           ]
         },

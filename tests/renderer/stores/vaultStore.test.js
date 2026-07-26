@@ -77,6 +77,35 @@ describe('vaultStore', () => {
     expect(sealed.createdAt).toBe(entry.createdAt)
   })
 
+  it('shares a diff with its tags but strips the local "imported" tag', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => ((sealed = entry), { ok: true })
+    const id = await vault.save('t', 1, PAYLOAD, ['release', 'imported'])
+    await vault.share(id, 'FP')
+    expect(sealed.tags).toContain('release')
+    expect(sealed.tags).not.toContain('imported')
+  })
+
+  it('an imported diff carries the sender tags plus the local "imported" tag', async () => {
+    const vault = useVaultStore()
+    window.api.shareImport = async () => ({
+      ok: true,
+      from: 'alice',
+      entry: {
+        name: 'x',
+        snapshot: PAYLOAD,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 3600_000,
+        tags: ['release']
+      }
+    })
+    const res = await vault.importShared()
+    expect(vault.entries.find((e) => e.id === res.id).tags).toEqual(
+      expect.arrayContaining(['imported', 'release'])
+    )
+  })
+
   it('keeps the sender timestamps on imported entries (simultaneous expiry)', async () => {
     const vault = useVaultStore()
     const createdAt = Date.now() - 1000

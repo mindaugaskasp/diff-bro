@@ -26,7 +26,7 @@
   background: none;
   border: none;
   color: var(--text);
-  padding: 6px 4px 6px 10px;
+  padding: 5px 4px 5px 6px;
   cursor: pointer;
 }
 .name {
@@ -65,9 +65,9 @@
   background: none;
   border: none;
   color: var(--text-dim);
-  padding: 0 6px;
+  padding: 0 4px 0 8px;
   cursor: pointer;
-  font-size: var(--font-xl);
+  font-size: var(--font-lg);
   line-height: 1;
 }
 .star:hover {
@@ -80,9 +80,9 @@
   background: none;
   border: none;
   color: var(--text-dim);
-  padding: 0 8px;
+  padding: 0 6px;
   cursor: pointer;
-  font-size: var(--font-xl);
+  font-size: var(--font-lg);
 }
 .row-btn:hover {
   color: var(--accent);
