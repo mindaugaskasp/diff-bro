@@ -5,7 +5,7 @@ import { detectSnippetLanguage } from '../utils/detectLanguage'
 // Snippets are a personal, non-expiring text library — encrypted at rest with
 // the same install-specific vault key as saved diffs (vault:encrypt /
 // vault:decrypt IPC; the key never enters this store). Organization is by
-// TAGS: each snippet carries up to 5 color-coded tags; a snippet with no tags
+// TAGS: each snippet carries up to MAX_TAGS color-coded tags; one with no tags
 // lives under the permanent "Default" catch-all. Tags are plaintext
 // organizational metadata, same trust level as a snippet's name — deliberately
 // NOT part of the AAD, so retagging never re-encrypts. Persistence goes through
@@ -35,7 +35,9 @@ export const TAG_PALETTE = [
   '#cf222e',
   '#8b949e'
 ]
-export const MAX_TAGS = 5
+// Per-entry tag cap. Tags organize BOTH diffs and snippets now (categories are
+// gone) and one slot is often the auto-added format tag, so this is generous.
+export const MAX_TAGS = 20
 
 export const cleanTag = (name) =>
   String(name ?? '')

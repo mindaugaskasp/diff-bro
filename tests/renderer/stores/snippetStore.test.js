@@ -10,6 +10,7 @@ import { createIdentityKeys } from '../../../src/main/sealing'
 import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
 import {
   EXAMPLE_SNIPPET,
+  MAX_TAGS,
   TAG_PALETTE,
   languageOf,
   useSnippetStore
@@ -154,15 +155,12 @@ describe('snippetStore — tags model', () => {
     expect(store.defaultCount).toBe(1)
   })
 
-  it('caps a snippet at 5 tags and de-duplicates', async () => {
+  it('caps a snippet at MAX_TAGS and de-duplicates', async () => {
     const store = useSnippetStore()
-    await store.add({
-      name: 'x',
-      content: 'y',
-      language: 'auto',
-      tags: ['a', 'b', 'a', 'c', 'd', 'e', 'f']
-    })
-    expect(store.entries[0].tags).toEqual(['a', 'b', 'c', 'd', 'e'])
+    const many = Array.from({ length: MAX_TAGS + 4 }, (_, i) => `t${i}`)
+    await store.add({ name: 'x', content: 'y', language: 'auto', tags: ['dup', 'dup', ...many] })
+    expect(store.entries[0].tags).toHaveLength(MAX_TAGS)
+    expect(new Set(store.entries[0].tags).size).toBe(MAX_TAGS) // no duplicates kept
   })
 
   it('assigns distinct palette colors and honors caller-chosen colors', async () => {

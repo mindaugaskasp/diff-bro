@@ -3,14 +3,16 @@
 // filter (All / Saved / Shared / Snippets) over one scroll, instead of three
 // reorderable bands. Each group is still its own component (categories, favorites,
 // tags all preserved) — just rendered with a light label and no drag-reorder.
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
 import AppIcon from './AppIcon.vue'
 
 const vault = useVaultStore()
+const snippets = useSnippetStore()
 let timer = null
 onMounted(() => {
   vault.tick()
@@ -19,15 +21,41 @@ onMounted(() => {
 })
 onBeforeUnmount(() => clearInterval(timer))
 
-const FILTERS = [
-  { id: 'all', label: 'All' },
+// The section toggles are MULTI-select — any combination of Saved / Shared /
+// Snippets can be shown at once. "All" turns them all on; "★" narrows every
+// shown section to favorites only.
+const SECTIONS = [
   { id: 'saved', label: 'Saved' },
   { id: 'shared', label: 'Shared' },
   { id: 'snippets', label: 'Snippets' }
 ]
-const filter = ref('all')
+const visible = ref(new Set(SECTIONS.map((s) => s.id)))
+const favOnly = ref(false)
 const query = ref('')
-const shows = (id) => filter.value === 'all' || filter.value === id
+const allOn = computed(() => visible.value.size === SECTIONS.length)
+const shows = (id) => visible.value.has(id)
+function toggleSection(id) {
+  const next = new Set(visible.value)
+  next.has(id) ? next.delete(id) : next.add(id)
+  visible.value = next
+}
+function showAll() {
+  visible.value = new Set(SECTIONS.map((s) => s.id))
+}
+
+// One tag filter across the whole sidebar: the union of tags on diffs AND
+// snippets (colors from the shared registry), most-used first. Clicking a chip
+// narrows every group to entries carrying that tag; clicking it again clears.
+const activeTag = ref('')
+const allTags = computed(() => {
+  const counts = {}
+  for (const e of vault.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
+  for (const e of snippets.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
+  return Object.keys(counts)
+    .map((name) => ({ name, color: snippets.colorOf(name) || 'var(--text-dim)', count: counts[name] }))
+    .sort((a, b) => b.count - a.count)
+})
+const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : name)
 </script>
 
 <template>
@@ -46,20 +74,60 @@ const shows = (id) => filter.value === 'all' || filter.value === id
         </button>
       </div>
       <div class="usb-seg">
+        <button :class="{ on: allOn }" title="Show all sections" @click="showAll">All</button>
         <button
-          v-for="f in FILTERS"
-          :key="f.id"
-          :class="{ on: filter === f.id }"
-          @click="filter = f.id"
+          class="star"
+          :class="{ on: favOnly }"
+          title="Favorites only"
+          @click="favOnly = !favOnly"
         >
-          {{ f.label }}
+          <AppIcon name="star-filled" />
+        </button>
+        <button
+          v-for="s in SECTIONS"
+          :key="s.id"
+          :class="{ on: shows(s.id) }"
+          @click="toggleSection(s.id)"
+        >
+          {{ s.label }}
+        </button>
+      </div>
+      <div v-if="allTags.length" class="usb-tags">
+        <button
+          v-for="t in allTags"
+          :key="t.name"
+          class="usb-tag"
+          :class="{ on: activeTag === t.name }"
+          :style="{ '--tc': t.color }"
+          @click="toggleTag(t.name)"
+        >
+          <span class="usb-dot" :style="{ background: t.color }" />{{ t.name }}
+          <span class="usb-tct">{{ t.count }}</span>
         </button>
       </div>
     </div>
     <div class="usb-scroll">
-      <SavedDiffsSection v-show="shows('saved')" unified :search="query" />
-      <ExternalDiffsSection v-show="shows('shared')" unified :search="query" />
-      <SnippetsPanel v-show="shows('snippets')" unified :search="query" />
+      <SavedDiffsSection
+        v-show="shows('saved')"
+        unified
+        :search="query"
+        :tag="activeTag"
+        :fav-only="favOnly"
+      />
+      <ExternalDiffsSection
+        v-show="shows('shared')"
+        unified
+        :search="query"
+        :tag="activeTag"
+        :fav-only="favOnly"
+      />
+      <SnippetsPanel
+        v-show="shows('snippets')"
+        unified
+        :search="query"
+        :tag="activeTag"
+        :fav-only="favOnly"
+      />
     </div>
   </aside>
 </template>

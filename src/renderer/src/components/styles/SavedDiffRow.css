@@ -25,7 +25,6 @@
   text-align: left;
   background: none;
   border: none;
-  border-top: 1px solid var(--border);
   color: var(--text);
   padding: 6px 4px 6px 10px;
   cursor: pointer;
@@ -65,7 +64,6 @@
   min-width: 26px;
   background: none;
   border: none;
-  border-top: 1px solid var(--border);
   color: var(--text-dim);
   padding: 0 6px;
   cursor: pointer;
@@ -81,7 +79,6 @@
 .row-btn {
   background: none;
   border: none;
-  border-top: 1px solid var(--border);
   color: var(--text-dim);
   padding: 0 8px;
   cursor: pointer;

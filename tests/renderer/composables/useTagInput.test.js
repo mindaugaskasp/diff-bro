@@ -60,16 +60,16 @@ describe('useTagInput — committing tags', () => {
   })
 
   it('caps at MAX_TAGS', () => {
-    const field = useTagInput(['a', 'b', 'c', 'd']) // 4 applied
-    field.input.value = 'e'
-    field.onKey(press('Enter')) // the 5th is allowed
+    const field = useTagInput(Array.from({ length: MAX_TAGS - 1 }, (_, i) => `t${i}`)) // MAX-1
+    field.input.value = 'last'
+    field.onKey(press('Enter')) // the MAX_TAGS-th is allowed
     expect(field.tags.value).toHaveLength(MAX_TAGS)
     expect(field.canAddMore.value).toBe(false)
 
-    field.input.value = 'f'
-    field.onKey(press('Enter')) // the 6th is refused
+    field.input.value = 'overflow'
+    field.onKey(press('Enter')) // one past the cap is refused
     expect(field.tags.value).toHaveLength(MAX_TAGS)
-    expect(field.tags.value).not.toContain('f')
+    expect(field.tags.value).not.toContain('overflow')
   })
 
   it('Backspace pops the last tag only when the input is empty', () => {

@@ -2,16 +2,20 @@
 import { ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useVaultStore, DEFAULT_TTL_HOURS, TTL_OPTIONS } from '../stores/vaultStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import BaseDialog from './BaseDialog.vue'
+import TagChipsField from './TagChipsField.vue'
 
 const diff = useDiffStore()
 const vault = useVaultStore()
+const snippets = useSnippetStore()
 
 const name = ref('')
 // Secure = auto-expiring (the app's default). Off keeps the diff indefinitely.
 const secure = ref(true)
 const ttl = ref(DEFAULT_TTL_HOURS)
 const nameInput = ref(null)
+const tagField = ref(null)
 
 onMounted(() => {
   name.value =
@@ -26,9 +30,17 @@ async function save() {
   // Saving from paste mode should also run the comparison, so the user lands on
   // the diff they just kept instead of staying on the two input boxes.
   const wasPaste = diff.mode === 'paste'
-  // Tags: the diff's detected format is auto-added in the store; user tags come
-  // later via the sidebar. (No category — organization is by tag now.)
-  const id = await vault.save(name.value.trim(), secure.value ? ttl.value : null, diff.snapshot())
+  // User tags (the diff's detected format is auto-added in the store). Persist
+  // any new tags' chosen colors into the shared registry so the chip color the
+  // user saw sticks.
+  const userTags = tagField.value ? [...tagField.value.tags] : []
+  if (userTags.length) snippets.registerTags(userTags, tagField.value.newColors())
+  const id = await vault.save(
+    name.value.trim(),
+    secure.value ? ttl.value : null,
+    diff.snapshot(),
+    userTags
+  )
   diff.showSaveDialog = false
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
@@ -90,6 +102,7 @@ function cancel() {
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
       </label>
+      <TagChipsField ref="tagField" />
       <label class="toggle">
         <input v-model="secure" type="checkbox" />
         <span><strong>Secure</strong> — auto-expiring (deletes itself)</span>

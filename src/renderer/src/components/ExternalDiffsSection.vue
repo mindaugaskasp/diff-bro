@@ -13,7 +13,9 @@ import AppIcon from './AppIcon.vue'
 const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
-  search: { type: String, default: '' }
+  search: { type: String, default: '' },
+  tag: { type: String, default: '' },
+  favOnly: { type: Boolean, default: false }
 })
 
 const vault = useVaultStore()
@@ -21,10 +23,17 @@ const diff = useDiffStore()
 
 const open = ref(true)
 const q = computed(() => props.search.trim().toLowerCase())
-const filt = (list) => (q.value ? list.filter((e) => e.name.toLowerCase().includes(q.value)) : list)
-const importedFavs = computed(() => filt(vault.importedFavorites))
-const importedOthers = computed(() => filt(vault.importedOthers))
-const hasImported = computed(() => importedFavs.value.length || importedOthers.value.length)
+const matches = (e) =>
+  (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
+  (!props.tag || e.tags.includes(props.tag))
+// One list, favorited (starred) shared diffs first — no separate Favorites shelf.
+const rows = computed(() =>
+  (props.favOnly
+    ? vault.importedFavorites
+    : [...vault.importedFavorites, ...vault.importedOthers]
+  ).filter(matches)
+)
+const hasImported = computed(() => vault.importedActive.length > 0)
 
 // The "+" lives in the header; expand the section so the imported diff is in
 // view, then run the import flow.
@@ -57,13 +66,8 @@ function startImport() {
         <strong>+</strong> in this section's header (or <kbd>{{ MOD }}+I</kbd>).
       </p>
 
-      <ul v-if="importedFavs.length" class="favorites-group">
-        <li class="fav-head"><AppIcon name="star-filled" /> Favorites</li>
-        <SavedDiffRow v-for="entry in importedFavs" :key="entry.id" :entry="entry" />
-      </ul>
-
-      <ul v-if="importedOthers.length">
-        <SavedDiffRow v-for="entry in importedOthers" :key="entry.id" :entry="entry" />
+      <ul v-if="rows.length" class="rows">
+        <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>
     </div>
   </section>
