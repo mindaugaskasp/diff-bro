@@ -41,15 +41,6 @@ function sendToFocused(action) {
   focusedWindow()?.webContents.send('menu:action', action)
 }
 
-// Clipboard/undo items driven by explicit clicks rather than Electron `role`s.
-// A role maps to AppKit's standard text selectors (cut:/copy:/paste:/…), which
-// is exactly what makes AppKit tag the Edit menu as a text menu and inject its
-// Writing Tools / AutoFill / Emoji & Symbols / Dictation submenus. Routing the
-// same action through webContents keeps Cmd+C/V/X/A/Z working in the renderer's
-// inputs (Monaco, the snippet editor, tag fields) without that tagging, so none
-// of those dead-end system submenus appear.
-const clip = (method) => (_item, win) => (win ?? focusedWindow())?.webContents[method]()
-
 // Clamped zoom (roughly 60%–250%) so it can never run away.
 const ZOOM_MIN = -2.5
 const ZOOM_MAX = 2.5
@@ -63,19 +54,23 @@ function resetZoom() {
   if (wc) wc.setZoomLevel(0)
 }
 
-// AppKit injects "Start Dictation" and "Emoji & Symbols" into any menu titled
-// "Edit". Both are dead ends here: dictation is a network service this app must
-// never touch, and the character palette cannot insert into a sandboxed
-// renderer, so it silently does nothing. Suppress them before the menu is built.
-// AppKit also injects an "AutoFill" submenu (Passwords/Contacts) into text
-// Edit menus on recent macOS. It is a dead end in a sandboxed, offline app —
-// there is nothing to autofill and Passwords is a network-backed service this
-// app must never touch — so suppress it alongside dictation and the palette.
+// AppKit injects "Start Dictation" and "Emoji & Symbols" into every app's Edit
+// menu. Both are dead ends here — dictation is a network service this app must
+// never touch, and the character palette can't insert into a sandboxed renderer
+// — and both honour these user-default kill switches, so suppress them before
+// the menu is built.
+//
+// macOS ALSO injects "AutoFill" and (with Apple Intelligence enabled) "Writing
+// Tools" into every app's Edit menu, but ships NO equivalent switch for either:
+// there is no `NSDisabledAutoFillMenuItem`/writing-tools default, and neither
+// role-based nor custom-click menu items stop the insertion (it is app-wide, not
+// keyed off our items). The only removal is native NSMenu surgery Electron
+// doesn't expose, so they can't be dropped here. Both act only on editable text
+// and stay inert unless invoked — even VS Code shows Writing Tools.
 function disableInjectedMacMenuItems() {
   if (process.platform !== 'darwin') return
   systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true)
   systemPreferences.setUserDefault('NSDisabledCharacterPaletteMenuItem', 'boolean', true)
-  systemPreferences.setUserDefault('NSDisabledAutoFillMenuItem', 'boolean', true)
 }
 
 export function installMenu() {
@@ -121,13 +116,13 @@ export function installMenu() {
         // and this native menu is hidden there, so the roles are macOS-only.
         ...(isMac
           ? [
-              { label: 'Undo', accelerator: 'CmdOrCtrl+Z', click: clip('undo') },
-              { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', click: clip('redo') },
+              { role: 'undo' },
+              { role: 'redo' },
               { type: 'separator' },
-              { label: 'Cut', accelerator: 'CmdOrCtrl+X', click: clip('cut') },
-              { label: 'Copy', accelerator: 'CmdOrCtrl+C', click: clip('copy') },
-              { label: 'Paste', accelerator: 'CmdOrCtrl+V', click: clip('paste') },
-              { label: 'Select All', accelerator: 'CmdOrCtrl+A', click: clip('selectAll') },
+              { role: 'cut' },
+              { role: 'copy' },
+              { role: 'paste' },
+              { role: 'selectAll' },
               { type: 'separator' }
             ]
           : []),
