@@ -20,6 +20,10 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
 
   // --- edit (rename) ---
   await page.getByText('My note', { exact: true }).click()
+  // Existing snippets open read-only ("Snippet"); Edit unlocks them.
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
+  await view.getByRole('button', { name: 'Edit', exact: true }).click()
   const edit = page.getByRole('dialog', { name: 'Edit Snippet' })
   await expect(edit).toBeVisible()
   // Wait for the decrypted content to load (Save enables only with content).

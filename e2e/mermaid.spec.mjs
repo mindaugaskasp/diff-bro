@@ -28,7 +28,8 @@ test('a Mermaid snippet opens a rendered SVG in the diagram viewer', async ({ pa
 test('editing a Mermaid snippet shows a live diagram preview', async ({ page }) => {
   await page.getByText('Example — Mermaid diagram').click()
 
-  const editor = page.getByRole('dialog', { name: 'Edit Snippet' })
+  // Existing snippets open read-only ("Snippet"); the preview renders here too.
+  const editor = page.getByRole('dialog', { name: 'Snippet', exact: true })
   await expect(editor).toBeVisible()
   // The Mermaid-only preview pane renders the decrypted content as an SVG.
   // 'Diagram preview' is exact — the Monaco content also contains the words
