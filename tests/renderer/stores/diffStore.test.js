@@ -350,7 +350,7 @@ describe('diffStore', () => {
     expect(store.saveThenShare).toBe(true)
   })
 
-  it('routes menu actions: tools-base64, tools-json, tools-xml, tools-crypt open their dialogs', () => {
+  it('routes menu actions: tools-base64/json/xml/sql/find-replace/crypt open their dialogs', () => {
     const store = useDiffStore()
     store.handleMenuAction('tools-base64')
     expect(store.showBase64Dialog).toBe(true)
@@ -360,6 +360,8 @@ describe('diffStore', () => {
     expect(store.textTool).toBe('xml')
     store.handleMenuAction('tools-sql')
     expect(store.textTool).toBe('sql')
+    store.handleMenuAction('tools-find-replace')
+    expect(store.showFindReplaceDialog).toBe(true)
     store.handleMenuAction('tools-crypt')
     expect(store.showCryptDialog).toBe(true)
   })
@@ -873,6 +875,56 @@ describe('diffStore', () => {
     await store.receiveDroppedSharedDiff('/tmp/x.diffbro')
     expect(store.left).toBeNull()
     expect(store.notice).toContain('different machine')
+  })
+
+  it('importShared opens the imported diff when nothing is on screen', async () => {
+    const store = useDiffStore()
+    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
+    window.api.shareImport = async () => ({
+      ok: true,
+      from: 'alice',
+      entry: { name: 'menu-import', snapshot, createdAt: Date.now(), expiresAt: Date.now() + 5000 }
+    })
+    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+    window.api.vaultDecrypt = async (box) => box.data
+    await store.importShared()
+    expect(store.left).toMatchObject({ name: 'l.txt' })
+    expect(store.right).toMatchObject({ name: 'r.txt' })
+    expect(store.diffSaved).toBe(true) // opened from the vault
+    expect(store.notice).toContain('Opened')
+  })
+
+  it('importShared keeps the current diff and only files the import when one is active', async () => {
+    const store = useDiffStore()
+    store.left = FILE('mine-a.txt')
+    store.right = FILE('mine-b.txt')
+    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
+    window.api.shareImport = async () => ({
+      ok: true,
+      from: 'alice',
+      entry: { name: 'menu-import', snapshot, createdAt: Date.now(), expiresAt: Date.now() + 5000 }
+    })
+    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+    let decrypted = false
+    window.api.vaultDecrypt = async (box) => ((decrypted = true), box.data)
+    await store.importShared()
+    // The view is untouched and the imported diff was never decrypted/opened.
+    expect(store.left).toMatchObject({ name: 'mine-a.txt' })
+    expect(decrypted).toBe(false)
+    expect(store.notice).toContain('External diffs')
+  })
+
+  it('confirmTrustedKey flags the freshly added key so the manager can highlight it', async () => {
+    const store = useDiffStore()
+    window.api.addTrustedKeyNamed = async (key, label) => ({
+      ok: true,
+      label,
+      fingerprint: 'AB:CD',
+      key
+    })
+    store.pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
+    await store.confirmTrustedKey('Alice')
+    expect(store.lastAddedTrustedFp).toBe('AB:CD')
   })
 
   it('copyDiff refuses a spreadsheet comparison instead of crashing', async () => {

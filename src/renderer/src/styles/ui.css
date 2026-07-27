@@ -111,21 +111,20 @@
 }
 
 /* --- Sidebar section rhythm ---------------------------------------------
-   App-wide spacing for the reorderable sidebar sections, so the inset around a
-   section's action row (e.g. "+ New category", "Import", "+ New snippet") is
-   controlled in one place. Adding a button or a whole new section can no longer
-   drift out of alignment — it opts into these classes instead of restating
-   pixel padding. Values come from the rhythm tokens in tokens.css. */
-.section-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--pad-section-top) var(--pad-inset-x) var(--pad-section-bottom);
-}
-/* Left/right inset that lines a section's own controls up with its action row. */
+   App-wide left/right inset for a section's own controls, so they line up
+   across sections from one place instead of restating pixel padding. Values
+   come from the rhythm tokens in tokens.css. (Section actions now live as a
+   single "+" glyph in each SectionHeader, not a body button row.) */
 .section-inset {
   padding-left: var(--pad-inset-x);
   padding-right: var(--pad-inset-x);
+}
+/* One spacing rule for every stacked sidebar input (snippet filter, add-category
+   name…), so a field is never glued to the header or the row above/below it —
+   set here once instead of per-component margins. Each field keeps its own
+   border/padding; only the outer spacing is shared. */
+.sidebar-field {
+  margin: var(--space-3) var(--pad-inset-x) var(--space-2);
 }
 
 /* Solid destructive action — confirmation dialogs only, never a first resort. */
@@ -164,6 +163,10 @@
   gap: var(--space-3);
   width: 420px;
   max-width: 92vw;
+  /* Never taller than the viewport — a big dialog (e.g. the snippet editor)
+     scrolls inside itself instead of running its header/actions off-screen. */
+  max-height: 92vh;
+  overflow-y: auto;
   padding: var(--space-4);
   background: var(--bg-panel);
   border: 1px solid var(--border);

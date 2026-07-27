@@ -189,12 +189,16 @@ First run: `npm install && npm run dev`
       open one into a loaded slot) confirms first, unless it's already saved
       (`diffStore.diffSaved`); the snippet editor confirms before Cancel/×
       discards a dirty draft (`useSnippetDraft` — unit + e2e tested)
-- [x] Tools menu grouped per format (Base64 / JSON / XML / SQL / Text
-      Encryption); Help → Keyboard Shortcuts lists bindings for the host OS
+- [x] Tools menu grouped per format (Base64 / JSON / XML / SQL / Find & Replace /
+      Text Encryption), mirrored as an always-visible launcher pinned to the
+      sidebar foot; Help → Keyboard Shortcuts lists bindings for the host OS
 - [x] Help → Report an Issue confirms before leaving the offline sandbox, then
       hands the fixed repo issue URL to the OS browser (the only outward link;
       the URL is fixed in main, the renderer can only trigger it)
-- [x] Categories are local-only — never offered or sent in the share flow
+- [x] One tag namespace shared across saved diffs and snippets (replacing
+      categories); tags ride inside a shared diff's signed+encrypted payload,
+      but the local-only "imported" tag is stripped on send and re-applied (and
+      sender tags re-sanitized) on import
 - [x] Color palette split into `styles/themes.css` (structure stays in
       `tokens.css`), plus app-wide `.section-actions` spacing so no section's
       buttons drift out of alignment

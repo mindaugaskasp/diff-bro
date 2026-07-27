@@ -37,6 +37,18 @@ export async function renderMermaid(code, appTheme) {
   // Re-apply config each render so a theme flip takes effect (initialize is the
   // supported way to change the active theme).
   mermaid.initialize({ ...BASE_CONFIG, theme: mermaidThemeFor(appTheme) })
-  const { svg } = await mermaid.render(nextDiagramId(), stripMermaidFence(code).trim())
-  return svg
+  // Render into a FIXED, off-flow holder passed as the size-measurement element.
+  // Left to itself Mermaid appends its transient measurement node to <body>, and
+  // a tall diagram briefly stretched the document — flashing a scrollbar over the
+  // diff area before the node was removed. A fixed element never contributes to
+  // scroll height, so the measurement is invisible and layout-neutral.
+  const holder = document.createElement('div')
+  holder.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;pointer-events:none'
+  document.body.appendChild(holder)
+  try {
+    const { svg } = await mermaid.render(nextDiagramId(), stripMermaidFence(code).trim(), holder)
+    return svg
+  } finally {
+    holder.remove()
+  }
 }

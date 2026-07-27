@@ -74,7 +74,9 @@ watch(isFullScreen, (on) => {
 })
 
 onMounted(() => {
-  maxed.value = isFullScreen.value
+  // Open filling the app — a diagram is the whole point of this window, so give
+  // it the room by default; the restore button shrinks it to DEFAULT_W×H.
+  maxed.value = true
   fitPanel()
   window.addEventListener('keydown', onKey)
   window.addEventListener('resize', onWindowResize)

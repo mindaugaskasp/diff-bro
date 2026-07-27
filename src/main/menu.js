@@ -54,19 +54,23 @@ function resetZoom() {
   if (wc) wc.setZoomLevel(0)
 }
 
-// AppKit injects "Start Dictation" and "Emoji & Symbols" into any menu titled
-// "Edit". Both are dead ends here: dictation is a network service this app must
-// never touch, and the character palette cannot insert into a sandboxed
-// renderer, so it silently does nothing. Suppress them before the menu is built.
-// AppKit also injects an "AutoFill" submenu (Passwords/Contacts) into text
-// Edit menus on recent macOS. It is a dead end in a sandboxed, offline app —
-// there is nothing to autofill and Passwords is a network-backed service this
-// app must never touch — so suppress it alongside dictation and the palette.
+// AppKit injects "Start Dictation" and "Emoji & Symbols" into every app's Edit
+// menu. Both are dead ends here — dictation is a network service this app must
+// never touch, and the character palette can't insert into a sandboxed renderer
+// — and both honour these user-default kill switches, so suppress them before
+// the menu is built.
+//
+// macOS ALSO injects "AutoFill" and (with Apple Intelligence enabled) "Writing
+// Tools" into every app's Edit menu, but ships NO equivalent switch for either:
+// there is no `NSDisabledAutoFillMenuItem`/writing-tools default, and neither
+// role-based nor custom-click menu items stop the insertion (it is app-wide, not
+// keyed off our items). The only removal is native NSMenu surgery Electron
+// doesn't expose, so they can't be dropped here. Both act only on editable text
+// and stay inert unless invoked — even VS Code shows Writing Tools.
 function disableInjectedMacMenuItems() {
   if (process.platform !== 'darwin') return
   systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true)
   systemPreferences.setUserDefault('NSDisabledCharacterPaletteMenuItem', 'boolean', true)
-  systemPreferences.setUserDefault('NSDisabledAutoFillMenuItem', 'boolean', true)
 }
 
 export function installMenu() {
@@ -220,6 +224,16 @@ export function installMenu() {
               label: 'Format / Validate',
               accelerator: 'CmdOrCtrl+Shift+Q',
               click: () => sendToFocused('tools-sql')
+            }
+          ]
+        },
+        {
+          label: 'Find & Replace',
+          submenu: [
+            {
+              label: 'Replace…',
+              accelerator: 'CmdOrCtrl+Shift+R',
+              click: () => sendToFocused('tools-find-replace')
             }
           ]
         },

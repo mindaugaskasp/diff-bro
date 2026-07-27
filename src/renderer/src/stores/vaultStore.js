@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
+import { useSnippetStore } from './snippetStore'
 
 // Saved diffs are a security-sensitive convenience: content is AES-256-GCM
 // encrypted with an install-specific key held by the main process (backed by
-// the OS keychain), and every entry auto-expires — default 1 hour, hard cap
-// 24 hours. Only the entry name and timestamps are stored in plaintext.
-// All crypto runs in the main process (vault:encrypt / vault:decrypt IPC);
-// this store never sees the key. Persistence goes through the durable file
-// store (persist.js) so saved diffs survive an app reinstall.
+// the OS keychain), and every entry auto-expires unless saved as "kept" —
+// default 1 hour, hard cap 24 hours. Only the entry name, tags and timestamps
+// are plaintext. All crypto runs in the main process (vault:encrypt /
+// vault:decrypt IPC); this store never sees the key. Organization is by TAGS,
+// drawn from the SAME registry as snippets (useSnippetStore) — one tag namespace
+// across the app. Tags are plaintext metadata, deliberately NOT in the AAD.
 export const DEFAULT_TTL_HOURS = 1
 export const MAX_TTL_HOURS = 24
 export const TTL_OPTIONS = [
@@ -17,138 +19,118 @@ export const TTL_OPTIONS = [
 ]
 
 // The entry's plaintext metadata is bound to the ciphertext as AES-GCM
-// additional authenticated data: anyone editing localStorage to, say,
-// extend expiresAt just makes the entry undecryptable (and it gets purged).
-// categoryId, like the entry name and favorite flag, is plaintext
-// organizational metadata and deliberately NOT part of the AAD.
+// additional authenticated data: editing localStorage to, say, extend expiresAt
+// just makes the entry undecryptable (and it gets purged). Name/tags/favorite
+// are plaintext organizational metadata and deliberately NOT part of the AAD.
 const entryAad = (id, createdAt, expiresAt, from) =>
   [id, createdAt, expiresAt, from ?? ''].join('|')
 
-const IMPORTED_CATEGORY = 'imported'
-
-// Categories persist independently of the diffs in them: expiry purges a
-// diff but never its category. The "Default" category is the non-deletable
-// fallback (marked isDefault so it survives rename). A reserved, hidden
-// "imported" category holds diffs received from others.
-// Parse the persisted blob, tolerating the legacy shape (a bare entries array)
-// and anything unreadable (start empty rather than throw at import time).
-function parsePersistedVault(raw) {
-  if (!raw) return { categories: [], entries: [] }
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return { categories: [], entries: parsed }
-    return {
-      categories: Array.isArray(parsed.categories) ? parsed.categories : [],
-      entries: Array.isArray(parsed.entries) ? parsed.entries : []
-    }
-  } catch {
-    return { categories: [], entries: [] }
-  }
+// Map a diff to a format tag from its files' extensions (both sides must agree,
+// or one side is enough) — so a JSON comparison is auto-tagged "json", etc.
+// Plain text / unknown yields no tag.
+const EXT_TAG = { yml: 'yaml', htm: 'html', md: 'markdown', xlsx: 'excel', txt: null, text: null }
+export function diffFormatTag(payload) {
+  const extOf = (f) => /\.([a-z0-9]+)$/i.exec(f?.name ?? '')?.[1]?.toLowerCase() ?? null
+  const raw = extOf(payload?.left) ?? extOf(payload?.right)
+  if (!raw) return null
+  const tag = raw in EXT_TAG ? EXT_TAG[raw] : raw
+  return tag || null
 }
 
-function readState() {
-  const { categories, entries } = parsePersistedVault(loadPersisted('vault'))
-  if (!categories.some((c) => c.isDefault)) {
-    categories.unshift({ id: crypto.randomUUID(), name: 'Default', isDefault: true })
+// Parse the persisted blob. Tolerates the legacy category shape (drops
+// categoryId; category names are intentionally not migrated to tags) and the
+// even older bare-array shape. Anything unreadable starts empty.
+function readEntries() {
+  const raw = loadPersisted('vault')
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed.entries) ? parsed.entries : []
+    return list.map((e) => {
+      const clean = { ...e, tags: Array.isArray(e.tags) ? e.tags : [] }
+      delete clean.categoryId // categories are gone; drop the stale field
+      return clean
+    })
+  } catch {
+    return []
   }
-  const defaultId = categories.find((c) => c.isDefault).id
-  // Legacy / imported entries with no category land in Default (own) or the
-  // reserved imported bucket (shared-in).
-  for (const e of entries) {
-    if (!e.categoryId) e.categoryId = e.from ? IMPORTED_CATEGORY : defaultId
-  }
-  return { categories, entries }
 }
 
 export const useVaultStore = defineStore('vault', {
   state: () => ({
-    // { id, name, createdAt, expiresAt, categoryId, favorite, iv, data }
-    ...readState(),
+    // { id, name, createdAt, expiresAt, from, favorite, tags:[name], iv, data }
+    entries: readEntries(),
     // re-render trigger for the expiry countdowns
     now: Date.now(),
-    // { type: 'category' | 'entry', id, name } pending delete confirmation.
+    // { id, name } pending diff-delete confirmation.
     pendingDelete: null,
-    // Bumps to a category id whenever a diff lands in it, so the sidebar can
-    // auto-expand it.
-    lastTouchedCategory: null,
     // Set when the main process can't load the vault key (locked keychain,
     // etc). Distinct from a per-entry auth failure: we must NOT purge the
     // entries — the key may come back — so we surface this and hold.
     keyError: null
   }),
   getters: {
-    // Favorites float to the top; otherwise insertion order is preserved
-    // (stable sort). Favoriting is plaintext metadata, same as the name.
+    // Favorites float to the top; otherwise insertion order is preserved (stable
+    // sort). expiresAt === null is a "kept" (non-expiring) diff — always active.
     active: (s) =>
       s.entries
-        .filter((e) => e.expiresAt > s.now)
+        .filter((e) => e.expiresAt === null || e.expiresAt > s.now)
         .slice()
         .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)),
-    defaultCategoryId: (s) => s.categories.find((c) => c.isDefault)?.id ?? null,
-    // Favorited own diffs are lifted out of their category into a pinned
-    // "Favorites" group at the top, so a category never shows its own
-    // favorites.
+    // Your own (not shared-in) favorited diffs — pinned above the rest.
     favoritesOwn() {
       return this.active.filter((e) => !e.from && e.favorite)
     },
-    // Own (not shared-in), non-favorited active diffs in one category.
-    activeInCategory() {
-      return (categoryId) =>
-        this.active.filter((e) => !e.from && !e.favorite && e.categoryId === categoryId)
+    // Your own, non-favorited active diffs.
+    ownActive() {
+      return this.active.filter((e) => !e.from && !e.favorite)
     },
-    // Shared-in diffs are shown in their own "External diffs" section.
+    // Shared-in diffs (each signed by its sender), shown in their own section.
     importedActive() {
       return this.active.filter((e) => e.from)
     },
-    // Favorited shared-in diffs get their own ★ shelf at the top of the External
-    // section — kept separate from your own saved-diff favorites on purpose
-    // (they're signed by someone else). Favoriting only pins; it can't extend
-    // the sender-bound expiry.
     importedFavorites() {
       return this.importedActive.filter((e) => e.favorite)
     },
     importedOthers() {
       return this.importedActive.filter((e) => !e.favorite)
-    },
-    // Deletable only if it is not Default and shows no diffs of its own
-    // (favorited diffs have moved to the Favorites group and don't block
-    // deletion; removeCategory reassigns any stragglers to Default).
-    canDeleteCategory() {
-      return (id) => {
-        const category = this.categories.find((c) => c.id === id)
-        if (!category || category.isDefault) return false
-        return !this.activeInCategory(id).length
-      }
     }
   },
   actions: {
     persist() {
-      savePersisted('vault', JSON.stringify({ categories: this.categories, entries: this.entries }))
+      savePersisted('vault', JSON.stringify({ entries: this.entries }))
     },
     tick() {
       this.now = Date.now()
       const before = this.entries.length
-      this.entries = this.entries.filter((e) => e.expiresAt > this.now)
+      this.entries = this.entries.filter((e) => e.expiresAt === null || e.expiresAt > this.now)
       if (this.entries.length !== before) this.persist()
     },
-    async save(name, ttlHours, payload, categoryId) {
-      const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
+    // ttlHours === null saves a "kept" diff that never expires (the save dialog's
+    // "Secure" toggle off); any number gives an auto-expiring diff, capped at
+    // 24 h. `tags` are user tags; the diff's detected format is auto-added.
+    async save(name, ttlHours, payload, tags = []) {
+      let expiresAt = null
+      if (ttlHours !== null) {
+        const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
+        expiresAt = Date.now() + hours * 3600_000
+      }
+      const auto = diffFormatTag(payload)
       return this._add({
         name,
         payload,
         createdAt: Date.now(),
-        expiresAt: Date.now() + hours * 3600_000,
+        expiresAt,
         from: null,
-        categoryId: categoryId ?? this.defaultCategoryId
+        tags: auto ? [auto, ...tags] : tags
       })
     },
-    // Entry received from another machine: keep the sender's absolute
-    // timestamps so it expires at the same moment everywhere (the 24 h cap
-    // was already enforced during signature verification in main).
+    // Entry received from another machine: keep the sender's absolute timestamps
+    // so it expires at the same moment everywhere, and auto-tag it "imported".
     async addShared(entry) {
-      return this._add({ ...entry, categoryId: IMPORTED_CATEGORY })
+      return this._add({ ...entry, tags: ['imported', ...(entry.tags || [])] })
     },
-    async _add({ name, payload, createdAt, expiresAt, from, categoryId }) {
+    async _add({ name, payload, createdAt, expiresAt, from, tags = [] }) {
       const id = crypto.randomUUID()
       const box = await window.api.vaultEncrypt(
         JSON.stringify(payload),
@@ -160,53 +142,37 @@ export const useVaultStore = defineStore('vault', {
         return null
       }
       const { iv, data } = box
+      // Tags register into the shared (snippet) tag registry so colors/namespace
+      // are consistent across diffs and snippets.
+      const applied = useSnippetStore().registerTags(tags)
       this.entries.push({
         id,
         name: name || 'Untitled diff',
         createdAt,
         expiresAt,
         from: from ?? null,
-        categoryId,
         favorite: false,
+        tags: applied,
         iv,
         data
       })
-      if (!from) this.lastTouchedCategory = categoryId
       this.persist()
       return id
     },
-    addCategory(name) {
-      const id = crypto.randomUUID()
-      this.categories.push({ id, name: (name || 'Untitled').trim() || 'Untitled' })
+    // Retag a saved diff in place (plaintext metadata — no re-encryption).
+    setTags(id, tags) {
+      const entry = this.entries.find((e) => e.id === id)
+      if (!entry) return
+      entry.tags = useSnippetStore().registerTags(tags)
       this.persist()
-      return id
     },
-    // Refuses the Default category and any category still holding active
-    // diffs (defense in depth — the UI gates this too). Returns whether it
-    // deleted.
-    removeCategory(id) {
-      if (!this.canDeleteCategory(id)) return false
-      // Any favorited stragglers still tagged to this category (they live in
-      // the Favorites group, not the category list) fall back to Default so
-      // they never point at a deleted category. categoryId is plaintext
-      // metadata (not in the AAD), so this needs no re-encryption.
-      const def = this.defaultCategoryId
-      for (const e of this.entries) if (e.categoryId === id) e.categoryId = def
-      this.categories = this.categories.filter((c) => c.id !== id)
-      this.persist()
-      return true
-    },
-    // Unified delete-confirmation for categories and individual diffs, so
-    // nothing is ever removed silently. type: 'category' | 'entry'.
-    requestDelete(type, id, name) {
-      this.pendingDelete = { type, id, name }
+    requestDelete(id, name) {
+      this.pendingDelete = { id, name }
     },
     confirmDelete() {
       const pending = this.pendingDelete
       this.pendingDelete = null
-      if (!pending) return
-      if (pending.type === 'category') this.removeCategory(pending.id)
-      else this.remove(pending.id)
+      if (pending) this.remove(pending.id)
     },
     cancelDelete() {
       this.pendingDelete = null
@@ -218,13 +184,18 @@ export const useVaultStore = defineStore('vault', {
       if (!entry) return { error: 'missing' }
       const payload = await this.load(id)
       if (!payload) return { error: 'missing' }
+      // Sealed shares MUST carry a finite, ≤24 h expiry (sealing.js enforces it
+      // both signing and opening). A kept (non-expiring) diff therefore gets a
+      // fresh 24 h window for its shared copy — the local original is untouched.
+      const now = Date.now()
+      const createdAt = entry.expiresAt === null ? now : entry.createdAt
+      const expiresAt = entry.expiresAt ?? now + MAX_TTL_HOURS * 3600_000
+      // Tags travel with the diff (inside the signed+encrypted payload), so the
+      // recipient sees them. The auto "imported" tag is local-only — never send
+      // it, or a re-shared diff would accumulate "imported" tags.
+      const tags = entry.tags.filter((t) => t !== 'imported')
       return window.api.shareExport(
-        {
-          name: entry.name,
-          createdAt: entry.createdAt,
-          expiresAt: entry.expiresAt,
-          snapshot: payload
-        },
+        { name: entry.name, createdAt, expiresAt, snapshot: payload, tags },
         recipientFp
       )
     },
@@ -235,24 +206,26 @@ export const useVaultStore = defineStore('vault', {
     async importSharedFromPath(path) {
       return this._ingestShared(await window.api.shareImportPath(path))
     },
-    // Persist a successfully-opened share into the imported-diffs category and
-    // hand back the new entry's id so the caller can open it. Shared by both
-    // import paths, so their success handling can't drift apart.
+    // Persist a successfully-opened share and hand back the new entry's id so the
+    // caller can open it. Shared by both import paths so they can't drift apart.
     async _ingestShared(res) {
       if (!res.ok) return res
-      const { name, snapshot, createdAt, expiresAt } = res.entry
+      const { name, snapshot, createdAt, expiresAt, tags } = res.entry
       const id = await this.addShared({
         name,
         payload: snapshot,
         createdAt,
         expiresAt,
+        // Sender tags are untrusted — addShared → registerTags cleans and caps
+        // them (and prepends the local "imported" tag).
+        tags: Array.isArray(tags) ? tags : [],
         from: res.from
       })
       return { ...res, id }
     },
     async load(id) {
       const entry = this.entries.find((e) => e.id === id)
-      if (!entry || entry.expiresAt <= Date.now()) return null
+      if (!entry || (entry.expiresAt !== null && entry.expiresAt <= Date.now())) return null
       const plaintext = await window.api.vaultDecrypt(
         { iv: entry.iv, data: entry.data },
         entryAad(entry.id, entry.createdAt, entry.expiresAt, entry.from)
@@ -264,8 +237,8 @@ export const useVaultStore = defineStore('vault', {
         return null
       }
       if (plaintext === null) {
-        // Undecryptable with a valid key: genuine tampered metadata /
-        // corruption for THIS entry — drop it (AAD tamper-evidence).
+        // Undecryptable with a valid key: genuine tampered metadata / corruption
+        // for THIS entry — drop it (AAD tamper-evidence).
         this.remove(id)
         return null
       }

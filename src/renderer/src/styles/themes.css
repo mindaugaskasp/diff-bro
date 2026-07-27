@@ -12,6 +12,14 @@
   --bg: #ffffff;
   --bg-panel: #f6f8fa;
   --bg-hover: #eaeef2;
+  /* Elevated surface for the sidebar section-header bands. Deliberately DERIVED
+     from the panel (not hand-picked per theme): mixing the panel toward the text
+     colour darkens it on a light ground and lightens it on a dark one, so a
+     header reads as "lifted" above the body in every theme by construction.
+     var() inside a custom property is substituted at use time, so this single
+     :root definition re-resolves against each theme's own --bg-panel/--text — a
+     theme block may still override it if its palette needs a different tone. */
+  --bg-elevated: color-mix(in srgb, var(--bg-panel) 88%, var(--text));
   --border: #d0d7de;
   --text: #1f2328;
   --text-dim: #656d76;

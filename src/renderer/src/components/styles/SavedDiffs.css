@@ -5,9 +5,176 @@
   background: var(--bg-panel);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden; /* the body scrolls, not the whole aside */
 }
-/* Sections stack flush — each header carries a single top hairline (see
-   SectionHeader.css), so consecutive sections are separated by one line with no
-   gap. A gap here would show as panel background hanging below a collapsed
-   header, which reads as a bug. */
+/* Fixed control strip: search + the segmented group filter. */
+.usb-controls {
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.usb-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 6px 0 8px;
+}
+.usb-search:focus-within {
+  border-color: var(--accent);
+}
+.usb-glyph {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.usb-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 5px 0;
+  font-size: var(--font-md);
+}
+.usb-search input:focus {
+  outline: none;
+}
+.usb-x {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-xl);
+  line-height: 1;
+  padding: 0 2px;
+}
+.usb-x:hover {
+  color: var(--text);
+}
+/* Section toggles — independent pills (MULTI-select), so several can be on at
+   once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
+   set slightly apart with a divider. */
+.usb-seg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.usb-seg button {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 11px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  font-family: inherit;
+}
+.usb-seg button:hover:not(.on) {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.usb-seg button.on {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* ★ favorites: a compact gold toggle, sat next to All ahead of the sections. */
+.usb-seg .star {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  margin-right: 3px;
+}
+.usb-seg .star.on {
+  background: color-mix(in srgb, var(--favorite) 18%, transparent);
+  border-color: var(--favorite);
+  color: var(--favorite);
+}
+/* Unified tag filter — a wrapping chip row under the segmented control. */
+.usb-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.usb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: var(--font-xs);
+  font-family: inherit;
+}
+.usb-tag:hover {
+  color: var(--text);
+}
+.usb-tag.on {
+  color: var(--text);
+  border-color: var(--tc);
+  background: color-mix(in srgb, var(--tc) 14%, transparent);
+}
+.usb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.usb-tct {
+  color: var(--text-hint);
+  font-variant-numeric: tabular-nums;
+}
+.usb-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-4);
+}
+/* Tool launcher pinned to the bottom — flex:none keeps it out of the scroll, so
+   it's always visible under the list regardless of how far the list scrolls. */
+.usb-tools {
+  flex: none;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.usb-tools-label {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-right: 2px;
+}
+.usb-tool {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 10px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  font-family: inherit;
+}
+.usb-tool:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}

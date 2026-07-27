@@ -5,6 +5,7 @@
 import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import { useDataDir } from '../composables/useDataDir'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
@@ -16,6 +17,8 @@ const props = defineProps({
 
 const vault = useVaultStore()
 const diff = useDiffStore()
+// Tag colors come from the shared registry (snippets own the persisted palette).
+const snippets = useSnippetStore()
 const dataDir = useDataDir()
 
 // Tooltip: what the entry is + where it's stored (Settings → Data folder).
@@ -26,7 +29,9 @@ const title = computed(() => {
 })
 
 // Live countdown — vault.now ticks once a second, which also purges expiries.
+// A kept (non-expiring) diff has no countdown.
 const remaining = computed(() => {
+  if (props.entry.expiresAt === null) return 'kept'
   const ms = props.entry.expiresAt - vault.now
   if (ms <= 0) return 'expired'
   const h = Math.floor(ms / 3600_000)
@@ -56,9 +61,18 @@ async function open() {
     </button>
     <button class="entry" :title="title" @click="open">
       <span class="name">{{ entry.name }}</span>
-      <span class="ttl"
-        >{{ remaining }}<template v-if="entry.from"> · from {{ entry.from }}</template></span
-      >
+      <span class="ttl">
+        {{ remaining }}<template v-if="entry.from"> · from {{ entry.from }}</template>
+        <span v-if="entry.tags?.length" class="tags">
+          <span
+            v-for="t in entry.tags"
+            :key="t"
+            class="tag-dot"
+            :style="{ background: snippets.colorOf(t) || 'var(--text-dim)' }"
+            :title="t"
+          />
+        </span>
+      </span>
     </button>
     <!-- Imported diffs are the sender's to share on; only your own get the button. -->
     <button
@@ -72,7 +86,7 @@ async function open() {
     <button
       class="row-btn delete"
       title="Delete now"
-      @click="vault.requestDelete('entry', entry.id, entry.name)"
+      @click="vault.requestDelete(entry.id, entry.name)"
     >
       <AppIcon name="x" />
     </button>

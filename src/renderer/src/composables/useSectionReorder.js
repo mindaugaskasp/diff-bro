@@ -10,6 +10,19 @@ const dragId = ref(null)
 // The header the cursor is currently over during a drag — so the drop indicator
 // follows the cursor to ONE header instead of lighting up all of them.
 const hoverId = ref(null)
+// The section that just changed position (drag OR arrow), so its header can
+// pulse briefly and the reorder registers at a glance without reading labels.
+// Cleared on a timer; module-level like dragId, so only one settles at a time.
+const movedId = ref(null)
+let settleTimer = null
+
+function flagMoved(id) {
+  movedId.value = id
+  clearTimeout(settleTimer)
+  settleTimer = setTimeout(() => {
+    if (movedId.value === id) movedId.value = null
+  }, 650)
+}
 
 export function useSectionReorder() {
   const settings = useSettingsStore()
@@ -35,7 +48,10 @@ export function useSectionReorder() {
     const from = dragId.value
     dragId.value = null
     hoverId.value = null
-    if (from) settings.reorderSections(from, targetId)
+    if (from && from !== targetId) {
+      settings.reorderSections(from, targetId)
+      flagMoved(from)
+    }
   }
   // The single header the section would drop before: a drag is in flight, the
   // cursor is over THIS header, and it isn't the one being dragged.
@@ -46,6 +62,19 @@ export function useSectionReorder() {
   function isDragging(id) {
     return dragId.value === id
   }
+  // The header that just settled into a new position (pulse target).
+  function isSettling(id) {
+    return movedId.value === id
+  }
 
-  return { dragId, onDragStart, onDragOver, onDragEnd, onDrop, isDropTarget, isDragging }
+  return {
+    dragId,
+    onDragStart,
+    onDragOver,
+    onDragEnd,
+    onDrop,
+    isDropTarget,
+    isDragging,
+    isSettling
+  }
 }

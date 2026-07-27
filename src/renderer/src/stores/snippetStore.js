@@ -5,7 +5,7 @@ import { detectSnippetLanguage } from '../utils/detectLanguage'
 // Snippets are a personal, non-expiring text library — encrypted at rest with
 // the same install-specific vault key as saved diffs (vault:encrypt /
 // vault:decrypt IPC; the key never enters this store). Organization is by
-// TAGS: each snippet carries up to 5 color-coded tags; a snippet with no tags
+// TAGS: each snippet carries up to MAX_TAGS color-coded tags; one with no tags
 // lives under the permanent "Default" catch-all. Tags are plaintext
 // organizational metadata, same trust level as a snippet's name — deliberately
 // NOT part of the AAD, so retagging never re-encrypts. Persistence goes through
@@ -35,7 +35,9 @@ export const TAG_PALETTE = [
   '#cf222e',
   '#8b949e'
 ]
-export const MAX_TAGS = 5
+// Per-entry tag cap. Tags organize BOTH diffs and snippets now (categories are
+// gone) and one slot is often the auto-added format tag, so this is generous.
+export const MAX_TAGS = 20
 
 export const cleanTag = (name) =>
   String(name ?? '')
@@ -146,6 +148,15 @@ export const EXAMPLE_SNIPPET = {
 export const languageOf = (entry) =>
   entry?.language && entry.language !== 'auto' ? entry.language : (entry?.detected ?? 'plaintext')
 
+// The format a snippet resolves to, as a tag name — its explicit language, else
+// the auto-detected one. Plaintext/unknown yields no tag. Applied automatically
+// on save so every snippet is findable by its format (a JSON snippet gets a
+// "json" tag, etc.).
+export function formatTagFor(language, content) {
+  const lang = language && language !== 'auto' ? language : detectSnippetLanguage(content)
+  return lang && lang !== 'plaintext' ? lang : null
+}
+
 const IMPORT_ERRORS = {
   'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
   'wrong-passphrase': 'Wrong passphrase, or the file is corrupted.',
@@ -202,7 +213,7 @@ export const useSnippetStore = defineStore('snippets', {
     // else the next palette color — this is where a tag typed in the editor is
     // FIRST persisted, only when the snippet is saved), touch used ones to
     // "now", and return the cleaned, de-duplicated, capped applied list.
-    _applyTags(names, colors = {}) {
+    registerTags(names, colors = {}) {
       const out = []
       for (const raw of names ?? []) {
         const n = cleanTag(raw)
@@ -239,7 +250,8 @@ export const useSnippetStore = defineStore('snippets', {
         this.keyError = box.error
         return null
       }
-      const applied = this._applyTags(tags, tagColors)
+      const ft = formatTagFor(language, content)
+      const applied = this.registerTags(ft ? [ft, ...tags] : tags, tagColors)
       this.entries.push({
         id,
         aadSalt,
@@ -299,7 +311,7 @@ export const useSnippetStore = defineStore('snippets', {
       entry.name = cleanName(name, entry.name)
       entry.detected = detectSnippetLanguage(content)
       if (language) entry.language = language
-      if (tags !== undefined) entry.tags = this._applyTags(tags, tagColors)
+      if (tags !== undefined) entry.tags = this.registerTags(tags, tagColors)
       entry.iv = box.iv
       entry.data = box.data
       this.persist()

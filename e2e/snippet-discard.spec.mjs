@@ -4,7 +4,7 @@ import { test, expect } from './fixtures.mjs'
 // silently throw it away — a real bug only a launch reproduces, since the guard
 // lives on the dialog's close paths and Monaco feeds the "dirty" state.
 test('cancelling a new snippet with typed content asks before discarding', async ({ page }) => {
-  await page.getByRole('button', { name: '+ New snippet' }).click()
+  await page.getByRole('button', { name: 'New snippet' }).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 
@@ -30,7 +30,7 @@ test('cancelling a new snippet with typed content asks before discarding', async
 
 // An untouched new snippet has nothing to protect, so Cancel closes at once.
 test('cancelling an empty new snippet closes without a prompt', async ({ page }) => {
-  await page.getByRole('button', { name: '+ New snippet' }).click()
+  await page.getByRole('button', { name: 'New snippet' }).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 

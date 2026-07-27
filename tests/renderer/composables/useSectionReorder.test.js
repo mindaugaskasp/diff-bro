@@ -42,6 +42,23 @@ describe('useSectionReorder', () => {
     expect(r.isDragging('saved')).toBe(false)
   })
 
+  it('a completed drag marks the moved section as settling, and only it', () => {
+    const r = useSectionReorder()
+    r.onDragStart('snippets', dragEvent())
+    r.onDrop('saved')
+    expect(r.isSettling('snippets')).toBe(true)
+    expect(r.isSettling('saved')).toBe(false)
+    expect(r.isSettling('external')).toBe(false)
+  })
+
+  it('a no-op drop onto the section itself neither reorders nor pulses', () => {
+    const r = useSectionReorder()
+    r.onDragStart('saved', dragEvent())
+    r.onDrop('saved')
+    expect(useSettingsStore().sectionOrder).toEqual(SECTIONS)
+    expect(r.isSettling('saved')).toBe(false)
+  })
+
   it('does nothing while the order is locked', () => {
     useSettingsStore().toggleSectionsLock()
     const r = useSectionReorder()

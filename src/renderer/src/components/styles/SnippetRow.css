@@ -7,6 +7,12 @@
   display: flex;
   align-items: center;
 }
+/* Whole-row hover highlight so pointing at a snippet reads at a glance, not just
+   a text-colour shift. The favourite shelf overrides this with its own gold
+   hover (SnippetsPanel.css). */
+.row:hover {
+  background: var(--bg-hover);
+}
 /* "Copied" acknowledgement over the action buttons. Anchored to the row, not
    .rowacts, so it survives the pointer leaving (which hides .rowacts). */
 .copied-flash {

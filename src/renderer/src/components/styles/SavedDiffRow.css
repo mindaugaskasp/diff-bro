@@ -7,6 +7,15 @@
   background: color-mix(in srgb, var(--favorite) 12%, transparent);
   box-shadow: inset 3px 0 0 var(--favorite);
 }
+/* Whole-row hover highlight — a distinct background so pointing at a row reads
+   at a glance, not just a faint text-colour shift. Favorited rows deepen their
+   own gold instead of going grey. */
+.diff:hover {
+  background: var(--bg-hover);
+}
+.diff.favorite:hover {
+  background: color-mix(in srgb, var(--favorite) 22%, transparent);
+}
 .entry {
   flex: 1;
   min-width: 0;
@@ -16,13 +25,9 @@
   text-align: left;
   background: none;
   border: none;
-  border-top: 1px solid var(--border);
   color: var(--text);
-  padding: 6px 4px 6px 10px;
+  padding: 5px 4px 5px 6px;
   cursor: pointer;
-}
-.entry:hover {
-  background: var(--bg);
 }
 .name {
   font-size: var(--font-md);
@@ -31,11 +36,26 @@
   text-overflow: ellipsis;
 }
 .ttl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--font-sm);
   color: var(--text-hint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Tag dots — colored from the shared registry, so a diff reads its tags at a
+   glance the way a snippet does. */
+.tags {
+  display: inline-flex;
+  gap: 3px;
+  flex: none;
+}
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 .star {
   display: flex;
@@ -44,16 +64,14 @@
   min-width: 26px;
   background: none;
   border: none;
-  border-top: 1px solid var(--border);
   color: var(--text-dim);
-  padding: 0 6px;
+  padding: 0 4px 0 8px;
   cursor: pointer;
-  font-size: var(--font-xl);
+  font-size: var(--font-lg);
   line-height: 1;
 }
 .star:hover {
   color: var(--favorite);
-  background: var(--bg-hover);
 }
 .star.on {
   color: var(--favorite);
@@ -61,11 +79,10 @@
 .row-btn {
   background: none;
   border: none;
-  border-top: 1px solid var(--border);
   color: var(--text-dim);
-  padding: 0 8px;
+  padding: 0 6px;
   cursor: pointer;
-  font-size: var(--font-xl);
+  font-size: var(--font-lg);
 }
 .row-btn:hover {
   color: var(--accent);

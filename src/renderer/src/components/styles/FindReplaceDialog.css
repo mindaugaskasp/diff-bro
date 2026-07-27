@@ -1,0 +1,51 @@
+/* Find/Replace fields sit two-up; the options row carries the mode, the
+   case toggle and the action, wrapping on a narrow dialog. */
+.fr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.fr-opts {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.fr-opts .btn {
+  margin-left: auto;
+}
+/* The shared `.dialog label` stacks its control; the checkbox reads as a row. */
+.fr-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+.fr-check input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  accent-color: var(--accent);
+}
+.fr-count {
+  color: var(--text-dim);
+}
+.output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-md);
+  color: var(--text-dim);
+  margin-bottom: -4px;
+}
+.inline-actions {
+  display: flex;
+  gap: 6px;
+}
+.error {
+  margin: 0;
+  font-size: var(--font-md);
+  color: var(--danger-bg);
+}

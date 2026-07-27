@@ -2,18 +2,20 @@
 import { ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useVaultStore, DEFAULT_TTL_HOURS, TTL_OPTIONS } from '../stores/vaultStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import BaseDialog from './BaseDialog.vue'
+import TagChipsField from './TagChipsField.vue'
 
 const diff = useDiffStore()
 const vault = useVaultStore()
+const snippets = useSnippetStore()
 
 const name = ref('')
+// Secure = auto-expiring (the app's default). Off keeps the diff indefinitely.
+const secure = ref(true)
 const ttl = ref(DEFAULT_TTL_HOURS)
 const nameInput = ref(null)
-// '__new__' reveals an input to create a category on the fly.
-const NEW_CATEGORY = '__new__'
-const categoryId = ref(vault.defaultCategoryId)
-const newCategoryName = ref('')
+const tagField = ref(null)
 
 onMounted(() => {
   name.value =
@@ -25,13 +27,20 @@ onMounted(() => {
 })
 
 async function save() {
-  let targetCategory = categoryId.value
-  if (targetCategory === NEW_CATEGORY) {
-    targetCategory = newCategoryName.value.trim()
-      ? vault.addCategory(newCategoryName.value)
-      : vault.defaultCategoryId
-  }
-  const id = await vault.save(name.value.trim(), ttl.value, diff.snapshot(), targetCategory)
+  // Saving from paste mode should also run the comparison, so the user lands on
+  // the diff they just kept instead of staying on the two input boxes.
+  const wasPaste = diff.mode === 'paste'
+  // User tags (the diff's detected format is auto-added in the store). Persist
+  // any new tags' chosen colors into the shared registry so the chip color the
+  // user saw sticks.
+  const userTags = tagField.value ? [...tagField.value.tags] : []
+  if (userTags.length) snippets.registerTags(userTags, tagField.value.newColors())
+  const id = await vault.save(
+    name.value.trim(),
+    secure.value ? ttl.value : null,
+    diff.snapshot(),
+    userTags
+  )
   diff.showSaveDialog = false
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
@@ -59,7 +68,17 @@ async function save() {
     diff.showNotice('Saved (encrypted). Loading the file…')
     diff.finishPickAfterSave()
   } else {
-    diff.showNotice(`Saved (encrypted) — expires in ${ttl.value} h.`)
+    // Initiate the comparison for a paste-mode save (comparePasted clears the
+    // saved flag, so re-mark it — nothing has changed since the save).
+    if (wasPaste) {
+      diff.comparePasted()
+      diff.markSaved()
+    }
+    diff.showNotice(
+      secure.value
+        ? `Saved (encrypted) — expires in ${ttl.value} h.`
+        : 'Saved (encrypted) — kept until you delete it.'
+    )
   }
 }
 
@@ -83,29 +102,12 @@ function cancel() {
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
       </label>
-      <!-- Categories are a local organizing tool only. In the share flow the
-           diff is still saved locally (into Default), but the recipient never
-           receives a category, so offering one here would be misleading — and
-           forcing a category onto someone else's copy is exactly what we avoid. -->
-      <template v-if="!diff.saveThenShare">
-        <label>
-          Category
-          <select v-model="categoryId">
-            <option v-for="c in vault.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-            <option :value="NEW_CATEGORY">+ New category…</option>
-          </select>
-        </label>
-        <label v-if="categoryId === NEW_CATEGORY">
-          New category name
-          <input
-            v-model="newCategoryName"
-            type="text"
-            spellcheck="false"
-            placeholder="Category name…"
-          />
-        </label>
-      </template>
-      <label>
+      <TagChipsField ref="tagField" />
+      <label class="toggle">
+        <input v-model="secure" type="checkbox" />
+        <span><strong>Secure</strong> — auto-expiring (deletes itself)</span>
+      </label>
+      <label v-if="secure">
         Expires after
         <select v-model.number="ttl">
           <option v-for="opt in TTL_OPTIONS" :key="opt.hours" :value="opt.hours">
@@ -114,7 +116,11 @@ function cancel() {
         </select>
       </label>
       <p class="dialog-note">
-        Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.
+        {{
+          secure
+            ? 'Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.'
+            : 'Stored encrypted on this machine only and kept until you delete it — no expiry.'
+        }}
       </p>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary">

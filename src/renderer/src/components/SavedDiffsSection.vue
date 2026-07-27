@@ -1,83 +1,34 @@
 <script setup>
-// The "Saved diffs" sidebar section: a Favorites shelf plus draggable category
-// shelves, each holding your own encrypted, auto-expiring diffs. Section move
-// controls live in SectionHeader; category order is drag-reorderable and
-// persisted per-section in settings.shelfOrder.
-import { computed, ref, watch } from 'vue'
+// The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs,
+// organized by TAGS shared with snippets (no categories). `search` narrows the
+// visible rows by name or tag; `unified` renders the light group label.
+import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
-import { useSettingsStore } from '../stores/settingsStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
-import AppIcon from './AppIcon.vue'
 
-defineProps({ first: { type: Boolean, default: false } })
+const props = defineProps({
+  first: { type: Boolean, default: false },
+  unified: { type: Boolean, default: false },
+  search: { type: String, default: '' },
+  tag: { type: String, default: '' },
+  favOnly: { type: Boolean, default: false }
+})
+const q = computed(() => props.search.trim().toLowerCase())
+const matches = (e) =>
+  (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
+  (!props.tag || e.tags.includes(props.tag))
 
 const vault = useVaultStore()
-const settings = useSettingsStore()
-
 const open = ref(true)
-const collapsed = ref(new Set())
-const addingCategory = ref(false)
-const newCategoryName = ref('')
 
-// Categories shown in the user's saved order (drag-reorder below), reconciled
-// against the categories that currently exist.
-const orderedCategories = computed(() => {
-  const byId = new Map(vault.categories.map((c) => [c.id, c]))
-  return settings
-    .shelfOrderFor(
-      'saved',
-      vault.categories.map((c) => c.id)
-    )
-    .map((id) => byId.get(id))
-    .filter(Boolean)
-})
-
-const isExpanded = (id) => !collapsed.value.has(id)
-function toggle(id) {
-  collapsed.value.has(id) ? collapsed.value.delete(id) : collapsed.value.add(id)
-  collapsed.value = new Set(collapsed.value)
-}
-
-// Auto-expand a category the moment a diff is saved into it.
-watch(
-  () => vault.lastTouchedCategory,
-  (id) => {
-    if (id && collapsed.value.has(id)) {
-      const next = new Set(collapsed.value)
-      next.delete(id)
-      collapsed.value = next
-    }
-  }
+// One list, favorites first (they float up via the store's sort) and marked by
+// the gold star — no separate Favorites sub-group. The ★ filter keeps only them.
+const rows = computed(() =>
+  (props.favOnly ? vault.favoritesOwn : [...vault.favoritesOwn, ...vault.ownActive]).filter(matches)
 )
-
-function startAddCategory() {
-  addingCategory.value = true
-  newCategoryName.value = ''
-}
-function commitAddCategory() {
-  if (!addingCategory.value) return
-  addingCategory.value = false
-  if (newCategoryName.value.trim()) vault.addCategory(newCategoryName.value)
-}
-
-function deleteCategoryTitle(category) {
-  if (category.isDefault) return "The Default category can't be deleted"
-  if (vault.activeInCategory(category.id).length) return 'Delete or let its diffs expire first'
-  return 'Delete category'
-}
-
-// --- category drag-reorder ---
-const dragId = ref(null)
-function onDrop(targetId) {
-  const from = dragId.value
-  dragId.value = null
-  if (!from || from === targetId) return
-  const ids = orderedCategories.value.map((c) => c.id)
-  ids.splice(ids.indexOf(targetId), 0, ids.splice(ids.indexOf(from), 1)[0])
-  settings.setShelfOrder('saved', ids)
-}
+const hasOwn = computed(() => vault.active.some((e) => !e.from))
 </script>
 
 <template>
@@ -85,89 +36,20 @@ function onDrop(targetId) {
     <SectionHeader
       section-id="saved"
       title="Saved diffs"
+      icon="folder"
       :open="open"
       :first="first"
+      :unified="unified"
       @toggle="open = !open"
-    >
-      <template #actions>
-        <AppIcon class="lock" name="lock" title="Encrypted at rest, auto-expiring" />
-      </template>
-    </SectionHeader>
+    />
 
     <div v-show="open" class="section-body">
-      <div class="section-actions">
-        <button class="btn btn-sm btn-block" title="New category" @click="startAddCategory">
-          + New category
-        </button>
-      </div>
-
-      <div v-if="addingCategory" class="add-category">
-        <input
-          v-model="newCategoryName"
-          type="text"
-          placeholder="Category name…"
-          spellcheck="false"
-          autofocus
-          @keyup.enter="commitAddCategory"
-          @keyup.escape="addingCategory = false"
-          @blur="commitAddCategory"
-        />
-      </div>
-
-      <p v-if="!vault.active.some((e) => !e.from)" class="empty">
+      <p v-if="!hasOwn" class="empty">
         Nothing saved. Load two files and press <kbd>{{ MOD }}+S</kbd> to keep a diff around —
-        encrypted, and gone automatically after at most 24&nbsp;hours.
+        encrypted, and auto-tagged by its format.
       </p>
-
-      <ul v-if="vault.favoritesOwn.length" class="favorites-group">
-        <li class="fav-head"><AppIcon name="star-filled" /> Favorites</li>
-        <SavedDiffRow v-for="entry in vault.favoritesOwn" :key="entry.id" :entry="entry" />
-      </ul>
-
-      <ul class="categories">
-        <li
-          v-for="category in orderedCategories"
-          :key="category.id"
-          class="category"
-          :class="{ dragging: dragId === category.id }"
-          draggable="true"
-          @dragstart="dragId = category.id"
-          @dragend="dragId = null"
-          @dragover.prevent
-          @drop.prevent="onDrop(category.id)"
-        >
-          <div class="category-head">
-            <AppIcon class="grip" name="grip" title="Drag to reorder" />
-            <button class="cat-toggle" @click="toggle(category.id)">
-              <AppIcon
-                class="chevron"
-                :class="{ open: isExpanded(category.id) }"
-                name="chevron-right"
-              />
-              <AppIcon class="folder" name="folder" />
-              <span class="cat-name">{{ category.name }}</span>
-              <span class="count">{{ vault.activeInCategory(category.id).length }}</span>
-            </button>
-            <button
-              class="icon delete"
-              :disabled="!vault.canDeleteCategory(category.id)"
-              :title="deleteCategoryTitle(category)"
-              @click="vault.requestDelete('category', category.id, category.name)"
-            >
-              <AppIcon name="x" />
-            </button>
-          </div>
-          <ul v-if="isExpanded(category.id)" class="diff-list">
-            <li v-if="!vault.activeInCategory(category.id).length" class="empty small">
-              No diffs yet.
-            </li>
-            <SavedDiffRow
-              v-for="entry in vault.activeInCategory(category.id)"
-              :key="entry.id"
-              :entry="entry"
-            />
-          </ul>
-        </li>
+      <ul v-if="rows.length" class="rows">
+        <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>
     </div>
   </section>

@@ -90,11 +90,13 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
 
     // 4. Bob imports it — it lands in External diffs, credited to Alice.
     const external = pageB.locator('.sidebar-section', { hasText: 'External diffs' })
-    const externalHelp = external.getByText(/Diffs shared by someone else appear here/)
+    const externalHelp = external.getByText(/Sealed diffs others share with you land here/)
     await expect(externalHelp).toBeVisible() // empty-state help, before any import
     await stubOpenDialog(appB, join(exchange, sealed))
-    await pageB.getByRole('button', { name: 'Import', exact: true }).click()
-    await expect(pageB.getByText(/Imported "Shared work" from Alice/)).toBeVisible()
+    await pageB.getByRole('button', { name: /Import a shared diff/ }).click()
+    // Bob has nothing on screen, so the import opens the diff straight away
+    // ("Opened…"); with a diff already active it would keep the view instead.
+    await expect(pageB.getByText(/Opened "Shared work" from Alice/)).toBeVisible()
     await expect(external.getByText('Shared work')).toBeVisible()
     await expect(externalHelp).toBeHidden() // the help text clears once a diff is there
 

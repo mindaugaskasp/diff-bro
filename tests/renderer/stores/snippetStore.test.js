@@ -10,6 +10,7 @@ import { createIdentityKeys } from '../../../src/main/sealing'
 import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
 import {
   EXAMPLE_SNIPPET,
+  MAX_TAGS,
   TAG_PALETTE,
   languageOf,
   useSnippetStore
@@ -98,6 +99,26 @@ describe('snippetStore — effective language', () => {
     expect(languageOf({ language: 'auto' })).toBe('plaintext')
     expect(languageOf({ language: 'json' })).toBe('json')
   })
+
+  it('auto-tags a saved snippet with its detected format', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'cfg', content: '{"a": 1, "b": 2}', language: 'auto' })
+    expect(store.entries.find((e) => e.id === id).tags).toContain('json')
+  })
+
+  it('auto-tags with the explicit language, alongside the user tags', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'q', content: 'SELECT 1', language: 'sql', tags: ['wip'] })
+    expect(store.entries.find((e) => e.id === id).tags).toEqual(
+      expect.arrayContaining(['sql', 'wip'])
+    )
+  })
+
+  it('adds no format tag for a plaintext snippet', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'note', content: 'hello world', language: 'plaintext' })
+    expect(store.entries.find((e) => e.id === id).tags).toHaveLength(0)
+  })
 })
 
 describe('snippetStore — tags model', () => {
@@ -134,15 +155,12 @@ describe('snippetStore — tags model', () => {
     expect(store.defaultCount).toBe(1)
   })
 
-  it('caps a snippet at 5 tags and de-duplicates', async () => {
+  it('caps a snippet at MAX_TAGS and de-duplicates', async () => {
     const store = useSnippetStore()
-    await store.add({
-      name: 'x',
-      content: 'y',
-      language: 'auto',
-      tags: ['a', 'b', 'a', 'c', 'd', 'e', 'f']
-    })
-    expect(store.entries[0].tags).toEqual(['a', 'b', 'c', 'd', 'e'])
+    const many = Array.from({ length: MAX_TAGS + 4 }, (_, i) => `t${i}`)
+    await store.add({ name: 'x', content: 'y', language: 'auto', tags: ['dup', 'dup', ...many] })
+    expect(store.entries[0].tags).toHaveLength(MAX_TAGS)
+    expect(new Set(store.entries[0].tags).size).toBe(MAX_TAGS) // no duplicates kept
   })
 
   it('assigns distinct palette colors and honors caller-chosen colors', async () => {

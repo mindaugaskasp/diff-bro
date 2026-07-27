@@ -17,6 +17,11 @@ export const ICONS = {
     { t: 'path', d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }
   ],
   x: [{ t: 'path', d: 'M18 6 6 18M6 6l12 12' }],
+  // Magnifying glass — marks the filter/search inputs.
+  search: [
+    { t: 'circle', cx: 11, cy: 11, r: 7 },
+    { t: 'line', x1: 21, y1: 21, x2: 16.5, y2: 16.5 }
+  ],
   star: [
     {
       t: 'path',
