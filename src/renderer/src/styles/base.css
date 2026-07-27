@@ -11,7 +11,10 @@ body,
 #app {
   margin: 0;
   height: 100%;
-  background: var(--bg);
+  /* The app ground is the canvas role, not the base surface: on the light theme
+     that's a soft tint the white cards float above; on every other theme it
+     resolves to --bg, so nothing changes. See the surface contract in tokens.css. */
+  background: var(--bg-canvas);
   color: var(--text);
   font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;

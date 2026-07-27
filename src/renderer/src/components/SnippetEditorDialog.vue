@@ -11,6 +11,7 @@ import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import { useArmedAction } from '../composables/useArmedAction'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 import TagChipsField from './TagChipsField.vue'
 import MermaidPreview from './MermaidPreview.vue'
 import JiraToolbar from './JiraToolbar.vue'
@@ -73,6 +74,12 @@ function applyJira(id) {
 // Clearing can discard a lot of typing, so it is a two-step confirm.
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => reset(''))
 
+// Inline "Copied" acknowledgement on the button — a toast sits behind the modal.
+const { copied, flash } = useCopyFeedback()
+async function copyAndFlash() {
+  if (await copyContent()) flash()
+}
+
 // A file dropped on the editor loads its contents (capture + stop in the
 // template, so the window-level diff drop never sees it).
 const { onDropFile } = useFileTextDrop((text, fileName) => {
@@ -132,6 +139,7 @@ function saveSnippet() {
     <JiraToolbar v-if="isJira && plain && editMode" @action="applyJira" />
     <div
       class="editor-area"
+      :class="{ editing: editMode }"
       @dragover.capture.prevent.stop
       @drop.capture.prevent.stop="editMode && onDropFile($event)"
     >
@@ -156,11 +164,12 @@ function saveSnippet() {
       </button>
       <button
         class="btn btn-sm btn-ghost"
+        :class="{ copied }"
         :disabled="!content"
-        title="Copy content"
-        @click="copyContent"
+        :title="copied ? 'Copied to clipboard' : 'Copy content'"
+        @click="copyAndFlash"
       >
-        Copy
+        {{ copied ? 'Copied' : 'Copy' }}
       </button>
       <button
         v-if="editMode"

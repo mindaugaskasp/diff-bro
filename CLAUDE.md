@@ -7,10 +7,11 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 
 - `npm run dev` — run natively. `make test-env` / `npm run docker:up` — full
   app in Docker with noVNC at http://localhost:6080/vnc.html (loopback only).
-- `npm run check` — lint + style-token guard + tests with coverage
-  thresholds. **Run it before declaring any task done.**
+- `npm run check` — lint + style-token guard + theme-depth guard + tests with
+  coverage thresholds. **Run it before declaring any task done.**
 - `npm test` / `npm run test:coverage` / `npm run lint` /
-  `npm run check:styles` / `npm run format` — individually.
+  `npm run check:styles` / `npm run check:themes` / `npm run format` —
+  individually.
 - `npm run build` — bundles to `build/` (NOT electron-builder's default;
   `buildResources` is `resources/`). Installers: `build:win` / `build:mac`.
 
@@ -70,6 +71,18 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   hardcoded color, font-size or radius in `components/styles/` — add a token
   rather than a literal, or `/* token-exempt: reason */` when a literal is
   genuinely right. New UI must be checked in both themes.
+- **Depth is a surface-role contract, not per-theme greys** — this is what keeps
+  a theme from going flat (the light theme twice did). Four roles, recessed →
+  raised: `--bg-canvas` (app ground) · `--bg`/`--bg-panel` (base surface / chrome)
+  · `--bg-elevated` (raised band) · `--bg-raised` (a card that FLOATS on the
+  canvas and casts a `--shadow-1/2/3`). A card reads the *role*, never a raw
+  colour, so the same markup floats on every theme; the light theme opts into the
+  floating-canvas inversion (tinted ground, white cards) purely by redefining
+  `--bg-canvas`/`--bg-raised` under `:root[data-theme='light']`. Elevation is the
+  `--shadow-*` scale in tokens.css (tinted per theme by `--shadow-rgb`) — reach
+  for a level, don't hand-roll an `rgba()` drop. `npm run check:themes`
+  (scripts/check-theme-depth.mjs) fails the build if any theme's text, surfaces,
+  or border lose contrast — the floors are a ratchet, never lowered to green a run.
 - **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
   section header, dialog header) is a *band*: it carries `.band` and vertically
   centres its content with flexbox. Never fake vertical alignment with top

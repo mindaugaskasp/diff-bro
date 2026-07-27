@@ -44,4 +44,31 @@
   --pad-section-top: var(--space-3);
   --pad-section-bottom: var(--space-2);
   --gap-section: 12px;
+  /* Elevation scale. The geometry (offset/blur/spread) is structural and lives
+     here; only the shadow TINT is a per-theme token (themes.css --shadow-rgb),
+     so the same three levels cast a soft grey drop on the light default and a
+     deep one on the dark themes. Surfaces opt in by depth, never by restating a
+     raw shadow: --shadow-1 a resting lift (top bar, primary buttons),
+     --shadow-2 a raised element (popovers, cards, the floating shortcut bar),
+     --shadow-3 a modal floating over the scrim. Two layers per level — a tight
+     contact shadow plus a soft ambient one — read as real depth, not a blur. */
+  --shadow-1: 0 1px 2px rgb(var(--shadow-rgb) / 0.1), 0 1px 3px -1px rgb(var(--shadow-rgb) / 0.08);
+  --shadow-2: 0 2px 6px -1px rgb(var(--shadow-rgb) / 0.12),
+    0 8px 20px -6px rgb(var(--shadow-rgb) / 0.16);
+  --shadow-3: 0 6px 16px -4px rgb(var(--shadow-rgb) / 0.18),
+    0 18px 44px -8px rgb(var(--shadow-rgb) / 0.3);
+  /* Surface-role contract. Depth in this app is a LAYER ORDER, not a set of
+     hand-picked greys per theme — that discipline is what keeps a new theme from
+     going flat. Four roles, recessed → raised:
+       --bg-canvas  the app ground (window body, the empty-state area)
+       --bg / --bg-panel  the base surface (editor, inputs) and the chrome
+       --bg-elevated  a raised band (section headers) — derived, see themes.css
+       --bg-raised  a card that FLOATS on the canvas and casts a --shadow
+     These defaults suit every dark theme: the ground is the base surface and a
+     raised card is the lighter panel. A light theme may invert them (themes.css
+     :root[data-theme='light']) to float white cards on a tinted canvas. Cards
+     read the role, never a raw colour, so the float works on every theme and
+     check-theme-depth.mjs can prove none of the roles collapse into each other. */
+  --bg-canvas: var(--bg);
+  --bg-raised: var(--bg-panel);
 }

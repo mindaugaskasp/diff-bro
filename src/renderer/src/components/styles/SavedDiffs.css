@@ -3,6 +3,10 @@
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-panel);
+  /* A soft right-edge lift over the content. On the floating-canvas light theme
+     the sidebar shares the canvas tint, so the hairline alone is too quiet; the
+     directional drop makes the chrome read as raised on every theme. */
+  box-shadow: 3px 0 12px -6px rgb(var(--shadow-rgb) / 0.22);
   display: flex;
   flex-direction: column;
   overflow: hidden; /* the body scrolls, not the whole aside */
@@ -21,6 +25,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: var(--space-1);
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -101,11 +106,16 @@
   border-color: var(--favorite);
   color: var(--favorite);
 }
-/* Unified tag filter — a wrapping chip row under the segmented control. */
+/* Unified tag filter — a wrapping chip row under the segmented control, set off
+   from the section toggles by a light divider so the two filter axes read apart. */
 .usb-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  margin-top: var(--space-1);
+  margin-bottom: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 .usb-tag {
   display: inline-flex;
@@ -150,7 +160,8 @@
   flex: none;
   flex-wrap: wrap;
   gap: 5px;
-  padding: var(--space-2) var(--space-3);
+  /* Extra bottom padding so the tool buttons aren't glued to the window edge. */
+  padding: var(--space-2) var(--space-3) var(--space-3);
   /* A brighter accent seam and a soft top-lit gradient lift the footer out of
      the flat panel and hint it's an interactive shelf, not a status bar. */
   border-top: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));

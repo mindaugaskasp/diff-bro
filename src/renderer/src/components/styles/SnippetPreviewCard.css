@@ -11,7 +11,7 @@
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-3);
   overflow: hidden;
   /* Passive by default (mermaid); the interactive class lets the pointer enter
      the card to click its actions. */

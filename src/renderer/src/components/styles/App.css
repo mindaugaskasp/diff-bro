@@ -11,6 +11,12 @@
   padding: 0 12px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
+  /* A resting lift over the diff body, so the toolbar reads as chrome sitting
+     above the content rather than a flat strip sharing its plane. Above the
+     content in z-order so the drop lands on it. */
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-1);
 }
 .slot-half {
   flex: 1;
@@ -53,18 +59,21 @@
   color: var(--accent);
 }
 .notice {
-  position: fixed;
-  /* Stacks above the floating ShortcutBar instead of landing on top of it. */
-  bottom: 60px;
+  position: absolute;
+  /* Top of the diff area, clear of the file-slots band, centred over the
+     content (its parent is .content, so it never straddles the sidebar). */
+  top: calc(var(--band-row) + var(--space-3));
   left: 50%;
   transform: translateX(-50%);
+  z-index: 5;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   color: var(--text);
   padding: 10px 16px;
   max-width: 70%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  box-shadow: var(--shadow-3);
 }
 .fade-enter-active,
 .fade-leave-active {
@@ -92,5 +101,5 @@
   font-size: var(--font-xl);
   font-weight: 600;
   padding: 28px 44px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-3);
 }

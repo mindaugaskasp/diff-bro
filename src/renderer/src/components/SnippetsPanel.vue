@@ -77,10 +77,7 @@ function newSnippet() {
     </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <p v-if="!store.entries.length" class="empty">
-        Use the <strong>+</strong> in this section's header to create one — saved encrypted, tagged
-        however you like, and exportable as a passphrase-protected file.
-      </p>
+      <p v-if="!store.entries.length" class="empty"><AppIcon name="inbox" /> Empty</p>
 
       <!-- One list, favorites first (marked by the gold star) — no sub-headers. -->
       <ul v-if="store.entries.length" class="rows">

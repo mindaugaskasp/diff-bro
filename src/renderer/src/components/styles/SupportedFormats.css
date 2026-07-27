@@ -29,7 +29,10 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  background: var(--bg-panel);
+  /* A card that floats on the empty-state canvas: the raised surface role plus a
+     resting shadow, so the tiles lift off the ground instead of tinting into it. */
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-1);
   color: var(--text);
   font-size: var(--font-sm);
 }

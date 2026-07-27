@@ -6,7 +6,7 @@ import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
-import { MOD } from '../keys'
+import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -44,10 +44,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
     />
 
     <div v-show="open" class="section-body">
-      <p v-if="!hasOwn" class="empty">
-        Nothing saved. Load two files and press <kbd>{{ MOD }}+S</kbd> to keep a diff around —
-        encrypted, and auto-tagged by its format.
-      </p>
+      <p v-if="!hasOwn" class="empty"><AppIcon name="inbox" /> Empty</p>
       <ul v-if="rows.length" class="rows">
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>

@@ -2,6 +2,11 @@
   display: flex;
   flex-direction: column;
 }
+/* Indent the section's contents past the header's chevron, so rows read as
+   children nested under the title rather than sitting on its vertical line. */
+.section-body {
+  padding-left: var(--space-4);
+}
 /* Collapse chevron for the shelf sub-headers (the section header owns its own). */
 .chev {
   display: inline-block;
@@ -53,10 +58,17 @@
   color: var(--text);
 }
 .empty {
-  padding: 4px 10px 10px;
-  font-size: var(--font-md);
-  color: var(--text-dim);
-  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.empty .app-icon {
+  width: 15px;
+  height: 15px;
 }
 .empty.small {
   padding: 8px 10px;

@@ -85,7 +85,7 @@ async function viewDiagram(entry) {
         title="Delete"
         @click="store.requestDelete('snippet', entry.id, entry.name)"
       >
-        <AppIcon name="x" />
+        <AppIcon name="trash" />
       </button>
     </span>
   </li>

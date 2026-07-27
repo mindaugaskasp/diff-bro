@@ -9,9 +9,14 @@
    The DEFAULT is Light: it lives on the bare :root, so a theme id with no block
    (or before JS runs) renders light rather than flashing dark. */
 :root {
+  /* The content/diff surface stays pure white — the reading plane the app is
+     about — while the chrome (sidebar, toolbars, headers) sits on a cooler,
+     slightly deeper grey so it reads as a distinct layer instead of blending
+     into the content. Depth then comes from the shadow scale, not from heavy
+     borders, which is what kept the old near-white panels looking flat. */
   --bg: #ffffff;
-  --bg-panel: #f6f8fa;
-  --bg-hover: #eaeef2;
+  --bg-panel: #e9edf5;
+  --bg-hover: #dce3ef;
   /* Elevated surface for the sidebar section-header bands. Deliberately DERIVED
      from the panel (not hand-picked per theme): mixing the panel toward the text
      colour darkens it on a light ground and lightens it on a dark one, so a
@@ -20,12 +25,12 @@
      :root definition re-resolves against each theme's own --bg-panel/--text — a
      theme block may still override it if its palette needs a different tone. */
   --bg-elevated: color-mix(in srgb, var(--bg-panel) 88%, var(--text));
-  --border: #d0d7de;
-  --text: #1f2328;
-  --text-dim: #656d76;
+  --border: #d3dae6;
+  --text: #1a1f27;
+  --text-dim: #5a6472;
   /* between --text and --text-dim: for hint text that must stay readable */
-  --text-hint: #454c54;
-  --accent: #0969da;
+  --text-hint: #3f4753;
+  --accent: #4a5fb0;
   /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
      deliberately more saturated than the rest of the palette. */
   --warning-bg: #f0b429;
@@ -42,6 +47,27 @@
   --favorite: #bf8700;
   /* Text on an accent/danger fill — a token so no component hardcodes it. */
   --text-on-accent: #ffffff;
+  /* Shadow tint (space-separated RGB, consumed as rgb(… / alpha) by the
+     --shadow-* scale in tokens.css). Black reads as a soft grey drop on the
+     dark grounds, so this default serves every dark theme; the light block
+     below tints it cool. A theme may override it for a coloured shadow. */
+  --shadow-rgb: 0 0 0;
+}
+
+/* Light opts into the FLOATING-CANVAS surface model (see the surface-role
+   contract in tokens.css). It inverts the two default roles: the app ground
+   becomes the panel tint and a raised card becomes pure white, so white inputs,
+   dialogs and the empty-state format tiles float above a soft cool canvas — the
+   opposite of the dark themes, where the ground is the base surface and a raised
+   card is the lighter panel. No component knows which arrangement is active; it
+   reads --bg-canvas / --bg-raised and the right thing happens on every theme.
+   Scoped to [data-theme='light'] (not the bare :root that carries the palette)
+   so the inversion never leaks onto the dark themes, which don't redefine it. */
+:root[data-theme='light'] {
+  --bg-canvas: var(--bg-panel);
+  --bg-raised: var(--bg);
+  /* A cool slate drop instead of neutral black — softer on the pale canvas. */
+  --shadow-rgb: 26 40 70;
 }
 
 /* Dark — low-glare GitHub-night. */

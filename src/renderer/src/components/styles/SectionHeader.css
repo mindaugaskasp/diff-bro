@@ -49,6 +49,9 @@
 }
 .section-title {
   flex: 1;
+  /* A step up from the row content below it (and uppercase + bold), so each
+     section title anchors its block rather than blending into the list. */
+  font-size: var(--font-md);
 }
 /* Per-section identity chip: a distinct icon silhouette in an accent-tinted
    square, so Saved / External / Snippets are told apart by shape at a glance

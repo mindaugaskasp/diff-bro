@@ -17,6 +17,19 @@ export const ICONS = {
     { t: 'path', d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }
   ],
   x: [{ t: 'path', d: 'M18 6 6 18M6 6l12 12' }],
+  // Trash can — the destructive delete action on a row.
+  trash: [
+    { t: 'path', d: 'M3 6h18' },
+    { t: 'path', d: 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' },
+    { t: 'path', d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' },
+    { t: 'line', x1: 10, y1: 11, x2: 10, y2: 17 },
+    { t: 'line', x1: 14, y1: 11, x2: 14, y2: 17 }
+  ],
+  // Open tray — the quiet empty-state mark for a section with no entries.
+  inbox: [
+    { t: 'path', d: 'M22 12h-6l-2 3h-4l-2-3H2' },
+    { t: 'path', d: 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z' }
+  ],
   // Magnifying glass — marks the filter/search inputs.
   search: [
     { t: 'circle', cx: 11, cy: 11, r: 7 },

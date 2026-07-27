@@ -94,6 +94,9 @@
    muted "Default" when the snippet carries no tags. */
 .tagfield.ro {
   cursor: default;
+  /* Read-only view mode: match the greyed name input and content editor so the
+     whole form reads inert until Edit is pressed, rather than a lone white field. */
+  background: var(--bg-elevated);
 }
 .tag-empty {
   color: var(--text-hint);

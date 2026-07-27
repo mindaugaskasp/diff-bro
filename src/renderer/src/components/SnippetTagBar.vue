@@ -87,7 +87,9 @@ function exportTag() {
     <div class="manage" @click.stop>
       <div class="manage-head">
         <span>Manage tag</span>
-        <button class="dialog-close" @click="closeManage"><AppIcon name="x" /></button>
+        <button class="dialog-close" title="Close" @click="closeManage">
+          <AppIcon name="x" />
+        </button>
       </div>
       <input
         v-model="renameValue"

@@ -20,4 +20,10 @@
   height: 180px;
   padding: 8px;
   overflow: auto;
+  /* Render the diagram on the base surface, never the panel/canvas tint. Mermaid's
+     light theme fills nodes with a pale lavender that is nearly the floating-canvas
+     tint, so on the tinted panel the diagram dissolved into it. --bg is the plain
+     light/dark ground Mermaid's themes are tuned for — the same surface the full
+     viewer uses — so a diagram always reads as a diagram. */
+  background: var(--bg);
 }

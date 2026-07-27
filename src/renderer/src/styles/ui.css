@@ -65,6 +65,9 @@
   border-color: var(--accent);
   color: var(--text-on-accent);
   font-weight: 600;
+  /* A resting lift so the affirmative action sits above the panel rather than
+     painted onto it — the cue reads on the flat light ground especially. */
+  box-shadow: var(--shadow-1);
 }
 /* Hover shifts the accent toward its own text colour, so the change is clearly
    visible on EVERY theme's accent — darkens on a light-text accent (Nyan's hot
@@ -171,6 +174,9 @@
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  /* A modal floats over the scrim — without a drop it reads as a flat rectangle
+     pinned to the backdrop, which is most of why the light theme looked flat. */
+  box-shadow: var(--shadow-3);
 }
 /* Opt-in drag-resize from any edge or corner (useDialogResize). The handles are
    invisible zones absolutely placed over the panel's padding ring, so they never
@@ -268,11 +274,12 @@
     background 0.12s,
     border-color 0.12s;
 }
-/* Red on hover so the destructive/exit action reads clearly. */
+/* Neutral hover on-palette — a close is dismissive, not destructive, so it reads
+   like any other icon control rather than a red danger cue. */
 .dialog-close:hover {
-  color: var(--danger-text);
-  background: color-mix(in srgb, var(--danger-bg) 15%, transparent);
-  border-color: var(--danger-border);
+  color: var(--text);
+  background: var(--bg-hover);
+  border-color: var(--border);
 }
 .dialog-note {
   margin: 0;

@@ -3,20 +3,23 @@ ul {
   margin: 0;
   padding: 0;
 }
+/* Indent the section's contents past the header's chevron, so rows read as
+   children nested under the title rather than sitting on its vertical line. */
+.section-body {
+  padding-left: var(--space-4);
+}
 .empty {
-  padding: 4px 10px;
-  font-size: var(--font-md);
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-.empty kbd {
-  font-size: var(--font-xs);
-  padding: 0 3px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.empty code {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
   font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.empty .app-icon {
+  width: 15px;
+  height: 15px;
 }
 .favorites-group {
   list-style: none;

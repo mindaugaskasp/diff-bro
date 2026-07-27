@@ -61,10 +61,7 @@ function startImport() {
       </template>
     </SectionHeader>
     <div v-show="open" class="section-body">
-      <p v-if="!hasImported" class="empty">
-        Sealed diffs others share with you land here — open a <code>.diffbro</code> with the
-        <strong>+</strong> in this section's header (or <kbd>{{ MOD }}+I</kbd>).
-      </p>
+      <p v-if="!hasImported" class="empty"><AppIcon name="inbox" /> Empty</p>
 
       <ul v-if="rows.length" class="rows">
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />

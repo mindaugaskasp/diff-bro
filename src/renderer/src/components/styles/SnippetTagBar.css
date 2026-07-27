@@ -109,7 +109,7 @@
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-3);
   padding: 12px;
   display: flex;
   flex-direction: column;

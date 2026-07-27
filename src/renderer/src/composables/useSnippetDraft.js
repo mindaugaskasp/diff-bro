@@ -39,8 +39,10 @@ export function useSnippetDraft() {
   const settings = useSettingsStore()
 
   const editing = store.editingSnippet
-  const isNew = editing.id == null
-  const existing = isNew ? null : store.entries.find((e) => e.id === editing.id)
+  // Reactive: a new snippet becomes an existing one after its first save (so the
+  // dialog stays open showing it, and a re-save updates instead of duplicating).
+  const isNew = ref(editing.id == null)
+  const existing = isNew.value ? null : store.entries.find((e) => e.id === editing.id)
   const initial = initialFields(editing, existing)
 
   const name = ref(initial.name)
@@ -50,7 +52,7 @@ export function useSnippetDraft() {
 
   // Existing snippets open read-only ("view mode") so a glance can't become an
   // accidental edit; the Edit button unlocks them. New snippets start editable.
-  const editMode = ref(isNew)
+  const editMode = ref(isNew.value)
   const startEditing = () => {
     editMode.value = true
   }
@@ -62,7 +64,7 @@ export function useSnippetDraft() {
   const baselineContent = ref(initial.content)
 
   // An existing snippet's content has to be decrypted before it can be shown.
-  if (!isNew)
+  if (!isNew.value)
     store.load(editing.id).then((text) => {
       content.value = text ?? ''
       baselineContent.value = text ?? ''
@@ -127,9 +129,22 @@ export function useSnippetDraft() {
       tags,
       tagColors
     }
-    if (isNew) await store.add(fields)
-    else await store.update(editing.id, fields)
-    close()
+    if (isNew.value) {
+      const id = await store.add(fields)
+      saving.value = false
+      if (id == null) return // key unavailable — keep the draft open so it can retry
+      editing.id = id
+      isNew.value = false
+    } else {
+      await store.update(editing.id, fields)
+      saving.value = false
+    }
+    // Save no longer closes the dialog; it drops back to the (now inert) view mode
+    // showing the saved snippet, so the save is confirmed without ejecting the
+    // user. Reset the dirty baseline so the just-saved state reads as clean.
+    baselineName.value = name.value
+    baselineContent.value = content.value
+    editMode.value = false
   }
 
   // Pretty-print when the syntax is one we can format; invalid content is
@@ -145,10 +160,13 @@ export function useSnippetDraft() {
     }
   }
 
+  // The caller (the dialog) shows the "Copied" acknowledgement inline on the
+  // button — a toast would be hidden behind the modal backdrop. Returns whether
+  // it copied so the button only flashes on success.
   async function copyContent() {
-    if (!content.value) return
+    if (!content.value) return false
     await window.api.copyText(content.value)
-    diff.showNotice('Copied snippet to clipboard.')
+    return true
   }
 
   function expandDiagram() {

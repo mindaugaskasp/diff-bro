@@ -144,15 +144,19 @@ const {
           <SupportedFormats />
         </div>
 
+        <!-- Status/error notices (e.g. a rejected shared diff) sit at the top of
+             the diff area, centred over it — where the eye already is, not tucked
+             at the window foot. Anchored to .content so it spans the diff, not
+             the sidebar. -->
+        <transition name="fade">
+          <div v-if="store.notice" class="notice">{{ store.notice }}</div>
+        </transition>
+
         <ShortcutBar />
       </main>
     </div>
 
     <AppDialogs />
-
-    <transition name="fade">
-      <div v-if="store.notice" class="notice">{{ store.notice }}</div>
-    </transition>
 
     <transition name="fade">
       <div v-if="dragActive" class="drop-overlay">

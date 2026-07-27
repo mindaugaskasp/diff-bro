@@ -33,7 +33,13 @@ defineExpose(field)
     <div class="tagfield" :class="{ ro: readonly }" @click="!readonly && field.inputEl?.focus()">
       <span v-for="t in field.tags" :key="t" class="etag" :style="{ '--tc': field.colorFor(t) }">
         <TagGlyph :color="field.colorFor(t)" />{{ t }}
-        <button v-if="!readonly" type="button" class="x" @click.stop="field.remove(t)">
+        <button
+          v-if="!readonly"
+          type="button"
+          class="x"
+          :title="`Remove ${t}`"
+          @click.stop="field.remove(t)"
+        >
           <AppIcon name="x" />
         </button>
       </span>

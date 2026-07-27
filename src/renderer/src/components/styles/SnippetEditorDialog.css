@@ -6,6 +6,33 @@
 .fields .grow {
   flex: 1;
 }
+/* View/edit cue. In view mode every field sits inert on a muted grey fill;
+   pressing Edit returns them to the plain white editable surface (the base
+   --bg from .dialog input), so the grey → white flip is the switch. An editable
+   input stays plainly white like every other input — no muddy tint. */
+.fields input:read-only {
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  /* View mode is not editable, so don't tease a text caret on hover. */
+  cursor: default;
+}
+.editor-area.editing .editor {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+/* Monaco keeps its I-beam even when read-only; drop it to the default arrow in
+   view mode so the editor doesn't imply you can type before pressing Edit. */
+.editor-area:not(.editing) .editor :deep(.monaco-mouse-cursor-text) {
+  cursor: default;
+}
+/* View mode greys the content editor the same way the read-only name field is
+   greyed, so the whole form reads inert until Edit is pressed. Monaco paints its
+   own surface, so tint its background layers to the muted elevated surface. */
+.editor-area:not(.editing) .editor,
+.editor-area:not(.editing) .editor :deep(.monaco-editor),
+.editor-area:not(.editing) .editor :deep(.monaco-editor-background),
+.editor-area:not(.editing) .editor :deep(.monaco-editor .margin) {
+  background: var(--bg-elevated);
+}
 .editor-header {
   display: flex;
   align-items: center;
@@ -78,6 +105,11 @@
 }
 .spacer {
   flex: 1;
+}
+/* Copy acknowledgement: a brief success tint so the click clearly landed. */
+.btn.copied {
+  color: var(--success-text);
+  border-color: color-mix(in srgb, var(--success-text) 45%, var(--border));
 }
 /* Armed clear: a danger cue so the second, destructive click is deliberate. */
 .ghost.small.armed {
