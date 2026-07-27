@@ -350,7 +350,7 @@ describe('diffStore', () => {
     expect(store.saveThenShare).toBe(true)
   })
 
-  it('routes menu actions: tools-base64, tools-json, tools-xml, tools-crypt open their dialogs', () => {
+  it('routes menu actions: tools-base64/json/xml/sql/find-replace/crypt open their dialogs', () => {
     const store = useDiffStore()
     store.handleMenuAction('tools-base64')
     expect(store.showBase64Dialog).toBe(true)
@@ -360,6 +360,8 @@ describe('diffStore', () => {
     expect(store.textTool).toBe('xml')
     store.handleMenuAction('tools-sql')
     expect(store.textTool).toBe('sql')
+    store.handleMenuAction('tools-find-replace')
+    expect(store.showFindReplaceDialog).toBe(true)
     store.handleMenuAction('tools-crypt')
     expect(store.showCryptDialog).toBe(true)
   })
