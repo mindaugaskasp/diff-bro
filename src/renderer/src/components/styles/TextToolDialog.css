@@ -1,8 +1,11 @@
+/* Fills the panel's height so dragging the dialog taller grows the editor
+   (Monaco's automaticLayout follows); 280px is the default basis. */
 .editor {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  height: 280px;
+  flex: 1 1 280px;
+  min-height: 160px;
 }
 .status {
   margin: 0;

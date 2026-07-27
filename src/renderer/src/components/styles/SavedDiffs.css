@@ -151,20 +151,33 @@
   flex-wrap: wrap;
   gap: 5px;
   padding: var(--space-2) var(--space-3);
-  border-top: 1px solid var(--border);
-  background: var(--bg-elevated);
+  /* A brighter accent seam and a soft top-lit gradient lift the footer out of
+     the flat panel and hint it's an interactive shelf, not a status bar. */
+  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 7%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
 }
 .usb-tools-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: var(--font-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--text-dim);
+  color: var(--accent);
   margin-right: 2px;
+}
+.usb-tools-label .app-icon {
+  width: 13px;
+  height: 13px;
 }
 .usb-tool {
   flex: 0 0 auto;
-  background: none;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   color: var(--text-dim);
@@ -173,8 +186,21 @@
   font-size: var(--font-xs);
   font-weight: 600;
   font-family: inherit;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s,
+    transform 0.12s,
+    box-shadow 0.12s;
 }
 .usb-tool:hover {
-  color: var(--accent);
+  color: var(--text-on-accent);
   border-color: var(--accent);
+  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.usb-tool:active {
+  transform: translateY(0);
+  box-shadow: none;
 }

@@ -9,6 +9,7 @@ import {
 import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
+import SettingToggle from './SettingToggle.vue'
 
 const diff = useDiffStore()
 const settings = useSettingsStore()
@@ -106,14 +107,12 @@ function close() {
               <span>{{ t.label }}</span>
             </button>
           </div>
-          <label class="row toggle">
-            <input
-              type="checkbox"
-              :checked="settings.showShortcutBar"
-              @change="settings.setShowShortcutBar($event.target.checked)"
-            />
-            <span>Show the keyboard-shortcut bar over diffs</span>
-          </label>
+          <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
+            Show the keyboard-shortcut bar over diffs
+          </SettingToggle>
+          <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
+            Maximize tool &amp; snippet windows (turn off to restore each one's size)
+          </SettingToggle>
         </section>
 
         <section v-else-if="tab === 'storage'">

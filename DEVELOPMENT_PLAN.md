@@ -169,6 +169,39 @@ First run: `npm install && npm run dev`
       XML; code braces disqualify CSS/YAML). Best-effort — a miss lands on
       plaintext rather than mis-coloring. Covered by a positive-plus-negative
       test matrix in `tests/renderer/utils/detectLanguage.test.js`.
+- [x] Jira / Confluence wiki-markup syntax with a formatting toolbar (bold,
+      italic, underline, strikethrough, inline monospace, h1–h3 headings, bullet
+      / numbered lists, quote, `{code}` block, `[text|url]` link) AND a rendered
+      preview shown by default, with a Rendered/Plain toggle (Plain flips to the
+      raw-markup editor + toolbar). The markup transforms and the markup→tree
+      parser are pure, unit-tested cores (`utils/jiraMarkup.js`,
+      `utils/jiraRender.js`); the preview renders that tree as real elements with
+      text interpolation only (`JiraRendered`/`JiraInline`) — no `v-html`, so it
+      stays within the injection-sink ban. Monaco glue is a single selection-edit
+      bridge (`useMonacoInput.applySelectionEdit`). Explicit-only in the picker;
+      the `jira` Monaco grammar (`monaco-jira.js`) highlights the raw view.
+      Alignment is deliberately omitted — wiki markup has no reliable form for it.
+- [x] Resizable dialogs: BaseDialog's `resizable` prop adds drag handles on every
+      edge and corner (centered, clamped growth — pure `utils/dialogResize.js` +
+      `useDialogResize`, both unit-tested). Sizes persist per-dialog across
+      restarts via a keyed map (`settings.dialogSizes` / `dialogSize(key)`).
+      Applied to the snippet editor and the tool windows (Base64, JSON/XML/SQL
+      format, Find & Replace, Text Encryption); their editors/textareas flex to
+      absorb the extra height. A global `settings.maximizeDialogs` toggle forces
+      every resizable dialog to fill the window (handles hide while on; untoggling
+      restores each one's remembered/default size). Tool windows also `close-on-
+      backdrop` (BaseDialog opt-in via unit-tested `useBackdropClose`, which
+      ignores a drag that starts in the panel and releases outside).
+- [x] Snippet view/edit mode: an existing snippet opens read-only (name, tags and
+      Monaco all locked; the Jira toolbar hidden) so a glance can't become an
+      accidental edit; an Edit button unlocks it (`useSnippetDraft.editMode`). In
+      view mode a click outside closes the snippet; in edit mode it's inert, so
+      unsaved changes are safe.
+- [x] Matrix theme: phosphor-green-on-black CRT palette with a falling-glyph
+      "digital rain" lane under the toolbar (`MatrixRain.vue`), the counterpart to
+      the Nyan cat's lane — glyphs are digits/Latin (no katakana) so nothing tofus.
+- [x] Sidebar Tools launcher given some flare (wrench icon, accent-lit shelf,
+      lively pill buttons); dialog × turns red on hover to read as an exit.
 
 ## Phase 2.6 – UI/UX refinements ✅
 

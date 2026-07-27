@@ -183,6 +183,29 @@
   --text-on-accent: #1a0410;
 }
 
+/* Matrix — phosphor green on near-black, like a CRT terminal. Pairs with the
+   falling-glyph rain lane (MatrixRain.vue), the counterpart to Nyan's cat. */
+:root[data-theme='matrix'] {
+  --bg: #020a04;
+  --bg-panel: #061309;
+  --bg-hover: #0c2312;
+  --border: #1f7a3a;
+  --text: #c6ffd2;
+  --text-dim: #4fae6a;
+  --text-hint: #8fe8a3;
+  --accent: #00ff41;
+  --warning-bg: #ffd23f;
+  --warning-border: #d9a400;
+  --warning-text: #201700;
+  --danger-bg: #ff5470;
+  --danger-border: #e03a58;
+  --danger-text: #12040a;
+  --success-text: #00ff41;
+  --scrim: rgba(0, 8, 2, 0.6);
+  --favorite: #7cfc00;
+  --text-on-accent: #012009;
+}
+
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {

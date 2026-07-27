@@ -31,34 +31,50 @@
   font-size: var(--font-sm);
   color: var(--text-hint);
 }
-.editor {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  height: 280px;
-}
-.mmd-preview {
+/* The editor slot: grows to absorb the panel's extra height when the dialog is
+   dragged taller (Monaco's automaticLayout follows), with 280px as the default
+   basis and a floor so a small drag can't collapse it. It holds either the
+   Monaco editor or the rendered Jira preview — both fill it. */
+.editor-area {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex: 1 1 280px;
+  min-height: 160px;
+}
+.editor {
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
 }
-.mmd-preview-head {
+.editor.rendered {
+  overflow: auto;
+  background: var(--bg);
+}
+.editor-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 8px 6px 10px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--font-sm);
-  color: var(--text-dim);
+  gap: 10px;
 }
-.mmd-preview-body {
-  height: 180px;
-  padding: 8px;
-  overflow: auto;
+/* Segmented Rendered/Plain switch for the wiki-markup view. */
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.view-toggle button {
+  padding: 2px 8px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+.view-toggle button.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
 .spacer {
   flex: 1;

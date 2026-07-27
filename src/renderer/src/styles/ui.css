@@ -172,6 +172,73 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+/* Opt-in drag-resize from any edge or corner (useDialogResize). The handles are
+   invisible zones absolutely placed over the panel's padding ring, so they never
+   overlap the header/actions content that sits 16px in. Positioning context for
+   them lives here. */
+.dialog--resizable {
+  position: relative;
+}
+.dlg-resize {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+}
+.dlg-resize.n,
+.dlg-resize.s {
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+.dlg-resize.e,
+.dlg-resize.w {
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+.dlg-resize.n {
+  top: 0;
+}
+.dlg-resize.s {
+  bottom: 0;
+}
+.dlg-resize.e {
+  right: 0;
+}
+.dlg-resize.w {
+  left: 0;
+}
+/* Corners sit above the edges so their diagonal cursor wins. */
+.dlg-resize.ne,
+.dlg-resize.nw,
+.dlg-resize.se,
+.dlg-resize.sw {
+  width: 14px;
+  height: 14px;
+  z-index: 2;
+}
+.dlg-resize.nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+.dlg-resize.se {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}
+.dlg-resize.ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+.dlg-resize.sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
 .dialog-header {
   display: flex;
   align-items: center;
@@ -183,16 +250,29 @@
   font-size: var(--font-lg);
 }
 .dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   color: var(--text-dim);
   font-size: 20px;
   line-height: 1;
-  padding: 0 var(--space-1);
+  padding: 0;
   cursor: pointer;
+  transition:
+    color 0.12s,
+    background 0.12s,
+    border-color 0.12s;
 }
+/* Red on hover so the destructive/exit action reads clearly. */
 .dialog-close:hover {
-  color: var(--text);
+  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger-bg) 15%, transparent);
+  border-color: var(--danger-border);
 }
 .dialog-note {
   margin: 0;

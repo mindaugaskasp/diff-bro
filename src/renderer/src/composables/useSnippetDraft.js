@@ -48,6 +48,13 @@ export function useSnippetDraft() {
   const saving = ref(false)
   const initialTags = initial.tags
 
+  // Existing snippets open read-only ("view mode") so a glance can't become an
+  // accidental edit; the Edit button unlocks them. New snippets start editable.
+  const editMode = ref(isNew)
+  const startEditing = () => {
+    editMode.value = true
+  }
+
   // Baseline for the unsaved-changes guard: the fields as first shown. For an
   // existing snippet the real content arrives only after decryption, so the
   // baseline updates when it lands — an untouched snippet is never "dirty".
@@ -68,6 +75,9 @@ export function useSnippetDraft() {
     chosenLanguage.value === 'auto' ? detectSnippetLanguage(content.value) : chosenLanguage.value
   )
   const isMermaid = computed(() => language.value === 'mermaid')
+  // The Jira/Confluence formatting toolbar shows only for this syntax (it is
+  // explicit-only — the auto-detector never guesses it).
+  const isJira = computed(() => language.value === 'jira')
 
   function close() {
     store.editingSnippet = null
@@ -160,6 +170,9 @@ export function useSnippetDraft() {
     chosenLanguage,
     language,
     isMermaid,
+    isJira,
+    editMode,
+    startEditing,
     canFormat,
     save,
     close,

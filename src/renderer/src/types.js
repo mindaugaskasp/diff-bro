@@ -83,6 +83,36 @@
  */
 
 /**
+ * A remembered dialog panel size in px (see BaseDialog's resizable dialogs).
+ * @typedef {object} DialogSize
+ * @property {number} width
+ * @property {number} height
+ */
+
+/**
+ * An inline node in a parsed Jira/Confluence document (see utils/jiraRender).
+ * @typedef {object} JiraInlineNode
+ * @property {'text'|'strong'|'em'|'ins'|'del'|'code'|'link'} type
+ * @property {string} [value]              text / inline-code / (unused) content
+ * @property {JiraInlineNode[]} [inlines]  children for emphasis nodes
+ * @property {string} [label]              link text
+ * @property {string} [href]               link target
+ */
+
+/**
+ * A block node in a parsed Jira/Confluence document (see utils/jiraRender).
+ * @typedef {object} JiraBlock
+ * @property {'heading'|'paragraph'|'list'|'quote'|'code'} type
+ * @property {number} [level]              heading level 1–6
+ * @property {JiraInlineNode[]} [inlines]  heading text
+ * @property {JiraInlineNode[][]} [lines]  paragraph lines, each a run of inlines
+ * @property {boolean} [ordered]           numbered vs bulleted list
+ * @property {{depth: number, inlines: JiraInlineNode[]}[]} [items]  list items
+ * @property {JiraBlock[]} [children]      quote body blocks
+ * @property {string} [code]               code-block text
+ */
+
+/**
  * The tag-chips field's public surface (see useTagInput).
  * @typedef {object} TagField
  * @property {string[]} tags

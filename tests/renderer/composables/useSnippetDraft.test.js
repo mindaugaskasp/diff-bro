@@ -62,3 +62,26 @@ describe('useSnippetDraft — discard guard', () => {
     expect(snippets.editingSnippet).toBeNull() // discarded
   })
 })
+
+// Open an existing snippet for viewing (store.load is stubbed so no crypto runs).
+function existingDraft() {
+  const snippets = useSnippetStore()
+  snippets.entries = [{ id: 'x', name: 'Existing', tags: ['a'], language: 'plaintext' }]
+  snippets.load = async () => 'body text'
+  snippets.editingSnippet = { id: 'x' }
+  return { snippets, draft: useSnippetDraft() }
+}
+
+describe('useSnippetDraft — view/edit mode', () => {
+  it('a new snippet opens straight into edit mode', () => {
+    const { draft } = newDraft()
+    expect(draft.editMode.value).toBe(true)
+  })
+
+  it('an existing snippet opens read-only (view mode) and Edit unlocks it', () => {
+    const { draft } = existingDraft()
+    expect(draft.editMode.value).toBe(false)
+    draft.startEditing()
+    expect(draft.editMode.value).toBe(true)
+  })
+})

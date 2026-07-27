@@ -7,10 +7,13 @@ import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
 import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import { registerMermaidLanguage } from './monaco-mermaid'
+import { registerJiraLanguage } from './monaco-jira'
 
-// Mermaid has no built-in Monaco grammar; register ours so snippet code
-// highlights (the 'mermaid' language id comes from utils/detectLanguage.js).
+// Mermaid and Jira/Confluence wiki markup have no built-in Monaco grammar;
+// register ours so snippet code highlights (the 'mermaid' and 'jira' language
+// ids come from utils/detectLanguage.js).
 registerMermaidLanguage(monaco)
+registerJiraLanguage(monaco)
 
 // Disable the Command Palette (F1 / Ctrl+Shift+P) across every editor: the app
 // never uses it and it exposes internal editor commands we don't want reachable

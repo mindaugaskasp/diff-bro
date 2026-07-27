@@ -3,18 +3,23 @@
 // Mermaid) a live diagram preview. The draft itself (fields, syntax, save,
 // format) lives in useSnippetDraft; the tag field owns its own tags. What is
 // left here is the wiring between them.
-import { ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
+import { applyJiraAction } from '../utils/jiraMarkup'
+import { useSettingsStore } from '../stores/settingsStore'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import { useArmedAction } from '../composables/useArmedAction'
 import TagChipsField from './TagChipsField.vue'
-import MermaidDiagram from './MermaidDiagram.vue'
+import MermaidPreview from './MermaidPreview.vue'
+import JiraToolbar from './JiraToolbar.vue'
+import JiraRendered from './JiraRendered.vue'
 import BaseDialog from './BaseDialog.vue'
 import AppIcon from './AppIcon.vue'
 
 const languages = SNIPPET_LANGUAGES
+const settings = useSettingsStore()
 const container = ref(null)
 // The tag field owns the tags; this ref is how save() reads them back.
 const tagField = ref(null)
@@ -28,6 +33,9 @@ const {
   chosenLanguage,
   language,
   isMermaid,
+  isJira,
+  editMode,
+  startEditing,
   canFormat,
   save,
   confirmingDiscard,
@@ -39,7 +47,28 @@ const {
   expandDiagram
 } = useSnippetDraft()
 
-const { reset } = useMonacoInput({ container, content, language })
+const readOnly = computed(() => !editMode.value)
+const { reset, applySelectionEdit, layout } = useMonacoInput({
+  container,
+  content,
+  language,
+  readOnly
+})
+
+// Jira/Confluence snippets open on the rendered preview; "Plain" flips to the
+// raw-markup editor (the only place the toolbar edits). Non-Jira syntaxes always
+// show the editor.
+const plain = ref(false)
+// The editor may have mounted in a hidden container (rendered view was showing);
+// relayout Monaco once it becomes visible again.
+watch(plain, (isPlain) => {
+  if (isPlain) nextTick(layout)
+})
+
+// A wiki-markup toolbar button: apply its transform to the current selection.
+function applyJira(id) {
+  applySelectionEdit((model) => applyJiraAction(id, model))
+}
 
 // Clearing can discard a lot of typing, so it is a two-step confirm.
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => reset(''))
@@ -59,54 +88,61 @@ function saveSnippet() {
 <template>
   <BaseDialog
     width="560px"
-    :title="isNew ? 'New Snippet' : 'Edit Snippet'"
-    :escape-closes="false"
+    resizable
+    :min-size="{ width: 420, height: 460 }"
+    :initial-size="settings.dialogSize('snippet')"
+    :title="isNew ? 'New Snippet' : editMode ? 'Edit Snippet' : 'Snippet'"
+    :escape-closes="!editMode"
+    :close-on-backdrop="!editMode"
     @close="requestClose"
+    @resize="(s) => settings.setDialogSize('snippet', s)"
   >
     <div class="fields">
       <label class="grow">
         Name
-        <input v-model="name" type="text" spellcheck="false" placeholder="Snippet name…" />
-        <span v-if="!name.trim()" class="required-hint">A snippet needs a name to save.</span>
+        <input
+          v-model="name"
+          type="text"
+          spellcheck="false"
+          placeholder="Snippet name…"
+          :readonly="readOnly"
+        />
+        <span v-if="editMode && !name.trim()" class="required-hint">
+          A snippet needs a name to save.
+        </span>
       </label>
     </div>
-    <TagChipsField ref="tagField" :initial="initialTags" />
+    <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />
     <div class="editor-header">
-      <span>Content <span class="drop-hint">— or drop a file here</span></span>
-      <label class="lang-picker">
-        Syntax
-        <select v-model="chosenLanguage">
-          <option v-for="l in languages" :key="l.id" :value="l.id">{{ l.label }}</option>
-        </select>
-        <span v-if="chosenLanguage === 'auto'" class="lang-detected">→ {{ language }}</span>
-      </label>
+      <span>Content <span v-if="editMode" class="drop-hint">— or drop a file here</span></span>
+      <div class="editor-controls">
+        <div v-if="isJira" class="view-toggle" role="group" aria-label="View mode">
+          <button type="button" :class="{ active: !plain }" @click="plain = false">Rendered</button>
+          <button type="button" :class="{ active: plain }" @click="plain = true">Plain</button>
+        </div>
+        <label class="lang-picker">
+          Syntax
+          <select v-model="chosenLanguage" :disabled="readOnly">
+            <option v-for="l in languages" :key="l.id" :value="l.id">{{ l.label }}</option>
+          </select>
+          <span v-if="chosenLanguage === 'auto'" class="lang-detected">→ {{ language }}</span>
+        </label>
+      </div>
     </div>
+    <JiraToolbar v-if="isJira && plain && editMode" @action="applyJira" />
     <div
-      ref="container"
-      class="editor"
+      class="editor-area"
       @dragover.capture.prevent.stop
-      @drop.capture.prevent.stop="onDropFile"
-    ></div>
-    <p v-if="!content.trim()" class="required-hint">A snippet needs content to save.</p>
-    <div v-if="isMermaid" class="mmd-preview">
-      <div class="mmd-preview-head">
-        <span>Diagram preview</span>
-        <button
-          type="button"
-          class="btn btn-sm btn-ghost"
-          :disabled="!content.trim()"
-          title="Open the full, resizable diagram viewer"
-          @click="expandDiagram"
-        >
-          <AppIcon name="expand" /> Expand
-        </button>
-      </div>
-      <div class="mmd-preview-body">
-        <MermaidDiagram :code="content" />
-      </div>
+      @drop.capture.prevent.stop="editMode && onDropFile($event)"
+    >
+      <div v-show="!isJira || plain" ref="container" class="editor"></div>
+      <JiraRendered v-if="isJira && !plain" class="editor rendered" :content="content" />
     </div>
+    <p v-if="editMode && !content.trim()" class="required-hint">A snippet needs content to save.</p>
+    <MermaidPreview v-if="isMermaid" :code="content" @expand="expandDiagram" />
     <template #actions>
       <button
+        v-if="editMode"
         class="btn btn-sm btn-ghost"
         :disabled="!canFormat"
         :title="
@@ -127,6 +163,7 @@ function saveSnippet() {
         Copy
       </button>
       <button
+        v-if="editMode"
         class="btn btn-sm btn-ghost"
         :class="{ armed: clearArmed }"
         :disabled="!content"
@@ -140,14 +177,18 @@ function saveSnippet() {
         {{ clearArmed ? 'Confirm clear' : 'Clear' }}
       </button>
       <span class="spacer" />
+      <button v-if="!editMode" class="btn btn-primary" @click="startEditing">
+        <AppIcon name="edit" /> Edit
+      </button>
       <button
+        v-else
         class="btn btn-primary"
         :disabled="!name.trim() || !content.trim() || saving"
         @click="saveSnippet"
       >
         Save
       </button>
-      <button class="btn btn-ghost" @click="requestClose">Cancel</button>
+      <button class="btn btn-ghost" @click="requestClose">{{ editMode ? 'Cancel' : 'Close' }}</button>
     </template>
 
     <!-- Unsaved-changes guard: shown over the actions when a dirty draft is

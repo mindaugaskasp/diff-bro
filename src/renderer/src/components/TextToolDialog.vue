@@ -5,6 +5,7 @@
 import { computed, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { TEXT_TOOLS, toolStatusText } from '../utils/textTools'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
@@ -17,6 +18,7 @@ const props = defineProps({
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
+const settings = useSettingsStore()
 const tool = computed(() => TEXT_TOOLS[props.tool])
 
 const container = ref(null)
@@ -51,7 +53,16 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="560px" :title="tool.title" @close="close">
+  <BaseDialog
+    width="560px"
+    resizable
+    close-on-backdrop
+    :min-size="{ width: 420, height: 360 }"
+    :initial-size="settings.dialogSize('texttool')"
+    :title="tool.title"
+    @close="close"
+    @resize="(s) => settings.setDialogSize('texttool', s)"
+  >
     <div
       ref="container"
       class="editor"

@@ -1,11 +1,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
 
 const store = useDiffStore()
+const settings = useSettingsStore()
 const input = ref('')
 const { onDropFile } = useFileTextDrop((text) => {
   input.value = text
@@ -70,7 +72,15 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="560px" title="Encrypt / Decrypt Text" @close="close">
+  <BaseDialog
+    width="560px"
+    resizable
+    close-on-backdrop
+    :initial-size="settings.dialogSize('encrypt')"
+    title="Encrypt / Decrypt Text"
+    @close="close"
+    @resize="(s) => settings.setDialogSize('encrypt', s)"
+  >
     <p class="dialog-note">
       Local only — the passphrase and text never leave this machine and are not saved anywhere.
       Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.

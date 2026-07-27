@@ -1,0 +1,40 @@
+/* A compact row of icon/label buttons above the editor. It is a band, so the
+   buttons centre vertically by construction rather than by fudged padding. */
+.jira-toolbar {
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.jira-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+}
+.jira-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+/* Heading buttons carry a short label (H1/H2/H3) instead of an icon. */
+.jira-btn-text {
+  width: auto;
+  padding: 0 var(--space-2);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  font-weight: 600;
+}

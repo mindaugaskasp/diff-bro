@@ -1,0 +1,14 @@
+.ji-mono {
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  /* token-exempt: relative so inline code scales with its surrounding text size */
+  font-size: 0.92em;
+}
+/* A link is shown styled but inert — the app never navigates (offline). */
+.ji-link {
+  color: var(--accent);
+  text-decoration: underline;
+}

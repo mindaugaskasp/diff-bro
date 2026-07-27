@@ -109,7 +109,8 @@ jobs:
       # package.json) by writing it in before packaging. The installer FILENAME
       # is intentionally version-less (see electron-builder.yml artifactName) so
       # the "download latest" URLs stay stable, so this only affects the version
-      # the app reports, not the filename. No commit; CI checkout is disposable.
+      # the app reports, not the filename. No commit here — this checkout is
+      # disposable; the persistent bump back to the repo is the sync-version job.
       - name: Sync version to the release tag
         shell: bash
         run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
@@ -146,6 +147,48 @@ jobs:
           # tag push is a real release, never a draft/prerelease.
           draft: false
           prerelease: false
+
+  # Persist the released version back to the repo. The build job writes the tag
+  # version into its DISPOSABLE checkout for packaging; this is the durable
+  # counterpart, so package.json (and the lockfile) on the default branch always
+  # reflect the latest release tag instead of drifting behind it. Runs only after
+  # the release is actually published. `[skip ci]` keeps this trivial bump from
+  # re-triggering the CI workflow. (If the default branch is protected against
+  # direct pushes, allow github-actions[bot] to bypass it, or swap in a PAT.)
+  sync-version:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - run: npm install -g npm@11
+
+      # Only touches package.json + package-lock.json (no node_modules needed);
+      # --allow-same-version makes a re-run a clean no-op.
+      - name: Bump package.json and lockfile to the release tag
+        shell: bash
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      - name: Commit and push the bump if the version changed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "package.json already at ${GITHUB_REF_NAME#v} — nothing to commit."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json
+          git commit -m "chore: sync version to ${GITHUB_REF_NAME} [skip ci]"
+          git push origin HEAD:"${{ github.event.repository.default_branch }}"
 
   # Keep the Homebrew cask in step with the release so `brew upgrade` works.
   # Regenerates the cask (version + sha256 of the just-released DMG) and pushes

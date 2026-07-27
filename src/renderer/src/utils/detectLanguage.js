@@ -19,6 +19,7 @@ export const SNIPPET_LANGUAGES = [
   { id: 'json', label: 'JSON' },
   { id: 'sql', label: 'SQL' },
   { id: 'markdown', label: 'Markdown' },
+  { id: 'jira', label: 'Jira / Confluence' },
   { id: 'yaml', label: 'YAML / Kubernetes' },
   { id: 'python', label: 'Python' },
   { id: 'shell', label: 'Bash / Shell' },

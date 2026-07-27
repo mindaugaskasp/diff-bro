@@ -1,0 +1,64 @@
+/* Formatted preview of wiki markup. Read-only text, styled to resemble how Jira
+   / Confluence renders it. Colors and sizes come from tokens so it tracks both
+   themes. */
+.jira-rendered {
+  padding: var(--space-3) var(--space-4);
+  overflow: auto;
+  color: var(--text);
+  font-size: var(--font-md);
+  line-height: 1.55;
+}
+.ji-empty {
+  margin: 0;
+  color: var(--text-hint);
+}
+.jira-rendered > :first-child {
+  margin-top: 0;
+}
+.ji-h {
+  margin: 0.7em 0 0.35em;
+  line-height: 1.25;
+  font-weight: 600;
+}
+h1.ji-h {
+  font-size: var(--font-2xl);
+}
+h2.ji-h {
+  font-size: var(--font-xl);
+}
+h3.ji-h {
+  font-size: var(--font-lg);
+}
+h4.ji-h,
+h5.ji-h,
+h6.ji-h {
+  font-size: var(--font-md);
+  color: var(--text-dim);
+}
+.ji-p {
+  margin: 0.5em 0;
+}
+.ji-list {
+  margin: 0.4em 0;
+  padding-inline-start: 1.4em;
+}
+.ji-list li {
+  margin: 0.15em 0;
+}
+.ji-quote {
+  margin: 0.5em 0;
+  padding: 0.2em 0.9em;
+  border-inline-start: 3px solid var(--accent);
+  color: var(--text-dim);
+}
+.ji-code {
+  margin: 0.5em 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow: auto;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+  white-space: pre-wrap;
+}

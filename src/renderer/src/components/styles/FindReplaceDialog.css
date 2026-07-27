@@ -32,6 +32,11 @@
 .fr-count {
   color: var(--text-dim);
 }
+/* Input and output grow to share the panel's extra height when resized taller. */
+textarea {
+  flex: 1 1 90px;
+  min-height: 60px;
+}
 .output-header {
   display: flex;
   align-items: center;

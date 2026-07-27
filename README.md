@@ -40,12 +40,18 @@ a hard promise: it never touches the network.
 - **Snippets** — an encrypted, tagged text library with per-language
   highlighting and live **Mermaid** diagram rendering, in a viewer you can drag
   bigger from any corner (and that fills the window when the app goes fullscreen).
+  A **Jira / Confluence** wiki-markup syntax adds a formatting toolbar (bold,
+  headings, lists, quote, `{code}`, links) and a rendered preview, with a
+  Rendered/Plain toggle.
+- **Resizable dialogs** — the snippet editor and the tool windows resize from any
+  edge or corner and remember their size between sessions (or a one-click setting
+  maximizes them all). Existing snippets open read-only until you press Edit.
 - **Tools** — Base64, JSON / XML / SQL format + validate, find & replace
   (characters, words, or regex), and passphrase text encryption.
-- **Yours to arrange** — eight themes (incl. Nord, Sepia, and a playful Nyan with
-  a reward cat), one tag namespace shared across diffs and snippets, a sidebar
-  that filters by section and tag, and adjustable limits, all remembered between
-  sessions.
+- **Yours to arrange** — nine themes (incl. Nord, Sepia, a playful Nyan with a
+  reward cat, and a Matrix digital-rain theme), one tag namespace shared across
+  diffs and snippets, a sidebar that filters by section and tag, and adjustable
+  limits, all remembered between sessions.
 
 <p align="center">
   <img src="docs/screenshots/spreadsheet-diff.png" width="820" alt="Two Excel files compared as aligned grids: changed cells boxed, a removed row and an added row shown as striped gaps, with per-sheet change counts">

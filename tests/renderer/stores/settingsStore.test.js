@@ -159,4 +159,51 @@ describe('settingsStore', () => {
     reloaded.moveSection('snippets', -1)
     expect(reloaded.sectionOrder).toEqual(['saved', 'snippets', 'external'])
   })
+
+  it('remembers a keyed dialog size across reloads', () => {
+    const s = useSettingsStore()
+    expect(s.dialogSize('snippet')).toBeNull() // default: use the dialog's own width
+    s.setDialogSize('snippet', { width: 720, height: 560 })
+    expect(s.dialogSize('snippet')).toEqual({ width: 720, height: 560 })
+    setActivePinia(createPinia())
+    expect(useSettingsStore().dialogSize('snippet')).toEqual({ width: 720, height: 560 })
+  })
+
+  it('persists the maximize-dialogs toggle', () => {
+    const s = useSettingsStore()
+    expect(s.maximizeDialogs).toBe(false)
+    s.setMaximizeDialogs(true)
+    expect(s.maximizeDialogs).toBe(true)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().maximizeDialogs).toBe(true)
+  })
+
+  it('keeps each dialog key independent', () => {
+    const s = useSettingsStore()
+    s.setDialogSize('snippet', { width: 720, height: 560 })
+    s.setDialogSize('base64', { width: 640, height: 480 })
+    expect(s.dialogSize('snippet')).toEqual({ width: 720, height: 560 })
+    expect(s.dialogSize('base64')).toEqual({ width: 640, height: 480 })
+    expect(s.dialogSize('unknown')).toBeNull()
+  })
+
+  it('clamps a stored size to its bounds and rejects partial ones', () => {
+    const s = useSettingsStore()
+    s.setDialogSize('snippet', { width: 10, height: 99999 }) // below min / above max
+    expect(s.dialogSize('snippet')).toEqual({ width: 320, height: 3000 })
+    s.setDialogSize('snippet', { width: 800 }) // missing height — ignored
+    expect(s.dialogSize('snippet')).toEqual({ width: 320, height: 3000 })
+  })
+
+  it('drops a corrupt persisted dialog size but keeps valid siblings', () => {
+    localStorage.setItem(
+      'diffbro.settings',
+      JSON.stringify({
+        dialogSizes: { snippet: { width: 'wide', height: 400 }, base64: { width: 600, height: 500 } }
+      })
+    )
+    const s = useSettingsStore()
+    expect(s.dialogSize('snippet')).toBeNull()
+    expect(s.dialogSize('base64')).toEqual({ width: 600, height: 500 })
+  })
 })

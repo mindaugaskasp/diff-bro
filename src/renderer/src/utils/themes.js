@@ -54,6 +54,12 @@ export const THEMES = [
     label: 'Nyan',
     dark: true,
     swatch: { bg: '#231033', accent: '#ff2ecb', add: '#63ff4d', del: '#ff5470' }
+  },
+  {
+    id: 'matrix',
+    label: 'Matrix',
+    dark: true,
+    swatch: { bg: '#020a04', accent: '#00ff41', add: '#00ff41', del: '#ff5470' }
   }
 ]
 

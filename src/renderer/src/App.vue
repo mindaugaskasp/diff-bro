@@ -9,6 +9,7 @@ import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
 import NyanLane from './components/NyanLane.vue'
+import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
 import MenuBar from './components/MenuBar.vue'
@@ -86,6 +87,8 @@ const {
     <!-- Nyan theme only: a slim rainbow lane where the reward cat flies on a
          match/save. Self-contained; absent in every other theme. -->
     <NyanLane v-if="store.theme === 'nyan'" />
+    <!-- Matrix theme only: the digital-rain counterpart to the Nyan lane. -->
+    <MatrixRain v-else-if="store.theme === 'matrix'" />
 
     <div class="body">
       <SavedDiffs />

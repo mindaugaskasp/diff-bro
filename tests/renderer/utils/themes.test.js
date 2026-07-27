@@ -9,7 +9,7 @@ import {
 } from '../../../src/renderer/src/utils/themes'
 
 describe('themes registry', () => {
-  it('offers the five named themes, Light first and the default', () => {
+  it('offers the named themes, Light first and the default', () => {
     expect(THEMES.map((t) => t.id)).toEqual([
       'light',
       'dark',
@@ -18,7 +18,8 @@ describe('themes registry', () => {
       'contrast',
       'nord',
       'sepia',
-      'nyan'
+      'nyan',
+      'matrix'
     ])
     expect(DEFAULT_THEME).toBe('light')
     expect(THEMES[0].id).toBe(DEFAULT_THEME)
@@ -26,7 +27,7 @@ describe('themes registry', () => {
 
   it('marks each theme dark- or light-ground (drives the editor/diagram theme)', () => {
     const dark = THEMES.filter((t) => t.dark).map((t) => t.id)
-    expect(dark).toEqual(['dark', 'neon', 'nord', 'nyan'])
+    expect(dark).toEqual(['dark', 'neon', 'nord', 'nyan', 'matrix'])
     expect(isDarkTheme('neon')).toBe(true)
     expect(isDarkTheme('solar')).toBe(false)
     expect(isDarkTheme('nope')).toBe(false)

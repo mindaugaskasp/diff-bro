@@ -128,5 +128,62 @@ export const ICONS = {
     { t: 'path', d: 'M3 10h18M3 15h18M9 4v16M15 4v16' }
   ],
   // Angle brackets — marks code/markup formats (JSON, XML, and the like).
-  code: [{ t: 'path', d: 'm8 8-4 4 4 4M16 8l4 4-4 4' }]
+  code: [{ t: 'path', d: 'm8 8-4 4 4 4M16 8l4 4-4 4' }],
+  // Rich-text formatting toolbar (Jira/Confluence wiki markup).
+  bold: [
+    { t: 'path', d: 'M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z' },
+    { t: 'path', d: 'M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z' }
+  ],
+  italic: [
+    { t: 'line', x1: 19, y1: 4, x2: 10, y2: 4 },
+    { t: 'line', x1: 14, y1: 20, x2: 5, y2: 20 },
+    { t: 'line', x1: 15, y1: 4, x2: 9, y2: 20 }
+  ],
+  underline: [
+    { t: 'path', d: 'M6 3v7a6 6 0 0 0 12 0V3' },
+    { t: 'line', x1: 4, y1: 21, x2: 20, y2: 21 }
+  ],
+  strikethrough: [
+    { t: 'path', d: 'M16 4H9a3 3 0 0 0-2.83 4' },
+    { t: 'path', d: 'M14 12a4 4 0 0 1 0 8H6' },
+    { t: 'line', x1: 4, y1: 12, x2: 20, y2: 12 }
+  ],
+  // { } braces — a {code}/{quote} block.
+  braces: [
+    { t: 'path', d: 'M7 4a2 2 0 0 0-2 2v2a2 2 0 0 1-2 2 2 2 0 0 1 2 2v2a2 2 0 0 0 2 2' },
+    { t: 'path', d: 'M17 4a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0-2 2v2a2 2 0 0 1-2 2' }
+  ],
+  quote: [
+    { t: 'line', x1: 4, y1: 5, x2: 4, y2: 19 },
+    { t: 'line', x1: 9, y1: 7, x2: 20, y2: 7 },
+    { t: 'line', x1: 9, y1: 12, x2: 20, y2: 12 },
+    { t: 'line', x1: 9, y1: 17, x2: 16, y2: 17 }
+  ],
+  list: [
+    { t: 'line', x1: 9, y1: 6, x2: 20, y2: 6 },
+    { t: 'line', x1: 9, y1: 12, x2: 20, y2: 12 },
+    { t: 'line', x1: 9, y1: 18, x2: 20, y2: 18 },
+    { t: 'circle', cx: 4.5, cy: 6, r: 1.1, fill: true },
+    { t: 'circle', cx: 4.5, cy: 12, r: 1.1, fill: true },
+    { t: 'circle', cx: 4.5, cy: 18, r: 1.1, fill: true }
+  ],
+  'list-ordered': [
+    { t: 'line', x1: 10, y1: 6, x2: 21, y2: 6 },
+    { t: 'line', x1: 10, y1: 12, x2: 21, y2: 12 },
+    { t: 'line', x1: 10, y1: 18, x2: 21, y2: 18 },
+    { t: 'path', d: 'M4 4h1v4' },
+    { t: 'path', d: 'M4 8h2' },
+    { t: 'path', d: 'M4 14h2v1.5H4V17h2' }
+  ],
+  link: [
+    { t: 'path', d: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' },
+    { t: 'path', d: 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' }
+  ],
+  // Wrench — marks the sidebar Tools launcher.
+  wrench: [
+    {
+      t: 'path',
+      d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'
+    }
+  ]
 }

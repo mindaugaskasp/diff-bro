@@ -89,3 +89,13 @@
   color: color-mix(in srgb, var(--tc) 72%, var(--text));
   font-family: inherit;
 }
+
+/* View mode: the tag field is a static chip row — no click affordance, and a
+   muted "Default" when the snippet carries no tags. */
+.tagfield.ro {
+  cursor: default;
+}
+.tag-empty {
+  color: var(--text-hint);
+  font-size: var(--font-sm);
+}

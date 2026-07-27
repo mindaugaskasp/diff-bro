@@ -2,12 +2,14 @@
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { base64Decode, base64Encode } from '../utils/base64'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
+const settings = useSettingsStore()
 const input = ref('')
 const { onDropFile } = useFileTextDrop((text) => {
   input.value = text
@@ -52,7 +54,15 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="520px" title="Base64 Encode / Decode" @close="close">
+  <BaseDialog
+    width="520px"
+    resizable
+    close-on-backdrop
+    :initial-size="settings.dialogSize('base64')"
+    title="Base64 Encode / Decode"
+    @close="close"
+    @resize="(s) => settings.setDialogSize('base64', s)"
+  >
     <label>
       Input
       <textarea

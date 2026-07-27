@@ -155,7 +155,7 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
       />
     </div>
     <div class="usb-tools band">
-      <span class="usb-tools-label">Tools</span>
+      <span class="usb-tools-label"><AppIcon name="wrench" /> Tools</span>
       <button
         v-for="t in TOOLS"
         :key="t.label"

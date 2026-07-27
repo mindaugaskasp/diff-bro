@@ -28,6 +28,12 @@ export const FILE_TYPE_LIMITS = {
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 
+// Bounds for a remembered resizable-dialog size (see dialogSizes). The min keeps
+// a dragged-tiny dialog usable; the max stops a stale/hand-edited file from
+// restoring an absurd box (the CSS 92vw/92vh cap still applies on top).
+export const DIALOG_SIZE_MIN = { width: 320, height: 240 }
+export const DIALOG_SIZE_MAX = { width: 3000, height: 3000 }
+
 function defaultFileLimits() {
   const out = {}
   for (const [type, spec] of Object.entries(FILE_TYPE_LIMITS)) out[type] = spec.default
@@ -47,6 +53,13 @@ export const DEFAULT_SETTINGS = {
   rotateThemeDaily: false,
   fileSizeLimitsMb: defaultFileLimits(),
   maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
+  // Remembered sizes of resizable dialogs, keyed by a stable dialog id
+  // ({ [key]: { width, height } } in px). Set only by a user drag-resize;
+  // survives restart. A dialog absent here opens at its default size.
+  dialogSizes: {},
+  // When on, every resizable dialog opens filling the window; turning it off
+  // restores each dialog's remembered (or default) size.
+  maximizeDialogs: false,
   // Whether the one-time first-run example snippet decision has been made (see
   // App.vue). Recorded for everyone once, so the example is never re-seeded.
   examplesSeeded: false
@@ -85,6 +98,27 @@ function readFileLimits(parsed) {
   return out
 }
 
+// A remembered size is only honoured when both dimensions are finite and within
+// bounds; anything else (missing, partial, corrupt) is dropped so the dialog
+// opens at its default rather than a broken box.
+function sanitizeSize(s) {
+  if (!s || typeof s !== 'object') return null
+  const width = clampNumber(s.width, null, DIALOG_SIZE_MIN.width, DIALOG_SIZE_MAX.width)
+  const height = clampNumber(s.height, null, DIALOG_SIZE_MIN.height, DIALOG_SIZE_MAX.height)
+  if (width == null || height == null) return null
+  return { width, height }
+}
+
+function readDialogSizes(parsed) {
+  if (!parsed.dialogSizes || typeof parsed.dialogSizes !== 'object') return {}
+  const out = {}
+  for (const [key, val] of Object.entries(parsed.dialogSizes)) {
+    const size = sanitizeSize(val)
+    if (size) out[key] = size
+  }
+  return out
+}
+
 function readState() {
   let parsed
   try {
@@ -111,6 +145,8 @@ function readState() {
       16,
       MAX_SNIPPET_SIZE_KB_CAP
     ),
+    dialogSizes: readDialogSizes(parsed),
+    maximizeDialogs: parsed.maximizeDialogs === true,
     examplesSeeded: parsed.examplesSeeded === true
   }
 }
@@ -121,6 +157,8 @@ export const useSettingsStore = defineStore('settings', {
     // Sections in the user's chosen order (always all three, sanitized).
     orderedSections: (s) => s.sectionOrder,
     maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024,
+    // The remembered size for a resizable dialog, or null for its default.
+    dialogSize: (s) => (key) => s.dialogSizes[key] ?? null,
     // The configured MB limit for a file type (falls back to its default).
     fileSizeLimitMb: (s) => (type) =>
       s.fileSizeLimitsMb[type] ?? FILE_TYPE_LIMITS[type]?.default ?? 10,
@@ -143,6 +181,8 @@ export const useSettingsStore = defineStore('settings', {
           // text limit through the pre-per-type key.
           maxComparisonFileMb: this.fileSizeLimitsMb.text,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
+          dialogSizes: this.dialogSizes,
+          maximizeDialogs: this.maximizeDialogs,
           examplesSeeded: this.examplesSeeded
         })
       )
@@ -201,6 +241,10 @@ export const useSettingsStore = defineStore('settings', {
       this.rotateThemeDaily = !!value
       this.persist()
     },
+    setMaximizeDialogs(value) {
+      this.maximizeDialogs = !!value
+      this.persist()
+    },
     setFileSizeLimitMb(type, value) {
       const spec = FILE_TYPE_LIMITS[type]
       if (!spec) return
@@ -208,6 +252,15 @@ export const useSettingsStore = defineStore('settings', {
         ...this.fileSizeLimitsMb,
         [type]: clampNumber(value, spec.default, 1, spec.cap)
       }
+      this.persist()
+    },
+    // Remember a resizable dialog's size after a user drag-resize, keyed by a
+    // stable dialog id. Bounds are clamped here too, so a bogus value can never
+    // reach persistence.
+    setDialogSize(key, size) {
+      const clamped = sanitizeSize(size)
+      if (!clamped) return
+      this.dialogSizes = { ...this.dialogSizes, [key]: clamped }
       this.persist()
     },
     setMaxSnippetSizeKb(value) {

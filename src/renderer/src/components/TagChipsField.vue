@@ -14,7 +14,9 @@ const props = defineProps({
     type: Array,
     default: () => [],
     validator: (v) => v.every((t) => typeof t === 'string')
-  }
+  },
+  // View mode: show the tags as static chips (no input, no remove, no suggestions).
+  readonly: { type: Boolean, default: false }
 })
 const store = useSnippetStore()
 // reactive() so the template reads field.tags / .canAddMore without .value.
@@ -28,12 +30,16 @@ defineExpose(field)
     <div class="field-label">
       Tags <span class="hint">— up to {{ MAX_TAGS }}, or leave empty for Default</span>
     </div>
-    <div class="tagfield" @click="field.inputEl?.focus()">
+    <div class="tagfield" :class="{ ro: readonly }" @click="!readonly && field.inputEl?.focus()">
       <span v-for="t in field.tags" :key="t" class="etag" :style="{ '--tc': field.colorFor(t) }">
         <TagGlyph :color="field.colorFor(t)" />{{ t }}
-        <button type="button" class="x" @click.stop="field.remove(t)"><AppIcon name="x" /></button>
+        <button v-if="!readonly" type="button" class="x" @click.stop="field.remove(t)">
+          <AppIcon name="x" />
+        </button>
       </span>
+      <span v-if="readonly && !field.tags.length" class="tag-empty">Default</span>
       <input
+        v-if="!readonly"
         :ref="(el) => (field.inputEl = el)"
         v-model="field.input"
         class="taginput"
@@ -44,11 +50,11 @@ defineExpose(field)
         @blur="field.onBlur"
       />
     </div>
-    <div class="cap" :class="{ full: !field.canAddMore }">
+    <div v-if="!readonly" class="cap" :class="{ full: !field.canAddMore }">
       {{ field.tags.length }} of {{ MAX_TAGS
       }}{{ field.canAddMore ? '' : ' — remove one to add another' }}
     </div>
-    <div v-if="field.suggestions.length && field.canAddMore" class="suggest">
+    <div v-if="!readonly && field.suggestions.length && field.canAddMore" class="suggest">
       <button
         v-for="s in field.suggestions"
         :key="s"

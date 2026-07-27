@@ -5,12 +5,14 @@
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { replaceText } from '../utils/findReplace'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
+const settings = useSettingsStore()
 const input = ref('')
 const { onDropFile } = useFileTextDrop((text) => (input.value = text))
 const find = ref('')
@@ -54,7 +56,15 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="560px" title="Find & Replace" @close="close">
+  <BaseDialog
+    width="560px"
+    resizable
+    close-on-backdrop
+    :initial-size="settings.dialogSize('findreplace')"
+    title="Find & Replace"
+    @close="close"
+    @resize="(s) => settings.setDialogSize('findreplace', s)"
+  >
     <label>
       Input
       <textarea
