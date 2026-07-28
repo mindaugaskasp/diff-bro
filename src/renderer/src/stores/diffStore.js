@@ -113,6 +113,7 @@ const MENU_ACTIONS = {
   'copy-diff': (s) => s.copyDiff(),
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
+  'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
   'toggle-theme': (s) => s.toggleTheme(),
@@ -295,6 +296,23 @@ export const useDiffStore = defineStore('diff', {
       }
       const res = await window.api.exportDiffHtml({ html, name: `${l.name}-vs-${r.name}` })
       if (res?.ok) this.showNotice('Exported diff to HTML.')
+    },
+    // Orchestrates the snippet import (the work + validation live in the snippet
+    // store / parser) and reports the outcome through the shared notice.
+    async importSnippets() {
+      const res = await useSnippetStore().importFromFile()
+      if (res?.cancelled) return
+      if (res?.error) {
+        this.showNotice(
+          res.error === 'too-large'
+            ? 'That file is too large to import.'
+            : 'Could not read that file.'
+        )
+        return
+      }
+      this.showNotice(
+        res.count ? `Imported ${res.count} snippet(s).` : 'No snippets found to import.'
+      )
     },
     // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
     // loaded starts fresh on the left; 1 otherwise fills the first empty side.

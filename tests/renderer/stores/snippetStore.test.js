@@ -484,3 +484,30 @@ describe('snippetStore — tags model', () => {
     expect(store.entries[0].tags).toEqual(['ok'])
   })
 })
+
+describe('importFromFile', () => {
+  it('imports VS Code snippets into the encrypted store, decryptable again', async () => {
+    const store = useSnippetStore()
+    window.api.openFile = async () => ({
+      name: 'x.code-snippets.json',
+      content: JSON.stringify({ Log: { body: ['a', 'b'] }, Hi: { body: 'hello' } })
+    })
+    const res = await store.importFromFile()
+    expect(res).toEqual({ count: 2 })
+    const names = store.entries.map((e) => e.name)
+    expect(names).toContain('Log')
+    expect(names).toContain('Hi')
+    const log = store.entries.find((e) => e.name === 'Log')
+    expect(await store.load(log.id)).toBe('a\nb')
+  })
+
+  it('reports cancellation and the size guard without adding anything', async () => {
+    const store = useSnippetStore()
+    const before = store.entries.length
+    window.api.openFile = async () => null
+    expect(await store.importFromFile()).toEqual({ cancelled: true })
+    window.api.openFile = async () => ({ name: 'big.txt', content: 'x'.repeat(1_000_001) })
+    expect(await store.importFromFile()).toEqual({ error: 'too-large' })
+    expect(store.entries.length).toBe(before)
+  })
+})

@@ -84,6 +84,7 @@ export function installMenu() {
           click: () => sendToFocused('import-shared')
         },
         { label: 'Export Diff as HTML…', click: () => sendToFocused('export-html') },
+        { label: 'Import Snippets…', click: () => sendToFocused('import-snippets') },
         { type: 'separator' },
         { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => sendToFocused('settings') },
         { type: 'separator' },
