@@ -111,6 +111,7 @@ const MENU_ACTIONS = {
   'config-backup': (s) => (s.configMode = 'backup'),
   'config-restore': (s) => (s.configMode = 'restore'),
   settings: (s) => (s.showSettingsDialog = true),
+  'command-palette': (s) => (s.showCommandPalette = true),
   'tools-base64': (s) => (s.showBase64Dialog = true),
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
@@ -187,6 +188,8 @@ export const useDiffStore = defineStore('diff', {
     showSettingsDialog: false,
     // Help → Keyboard Shortcuts dialog visibility.
     showShortcutsDialog: false,
+    // ⌘K-style command palette visibility.
+    showCommandPalette: false,
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
     // Content last dismissed per side, so the format-hint banner stays gone until

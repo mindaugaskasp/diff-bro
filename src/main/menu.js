@@ -130,6 +130,12 @@ export function installMenu() {
       label: 'View',
       submenu: [
         {
+          label: 'Command Palette…',
+          accelerator: 'CmdOrCtrl+Shift+P',
+          click: () => sendToFocused('command-palette')
+        },
+        { type: 'separator' },
+        {
           label: 'Toggle Split View',
           accelerator: 'CmdOrCtrl+\\',
           click: () => sendToFocused('toggle-split')

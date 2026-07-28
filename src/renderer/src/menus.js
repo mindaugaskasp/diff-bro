@@ -21,7 +21,7 @@ export function buildMenus(store) {
         { sep: true },
         { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },
         { sep: true },
-        { label: 'Quit', run: () => window.api.quit() }
+        { label: 'Quit', paletteHidden: true, run: () => window.api.quit() }
       ]
     },
     {
@@ -45,6 +45,13 @@ export function buildMenus(store) {
       label: 'View',
       items: [
         {
+          label: 'Command Palette…',
+          keys: `${MOD}+Shift+P`,
+          paletteHidden: true,
+          run: () => store.handleMenuAction('command-palette')
+        },
+        { sep: true },
+        {
           label: 'Toggle Split View',
           keys: `${MOD}+\\`,
           run: () => store.handleMenuAction('toggle-split')
@@ -58,11 +65,26 @@ export function buildMenus(store) {
           run: () => window.api.quickLookToggle()
         },
         { sep: true },
-        { label: 'Zoom In', keys: `${MOD}++`, run: () => window.api.zoom(1) },
-        { label: 'Zoom Out', keys: `${MOD}+-`, run: () => window.api.zoom(-1) },
-        { label: 'Reset Zoom', keys: `${MOD}+0`, run: () => window.api.zoom(0) },
+        { label: 'Zoom In', keys: `${MOD}++`, paletteHidden: true, run: () => window.api.zoom(1) },
+        {
+          label: 'Zoom Out',
+          keys: `${MOD}+-`,
+          paletteHidden: true,
+          run: () => window.api.zoom(-1)
+        },
+        {
+          label: 'Reset Zoom',
+          keys: `${MOD}+0`,
+          paletteHidden: true,
+          run: () => window.api.zoom(0)
+        },
         { sep: true, devOnly: true },
-        { label: 'Toggle Developer Tools', devOnly: true, run: () => window.api.toggleDevTools() }
+        {
+          label: 'Toggle Developer Tools',
+          devOnly: true,
+          paletteHidden: true,
+          run: () => window.api.toggleDevTools()
+        }
       ]
     },
     {
