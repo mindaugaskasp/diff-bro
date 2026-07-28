@@ -1,11 +1,6 @@
-// Secure diff sharing — Electron glue (dialogs, key persistence, IPC).
-// All actual crypto lives in sealing.js, which is pure and unit-tested.
-//
-// Every install has two keypairs (generated on first use, private halves
-// wrapped by the OS keychain via safeStorage). Peers exchange .diffbrokey
-// files (public halves only) out of band and import them via "Add Trusted
-// Key" — the exchange must happen in BOTH directions before sharing works,
-// because a share file is addressed to one specific recipient.
+// Secure diff sharing — Electron glue (crypto is in sealing.js). Each install
+// has two keypairs (private halves wrapped by the OS keychain); peers exchange
+// public .diffbrokey files both ways before a (single-recipient) share works.
 import { clipboard, dialog, ipcMain, safeStorage } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join } from 'path'
@@ -36,11 +31,9 @@ const privPath = () => dataFile('identity.key')
 const pubPath = () => dataFile('identity.pub')
 const trustPath = () => dataFile('trusted-keys.json')
 
-// The identity files exist but can't be loaded right now (locked keychain,
-// DPAPI error after a profile move, corruption). Minting a fresh identity here
-// would silently rotate this install's public key — every peer's trust would
-// break with no signal to either side — so we surface this instead and never
-// overwrite the existing files.
+// Identity present but unloadable (locked keychain, corruption). Surface it,
+// never regenerate — that would silently rotate the public key and break every
+// peer's trust.
 class IdentityUnavailable extends Error {
   constructor() {
     super('identity-unavailable')
@@ -49,16 +42,14 @@ class IdentityUnavailable extends Error {
 }
 
 export async function getIdentity() {
-  // Read both halves without letting one missing file mask the other's state.
   const [privRes, pubRes] = await Promise.allSettled([
     readFile(privPath()),
     readFile(pubPath(), 'utf-8')
   ])
   const missing = (r) => r.status === 'rejected' && r.reason?.code === 'ENOENT'
 
-  // Only a truly absent identity (BOTH halves missing) is "first run". A
-  // partial or unreadable state must never trigger regeneration, or we'd
-  // overwrite a recoverable key.
+  // Only BOTH halves missing is "first run" — a partial/unreadable state must
+  // never regenerate over a recoverable key.
   if (missing(privRes) && missing(pubRes)) {
     const { priv, pub } = createIdentityKeys()
     await persistIdentity(priv, pub)
@@ -72,14 +63,11 @@ export async function getIdentity() {
   return upgradeIdentityFormat(identity)
 }
 
-// Unwrap the stored keypair. Anything unreadable is surfaced, never
-// regenerated — regenerating would discard a recoverable key.
 function decodeIdentity(rawPriv, rawPub) {
   try {
     const isPlain = rawPriv.subarray(0, PLAIN_PREFIX.length).toString() === PLAIN_PREFIX
-    // A plaintext identity key while the keychain works is anomalous (we always
-    // wrap when we can) — treat it as planted and refuse, rather than adopting
-    // an attacker-supplied private key as this install's identity.
+    // A plaintext key while the keychain works is anomalous — refuse it as
+    // planted rather than adopt an attacker-supplied private key as our identity.
     if (isPlain && safeStorage.isEncryptionAvailable()) throw new IdentityUnavailable()
     const privJson = isPlain
       ? rawPriv.subarray(PLAIN_PREFIX.length).toString()
@@ -90,11 +78,8 @@ function decodeIdentity(rawPriv, rawPub) {
   }
 }
 
-// Upgrade an identity written by an older release (e.g. diffbro-key/1 with a
-// 64-bit fingerprint) to the current format and 128-bit fingerprint, keeping the
-// SAME key material. Without this, this install would keep exporting and sealing
-// under the old format — which current peers reject — so a key it exports can't
-// even be re-imported. Runs once: the next load already matches.
+// Upgrade an older-format identity to the current format + 128-bit fingerprint,
+// keeping the SAME key material, so exports aren't rejected by current peers.
 async function upgradeIdentityFormat(identity) {
   const currentFp = fingerprint(identity.pub.sign, identity.pub.box)
   if (identity.pub.format === KEY_FORMAT && identity.pub.fingerprint === currentFp) return identity
@@ -108,8 +93,7 @@ async function upgradeIdentityFormat(identity) {
   return { priv: identity.priv, pub }
 }
 
-// Write the identity keypair, private half wrapped by the OS keychain
-// (safeStorage) where available. Shared by first-run generation and restore.
+// Private half wrapped by the OS keychain (safeStorage) where available.
 async function persistIdentity(priv, pub) {
   const privJson = JSON.stringify(priv)
   const out = safeStorage.isEncryptionAvailable()
@@ -128,14 +112,11 @@ async function readTrusted() {
   }
 }
 
-// Set/refresh this install's public-key display label and return the pub with
-// it embedded. Persisted on identity.pub so it sticks across exports. The label
-// is cosmetic only — it is never part of the fingerprint or any trust check.
+// Set/refresh the cosmetic display label (never part of the fingerprint or any
+// trust check) and return the pub with it embedded.
 async function pubWithLabel(rawLabel) {
   const { priv, pub } = await getIdentity()
-  // undefined/null means "keep whatever label is already set" (callers that
-  // don't manage the label, e.g. the share dialog). A string — even '' — is an
-  // explicit set from the Share-my-key dialog.
+  // null/undefined keeps the existing label; a string (even '') sets it.
   if (rawLabel == null) return pub
   const label = cleanLabel(rawLabel)
   if ((pub.label ?? '') !== label) {
@@ -152,21 +133,15 @@ function keyFileBasename(label, fp) {
   return (slug ? `${slug}-diffbro-key` : `diffbro-public-key-${fp}`) + '.diffbrokey'
 }
 
-// Read + validate a .diffbrokey file at `path`. Returns the public key
-// material, a recomputed fingerprint (never trust the stated one), and a
-// default label from the filename. Throws on anything malformed/oversized.
+// Public key material + a RECOMPUTED fingerprint (the stated one is never
+// trusted) + a default label. Throws on malformed/oversized.
 async function parseKeyFileAt(path) {
   const { size } = await stat(path)
   if (size > MAX_KEY_FILE_BYTES) throw new Error('too large')
   const key = decodePublicKey(await readFile(path, 'utf-8'))
   if (!isAcceptedKeyFormat(key.format) || !key.sign || !key.box) throw new Error('bad format')
-  // Prefer the sender's self-chosen label (a cosmetic hint, sanitized and
-  // never trusted) so the recipient sees a human name; fall back to the
-  // filename. This is what makes "whose key is this?" answerable at a glance.
   const embedded = cleanLabel(key.label)
   return {
-    // Normalize to the current format — the material is what matters, and the
-    // fingerprint below is recomputed at 128 bits regardless of the file's age.
     key: { format: KEY_FORMAT, sign: key.sign, box: key.box },
     fp: fingerprint(key.sign, key.box),
     defaultLabel: embedded || basename(path).replace(/\.diffbrokey$/i, '')
@@ -179,9 +154,8 @@ async function storeTrusted(key, fp, label) {
   await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
 }
 
-// Wrap a handler so an unloadable identity surfaces as a plain error object
-// the renderer can render, instead of a rejected IPC promise (which would
-// throw in the renderer). Handlers that don't touch the identity are left bare.
+// Surface an unloadable identity as a plain error object rather than a rejected
+// IPC promise.
 const guardIdentity =
   (fn) =>
   async (...args) => {
@@ -193,10 +167,8 @@ const guardIdentity =
     }
   }
 
-// Read, size-check, filename-integrity-check and open a sealed diff at `path`.
-// Shared by the dialog importer (share:import) and the drag-drop importer
-// (share:importPath): the path is the only difference, and both must apply the
-// same guards to an untrusted file before openSealed does the crypto vetting.
+// Size + filename-integrity guards on the untrusted file before openSealed does
+// the crypto vetting. Shared by the dialog and drag-drop importers.
 async function openSharedFileAt(path) {
   let file
   try {
@@ -206,8 +178,7 @@ async function openSharedFileAt(path) {
   } catch {
     return { error: 'not-a-share-file' }
   }
-  // Integrity is tied to the filename: a shared diff must keep the hashed name
-  // it was written with. A renamed file is refused.
+  // A shared diff must keep its hashed filename; a renamed file is refused.
   if (file?.ciphertext && basename(path) !== shareFilename(file)) {
     return { error: 'renamed' }
   }
@@ -219,10 +190,8 @@ export function registerShareIpc() {
     return (await readTrusted()).map(({ fingerprint: fp, label }) => ({ fingerprint: fp, label }))
   })
 
-  // Fingerprint of this install's own identity. Calling this creates the
-  // keypairs on first use, so the share dialog can onboard a fresh install
-  // without any manual "generate keys" step. null if the identity can't be
-  // loaded (the dialog just shows no fingerprint rather than crashing).
+  // Creates the keypairs on first use (no manual "generate keys" step); null if
+  // the identity can't be loaded.
   ipcMain.handle('share:myFingerprint', async () => {
     try {
       return (await getIdentity()).pub.fingerprint
@@ -240,16 +209,13 @@ export function registerShareIpc() {
       const recipient = (await readTrusted()).find((t) => t.fingerprint === recipientFp)
       if (!recipient) return { error: 'unknown-recipient' }
 
-      // Enforce the TTL rules at signing time too — never put our signature
-      // on timestamps a receiver would have to reject.
+      // Enforce the TTL at signing too — never sign timestamps a receiver rejects.
       const invalid = ttlError(entry)
       if (invalid) return { error: invalid }
 
       const { priv, pub } = await getIdentity()
       const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipient)
-      // The filename is a hash of the ciphertext (hides the diff's name/size
-      // signature; import rejects a renamed file), so we only let the user pick
-      // WHERE to save — the basename is forced.
+      // Filename is forced (a ciphertext hash); the user only picks WHERE.
       const forcedName = shareFilename(file)
       const { canceled, filePath } = await dialog.showSaveDialog({
         title: 'Share diff (sealed for one recipient)',
@@ -277,9 +243,7 @@ export function registerShareIpc() {
     })
   )
 
-  // Drag-drop variant: a .diffbro dropped on the window. Same untrusted-file
-  // guards as the dialog path — the path is webUtils-resolved (a genuine user
-  // drop), but the file's contents are still hostile until openSealed vets them.
+  // Drag-drop variant — same untrusted-file guards as the dialog path.
   ipcMain.handle(
     'share:importPath',
     guardIdentity((e, path) => openSharedFileAt(path))
@@ -295,10 +259,8 @@ export function registerShareIpc() {
     }
   })
 
-  // Save this install's public key so it can be handed to other machines. The
-  // `label` is the sender's self-chosen display name: it's embedded in the file
-  // (a cosmetic hint) so the recipient sees a human name instead of a hex
-  // fingerprint, drives a recognizable filename, and is persisted so it sticks.
+  // Save this install's public key for handoff; `label` is the embedded cosmetic
+  // display name.
   ipcMain.handle(
     'share:exportPublicKey',
     guardIdentity(async (e, label) => {
@@ -314,11 +276,8 @@ export function registerShareIpc() {
     })
   )
 
-  // Same payload as the .diffbrokey file, on the clipboard instead of on disk,
-  // so it can be pasted straight into a password manager or chat. Public
-  // halves only — this is the same data the export dialog writes, and the
-  // private key still never leaves this process (CLAUDE.md rule 4).
-  // clipboard.writeText behaves identically on Windows, macOS and Linux.
+  // Same public-key payload as the export file, to the clipboard. Private key
+  // never leaves this process (rule 4).
   ipcMain.handle(
     'share:copyPublicKey',
     guardIdentity(async (e, label) => {
@@ -328,9 +287,8 @@ export function registerShareIpc() {
     })
   )
 
-  // Pick a peer's public-key file and validate it, but DON'T store it yet —
-  // the renderer prompts for a name first (a trusted host must always be
-  // named), then commits via share:addTrustedKeyNamed. Public key only.
+  // Validate a peer's key but DON'T store it — the renderer names it first, then
+  // commits via share:addTrustedKeyNamed.
   ipcMain.handle(
     'share:addTrustedKey',
     guardIdentity(async () => {
@@ -395,9 +353,7 @@ export function registerShareIpc() {
     })
   )
 
-  // Commit a trusted key the user reviewed/named in the drag-drop dialog.
-  // The fingerprint is recomputed from the key material — the renderer's is
-  // never trusted.
+  // Fingerprint recomputed from the key material — the renderer's is never trusted.
   ipcMain.handle(
     'share:addTrustedKeyNamed',
     guardIdentity(async (e, key, label) => {
@@ -409,12 +365,9 @@ export function registerShareIpc() {
     })
   )
 
-  // --- Configuration backup / restore (passphrase-encrypted) ---
-  // Bundles this install's identity keypair, the trusted-keys list, the
-  // snippet library (passed in decrypted by the renderer) and UI settings.
-  // The private identity key is read and written HERE and only ever leaves
-  // this process inside the passphrase-encrypted blob (CLAUDE.md rule 4).
-  // Diffs are deliberately excluded — they are ephemeral and auto-expiring.
+  // Config backup: identity keypair + trusted keys + snippets + settings. The
+  // private key only leaves this process inside the passphrase-encrypted blob
+  // (rule 4). Diffs are excluded (ephemeral).
   ipcMain.handle(
     'config:backup',
     guardIdentity(async (e, snippets, settings, passphrase) => {
@@ -451,8 +404,7 @@ export function registerShareIpc() {
   })
 }
 
-// Size-capped read of a chosen backup file. null on anything unreadable or
-// oversized — the caller turns that into a user-facing rejection.
+// Size-capped read; null on anything unreadable or oversized.
 async function readConfigFile(path) {
   try {
     const { size } = await stat(path)
@@ -463,14 +415,12 @@ async function readConfigFile(path) {
   }
 }
 
-// A decryptable backup is still validated before anything is applied — the
-// snippet bundle gets the same shape/size checks as a snippet import, so a
-// malformed-but-decryptable config can't half-write state or blow the quota.
+// A decryptable backup is still validated (same checks as a snippet import)
+// before anything is applied.
 async function applyRestoredConfig({ identity, trusted, snippets, settings }) {
   if (snippets != null && validateSnippetBundle(snippets)) return { error: 'malformed' }
   if (identity?.priv && identity?.pub) await persistIdentity(identity.priv, identity.pub)
   if (Array.isArray(trusted)) await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
-  // Snippets + settings go back to the renderer to re-import locally
-  // (re-encrypted under this machine's vault key).
+  // Snippets + settings go back to the renderer to re-encrypt locally.
   return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
 }

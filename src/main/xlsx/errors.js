@@ -1,6 +1,3 @@
-// Shared error type + guards for the OOXML reader. No Electron, no fs — the
-// whole reader is pure so it stays unit-testable (see tests/main/xlsx/).
-
 export class XlsxError extends Error {
   constructor(code, message) {
     super(message)
@@ -10,9 +7,8 @@ export class XlsxError extends Error {
   }
 }
 
-// OOXML is always DTD-free. A DOCTYPE is the entry point for XXE and
-// billion-laughs entity expansion, so any declaration rejects the whole file
-// before a parser ever touches it.
+// A DOCTYPE is the entry point for XXE / billion-laughs, so any declaration
+// rejects the whole file before a parser touches it. OOXML is always DTD-free.
 export function rejectDoctype(xml) {
   if (/<!doctype/i.test(xml)) {
     throw new XlsxError('doctype', 'XML DOCTYPE declarations are not allowed in .xlsx')

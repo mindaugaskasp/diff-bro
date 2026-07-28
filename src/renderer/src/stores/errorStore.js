@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 
-// Surfaces uncaught renderer errors: forwards each to the main process for the
-// LOCAL log (window.api.logError — nothing leaves the machine) and raises a
-// dialog suggesting the user report it. Identical errors are throttled so a
-// render loop can't spam the log or respawn the dialog.
+// Uncaught renderer errors → the LOCAL log + a report dialog. Identical errors
+// are throttled so a render loop can't spam either.
 const THROTTLE_MS = 3000
 
 function messageOf(reason) {
@@ -11,12 +9,8 @@ function messageOf(reason) {
   return String(reason ?? 'Unknown error')
 }
 
-// Benign framework noise that is NOT a crash and must never log or raise the
-// dialog: Monaco cancels in-flight work by rejecting with a Canceled /
-// CancellationError on normal model switches/disposal; ResizeObserver emits a
-// harmless loop notice; a cross-origin script error arrives as an opaque
-// "Script error." with no detail worth reporting. Matched on name+message so a
-// cancellation is caught however Monaco labels it.
+// Benign framework noise (Monaco cancellations, ResizeObserver loop, opaque
+// cross-origin "Script error.") — never a crash, never logged.
 const IGNORED = [/cancell?ed/i, /CancellationError/i, /ResizeObserver loop/i, /^Script error\.?$/i]
 
 function isIgnorable(err) {
@@ -25,8 +19,8 @@ function isIgnorable(err) {
   return IGNORED.some((re) => re.test(text))
 }
 
-// Normalise the many shapes an error arrives as (Error, string, ErrorEvent,
-// PromiseRejectionEvent) into { message, stack, context }.
+// Normalise the many error shapes (Error, string, ErrorEvent, rejection) into a
+// record.
 function toRecord(err, context) {
   if (err instanceof Error)
     return { message: err.message || String(err), stack: err.stack, context }

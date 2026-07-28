@@ -3,44 +3,27 @@ import { loadPersisted, savePersisted } from '../persist'
 import { isValidAccelerator } from '../utils/accelerator'
 import { isMac } from '../keys'
 
-// The default global shortcut that summons the floating quick look-up, per
-// platform: macOS uses Shift+Space (note: as a GLOBAL shortcut this intercepts
-// Shift+Space system-wide until the user rebinds it); Windows/Linux keep the
-// safe three-key chord (Cmd+Space is macOS Spotlight, hence the Shift variant
-// there). The main process mirrors this per-platform in src/main/quickLook.js
-// for when it reads a hand-edited or empty settings.json — keep the two in step.
+// Default quick look-up shortcut. macOS Shift+Space (note: as a GLOBAL shortcut
+// this intercepts Shift+Space system-wide until rebound); Windows/Linux keep the
+// three-key chord. Mirrored per-platform in src/main/quickLook.js — keep in step.
 export const DEFAULT_QUICKLOOK_SHORTCUT = isMac ? 'Shift+Space' : 'CommandOrControl+Shift+Space'
 
-// User preferences that are organizational, not secret — section order, shelf
-// order, UI toggles, and the size guards. Persisted as PLAINTEXT JSON in the
-// data directory (settings.json) on purpose: it holds nothing sensitive, and
-// keeping it human-readable leaves the door open to editing it by hand (or, one
-// day, exposing more of it in the UI). Everything encrypted stays in the vault
-// and snippet stores.
+// Organizational, non-secret preferences, persisted as PLAINTEXT settings.json
+// (nothing sensitive; encrypted data stays in the vault/snippet stores).
 
-// The three reorderable sidebar sections, in their default top-to-bottom order.
 export const SECTIONS = ['saved', 'external', 'snippets']
 
-// Comparison-file size limits, PER FILE TYPE. Each is a soft "load anyway?"
-// prompt threshold the user can raise, and `cap` is the hard ceiling the app
-// enforces (also the slider max). Different types degrade differently: Monaco
-// gets sluggish with large text well before a .xlsx (compressed, and the grid
-// only renders a capped window), so their sensible middle grounds differ. Add a
-// new type here (e.g. `docx`) and the Settings pane + main-process guard both
-// pick it up. Main mirrors these numbers in src/main/files.js (it can't import a
-// Pinia store) — keep the two in sync.
+// Per-type soft "load anyway?" thresholds (`cap` is the enforced ceiling + slider
+// max). Mirrored in src/main/files.js — keep in sync.
 export const FILE_TYPE_LIMITS = {
   text: { label: 'Text & code', default: 10, cap: 200 },
   spreadsheet: { label: 'Spreadsheet (.xlsx)', default: 25, cap: 100 }
 }
 
-// Snippet size guard: user-raisable with a hard ceiling, same rationale.
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 
-// Bounds for a remembered resizable-dialog size (see dialogSizes). The min keeps
-// a dragged-tiny dialog usable; the max stops a stale/hand-edited file from
-// restoring an absurd box (the CSS 92vw/92vh cap still applies on top).
+// Bounds for a remembered dialog size, so a stale file can't restore an absurd box.
 export const DIALOG_SIZE_MIN = { width: 320, height: 240 }
 export const DIALOG_SIZE_MAX = { width: 3000, height: 3000 }
 
@@ -52,26 +35,14 @@ function defaultFileLimits() {
 
 export const DEFAULT_SETTINGS = {
   sectionOrder: [...SECTIONS],
-  // Freezes section reordering (both the drag-and-drop and the up/down controls)
-  // so a settled sidebar layout can't be nudged by accident.
   sectionsLocked: false,
-  // { [sectionId]: [shelfId, …] } — a section absent here uses its natural order.
-  shelfOrder: {},
+  shelfOrder: {}, // { [sectionId]: [shelfId, …] }
   showShortcutBar: true,
-  // Fun: pick a new random theme each day (overrides the Appearance choice while
-  // on; turning it off reverts to that choice). Off by default.
   rotateThemeDaily: false,
   fileSizeLimitsMb: defaultFileLimits(),
   maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
-  // Remembered sizes of resizable dialogs, keyed by a stable dialog id
-  // ({ [key]: { width, height } } in px). Set only by a user drag-resize;
-  // survives restart. A dialog absent here opens at its default size.
-  dialogSizes: {},
-  // When on, every resizable dialog opens filling the window; turning it off
-  // restores each dialog's remembered (or default) size.
+  dialogSizes: {}, // { [key]: { width, height } } from user drag-resizes
   maximizeDialogs: false,
-  // Whether the one-time first-run example snippet decision has been made (see
-  // App.vue). Recorded for everyone once, so the example is never re-seeded.
   examplesSeeded: false,
   // Global shortcut for the quick look-up launcher (Electron accelerator form).
   quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT
@@ -92,9 +63,8 @@ function sanitizeSectionOrder(order) {
   return kept
 }
 
-// Resolve each type's limit from the stored map, migrating the pre-per-type
-// single `maxComparisonFileMb` into the text bucket. Every value is clamped to
-// its type's [1, cap], so a stale or hand-edited file can't exceed the ceiling.
+// Clamped to each type's [1, cap]; migrates the pre-per-type maxComparisonFileMb
+// into the text bucket.
 function readFileLimits(parsed) {
   const stored =
     parsed.fileSizeLimitsMb && typeof parsed.fileSizeLimitsMb === 'object'
@@ -110,9 +80,7 @@ function readFileLimits(parsed) {
   return out
 }
 
-// A remembered size is only honoured when both dimensions are finite and within
-// bounds; anything else (missing, partial, corrupt) is dropped so the dialog
-// opens at its default rather than a broken box.
+// Only honoured when both dimensions are finite and in-bounds; else dropped.
 function sanitizeSize(s) {
   if (!s || typeof s !== 'object') return null
   const width = clampNumber(s.width, null, DIALOG_SIZE_MIN.width, DIALOG_SIZE_MAX.width)

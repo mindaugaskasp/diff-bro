@@ -1,8 +1,7 @@
 import { Parser, decode } from 'saxen'
 import { XlsxError, rejectDoctype } from './errors'
 
-// One place to build a SAX parser whose XML errors surface as XlsxError('parse')
-// rather than saxen's default throw of a bare string.
+// SAX parser whose XML errors surface as XlsxError, not saxen's bare-string throw.
 function newParser(onOpen, onClose, onText) {
   const p = new Parser()
   if (onOpen) p.on('openTag', onOpen)
@@ -14,9 +13,7 @@ function newParser(onOpen, onClose, onText) {
   return p
 }
 
-// The shared string table: <sst><si>…</si>…</sst>. An <si> may hold rich-text
-// runs (<r><t>…</t></r>), whose <t> fragments concatenate; phonetic runs
-// (<rPh>) carry pronunciation, not content, so their <t> is skipped.
+// Rich-text <t> fragments concatenate; phonetic runs (<rPh>) are skipped.
 export function parseSharedStrings(xml) {
   rejectDoctype(xml)
   const strings = []
@@ -59,8 +56,7 @@ export function parseWorkbook(xml) {
   return sheets
 }
 
-// Relationship ids are attacker-controlled strings used as keys, so they go in a
-// Map — never plain-object property assignment (prototype-pollution safe).
+// Attacker-controlled ids as keys go in a Map, never a plain object (proto-safe).
 export function parseRels(xml) {
   rejectDoctype(xml)
   const map = new Map()

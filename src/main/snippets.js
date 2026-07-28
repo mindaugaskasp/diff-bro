@@ -1,8 +1,5 @@
-// Snippets export/import — Electron glue (file dialogs) around the pure
-// crypto in snippetSealing.js. Reuses this install's identity (same keys as
-// sealed diff sharing, see share.js) purely to sign the export; unlike
-// sealed shares, import needs no trusted-peer setup — the passphrase is the
-// only thing that gates decryption.
+// Snippets export/import — Electron glue around snippetSealing.js. Signs with
+// this install's identity; import is gated only by the passphrase (no peer setup).
 import { dialog, ipcMain } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
 import { getIdentity } from './share'
@@ -12,10 +9,8 @@ import { openSnippets, sealSnippets } from './snippetSealing'
 const MAX_SNIPPET_FILE_BYTES = 64 * 1024 * 1024
 
 export function registerSnippetIpc() {
-  // bundle: { categories: [{ name, snippets: [{ name, content }] }] }
   ipcMain.handle('snippets:export', async (e, bundle, passphrase, defaultName) => {
-    // Never trust the shapes a (possibly compromised) renderer sends: guard
-    // before they reach a string sink or the crypto core (CLAUDE.md rule 6).
+    // Guard the shapes a compromised renderer could send (rule 6).
     if (typeof passphrase !== 'string' || !passphrase || !bundle || typeof bundle !== 'object') {
       return { error: 'bad-request' }
     }

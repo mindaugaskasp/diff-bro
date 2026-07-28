@@ -1,10 +1,9 @@
 import { unzipSync } from 'fflate'
 import { XlsxError } from './errors'
 
-// Only the parts a value diff interprets are ever inflated. Everything else —
-// formulas' external links (xl/externalLinks/*), VBA (xl/vbaProject.bin),
-// drawings, media, styles, connections — is left compressed and untouched, so
-// the code that would parse it is never a reachable attack surface.
+// Only the parts a value diff reads are inflated; everything else (external
+// links, VBA, media, styles) stays compressed, so its parser is never a
+// reachable attack surface.
 const ALLOWED =
   /^xl\/(workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/sheet\d+\.xml)$/
 
@@ -13,22 +12,18 @@ export function isAllowedEntry(name) {
 }
 
 export const UNZIP_DEFAULTS = {
-  // Compressed-input ceiling. files.js overrides this with the spreadsheet
-  // size cap so the reader agrees with the Settings slider; this default is the
-  // same value for direct/test callers.
+  // files.js overrides this with the spreadsheet size cap; default for tests.
   maxInputBytes: 100 * 1024 * 1024, // whole .xlsx (compressed)
   maxEntryBytes: 256 * 1024 * 1024, // one inflated part
   maxTotalBytes: 512 * 1024 * 1024, // all inflated parts together
   maxRatio: 500 // inflated / compressed, per entry
 }
 
-// Inflate ONLY the allowlisted entries, refusing decompression bombs. The zip
-// header's sizes are attacker-controlled, so they gate inflation cheaply in the
-// filter; the ACTUAL inflated lengths are re-checked afterwards in case a header
-// lied. NOTE (follow-up): the synchronous unzip still fully inflates an accepted
-// entry before the post-check sees it — a production build should switch to
-// fflate's streaming `Unzip` with a hard byte-abort so the bound is enforced
-// during inflation, not after.
+// Inflate ONLY allowlisted entries, refusing decompression bombs: attacker-
+// controlled header sizes gate cheaply in the filter, then actual inflated
+// lengths are re-checked. NOTE: unzipSync fully inflates an accepted entry
+// before the post-check — a follow-up should switch to fflate streaming with a
+// hard byte-abort so the bound holds during inflation.
 export function extractXlsxEntries(buffer, opts = {}) {
   const cfg = { ...UNZIP_DEFAULTS, ...opts }
   const input = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)

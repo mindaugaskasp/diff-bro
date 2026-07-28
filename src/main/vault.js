@@ -4,25 +4,15 @@ import { randomBytes } from 'crypto'
 import { dataFile } from './appData'
 import { vaultDecrypt, vaultEncrypt } from './vaultCrypt'
 
-// ---------------------------------------------------------------------------
-// Saved-diff vault. Saved diffs live in the renderer's localStorage as
-// AES-256-GCM ciphertext, but all crypto happens HERE: the renderer only
-// ever sees `vault:encrypt` / `vault:decrypt` — the key itself never
-// crosses the IPC boundary, so a compromised renderer cannot exfiltrate it
-// (CLAUDE.md rule 4).
-// The 256-bit key is generated once per install and protected at rest by
-// the OS keychain via safeStorage (DPAPI on Windows, Keychain on macOS,
-// libsecret on Linux). Where no keychain exists (e.g. the Docker test
-// container) the key file is stored as-is — the entries are still
-// encrypted, the key just has no OS-level protection.
-// ---------------------------------------------------------------------------
+// Saved-diff vault. All crypto happens HERE — the renderer only sees
+// vault:encrypt/decrypt, the key never crosses the IPC boundary (rule 4). The
+// 256-bit key is protected at rest by the OS keychain (safeStorage), or stored
+// as-is where none exists (e.g. the Docker container).
 const PLAIN_PREFIX = 'plain:'
 
-// Distinct from a genuine per-entry auth failure: the key itself couldn't be
-// loaded (locked keychain, DPAPI error after a profile move, a transient FS
-// error, a corrupted-but-recoverable file). This must NOT be treated as
-// "missing", because regenerating the key would strand every saved diff and
-// snippet forever — so we surface it and leave the existing key file untouched.
+// The key itself couldn't be loaded (locked keychain, corruption) — distinct
+// from a per-entry auth failure. Never treat as "missing": regenerating would
+// strand every saved diff and snippet.
 class VaultKeyUnavailable extends Error {
   constructor() {
     super('vault-key-unavailable')
@@ -33,8 +23,7 @@ class VaultKeyUnavailable extends Error {
 let vaultKeyPromise = null
 
 function getVaultKey() {
-  // Never cache a rejection: if the keychain was merely locked, a later call
-  // (after the user unlocks it) must be able to succeed.
+  // Never cache a rejection, so a later call after the keychain unlocks succeeds.
   vaultKeyPromise ??= loadVaultKey().catch((err) => {
     vaultKeyPromise = null
     throw err
@@ -57,33 +46,27 @@ async function loadVaultKey() {
   try {
     raw = await readFile(keyPath)
   } catch (err) {
-    // Only a genuinely absent file means "first run, generate a key". Any
-    // other read error (permissions, locked, transient) must not overwrite it.
+    // Only a genuinely absent file is "first run"; any other read error must
+    // not overwrite it.
     if (err.code === 'ENOENT') return generateVaultKey(keyPath)
     throw new VaultKeyUnavailable()
   }
   const isPlain = raw.subarray(0, PLAIN_PREFIX.length).toString() === PLAIN_PREFIX
   if (isPlain) {
-    // A plaintext key file only ever exists where no OS keychain is available
-    // (e.g. the Docker test env). If the keychain works here, we would have
-    // wrapped the key — so a plaintext file is anomalous: either migrated from
-    // a keychain-less machine or PLANTED by a local attacker who can write to
-    // userData. We can't tell them apart, and adopting it would silently use
-    // an attacker-known key, so refuse rather than trust it.
+    // A plaintext key while the keychain works is anomalous (migrated or
+    // PLANTED) — refuse rather than adopt an attacker-known key.
     if (safeStorage.isEncryptionAvailable()) throw new VaultKeyUnavailable()
     return Buffer.from(raw.subarray(PLAIN_PREFIX.length).toString(), 'base64')
   }
   try {
     return Buffer.from(safeStorage.decryptString(raw), 'base64')
   } catch {
-    // Present but undecryptable: never overwrite it — that would permanently
-    // destroy the key (and every entry it protects). Surface instead.
+    // Present but undecryptable: surface, never overwrite (that destroys the key).
     throw new VaultKeyUnavailable()
   }
 }
 
-// Map a key-load failure to a distinct sentinel the renderer can tell apart
-// from a per-entry auth failure, so it warns instead of purging every entry.
+// Distinct sentinel so the renderer warns instead of purging every entry.
 async function withKey(fn) {
   try {
     return await fn(await getVaultKey())
@@ -94,20 +77,14 @@ async function withKey(fn) {
 }
 
 export function registerVaultIpc() {
-  // plaintext/aad are strings; result mirrors what the renderer stores, or
-  // { error: 'vault-key-unavailable' } if the key couldn't be loaded.
   ipcMain.handle('vault:encrypt', async (e, plaintext, aad) => {
-    // Guard the shapes a compromised renderer could send before they hit the
-    // crypto core. A non-null error object (not null) means the renderer will
-    // surface, never purge (CLAUDE.md rule 6).
+    // Guard the shapes a compromised renderer could send (rule 6).
     if (typeof plaintext !== 'string' || typeof aad !== 'string') return { error: 'bad-request' }
     return withKey((key) => vaultEncrypt(key, plaintext, aad))
   })
 
-  // The plaintext string on success; null when the ENTRY fails authentication
-  // (tampered metadata, wrong key) — the renderer purges those. A
-  // { error: ... } object instead means the request/key was bad, not the
-  // entry: the renderer must keep the entries and warn, never purge.
+  // null means the ENTRY failed auth (renderer purges it); an { error } object
+  // means the request/key was bad (renderer keeps entries and warns).
   ipcMain.handle('vault:decrypt', async (e, box, aad) => {
     if (
       !box ||
