@@ -1,18 +1,12 @@
-// Line-level LCS → git-style unified diff. Pure and unit-tested.
-//
-// The on-screen diff is Monaco's; a *copied* patch has a higher bar — it must
-// apply cleanly with `patch`/`git apply` — so we compute our own line diff with
-// well-defined semantics here rather than scraping the editor's change list.
+// Line-level LCS → git-style unified diff (must apply cleanly with `git apply`,
+// so it's computed here, not scraped from Monaco). Pure + unit-tested.
 
 const CONTEXT = 3
 
-// Guard the O(n·m) LCS table: past this the transient memory/time isn't worth it
-// for a clipboard convenience, and the caller shows a notice instead. LCS depths
-// stay below Uint16's ceiling at this cap, so the table can be a Uint16Array.
+// Guards the O(n·m) table (also keeps depths under Uint16, so the table is one).
 export const MAX_DIFF_LINES = 4000
 
-// Drop a single trailing newline so a file ending in "\n" doesn't yield a
-// phantom empty final line; every real line is preserved otherwise.
+// Drop a single trailing newline so a file ending in "\n" has no phantom line.
 function splitLines(text) {
   const t = text.endsWith('\n') ? text.slice(0, -1) : text
   return t.length === 0 ? [] : t.split('\n')
@@ -51,8 +45,7 @@ function lcsOps(a, b) {
   return ops
 }
 
-// Tag each emitted line with the 1-based old/new line numbers it occupies
-// (null on the side where it doesn't exist).
+// Tag each line with 1-based old/new line numbers (null where it doesn't exist).
 function annotate(ops) {
   let oldNo = 1
   let newNo = 1
@@ -64,9 +57,7 @@ function annotate(ops) {
   })
 }
 
-// A hunk header counts context+deletions on the old side, context+additions on
-// the new side; start numbers come from the first real line on each side (0 when
-// a side contributes nothing, e.g. a file created from empty).
+// Hunk header counts + start numbers (0 when a side contributes nothing).
 function renderHunk(slice) {
   const olds = slice.filter((l) => l.oldNo != null)
   const news = slice.filter((l) => l.newNo != null)
@@ -76,9 +67,7 @@ function renderHunk(slice) {
   return head + slice.map((l) => l.sign + l.text).join('\n') + '\n'
 }
 
-// Group changed lines into hunks, padding each with up to CONTEXT unchanged
-// lines; changes closer than 2·CONTEXT lines share a hunk (their context would
-// otherwise overlap).
+// Group changes into hunks with CONTEXT lines of padding; nearby changes merge.
 function buildHunks(lines) {
   const changed = []
   lines.forEach((l, i) => {

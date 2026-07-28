@@ -1,6 +1,5 @@
 <script setup>
-// Tag chips + typeahead input, driven by a useTagInput() field handed in by the
-// parent (which owns the tags so it can save them). Presentation only.
+// Tag chips + typeahead, driven by a useTagInput() field the parent owns.
 import { reactive } from 'vue'
 import { useSnippetStore, MAX_TAGS } from '../stores/snippetStore'
 import { useTagInput } from '../composables/useTagInput'

@@ -1,9 +1,7 @@
 import { ref } from 'vue'
 
-// Load a dropped file's text into a tool input. Reading goes through the main
-// process (window.api.readFile); the drop path is registered with main via
-// getPathForFile, so the file-read provenance allowlist permits it (see
-// src/main/files.js). `apply(text, name)` receives the decoded content.
+// Load a dropped file's text into a tool input. getPathForFile registers the
+// path with main's read allowlist (src/main/files.js).
 export function useFileTextDrop(apply) {
   async function onDropFile(e) {
     const file = e.dataTransfer?.files?.[0]
@@ -11,18 +9,13 @@ export function useFileTextDrop(apply) {
     const path = window.api.getPathForFile(file)
     if (!path) return
     const res = await window.api.readFile(path)
-    // `path` is passed through as a third arg for callers that keep it (e.g.
-    // partial-paste live reload); tool inputs simply ignore it.
     if (res && !res.error && res.content != null) apply(res.content, res.name, res.path)
   }
   return { onDropFile }
 }
 
-// Window-level diff drop: files dropped anywhere load into the two sides. A
-// dragenter/dragleave counter avoids the flicker you'd get from child elements
-// firing dragleave as the pointer moves over them, and `suppressed` stands the
-// whole thing down while a dialog that handles its own drops is open —
-// otherwise a drop on the dialog's backdrop would load a diff behind it.
+// Window-level diff drop. A dragenter/leave depth counter avoids child-element
+// flicker; `suppressed` stands it down while a dialog handles its own drops.
 export function useWindowFileDrop(store, suppressed) {
   const depth = ref(0)
   const active = ref(false)
@@ -46,17 +39,13 @@ export function useWindowFileDrop(store, suppressed) {
       .map((f) => window.api.getPathForFile(f))
       .filter(Boolean)
     if (!paths.length) return
-    // A dropped public key opens the "name this trusted key" dialog instead of
-    // loading a diff.
+    // A dropped public key opens the naming dialog, not a diff.
     const keyPath = paths.find((p) => p.toLowerCase().endsWith('.diffbrokey'))
     if (keyPath) {
       await store.receiveDroppedKey(keyPath)
       return
     }
-    // A dropped sealed diff is imported as an external diff and opened, rather
-    // than being mistaken for a file to compare. Checked after .diffbrokey so
-    // the more specific extension wins (.diffbrokey also ends in "key", not
-    // "diffbro", so order only matters for clarity here).
+    // A dropped sealed diff imports + opens (checked after .diffbrokey).
     const sharedPath = paths.find((p) => p.toLowerCase().endsWith('.diffbro'))
     if (sharedPath) {
       await store.receiveDroppedSharedDiff(sharedPath)

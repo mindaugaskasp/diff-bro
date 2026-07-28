@@ -1,8 +1,7 @@
 import { onBeforeUnmount, ref } from 'vue'
 
-// Two-step confirm for a destructive button: the first press arms it, a second
-// press within `windowMs` runs the action. Disarms itself if the user walks
-// away, so a stale armed button can't fire on an accidental later click.
+// Two-step confirm: the first press arms, a second within `windowMs` runs it.
+// Auto-disarms so a stale armed button can't fire later.
 export function useArmedAction(run, windowMs = 3000) {
   const armed = ref(false)
   let timer = null

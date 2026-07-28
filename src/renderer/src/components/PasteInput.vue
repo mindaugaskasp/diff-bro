@@ -1,8 +1,6 @@
 <script setup>
-// Paste-compare with partial-paste support: each side is either a textarea or a
-// loaded file, independently — so pasted text on one side can be diffed against
-// a real dropped/chosen file on the other. Each pane captures its own drop so
-// the window-level diff drop never sees it.
+// Paste-compare with partial paste: each side is a textarea or a loaded file,
+// independently. Each pane captures its own drop.
 import { useDiffStore } from '../stores/diffStore'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import AppIcon from './AppIcon.vue'

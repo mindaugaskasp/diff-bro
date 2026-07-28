@@ -1,8 +1,5 @@
-// Local error/crash logger. LOCAL ONLY — it writes a daily-rotated text file so
-// a user can paste it into a GitHub issue by choice; it NEVER sends anything
-// (that would break the offline guarantee). All fs lives here in the main
-// process; the renderer only forwards error records over IPC. Pure formatting,
-// rotation, and retention live in logFormat.js (unit-tested).
+// Local error/crash logger — LOCAL ONLY, never sends anything (offline). Writes a
+// daily-rotated file; formatting/rotation/retention live in logFormat.js.
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import {
   existsSync,
@@ -26,9 +23,8 @@ import {
 
 const MAX_DAY_BYTES = 512 * 1024 // one day's file
 const KEEP_DAYS = 7
-// A pointer file (like data-location.json) so the log directory is main-managed
-// and readable at startup without the renderer. Lives in userData, which is
-// always writable; the default target is Electron's per-app logs path.
+// Pointer file so the log dir is main-managed and readable at startup; defaults
+// to Electron's logs path.
 const pointerPath = () => join(app.getPath('userData'), 'log-location.json')
 
 function defaultLogDir() {
@@ -61,9 +57,7 @@ function currentLogPath() {
   return join(getLogDir(), dailyLogName())
 }
 
-// Append one record to today's file, capping the day's size and pruning files
-// older than the retention window. Best-effort and self-contained: a logging
-// failure must never throw into a crash handler.
+// Best-effort: a logging failure must never throw into a crash handler.
 export function appendLog(record) {
   try {
     const dir = getLogDir()
@@ -92,8 +86,7 @@ function pruneOldLogs(dir) {
   }
 }
 
-// Read the most recent day's log for display/copy in the report dialog, capped
-// to the last slice so a big day doesn't flood the clipboard/UI.
+// Tail-capped so a big day doesn't flood the report dialog / clipboard.
 const READ_TAIL_BYTES = 64 * 1024
 export function readCurrentLog() {
   try {
@@ -139,9 +132,7 @@ function resetLogDir() {
   return { ok: true, dir: getLogDir() }
 }
 
-// Catch what the app itself can't recover from. Renderer JS errors arrive via
-// the log:error IPC (see App.vue's global handlers); these are the main-process
-// and process-level failures.
+// Main-process + process-level failures (renderer JS errors arrive via log:error).
 export function installCrashHooks() {
   process.on('uncaughtException', (err) => {
     appendLog({ source: 'main', message: err?.message ?? String(err), stack: err?.stack })
@@ -170,8 +161,7 @@ export function installCrashHooks() {
 }
 
 export function registerLoggerIpc() {
-  // The renderer forwards its own uncaught errors here. Treat the record as
-  // untrusted: only the known string fields are read, and logFormat caps them.
+  // Untrusted record: only known string fields are read; logFormat caps them.
   ipcMain.handle('log:error', (_e, record = {}) => {
     appendLog({
       source: 'renderer',

@@ -1,12 +1,6 @@
-// Pure crypto core for the "back up / restore configuration" feature — no
-// Electron imports, unit-tested. config.js owns the file dialogs and the
-// reads/writes of identity + trusted-keys files.
-//
-// A backup bundles this install's identity keypair, the trusted-keys list,
-// the snippet library, and UI settings, all AES-256-GCM encrypted under a
-// passphrase (scrypt-derived key, random salt embedded). No TTL, no signing:
-// it's a personal backup meant to be restored by its owner. Diffs are
-// deliberately NOT included (they are ephemeral and auto-expiring).
+// Pure crypto for config backup/restore (share.js owns the file glue): identity
+// keys + trusted keys + snippets + settings, AES-256-GCM under a scrypt-derived
+// passphrase. No TTL/signing — a personal backup. Diffs excluded (ephemeral).
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 import { SCRYPT_PARAMS, deriveKey, scryptParamsFor } from './kdf'
 

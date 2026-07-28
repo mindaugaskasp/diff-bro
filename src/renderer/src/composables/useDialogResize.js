@@ -1,17 +1,10 @@
 import { computed, reactive } from 'vue'
 import { resizeCentered } from '../utils/dialogResize'
 
-// Drives a centered dialog's edge/corner resize: it owns the live size, exposes
-// the inline style for the panel, and wires each handle's pointer drag. The
-// geometry is the pure resizeCentered (utils/dialogResize); this keeps the drag
-// reactive and reports the final size for persistence on release.
-//
-// A null width/height means "use the dialog's default" (its CSS width, and
-// content height) until the user drags — so an un-resized dialog still sizes to
-// its content rather than being pinned to a guessed box.
+// Drives a centered dialog's edge/corner resize (geometry is the pure
+// resizeCentered). A null width/height means "use the CSS default until dragged".
 
-// Never let a dialog grow past almost the whole viewport (the CSS max also caps
-// it, but clamping here keeps the persisted number sane).
+// Clamp so the persisted number stays sane (the CSS max also caps it).
 const MAX_FRACTION = 0.94
 
 export function useDialogResize({
@@ -28,9 +21,7 @@ export function useDialogResize({
   })
 
   const style = computed(() => {
-    // Maximized: fill the window. 100vw/100vh is capped by the dialog's CSS
-    // max-width/height (92vw/92vh), and turning it off falls straight back to the
-    // remembered/default size below since `size` is untouched.
+    // Maximized: fill the window (capped by the dialog's CSS max).
     if (maximized?.()) return { width: '100vw', height: '100vh' }
     return {
       width: size.width != null ? `${size.width}px` : width || null,

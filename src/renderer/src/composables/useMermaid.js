@@ -1,22 +1,14 @@
-// Lazy access to the Mermaid library. Mermaid is ~2.8 MB, so it is dynamically
-// imported the first time a diagram renders and never pulled into the main
-// renderer chunk. It runs entirely offline under the app's strict CSP (no
-// unsafe-eval) — verified against every diagram type before adoption.
-//
-// securityLevel MUST stay 'strict': Mermaid runs its output through DOMPurify
-// at that level, so a diagram authored from imported/shared text can't smuggle
-// script or event handlers into the SVG. Never lower it to 'loose'/'antiscript'.
+// Mermaid (~2.8 MB) is dynamically imported on first render, never in the main
+// chunk. securityLevel MUST stay 'strict' — DOMPurify at that level stops a
+// diagram from smuggling script into the SVG. Never lower it.
 import { mermaidThemeFor, nextDiagramId, stripMermaidFence } from '../utils/mermaid'
 
 const BASE_CONFIG = {
   startOnLoad: false,
   securityLevel: 'strict',
-  // Without this, a failed render leaves Mermaid's own "Syntax error in text"
-  // bomb SVG attached to the document — it escapes the diagram container and
-  // hides the caller's error message. Errors surface only as a thrown error.
+  // Errors surface as a thrown error, not Mermaid's own bomb SVG in the document.
   suppressErrorRendering: true,
-  // Pure-SVG labels (no <foreignObject>/HTML), which render crisply and keep
-  // the output trivially safe to insert without innerHTML.
+  // Pure-SVG labels — safe to insert without innerHTML.
   flowchart: { htmlLabels: false }
 }
 
@@ -30,18 +22,13 @@ function loadMermaid() {
   return mermaidPromise
 }
 
-// Render `code` to an SVG string, themed to match the app. Rejects with a
-// Mermaid parse error (message shown to the user) when the syntax is invalid.
+// Render `code` to an SVG string; rejects with a Mermaid parse error on bad syntax.
 export async function renderMermaid(code, appTheme) {
   const mermaid = await loadMermaid()
-  // Re-apply config each render so a theme flip takes effect (initialize is the
-  // supported way to change the active theme).
+  // Re-apply config each render so a theme flip takes effect.
   mermaid.initialize({ ...BASE_CONFIG, theme: mermaidThemeFor(appTheme) })
-  // Render into a FIXED, off-flow holder passed as the size-measurement element.
-  // Left to itself Mermaid appends its transient measurement node to <body>, and
-  // a tall diagram briefly stretched the document — flashing a scrollbar over the
-  // diff area before the node was removed. A fixed element never contributes to
-  // scroll height, so the measurement is invisible and layout-neutral.
+  // A fixed, off-flow measurement holder — Mermaid's default <body> node briefly
+  // stretched the document and flashed a scrollbar.
   const holder = document.createElement('div')
   holder.style.cssText = 'position:fixed;top:0;left:0;visibility:hidden;pointer-events:none'
   document.body.appendChild(holder)

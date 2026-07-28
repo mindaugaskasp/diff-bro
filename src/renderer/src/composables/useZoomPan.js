@@ -1,8 +1,6 @@
 import { computed, ref } from 'vue'
 
-// Zoom + drag-to-pan for the Mermaid viewer stage: scale via buttons or
-// Ctrl/⌘-wheel, translate by dragging. Kept out of the .vue so the panel stays
-// under its size cap and the transform maths is reusable.
+// Zoom (buttons / Ctrl-wheel) + drag-to-pan for the Mermaid viewer stage.
 const SCALE_MIN = 0.2
 const SCALE_MAX = 8
 

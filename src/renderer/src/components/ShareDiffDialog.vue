@@ -3,12 +3,8 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import BaseDialog from './BaseDialog.vue'
 
-// Recipient picker with built-in first-time setup: if this install has no
-// trusted keys yet, the dialog walks through the one-time key exchange
-// (keys themselves are generated automatically — the user never has to
-// think about "generating keys"). Both halves of that exchange reuse the same
-// flows as the Security menu — the "Share my key" dialog (which names the key)
-// and the "Add trusted key" naming dialog — so there's one way to do each.
+// Recipient picker with built-in first-time key-exchange setup (reusing the
+// Security-menu flows). Keys are generated automatically on first use.
 const diff = useDiffStore()
 
 const recipients = ref([])
@@ -28,10 +24,7 @@ async function refresh(preferFp) {
     preferFp ?? selected.value ?? recipients.value[recipients.value.length - 1]?.fingerprint ?? null
 }
 
-// The trusted key is committed from the "Add trusted key" naming dialog, not
-// here — so refresh the recipient list once that dialog closes (a newly added
-// key becomes the selected recipient, and the first-time view flips to the
-// normal picker).
+// Refresh the recipient list once the "Add trusted key" dialog closes.
 watch(
   () => diff.pendingTrustedKey,
   (val, old) => {

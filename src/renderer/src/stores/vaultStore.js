@@ -2,14 +2,8 @@ import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { useSnippetStore } from './snippetStore'
 
-// Saved diffs are a security-sensitive convenience: content is AES-256-GCM
-// encrypted with an install-specific key held by the main process (backed by
-// the OS keychain), and every entry auto-expires unless saved as "kept" —
-// default 1 hour, hard cap 24 hours. Only the entry name, tags and timestamps
-// are plaintext. All crypto runs in the main process (vault:encrypt /
-// vault:decrypt IPC); this store never sees the key. Organization is by TAGS,
-// drawn from the SAME registry as snippets (useSnippetStore) — one tag namespace
-// across the app. Tags are plaintext metadata, deliberately NOT in the AAD.
+// Content crypto runs in main (vault:encrypt/decrypt); this store never sees the
+// key. Only name/tags/timestamps are plaintext.
 export const DEFAULT_TTL_HOURS = 1
 export const MAX_TTL_HOURS = 24
 export const TTL_OPTIONS = [
@@ -18,16 +12,12 @@ export const TTL_OPTIONS = [
   { label: '24 hours', hours: 24 }
 ]
 
-// The entry's plaintext metadata is bound to the ciphertext as AES-GCM
-// additional authenticated data: editing localStorage to, say, extend expiresAt
-// just makes the entry undecryptable (and it gets purged). Name/tags/favorite
-// are plaintext organizational metadata and deliberately NOT part of the AAD.
+// Timestamps bind the ciphertext as AES-GCM AAD (tampering expiresAt makes the
+// entry undecryptable); name/tags/favorite are deliberately excluded so they
+// stay editable free metadata.
 const entryAad = (id, createdAt, expiresAt, from) =>
   [id, createdAt, expiresAt, from ?? ''].join('|')
 
-// Map a diff to a format tag from its files' extensions (both sides must agree,
-// or one side is enough) — so a JSON comparison is auto-tagged "json", etc.
-// Plain text / unknown yields no tag.
 const EXT_TAG = { yml: 'yaml', htm: 'html', md: 'markdown', xlsx: 'excel', txt: null, text: null }
 export function diffFormatTag(payload) {
   const extOf = (f) => /\.([a-z0-9]+)$/i.exec(f?.name ?? '')?.[1]?.toLowerCase() ?? null
@@ -37,9 +27,7 @@ export function diffFormatTag(payload) {
   return tag || null
 }
 
-// Parse the persisted blob. Tolerates the legacy category shape (drops
-// categoryId; category names are intentionally not migrated to tags) and the
-// even older bare-array shape. Anything unreadable starts empty.
+// Tolerates the legacy category shape and the even older bare-array shape.
 function readEntries() {
   const raw = loadPersisted('vault')
   if (!raw) return []
@@ -47,8 +35,14 @@ function readEntries() {
     const parsed = JSON.parse(raw)
     const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed.entries) ? parsed.entries : []
     return list.map((e) => {
-      const clean = { ...e, tags: Array.isArray(e.tags) ? e.tags : [] }
-      delete clean.categoryId // categories are gone; drop the stale field
+      // Coerce name/tags so old data can't throw downstream (not in the AAD, so
+      // decryption is unaffected).
+      const clean = {
+        ...e,
+        name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled diff'),
+        tags: Array.isArray(e.tags) ? e.tags.filter((t) => typeof t === 'string') : []
+      }
+      delete clean.categoryId
       return clean
     })
   } catch {
@@ -58,34 +52,25 @@ function readEntries() {
 
 export const useVaultStore = defineStore('vault', {
   state: () => ({
-    // { id, name, createdAt, expiresAt, from, favorite, tags:[name], iv, data }
     entries: readEntries(),
-    // re-render trigger for the expiry countdowns
     now: Date.now(),
-    // { id, name } pending diff-delete confirmation.
     pendingDelete: null,
-    // Set when the main process can't load the vault key (locked keychain,
-    // etc). Distinct from a per-entry auth failure: we must NOT purge the
-    // entries — the key may come back — so we surface this and hold.
+    // Vault key unavailable (locked keychain): hold, never purge — it may return.
     keyError: null
   }),
   getters: {
-    // Favorites float to the top; otherwise insertion order is preserved (stable
-    // sort). expiresAt === null is a "kept" (non-expiring) diff — always active.
+    // expiresAt === null is a "kept" (non-expiring) diff.
     active: (s) =>
       s.entries
         .filter((e) => e.expiresAt === null || e.expiresAt > s.now)
         .slice()
         .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)),
-    // Your own (not shared-in) favorited diffs — pinned above the rest.
     favoritesOwn() {
       return this.active.filter((e) => !e.from && e.favorite)
     },
-    // Your own, non-favorited active diffs.
     ownActive() {
       return this.active.filter((e) => !e.from && !e.favorite)
     },
-    // Shared-in diffs (each signed by its sender), shown in their own section.
     importedActive() {
       return this.active.filter((e) => e.from)
     },
@@ -158,6 +143,9 @@ export const useVaultStore = defineStore('vault', {
         createdAt,
         expiresAt,
         from: from ?? null,
+        // Plaintext metadata (not in the AAD): the compared files' format, so the
+        // row can show a type monogram without decrypting the snapshot.
+        format: diffFormatTag(payload),
         favorite: false,
         tags: applied,
         iv,

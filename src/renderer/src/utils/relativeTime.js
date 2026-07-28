@@ -1,6 +1,4 @@
-// Compact "3d / 2w / 5h" age from a timestamp. Not live — the callers render
-// lists that are rebuilt often enough, and a coarse label recomputed on render
-// is cheaper than a ticking clock per row.
+// Compact "3d / 2w / 5h" age from a timestamp (recomputed on render, not live).
 /**
  * @param {number} ts epoch ms
  * @returns {string} compact age, e.g. "now", "5m", "3d"

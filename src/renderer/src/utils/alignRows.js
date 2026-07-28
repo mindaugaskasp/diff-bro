@@ -1,14 +1,7 @@
-// Row alignment for the spreadsheet diff. Pure (no Vue/store) so it stays
-// unit-testable. The goal: an inserted or deleted row must NOT cascade every row
-// below it into a false "changed", the way a naive index-by-index compare would.
-//
-// Strategy: an LCS over whole-row signatures anchors the rows that are identical
-// on both sides. Each remaining gap between anchors holds some removed (left) and
-// some added (right) rows; within a gap we pair a removed row with an added row
-// ONLY when they share a key (column A by default) — that pair is a "changed"
-// row with cell-level marks. Unpaired rows stay genuinely removed/added. So a
-// row whose id is unchanged but whose numbers moved reads as one changed row,
-// while a truly new/deleted row reads as added/removed.
+// Row alignment for the spreadsheet diff. Pure + unit-tested. An LCS over
+// whole-row signatures anchors identical rows so an inserted/deleted row can't
+// cascade the rows below into false "changed"; within each gap a removed row is
+// paired with an added one only when their key columns (col A default) match.
 
 function normCell(v) {
   return v === null || v === undefined ? '' : v
@@ -26,8 +19,7 @@ export function changedCells(left, right) {
   return cols
 }
 
-// Cheap deep-equality handle: JSON of the row with trailing empties trimmed, so
-// ["a",1] and ["a",1,null,""] compare equal.
+// JSON of the row with trailing empties trimmed, so ["a",1] == ["a",1,null,""].
 function rowSignature(row) {
   let end = row.length
   while (end > 0 && normCell(row[end - 1]) === '') end--
@@ -64,8 +56,7 @@ function lcsOps(leftSig, rightSig) {
   return ops
 }
 
-// Fallback when the LCS table would be too large: align by position, letting a
-// differing row at the same index become a del+ins gap (paired by key below).
+// Fallback when the LCS table would be too large: align by position.
 function positionalOps(leftSig, rightSig) {
   const ops = []
   const min = Math.min(leftSig.length, rightSig.length)
@@ -78,8 +69,7 @@ function positionalOps(leftSig, rightSig) {
   return ops
 }
 
-// Turn one gap (consecutive del/ins ops) into changed/removed/added entries,
-// pairing a removed row with an added row when their key columns match.
+// One gap → changed/removed/added, pairing del+ins rows by matching key.
 function emitGap(gap, leftRows, rightRows, keyColumn) {
   const dels = gap.filter((o) => o.t === 'del').map((o) => o.i)
   const ins = gap.filter((o) => o.t === 'ins').map((o) => o.j)

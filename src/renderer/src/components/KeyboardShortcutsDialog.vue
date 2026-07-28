@@ -1,7 +1,5 @@
 <script setup>
-// Help → Keyboard Shortcuts: the full, grouped list. Labels come from
-// utils/shortcuts.js, which resolves modifier names against the host OS, so a
-// Mac shows ⌘ where Windows/Linux show Ctrl.
+// Help → Keyboard Shortcuts: the grouped list (labels from utils/shortcuts.js).
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -39,7 +37,7 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="440px" title="Keyboard shortcuts" @close="close">
+  <BaseDialog width="500px" title="Keyboard shortcuts" @close="close">
     <p class="dialog-note">
       Shortcuts for <strong>{{ platform }}</strong
       >.
@@ -55,9 +53,6 @@ function close() {
         </ul>
       </section>
     </div>
-    <template #actions>
-      <button class="btn btn-primary" @click="close">Done</button>
-    </template>
   </BaseDialog>
 </template>
 

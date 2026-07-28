@@ -4,8 +4,7 @@ defineProps({
   side: { type: String, required: true },
   /** @type {import('vue').PropType<import('../types').LoadedFile|null>} */
   file: {
-    // A text file carries `content`; a spreadsheet carries `sheets` instead —
-    // the slot only ever reads `name`/`path`, so that's all it requires.
+    // The slot only reads name/path (a spreadsheet carries sheets, not content).
     type: Object,
     default: null,
     validator: (v) => v === null || shaped('name')(v)
@@ -15,8 +14,7 @@ defineProps({
   awaiting: { type: Boolean, default: false }
 })
 const emit = defineEmits(['pick'])
-// Drag & drop is handled once at the window level (App.vue); the slot only
-// tags itself with data-side so a drop landing on it targets that side.
+// Drag & drop is window-level (App.vue); the slot just tags itself data-side.
 </script>
 
 <template>

@@ -1,12 +1,3 @@
-// Entry point: process lifecycle and wiring only. Everything with substance
-// lives in a module beside this one (CLAUDE.md — index.js is thin glue):
-//   security.js  offline kill switch, permission handler, headless switches
-//   window.js    BrowserWindow creation + window-state persistence
-//   menu.js      application menu and its two escape-hatch IPC handlers
-//   vault.js     saved-diff vault key + vault:encrypt/decrypt
-//   files.js     file dialogs and reads
-//   textTools.js Tools-menu passphrase crypto
-//   share.js / snippets.js  sealed share + snippet export IPC
 import { app, BrowserWindow } from 'electron'
 import { applyHeadlessSwitches, installNetworkKillSwitch } from './security'
 import { createWindow } from './window'
@@ -21,21 +12,13 @@ import { registerSnippetIpc } from './snippets'
 import { registerQuickLook, destroyQuickLook } from './quickLook'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 
-// Must run before app ready, while the command line is still mutable.
-applyHeadlessSwitches()
-// Record main-process crashes as early as possible, before anything else runs.
+applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
 
-// Only one instance/window. A second launch hands its args (and its version)
-// off to the running instance and quits instead of opening a second window.
-//
-// The version is how an update takes effect: with no auto-updater (offline by
-// design), a user installs a new build and launches it while the old one is
-// still running. That new launch loses the single-instance race and quits —
-// which, without the check below, would leave the STALE old UI on screen. So
-// when the incoming version differs from ours, the running instance relaunches
-// from its own path (which the installer has just replaced) to load the new
-// build, giving the user the updated app instead of the old one.
+// Single instance. When a newer build is launched over a running one (no
+// auto-updater by design), the loser's version differs, so the running instance
+// relaunches from its now-replaced path to pick up the update rather than
+// leaving the stale UI on screen.
 if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
   app.quit()
 } else {
@@ -65,8 +48,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerLoggerIpc()
     const mainWin = createWindow()
     registerQuickLook()
-    // Tear the launcher down with the main window so closing it (Windows/Linux)
-    // still lets window-all-closed fire and the app quit.
+    // Without this, the hidden launcher keeps a window alive and blocks quit.
     mainWin.on('closed', destroyQuickLook)
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()

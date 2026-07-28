@@ -6,14 +6,14 @@ import { TEXT_TOOLS, toolStatusText } from '../../../src/renderer/src/utils/text
 describe('TEXT_TOOLS', () => {
   const ids = Object.keys(TEXT_TOOLS)
 
-  it('covers the three format/validate tools the menu offers', () => {
-    expect(ids.sort()).toEqual(['json', 'sql', 'xml'])
+  it('covers the tools the menu offers', () => {
+    expect(ids.sort()).toEqual(['json', 'sql', 'uuid', 'xml'])
   })
 
   it.each(ids)('%s declares a complete descriptor', (id) => {
     const tool = TEXT_TOOLS[id]
     expect(typeof tool.title).toBe('string')
-    expect(tool.language).toBe(id)
+    expect(typeof tool.language).toBe('string')
     expect(typeof tool.validate).toBe('function')
     expect(typeof tool.format).toBe('function')
     expect(typeof tool.validLabel).toBe('string')
@@ -26,6 +26,10 @@ describe('TEXT_TOOLS', () => {
     expect(TEXT_TOOLS.json.format('{"a":1}')).toContain('\n')
     expect(TEXT_TOOLS.xml.validate('<a><b/></a>').valid).toBe(true)
     expect(TEXT_TOOLS.xml.validate('<a></b>').valid).toBe(false)
+    expect(TEXT_TOOLS.uuid.validate('550e8400-e29b-41d4-a716-446655440000').valid).toBe(true)
+    expect(TEXT_TOOLS.uuid.format('550e8400-e29b-41d4-a716-446655440000')).toBe(
+      '550e8400e29b41d4a716446655440000'
+    )
   })
 
   // SQL formatting stays available on input the validator won't vouch for.

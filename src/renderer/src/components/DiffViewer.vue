@@ -103,8 +103,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="diff-viewer">
-    <!-- Identical sides: a row label right over the panes says so, rather than a
-         far-off toolbar note (the panes themselves show no change markers). -->
+    <!-- Identical sides: a label over the panes says so. -->
     <div v-if="store.identical" class="identical-row">
       <AppIcon name="check" class="ok" />
       <span>No differences — both sides are identical</span>

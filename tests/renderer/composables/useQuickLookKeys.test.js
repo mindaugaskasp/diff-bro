@@ -3,18 +3,23 @@ import { useQuickLookKeys } from '../../../src/renderer/src/composables/useQuick
 
 // A plain {value} stands in for the Vue ref; count() is a getter over the list
 // length. The KeyboardEvent is faked down to the two things the driver reads.
+// Builds a press() that fakes the KeyboardEvent down to the two things the
+// driver reads (key + preventDefault), shared by both harnesses.
+function presser(onKeydown) {
+  return (key, opts = {}) => {
+    const preventDefault = vi.fn()
+    onKeydown({ key, preventDefault, ...opts })
+    return preventDefault
+  }
+}
+
 function harness(n = 3, start = 0) {
   const selected = { value: start }
   const onChoose = vi.fn()
   const onDismiss = vi.fn()
   const onCopy = vi.fn()
   const { onKeydown } = useQuickLookKeys({ count: () => n, selected, onChoose, onDismiss, onCopy })
-  const press = (key, opts = {}) => {
-    const preventDefault = vi.fn()
-    onKeydown({ key, preventDefault, ...opts })
-    return preventDefault
-  }
-  return { selected, onChoose, onDismiss, onCopy, press }
+  return { selected, onChoose, onDismiss, onCopy, press: presser(onKeydown) }
 }
 
 describe('useQuickLookKeys', () => {
@@ -95,5 +100,71 @@ describe('useQuickLookKeys', () => {
     const empty = harness(0, 0)
     empty.press('c', { metaKey: true, target: { selectionStart: 0, selectionEnd: 0 } })
     expect(empty.onCopy).not.toHaveBeenCalled()
+  })
+})
+
+// A stand-in for the two focus zones. canEnter mirrors "the active row has a
+// scrollable snippet preview"; scrollPreview is spied.
+function previewHarness({ zoneStart = 'list', canEnter = true } = {}) {
+  const selected = { value: 0 }
+  const zone = { value: zoneStart }
+  const scrollPreview = vi.fn()
+  const onDismiss = vi.fn()
+  const { onKeydown } = useQuickLookKeys({
+    count: () => 3,
+    selected,
+    zone,
+    canEnterPreview: () => canEnter,
+    scrollPreview,
+    onChoose: vi.fn(),
+    onDismiss
+  })
+  const atEnd = { selectionStart: 4, selectionEnd: 4, value: 'auth' }
+  return { selected, zone, scrollPreview, onDismiss, press: presser(onKeydown), atEnd }
+}
+
+describe('useQuickLookKeys — preview zone', () => {
+  it('ArrowRight enters the preview from the end of the query when one exists', () => {
+    const h = previewHarness()
+    const pd = h.press('ArrowRight', { target: h.atEnd })
+    expect(h.zone.value).toBe('preview')
+    expect(pd).toHaveBeenCalled()
+  })
+
+  it('ArrowRight is ignored mid-query (the caret moves instead)', () => {
+    const h = previewHarness()
+    const pd = h.press('ArrowRight', { target: { selectionStart: 2, selectionEnd: 2, value: 'auth' } })
+    expect(h.zone.value).toBe('list')
+    expect(pd).not.toHaveBeenCalled()
+  })
+
+  it('ArrowRight is ignored when the row has no scrollable preview', () => {
+    const h = previewHarness({ canEnter: false })
+    h.press('ArrowRight', { target: h.atEnd })
+    expect(h.zone.value).toBe('list')
+  })
+
+  it('in the preview, Up/Down scroll the body and leave the selection put', () => {
+    const h = previewHarness({ zoneStart: 'preview' })
+    h.press('ArrowDown')
+    h.press('ArrowUp')
+    expect(h.scrollPreview.mock.calls).toEqual([[1], [-1]])
+    expect(h.selected.value).toBe(0)
+  })
+
+  it('ArrowLeft returns from the preview to the list', () => {
+    const h = previewHarness({ zoneStart: 'preview' })
+    const pd = h.press('ArrowLeft')
+    expect(h.zone.value).toBe('list')
+    expect(pd).toHaveBeenCalled()
+  })
+
+  it('Escape backs out of the preview before it dismisses', () => {
+    const h = previewHarness({ zoneStart: 'preview' })
+    h.press('Escape')
+    expect(h.zone.value).toBe('list')
+    expect(h.onDismiss).not.toHaveBeenCalled()
+    h.press('Escape')
+    expect(h.onDismiss).toHaveBeenCalledTimes(1)
   })
 })

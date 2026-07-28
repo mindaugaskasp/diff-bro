@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('api', {
   encryptText: (plaintext, passphrase, algorithm) =>
     ipcRenderer.invoke('crypto:encryptText', plaintext, passphrase, algorithm),
   decryptText: (blob, passphrase) => ipcRenderer.invoke('crypto:decryptText', blob, passphrase),
+  // Decrypt-only raw-key interop (AES-256-CBC, unauthenticated); key is user input.
+  decryptTextRaw: (payload) => ipcRenderer.invoke('crypto:decryptTextRaw', payload),
   // Sealed diff sharing (sign-then-encrypt, keys managed in main).
   listTrustedKeys: () => ipcRenderer.invoke('share:listTrusted'),
   myFingerprint: () => ipcRenderer.invoke('share:myFingerprint'),

@@ -4,9 +4,8 @@ import { useDiffStore } from '../stores/diffStore'
 import { buildMenus } from '../menus'
 import AppIcon from './AppIcon.vue'
 
-// Themed replacement for the native File/View menu bar on Windows/Linux
-// (macOS keeps the system menu bar). Items mirror the hidden application
-// menu, whose accelerators still work — this bar is only the visual half.
+// Themed menu bar for Windows/Linux (macOS keeps the native one); mirrors the
+// hidden app menu, which still binds the accelerators.
 const store = useDiffStore()
 const menus = buildMenus(store)
 const open = ref(null)
@@ -81,7 +80,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       </div>
     </div>
   </nav>
-  <!-- Invisible click-catcher, not a modal scrim: clicking anywhere closes the
+  <!-- Click-catcher: clicking anywhere closes the
        open menu without dimming the app behind it. -->
   <div v-if="open" class="menu-backdrop" @click="open = null" @contextmenu.prevent="open = null" />
 </template>

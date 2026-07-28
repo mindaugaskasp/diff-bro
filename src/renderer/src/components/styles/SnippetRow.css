@@ -1,7 +1,6 @@
 /* Row presentation for SnippetRow.vue — shared by both snippet shelves.
    The favourite-shelf tint stays in SnippetsPanel.css: it is the parent
    that knows which shelf a row sits in. */
-/* Row presentation for SnippetRow.vue — shared by both snippet shelves. */
 .row {
   position: relative;
   display: flex;
@@ -63,46 +62,24 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 9px;
   text-align: left;
   background: none;
   border: none;
-  color: var(--text-dim);
   padding: 5px 4px 5px 6px;
   cursor: pointer;
-  font-size: var(--font-md);
 }
-.row:hover .entry {
-  color: var(--text);
-}
-/* Resting marker for diagram snippets — the ◈ action button only shows on
-   hover, so without this a Mermaid row looks like any other. */
-.mmd {
-  flex-shrink: 0;
-  font-size: var(--font-sm);
-  line-height: 1;
-  color: var(--accent);
-}
+/* The name is the primary identifier — full text colour and medium weight at
+   rest, so rows stop reading as one dim, uniform column. */
 .nm {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.dots {
-  display: flex;
-  gap: 3px;
-  flex-shrink: 0;
-}
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-dim);
-}
-.dot.faint {
-  opacity: 0.4;
+  color: var(--text);
+  font-size: var(--font-md);
+  font-weight: 500;
 }
 .when {
   font-size: var(--font-xs);
@@ -117,7 +94,8 @@
   align-items: center;
   flex-shrink: 0;
 }
-.row:hover .when {
+.row:hover .when,
+.row:hover .tag-word {
   display: none;
 }
 .row:hover .rowacts {

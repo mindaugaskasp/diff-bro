@@ -1,8 +1,6 @@
 <script setup>
-// Renders a Mermaid diagram from `code`, re-rendering (debounced) as the code or
-// the app theme changes. The SVG is inserted with DOMParser + replaceChildren —
-// never innerHTML/v-html (ESLint-banned, CLAUDE.md rule 7) — and Mermaid has
-// already sanitized it at securityLevel 'strict'.
+// The SVG is inserted with DOMParser + replaceChildren, never innerHTML/v-html
+// (rule 7); Mermaid already sanitized it at securityLevel 'strict'.
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { renderMermaid } from '../composables/useMermaid'
@@ -19,8 +17,7 @@ const host = ref(null)
 const error = ref('')
 const loading = ref(false)
 let timer = null
-// Guards against an out-of-order finish: a fast edit can start render N+1 while
-// N is still awaiting, and only the newest result may touch the DOM.
+// Only the newest render may touch the DOM (a fast edit can outrace an old one).
 let renderSeq = 0
 
 async function doRender() {
@@ -35,8 +32,7 @@ async function doRender() {
   try {
     const svg = await renderMermaid(code, diff.theme)
     if (mine !== renderSeq) return
-    // Parse as HTML so <foreignObject> content (if any) is handled, then adopt
-    // the <svg> node into this document. No string is ever assigned to innerHTML.
+    // Adopt the <svg> node; no string is ever assigned to innerHTML.
     const parsed = new DOMParser().parseFromString(svg, 'text/html')
     const svgEl = parsed.body.querySelector('svg')
     if (!svgEl) throw new Error('No diagram was produced.')

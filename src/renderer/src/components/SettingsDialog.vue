@@ -15,8 +15,7 @@ const dir = ref('')
 const isDefault = ref(true)
 const busy = ref(false)
 
-// Settings split by domain so the window stays scannable; one pane shows at a
-// time behind the left rail.
+// One pane shows at a time behind the left rail.
 const TABS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'shortcuts', label: 'Shortcuts' },
@@ -26,8 +25,7 @@ const TABS = [
   { id: 'fun', label: 'Fun' }
 ]
 
-// Toggle daily theme rotation, then re-resolve the active theme so it applies
-// (or reverts to the Appearance choice) immediately.
+// Re-resolve the active theme so the rotation toggle applies immediately.
 function toggleDailyTheme(on) {
   settings.setRotateThemeDaily(on)
   diff.resolveActiveTheme()
@@ -41,8 +39,7 @@ async function refresh() {
 }
 onMounted(refresh)
 
-// Changing where data lives moves the files, then restarts so every in-memory
-// key cache is rebuilt cleanly from the new location.
+// Moving the data folder restarts so key caches rebuild from the new location.
 async function choose() {
   busy.value = true
   try {

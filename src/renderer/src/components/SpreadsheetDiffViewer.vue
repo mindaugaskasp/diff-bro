@@ -14,8 +14,7 @@ const { sheets, active, activeSheet, totals, identical, select } = useSpreadshee
 // yet — see pageRows).
 const view = computed(() => pageRows(activeSheet.value?.rows ?? []))
 
-// The +/− toolbar stat is Monaco line-diff language; the grid owns a richer
-// changed/added/removed strip instead, so clear the shared stat while it's up.
+// Clear the Monaco +/− stat; the grid shows its own changed/added/removed strip.
 onMounted(() => {
   store.stats = null
 })

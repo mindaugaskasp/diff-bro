@@ -10,8 +10,7 @@ function close() {
   store.dismiss()
 }
 
-// Copy today's log through the main-process clipboard (navigator.clipboard is
-// blocked by the deny-all permission handler — see clipboard.js).
+// Copy via the main-process clipboard (navigator.clipboard is blocked).
 async function copyLog() {
   const { content } = await window.api.readLog()
   await window.api.copyText(content || '(the log is empty)')

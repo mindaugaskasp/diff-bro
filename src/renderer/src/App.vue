@@ -26,45 +26,31 @@ const settings = useSettingsStore()
 
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
-// A snippet/diff chosen in the floating quick look-up window opens here.
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
-// Ctrl/Cmd+V outside a text field offers to jump into paste mode (two-step
-// confirm before the clipboard is read — see the store's paste actions).
 usePasteShortcut(() => store.requestPasteFromClipboard())
-// Live re-diff: whenever the window regains focus, re-read loaded files so
-// external edits show up without reopening anything.
+// Re-diff loaded files + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {
   store.refreshFromDisk()
-  // Roll the daily theme over if the date changed while the app sat open.
   store.resolveActiveTheme()
 })
 
-// First run: greet a brand-new, empty library with the example snippet, then
-// record the one-time decision so it is never re-seeded — and never injected
-// next to an existing user's own snippets.
+// First run only: seed the example snippet into an empty library, once.
 onMounted(async () => {
   if (settings.examplesSeeded) return
   if (snippets.entries.length === 0) {
     const id = await snippets.seedExample()
-    if (!id) return // vault key not ready — leave the flag unset and retry next launch
+    if (!id) return // vault key not ready — retry next launch
   }
   settings.markExamplesSeeded()
 })
 
-// The sidebar is a fixed width (see SavedDiffs.vue) — deliberately not
-// resizable, so the layout stays predictable across sessions.
-
-// Files dropped anywhere on the window load into the two sides; the snippet
-// editor and Tools dialogs handle their own drops, so this stands down while
-// one of them is open.
+// Window-level file drops stand down while a dialog/paste pane handles its own.
 const dropSuppressed = computed(
   () =>
     !!snippets.editingSnippet ||
     store.showBase64Dialog ||
     !!store.textTool ||
     store.showCryptDialog ||
-    // Paste mode's panes capture their own file drops (partial paste), so the
-    // window-level diff drop stands down to avoid a competing overlay.
     store.mode === 'paste'
 )
 const {
@@ -86,10 +72,9 @@ const {
     <MenuBar v-if="!isMac" />
 
     <AppToolbar />
-    <!-- Nyan theme only: a slim rainbow lane where the reward cat flies on a
-         match/save. Self-contained; absent in every other theme. -->
+    <!-- Nyan theme only. -->
     <NyanLane v-if="store.theme === 'nyan'" />
-    <!-- Matrix theme only: the digital-rain counterpart to the Nyan lane. -->
+    <!-- Matrix theme only. -->
     <MatrixRain v-else-if="store.theme === 'matrix'" />
 
     <div class="body">
@@ -146,10 +131,7 @@ const {
           <SupportedFormats />
         </div>
 
-        <!-- Status/error notices (e.g. a rejected shared diff) sit at the top of
-             the diff area, centred over it — where the eye already is, not tucked
-             at the window foot. Anchored to .content so it spans the diff, not
-             the sidebar. -->
+        <!-- Notices sit centred over the diff area (anchored to .content). -->
         <transition name="fade">
           <div v-if="store.notice" class="notice">{{ store.notice }}</div>
         </transition>

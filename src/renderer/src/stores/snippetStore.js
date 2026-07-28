@@ -2,17 +2,11 @@ import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 
-// Snippets are a personal, non-expiring text library — encrypted at rest with
-// the same install-specific vault key as saved diffs (vault:encrypt /
-// vault:decrypt IPC; the key never enters this store). Organization is by
-// TAGS: each snippet carries up to MAX_TAGS color-coded tags; one with no tags
-// lives under the permanent "Default" catch-all. Tags are plaintext
-// organizational metadata, same trust level as a snippet's name — deliberately
-// NOT part of the AAD, so retagging never re-encrypts. Persistence goes through
-// the durable file store (persist.js) so snippets survive an app reinstall.
+// Personal, non-expiring text library, encrypted at rest with the vault key
+// (crypto in main; the key never enters this store). Organized by TAGS —
+// plaintext metadata, deliberately NOT in the AAD, so retagging never re-encrypts.
 
-// Predefined 20-color palette, tuned to read on both themes. A new tag takes
-// the next unused color; past 20 tags colors cycle.
+// 20-color palette; a new tag takes the next unused color, then cycles.
 export const TAG_PALETTE = [
   '#4c8dff',
   '#39c5cf',
@@ -35,8 +29,7 @@ export const TAG_PALETTE = [
   '#cf222e',
   '#8b949e'
 ]
-// Per-entry tag cap. Tags organize BOTH diffs and snippets now (categories are
-// gone) and one slot is often the auto-added format tag, so this is generous.
+// Per-entry tag cap (one slot is often the auto-added format tag).
 export const MAX_TAGS = 20
 
 export const cleanTag = (name) =>
@@ -54,18 +47,14 @@ function nextColor(tags) {
     TAG_PALETTE[Object.keys(tags).length % TAG_PALETTE.length]
   )
 }
-// Monotonic recency rank — higher is more recent, so the shelf shows new /
-// just-used tags first. Derived from stored ranks so it survives a reload.
+// Monotonic recency rank (higher = more recent), derived from stored ranks.
 function nextRank(tags) {
   const ranks = Object.values(tags).map((t) => t.rank)
   return (ranks.length ? Math.max(...ranks) : 0) + 1
 }
 
-// Migrate the persisted blob to the tags shape. Old shape is
-// { categories:[{id,name,isDefault}], entries:[{...,categoryId}] }. Crucially,
-// the AAD stays `[id, aadSalt, createdAt]` with aadSalt = the entry's original
-// categoryId, so existing ciphertext still decrypts — this migration only
-// reshapes metadata and never touches (or risks) the encrypted content.
+// Migrate the legacy categories shape to tags. The AAD keeps aadSalt = the old
+// categoryId, so existing ciphertext still decrypts — metadata-only reshape.
 const isTagShape = (parsed) =>
   !!parsed && !!parsed.tags && Array.isArray(parsed.entries) && !parsed.categories
 
@@ -80,11 +69,21 @@ function tagsFromCategories(categories) {
   return tags
 }
 
+// Coerce name/tags so old/partial data can't throw the sidebar's unguarded field
+// access (not in the AAD, so decryption is unaffected).
+function normalizeEntry(e) {
+  return {
+    ...e,
+    name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled snippet'),
+    tags: Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : []
+  }
+}
+
 function migrate(parsed) {
   if (isTagShape(parsed)) {
     return {
       tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
-      entries: parsed.entries
+      entries: (Array.isArray(parsed.entries) ? parsed.entries : []).map(normalizeEntry)
     }
   }
   const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
@@ -93,7 +92,7 @@ function migrate(parsed) {
     const cat = catById.get(e.categoryId)
     const tagName = cat && !cat.isDefault ? cleanTag(cat.name) : null
     const { categoryId, ...rest } = e
-    return { ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] }
+    return normalizeEntry({ ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] })
   })
   return { tags: tagsFromCategories(categories), entries }
 }
@@ -113,17 +112,11 @@ function readState() {
   return state
 }
 
-// Binds each snippet's ciphertext to immutable per-snippet values (id + a
-// stable salt + creation time). aadSalt is the old categoryId on migrated
-// snippets and a fresh UUID on new ones — either way it never changes, so tags
-// stay free metadata.
+// Binds the ciphertext to immutable per-snippet values; aadSalt never changes,
+// so tags stay free metadata.
 const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
 
-// Seeded once into a brand-new, empty library so a first-time user meets the
-// snippet feature with something real: a Mermaid diagram that both renders in
-// the preview and describes what snippets do. It goes through the normal add()
-// path, so it is encrypted at rest like any other snippet and can be edited or
-// deleted freely.
+// Seeded once into an empty library so a first-time user sees a real snippet.
 export const EXAMPLE_SNIPPET = {
   name: 'Example — Mermaid diagram',
   language: 'mermaid',
@@ -137,10 +130,8 @@ export const EXAMPLE_SNIPPET = {
     D --> F`
 }
 
-// A snippet's effective syntax. Content is encrypted at rest, so the sidebar
-// can't re-detect it — `detected` is recorded whenever the content is written
-// and stands in for a snippet left on 'auto'. Entries saved before this field
-// existed simply read as plaintext until their next save.
+// Effective syntax: the explicit language, else the `detected` one recorded at
+// write time (content is encrypted, so the sidebar can't re-detect it).
 /**
  * @param {import('../types').SnippetEntry} entry
  * @returns {string} Monaco language id the snippet resolves to
@@ -148,10 +139,8 @@ export const EXAMPLE_SNIPPET = {
 export const languageOf = (entry) =>
   entry?.language && entry.language !== 'auto' ? entry.language : (entry?.detected ?? 'plaintext')
 
-// The format a snippet resolves to, as a tag name — its explicit language, else
-// the auto-detected one. Plaintext/unknown yields no tag. Applied automatically
-// on save so every snippet is findable by its format (a JSON snippet gets a
-// "json" tag, etc.).
+// The snippet's format as a tag name (added on save so it's findable); null for
+// plaintext/unknown.
 export function formatTagFor(language, content) {
   const lang = language && language !== 'auto' ? language : detectSnippetLanguage(content)
   return lang && lang !== 'plaintext' ? lang : null
@@ -179,20 +168,14 @@ export const useSnippetStore = defineStore('snippets', {
     editingSnippet: null,
     // { type: 'snippet' | 'tag', id, name } while a delete confirmation is open.
     pendingDelete: null,
-    // Set when the vault key can't be loaded — surfaced, never a reason to drop
-    // snippets (which, unlike diffs, don't expire and can't be re-fetched).
+    // Surfaced, never a reason to drop snippets (they can't be re-fetched).
     keyError: null
   }),
   getters: {
-    // Both shelves are ordered newest-created-first, so the freshest snippet is
-    // always at the top of its shelf.
     favorites: (s) => s.entries.filter((e) => e.favorite).sort((a, b) => b.createdAt - a.createdAt),
-    // Non-favorited snippets, newest-created first (favorites float to their own
-    // shelf in the UI).
     listed: (s) => s.entries.filter((e) => !e.favorite).sort((a, b) => b.createdAt - a.createdAt),
-    // Tags actually in use, most-recent first, with usage counts. Tags with no
-    // snippets (e.g. created then abandoned in the editor) stay in the registry
-    // — reusing their color — but don't clutter the shelf.
+    // In-use tags, most-recent first; unused ones stay in the registry (keeping
+    // their color) but off the shelf.
     tagList: (s) => {
       const counts = {}
       for (const e of s.entries) for (const t of e.tags) counts[t] = (counts[t] || 0) + 1
@@ -209,18 +192,15 @@ export const useSnippetStore = defineStore('snippets', {
     persist() {
       savePersisted('snippets', JSON.stringify({ tags: this.tags, entries: this.entries }))
     },
-    // Re-read the persisted library from disk. The quick look-up runs in a
-    // separate window (its own Pinia instance), so it calls this on each summon
-    // to pick up snippets the main window added or edited meanwhile.
+    // The quick look-up window (separate Pinia instance) calls this on each
+    // summon to pick up snippets changed in the main window.
     reload() {
       const s = readState()
       this.tags = s.tags
       this.entries = s.entries
     },
-    // Register any missing tags (using the caller's chosen color when given,
-    // else the next palette color — this is where a tag typed in the editor is
-    // FIRST persisted, only when the snippet is saved), touch used ones to
-    // "now", and return the cleaned, de-duplicated, capped applied list.
+    // Register missing tags, touch used ones to "now", and return the cleaned,
+    // de-duplicated, capped applied list.
     registerTags(names, colors = {}) {
       const out = []
       for (const raw of names ?? []) {
@@ -234,8 +214,7 @@ export const useSnippetStore = defineStore('snippets', {
       }
       return out
     },
-    // Add the starter snippet. Returns its id, or null if the vault key wasn't
-    // available (so the caller can leave the first-run flag unset and retry).
+    // Returns the id, or null if the vault key wasn't available (caller retries).
     async seedExample() {
       return this.add({ ...EXAMPLE_SNIPPET })
     },
@@ -293,17 +272,16 @@ export const useSnippetStore = defineStore('snippets', {
         return null
       }
       this.keyError = null
-      // Backfill for snippets saved before `detected` existed: this is the one
-      // place their plaintext is in hand, and the hover preview decrypts every
-      // row the pointer settles on, so the sidebar fills in as it is used.
+      // Backfill `detected` for pre-field snippets — the one place their
+      // plaintext is in hand.
       if (entry.detected === undefined) {
         entry.detected = detectSnippetLanguage(content)
         this.persist()
       }
       return content
     },
-    // tags is optional — pass to replace the snippet's tags (the AAD is
-    // unchanged, so this is a plain metadata + content update, no re-key).
+    // tags optional; the AAD is unchanged, so this is a metadata + content
+    // update, no re-key.
     async update(id, { name, content, language, tags, tagColors = {} }) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
@@ -412,10 +390,8 @@ export const useSnippetStore = defineStore('snippets', {
     async fullBundle() {
       return this._bundle(this.entries)
     },
-    // Merge an in-memory bundle back in (config restore / import). Tag colors
-    // are registered without clobbering existing ones; snippets are appended.
-    // Also accepts a legacy { categories:[...] } bundle so old exports still
-    // import — each category folds into a tag of the same name.
+    // Merge a bundle in (restore/import): appends snippets, keeps existing tag
+    // colors. Also accepts the legacy categories shape.
     async restoreBundle(bundle) {
       if (Array.isArray(bundle?.categories)) return this._restoreLegacyBundle(bundle.categories)
       this._registerBundleTags(bundle?.tags)
@@ -471,10 +447,9 @@ export const useSnippetStore = defineStore('snippets', {
         if (!res.canceled) res.message = IMPORT_ERRORS[res.error] ?? 'Import failed.'
         return res
       }
-      // The embedded signature only proves the bundle wasn't altered after
-      // signing — the verifying key travels INSIDE the file, so it does NOT
-      // prove the signer is trusted. Cross-check against trusted keys and label
-      // it "unverified" otherwise; never present the signer as verified.
+      // The embedded signature proves integrity, NOT that the signer is trusted
+      // (the verifying key is in the file) — cross-check trusted keys, else label
+      // it unverified.
       const trusted = (await window.api.listTrustedKeys?.()) ?? []
       const match = trusted.find((t) => t.fingerprint === res.signer)
       res.signerNote = match

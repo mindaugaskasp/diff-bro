@@ -42,6 +42,7 @@
  * @property {number} expiresAt   epoch ms; purged on tick() once passed
  * @property {string|null} from   sender's label when shared in, else null
  * @property {string} categoryId
+ * @property {string|null} [format]  compared files' format id (json, yaml, …), for the row's type monogram
  * @property {boolean} favorite
  * @property {string} iv          base64 GCM nonce
  * @property {string} data        base64 ciphertext
@@ -124,6 +125,15 @@
  */
 
 /**
+ * A formatting-toolbar button (see jiraMarkup / markdownMarkup, FormatToolbar).
+ * @typedef {object} MarkupAction
+ * @property {string} id        action id passed to the language's apply*Action
+ * @property {string} title     tooltip / aria-label
+ * @property {string} [icon]    AppIcon name (icon buttons)
+ * @property {string} [text]    short label instead of an icon (e.g. "H1")
+ */
+
+/**
  * The tag-chips field's public surface (see useTagInput).
  * @typedef {object} TagField
  * @property {string[]} tags
@@ -148,6 +158,7 @@
  * @property {(text: string) => string} format
  * @property {string} validLabel        status line when the input parses
  * @property {boolean} requiresValid    Format needs parseable input
+ * @property {string} [actionLabel]     primary action label (default 'Format')
  * @property {string} [note]            caveat shown above the actions
  */
 

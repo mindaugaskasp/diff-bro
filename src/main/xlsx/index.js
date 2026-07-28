@@ -3,11 +3,9 @@ import { decodeUtf8, XlsxError } from './errors'
 import { parseSharedStrings, parseWorkbook, parseRels, resolveTarget } from './parse'
 import { parseSheet } from './sheet'
 
-// Read an .xlsx buffer into a comparable grid. Read-only, no formula
-// evaluation, no external resources — the security posture lives in unzip.js
-// (entry allowlist + decompression-bomb caps) and errors.js (DOCTYPE rejection).
-// Returns { sheets: [{ name, rows }] }; each row is a dense array of cell values
-// (string | number | boolean | null). Throws XlsxError on refusal.
+// Read an .xlsx buffer into { sheets: [{ name, rows }] }. Read-only, no formula
+// eval — the security posture lives in unzip.js (allowlist + bomb caps) and
+// errors.js (DOCTYPE rejection). Throws XlsxError on refusal.
 export function readXlsx(buffer, opts = {}) {
   const entries = extractXlsxEntries(buffer, opts)
   const textOf = (name) => (entries.has(name) ? decodeUtf8(entries.get(name)) : null)

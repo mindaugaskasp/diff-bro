@@ -1,7 +1,5 @@
 <script setup>
-// Format/validate workbench for one of the TEXT_TOOLS (JSON, XML, SQL). The
-// tool descriptor supplies the syntax and the two pure functions; everything
-// here is the shared shell around them.
+// Shared format/validate shell for one of the TEXT_TOOLS (JSON, XML, SQL).
 import { computed, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
@@ -30,8 +28,7 @@ const { onDropFile } = useFileTextDrop((text) => {
   input.value = text
 })
 
-// Recomputed on every keystroke — the validators are cheap, and this drives
-// both the status line and (for JSON/XML) Monaco's own inline squiggle.
+// Drives the status line and Monaco's inline squiggle.
 const status = computed(() => (input.value.trim() ? tool.value.validate(input.value) : null))
 const statusText = computed(() => toolStatusText(tool.value, status.value))
 const canFormat = computed(() => (tool.value.requiresValid ? !!status.value?.valid : !!input.value))
@@ -75,7 +72,9 @@ function close() {
     </p>
     <p v-if="tool.note" class="dialog-note">{{ tool.note }}</p>
     <template #actions>
-      <button class="btn btn-primary" :disabled="!canFormat" @click="format">Format</button>
+      <button class="btn btn-primary" :disabled="!canFormat" @click="format">
+        {{ tool.actionLabel ?? 'Format' }}
+      </button>
       <button class="btn btn-ghost" :disabled="!input" @click="copy">Copy</button>
       <button class="btn btn-ghost" :disabled="!input" @click="addToSnippets">
         Add to Snippets

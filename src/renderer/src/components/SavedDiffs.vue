@@ -1,8 +1,6 @@
 <script setup>
-// The sidebar shell (Option 2 — "one quiet list"): a single search + a segmented
-// filter (All / Saved / Shared / Snippets) over one scroll, instead of three
-// reorderable bands. Each group is still its own component (categories, favorites,
-// tags all preserved) — just rendered with a light label and no drag-reorder.
+// The sidebar shell: a search + a segmented filter (All / Saved / Shared /
+// Snippets) over one scroll; each group is its own component.
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
@@ -17,9 +15,7 @@ const vault = useVaultStore()
 const snippets = useSnippetStore()
 const diff = useDiffStore()
 
-// Tools pinned to the sidebar foot for one-click access — the same dialogs the
-// Tools menu opens, in the same order. Base64 has its own dialog flag; the
-// format/validate tools come from the TEXT_TOOLS registry (the single source).
+// Tools pinned to the sidebar foot (same dialogs as the Tools menu).
 const TOOLS = [
   { label: 'Base64', title: 'Base64 Encode / Decode', open: () => (diff.showBase64Dialog = true) },
   ...Object.keys(TEXT_TOOLS).map((id) => ({
@@ -41,9 +37,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => clearInterval(timer))
 
-// The section toggles are MULTI-select — any combination of Saved / Shared /
-// Snippets can be shown at once. "All" turns them all on; "★" narrows every
-// shown section to favorites only.
+// Section toggles are multi-select; "All" shows all, "★" narrows to favorites.
 const SECTIONS = [
   { id: 'saved', label: 'Saved' },
   { id: 'shared', label: 'Shared' },
@@ -68,9 +62,8 @@ function showAll() {
   visible.value = new Set(SECTIONS.map((s) => s.id))
 }
 
-// One tag filter across the whole sidebar: the union of tags on diffs AND
-// snippets (colors from the shared registry), most-used first. Clicking a chip
-// narrows every group to entries carrying that tag; clicking it again clears.
+// One tag filter across the sidebar: the union of diff + snippet tags, most-used
+// first.
 const activeTag = ref('')
 const allTags = computed(() => {
   const counts = {}

@@ -1,9 +1,6 @@
 <script setup>
-// Full-screen-ish, movable Mermaid viewer. Opened from the snippet editor's
-// live preview or a Mermaid snippet row (diffStore.mermaidView). Supports
-// zoom (buttons + Ctrl/⌘-wheel), drag-to-pan, Fit, a maximize toggle, and
-// drag-resize from any of its four corners (useResizable). When the app window
-// itself goes fullscreen the panel maximises to fill it (useFullScreen).
+// Movable Mermaid viewer (diffStore.mermaidView): zoom, drag-pan, corner-resize,
+// maximize; follows OS fullscreen.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useBackdropClose } from '../composables/useBackdropClose'
@@ -43,8 +40,7 @@ function toggleMaxed() {
   maxed.value = !maxed.value
   fitPanel()
 }
-// A manual corner drag means the user wants a custom size; drop the maxed flag
-// so the maximize button offers to fill again rather than to restore.
+// A manual drag drops the maxed flag, so the button offers to fill again.
 function startResize(corner, e) {
   maxed.value = false
   beginResize(corner, e)
@@ -64,8 +60,7 @@ function onKey(e) {
 function onWindowResize() {
   if (maxed.value) fitPanel()
 }
-// Entering app fullscreen fills the window; leaving it does not shrink a panel
-// the user may have grown, so only react on the way in.
+// Only react on the way in, so leaving fullscreen doesn't shrink a grown panel.
 watch(isFullScreen, (on) => {
   if (on) {
     maxed.value = true
@@ -74,8 +69,7 @@ watch(isFullScreen, (on) => {
 })
 
 onMounted(() => {
-  // Open filling the app — a diagram is the whole point of this window, so give
-  // it the room by default; the restore button shrinks it to DEFAULT_W×H.
+  // Open maximized; the restore button shrinks it to DEFAULT_W×H.
   maxed.value = true
   fitPanel()
   window.addEventListener('keydown', onKey)

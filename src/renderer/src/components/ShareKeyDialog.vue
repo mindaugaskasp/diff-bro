@@ -9,8 +9,7 @@ const fingerprint = ref('')
 const busy = ref(false)
 
 onMounted(async () => {
-  // Prefill the name the user set before (if any) and show this key's
-  // fingerprint so they can read it out to the other person out of band.
+  // Prefill the prior name and show the fingerprint for out-of-band verification.
   label.value = (await window.api.myKeyLabel()) ?? ''
   fingerprint.value = (await window.api.myFingerprint()) ?? ''
 })

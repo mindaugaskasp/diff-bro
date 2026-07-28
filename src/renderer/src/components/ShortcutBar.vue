@@ -3,10 +3,8 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { SHORTCUT_BAR } from '../utils/shortcuts'
 import AppIcon from './AppIcon.vue'
 
-// Translucent hint pill floating over the bottom of the diff area — it never
-// takes layout space and never covers the top of the content, where the diff
-// actually starts. Visibility is a persisted setting (Settings → Interface),
-// so the hidden bar can be brought back without editing storage by hand.
+// Translucent hint pill floating over the diff area; visibility is a persisted
+// setting.
 const settings = useSettingsStore()
 
 const shortcuts = SHORTCUT_BAR

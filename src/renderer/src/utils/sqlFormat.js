@@ -1,8 +1,6 @@
-// Lightweight, dependency-free SQL formatter + heuristic validator for the
-// Tools menu. Not a full SQL parser (that would need a library and a network
-// audit, which CLAUDE.md steers away from) — a keyword-based reflow that
-// covers the common shapes, plus balance/structure checks. String and quoted
-// identifiers are masked out first so nothing inside them is touched.
+// Dependency-free SQL formatter + heuristic validator (a keyword reflow, not a
+// parser). Strings/quoted identifiers are masked first so their contents aren't
+// touched.
 
 // Clauses that start a fresh line at the base indent.
 const CLAUSE = [
@@ -67,13 +65,12 @@ const KEYWORDS = [
 const STATEMENT_START =
   /^(WITH|SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|MERGE|EXPLAIN|BEGIN|COMMIT|ROLLBACK)\b/i
 
-// A Private-Use-Area code point wraps each placeholder so it can never collide
-// with real SQL tokens (e.g. a bare number) and is not a control character.
+// A Private-Use-Area code point wraps each placeholder so it can't collide with
+// real tokens.
 const SENTINEL = String.fromCharCode(0xe000)
 const PLACEHOLDER = new RegExp(`${SENTINEL}(\\d+)${SENTINEL}`, 'g')
 
-// Replace string literals ('...') and quoted identifiers ("...") with
-// placeholders so formatting never rewrites their contents.
+// Mask string literals + quoted identifiers so formatting never rewrites them.
 function mask(sql) {
   const literals = []
   const masked = sql.replace(/'(?:[^']|'')*'|"(?:[^"]|"")*"/g, (m) => {

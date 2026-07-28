@@ -1,20 +1,10 @@
-// Parse Jira / Confluence wiki markup into a block tree so the editor can show a
-// *rendered* preview. The tree is rendered by JiraRendered/JiraInline as real
-// DOM elements with text interpolation — never HTML injection — so this stays on
-// the right side of the no-`v-html`/`innerHTML` rule (see CLAUDE.md §7). It is
-// pure and best-effort: bounded to the notation the toolbar produces (utils/
-// jiraMarkup.js) plus common extras, and a thing it can't parse just lands as
-// text rather than throwing.
-//
-// Block nodes:  heading{level,inlines} · paragraph{lines:[inlines]} ·
-//   list{ordered,items:[{depth,inlines}]} · quote{children:[blocks]} · code{code}
-// Inline nodes: text{value} · strong/em/ins/del{inlines} · code{value} ·
-//   link{label,href}
+// Parse Jira/Confluence wiki markup into a block tree for the rendered preview.
+// The tree renders as real DOM via interpolation, never v-html (rule 7). Pure,
+// best-effort — anything it can't parse lands as text.
 
 const HEADING = /^h([1-6])\.\s+(.*)$/
 const QUOTE_LINE = /^bq\.\s+(.*)$/
-// Lists are `*` (bulleted) or `#` (numbered), one or more for nesting depth. `-`
-// is deliberately excluded — it is the strikethrough marker, not a list bullet.
+// `*`/`#` (repeat for depth); `-` is the strike marker, not a bullet.
 const LIST_LINE = /^([*#]+)\s+(.*)$/
 const CODE_OPEN = /^\{code(?::[^}]*)?\}$/
 const QUOTE_OPEN = /^\{quote\}$/
@@ -30,9 +20,8 @@ function linkNode(inner) {
   return { type: 'link', label, href }
 }
 
-// The matching emphasis close for the marker at `open`: another same marker that
-// isn't glued to a word, wrapping non-empty content with no edge spaces (Jira's
-// word-boundary rule, which keeps hyphens/underscores in prose from lighting up).
+// The emphasis close: a same marker not glued to a word, wrapping non-empty,
+// non-edge-spaced content (Jira's word-boundary rule).
 function findClose(text, open, ch) {
   for (let j = open + 1; j < text.length; j++) {
     if (text[j] !== ch) continue

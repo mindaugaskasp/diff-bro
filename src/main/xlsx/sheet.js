@@ -4,11 +4,8 @@ import { colToIndex } from './parse'
 
 export const SHEET_DEFAULTS = { maxCells: 2_000_000 }
 
-// Turn a cell's raw <v>/<t> text into a typed JS value. A formula cell reaches
-// here with only its cached <v> result — <f> is dropped during parsing (see
-// onText) — so nothing is ever re-evaluated. Dates are numbers: without reading
-// xl/styles.xml (deliberately skipped) a date serial can't be distinguished
-// from a plain number; that's a documented limitation of the value diff.
+// A formula cell arrives with only its cached <v> — <f> is dropped, so nothing
+// is re-evaluated. Dates read as numbers (styles.xml is skipped).
 export function resolveCellValue(type, v, t, sharedStrings) {
   switch (type) {
     case 's': {
@@ -56,8 +53,7 @@ function onText(st, val, decodeEntities) {
   else if (st.inT) st.t += decodeEntities(val)
 }
 
-// Returns true to signal the caller to stop parsing (cell budget exceeded).
-// `ctx` carries { rows, sharedStrings, maxCells } to stay within max-params.
+// Returns true to stop parsing (cell budget exceeded).
 function onClose(st, name, ctx) {
   if (name === 'v') st.inV = false
   else if (name === 'f') st.inF = false

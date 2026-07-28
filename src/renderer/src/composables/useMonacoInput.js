@@ -3,9 +3,8 @@ import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { isDarkTheme } from '../utils/themes'
 
-// A Monaco editor bound to a `content` ref: two-way value sync, live language
-// switching, and the app theme mirrored into the editor. Callers own the ref, so
-// the editor is just another view of it.
+// A Monaco editor bound to a `content` ref: two-way sync, live language switching,
+// theme mirrored in.
 /**
  * @param {object} args
  * @param {import('vue').Ref<HTMLElement|null>} args.container  element to mount into
@@ -30,6 +29,12 @@ export function useMonacoInput({ container, content, language, readOnly, options
       theme: monacoTheme(),
       automaticLayout: true,
       minimap: { enabled: false },
+      // No right-hand overview-ruler lane: with the minimap off it only paints a
+      // stock-theme border that reads as a white sliver against the app surface.
+      overviewRulerLanes: 0,
+      overviewRulerBorder: false,
+      hideCursorInOverviewRuler: true,
+      scrollbar: { useShadows: false },
       scrollBeyondLastLine: false,
       contextmenu: false,
       fontSize: 12.5,
@@ -62,10 +67,8 @@ export function useMonacoInput({ container, content, language, readOnly, options
     editor?.focus()
   }
 
-  // Run a pure (whole text + selection offsets) → (new text + new selection)
-  // transform against the editor, as one undo step, then restore the selection
-  // and focus. The transform owns the string work (see utils/jiraMarkup.js); this
-  // just bridges Monaco's line/column selection to flat offsets and back.
+  // Bridge Monaco's line/column selection to flat offsets, run a pure transform
+  // as one undo step, then restore the selection.
   function applySelectionEdit(transform) {
     if (!editor) return
     const model = editor.getModel()
@@ -83,8 +86,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
     editor.focus()
   }
 
-  // Force a re-layout. Needed when the editor was created in a hidden container
-  // (e.g. the snippet editor opens on the rendered Jira view) and is then shown.
+  // Re-layout after the editor was created in a hidden container and then shown.
   function layout() {
     editor?.layout()
   }

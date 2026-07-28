@@ -31,6 +31,22 @@ describe('vaultStore', () => {
     await expect(vault.load(id)).resolves.toEqual(PAYLOAD)
   })
 
+  it("records the compared files' format on the entry (for the row's type monogram)", async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('cfg', 1, {
+      mode: 'file',
+      left: { name: 'config.json' },
+      right: { name: 'config.json' }
+    })
+    expect(vault.entries.find((e) => e.id === id).format).toBe('json')
+  })
+
+  it('leaves format null for a paste diff with no filename', async () => {
+    const vault = useVaultStore()
+    await vault.save('p', 1, PAYLOAD)
+    expect(vault.entries[0].format).toBeNull()
+  })
+
   it('stores only ciphertext in localStorage', async () => {
     const vault = useVaultStore()
     await vault.save('my diff', 1, PAYLOAD)
@@ -408,5 +424,19 @@ describe('vaultStore', () => {
     localStorage.setItem('diffbro.vault', JSON.stringify(raw))
     vault.reload()
     expect(vault.entries.map((e) => e.name)).toEqual(['one', 'two'])
+  })
+
+  // Older/partial records must not crash the sidebar filters (unguarded
+  // e.tags.some / e.name.toLowerCase).
+  it('normalizes an older entry with invalid tags or missing name on load', () => {
+    localStorage.setItem(
+      'diffbro.vault',
+      JSON.stringify({
+        entries: [{ id: 'x', iv: 'i', data: 'd', createdAt: 1, expiresAt: null, tags: 'oops' }]
+      })
+    )
+    const vault = useVaultStore()
+    expect(vault.entries[0].tags).toEqual([])
+    expect(typeof vault.entries[0].name).toBe('string')
   })
 })

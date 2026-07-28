@@ -18,6 +18,10 @@ export function useQuickLook() {
   const query = ref('')
   const selected = ref(0)
   const snippetText = ref('')
+  // 'list' navigates results; 'preview' scrolls the active snippet body.
+  const zone = ref('list')
+  const previewEl = ref(null)
+  const PREVIEW_STEP = 56
 
   const items = computed(() => [
     ...snippets.entries
@@ -53,11 +57,18 @@ export function useQuickLook() {
 
   watch(results, () => {
     selected.value = 0
+    zone.value = 'list'
   })
+
+  const canEnterPreview = () => current.value?.kind === 'snippet' && !!previewEl.value
+  function scrollPreview(dir) {
+    previewEl.value?.scrollBy({ top: dir * PREVIEW_STEP })
+  }
 
   // Guarded by id so a fast arrow sweep never renders a stale decrypt.
   watch(current, async (it) => {
     snippetText.value = ''
+    zone.value = 'list' // a new (or diff) selection can't stay in snippet-scroll
     if (it?.kind !== 'snippet') return
     const text = await snippets.load(it.id)
     if (current.value?.id === it.id && typeof text === 'string') {
@@ -86,8 +97,12 @@ export function useQuickLook() {
 
   // Full contents (the preview is truncated), via the main process —
   // navigator.clipboard is blocked by the deny-all permission handler.
-  const HIDE_AFTER_COPY_MS = 650
+  const HIDE_AFTER_COPY_MS = 900
   const { copied, flash } = useCopyFeedback()
+  // The just-copied snippet's name + its row index, so the confirmation names
+  // what was taken and the "Copied" cue can animate on that exact row.
+  const copiedName = ref('')
+  const copiedIndex = ref(-1)
   async function copy(i) {
     const it = results.value[i]
     if (it?.kind !== 'snippet') return
@@ -95,6 +110,8 @@ export function useQuickLook() {
     if (typeof text !== 'string') return
     const res = await window.api.copyText(text)
     if (!res?.ok) return
+    copiedName.value = it.name
+    copiedIndex.value = i
     flash()
     setTimeout(animateOut, HIDE_AFTER_COPY_MS)
   }
@@ -107,12 +124,18 @@ export function useQuickLook() {
     query.value = ''
     selected.value = 0
     snippetText.value = ''
+    zone.value = 'list'
+    copiedName.value = ''
+    copiedIndex.value = -1
     closing.value = false
   }
 
   const { onKeydown } = useQuickLookKeys({
     count: () => results.value.length,
     selected,
+    zone,
+    canEnterPreview,
+    scrollPreview,
     onChoose: choose,
     onDismiss: dismiss,
     onCopy: copy
@@ -125,9 +148,13 @@ export function useQuickLook() {
     current,
     diffMeta,
     snippetText,
+    zone,
+    previewEl,
     choose,
     copy,
     copied,
+    copiedName,
+    copiedIndex,
     closing,
     dismiss,
     refresh,

@@ -1,7 +1,5 @@
 <script setup>
-// Shown before an active, UNSAVED comparison is overwritten — by dropping new
-// files (pendingReplace) or by opening a file into a loaded slot (pendingPick).
-// A saved comparison skips this entirely (see diffStore.diffSaved).
+// Confirm before overwriting an active UNSAVED comparison (a saved one skips this).
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import BaseDialog from './BaseDialog.vue'

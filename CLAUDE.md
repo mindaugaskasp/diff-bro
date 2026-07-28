@@ -110,8 +110,13 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   `src/renderer/src/types.js` and a JSDoc annotation; a prop typed `Object`
   documents nothing, so pair it with a `shaped(...)` validator from
   `utils/props.js`.
-- Comments explain *why* or state invariants; never narrate what the next
-  line does. Match the density and tone of the surrounding file.
+- **Prose comments are forbidden.** Code must explain itself through names and
+  structure. A comment is allowed *only* when the code's intent is genuinely
+  ambiguous and cannot be made clear by better naming or refactoring — e.g. a
+  non-obvious security invariant, a subtle gotcha, or a "why not the obvious
+  thing" note. When one is truly warranted, keep it to a single terse line.
+  Never narrate what the next line does, never restate the code in English, and
+  never leave block/"wall" comments. When in doubt, delete the comment.
 - New file formats go through the adapter registry
   (`src/renderer/src/adapters/`) returning a `{ kind, ... }` comparable —
   never special-case a format inside `DiffViewer`.

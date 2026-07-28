@@ -1,10 +1,8 @@
 <script setup>
 import AppIcon from './AppIcon.vue'
 
-// Shown under the empty-state prompt so it's obvious what can be dropped. Only
-// .xlsx gets the structural grid diff; everything else diffs as text, so this
-// list is illustrative, not exhaustive — hence the trailing "& any text or code
-// file". `featured` highlights the headline capability (Excel).
+// The empty-state list of droppable formats (illustrative — everything non-.xlsx
+// diffs as text). `featured` highlights Excel.
 const FORMATS = [
   { label: 'Excel', ext: '.xlsx', icon: 'table', featured: true },
   { label: 'JSON', icon: 'code' },

@@ -1,12 +1,8 @@
 import { computed, ref } from 'vue'
 import { useSnippetStore, MAX_TAGS, TAG_PALETTE, cleanTag } from '../stores/snippetStore'
 
-// The snippet editor's tag chips field: up to MAX_TAGS color-coded tags, with
-// suggestions from the existing registry.
-//
-// Colors for tags typed here that don't exist yet are held locally and only
-// written to the registry when the snippet is saved — abandoning the editor
-// must never leave a stray tag behind.
+// The snippet editor's tag chips field. Colors for new tags are held locally and
+// only written to the registry on save, so abandoning the editor leaves no stray.
 /**
  * @param {string[]} initial tags the snippet already carries
  * @returns {import('../types').TagField}
@@ -58,8 +54,7 @@ export function useTagInput(initial = []) {
     tags.value = tags.value.filter((x) => x !== t)
   }
 
-  // Space and comma commit the tag the same way Enter does, so a tag never
-  // stays behind as uncommitted text in the input.
+  // Space and comma commit like Enter, so no tag stays behind as typed text.
   function onKey(e) {
     if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
       e.preventDefault()

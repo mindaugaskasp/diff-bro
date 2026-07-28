@@ -1,8 +1,5 @@
 <script setup>
-// One banner for both sides. When both are minified JSON/XML it reads "Both
-// sides look like JSON — pretty-print?" with a single Format-both action; a
-// mixed or single-side case names the side(s). The merge lives in the store
-// (diffStore.formatBanner) so this stays a thin renderer.
+// Thin renderer of diffStore.formatBanner (one banner covering both sides).
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 

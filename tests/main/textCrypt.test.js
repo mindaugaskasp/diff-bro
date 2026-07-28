@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ALGORITHMS, decryptText, encryptText, TEXT_CRYPT_FORMAT } from '../../src/main/textCrypt'
+import { createCipheriv } from 'node:crypto'
+import {
+  ALGORITHMS,
+  decryptText,
+  decryptTextRaw,
+  encryptText,
+  TEXT_CRYPT_FORMAT
+} from '../../src/main/textCrypt'
 
 describe('encryptText / decryptText', () => {
   for (const algo of ALGORITHMS) {
@@ -121,5 +128,67 @@ describe('encryptText / decryptText', () => {
       ok: false,
       error: 'Not a valid encrypted blob.'
     })
+  })
+})
+
+describe('decryptTextRaw (AES-256-CBC interop)', () => {
+  const KEY = Buffer.alloc(32, 7)
+  const IV = Buffer.alloc(16, 3)
+  const PLAIN = 'external payload — 日本語 🎉, more than one block long'
+  const cbc = (text, key = KEY, iv = IV) => {
+    const c = createCipheriv('aes-256-cbc', key, iv)
+    return Buffer.concat([c.update(text, 'utf8'), c.final()])
+  }
+
+  it('decrypts with hex key, IV, and ciphertext', () => {
+    const ct = cbc(PLAIN).toString('hex')
+    expect(decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: IV.toString('hex') })).toEqual(
+      { ok: true, plaintext: PLAIN }
+    )
+  })
+
+  it('accepts base64 for every field', () => {
+    const ct = cbc(PLAIN).toString('base64')
+    expect(
+      decryptTextRaw({ ciphertext: ct, key: KEY.toString('base64'), iv: IV.toString('base64') })
+    ).toEqual({ ok: true, plaintext: PLAIN })
+  })
+
+  it('never reproduces the plaintext under a wrong key', () => {
+    const ct = cbc(PLAIN).toString('hex')
+    const wrong = Buffer.alloc(32, 9).toString('hex')
+    const res = decryptTextRaw({ ciphertext: ct, key: wrong, iv: IV.toString('hex') })
+    expect(res.ok === false || res.plaintext !== PLAIN).toBe(true)
+  })
+
+  it('corrupts the first block under a wrong IV (CBC has no integrity)', () => {
+    const ct = cbc(PLAIN).toString('hex')
+    const wrongIv = Buffer.alloc(16, 255).toString('hex')
+    const res = decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: wrongIv })
+    expect(res.ok === false || res.plaintext !== PLAIN).toBe(true)
+  })
+
+  it('rejects a key or IV of the wrong length', () => {
+    const ct = cbc(PLAIN).toString('hex')
+    expect(decryptTextRaw({ ciphertext: ct, key: 'abcd', iv: IV.toString('hex') }).error).toMatch(
+      /Key must be 32 bytes/
+    )
+    expect(decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: 'abcd' }).error).toMatch(
+      /IV must be 16 bytes/
+    )
+  })
+
+  it('rejects ciphertext that is not whole 16-byte blocks', () => {
+    expect(
+      decryptTextRaw({ ciphertext: 'aabbcc', key: KEY.toString('hex'), iv: IV.toString('hex') }).error
+    ).toMatch(/whole 16-byte blocks/)
+  })
+
+  it('refuses a non-CBC algorithm and missing fields', () => {
+    const ct = cbc(PLAIN).toString('hex')
+    expect(
+      decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: IV.toString('hex'), algorithm: 'aes-256-gcm' })
+    ).toEqual({ ok: false, error: 'Unsupported algorithm.' })
+    expect(decryptTextRaw({}).ok).toBe(false)
   })
 })

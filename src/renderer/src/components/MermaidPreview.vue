@@ -1,7 +1,5 @@
 <script setup>
-// The snippet editor's live Mermaid preview: renders the current code and offers
-// to open the full, resizable diagram viewer. Split out of SnippetEditorDialog to
-// keep that component within its size budget.
+// The snippet editor's live Mermaid preview + an "expand to full viewer" button.
 import MermaidDiagram from './MermaidDiagram.vue'
 import AppIcon from './AppIcon.vue'
 

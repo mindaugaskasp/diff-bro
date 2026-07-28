@@ -443,4 +443,28 @@ describe('snippetStore — tags model', () => {
     store.reload()
     expect(store.entries.map((e) => e.name)).toEqual(['first', 'second'])
   })
+
+  // Older/partial records must not crash the sidebar, whose filters do unguarded
+  // entry.tags.some / entry.name.toLowerCase.
+  it('normalizes an older entry missing tags and name on load', () => {
+    localStorage.setItem(
+      'diffbro.snippets',
+      JSON.stringify({ tags: {}, entries: [{ id: 'x', iv: 'i', data: 'd', createdAt: 1 }] })
+    )
+    const store = useSnippetStore()
+    expect(store.entries[0].tags).toEqual([])
+    expect(typeof store.entries[0].name).toBe('string')
+  })
+
+  it('drops non-string tags from an older entry on load', () => {
+    localStorage.setItem(
+      'diffbro.snippets',
+      JSON.stringify({
+        tags: {},
+        entries: [{ id: 'x', iv: 'i', data: 'd', createdAt: 1, name: 'n', tags: ['ok', 5, null] }]
+      })
+    )
+    const store = useSnippetStore()
+    expect(store.entries[0].tags).toEqual(['ok'])
+  })
 })

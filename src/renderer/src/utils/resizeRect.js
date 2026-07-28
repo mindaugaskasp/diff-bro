@@ -1,6 +1,5 @@
-// Pure geometry for the corner-resize of the Mermaid viewer panel. No DOM, no
-// Vue — the composable (useResizable) owns the pointer wiring; this owns only
-// the maths so it stays unit-testable.
+// Pure corner-resize geometry for the Mermaid viewer panel (wiring is in
+// useResizable).
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 

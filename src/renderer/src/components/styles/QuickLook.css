@@ -123,6 +123,7 @@
   text-align: center;
 }
 .ql-res {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
@@ -138,10 +139,6 @@
 .ql-res.sel {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-}
-.ql-ico {
-  color: var(--text-dim);
-  display: inline-flex;
 }
 .ql-name {
   font-size: var(--font-md);
@@ -191,6 +188,11 @@
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  flex: none;
+}
+/* Copy sits in the name header (least travel from the just-selected result),
+   not the footer; the footer keeps the primary Open action. */
+.ql-pv-copy {
   flex: none;
 }
 .ql-pv-tags {
@@ -261,4 +263,100 @@
   border-top: 1px solid var(--border);
   font-size: var(--font-xs);
   color: var(--text-dim);
+}
+
+/* --- preview-focus mode ---
+   Stepping into the preview (→) relays through three coordinated cues: the
+   preview pane gains an accent focus ring, the results list parks (dims, and its
+   selection drops to a quiet outline), and the footer hints swap (see template).
+   Everything resolves through tokens so it holds on every theme. */
+.ql-results {
+  transition: opacity 0.16s ease;
+}
+.ql-preview {
+  transition: box-shadow 0.16s ease;
+}
+.ql-body.in-preview .ql-results {
+  opacity: 0.5;
+}
+.ql-body.in-preview .ql-res.sel {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.ql-body.in-preview .ql-preview {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+/* Back-to-list affordance in the preview header. */
+.ql-pv-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  margin-right: calc(-1 * var(--space-1));
+}
+.ql-pv-back .app-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- per-row "Copied" cue ---
+   A chip that pops on the exact row that was copied, plus a one-shot accent
+   pulse under it, so the confirmation is anchored to the snippet before the
+   launcher gracefully closes. */
+.ql-res-copied {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  pointer-events: none;
+}
+.ql-res-copied .app-icon {
+  width: 12px;
+  height: 12px;
+}
+@keyframes ql-copied-pulse {
+  from {
+    background: color-mix(in srgb, var(--accent) 42%, transparent);
+  }
+  to {
+    background: color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+.ql-res.copied {
+  animation: ql-copied-pulse 0.9s ease-out;
+}
+.ql-copychip-enter-active,
+.ql-copychip-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.ql-copychip-enter-from,
+.ql-copychip-leave-to {
+  opacity: 0;
+  transform: translateY(-50%) scale(0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ql-results,
+  .ql-preview,
+  .ql-copychip-enter-active,
+  .ql-copychip-leave-active {
+    transition: none;
+  }
+  .ql-res.copied {
+    animation: none;
+  }
 }

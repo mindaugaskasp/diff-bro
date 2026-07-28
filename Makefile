@@ -13,7 +13,8 @@ VNC_URL := http://localhost:6080/vnc.html
 RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
 .PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
-        clean dev check test e2e lint build package-win package-linux package-mac audit-fix brew-cask
+        clean dev check test e2e lint build package-win package-linux package-mac audit-fix \
+        brew-cask screenshots
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -133,3 +134,14 @@ package-mac: ## Build the macOS DMG -> dist/ (must run natively on macOS)
 # Regenerate the Homebrew cask (packaging/homebrew/diff-bro.rb) with the current tag version
 brew-cask: ## Regenerate the Homebrew cask for the current (or VERSION=x.y.z) release
 	node scripts/gen-homebrew-cask.mjs $(VERSION) $(if $(DMG),--dmg $(DMG),)
+
+# Refreshes docs/screenshots (the README images) by driving the app's own
+# Electron with Playwright (page.screenshot). Runs INSIDE the up container for the
+# same reason as e2e: it needs the virtual display (Xvfb :99), and Playwright's
+# _electron can't launch Electron 39 on the macOS host (that build rejects the
+# --remote-debugging-port=0 flag Playwright passes; Linux Electron accepts it).
+# Builds first, seeds a demo library, walks each state — no manual interaction.
+# Images land on the host via the bind mount. SHOTS="name ..." for a subset.
+screenshots: up ## Refresh README screenshots (auto-drives the app in the container). SHOTS="name ..." for a subset
+	docker compose exec -T $(SERVICE) npm run build
+	docker compose exec -T $(SERVICE) node scripts/recapture-screenshots.mjs $(SHOTS)

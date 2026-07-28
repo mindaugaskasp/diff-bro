@@ -1,17 +1,9 @@
 import { formatJson, formatXml, validateJson, validateXml } from './textFormats'
 import { formatSql, validateSql } from './sqlFormat'
+import { convertUuid, validateUuid } from './uuid'
 
-// The format/validate tools are one dialog driven by this table: they differ
-// only in their syntax, their two pure functions, and their wording. Adding a
-// tool means adding an entry here plus its menu accelerator — never another
-// near-identical dialog component.
-//
-//   language      Monaco language id (also the syntax a snippet is saved as)
-//   validate      (text) => { valid, error?, line?, column? }
-//   format        (text) => string
-//   validLabel    status line when the input parses
-//   requiresValid Format only makes sense on parseable input
-//   note          optional caveat shown above the actions
+// All format/validate tools are one dialog driven by this table: a new tool is
+// an entry here + a menu accelerator, never another dialog component.
 export const TEXT_TOOLS = {
   json: {
     title: 'JSON Format / Validate',
@@ -41,11 +33,20 @@ export const TEXT_TOOLS = {
     note:
       'Best-effort formatting/validation — not a full SQL parser, so treat "looks valid" as a ' +
       'smoke test, not a guarantee.'
+  },
+  uuid: {
+    title: 'UUID Convert',
+    language: 'plaintext',
+    validate: validateUuid,
+    format: convertUuid,
+    actionLabel: 'Convert',
+    validLabel: 'Valid UUID',
+    requiresValid: true,
+    note: 'Converts a canonical 8-4-4-4-12 UUID to its 32-hex (BINARY(16)) form and back.'
   }
 }
 
-// One status line for every tool: the tool's own "valid" wording, or the error
-// with a location when the validator could pin one down.
+// The tool's "valid" wording, or the error with a location when known.
 /**
  * @param {import('../types').TextTool} tool
  * @param {import('../types').ValidationResult|null} status

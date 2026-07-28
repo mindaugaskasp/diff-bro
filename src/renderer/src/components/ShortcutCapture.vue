@@ -1,7 +1,6 @@
 <script setup>
-// Captures a global shortcut for the quick look-up (mapping/validation live in
-// utils/accelerator). A new binding goes through main FIRST — it owns the OS
-// registration and reports if the combo is taken — and only a success persists.
+// A new binding goes through main FIRST — it owns the OS registration and
+// reports if the combo is taken — and only a success persists.
 import { computed, ref } from 'vue'
 import { useSettingsStore, DEFAULT_QUICKLOOK_SHORTCUT } from '../stores/settingsStore'
 import { acceleratorFromEvent, isValidAccelerator, acceleratorLabel } from '../utils/accelerator'

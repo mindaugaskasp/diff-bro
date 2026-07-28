@@ -5,8 +5,7 @@ import BaseDialog from './BaseDialog.vue'
 
 const diff = useDiffStore()
 const label = ref(diff.pendingTrustedKey?.label ?? '')
-// The dialog stays up until the key is stored (the store clears the pending key
-// only then), so guard against a second submit in that window.
+// Guard against a second submit while the key is still being stored.
 const adding = ref(false)
 
 async function add() {

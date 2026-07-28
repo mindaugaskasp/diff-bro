@@ -1,8 +1,6 @@
 <script setup>
-// Renders a run of inline nodes from jiraRender as real elements — recursing
-// into itself for nested emphasis. Every bit of user text goes through Vue text
-// interpolation ({{ }}); there is no HTML injection anywhere, which is what keeps
-// the rendered preview on the right side of the no-`v-html`/`innerHTML` rule.
+// Renders inline jiraRender nodes as real elements (recursing for nested
+// emphasis); all text is interpolated, no HTML injection (rule 7).
 import { arrayOfShape } from '../utils/props'
 
 defineProps({

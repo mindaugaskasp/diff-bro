@@ -1,6 +1,6 @@
 <script setup>
-// Collapsible tag filter bar + the right-click "manage tag" popover. Tags
-// compose with the text search (see useSnippetFilters); inactive chips stay dim.
+// Collapsible tag filter bar + right-click "manage tag" popover (composes with
+// the text search).
 import { ref } from 'vue'
 import { useSnippetStore, TAG_PALETTE } from '../stores/snippetStore'
 import { DEFAULT_TAG } from '../composables/useSnippetFilters'

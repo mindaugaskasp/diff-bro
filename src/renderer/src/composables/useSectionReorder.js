@@ -1,18 +1,12 @@
 import { ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 
-// Drag-and-drop reordering of the sidebar sections. The drag source and the drop
-// target are different SectionHeader instances, so the id of the section being
-// dragged lives in a module-level ref shared across them all. The reorder maths
-// itself is the store's reorderSections (unit-tested); this is only the wiring,
-// pulled out of the .vue so the drag guards can be exercised without mounting.
+// Drag-reorder of sidebar sections. Source and target are different
+// SectionHeaders, so the dragged/hovered/moved ids are module-level refs shared
+// across them; the reorder maths is the store's reorderSections.
 const dragId = ref(null)
-// The header the cursor is currently over during a drag — so the drop indicator
-// follows the cursor to ONE header instead of lighting up all of them.
 const hoverId = ref(null)
-// The section that just changed position (drag OR arrow), so its header can
-// pulse briefly and the reorder registers at a glance without reading labels.
-// Cleared on a timer; module-level like dragId, so only one settles at a time.
+// The section that just moved (drag or arrow), so its header pulses briefly.
 const movedId = ref(null)
 let settleTimer = null
 
@@ -53,16 +47,12 @@ export function useSectionReorder() {
       flagMoved(from)
     }
   }
-  // The single header the section would drop before: a drag is in flight, the
-  // cursor is over THIS header, and it isn't the one being dragged.
   function isDropTarget(id) {
     return dragId.value !== null && id === hoverId.value && id !== dragId.value
   }
-  // The header currently being dragged (so it can dim to show what's moving).
   function isDragging(id) {
     return dragId.value === id
   }
-  // The header that just settled into a new position (pulse target).
   function isSettling(id) {
     return movedId.value === id
   }

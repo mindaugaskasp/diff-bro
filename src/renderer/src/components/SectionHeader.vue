@@ -1,8 +1,6 @@
 <script setup>
-// The band at the top of each reorderable sidebar section: a collapse chevron,
-// the title, and an optional actions slot. The whole header is the drag handle
-// for reordering (unless locked) — drag-and-drop only, no stepper buttons.
-// Shared so Saved / External / Snippets behave identically.
+// Shared band at the top of each sidebar section. The whole header is the
+// reorder drag handle (unless locked).
 import { computed, ref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useSectionReorder } from '../composables/useSectionReorder'
@@ -12,14 +10,10 @@ const props = defineProps({
   sectionId: { type: String, required: true },
   title: { type: String, required: true },
   open: { type: Boolean, default: true },
-  // A per-section AppIcon name (folder / share / code …). Distinct silhouettes
-  // give each section its own identity, so a reorder reads at a glance without
-  // parsing the labels — the whole point of the identity work.
-  icon: { type: String, default: '' },
-  // The topmost section sits flush and aligns its label with the file-slot row.
+  icon: { type: String, default: '' }, // per-section AppIcon for identity
+  // The topmost section aligns its label with the file-slot row.
   first: { type: Boolean, default: false },
-  // In the unified sidebar the header is just a quiet group label — no band fill,
-  // no drag-reorder, no lock cue. It still collapses on click.
+  // Quiet group-label mode: no band fill, drag-reorder, or lock cue.
   unified: { type: Boolean, default: false }
 })
 defineEmits(['toggle'])
@@ -33,9 +27,7 @@ const dropTarget = computed(() => isDropTarget(props.sectionId))
 const dragging = computed(() => isDragging(props.sectionId))
 const settling = computed(() => isSettling(props.sectionId))
 
-// A one-shot cue whenever the sidebar lock toggles, so the change is obvious:
-// unlocking wiggles every header (now draggable), locking snaps them firm.
-// '' | 'unlock' | 'lock' — cleared after the animation so it can replay.
+// One-shot animation cue when the lock toggles ('' | 'unlock' | 'lock').
 const lockCue = ref('')
 let cueTimer = null
 watch(

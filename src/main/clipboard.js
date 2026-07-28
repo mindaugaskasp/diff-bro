@@ -1,16 +1,8 @@
 import { clipboard, ipcMain } from 'electron'
 
-// Writing the OS clipboard is a main-process job, exposed as window.api.copyText.
-//
-// The renderer cannot use navigator.clipboard: the deny-all permission handler
-// (security.js — never weakened, CLAUDE.md rule 1) blocks
-// clipboard-sanitized-write, so writeText() rejects with NotAllowedError. Doing
-// the write here sidesteps that without touching the permission handler, and
-// keeps OS access on the main side of the IPC boundary (rule 3). It is a
-// local-only operation — no network — so the offline guarantees are unchanged.
-//
-// Cap defensively: clipboard payloads here are already size-bounded upstream
-// (snippet / tool output), but never hand an unbounded renderer string to the OS.
+// Clipboard access lives in main because the renderer's navigator.clipboard is
+// blocked by the deny-all permission handler (rule 1/3). Capped so an unbounded
+// renderer string never reaches the OS.
 const MAX_CLIPBOARD_BYTES = 10 * 1024 * 1024
 
 export function registerClipboardIpc() {
@@ -22,9 +14,6 @@ export function registerClipboardIpc() {
     return { ok: true }
   })
 
-  // Reading is also main-side (navigator.clipboard is blocked, rule 1/3). Only
-  // ever invoked after an explicit user gesture + confirm (the Ctrl/Cmd+V
-  // paste-to-compare flow), and capped so a huge clipboard can't be dumped in.
   ipcMain.handle('clipboard:read', () => {
     const text = clipboard.readText()
     if (typeof text !== 'string') return ''

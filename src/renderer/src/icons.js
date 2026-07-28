@@ -198,5 +198,11 @@ export const ICONS = {
       t: 'path',
       d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'
     }
+  ],
+  // Shield with a check — an external diff was sealed by, and imported from, a
+  // trusted sender (openSealed rejects any other), so the mark is always honest.
+  'shield-check': [
+    { t: 'path', d: 'M12 2.5 4.5 5.5v5.5c0 4.7 3.2 7.6 7.5 10 4.3-2.4 7.5-5.3 7.5-10V5.5z' },
+    { t: 'path', d: 'm9 12 2 2 4-4' }
   ]
 }

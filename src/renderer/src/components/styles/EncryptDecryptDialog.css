@@ -23,3 +23,17 @@ select:focus {
   font-size: var(--font-md);
   color: var(--danger-bg);
 }
+.warn {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warning-bg) 12%, var(--bg-panel));
+  color: var(--text);
+  font-size: var(--font-md);
+}
+.hint {
+  color: var(--text-hint);
+  font-weight: 400;
+  font-size: var(--font-sm);
+}

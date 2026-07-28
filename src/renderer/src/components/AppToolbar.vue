@@ -1,7 +1,6 @@
 <script setup>
-// Top bar: diff stats, the display toggles, the document actions, and the
-// theme switch. Every action here has a menu twin (src/main/menu.js and
-// MenuBar.vue) — this is the pointer-friendly half.
+// Top bar: stats, display toggles, document actions, theme switch. Every action
+// has a menu twin (menu.js / MenuBar.vue).
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { MOD } from '../keys'
@@ -9,8 +8,7 @@ import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
 
-// The button names its destination, so it's explicit that pressing it again in
-// paste mode returns to comparing files.
+// The button names its destination (files ⇄ paste).
 const inPaste = computed(() => store.mode === 'paste')
 const pasteToggleLabel = computed(() => (inPaste.value ? 'File mode' : 'Paste text'))
 const pasteToggleTitle = computed(() =>

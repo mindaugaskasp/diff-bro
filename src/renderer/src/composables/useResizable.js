@@ -1,12 +1,8 @@
 import { reactive } from 'vue'
 import { resizeRect, centeredRect } from '../utils/resizeRect'
 
-// A panel that can be dragged bigger/smaller from any of its four corners and
-// stays inside the viewport. Geometry is in utils/resizeRect (unit-tested);
-// this wires the pointer drag and keeps the live rect reactive.
-
-// Keep at least this much of the window edge free so the panel can never be
-// dragged fully off-screen.
+// A panel dragged from any corner, clamped inside the viewport (geometry is the
+// pure resizeRect). MARGIN keeps it from going fully off-screen.
 const MARGIN = 8
 
 export function useResizable({ min }) {
@@ -26,9 +22,7 @@ export function useResizable({ min }) {
     Object.assign(rect, centeredRect(w, h, window.innerWidth, window.innerHeight))
   }
 
-  // Begin a corner drag. The opposite corner is pinned for the whole gesture, so
-  // the start rect and bounds are captured once and every move is computed from
-  // the original press point.
+  // The opposite corner is pinned, so start rect + bounds are captured once.
   function beginResize(corner, e) {
     e.preventDefault()
     e.stopPropagation()

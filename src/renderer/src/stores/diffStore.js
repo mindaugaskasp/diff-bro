@@ -34,9 +34,7 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = theme
 }
 
-// Format-suggestion banner: null once dismissed for the *current* content
-// (dismissedContent tracks the exact string that was dismissed, so editing
-// or re-loading the side clears the dismissal), null once already pretty.
+// null once dismissed for the current content, or once it's already pretty.
 function formatHintFor(file, dismissedContent) {
   if (!file?.content || file.content === dismissedContent) return null
   const detected = detectTextFormat(file.content)
@@ -47,9 +45,7 @@ function formatHintFor(file, dismissedContent) {
   return { kind: detected.kind, valid: true }
 }
 
-// Merge the two per-side format hints into ONE banner so the diff never carries
-// two stacked strips. Pure (takes the two hints, returns render data or null) so
-// the store getter stays thin and this stays unit-testable.
+// Merge the two per-side format hints into one banner. Pure + unit-tested.
 function mergeFormatBanner(left, right) {
   const shown = []
   if (left) shown.push({ side: 'left', label: 'Left', hint: left })
@@ -86,15 +82,13 @@ function mergeFormatBanner(left, right) {
   }
 }
 
-// A synthetic "pasted" comparison side — no path, so it's never re-read from
-// disk on focus (unlike a real file slot).
+// A pasted side has no path, so it's never re-read from disk on focus.
 function pastedSide(side, text) {
   return { path: null, name: `${side === 'left' ? 'Left' : 'Right'} (pasted)`, content: text }
 }
 
-// Menu action → what it does to the store. A table rather than a switch: the
-// accelerators in src/main/menu.js and MenuBar.vue name these strings, so this
-// is the single list of everything a menu can trigger.
+// Menu action → store effect. The single list of everything a menu can trigger
+// (named by the accelerators in menu.js / MenuBar.vue).
 const MENU_ACTIONS = {
   'open-left': (s) => s.pick('left'),
   'open-right': (s) => s.pick('right'),
@@ -120,6 +114,7 @@ const MENU_ACTIONS = {
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
+  'tools-uuid': (s) => (s.textTool = 'uuid'),
   'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)
@@ -135,14 +130,11 @@ export const useDiffStore = defineStore('diff', {
     mode: 'files',
     pasteLeft: '',
     pasteRight: '',
-    // In paste mode each side can instead hold a dropped/loaded file
-    // ({ name, content }) — so pasted text on one side can be compared against a
-    // real file on the other ("partial paste"). null = that side is a textarea.
+    // A paste side can instead hold a dropped file (partial paste); null = textarea.
     pasteLeftFile: null,
     pasteRightFile: null,
-    // Ctrl/Cmd+V paste-to-compare flow: null | 'enter' | 'overwrite' controls
-    // which confirmation is showing; pendingPasteText holds the clipboard text
-    // between the "both sides full" confirm and the overwrite.
+    // Ctrl/Cmd+V flow: null | 'enter' | 'overwrite'; pendingPasteText holds the
+    // clipboard text between confirm and overwrite.
     pastePrompt: null,
     pendingPasteText: '',
     // { additions, deletions } from the diff editor, null before first diff
@@ -153,38 +145,22 @@ export const useDiffStore = defineStore('diff', {
     showSaveDialog: false,
     // when true, the save dialog flows straight into the share dialog
     saveThenShare: false,
-    // Dropped file paths waiting on the "replace current diff?" confirmation
-    // (a drop that would discard a complete, already-loaded comparison) — null
-    // when no prompt is open. `replaceAfterSave` carries them through the save
-    // dialog when the user chooses "Save first".
+    // Dropped paths / picked file awaiting the "replace current diff?" confirm;
+    // the *AfterSave twins carry them through the save dialog on "Save first".
     pendingReplace: null,
     replaceAfterSave: null,
-    // Picked file (via Open / clicking a slot) waiting on the "replace current
-    // diff?" confirmation, when it would overwrite a side of a complete, unsaved
-    // comparison — { side, file }. `pickAfterSave` carries it through the save
-    // dialog when the user chooses "Save first". null when no prompt is open.
     pendingPick: null,
     pickAfterSave: null,
-    // True once the current comparison has been saved to the vault (or opened
-    // from a saved diff) and not changed since — so overwriting it loses
-    // nothing and the replace prompt is skipped. Any edit to either side clears
-    // it (see receive/comparePasted/swap/formatSide).
+    // Saved (or opened from a saved diff) and unchanged since, so overwriting is
+    // safe and skips the replace prompt. Any edit clears it.
     diffSaved: false,
-    // The user's PERSISTED choice (Appearance picker), through the durable
-    // data-dir store — survives a reinstall; the old localStorage 'diffbro.theme'
-    // key migrates forward. Default Light; unknown ids normalize.
-    userTheme: normalizeTheme(loadPersisted('theme')),
-    // The ACTIVE, applied theme components read. Equals userTheme, unless the
-    // "rotate daily" Fun option is on, when it's the day's random theme
-    // (resolveActiveTheme). Kept separate so turning rotation off reverts cleanly.
+    userTheme: normalizeTheme(loadPersisted('theme')), // persisted Appearance pick
+    // The ACTIVE theme components read — userTheme, unless daily rotation is on.
     theme: normalizeTheme(loadPersisted('theme')),
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
-    // { key, fingerprint, label } while the drag-drop "name this trusted
-    // key" dialog is open — null otherwise.
-    pendingTrustedKey: null,
-    // Fingerprint of the key added in the most recent confirmTrustedKey, so the
-    // manager can highlight it as freshly added. Cleared when the manager closes.
+    pendingTrustedKey: null, // { key, fingerprint, label } while the name dialog is open
+    // So the manager can highlight the just-added key; cleared when it closes.
     lastAddedTrustedFp: null,
     // Trusted-keys management dialog visibility.
     showTrustedKeysDialog: false,
@@ -205,27 +181,19 @@ export const useDiffStore = defineStore('diff', {
     showShortcutsDialog: false,
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
-    // content string last dismissed per side, so the format-hint banner
-    // stays gone until that side's content actually changes.
+    // Content last dismissed per side, so the format-hint banner stays gone until
+    // that side's content changes.
     dismissedFormatHint: { left: null, right: null }
   }),
   getters: {
     ready: (s) => !!s.left && !!s.right,
-    // Is a comparison currently on screen? In files mode either side loaded
-    // counts; in paste mode any filled field does. Used to decide whether a
-    // menu-imported sealed diff may take over the view (it may not, if the user
-    // is looking at something) — a dropped .diffbro is an explicit gesture and
-    // ignores this.
+    // Anything on screen — gates whether a menu-imported diff may take over.
     hasActive: (s) =>
       s.mode === 'paste'
         ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
         : !!(s.left || s.right),
-    // Two loaded sides with a computed diff of no changes — surfaced as an
-    // affirmative "identical" state so an empty +0/−0 doesn't read as "did it
-    // run?". With Ignore-whitespace on, this also covers whitespace-only diffs.
+    // Two sides that diff to nothing — an affirmative "identical" state.
     identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
-    // A diff is saveable once there is anything to keep: two loaded files,
-    // or text/files put into the paste panes (even before Compare).
     canSave: (s) =>
       s.mode === 'paste'
         ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
@@ -261,23 +229,15 @@ export const useDiffStore = defineStore('diff', {
     async drop(side, path) {
       this.receive(side, await window.api.readFile(path))
     },
-    // Files dropped on the window. `targetSide` is set when the drop landed
-    // directly on one of the two file slots.
-    //   - 2+ files: fill both sides in drop order (replacing whatever's there).
-    //   - 1 file onto a specific slot: fill that slot.
-    //   - 1 file elsewhere while a comparison is already loaded: start over —
-    //     clear both sides, put the file on the left, and wait for the next
-    //     one (so a "third" dropped file begins a fresh comparison).
-    //   - 1 file otherwise: fill the first empty side (left, then right).
+    // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
+    // loaded starts fresh on the left; 1 otherwise fills the first empty side.
     async dropFiles(paths, targetSide = null) {
       if (!paths.length) return
-      // Dropping on a specific slot is a deliberate single-side change.
       if (targetSide && paths.length === 1) {
         await this.drop(targetSide, paths[0])
         return
       }
-      // Would this discard a complete comparison? Ask first — unless it's
-      // already saved, in which case replacing it loses nothing.
+      // Discards a complete unsaved comparison? Ask first.
       if (this.left && this.right) {
         if (!this.diffSaved) {
           this.pendingReplace = paths.slice(0, 2)
@@ -379,21 +339,15 @@ export const useDiffStore = defineStore('diff', {
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
     },
-    // --- Ctrl/Cmd+V paste-to-compare (see usePasteShortcut) ---
-    // Step 1: a paste gesture landed outside any input. Ask before touching the
-    // clipboard — it's only read once the user confirms.
+    // Ctrl/Cmd+V paste-to-compare. Ask before reading the clipboard.
     requestPasteFromClipboard() {
-      if (this.pastePrompt) return // a confirm is already up
-      // A spreadsheet can't be diffed against pasted text — don't even prompt.
+      if (this.pastePrompt) return
       if (this.left?.kind === 'spreadsheet' || this.right?.kind === 'spreadsheet') {
         this.showNotice('Paste-to-compare works with text, not a spreadsheet.')
         return
       }
       this.pastePrompt = 'enter'
     },
-    // Step 2: confirmed. Read the clipboard (main process), enter paste mode, and
-    // drop the text into the first empty side. If BOTH sides already hold text,
-    // escalate to the overwrite confirm rather than clobbering unsaved work.
     async confirmPasteEnter() {
       const text = (await window.api?.readText?.()) ?? ''
       if (!text.trim()) {
@@ -401,9 +355,8 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice('The clipboard is empty — nothing to paste.')
         return
       }
-      // With a comparison already loaded in files mode, paste relative to THAT
-      // (fill the empty side, keeping the loaded file) — not the empty paste
-      // textareas, which would orphan the loaded file.
+      // A loaded comparison: paste into its empty side, not the paste textareas
+      // (which would orphan the loaded file).
       if (this.mode === 'files' && (this.left || this.right)) {
         this.pasteIntoComparison(text)
       } else {
@@ -490,9 +443,7 @@ export const useDiffStore = defineStore('diff', {
     initTheme() {
       this.resolveActiveTheme()
     },
-    // Compute and apply the active theme: the day's random theme when the "rotate
-    // daily" Fun option is on, otherwise the user's saved choice. Idempotent —
-    // safe to call on window focus so the theme rolls over at midnight.
+    // Idempotent, so calling on focus rolls the daily theme over at midnight.
     resolveActiveTheme() {
       const rotate = useSettingsStore().rotateThemeDaily
       this.theme = rotate ? themeForDay() : this.userTheme
@@ -519,10 +470,7 @@ export const useDiffStore = defineStore('diff', {
     toggleTheme() {
       this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
     },
-    // Re-read one slot quietly (no large-file prompt); returns the file name if
-    // its on-disk content actually changed, else null. Paste-file slots keep
-    // their trimmed { name, content, path } shape; comparison sides take the
-    // full loaded-file object.
+    // Re-read one slot quietly; returns the file name if its content changed.
     async _reloadSlot(slot) {
       const current = this[slot]
       if (!current?.path) return null
@@ -538,9 +486,8 @@ export const useDiffStore = defineStore('diff', {
         return null
       }
     },
-    // Follow external edits when the window regains focus: both comparison
-    // sides and either partial-paste source. One coalesced notice covers all of
-    // them, so two files changing at once can't race the single toast timer.
+    // Follow external edits on focus; one coalesced notice so simultaneous
+    // changes don't race the toast timer.
     async refreshFromDisk() {
       const changed = []
       for (const slot of ['left', 'right', 'pasteLeftFile', 'pasteRightFile']) {
@@ -553,10 +500,8 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice(`${changed.length} files changed on disk — diff reloaded.`)
       }
     },
-    // Copy the current comparison as a git-style unified diff (File → Copy diff,
-    // toolbar, Ctrl+Shift+C). The on-screen diff is Monaco's; this recomputes a
-    // patch that applies cleanly (see utils/unifiedDiff.js). Clipboard write goes
-    // through the main process — navigator.clipboard is denied here (CLAUDE.md).
+    // Recompute a clean git-style patch (Monaco's on-screen diff isn't one).
+    // Clipboard goes through main — navigator.clipboard is denied here.
     async copyDiff() {
       if (!this.ready) {
         this.showNotice('Load two files (or compare pasted text) before copying a diff.')
@@ -606,8 +551,7 @@ export const useDiffStore = defineStore('diff', {
     dismissFormatHints(sides) {
       for (const side of sides) this.dismissFormatHint(side)
     },
-    // Snapshot of everything a saved diff needs to be restored later —
-    // including in-progress paste-mode text.
+    // Everything a saved diff needs to restore later (incl. paste-mode text).
     snapshot() {
       return {
         mode: this.mode,
@@ -635,9 +579,8 @@ export const useDiffStore = defineStore('diff', {
       // it later needs no "you'll lose it" prompt.
       this.diffSaved = true
     },
-    // A result chosen in the floating quick look-up window (main forwards it as
-    // { kind, id }): the big view does the heavy lifting the launcher stays out
-    // of — load + restore a saved diff, or open the snippet editor.
+    // A result chosen in the quick look-up (main forwards { kind, id }); the big
+    // view does the load/restore the launcher stays out of.
     async openFromQuickLook(payload) {
       if (!payload?.id) return
       if (payload.kind === 'snippet') {
@@ -667,9 +610,7 @@ export const useDiffStore = defineStore('diff', {
     handleMenuAction(action) {
       MENU_ACTIONS[action]?.(this)
     },
-    // One-click share of whatever is on screen: save first (a share file
-    // needs a name and an expiry), then flow straight into the recipient
-    // picker. The share dialog itself handles first-time key setup.
+    // Save first (a share file needs a name + expiry), then the recipient picker.
     shareCurrent() {
       if (!this.canSave) {
         this.showNotice('Nothing to share yet — load two files or paste some text first.')
@@ -690,10 +631,8 @@ export const useDiffStore = defineStore('diff', {
       if (res.ok) this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)
       else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
     },
-    // File → Import (menu / the External-diffs "Import" button): import a sealed
-    // diff and OPEN it — but only when nothing is on screen. If the user is
-    // already looking at a diff, importing silently swapping it out would be a
-    // surprise, so keep their view and tell them it's waiting in External diffs.
+    // Import a sealed diff and open it — but only when nothing is on screen; with
+    // a diff loaded, keep the view and leave it in External diffs.
     async importShared() {
       const res = await useVaultStore().importShared()
       if (!res.ok) {
@@ -709,10 +648,8 @@ export const useDiffStore = defineStore('diff', {
       await this._openImported(res)
       this.showNotice(`Opened "${res.entry.name}" from ${res.from} — same expiry as on the sender.`)
     },
-    // A .diffbro dropped on the window: import it as a sealed external diff and
-    // open it straight away, so the user sees what they just dropped (a drop is
-    // a direct "show me this" gesture, unlike the File → Import menu path, so it
-    // ignores hasActive on purpose).
+    // A dropped .diffbro opens straight away (a drop is an explicit "show me
+    // this", so unlike menu-import it ignores hasActive).
     async receiveDroppedSharedDiff(path) {
       const res = await useVaultStore().importSharedFromPath(path)
       if (!res.ok) {
@@ -724,14 +661,12 @@ export const useDiffStore = defineStore('diff', {
         `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
       )
     },
-    // Decrypt a just-imported share out of the vault and show it. Shared by the
-    // drop and (when the view is free) menu-import paths so opening can't drift.
+    // Decrypt a just-imported share and show it (shared by drop + menu paths).
     async _openImported(res) {
       const payload = await useVaultStore().load(res.id)
       if (payload) this.restore(payload)
     },
-    // Export / copy THIS install's public key, tagged with the display name
-    // the user typed so recipients recognize it. Called by ShareKeyDialog.
+    // Export this install's public key, tagged with the user's display name.
     async runExportKey(label) {
       const res = await window.api.exportPublicKey(label)
       if (res.ok) {
@@ -750,8 +685,7 @@ export const useDiffStore = defineStore('diff', {
         )
       }
     },
-    // Pick a key file via dialog, then require a name before adding (same
-    // naming dialog as the drag-drop path).
+    // Pick a key file, then require a name before adding.
     async addTrustedKey() {
       const res = await window.api.addTrustedKey()
       if (res.ok) {
@@ -766,8 +700,7 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice('That file is not a valid public key.')
       }
     },
-    // A .diffbrokey dropped onto the window: validate it, then open the
-    // naming dialog so the user can label the trusted host before adding.
+    // A dropped .diffbrokey: validate, then open the naming dialog before adding.
     async receiveDroppedKey(path) {
       const res = await window.api.readKeyFile(path)
       if (res.ok) {
@@ -793,15 +726,11 @@ export const useDiffStore = defineStore('diff', {
       } catch {
         res = { error: 'ipc' }
       }
-      // Cleared only once the key is actually stored: TrustedKeysDialog re-reads
-      // the list when this goes null, and clearing first raced the write — the
-      // manager came back without the key that had just been added.
+      // Cleared only after the write, or the manager re-reads before the key lands.
       this.pendingTrustedKey = null
       if (res.ok) {
         this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
-        // Land in the manager with the new key flagged, so the add reads as done
-        // at a glance — not just a toast that fades. The manager highlights the
-        // matching row and clears the flag when it closes.
+        // Flag the new key so the manager highlights it.
         this.lastAddedTrustedFp = res.fingerprint
         this.showTrustedKeysDialog = true
       } else this.showNotice('Could not add that key.')
