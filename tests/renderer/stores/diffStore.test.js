@@ -1144,3 +1144,31 @@ describe('applyPatch', () => {
     expect(store.right).toBeNull()
   })
 })
+
+describe('exportDiff', () => {
+  it('builds a self-contained HTML doc and hands it to the save IPC', async () => {
+    const store = useDiffStore()
+    store.left = { path: null, name: 'a.js', content: 'a\nb\n' }
+    store.right = { path: null, name: 'b.js', content: 'a\nB\n' }
+    let sent = null
+    window.api.exportDiffHtml = async (payload) => {
+      sent = payload
+      return { ok: true, path: '/tmp/out.html' }
+    }
+    await store.exportDiff()
+    expect(sent.name).toBe('a.js-vs-b.js')
+    expect(sent.html).toContain('<!doctype html>')
+    expect(sent.html).toContain('a.js ↔ b.js')
+  })
+
+  it('does nothing (no IPC) when there is nothing to compare', async () => {
+    const store = useDiffStore()
+    let called = false
+    window.api.exportDiffHtml = async () => {
+      called = true
+      return { ok: true }
+    }
+    await store.exportDiff()
+    expect(called).toBe(false)
+  })
+})

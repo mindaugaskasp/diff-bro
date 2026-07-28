@@ -83,6 +83,7 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+I',
           click: () => sendToFocused('import-shared')
         },
+        { label: 'Export Diff as HTML…', click: () => sendToFocused('export-html') },
         { type: 'separator' },
         { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => sendToFocused('settings') },
         { type: 'separator' },

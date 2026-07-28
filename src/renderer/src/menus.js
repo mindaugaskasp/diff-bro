@@ -18,6 +18,7 @@ export function buildMenus(store) {
         { label: 'Save', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
         { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
         { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
+        { label: 'Export Diff as HTML…', run: () => store.handleMenuAction('export-html') },
         { sep: true },
         { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },
         { sep: true },

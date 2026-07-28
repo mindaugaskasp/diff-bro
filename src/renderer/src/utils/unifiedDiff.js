@@ -87,16 +87,24 @@ function buildHunks(lines) {
   })
 }
 
+// The full aligned line list (each { sign, text, oldNo, newNo }), shared by the
+// patch and the HTML export. { error: 'too-large' } past the guard.
+export function diffLines(leftText, rightText) {
+  const a = splitLines(leftText)
+  const b = splitLines(rightText)
+  if (a.length > MAX_DIFF_LINES || b.length > MAX_DIFF_LINES) return { error: 'too-large' }
+  return { lines: annotate(lcsOps(a, b)) }
+}
+
 // Returns { patch } — '' when the two sides are identical — or { error }.
 export function toUnifiedDiff(
   leftText,
   rightText,
   { leftLabel = 'original', rightLabel = 'changed' } = {}
 ) {
-  const a = splitLines(leftText)
-  const b = splitLines(rightText)
-  if (a.length > MAX_DIFF_LINES || b.length > MAX_DIFF_LINES) return { error: 'too-large' }
-  const hunks = buildHunks(annotate(lcsOps(a, b)))
+  const result = diffLines(leftText, rightText)
+  if (result.error) return result
+  const hunks = buildHunks(result.lines)
   if (!hunks.length) return { patch: '' }
   return { patch: `--- ${leftLabel}\n+++ ${rightLabel}\n${hunks.join('')}` }
 }

@@ -5,6 +5,7 @@ import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
+import { diffToHtml } from '../utils/diffHtml'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
@@ -87,6 +88,17 @@ function pastedSide(side, text) {
   return { path: null, name: `${side === 'left' ? 'Left' : 'Right'} (pasted)`, content: text }
 }
 
+// The two compared sides as { name, content }, whether in files or paste mode.
+function comparedSides(s) {
+  if (s.mode === 'paste') {
+    return [
+      s.pasteLeftFile ?? { name: 'Left', content: s.pasteLeft },
+      s.pasteRightFile ?? { name: 'Right', content: s.pasteRight }
+    ]
+  }
+  return [s.left ?? { name: 'Left', content: '' }, s.right ?? { name: 'Right', content: '' }]
+}
+
 // Menu action → store effect. The single list of everything a menu can trigger
 // (named by the accelerators in menu.js / MenuBar.vue).
 const MENU_ACTIONS = {
@@ -100,6 +112,7 @@ const MENU_ACTIONS = {
   clear: (s) => s.clear(),
   'copy-diff': (s) => s.copyDiff(),
   'apply-patch': (s) => s.applyPatch(),
+  'export-html': (s) => s.exportDiff(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
   'toggle-theme': (s) => s.toggleTheme(),
@@ -261,6 +274,27 @@ export const useDiffStore = defineStore('diff', {
           `Applied — ${rejected.length} hunk(s) didn't match the base and were skipped.`
         )
       }
+    },
+    // Export the current comparison as a self-contained HTML file for a ticket
+    // or PR. The document is built in the renderer (diffToHtml); main only saves.
+    async exportDiff() {
+      const [l, r] = comparedSides(this)
+      const leftText = l.content ?? ''
+      const rightText = r.content ?? ''
+      if (!leftText && !rightText) {
+        this.showNotice('Nothing to export yet.')
+        return
+      }
+      const { html, error } = diffToHtml(leftText, rightText, {
+        leftName: l.name,
+        rightName: r.name
+      })
+      if (error) {
+        this.showNotice('This comparison is too large to export.')
+        return
+      }
+      const res = await window.api.exportDiffHtml({ html, name: `${l.name}-vs-${r.name}` })
+      if (res?.ok) this.showNotice('Exported diff to HTML.')
     },
     // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
     // loaded starts fresh on the left; 1 otherwise fills the first empty side.

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { readFile, stat } from 'fs/promises'
+import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, resolve, sep } from 'path'
 import chardet from 'chardet'
 import iconv from 'iconv-lite'
@@ -148,5 +148,23 @@ export function registerFileIpc() {
     }
     if (isUnderUserData(filePath)) return { error: 'not-permitted' }
     return readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
+  })
+
+  // Save-dialog + write for the diff HTML export. The renderer builds the whole
+  // self-contained document (utils/diffHtml.js); main only writes it where the
+  // user chooses. Plain text out — never touches the allowed-paths read gate.
+  ipcMain.handle('diff:exportHtml', async (e, payload) => {
+    const { html, name } = payload || {}
+    if (typeof html !== 'string') return { error: 'bad-args' }
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const safe = String(name || 'diff').replace(/[\\/:*?"<>|]/g, '-')
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: 'Export diff as HTML',
+      defaultPath: `${safe}.html`,
+      filters: [{ name: 'HTML', extensions: ['html'] }]
+    })
+    if (canceled || !filePath) return { canceled: true }
+    await writeFile(filePath, html, 'utf8')
+    return { ok: true, path: filePath }
   })
 }
