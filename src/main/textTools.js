@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { decryptText, encryptText } from './textCrypt'
+import { decryptText, decryptTextRaw, encryptText } from './textCrypt'
 
 // Tools menu: local passphrase text encrypt/decrypt (logic in textCrypt.js).
 export function registerTextToolsIpc() {
@@ -15,5 +15,12 @@ export function registerTextToolsIpc() {
       return { ok: false, error: 'Not a valid encrypted blob.' }
     }
     return decryptText(blob, passphrase)
+  })
+  ipcMain.handle('crypto:decryptTextRaw', (e, payload) => {
+    const { ciphertext, key, iv } = payload ?? {}
+    if (typeof ciphertext !== 'string' || typeof key !== 'string' || typeof iv !== 'string') {
+      return { ok: false, error: 'Enter the ciphertext, key, and IV.' }
+    }
+    return decryptTextRaw({ ciphertext, key, iv })
   })
 }

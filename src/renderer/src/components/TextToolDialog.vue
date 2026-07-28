@@ -72,7 +72,9 @@ function close() {
     </p>
     <p v-if="tool.note" class="dialog-note">{{ tool.note }}</p>
     <template #actions>
-      <button class="btn btn-primary" :disabled="!canFormat" @click="format">Format</button>
+      <button class="btn btn-primary" :disabled="!canFormat" @click="format">
+        {{ tool.actionLabel ?? 'Format' }}
+      </button>
       <button class="btn btn-ghost" :disabled="!input" @click="copy">Copy</button>
       <button class="btn btn-ghost" :disabled="!input" @click="addToSnippets">
         Add to Snippets

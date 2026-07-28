@@ -212,6 +212,16 @@ export function installMenu() {
           ]
         },
         {
+          label: 'UUID',
+          submenu: [
+            {
+              label: 'Convert',
+              accelerator: 'CmdOrCtrl+Shift+U',
+              click: () => sendToFocused('tools-uuid')
+            }
+          ]
+        },
+        {
           label: 'Find & Replace',
           submenu: [
             {

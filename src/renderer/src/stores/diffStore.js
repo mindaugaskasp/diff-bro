@@ -114,6 +114,7 @@ const MENU_ACTIONS = {
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
+  'tools-uuid': (s) => (s.textTool = 'uuid'),
   'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)

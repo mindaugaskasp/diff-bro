@@ -37,7 +37,7 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="440px" title="Keyboard shortcuts" @close="close">
+  <BaseDialog width="500px" title="Keyboard shortcuts" @close="close">
     <p class="dialog-note">
       Shortcuts for <strong>{{ platform }}</strong
       >.
@@ -53,9 +53,6 @@ function close() {
         </ul>
       </section>
     </div>
-    <template #actions>
-      <button class="btn btn-primary" @click="close">Done</button>
-    </template>
   </BaseDialog>
 </template>
 

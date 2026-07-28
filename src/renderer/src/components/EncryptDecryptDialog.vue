@@ -14,6 +14,10 @@ const { onDropFile } = useFileTextDrop((text) => {
 })
 const output = ref('')
 const passphrase = ref('')
+// 'passphrase' (GCM, encrypt+decrypt) | 'rawkey' (AES-256-CBC, decrypt-only interop).
+const keyMode = ref('passphrase')
+const rawKey = ref('')
+const rawIv = ref('')
 const error = ref(null)
 const busy = ref(false)
 
@@ -37,16 +41,30 @@ async function encrypt() {
 
 async function decrypt() {
   error.value = null
+  if (keyMode.value === 'rawkey') return decryptRaw()
   if (!passphrase.value) {
     error.value = 'Enter a passphrase first.'
     return
   }
+  await run(() => window.api.decryptText(input.value, passphrase.value))
+}
+
+async function decryptRaw() {
+  if (!rawKey.value || !rawIv.value) {
+    error.value = 'Enter the key and IV.'
+    return
+  }
+  await run(() =>
+    window.api.decryptTextRaw({ ciphertext: input.value, key: rawKey.value, iv: rawIv.value })
+  )
+}
+
+async function run(op) {
   busy.value = true
   try {
-    const res = await window.api.decryptText(input.value, passphrase.value)
-    if (res.ok) {
-      output.value = res.plaintext
-    } else {
+    const res = await op()
+    if (res.ok) output.value = res.plaintext
+    else {
       output.value = ''
       error.value = res.error
     }
@@ -97,12 +115,56 @@ function close() {
     </label>
     <div class="row">
       <label class="grow">
+        Key type
+        <select v-model="keyMode">
+          <option value="passphrase">Passphrase — AES-256-GCM (authenticated)</option>
+          <option value="rawkey">Raw key — AES-256-CBC (decrypt only, unauthenticated)</option>
+        </select>
+      </label>
+    </div>
+    <div v-if="keyMode === 'passphrase'" class="row">
+      <label class="grow">
         Passphrase
         <input v-model="passphrase" type="password" autocomplete="off" spellcheck="false" />
       </label>
     </div>
+    <template v-else>
+      <div class="row">
+        <label class="grow">
+          Key <span class="hint">(hex or base64)</span>
+          <input
+            v-model="rawKey"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="32 bytes — 64 hex or base64"
+          />
+        </label>
+        <label class="grow">
+          IV <span class="hint">(hex or base64)</span>
+          <input
+            v-model="rawIv"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="16 bytes — 32 hex or base64"
+          />
+        </label>
+      </div>
+      <p class="warn">
+        AES-256-CBC is <strong>unauthenticated</strong> — a successful decrypt does not prove the
+        data is untampered. For decrypting external payloads only.
+      </p>
+    </template>
     <div class="dialog-actions">
-      <button class="btn btn-primary" :disabled="busy || !input" @click="encrypt">Encrypt →</button>
+      <button
+        v-if="keyMode === 'passphrase'"
+        class="btn btn-primary"
+        :disabled="busy || !input"
+        @click="encrypt"
+      >
+        Encrypt →
+      </button>
       <button class="btn btn-primary" :disabled="busy || !input" @click="decrypt">Decrypt →</button>
     </div>
     <label>

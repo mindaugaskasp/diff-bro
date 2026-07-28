@@ -40,9 +40,9 @@ a hard promise: it never touches the network.
 - **Snippets** — an encrypted, tagged text library with per-language
   highlighting and live **Mermaid** diagram rendering, in a viewer you can drag
   bigger from any corner (and that fills the window when the app goes fullscreen).
-  A **Jira / Confluence** wiki-markup syntax adds a formatting toolbar (bold,
-  headings, lists, quote, `{code}`, links) and a rendered preview, with a
-  Rendered/Plain toggle.
+  The **Markdown** and **Jira / Confluence** syntaxes each add a formatting
+  toolbar (bold, headings, lists, quote, code, links) and a live rendered
+  preview, with a Rendered/Plain toggle.
 - **Quick look-up** — a global shortcut summons a floating search over your
   snippets and saved diffs *without raising the app*; ↑/↓ to browse, **Enter** to
   open, **Ctrl/Cmd+C** to copy a snippet straight to the clipboard. Rebind the
@@ -50,8 +50,10 @@ a hard promise: it never touches the network.
 - **Resizable dialogs** — the snippet editor and the tool windows resize from any
   edge or corner and remember their size between sessions (or a one-click setting
   maximizes them all). Existing snippets open read-only until you press Edit.
-- **Tools** — Base64, JSON / XML / SQL format + validate, find & replace
-  (characters, words, or regex), and passphrase text encryption.
+- **Tools** — Base64, JSON / XML / SQL format + validate, UUID convert
+  (canonical ↔ binary hex), find & replace (characters, words, or regex), and
+  passphrase text encryption (AES-256-GCM), with an opt-in raw-key AES-256-CBC
+  decrypt for external payloads.
 - **Yours to arrange** — nine themes (incl. Nord, Sepia, a playful Nyan with a
   reward cat, and a Matrix digital-rain theme), one tag namespace shared across
   diffs and snippets, a sidebar that filters by section and tag, and adjustable

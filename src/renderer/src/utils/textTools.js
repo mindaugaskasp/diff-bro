@@ -1,5 +1,6 @@
 import { formatJson, formatXml, validateJson, validateXml } from './textFormats'
 import { formatSql, validateSql } from './sqlFormat'
+import { convertUuid, validateUuid } from './uuid'
 
 // All format/validate tools are one dialog driven by this table: a new tool is
 // an entry here + a menu accelerator, never another dialog component.
@@ -32,6 +33,16 @@ export const TEXT_TOOLS = {
     note:
       'Best-effort formatting/validation — not a full SQL parser, so treat "looks valid" as a ' +
       'smoke test, not a guarantee.'
+  },
+  uuid: {
+    title: 'UUID Convert',
+    language: 'plaintext',
+    validate: validateUuid,
+    format: convertUuid,
+    actionLabel: 'Convert',
+    validLabel: 'Valid UUID',
+    requiresValid: true,
+    note: 'Converts a canonical 8-4-4-4-12 UUID to its 32-hex (BINARY(16)) form and back.'
   }
 }
 

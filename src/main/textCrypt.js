@@ -7,6 +7,10 @@ import { SCRYPT_PARAMS, deriveKey, scryptParamsFor } from './kdf'
 
 export const TEXT_CRYPT_FORMAT = 'diffbro-textcrypt/1'
 export const ALGORITHMS = ['aes-256-gcm']
+// Decrypt-only interop for payloads encrypted elsewhere. CBC is UNAUTHENTICATED,
+// so we never ENCRYPT with it (that would hand out a malleable blob) — the
+// allowlist here gates decryption only.
+export const RAW_DECRYPT_ALGORITHMS = ['aes-256-cbc']
 
 const GCM_IV_BYTES = 12
 
@@ -70,5 +74,50 @@ export async function decryptText(blob, passphrase) {
     return { ok: true, plaintext }
   } catch {
     return { ok: false, error: 'Wrong passphrase, or the data is corrupted.' }
+  }
+}
+
+// Hex (even-length, hex charset) or base64 → bytes; null when neither yields any.
+function parseKeyMaterial(text) {
+  const s = String(text ?? '').trim()
+  if (!s) return null
+  if (/^[0-9a-f]+$/i.test(s) && s.length % 2 === 0) return Buffer.from(s, 'hex')
+  const bytes = Buffer.from(s.replace(/\s+/g, ''), 'base64')
+  return bytes.length ? bytes : null
+}
+
+// Decrypt an externally-encrypted payload with a raw key + IV — no passphrase, no
+// KDF. UNAUTHENTICATED: a successful decrypt does NOT prove the ciphertext is
+// intact (the UI says so). The raw key is user-supplied input to this op, not
+// app-managed key material, so it crosses IPC like the passphrase does.
+// Parse + length-check the three inputs; { error } or the three byte buffers.
+function parseCbcInputs({ ciphertext, key, iv }) {
+  const keyBuf = parseKeyMaterial(key)
+  if (!keyBuf || keyBuf.length !== 32) {
+    return { error: 'Key must be 32 bytes (64 hex digits or base64) for AES-256.' }
+  }
+  const ivBuf = parseKeyMaterial(iv)
+  if (!ivBuf || ivBuf.length !== 16) {
+    return { error: 'IV must be 16 bytes (32 hex digits or base64).' }
+  }
+  const ctBuf = parseKeyMaterial(ciphertext)
+  if (!ctBuf || ctBuf.length === 0 || ctBuf.length % 16 !== 0) {
+    return { error: 'Ciphertext must be whole 16-byte blocks (hex or base64).' }
+  }
+  return { keyBuf, ivBuf, ctBuf }
+}
+
+export function decryptTextRaw({ ciphertext, key, iv, algorithm = 'aes-256-cbc' } = {}) {
+  if (!RAW_DECRYPT_ALGORITHMS.includes(algorithm)) {
+    return { ok: false, error: 'Unsupported algorithm.' }
+  }
+  const { error, keyBuf, ivBuf, ctBuf } = parseCbcInputs({ ciphertext, key, iv })
+  if (error) return { ok: false, error }
+  try {
+    const decipher = createDecipheriv(algorithm, keyBuf, ivBuf)
+    const plaintext = Buffer.concat([decipher.update(ctBuf), decipher.final()]).toString('utf8')
+    return { ok: true, plaintext }
+  } catch {
+    return { ok: false, error: 'Decryption failed — wrong key or IV, or the data is corrupted.' }
   }
 }

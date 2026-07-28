@@ -68,6 +68,7 @@ export function useSnippetDraft() {
   const isMermaid = computed(() => language.value === 'mermaid')
   // Jira is explicit-only (the detector never guesses it).
   const isJira = computed(() => language.value === 'jira')
+  const isMarkdown = computed(() => language.value === 'markdown')
 
   function close() {
     store.editingSnippet = null
@@ -160,6 +161,7 @@ export function useSnippetDraft() {
     language,
     isMermaid,
     isJira,
+    isMarkdown,
     editMode,
     startEditing,
     canFormat,

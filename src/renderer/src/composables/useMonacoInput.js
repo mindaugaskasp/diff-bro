@@ -29,6 +29,12 @@ export function useMonacoInput({ container, content, language, readOnly, options
       theme: monacoTheme(),
       automaticLayout: true,
       minimap: { enabled: false },
+      // No right-hand overview-ruler lane: with the minimap off it only paints a
+      // stock-theme border that reads as a white sliver against the app surface.
+      overviewRulerLanes: 0,
+      overviewRulerBorder: false,
+      hideCursorInOverviewRuler: true,
+      scrollbar: { useShadows: false },
       scrollBeyondLastLine: false,
       contextmenu: false,
       fontSize: 12.5,

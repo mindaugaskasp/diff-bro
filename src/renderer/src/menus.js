@@ -128,6 +128,16 @@ export function buildMenus(store) {
           ]
         },
         {
+          label: 'UUID',
+          items: [
+            {
+              label: 'Convert',
+              keys: `${MOD}+Shift+U`,
+              run: () => store.handleMenuAction('tools-uuid')
+            }
+          ]
+        },
+        {
           label: 'Find & Replace',
           items: [
             {
