@@ -1,6 +1,6 @@
 {
   "name": "diffbro",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Desktop file diff viewer with GitHub-style rendering",
   "main": "./build/main/index.js",
   "author": "Mindaugas",
