@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { isValidAccelerator } from '../utils/accelerator'
+import { isMac } from '../keys'
 
-// The default global shortcut that summons the floating quick look-up. Cmd+Space
-// is the macOS launcher, so we take the Shift variant. The main process has an
-// equal fallback constant (src/main/quickLook.js) for when it reads a
-// hand-edited or empty settings.json — keep the two in step.
-export const DEFAULT_QUICKLOOK_SHORTCUT = 'CommandOrControl+Shift+Space'
+// The default global shortcut that summons the floating quick look-up, per
+// platform: macOS uses Shift+Space (note: as a GLOBAL shortcut this intercepts
+// Shift+Space system-wide until the user rebinds it); Windows/Linux keep the
+// safe three-key chord (Cmd+Space is macOS Spotlight, hence the Shift variant
+// there). The main process mirrors this per-platform in src/main/quickLook.js
+// for when it reads a hand-edited or empty settings.json — keep the two in step.
+export const DEFAULT_QUICKLOOK_SHORTCUT = isMac ? 'Shift+Space' : 'CommandOrControl+Shift+Space'
 
 // User preferences that are organizational, not secret — section order, shelf
 // order, UI toggles, and the size guards. Persisted as PLAINTEXT JSON in the

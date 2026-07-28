@@ -16,10 +16,12 @@ import { DEV_URL } from './env'
 import { readSettings } from './appData'
 import { placeWindow, displayForPoint, resolveAccelerator } from './quickLookCore'
 
-// Fallback summon accelerator when settings.json has none. Cmd+Space is the OS
-// launcher on macOS, so we take the Shift variant. The renderer keeps an equal
-// DEFAULT_QUICKLOOK_SHORTCUT (settingsStore.js) — keep the two in step.
-const DEFAULT_ACCELERATOR = 'CommandOrControl+Shift+Space'
+// Fallback summon accelerator when settings.json has none. Per-platform to match
+// the renderer's DEFAULT_QUICKLOOK_SHORTCUT (settingsStore.js): macOS defaults to
+// Shift+Space, Windows/Linux to the safe three-key chord (Cmd+Space is macOS
+// Spotlight). Keep the two in step.
+const DEFAULT_ACCELERATOR =
+  process.platform === 'darwin' ? 'Shift+Space' : 'CommandOrControl+Shift+Space'
 
 let win = null
 // The accelerator currently registered, so a change unregisters exactly it.
