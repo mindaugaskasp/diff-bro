@@ -2,12 +2,10 @@ import { reactive } from 'vue'
 import * as monaco from 'monaco-editor'
 import { checkRegex } from '../utils/searchRegex'
 
-// The word separators Monaco uses to bound a whole-word match. Passing this to
-// findMatches restricts matches to whole words; passing null matches anywhere.
+// Whole-word bounds for Monaco's findMatches (null = match anywhere).
 const WORD_SEPARATORS = '`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?'
 
-// Each side searches only its own model, with its own query, options, match
-// count, and navigation — the left and right panes are independent.
+// One independent search per pane (own query, options, navigation).
 export function makeSearch(getModel, getSubEditor, getDecos) {
   const state = reactive({
     query: '',
@@ -45,9 +43,7 @@ export function makeSearch(getModel, getSubEditor, getDecos) {
     state.error = false
     const model = getModel()
     if (!state.query || !model) return clear()
-    // A regex query is refused (and flagged) unless it passes the ReDoS/length
-    // guard — Monaco's search is synchronous, so an unsafe pattern would hang
-    // the renderer.
+    // Monaco's search is synchronous, so an unsafe regex would hang the renderer.
     if (state.isRegex && !checkRegex(state.query).ok) {
       state.error = true
       return clear()

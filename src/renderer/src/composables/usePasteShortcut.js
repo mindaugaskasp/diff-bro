@@ -1,7 +1,6 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 
-// True for fields where Ctrl/Cmd+V should do a NORMAL paste — we must never
-// hijack it there (typing in the paste textareas, search boxes, dialog inputs).
+// Fields where Ctrl/Cmd+V must do a normal paste, never be hijacked.
 export function isEditableTarget(el) {
   if (!el) return false
   const tag = el.tagName
@@ -14,11 +13,8 @@ export function isPasteChord(e) {
   return mod && !e.altKey && !e.shiftKey && (e.key === 'v' || e.key === 'V')
 }
 
-// Ctrl/Cmd+V while focus is NOT in a text field is a "paste to compare" gesture:
-// it runs `onPaste`. When focus IS in an input/textarea the browser's normal
-// paste is left completely alone. Deliberately a renderer-only gesture, NOT a
-// menu accelerator — a global accelerator would fire regardless of focus and
-// break pasting into fields.
+// Ctrl/Cmd+V outside a text field runs `onPaste`. Renderer-only, NOT a menu
+// accelerator — a global one would fire regardless of focus and break field paste.
 export function usePasteShortcut(onPaste) {
   function handler(e) {
     if (!isPasteChord(e)) return

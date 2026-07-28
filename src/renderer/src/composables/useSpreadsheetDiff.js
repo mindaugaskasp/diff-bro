@@ -2,9 +2,7 @@ import { computed, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { diffWorkbooks } from '../utils/spreadsheetDiff'
 
-// Binds the two loaded spreadsheet comparables to a per-sheet diff and tracks
-// which sheet tab is active. Kept out of the .vue so the selection/clamping
-// logic is unit-testable (see tests/renderer/composables/).
+// Per-sheet diff of the two loaded spreadsheets + the active tab.
 export function useSpreadsheetDiff() {
   const store = useDiffStore()
   const active = ref(0)
@@ -13,8 +11,7 @@ export function useSpreadsheetDiff() {
     diffWorkbooks(store.leftComparable?.sheets ?? [], store.rightComparable?.sheets ?? [])
   )
 
-  // Clamp rather than reset: if the active index falls out of range (sheet count
-  // shrank), fall back to the last sheet instead of throwing.
+  // Clamp to the last sheet if the active index falls out of range.
   const activeSheet = computed(() => {
     if (!sheets.value.length) return null
     return sheets.value[Math.min(active.value, sheets.value.length - 1)]

@@ -1,8 +1,7 @@
 import { ref } from 'vue'
 
-// Where saved diffs and snippets actually live on disk (Settings → Data folder).
-// Module-level: the path doesn't change while the app runs, so one IPC call
-// serves every component that wants to mention it.
+// The on-disk data folder. Module-level: one IPC call serves every component
+// (the path can't change while running).
 const dataDir = ref('')
 let requested = false
 
