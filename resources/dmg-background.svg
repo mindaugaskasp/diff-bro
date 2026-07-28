@@ -3,17 +3,14 @@
      1. LIGHT, not dark. The DMG window renders in the light appearance even
         when the user's system is in dark mode, so Finder draws the two icon
         captions ("Diff Bro" and "Applications") in black. A dark backdrop
-        makes them unreadable.
+        makes them unreadable. The brand's warmth therefore comes from the
+        app icon's own dark tile and the amber drag-arrow — the field itself
+        stays a light warm paper so the captions read.
      2. The canvas is 1600x1000 but the LAYOUT lives in the top-left 640x400,
         which is the window size set in electron-builder.yml. Finder draws this
-        image at natural size anchored top-left and does not scale it, so a
-        user resizing the window past 640x400 would otherwise expose the bare
-        white window background. The extra canvas is filled pure white and the
-        artwork fades to pure white before the 640x400 edge, so the seam
-        between image and window background is invisible at any window size.
-        (A Finder window cannot be made non-resizable — there is no such
-        property in the .DS_Store or the AppleScript Finder dictionary — so
-        making the resize harmless is the available fix.)
+        image at natural size anchored top-left and does not scale it, so the
+        artwork fades to pure white before the 640x400 edge — a user resizing
+        the window past 640x400 only ever exposes more white, never a seam.
 
      Never edit background.png / background@2x.png directly: run
      `npm run render:dmg-bg` (scripts/render-dmg-background.mjs), which
@@ -22,58 +19,56 @@
      below (centres 180,208 and 460,208). -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
   <defs>
-    <!-- Soft vignette confined to the visible window area. It fades to fully
-         transparent (i.e. to the white base) well inside 640x400 so that the
-         revealed canvas on resize matches Finder's own white. -->
-    <radialGradient id="paper" cx="320" cy="200" r="560" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#e7edf3" stop-opacity="1"/>
-      <stop offset="0.55" stop-color="#eff3f7" stop-opacity="1"/>
+    <!-- Warm paper vignette confined to the visible window area. Fades to fully
+         transparent (the white base) well inside 640x400 so the revealed canvas
+         on resize matches Finder's own white. -->
+    <radialGradient id="paper" cx="300" cy="196" r="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f6efe2" stop-opacity="1"/>
+      <stop offset="0.5" stop-color="#f2ebdd" stop-opacity="1"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="arrow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#58a6ff" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#0969da" stop-opacity="1"/>
+      <stop offset="0" stop-color="#e8b45f" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#c9852a" stop-opacity="1"/>
     </linearGradient>
   </defs>
 
   <rect width="1600" height="1000" fill="#ffffff"/>
-  <!-- Spans the whole canvas, not just the window: clipping the tint to
-       640x400 left a hard rectangular seam exactly where the window edge
-       falls, which is the artefact this layout exists to avoid. -->
+  <!-- Spans the whole canvas, not just the window, so no hard rectangular seam
+       falls on the window edge. -->
   <rect width="1600" height="1000" fill="url(#paper)"/>
 
-  <!-- The app's signature: a green add line and a red delete line, kept far
-       enough from the icon wells not to compete with them. -->
-  <g opacity="0.16">
-    <rect x="60"  y="54" width="120" height="9" rx="4.5" fill="#2da44e"/>
-    <rect x="60"  y="72" width="76"  height="9" rx="4.5" fill="#2da44e"/>
-    <rect x="460" y="54" width="120" height="9" rx="4.5" fill="#cf222e"/>
-    <rect x="460" y="72" width="94"  height="9" rx="4.5" fill="#cf222e"/>
+  <!-- Faint Monoline-D watermark: ties the window to the mark without competing
+       with the two real icons Finder draws on top. -->
+  <g transform="translate(486,286) scale(1.5)" opacity="0.05">
+    <path d="M32 22 H50 A28 28 0 0 1 50 78 H32 Z" fill="none"
+          stroke="#6e5a2f" stroke-width="8" stroke-linejoin="round"/>
+    <circle cx="45" cy="50" r="7.5" fill="#6e5a2f"/>
+    <circle cx="63" cy="50" r="7.5" fill="#6e5a2f"/>
   </g>
 
-  <text x="320" y="76" text-anchor="middle" fill="#1f2328"
+  <text x="320" y="80" text-anchor="middle" fill="#2a2620"
         font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Helvetica, Arial, sans-serif"
-        font-size="26" font-weight="600" letter-spacing="0.5">Diff Bro</text>
-  <text x="320" y="102" text-anchor="middle" fill="#57606a"
+        font-size="26" font-weight="600" letter-spacing="0.5">Install Diff Bro</text>
+  <text x="320" y="106" text-anchor="middle" fill="#857c6c"
         font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Helvetica, Arial, sans-serif"
-        font-size="13.5">Drag the app into Applications to install</text>
+        font-size="13.5">Drag the app into your Applications folder</text>
 
   <!-- Drop wells: centres match the icon coordinates in electron-builder.yml
        (180,208 and 460,208). -->
-  <rect x="112" y="140" width="136" height="136" rx="26" fill="#ffffff"
-        stroke="#d0d7de" stroke-width="1.5"/>
-  <rect x="392" y="140" width="136" height="136" rx="26" fill="#ffffff"
-        stroke="#d0d7de" stroke-width="1.5" stroke-dasharray="7 6"/>
+  <rect x="112" y="140" width="136" height="136" rx="26" fill="#ffffff" fill-opacity="0.6"
+        stroke="#d8ccb4" stroke-width="1.5"/>
+  <rect x="392" y="140" width="136" height="136" rx="26" fill="#ffffff" fill-opacity="0.4"
+        stroke="#d8ccb4" stroke-width="1.5" stroke-dasharray="7 6"/>
 
-  <!-- No icon captions here: Finder draws the real filenames under both icons,
-       and a second set would collide with them. -->
+  <!-- No icon captions here: Finder draws the real filenames under both icons. -->
   <g stroke="url(#arrow)" stroke-width="4.5" stroke-linecap="round"
      stroke-linejoin="round" fill="none">
     <line x1="278" y1="208" x2="356" y2="208"/>
     <path d="M 344 195 L 358 208 L 344 221"/>
   </g>
 
-  <text x="320" y="368" text-anchor="middle" fill="#8b949e"
+  <text x="320" y="368" text-anchor="middle" fill="#9a917f"
         font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Helvetica, Arial, sans-serif"
         font-size="11.5" letter-spacing="0.4">Offline only · nothing leaves this machine</text>
 </svg>
