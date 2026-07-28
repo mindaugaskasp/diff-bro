@@ -1,6 +1,5 @@
-// Unicode-safe Base64 encode/decode for the Tools menu. Plain btoa/atob only
-// handle Latin1, so text is routed through TextEncoder/TextDecoder first —
-// all native browser APIs, no dependency needed.
+// Unicode-safe Base64 (btoa/atob only handle Latin1, so route through
+// TextEncoder/Decoder).
 
 export function base64Encode(text) {
   const bytes = new TextEncoder().encode(text)

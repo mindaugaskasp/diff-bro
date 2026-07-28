@@ -1,9 +1,6 @@
-// Geometry for resizing a *centered* modal dialog from any edge or corner. The
-// panel stays centered on screen, so a drag grows/shrinks it symmetrically about
-// the centre — and to keep the dragged edge under the cursor while both sides
-// move, the cursor delta counts double on the axis the handle controls. Pure and
-// clamped, so the whole resize behaviour is unit-testable; the composable only
-// wires the pointer drag.
+// Pure geometry for resizing a CENTERED dialog: it grows symmetrically about the
+// centre, so the cursor delta counts double on the handle's axis to keep the
+// dragged edge under the cursor.
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi)
 

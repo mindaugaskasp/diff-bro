@@ -1,36 +1,26 @@
-// Best-effort JSON/XML sniffing, validation, and pretty-printing — used by
-// the "looks like JSON/XML" suggestion banner and the standalone Tools menu
-// formatters. Deliberately dependency-free (offline app, CLAUDE.md prefers
-// zero new production dependencies): no XML parser library, just a tag-stack
-// scan for well-formedness and a regex-based reindent for pretty-printing.
+// Dependency-free JSON/XML sniff, validate, and pretty-print (a tag-stack scan,
+// no XML library) for the suggestion banner and the Tools formatters.
 
 export function detectTextFormat(content) {
   const trimmed = content.trim()
   if (!trimmed) return null
   const first = trimmed[0]
   const last = trimmed[trimmed.length - 1]
-  // Require the MATCHING closing bracket too. A leading '{'/'['/'<' alone also
-  // matches things that aren't JSON/XML — e.g. a log line "[2026-…Z] [renderer]
-  // …" — which then wrongly showed a "looks like JSON but doesn't parse" banner.
-  // Valid JSON objects/arrays and XML documents always close, so this loses no
-  // real detection.
+  // Require the MATCHING close too, so a leading bracket in e.g. a log line isn't
+  // mistaken for JSON/XML.
   if ((first === '{' && last === '}') || (first === '[' && last === ']')) {
     return { kind: 'json', ...validateJson(trimmed) }
   }
   if (first === '<' && last === '>') {
-    // HTML is not XML: its void elements (<meta>, <br>, <img>, <link>, …) are
-    // never closed, so the XML tag-stack validator would wrongly report a
-    // mismatch (e.g. "</head> expected </meta>"). Don't offer XML
-    // validation/formatting for an HTML document.
+    // HTML's void elements aren't closed, so the tag-stack validator would false
+    // mismatch — skip it.
     if (isHtml(trimmed)) return null
     return { kind: 'xml', ...validateXml(trimmed) }
   }
   return null
 }
 
-// A full HTML document: an HTML5 doctype, or a root <html> tag. XHTML served as
-// real XML starts with an <?xml …?> declaration or an XHTML DOCTYPE and is left
-// to the XML path on purpose.
+// A full HTML document (doctype or root <html>); real XHTML stays on the XML path.
 function isHtml(trimmed) {
   if (/^<!doctype\s+html\b/i.test(trimmed)) {
     return !/\bDTD\s+XHTML\b/i.test(trimmed) // XHTML doctype -> treat as XML
@@ -54,13 +44,8 @@ function locateOffset(content, offset) {
   return { line: lines.length, column: lines[lines.length - 1].length + 1 }
 }
 
-// V8's JSON.parse errors report a 0-based character offset ("at position N")
-// for most structural errors (trailing comma, missing colon, unterminated
-// string); newer V8 sometimes appends "(line X column Y)" itself, but not
-// for every error shape, so line/column is recomputed from the offset here
-// for a result that doesn't depend on the exact engine/message format. Some
-// error shapes (e.g. a single unexpected token with no offset) have no
-// position at all — those just fall back to the plain message.
+// Recompute line/column from V8's "at position N" offset (independent of the
+// engine's message format); no offset → plain message.
 function locateJsonError(message, content) {
   const match = /position (\d+)/.exec(message)
   return match ? locateOffset(content, Number(match[1])) : {}
@@ -70,8 +55,7 @@ export function formatJson(content) {
   return JSON.stringify(JSON.parse(content), null, 2)
 }
 
-// Strip comments/CDATA/declarations before tag-scanning so tag-like text
-// inside them isn't mistaken for real markup.
+// Stripped before tag-scanning so tag-like text inside them isn't read as markup.
 const STRIP_PATTERNS = [
   /<!--[\s\S]*?-->/g,
   /<!\[CDATA\[[\s\S]*?\]\]>/g,
@@ -103,10 +87,8 @@ export function validateXml(content) {
   const stack = []
   let match
   let sawElement = false
-  // Tags are never touched by STRIP_PATTERNS, so each matched tag's literal
-  // text still appears verbatim (and in the same order) in the original
-  // `content` — search forward for it there to get a real line/column
-  // instead of one relative to the comment/CDATA-stripped scan string.
+  // Find each tag in the ORIGINAL content for a real line/column (not one
+  // relative to the stripped scan string).
   let searchFrom = 0
   while ((match = tagRe.exec(scan))) {
     const [full, name, selfClose] = match
@@ -131,11 +113,8 @@ export function validateXml(content) {
   return { valid: true }
 }
 
-// Regex-based reindent, not a full parser: splits on "><" tag boundaries and
-// indents by nesting depth. Handles the common case (element-only or
-// element-with-plain-text-content) well; attribute values containing a
-// literal ">" would confuse the split, which is an acceptable limitation
-// for a "pretty-print my XML" convenience tool.
+// Regex reindent (not a parser): splits on "><" and indents by depth. An
+// attribute value with a literal ">" would confuse it — acceptable here.
 export function formatXml(content) {
   const withBreaks = content.trim().replace(/>\s*</g, '>\n<')
   let depth = 0

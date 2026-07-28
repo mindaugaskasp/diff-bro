@@ -1,6 +1,5 @@
-// Workbook-level diff: pair sheets by name across the two files, align each
-// pair's rows (utils/alignRows), and roll up per-sheet stats. Pure — the viewer
-// and its composable render whatever this returns.
+// Workbook diff: pair sheets by name, align each pair's rows (alignRows), roll
+// up per-sheet stats. Pure.
 import { alignRows } from './alignRows'
 
 // 0 -> "A", 25 -> "Z", 26 -> "AA" (bijective base-26), for the grid's column
@@ -50,10 +49,8 @@ function total(stats) {
   return stats.changed + stats.added + stats.removed
 }
 
-// The grid renders real DOM rows, so an enormous sheet would freeze the window
-// (there's no virtualization yet). Cap what we hand the viewer and report how
-// many rows are held back, rather than letting the app hang. A follow-up can
-// swap this for true row virtualization.
+// No row virtualization yet, so cap the rows handed to the viewer and report how
+// many are held back rather than freezing the window.
 export const RENDER_ROW_CAP = 3000
 export function pageRows(rows, cap = RENDER_ROW_CAP) {
   if (rows.length <= cap) return { rows, hidden: 0 }

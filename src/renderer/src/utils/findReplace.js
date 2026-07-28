@@ -1,10 +1,5 @@
-// Find-and-replace for the Tools dialog. Three match modes:
-//   text   literal substring
-//   word   literal, but only whole-word occurrences (\b boundaries)
-//   regex  the find field is a JS regular expression ($1 backreferences work)
-// Returns the transformed text plus a replacement count, or { error } when a
-// regex won't compile. The pattern runs only on the user's own local text, so a
-// pathological expression can stall this window and nothing beyond it.
+// Find-and-replace for the Tools dialog: text / word (\b) / regex ($1 works)
+// modes. Returns { text, count } or { error } when a regex won't compile.
 const SPECIAL = /[.*+?^${}()|[\]\\]/g
 
 function buildRegex(find, mode, caseInsensitive) {
@@ -29,8 +24,8 @@ export function replaceText({ text = '', find, replace = '', mode = 'text', case
   }
   const matches = text.match(re)
   const count = matches ? matches.length : 0
-  // Literal modes replace through a function so $-sequences in the replacement
-  // stay literal; regex mode replaces natively so $1 backreferences resolve.
+  // Literal modes replace via a function so $-sequences stay literal; regex mode
+  // replaces natively so $1 resolves.
   const output = mode === 'regex' ? text.replace(re, replace) : text.replace(re, () => replace)
   return { output, count }
 }

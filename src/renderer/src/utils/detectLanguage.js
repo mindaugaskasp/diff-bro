@@ -1,17 +1,10 @@
-// Best-effort language guess for the Snippets editor's syntax highlighting.
-// Wrong guesses only cost coloring quality, not correctness, so this is a
-// deliberately cheap heuristic rather than a real parser for every format.
-//
-// The guiding rule for every signal below: fire only on something distinctive
-// and low-ambiguity, and stay silent otherwise — a miss lands on plaintext,
-// which is neutral, whereas a false positive mis-colors a whole snippet. The
-// detectors are ordered most-distinctive-first; the first hit wins.
+// Cheap best-effort language guess for snippet highlighting: each signal fires
+// only on something distinctive (a false positive mis-colors a whole snippet; a
+// miss just lands on plaintext), ordered most-distinctive-first.
 import { validateJson } from './textFormats'
 import { looksLikeMermaid } from './mermaid'
 
-// Syntaxes offered in the snippet editor's language picker. `id` is the
-// Monaco language id (all bundled with monaco-editor); 'auto' means "let
-// detectSnippetLanguage pick as you type".
+// Syntaxes in the language picker (Monaco ids).
 export const SNIPPET_LANGUAGES = [
   { id: 'auto', label: 'Auto-detect' },
   { id: 'plaintext', label: 'Plain text' },
@@ -40,8 +33,7 @@ const firstLine = (t) => {
   return nl === -1 ? t : t.slice(0, nl)
 }
 
-// A shebang names its interpreter outright — the single highest-confidence
-// signal we have, so it is checked first.
+// A shebang names its interpreter — the highest-confidence signal, checked first.
 function detectShebang(t) {
   const first = firstLine(t)
   if (!first.startsWith('#!')) return null
@@ -189,11 +181,9 @@ const DETECTORS = [
   (t) => (looksLikeShell(t) ? 'shell' : null)
 ]
 
-// A fenced code block means the document is Markdown wrapping code — checked
-// before the code detectors so the code *inside* the fence can't win.
+// Checked before the code detectors so code inside a fence can't win.
 const MARKDOWN_FENCE = /^```/m
-// The remaining Markdown signals live after the code detectors, so a lone `#`
-// (also a comment marker in several languages) can't pre-empt a real program.
+// After the code detectors, so a lone `#` can't pre-empt a real program.
 const MARKDOWN_STRONG = [/^#{1,6}\s+\S/m, /\[[^\]]+\]\([^)]+\)/]
 const MARKDOWN_WEAK = [/^[-*+]\s+\S/m, /^\d+\.\s+\S/m, /^>\s+\S/m]
 
@@ -212,8 +202,7 @@ export function detectSnippetLanguage(content) {
   if (!t) return 'plaintext'
   if (isJson(t)) return 'json'
 
-  // Distinctive diagram keywords ('flowchart', 'sequenceDiagram', …) — checked
-  // before markdown, whose ``` fences could otherwise claim a fenced diagram.
+  // Before markdown, so a fenced diagram isn't claimed by its ``` fence.
   if (looksLikeMermaid(t)) return 'mermaid'
   if (MARKDOWN_FENCE.test(t)) return 'markdown'
 

@@ -1,11 +1,6 @@
-// The selectable colour themes. Pure data + helpers (no Vue/store), so the
-// store, the Monaco wiring, and the Mermaid renderer all share one source of
-// truth for what a theme is and whether it sits on a dark or light ground.
-//
-// `dark` drives the editor/diagram theme: dark-ground themes get Monaco's
-// vs-dark and Mermaid's dark theme; light-ground themes get vs / default. The
-// palette itself lives in styles/themes.css, keyed by the same id.
-// `swatch` is just for the Settings picker's preview chips.
+// The selectable themes (pure data + helpers). `dark` drives the Monaco/Mermaid
+// theme; the palette lives in styles/themes.css keyed by the same id; `swatch`
+// is the Settings preview chip.
 export const THEMES = [
   {
     id: 'light',
@@ -72,9 +67,8 @@ export const isValidTheme = (id) => BY_ID.has(id)
 export const normalizeTheme = (id) => (BY_ID.has(id) ? id : DEFAULT_THEME)
 export const isDarkTheme = (id) => BY_ID.get(id)?.dark ?? false
 
-// The theme for a given calendar day — random-looking but STABLE within a day,
-// so the "rotate daily" option doesn't reshuffle on every launch, only at the
-// date rollover. Deterministic hash of the local Y-M-D → an index into THEMES.
+// Stable within a day (deterministic hash of local Y-M-D → THEMES index), so
+// "rotate daily" only changes at the date rollover.
 export function themeForDay(date = new Date()) {
   const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
   let hash = 0

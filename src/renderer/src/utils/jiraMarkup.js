@@ -1,18 +1,7 @@
-// Jira / Confluence wiki-markup transforms behind the snippet editor's
-// formatting toolbar. Each action takes the editor's whole text plus the current
-// selection offsets and returns the new text and where the selection should land
-// afterwards. No Monaco, no DOM — pure string work, so every button's behaviour
-// (wrap, toggle, per-line prefix, caret placement) is unit-testable. The
-// composable that owns the Monaco editor just converts its selection to offsets
-// and applies the result.
-//
-// The notation is the classic Atlassian one shared by Jira and legacy Confluence
-// wiki markup: *bold*, _italic_, +underline+, -strike-, {{monospace}}, hN.
-// headings, `#`/`*` lists, bq. quote, {code} blocks, [text|url] links. Alignment
-// has no reliable wiki-markup form, so it is deliberately not offered.
+// Pure Jira/Confluence wiki-markup transforms behind the snippet editor toolbar:
+// (whole text + selection offsets) → (new text + new selection). Unit-testable.
 
-// The toolbar buttons, in display order. `icon` names an AppIcon; `text` is a
-// short label used where a glyph reads clearer than a pictogram (the headings).
+// Toolbar buttons in display order.
 export const JIRA_ACTIONS = [
   { id: 'bold', title: 'Bold  *text*', icon: 'bold' },
   { id: 'italic', title: 'Italic  _text_', icon: 'italic' },
@@ -51,8 +40,7 @@ function splice(m, text, selStart, selEnd) {
   return { text: head(m) + text + tail(m), start: selStart, end: selEnd }
 }
 
-// Inline wrap with toggle-off: strip the markers when they already surround the
-// selection (inside it, or immediately outside it), otherwise add them.
+// Inline wrap with toggle-off when the markers already surround the selection.
 function wrap(m, prefix, suffix) {
   const sel = selected(m)
   if (sel.length >= prefix.length + suffix.length && sel.startsWith(prefix) && sel.endsWith(suffix)) {
@@ -66,16 +54,14 @@ function wrap(m, prefix, suffix) {
   return splice(m, prefix + sel + suffix, m.start + prefix.length, m.start + prefix.length + sel.length)
 }
 
-// Grow the selection to the whole lines it touches, so a per-line prefix never
-// starts from mid-line.
+// Grow to whole lines, so a per-line prefix never starts mid-line.
 function lineBounds(m) {
   const start = m.text.lastIndexOf('\n', m.start - 1) + 1
   const nl = m.text.indexOf('\n', m.end)
   return { start, end: nl === -1 ? m.text.length : nl }
 }
 
-// A single leading marker (hN. / bq.) that replaces any existing one, or clears
-// it when the same marker is clicked again.
+// A leading hN./bq. marker that replaces any existing one, or toggles off.
 function heading(m, marker) {
   const { start, end } = lineBounds(m)
   const block = m.text.slice(start, end)
@@ -84,8 +70,7 @@ function heading(m, marker) {
   return { text: m.text.slice(0, start) + next + m.text.slice(end), start, end: start + next.length }
 }
 
-// A per-line list marker: add it to every non-blank line, or remove it from all
-// of them when every line already has it (toggle).
+// Per-line list marker on every non-blank line (toggle off when all have it).
 function listBlock(m, marker) {
   const { start, end } = lineBounds(m)
   const token = `${marker} `
@@ -98,16 +83,15 @@ function listBlock(m, marker) {
   return { text: m.text.slice(0, start) + next + m.text.slice(end), start, end: start + next.length }
 }
 
-// A {code} block wrapping the selection on its own lines; the inner content is
-// selected (or the caret lands on the empty inner line).
+// A {code} block wrapping the selection on its own lines.
 function codeBlock(m) {
   const sel = selected(m)
   const opener = '{code}\n'
   return splice(m, `${opener}${sel}\n{code}`, m.start + opener.length, m.start + opener.length + sel.length)
 }
 
-// [text|url]: with a selection, keep it as the label and land the caret in the
-// empty url slot; with none, insert a placeholder and select "text".
+// [text|url]: a selection becomes the label (caret in the url slot); else a
+// placeholder.
 function link(m) {
   const sel = selected(m)
   if (sel) {

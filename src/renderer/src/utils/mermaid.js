@@ -1,11 +1,9 @@
-// Pure Mermaid helpers — no `mermaid` import, so this stays unit-testable and
-// adds nothing to the bundle. The heavy library is loaded lazily elsewhere
-// (composables/useMermaid.js), only once a diagram is actually rendered.
+// Pure Mermaid helpers (no `mermaid` import; the library loads lazily in
+// composables/useMermaid.js).
 import { isDarkTheme } from './themes'
 
-// The leading keyword of every Mermaid diagram type we recognize for
-// auto-detection. Matched against the first non-empty, non-directive line so a
-// pasted diagram is offered the Mermaid syntax without the user picking it.
+// Leading keyword of each recognized diagram type, matched against the first
+// real line for auto-detection.
 export const MERMAID_KEYWORDS = [
   'flowchart',
   'graph',
@@ -52,11 +50,8 @@ const opensMermaidFence = (line) => {
   return !!m && (!m[1] || m[1].toLowerCase() === 'mermaid')
 }
 
-// Diagrams are usually copied out of chat or docs wrapped in a Markdown code
-// fence. Mermaid treats the fence lines as diagram text and fails to parse, so
-// a wrapping ```mermaid (or bare ```) block is peeled off before detection and
-// rendering. Anything else — including a fence tagged for another language — is
-// returned untouched.
+// Peel off a wrapping ```mermaid (or bare ```) fence, which Mermaid would
+// otherwise fail to parse. Anything else is returned untouched.
 export function stripMermaidFence(text) {
   const src = String(text ?? '')
   const lines = src.split('\n')
@@ -66,9 +61,8 @@ export function stripMermaidFence(text) {
   return lines.slice(start + 1, end - 1).join('\n')
 }
 
-// True when `text` opens like a Mermaid diagram. Skips a leading YAML
-// frontmatter block (`---`) and `%%` directives/comments, matching only the
-// first real content line so it stays a cheap, false-positive-averse heuristic.
+// True when the first real line (past `---` frontmatter and `%%` directives)
+// starts with a Mermaid keyword.
 export function looksLikeMermaid(text) {
   const lines = stripMermaidFence(text).split('\n')
   let i = 0

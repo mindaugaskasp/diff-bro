@@ -1,7 +1,5 @@
-// Prop shape checks. A prop typed `Object` accepts anything, so components that
-// take a record declare which fields they actually rely on — the failure then
-// names the missing field instead of surfacing as an undefined deep in a
-// template. Vue only runs validators in development builds.
+// Prop shape checks: a record prop declares the fields it relies on, so a bad
+// prop names the missing field instead of failing deep in a template.
 export const shaped =
   (...keys) =>
   (value) =>
