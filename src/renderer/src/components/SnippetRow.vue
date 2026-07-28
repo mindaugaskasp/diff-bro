@@ -1,6 +1,5 @@
 <script setup>
-// One snippet row, shared by the Favorites and All shelves — the two lists
-// differ only in the star's state, so the markup lives here once.
+// One snippet row (shared by both shelves; only the star state differs).
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
@@ -18,8 +17,7 @@ const store = useSnippetStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 
-// Diagram snippets get a resting diagram marker; a snippet left on Auto-detect
-// resolves through the language recorded when it was saved.
+// Auto-detect resolves through the language recorded at save time.
 const isDiagram = (entry) => languageOf(entry) === 'mermaid'
 
 async function copySnippet(id) {

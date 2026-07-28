@@ -1,7 +1,5 @@
 <script setup>
-// One SVG icon from the shared set (see ../icons.js). Sizes to 1em and inherits
-// currentColor, so it drops in wherever a text glyph used to sit. Explicit
-// element tags (not <component :is>) keep every child in the SVG namespace.
+// One SVG icon from ../icons.js; sizes to 1em and inherits currentColor.
 import { ICONS } from '../icons'
 
 defineProps({

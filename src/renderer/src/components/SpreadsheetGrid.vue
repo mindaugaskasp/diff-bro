@@ -11,8 +11,7 @@ const props = defineProps({
 const rowData = (entry) => (props.side === 'left' ? entry.left : entry.right)
 const rowIndex = (entry) => (props.side === 'left' ? entry.leftIndex : entry.rightIndex)
 
-// A row is a "ghost" (striped gap) on the side that has no counterpart, so both
-// grids keep the same height row-for-row and stay aligned.
+// A "ghost" (striped gap) on the side with no counterpart keeps both grids aligned.
 function rowClass(entry) {
   if (rowData(entry) === null) return 'ghost'
   if (entry.status === 'changed') return 'changed'

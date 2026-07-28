@@ -1,7 +1,5 @@
 <script setup>
-// Every modal in the app, mounted in one place. They are siblings by design:
-// each is driven by its own piece of store state, so opening one never depends
-// on where the trigger lives in the component tree.
+// Every modal, mounted in one place; each is driven by its own store state.
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useVaultStore } from '../stores/vaultStore'

@@ -1,7 +1,5 @@
 <script setup>
-// One saved-diff row: favorite star, name + live countdown, share and delete.
-// The same row serves your own diffs and imported ones — imported rows just
-// carry a sender, which the tooltip mentions.
+// One saved-diff row (own or imported). Imported rows carry a sender.
 import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
@@ -28,8 +26,7 @@ const title = computed(() => {
   return `Open "${props.entry.name}"${from}${loc}`
 })
 
-// Live countdown — vault.now ticks once a second, which also purges expiries.
-// A kept (non-expiring) diff has no countdown.
+// Live countdown (vault.now ticks each second); a kept diff has none.
 const remaining = computed(() => {
   if (props.entry.expiresAt === null) return 'kept'
   const ms = props.entry.expiresAt - vault.now
@@ -74,7 +71,6 @@ async function open() {
         </span>
       </span>
     </button>
-    <!-- Imported diffs are the sender's to share on; only your own get the button. -->
     <button
       v-if="!entry.from"
       class="row-btn"

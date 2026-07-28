@@ -1,7 +1,6 @@
 <script setup>
-// Snippets sidebar: a filter bar over two shelves (★ favorites, then the rest).
-// Filtering lives in useSnippetFilters, hover previews in useSnippetPreview, and
-// a row's own markup in SnippetRow — this file is layout and nothing else.
+// Snippets sidebar layout; filtering is useSnippetFilters, previews
+// useSnippetPreview, rows SnippetRow.
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
@@ -29,15 +28,13 @@ const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, o
 
 watch(() => props.search, (v) => (query.value = v), { immediate: true })
 const byTag = (list) => (props.tag ? list.filter((e) => e.tags.includes(props.tag)) : list)
-// One list, favorites (starred) first — no separate Favorites shelf. The ★
-// filter keeps only them.
+// One list, favorites first; the ★ filter keeps only them.
 const rows = computed(() => {
   const favs = byTag(visibleFavorites.value)
   return props.favOnly ? favs : [...favs, ...byTag(visibleListed.value)]
 })
 
-// The "+" lives in the header; expand the section (its editor mounts in the
-// body) and open a blank snippet.
+// Expand the section and open a blank snippet.
 function newSnippet() {
   sectionOpen.value = true
   store.editingSnippet = { id: null }
@@ -79,7 +76,6 @@ function newSnippet() {
     <div v-show="sectionOpen" class="section-body">
       <p v-if="!store.entries.length" class="empty"><AppIcon name="inbox" /> Empty</p>
 
-      <!-- One list, favorites first (marked by the gold star) — no sub-headers. -->
       <ul v-if="store.entries.length" class="rows">
         <li v-if="!rows.length" class="empty small">No snippets match — try removing a filter.</li>
         <SnippetRow

@@ -1,7 +1,6 @@
 <script setup>
-// The Settings → Limits pane, split out of SettingsDialog so that dialog's
-// template stays within its line budget. Shares SettingsDialog.css (the same
-// pattern LogSettings uses).
+// The Settings → Limits pane, split out of SettingsDialog to keep it within
+// its line budget. Shares SettingsDialog.css.
 import {
   useSettingsStore,
   FILE_TYPE_LIMITS,

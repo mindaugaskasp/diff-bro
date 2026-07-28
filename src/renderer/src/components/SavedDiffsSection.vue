@@ -1,7 +1,5 @@
 <script setup>
-// The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs,
-// organized by TAGS shared with snippets (no categories). `search` narrows the
-// visible rows by name or tag; `unified` renders the light group label.
+// The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs.
 import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
@@ -23,8 +21,7 @@ const matches = (e) =>
 const vault = useVaultStore()
 const open = ref(true)
 
-// One list, favorites first (they float up via the store's sort) and marked by
-// the gold star — no separate Favorites sub-group. The ★ filter keeps only them.
+// One list, favorites first; the ★ filter keeps only them.
 const rows = computed(() =>
   (props.favOnly ? vault.favoritesOwn : [...vault.favoritesOwn, ...vault.ownActive]).filter(matches)
 )

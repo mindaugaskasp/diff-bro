@@ -1,7 +1,5 @@
 <script setup>
-// The "External diffs" sidebar section: diffs shared by someone else, each
-// signed by its sender and kept separate from your own saved diffs. A Favorites
-// shelf pins starred ones. Section move controls live in SectionHeader.
+// The "External diffs" section: diffs shared by others, each signed by its sender.
 import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
@@ -35,8 +33,7 @@ const rows = computed(() =>
 )
 const hasImported = computed(() => vault.importedActive.length > 0)
 
-// The "+" lives in the header; expand the section so the imported diff is in
-// view, then run the import flow.
+// Expand the section, then run the import flow.
 function startImport() {
   open.value = true
   diff.importShared()

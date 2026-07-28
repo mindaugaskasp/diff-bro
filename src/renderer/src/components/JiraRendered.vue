@@ -1,9 +1,6 @@
 <script setup>
-// The rendered ("what it looks like") view of a Jira/Confluence snippet. Parses
-// the markup into a block tree (utils/jiraRender) and renders it as real
-// elements — recursing into itself for quote children, and into JiraInline for
-// inline runs. No HTML injection: all text is interpolated. Given `content` it
-// parses; given `blocks` (the recursive case) it renders them directly.
+// A Jira block tree (utils/jiraRender) rendered as real elements — all text
+// interpolated, never HTML injection (rule 7).
 import { computed } from 'vue'
 import { parseJira } from '../utils/jiraRender'
 import { arrayOfShape } from '../utils/props'

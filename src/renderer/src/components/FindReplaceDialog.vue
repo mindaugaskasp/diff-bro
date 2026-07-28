@@ -1,7 +1,5 @@
 <script setup>
-// Find & Replace tool: literal characters, whole words, or a regex, over the
-// input text. The matching itself is the pure replaceText() in utils — this is
-// the input/output shell around it, mirroring the Base64 dialog.
+// Find & Replace shell (matching is the pure replaceText() in utils).
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'

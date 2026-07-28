@@ -27,12 +27,9 @@ onMounted(() => {
 })
 
 async function save() {
-  // Saving from paste mode should also run the comparison, so the user lands on
-  // the diff they just kept instead of staying on the two input boxes.
+  // Saving from paste mode also runs the comparison, so the user lands on the diff.
   const wasPaste = diff.mode === 'paste'
-  // User tags (the diff's detected format is auto-added in the store). Persist
-  // any new tags' chosen colors into the shared registry so the chip color the
-  // user saw sticks.
+  // Persist any new tags' colors so the chip color the user saw sticks.
   const userTags = tagField.value ? [...tagField.value.tags] : []
   if (userTags.length) snippets.registerTags(userTags, tagField.value.newColors())
   const id = await vault.save(
@@ -52,8 +49,6 @@ async function save() {
     )
     return
   }
-  // The on-screen comparison now matches a vault entry, so overwriting it no
-  // longer needs the "you'll lose it" prompt.
   diff.markSaved()
   if (diff.saveThenShare) {
     // "Share" flow: continue straight into the recipient picker.
@@ -68,8 +63,7 @@ async function save() {
     diff.showNotice('Saved (encrypted). Loading the file…')
     diff.finishPickAfterSave()
   } else {
-    // Initiate the comparison for a paste-mode save (comparePasted clears the
-    // saved flag, so re-mark it — nothing has changed since the save).
+    // Run the comparison for a paste-mode save, then re-mark saved.
     if (wasPaste) {
       diff.comparePasted()
       diff.markSaved()

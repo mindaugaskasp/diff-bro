@@ -1,7 +1,5 @@
 <script setup>
-// Help → Keyboard Shortcuts: the full, grouped list. Labels come from
-// utils/shortcuts.js, which resolves modifier names against the host OS, so a
-// Mac shows ⌘ where Windows/Linux show Ctrl.
+// Help → Keyboard Shortcuts: the grouped list (labels from utils/shortcuts.js).
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'

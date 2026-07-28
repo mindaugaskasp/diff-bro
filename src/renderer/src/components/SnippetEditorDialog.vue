@@ -1,8 +1,6 @@
 <script setup>
-// Create/edit a snippet: name, tag chips, a Monaco content editor, and (for
-// Mermaid) a live diagram preview. The draft itself (fields, syntax, save,
-// format) lives in useSnippetDraft; the tag field owns its own tags. What is
-// left here is the wiring between them.
+// Create/edit a snippet. The draft (fields, syntax, save, format) is in
+// useSnippetDraft; this is the Monaco + tag-field wiring.
 import { computed, nextTick, ref, watch } from 'vue'
 import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 import { applyJiraAction } from '../utils/jiraMarkup'
@@ -56,12 +54,9 @@ const { reset, applySelectionEdit, layout } = useMonacoInput({
   readOnly
 })
 
-// Jira/Confluence snippets open on the rendered preview; "Plain" flips to the
-// raw-markup editor (the only place the toolbar edits). Non-Jira syntaxes always
-// show the editor.
+// Jira snippets open on the rendered preview; "Plain" flips to the raw editor.
 const plain = ref(false)
-// The editor may have mounted in a hidden container (rendered view was showing);
-// relayout Monaco once it becomes visible again.
+// Relayout Monaco once it becomes visible (it may have mounted hidden).
 watch(plain, (isPlain) => {
   if (isPlain) nextTick(layout)
 })
@@ -80,8 +75,7 @@ async function copyAndFlash() {
   if (await copyContent()) flash()
 }
 
-// A file dropped on the editor loads its contents (capture + stop in the
-// template, so the window-level diff drop never sees it).
+// A file dropped on the editor loads its contents.
 const { onDropFile } = useFileTextDrop((text, fileName) => {
   content.value = text
   if (!name.value.trim()) name.value = fileName

@@ -1,15 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 
-// A slim "digital rain" lane under the toolbar, present only in the Matrix theme
-// (App.vue mounts it with v-if) — the counterpart to NyanLane's flying cat. Each
-// column falls on its own staggered CSS loop (GPU transform), and every time a
-// column completes a fall it swaps in fresh glyphs, so the rain keeps shimmering
-// instead of looping identically. Decorative → aria-hidden.
-//
-// Glyphs are digits + Latin letters + a few symbols (no katakana) so nothing
-// tofus on a font that lacks the character — the same reason the app's UI icons
-// are SVG, applied here to decorative text.
+// Decorative "digital rain" for the Matrix theme (aria-hidden). Glyphs avoid
+// katakana so nothing tofus on a font that lacks them.
 const GLYPHS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>*+=/#'
 const rnd = (n) => Math.floor(Math.random() * n)
 const pick = () => Array.from({ length: 3 + rnd(4) }, () => GLYPHS[rnd(GLYPHS.length)])

@@ -14,8 +14,7 @@ async function refresh() {
 }
 onMounted(refresh)
 
-// After the "name this key" dialog closes (add flow), the list may have
-// changed — re-fetch.
+// Re-fetch after the "name this key" dialog closes.
 watch(
   () => diff.pendingTrustedKey,
   (v) => {

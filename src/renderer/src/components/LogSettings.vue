@@ -2,9 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useArmedAction } from '../composables/useArmedAction'
 
-// The "Logs" settings pane: where the local error log lives, plus reveal/clear.
-// All fs work is in the main process (window.api.log*) — the renderer only
-// triggers it and shows the current path.
+// The "Logs" settings pane (fs work is in main via window.api.log*).
 const dir = ref('')
 const isDefault = ref(true)
 const busy = ref(false)
@@ -39,8 +37,7 @@ function reveal() {
   window.api.revealLog()
 }
 
-// Deleting the logs is destructive and irreversible, so it's a two-step confirm
-// (first click arms, second click within the window actually clears).
+// Two-step confirm — deleting the logs is irreversible.
 async function doClear() {
   await window.api.clearLog()
   cleared.value = true

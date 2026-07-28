@@ -1,8 +1,6 @@
 <script setup>
-// Formatting toolbar for Jira / Confluence wiki markup, shown above the snippet
-// editor when that syntax is picked. Each button emits its action id; the parent
-// applies the matching markup transform to the Monaco selection. The button set
-// and the markup itself live in utils/jiraMarkup.js so they stay unit-testable.
+// Jira/Confluence formatting toolbar. Each button emits its action id; the
+// buttons + transforms are in utils/jiraMarkup.js.
 import { JIRA_ACTIONS } from '../utils/jiraMarkup'
 import AppIcon from './AppIcon.vue'
 

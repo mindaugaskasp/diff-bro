@@ -1,9 +1,6 @@
 <script setup>
-// Hover preview popover. Fixed-positioned so it escapes the sidebar's scroll
-// container; the decrypted text renders through interpolation only. The card is
-// interactive: hovering INTO it keeps it open and offers a full-size action —
-// "Open in editor" for a text snippet, "View full screen" (the zoomable diagram
-// viewer) for a Mermaid one.
+// Hover preview popover (fixed-positioned to escape the sidebar scroll). Text
+// renders via interpolation only; hovering in keeps it open for its action.
 import { computed } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { shaped } from '../utils/props'
@@ -28,7 +25,7 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid')
       </span>
       <span v-if="preview.lang" class="pv-lang">{{ preview.lang }}</span>
     </div>
-    <!-- A Mermaid snippet previews as its rendered diagram, not its source;
+    <!-- A Mermaid snippet previews as its rendered diagram;
          clicking it opens the full-screen zoomable viewer. -->
     <button v-if="isMermaid" class="pv-diagram" title="View full screen" @click="$emit('view')">
       <MermaidDiagram :code="preview.text" :debounce="0" />
