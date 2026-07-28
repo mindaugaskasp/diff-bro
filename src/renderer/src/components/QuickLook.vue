@@ -12,8 +12,10 @@ import AppIcon from './AppIcon.vue'
 // Same type anchor the sidebar rows use, so a result reads the same everywhere.
 const mono = (lang) => languageMonogram(lang)
 
-const { query, selected, results, current, diffMeta, snippetText, choose, copy, copied, closing, refresh, onKeydown } =
-  useQuickLook()
+const {
+  query, selected, results, current, diffMeta, snippetText, zone, previewEl,
+  choose, copy, copied, copiedName, copiedIndex, closing, refresh, onKeydown
+} = useQuickLook()
 const store = useSnippetStore()
 const input = ref(null)
 const copyKey = isMac ? '⌘C' : 'Ctrl+C'
@@ -57,14 +59,14 @@ function expiryLabel(meta) {
       <span class="ql-kbd">Esc</span>
     </div>
 
-    <div class="ql-body">
+    <div class="ql-body" :class="{ 'in-preview': zone === 'preview' }">
       <ul class="ql-results">
         <li v-if="!results.length" class="ql-empty">No snippet or diff matches.</li>
         <li
           v-for="(it, i) in results"
           :key="it.kind + it.id"
           class="ql-res"
-          :class="{ sel: i === selected }"
+          :class="{ sel: i === selected, copied: copied && i === copiedIndex }"
           @click="selected = i"
           @dblclick="choose(i)"
         >
@@ -76,14 +78,35 @@ function expiryLabel(meta) {
             it.tags[0]
           }}</span>
           <span class="ql-kind">{{ it.kind }}</span>
+          <Transition name="ql-copychip">
+            <span v-if="copied && i === copiedIndex" class="ql-res-copied" aria-live="polite">
+              <AppIcon name="check" /> Copied
+            </span>
+          </Transition>
         </li>
       </ul>
 
       <div class="ql-preview">
         <template v-if="current">
           <div class="ql-pv-head band">
+            <button
+              v-if="zone === 'preview'"
+              class="ql-pv-back"
+              title="Back to list (←)"
+              @click="zone = 'list'"
+            >
+              <AppIcon name="chevron-left" />
+            </button>
             <span class="ql-pv-name">{{ current.name }}</span>
             <span v-if="current.lang" class="ql-pv-lang">{{ current.lang }}</span>
+            <button
+              v-if="current.kind === 'snippet'"
+              class="btn btn-sm ql-pv-copy"
+              :title="`Copy contents (${copyKey})`"
+              @click="copy(selected)"
+            >
+              <AppIcon :name="copied ? 'check' : 'copy'" /> {{ copied ? 'Copied' : 'Copy' }}
+            </button>
           </div>
           <div v-if="current.tags.length" class="ql-pv-tags">
             <span v-for="t in current.tags" :key="t" class="ql-pv-tag">
@@ -91,7 +114,12 @@ function expiryLabel(meta) {
             </span>
           </div>
 
-          <pre v-if="current.kind === 'snippet'" class="ql-pv-body">{{ snippetText }}</pre>
+          <pre
+            v-if="current.kind === 'snippet'"
+            ref="previewEl"
+            class="ql-pv-body"
+            :class="{ scrolling: zone === 'preview' }"
+          >{{ snippetText }}</pre>
           <div v-else class="ql-pv-diff">
             <span class="ql-pv-expiry">{{ expiryLabel(diffMeta) }}</span>
             <p>Press <strong>Enter</strong> to open this diff in the comparison view.</p>
@@ -100,14 +128,6 @@ function expiryLabel(meta) {
           <div class="ql-pv-foot band">
             <span class="ql-lock"><AppIcon name="lock" /> decrypted on demand</span>
             <span class="ql-pv-actions">
-              <button
-                v-if="current.kind === 'snippet'"
-                class="btn btn-sm"
-                :title="`Copy contents (${copyKey})`"
-                @click="copy(selected)"
-              >
-                <AppIcon :name="copied ? 'check' : 'copy'" /> {{ copied ? 'Copied' : 'Copy' }}
-              </button>
               <button class="btn btn-primary btn-sm" @click="choose(selected)">
                 <AppIcon :name="current.kind === 'diff' ? 'file' : 'edit'" />
                 {{ current.kind === 'diff' ? 'Open in comparison' : 'Open in editor' }}
@@ -120,15 +140,24 @@ function expiryLabel(meta) {
     </div>
 
     <div class="ql-foot band">
-      <span><span class="ql-kbd">↑↓</span> navigate</span>
-      <span><span class="ql-kbd">↵</span> open</span>
-      <span><span class="ql-kbd">{{ copyKey }}</span> copy</span>
-      <span><span class="ql-kbd">Esc</span> dismiss</span>
+      <template v-if="zone === 'preview'">
+        <span><span class="ql-kbd">↑↓</span> scroll</span>
+        <span><span class="ql-kbd">←</span> back to list</span>
+        <span><span class="ql-kbd">↵</span> open</span>
+        <span><span class="ql-kbd">Esc</span> back</span>
+      </template>
+      <template v-else>
+        <span><span class="ql-kbd">↑↓</span> navigate</span>
+        <span v-if="current && current.kind === 'snippet'"><span class="ql-kbd">→</span> scroll preview</span>
+        <span><span class="ql-kbd">↵</span> open</span>
+        <span><span class="ql-kbd">{{ copyKey }}</span> copy</span>
+        <span><span class="ql-kbd">Esc</span> close</span>
+      </template>
     </div>
 
     <transition name="ql-toast">
       <div v-if="copied" class="ql-toast" role="status">
-        <AppIcon name="check" class="ok" /> Copied to clipboard
+        <AppIcon name="check" class="ok" /> Copied <strong>{{ copiedName }}</strong>
       </div>
     </transition>
   </div>
