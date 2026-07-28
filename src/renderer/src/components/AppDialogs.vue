@@ -20,6 +20,7 @@ import SnippetFillDialog from './SnippetFillDialog.vue'
 import VaultCategoryDeleteDialog from './VaultCategoryDeleteDialog.vue'
 import AddTrustedKeyDialog from './AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './TrustedKeysDialog.vue'
+import RemoveTrustedKeyDialog from './RemoveTrustedKeyDialog.vue'
 import ShareKeyDialog from './ShareKeyDialog.vue'
 import ConfigBackupDialog from './ConfigBackupDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
@@ -37,6 +38,7 @@ const errors = useErrorStore()
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
   <ShareDiffDialog v-if="store.shareEntryId" />
   <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
+  <RemoveTrustedKeyDialog v-if="store.pendingUntrust" />
   <ShareKeyDialog v-if="store.showShareKeyDialog" />
   <ConfigBackupDialog v-if="store.configMode" />
   <SettingsDialog v-if="store.showSettingsDialog" />

@@ -107,6 +107,16 @@ export function toggleQuickLook() {
   else reveal()
 }
 
+// Global-shortcut entry point only (menu/IPC toggle unconditionally): skip
+// revealing when you're already in the app, e.g. capturing a new shortcut in
+// Settings — the keypress would otherwise pop the launcher over the field.
+function onShortcut() {
+  const w = ensure()
+  const main = BrowserWindow.getAllWindows().find((x) => x !== w)
+  if (!w.isVisible() && main?.isFocused()) return
+  toggleQuickLook()
+}
+
 // Hand a chosen result to the main window on its own channel (menu:action stays
 // a plain-string channel, so the id travels separately).
 function openInMain(payload) {
@@ -127,7 +137,7 @@ function registerShortcut(accel) {
     currentAccelerator = null
   }
   try {
-    if (globalShortcut.register(accel, toggleQuickLook)) {
+    if (globalShortcut.register(accel, onShortcut)) {
       currentAccelerator = accel
       return { ok: true }
     }

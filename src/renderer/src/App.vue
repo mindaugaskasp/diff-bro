@@ -75,12 +75,16 @@ const {
     <AppToolbar />
     <!-- Nyan theme only. -->
     <NyanLane v-if="store.theme === 'nyan'" />
-    <!-- Matrix theme only. -->
-    <MatrixRain v-else-if="store.theme === 'matrix'" />
 
     <div class="body">
       <SavedDiffs />
       <main class="content">
+        <!-- Matrix theme: code rain behind the empty state / diff area, only
+             while no diff is loaded (it never sits behind a comparison). -->
+        <MatrixRain
+          v-if="store.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
+          fill
+        />
         <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row">
           <div class="slot-half">
             <FileSlot

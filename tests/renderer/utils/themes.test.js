@@ -18,6 +18,11 @@ describe('themes registry', () => {
       'contrast',
       'nord',
       'sepia',
+      'dim',
+      'beacon',
+      'meridian',
+      'linen',
+      'bloom',
       'nyan',
       'matrix'
     ])
@@ -27,7 +32,7 @@ describe('themes registry', () => {
 
   it('marks each theme dark- or light-ground (drives the editor/diagram theme)', () => {
     const dark = THEMES.filter((t) => t.dark).map((t) => t.id)
-    expect(dark).toEqual(['dark', 'neon', 'nord', 'nyan', 'matrix'])
+    expect(dark).toEqual(['dark', 'neon', 'nord', 'dim', 'beacon', 'nyan', 'matrix'])
     expect(isDarkTheme('neon')).toBe(true)
     expect(isDarkTheme('solar')).toBe(false)
     expect(isDarkTheme('nope')).toBe(false)

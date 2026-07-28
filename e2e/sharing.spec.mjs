@@ -108,7 +108,11 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     await mgr.locator('input.rename').fill('Bob — laptop')
     await mgr.locator('input.rename').press('Enter')
     await expect(mgr.getByText('Bob — laptop')).toBeVisible()
+    // Removal is guarded by a confirmation dialog.
     await mgr.getByTitle('Remove').click()
+    const confirm = pageA.getByRole('dialog', { name: 'Remove trusted key?' })
+    await expect(confirm).toBeVisible()
+    await confirm.getByRole('button', { name: 'Remove' }).click()
     await expect(mgr.getByText(/No trusted keys yet/i)).toBeVisible()
   } finally {
     await appA.close()

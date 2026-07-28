@@ -35,8 +35,11 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Anchors the floating ShortcutBar to the diff area, not the window. */
+  /* Anchors the floating ShortcutBar to the diff area, not the window. Isolation
+     keeps the Matrix theme's z-index:-1 rain layer behind the content, not the
+     whole app. */
   position: relative;
+  isolation: isolate;
 }
 .empty {
   height: 100%;

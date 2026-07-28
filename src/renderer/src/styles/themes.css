@@ -183,6 +183,128 @@
   --text-on-accent: #ffffff;
 }
 
+/* Dim — the warm counterpart to the cool darks (Dark/Neon/Nord): a warm
+   graphite ground with soft warm-white ink and a single muted amber-gold
+   accent. Lower glare for long night sessions. */
+:root[data-theme='dim'] {
+  --bg: #1b1917;
+  --bg-panel: #232019;
+  --bg-hover: #2c2820;
+  --border: #3a352b;
+  --text: #ece5da;
+  --text-dim: #9a8f7f;
+  --text-hint: #cdbfab;
+  --accent: #d9a441;
+  --warning-bg: #e0a52e;
+  --warning-border: #b07d18;
+  --warning-text: #201700;
+  --danger-bg: #e0705f;
+  --danger-border: #c25445;
+  --danger-text: #2a1712;
+  --success-text: #9ccd78;
+  --scrim: rgba(10, 8, 4, 0.55);
+  --favorite: #e6b34d;
+  --text-on-accent: #201a10;
+}
+
+/* Beacon — the dark sibling of Contrast: an accessibility-grade dark aimed at
+   WCAG-AAA. Pure-black ground, pure-white ink, saturated accent, bright hard
+   borders. */
+:root[data-theme='beacon'] {
+  --bg: #000000;
+  --bg-panel: #0b0b0b;
+  --bg-hover: #1a1a1a;
+  --border: #e0e0e0;
+  --text: #ffffff;
+  --text-dim: #cccccc;
+  --text-hint: #e6e6e6;
+  --accent: #4cc2ff;
+  --warning-bg: #ffd23f;
+  --warning-border: #b38f00;
+  --warning-text: #000000;
+  --danger-bg: #ff5b57;
+  --danger-border: #d63a36;
+  --danger-text: #000000;
+  --success-text: #3fe07a;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --favorite: #ffd23f;
+  --text-on-accent: #000000;
+}
+
+/* Meridian — a low-glare daytime coding light (the Solarized-Light lane): a
+   soft blue-grey off-white instead of pure white, teal ink, muted cyan accent.
+   Calmer than the crisp Light for hours of reading. */
+:root[data-theme='meridian'] {
+  --bg: #f5f7f4;
+  --bg-panel: #eef2ee;
+  --bg-hover: #e2e8e2;
+  --border: #c7d0c8;
+  --text: #263238;
+  --text-dim: #5c6b70;
+  --text-hint: #3d4a4f;
+  --accent: #0e8a8a;
+  --warning-bg: #e8a317;
+  --warning-border: #b3790a;
+  --warning-text: #2a1c00;
+  --danger-bg: #c0392b;
+  --danger-border: #9e2f24;
+  --danger-text: #ffffff;
+  --success-text: #217a38;
+  --scrim: rgba(20, 30, 30, 0.42);
+  --favorite: #b3780a;
+  --text-on-accent: #ffffff;
+  --shadow-rgb: 20 40 45;
+}
+
+/* Linen — a quiet warm light between Solar's vivid sun and Sepia's saturated
+   parchment: a restrained warm ivory with near-black ink and a cool slate-blue
+   accent, for an e-ink / print reading feel. */
+:root[data-theme='linen'] {
+  --bg: #faf7f0;
+  --bg-panel: #efe9dc;
+  --bg-hover: #e6dfce;
+  --border: #d8cfba;
+  --text: #221f1a;
+  --text-dim: #6f685b;
+  --text-hint: #4a4638;
+  --accent: #3f5b8a;
+  --warning-bg: #d99a1f;
+  --warning-border: #a86f10;
+  --warning-text: #2a1c00;
+  --danger-bg: #a8432f;
+  --danger-border: #8a3626;
+  --danger-text: #ffffff;
+  --success-text: #3d6b2f;
+  --scrim: rgba(40, 34, 20, 0.42);
+  --favorite: #a3760a;
+  --text-on-accent: #ffffff;
+  --shadow-rgb: 40 34 20;
+}
+
+/* Bloom — the only rose/plum accent in the set, kept low-saturation and
+   high-clarity so it stays a serious reading light, not a novelty theme. */
+:root[data-theme='bloom'] {
+  --bg: #f9f4f5;
+  --bg-panel: #efe4e7;
+  --bg-hover: #e7d8dd;
+  --border: #ddccd2;
+  --text: #2a1f26;
+  --text-dim: #7a6570;
+  --text-hint: #4f414a;
+  --accent: #b0446e;
+  --warning-bg: #d99a1f;
+  --warning-border: #a86f10;
+  --warning-text: #2a1c00;
+  --danger-bg: #c33a54;
+  --danger-border: #9e2f44;
+  --danger-text: #ffffff;
+  --success-text: #357a4c;
+  --scrim: rgba(50, 30, 40, 0.42);
+  --favorite: #b07a1a;
+  --text-on-accent: #ffffff;
+  --shadow-rgb: 50 30 40;
+}
+
 /* Nyan — playful but usable: a readable deep-violet base with hot-pink accent
    and lime/rose diff colors. The chaos (the rainbow lane + reward cat) lives in
    non-content chrome (see NyanLane), so diffs stay legible. */

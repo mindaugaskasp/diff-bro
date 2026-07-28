@@ -45,6 +45,36 @@ export const THEMES = [
     swatch: { bg: '#dfcea6', accent: '#9c4f1f', add: '#5a6f28', del: '#933a22' }
   },
   {
+    id: 'dim',
+    label: 'Dim',
+    dark: true,
+    swatch: { bg: '#232019', accent: '#d9a441', add: '#8fbf6b', del: '#e0705f' }
+  },
+  {
+    id: 'beacon',
+    label: 'Beacon',
+    dark: true,
+    swatch: { bg: '#0b0b0b', accent: '#4cc2ff', add: '#3fe07a', del: '#ff5b57' }
+  },
+  {
+    id: 'meridian',
+    label: 'Meridian',
+    dark: false,
+    swatch: { bg: '#eef2ee', accent: '#0e8a8a', add: '#2f9e44', del: '#c0392b' }
+  },
+  {
+    id: 'linen',
+    label: 'Linen',
+    dark: false,
+    swatch: { bg: '#efe9dc', accent: '#3f5b8a', add: '#4a7c3a', del: '#a8432f' }
+  },
+  {
+    id: 'bloom',
+    label: 'Bloom',
+    dark: false,
+    swatch: { bg: '#efe4e7', accent: '#b0446e', add: '#3f9160', del: '#c33a54' }
+  },
+  {
     id: 'nyan',
     label: 'Nyan',
     dark: true,
