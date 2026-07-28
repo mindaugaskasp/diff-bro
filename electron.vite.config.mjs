@@ -19,6 +19,16 @@ export default defineConfig({
       }
     },
     plugins: [vue()],
-    build: { outDir: 'build/renderer' }
+    build: {
+      outDir: 'build/renderer',
+      // Two renderer entries: the main app and the floating quick look-up
+      // launcher (its own hardened BrowserWindow — see src/main/quickLook.js).
+      rollupOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          quicklook: resolve('src/renderer/quicklook.html')
+        }
+      }
+    }
   }
 })

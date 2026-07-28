@@ -26,6 +26,8 @@ const settings = useSettingsStore()
 
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
+// A snippet/diff chosen in the floating quick look-up window opens here.
+window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
 // Ctrl/Cmd+V outside a text field offers to jump into paste mode (two-step
 // confirm before the clipboard is read — see the store's paste actions).
 usePasteShortcut(() => store.requestPasteFromClipboard())

@@ -2,14 +2,36 @@
 // Help → Keyboard Shortcuts: the full, grouped list. Labels come from
 // utils/shortcuts.js, which resolves modifier names against the host OS, so a
 // Mac shows ⌘ where Windows/Linux show Ctrl.
+import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { SHORTCUT_GROUPS } from '../utils/shortcuts'
+import { acceleratorLabel } from '../utils/accelerator'
 import { isMac } from '../keys'
 import BaseDialog from './BaseDialog.vue'
 
 const store = useDiffStore()
-const groups = SHORTCUT_GROUPS
+const settings = useSettingsStore()
 const platform = isMac ? 'macOS' : 'this system'
+
+// The quick look-up binding is user-configurable (Settings → Shortcuts), so it's
+// appended to the View group live rather than hard-coded in SHORTCUT_GROUPS.
+const groups = computed(() =>
+  SHORTCUT_GROUPS.map((g) =>
+    g.group === 'View'
+      ? {
+          ...g,
+          items: [
+            ...g.items,
+            {
+              keys: acceleratorLabel(settings.quickLookShortcut, isMac),
+              label: 'Quick look-up (works app-wide)'
+            }
+          ]
+        }
+      : g
+  )
+)
 
 function close() {
   store.showShortcutsDialog = false

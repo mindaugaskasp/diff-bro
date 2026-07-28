@@ -100,6 +100,13 @@ export const useVaultStore = defineStore('vault', {
     persist() {
       savePersisted('vault', JSON.stringify({ entries: this.entries }))
     },
+    // Re-read the persisted diffs from disk. The quick look-up window is a
+    // separate Pinia instance, so it calls this on each summon to reflect diffs
+    // the main window saved (or let expire) meanwhile.
+    reload() {
+      this.entries = readEntries()
+      this.now = Date.now()
+    },
     tick() {
       this.now = Date.now()
       const before = this.entries.length

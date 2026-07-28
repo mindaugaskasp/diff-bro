@@ -1,5 +1,12 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
+import { isValidAccelerator } from '../utils/accelerator'
+
+// The default global shortcut that summons the floating quick look-up. Cmd+Space
+// is the macOS launcher, so we take the Shift variant. The main process has an
+// equal fallback constant (src/main/quickLook.js) for when it reads a
+// hand-edited or empty settings.json — keep the two in step.
+export const DEFAULT_QUICKLOOK_SHORTCUT = 'CommandOrControl+Shift+Space'
 
 // User preferences that are organizational, not secret — section order, shelf
 // order, UI toggles, and the size guards. Persisted as PLAINTEXT JSON in the
@@ -62,7 +69,9 @@ export const DEFAULT_SETTINGS = {
   maximizeDialogs: false,
   // Whether the one-time first-run example snippet decision has been made (see
   // App.vue). Recorded for everyone once, so the example is never re-seeded.
-  examplesSeeded: false
+  examplesSeeded: false,
+  // Global shortcut for the quick look-up launcher (Electron accelerator form).
+  quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT
 }
 
 const clampNumber = (value, fallback, min, max) => {
@@ -147,7 +156,11 @@ function readState() {
     ),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
-    examplesSeeded: parsed.examplesSeeded === true
+    examplesSeeded: parsed.examplesSeeded === true,
+    // A hand-edited/invalid stored accelerator falls back to the default.
+    quickLookShortcut: isValidAccelerator(parsed.quickLookShortcut)
+      ? parsed.quickLookShortcut
+      : DEFAULT_QUICKLOOK_SHORTCUT
   }
 }
 
@@ -183,7 +196,8 @@ export const useSettingsStore = defineStore('settings', {
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
-          examplesSeeded: this.examplesSeeded
+          examplesSeeded: this.examplesSeeded,
+          quickLookShortcut: this.quickLookShortcut
         })
       )
     },
@@ -271,6 +285,15 @@ export const useSettingsStore = defineStore('settings', {
         MAX_SNIPPET_SIZE_KB_CAP
       )
       this.persist()
+    },
+    // Persist the quick look-up accelerator. Rejects anything structurally
+    // invalid so a bad value can't reach settings.json (the main process still
+    // guards its own registration). Returns whether it was accepted.
+    setQuickLookShortcut(accel) {
+      if (!isValidAccelerator(accel)) return false
+      this.quickLookShortcut = accel
+      this.persist()
+      return true
     }
   }
 })

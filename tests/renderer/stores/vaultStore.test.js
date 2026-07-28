@@ -395,4 +395,18 @@ describe('vaultStore', () => {
     expect(vault.entries).toHaveLength(0)
     expect(vault.keyError).toBe('vault-key-unavailable')
   })
+
+  // The quick look-up window is a separate Pinia instance and calls reload() on
+  // each summon to see diffs the main window saved meanwhile.
+  it('reload() re-reads diffs persisted by another window', async () => {
+    const vault = useVaultStore()
+    await vault.save('one', 1, PAYLOAD)
+    expect(vault.entries).toHaveLength(1)
+    // Simulate the main window persisting a second diff to disk.
+    const raw = JSON.parse(localStorage.getItem('diffbro.vault'))
+    raw.entries.push({ ...raw.entries[0], id: 'other', name: 'two' })
+    localStorage.setItem('diffbro.vault', JSON.stringify(raw))
+    vault.reload()
+    expect(vault.entries.map((e) => e.name)).toEqual(['one', 'two'])
+  })
 })

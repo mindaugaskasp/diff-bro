@@ -83,6 +83,17 @@
  */
 
 /**
+ * A snippet or saved diff normalized into one searchable shape for the quick
+ * look-up (see utils/quickLook and composables/useQuickLook).
+ * @typedef {object} QuickLookItem
+ * @property {'snippet'|'diff'} kind
+ * @property {string} id
+ * @property {string} name
+ * @property {string[]} tags
+ * @property {string} lang                 resolved language id ('' for plain)
+ */
+
+/**
  * A remembered dialog panel size in px (see BaseDialog's resizable dialogs).
  * @typedef {object} DialogSize
  * @property {number} width

@@ -1,4 +1,5 @@
 import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } from 'electron'
+import { toggleQuickLook } from './quickLook'
 
 // Where "Report an Issue" sends the user. The URL is fixed here in the main
 // process — the renderer can ask to open it but can never pass a URL of its own,
@@ -157,6 +158,14 @@ export function installMenu() {
           label: 'Toggle Light/Dark Theme',
           accelerator: 'CmdOrCtrl+D',
           click: () => sendToFocused('toggle-theme')
+        },
+        { type: 'separator' },
+        {
+          label: 'Quick Look-up',
+          // The binding is a user-configurable GLOBAL shortcut (Settings →
+          // Shortcuts; registered in quickLook.js), so no accelerator is shown
+          // here — a fixed hint would go stale the moment it's rebound.
+          click: () => toggleQuickLook()
         },
         { type: 'separator' },
         { label: 'Zoom In', accelerator: 'CmdOrCtrl+=', click: () => zoomBy(0.5) },

@@ -50,6 +50,13 @@ export function buildMenus(store) {
         },
         { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => store.toggleTheme() },
         { sep: true },
+        {
+          // No key hint: the binding is user-configurable (Settings →
+          // Shortcuts), so a fixed label here would go stale once rebound.
+          label: 'Quick Look-up',
+          run: () => window.api.quickLookToggle()
+        },
+        { sep: true },
         { label: 'Zoom In', keys: `${MOD}++`, run: () => window.api.zoom(1) },
         { label: 'Zoom Out', keys: `${MOD}+-`, run: () => window.api.zoom(-1) },
         { label: 'Reset Zoom', keys: `${MOD}+0`, run: () => window.api.zoom(0) },

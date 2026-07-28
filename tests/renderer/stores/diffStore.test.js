@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
+import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
+import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -1070,5 +1072,42 @@ describe('diffStore', () => {
     store.markSaved()
     store.swap()
     expect(store.diffSaved).toBe(false)
+  })
+
+  // The floating quick look-up hands a chosen result here (main forwards
+  // { kind, id }); the main window's big view does the actual open.
+  it('openFromQuickLook opens a snippet in the editor', async () => {
+    const store = useDiffStore()
+    await store.openFromQuickLook({ kind: 'snippet', id: 's1' })
+    expect(useSnippetStore().editingSnippet).toEqual({ id: 's1' })
+  })
+
+  it('openFromQuickLook loads and restores a saved diff', async () => {
+    const payload = { mode: 'paste', pasteLeft: 'L', pasteRight: 'R', left: null, right: null }
+    window.api.vaultDecrypt = async () => JSON.stringify(payload)
+    const store = useDiffStore()
+    useVaultStore().entries.push({
+      id: 'd1',
+      name: 'diff',
+      createdAt: Date.now(),
+      expiresAt: null,
+      from: null,
+      favorite: false,
+      tags: [],
+      iv: 'x',
+      data: 'y'
+    })
+    await store.openFromQuickLook({ kind: 'diff', id: 'd1' })
+    expect(store.mode).toBe('paste')
+    expect(store.pasteLeft).toBe('L')
+    expect(store.pasteRight).toBe('R')
+    expect(store.diffSaved).toBe(true)
+  })
+
+  it('openFromQuickLook ignores a payload with no id', async () => {
+    const store = useDiffStore()
+    await store.openFromQuickLook(null)
+    await store.openFromQuickLook({ kind: 'snippet' })
+    expect(useSnippetStore().editingSnippet).toBeFalsy()
   })
 })

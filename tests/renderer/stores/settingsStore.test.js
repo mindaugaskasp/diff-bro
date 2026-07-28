@@ -206,4 +206,26 @@ describe('settingsStore', () => {
     expect(s.dialogSize('snippet')).toBeNull()
     expect(s.dialogSize('base64')).toEqual({ width: 600, height: 500 })
   })
+
+  it('accepts and persists a valid quick look-up shortcut', () => {
+    const s = useSettingsStore()
+    expect(s.quickLookShortcut).toBe('CommandOrControl+Shift+Space')
+    expect(s.setQuickLookShortcut('Alt+Shift+D')).toBe(true)
+    expect(s.quickLookShortcut).toBe('Alt+Shift+D')
+    expect(JSON.parse(localStorage.getItem('diffbro.settings')).quickLookShortcut).toBe(
+      'Alt+Shift+D'
+    )
+  })
+
+  it('rejects an invalid shortcut and keeps the previous binding', () => {
+    const s = useSettingsStore()
+    expect(s.setQuickLookShortcut('Space')).toBe(false) // no modifier
+    expect(s.quickLookShortcut).toBe('CommandOrControl+Shift+Space')
+  })
+
+  it('falls back to the default when the persisted shortcut is invalid', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ quickLookShortcut: 'garbage' }))
+    const s = useSettingsStore()
+    expect(s.quickLookShortcut).toBe('CommandOrControl+Shift+Space')
+  })
 })

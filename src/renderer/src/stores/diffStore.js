@@ -635,6 +635,18 @@ export const useDiffStore = defineStore('diff', {
       // it later needs no "you'll lose it" prompt.
       this.diffSaved = true
     },
+    // A result chosen in the floating quick look-up window (main forwards it as
+    // { kind, id }): the big view does the heavy lifting the launcher stays out
+    // of — load + restore a saved diff, or open the snippet editor.
+    async openFromQuickLook(payload) {
+      if (!payload?.id) return
+      if (payload.kind === 'snippet') {
+        useSnippetStore().editingSnippet = { id: payload.id }
+        return
+      }
+      const p = await useVaultStore().load(payload.id)
+      if (p) this.restore(p)
+    },
     clear() {
       this.left = null
       this.right = null

@@ -429,4 +429,18 @@ describe('snippetStore — tags model', () => {
     // The whole point: content still decrypts after a metadata-only migration.
     await expect(store.load(id)).resolves.toBe('legacy content')
   })
+
+  // The quick look-up window is a separate Pinia instance and calls reload() on
+  // each summon to pick up snippets the main window added meanwhile.
+  it('reload() re-reads the library persisted by another window', async () => {
+    const store = useSnippetStore()
+    await store.add({ name: 'first', content: 'x' })
+    expect(store.entries.map((e) => e.name)).toEqual(['first'])
+    // Simulate the main window persisting a second snippet to disk.
+    const raw = JSON.parse(localStorage.getItem('diffbro.snippets'))
+    raw.entries.push({ ...raw.entries[0], id: 'other', name: 'second' })
+    localStorage.setItem('diffbro.snippets', JSON.stringify(raw))
+    store.reload()
+    expect(store.entries.map((e) => e.name)).toEqual(['first', 'second'])
+  })
 })

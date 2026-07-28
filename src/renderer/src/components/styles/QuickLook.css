@@ -1,0 +1,264 @@
+/* Floating quick look-up launcher (QuickLook.vue). The window itself is
+   transparent (src/main/quickLook.js) so this card floats as a raised surface
+   with a modal-level shadow, Spotlight-style. */
+.ql {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  transform-origin: center top;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+/* Dismiss: the card fades and settles back before the (transparent) OS window
+   is hidden, so the launcher vanishes smoothly instead of blinking out. */
+.ql.closing {
+  opacity: 0;
+  transform: scale(0.97) translateY(-6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ql {
+    transition: none;
+  }
+}
+
+/* Transient "Copied" cue, centred above the footer. */
+.ql-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--control-h) + var(--space-3));
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2);
+  font-size: var(--font-sm);
+  color: var(--text);
+  z-index: 5;
+  pointer-events: none;
+}
+.ql-toast .ok {
+  color: var(--success-text);
+}
+.ql-toast-enter-active,
+.ql-toast-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.ql-toast-enter-from,
+.ql-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ql-toast-enter-active,
+  .ql-toast-leave-active {
+    transition: none;
+  }
+}
+
+/* --- search band --- */
+.ql-search {
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  height: var(--band-row);
+  border-bottom: 1px solid var(--border);
+}
+.ql-search-ico {
+  color: var(--text-dim);
+  flex: none;
+}
+.ql-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: var(--font-lg);
+  caret-color: var(--accent);
+}
+.ql-input::placeholder {
+  color: var(--text-dim);
+}
+.ql-kbd {
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 5px;
+}
+
+/* --- body: results | preview --- */
+.ql-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+}
+.ql-results {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+.ql-empty,
+.ql-pv-none {
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+  padding: var(--space-4);
+  text-align: center;
+}
+.ql-res {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.ql-res:hover {
+  background: var(--bg-hover);
+}
+.ql-res.sel {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.ql-ico {
+  color: var(--text-dim);
+  display: inline-flex;
+}
+.ql-name {
+  font-size: var(--font-md);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ql-tag {
+  font-size: var(--font-2xs);
+  color: var(--text-on-accent);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+}
+.ql-kind {
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* --- preview --- */
+.ql-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg);
+}
+.ql-pv-head {
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  height: var(--band-row);
+  border-bottom: 1px solid var(--border);
+}
+.ql-pv-name {
+  flex: 1;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ql-pv-lang {
+  font-size: var(--font-2xs);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: none;
+}
+.ql-pv-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) 0;
+}
+.ql-pv-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+.ql-pv-tag .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+}
+.ql-pv-body {
+  flex: 1;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  overflow: auto;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--text-hint);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ql-pv-diff {
+  flex: 1;
+  padding: var(--space-4);
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+}
+.ql-pv-expiry {
+  display: inline-block;
+  margin-bottom: var(--space-2);
+  color: var(--text-hint);
+}
+.ql-pv-foot {
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.ql-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+.ql-pv-actions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+/* --- footer hints --- */
+.ql-foot {
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  height: var(--control-h);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}

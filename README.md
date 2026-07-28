@@ -43,6 +43,10 @@ a hard promise: it never touches the network.
   A **Jira / Confluence** wiki-markup syntax adds a formatting toolbar (bold,
   headings, lists, quote, `{code}`, links) and a rendered preview, with a
   Rendered/Plain toggle.
+- **Quick look-up** — a global shortcut summons a floating search over your
+  snippets and saved diffs *without raising the app*; ↑/↓ to browse, **Enter** to
+  open, **Ctrl/Cmd+C** to copy a snippet straight to the clipboard. Rebind the
+  shortcut in Settings.
 - **Resizable dialogs** — the snippet editor and the tool windows resize from any
   edge or corner and remember their size between sessions (or a one-click setting
   maximizes them all). Existing snippets open read-only until you press Edit.

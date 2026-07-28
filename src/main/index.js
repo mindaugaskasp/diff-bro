@@ -18,6 +18,7 @@ import { registerFileIpc } from './files'
 import { registerTextToolsIpc } from './textTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
+import { registerQuickLook, destroyQuickLook } from './quickLook'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 
 // Must run before app ready, while the command line is still mutable.
@@ -62,7 +63,11 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerShareIpc()
     registerSnippetIpc()
     registerLoggerIpc()
-    createWindow()
+    const mainWin = createWindow()
+    registerQuickLook()
+    // Tear the launcher down with the main window so closing it (Windows/Linux)
+    // still lets window-all-closed fire and the app quit.
+    mainWin.on('closed', destroyQuickLook)
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })

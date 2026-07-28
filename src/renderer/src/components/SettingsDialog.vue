@@ -1,15 +1,13 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import {
-  useSettingsStore,
-  FILE_TYPE_LIMITS,
-  MAX_SNIPPET_SIZE_KB_CAP
-} from '../stores/settingsStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
 import SettingToggle from './SettingToggle.vue'
+import ShortcutCapture from './ShortcutCapture.vue'
+import SettingsLimits from './SettingsLimits.vue'
 
 const diff = useDiffStore()
 const settings = useSettingsStore()
@@ -21,6 +19,7 @@ const busy = ref(false)
 // time behind the left rail.
 const TABS = [
   { id: 'appearance', label: 'Appearance' },
+  { id: 'shortcuts', label: 'Shortcuts' },
   { id: 'storage', label: 'Storage' },
   { id: 'limits', label: 'Limits' },
   { id: 'logs', label: 'Logs' },
@@ -115,6 +114,16 @@ function close() {
           </SettingToggle>
         </section>
 
+        <section v-else-if="tab === 'shortcuts'">
+          <h4>Quick look-up</h4>
+          <p class="dialog-note">
+            A floating search that finds any snippet or saved diff without raising the main window —
+            it works even when Diff Bro is minimized. Click the field, then press the key combination
+            you want.
+          </p>
+          <ShortcutCapture />
+        </section>
+
         <section v-else-if="tab === 'storage'">
           <h4>Data folder</h4>
           <p class="dialog-note">
@@ -155,33 +164,7 @@ function close() {
           </p>
         </section>
 
-        <section v-else>
-          <h4>Limits</h4>
-          <label v-for="(spec, type) in FILE_TYPE_LIMITS" :key="type" class="row">
-            <span>Max {{ spec.label }} file (MB)</span>
-            <input
-              type="number"
-              min="1"
-              :max="spec.cap"
-              :value="settings.fileSizeLimitMb(type)"
-              @change="settings.setFileSizeLimitMb(type, $event.target.value)"
-            />
-          </label>
-          <label class="row">
-            <span>Max snippet size (KB)</span>
-            <input
-              type="number"
-              min="16"
-              :max="MAX_SNIPPET_SIZE_KB_CAP"
-              :value="settings.maxSnippetSizeKb"
-              @change="settings.setMaxSnippetSizeKb($event.target.value)"
-            />
-          </label>
-          <p class="hint">
-            Higher limits let you diff or store bigger content, at the cost of speed — raise them
-            only if you need to.
-          </p>
-        </section>
+        <SettingsLimits v-else />
       </div>
     </div>
 

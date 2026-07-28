@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Diff Bro — Quick Look-up</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+    <style>
+      /* The launcher window is transparent (src/main/quickLook.js): keep the
+         document transparent so the card floats, and inset it so its drop shadow
+         has room to render. */
+      html,
+      body,
+      #app {
+        background: transparent !important;
+      }
+      #app {
+        padding: 14px;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/quicklook.js"></script>
+  </body>
+</html>

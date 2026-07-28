@@ -1,0 +1,53 @@
+/* Global-shortcut capture field (ShortcutCapture.vue). */
+.shortcut-capture {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.capture-field {
+  flex: 1;
+  min-height: var(--control-h);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.capture-field:hover {
+  border-color: var(--text-dim);
+}
+.capture-field.capturing {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.capture-field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.prompt {
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.prompt .esc {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+.capture-field kbd {
+  font-family: inherit;
+  font-size: var(--font-sm);
+  color: var(--text);
+}
+.capture-msg {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-xs);
+}
+.capture-msg.error {
+  color: var(--danger-border);
+}
+.capture-msg.ok {
+  color: var(--success-text);
+}

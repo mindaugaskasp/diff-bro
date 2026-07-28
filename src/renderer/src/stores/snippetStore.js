@@ -209,6 +209,14 @@ export const useSnippetStore = defineStore('snippets', {
     persist() {
       savePersisted('snippets', JSON.stringify({ tags: this.tags, entries: this.entries }))
     },
+    // Re-read the persisted library from disk. The quick look-up runs in a
+    // separate window (its own Pinia instance), so it calls this on each summon
+    // to pick up snippets the main window added or edited meanwhile.
+    reload() {
+      const s = readState()
+      this.tags = s.tags
+      this.entries = s.entries
+    },
     // Register any missing tags (using the caller's chosen color when given,
     // else the next palette color — this is where a tag typed in the editor is
     // FIRST persisted, only when the snippet is saved), touch used ones to

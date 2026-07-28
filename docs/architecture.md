@@ -24,6 +24,7 @@ flowchart TB
         vaultkey["Vault crypto<br/>AES-256-GCM · key via OS keychain"]
         sealing["Identity + sealing<br/>Ed25519 sign · X25519 + AES-256-GCM seal"]
         cfg["Config + snippet + text-tool crypto<br/>passphrase (scrypt) AES-256-GCM"]
+        quicklook["Quick look-up<br/>global shortcut · hardened 2nd BrowserWindow"]
     end
 
     disk[("Local files &<br/>userData")]
@@ -36,6 +37,7 @@ flowchart TB
     fileio --> disk
     sealing --> disk
     vaultkey --> disk
+    api <--> quicklook
 ```
 
 ### Rules encoded in that picture
@@ -48,6 +50,12 @@ flowchart TB
 - **The network kill-switch guarantees offline operation** — every request that
   isn't `file://` / `devtools://` / `blob:` / `data:` (or the Vite dev server in
   dev mode) is cancelled at the session level.
+- **The quick look-up is a second, equally-hardened window.** A global shortcut
+  summons a frameless floating launcher (its own renderer entry) to search
+  snippets and saved diffs without raising the main window. It re-declares every
+  per-window guard (sandbox, `contextIsolation`, window-open deny, `will-navigate`);
+  the session-level kill-switch and permission handler already cover it, and it
+  decrypts through the same `window.api` — key material never reaches it.
 
 ### Directory map
 

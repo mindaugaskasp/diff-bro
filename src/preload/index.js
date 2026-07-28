@@ -100,5 +100,24 @@ contextBridge.exposeInMainWorld('api', {
   // Mermaid viewer so it can fill the window when the app goes fullscreen.
   onFullScreenChange: (handler) => {
     ipcRenderer.on('window:fullscreen', (_e, value) => handler(value))
+  },
+  // Quick look-up (the floating launcher window). The launcher renderer hides
+  // itself (Esc) and hands a chosen result to the main window; the main-window
+  // renderer receives that pick. Shared preload → both windows see these, but
+  // each only wires the half it uses.
+  quickLookToggle: () => ipcRenderer.invoke('quicklook:toggle'),
+  // Settings → Shortcuts: apply a new summon accelerator live. Resolves to
+  // { ok } or { ok:false, error } ('unavailable' / 'invalid').
+  quickLookSetShortcut: (accel) => ipcRenderer.invoke('quicklook:setShortcut', accel),
+  quickLookHide: () => ipcRenderer.invoke('quicklook:hide'),
+  quickLookOpen: (payload) => ipcRenderer.invoke('quicklook:open', payload),
+  // Launcher window: main signals a fresh summon so the list refreshes + the
+  // input refocuses.
+  onQuickLookShow: (handler) => {
+    ipcRenderer.on('quicklook:show', () => handler())
+  },
+  // Main window: a result chosen in the launcher arrives here ({ kind, id }).
+  onQuickLookOpen: (handler) => {
+    ipcRenderer.on('quicklook:openInMain', (_e, payload) => handler(payload))
   }
 })
