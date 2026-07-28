@@ -7,7 +7,9 @@ import { test, expect } from './fixtures.mjs'
 // this pins the observable behaviour so a future getter tweak can't leave stale
 // help text sitting above the user's own diffs.
 test('the Saved diffs helper text disappears after saving one diff', async ({ page }) => {
-  const emptyText = page.getByText('Nothing saved. Load two files')
+  // "Empty" shows in several sections, so scope to the Saved diffs one.
+  const saved = page.locator('.sidebar-section', { hasText: 'Saved diffs' })
+  const emptyText = saved.locator('.empty')
   await expect(emptyText).toBeVisible() // fresh install
 
   await page.getByRole('button', { name: 'Paste text' }).click()

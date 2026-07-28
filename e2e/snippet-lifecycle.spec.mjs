@@ -14,24 +14,30 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   await page.keyboard.type('remember to hydrate')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
 
-  await expect(editor).toBeHidden()
+  // Save no longer closes the dialog (useSnippetDraft): it drops into read-only
+  // view mode ("Snippet") showing the just-saved snippet, and the row appears.
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
   const row = page.locator('.snippets-section .row', { hasText: 'My note' })
   await expect(row).toBeVisible()
 
   // --- edit (rename) ---
-  await page.getByText('My note', { exact: true }).click()
-  // Existing snippets open read-only ("Snippet"); Edit unlocks them.
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
-  await expect(view).toBeVisible()
+  // Already open in view mode; Edit unlocks the same dialog (no re-decrypt — the
+  // content is still in hand from the create above).
   await view.getByRole('button', { name: 'Edit', exact: true }).click()
   const edit = page.getByRole('dialog', { name: 'Edit Snippet' })
   await expect(edit).toBeVisible()
-  // Wait for the decrypted content to load (Save enables only with content).
   await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
   await edit.getByPlaceholder('Snippet name…').fill('My renamed note')
   await edit.getByRole('button', { name: 'Save', exact: true }).click()
 
-  await expect(edit).toBeHidden()
+  // Back to view mode again after saving; Escape closes a read-only view
+  // (escape-closes is on when not editing) to return to the list.
+  const renamedView = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(renamedView).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(renamedView).toBeHidden()
+
   await expect(page.getByText('My renamed note', { exact: true })).toBeVisible()
   await expect(page.getByText('My note', { exact: true })).toBeHidden()
 

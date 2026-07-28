@@ -1,9 +1,7 @@
 <script setup>
-// Captures a global shortcut for the quick look-up: click to arm, then the next
-// modifier+key press becomes the binding. The keypress→accelerator mapping and
-// validation live in utils/accelerator (pure, unit-tested); this is the arm/
-// apply glue. Applying goes through main FIRST (it owns the OS registration and
-// reports if the combo is taken), and only a success persists to settings.
+// Captures a global shortcut for the quick look-up (mapping/validation live in
+// utils/accelerator). A new binding goes through main FIRST — it owns the OS
+// registration and reports if the combo is taken — and only a success persists.
 import { computed, ref } from 'vue'
 import { useSettingsStore, DEFAULT_QUICKLOOK_SHORTCUT } from '../stores/settingsStore'
 import { acceleratorFromEvent, isValidAccelerator, acceleratorLabel } from '../utils/accelerator'

@@ -1,14 +1,12 @@
 // Electron global-accelerator helpers for the configurable quick look-up
-// shortcut. Pure (no Vue, no Electron, no stores) so the capture UI and its
-// tests share one definition of what a valid accelerator is, and one mapping
-// from a keypress to Electron's accelerator string.
+// shortcut. Pure so the capture UI and its tests share one definition of what a
+// valid accelerator is and one keypress → accelerator mapping.
 
-// Electron modifier tokens we emit. CommandOrControl abstracts Cmd (macOS) and
-// Ctrl (Windows/Linux) so one stored binding works on every platform.
+// CommandOrControl abstracts Cmd (macOS) and Ctrl (Windows/Linux) so one stored
+// binding works on every platform.
 const MODIFIERS = ['CommandOrControl', 'Alt', 'Shift', 'Super']
 
-// Map a KeyboardEvent's PHYSICAL key (e.code, layout-stable) to an Electron key
-// token. Returns null for a modifier-only press or a key we don't support.
+// Keyed on e.code (physical key, layout-stable). null for an unsupported key.
 function keyToken(code) {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3) // KeyA → A
   if (/^Digit[0-9]$/.test(code)) return code.slice(5) // Digit1 → 1

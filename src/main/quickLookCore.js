@@ -1,11 +1,8 @@
-// Pure geometry for the floating quick look-up window — kept out of the
-// Electron-importing glue (quickLook.js) so it unit-tests without a display
-// server, the same split CLAUDE.md mandates for sealing.js vs share.js. Given
-// the active display's work area and the window size, it places the window
-// Spotlight-style: horizontally centred, sitting in the upper third.
+// Pure geometry for the quick look-up window, kept out of the Electron glue
+// (quickLook.js) so it unit-tests without a display server.
 
-// Fraction of the free vertical space left ABOVE the window — a bit above
-// centre, where a launcher is expected to appear, not dead-centre on screen.
+// Fraction of the free vertical space left above the window — a launcher sits a
+// bit above centre, not dead-centre.
 const TOP_FRACTION = 0.28
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, Math.max(lo, hi)))
@@ -25,10 +22,8 @@ export function placeWindow(workArea, win) {
 }
 
 /**
- * The accelerator to register: the stored one when it's a non-empty string, else
- * the fallback. Deep validity is enforced where it's registered (Electron throws
- * on a bad accelerator, caught there); this only guards the empty/missing case
- * so a fresh or hand-cleared settings.json still gets the default binding.
+ * The stored accelerator when it's a non-empty string, else the fallback. Deep
+ * validity is enforced where it's registered (Electron throws, caught there).
  * @param {unknown} stored
  * @param {string} fallback
  * @returns {string}
@@ -38,9 +33,7 @@ export function resolveAccelerator(stored, fallback) {
 }
 
 /**
- * The display whose bounds contain `point`, else the first (primary) display —
- * so the launcher opens on the screen the pointer is on, across a multi-monitor
- * setup. Returns null only when there are no displays at all.
+ * The display whose bounds contain `point`, else the first display, else null.
  * @param {Array<{bounds:{x:number,y:number,width:number,height:number}}>} displays
  * @param {{x:number,y:number}} point
  */

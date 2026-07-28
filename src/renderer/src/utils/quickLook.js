@@ -1,10 +1,5 @@
-// Pure ranking for the quick look-up: given a query and a normalized item list
-// (snippets + saved diffs merged into one shape), return the matches ordered by
-// how directly they hit — a name prefix beats a name substring beats a tag hit
-// beats a format hit. The bands mirror useSnippetFilters' text match so the two
-// search surfaces agree on what a query finds. Kept free of Vue and stores
-// (utils/ is pure) so it unit-tests in isolation; the composable does the store
-// reads and the snippet/diff → QuickLookItem normalization.
+// Pure ranking for the quick look-up. The scoring bands mirror useSnippetFilters'
+// text match so the two search surfaces agree on what a query finds.
 
 /** @typedef {import('../types').QuickLookItem} QuickLookItem */
 
@@ -13,8 +8,8 @@ const norm = (s) =>
     .trim()
     .toLowerCase()
 
-// Lower score = stronger match; NO_MATCH drops the item. An empty query keeps
-// every item at score 0, so the list returns in the caller's order untouched.
+// Lower score = stronger match; NO_MATCH drops the item. An empty query scores
+// every item 0, so the list returns in the caller's order untouched.
 export const NO_MATCH = 99
 
 /**

@@ -1,10 +1,6 @@
-// Keyboard driver for the quick look-up list: ArrowUp/Down move the selection
-// (clamped, no wrap), Enter chooses the selected row, Cmd/Ctrl+C copies its
-// contents, Escape dismisses the window. Pulled out of the component and
-// unit-tested like useBackdropClose — the ESC/arrow/copy behaviour is exactly
-// the kind of event logic CLAUDE.md says must not live inline where nothing
-// exercises it. Takes plain accessors (a count getter, a selection ref,
-// callbacks) so the test drives it with no Vue mount.
+// Keyboard driver for the quick look-up list. Pulled out of the component and
+// unit-tested like useBackdropClose; takes plain accessors so the test drives it
+// with no Vue mount.
 
 /**
  * @param {object} o
@@ -18,9 +14,8 @@
 export function useQuickLookKeys({ count, selected, onChoose, onDismiss, onCopy = () => {} }) {
   const clamp = (i) => Math.max(0, Math.min(i, count() - 1))
 
-  // Cmd/Ctrl+C. Returns true when it's the copy combo (so onKeydown stops):
-  // with a live text selection in the search box we let the browser copy that
-  // natively; otherwise we copy the highlighted result.
+  // A live text selection in the search box copies natively; otherwise Cmd/Ctrl+C
+  // copies the highlighted result. Returns true when it's the copy combo.
   function tryCopy(e) {
     if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return false
     const t = e.target

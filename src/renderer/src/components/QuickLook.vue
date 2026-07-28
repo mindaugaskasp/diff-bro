@@ -1,8 +1,7 @@
 <script setup>
-// Root of the floating quick look-up window (its own hardened BrowserWindow,
-// summoned by the global shortcut — see src/main/quickLook.js). Search + ranking
-// + decrypt live in useQuickLook; this file is layout. The decrypted snippet
-// preview renders through text interpolation only, never v-html (CLAUDE.md #7).
+// Root of the floating quick look-up window (see src/main/quickLook.js); logic
+// lives in useQuickLook. The snippet preview renders through text interpolation
+// only, never v-html (CLAUDE.md #7).
 import { onMounted, ref } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
@@ -22,8 +21,6 @@ function focusInput() {
 
 onMounted(() => {
   focusInput()
-  // Each summon (main pushes 'quicklook:show'): re-read the libraries and put
-  // the caret back in the search box.
   window.api.onQuickLookShow(() => {
     refresh()
     focusInput()
@@ -123,7 +120,6 @@ function expiryLabel(meta) {
       <span><span class="ql-kbd">Esc</span> dismiss</span>
     </div>
 
-    <!-- Screen-level cue so a copy (especially via keyboard) is unmistakable. -->
     <transition name="ql-toast">
       <div v-if="copied" class="ql-toast" role="status">
         <AppIcon name="check" class="ok" /> Copied to clipboard
