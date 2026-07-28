@@ -64,7 +64,7 @@ test('Encrypt then Decrypt round-trips text under a passphrase', async ({ page }
   await expect(dialog).toBeVisible()
 
   await dialog.getByPlaceholder('Plain text to encrypt').fill('top secret')
-  await dialog.getByLabel('Passphrase').fill('correct horse battery')
+  await dialog.getByLabel('Passphrase', { exact: true }).fill('correct horse battery')
   await dialog.getByRole('button', { name: 'Encrypt →' }).click()
 
   const output = dialog.locator('textarea[readonly]')
@@ -82,11 +82,11 @@ test('decrypting with the wrong passphrase fails loudly', async ({ page }) => {
   const dialog = page.getByRole('dialog', { name: 'Encrypt / Decrypt Text' })
 
   await dialog.getByPlaceholder('Plain text to encrypt').fill('secret')
-  await dialog.getByLabel('Passphrase').fill('right passphrase')
+  await dialog.getByLabel('Passphrase', { exact: true }).fill('right passphrase')
   await dialog.getByRole('button', { name: 'Encrypt →' }).click()
   await dialog.getByRole('button', { name: 'Use output as input' }).click()
 
-  await dialog.getByLabel('Passphrase').fill('wrong passphrase')
+  await dialog.getByLabel('Passphrase', { exact: true }).fill('wrong passphrase')
   await dialog.getByRole('button', { name: 'Decrypt →' }).click()
   await expect(dialog.locator('.error')).toBeVisible()
 })
