@@ -31,6 +31,22 @@ describe('vaultStore', () => {
     await expect(vault.load(id)).resolves.toEqual(PAYLOAD)
   })
 
+  it("records the compared files' format on the entry (for the row's type monogram)", async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('cfg', 1, {
+      mode: 'file',
+      left: { name: 'config.json' },
+      right: { name: 'config.json' }
+    })
+    expect(vault.entries.find((e) => e.id === id).format).toBe('json')
+  })
+
+  it('leaves format null for a paste diff with no filename', async () => {
+    const vault = useVaultStore()
+    await vault.save('p', 1, PAYLOAD)
+    expect(vault.entries[0].format).toBeNull()
+  })
+
   it('stores only ciphertext in localStorage', async () => {
     const vault = useVaultStore()
     await vault.save('my diff', 1, PAYLOAD)

@@ -5,8 +5,12 @@
 import { onMounted, ref } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
+import { languageMonogram } from '../utils/languageMonogram'
 import { isMac } from '../keys'
 import AppIcon from './AppIcon.vue'
+
+// Same type anchor the sidebar rows use, so a result reads the same everywhere.
+const mono = (lang) => languageMonogram(lang)
 
 const { query, selected, results, current, diffMeta, snippetText, choose, copy, copied, closing, refresh, onKeydown } =
   useQuickLook()
@@ -64,7 +68,9 @@ function expiryLabel(meta) {
           @click="selected = i"
           @dblclick="choose(i)"
         >
-          <span class="ql-ico"><AppIcon :name="it.kind === 'diff' ? 'file' : 'code'" /></span>
+          <span class="monogram" :style="{ '--fam': mono(it.lang).family }">{{
+            mono(it.lang).label
+          }}</span>
           <span class="ql-name">{{ it.name }}</span>
           <span v-if="it.tags[0]" class="ql-tag" :style="{ background: store.colorOf(it.tags[0]) }">{{
             it.tags[0]

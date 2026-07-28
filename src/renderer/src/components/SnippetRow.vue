@@ -1,13 +1,16 @@
 <script setup>
-// One snippet row (shared by both shelves; only the star state differs).
+// One snippet row (shared by both shelves; only the star state differs). Leads
+// with a language monogram so the row is recognizable before the name is read.
+import { computed } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
+import { languageMonogram } from '../utils/languageMonogram'
 import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 
-defineProps({
+const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
   entry: { type: Object, required: true, validator: shaped('id', 'name', 'tags', 'createdAt') },
   favorite: { type: Boolean, default: false }
@@ -17,8 +20,12 @@ const store = useSnippetStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 
-// Auto-detect resolves through the language recorded at save time.
-const isDiagram = (entry) => languageOf(entry) === 'mermaid'
+const lang = computed(() => languageOf(props.entry))
+const mono = computed(() => languageMonogram(lang.value))
+const isDiagram = computed(() => lang.value === 'mermaid')
+// Drop the tag that just restates the monogram (the auto format tag), so the
+// tag word carries information the type anchor doesn't already.
+const shownTags = computed(() => props.entry.tags.filter((t) => t !== lang.value))
 
 async function copySnippet(id) {
   const content = await store.load(id)
@@ -27,7 +34,6 @@ async function copySnippet(id) {
     flash()
   }
 }
-// Decrypt a Mermaid snippet and open it in the resizable diagram viewer.
 async function viewDiagram(entry) {
   const code = await store.load(entry.id)
   if (code != null) diff.openMermaid(entry.name, code)
@@ -48,27 +54,18 @@ async function viewDiagram(entry) {
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
     </button>
     <button class="entry" @click="store.editingSnippet = { id: entry.id }">
-      <AppIcon
-        v-if="isDiagram(entry)"
-        class="mmd"
-        name="diagram"
-        title="Mermaid diagram — opens in the diagram viewer"
-      />
+      <span class="monogram" :style="{ '--fam': mono.family }" :title="lang">{{ mono.label }}</span>
       <span class="nm">{{ entry.name }}</span>
-      <span class="dots">
-        <span
-          v-for="t in entry.tags"
-          :key="t"
-          class="dot"
-          :style="{ background: store.colorOf(t) }"
-        ></span>
-        <span v-if="!entry.tags.length" class="dot faint"></span>
+      <span v-if="shownTags.length" class="tag-word">
+        <span class="tw-dot" :style="{ background: store.colorOf(shownTags[0]) }"></span>
+        <span class="tw-label">{{ shownTags[0] }}</span>
+        <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
       </span>
     </button>
     <span class="when">{{ ago(entry.createdAt) }}</span>
     <span class="rowacts">
       <button
-        v-if="isDiagram(entry)"
+        v-if="isDiagram"
         class="row-btn"
         title="View diagram"
         @click="viewDiagram(entry)"

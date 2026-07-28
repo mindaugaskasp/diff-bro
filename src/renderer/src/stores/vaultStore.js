@@ -143,6 +143,9 @@ export const useVaultStore = defineStore('vault', {
         createdAt,
         expiresAt,
         from: from ?? null,
+        // Plaintext metadata (not in the AAD): the compared files' format, so the
+        // row can show a type monogram without decrypting the snapshot.
+        format: diffFormatTag(payload),
         favorite: false,
         tags: applied,
         iv,

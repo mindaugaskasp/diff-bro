@@ -1,4 +1,5 @@
-/* Saved-diff row presentation (SavedDiffRow.vue). */
+/* Saved-diff row presentation (SavedDiffRow.vue). Two lines led by a type
+   monogram; imported rows (.external) add a sender + trust mark on line two. */
 .diff {
   display: flex;
   align-items: stretch;
@@ -16,46 +17,67 @@
 .diff.favorite:hover {
   background: color-mix(in srgb, var(--favorite) 22%, transparent);
 }
-.entry {
+.stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 5px 4px 5px 6px;
+  cursor: pointer;
+}
+.stack .monogram {
+  align-self: center;
+}
+.lines {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  text-align: left;
-  background: none;
-  border: none;
-  color: var(--text);
-  padding: 5px 4px 5px 6px;
-  cursor: pointer;
 }
+.l1 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+/* The name is the primary identifier — full text colour, medium weight. */
 .name {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
   font-size: var(--font-md);
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ttl {
+.l1 .state-chip {
+  margin: 0;
+}
+.l2 {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: var(--font-sm);
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+.from {
   color: var(--text-hint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Tag dots — colored from the shared registry, so a diff reads its tags at a
-   glance the way a snippet does. */
-.tags {
-  display: inline-flex;
-  gap: 3px;
-  flex: none;
+.sep {
+  opacity: 0.4;
 }
-.tag-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.untagged {
+  color: var(--text-dim);
+  opacity: 0.7;
 }
 .star {
   display: flex;
@@ -77,6 +99,8 @@
   color: var(--favorite);
 }
 .row-btn {
+  display: flex;
+  align-items: center;
   background: none;
   border: none;
   color: var(--text-dim);

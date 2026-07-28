@@ -42,6 +42,7 @@
  * @property {number} expiresAt   epoch ms; purged on tick() once passed
  * @property {string|null} from   sender's label when shared in, else null
  * @property {string} categoryId
+ * @property {string|null} [format]  compared files' format id (json, yaml, …), for the row's type monogram
  * @property {boolean} favorite
  * @property {string} iv          base64 GCM nonce
  * @property {string} data        base64 ciphertext

@@ -333,3 +333,94 @@
   outline: none;
   border-color: var(--accent);
 }
+
+/* Sidebar row recognition system — the type monogram, one-word tag, lifetime
+   state chip and trusted-sender mark shared by SnippetRow and SavedDiffRow.
+   The monogram's family tint (--fam) is bound inline per language family, the
+   same exemption tag colours use; everything else resolves through tokens so it
+   re-tints for every theme. State chips reuse the designed warning/danger
+   contrast pairs so "expiring soon" stays legible on light and dark alike. */
+.monogram {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-hint);
+  border-bottom: 2px solid var(--fam, var(--border));
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  line-height: 1;
+}
+.monogram-sm {
+  flex: none;
+  color: var(--fam, var(--text-dim));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+}
+.tag-word {
+  flex: none;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+.tag-word .tw-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+}
+.tag-word .tw-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag-word .tw-more {
+  flex: none;
+  opacity: 0.65;
+}
+.state-chip {
+  flex: none;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.state-chip.kept {
+  color: var(--text-dim);
+}
+.state-chip.left {
+  color: var(--text-hint);
+}
+.state-chip.soon {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+.state-chip.expired {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.trust-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--success-text);
+}
+.trust-mark .app-icon {
+  width: 12px;
+  height: 12px;
+}
