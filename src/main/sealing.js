@@ -1,15 +1,8 @@
-// Pure crypto core for sealed diff sharing — no Electron imports, fully
-// unit-testable. share.js owns the IPC/dialog/persistence glue around this.
-//
-// A .diffbro share file is sign-then-encrypt:
-//   inner envelope = { payload, signer fingerprint, Ed25519 signature }
-//   outer          = AES-256-GCM of the inner envelope, key derived via
-//                    HKDF from ECDH(ephemeral X25519, recipient X25519)
-// Both layers are bound to the addressed recipient: the signature covers
-// payload ‖ recipient-fingerprint (so a recipient cannot re-seal the signed
-// payload for a third machine and pass it off as the sender's), and the GCM
-// AAD covers format ‖ recipient-fingerprint (so the outer header cannot be
-// re-addressed).
+// Pure crypto core for sealed diff sharing (share.js owns the IPC/glue). A
+// .diffbro file is sign-then-encrypt: an Ed25519-signed inner envelope inside
+// AES-256-GCM (key = HKDF over ECDH to the recipient). Both layers bind the
+// recipient — signature covers payload‖recipient-fp, GCM AAD covers
+// format‖recipient-fp — so a signed payload can't be re-sealed or re-addressed.
 import {
   createCipheriv,
   createDecipheriv,
@@ -24,42 +17,25 @@ import {
   verify
 } from 'crypto'
 
-// Versioned wire formats. These are the ONLY versions this release writes and
-// accepts — both key parsing and openSealed require an exact match, so a file
-// in any other version is refused. Rotation / revocation policy: if a format
-// is ever found vulnerable, bump its version here (e.g. `diffbro-key/3`) and
-// ship it in a new release. From that release on, files in the old version
-// stop opening (exact-match rejection) and every new file is written in the
-// new version — a compromised format can't be reused. `HKDF_INFO` and the GCM
-// AAD are tied to SHARE_FORMAT, so a share-format bump also re-keys/re-binds.
-//
-// key/2 + share/3 widened the fingerprint from 64 to 128 bits (see
-// `fingerprint`). New files are written in these versions.
+// The ONLY versions this release writes/accepts — exact-match rejection retires
+// a vulnerable format by a version bump (HKDF_INFO + GCM AAD are tied to
+// SHARE_FORMAT, so a bump re-keys/re-binds). key/2 + share/3 widened the
+// fingerprint to 128 bits.
 export const KEY_FORMAT = 'diffbro-key/2'
 export const SHARE_FORMAT = 'diffbro-share/3'
 export const MAX_TTL_MS = 24 * 3600 * 1000
 
-// Public-key FILES stay importable across the version bump: a key file only
-// carries key material, and the fingerprint is always RECOMPUTED at 128 bits
-// on import (never trusted from the file), so an older-format key has no
-// weaker binding to reuse — accepting it just re-labels the same keys. Shares
-// are the opposite: SHARE_FORMAT is matched exactly, because a share's 64-bit
-// binding was baked into its signature and GCM AAD, so old shares must be
-// rejected outright.
+// Key FILES stay importable across the bump: the fingerprint is always
+// RECOMPUTED at 128 bits on import, never trusted from the file. Shares are
+// matched exactly, since their 64-bit binding was baked into signature + AAD.
 export const ACCEPTED_KEY_FORMATS = ['diffbro-key/2', 'diffbro-key/1']
 export const isAcceptedKeyFormat = (fmt) => ACCEPTED_KEY_FORMATS.includes(fmt)
 
-// A public key may carry an optional self-chosen display label so a recipient
-// sees a human name ("Alice — laptop") instead of a hex fingerprint when
-// importing. The label is a COSMETIC HINT ONLY: it is not part of the
-// fingerprint and is never used for any trust decision, so it stays untrusted
-// input — collapse whitespace/control chars and hard-cap the length here.
+// Cosmetic display label only — never part of the fingerprint or any trust
+// decision, so treat as untrusted: strip control chars, collapse, hard-cap.
 export const MAX_LABEL_LEN = 80
 export function cleanLabel(value) {
   if (typeof value !== 'string') return ''
-  // Turn any C0 control char or DEL into a space (so a label can't be
-  // multi-line or carry terminal control codes), collapse whitespace, trim,
-  // hard-cap. Vue renders this as text, so it's defense in depth.
   let out = ''
   for (const ch of value) {
     const c = ch.codePointAt(0)
@@ -70,12 +46,9 @@ export function cleanLabel(value) {
 
 const HKDF_INFO = SHARE_FORMAT
 
-// Fingerprint covers both public keys, so neither can be swapped alone. It is
-// the anchor for every trust decision — trusted-key lookup, the recipient
-// binding in the signature (payload ‖ recipient-fp), and the GCM AAD — so it
-// must be wide enough to resist a crafted-keypair second preimage. 128 bits
-// (32 hex chars) keeps a targeted second preimage at ~2^128 and collisions
-// (adversary controls both keys) at ~2^64.
+// Covers both public keys and anchors every trust decision, so it must resist a
+// crafted-keypair second preimage: 128 bits keeps that at ~2^128 (collisions,
+// where the adversary controls both keys, at ~2^64).
 export function fingerprint(signPem, boxPem) {
   const h = createHash('sha256')
   h.update(createPublicKey(signPem).export({ type: 'spki', format: 'der' }))
@@ -117,13 +90,9 @@ const deriveKey = (ecdhSecret, salt) =>
 const signedData = (payload, recipientFp) => Buffer.concat([payload, Buffer.from(recipientFp)])
 const aadFor = (recipientFp) => Buffer.from(`${SHARE_FORMAT}|${recipientFp}`)
 
-// .diffbrokey obfuscation. A public key isn't secret (it's meant to be
-// shared), so this is deliberately obfuscation, not encryption: it just keeps
-// the file from being plainly readable/parseable in a text editor. New
-// exports get the `dbk1:` base64 envelope; import still accepts legacy plain
-// JSON so keys exchanged with older versions keep working. The fingerprint is
-// always recomputed from the decoded key material, so the encoding is never
-// trusted for integrity.
+// A public key isn't secret, so the `dbk1:` envelope is obfuscation, not
+// encryption. Import still accepts legacy plain JSON; the fingerprint is always
+// recomputed, never trusted from the encoding.
 const KEY_ENVELOPE_PREFIX = 'dbk1:'
 export function encodePublicKey(pub) {
   return KEY_ENVELOPE_PREFIX + Buffer.from(JSON.stringify(pub)).toString('base64')
@@ -148,11 +117,9 @@ export function hasShareShape(file) {
   )
 }
 
-// The on-disk filename is derived from the (GCM-authenticated) ciphertext, so
-// it reveals nothing about the diff's name/content and lets the opener detect
-// a renamed file: import recomputes this and refuses to read a mismatch. The
-// ciphertext is already tamper-evident via its GCM tag, so this only needs to
-// bind the name to the bytes, not re-authenticate them.
+// Derived from the GCM-authenticated ciphertext: reveals nothing about the diff
+// and lets the opener detect a renamed file (import recomputes + refuses a
+// mismatch).
 export function shareFilename(file) {
   return (
     createHash('sha256').update(String(file.ciphertext)).digest('hex').slice(0, 32) + '.diffbro'

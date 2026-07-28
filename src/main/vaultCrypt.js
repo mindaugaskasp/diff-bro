@@ -1,10 +1,6 @@
-// Pure AES-256-GCM helpers for the saved-diff vault — no Electron imports,
-// unit-tested. index.js owns the key (safeStorage) and the IPC surface.
-//
-// Ciphertext layout matches WebCrypto's AES-GCM (ciphertext ‖ 16-byte tag),
-// so entries written by earlier renderer-side crypto stay readable. The
-// entry's plaintext metadata rides along as AAD: tampering with it (e.g.
-// extending expiresAt in localStorage) makes the entry undecryptable.
+// Pure AES-256-GCM helpers for the saved-diff vault (vault.js owns the key +
+// IPC). Layout is ciphertext‖16-byte tag (WebCrypto-compatible); metadata rides
+// as AAD, so tampering with it makes the entry undecryptable.
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 
 const GCM_TAG_BYTES = 16

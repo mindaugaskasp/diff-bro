@@ -409,4 +409,18 @@ describe('vaultStore', () => {
     vault.reload()
     expect(vault.entries.map((e) => e.name)).toEqual(['one', 'two'])
   })
+
+  // Older/partial records must not crash the sidebar filters (unguarded
+  // e.tags.some / e.name.toLowerCase).
+  it('normalizes an older entry with invalid tags or missing name on load', () => {
+    localStorage.setItem(
+      'diffbro.vault',
+      JSON.stringify({
+        entries: [{ id: 'x', iv: 'i', data: 'd', createdAt: 1, expiresAt: null, tags: 'oops' }]
+      })
+    )
+    const vault = useVaultStore()
+    expect(vault.entries[0].tags).toEqual([])
+    expect(typeof vault.entries[0].name).toBe('string')
+  })
 })

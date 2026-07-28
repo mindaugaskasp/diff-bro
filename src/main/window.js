@@ -51,50 +51,35 @@ export function createWindow() {
     x: state.x,
     y: state.y,
     resizable: true,
-    // Floor chosen so the core layout stays usable: the sidebar cannot go
-    // below SIDEBAR_MIN (180px, App.vue) and split view still leaves both
-    // Monaco panes wide enough to read a line of code. Also keeps the window
-    // openable on a 1024x768 display.
+    // Keeps the sidebar + split Monaco panes usable, and openable on 1024x768.
     minWidth: 940,
     minHeight: 640,
     backgroundColor: '#0d1117',
-    // macOS gets its icon from the app bundle; win/linux take it here.
     ...(process.platform !== 'darwin' ? { icon: appIcon } : {}),
-    // On Windows/Linux the renderer draws its own themed menu bar
-    // (MenuBar.vue); the native one stays hidden. macOS keeps the native
-    // system menu bar, which is the platform-correct look.
+    // Windows/Linux draw their own themed menu bar (MenuBar.vue); macOS keeps
+    // the native one.
     autoHideMenuBar: process.platform !== 'darwin',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      // Sandboxed renderer: the preload only uses the electron built-ins
-      // that sandboxed preloads are allowed (ipcRenderer, contextBridge,
-      // webFrame, webUtils), so full Node access is unnecessary.
       sandbox: true,
-      // No DevTools in a packaged build — this disables them at the source
-      // (any accelerator, the Inspect context item, and openDevTools all
-      // become no-ops), not just the menu entry, so a production build
-      // exposes no console into the renderer.
+      // Off in a packaged build: no console into the renderer.
       devTools: !app.isPackaged,
-      // Chromium's spellchecker downloads dictionaries from Google - keep off.
+      // Chromium's spellchecker downloads dictionaries — keep off (offline).
       spellcheck: false
     }
   })
 
-  // Never open external links or navigate away from the app. will-navigate
-  // only fires for renderer-initiated navigations (loadFile/loadURL bypass
-  // it), and the app never navigates itself — so block everything except
-  // the dev server's HMR full-reloads.
+  // Never open external links or navigate away — allow only the dev server's
+  // HMR full-reloads.
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   win.webContents.on('will-navigate', (e, url) => {
     if (!DEV_URL || !url.startsWith(DEV_URL)) e.preventDefault()
   })
 
-  // Native right-click menu: Cut/Copy/Paste in editable fields (so the snippet
-  // editor, paste panes, and tool inputs behave like any OS text field), and
-  // Copy in read-only content like the diff viewer. Uses menu roles, so the
-  // clipboard works on every platform regardless of the app menu.
+  // Native right-click Cut/Copy/Paste via menu roles, so the clipboard works on
+  // every platform regardless of the app menu.
   win.webContents.on('context-menu', (_e, params) => {
     const { editFlags, isEditable, selectionText } = params
     const items = []
@@ -112,17 +97,15 @@ export function createWindow() {
     Menu.buildFromTemplate(items).popup({ window: win })
   })
 
-  // autoHideMenuBar still reveals the native bar on Alt — suppress that too.
-  // The application menu stays installed so its accelerators keep working.
+  // autoHideMenuBar still reveals the bar on Alt; the menu stays installed so
+  // its accelerators keep working.
   if (process.platform !== 'darwin') win.setMenuBarVisibility(false)
 
   if (state.maximized) win.maximize()
   trackWindowState(win)
 
-  // Push the app-window fullscreen state to the renderer so views that fill the
-  // window (the Mermaid viewer) can maximise themselves in step with it. No
-  // renderer-observable DOM signal exists for OS-level window fullscreen, so it
-  // comes from these BrowserWindow events.
+  // No renderer-observable signal exists for OS-level fullscreen, so push it (the
+  // Mermaid viewer fills the window in step).
   const sendFullScreen = () => win.webContents.send('window:fullscreen', win.isFullScreen())
   win.on('enter-full-screen', sendFullScreen)
   win.on('leave-full-screen', sendFullScreen)

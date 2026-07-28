@@ -1,18 +1,8 @@
-// Pure crypto for exporting/reimporting Snippets categories as a
-// passphrase-protected, signed file — deliberately separate from the
-// sealed-share system in sealing.js, which is hard-capped at a 24 h TTL for
-// ephemeral diff sharing. Snippet backups are meant to persist indefinitely,
-// so there is no TTL here; instead:
-//   - confidentiality + tamper-evidence come from AES-256-GCM, keyed by a
-//     passphrase you choose (scrypt-derived) — portable, no recipient key
-//     exchange needed, unlike sealed diff shares.
-//   - the signer's public key and Ed25519 signature travel INSIDE the
-//     encrypted envelope (not just alongside it), so importing only ever
-//     needs the passphrase; it self-certifies that the payload wasn't
-//     altered after signing, but (unlike sealed shares) does not by itself
-//     prove the signer is someone you already trust — compare the returned
-//     fingerprint against Share → your fingerprint, or a trusted peer's, if
-//     that matters for your use case.
+// Pure crypto for exporting/importing snippets as a passphrase-protected, signed
+// file (no TTL, unlike sealing.js's ephemeral shares): AES-256-GCM keyed by a
+// scrypt-derived passphrase. The signer's key + signature travel INSIDE the
+// envelope, so import needs only the passphrase — it proves the payload wasn't
+// altered, but NOT that the signer is trusted (compare the fingerprint yourself).
 import {
   createCipheriv,
   createDecipheriv,
@@ -26,14 +16,9 @@ import { SCRYPT_PARAMS, deriveKey, scryptParamsFor } from './kdf'
 
 export const SNIPPET_FORMAT = 'diffbro-snippets/1'
 
-// A decryptable file is NOT a trustworthy one: the passphrase gates
-// confidentiality, not the sender's honesty. So an imported bundle is treated
-// as hostile input and validated in shape and size before anything downstream
-// touches it — the same rigor share:addTrustedKey applies to key files.
-// Without this, a malformed-but-decryptable bundle could: make vaultEncrypt
-// throw mid-import (non-string content) leaving a partial import, or blow the
-// ~5 MB localStorage quota so every later persist() throws and the store stops
-// saving entirely. Caps are generous for real use but bounded.
+// A decryptable file is NOT trustworthy — the passphrase gates confidentiality,
+// not honesty — so a bundle is hostile input, shape/size-validated before use.
+// Caps bound it so a malformed-but-decryptable bundle can't wedge the store.
 export const SNIPPET_LIMITS = {
   snippets: 5000, // whole-library cap (tags bundle)
   tagsPerSnippet: 5,
@@ -50,14 +35,8 @@ export const SNIPPET_LIMITS = {
 
 const byteLen = (s) => Buffer.byteLength(s, 'utf8')
 
-// Returns null when `bundle` is a well-formed, within-caps snippet bundle, or
-// an error code ('malformed' | 'too-large') otherwise. Accepts the current
-// tags shape { snippets:[...], tags:{...} } and the legacy categories shape
-// { categories:[...] } so old exports still import. Pure and unit-tested.
-//
-// A decryptable file is NOT a trustworthy one: the passphrase gates
-// confidentiality, not the sender's honesty, so an imported bundle is hostile
-// input — validated in shape and size before anything downstream touches it.
+// null when `bundle` is well-formed and within caps, else 'malformed'/'too-large'.
+// Accepts the current tags shape and the legacy categories shape.
 export function validateSnippetBundle(bundle, limits = SNIPPET_LIMITS) {
   if (!bundle || typeof bundle !== 'object') return 'malformed'
   if (Array.isArray(bundle.snippets)) return validateTagsBundle(bundle, limits)

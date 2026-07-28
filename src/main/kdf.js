@@ -1,18 +1,7 @@
-// Shared passphrase key-derivation for the passphrase-based formats
-// (textCrypt, snippetSealing, configBackup). No Electron imports, unit-tested.
-//
-// Three things this centralizes:
-//   1. Explicit, pinned scrypt cost — N=2^17 (~128 MiB working set at r=8),
-//      well above Node's default N=2^14, which is light for files meant to
-//      persist indefinitely. Node throws at this N unless `maxmem` is raised,
-//      so we pass it explicitly.
-//   2. Async derivation — `scryptSync` blocks the main process's event loop
-//      (freezing every window for the ~hundreds of ms a derivation takes), so
-//      we use the async form.
-//   3. Backward/forward compatibility — the parameters travel in the envelope
-//      (`kdf`), so a file written with one cost still opens after the pin
-//      changes. Files written before params were embedded carry no `kdf`
-//      field and are read with Node's old defaults (`LEGACY_PARAMS`).
+// Shared passphrase key-derivation (textCrypt, snippetSealing, configBackup).
+// Pinned scrypt cost N=2^17 (well above Node's default), async so it doesn't
+// freeze the event loop, and the params travel in the envelope (`kdf`) so a
+// file still opens after the pin changes.
 import { scrypt as scryptCb } from 'crypto'
 import { promisify } from 'util'
 
@@ -30,12 +19,8 @@ const MAX_N = 2 ** 20
 
 const isPow2 = (n) => Number.isInteger(n) && n > 1 && (n & (n - 1)) === 0
 
-// Resolve the scrypt parameters to use when OPENING an envelope. Returns the
-// legacy defaults when no `kdf` is present (older file), the validated params
-// when present, or null when the `kdf` field is malformed/out of bounds (so
-// the caller can reject the file rather than derive with attacker-chosen cost).
-// Every bound an attacker-supplied cost must satisfy. Kept separate so the
-// resolver above stays a two-line decision and these limits read as one list.
+// Bounds an attacker-supplied cost must satisfy, so a hostile envelope can't
+// request an unbounded working set.
 function withinScryptBounds({ N, r, p }) {
   if (!isPow2(N) || N > MAX_N) return false
   if (!Number.isInteger(r) || r < 1 || r > 16) return false
@@ -43,6 +28,8 @@ function withinScryptBounds({ N, r, p }) {
   return 128 * N * r <= MAXMEM
 }
 
+// null on a malformed/out-of-bounds `kdf` so the caller rejects the file rather
+// than deriving with an attacker-chosen cost.
 export function scryptParamsFor(envelope) {
   const k = envelope?.kdf
   if (k == null) return LEGACY_PARAMS

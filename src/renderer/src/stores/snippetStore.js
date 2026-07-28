@@ -80,11 +80,24 @@ function tagsFromCategories(categories) {
   return tags
 }
 
+// Harden a persisted entry against older/partial shapes: guarantee `name` is a
+// string and `tags` an array of strings, so the sidebar's unguarded field access
+// (entry.tags.some / entry.name.toLowerCase / …) can never throw on old data.
+// Name/tags aren't part of the AAD, so this is free metadata — decryption is
+// unaffected.
+function normalizeEntry(e) {
+  return {
+    ...e,
+    name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled snippet'),
+    tags: Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : []
+  }
+}
+
 function migrate(parsed) {
   if (isTagShape(parsed)) {
     return {
       tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
-      entries: parsed.entries
+      entries: (Array.isArray(parsed.entries) ? parsed.entries : []).map(normalizeEntry)
     }
   }
   const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
@@ -93,7 +106,7 @@ function migrate(parsed) {
     const cat = catById.get(e.categoryId)
     const tagName = cat && !cat.isDefault ? cleanTag(cat.name) : null
     const { categoryId, ...rest } = e
-    return { ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] }
+    return normalizeEntry({ ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] })
   })
   return { tags: tagsFromCategories(categories), entries }
 }

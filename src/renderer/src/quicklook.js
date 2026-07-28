@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import QuickLook from './components/QuickLook.vue'
 import { installErrorHandlers } from './errorHandlers'
+import { installUpdateRecovery } from './updateRecovery'
 import { normalizeTheme, themeForDay } from './utils/themes'
 import { loadPersisted } from './persist'
 import './styles/tokens.css'
@@ -31,3 +32,4 @@ app.use(pinia)
 // Catch uncaught errors before the UI mounts, so even a startup failure logs.
 installErrorHandlers(app, pinia)
 app.mount('#app')
+installUpdateRecovery()

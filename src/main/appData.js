@@ -1,12 +1,6 @@
-// Configurable data directory + a tiny file-backed key/value store, so all of
-// this install's data (saved diffs, snippets, identity + trusted keys) can live
-// in a folder the user chooses — e.g. under Documents or a synced folder — and
-// therefore survive an app reinstall that wipes userData.
-//
-// A pointer file in userData records where the data lives; it defaults to
-// userData itself, so nothing moves until the user opts in. If the pointer is
-// lost on reinstall, the data is still intact in the chosen folder — the user
-// just re-points to it in Settings.
+// Configurable data directory + a tiny file-backed key/value store, so this
+// install's data (diffs, snippets, keys) can live in a user-chosen folder and
+// survive a reinstall. A pointer file in userData records the location.
 import { app, dialog, ipcMain, shell } from 'electron'
 import {
   closeSync,
@@ -57,9 +51,7 @@ export function dataFile(name) {
   return join(getDataDir(), name)
 }
 
-// Atomic write: write to a temp file, fsync, then rename over the target, so a
-// crash mid-write can never corrupt existing data. Node's rename replaces an
-// existing destination on both POSIX and Windows.
+// Atomic write (temp + fsync + rename) so a crash mid-write can't corrupt data.
 function writeFileAtomic(path, data) {
   const tmp = `${path}.tmp`
   const fd = openSync(tmp, 'w', 0o600)
@@ -80,10 +72,8 @@ function readStore(name) {
   }
 }
 
-// The renderer's settings store persists preferences as plaintext settings.json
-// through the same key/value store. The main process reads it directly (fresh
-// each call, so a changed setting takes effect without a restart) for the few
-// limits it has to enforce itself — e.g. the large-file warning threshold.
+// Main reads the renderer's settings.json fresh for the few limits it enforces
+// (e.g. the large-file threshold).
 export function readSettings() {
   try {
     return JSON.parse(readStore('settings') ?? '{}') || {}
@@ -96,10 +86,8 @@ function writeStore(name, contents) {
   writeFileAtomic(join(getDataDir(), `${name}.json`), String(contents))
 }
 
-// Point at a new data directory. Non-destructive: existing files at the
-// destination are kept (so pointing back at a folder after a reinstall restores
-// it), and files present only at the source are copied over. The old directory
-// is left untouched.
+// Non-destructive: keeps existing files at the destination (so re-pointing after
+// a reinstall restores them) and copies over source-only files.
 function setDataDir(newDir) {
   const current = getDataDir()
   const resolved = String(newDir)
@@ -117,8 +105,7 @@ function setDataDir(newDir) {
 }
 
 export function registerAppDataIpc() {
-  // Synchronous load so the renderer's Pinia stores can read their state during
-  // setup (like localStorage did). Returns the raw JSON string, or null.
+  // Sync so the Pinia stores can read state during setup.
   ipcMain.on('store:load', (e, name) => {
     e.returnValue = typeof name === 'string' ? readStore(name) : null
   })
@@ -134,8 +121,6 @@ export function registerAppDataIpc() {
     isDefault: getDataDir() === app.getPath('userData')
   }))
 
-  // Pick a folder and move the data there. The renderer restarts the app after
-  // this so every in-memory key cache is rebuilt from the new location.
   ipcMain.handle('datadir:choose', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       title: 'Choose a folder for Diff Bro data',

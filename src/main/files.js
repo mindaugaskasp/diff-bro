@@ -6,12 +6,8 @@ import iconv from 'iconv-lite'
 import { readSettings } from './appData'
 import { readXlsx } from './xlsx/index'
 
-// Per-file-type size guards. Mirrors the renderer's FILE_TYPE_LIMITS
-// (stores/settingsStore.js) — the renderer owns the slider UI; main enforces
-// independently so a hand-edited settings.json can't wedge the app. Keep the
-// numbers in sync with that file. `cap` is the hard ceiling: for .xlsx it's also
-// the reader's compressed-input limit, so "Load anyway" works up to the same
-// number the slider maxes at, and the two can never disagree.
+// Mirrors the renderer's FILE_TYPE_LIMITS; main enforces independently so a
+// hand-edited settings.json can't wedge the app. Keep the numbers in sync.
 const TYPE_LIMITS = {
   text: { default: 10, cap: 200 },
   spreadsheet: { default: 25, cap: 100 }
@@ -21,9 +17,8 @@ function fileTypeFor(name) {
   return /\.xlsx$/i.test(name) ? 'spreadsheet' : 'text'
 }
 
-// The soft prompt threshold in bytes for a type: the user's setting, floored so
-// a bad value can't disable the guard and capped at the type's ceiling. Read
-// fresh each time so a change applies without a restart.
+// Soft-prompt threshold in bytes: the user's setting, floored + capped, read
+// fresh each call.
 function limitBytesFor(type) {
   const spec = TYPE_LIMITS[type] ?? TYPE_LIMITS.text
   const configured = Number(readSettings().fileSizeLimitsMb?.[type])
@@ -32,21 +27,13 @@ function limitBytesFor(type) {
   return mb * 1024 * 1024
 }
 
-// Provenance allowlist. `file:read` is only ever meant to serve a path the
-// user actually chose — via the open dialog, or by physically dragging a file
-// onto the window. CLAUDE.md's threat model assumes the renderer can be
-// compromised (see vault.js), and a raw path argument from a compromised
-// renderer would turn `file:read` into an arbitrary-file-read primitive: SSH
-// keys, browser profiles, cloud tokens — and, on installs with no OS keychain
-// (the `plain:` fallback), vault.key / identity.key themselves, defeating the
-// "key never enters the renderer" guarantee. So a path is readable only after
-// it has been registered here through a trusted channel.
+// Provenance allowlist. file:read serves ONLY paths the user chose (open dialog
+// or a real drop). CLAUDE.md assumes a compromised renderer, where a raw path
+// arg would be an arbitrary-file-read primitive (SSH keys, vault.key, …), so a
+// path is readable only after being registered here through a trusted channel.
 const allowedPaths = new Set()
-// Bound the allowlist so a long session can't grow it without limit, and so a
-// path doesn't stay readable forever after the user has moved on. The current
-// comparison's two paths are always the most recently allowed (re-inserting
-// refreshes recency), so FIFO eviction of the oldest entry never revokes a
-// path still in use, including its quiet focus-refresh re-reads.
+// Bounded + FIFO: the current comparison's two paths are the most recently
+// added, so evicting the oldest never revokes a path still in use.
 const MAX_ALLOWED_PATHS = 64
 
 function allow(filePath) {
@@ -59,17 +46,15 @@ function allow(filePath) {
   }
 }
 
-// Belt and braces: never serve anything inside userData (vault.key,
-// identity.key, trusted-keys.json, config) regardless of how the path was
-// obtained. Nothing the user opens or drops legitimately lives there.
+// Belt and braces: never serve anything under userData (keys, config), however
+// the path was obtained.
 function isUnderUserData(filePath) {
   const abs = resolve(filePath)
   const base = resolve(app.getPath('userData'))
   return abs === base || abs.startsWith(base + sep)
 }
 
-// Local zip signature ("PK\x03\x04"). Gated on the .xlsx extension too, so a
-// plain .zip the user drops isn't treated as a spreadsheet.
+// Gated on the .xlsx extension too, so a plain .zip isn't read as a spreadsheet.
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 function looksLikeXlsx(name, buffer) {
   return /\.xlsx$/i.test(name) && buffer.length >= 4 && buffer.subarray(0, 4).equals(ZIP_MAGIC)
@@ -116,9 +101,8 @@ async function readFileForRenderer(win, filePath, opts = {}) {
 
   const buffer = await readFile(filePath)
 
-  // .xlsx is a zip (so it trips the binary sniff below): detect it first and
-  // parse to a spreadsheet grid in the main process. Parsing stays here, never
-  // in the renderer — it's hostile binary input (see src/main/xlsx/).
+  // .xlsx is a zip (trips the binary sniff): parse it in main, never the
+  // renderer — hostile binary input (see src/main/xlsx/).
   if (looksLikeXlsx(name, buffer)) return readXlsxForRenderer(buffer, filePath, name, size)
 
   // Binary detection: a NUL byte in the first 8 KB means this is not text.
@@ -149,11 +133,8 @@ export function registerFileIpc() {
     return readFileForRenderer(win, filePaths[0])
   })
 
-  // Registers a path the preload resolved from a REAL OS drag-drop
-  // (webUtils.getPathForFile on an actual dropped File). The preload calls
-  // this before the renderer asks to read the file, so a genuinely dropped
-  // path becomes readable while a path the renderer merely invents never
-  // passes through here and stays denied.
+  // Registers a path the preload resolved from a REAL OS drop (webUtils), so an
+  // invented renderer path never becomes readable.
   ipcMain.handle('file:allowDropPath', (e, filePath) => {
     allow(filePath)
     return true

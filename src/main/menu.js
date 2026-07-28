@@ -1,17 +1,12 @@
 import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } from 'electron'
 import { toggleQuickLook } from './quickLook'
 
-// Where "Report an Issue" sends the user. The URL is fixed here in the main
-// process — the renderer can ask to open it but can never pass a URL of its own,
-// so this adds no open-any-URL surface. shell.openExternal hands the address to
-// the OS browser; the app itself still makes no network request, so the offline
-// guarantee (and the network kill switch, CSP, will-navigate block …) is intact.
+// Fixed in main so the renderer can trigger it but never supply a URL — no
+// open-any-URL surface.
 const ISSUE_URL = 'https://github.com/mindaugaskasp/diff-bro/issues/new'
 
-// Report an Issue is the one action that leaves the offline sandbox — it hands
-// the fixed URL to the OS browser, which does connect to the internet. Confirm
-// first so that departure is always the user's explicit choice, never a silent
-// side effect of a menu click.
+// The one action that leaves the offline sandbox (hands the URL to the OS
+// browser), so confirm first.
 async function promptAndOpenIssue(win) {
   const parent = win ?? BrowserWindow.getFocusedWindow()
   const { response } = await dialog.showMessageBox(parent, {
@@ -26,15 +21,11 @@ async function promptAndOpenIssue(win) {
   if (response === 1) shell.openExternal(ISSUE_URL)
 }
 
-// --- App menu: file actions forwarded to the renderer over IPC ---
-//
 // Every accelerator here must have a twin in the renderer's MenuBar.vue
-// (CLAUDE.md): the native menu is hidden on Windows/Linux but stays installed
-// so its shortcuts keep working.
+// (CLAUDE.md); this hidden native menu keeps the shortcuts working on Win/Linux.
 
 function focusedWindow() {
-  // Fall back to the first window: under bare Xvfb (Docker test env, no
-  // window manager) no window ever reports keyboard focus.
+  // Fall back to the first window: bare Xvfb reports no keyboard focus.
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
 }
 
@@ -55,19 +46,9 @@ function resetZoom() {
   if (wc) wc.setZoomLevel(0)
 }
 
-// AppKit injects "Start Dictation" and "Emoji & Symbols" into every app's Edit
-// menu. Both are dead ends here — dictation is a network service this app must
-// never touch, and the character palette can't insert into a sandboxed renderer
-// — and both honour these user-default kill switches, so suppress them before
-// the menu is built.
-//
-// macOS ALSO injects "AutoFill" and (with Apple Intelligence enabled) "Writing
-// Tools" into every app's Edit menu, but ships NO equivalent switch for either:
-// there is no `NSDisabledAutoFillMenuItem`/writing-tools default, and neither
-// role-based nor custom-click menu items stop the insertion (it is app-wide, not
-// keyed off our items). The only removal is native NSMenu surgery Electron
-// doesn't expose, so they can't be dropped here. Both act only on editable text
-// and stay inert unless invoked — even VS Code shows Writing Tools.
+// Suppress AppKit's injected "Start Dictation" (a network service) and "Emoji &
+// Symbols" via their user-default kill switches. (AutoFill / Writing Tools are
+// also injected but ship no equivalent switch, so they can't be removed here.)
 function disableInjectedMacMenuItems() {
   if (process.platform !== 'darwin') return
   systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true)
@@ -111,10 +92,8 @@ export function installMenu() {
     {
       label: 'Edit',
       submenu: [
-        // macOS routes clipboard shortcuts (Cmd+C/V/X/A) through the app menu:
-        // without these roles, Cmd+V does nothing in text inputs (e.g. the
-        // snippet editor). Windows/Linux get clipboard from Chromium directly,
-        // and this native menu is hidden there, so the roles are macOS-only.
+        // macOS routes clipboard shortcuts through the app menu, so these roles
+        // are required for text inputs to work; Chromium handles it elsewhere.
         ...(isMac
           ? [
               { role: 'undo' },
@@ -162,9 +141,7 @@ export function installMenu() {
         { type: 'separator' },
         {
           label: 'Quick Look-up',
-          // The binding is a user-configurable GLOBAL shortcut (Settings →
-          // Shortcuts; registered in quickLook.js), so no accelerator is shown
-          // here — a fixed hint would go stale the moment it's rebound.
+          // User-configurable global shortcut (Settings), so no fixed hint here.
           click: () => toggleQuickLook()
         },
         { type: 'separator' },
@@ -193,8 +170,6 @@ export function installMenu() {
     },
     {
       label: 'Tools',
-      // Grouped by format so each tool's operations live under their own
-      // heading (Tools → Base64 → …), leaving room to grow per format.
       submenu: [
         {
           label: 'Base64',
@@ -271,17 +246,12 @@ export function installMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
-// The custom in-app menu bar (Windows/Linux) cannot reach these two itself.
-// DevTools access is dev-only: in a packaged build the handler is a no-op so
-// the renderer can never open DevTools.
+// DevTools access is dev-only: a no-op in packaged builds.
 export function registerMenuIpc() {
   ipcMain.handle('app:toggleDevTools', (e) => {
     if (!app.isPackaged) e.sender.toggleDevTools()
   })
   ipcMain.handle('app:quit', () => app.quit())
-  // The custom menu bar (Windows/Linux) can't call shell itself. The URL is
-  // fixed above; the renderer only triggers it, never chooses it — and the
-  // confirm prompt still gates the actual browser launch.
   ipcMain.handle('app:reportIssue', (e) =>
     promptAndOpenIssue(BrowserWindow.fromWebContents(e.sender))
   )

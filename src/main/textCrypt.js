@@ -1,18 +1,7 @@
-// Pure crypto core for the Tools → Encrypt/Decrypt Text dialog — a local,
-// passphrase-based scratch tool (not related to the vault or share crypto).
-// No Electron imports, unit-tested; index.js owns the thin IPC handlers.
-//
-// Output is a single self-describing base64 blob: the passphrase is run
-// through scrypt with a random salt (embedded in the blob) to derive the
-// cipher key, so decrypting only ever needs the same passphrase — the
-// algorithm and salt travel with the ciphertext.
-//
-// AES-256-GCM only, deliberately. An unauthenticated mode (e.g. CBC) has no
-// MAC: its ciphertext is malleable and a tampered blob can decrypt
-// "successfully" to attacker-influenced garbage, which is a footgun for a tool
-// people reach for precisely when integrity matters. The `ALGORITHMS`
-// allowlist also means any blob written by an older build with a different
-// algorithm is simply refused rather than decrypted without authentication.
+// Pure crypto for the Tools → Encrypt/Decrypt Text dialog (local passphrase
+// scratch tool). Self-describing base64 blob: scrypt-derived key, algo + salt
+// embedded. Authenticated (AES-256-GCM) ONLY — the ALGORITHMS allowlist refuses
+// anything else rather than decrypt an unauthenticated, malleable blob.
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 import { SCRYPT_PARAMS, deriveKey, scryptParamsFor } from './kdf'
 
@@ -56,9 +45,7 @@ function hasEnvelopeShape(envelope, params) {
   )
 }
 
-// Returns { ok: true, plaintext } or { ok: false, error }. Never distinguishes
-// "wrong passphrase" from "corrupted data" from "not a blob we made" — all
-// collapse to the same generic failure, same as vaultDecrypt.
+// Failures never distinguish wrong-passphrase from corrupt from not-ours.
 export async function decryptText(blob, passphrase) {
   let envelope
   try {
