@@ -7,7 +7,17 @@ describe('TEXT_TOOLS', () => {
   const ids = Object.keys(TEXT_TOOLS)
 
   it('covers the tools the menu offers', () => {
-    expect(ids.sort()).toEqual(['json', 'sql', 'uuid', 'xml'])
+    expect(ids.sort()).toEqual([
+      'epoch',
+      'html',
+      'json',
+      'jwt',
+      'lines',
+      'sql',
+      'url',
+      'uuid',
+      'xml'
+    ])
   })
 
   it.each(ids)('%s declares a complete descriptor', (id) => {

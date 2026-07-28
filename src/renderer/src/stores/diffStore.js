@@ -115,6 +115,11 @@ const MENU_ACTIONS = {
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
   'tools-uuid': (s) => (s.textTool = 'uuid'),
+  'tools-jwt': (s) => (s.textTool = 'jwt'),
+  'tools-epoch': (s) => (s.textTool = 'epoch'),
+  'tools-url': (s) => (s.textTool = 'url'),
+  'tools-html': (s) => (s.textTool = 'html'),
+  'tools-lines': (s) => (s.textTool = 'lines'),
   'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)

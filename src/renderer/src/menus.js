@@ -137,6 +137,11 @@ export function buildMenus(store) {
             }
           ]
         },
+        { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
+        { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
+        { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
+        { label: 'HTML Entities', run: () => store.handleMenuAction('tools-html') },
+        { label: 'Sort & Dedupe Lines', run: () => store.handleMenuAction('tools-lines') },
         {
           label: 'Find & Replace',
           items: [
