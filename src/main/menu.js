@@ -247,6 +247,10 @@ export function installMenu() {
       role: 'help',
       label: 'Help',
       submenu: [
+        // Installed version — the anchor for a future "Check for Updates…" item
+        // that opens this tag's release page.
+        { label: `Diff Bro v${app.getVersion()}`, enabled: false },
+        { type: 'separator' },
         { label: 'Keyboard Shortcuts', click: () => sendToFocused('shortcuts') },
         { type: 'separator' },
         { label: 'Report an Issue', click: (_item, win) => promptAndOpenIssue(win) }
@@ -262,6 +266,11 @@ export function registerMenuIpc() {
     if (!app.isPackaged) e.sender.toggleDevTools()
   })
   ipcMain.handle('app:quit', () => app.quit())
+  // Synchronous so the renderer can stamp the version into the window title and
+  // the Help menu without an async round-trip (mirrors store:load).
+  ipcMain.on('app:version', (e) => {
+    e.returnValue = app.getVersion()
+  })
   ipcMain.handle('app:reportIssue', (e) =>
     promptAndOpenIssue(BrowserWindow.fromWebContents(e.sender))
   )

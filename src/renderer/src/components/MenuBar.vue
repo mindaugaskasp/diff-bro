@@ -54,6 +54,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <template v-for="(item, i) in menu.items" :key="i">
           <template v-if="!(item.devOnly && isPackaged)">
             <div v-if="item.sep" class="sep" />
+            <div v-else-if="item.info" class="item info">{{ item.label }}</div>
             <div v-else-if="item.items" class="submenu" @mouseenter="openSub = item.label">
               <button class="item" @click="openSub = openSub === item.label ? null : item.label">
                 <span>{{ item.label }}</span>

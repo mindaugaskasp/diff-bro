@@ -17,7 +17,7 @@ import AppDialogs from './components/AppDialogs.vue'
 import AppToolbar from './components/AppToolbar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import FormatHintBanner from './components/FormatHintBanner.vue'
-import { useSnippetStore } from './stores/snippetStore'
+import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
 import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
@@ -40,6 +40,7 @@ onMounted(async () => {
   if (snippets.entries.length === 0) {
     const id = await snippets.seedExample()
     if (!id) return // vault key not ready — retry next launch
+    await snippets.add({ ...CLAUDE_EXAMPLE_SNIPPET })
   }
   settings.markExamplesSeeded()
 })

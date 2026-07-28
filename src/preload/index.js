@@ -83,10 +83,16 @@ contextBridge.exposeInMainWorld('api', {
   // (so data survives a reinstall). Loads are synchronous so the Pinia stores
   // can read their state during setup, exactly like localStorage did.
   storeLoad: (name) => ipcRenderer.sendSync('store:load', name),
+  // The installed app version, resolved once at preload so the renderer has it
+  // synchronously for the window title and Help menu.
+  appVersion: ipcRenderer.sendSync('app:version'),
   storeSave: (name, contents) => ipcRenderer.invoke('store:save', name, contents),
   // Write/read the OS clipboard from the main process (navigator.clipboard is
   // blocked by the deny-all permission handler; see src/main/clipboard.js).
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
+  // Opens a stored link ONLY if main validates it as a claude.ai URL, after a
+  // confirm dialog; any other URL is refused (see src/main/links.js).
+  openClaudeLink: (url) => ipcRenderer.invoke('link:openClaude', url),
   readText: () => ipcRenderer.invoke('clipboard:read'),
   // Data-location settings.
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),

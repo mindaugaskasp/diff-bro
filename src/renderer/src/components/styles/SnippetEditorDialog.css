@@ -33,6 +33,19 @@
 .editor-area:not(.editing) .editor :deep(.monaco-editor .margin) {
   background: var(--bg-elevated);
 }
+/* Edit mode: the same discipline, to the ACTIVE editor surface. Without this
+   Monaco paints its stock-'vs' white background + a light current-line border,
+   which read as white artifacts on the app's tinted light surfaces. Pin both to
+   tokens (matching the read-only inputs' --bg surface) and drop the line box. */
+.editor-area.editing .editor :deep(.monaco-editor),
+.editor-area.editing .editor :deep(.monaco-editor-background),
+.editor-area.editing .editor :deep(.monaco-editor .margin) {
+  background: var(--bg);
+}
+.editor-area.editing .editor :deep(.monaco-editor .current-line) {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
 .editor-header {
   display: flex;
   align-items: center;

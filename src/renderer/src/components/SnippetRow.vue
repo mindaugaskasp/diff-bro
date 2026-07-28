@@ -6,6 +6,8 @@ import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { languageMonogram } from '../utils/languageMonogram'
+import { firstClaudeUrl } from '../utils/detectLanguage'
+import { parseTemplateVars } from '../utils/templateVars'
 import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
@@ -23,20 +25,33 @@ const { copied, flash } = useCopyFeedback()
 const lang = computed(() => languageOf(props.entry))
 const mono = computed(() => languageMonogram(lang.value))
 const isDiagram = computed(() => lang.value === 'mermaid')
+const isClaude = computed(() => lang.value === 'claude')
 // Drop the tag that just restates the monogram (the auto format tag), so the
 // tag word carries information the type anchor doesn't already.
 const shownTags = computed(() => props.entry.tags.filter((t) => t !== lang.value))
 
 async function copySnippet(id) {
   const content = await store.load(id)
-  if (content != null) {
-    await window.api.copyText(content)
-    flash()
+  if (content == null) return
+  // A Claude prompt with placeholders routes through the fill dialog first.
+  if (isClaude.value && parseTemplateVars(content).length) {
+    store.pendingFill = { name: props.entry.name, content }
+    return
   }
+  await window.api.copyText(content)
+  flash()
 }
 async function viewDiagram(entry) {
   const code = await store.load(entry.id)
   if (code != null) diff.openMermaid(entry.name, code)
+}
+// Opening is gated by the main-process claude.ai allowlist; this only offers a
+// candidate URL from the snippet.
+async function openLink() {
+  const content = await store.load(props.entry.id)
+  const url = content != null ? firstClaudeUrl(content) : null
+  if (url) await window.api.openClaudeLink(url)
+  else diff.showNotice('No Claude link in this snippet.')
 }
 </script>
 
@@ -56,6 +71,13 @@ async function viewDiagram(entry) {
     <button class="entry" @click="store.editingSnippet = { id: entry.id }">
       <span class="monogram" :style="{ '--fam': mono.family }" :title="lang">{{ mono.label }}</span>
       <span class="nm">{{ entry.name }}</span>
+      <span
+        v-if="entry.vars?.length"
+        class="varchip"
+        :title="`${entry.vars.length} variable${entry.vars.length > 1 ? 's' : ''} to fill on copy: ${entry.vars.join(', ')}`"
+      >
+        <AppIcon name="braces" />{{ entry.vars.length }}
+      </span>
       <span v-if="shownTags.length" class="tag-word">
         <span class="tw-dot" :style="{ background: store.colorOf(shownTags[0]) }"></span>
         <span class="tw-label">{{ shownTags[0] }}</span>
@@ -71,6 +93,9 @@ async function viewDiagram(entry) {
         @click="viewDiagram(entry)"
       >
         <AppIcon name="diagram" />
+      </button>
+      <button v-if="isClaude" class="row-btn" title="Open Claude link" @click="openLink">
+        <AppIcon name="link" />
       </button>
       <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">
         <AppIcon name="copy" />

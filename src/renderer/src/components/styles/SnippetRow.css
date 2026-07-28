@@ -95,8 +95,24 @@
   flex-shrink: 0;
 }
 .row:hover .when,
-.row:hover .tag-word {
+.row:hover .tag-word,
+.row:hover .varchip {
   display: none;
+}
+/* Fillable-prompt cue: {{ }} + how many placeholders await (claude snippets). */
+.varchip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding-right: 2px;
+  font-size: var(--font-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-hint);
+}
+.varchip .app-icon {
+  width: 13px;
+  height: 13px;
 }
 .row:hover .rowacts {
   display: flex;

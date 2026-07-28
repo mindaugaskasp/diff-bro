@@ -16,6 +16,7 @@ import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
 import SnippetEditorDialog from './SnippetEditorDialog.vue'
 import SnippetPassphraseDialog from './SnippetPassphraseDialog.vue'
 import SnippetDeleteDialog from './SnippetDeleteDialog.vue'
+import SnippetFillDialog from './SnippetFillDialog.vue'
 import VaultCategoryDeleteDialog from './VaultCategoryDeleteDialog.vue'
 import AddTrustedKeyDialog from './AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './TrustedKeysDialog.vue'
@@ -49,6 +50,7 @@ const errors = useErrorStore()
   <SnippetEditorDialog v-if="snippets.editingSnippet" />
   <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />
   <SnippetDeleteDialog v-if="snippets.pendingDelete" />
+  <SnippetFillDialog v-if="snippets.pendingFill" />
   <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
   <ErrorReportDialog v-if="errors.visible" />
   <PasteConfirmDialog v-if="store.pastePrompt" />

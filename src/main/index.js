@@ -10,6 +10,7 @@ import { registerTextToolsIpc } from './textTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
 import { registerQuickLook, destroyQuickLook } from './quickLook'
+import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
@@ -46,6 +47,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerShareIpc()
     registerSnippetIpc()
     registerLoggerIpc()
+    registerLinkIpc()
     const mainWin = createWindow()
     registerQuickLook()
     // Without this, the hidden launcher keeps a window alive and blocks quit.

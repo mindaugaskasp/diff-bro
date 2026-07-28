@@ -2,7 +2,7 @@
 // Root of the floating quick look-up window (see src/main/quickLook.js); logic
 // lives in useQuickLook. The snippet preview renders through text interpolation
 // only, never v-html (CLAUDE.md #7).
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
 import { languageMonogram } from '../utils/languageMonogram'
@@ -19,6 +19,7 @@ const {
 const store = useSnippetStore()
 const input = ref(null)
 const copyKey = isMac ? '⌘C' : 'Ctrl+C'
+const snippetLines = computed(() => snippetText.value.split('\n'))
 
 function focusInput() {
   input.value?.focus()
@@ -114,12 +115,14 @@ function expiryLabel(meta) {
             </span>
           </div>
 
-          <pre
+          <div
             v-if="current.kind === 'snippet'"
             ref="previewEl"
             class="ql-pv-body"
             :class="{ scrolling: zone === 'preview' }"
-          >{{ snippetText }}</pre>
+          >
+            <div v-for="(line, i) in snippetLines" :key="i" class="ql-pv-line">{{ line }}</div>
+          </div>
           <div v-else class="ql-pv-diff">
             <span class="ql-pv-expiry">{{ expiryLabel(diffMeta) }}</span>
             <p>Press <strong>Enter</strong> to open this diff in the comparison view.</p>

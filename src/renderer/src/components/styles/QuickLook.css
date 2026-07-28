@@ -216,14 +216,42 @@
 .ql-pv-body {
   flex: 1;
   margin: 0;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
   overflow: auto;
+  /* Arrow-key scroll (→ preview mode) glides instead of jumping; Chromium
+     coalesces held-key repeats into one continuous smooth scroll. */
+  scroll-behavior: smooth;
+  counter-reset: ln;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: var(--font-sm);
   line-height: 1.5;
   color: var(--text-hint);
+}
+/* Line numbers via a CSS counter — generated content is never part of a text
+   selection, so copying the preview never drags the gutter along. */
+.ql-pv-line {
+  position: relative;
+  padding-left: 3.4em;
+  min-height: 1.5em;
   white-space: pre-wrap;
   word-break: break-word;
+}
+.ql-pv-line::before {
+  counter-increment: ln;
+  content: counter(ln);
+  position: absolute;
+  left: 0;
+  width: 2.6em;
+  text-align: right;
+  color: var(--text-dim);
+  opacity: 0.55;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ql-pv-body {
+    scroll-behavior: auto;
+  }
 }
 .ql-pv-diff {
   flex: 1;
@@ -278,13 +306,19 @@
 }
 .ql-body.in-preview .ql-results {
   opacity: 0.5;
+  /* Hand the seam to the preview's accent edge so they don't double up. */
+  border-right-color: transparent;
 }
 .ql-body.in-preview .ql-res.sel {
   background: transparent;
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
+/* Focus reads as a single accent seam on the shared divider plus a faint tint —
+   no full ring, so it never parallels the search-band / footer / window borders
+   or fight the rounded corners. */
 .ql-body.in-preview .ql-preview {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
 }
 /* Back-to-list affordance in the preview header. */
 .ql-pv-back {

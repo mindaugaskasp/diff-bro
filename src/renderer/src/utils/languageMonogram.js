@@ -13,12 +13,14 @@ export const MONOGRAM_FAMILIES = {
   db: '#d29922',
   diagram: '#a371f7',
   code: '#3fb950',
-  docs: '#8b949e'
+  docs: '#8b949e',
+  ai: '#d97757'
 }
 
 // language/format id → [label, family]. Ids come from languageOf() (snippets)
 // and diffFormatTag() (diffs); both are lowercase Monaco/format names.
 const MAP = {
+  claude: ['CL', 'ai'],
   mermaid: ['MMD', 'diagram'],
   sql: ['SQL', 'db'],
   json: ['JSON', 'data'],

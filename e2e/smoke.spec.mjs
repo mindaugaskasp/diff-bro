@@ -6,7 +6,9 @@ import { test, expect } from './fixtures.mjs'
 // one assertion also guards the IPC surface being present.
 test('boots to the empty-state diff view in a single window', async ({ app, page }) => {
   expect(app.windows()).toHaveLength(1)
-  await expect(page).toHaveTitle('Diff Bro')
+  // The window title carries the installed version (window.api.appVersion),
+  // so this also proves the sync version bridge resolved.
+  await expect(page).toHaveTitle(/^Diff Bro v\d+\.\d+\.\d+/)
   await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
   // The snippets shelf renders, which only happens once the preload-backed
   // stores have hydrated.

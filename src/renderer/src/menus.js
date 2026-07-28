@@ -163,6 +163,10 @@ export function buildMenus(store) {
       id: 'help',
       label: 'Help',
       items: [
+        // Installed version — the anchor for a future "Check for Updates…" item
+        // that opens this tag's release page. Mirrors the native menu.
+        { label: `Diff Bro v${window.api.appVersion}`, info: true },
+        { sep: true },
         { label: 'Keyboard Shortcuts', run: () => store.handleMenuAction('shortcuts') },
         { sep: true },
         { label: 'Report an Issue', run: () => window.api.reportIssue() }

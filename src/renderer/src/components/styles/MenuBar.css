@@ -59,6 +59,13 @@
   background: var(--accent);
   color: var(--text-on-accent);
 }
+/* Non-interactive label (e.g. the version line): reads as info, never highlights. */
+.item.info {
+  color: var(--text-hint);
+  font-size: var(--font-xs);
+  cursor: default;
+  pointer-events: none;
+}
 .item:hover kbd {
   /* The shortcut chip sits on the accent fill, so it shades the on-accent text
      rather than picking a color of its own. */

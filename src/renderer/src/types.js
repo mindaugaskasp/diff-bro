@@ -57,6 +57,7 @@
  * @property {number} createdAt    epoch ms
  * @property {string} language     'auto', or an explicit Monaco language id
  * @property {string} [detected]   language detected from the content on save
+ * @property {string[]} [vars]     {{placeholders}} in a claude prompt, for the fill-on-copy cue
  * @property {boolean} favorite
  * @property {string[]} tags       up to MAX_TAGS names; empty means Default
  * @property {string} iv

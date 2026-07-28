@@ -11,6 +11,7 @@ describe('languageMonogram', () => {
     expect(languageMonogram('mermaid')).toEqual({ label: 'MMD', family: MONOGRAM_FAMILIES.diagram })
     expect(languageMonogram('sql')).toEqual({ label: 'SQL', family: MONOGRAM_FAMILIES.db })
     expect(languageMonogram('json')).toEqual({ label: 'JSON', family: MONOGRAM_FAMILIES.data })
+    expect(languageMonogram('claude')).toEqual({ label: 'CL', family: MONOGRAM_FAMILIES.ai })
   })
 
   it('maps diff format ids the same way (excel, yaml)', () => {

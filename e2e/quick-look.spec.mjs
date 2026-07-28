@@ -30,8 +30,10 @@ test('summons the launcher with the seeded snippet and previews it', async ({ ap
   await seededReady(page)
   const ql = await summon(app, page)
 
+  // Filter to the Mermaid example so the test is independent of how many
+  // snippets are seeded / their order (the top result is auto-selected).
+  await ql.locator('.ql-input').fill('Mermaid')
   await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
-  // Index 0 is auto-selected, so its preview header names the same snippet.
   await expect(ql.locator('.ql-pv-name')).toHaveText(EXAMPLE)
 })
 
@@ -39,7 +41,7 @@ test('→ enters snippet-scroll mode and ← returns to the list', async ({ app,
   await seededReady(page)
   const ql = await summon(app, page)
 
-  await ql.locator('.ql-input').focus()
+  await ql.locator('.ql-input').fill('Mermaid')
   await ql.keyboard.press('ArrowRight')
 
   // The whole body flips to the parked/focused state and the footer hints swap.
@@ -55,6 +57,7 @@ test('copying names the snippet, flashes on its row, then closes', async ({ app,
   await seededReady(page)
   const ql = await summon(app, page)
 
+  await ql.locator('.ql-input').fill('Mermaid')
   await ql.locator('.ql-pv-copy').click()
 
   // The confirmation names what was taken…

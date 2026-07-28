@@ -8,6 +8,7 @@ import { looksLikeMermaid } from './mermaid'
 export const SNIPPET_LANGUAGES = [
   { id: 'auto', label: 'Auto-detect' },
   { id: 'plaintext', label: 'Plain text' },
+  { id: 'claude', label: 'Claude prompt / link' },
   { id: 'mermaid', label: 'Mermaid diagram' },
   { id: 'json', label: 'JSON' },
   { id: 'sql', label: 'SQL' },
@@ -189,6 +190,17 @@ const MARKDOWN_WEAK = [/^[-*+]\s+\S/m, /^\d+\.\s+\S/m, /^>\s+\S/m]
 
 const isJson = (t) => (t[0] === '{' || t[0] === '[') && validateJson(t).valid
 
+// A snippet that is just a claude.ai URL is a stored artifact/chat link. Only
+// the categorisation is done here; opening is gated by the main-process
+// allowlist (src/main/links.js), never by this loose match.
+const CLAUDE_LINK_RE = /^https:\/\/(www\.)?claude\.ai\/\S*$/i
+const isClaudeLink = (t) => !t.includes('\n') && CLAUDE_LINK_RE.test(t)
+
+// First claude.ai URL embedded anywhere in the text — the candidate the row's
+// "Open link" action hands to main, which re-validates it against the allowlist.
+const CLAUDE_URL_G = /https:\/\/(?:www\.)?claude\.ai\/\S*/i
+export const firstClaudeUrl = (t) => String(t ?? '').match(CLAUDE_URL_G)?.[0] ?? null
+
 // A heading or link alone is enough; the weaker list/quote signals (also common
 // in plain prose) must appear at least twice together.
 function isMarkdownProse(t) {
@@ -200,6 +212,7 @@ function isMarkdownProse(t) {
 export function detectSnippetLanguage(content) {
   const t = content.trim()
   if (!t) return 'plaintext'
+  if (isClaudeLink(t)) return 'claude'
   if (isJson(t)) return 'json'
 
   // Before markdown, so a fenced diagram isn't claimed by its ``` fence.

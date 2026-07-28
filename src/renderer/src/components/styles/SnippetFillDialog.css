@@ -1,0 +1,19 @@
+.fill-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 32%) 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+.fill-name {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dialog-note code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  color: var(--text);
+}

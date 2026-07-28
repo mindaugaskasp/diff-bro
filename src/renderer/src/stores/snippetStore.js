@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
+import { parseTemplateVars } from '../utils/templateVars'
 
 // Personal, non-expiring text library, encrypted at rest with the vault key
 // (crypto in main; the key never enters this store). Organized by TAGS —
@@ -130,6 +131,17 @@ export const EXAMPLE_SNIPPET = {
     D --> F`
 }
 
+// Seeded alongside the Mermaid example: a Claude prompt showing {{variables}} —
+// copying it asks you to fill them in first (see SnippetFillDialog).
+export const CLAUDE_EXAMPLE_SNIPPET = {
+  name: 'Example — Claude review prompt',
+  language: 'claude',
+  tags: ['example', 'prompt'],
+  content: `Review the {{language}} changes in {{file}} for correctness, edge cases, and {{concern}}.
+
+Reply with a prioritized list — most critical first — and suggest a fix for each.`
+}
+
 // Effective syntax: the explicit language, else the `detected` one recorded at
 // write time (content is encrypted, so the sidebar can't re-detect it).
 /**
@@ -138,6 +150,12 @@ export const EXAMPLE_SNIPPET = {
  */
 export const languageOf = (entry) =>
   entry?.language && entry.language !== 'auto' ? entry.language : (entry?.detected ?? 'plaintext')
+
+// Distinct {{variables}} in a claude prompt, stored as plaintext metadata so the
+// sidebar row can flag "fillable on copy" without decrypting. Empty for every
+// other language (where {{ }} is template code, not a fill placeholder).
+const promptVars = (effectiveLang, content) =>
+  effectiveLang === 'claude' ? parseTemplateVars(content) : []
 
 // The snippet's format as a tag name (added on save so it's findable); null for
 // plaintext/unknown.
@@ -166,6 +184,8 @@ export const useSnippetStore = defineStore('snippets', {
     pendingImport: false,
     // { id: null, ... } for a new snippet, or { id } to edit — null when closed.
     editingSnippet: null,
+    // { name, content } while the {{variables}} fill dialog is open (claude copy).
+    pendingFill: null,
     // { type: 'snippet' | 'tag', id, name } while a delete confirmation is open.
     pendingDelete: null,
     // Surfaced, never a reason to drop snippets (they can't be re-fetched).
@@ -239,13 +259,16 @@ export const useSnippetStore = defineStore('snippets', {
       }
       const ft = formatTagFor(language, content)
       const applied = this.registerTags(ft ? [ft, ...tags] : tags, tagColors)
+      const detected = detectSnippetLanguage(content)
+      const eff = language && language !== 'auto' ? language : detected
       this.entries.push({
         id,
         aadSalt,
         name: cleanName(name),
         createdAt,
         language: language || 'auto',
-        detected: detectSnippetLanguage(content),
+        detected,
+        vars: promptVars(eff, content),
         favorite: false,
         tags: applied,
         iv: box.iv,
@@ -272,12 +295,18 @@ export const useSnippetStore = defineStore('snippets', {
         return null
       }
       this.keyError = null
-      // Backfill `detected` for pre-field snippets — the one place their
+      // Backfill `detected`/`vars` for pre-field snippets — the one place their
       // plaintext is in hand.
+      let changed = false
       if (entry.detected === undefined) {
         entry.detected = detectSnippetLanguage(content)
-        this.persist()
+        changed = true
       }
+      if (entry.vars === undefined) {
+        entry.vars = promptVars(languageOf(entry), content)
+        changed = true
+      }
+      if (changed) this.persist()
       return content
     },
     // tags optional; the AAD is unchanged, so this is a metadata + content
@@ -297,6 +326,7 @@ export const useSnippetStore = defineStore('snippets', {
       entry.name = cleanName(name, entry.name)
       entry.detected = detectSnippetLanguage(content)
       if (language) entry.language = language
+      entry.vars = promptVars(languageOf(entry), content)
       if (tags !== undefined) entry.tags = this.registerTags(tags, tagColors)
       entry.iv = box.iv
       entry.data = box.data

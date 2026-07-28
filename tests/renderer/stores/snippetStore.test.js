@@ -119,6 +119,22 @@ describe('snippetStore — effective language', () => {
     const id = await store.add({ name: 'note', content: 'hello world', language: 'plaintext' })
     expect(store.entries.find((e) => e.id === id).tags).toHaveLength(0)
   })
+
+  it('records distinct {{variables}} on a claude prompt for the fill-on-copy cue', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({
+      name: 'p',
+      content: 'Fix {{file}} for {{issue}}, then re-check {{file}}',
+      language: 'claude'
+    })
+    expect(store.entries.find((e) => e.id === id).vars).toEqual(['file', 'issue'])
+  })
+
+  it('leaves vars empty when {{ }} is template code, not a claude prompt', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 't', content: '<b>{{ user.name }}</b>', language: 'html' })
+    expect(store.entries.find((e) => e.id === id).vars).toEqual([])
+  })
 })
 
 describe('snippetStore — tags model', () => {
