@@ -26,7 +26,8 @@
     "build:linux": "npm run build && electron-builder --linux --publish never",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "render:dmg-bg": "electron scripts/render-dmg-background.mjs"
+    "render:dmg-bg": "electron scripts/render-dmg-background.mjs",
+    "render:brand": "electron scripts/render-brand-assets.mjs"
   },
   "dependencies": {
     "chardet": "^2.0.0",

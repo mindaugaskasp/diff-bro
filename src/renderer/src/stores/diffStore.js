@@ -160,6 +160,8 @@ export const useDiffStore = defineStore('diff', {
     // entry id currently in the share dialog (null = closed)
     shareEntryId: null,
     pendingTrustedKey: null, // { key, fingerprint, label } while the name dialog is open
+    // { fingerprint, label } while the "remove this key?" confirmation is open.
+    pendingUntrust: null,
     // So the manager can highlight the just-added key; cleared when it closes.
     lastAddedTrustedFp: null,
     // Trusted-keys management dialog visibility.

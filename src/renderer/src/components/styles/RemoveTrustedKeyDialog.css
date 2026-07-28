@@ -1,0 +1,8 @@
+/* Opens on top of the trusted-keys manager, which is itself a dialog. */
+.dialog-backdrop {
+  z-index: 40;
+}
+code {
+  color: var(--text);
+  font-size: var(--font-xs);
+}

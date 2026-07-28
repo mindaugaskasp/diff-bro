@@ -14,13 +14,10 @@ async function refresh() {
 }
 onMounted(refresh)
 
-// Re-fetch after the "name this key" dialog closes.
-watch(
-  () => diff.pendingTrustedKey,
-  (v) => {
-    if (!v) refresh()
-  }
-)
+// Re-fetch after the "name this key" or "remove key?" dialog closes.
+watch([() => diff.pendingTrustedKey, () => diff.pendingUntrust], ([a, b]) => {
+  if (!a && !b) refresh()
+})
 
 function startRename(k) {
   editingFp.value = k.fingerprint
@@ -33,11 +30,6 @@ async function commitRename() {
     await window.api.renameTrusted(fp, editLabel.value)
     await refresh()
   }
-}
-async function remove(k) {
-  if (diff.lastAddedTrustedFp === k.fingerprint) diff.lastAddedTrustedFp = null
-  await window.api.removeTrusted(k.fingerprint)
-  await refresh()
 }
 function addKey() {
   // Opens the OS file picker, then the naming dialog on top of this one.
@@ -92,7 +84,9 @@ function close() {
           <button class="icon" title="Rename" @click="startRename(k)">
             <AppIcon name="edit" />
           </button>
-          <button class="icon delete" title="Remove" @click="remove(k)"><AppIcon name="x" /></button>
+          <button class="icon delete" title="Remove" @click="diff.pendingUntrust = k">
+            <AppIcon name="x" />
+          </button>
         </li>
       </ul>
     </template>

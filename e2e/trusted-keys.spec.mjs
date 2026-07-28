@@ -51,11 +51,18 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
     await expect(mgr.getByText('Teammate 08 — laptop')).toBeVisible()
     await expect(mgr.locator('li.key')).toHaveCount(N)
 
-    // Remove two different rows: the count drops, the removed ones vanish, the
-    // rest are untouched.
+    // Remove two different rows (each behind a confirmation): the count drops,
+    // the removed ones vanish, the rest are untouched.
+    const confirmRemove = () =>
+      page
+        .getByRole('dialog', { name: 'Remove trusted key?' })
+        .getByRole('button', { name: 'Remove' })
+        .click()
     await mgr.locator('li.key', { hasText: 'Teammate 03' }).getByTitle('Remove').click()
+    await confirmRemove()
     await expect(mgr.locator('li.key')).toHaveCount(N - 1)
     await mgr.locator('li.key', { hasText: 'Teammate 12' }).getByTitle('Remove').click()
+    await confirmRemove()
     await expect(mgr.locator('li.key')).toHaveCount(N - 2)
     await expect(mgr.getByText('Teammate 03', { exact: true })).toBeHidden()
     await expect(mgr.getByText('Teammate 12', { exact: true })).toBeHidden()

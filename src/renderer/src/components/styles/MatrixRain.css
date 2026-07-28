@@ -1,56 +1,20 @@
-/* A flat black CRT track for the falling glyphs — same height as the Nyan lane
-   so the chrome doesn't jump when switching themes. */
+/* CRT rain lane under the toolbar — tall enough for the cascade to actually
+   read (the 26px Nyan-lane height was too short for it). */
 .matrix-rain {
-  position: relative;
-  height: 26px;
+  display: block;
+  width: 100%;
+  height: 48px;
   flex: none;
-  overflow: hidden;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
-/* Each column is a short vertical stack of glyphs that translates downward on a
-   loop (composited transform, like the cat's glide). The mask fades the trailing
-   (upper) glyphs out so only the leading head stays bright. */
-.mr-col {
+/* Full-area background behind the empty state / diff area (no lane chrome). */
+.matrix-rain.fill {
   position: absolute;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
-  will-change: transform;
-  animation-name: mr-fall;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  -webkit-mask-image: linear-gradient(180deg, transparent, #000 70%);
-  mask-image: linear-gradient(180deg, transparent, #000 70%);
-}
-@keyframes mr-fall {
-  from {
-    transform: translateY(-120%);
-  }
-  to {
-    transform: translateY(120%);
-  }
-}
-.mr-ch {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: var(--font-sm);
-  color: var(--accent);
-  opacity: 0.75;
-}
-/* The leading glyph is brightest, with a phosphor glow. */
-.mr-ch.head {
-  color: var(--text);
-  opacity: 1;
-  text-shadow: 0 0 6px var(--accent);
-}
-
-/* Reduced motion: hold a static field of glyphs so the theme still reads as
-   "rain" without any movement. */
-@media (prefers-reduced-motion: reduce) {
-  .mr-col {
-    animation: none;
-    transform: translateY(0);
-  }
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  border-bottom: none;
 }

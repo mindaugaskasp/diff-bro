@@ -108,3 +108,15 @@ dmg:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  # Assisted-installer branding. Set explicitly rather than relying on
+  # buildResources auto-detection, for the same reason dmg.background is (a
+  # silent fallback to NSIS's stock art ships a wrong-looking installer). Both
+  # are 24-bit BMPs rendered from the SVGs in resources/ — regenerate with
+  # `npm run render:brand` (scripts/render-brand-assets.mjs), never hand-edit
+  # the .bmp (it also re-renders icon.png from logo.svg). installerHeader
+  # (150x57) rides the inner-page header; installerSidebar (164x314) is the
+  # welcome/finish panel. The installer/uninstaller and header icons default to
+  # the app icon (icon.png), which is correct — no need to restate them.
+  installerHeader: resources/installerHeader.bmp
+  installerSidebar: resources/installerSidebar.bmp
+  uninstallerSidebar: resources/installerSidebar.bmp

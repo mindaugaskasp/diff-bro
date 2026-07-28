@@ -56,7 +56,22 @@ const tokenBlocks = blocks(tokensCss)
 const themeBlocks = blocks(themesCss)
 const structuralDefaults = tokenBlocks[':root'] || {}
 
-const THEMES = ['light', 'dark', 'solar', 'neon', 'nord', 'sepia', 'nyan', 'matrix', 'contrast']
+const THEMES = [
+  'light',
+  'dark',
+  'solar',
+  'neon',
+  'nord',
+  'sepia',
+  'dim',
+  'beacon',
+  'meridian',
+  'linen',
+  'bloom',
+  'nyan',
+  'matrix',
+  'contrast'
+]
 
 // Effective token map for a theme: structural defaults (tokens.css) < the light
 // palette on the bare :root < the theme's own overrides. Light additionally
