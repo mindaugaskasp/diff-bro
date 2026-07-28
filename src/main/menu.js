@@ -117,6 +117,7 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+Shift+C',
           click: () => sendToFocused('copy-diff')
         },
+        { label: 'Apply Patch…', click: () => sendToFocused('apply-patch') },
         { type: 'separator' },
         {
           label: 'Paste Text Mode',

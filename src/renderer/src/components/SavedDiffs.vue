@@ -27,6 +27,11 @@ const TOOLS = [
     label: 'Replace',
     title: 'Find & Replace (characters, words, or regex)',
     open: () => (diff.showFindReplaceDialog = true)
+  },
+  {
+    label: 'Patch',
+    title: 'Apply a unified .patch to a base file',
+    open: () => diff.applyPatch()
   }
 ]
 let timer = null
@@ -70,7 +75,11 @@ const allTags = computed(() => {
   for (const e of vault.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
   for (const e of snippets.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
   return Object.keys(counts)
-    .map((name) => ({ name, color: snippets.colorOf(name) || 'var(--text-dim)', count: counts[name] }))
+    .map((name) => ({
+      name,
+      color: snippets.colorOf(name) || 'var(--text-dim)',
+      count: counts[name]
+    }))
     .sort((a, b) => b.count - a.count)
 })
 const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : name)
@@ -149,13 +158,7 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
     </div>
     <div class="usb-tools band">
       <span class="usb-tools-label"><AppIcon name="wrench" /> Tools</span>
-      <button
-        v-for="t in TOOLS"
-        :key="t.label"
-        class="usb-tool"
-        :title="t.title"
-        @click="t.open()"
-      >
+      <button v-for="t in TOOLS" :key="t.label" class="usb-tool" :title="t.title" @click="t.open()">
         {{ t.label }}
       </button>
     </div>

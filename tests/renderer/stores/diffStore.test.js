@@ -1111,3 +1111,36 @@ describe('diffStore', () => {
     expect(useSnippetStore().editingSnippet).toBeFalsy()
   })
 })
+
+describe('applyPatch', () => {
+  const PATCH = '--- original\n+++ changed\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n'
+  const pick = (base, patch) => async (side) =>
+    side === 'base'
+      ? { path: '/tmp/config.js', name: 'config.js', content: base }
+      : { name: 'change.patch', content: patch }
+
+  it('opens base ↔ patched from the chosen files', async () => {
+    const store = useDiffStore()
+    window.api.openFile = pick('a\nb\nc\n', PATCH)
+    await store.applyPatch()
+    expect(store.left).toEqual({ path: '/tmp/config.js', name: 'config.js', content: 'a\nb\nc\n' })
+    expect(store.right).toEqual({ path: null, name: 'config.js (patched)', content: 'a\nB\nc\n' })
+    expect(store.mode).toBe('files')
+  })
+
+  it('does nothing when the base pick is cancelled', async () => {
+    const store = useDiffStore()
+    window.api.openFile = async () => null
+    await store.applyPatch()
+    expect(store.left).toBeNull()
+    expect(store.right).toBeNull()
+  })
+
+  it('rejects a file that is not a unified diff without loading anything', async () => {
+    const store = useDiffStore()
+    window.api.openFile = pick('a\nb\nc\n', 'not a patch')
+    await store.applyPatch()
+    expect(store.left).toBeNull()
+    expect(store.right).toBeNull()
+  })
+})

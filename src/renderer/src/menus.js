@@ -35,6 +35,7 @@ export function buildMenus(store) {
           keys: `${MOD}+Shift+C`,
           run: () => store.handleMenuAction('copy-diff')
         },
+        { label: 'Apply Patch…', run: () => store.handleMenuAction('apply-patch') },
         { sep: true },
         { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() }
       ]

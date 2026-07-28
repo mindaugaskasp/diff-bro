@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { toUnifiedDiff, MAX_DIFF_LINES } from '../../../src/renderer/src/utils/unifiedDiff'
+import {
+  applyUnifiedDiff,
+  toUnifiedDiff,
+  MAX_DIFF_LINES
+} from '../../../src/renderer/src/utils/unifiedDiff'
 
 describe('toUnifiedDiff', () => {
   it('returns an empty patch for identical sides', () => {
@@ -64,5 +68,50 @@ describe('toUnifiedDiff', () => {
     // The @@ header line itself starts with '@', not counted by [ -]/[ +].
     expect(oldLines).toBe(oldCount)
     expect(newLines).toBe(newCount)
+  })
+})
+
+describe('applyUnifiedDiff', () => {
+  // The strongest guarantee: whatever the generator produces must apply back to
+  // the changed side exactly. Covers add, delete, replace, EOF-newline and
+  // multi-hunk cases in one property.
+  it.each([
+    ['one\ntwo\nthree\n', 'one\nTWO\nthree\n'],
+    ['keep\ndrop\nkeep2\n', 'keep\nkeep2\n'],
+    ['a\nb\n', 'a\nb\nc\n'],
+    ['', 'x\ny\n'],
+    ['no-eol-newline', 'no-eol-CHANGED'],
+    ['1\n2\n3\n4\n5\n6\n7\n8\n9\n', '1\n2\nX\n4\n5\n6\n7\nY\n9\n']
+  ])('round-trips the generated patch back to the changed side (%#)', (base, changed) => {
+    const { patch } = toUnifiedDiff(base, changed)
+    expect(applyUnifiedDiff(base, patch)).toEqual({ output: changed, rejected: [] })
+  })
+
+  it('preserves a trailing newline the patch does not touch', () => {
+    const base = 'a\nb\nc\n'
+    const { patch } = toUnifiedDiff(base, 'a\nB\nc\n')
+    expect(applyUnifiedDiff(base, patch).output).toBe('a\nB\nc\n')
+  })
+
+  it('rejects a hunk whose context does not match the base', () => {
+    const { patch } = toUnifiedDiff('a\nb\nc\n', 'a\nX\nc\n')
+    const res = applyUnifiedDiff('totally\ndifferent\nfile\n', patch)
+    expect(res.rejected).toEqual([0])
+    // The non-matching hunk changes nothing — the base comes back untouched.
+    expect(res.output).toBe('totally\ndifferent\nfile\n')
+  })
+
+  it('applies the good hunks and rejects only the bad ones', () => {
+    const base = 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n'
+    const { patch } = toUnifiedDiff(base, 'A\nb\nc\nd\ne\nf\ng\nh\ni\nJ\n')
+    // Break the base for the first hunk only; the last hunk still matches.
+    const res = applyUnifiedDiff('Z\nb\nc\nd\ne\nf\ng\nh\ni\nj\n', patch)
+    expect(res.rejected).toEqual([0])
+    expect(res.output.endsWith('J\n')).toBe(true)
+    expect(res.output.startsWith('Z')).toBe(true)
+  })
+
+  it('errors when the text carries no hunk', () => {
+    expect(applyUnifiedDiff('a\n', 'not a patch at all')).toEqual({ error: 'not-a-unified-diff' })
   })
 })

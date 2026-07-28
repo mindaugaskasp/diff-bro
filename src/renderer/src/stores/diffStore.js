@@ -4,7 +4,7 @@ import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
-import { toUnifiedDiff } from '../utils/unifiedDiff'
+import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
@@ -99,6 +99,7 @@ const MENU_ACTIONS = {
   swap: (s) => s.swap(),
   clear: (s) => s.clear(),
   'copy-diff': (s) => s.copyDiff(),
+  'apply-patch': (s) => s.applyPatch(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
   'toggle-theme': (s) => s.toggleTheme(),
@@ -235,6 +236,28 @@ export const useDiffStore = defineStore('diff', {
     },
     async drop(side, path) {
       this.receive(side, await window.api.readFile(path))
+    },
+    // Apply a unified .patch to a chosen base file and open base ↔ patched in
+    // the diff view, so the change is shown, not just written.
+    async applyPatch() {
+      const base = await window.api.openFile('base')
+      if (!base || base.error || typeof base.content !== 'string') return
+      const patchFile = await window.api.openFile('patch')
+      if (!patchFile || patchFile.error || typeof patchFile.content !== 'string') return
+      const { output, rejected, error } = applyUnifiedDiff(base.content, patchFile.content)
+      if (error) {
+        this.showNotice(`"${patchFile.name}" is not a unified diff.`)
+        return
+      }
+      this.left = { path: base.path, name: base.name, content: base.content }
+      this.right = { path: null, name: `${base.name} (patched)`, content: output }
+      this.mode = 'files'
+      this.diffSaved = false
+      if (rejected.length) {
+        this.showNotice(
+          `Applied — ${rejected.length} hunk(s) didn't match the base and were skipped.`
+        )
+      }
     },
     // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
     // loaded starts fresh on the left; 1 otherwise fills the first empty side.
