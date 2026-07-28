@@ -9,7 +9,7 @@ side-by-side comparison, syntax highlighting, and encrypted local history — wi
 a hard promise: it never touches the network.
 
 <p align="center">
-  <img src="docs/screenshots/diff-dark.png" width="820" alt="Diff Bro comparing two JSON files side by side, with word-level highlights and add/remove counts">
+  <img src="docs/screenshots/diff-dark.png" width="820" alt="Diff Bro comparing two JSON files side by side — word-level highlights and add/remove counts, with a sidebar of saved diffs, shared diffs, snippets, and colored tags">
 </p>
 
 ## Why Diff Bro
@@ -58,24 +58,24 @@ a hard promise: it never touches the network.
   limits, all remembered between sessions.
 
 <p align="center">
-  <img src="docs/screenshots/spreadsheet-diff.png" width="820" alt="Two Excel files compared as aligned grids: changed cells boxed, a removed row and an added row shown as striped gaps, with per-sheet change counts">
-  <br><em>Excel (.xlsx) files compared as aligned grids — changed cells boxed, added/removed rows aligned.</em>
+  <img src="docs/screenshots/spreadsheet-diff.png" width="820" alt="Two multi-sheet Excel workbooks compared as aligned grids: sheet tabs with per-sheet change counts, changed cells boxed, and an added row shown as a striped gap on the side without it">
+  <br><em>Excel (.xlsx) workbooks compared as aligned grids — sheet tabs, changed cells boxed, added/removed rows aligned.</em>
 </p>
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/screenshots/diff-light.png" alt="The same diff in the light theme">
+      <img src="docs/screenshots/diff-light.png" alt="The same JSON diff in the light theme — floating cards on a tinted ground">
       <p align="center"><em>Light and dark themes, GitHub-style rendering.</em></p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/screenshots/save-encrypted.png" alt="Save dialog: name, category, and an expiry of at most 24 hours">
+      <img src="docs/screenshots/save-encrypted.png" alt="Save dialog: name, tags, a Secure auto-expiring toggle, and an expiry of at most 24 hours">
       <p align="center"><em>Saved diffs are encrypted on-device and auto-expire.</em></p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types: Excel, JSON, XML, YAML, CSV, Markdown, and any text or code file">
+      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types (Excel, JSON, XML, YAML, CSV, Markdown, and any text or code file) beside a sidebar of saved diffs, shared diffs, snippets, and tags">
       <p align="center"><em>Drop or choose two files — Excel, JSON/XML, or any text.</em></p>
     </td>
     <td width="50%" valign="top"></td>
