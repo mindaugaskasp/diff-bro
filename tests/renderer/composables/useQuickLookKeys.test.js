@@ -133,7 +133,9 @@ describe('useQuickLookKeys — preview zone', () => {
 
   it('ArrowRight is ignored mid-query (the caret moves instead)', () => {
     const h = previewHarness()
-    const pd = h.press('ArrowRight', { target: { selectionStart: 2, selectionEnd: 2, value: 'auth' } })
+    const pd = h.press('ArrowRight', {
+      target: { selectionStart: 2, selectionEnd: 2, value: 'auth' }
+    })
     expect(h.zone.value).toBe('list')
     expect(pd).not.toHaveBeenCalled()
   })
@@ -166,5 +168,41 @@ describe('useQuickLookKeys — preview zone', () => {
     expect(h.onDismiss).not.toHaveBeenCalled()
     h.press('Escape')
     expect(h.onDismiss).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('useQuickLookKeys — onExpand (→ on a non-preview row)', () => {
+  function expandHarness(handled) {
+    const onExpand = vi.fn(() => handled)
+    const { onKeydown } = useQuickLookKeys({
+      count: () => 3,
+      selected: { value: 0 },
+      canEnterPreview: () => false,
+      onChoose: vi.fn(),
+      onDismiss: vi.fn(),
+      onExpand
+    })
+    const atEnd = { selectionStart: 4, selectionEnd: 4, value: 'base' }
+    return { onExpand, press: presser(onKeydown), atEnd }
+  }
+
+  it('hands → to onExpand and prevents default when it handles it (a command)', () => {
+    const h = expandHarness(true)
+    const pd = h.press('ArrowRight', { target: h.atEnd })
+    expect(h.onExpand).toHaveBeenCalled()
+    expect(pd).toHaveBeenCalled()
+  })
+
+  it('lets the caret move when onExpand declines (e.g. a diff row)', () => {
+    const h = expandHarness(false)
+    const pd = h.press('ArrowRight', { target: h.atEnd })
+    expect(h.onExpand).toHaveBeenCalled()
+    expect(pd).not.toHaveBeenCalled()
+  })
+
+  it('does not fire → mid-query', () => {
+    const h = expandHarness(true)
+    h.press('ArrowRight', { target: { selectionStart: 1, selectionEnd: 1, value: 'base' } })
+    expect(h.onExpand).not.toHaveBeenCalled()
   })
 })

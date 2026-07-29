@@ -16,6 +16,7 @@
  * @param {{ value: 'list' | 'preview' }} [o.zone]  focus zone (a Vue ref, or any {value})
  * @param {() => boolean} [o.canEnterPreview]       true when the active row has a scrollable preview
  * @param {(dir: 1 | -1) => void} [o.scrollPreview] scroll the preview one step
+ * @param {() => boolean} [o.onExpand]  → on a non-preview row (e.g. a command): returns true if it handled it
  * @returns {{ onKeydown: (e: KeyboardEvent) => void }}
  */
 export function useQuickLookKeys({
@@ -26,7 +27,8 @@ export function useQuickLookKeys({
   onCopy = () => {},
   zone = { value: 'list' },
   canEnterPreview = () => false,
-  scrollPreview = () => {}
+  scrollPreview = () => {},
+  onExpand = () => false
 }) {
   const clamp = (i) => Math.max(0, Math.min(i, count() - 1))
   const inPreview = () => zone.value === 'preview'
@@ -57,10 +59,16 @@ export function useQuickLookKeys({
     if (inPreview()) scrollPreview(dir)
     else selected.value = clamp(selected.value + dir)
   }
+  // → enters the snippet preview, OR hands off to onExpand (a command opens its
+  // convert panel) — same key, so navigation reads the same on every row.
   function enterPreview(e) {
-    if (inPreview() || !caretAtEnd(e) || !canEnterPreview()) return
-    e.preventDefault()
-    zone.value = 'preview'
+    if (inPreview() || !caretAtEnd(e)) return
+    if (canEnterPreview()) {
+      e.preventDefault()
+      zone.value = 'preview'
+    } else if (onExpand()) {
+      e.preventDefault()
+    }
   }
   function leavePreview(e) {
     if (!inPreview()) return

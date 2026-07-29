@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useVaultStore } from '../stores/vaultStore'
 import { rank } from '../utils/quickLook'
+import { convertItems, runConvert } from '../utils/quickLookCommands'
 import { useQuickLookKeys } from './useQuickLookKeys'
 import { useCopyFeedback } from './useCopyFeedback'
 
@@ -43,7 +44,10 @@ export function useQuickLook() {
       name: e.name,
       tags: e.tags ?? [],
       lang: extOf(e.name)
-    }))
+    })),
+    // Convert tools run inline (below); they rank next to snippets/diffs so a
+    // query like "base64" surfaces them.
+    ...convertItems()
   ])
 
   const results = computed(() => rank(query.value, items.value))
@@ -76,9 +80,27 @@ export function useQuickLook() {
     }
   })
 
+  // A convert tool opens the inline panel; a snippet/diff opens in the main
+  // window. Convert never raises the app — the whole point of doing it here.
+  const convertTool = ref(null) // { id, name } | null
+  const convertInput = ref('')
+  const convertResult = computed(() =>
+    convertTool.value ? runConvert(convertTool.value.id, convertInput.value) : { output: '' }
+  )
+  function exitConvert() {
+    convertTool.value = null
+    convertInput.value = ''
+  }
+
   function choose(i) {
     const it = results.value[i]
-    if (it) window.api.quickLookOpen({ kind: it.kind, id: it.id })
+    if (!it) return
+    if (it.kind === 'command') {
+      convertTool.value = { id: it.id, name: it.name }
+      convertInput.value = ''
+      return
+    }
+    window.api.quickLookOpen({ kind: it.kind, id: it.id })
   }
 
   // Fade the card out (the window is transparent) before the OS hide, so the
@@ -116,6 +138,16 @@ export function useQuickLook() {
     setTimeout(animateOut, HIDE_AFTER_COPY_MS)
   }
 
+  async function copyConvert() {
+    const out = convertResult.value.output
+    if (!out) return
+    const res = await window.api.copyText(out)
+    if (!res?.ok) return
+    copiedName.value = convertTool.value.name
+    flash()
+    setTimeout(animateOut, HIDE_AFTER_COPY_MS)
+  }
+
   // Separate Pinia instance from the main window — re-read both libraries on
   // each summon to reflect changes made there.
   function refresh() {
@@ -128,6 +160,8 @@ export function useQuickLook() {
     copiedName.value = ''
     copiedIndex.value = -1
     closing.value = false
+    convertTool.value = null
+    convertInput.value = ''
   }
 
   const { onKeydown } = useQuickLookKeys({
@@ -138,7 +172,13 @@ export function useQuickLook() {
     scrollPreview,
     onChoose: choose,
     onDismiss: dismiss,
-    onCopy: copy
+    onCopy: copy,
+    // → on a command opens its convert panel, mirroring → into a snippet preview.
+    onExpand: () => {
+      if (current.value?.kind !== 'command') return false
+      choose(selected.value)
+      return true
+    }
   })
 
   return {
@@ -158,6 +198,11 @@ export function useQuickLook() {
     closing,
     dismiss,
     refresh,
-    onKeydown
+    onKeydown,
+    convertTool,
+    convertInput,
+    convertResult,
+    exitConvert,
+    copyConvert
   }
 }
