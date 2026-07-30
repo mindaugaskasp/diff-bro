@@ -227,3 +227,43 @@ describe('useQuickLookKeys — onExpand (→ on a non-preview row)', () => {
     expect(h.onExpand).not.toHaveBeenCalled()
   })
 })
+
+describe('useQuickLookKeys — onCollapse (← / Escape in the list)', () => {
+  function collapseHarness(handled) {
+    const onCollapse = vi.fn(() => handled)
+    const onDismiss = vi.fn()
+    const { onKeydown } = useQuickLookKeys({
+      count: () => 3,
+      selected: { value: 0 },
+      onChoose: vi.fn(),
+      onDismiss,
+      onCollapse
+    })
+    return { onCollapse, onDismiss, press: presser(onKeydown) }
+  }
+
+  it('ArrowLeft in the list collapses an open section and prevents default', () => {
+    const h = collapseHarness(true)
+    const pd = h.press('ArrowLeft')
+    expect(h.onCollapse).toHaveBeenCalled()
+    expect(pd).toHaveBeenCalled()
+  })
+
+  it('ArrowLeft is inert when there is nothing to collapse', () => {
+    const h = collapseHarness(false)
+    expect(h.press('ArrowLeft')).not.toHaveBeenCalled()
+  })
+
+  it('Escape collapses the section before dismissing', () => {
+    const h = collapseHarness(true)
+    h.press('Escape')
+    expect(h.onCollapse).toHaveBeenCalled()
+    expect(h.onDismiss).not.toHaveBeenCalled()
+  })
+
+  it('Escape dismisses when there is nothing to collapse', () => {
+    const h = collapseHarness(false)
+    h.press('Escape')
+    expect(h.onDismiss).toHaveBeenCalledTimes(1)
+  })
+})

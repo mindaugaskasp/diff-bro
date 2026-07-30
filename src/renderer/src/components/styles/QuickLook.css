@@ -147,12 +147,29 @@
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
-/* Seam between the snippet group and the tool group: a horizontal divider so the
-   two kinds read as separate sections while staying one keyboard list. */
+/* Seam above the collapsible Tools header: a horizontal divider so it reads as a
+   separate section while staying one keyboard list. */
 .ql-res.group-start {
   margin-top: var(--space-2);
   border-top: 1px solid var(--border);
   padding-top: calc(var(--space-2) + var(--space-1));
+}
+/* The Tools header: a plain chevron (not a chip) and an emphasized label; its
+   tool rows indent beneath so the hierarchy reads at a glance. */
+.monogram.sec {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+}
+.monogram.sec .app-icon {
+  width: 16px;
+  height: 16px;
+}
+.ql-res.section .ql-name {
+  font-weight: 600;
+}
+.ql-res.sub {
+  padding-left: calc(var(--space-2) + var(--space-4));
 }
 .ql-name {
   font-size: var(--font-md);

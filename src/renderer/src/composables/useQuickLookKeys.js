@@ -18,6 +18,7 @@
  * @param {() => boolean} [o.canEnterPreview]       true when the active row has a scrollable preview
  * @param {(dir: 1 | -1) => void} [o.movePreview]  step the active preview line one row
  * @param {() => boolean} [o.onExpand]  → on a non-preview row (e.g. a command): returns true if it handled it
+ * @param {() => boolean} [o.onCollapse]  ← / Escape in the list (e.g. close an expanded section): true if it handled it
  * @returns {{ onKeydown: (e: KeyboardEvent) => void }}
  */
 export function useQuickLookKeys({
@@ -30,7 +31,8 @@ export function useQuickLookKeys({
   zone = { value: 'list' },
   canEnterPreview = () => false,
   movePreview = () => {},
-  onExpand = () => false
+  onExpand = () => false,
+  onCollapse = () => false
 }) {
   const clamp = (i) => Math.max(0, Math.min(i, count() - 1))
   const inPreview = () => zone.value === 'preview'
@@ -74,18 +76,24 @@ export function useQuickLookKeys({
       e.preventDefault()
     }
   }
-  function leavePreview(e) {
-    if (!inPreview()) return
-    e.preventDefault()
-    zone.value = 'list'
+  // ← leaves the preview, else collapses an expanded section (onCollapse).
+  function leaveOrCollapse(e) {
+    if (inPreview()) {
+      e.preventDefault()
+      zone.value = 'list'
+    } else if (onCollapse()) {
+      e.preventDefault()
+    }
   }
   function commit(e) {
     e.preventDefault()
     if (count() > 0) onChoose(selected.value)
   }
+  // Escape backs out one level at a time: preview → list → collapse section → dismiss.
   function back(e) {
     e.preventDefault()
     if (inPreview()) zone.value = 'list'
+    else if (onCollapse()) return
     else onDismiss()
   }
 
@@ -93,7 +101,7 @@ export function useQuickLookKeys({
     ArrowDown: (e) => moveOrScroll(e, 1),
     ArrowUp: (e) => moveOrScroll(e, -1),
     ArrowRight: enterPreview,
-    ArrowLeft: leavePreview,
+    ArrowLeft: leaveOrCollapse,
     Enter: commit,
     Escape: back
   }

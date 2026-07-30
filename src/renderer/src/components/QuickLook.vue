@@ -17,6 +17,7 @@ const {
   selected,
   results,
   current,
+  toolsOpen,
   snippetLines,
   lineClass,
   hoverLine,
@@ -42,25 +43,34 @@ const store = useSnippetStore()
 const input = ref(null)
 
 // Row helpers — precomputed so the template rows stay one line each.
-const monoStyle = (it) => ({ '--fam': it.kind === 'command' ? '' : mono(it.lang).family })
-const monoText = (it) => (it.kind === 'command' ? '' : mono(it.lang).label)
+const monoStyle = (it) => ({ '--fam': it.kind === 'snippet' ? mono(it.lang).family : '' })
+const monoText = (it) => (it.kind === 'snippet' ? mono(it.lang).label : '')
 const tagStyle = (it) => ({ background: store.colorOf(it.tags?.[0]) })
-// The first tool after the snippets gets .group-start (the CSS draws the seam);
-// selection/copied state stays index-based so keyboard nav is one flat list.
-const isToolStart = (i) =>
-  results.value[i]?.kind === 'command' && results.value[i - 1]?.kind === 'snippet'
-const resClass = (i) => ({
-  sel: i === selected.value,
-  copied: copied.value && i === copiedIndex.value,
-  'group-start': isToolStart(i)
-})
+const rowIcon = () => (toolsOpen.value ? 'chevron-down' : 'chevron-right')
+const kindLabel = (it) =>
+  it.kind === 'command' ? 'convert' : it.kind === 'tools' ? `${it.count} tools` : it.kind
+// The Tools header carries the seam divider (above it) and its command rows
+// indent beneath; selection stays index-based so nav is one flat list.
+const isSectionStart = (i) =>
+  results.value[i]?.kind === 'tools' && results.value[i - 1]?.kind === 'snippet'
+const resClass = (i) => {
+  const it = results.value[i]
+  return {
+    sel: i === selected.value,
+    copied: copied.value && i === copiedIndex.value,
+    'group-start': isSectionStart(i),
+    section: it?.kind === 'tools',
+    sub: it?.kind === 'command'
+  }
+}
 
-// Per-kind preview action + lock note — a snippet opens in the editor, a command converts.
+// Per-kind preview action + lock note — snippet opens, command/tools stay local.
 const ACTIONS = {
   snippet: { icon: 'edit', label: 'Open in editor' },
-  command: { icon: 'wrench', label: 'Convert' }
+  command: { icon: 'wrench', label: 'Convert' },
+  tools: { icon: 'wrench', label: 'Browse tools' }
 }
-const lockLabel = (it) => (it.kind === 'command' ? 'runs on this machine' : 'decrypted on demand')
+const lockLabel = (it) => (it.kind === 'snippet' ? 'decrypted on demand' : 'runs on this machine')
 
 function focusInput() {
   input.value?.focus()
@@ -120,10 +130,11 @@ watch(convertTool, (tool) => {
             @dblclick="choose(i)"
           >
             <span v-if="it.kind === 'command'" class="monogram cmd"><AppIcon name="wrench" /></span>
+            <span v-else-if="it.count" class="monogram sec"><AppIcon :name="rowIcon()" /></span>
             <span v-else class="monogram" :style="monoStyle(it)">{{ monoText(it) }}</span>
             <span class="ql-name">{{ it.name }}</span>
             <span v-if="it.tags?.[0]" class="ql-tag" :style="tagStyle(it)">{{ it.tags[0] }}</span>
-            <span class="ql-kind">{{ it.kind === 'command' ? 'convert' : it.kind }}</span>
+            <span class="ql-kind">{{ kindLabel(it) }}</span>
             <Transition name="ql-copychip">
               <span v-if="copied && i === copiedIndex" class="ql-res-copied" aria-live="polite">
                 <AppIcon name="check" /> Copied
@@ -170,7 +181,10 @@ watch(convertTool, (tool) => {
               <div v-for="(line, i) in snippetLines" :key="i" :class="lineClass(i)">{{ line }}</div>
             </div>
             <div v-else class="ql-pv-msg">
-              <p>Press <strong>Enter</strong> to convert with this tool.</p>
+              <p v-if="current.kind === 'tools'">
+                Press <strong>→</strong> to browse the {{ current.count }} tools.
+              </p>
+              <p v-else>Press <strong>Enter</strong> to convert with this tool.</p>
             </div>
 
             <div class="ql-pv-foot band">

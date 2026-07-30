@@ -38,19 +38,48 @@ export function useQuickLook() {
       })
   )
 
-  // Snippets and the inline convert tools rank within their own group, snippets
-  // first, so the list keeps a stable "snippets · tools" split (a divider marks
-  // the seam) while a query still surfaces the best match in each.
-  const results = computed(() => [
-    ...rank(query.value, snippetItems.value),
-    ...rank(query.value, convertItems())
-  ])
-  const current = computed(() => results.value[selected.value] ?? null)
-
-  watch(results, () => {
-    selected.value = 0
-    zone.value = 'list'
+  const toolItems = computed(() => rank(query.value, convertItems()))
+  // The convert tools live under a single collapsible "Tools" row so browsing
+  // snippets stays compact; a query that matches a tool opens the section so
+  // search still surfaces them.
+  const toolsOpen = ref(false)
+  const results = computed(() => {
+    const snips = rank(query.value, snippetItems.value)
+    const tools = toolItems.value
+    if (!tools.length) return snips
+    const header = { kind: 'tools', id: '__tools__', name: 'Tools', count: tools.length }
+    return toolsOpen.value ? [...snips, header, ...tools] : [...snips, header]
   })
+  const current = computed(() => results.value[selected.value] ?? null)
+  const toolsIndex = () => results.value.findIndex((r) => r.kind === 'tools')
+
+  watch(query, () => {
+    zone.value = 'list'
+    const open = query.value.trim() !== '' && toolItems.value.length > 0
+    toolsOpen.value = open
+    // A tool-matching search lands on the first tool (past the header); browsing
+    // starts at the top of the list.
+    selected.value = open ? rank(query.value, snippetItems.value).length + 1 : 0
+  })
+  // Collapsing shrinks the list — clamp the selection, but never yank it to the
+  // top the way a fresh query does.
+  watch(results, () => {
+    if (selected.value >= results.value.length) {
+      selected.value = Math.max(0, results.value.length - 1)
+    }
+  })
+
+  function toggleTools() {
+    toolsOpen.value = !toolsOpen.value
+    if (!toolsOpen.value) selected.value = toolsIndex()
+  }
+  // ← / Escape from the expanded section closes it and parks on the header.
+  function collapseTools() {
+    if (!toolsOpen.value) return false
+    toolsOpen.value = false
+    selected.value = toolsIndex()
+    return true
+  }
 
   const canEnterPreview = () => current.value?.kind === 'snippet' && !!previewEl.value
 
@@ -81,6 +110,7 @@ export function useQuickLook() {
   function choose(i) {
     const it = results.value[i]
     if (!it) return
+    if (it.kind === 'tools') return toggleTools()
     if (it.kind === 'command') {
       convertTool.value = { id: it.id, name: it.name, panel: it.panel }
       convertInput.value = ''
@@ -157,6 +187,7 @@ export function useQuickLook() {
     selected.value = 0
     snippetText.value = ''
     zone.value = 'list'
+    toolsOpen.value = false
     preview.reset()
     copiedName.value = ''
     copiedIndex.value = -1
@@ -178,8 +209,10 @@ export function useQuickLook() {
       ]
     }
     const hints = [['↑↓', 'navigate']]
-    if (current.value?.kind === 'snippet') hints.push(['→', 'scroll preview'])
-    else if (current.value?.kind === 'command') hints.push(['→', 'convert'])
+    const kind = current.value?.kind
+    if (kind === 'snippet') hints.push(['→', 'scroll preview'])
+    else if (kind === 'command') hints.push(['→', 'convert'])
+    else if (kind === 'tools') hints.push(['→', toolsOpen.value ? 'collapse' : 'browse tools'])
     hints.push(['↵', 'open'], [copyKey, 'copy'], ['Esc', 'close'])
     return hints
   })
@@ -194,11 +227,21 @@ export function useQuickLook() {
     onDismiss: dismiss,
     onCopy: copy,
     onCopyLine: preview.copyLine,
-    // → on a command opens its convert panel, mirroring → into a snippet preview.
+    onCollapse: collapseTools,
+    // → drills in: a command opens its convert panel, the Tools row expands and
+    // moves onto the first tool — mirroring → into a snippet preview.
     onExpand: () => {
-      if (current.value?.kind !== 'command') return false
-      choose(selected.value)
-      return true
+      const it = current.value
+      if (it?.kind === 'tools') {
+        toolsOpen.value = true
+        selected.value += 1
+        return true
+      }
+      if (it?.kind === 'command') {
+        choose(selected.value)
+        return true
+      }
+      return false
     }
   })
 
@@ -207,6 +250,7 @@ export function useQuickLook() {
     selected,
     results,
     current,
+    toolsOpen,
     snippetLines: preview.snippetLines,
     lineClass: preview.lineClass,
     hoverLine: preview.hoverLine,
