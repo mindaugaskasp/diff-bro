@@ -16,7 +16,7 @@ export const CONVERT_TOOLS = [
   { id: 'url', name: 'URL', panel: 'url' },
   { id: 'html', name: 'HTML Entities', convert: T.html.format },
   { id: 'epoch', name: 'Epoch / Date', panel: 'epoch' },
-  { id: 'json', name: 'JSON Format', convert: T.json.format },
+  { id: 'json', name: 'JSON', panel: 'json' },
   { id: 'uuid', name: 'UUID', panel: 'uuid' }
 ]
 

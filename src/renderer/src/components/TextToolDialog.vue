@@ -13,6 +13,7 @@ import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
 import ToolUrl from './ToolUrl.vue'
 import ToolJwt from './ToolJwt.vue'
+import ToolJson from './ToolJson.vue'
 
 const props = defineProps({
   // Key into TEXT_TOOLS — which tool this dialog is showing.
@@ -74,6 +75,7 @@ function close() {
     <ToolUuid v-else-if="tool.panel === 'uuid'" />
     <ToolUrl v-else-if="tool.panel === 'url'" />
     <ToolJwt v-else-if="tool.panel === 'jwt'" />
+    <ToolJson v-else-if="tool.panel === 'json'" />
     <template v-else>
       <div
         ref="container"

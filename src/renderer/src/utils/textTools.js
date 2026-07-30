@@ -18,8 +18,10 @@ import {
 // an entry here + a menu accelerator, never another dialog component.
 export const TEXT_TOOLS = {
   json: {
-    title: 'JSON Format / Validate',
+    title: 'JSON',
     language: 'json',
+    // A rich panel (ToolJson.vue): pretty/minify/sort, JSONPath filter, tree.
+    panel: 'json',
     validate: validateJson,
     format: formatJson,
     validLabel: 'Valid JSON',

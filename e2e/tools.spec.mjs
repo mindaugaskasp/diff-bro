@@ -32,32 +32,6 @@ test('invalid Base64 is reported, not silently wrong', async ({ page }) => {
   await expect(dialog.locator('.error')).toContainText('Not valid Base64')
 })
 
-test('JSON tool validates input and only formats when valid', async ({ page }) => {
-  await openMenu(page, 'Tools', 'JSON', 'Format / Validate')
-  const dialog = page.getByRole('dialog', { name: /JSON/ })
-  await expect(dialog).toBeVisible()
-  const editor = dialog.locator('.editor')
-
-  // Monaco auto-closes brackets, so we type only the opener + contents. A
-  // trailing comma makes it invalid → status invalid, Format disabled.
-  await editor.click()
-  await page.keyboard.type('[1,2,')
-  await expect(dialog.locator('.status.invalid')).toBeVisible()
-  await expect(dialog.getByRole('button', { name: 'Format' })).toBeDisabled()
-
-  // Replace with valid content → status flips and Format enables + pretty-prints.
-  await editor.click()
-  await page.keyboard.press('Control+A')
-  await page.keyboard.press('Delete')
-  await page.keyboard.type('[1,2')
-  await expect(dialog.locator('.status.valid')).toBeVisible()
-  const format = dialog.getByRole('button', { name: 'Format' })
-  await expect(format).toBeEnabled()
-  await format.click()
-  // A formatted array spans multiple lines.
-  await expect(dialog.locator('.view-line')).toHaveCount(4)
-})
-
 test('Encrypt then Decrypt round-trips text under a passphrase', async ({ page }) => {
   await openMenu(page, 'Tools', 'Text Encryption', 'Encrypt / Decrypt')
   const dialog = page.getByRole('dialog', { name: 'Encrypt / Decrypt Text' })

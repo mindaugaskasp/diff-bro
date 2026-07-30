@@ -192,13 +192,8 @@ export function installMenu() {
         },
         {
           label: 'JSON',
-          submenu: [
-            {
-              label: 'Format / Validate',
-              accelerator: 'CmdOrCtrl+Shift+J',
-              click: () => sendToFocused('tools-json')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+J',
+          click: () => sendToFocused('tools-json')
         },
         {
           label: 'XML',

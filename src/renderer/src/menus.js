@@ -122,16 +122,7 @@ export function buildMenus(store) {
             }
           ]
         },
-        {
-          label: 'JSON',
-          items: [
-            {
-              label: 'Format / Validate',
-              keys: `${MOD}+Shift+J`,
-              run: () => store.handleMenuAction('tools-json')
-            }
-          ]
-        },
+        { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => store.handleMenuAction('tools-json') },
         {
           label: 'XML',
           items: [

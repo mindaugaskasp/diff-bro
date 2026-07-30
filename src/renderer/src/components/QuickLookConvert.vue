@@ -11,6 +11,7 @@ import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
 import ToolUrl from './ToolUrl.vue'
 import ToolJwt from './ToolJwt.vue'
+import ToolJson from './ToolJson.vue'
 
 const props = defineProps({
   tool: { type: Object, required: true }, // { id, name, panel? }
@@ -20,7 +21,13 @@ const input = defineModel('input', { type: String, default: '' })
 const emit = defineEmits(['copy', 'back'])
 const inputEl = ref(null)
 const copyKey = isMac ? '⌘C' : 'Ctrl+C'
-const PANEL_ICONS = { epoch: 'clock', uuid: 'hash', url: 'link', jwt: 'shield-check' }
+const PANEL_ICONS = {
+  epoch: 'clock',
+  uuid: 'hash',
+  url: 'link',
+  jwt: 'shield-check',
+  json: 'braces'
+}
 const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 onMounted(() => {
   if (!props.tool.panel) nextTick(() => inputEl.value?.focus())
@@ -56,6 +63,7 @@ function onKeydown(e) {
       <ToolUuid v-else-if="tool.panel === 'uuid'" compact />
       <ToolUrl v-else-if="tool.panel === 'url'" compact />
       <ToolJwt v-else-if="tool.panel === 'jwt'" compact />
+      <ToolJson v-else-if="tool.panel === 'json'" compact />
     </div>
     <template v-else>
       <textarea

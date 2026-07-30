@@ -30,13 +30,13 @@ describe('convert tools', () => {
     expect(runConvert('base64-decode', 'not valid base64 !!!')).toEqual({ error: 'convert-failed' })
   })
 
-  it('runs the shared TEXT_TOOLS transforms (JSON)', () => {
-    expect(runConvert('json', '{"a":1}').output).toContain('"a": 1')
+  it('runs the shared TEXT_TOOLS transforms (HTML entities)', () => {
+    expect(runConvert('html', '<a> & </a>').output).toContain('&lt;a&gt;')
   })
 
-  it('treats panel tools (epoch/uuid/url/jwt) as having no text conversion', () => {
+  it('treats panel tools (epoch/uuid/url/jwt/json) as having no text conversion', () => {
     const items = convertItems()
-    for (const id of ['epoch', 'uuid', 'url', 'jwt']) {
+    for (const id of ['epoch', 'uuid', 'url', 'jwt', 'json']) {
       expect(items.find((i) => i.id === id)).toMatchObject({ panel: id })
       // The rich panel renders instead — there is nothing to text-convert.
       expect(runConvert(id, 'x')).toEqual({ output: '' })
