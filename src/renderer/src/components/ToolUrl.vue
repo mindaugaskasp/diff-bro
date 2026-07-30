@@ -66,7 +66,13 @@ async function copy(text) {
     ></textarea>
     <div class="tur-out">
       <span class="tur-out-v">{{ output || '—' }}</span>
-      <button v-if="output" class="tur-copy" aria-label="Copy result" @click="copy(output)">
+      <button
+        v-if="output"
+        class="tur-copy"
+        aria-label="Copy result"
+        title="Copy"
+        @click="copy(output)"
+      >
         <AppIcon :name="copied === output ? 'check' : 'copy'" />
       </button>
     </div>
@@ -76,7 +82,12 @@ async function copy(text) {
       <div v-for="(p, i) in params" :key="i" class="tur-row">
         <input v-model="p.key" class="tur-cell" spellcheck="false" aria-label="Parameter key" />
         <input v-model="p.value" class="tur-cell" spellcheck="false" aria-label="Parameter value" />
-        <button class="tur-x" aria-label="Remove parameter" @click="params.splice(i, 1)">
+        <button
+          class="tur-x"
+          aria-label="Remove parameter"
+          title="Remove"
+          @click="params.splice(i, 1)"
+        >
           <AppIcon name="x" />
         </button>
       </div>
@@ -85,7 +96,7 @@ async function copy(text) {
       </button>
       <div class="tur-out">
         <span class="tur-out-v">{{ rebuilt }}</span>
-        <button class="tur-copy" aria-label="Copy URL" @click="copy(rebuilt)">
+        <button class="tur-copy" aria-label="Copy URL" title="Copy" @click="copy(rebuilt)">
           <AppIcon :name="copied === rebuilt ? 'check' : 'copy'" />
         </button>
       </div>

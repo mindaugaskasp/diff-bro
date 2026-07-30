@@ -131,7 +131,7 @@ async function copy() {
         <span
           >Result <span class="tln-count">· {{ summary }}</span></span
         >
-        <button class="tln-copy" aria-label="Copy" @click="copy">
+        <button class="tln-copy" aria-label="Copy" title="Copy" @click="copy">
           <AppIcon :name="copied ? 'check' : 'copy'" />
         </button>
       </div>

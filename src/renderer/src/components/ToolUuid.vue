@@ -142,7 +142,7 @@ async function copy() {
 
     <div class="tu-out">
       <span class="tu-mono tu-out-v">{{ display || '—' }}</span>
-      <button v-if="display" class="tu-copy" aria-label="Copy" @click="copy">
+      <button v-if="display" class="tu-copy" aria-label="Copy" title="Copy" @click="copy">
         <AppIcon :name="copied ? 'check' : 'copy'" />
       </button>
     </div>

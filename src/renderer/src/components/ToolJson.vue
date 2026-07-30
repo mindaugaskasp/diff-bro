@@ -87,7 +87,7 @@ async function copy(text) {
                 · {{ filtered.count }} match{{ filtered.count === 1 ? '' : 'es' }}
               </span>
             </span>
-            <button class="tjs-copy" aria-label="Copy" @click="copy(shaped)">
+            <button class="tjs-copy" aria-label="Copy" title="Copy" @click="copy(shaped)">
               <AppIcon :name="copied ? 'check' : 'copy'" />
             </button>
           </div>

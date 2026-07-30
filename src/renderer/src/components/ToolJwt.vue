@@ -63,7 +63,7 @@ async function copy(text) {
       <div class="tj-block">
         <div class="tj-bh">
           Header
-          <button class="tj-copy" aria-label="Copy header" @click="copy(headerJson)">
+          <button class="tj-copy" aria-label="Copy header" title="Copy" @click="copy(headerJson)">
             <AppIcon :name="copied === headerJson ? 'check' : 'copy'" />
           </button>
         </div>
@@ -73,7 +73,7 @@ async function copy(text) {
       <div class="tj-block">
         <div class="tj-bh">
           Payload
-          <button class="tj-copy" aria-label="Copy payload" @click="copy(payloadJson)">
+          <button class="tj-copy" aria-label="Copy payload" title="Copy" @click="copy(payloadJson)">
             <AppIcon :name="copied === payloadJson ? 'check' : 'copy'" />
           </button>
         </div>

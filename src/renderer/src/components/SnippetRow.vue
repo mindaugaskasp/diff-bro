@@ -53,6 +53,10 @@ async function openLink() {
   if (url) await window.api.openClaudeLink(url)
   else diff.showNotice('No Claude link in this snippet.')
 }
+
+// Hovering the name previews the snippet — not the whole row, which made the
+// card appear while you were only reaching for the row's buttons.
+defineEmits(['hoverTitle', 'leaveTitle'])
 </script>
 
 <template>
@@ -70,7 +74,12 @@ async function openLink() {
     </button>
     <button class="entry" @click="store.editingSnippet = { id: entry.id }">
       <span class="monogram" :style="{ '--fam': mono.family }" :title="lang">{{ mono.label }}</span>
-      <span class="nm">{{ entry.name }}</span>
+      <span
+        class="nm"
+        @mouseenter="$emit('hoverTitle', $event)"
+        @mouseleave="$emit('leaveTitle')"
+        >{{ entry.name }}</span
+      >
       <span
         v-if="entry.vars?.length"
         class="varchip"

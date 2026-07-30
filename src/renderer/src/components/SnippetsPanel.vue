@@ -57,19 +57,21 @@ function newSnippet() {
       @toggle="sectionOpen = !sectionOpen"
     >
       <template #actions>
-        <button class="btn btn-icon" title="New snippet" @click.stop="newSnippet">
+        <button class="btn btn-icon" title="New" aria-label="New snippet" @click.stop="newSnippet">
           <AppIcon name="plus" />
         </button>
         <button
           class="btn btn-icon"
-          title="Export all snippets to a passphrase-protected file"
+          title="Export"
+          aria-label="Export all snippets to a passphrase-protected file"
           @click.stop="store.pendingExport = { all: true }"
         >
           <AppIcon name="arrow-up" />
         </button>
         <button
           class="btn btn-icon"
-          title="Import snippets from a file"
+          title="Import"
+          aria-label="Import snippets from a file"
           @click.stop="store.pendingImport = true"
         >
           <AppIcon name="arrow-down" />
@@ -87,8 +89,8 @@ function newSnippet() {
           :key="entry.id"
           :entry="entry"
           :favorite="entry.favorite"
-          @mouseenter="onRowEnter(entry, $event)"
-          @mouseleave="onRowLeave"
+          @hover-title="onRowEnter(entry, $event)"
+          @leave-title="onRowLeave"
         />
       </ul>
     </div>

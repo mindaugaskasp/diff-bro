@@ -5,6 +5,7 @@ import chardet from 'chardet'
 import iconv from 'iconv-lite'
 import { readSettings } from './appData'
 import { readXlsx } from './xlsx/index'
+import { filtersFor } from './fileFilters'
 
 // Mirrors the renderer's FILE_TYPE_LIMITS; main enforces independently so a
 // hand-edited settings.json can't wedge the app. Keep the numbers in sync.
@@ -122,11 +123,12 @@ async function readFileForRenderer(win, filePath, opts = {}) {
 // File access lives in the main process only — the renderer never touches fs.
 export function registerFileIpc() {
   // Open dialog + read file. side: 'left' | 'right' (dialog title only)
-  ipcMain.handle('file:open', async (e, side) => {
+  ipcMain.handle('file:open', async (e, side, format) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     const { canceled, filePaths } = await dialog.showOpenDialog(win, {
       title: `Select ${side} file`,
-      properties: ['openFile']
+      properties: ['openFile'],
+      filters: filtersFor(format)
     })
     if (canceled || !filePaths.length) return null
     allow(filePaths[0]) // the user picked it — now it (and quiet re-reads) may be read

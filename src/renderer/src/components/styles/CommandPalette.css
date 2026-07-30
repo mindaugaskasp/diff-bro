@@ -124,9 +124,10 @@
   position: relative;
   margin-top: calc(var(--space-4) + var(--space-3));
 }
-/* Still needs room for the label above it, just less than a mid-list group. */
+/* Still needs a label's height above it — less than a mid-list group, but not
+   less than the label, which clipped "Recent" against the search bar. */
 .cp-row[data-section]:first-child {
-  margin-top: var(--space-3);
+  margin-top: calc(var(--space-4) + var(--space-1));
 }
 .cp-row[data-section]::before {
   content: attr(data-section);

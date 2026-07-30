@@ -242,8 +242,12 @@ export const useDiffStore = defineStore('diff', {
     }
   },
   actions: {
-    async pick(side) {
-      const file = await window.api.openFile(side)
+    // The empty-state format tiles pick into the first free side.
+    pickFormat(format) {
+      return this.pick(this.left ? 'right' : 'left', format)
+    },
+    async pick(side, format) {
+      const file = await window.api.openFile(side, format)
       if (!file) return // dialog cancelled
       // Replacing a side of a complete, unsaved comparison would discard it —
       // ask first. A saved comparison is safe to overwrite, so it skips the

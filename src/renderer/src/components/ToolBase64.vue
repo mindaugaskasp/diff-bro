@@ -66,7 +66,7 @@ async function copy() {
         <span
           >Result <span v-if="input" class="tb-count">· {{ summary }}</span></span
         >
-        <button class="tb-copy" aria-label="Copy" @click="copy">
+        <button class="tb-copy" aria-label="Copy" title="Copy" @click="copy">
           <AppIcon :name="copied ? 'check' : 'copy'" />
         </button>
       </div>
