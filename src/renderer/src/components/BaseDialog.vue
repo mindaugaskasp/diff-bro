@@ -20,9 +20,17 @@ const props = defineProps({
   closeOnBackdrop: { type: Boolean, default: false },
   // Drag-resizable from any edge/corner (size from useDialogResize).
   resizable: { type: Boolean, default: false },
-  minSize: { type: Object, default: () => ({ width: 320, height: 240 }), validator: shaped('width', 'height') },
+  minSize: {
+    type: Object,
+    default: () => ({ width: 320, height: 240 }),
+    validator: shaped('width', 'height')
+  },
   /** @type {import('../types').DialogSize} */
-  initialSize: { type: Object, default: null, validator: (v) => v === null || shaped('width', 'height')(v) }
+  initialSize: {
+    type: Object,
+    default: null,
+    validator: (v) => v === null || shaped('width', 'height')(v)
+  }
 })
 const emit = defineEmits(['close', 'resize'])
 

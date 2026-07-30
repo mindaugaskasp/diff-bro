@@ -48,8 +48,8 @@
 .jt-val.str {
   color: var(--success-text);
 }
-/* --favorite, not --warning-text: the latter is the ink for text ON a warning
-   fill, so it is near-black on every dark theme and vanishes against a panel. */
+/* --favorite, not --warning-text: that one is ink for a warning FILL, so it is
+   near-black on every dark theme. */
 .jt-val.num,
 .jt-val.bool {
   color: var(--favorite);

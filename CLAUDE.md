@@ -104,8 +104,10 @@ Monaco.
 - Every modal is a `BaseDialog` (backdrop, header, `#actions` slot, Escape,
   focus trap). Its panel is BaseDialog's, so a dialog sizes itself with the
   `width` prop — scoped CSS cannot reach into a child. `:escape-closes="false"`
-  for dialogs holding unsaved input. New format/validate tools are a `TEXT_TOOLS`
-  entry (`utils/textTools.js`), never another dialog component.
+  for dialogs holding unsaved input. A new tool is an entry in the registry
+  (`utils/tools.js`), a `Tool*.vue` panel, and a case in `TextToolDialog` /
+  `QuickLookConvert` — never another dialog component. Every tool is a panel:
+  there is no text-buffer/validate path left to fall back on.
 - Objects that cross a boundary (props, composable returns) get a typedef in
   `src/renderer/src/types.js` and a JSDoc annotation; a prop typed `Object`
   documents nothing, so pair it with a `shaped(...)` validator from

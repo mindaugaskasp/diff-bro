@@ -1,7 +1,4 @@
 <script setup>
-// The Base64 tool panel — hosted in the Tools dialog and the Quick Look launcher.
-// Explicit Encode/Decode toggle with live output, URL-safe alphabet, MIME
-// line-wrap, and byte/char counts. Pure logic in utils/base64.
 import { computed, ref } from 'vue'
 import { base64Decode, base64Encode, byteLength } from '../utils/base64'
 import SegmentedControl from './SegmentedControl.vue'
@@ -66,7 +63,9 @@ async function copy() {
     <p v-if="result.error" class="tb-err">{{ result.error }}</p>
     <div v-else class="tb-block">
       <div class="tb-bh">
-        <span>Result <span v-if="input" class="tb-count">· {{ summary }}</span></span>
+        <span
+          >Result <span v-if="input" class="tb-count">· {{ summary }}</span></span
+        >
         <button class="tb-copy" aria-label="Copy" @click="copy">
           <AppIcon :name="copied ? 'check' : 'copy'" />
         </button>

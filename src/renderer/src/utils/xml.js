@@ -1,8 +1,6 @@
-// Pure XML shaping for the XML tool: a plain tree for the viewer, a
-// pretty/minify toggle, and an XPath-subset filter. Parsing goes through
-// DOMParser in 'text/xml' mode, which builds a tree without executing anything
-// and does not resolve external entities — the document is never inserted into
-// the page, only read into plain objects the template renders as text.
+// DOMParser in 'text/xml' executes nothing and resolves no external entities,
+// and the document is never inserted into the page — only read into plain
+// objects the template renders as text (CLAUDE.md #7).
 import { formatXml, validateXml } from './textFormats'
 
 /**
@@ -34,8 +32,7 @@ function toNode(el) {
  */
 export function parseXml(text) {
   if (!text.trim()) return { error: 'Nothing to parse.' }
-  // Our own validator first: it reports a real line/column, which DOMParser's
-  // parsererror text does not do portably.
+  // Ours first: DOMParser's parsererror carries no portable line/column.
   const status = validateXml(text)
   if (!status.valid) return { error: status.error, line: status.line, column: status.column }
   const doc = new DOMParser().parseFromString(text, 'text/xml')
@@ -56,10 +53,8 @@ export function stringifyXml(text, mode = 'pretty') {
   return formatXml(text)
 }
 
-// --- XPath subset: /a/b, //b, [n] (1-based), @attr, and * ------------------
-
-// Sticky so a step must start exactly where the last one ended — any gap is an
-// unsupported path rather than a silently skipped fragment.
+// Supported: /a/b, //b, [n] (1-based, as XPath counts), @attr, and *.
+// Sticky, so a gap between steps is an unsupported path, not a skipped one.
 const STEP = /(\/\/|\/)(@?[A-Za-z_*][\w:.-]*|\*)(\[(\d+)\])?/y
 
 function tokenize(path) {
@@ -113,8 +108,7 @@ export function xpath(root, path) {
   if (steps === null) return { error: 'Unsupported path.' }
   if (!steps.length) return { matches: [root] }
 
-  // A leading /name selects the root itself when it matches; //name searches
-  // from it. Both start the walk with the document element in hand.
+  // /name selects the root itself; //name searches from it.
   let current = [root]
   const [first, ...rest] = steps
   if (!first.deep) {

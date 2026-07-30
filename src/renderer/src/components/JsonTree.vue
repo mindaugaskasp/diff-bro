@@ -1,7 +1,5 @@
 <script setup>
-// One node of the JSON tree, recursive: an object/array is a collapsible row over
-// its children (itself); a primitive is a colour-coded value. Self-imported so
-// the recursion resolves under vue/no-undef-components.
+// Self-imported so the recursion resolves under vue/no-undef-components.
 import { computed, ref } from 'vue'
 import AppIcon from './AppIcon.vue'
 import JsonTree from './JsonTree.vue'

@@ -26,7 +26,11 @@ const { query, visibleFavorites, visibleListed } = useSnippetFilters()
 const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, openDiagram } =
   useSnippetPreview()
 
-watch(() => props.search, (v) => (query.value = v), { immediate: true })
+watch(
+  () => props.search,
+  (v) => (query.value = v),
+  { immediate: true }
+)
 const byTag = (list) => (props.tag ? list.filter((e) => e.tags.includes(props.tag)) : list)
 // One list, favorites first; the ★ filter keeps only them.
 const rows = computed(() => {

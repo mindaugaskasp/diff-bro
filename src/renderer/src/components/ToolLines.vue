@@ -1,8 +1,4 @@
 <script setup>
-// The Lines tool panel — hosted in the Tools dialog and the Quick Look launcher.
-// Clean up (trim / drop blanks / dedupe), sort, and turn a paste into a list:
-// per-line find/replace, wrap, and join (e.g. UUIDs → a SQL IN-clause). Pure
-// logic in utils/lines.
 import { computed, ref } from 'vue'
 import { processLines } from '../utils/lines'
 import SegmentedControl from './SegmentedControl.vue'

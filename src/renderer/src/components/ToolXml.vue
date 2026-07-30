@@ -1,7 +1,4 @@
 <script setup>
-// The XML tool panel — hosted in the Tools dialog and the Quick Look launcher.
-// Pretty / Minify, an XPath-subset filter, and a collapsible tree that reads
-// attributes on the tag. Pure logic in utils/xml.
 import { computed, ref } from 'vue'
 import { parseXml, stringifyXml, xpath } from '../utils/xml'
 import SegmentedControl from './SegmentedControl.vue'

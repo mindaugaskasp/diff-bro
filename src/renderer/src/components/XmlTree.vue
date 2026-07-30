@@ -1,8 +1,5 @@
 <script setup>
-// One node of the XML tree, recursive: an element with children is collapsible,
-// a leaf shows its text inline. Attributes read on the tag itself, the way the
-// source does. Self-imported so the recursion resolves under
-// vue/no-undef-components.
+// Self-imported so the recursion resolves under vue/no-undef-components.
 import { computed, ref } from 'vue'
 import AppIcon from './AppIcon.vue'
 import XmlTree from './XmlTree.vue'

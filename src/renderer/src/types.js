@@ -151,19 +151,6 @@
  */
 
 /**
- * A format/validate tool descriptor (see utils/textTools.js).
- * @typedef {object} TextTool
- * @property {string} title
- * @property {string} language          Monaco language id
- * @property {(text: string) => ValidationResult} validate
- * @property {(text: string) => string} format
- * @property {string} validLabel        status line when the input parses
- * @property {boolean} requiresValid    Format needs parseable input
- * @property {string} [actionLabel]     primary action label (default 'Format')
- * @property {string} [note]            caveat shown above the actions
- */
-
-/**
  * What a validator reports about a piece of text.
  * @typedef {object} ValidationResult
  * @property {boolean} valid

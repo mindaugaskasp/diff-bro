@@ -118,9 +118,8 @@
   text-transform: uppercase;
   color: var(--text-dim);
 }
-/* Section labels ride as a pseudo-element on the row that opens the group, not
-   as list items — the keyboard driver indexes rows, so an extra <li> would put
-   a dead stop in the middle of the list. */
+/* A pseudo-element, not an <li>: the keyboard driver indexes rows, so a header
+   row would be a dead stop in the middle of the list. */
 .cp-row[data-section] {
   position: relative;
   margin-top: var(--space-4);

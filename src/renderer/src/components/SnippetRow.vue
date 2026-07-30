@@ -86,12 +86,7 @@ async function openLink() {
     </button>
     <span class="when">{{ ago(entry.createdAt) }}</span>
     <span class="rowacts">
-      <button
-        v-if="isDiagram"
-        class="row-btn"
-        title="View diagram"
-        @click="viewDiagram(entry)"
-      >
+      <button v-if="isDiagram" class="row-btn" title="View diagram" @click="viewDiagram(entry)">
         <AppIcon name="diagram" />
       </button>
       <button v-if="isClaude" class="row-btn" title="Open Claude link" @click="openLink">

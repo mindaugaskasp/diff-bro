@@ -69,7 +69,12 @@ function onKeydown(e) {
       </span>
       <kbd v-else>{{ label }}</kbd>
     </button>
-    <button v-if="!isDefault" type="button" class="btn btn-ghost btn-sm" @click="apply(DEFAULT_QUICKLOOK_SHORTCUT)">
+    <button
+      v-if="!isDefault"
+      type="button"
+      class="btn btn-ghost btn-sm"
+      @click="apply(DEFAULT_QUICKLOOK_SHORTCUT)"
+    >
       Reset
     </button>
   </div>

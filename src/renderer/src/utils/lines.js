@@ -1,8 +1,3 @@
-// Pure line-list operations for the Lines tool: clean up (trim, drop blanks,
-// dedupe keep-first), sort, find/replace (text / whole-word / regex, via the
-// shared replaceText), then wrap each line and join — e.g. a paste of UUIDs into
-// a SQL IN-clause list. Vue-free so it stays unit-testable.
-//
 // Replace runs per line, which is what makes `^`/`$` anchors useful here; a
 // pattern meant to span newlines is the one thing this cannot express.
 import { replaceText } from './findReplace'

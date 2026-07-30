@@ -1,8 +1,5 @@
-// Tools offered by the Quick Look launcher. Every one renders its own rich
-// panel IN the launcher (no main process, no raising the app), so a token can be
-// decoded without leaving what you're doing. Names are the launcher's own search
-// aliases ("Epoch / Date" finds it by typing "date"); the icon and action word
-// come from the shared registry so the launcher and the app never diverge.
+// Names here are search aliases — "Epoch / Date" so typing "date" finds it;
+// icon and action word come from the registry so the two surfaces agree.
 import { toolById } from './tools'
 
 export const CONVERT_TOOLS = [
@@ -16,7 +13,6 @@ export const CONVERT_TOOLS = [
   { id: 'lines', name: 'Lines', panel: 'lines' }
 ]
 
-// The launcher ranks these next to snippets via rank(), which matches on `name`;
 // kind:'command' routes a choice into the panel instead of openInMain.
 export const convertItems = () =>
   CONVERT_TOOLS.map((t) => {

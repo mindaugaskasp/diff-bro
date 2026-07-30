@@ -5,7 +5,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 
 test('epoch → date rows render and a row copies to the clipboard', async ({ app, page }) => {
   await openMenu(page, 'Tools', 'Epoch / Date')
-  const dlg = page.getByRole('dialog', { name: 'Epoch / Date' })
+  const dlg = page.getByRole('dialog', { name: 'Epoch' })
   await expect(dlg).toBeVisible()
 
   await dlg.getByLabel('Unix timestamp').fill('0')
@@ -19,7 +19,7 @@ test('epoch → date rows render and a row copies to the clipboard', async ({ ap
 
 test('a picked date converts to its Unix timestamp', async ({ page }) => {
   await openMenu(page, 'Tools', 'Epoch / Date')
-  const dlg = page.getByRole('dialog', { name: 'Epoch / Date' })
+  const dlg = page.getByRole('dialog', { name: 'Epoch' })
   await dlg.getByLabel('Date and time, as YYYY-MM-DD HH:MM').fill('2025-07-30 13:00')
   const expected = String(Math.floor(Date.parse('2025-07-30T13:00Z') / 1000))
   await expect(dlg.locator('.te-out-v')).toHaveText(expected)

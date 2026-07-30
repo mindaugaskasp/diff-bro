@@ -39,8 +39,8 @@
 .xt-attr {
   margin-left: var(--space-2);
 }
-/* --favorite, not --warning-text: the latter is the ink for text ON a warning
-   fill, so it is near-black on every dark theme and vanishes against a panel. */
+/* --favorite, not --warning-text: that one is ink for a warning FILL, so it is
+   near-black on every dark theme. */
 .xt-key {
   color: var(--favorite);
 }

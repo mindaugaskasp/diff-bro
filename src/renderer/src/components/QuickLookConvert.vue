@@ -1,8 +1,4 @@
 <script setup>
-// Inline tool panel for the Quick Look launcher: run a tool and copy its result
-// without ever raising the app. Every tool is a rich panel (each owns its input,
-// output and copy button), so this component is just the frame around one —
-// header, the panel itself, and the offline note.
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useCaretBackOut } from '../composables/useCaretBackOut'
 import AppIcon from './AppIcon.vue'
@@ -20,8 +16,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['back'])
 
-// ← returns to the list, the mirror of the → that entered the panel — unless a
-// field still has caret to give up (see useCaretBackOut).
+// ← mirrors the → that entered the panel (see useCaretBackOut).
 const { onKeydown } = useCaretBackOut(() => emit('back'))
 
 const PANEL_ICONS = {
@@ -36,9 +31,7 @@ const PANEL_ICONS = {
 }
 const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 
-// Land the caret in the panel's first field so you can type straight away — and
-// so Escape has somewhere inside .qc to bubble from (on body it never reaches
-// the handler, leaving the panel with no keyboard way out).
+// Focus a field, or Escape fires on body and never reaches the handler here.
 const panelEl = ref(null)
 onMounted(() =>
   nextTick(() => {

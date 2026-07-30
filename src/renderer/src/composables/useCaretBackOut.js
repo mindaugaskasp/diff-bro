@@ -1,8 +1,6 @@
-// ← backs out of an inline panel to the list — but only when the caret has
-// nowhere left to go. Inside a text field with the caret past 0, or with a live
-// selection, the key belongs to the field and must pass through. Pulled out of
-// the component and unit-tested like useBackdropClose (CLAUDE.md): this guard is
-// exactly the kind that silently regresses when a component is refactored.
+// ← leaves an inline panel only when the caret has nowhere left to go, so a
+// field keeps the key while it can still use it. A composable, not inline, so
+// the guard is unit-tested — it regressed silently once already.
 
 const isTextField = (el) =>
   !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.selectionStart != null

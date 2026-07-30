@@ -196,8 +196,7 @@ export const useDiffStore = defineStore('diff', {
     showShareKeyDialog: false,
     // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
     configMode: null,
-    // Which text tool is open (a TEXT_TOOLS key, e.g. 'base64' | 'json' |
-    // 'xml'), null when none — one dialog serves all of them (utils/textTools.js).
+    // Which tool panel is open (a registry id), null when none.
     textTool: null,
     showCryptDialog: false,
     // Settings dialog (data location) visibility.

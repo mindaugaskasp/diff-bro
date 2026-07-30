@@ -1,9 +1,6 @@
 <script setup>
-// The sidebar's tools shelf: the few tools you actually reach for, plus one way
-// into all of them. Recents come from settings and are capped at five, so the
-// shelf stays one or two rows instead of the twelve-pill wall it replaced; the
-// full list lives in the command palette's tools scope (one searchable list,
-// not a second parallel UI).
+// Only the recents live here; the full list is the palette's tools scope, so
+// there is no second searchable tool UI to keep in step.
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'

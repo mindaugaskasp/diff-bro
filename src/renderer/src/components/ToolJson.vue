@@ -1,7 +1,4 @@
 <script setup>
-// The JSON tool panel — hosted in the Tools dialog and the Quick Look launcher.
-// Pretty / Minify / Sort-keys, a JSONPath-subset filter, and a syntax-colored
-// collapsible tree. Pure logic in utils/json.
 import { computed, ref } from 'vue'
 import { stringifyJson, jsonPath, sortDeep } from '../utils/json'
 import SegmentedControl from './SegmentedControl.vue'

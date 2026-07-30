@@ -98,8 +98,7 @@
   background: var(--bg-raised);
   white-space: pre;
 }
-/* Attribute matches are plain strings, so they get their own list rather than
-   being forced into the element tree. */
+/* Attribute matches are strings, not elements — the tree can't show them. */
 .txm-values {
   list-style: none;
   margin: 0;

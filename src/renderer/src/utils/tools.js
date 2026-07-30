@@ -1,8 +1,5 @@
-// The single tool registry. Every tool surface reads from this list — the
-// sidebar shelf, the command palette's tools scope, and the launcher's Tools
-// section — so a tool's icon, wording and action can never drift between them.
-// `kind` is the accurate one-word action (never a blanket "Convert"); `action`
-// is the menu action that opens it (see MENU_ACTIONS in stores/diffStore.js).
+// The one list every tool surface reads — sidebar shelf, palette tools scope,
+// launcher — so their icons and wording cannot drift apart.
 
 /**
  * @typedef {object} Tool
@@ -37,8 +34,7 @@ const BY_ID = new Map(TOOLS.map((t) => [t.id, t]))
  */
 export const toolById = (id) => BY_ID.get(id)
 
-// Stored ids are untrusted (hand-edited settings, a tool removed in an update),
-// so unknown ids are dropped rather than rendered as a blank row.
+// Stored ids outlive the registry (hand-edited settings, a removed tool).
 /**
  * @param {string[]} ids  most-recent-first
  * @returns {Tool[]}
