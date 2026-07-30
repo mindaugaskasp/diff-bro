@@ -60,7 +60,7 @@ function close() {
   <BaseDialog
     :width="isPanel ? '460px' : '560px'"
     :resizable="!isPanel"
-    close-on-backdrop
+    :close-on-backdrop="!isPanel"
     :min-size="{ width: 420, height: 360 }"
     :initial-size="settings.dialogSize('texttool')"
     :title="tool.title"
