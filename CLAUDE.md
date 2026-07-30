@@ -188,6 +188,15 @@ Monaco.
   (npm 11). npm majors disagree about optional/platform packages in the
   lock, and a lock written by one fails `npm ci` under the other; keep
   host npm and the Dockerfile's `npm install -g npm@11` in step.
+- **Install scripts are gated** (npm 11): a package may only run one if it is
+  listed in `allowScripts` in `package.json`. The approved six are all build
+  toolchain (`electron`, `esbuild`, `fsevents`, `electron-winstaller`,
+  `vue-demi`) — nothing that ships in the app. A new dependency that wants an
+  install script is part of the network audit above: read what the script does,
+  then `npm install-scripts approve <pkg>`. Never blanket-disable the gate
+  (`--ignore-scripts=false` globally, or deleting the field) — it is the one
+  check that stands between a compromised transitive package and arbitrary code
+  on the build machine.
 - `@emnapi/core` / `@emnapi/runtime` are pinned in devDependencies only to
   work around npm dropping them from the lock (they are transitive
   optionals of vitest's wasm toolchain) — do not remove them just because
