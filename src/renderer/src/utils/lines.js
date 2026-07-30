@@ -21,6 +21,7 @@ function dedupe(lines) {
 
 /**
  * @typedef {Object} LineOpts
+ * @property {string} splitBy       literal delimiter to also explode each line on (besides newlines)
  * @property {boolean} trim         trim each line
  * @property {boolean} dropBlank    drop empty lines
  * @property {boolean} dedupe       drop repeats, keeping the first
@@ -38,7 +39,8 @@ function dedupe(lines) {
  * @returns {{ output: string, count: { in: number, out: number, dupes: number } }}
  */
 export function processLines(text, o) {
-  const raw = text === '' ? [] : text.split(/\r?\n/)
+  const byLine = text === '' ? [] : text.split(/\r?\n/)
+  const raw = o.splitBy ? byLine.flatMap((l) => l.split(o.splitBy)) : byLine
   let lines = raw
   if (o.trim) lines = lines.map((l) => l.trim())
   if (o.find) lines = lines.map((l) => l.replaceAll(o.find, o.replace))

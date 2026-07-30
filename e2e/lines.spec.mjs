@@ -27,6 +27,19 @@ test('builds a SQL IN-clause list from a messy UUID paste and copies it', async 
   expect(clip).toBe('"1a2b",\n"3c4d",\n"5e6f"')
 })
 
+test('explodes a delimited line into a wrapped list', async ({ page }) => {
+  await openMenu(page, 'Tools', 'Lines')
+  const dlg = page.getByRole('dialog', { name: 'Lines' })
+  await dlg.getByLabel('Lines', { exact: true }).fill('aaad, adad, ddd, 444, 5f5, r4e')
+  await dlg.getByLabel('Split by', { exact: true }).fill(', ')
+  await dlg.getByLabel('Prefix', { exact: true }).fill('"')
+  await dlg.getByLabel('Suffix', { exact: true }).fill('"')
+  await dlg.getByLabel('Separator', { exact: true }).fill(',')
+
+  await expect(dlg.locator('.tln-text')).toHaveText('"aaad",\n"adad",\n"ddd",\n"444",\n"5f5",\n"r4e"')
+  await expect(dlg.locator('.tln-count')).toContainText('6 → 6')
+})
+
 test('natural sort orders numbered lines by value', async ({ page }) => {
   await openMenu(page, 'Tools', 'Lines')
   const dlg = page.getByRole('dialog', { name: 'Lines' })

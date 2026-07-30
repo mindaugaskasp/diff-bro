@@ -18,6 +18,7 @@ const SORT_OPTS = [
 ]
 
 const input = ref('')
+const splitBy = ref('')
 const trim = ref(false)
 const dropBlank = ref(false)
 const dedupe = ref(false)
@@ -32,6 +33,7 @@ const perLine = ref(true)
 const separator = computed(() => sepRaw.value + (perLine.value ? '\n' : ''))
 const result = computed(() =>
   processLines(input.value, {
+    splitBy: splitBy.value,
     trim: trim.value,
     dropBlank: dropBlank.value,
     dedupe: dedupe.value,
@@ -79,6 +81,14 @@ async function copy() {
 
     <div class="tln-build">
       <div class="tln-row">
+        <input
+          v-model="splitBy"
+          class="tln-field"
+          placeholder="Split input by, e.g. &quot;, &quot; (blank = lines)"
+          aria-label="Split by"
+        />
+      </div>
+      <div class="tln-row">
         <input v-model="find" class="tln-field" placeholder="Find…" aria-label="Find" />
         <input v-model="replace" class="tln-field" placeholder="Replace…" aria-label="Replace" />
       </div>
@@ -87,7 +97,7 @@ async function copy() {
         <input v-model="suffix" class="tln-field" placeholder="…suffix" aria-label="Suffix" />
       </div>
       <div class="tln-row">
-        <input v-model="sepRaw" class="tln-field" placeholder="Separator, e.g. ," aria-label="Separator" />
+        <input v-model="sepRaw" class="tln-field" placeholder="Join with, e.g. ," aria-label="Separator" />
         <label class="tln-chk"><input v-model="perLine" type="checkbox" /> One per line</label>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { processLines, SORTS } from '../../../src/renderer/src/utils/lines'
 // A complete opts object; each test overrides only what it exercises so the
 // default is the identity transform (output === input, newline-joined).
 const base = {
+  splitBy: '',
   trim: false,
   dropBlank: false,
   dedupe: false,
@@ -72,6 +73,26 @@ describe('processLines', () => {
 
   it('joins with an arbitrary separator', () => {
     expect(run('a\nb\nc', { separator: ', ' }).output).toBe('a, b, c')
+  })
+
+  it('explodes a single delimited line into separate lines', () => {
+    const { output, count } = run('a, b, c', { splitBy: ', ' })
+    expect(output).toBe('a\nb\nc')
+    expect(count).toEqual({ in: 3, out: 3, dupes: 0 })
+  })
+
+  it('splits on the delimiter and on newlines together', () => {
+    expect(run('a, b\nc, d', { splitBy: ', ' }).output).toBe('a\nb\nc\nd')
+  })
+
+  it('explodes a delimited line into a wrapped list (the requested use case)', () => {
+    const { output } = run('aaad, adad, ddd, 444, 5f5, r4e', {
+      splitBy: ', ',
+      prefix: '"',
+      suffix: '"',
+      separator: ',\n'
+    })
+    expect(output).toBe('"aaad",\n"adad",\n"ddd",\n"444",\n"5f5",\n"r4e"')
   })
 
   it('builds a SQL IN-clause list from a messy UUID paste (the headline use case)', () => {
