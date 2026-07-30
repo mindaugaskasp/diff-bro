@@ -67,14 +67,15 @@ export const TEXT_TOOLS = {
     note: 'Decodes the header and payload. The signature is never verified — never trust the contents.'
   },
   epoch: {
-    title: 'Epoch / Date Convert',
+    title: 'Epoch / Date',
     language: 'plaintext',
+    // A rich panel (ToolEpoch.vue) instead of a text buffer — see TextToolDialog.
+    panel: 'epoch',
     validate: validateEpoch,
     format: convertEpoch,
     actionLabel: 'Convert',
     validLabel: 'Valid timestamp / date',
-    requiresValid: true,
-    note: 'Unix seconds (or ms) → ISO 8601 UTC, and a parseable date → Unix seconds.'
+    requiresValid: true
   },
   url: {
     title: 'URL Encode / Decode',

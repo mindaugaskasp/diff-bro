@@ -30,10 +30,15 @@ describe('convert tools', () => {
     expect(runConvert('base64-decode', 'not valid base64 !!!')).toEqual({ error: 'convert-failed' })
   })
 
-  it('runs the shared TEXT_TOOLS transforms (JWT, epoch)', () => {
+  it('runs the shared TEXT_TOOLS transforms (JWT)', () => {
     const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.sig'
     expect(runConvert('jwt', jwt).output).toContain('"sub": "123"')
-    expect(runConvert('epoch', '0').output).toBe('1970-01-01T00:00:00.000Z')
+  })
+
+  it('treats a panel tool (epoch) as having no text conversion', () => {
+    expect(convertItems().find((i) => i.id === 'epoch')).toMatchObject({ panel: 'epoch' })
+    // The rich panel (ToolEpoch) renders instead — there is nothing to text-convert.
+    expect(runConvert('epoch', '0')).toEqual({ output: '' })
   })
 
   it('handles empty input and unknown tools without throwing', () => {

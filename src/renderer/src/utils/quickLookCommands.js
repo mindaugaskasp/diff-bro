@@ -7,23 +7,26 @@ import { TEXT_TOOLS } from './textTools'
 
 const T = TEXT_TOOLS
 
+// A `panel` tool renders its own rich body (ToolEpoch.vue) in the launcher
+// instead of the text→text input/output; it has no `convert`.
 export const CONVERT_TOOLS = [
   { id: 'base64-encode', name: 'Base64 Encode', convert: base64Encode },
   { id: 'base64-decode', name: 'Base64 Decode', convert: base64Decode },
   { id: 'jwt', name: 'JWT Decode', convert: T.jwt.format },
   { id: 'url', name: 'URL Encode / Decode', convert: T.url.format },
   { id: 'html', name: 'HTML Entities', convert: T.html.format },
-  { id: 'epoch', name: 'Epoch / Date', convert: T.epoch.format },
+  { id: 'epoch', name: 'Epoch / Date', panel: 'epoch' },
   { id: 'json', name: 'JSON Format', convert: T.json.format },
   { id: 'uuid', name: 'UUID Convert', convert: T.uuid.format }
 ]
 
 const BY_ID = new Map(CONVERT_TOOLS.map((t) => [t.id, t]))
 
-// The launcher ranks these next to snippets/diffs via rank(), which matches on
-// `name`; kind:'command' routes a choice into convert mode instead of openInMain.
+// The launcher ranks these next to snippets via rank(), which matches on `name`;
+// kind:'command' routes a choice into convert mode instead of openInMain. `panel`
+// travels so the convert panel knows to render a rich body.
 export const convertItems = () =>
-  CONVERT_TOOLS.map((t) => ({ kind: 'command', id: t.id, name: t.name }))
+  CONVERT_TOOLS.map((t) => ({ kind: 'command', id: t.id, name: t.name, panel: t.panel }))
 
 /**
  * @param {string} id     a CONVERT_TOOLS id
@@ -33,7 +36,8 @@ export const convertItems = () =>
 export function runConvert(id, input) {
   const tool = BY_ID.get(id)
   if (!tool) return { error: 'unknown-tool' }
-  if (!input) return { output: '' }
+  // Panel tools render their own UI; there's nothing to text-convert.
+  if (tool.panel || !input) return { output: '' }
   try {
     return { output: tool.convert(input) }
   } catch {

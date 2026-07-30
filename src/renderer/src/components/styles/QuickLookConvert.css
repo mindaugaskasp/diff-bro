@@ -66,6 +66,14 @@
 .qc-field:focus-visible {
   box-shadow: inset 2px 0 0 0 var(--accent);
 }
+/* A panel tool (Epoch) renders its rich body here instead of the textareas; it
+   scrolls within the fixed launcher window when tall. */
+.qc-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+}
 .qc-in {
   background: var(--bg);
 }

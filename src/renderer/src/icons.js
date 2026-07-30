@@ -28,7 +28,10 @@ export const ICONS = {
   // Open tray — the quiet empty-state mark for a section with no entries.
   inbox: [
     { t: 'path', d: 'M22 12h-6l-2 3h-4l-2-3H2' },
-    { t: 'path', d: 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z' }
+    {
+      t: 'path',
+      d: 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'
+    }
   ],
   // Magnifying glass — marks the filter/search inputs.
   search: [
@@ -204,5 +207,15 @@ export const ICONS = {
   'shield-check': [
     { t: 'path', d: 'M12 2.5 4.5 5.5v5.5c0 4.7 3.2 7.6 7.5 10 4.3-2.4 7.5-5.3 7.5-10V5.5z' },
     { t: 'path', d: 'm9 12 2 2 4-4' }
+  ],
+  // Clock — the Epoch / Date tool's mark and its live "now" readout.
+  clock: [
+    { t: 'circle', cx: 12, cy: 12, r: 9 },
+    { t: 'path', d: 'M12 7v5l3.5 2' }
+  ],
+  // Calendar — the date-picker lane of the Epoch tool.
+  calendar: [
+    { t: 'rect', x: 3, y: 5, width: 18, height: 16, rx: 2 },
+    { t: 'path', d: 'M3 9h18M8 3v4M16 3v4' }
   ]
 }

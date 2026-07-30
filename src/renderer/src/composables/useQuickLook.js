@@ -82,7 +82,7 @@ export function useQuickLook() {
     const it = results.value[i]
     if (!it) return
     if (it.kind === 'command') {
-      convertTool.value = { id: it.id, name: it.name }
+      convertTool.value = { id: it.id, name: it.name, panel: it.panel }
       convertInput.value = ''
       return
     }
