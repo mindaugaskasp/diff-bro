@@ -200,7 +200,10 @@ describe('settingsStore', () => {
     localStorage.setItem(
       'diffbro.settings',
       JSON.stringify({
-        dialogSizes: { snippet: { width: 'wide', height: 400 }, base64: { width: 600, height: 500 } }
+        dialogSizes: {
+          snippet: { width: 'wide', height: 400 },
+          base64: { width: 600, height: 500 }
+        }
       })
     )
     const s = useSettingsStore()
@@ -238,7 +241,7 @@ describe('settingsStore', () => {
     s.noteToolUsed('json') // promotes, never duplicates
     expect(s.recentTools).toEqual(['json', 'base64'])
 
-    for (const id of ['xml', 'sql', 'uuid', 'jwt']) s.noteToolUsed(id)
+    for (const id of ['xml', 'lines', 'uuid', 'jwt']) s.noteToolUsed(id)
     expect(s.recentTools).toHaveLength(MAX_RECENT_TOOLS)
     expect(s.recentTools[0]).toBe('jwt')
     expect(JSON.parse(localStorage.getItem('diffbro.settings')).recentTools).toEqual(s.recentTools)

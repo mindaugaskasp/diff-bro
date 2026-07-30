@@ -1,13 +1,10 @@
 import { formatJson, formatXml, validateJson, validateXml } from './textFormats'
-import { formatSql, validateSql } from './sqlFormat'
 import { convertUuid, validateUuid } from './uuid'
 import {
   convertEpoch,
-  convertHtmlEntities,
   convertUrlCode,
   decodeJwt,
   validateEpoch,
-  validateHtmlEntities,
   validateJwt,
   validateUrlCode
 } from './devTools'
@@ -38,19 +35,6 @@ export const TEXT_TOOLS = {
     format: formatXml,
     validLabel: 'Valid XML',
     requiresValid: true
-  },
-  sql: {
-    title: 'SQL Format / Validate',
-    language: 'sql',
-    validate: validateSql,
-    format: formatSql,
-    validLabel: 'Looks valid',
-    // The SQL formatter is best-effort, so it stays useful on input the
-    // validator can't vouch for.
-    requiresValid: false,
-    note:
-      'Best-effort formatting/validation — not a full SQL parser, so treat "looks valid" as a ' +
-      'smoke test, not a guarantee.'
   },
   uuid: {
     title: 'UUID',
@@ -92,15 +76,6 @@ export const TEXT_TOOLS = {
     panel: 'url',
     validate: validateUrlCode,
     format: convertUrlCode,
-    actionLabel: 'Encode / Decode',
-    validLabel: 'Ready',
-    requiresValid: false
-  },
-  html: {
-    title: 'HTML Entities Encode / Decode',
-    language: 'plaintext',
-    validate: validateHtmlEntities,
-    format: convertHtmlEntities,
     actionLabel: 'Encode / Decode',
     validLabel: 'Ready',
     requiresValid: false

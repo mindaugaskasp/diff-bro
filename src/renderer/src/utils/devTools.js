@@ -92,22 +92,3 @@ export function convertUrlCode(text) {
     return text
   }
 }
-
-// --- HTML entities (toggle) ------------------------------------------------
-const ENCODE = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
-const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
-const HAS_ENTITY = /&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/
-
-export function validateHtmlEntities() {
-  return { valid: true }
-}
-
-export function convertHtmlEntities(text) {
-  if (!HAS_ENTITY.test(text)) return text.replace(/[&<>"']/g, (c) => ENCODE[c])
-  return text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, body) => {
-    if (body[0] !== '#') return NAMED[body] ?? m
-    const isHex = body[1] === 'x' || body[1] === 'X'
-    const code = parseInt(body.slice(isHex ? 2 : 1), isHex ? 16 : 10)
-    return Number.isFinite(code) ? String.fromCodePoint(code) : m
-  })
-}

@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import {
-  CONVERT_TOOLS,
-  convertItems,
-  runConvert
-} from '../../../src/renderer/src/utils/quickLookCommands'
+import { CONVERT_TOOLS, convertItems } from '../../../src/renderer/src/utils/quickLookCommands'
 import { rank } from '../../../src/renderer/src/utils/quickLook'
+import { toolById } from '../../../src/renderer/src/utils/tools'
 
-describe('convert tools', () => {
+describe('launcher tools', () => {
   it('exposes each tool as a searchable command item', () => {
     const items = convertItems()
     expect(items).toHaveLength(CONVERT_TOOLS.length)
@@ -15,26 +12,27 @@ describe('convert tools', () => {
     expect(rank('base64', items).map((i) => i.id)).toEqual(['base64'])
   })
 
-  it('runs the shared TEXT_TOOLS transforms (HTML entities)', () => {
-    expect(runConvert('html', '<a> & </a>').output).toContain('&lt;a&gt;')
+  // The launcher's names are its own search aliases ("date" finds Epoch), but
+  // every id must still exist in the registry or the row loses its icon/kind.
+  it('every launcher tool is in the shared registry', () => {
+    for (const t of CONVERT_TOOLS) expect(toolById(t.id), t.id).toBeDefined()
   })
 
-  it('reports a failed conversion instead of throwing', () => {
-    // An out-of-range code point makes the entity decoder throw.
-    expect(runConvert('html', '&#x110000;')).toEqual({ error: 'convert-failed' })
-  })
-
-  it('treats panel tools as having no text conversion', () => {
+  it('takes its icon and action word from the registry, never a blanket label', () => {
     const items = convertItems()
-    for (const id of ['base64', 'epoch', 'uuid', 'url', 'jwt', 'json', 'lines']) {
-      expect(items.find((i) => i.id === id)).toMatchObject({ panel: id })
-      // The rich panel renders instead — there is nothing to text-convert.
-      expect(runConvert(id, 'x')).toEqual({ output: '' })
-    }
+    const byId = Object.fromEntries(items.map((i) => [i.id, i]))
+    expect(byId.base64).toMatchObject({ icon: 'binary', action: 'Encode' })
+    expect(byId.jwt).toMatchObject({ icon: 'shield-check', action: 'Decode' })
+    expect(byId.uuid).toMatchObject({ icon: 'hash', action: 'Generate' })
+    expect(items.every((i) => i.action !== 'Convert' || i.id === 'epoch')).toBe(true)
   })
 
-  it('handles empty input and unknown tools without throwing', () => {
-    expect(runConvert('html', '')).toEqual({ output: '' })
-    expect(runConvert('nope', 'x')).toEqual({ error: 'unknown-tool' })
+  it('every tool renders a rich panel', () => {
+    for (const t of CONVERT_TOOLS) expect(typeof t.panel).toBe('string')
+    expect(convertItems().every((i) => i.panel)).toBe(true)
+  })
+
+  it('finds a tool by its alias, not just its registry name', () => {
+    expect(rank('date', convertItems()).map((i) => i.id)).toContain('epoch')
   })
 })

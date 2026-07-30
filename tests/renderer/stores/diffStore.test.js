@@ -360,8 +360,6 @@ describe('diffStore', () => {
     expect(store.textTool).toBe('json')
     store.handleMenuAction('tools-xml')
     expect(store.textTool).toBe('xml')
-    store.handleMenuAction('tools-sql')
-    expect(store.textTool).toBe('sql')
     store.handleMenuAction('tools-find-replace')
     expect(store.showFindReplaceDialog).toBe(true)
     store.handleMenuAction('tools-crypt')

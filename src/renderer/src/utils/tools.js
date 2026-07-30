@@ -18,14 +18,18 @@ export const TOOLS = [
   { id: 'base64', name: 'Base64', icon: 'binary', kind: 'Encode', action: 'tools-base64' },
   { id: 'json', name: 'JSON', icon: 'braces', kind: 'Format', action: 'tools-json' },
   { id: 'xml', name: 'XML', icon: 'code', kind: 'Format', action: 'tools-xml' },
-  { id: 'sql', name: 'SQL', icon: 'table', kind: 'Format', action: 'tools-sql' },
   { id: 'uuid', name: 'UUID', icon: 'hash', kind: 'Generate', action: 'tools-uuid' },
   { id: 'jwt', name: 'JWT', icon: 'shield-check', kind: 'Decode', action: 'tools-jwt' },
   { id: 'epoch', name: 'Epoch', icon: 'clock', kind: 'Convert', action: 'tools-epoch' },
   { id: 'url', name: 'URL', icon: 'link', kind: 'Encode', action: 'tools-url' },
-  { id: 'html', name: 'HTML', icon: 'tag', kind: 'Encode', action: 'tools-html' },
   { id: 'lines', name: 'Lines', icon: 'list', kind: 'Transform', action: 'tools-lines' },
-  { id: 'replace', name: 'Replace', icon: 'replace', kind: 'Replace', action: 'tools-find-replace' },
+  {
+    id: 'replace',
+    name: 'Replace',
+    icon: 'replace',
+    kind: 'Replace',
+    action: 'tools-find-replace'
+  },
   { id: 'crypt', name: 'Encrypt', icon: 'lock', kind: 'Encrypt', action: 'tools-crypt' },
   { id: 'patch', name: 'Patch', icon: 'file', kind: 'Apply', action: 'apply-patch' }
 ]

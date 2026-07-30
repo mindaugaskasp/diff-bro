@@ -77,8 +77,8 @@ describe('noteRecent', () => {
   })
 
   it('caps the list at MAX_RECENT_TOOLS', () => {
-    const ids = ['json', 'xml', 'sql', 'uuid', 'jwt']
-    expect(noteRecent(ids, 'epoch')).toEqual(['epoch', 'json', 'xml', 'sql', 'uuid'])
+    const ids = ['json', 'xml', 'lines', 'uuid', 'jwt']
+    expect(noteRecent(ids, 'epoch')).toEqual(['epoch', 'json', 'xml', 'lines', 'uuid'])
   })
 
   it('ignores an unknown tool but still returns a capped list', () => {

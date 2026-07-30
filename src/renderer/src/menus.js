@@ -128,21 +128,10 @@ export function buildMenus(store) {
             }
           ]
         },
-        {
-          label: 'SQL',
-          items: [
-            {
-              label: 'Format / Validate',
-              keys: `${MOD}+Shift+Q`,
-              run: () => store.handleMenuAction('tools-sql')
-            }
-          ]
-        },
         { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => store.handleMenuAction('tools-uuid') },
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
         { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
-        { label: 'HTML Entities', run: () => store.handleMenuAction('tools-html') },
         { label: 'Lines', run: () => store.handleMenuAction('tools-lines') },
         {
           label: 'Find & Replace',

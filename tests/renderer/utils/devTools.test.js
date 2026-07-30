@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   convertEpoch,
-  convertHtmlEntities,
   convertUrlCode,
   decodeJwt,
   validateEpoch,
-  validateHtmlEntities,
   validateJwt,
   validateUrlCode
 } from '../../../src/renderer/src/utils/devTools'
@@ -83,24 +81,5 @@ describe('URL encode / decode', () => {
   it('flags and survives malformed percent-encoding', () => {
     expect(validateUrlCode('%C3%28')).toEqual({ valid: false, error: 'malformed percent-encoding' })
     expect(convertUrlCode('%C3%28')).toBe('%C3%28')
-  })
-})
-
-describe('HTML entities', () => {
-  it('encodes the five special characters', () => {
-    expect(convertHtmlEntities('<a href="x">&\'')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&#39;')
-  })
-
-  it('decodes named, decimal, and hex entities', () => {
-    expect(convertHtmlEntities('&lt;a&gt;&amp;&quot;&#39;')).toBe('<a>&"\'')
-    expect(convertHtmlEntities('&#65;&#x42;')).toBe('AB')
-  })
-
-  it('passes an unknown entity through untouched', () => {
-    expect(convertHtmlEntities('&bogus;')).toBe('&bogus;')
-  })
-
-  it('always validates', () => {
-    expect(validateHtmlEntities().valid).toBe(true)
   })
 })

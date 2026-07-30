@@ -34,10 +34,7 @@ const {
   refresh,
   onKeydown,
   convertTool,
-  convertInput,
-  convertResult,
-  exitConvert,
-  copyConvert
+  exitConvert
 } = useQuickLook()
 const store = useSnippetStore()
 const input = ref(null)
@@ -97,14 +94,7 @@ watch(convertTool, (tool) => {
 
 <template>
   <div class="ql" :class="{ closing }">
-    <QuickLookConvert
-      v-if="convertTool"
-      v-model:input="convertInput"
-      :tool="convertTool"
-      :result="convertResult"
-      @back="exitConvert"
-      @copy="copyConvert"
-    />
+    <QuickLookConvert v-if="convertTool" :tool="convertTool" @back="exitConvert" />
     <template v-else>
       <div class="ql-search band">
         <AppIcon name="search" class="ql-search-ico" />
@@ -132,7 +122,9 @@ watch(convertTool, (tool) => {
             @click="selected = i"
             @dblclick="choose(i)"
           >
-            <span v-if="it.kind === 'command'" class="monogram cmd"><AppIcon :name="it.icon" /></span>
+            <span v-if="it.kind === 'command'" class="monogram cmd"
+              ><AppIcon :name="it.icon"
+            /></span>
             <span v-else-if="it.count" class="monogram sec"><AppIcon :name="rowIcon()" /></span>
             <span v-else class="monogram" :style="monoStyle(it)">{{ monoText(it) }}</span>
             <span class="ql-name">{{ it.name }}</span>
@@ -187,7 +179,7 @@ watch(convertTool, (tool) => {
               <p v-if="current.kind === 'tools'">
                 Press <strong>→</strong> to browse the {{ current.count }} tools.
               </p>
-              <p v-else>Press <strong>Enter</strong> to convert with this tool.</p>
+              <p v-else>Press <strong>Enter</strong> to open this tool.</p>
             </div>
 
             <div class="ql-pv-foot band">

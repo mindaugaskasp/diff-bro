@@ -7,18 +7,7 @@ describe('TEXT_TOOLS', () => {
   const ids = Object.keys(TEXT_TOOLS)
 
   it('covers the tools the menu offers', () => {
-    expect(ids.sort()).toEqual([
-      'base64',
-      'epoch',
-      'html',
-      'json',
-      'jwt',
-      'lines',
-      'sql',
-      'url',
-      'uuid',
-      'xml'
-    ])
+    expect(ids.sort()).toEqual(['base64', 'epoch', 'json', 'jwt', 'lines', 'url', 'uuid', 'xml'])
   })
 
   it.each(ids)('%s declares a complete descriptor', (id) => {
@@ -48,11 +37,9 @@ describe('TEXT_TOOLS', () => {
     )
   })
 
-  // SQL formatting stays available on input the validator won't vouch for.
-  it('only requires valid input where the formatter needs it', () => {
+  it('requires valid input where the formatter needs it', () => {
     expect(TEXT_TOOLS.json.requiresValid).toBe(true)
     expect(TEXT_TOOLS.xml.requiresValid).toBe(true)
-    expect(TEXT_TOOLS.sql.requiresValid).toBe(false)
   })
 })
 
@@ -65,7 +52,7 @@ describe('toolStatusText', () => {
 
   it("uses the tool's own wording when valid", () => {
     expect(toolStatusText(json, { valid: true })).toBe('Valid JSON')
-    expect(toolStatusText(TEXT_TOOLS.sql, { valid: true })).toBe('Looks valid')
+    expect(toolStatusText(TEXT_TOOLS.xml, { valid: true })).toBe('Valid XML')
   })
 
   it('reports the location when the validator pinned one down', () => {

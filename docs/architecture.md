@@ -75,5 +75,3 @@ flowchart TB
 - `docs/` — this file, plus [security.md](security.md) and
   [packaging.md](packaging.md).
 - `tests/` — mirrors `src/` (`tests/main`, `tests/renderer/{stores,utils,adapters}`).
-
-See [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md) for the roadmap.

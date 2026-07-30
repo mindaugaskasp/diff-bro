@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { rank } from '../utils/quickLook'
-import { convertItems, runConvert } from '../utils/quickLookCommands'
+import { convertItems } from '../utils/quickLookCommands'
 import { isMac } from '../keys'
 import { useQuickLookKeys } from './useQuickLookKeys'
 import { usePreviewLines } from './usePreviewLines'
@@ -97,14 +97,9 @@ export function useQuickLook() {
 
   // A convert tool opens the inline panel; a snippet/diff opens in the main
   // window. Convert never raises the app — the whole point of doing it here.
-  const convertTool = ref(null) // { id, name } | null
-  const convertInput = ref('')
-  const convertResult = computed(() =>
-    convertTool.value ? runConvert(convertTool.value.id, convertInput.value) : { output: '' }
-  )
+  const convertTool = ref(null) // { id, name, panel } | null
   function exitConvert() {
     convertTool.value = null
-    convertInput.value = ''
   }
 
   function choose(i) {
@@ -113,7 +108,6 @@ export function useQuickLook() {
     if (it.kind === 'tools') return toggleTools()
     if (it.kind === 'command') {
       convertTool.value = { id: it.id, name: it.name, panel: it.panel }
-      convertInput.value = ''
       return
     }
     window.api.quickLookOpen({ kind: it.kind, id: it.id })
@@ -169,16 +163,6 @@ export function useQuickLook() {
     }
   })
 
-  async function copyConvert() {
-    const out = convertResult.value.output
-    if (!out) return
-    const res = await window.api.copyText(out)
-    if (!res?.ok) return
-    copiedName.value = convertTool.value.name
-    flash()
-    setTimeout(animateOut, HIDE_AFTER_COPY_MS)
-  }
-
   // Separate Pinia instance from the main window — re-read the snippet library on
   // each summon to reflect changes made there.
   function refresh() {
@@ -193,7 +177,6 @@ export function useQuickLook() {
     copiedIndex.value = -1
     closing.value = false
     convertTool.value = null
-    convertInput.value = ''
   }
 
   const copyKey = isMac ? '⌘C' : 'Ctrl+C'
@@ -268,9 +251,6 @@ export function useQuickLook() {
     refresh,
     onKeydown,
     convertTool,
-    convertInput,
-    convertResult,
-    exitConvert,
-    copyConvert
+    exitConvert
   }
 }

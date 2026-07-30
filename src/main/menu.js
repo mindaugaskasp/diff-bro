@@ -201,16 +201,6 @@ export function installMenu() {
           ]
         },
         {
-          label: 'SQL',
-          submenu: [
-            {
-              label: 'Format / Validate',
-              accelerator: 'CmdOrCtrl+Shift+Q',
-              click: () => sendToFocused('tools-sql')
-            }
-          ]
-        },
-        {
           label: 'UUID',
           accelerator: 'CmdOrCtrl+Shift+U',
           click: () => sendToFocused('tools-uuid')
@@ -218,7 +208,6 @@ export function installMenu() {
         { label: 'JWT Decode', click: () => sendToFocused('tools-jwt') },
         { label: 'Epoch / Date', click: () => sendToFocused('tools-epoch') },
         { label: 'URL Encode / Decode', click: () => sendToFocused('tools-url') },
-        { label: 'HTML Entities', click: () => sendToFocused('tools-html') },
         { label: 'Lines', click: () => sendToFocused('tools-lines') },
         {
           label: 'Find & Replace',
