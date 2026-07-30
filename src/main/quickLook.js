@@ -122,6 +122,19 @@ function reveal() {
 // the main window too, which the next summon then drags back up. So instead make
 // the main window briefly non-focusable: the OS can't make it key, the app
 // deactivates back to the previous app, and the main window stays put.
+// The un-focusable window above is a timed state, so anything that wants to
+// focus the main window must end it first — otherwise focus() is a silent no-op
+// and the window surfaces without keyboard focus.
+let refocusTimer = null
+export function allowMainFocus() {
+  if (refocusTimer) {
+    clearTimeout(refocusTimer)
+    refocusTimer = null
+  }
+  const main = mainWindow()
+  if (main && !main.isDestroyed()) main.setFocusable(true)
+}
+
 function hideLauncher() {
   logDiag('hide', screen.getAllDisplays(), screen.getCursorScreenPoint(), win?.getBounds())
   if (process.platform !== 'darwin') {
@@ -132,7 +145,11 @@ function hideLauncher() {
   if (main && main.isVisible() && !main.isMinimized()) {
     main.setFocusable(false)
     win?.hide()
-    setTimeout(() => main.setFocusable(true), 300)
+    if (refocusTimer) clearTimeout(refocusTimer)
+    refocusTimer = setTimeout(() => {
+      refocusTimer = null
+      if (!main.isDestroyed()) main.setFocusable(true)
+    }, 300)
   } else {
     win?.hide()
   }
@@ -160,6 +177,7 @@ function openInMain(payload) {
   win?.hide()
   const main = BrowserWindow.getAllWindows().find((w) => w !== win)
   if (!main) return
+  allowMainFocus()
   if (main.isMinimized()) main.restore()
   main.show()
   main.focus()
