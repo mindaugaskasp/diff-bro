@@ -39,16 +39,16 @@ export function useQuickLook() {
   )
 
   const toolItems = computed(() => rank(query.value, convertItems()))
-  // The convert tools live under a single collapsible "Tools" row so browsing
-  // snippets stays compact; a query that matches a tool opens the section so
-  // search still surfaces them.
+  // Tools lead the list under one collapsed row: a long snippet library would
+  // otherwise bury them, and reaching a tool meant scrolling past everything.
+  // A query that matches a tool opens the section so search still surfaces them.
   const toolsOpen = ref(false)
   const results = computed(() => {
     const snips = rank(query.value, snippetItems.value)
     const tools = toolItems.value
     if (!tools.length) return snips
     const header = { kind: 'tools', id: '__tools__', name: 'Tools', count: tools.length }
-    return toolsOpen.value ? [...snips, header, ...tools] : [...snips, header]
+    return toolsOpen.value ? [header, ...tools, ...snips] : [header, ...snips]
   })
   const current = computed(() => results.value[selected.value] ?? null)
   const toolsIndex = () => results.value.findIndex((r) => r.kind === 'tools')
@@ -57,9 +57,8 @@ export function useQuickLook() {
     zone.value = 'list'
     const open = query.value.trim() !== '' && toolItems.value.length > 0
     toolsOpen.value = open
-    // A tool-matching search lands on the first tool (past the header); browsing
-    // starts at the top of the list.
-    selected.value = open ? rank(query.value, snippetItems.value).length + 1 : 0
+    // A tool-matching search lands on the first tool, just past the header.
+    selected.value = open ? 1 : 0
   })
   // Collapsing shrinks the list — clamp the selection, but never yank it to the
   // top the way a fresh query does.
@@ -194,7 +193,7 @@ export function useQuickLook() {
     const hints = [['↑↓', 'navigate']]
     const kind = current.value?.kind
     if (kind === 'snippet') hints.push(['→', 'scroll preview'])
-    else if (kind === 'command') hints.push(['→', 'convert'])
+    else if (kind === 'command') hints.push(['→', 'open tool'])
     else if (kind === 'tools') hints.push(['→', toolsOpen.value ? 'collapse' : 'browse tools'])
     hints.push(['↵', 'open'], [copyKey, 'copy'], ['Esc', 'close'])
     return hints

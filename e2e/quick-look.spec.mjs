@@ -117,8 +117,8 @@ test('arrowing down scrolls the results list to keep the selection visible', asy
   const list = ql.locator('.ql-results')
   const before = await list.evaluate((el) => el.scrollTop)
 
-  // Open the Tools section so the list overflows, then walk to the bottom.
-  for (let i = 0; i < 3; i++) await ql.keyboard.press('ArrowDown')
+  // Tools leads the list, so → expands it straight away; then walk to the bottom.
+  await expect(ql.locator('.ql-res.sel')).toContainText('Tools')
   await ql.keyboard.press('ArrowRight')
   for (let i = 0; i < 12; i++) await ql.keyboard.press('ArrowDown')
 

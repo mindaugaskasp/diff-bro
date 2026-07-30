@@ -51,10 +51,12 @@ const tagStyle = (it) => ({ background: store.colorOf(it.tags?.[0]) })
 const rowIcon = () => (toolsOpen.value ? 'chevron-down' : 'chevron-right')
 const kindLabel = (it) =>
   it.kind === 'command' ? it.action : it.kind === 'tools' ? `${it.count} tools` : it.kind
-// The Tools header carries the seam divider (above it) and its command rows
-// indent beneath; selection stays index-based so nav is one flat list.
+// The seam sits under the tools block, above the first snippet; selection stays
+// index-based so nav is one flat list.
 const isSectionStart = (i) =>
-  results.value[i]?.kind === 'tools' && results.value[i - 1]?.kind === 'snippet'
+  results.value[i]?.kind === 'snippet' &&
+  !!results.value[i - 1] &&
+  results.value[i - 1].kind !== 'snippet'
 const resClass = (i) => {
   const it = results.value[i]
   return {
