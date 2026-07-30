@@ -3,7 +3,7 @@
 // registry, and the panel itself. Every tool is a rich panel now, so there is no
 // text-buffer branch — a new tool is a registry entry (utils/tools.js) plus a
 // case below, never another dialog component.
-import { computed } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { toolById } from '../utils/tools'
 import BaseDialog from './BaseDialog.vue'
@@ -24,6 +24,11 @@ const props = defineProps({
 const store = useDiffStore()
 const title = computed(() => toolById(props.tool)?.name ?? 'Tools')
 
+// Land the caret in the panel's first field, as the launcher does — otherwise
+// the first Tab lands on Close and you cannot paste without reaching for a mouse.
+const body = ref(null)
+onMounted(() => nextTick(() => body.value?.querySelector('input, textarea')?.focus()))
+
 function close() {
   store.textTool = null
 }
@@ -31,14 +36,16 @@ function close() {
 
 <template>
   <BaseDialog width="460px" :close-on-backdrop="false" :title="title" @close="close">
-    <ToolEpoch v-if="tool === 'epoch'" />
-    <ToolUuid v-else-if="tool === 'uuid'" />
-    <ToolUrl v-else-if="tool === 'url'" />
-    <ToolJwt v-else-if="tool === 'jwt'" />
-    <ToolJson v-else-if="tool === 'json'" />
-    <ToolLines v-else-if="tool === 'lines'" />
-    <ToolBase64 v-else-if="tool === 'base64'" />
-    <ToolXml v-else-if="tool === 'xml'" />
+    <div ref="body" class="tt-body">
+      <ToolEpoch v-if="tool === 'epoch'" />
+      <ToolUuid v-else-if="tool === 'uuid'" />
+      <ToolUrl v-else-if="tool === 'url'" />
+      <ToolJwt v-else-if="tool === 'jwt'" />
+      <ToolJson v-else-if="tool === 'json'" />
+      <ToolLines v-else-if="tool === 'lines'" />
+      <ToolBase64 v-else-if="tool === 'base64'" />
+      <ToolXml v-else-if="tool === 'xml'" />
+    </div>
     <template #actions>
       <button class="btn btn-ghost" @click="close">Close</button>
     </template>
