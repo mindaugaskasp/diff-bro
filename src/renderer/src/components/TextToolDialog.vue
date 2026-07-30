@@ -10,6 +10,7 @@ import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
 import ToolEpoch from './ToolEpoch.vue'
+import ToolUuid from './ToolUuid.vue'
 
 const props = defineProps({
   // Key into TEXT_TOOLS — which tool this dialog is showing.
@@ -68,6 +69,7 @@ function close() {
     @resize="(s) => settings.setDialogSize('texttool', s)"
   >
     <ToolEpoch v-if="tool.panel === 'epoch'" />
+    <ToolUuid v-else-if="tool.panel === 'uuid'" />
     <template v-else>
       <div
         ref="container"

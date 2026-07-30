@@ -217,5 +217,7 @@ export const ICONS = {
   calendar: [
     { t: 'rect', x: 3, y: 5, width: 18, height: 16, rx: 2 },
     { t: 'path', d: 'M3 9h18M8 3v4M16 3v4' }
-  ]
+  ],
+  // Hash — the UUID tool's mark.
+  hash: [{ t: 'path', d: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18' }]
 }

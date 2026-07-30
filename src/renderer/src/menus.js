@@ -152,16 +152,7 @@ export function buildMenus(store) {
             }
           ]
         },
-        {
-          label: 'UUID',
-          items: [
-            {
-              label: 'Convert',
-              keys: `${MOD}+Shift+U`,
-              run: () => store.handleMenuAction('tools-uuid')
-            }
-          ]
-        },
+        { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => store.handleMenuAction('tools-uuid') },
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
         { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },

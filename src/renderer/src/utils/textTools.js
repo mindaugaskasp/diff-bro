@@ -47,14 +47,15 @@ export const TEXT_TOOLS = {
       'smoke test, not a guarantee.'
   },
   uuid: {
-    title: 'UUID Convert',
+    title: 'UUID',
     language: 'plaintext',
+    // A rich panel (ToolUuid.vue): generate v1/v4/v5/v6/v7, inspect, convert.
+    panel: 'uuid',
     validate: validateUuid,
     format: convertUuid,
     actionLabel: 'Convert',
     validLabel: 'Valid UUID',
-    requiresValid: true,
-    note: 'Converts a canonical 8-4-4-4-12 UUID to its 32-hex (BINARY(16)) form and back.'
+    requiresValid: true
   },
   jwt: {
     title: 'JWT Decode',

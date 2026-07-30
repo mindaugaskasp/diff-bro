@@ -222,13 +222,8 @@ export function installMenu() {
         },
         {
           label: 'UUID',
-          submenu: [
-            {
-              label: 'Convert',
-              accelerator: 'CmdOrCtrl+Shift+U',
-              click: () => sendToFocused('tools-uuid')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+U',
+          click: () => sendToFocused('tools-uuid')
         },
         { label: 'JWT Decode', click: () => sendToFocused('tools-jwt') },
         { label: 'Epoch / Date', click: () => sendToFocused('tools-epoch') },
