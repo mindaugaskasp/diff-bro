@@ -34,9 +34,9 @@ describe('convert tools', () => {
     expect(runConvert('html', '<a> & </a>').output).toContain('&lt;a&gt;')
   })
 
-  it('treats panel tools (epoch/uuid/url/jwt/json) as having no text conversion', () => {
+  it('treats panel tools (epoch/uuid/url/jwt/json/lines) as having no text conversion', () => {
     const items = convertItems()
-    for (const id of ['epoch', 'uuid', 'url', 'jwt', 'json']) {
+    for (const id of ['epoch', 'uuid', 'url', 'jwt', 'json', 'lines']) {
       expect(items.find((i) => i.id === id)).toMatchObject({ panel: id })
       // The rich panel renders instead — there is nothing to text-convert.
       expect(runConvert(id, 'x')).toEqual({ output: '' })

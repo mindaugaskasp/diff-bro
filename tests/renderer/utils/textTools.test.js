@@ -24,6 +24,11 @@ describe('TEXT_TOOLS', () => {
     const tool = TEXT_TOOLS[id]
     expect(typeof tool.title).toBe('string')
     expect(typeof tool.language).toBe('string')
+    // A panel tool renders its own body, so it carries no validate/format pair.
+    if (tool.panel) {
+      expect(typeof tool.panel).toBe('string')
+      return
+    }
     expect(typeof tool.validate).toBe('function')
     expect(typeof tool.format).toBe('function')
     expect(typeof tool.validLabel).toBe('string')

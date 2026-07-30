@@ -224,7 +224,7 @@ export function installMenu() {
         { label: 'Epoch / Date', click: () => sendToFocused('tools-epoch') },
         { label: 'URL Encode / Decode', click: () => sendToFocused('tools-url') },
         { label: 'HTML Entities', click: () => sendToFocused('tools-html') },
-        { label: 'Sort & Dedupe Lines', click: () => sendToFocused('tools-lines') },
+        { label: 'Lines', click: () => sendToFocused('tools-lines') },
         {
           label: 'Find & Replace',
           submenu: [

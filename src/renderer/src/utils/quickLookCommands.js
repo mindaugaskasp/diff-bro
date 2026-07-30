@@ -17,7 +17,8 @@ export const CONVERT_TOOLS = [
   { id: 'html', name: 'HTML Entities', convert: T.html.format },
   { id: 'epoch', name: 'Epoch / Date', panel: 'epoch' },
   { id: 'json', name: 'JSON', panel: 'json' },
-  { id: 'uuid', name: 'UUID', panel: 'uuid' }
+  { id: 'uuid', name: 'UUID', panel: 'uuid' },
+  { id: 'lines', name: 'Lines', panel: 'lines' }
 ]
 
 const BY_ID = new Map(CONVERT_TOOLS.map((t) => [t.id, t]))

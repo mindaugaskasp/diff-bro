@@ -12,6 +12,7 @@ import ToolUuid from './ToolUuid.vue'
 import ToolUrl from './ToolUrl.vue'
 import ToolJwt from './ToolJwt.vue'
 import ToolJson from './ToolJson.vue'
+import ToolLines from './ToolLines.vue'
 
 const props = defineProps({
   tool: { type: Object, required: true }, // { id, name, panel? }
@@ -26,7 +27,8 @@ const PANEL_ICONS = {
   uuid: 'hash',
   url: 'link',
   jwt: 'shield-check',
-  json: 'braces'
+  json: 'braces',
+  lines: 'list'
 }
 const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 onMounted(() => {
@@ -64,6 +66,7 @@ function onKeydown(e) {
       <ToolUrl v-else-if="tool.panel === 'url'" compact />
       <ToolJwt v-else-if="tool.panel === 'jwt'" compact />
       <ToolJson v-else-if="tool.panel === 'json'" compact />
+      <ToolLines v-else-if="tool.panel === 'lines'" compact />
     </div>
     <template v-else>
       <textarea

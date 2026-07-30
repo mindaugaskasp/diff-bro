@@ -6,11 +6,9 @@ import {
   convertHtmlEntities,
   convertUrlCode,
   decodeJwt,
-  sortDedupeLines,
   validateEpoch,
   validateHtmlEntities,
   validateJwt,
-  validateLines,
   validateUrlCode
 } from './devTools'
 
@@ -102,13 +100,10 @@ export const TEXT_TOOLS = {
     requiresValid: false
   },
   lines: {
-    title: 'Sort & Dedupe Lines',
+    title: 'Lines',
     language: 'plaintext',
-    validate: validateLines,
-    format: sortDedupeLines,
-    actionLabel: 'Sort & Dedupe',
-    validLabel: 'Ready',
-    requiresValid: false
+    // A rich panel (ToolLines.vue): clean up, sort, and build lists.
+    panel: 'lines'
   }
 }
 

@@ -111,20 +111,3 @@ export function convertHtmlEntities(text) {
     return Number.isFinite(code) ? String.fromCodePoint(code) : m
   })
 }
-
-// --- Sort & dedupe lines ---------------------------------------------------
-export function validateLines() {
-  return { valid: true }
-}
-
-export function sortDedupeLines(text) {
-  const seen = new Set()
-  const out = []
-  for (const line of text.split(/\r?\n/).sort((a, b) => a.localeCompare(b))) {
-    if (!seen.has(line)) {
-      seen.add(line)
-      out.push(line)
-    }
-  }
-  return out.join('\n')
-}

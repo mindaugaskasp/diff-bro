@@ -4,11 +4,9 @@ import {
   convertHtmlEntities,
   convertUrlCode,
   decodeJwt,
-  sortDedupeLines,
   validateEpoch,
   validateHtmlEntities,
   validateJwt,
-  validateLines,
   validateUrlCode
 } from '../../../src/renderer/src/utils/devTools'
 
@@ -104,16 +102,5 @@ describe('HTML entities', () => {
 
   it('always validates', () => {
     expect(validateHtmlEntities().valid).toBe(true)
-  })
-})
-
-describe('sort & dedupe lines', () => {
-  it('sorts and removes duplicates across CRLF and LF', () => {
-    expect(sortDedupeLines('b\na\nb\nc')).toBe('a\nb\nc')
-    expect(sortDedupeLines('b\r\na\r\nb')).toBe('a\nb')
-  })
-
-  it('always validates', () => {
-    expect(validateLines().valid).toBe(true)
   })
 })
