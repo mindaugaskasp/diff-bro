@@ -29,8 +29,6 @@ describe('TEXT_TOOLS', () => {
     expect(TEXT_TOOLS.json.validate('{"a":1}').valid).toBe(true)
     expect(TEXT_TOOLS.json.validate('{a}').valid).toBe(false)
     expect(TEXT_TOOLS.json.format('{"a":1}')).toContain('\n')
-    expect(TEXT_TOOLS.xml.validate('<a><b/></a>').valid).toBe(true)
-    expect(TEXT_TOOLS.xml.validate('<a></b>').valid).toBe(false)
     expect(TEXT_TOOLS.uuid.validate('550e8400-e29b-41d4-a716-446655440000').valid).toBe(true)
     expect(TEXT_TOOLS.uuid.format('550e8400-e29b-41d4-a716-446655440000')).toBe(
       '550e8400e29b41d4a716446655440000'
@@ -39,7 +37,6 @@ describe('TEXT_TOOLS', () => {
 
   it('requires valid input where the formatter needs it', () => {
     expect(TEXT_TOOLS.json.requiresValid).toBe(true)
-    expect(TEXT_TOOLS.xml.requiresValid).toBe(true)
   })
 })
 
@@ -52,7 +49,7 @@ describe('toolStatusText', () => {
 
   it("uses the tool's own wording when valid", () => {
     expect(toolStatusText(json, { valid: true })).toBe('Valid JSON')
-    expect(toolStatusText(TEXT_TOOLS.xml, { valid: true })).toBe('Valid XML')
+    expect(toolStatusText(TEXT_TOOLS.json, { valid: true })).toBe('Valid JSON')
   })
 
   it('reports the location when the validator pinned one down', () => {

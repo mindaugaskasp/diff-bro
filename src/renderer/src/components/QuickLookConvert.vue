@@ -12,6 +12,7 @@ import ToolJwt from './ToolJwt.vue'
 import ToolJson from './ToolJson.vue'
 import ToolLines from './ToolLines.vue'
 import ToolBase64 from './ToolBase64.vue'
+import ToolXml from './ToolXml.vue'
 
 const props = defineProps({
   tool: { type: Object, required: true } // { id, name, panel }
@@ -25,7 +26,8 @@ const PANEL_ICONS = {
   jwt: 'shield-check',
   json: 'braces',
   lines: 'list',
-  base64: 'binary'
+  base64: 'binary',
+  xml: 'code'
 }
 const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 
@@ -60,6 +62,7 @@ onMounted(() =>
       <ToolJson v-else-if="tool.panel === 'json'" compact />
       <ToolLines v-else-if="tool.panel === 'lines'" compact />
       <ToolBase64 v-else-if="tool.panel === 'base64'" compact />
+      <ToolXml v-else-if="tool.panel === 'xml'" compact />
     </div>
 
     <div class="qc-foot band">

@@ -192,13 +192,8 @@ export function installMenu() {
         },
         {
           label: 'XML',
-          submenu: [
-            {
-              label: 'Format / Validate',
-              accelerator: 'CmdOrCtrl+Shift+M',
-              click: () => sendToFocused('tools-xml')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => sendToFocused('tools-xml')
         },
         {
           label: 'UUID',

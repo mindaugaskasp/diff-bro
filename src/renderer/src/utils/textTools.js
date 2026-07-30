@@ -1,4 +1,4 @@
-import { formatJson, formatXml, validateJson, validateXml } from './textFormats'
+import { formatJson, validateJson } from './textFormats'
 import { convertUuid, validateUuid } from './uuid'
 import {
   convertEpoch,
@@ -29,12 +29,10 @@ export const TEXT_TOOLS = {
     requiresValid: true
   },
   xml: {
-    title: 'XML Format / Validate',
+    title: 'XML',
     language: 'xml',
-    validate: validateXml,
-    format: formatXml,
-    validLabel: 'Valid XML',
-    requiresValid: true
+    // A rich panel (ToolXml.vue): pretty/minify, XPath filter, element tree.
+    panel: 'xml'
   },
   uuid: {
     title: 'UUID',

@@ -118,16 +118,7 @@ export function buildMenus(store) {
           run: () => store.handleMenuAction('tools-base64')
         },
         { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => store.handleMenuAction('tools-json') },
-        {
-          label: 'XML',
-          items: [
-            {
-              label: 'Format / Validate',
-              keys: `${MOD}+Shift+M`,
-              run: () => store.handleMenuAction('tools-xml')
-            }
-          ]
-        },
+        { label: 'XML', keys: `${MOD}+Shift+M`, run: () => store.handleMenuAction('tools-xml') },
         { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => store.handleMenuAction('tools-uuid') },
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },

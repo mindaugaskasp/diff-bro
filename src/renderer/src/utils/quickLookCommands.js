@@ -11,6 +11,7 @@ export const CONVERT_TOOLS = [
   { id: 'url', name: 'URL', panel: 'url' },
   { id: 'epoch', name: 'Epoch / Date', panel: 'epoch' },
   { id: 'json', name: 'JSON', panel: 'json' },
+  { id: 'xml', name: 'XML', panel: 'xml' },
   { id: 'uuid', name: 'UUID', panel: 'uuid' },
   { id: 'lines', name: 'Lines', panel: 'lines' }
 ]
