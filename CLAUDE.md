@@ -1,7 +1,7 @@
 # DiffBro — project instructions
 
 Offline-only desktop diff viewer. Electron + electron-vite + Vue 3 + Pinia +
-Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
+Monaco.
 
 ## Commands
 
@@ -117,6 +117,13 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   thing" note. When one is truly warranted, keep it to a single terse line.
   Never narrate what the next line does, never restate the code in English, and
   never leave block/"wall" comments. When in doubt, delete the comment.
+- **Sweep comments when a feature settles.** Comments written to reason through
+  an in-progress implementation must not survive into the committed code. After
+  finishing or changing a feature — and before committing — re-read every comment
+  you touched and delete or shrink the ones the final code made redundant. A
+  comment that described an earlier approach, restates the now-obvious, or that a
+  rename would erase is stale by definition; only the genuinely-warranted terse
+  "why" lines from the rule above stay.
 - New file formats go through the adapter registry
   (`src/renderer/src/adapters/`) returning a `{ kind, ... }` comparable —
   never special-case a format inside `DiffViewer`.
@@ -190,5 +197,4 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   (set in `docker/Dockerfile` before `npm ci`, and pass it when adding/updating
   deps). Never run `playwright install` — it would pull Chromium/Firefox/WebKit
   the suite doesn't use.
-- Update `README.md` (including the mermaid diagram) and
-  `DEVELOPMENT_PLAN.md` when architecture or feature status changes.
+- Update `README.md` when architecture or feature status changes.
