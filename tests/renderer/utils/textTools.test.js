@@ -8,6 +8,7 @@ describe('TEXT_TOOLS', () => {
 
   it('covers the tools the menu offers', () => {
     expect(ids.sort()).toEqual([
+      'base64',
       'epoch',
       'html',
       'json',

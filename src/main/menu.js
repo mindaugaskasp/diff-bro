@@ -182,13 +182,8 @@ export function installMenu() {
       submenu: [
         {
           label: 'Base64',
-          submenu: [
-            {
-              label: 'Encode / Decode',
-              accelerator: 'CmdOrCtrl+Shift+B',
-              click: () => sendToFocused('tools-base64')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+B',
+          click: () => sendToFocused('tools-base64')
         },
         {
           label: 'JSON',

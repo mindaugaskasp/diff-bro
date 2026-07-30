@@ -15,6 +15,12 @@ import {
 // All format/validate tools are one dialog driven by this table: a new tool is
 // an entry here + a menu accelerator, never another dialog component.
 export const TEXT_TOOLS = {
+  base64: {
+    title: 'Base64',
+    language: 'plaintext',
+    // A rich panel (ToolBase64.vue): encode/decode, URL-safe, wrap, byte counts.
+    panel: 'base64'
+  },
   json: {
     title: 'JSON',
     language: 'json',

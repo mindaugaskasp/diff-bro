@@ -15,6 +15,7 @@ import ToolUrl from './ToolUrl.vue'
 import ToolJwt from './ToolJwt.vue'
 import ToolJson from './ToolJson.vue'
 import ToolLines from './ToolLines.vue'
+import ToolBase64 from './ToolBase64.vue'
 
 const props = defineProps({
   // Key into TEXT_TOOLS — which tool this dialog is showing.
@@ -78,6 +79,7 @@ function close() {
     <ToolJwt v-else-if="tool.panel === 'jwt'" />
     <ToolJson v-else-if="tool.panel === 'json'" />
     <ToolLines v-else-if="tool.panel === 'lines'" />
+    <ToolBase64 v-else-if="tool.panel === 'base64'" />
     <template v-else>
       <div
         ref="container"

@@ -17,7 +17,6 @@ const diff = useDiffStore()
 
 // Tools pinned to the sidebar foot (same dialogs as the Tools menu).
 const TOOLS = [
-  { label: 'Base64', title: 'Base64 Encode / Decode', open: () => (diff.showBase64Dialog = true) },
   ...Object.keys(TEXT_TOOLS).map((id) => ({
     label: id.toUpperCase(),
     title: TEXT_TOOLS[id].title,

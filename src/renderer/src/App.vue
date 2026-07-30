@@ -49,7 +49,6 @@ onMounted(async () => {
 const dropSuppressed = computed(
   () =>
     !!snippets.editingSnippet ||
-    store.showBase64Dialog ||
     !!store.textTool ||
     store.showCryptDialog ||
     store.mode === 'paste'

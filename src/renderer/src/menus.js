@@ -114,13 +114,8 @@ export function buildMenus(store) {
       items: [
         {
           label: 'Base64',
-          items: [
-            {
-              label: 'Encode / Decode',
-              keys: `${MOD}+Shift+B`,
-              run: () => store.handleMenuAction('tools-base64')
-            }
-          ]
+          keys: `${MOD}+Shift+B`,
+          run: () => store.handleMenuAction('tools-base64')
         },
         { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => store.handleMenuAction('tools-json') },
         {

@@ -2,7 +2,6 @@
 // IN the launcher (no main process, no raising the app), so a base64 string can
 // be decoded without ever leaving what you're doing. Reuses the same pure
 // helpers the in-app tools use, so the two never diverge.
-import { base64Decode, base64Encode } from './base64'
 import { TEXT_TOOLS } from './textTools'
 
 const T = TEXT_TOOLS
@@ -10,8 +9,7 @@ const T = TEXT_TOOLS
 // A `panel` tool renders its own rich body (ToolEpoch.vue) in the launcher
 // instead of the text→text input/output; it has no `convert`.
 export const CONVERT_TOOLS = [
-  { id: 'base64-encode', name: 'Base64 Encode', convert: base64Encode },
-  { id: 'base64-decode', name: 'Base64 Decode', convert: base64Decode },
+  { id: 'base64', name: 'Base64', panel: 'base64' },
   { id: 'jwt', name: 'JWT Decode', panel: 'jwt' },
   { id: 'url', name: 'URL', panel: 'url' },
   { id: 'html', name: 'HTML Entities', convert: T.html.format },

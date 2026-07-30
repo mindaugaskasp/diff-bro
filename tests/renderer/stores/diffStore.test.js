@@ -355,7 +355,7 @@ describe('diffStore', () => {
   it('routes menu actions: tools-base64/json/xml/sql/find-replace/crypt open their dialogs', () => {
     const store = useDiffStore()
     store.handleMenuAction('tools-base64')
-    expect(store.showBase64Dialog).toBe(true)
+    expect(store.textTool).toBe('base64')
     store.handleMenuAction('tools-json')
     expect(store.textTool).toBe('json')
     store.handleMenuAction('tools-xml')

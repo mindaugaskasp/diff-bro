@@ -126,7 +126,7 @@ const MENU_ACTIONS = {
   'config-restore': (s) => (s.configMode = 'restore'),
   settings: (s) => (s.showSettingsDialog = true),
   'command-palette': (s) => (s.showCommandPalette = true),
-  'tools-base64': (s) => (s.showBase64Dialog = true),
+  'tools-base64': (s) => (s.textTool = 'base64'),
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
@@ -195,10 +195,8 @@ export const useDiffStore = defineStore('diff', {
     showShareKeyDialog: false,
     // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
     configMode: null,
-    // Tools menu dialog visibility.
-    showBase64Dialog: false,
-    // Which format/validate tool is open ('json' | 'xml' | 'sql'), null when
-    // none — one dialog serves all of them (see utils/textTools.js).
+    // Which text tool is open (a TEXT_TOOLS key, e.g. 'base64' | 'json' |
+    // 'xml'), null when none — one dialog serves all of them (utils/textTools.js).
     textTool: null,
     showFindReplaceDialog: false,
     showCryptDialog: false,

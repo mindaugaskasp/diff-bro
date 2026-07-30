@@ -12,31 +12,21 @@ describe('convert tools', () => {
     expect(items).toHaveLength(CONVERT_TOOLS.length)
     expect(items.every((i) => i.kind === 'command')).toBe(true)
     // searchable by name through the shared rank()
-    expect(rank('base64', items).map((i) => i.id)).toEqual(['base64-encode', 'base64-decode'])
-  })
-
-  it('round-trips base64 encode and decode', () => {
-    const enc = runConvert('base64-encode', 'hello')
-    expect(enc.output).toBe('aGVsbG8=')
-    expect(runConvert('base64-decode', enc.output)).toEqual({ output: 'hello' })
-  })
-
-  it('is Unicode-safe', () => {
-    const enc = runConvert('base64-encode', 'héllo €')
-    expect(runConvert('base64-decode', enc.output)).toEqual({ output: 'héllo €' })
-  })
-
-  it('reports malformed base64 instead of throwing', () => {
-    expect(runConvert('base64-decode', 'not valid base64 !!!')).toEqual({ error: 'convert-failed' })
+    expect(rank('base64', items).map((i) => i.id)).toEqual(['base64'])
   })
 
   it('runs the shared TEXT_TOOLS transforms (HTML entities)', () => {
     expect(runConvert('html', '<a> & </a>').output).toContain('&lt;a&gt;')
   })
 
-  it('treats panel tools (epoch/uuid/url/jwt/json/lines) as having no text conversion', () => {
+  it('reports a failed conversion instead of throwing', () => {
+    // An out-of-range code point makes the entity decoder throw.
+    expect(runConvert('html', '&#x110000;')).toEqual({ error: 'convert-failed' })
+  })
+
+  it('treats panel tools as having no text conversion', () => {
     const items = convertItems()
-    for (const id of ['epoch', 'uuid', 'url', 'jwt', 'json', 'lines']) {
+    for (const id of ['base64', 'epoch', 'uuid', 'url', 'jwt', 'json', 'lines']) {
       expect(items.find((i) => i.id === id)).toMatchObject({ panel: id })
       // The rich panel renders instead — there is nothing to text-convert.
       expect(runConvert(id, 'x')).toEqual({ output: '' })
@@ -44,7 +34,7 @@ describe('convert tools', () => {
   })
 
   it('handles empty input and unknown tools without throwing', () => {
-    expect(runConvert('base64-encode', '')).toEqual({ output: '' })
+    expect(runConvert('html', '')).toEqual({ output: '' })
     expect(runConvert('nope', 'x')).toEqual({ error: 'unknown-tool' })
   })
 })

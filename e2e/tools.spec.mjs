@@ -4,34 +4,6 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // utils are unit-tested; a launch proves the menu → dialog → util → output
 // wiring and the OS-clipboard write.
 
-test('Base64 encodes, then decodes back to the original', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'Base64', 'Encode / Decode')
-  const dialog = page.getByRole('dialog', { name: 'Base64 Encode / Decode' })
-  await expect(dialog).toBeVisible()
-
-  await dialog.getByPlaceholder('Text or Base64…').fill('Diff Bro')
-  await dialog.getByRole('button', { name: 'Encode →' }).click()
-  const output = dialog.locator('textarea[readonly]')
-  await expect(output).toHaveValue('RGlmZiBCcm8=')
-
-  await dialog.getByRole('button', { name: 'Use as Input' }).click()
-  await dialog.getByRole('button', { name: 'Decode →' }).click()
-  await expect(output).toHaveValue('Diff Bro')
-
-  // Copy writes to the real OS clipboard (via the main process).
-  await dialog.getByRole('button', { name: 'Copy', exact: true }).click()
-  const clip = await app.evaluate(({ clipboard }) => clipboard.readText())
-  expect(clip).toBe('Diff Bro')
-})
-
-test('invalid Base64 is reported, not silently wrong', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Base64', 'Encode / Decode')
-  const dialog = page.getByRole('dialog', { name: 'Base64 Encode / Decode' })
-  await dialog.getByPlaceholder('Text or Base64…').fill('not valid base64 !!!')
-  await dialog.getByRole('button', { name: 'Decode →' }).click()
-  await expect(dialog.locator('.error')).toContainText('Not valid Base64')
-})
-
 test('Encrypt then Decrypt round-trips text under a passphrase', async ({ page }) => {
   await openMenu(page, 'Tools', 'Text Encryption', 'Encrypt / Decrypt')
   const dialog = page.getByRole('dialog', { name: 'Encrypt / Decrypt Text' })

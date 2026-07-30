@@ -13,6 +13,7 @@ import ToolUrl from './ToolUrl.vue'
 import ToolJwt from './ToolJwt.vue'
 import ToolJson from './ToolJson.vue'
 import ToolLines from './ToolLines.vue'
+import ToolBase64 from './ToolBase64.vue'
 
 const props = defineProps({
   tool: { type: Object, required: true }, // { id, name, panel? }
@@ -28,7 +29,8 @@ const PANEL_ICONS = {
   url: 'link',
   jwt: 'shield-check',
   json: 'braces',
-  lines: 'list'
+  lines: 'list',
+  base64: 'code'
 }
 const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 onMounted(() => {
@@ -67,6 +69,7 @@ function onKeydown(e) {
       <ToolJwt v-else-if="tool.panel === 'jwt'" compact />
       <ToolJson v-else-if="tool.panel === 'json'" compact />
       <ToolLines v-else-if="tool.panel === 'lines'" compact />
+      <ToolBase64 v-else-if="tool.panel === 'base64'" compact />
     </div>
     <template v-else>
       <textarea

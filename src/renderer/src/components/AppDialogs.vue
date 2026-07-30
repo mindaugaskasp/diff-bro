@@ -9,7 +9,6 @@ import PasteConfirmDialog from './PasteConfirmDialog.vue'
 import SaveDiffDialog from './SaveDiffDialog.vue'
 import ShareDiffDialog from './ShareDiffDialog.vue'
 import ReplaceDiffDialog from './ReplaceDiffDialog.vue'
-import Base64Dialog from './Base64Dialog.vue'
 import TextToolDialog from './TextToolDialog.vue'
 import FindReplaceDialog from './FindReplaceDialog.vue'
 import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
@@ -47,7 +46,6 @@ const errors = useErrorStore()
   <CommandPalette v-if="store.showCommandPalette" />
   <MermaidViewerDialog v-if="store.mermaidView" />
   <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
-  <Base64Dialog v-if="store.showBase64Dialog" />
   <TextToolDialog v-if="store.textTool" :key="store.textTool" :tool="store.textTool" />
   <FindReplaceDialog v-if="store.showFindReplaceDialog" />
   <EncryptDecryptDialog v-if="store.showCryptDialog" />
