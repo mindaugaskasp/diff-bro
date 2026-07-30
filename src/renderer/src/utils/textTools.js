@@ -58,14 +58,15 @@ export const TEXT_TOOLS = {
     requiresValid: true
   },
   jwt: {
-    title: 'JWT Decode',
+    title: 'JWT',
     language: 'json',
+    // A rich panel (ToolJwt.vue): decoded header/payload + humanized claims.
+    panel: 'jwt',
     validate: validateJwt,
     format: decodeJwt,
     actionLabel: 'Decode',
     validLabel: 'Valid JWT',
-    requiresValid: true,
-    note: 'Decodes the header and payload. The signature is never verified — never trust the contents.'
+    requiresValid: true
   },
   epoch: {
     title: 'Epoch / Date',
