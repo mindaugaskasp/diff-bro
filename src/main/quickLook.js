@@ -20,8 +20,7 @@ import {
 
 // Fallback when settings.json has none. Mirror the renderer's
 // DEFAULT_QUICKLOOK_SHORTCUT (settingsStore.js) — keep the two in step.
-const DEFAULT_ACCELERATOR =
-  process.platform === 'darwin' ? 'Shift+Space' : 'CommandOrControl+Shift+Space'
+const DEFAULT_ACCELERATOR = 'CommandOrControl+Shift+Space'
 
 let win = null
 // The accelerator currently registered, so a change unregisters exactly it.

@@ -1,12 +1,11 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { isValidAccelerator } from '../utils/accelerator'
-import { isMac } from '../keys'
 
-// Default quick look-up shortcut. macOS Shift+Space (note: as a GLOBAL shortcut
-// this intercepts Shift+Space system-wide until rebound); Windows/Linux keep the
-// three-key chord. Mirrored per-platform in src/main/quickLook.js — keep in step.
-export const DEFAULT_QUICKLOOK_SHORTCUT = isMac ? 'Shift+Space' : 'CommandOrControl+Shift+Space'
+// Default quick look-up shortcut: Cmd/Ctrl+Shift+Space on every platform. Two
+// modifiers so it can't fire while typing capitals (the old macOS Shift+Space
+// did). Mirrored in src/main/quickLook.js — keep the two in step.
+export const DEFAULT_QUICKLOOK_SHORTCUT = 'CommandOrControl+Shift+Space'
 
 // Organizational, non-secret preferences, persisted as PLAINTEXT settings.json
 // (nothing sensitive; encrypted data stays in the vault/snippet stores).
