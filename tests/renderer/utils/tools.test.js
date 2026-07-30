@@ -94,11 +94,13 @@ describe('toolSections', () => {
     expect(sections[0].items).toHaveLength(TOOLS.length)
   })
 
-  it('puts Recent above All tools, and repeats a recent tool in both', () => {
+  // Listing a recent tool again under "All tools" read as a duplicate row.
+  it('puts Recent first and lists each tool exactly once', () => {
     const sections = toolSections(['uuid'])
-    expect(sections.map((s) => s.label)).toEqual(['Recent', 'All tools'])
+    expect(sections.map((s) => s.label)).toEqual(['Recent', 'Other tools'])
     expect(sections[0].items.map((t) => t.id)).toEqual(['uuid'])
-    expect(sections[1].items.some((t) => t.id === 'uuid')).toBe(true)
+    expect(sections[1].items.some((t) => t.id === 'uuid')).toBe(false)
+    expect(sections[0].items.length + sections[1].items.length).toBe(TOOLS.length)
   })
 })
 
@@ -107,13 +109,15 @@ describe('toolPaletteItems', () => {
     const items = toolPaletteItems(['uuid', 'json'])
     expect(items[0]).toMatchObject({ id: 'uuid', section: 'Recent' })
     expect(items[1]).toMatchObject({ id: 'json', section: '' })
-    expect(items[2].section).toBe('All tools')
+    expect(items[2].section).toBe('Other tools')
     expect(items.filter((i) => i.section)).toHaveLength(2)
   })
 
-  it('is every tool plus the recents shown twice', () => {
+  it('is every tool, once, however many are recent', () => {
     expect(toolPaletteItems([])).toHaveLength(TOOLS.length)
-    expect(toolPaletteItems(['uuid', 'json'])).toHaveLength(TOOLS.length + 2)
+    expect(toolPaletteItems(['uuid', 'json'])).toHaveLength(TOOLS.length)
+    const ids = toolPaletteItems(['uuid', 'json']).map((t) => t.id)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('does not mutate the registry entries it copies', () => {

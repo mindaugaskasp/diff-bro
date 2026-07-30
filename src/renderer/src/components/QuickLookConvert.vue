@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useCaretBackOut } from '../composables/useCaretBackOut'
+import { usePanelScroll } from '../composables/usePanelScroll'
 import AppIcon from './AppIcon.vue'
 import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
@@ -33,6 +34,7 @@ const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 
 // Focus a field, or Escape fires on body and never reaches the handler here.
 const panelEl = ref(null)
+const { onKeydown: onPanelKeys } = usePanelScroll(panelEl)
 onMounted(() =>
   nextTick(() => {
     const field = panelEl.value?.querySelector('input, textarea')
@@ -52,7 +54,7 @@ onMounted(() =>
       <span class="qc-kbd">Esc</span>
     </div>
 
-    <div ref="panelEl" class="qc-panel" tabindex="-1">
+    <div ref="panelEl" class="qc-panel" tabindex="-1" @keydown="onPanelKeys">
       <ToolEpoch v-if="tool.panel === 'epoch'" compact />
       <ToolUuid v-else-if="tool.panel === 'uuid'" compact />
       <ToolUrl v-else-if="tool.panel === 'url'" compact />

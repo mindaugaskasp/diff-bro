@@ -44,42 +44,12 @@
   padding: 0 var(--space-1);
 }
 
-/* Input and output share the field styling; Tab moves focus between them, and
-   the focus bar makes that move visible. */
-.qc-field {
-  flex: 1 1 50%;
-  min-height: 0;
-  resize: none;
-  border: none;
-  outline: none;
-  color: var(--text);
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: var(--font-md);
-  line-height: 1.6;
-  padding: var(--space-3) var(--space-4);
-}
-.qc-field::placeholder {
-  color: var(--text-dim);
-}
-/* Same accent edge the snippet preview uses (QuickLook.css .ql-body.in-preview
-   .ql-preview), so a focused field reads identically across the launcher. */
-.qc-field:focus-visible {
-  box-shadow: inset 2px 0 0 0 var(--accent);
-}
-/* A panel tool (Epoch) renders its rich body here instead of the textareas; it
-   scrolls within the fixed launcher window when tall. */
+/* Scrolls within the fixed launcher window when the panel is tall. */
 .qc-panel {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-3) var(--space-4);
-}
-.qc-in {
-  background: var(--bg);
-}
-.qc-out {
-  background: var(--bg-elevated);
-  border-top: 1px solid var(--border);
 }
 
 .qc-foot {
@@ -95,8 +65,4 @@
   gap: var(--space-1);
   font-size: var(--font-xs);
   color: var(--text-dim);
-}
-.qc-err {
-  font-size: var(--font-xs);
-  color: var(--danger-border);
 }

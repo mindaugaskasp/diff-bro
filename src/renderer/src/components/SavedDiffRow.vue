@@ -97,7 +97,7 @@ async function open() {
               <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
             </span>
           </template>
-          <span v-else-if="!entry.from" class="untagged">Default</span>
+          <span v-else-if="!entry.from" class="untagged">Untagged</span>
         </span>
       </span>
     </button>

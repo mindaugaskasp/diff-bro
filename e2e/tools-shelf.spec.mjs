@@ -48,7 +48,9 @@ test('records recents from the menu and surfaces them in the shelf and palette',
   const sections = page.locator('.cp .cp-row[data-section]')
   await expect(sections).toHaveCount(2)
   await expect(sections.nth(0)).toHaveAttribute('data-section', 'Recent')
-  await expect(sections.nth(1)).toHaveAttribute('data-section', 'All tools')
+  await expect(sections.nth(1)).toHaveAttribute('data-section', 'Other tools')
+  // A recent tool must not also appear below — that read as a duplicate row.
+  await expect(page.locator('.cp-row .cp-name', { hasText: /^Base64$/ })).toHaveCount(1)
   // The row carries an accurate action word, never a blanket "Convert".
   await expect(page.locator('.cp-row').first()).toContainText('Encode')
 })

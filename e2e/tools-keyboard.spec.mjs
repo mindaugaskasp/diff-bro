@@ -86,3 +86,27 @@ test('the launcher arrow chain reaches a tool and comes back', async ({ app, pag
   await ql.keyboard.press('ArrowDown')
   await expect(ql.locator('.ql-res.sel')).toBeVisible()
 })
+
+// The launcher window is short and the Lines panel is tall. With the caret in
+// the first textarea, ArrowDown used to be swallowed by the field forever, so
+// the result at the bottom was unreachable without a mouse.
+test('a tall tool panel scrolls with the arrow keys in the launcher', async ({ app, page }) => {
+  const [ql] = await Promise.all([
+    app.waitForEvent('window'),
+    page.evaluate(() => window.api.quickLookToggle())
+  ])
+  await ql.waitForLoadState('domcontentloaded')
+  await ql.locator('.ql-input').fill('Lines')
+  await ql.locator('.ql-input').press('ArrowRight')
+
+  const panel = ql.locator('.qc-panel')
+  await expect(panel).toBeVisible()
+  const room = await panel.evaluate((el) => el.scrollHeight - el.clientHeight)
+  expect(room, 'the panel should overflow the launcher window').toBeGreaterThan(0)
+
+  for (let i = 0; i < 12; i++) await ql.keyboard.press('ArrowDown')
+  await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
+
+  await ql.keyboard.press('PageUp')
+  await expect.poll(() => panel.evaluate((el) => Math.round(el.scrollTop))).toBe(0)
+})
