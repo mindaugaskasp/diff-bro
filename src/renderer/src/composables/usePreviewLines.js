@@ -18,11 +18,19 @@ export function usePreviewLines({ snippetText, zone, previewEl, current, onCopie
   const reset = () => (previewLine.value = 0)
 
   // ↑/↓ step the highlighted line and keep it in view (a long snippet scrolls as
-  // the line advances) rather than free-scrolling the body.
+  // the line advances). Scroll the container by the exact overflow — scrollIntoView
+  // under-scrolls at the bottom because smooth-scroll lag makes 'nearest' read a
+  // mid-animation position as already-visible.
   function movePreview(dir) {
     const last = snippetLines.value.length - 1
     previewLine.value = Math.max(0, Math.min(previewLine.value + dir, last))
-    previewEl.value?.children?.[previewLine.value]?.scrollIntoView?.({ block: 'nearest' })
+    const el = previewEl.value
+    const line = el?.children?.[previewLine.value]
+    if (!el || typeof line?.getBoundingClientRect !== 'function') return
+    const lr = line.getBoundingClientRect()
+    const er = el.getBoundingClientRect()
+    if (lr.bottom > er.bottom) el.scrollTop += lr.bottom - er.bottom
+    else if (lr.top < er.top) el.scrollTop -= er.top - lr.top
   }
 
   const isHot = (i) => zone.value === 'preview' && i === previewLine.value

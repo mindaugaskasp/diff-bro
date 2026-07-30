@@ -31,12 +31,19 @@ describe('usePreviewLines', () => {
     expect(p.previewLine.value).toBe(0)
   })
 
-  it('movePreview scrolls the active line into view', () => {
+  it('movePreview scrolls the container by the overflow so the active line stays visible', () => {
     const { p, previewEl } = setup()
-    const scrollIntoView = vi.fn()
-    previewEl.value = { children: [{ scrollIntoView }, { scrollIntoView }, { scrollIntoView }] }
+    previewEl.value = {
+      scrollTop: 0,
+      getBoundingClientRect: () => ({ top: 0, bottom: 100 }),
+      children: [
+        { getBoundingClientRect: () => ({ top: 0, bottom: 20 }) },
+        { getBoundingClientRect: () => ({ top: 90, bottom: 110 }) }, // juts 10px below
+        { getBoundingClientRect: () => ({ top: 110, bottom: 130 }) }
+      ]
+    }
     p.movePreview(1)
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+    expect(previewEl.value.scrollTop).toBe(10)
   })
 
   it('lineClass marks only the active line, and only in the preview zone', () => {
