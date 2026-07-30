@@ -10,6 +10,11 @@ import AppIcon from './AppIcon.vue'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
+const MODES = [
+  { value: 'text', label: 'Text' },
+  { value: 'word', label: 'Word' },
+  { value: 'regex', label: 'Regex' }
+]
 const SORT_OPTS = [
   { value: 'none', label: 'Original' },
   { value: 'asc', label: 'A→Z' },
@@ -25,6 +30,8 @@ const dedupe = ref(false)
 const sort = ref('none')
 const find = ref('')
 const replace = ref('')
+const mode = ref('text')
+const caseInsensitive = ref(false)
 const prefix = ref('')
 const suffix = ref('')
 const sepRaw = ref('')
@@ -40,6 +47,8 @@ const result = computed(() =>
     sort: sort.value,
     find: find.value,
     replace: replace.value,
+    mode: mode.value,
+    caseInsensitive: caseInsensitive.value,
     prefix: prefix.value,
     suffix: suffix.value,
     separator: separator.value
@@ -47,8 +56,10 @@ const result = computed(() =>
 )
 const summary = computed(() => {
   const c = result.value.count
+  if (!c) return ''
   const dup = c.dupes ? ` · ${c.dupes} dup${c.dupes === 1 ? '' : 's'}` : ''
-  return `${c.in} → ${c.out} line${c.out === 1 ? '' : 's'}${dup}`
+  const rep = c.replaced ? ` · ${c.replaced} replaced` : ''
+  return `${c.in} → ${c.out} line${c.out === 1 ? '' : 's'}${dup}${rep}`
 })
 
 const copied = ref(false)
@@ -84,7 +95,7 @@ async function copy() {
         <input
           v-model="splitBy"
           class="tln-field"
-          placeholder="Split input by, e.g. &quot;, &quot; (blank = lines)"
+          placeholder='Split input by, e.g. ", " (blank = lines)'
           aria-label="Split by"
         />
       </div>
@@ -93,18 +104,37 @@ async function copy() {
         <input v-model="replace" class="tln-field" placeholder="Replace…" aria-label="Replace" />
       </div>
       <div class="tln-row">
-        <input v-model="prefix" class="tln-field" placeholder="Prefix each line…" aria-label="Prefix" />
+        <SegmentedControl v-model:value="mode" :options="MODES" />
+        <label class="tln-chk">
+          <input v-model="caseInsensitive" type="checkbox" /> Ignore case
+        </label>
+      </div>
+      <div class="tln-row">
+        <input
+          v-model="prefix"
+          class="tln-field"
+          placeholder="Prefix each line…"
+          aria-label="Prefix"
+        />
         <input v-model="suffix" class="tln-field" placeholder="…suffix" aria-label="Suffix" />
       </div>
       <div class="tln-row">
-        <input v-model="sepRaw" class="tln-field" placeholder="Join with, e.g. ," aria-label="Separator" />
+        <input
+          v-model="sepRaw"
+          class="tln-field"
+          placeholder="Join with, e.g. ,"
+          aria-label="Separator"
+        />
         <label class="tln-chk"><input v-model="perLine" type="checkbox" /> One per line</label>
       </div>
     </div>
 
-    <div class="tln-block">
+    <p v-if="result.error" class="tln-err">{{ result.error }}</p>
+    <div v-else class="tln-block">
       <div class="tln-bh">
-        <span>Result <span class="tln-count">· {{ summary }}</span></span>
+        <span
+          >Result <span class="tln-count">· {{ summary }}</span></span
+        >
         <button class="tln-copy" aria-label="Copy" @click="copy">
           <AppIcon :name="copied ? 'check' : 'copy'" />
         </button>

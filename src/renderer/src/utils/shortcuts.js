@@ -43,7 +43,7 @@ export const SHORTCUT_GROUPS = [
       { keys: `${MOD}+Shift+J`, label: 'JSON format / validate' },
       { keys: `${MOD}+Shift+M`, label: 'XML format / validate' },
       { keys: `${MOD}+Shift+U`, label: 'UUID convert' },
-      { keys: `${MOD}+Shift+R`, label: 'Find & replace' },
+      { keys: `${MOD}+Shift+R`, label: 'Lines (split, sort, replace)' },
       { keys: `${MOD}+Shift+X`, label: 'Encrypt / decrypt text' }
     ]
   }

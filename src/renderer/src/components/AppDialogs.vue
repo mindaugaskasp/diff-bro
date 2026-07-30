@@ -10,7 +10,6 @@ import SaveDiffDialog from './SaveDiffDialog.vue'
 import ShareDiffDialog from './ShareDiffDialog.vue'
 import ReplaceDiffDialog from './ReplaceDiffDialog.vue'
 import TextToolDialog from './TextToolDialog.vue'
-import FindReplaceDialog from './FindReplaceDialog.vue'
 import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
 import SnippetEditorDialog from './SnippetEditorDialog.vue'
 import SnippetPassphraseDialog from './SnippetPassphraseDialog.vue'
@@ -47,7 +46,6 @@ const errors = useErrorStore()
   <MermaidViewerDialog v-if="store.mermaidView" />
   <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
   <TextToolDialog v-if="store.textTool" :key="store.textTool" :tool="store.textTool" />
-  <FindReplaceDialog v-if="store.showFindReplaceDialog" />
   <EncryptDecryptDialog v-if="store.showCryptDialog" />
   <SnippetEditorDialog v-if="snippets.editingSnippet" />
   <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />

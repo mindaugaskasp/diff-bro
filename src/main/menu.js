@@ -203,16 +203,10 @@ export function installMenu() {
         { label: 'JWT Decode', click: () => sendToFocused('tools-jwt') },
         { label: 'Epoch / Date', click: () => sendToFocused('tools-epoch') },
         { label: 'URL Encode / Decode', click: () => sendToFocused('tools-url') },
-        { label: 'Lines', click: () => sendToFocused('tools-lines') },
         {
-          label: 'Find & Replace',
-          submenu: [
-            {
-              label: 'Replace…',
-              accelerator: 'CmdOrCtrl+Shift+R',
-              click: () => sendToFocused('tools-find-replace')
-            }
-          ]
+          label: 'Lines',
+          accelerator: 'CmdOrCtrl+Shift+R',
+          click: () => sendToFocused('tools-lines')
         },
         {
           label: 'Text Encryption',

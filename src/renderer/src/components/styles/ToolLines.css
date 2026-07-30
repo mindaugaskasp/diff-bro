@@ -118,3 +118,9 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+.tln-err {
+  margin: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  color: var(--danger-border);
+}

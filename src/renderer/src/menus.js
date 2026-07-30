@@ -123,16 +123,10 @@ export function buildMenus(store) {
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
         { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
-        { label: 'Lines', run: () => store.handleMenuAction('tools-lines') },
         {
-          label: 'Find & Replace',
-          items: [
-            {
-              label: 'Replace…',
-              keys: `${MOD}+Shift+R`,
-              run: () => store.handleMenuAction('tools-find-replace')
-            }
-          ]
+          label: 'Lines',
+          keys: `${MOD}+Shift+R`,
+          run: () => store.handleMenuAction('tools-lines')
         },
         {
           label: 'Text Encryption',

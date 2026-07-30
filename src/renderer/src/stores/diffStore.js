@@ -138,7 +138,6 @@ const MENU_ACTIONS = {
   'tools-epoch': (s) => (s.textTool = 'epoch'),
   'tools-url': (s) => (s.textTool = 'url'),
   'tools-lines': (s) => (s.textTool = 'lines'),
-  'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)
 }
@@ -200,7 +199,6 @@ export const useDiffStore = defineStore('diff', {
     // Which text tool is open (a TEXT_TOOLS key, e.g. 'base64' | 'json' |
     // 'xml'), null when none — one dialog serves all of them (utils/textTools.js).
     textTool: null,
-    showFindReplaceDialog: false,
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,
