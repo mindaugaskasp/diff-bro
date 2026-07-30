@@ -79,14 +79,14 @@ export const TEXT_TOOLS = {
     requiresValid: true
   },
   url: {
-    title: 'URL Encode / Decode',
+    title: 'URL',
     language: 'plaintext',
+    // A rich panel (ToolUrl.vue): encode/decode + editable query-param table.
+    panel: 'url',
     validate: validateUrlCode,
     format: convertUrlCode,
     actionLabel: 'Encode / Decode',
     validLabel: 'Ready',
-    // Percent-encoded input decodes; anything else encodes. Encoding always
-    // works, so the tool stays useful even when a stray % fails to validate.
     requiresValid: false
   },
   html: {

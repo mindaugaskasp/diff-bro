@@ -13,7 +13,7 @@ export const CONVERT_TOOLS = [
   { id: 'base64-encode', name: 'Base64 Encode', convert: base64Encode },
   { id: 'base64-decode', name: 'Base64 Decode', convert: base64Decode },
   { id: 'jwt', name: 'JWT Decode', convert: T.jwt.format },
-  { id: 'url', name: 'URL Encode / Decode', convert: T.url.format },
+  { id: 'url', name: 'URL', panel: 'url' },
   { id: 'html', name: 'HTML Entities', convert: T.html.format },
   { id: 'epoch', name: 'Epoch / Date', panel: 'epoch' },
   { id: 'json', name: 'JSON Format', convert: T.json.format },

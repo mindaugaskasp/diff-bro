@@ -11,6 +11,7 @@ import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
 import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
+import ToolUrl from './ToolUrl.vue'
 
 const props = defineProps({
   // Key into TEXT_TOOLS — which tool this dialog is showing.
@@ -70,6 +71,7 @@ function close() {
   >
     <ToolEpoch v-if="tool.panel === 'epoch'" />
     <ToolUuid v-else-if="tool.panel === 'uuid'" />
+    <ToolUrl v-else-if="tool.panel === 'url'" />
     <template v-else>
       <div
         ref="container"
