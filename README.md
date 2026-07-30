@@ -15,7 +15,7 @@ a hard promise: it never touches the network.
 ## Why Diff Bro
 
 - **Truly offline.** No account, no telemetry, no auto-update, no CDN. The app
-  makes *zero* network requests — enforced by a session-level kill switch, a
+  makes _zero_ network requests — enforced by a session-level kill switch, a
   strict CSP, and a sandboxed renderer, not just a promise. Your files never
   leave your machine.
 - **Private by default.** Anything you keep — saved diffs, snippets, keys — is
@@ -44,7 +44,7 @@ a hard promise: it never touches the network.
   toolbar (bold, headings, lists, quote, code, links) and a live rendered
   preview, with a Rendered/Plain toggle.
 - **Quick look-up** — a global shortcut summons a floating search over your
-  snippets and saved diffs *without raising the app*; ↑/↓ to browse, **Enter** to
+  snippets and saved diffs _without raising the app_; ↑/↓ to browse, **Enter** to
   open, **Ctrl/Cmd+C** to copy a snippet straight to the clipboard. Rebind the
   shortcut in Settings.
 - **Resizable dialogs** — the snippet editor and the tool windows resize from any
@@ -89,10 +89,10 @@ a hard promise: it never touches the network.
 Grab the latest installer from the
 [**latest release**](https://github.com/mindaugaskasp/diff-bro/releases/latest):
 
-| OS | Download |
-| --- | --- |
-| **Windows** (10/11) | `diff-bro-Setup-v<version>.exe` |
-| **macOS** (Apple silicon, 12+) | `diff-bro-v<version>.dmg` |
+| OS                             | Download                        |
+| ------------------------------ | ------------------------------- |
+| **Windows** (10/11)            | `diff-bro-Setup-v<version>.exe` |
+| **macOS** (Apple silicon, 12+) | `diff-bro-v<version>.dmg`       |
 
 **macOS via Homebrew:**
 
@@ -114,7 +114,12 @@ the [security model](docs/security.md).
 
 ## Build from source
 
+Needs **Node 22.12+** (the version Docker and CI use — `nvm use` picks it up
+from `.nvmrc`). Older majors install but warn, and the build toolchain no
+longer supports them.
+
 ```bash
+nvm use          # or install Node 22.12+ yourself
 npm install
 npm run dev      # run locally
 npm run check    # lint + tests

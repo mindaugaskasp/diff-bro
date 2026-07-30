@@ -181,6 +181,17 @@ Monaco.
 - Temp/test artifacts (generated key files, `.diffbro` files) must be
   cleaned up from `tests/data/` after verification; only `config-v1.json`
   and `config-v2.json` belong there.
+- **Node 22.12+** (`.nvmrc`, `engines`, `node:22-bookworm-slim`, CI's
+  `node-version: 22` — keep all four in step). On an older major `npm install`
+  warns `EBADENGINE` for the app and for `@electron/rebuild` / `node-abi`,
+  which genuinely require it. Fix the local Node (`nvm use`); never widen
+  `engines` to silence it.
+- Three deprecation warnings on install (`inflight`, `rimraf@2`, `glob@7`) are
+  transitive dev-only dependencies of `electron-builder`, which is already at
+  its latest — `npm audit` reports zero vulnerabilities and nothing we import
+  reaches them. They are upstream's to fix: do NOT add `overrides` to force
+  newer versions inside a build tool, which risks the installer builds for no
+  security gain.
 - After dependency changes, the Docker env needs `make rebuild`
   (volume-shadowed `node_modules`). Prefer `make install` for adding or
   updating dependencies — it writes `package-lock.json` with the
