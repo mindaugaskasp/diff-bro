@@ -32,6 +32,22 @@ async function save() {
   // Persist any new tags' colors so the chip color the user saw sticks.
   const userTags = tagField.value ? [...tagField.value.tags] : []
   if (userTags.length) snippets.registerTags(userTags, tagField.value.newColors())
+
+  // "Share" flow: don't persist yet — capture the draft and go to the recipient
+  // picker. The local copy + sealed file are written together only when the share
+  // completes (diffStore.shareTo), so cancelling anywhere leaves nothing behind.
+  if (diff.saveThenShare) {
+    diff.saveThenShare = false
+    diff.showSaveDialog = false
+    diff.beginShareDraft({
+      name: name.value.trim(),
+      ttlHours: secure.value ? ttl.value : null,
+      snapshot: diff.snapshot(),
+      tags: userTags
+    })
+    return
+  }
+
   const id = await vault.save(
     name.value.trim(),
     secure.value ? ttl.value : null,
@@ -41,7 +57,6 @@ async function save() {
   diff.showSaveDialog = false
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
-    diff.saveThenShare = false
     diff.replaceAfterSave = null
     diff.pickAfterSave = null
     diff.showNotice(
@@ -49,21 +64,20 @@ async function save() {
     )
     return
   }
+  await finishSave(wasPaste)
+}
+
+// Post-save routing: a "save first" chain resumes its deferred action, otherwise
+// a paste-mode save runs the comparison and we confirm the save.
+async function finishSave(wasPaste) {
   diff.markSaved()
-  if (diff.saveThenShare) {
-    // "Share" flow: continue straight into the recipient picker.
-    diff.saveThenShare = false
-    diff.shareEntryId = id
-  } else if (diff.replaceAfterSave) {
-    // "Save first" from the replace prompt: saved, now load the dropped file(s).
+  if (diff.replaceAfterSave) {
     diff.showNotice('Saved (encrypted). Loading the dropped file…')
     await diff.finishReplaceAfterSave()
   } else if (diff.pickAfterSave) {
-    // "Save first" from the file-load prompt: saved, now open the picked file.
     diff.showNotice('Saved (encrypted). Loading the file…')
     diff.finishPickAfterSave()
   } else {
-    // Run the comparison for a paste-mode save, then re-mark saved.
     if (wasPaste) {
       diff.comparePasted()
       diff.markSaved()

@@ -33,7 +33,11 @@ function readEntries() {
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
-    const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed.entries) ? parsed.entries : []
+    const list = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed.entries)
+        ? parsed.entries
+        : []
     return list.map((e) => {
       // Coerce name/tags so old data can't throw downstream (not in the AAD, so
       // decryption is unaffected).
@@ -193,6 +197,28 @@ export const useVaultStore = defineStore('vault', {
         { name: entry.name, createdAt, expiresAt, snapshot: payload, tags },
         recipientFp
       )
+    },
+    // Share the CURRENT diff WITHOUT first persisting a local copy: seal from the
+    // in-memory snapshot, and only once the sealed file is actually written do we
+    // save the local twin. So cancelling the recipient picker OR the file dialog
+    // leaves nothing behind (see diffStore.shareCurrent) — a share is all-or-nothing.
+    async shareDraft({ name, ttlHours, snapshot, tags = [] }, recipientFp) {
+      const now = Date.now()
+      const localExpiresAt =
+        ttlHours === null
+          ? null
+          : now + Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS) * 3600_000
+      // The sealed copy MUST carry a finite ≤24 h expiry (sealing.js enforces it);
+      // a kept local diff therefore shares with a fresh 24 h window.
+      const expiresAt = localExpiresAt ?? now + MAX_TTL_HOURS * 3600_000
+      const cleanTags = tags.filter((t) => t !== 'imported')
+      const res = await window.api.shareExport(
+        { name, createdAt: now, expiresAt, snapshot, tags: cleanTags },
+        recipientFp
+      )
+      // Only a written file persists the local twin — a cancel writes nothing.
+      if (res.ok) await this.save(name, ttlHours, snapshot, tags)
+      return res
     },
     async importShared() {
       return this._ingestShared(await window.api.shareImport())

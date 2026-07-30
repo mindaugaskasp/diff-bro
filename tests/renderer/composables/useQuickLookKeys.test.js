@@ -18,8 +18,16 @@ function harness(n = 3, start = 0) {
   const onChoose = vi.fn()
   const onDismiss = vi.fn()
   const onCopy = vi.fn()
-  const { onKeydown } = useQuickLookKeys({ count: () => n, selected, onChoose, onDismiss, onCopy })
-  return { selected, onChoose, onDismiss, onCopy, press: presser(onKeydown) }
+  const onCopyLine = vi.fn()
+  const { onKeydown } = useQuickLookKeys({
+    count: () => n,
+    selected,
+    onChoose,
+    onDismiss,
+    onCopy,
+    onCopyLine
+  })
+  return { selected, onChoose, onDismiss, onCopy, onCopyLine, press: presser(onKeydown) }
 }
 
 describe('useQuickLookKeys', () => {
@@ -93,6 +101,19 @@ describe('useQuickLookKeys', () => {
     expect(h.onCopy).not.toHaveBeenCalled()
   })
 
+  it('Shift+Cmd/Ctrl+C copies the active preview line, not the whole row', () => {
+    const collapsed = { selectionStart: 0, selectionEnd: 0 }
+    const h = harness(3, 1)
+    const pd = h.press('C', { metaKey: true, shiftKey: true, target: collapsed })
+    expect(pd).toHaveBeenCalled()
+    expect(h.onCopyLine).toHaveBeenCalledTimes(1)
+    expect(h.onCopy).not.toHaveBeenCalled()
+
+    const h2 = harness(3, 0)
+    h2.press('c', { ctrlKey: true, shiftKey: true, target: collapsed })
+    expect(h2.onCopyLine).toHaveBeenCalledTimes(1)
+  })
+
   it('does not copy a plain c (no modifier) or when the list is empty', () => {
     const h = harness(3, 0)
     h.press('c', { target: { selectionStart: 0, selectionEnd: 0 } })
@@ -104,23 +125,23 @@ describe('useQuickLookKeys', () => {
 })
 
 // A stand-in for the two focus zones. canEnter mirrors "the active row has a
-// scrollable snippet preview"; scrollPreview is spied.
+// scrollable snippet preview"; movePreview is spied.
 function previewHarness({ zoneStart = 'list', canEnter = true } = {}) {
   const selected = { value: 0 }
   const zone = { value: zoneStart }
-  const scrollPreview = vi.fn()
+  const movePreview = vi.fn()
   const onDismiss = vi.fn()
   const { onKeydown } = useQuickLookKeys({
     count: () => 3,
     selected,
     zone,
     canEnterPreview: () => canEnter,
-    scrollPreview,
+    movePreview,
     onChoose: vi.fn(),
     onDismiss
   })
   const atEnd = { selectionStart: 4, selectionEnd: 4, value: 'auth' }
-  return { selected, zone, scrollPreview, onDismiss, press: presser(onKeydown), atEnd }
+  return { selected, zone, movePreview, onDismiss, press: presser(onKeydown), atEnd }
 }
 
 describe('useQuickLookKeys — preview zone', () => {
@@ -146,11 +167,11 @@ describe('useQuickLookKeys — preview zone', () => {
     expect(h.zone.value).toBe('list')
   })
 
-  it('in the preview, Up/Down scroll the body and leave the selection put', () => {
+  it('in the preview, Up/Down step the active line and leave the list selection put', () => {
     const h = previewHarness({ zoneStart: 'preview' })
     h.press('ArrowDown')
     h.press('ArrowUp')
-    expect(h.scrollPreview.mock.calls).toEqual([[1], [-1]])
+    expect(h.movePreview.mock.calls).toEqual([[1], [-1]])
     expect(h.selected.value).toBe(0)
   })
 

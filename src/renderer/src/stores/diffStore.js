@@ -178,8 +178,12 @@ export const useDiffStore = defineStore('diff', {
     userTheme: normalizeTheme(loadPersisted('theme')), // persisted Appearance pick
     // The ACTIVE theme components read — userTheme, unless daily rotation is on.
     theme: normalizeTheme(loadPersisted('theme')),
-    // entry id currently in the share dialog (null = closed)
+    // entry id currently in the share dialog (an already-saved diff; null = closed)
     shareEntryId: null,
+    // Pending share of the CURRENT diff, captured but NOT yet persisted:
+    // { name, ttlHours, snapshot, tags }. The local copy is written only when the
+    // share completes, so cancelling the picker/file dialog leaves nothing.
+    shareDraft: null,
     pendingTrustedKey: null, // { key, fingerprint, label } while the name dialog is open
     // { fingerprint, label } while the "remove this key?" confirmation is open.
     pendingUntrust: null,
@@ -709,12 +713,26 @@ export const useDiffStore = defineStore('diff', {
     shareEntry(id) {
       this.shareEntryId = id
     },
+    // The save step of the "share current diff" flow captured this draft instead of
+    // persisting — opening the recipient picker with it pending (see SaveDiffDialog).
+    beginShareDraft(draft) {
+      this.shareDraft = draft
+    },
     async shareTo(recipientFp) {
+      const vault = useVaultStore()
+      const draft = this.shareDraft
       const id = this.shareEntryId
+      this.shareDraft = null
       this.shareEntryId = null
-      const res = await useVaultStore().share(id, recipientFp)
-      if (res.ok) this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)
-      else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
+      const res = draft
+        ? await vault.shareDraft(draft, recipientFp)
+        : await vault.share(id, recipientFp)
+      if (res.ok) {
+        if (draft) this.markSaved() // the draft's local twin now exists on disk
+        this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)
+      } else if (res.error) {
+        this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
+      }
     },
     // Import a sealed diff and open it — but only when nothing is on screen; with
     // a diff loaded, keep the view and leave it in External diffs.

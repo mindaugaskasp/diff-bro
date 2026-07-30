@@ -2,11 +2,10 @@
 // Root of the floating quick look-up window (see src/main/quickLook.js); logic
 // lives in useQuickLook. The snippet preview renders through text interpolation
 // only, never v-html (CLAUDE.md #7).
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
 import { languageMonogram } from '../utils/languageMonogram'
-import { isMac } from '../keys'
 import AppIcon from './AppIcon.vue'
 import QuickLookConvert from './QuickLookConvert.vue'
 
@@ -18,8 +17,11 @@ const {
   selected,
   results,
   current,
-  diffMeta,
-  snippetText,
+  snippetLines,
+  lineClass,
+  hoverLine,
+  footHints,
+  copyKey,
   zone,
   previewEl,
   choose,
@@ -38,39 +40,26 @@ const {
 } = useQuickLook()
 const store = useSnippetStore()
 const input = ref(null)
-const copyKey = isMac ? '⌘C' : 'Ctrl+C'
-const snippetLines = computed(() => snippetText.value.split('\n'))
 
 // Row helpers — precomputed so the template rows stay one line each.
 const monoStyle = (it) => ({ '--fam': it.kind === 'command' ? '' : mono(it.lang).family })
 const monoText = (it) => (it.kind === 'command' ? '' : mono(it.lang).label)
 const tagStyle = (it) => ({ background: store.colorOf(it.tags?.[0]) })
-
-// Keyboard hints for the foot, data-driven so the template stays small.
-const footHints = computed(() => {
-  if (zone.value === 'preview') {
-    return [
-      ['↑↓', 'scroll'],
-      ['←', 'back to list'],
-      ['↵', 'open'],
-      ['Esc', 'back']
-    ]
-  }
-  const hints = [['↑↓', 'navigate']]
-  if (current.value?.kind === 'snippet') hints.push(['→', 'scroll preview'])
-  else if (current.value?.kind === 'command') hints.push(['→', 'convert'])
-  hints.push(['↵', 'open'], [copyKey, 'copy'], ['Esc', 'close'])
-  return hints
+// The first tool after the snippets gets .group-start (the CSS draws the seam);
+// selection/copied state stays index-based so keyboard nav is one flat list.
+const isToolStart = (i) =>
+  results.value[i]?.kind === 'command' && results.value[i - 1]?.kind === 'snippet'
+const resClass = (i) => ({
+  sel: i === selected.value,
+  copied: copied.value && i === copiedIndex.value,
+  'group-start': isToolStart(i)
 })
 
-// Per-kind preview action + body hint — a command converts, a snippet/diff opens.
+// Per-kind preview action + lock note — a snippet opens in the editor, a command converts.
 const ACTIONS = {
   snippet: { icon: 'edit', label: 'Open in editor' },
-  diff: { icon: 'file', label: 'Open in comparison' },
   command: { icon: 'wrench', label: 'Convert' }
 }
-const bodyHint = (it) =>
-  it.kind === 'command' ? 'convert with this tool' : 'open this diff in the comparison view'
 const lockLabel = (it) => (it.kind === 'command' ? 'runs on this machine' : 'decrypted on demand')
 
 function focusInput() {
@@ -91,14 +80,6 @@ onMounted(() => {
 watch(convertTool, (tool) => {
   if (!tool) nextTick(focusInput)
 })
-
-function expiryLabel(meta) {
-  if (!meta) return ''
-  if (meta.from) return 'Shared diff'
-  if (meta.expiresAt === null) return 'Kept'
-  const mins = Math.max(0, Math.round((meta.expiresAt - Date.now()) / 60000))
-  return mins >= 60 ? `expires in ${Math.round(mins / 60)} h` : `expires in ${mins} min`
-}
 </script>
 
 <template>
@@ -119,7 +100,7 @@ function expiryLabel(meta) {
           v-model="query"
           class="ql-input"
           type="text"
-          placeholder="Search snippets & diffs…"
+          placeholder="Search snippets & tools…"
           autocomplete="off"
           spellcheck="false"
           @keydown="onKeydown"
@@ -129,12 +110,12 @@ function expiryLabel(meta) {
 
       <div class="ql-body" :class="{ 'in-preview': zone === 'preview' }">
         <ul class="ql-results">
-          <li v-if="!results.length" class="ql-empty">No snippet or diff matches.</li>
+          <li v-if="!results.length" class="ql-empty">No snippet or tool matches.</li>
           <li
             v-for="(it, i) in results"
             :key="it.kind + it.id"
             class="ql-res"
-            :class="{ sel: i === selected, copied: copied && i === copiedIndex }"
+            :class="resClass(i)"
             @click="selected = i"
             @dblclick="choose(i)"
           >
@@ -184,14 +165,12 @@ function expiryLabel(meta) {
               ref="previewEl"
               class="ql-pv-body"
               :class="{ scrolling: zone === 'preview' }"
+              @mouseover="hoverLine"
             >
-              <div v-for="(line, i) in snippetLines" :key="i" class="ql-pv-line">{{ line }}</div>
+              <div v-for="(line, i) in snippetLines" :key="i" :class="lineClass(i)">{{ line }}</div>
             </div>
-            <div v-else class="ql-pv-diff">
-              <span v-if="current.kind === 'diff'" class="ql-pv-expiry">{{
-                expiryLabel(diffMeta)
-              }}</span>
-              <p>Press <strong>Enter</strong> to {{ bodyHint(current) }}.</p>
+            <div v-else class="ql-pv-msg">
+              <p>Press <strong>Enter</strong> to convert with this tool.</p>
             </div>
 
             <div class="ql-pv-foot band">

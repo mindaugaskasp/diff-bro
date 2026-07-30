@@ -101,17 +101,22 @@
   padding: 3px 5px;
 }
 
-/* --- body: results | preview --- */
+/* --- body: results | preview ---
+   minmax(0, 1fr) + min-height:0 on the items caps the single row at the card
+   height so each column scrolls internally instead of overflowing the window
+   (grid items default to min-height:auto, which otherwise grows to content). */
 .ql-body {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
 .ql-results {
   list-style: none;
   margin: 0;
   padding: var(--space-2);
+  min-height: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);
 }
@@ -133,12 +138,21 @@
   border: 1px solid transparent;
   cursor: pointer;
 }
+/* Accent tint (not --bg-hover) so a hovered/selected row speaks the launcher's
+   one selection language and never reads as a stray grey band. */
 .ql-res:hover {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .ql-res.sel {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+/* Seam between the snippet group and the tool group: a horizontal divider so the
+   two kinds read as separate sections while staying one keyboard list. */
+.ql-res.group-start {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  padding-top: calc(var(--space-2) + var(--space-1));
 }
 .ql-name {
   font-size: var(--font-md);
@@ -248,21 +262,27 @@
   user-select: none;
   font-variant-numeric: tabular-nums;
 }
+/* Hover marks the copy target in either zone; .hot is the keyboard-active line
+   (preview zone) — an accent tint + edge, the launcher's own selection language
+   (matches .ql-res.sel and the in-preview seam) so it never reads as a stray
+   grey/white band. Shift+Cmd+C copies it. */
+.ql-pv-line:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ql-pv-line.hot {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 2px 0 0 0 var(--accent);
+}
 @media (prefers-reduced-motion: reduce) {
   .ql-pv-body {
     scroll-behavior: auto;
   }
 }
-.ql-pv-diff {
+.ql-pv-msg {
   flex: 1;
   padding: var(--space-4);
   color: var(--text-dim);
   font-size: var(--font-sm);
-}
-.ql-pv-expiry {
-  display: inline-block;
-  margin-bottom: var(--space-2);
-  color: var(--text-hint);
 }
 .ql-pv-foot {
   justify-content: space-between;

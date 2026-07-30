@@ -103,6 +103,48 @@ describe('vaultStore', () => {
     expect(sealed.tags).not.toContain('imported')
   })
 
+  it('shareDraft persists a local twin only once the sealed file is written', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => (
+      (sealed = entry),
+      { ok: true, to: 'bob', path: '/x' }
+    )
+    const res = await vault.shareDraft(
+      { name: 'd', ttlHours: 1, snapshot: PAYLOAD, tags: ['release'] },
+      'FP'
+    )
+    expect(res.ok).toBe(true)
+    expect(sealed.snapshot).toEqual(PAYLOAD)
+    expect(vault.entries).toHaveLength(1)
+    expect(vault.entries[0].name).toBe('d')
+    await expect(vault.load(vault.entries[0].id)).resolves.toEqual(PAYLOAD)
+  })
+
+  it('shareDraft persists nothing when the file dialog is cancelled', async () => {
+    const vault = useVaultStore()
+    window.api.shareExport = async () => ({ canceled: true })
+    const res = await vault.shareDraft(
+      { name: 'd', ttlHours: 1, snapshot: PAYLOAD, tags: [] },
+      'FP'
+    )
+    expect(res).toEqual({ canceled: true })
+    expect(vault.entries).toHaveLength(0)
+  })
+
+  it('shareDraft: a kept draft seals a fresh ≤24 h copy but keeps the local twin', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => (
+      (sealed = entry),
+      { ok: true, to: 'bob', path: '/x' }
+    )
+    await vault.shareDraft({ name: 'kept', ttlHours: null, snapshot: PAYLOAD, tags: [] }, 'FP')
+    expect(sealed.expiresAt).toBeGreaterThan(Date.now())
+    expect(sealed.expiresAt - sealed.createdAt).toBeLessThanOrEqual(24 * 3600_000)
+    expect(vault.entries[0].expiresAt).toBe(null)
+  })
+
   it('an imported diff carries the sender tags plus the local "imported" tag', async () => {
     const vault = useVaultStore()
     window.api.shareImport = async () => ({

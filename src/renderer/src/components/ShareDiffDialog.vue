@@ -34,6 +34,7 @@ watch(
 
 function close() {
   diff.shareEntryId = null
+  diff.shareDraft = null
 }
 </script>
 

@@ -37,7 +37,7 @@ const errors = useErrorStore()
 <template>
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
-  <ShareDiffDialog v-if="store.shareEntryId" />
+  <ShareDiffDialog v-if="store.shareEntryId || store.shareDraft" />
   <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
   <RemoveTrustedKeyDialog v-if="store.pendingUntrust" />
   <ShareKeyDialog v-if="store.showShareKeyDialog" />
