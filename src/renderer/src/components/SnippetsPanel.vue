@@ -57,12 +57,17 @@ function newSnippet() {
       @toggle="sectionOpen = !sectionOpen"
     >
       <template #actions>
-        <button class="btn btn-icon" title="New" aria-label="New snippet" @click.stop="newSnippet">
+        <button
+          class="btn btn-icon"
+          data-tip="New"
+          aria-label="New snippet"
+          @click.stop="newSnippet"
+        >
           <AppIcon name="plus" />
         </button>
         <button
           class="btn btn-icon"
-          title="Export"
+          data-tip="Export"
           aria-label="Export all snippets to a passphrase-protected file"
           @click.stop="store.pendingExport = { all: true }"
         >
@@ -70,7 +75,7 @@ function newSnippet() {
         </button>
         <button
           class="btn btn-icon"
-          title="Import"
+          data-tip="Import"
           aria-label="Import snippets from a file"
           @click.stop="store.pendingImport = true"
         >

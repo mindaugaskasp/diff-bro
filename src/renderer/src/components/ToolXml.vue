@@ -80,7 +80,7 @@ async function copy() {
                 · {{ filtered.count }} match{{ filtered.count === 1 ? '' : 'es' }}
               </span>
             </span>
-            <button class="txm-copy" aria-label="Copy" title="Copy" @click="copy">
+            <button class="txm-copy" aria-label="Copy" data-tip="Copy" @click="copy">
               <AppIcon :name="copied ? 'check' : 'copy'" />
             </button>
           </div>

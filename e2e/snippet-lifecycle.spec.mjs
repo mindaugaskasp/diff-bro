@@ -44,7 +44,7 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   // --- delete (with confirm) ---
   const renamed = page.locator('.snippets-section .row', { hasText: 'My renamed note' })
   await renamed.hover()
-  await renamed.getByTitle('Delete').click()
+  await renamed.getByRole('button', { name: 'Delete' }).click()
   const del = page.getByRole('dialog', { name: 'Delete snippet?' })
   await expect(del).toBeVisible()
   await del.getByRole('button', { name: 'Delete', exact: true }).click()

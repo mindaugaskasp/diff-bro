@@ -70,7 +70,7 @@ async function copy(text) {
         v-if="output"
         class="tur-copy"
         aria-label="Copy result"
-        title="Copy"
+        data-tip="Copy"
         @click="copy(output)"
       >
         <AppIcon :name="copied === output ? 'check' : 'copy'" />
@@ -85,7 +85,7 @@ async function copy(text) {
         <button
           class="tur-x"
           aria-label="Remove parameter"
-          title="Remove"
+          data-tip="Remove"
           @click="params.splice(i, 1)"
         >
           <AppIcon name="x" />
@@ -96,7 +96,7 @@ async function copy(text) {
       </button>
       <div class="tur-out">
         <span class="tur-out-v">{{ rebuilt }}</span>
-        <button class="tur-copy" aria-label="Copy URL" title="Copy" @click="copy(rebuilt)">
+        <button class="tur-copy" aria-label="Copy URL" data-tip="Copy" @click="copy(rebuilt)">
           <AppIcon :name="copied === rebuilt ? 'check' : 'copy'" />
         </button>
       </div>

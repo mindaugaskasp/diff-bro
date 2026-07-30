@@ -28,7 +28,7 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
   for (const [tooltip, name] of cases) {
     const button = page.getByRole('button', { name })
     await expect(button, `${name} should still be findable by name`).toBeVisible()
-    await expect(button).toHaveAttribute('title', tooltip)
+    await expect(button).toHaveAttribute('data-tip', tooltip)
   }
 })
 
@@ -38,7 +38,11 @@ test('a tool panel copy button has a hover tooltip, not just an aria-label', asy
   await page.keyboard.press('Enter')
   const dlg = page.getByRole('dialog', { name: 'JSON' })
   await dlg.getByLabel('JSON', { exact: true }).fill('{"a":1}')
-  await expect(dlg.locator('.tjs-copy')).toHaveAttribute('title', 'Copy')
+  await expect(dlg.locator('.tjs-copy')).toHaveAttribute('data-tip', 'Copy')
+
+  // …and it renders on hover, rather than relying on the OS to draw it.
+  await dlg.locator('.tjs-copy').hover()
+  await expect(page.locator('.tip-bubble')).toHaveText('Copy')
 })
 
 // The preview used to open from anywhere on the row, so it appeared while you
@@ -53,6 +57,14 @@ test('the snippet preview opens from the title only', async ({ page }) => {
 
   await row.locator('.nm').hover()
   await expect(page.locator('.preview')).toBeVisible()
+
+  // Anchored to the title instead of the row, the card covered the row buttons.
+  const [card, rowBox] = await Promise.all([
+    page.locator('.preview').boundingBox(),
+    row.boundingBox()
+  ])
+  const overlaps = card.x < rowBox.x + rowBox.width && card.x + card.width > rowBox.x
+  expect(overlaps, 'the preview must not sit on top of the row').toBe(false)
 })
 
 // The first section label is a pseudo-element above its row; too small a margin
@@ -70,4 +82,34 @@ test('the palette section label has room above its first row', async ({ page }) 
       return el.getBoundingClientRect().top - listTop - labelHeight
     })
   expect(room, 'the label would overlap the row above it').toBeGreaterThan(0)
+})
+
+// Native `title` tooltips are drawn by the OS, so they are invisible to the app,
+// unstyleable and slow. This asserts a tooltip the page actually renders.
+test('hovering an icon button shows a visible tooltip', async ({ page }) => {
+  const button = page.getByRole('button', { name: 'New snippet' })
+  await button.hover()
+
+  const tip = page.locator('.tip-bubble')
+  await expect(tip).toBeVisible()
+  await expect(tip).toHaveText('New')
+
+  const box = await tip.boundingBox()
+  expect(box.width, 'the tooltip must have real size').toBeGreaterThan(0)
+
+  // toBeVisible() only proves it has a box — a bubble left inside the app tree
+  // is capped by a parent stacking context and never painted. It must be a
+  // child of body, above everything.
+  const escaped = await tip.evaluate((el) => el.parentElement === document.body)
+  expect(escaped, 'the tooltip must be teleported out of the app tree').toBe(true)
+})
+
+// The shelf sat closer to the seam above it than to the window edge below,
+// which reads as a misaligned band once the chips wrap to a second row.
+test('the tools shelf has equal space above and below its chips', async ({ page }) => {
+  const pad = await page.locator('.usb-tools').evaluate((el) => {
+    const s = getComputedStyle(el)
+    return { top: parseFloat(s.paddingTop), bottom: parseFloat(s.paddingBottom) }
+  })
+  expect(pad.top, `top ${pad.top} vs bottom ${pad.bottom}`).toBe(pad.bottom)
 })

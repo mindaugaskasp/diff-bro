@@ -60,14 +60,15 @@ defineEmits(['hoverTitle', 'leaveTitle'])
 </script>
 
 <template>
-  <li class="row">
+  <li class="row" data-preview-anchor>
     <Transition name="flash">
       <span v-if="copied" class="copied-flash" aria-live="polite">Copied</span>
     </Transition>
     <button
       class="star"
       :class="{ on: favorite }"
-      :title="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="favorite ? 'Unfavorite' : 'Favorite'"
+      :aria-label="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
       @click="store.toggleFavorite(entry.id)"
     >
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
@@ -95,18 +96,36 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     </button>
     <span class="when">{{ ago(entry.createdAt) }}</span>
     <span class="rowacts">
-      <button v-if="isDiagram" class="row-btn" title="View diagram" @click="viewDiagram(entry)">
+      <button
+        v-if="isDiagram"
+        class="row-btn"
+        data-tip="Diagram"
+        aria-label="View diagram"
+        @click="viewDiagram(entry)"
+      >
         <AppIcon name="diagram" />
       </button>
-      <button v-if="isClaude" class="row-btn" title="Open Claude link" @click="openLink">
+      <button
+        v-if="isClaude"
+        class="row-btn"
+        data-tip="Open"
+        aria-label="Open Claude link"
+        @click="openLink"
+      >
         <AppIcon name="link" />
       </button>
-      <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">
+      <button
+        class="row-btn"
+        data-tip="Copy"
+        aria-label="Copy to clipboard"
+        @click="copySnippet(entry.id)"
+      >
         <AppIcon name="copy" />
       </button>
       <button
         class="row-btn delete"
-        title="Delete"
+        data-tip="Delete"
+        aria-label="Delete"
         @click="store.requestDelete('snippet', entry.id, entry.name)"
       >
         <AppIcon name="trash" />

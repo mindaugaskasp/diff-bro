@@ -54,7 +54,7 @@ function startImport() {
       <template #actions>
         <button
           class="btn btn-icon"
-          :title="`Import (${MOD}+I)`"
+          :data-tip="`Import (${MOD}+I)`"
           aria-label="Import a shared diff"
           @click.stop="startImport"
         >

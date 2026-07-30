@@ -100,7 +100,7 @@ async function copy(text) {
             v-if="pickedEpoch"
             class="te-copy"
             aria-label="Copy epoch"
-            title="Copy"
+            data-tip="Copy"
             @click="copy(pickedEpoch)"
           >
             <AppIcon :name="copied === pickedEpoch ? 'check' : 'copy'" />

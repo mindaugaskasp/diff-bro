@@ -3,6 +3,28 @@
 Offline-only desktop diff viewer. Electron + electron-vite + Vue 3 + Pinia +
 Monaco.
 
+## Fixing a bug — read this before touching anything
+
+**Non-negotiable, in this order, for every bug:**
+
+1. **Write the test first and watch it FAIL.** Reproduce the bug in a test
+   before changing a line of source. A regression test you have never seen fail
+   proves nothing — it may assert something that was always true.
+2. **Then fix the code.**
+3. **Run the test again — it must now PASS.** Red → green is the evidence the
+   fix works and the test guards it.
+4. **If the test passed before the fix, the test is wrong, not the bug.**
+   Rewrite it until it fails for the right reason, then start again at 2.
+
+This covers UI defects too, not just pure logic: a visual or interaction bug
+gets an **e2e** test (`e2e/`), driven the way a user hits it. When the defect is
+a rendered property (colour, position, clipping, focus), assert the measurable
+thing — a bounding box, a computed style, a contrast ratio — not a screenshot.
+
+To prove an existing test really catches its bug, revert the fix, run it, see it
+fail, restore the fix. That check is cheap and it is the only thing separating a
+regression test from decoration.
+
 ## Commands
 
 - `npm run dev` — run natively. `make test-env` / `npm run docker:up` — full

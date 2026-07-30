@@ -67,7 +67,8 @@ async function open() {
     <button
       class="star"
       :class="{ on: entry.favorite }"
-      :title="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="entry.favorite ? 'Unfavorite' : 'Favorite'"
+      :aria-label="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
       @click="vault.toggleFavorite(entry.id)"
     >
       <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />
@@ -105,14 +106,16 @@ async function open() {
     <button
       v-if="!entry.from"
       class="row-btn"
-      title="Share as sealed file"
+      data-tip="Share"
+      aria-label="Share as sealed file"
       @click="diff.shareEntry(entry.id)"
     >
       <AppIcon name="share" />
     </button>
     <button
       class="row-btn delete"
-      title="Delete now"
+      data-tip="Delete"
+      aria-label="Delete now"
       @click="vault.requestDelete(entry.id, entry.name)"
     >
       <AppIcon name="x" />

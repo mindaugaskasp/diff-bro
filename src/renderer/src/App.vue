@@ -14,6 +14,7 @@ import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
 import MenuBar from './components/MenuBar.vue'
 import AppDialogs from './components/AppDialogs.vue'
+import AppTooltip from './components/AppTooltip.vue'
 import AppToolbar from './components/AppToolbar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import FormatHintBanner from './components/FormatHintBanner.vue'
@@ -48,10 +49,7 @@ onMounted(async () => {
 // Window-level file drops stand down while a dialog/paste pane handles its own.
 const dropSuppressed = computed(
   () =>
-    !!snippets.editingSnippet ||
-    !!store.textTool ||
-    store.showCryptDialog ||
-    store.mode === 'paste'
+    !!snippets.editingSnippet || !!store.textTool || store.showCryptDialog || store.mode === 'paste'
 )
 const {
   active: dragActive,
@@ -145,6 +143,7 @@ const {
     </div>
 
     <AppDialogs />
+    <AppTooltip />
 
     <transition name="fade">
       <div v-if="dragActive" class="drop-overlay">
