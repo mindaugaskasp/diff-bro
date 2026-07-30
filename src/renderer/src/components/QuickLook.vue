@@ -38,6 +38,11 @@ const {
 } = useQuickLook()
 const store = useSnippetStore()
 const input = ref(null)
+const listEl = ref(null)
+
+// Keep the highlighted row in view as the arrows move it — without this the
+// list stops scrolling once the selection passes the visible rows.
+watch(selected, (i) => listEl.value?.children?.[i]?.scrollIntoView({ block: 'nearest' }))
 
 // Row helpers — precomputed so the template rows stay one line each.
 const monoStyle = (it) => ({ '--fam': it.kind === 'snippet' ? mono(it.lang).family : '' })
@@ -112,7 +117,7 @@ watch(convertTool, (tool) => {
       </div>
 
       <div class="ql-body" :class="{ 'in-preview': zone === 'preview' }">
-        <ul class="ql-results">
+        <ul ref="listEl" class="ql-results">
           <li v-if="!results.length" class="ql-empty">No snippet or tool matches.</li>
           <li
             v-for="(it, i) in results"

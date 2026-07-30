@@ -105,3 +105,32 @@ test('Shift+Cmd+C copies only the active preview line', async ({ app, page }) =>
   const clip = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(clip).toBe(lineText)
 })
+
+// Arrowing past the visible rows must scroll the list; before this it stopped at
+// the fold and the selection walked off-screen (the Tools section made the list
+// long enough to notice).
+test('arrowing down scrolls the results list to keep the selection visible', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+  const list = ql.locator('.ql-results')
+  const before = await list.evaluate((el) => el.scrollTop)
+
+  // Open the Tools section so the list overflows, then walk to the bottom.
+  for (let i = 0; i < 3; i++) await ql.keyboard.press('ArrowDown')
+  await ql.keyboard.press('ArrowRight')
+  for (let i = 0; i < 12; i++) await ql.keyboard.press('ArrowDown')
+
+  await expect
+    .poll(async () => {
+      const el = await list.elementHandle()
+      const { scrollTop, scrollHeight, clientHeight } = await el.evaluate((n) => ({
+        scrollTop: n.scrollTop,
+        scrollHeight: n.scrollHeight,
+        clientHeight: n.clientHeight
+      }))
+      return scrollHeight > clientHeight ? scrollTop : -1
+    })
+    .toBeGreaterThan(before)
+})

@@ -41,6 +41,20 @@ test('Escape returns to the list with no click first', async ({ app, page }) => 
   await expect(ql.locator('.ql-input')).toBeVisible()
 })
 
+// ← is the mirror of the → that entered the panel. It must not fire while the
+// caret can still move inside a field.
+test('← returns to the list from the panel, but not mid-field', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await enterBase64(ql)
+  await ql.getByLabel('Base64 input').fill('hello')
+  await ql.keyboard.press('ArrowLeft') // caret is at the end — the field keeps it
+  await expect(ql.locator('.qc-name')).toHaveText('Base64')
+
+  await ql.getByLabel('Base64 input').fill('')
+  await ql.keyboard.press('ArrowLeft') // nothing left to give up — back out
+  await expect(ql.locator('.ql-input')).toBeVisible()
+})
+
 test('the back button returns to the list and navigation resumes', async ({ app, page }) => {
   const ql = await summon(app, page)
   await enterBase64(ql)

@@ -4,6 +4,7 @@
 // output and copy button), so this component is just the frame around one —
 // header, the panel itself, and the offline note.
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { useCaretBackOut } from '../composables/useCaretBackOut'
 import AppIcon from './AppIcon.vue'
 import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
@@ -17,7 +18,11 @@ import ToolXml from './ToolXml.vue'
 const props = defineProps({
   tool: { type: Object, required: true } // { id, name, panel }
 })
-defineEmits(['back'])
+const emit = defineEmits(['back'])
+
+// ← returns to the list, the mirror of the → that entered the panel — unless a
+// field still has caret to give up (see useCaretBackOut).
+const { onKeydown } = useCaretBackOut(() => emit('back'))
 
 const PANEL_ICONS = {
   epoch: 'clock',
@@ -44,7 +49,7 @@ onMounted(() =>
 </script>
 
 <template>
-  <div class="qc" @keydown.escape="$emit('back')">
+  <div class="qc" @keydown.escape="$emit('back')" @keydown="onKeydown">
     <div class="qc-head band">
       <button class="qc-back" title="Back (Esc)" @click="$emit('back')">
         <AppIcon name="chevron-left" />
