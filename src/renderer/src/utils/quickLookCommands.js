@@ -3,6 +3,7 @@
 // be decoded without ever leaving what you're doing. Reuses the same pure
 // helpers the in-app tools use, so the two never diverge.
 import { TEXT_TOOLS } from './textTools'
+import { toolById } from './tools'
 
 const T = TEXT_TOOLS
 
@@ -23,9 +24,20 @@ const BY_ID = new Map(CONVERT_TOOLS.map((t) => [t.id, t]))
 
 // The launcher ranks these next to snippets via rank(), which matches on `name`;
 // kind:'command' routes a choice into convert mode instead of openInMain. `panel`
-// travels so the convert panel knows to render a rich body.
+// travels so the convert panel knows to render a rich body, and the registry
+// supplies the row's own icon and action word (never a blanket "convert").
 export const convertItems = () =>
-  CONVERT_TOOLS.map((t) => ({ kind: 'command', id: t.id, name: t.name, panel: t.panel }))
+  CONVERT_TOOLS.map((t) => {
+    const tool = toolById(t.id)
+    return {
+      kind: 'command',
+      id: t.id,
+      name: t.name,
+      panel: t.panel,
+      icon: tool?.icon ?? 'wrench',
+      action: tool?.kind ?? 'Convert'
+    }
+  })
 
 /**
  * @param {string} id     a CONVERT_TOOLS id

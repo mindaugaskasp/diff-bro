@@ -9,6 +9,7 @@ import { diffToHtml } from '../utils/diffHtml'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
+import { TOOLS } from '../utils/tools'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -125,7 +126,10 @@ const MENU_ACTIONS = {
   'config-backup': (s) => (s.configMode = 'backup'),
   'config-restore': (s) => (s.configMode = 'restore'),
   settings: (s) => (s.showSettingsDialog = true),
-  'command-palette': (s) => (s.showCommandPalette = true),
+  'command-palette': (s) => {
+    s.paletteScope = 'all'
+    s.showCommandPalette = true
+  },
   'tools-base64': (s) => (s.textTool = 'base64'),
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
@@ -206,6 +210,8 @@ export const useDiffStore = defineStore('diff', {
     showShortcutsDialog: false,
     // ⌘K-style command palette visibility.
     showCommandPalette: false,
+    // What the palette lists: every menu command, or just the tools.
+    paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
     // Content last dismissed per side, so the format-hint banner stays gone until
@@ -696,6 +702,15 @@ export const useDiffStore = defineStore('diff', {
     },
     handleMenuAction(action) {
       MENU_ACTIONS[action]?.(this)
+      // One choke point, so a tool opened from the menu, a shortcut, the shelf
+      // or the palette all count towards the shelf's recents.
+      const tool = TOOLS.find((t) => t.action === action)
+      if (tool) useSettingsStore().noteToolUsed(tool.id)
+    },
+    // The command palette, scoped to tools (sidebar shelf → "Search tools…").
+    openToolsPalette() {
+      this.paletteScope = 'tools'
+      this.showCommandPalette = true
     },
     // Save first (a share file needs a name + expiry), then the recipient picker.
     shareCurrent() {

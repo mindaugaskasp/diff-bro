@@ -4,35 +4,15 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
-import { useDiffStore } from '../stores/diffStore'
-import { TEXT_TOOLS } from '../utils/textTools'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
+import ToolsShelf from './ToolsShelf.vue'
 import AppIcon from './AppIcon.vue'
 
 const vault = useVaultStore()
 const snippets = useSnippetStore()
-const diff = useDiffStore()
 
-// Tools pinned to the sidebar foot (same dialogs as the Tools menu).
-const TOOLS = [
-  ...Object.keys(TEXT_TOOLS).map((id) => ({
-    label: id.toUpperCase(),
-    title: TEXT_TOOLS[id].title,
-    open: () => (diff.textTool = id)
-  })),
-  {
-    label: 'Replace',
-    title: 'Find & Replace (characters, words, or regex)',
-    open: () => (diff.showFindReplaceDialog = true)
-  },
-  {
-    label: 'Patch',
-    title: 'Apply a unified .patch to a base file',
-    open: () => diff.applyPatch()
-  }
-]
 let timer = null
 onMounted(() => {
   vault.tick()
@@ -155,12 +135,7 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
         :fav-only="favOnly"
       />
     </div>
-    <div class="usb-tools band">
-      <span class="usb-tools-label"><AppIcon name="wrench" /> Tools</span>
-      <button v-for="t in TOOLS" :key="t.label" class="usb-tool" :title="t.title" @click="t.open()">
-        {{ t.label }}
-      </button>
-    </div>
+    <ToolsShelf />
   </aside>
 </template>
 

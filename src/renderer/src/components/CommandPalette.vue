@@ -5,21 +5,30 @@
 // list-only defaults — so all the event logic stays in tested composables.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { buildMenus } from '../menus'
 import { flattenCommands } from '../utils/commandPalette'
+import { TOOLS, toolPaletteItems } from '../utils/tools'
 import { rank } from '../utils/quickLook'
 import { useQuickLookKeys } from '../composables/useQuickLookKeys'
 import { useBackdropClose } from '../composables/useBackdropClose'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
+const settings = useSettingsStore()
 const commands = flattenCommands(buildMenus(store))
 const query = ref('')
 const selected = ref(0)
 const input = ref(null)
 const listEl = ref(null)
 
-const results = computed(() => rank(query.value, commands))
+const isTools = computed(() => store.paletteScope === 'tools')
+// Unfiltered, the tools scope shows Recent above All tools; once you type it
+// ranks the plain registry so a recent tool can't match twice.
+const results = computed(() => {
+  if (!isTools.value) return rank(query.value, commands)
+  return query.value.trim() ? rank(query.value, TOOLS) : toolPaletteItems(settings.recentTools)
+})
 watch(results, () => (selected.value = 0))
 watch(selected, (i) => listEl.value?.children?.[i]?.scrollIntoView({ block: 'nearest' }))
 
@@ -30,7 +39,8 @@ function choose(i) {
   const cmd = results.value[i]
   if (!cmd) return
   close()
-  cmd.run()
+  if (cmd.action) store.handleMenuAction(cmd.action)
+  else cmd.run()
 }
 
 const { onKeydown } = useQuickLookKeys({
@@ -54,7 +64,7 @@ onMounted(() => input.value?.focus())
           v-model="query"
           class="cp-input"
           type="text"
-          placeholder="Search commands…"
+          :placeholder="isTools ? 'Search tools…' : 'Search commands…'"
           autocomplete="off"
           spellcheck="false"
           @keydown="onKeydown"
@@ -62,18 +72,23 @@ onMounted(() => input.value?.focus())
         <span class="cp-kbd">Esc</span>
       </div>
       <ul ref="listEl" class="cp-list">
-        <li v-if="!results.length" class="cp-empty">No matching command.</li>
+        <li v-if="!results.length" class="cp-empty">
+          {{ isTools ? 'No matching tool.' : 'No matching command.' }}
+        </li>
         <li
           v-for="(cmd, i) in results"
-          :key="cmd.group + cmd.name"
+          :key="(cmd.group || cmd.id) + cmd.name"
           class="cp-row"
-          :class="{ sel: i === selected }"
+          :class="{ sel: i === selected, tool: isTools }"
+          :data-section="cmd.section || undefined"
           @mouseenter="selected = i"
           @click="choose(i)"
         >
-          <span class="cp-group">{{ cmd.group }}</span>
+          <AppIcon v-if="isTools" :name="cmd.icon" class="cp-tool-ico" />
+          <span v-else class="cp-group">{{ cmd.group }}</span>
           <span class="cp-name">{{ cmd.name }}</span>
           <span v-if="cmd.keys" class="cp-keys">{{ cmd.keys }}</span>
+          <span v-else-if="isTools" class="cp-kind">{{ cmd.kind }}</span>
         </li>
       </ul>
     </div>

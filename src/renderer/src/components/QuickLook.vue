@@ -48,7 +48,7 @@ const monoText = (it) => (it.kind === 'snippet' ? mono(it.lang).label : '')
 const tagStyle = (it) => ({ background: store.colorOf(it.tags?.[0]) })
 const rowIcon = () => (toolsOpen.value ? 'chevron-down' : 'chevron-right')
 const kindLabel = (it) =>
-  it.kind === 'command' ? 'convert' : it.kind === 'tools' ? `${it.count} tools` : it.kind
+  it.kind === 'command' ? it.action : it.kind === 'tools' ? `${it.count} tools` : it.kind
 // The Tools header carries the seam divider (above it) and its command rows
 // indent beneath; selection stays index-based so nav is one flat list.
 const isSectionStart = (i) =>
@@ -65,11 +65,14 @@ const resClass = (i) => {
 }
 
 // Per-kind preview action + lock note — snippet opens, command/tools stay local.
+// A tool speaks for itself (its own icon and action word), so the button never
+// says a blanket "Convert" over a tool that formats or generates.
 const ACTIONS = {
   snippet: { icon: 'edit', label: 'Open in editor' },
-  command: { icon: 'wrench', label: 'Convert' },
   tools: { icon: 'wrench', label: 'Browse tools' }
 }
+const previewAction = (it) =>
+  it.kind === 'command' ? { icon: it.icon, label: it.action } : ACTIONS[it.kind]
 const lockLabel = (it) => (it.kind === 'snippet' ? 'decrypted on demand' : 'runs on this machine')
 
 function focusInput() {
@@ -129,7 +132,7 @@ watch(convertTool, (tool) => {
             @click="selected = i"
             @dblclick="choose(i)"
           >
-            <span v-if="it.kind === 'command'" class="monogram cmd"><AppIcon name="wrench" /></span>
+            <span v-if="it.kind === 'command'" class="monogram cmd"><AppIcon :name="it.icon" /></span>
             <span v-else-if="it.count" class="monogram sec"><AppIcon :name="rowIcon()" /></span>
             <span v-else class="monogram" :style="monoStyle(it)">{{ monoText(it) }}</span>
             <span class="ql-name">{{ it.name }}</span>
@@ -191,7 +194,7 @@ watch(convertTool, (tool) => {
               <span class="ql-lock"><AppIcon name="lock" /> {{ lockLabel(current) }}</span>
               <span class="ql-pv-actions">
                 <button class="btn btn-primary btn-sm" @click="choose(selected)">
-                  <AppIcon :name="ACTIONS[current.kind].icon" /> {{ ACTIONS[current.kind].label }}
+                  <AppIcon :name="previewAction(current).icon" /> {{ previewAction(current).label }}
                 </button>
               </span>
             </div>

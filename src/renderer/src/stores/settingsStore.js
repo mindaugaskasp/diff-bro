@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { isValidAccelerator } from '../utils/accelerator'
+import { MAX_RECENT_TOOLS, noteRecent } from '../utils/tools'
 
 // Default quick look-up shortcut: Cmd/Ctrl+Shift+Space on every platform. Two
 // modifiers so it can't fire while typing capitals (the old macOS Shift+Space
@@ -127,6 +128,10 @@ function readState() {
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
     examplesSeeded: parsed.examplesSeeded === true,
+    // Most-recent-first tool ids; unknown ids are dropped when rendered.
+    recentTools: Array.isArray(parsed.recentTools)
+      ? parsed.recentTools.filter((id) => typeof id === 'string').slice(0, MAX_RECENT_TOOLS)
+      : [],
     // A hand-edited/invalid stored accelerator falls back to the default.
     quickLookShortcut: isValidAccelerator(parsed.quickLookShortcut)
       ? parsed.quickLookShortcut
@@ -167,9 +172,17 @@ export const useSettingsStore = defineStore('settings', {
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           examplesSeeded: this.examplesSeeded,
+          recentTools: this.recentTools,
           quickLookShortcut: this.quickLookShortcut
         })
       )
+    },
+    // Drives the sidebar shelf's recent chips and the palette's Recent section.
+    noteToolUsed(id) {
+      const next = noteRecent(this.recentTools, id)
+      if (next.join() === this.recentTools.join()) return
+      this.recentTools = next
+      this.persist()
     },
     // Record that the one-time first-run example decision has been made.
     markExamplesSeeded() {

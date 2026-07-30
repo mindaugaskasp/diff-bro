@@ -6,6 +6,7 @@ import {
   FILE_TYPE_LIMITS,
   MAX_SNIPPET_SIZE_KB_CAP
 } from '../../../src/renderer/src/stores/settingsStore'
+import { MAX_RECENT_TOOLS, recentTools } from '../../../src/renderer/src/utils/tools'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -227,5 +228,39 @@ describe('settingsStore', () => {
     localStorage.setItem('diffbro.settings', JSON.stringify({ quickLookShortcut: 'garbage' }))
     const s = useSettingsStore()
     expect(s.quickLookShortcut).toBe('CommandOrControl+Shift+Space')
+  })
+
+  it('records recent tools most-recent-first, deduped and capped', () => {
+    const s = useSettingsStore()
+    expect(s.recentTools).toEqual([])
+    s.noteToolUsed('json')
+    s.noteToolUsed('base64')
+    s.noteToolUsed('json') // promotes, never duplicates
+    expect(s.recentTools).toEqual(['json', 'base64'])
+
+    for (const id of ['xml', 'sql', 'uuid', 'jwt']) s.noteToolUsed(id)
+    expect(s.recentTools).toHaveLength(MAX_RECENT_TOOLS)
+    expect(s.recentTools[0]).toBe('jwt')
+    expect(JSON.parse(localStorage.getItem('diffbro.settings')).recentTools).toEqual(s.recentTools)
+  })
+
+  it('ignores an unknown tool id without persisting a change', () => {
+    const s = useSettingsStore()
+    s.noteToolUsed('json')
+    const before = localStorage.getItem('diffbro.settings')
+    s.noteToolUsed('not-a-tool')
+    expect(s.recentTools).toEqual(['json'])
+    expect(localStorage.getItem('diffbro.settings')).toBe(before)
+  })
+
+  it('drops junk from a hand-edited recentTools list', () => {
+    localStorage.setItem(
+      'diffbro.settings',
+      JSON.stringify({ recentTools: ['json', 42, 'gone', 'uuid'] })
+    )
+    const s = useSettingsStore()
+    expect(s.recentTools).toEqual(['json', 'gone', 'uuid'])
+    // A stale id survives storage but is dropped at render time (utils/tools).
+    expect(recentTools(s.recentTools).map((t) => t.id)).toEqual(['json', 'uuid'])
   })
 })

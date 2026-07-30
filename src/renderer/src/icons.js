@@ -219,5 +219,22 @@ export const ICONS = {
     { t: 'path', d: 'M3 9h18M8 3v4M16 3v4' }
   ],
   // Hash — the UUID tool's mark.
-  hash: [{ t: 'path', d: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18' }]
+  hash: [{ t: 'path', d: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18' }],
+  // Encoded bytes in a frame — the Base64 tool's mark.
+  binary: [
+    { t: 'rect', x: 3, y: 5, width: 18, height: 14, rx: 2 },
+    { t: 'path', d: 'm10 10-2 2 2 2M14 10l2 2-2 2' }
+  ],
+  // Tag — the HTML entities tool's mark.
+  tag: [
+    { t: 'path', d: 'M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z' },
+    { t: 'circle', cx: 7.5, cy: 7.5, r: 1.1, fill: true }
+  ],
+  // Two arrows swapping — the Find & Replace tool's mark.
+  replace: [
+    { t: 'path', d: 'm16 3 4 4-4 4' },
+    { t: 'path', d: 'M20 7H9a5 5 0 0 0-5 5' },
+    { t: 'path', d: 'm8 21-4-4 4-4' },
+    { t: 'path', d: 'M4 17h11a5 5 0 0 0 5-5' }
+  ]
 }
