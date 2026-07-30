@@ -75,7 +75,7 @@ Monaco.
   a theme from going flat (the light theme twice did). Four roles, recessed →
   raised: `--bg-canvas` (app ground) · `--bg`/`--bg-panel` (base surface / chrome)
   · `--bg-elevated` (raised band) · `--bg-raised` (a card that FLOATS on the
-  canvas and casts a `--shadow-1/2/3`). A card reads the *role*, never a raw
+  canvas and casts a `--shadow-1/2/3`). A card reads the _role_, never a raw
   colour, so the same markup floats on every theme; the light theme opts into the
   floating-canvas inversion (tinted ground, white cards) purely by redefining
   `--bg-canvas`/`--bg-raised` under `:root[data-theme='light']`. Elevation is the
@@ -84,7 +84,7 @@ Monaco.
   (scripts/check-theme-depth.mjs) fails the build if any theme's text, surfaces,
   or border lose contrast — the floors are a ratchet, never lowered to green a run.
 - **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
-  section header, dialog header) is a *band*: it carries `.band` and vertically
+  section header, dialog header) is a _band_: it carries `.band` and vertically
   centres its content with flexbox. Never fake vertical alignment with top
   padding — it drifts the instant a font size or line-height changes (that is
   what twice broke the sidebar/file-input alignment). Bands that sit at the
@@ -99,7 +99,7 @@ Monaco.
   from `<AppIcon name="…" />`, whose geometry lives in `src/renderer/src/icons.js`
   (Feather/Lucide-style 24×24, sizes to 1em, inherits `currentColor`). Add a new
   icon by adding an entry to that map — never reach for a glyph character. Text
-  glyphs used as *prose* (⌘ in a shortcut label, ↔ in a diff name, the − on the
+  glyphs used as _prose_ (⌘ in a shortcut label, ↔ in a diff name, the − on the
   deletions count) stay text; only standalone/interactive icons are SVG.
 - Every modal is a `BaseDialog` (backdrop, header, `#actions` slot, Escape,
   focus trap). Its panel is BaseDialog's, so a dialog sizes itself with the
@@ -111,7 +111,7 @@ Monaco.
   documents nothing, so pair it with a `shaped(...)` validator from
   `utils/props.js`.
 - **Prose comments are forbidden.** Code must explain itself through names and
-  structure. A comment is allowed *only* when the code's intent is genuinely
+  structure. A comment is allowed _only_ when the code's intent is genuinely
   ambiguous and cannot be made clear by better naming or refactoring — e.g. a
   non-obvious security invariant, a subtle gotcha, or a "why not the obvious
   thing" note. When one is truly warranted, keep it to a single terse line.
@@ -145,13 +145,13 @@ Monaco.
   test goes in the directory matching its subject's source path. Fixtures live
   in `tests/data/`.
 - **Interaction bugs split two ways, and each has a home — this is how the
-  recurring UI regressions get caught.** *Event logic* (does a backdrop click
+  recurring UI regressions get caught.** _Event logic_ (does a backdrop click
   close only when the press began on the backdrop? does Space commit a tag?
   does Escape leave the snippet editor open?) is pulled OUT of the `.vue` file
   into a `composables/` unit and unit-tested there — never left inline where
   nothing exercises it. The Mermaid-viewer resize-closes bug became
   `useBackdropClose` + `useBackdropClose.test.js`; follow that pattern for any
-  new event guard. *Layout* (alignment, sizing, overlap) can't be asserted in
+  new event guard. _Layout_ (alignment, sizing, overlap) can't be asserted in
   jsdom — verify it in the Docker env with screenshots, and encode the
   invariant as a shared class/token (see the band system) so it can't drift.
 - Every behavior change in `src/main/sealing.js`, `vaultCrypt.js`, the
@@ -193,10 +193,15 @@ Monaco.
   toolchain (`electron`, `esbuild`, `fsevents`, `electron-winstaller`,
   `vue-demi`) — nothing that ships in the app. A new dependency that wants an
   install script is part of the network audit above: read what the script does,
-  then `npm install-scripts approve <pkg>`. Never blanket-disable the gate
-  (`--ignore-scripts=false` globally, or deleting the field) — it is the one
-  check that stands between a compromised transitive package and arbitrary code
-  on the build machine.
+  then `npm install-scripts approve <pkg>`. Every entry is **version-pinned**
+  (`esbuild@0.25.12`, not `esbuild`) so a later version has to be re-reviewed
+  rather than inheriting the approval. Pinning needs a `resolved` URL in BOTH
+  `package-lock.json` and the hidden `node_modules/.package-lock.json` — npm
+  reads the latter; if approve warns "approved by name (all versions)", run
+  `npm install` to refresh the hidden lock and approve again. Never
+  blanket-disable the gate (`--ignore-scripts=false` globally, or deleting the
+  field) — it is the one check that stands between a compromised transitive
+  package and arbitrary code on the build machine.
 - `@emnapi/core` / `@emnapi/runtime` are pinned in devDependencies only to
   work around npm dropping them from the lock (they are transitive
   optionals of vitest's wasm toolchain) — do not remove them just because

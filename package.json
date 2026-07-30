@@ -63,11 +63,11 @@
     "vitest": "^4.1.10"
   },
   "allowScripts": {
-    "electron": true,
     "electron-winstaller@5.4.0": true,
     "esbuild@0.25.12": true,
     "fsevents@2.3.3": true,
     "fsevents@2.3.2": true,
-    "vue-demi": true
+    "electron@39.8.10": true,
+    "vue-demi@0.14.10": true
   }
 }
