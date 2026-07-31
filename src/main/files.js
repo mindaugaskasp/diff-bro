@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, resolve, sep } from 'path'
 import chardet from 'chardet'
@@ -6,6 +6,7 @@ import iconv from 'iconv-lite'
 import { readSettings } from './appData'
 import { readXlsx } from './xlsx/index'
 import { filtersFor } from './fileFilters'
+import { clipboardFilePaths } from './clipboardFiles'
 
 // Mirrors the renderer's FILE_TYPE_LIMITS; main enforces independently so a
 // hand-edited settings.json can't wedge the app. Keep the numbers in sync.
@@ -133,6 +134,29 @@ export function registerFileIpc() {
     if (canceled || !filePaths.length) return null
     allow(filePaths[0]) // the user picked it — now it (and quiet re-reads) may be read
     return readFileForRenderer(win, filePaths[0])
+  })
+
+  // Files copied in a file manager. The clipboard's text flavour holds only
+  // their names, so reading text alone pasted those names as content. Paths go
+  // through the same allow() gate as a dialog pick before anything is read.
+  ipcMain.handle('clipboard:readFiles', async (e) => {
+    const paths = clipboardFilePaths({
+      formats: () => clipboard.availableFormats(),
+      readText: (f) => clipboard.read(f),
+      readBuffer: (f) => clipboard.readBuffer(f)
+    }).slice(0, 2)
+
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const files = []
+    for (const filePath of paths) {
+      const full = resolve(filePath)
+      if (isUnderUserData(full)) continue
+      const info = await stat(full).catch(() => null)
+      if (!info?.isFile()) continue
+      allow(full)
+      files.push(await readFileForRenderer(win, full))
+    }
+    return files
   })
 
   // Registers a path the preload resolved from a REAL OS drop (webUtils), so an

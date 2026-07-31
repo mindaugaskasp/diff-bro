@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 
 contextBridge.exposeInMainWorld('api', {
   openFile: (side, format) => ipcRenderer.invoke('file:open', side, format),
+  readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   exportDiffHtml: (payload) => ipcRenderer.invoke('diff:exportHtml', payload),
   // Electron >= 32: File objects in the renderer no longer expose .path,

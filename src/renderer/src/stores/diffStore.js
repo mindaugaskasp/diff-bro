@@ -441,6 +441,10 @@ export const useDiffStore = defineStore('diff', {
       this.pastePrompt = 'enter'
     },
     async confirmPasteEnter() {
+      // Copied files beat the clipboard's text flavour, which holds only their
+      // names — pasting those as content is never what was meant.
+      if (await this.pasteClipboardFiles()) return
+
       const text = (await window.api?.readText?.()) ?? ''
       if (!text.trim()) {
         this.pastePrompt = null
@@ -454,6 +458,21 @@ export const useDiffStore = defineStore('diff', {
       } else {
         this.pasteIntoPasteFields(text)
       }
+    },
+    // Two copied files become the two sides; one fills the first free side.
+    // Returns true when the clipboard held files and they were loaded.
+    async pasteClipboardFiles() {
+      const files = (await window.api?.readClipboardFiles?.()) ?? []
+      if (!files.length) return false
+      this.pastePrompt = null
+      this.mode = 'files'
+      if (files.length > 1) {
+        this.receive('left', files[0])
+        this.receive('right', files[1])
+      } else {
+        this.receive(this.left ? 'right' : 'left', files[0])
+      }
+      return true
     },
     // Files mode with something loaded: drop the pasted text into the empty side
     // for an immediate diff; if both sides are full, confirm before overwriting.
