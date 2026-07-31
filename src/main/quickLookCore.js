@@ -33,18 +33,66 @@ export function resolveAccelerator(stored, fallback) {
 }
 
 /**
- * The display whose bounds contain `point`, else the first display, else null.
+ * Index of the display whose bounds contain `point`, else -1.
  * @param {Array<{bounds:{x:number,y:number,width:number,height:number}}>} displays
  * @param {{x:number,y:number}} point
+ * @returns {number}
  */
-export function displayForPoint(displays, point) {
+export function displayIndexForPoint(displays, point) {
   const list = displays ?? []
-  const hit = list.find(
+  if (!point) return -1
+  return list.findIndex(
     (d) =>
       point.x >= d.bounds.x &&
       point.x < d.bounds.x + d.bounds.width &&
       point.y >= d.bounds.y &&
       point.y < d.bounds.y + d.bounds.height
   )
-  return hit ?? list[0] ?? null
+}
+
+/**
+ * The display whose bounds contain `point`, else the first display, else null.
+ * @param {Array<{bounds:{x:number,y:number,width:number,height:number}}>} displays
+ * @param {{x:number,y:number}} point
+ */
+export function displayForPoint(displays, point) {
+  const list = displays ?? []
+  const i = displayIndexForPoint(list, point)
+  return (i >= 0 ? list[i] : list[0]) ?? null
+}
+
+const centre = (b) => (b ? { x: b.x + b.width / 2, y: b.y + b.height / 2 } : null)
+
+/**
+ * A compact one-line snapshot of the display/window layout at summon/dismiss,
+ * for the local diagnostics log (see quickLook.js). Pure so it unit-tests without
+ * a display server. The goal is to catch the case where summoning the launcher on
+ * one display raises the main window sitting on another.
+ * @param {object} o
+ * @param {'reveal'|'hide'} o.event
+ * @param {Array<{bounds:object}>} o.displays
+ * @param {{x:number,y:number}} o.cursor
+ * @param {{visible:boolean,minimized:boolean,focused:boolean,bounds:object}|null} [o.main]
+ * @param {{x:number,y:number,width:number,height:number}|null} [o.launcher]
+ * @returns {string}
+ */
+export function launcherDiagnostics({ event, displays, cursor, main = null, launcher = null }) {
+  const at = (p) => displayIndexForPoint(displays, p)
+  const parts = [
+    `event=${event}`,
+    `displays=${displays?.length ?? 0}`,
+    `cursorDisplay=${at(cursor)}`
+  ]
+  if (main) {
+    parts.push(
+      `mainVisible=${main.visible}`,
+      `mainMinimized=${main.minimized}`,
+      `mainFocused=${main.focused}`,
+      `mainDisplay=${at(centre(main.bounds))}`
+    )
+  } else {
+    parts.push('main=none')
+  }
+  if (launcher) parts.push(`launcherDisplay=${at(centre(launcher))}`)
+  return parts.join(' ')
 }

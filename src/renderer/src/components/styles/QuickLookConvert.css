@@ -1,0 +1,68 @@
+.qc {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.qc-head {
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  height: var(--band-row);
+  border-bottom: 1px solid var(--border);
+}
+.qc-back {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.qc-back:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+.qc-ico {
+  color: var(--text-dim);
+  flex: none;
+}
+.qc-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text);
+}
+.qc-kbd {
+  flex: none;
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+}
+
+/* Scrolls within the fixed launcher window when the panel is tall. */
+.qc-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.qc-foot {
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  height: var(--band-row);
+  border-top: 1px solid var(--border);
+  justify-content: space-between;
+}
+.qc-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}

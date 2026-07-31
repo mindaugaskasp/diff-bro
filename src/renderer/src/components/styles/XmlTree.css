@@ -1,0 +1,61 @@
+.xt {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.55;
+}
+.xt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding-right: var(--space-3);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.xt-row.clickable {
+  cursor: pointer;
+}
+.xt-row:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.xt-tw {
+  flex: none;
+  width: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+.xt-tw .app-icon {
+  width: 12px;
+  height: 12px;
+}
+.xt-tag {
+  color: var(--accent);
+}
+.xt-punct {
+  color: var(--text-dim);
+}
+.xt-attr {
+  margin-left: var(--space-2);
+}
+/* --favorite, not --warning-text: that one is ink for a warning FILL, so it is
+   near-black on every dark theme. */
+.xt-key {
+  color: var(--favorite);
+}
+.xt-val {
+  color: var(--success-text);
+}
+.xt-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+  margin-left: var(--space-2);
+}
+.xt-count {
+  color: var(--text-hint);
+  font-style: italic;
+  margin-left: var(--space-2);
+}

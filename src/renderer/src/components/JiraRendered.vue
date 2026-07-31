@@ -40,7 +40,9 @@ const indent = (depth) => (depth > 1 ? { marginInlineStart: `${(depth - 1) * 16}
       </blockquote>
       <pre v-else-if="b.type === 'code'" class="ji-code">{{ b.code }}</pre>
       <p v-else class="ji-p">
-        <template v-for="(ln, j) in b.lines" :key="j"><br v-if="j" /><JiraInline :nodes="ln" /></template>
+        <template v-for="(ln, j) in b.lines" :key="j"
+          ><br v-if="j" /><JiraInline :nodes="ln"
+        /></template>
       </p>
     </template>
   </div>

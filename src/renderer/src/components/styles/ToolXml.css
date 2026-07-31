@@ -1,0 +1,122 @@
+.txm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.txm-in {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+.txm-in:focus-visible,
+.txm-filter:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.txm-err {
+  margin: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  color: var(--danger-border);
+}
+.txm-ctrls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.txm-filter {
+  flex: 1;
+  min-width: 150px;
+  height: var(--control-h);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-md);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+.txm-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.txm-bh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 640;
+  color: var(--text-dim);
+}
+.txm-count {
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.txm-copy {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+}
+.txm-copy:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.txm-copy .app-icon {
+  width: 15px;
+  height: 15px;
+}
+.txm-text {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: var(--space-3);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg-raised);
+  white-space: pre;
+}
+/* Attribute matches are strings, not elements — the tree can't show them. */
+.txm-values {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  color: var(--success-text);
+  max-height: 120px;
+  overflow: auto;
+}
+.txm-tree {
+  max-height: 300px;
+  overflow: auto;
+  padding: var(--space-2) 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}

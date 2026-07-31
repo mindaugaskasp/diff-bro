@@ -1,0 +1,66 @@
+.jt {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.55;
+}
+.jt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding-right: var(--space-3);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.jt-row.clickable {
+  cursor: pointer;
+}
+.jt-row:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.jt-tw {
+  flex: none;
+  width: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+.jt-tw .app-icon {
+  width: 12px;
+  height: 12px;
+}
+.jt-key {
+  color: var(--accent);
+}
+.jt-colon {
+  color: var(--text-dim);
+  margin-right: var(--space-1);
+}
+.jt-punct {
+  color: var(--text-dim);
+}
+.jt-val {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jt-val.str {
+  color: var(--success-text);
+}
+/* --favorite, not --warning-text: that one is ink for a warning FILL, so it is
+   near-black on every dark theme. */
+.jt-val.num,
+.jt-val.bool {
+  color: var(--favorite);
+}
+.jt-val.nul {
+  color: var(--text-hint);
+  font-style: italic;
+}
+.jt-close {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-right: var(--space-3);
+}

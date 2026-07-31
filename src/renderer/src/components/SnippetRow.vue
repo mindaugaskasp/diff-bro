@@ -26,6 +26,7 @@ const lang = computed(() => languageOf(props.entry))
 const mono = computed(() => languageMonogram(lang.value))
 const isDiagram = computed(() => lang.value === 'mermaid')
 const isClaude = computed(() => lang.value === 'claude')
+const isUrl = computed(() => lang.value === 'url')
 // Drop the tag that just restates the monogram (the auto format tag), so the
 // tag word carries information the type anchor doesn't already.
 const shownTags = computed(() => props.entry.tags.filter((t) => t !== lang.value))
@@ -47,30 +48,48 @@ async function viewDiagram(entry) {
 }
 // Opening is gated by the main-process claude.ai allowlist; this only offers a
 // candidate URL from the snippet.
+// A URL snippet is the whole link; main fences the scheme and confirms.
+async function openUrl() {
+  const content = await store.load(props.entry.id)
+  const url = content?.trim().split(/\s+/)[0]
+  const res = url ? await window.api.openLink(url) : { error: 'empty' }
+  if (res?.error) diff.showNotice('That snippet has no link Diff Bro can open.')
+}
+
 async function openLink() {
   const content = await store.load(props.entry.id)
   const url = content != null ? firstClaudeUrl(content) : null
   if (url) await window.api.openClaudeLink(url)
   else diff.showNotice('No Claude link in this snippet.')
 }
+
+// Hovering the name previews the snippet — not the whole row, which made the
+// card appear while you were only reaching for the row's buttons.
+defineEmits(['hoverTitle', 'leaveTitle'])
 </script>
 
 <template>
-  <li class="row">
+  <li class="row" data-preview-anchor>
     <Transition name="flash">
       <span v-if="copied" class="copied-flash" aria-live="polite">Copied</span>
     </Transition>
     <button
       class="star"
       :class="{ on: favorite }"
-      :title="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="favorite ? 'Unfavorite' : 'Favorite'"
+      :aria-label="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
       @click="store.toggleFavorite(entry.id)"
     >
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
     </button>
     <button class="entry" @click="store.editingSnippet = { id: entry.id }">
       <span class="monogram" :style="{ '--fam': mono.family }" :title="lang">{{ mono.label }}</span>
-      <span class="nm">{{ entry.name }}</span>
+      <span
+        class="nm"
+        @mouseenter="$emit('hoverTitle', $event)"
+        @mouseleave="$emit('leaveTitle')"
+        >{{ entry.name }}</span
+      >
       <span
         v-if="entry.vars?.length"
         class="varchip"
@@ -89,20 +108,42 @@ async function openLink() {
       <button
         v-if="isDiagram"
         class="row-btn"
-        title="View diagram"
+        data-tip="Diagram"
+        aria-label="View diagram"
         @click="viewDiagram(entry)"
       >
         <AppIcon name="diagram" />
       </button>
-      <button v-if="isClaude" class="row-btn" title="Open Claude link" @click="openLink">
+      <button
+        v-if="isUrl"
+        class="row-btn"
+        data-tip="Open"
+        aria-label="Open link in browser"
+        @click="openUrl"
+      >
         <AppIcon name="link" />
       </button>
-      <button class="row-btn" title="Copy to clipboard" @click="copySnippet(entry.id)">
+      <button
+        v-if="isClaude"
+        class="row-btn"
+        data-tip="Open"
+        aria-label="Open Claude link"
+        @click="openLink"
+      >
+        <AppIcon name="link" />
+      </button>
+      <button
+        class="row-btn"
+        data-tip="Copy"
+        aria-label="Copy to clipboard"
+        @click="copySnippet(entry.id)"
+      >
         <AppIcon name="copy" />
       </button>
       <button
         class="row-btn delete"
-        title="Delete"
+        data-tip="Delete"
+        aria-label="Delete"
         @click="store.requestDelete('snippet', entry.id, entry.name)"
       >
         <AppIcon name="trash" />

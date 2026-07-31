@@ -30,15 +30,15 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid')
     <button v-if="isMermaid" class="pv-diagram" title="View full screen" @click="$emit('view')">
       <MermaidDiagram :code="preview.text" :debounce="0" />
     </button>
-    <button v-else class="pv-body" title="Open in editor" @click="$emit('edit')">{{
-      preview.text
-    }}</button>
+    <button v-else class="pv-body" title="Open in editor" @click="$emit('edit')">
+      {{ preview.text }}
+    </button>
     <div class="pv-foot">
       <span class="pv-tags">
         <span v-for="t in preview.tags" :key="t" class="pv-tag">
           <span class="dot" :style="{ background: store.colorOf(t) }"></span>{{ t }}
         </span>
-        <span v-if="!preview.tags.length" class="pv-untagged">Default</span>
+        <span v-if="!preview.tags.length" class="pv-untagged">Untagged</span>
       </span>
       <button v-if="isMermaid" class="pv-open" @click="$emit('view')">
         <AppIcon name="diagram" /> View full screen

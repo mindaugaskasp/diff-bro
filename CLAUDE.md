@@ -1,7 +1,29 @@
 # DiffBro — project instructions
 
 Offline-only desktop diff viewer. Electron + electron-vite + Vue 3 + Pinia +
-Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
+Monaco.
+
+## Fixing a bug — read this before touching anything
+
+**Non-negotiable, in this order, for every bug:**
+
+1. **Write the test first and watch it FAIL.** Reproduce the bug in a test
+   before changing a line of source. A regression test you have never seen fail
+   proves nothing — it may assert something that was always true.
+2. **Then fix the code.**
+3. **Run the test again — it must now PASS.** Red → green is the evidence the
+   fix works and the test guards it.
+4. **If the test passed before the fix, the test is wrong, not the bug.**
+   Rewrite it until it fails for the right reason, then start again at 2.
+
+This covers UI defects too, not just pure logic: a visual or interaction bug
+gets an **e2e** test (`e2e/`), driven the way a user hits it. When the defect is
+a rendered property (colour, position, clipping, focus), assert the measurable
+thing — a bounding box, a computed style, a contrast ratio — not a screenshot.
+
+To prove an existing test really catches its bug, revert the fix, run it, see it
+fail, restore the fix. That check is cheap and it is the only thing separating a
+regression test from decoration.
 
 ## Commands
 
@@ -43,7 +65,18 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 6. **Untrusted input is hostile.** Files chosen for import (`.diffbro`,
    `.diffbrokey`) get size caps, shape validation, and recomputed
    fingerprints before use. Keep it that way for any new import surface.
-7. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
+7. **Leaving the sandbox is fenced in main.** `shell.openExternal` has exactly
+   two call sites, both of which confirm with the user first: `src/main/menu.js`
+   (Report an Issue — a hardcoded URL the renderer cannot influence) and
+   `src/main/links.js`, which validates a renderer-supplied URL in the MAIN
+   process — Claude links against the strict claude.ai allowlist, a URL
+   snippet's link against an http(s)-only scheme check (`linkPolicy.js`). The
+   scheme check is the fence: openExternal will otherwise open a local file, run
+   a script handler, or launch another application. Adding a third call site
+   needs the same treatment. **URL snippets are local-only**: `_bundle` and
+   `restoreBundle` drop them, so a link can never arrive in a shared bundle and
+   be opened with one click.
+8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only
    through Vue text interpolation.
 
@@ -75,7 +108,7 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   a theme from going flat (the light theme twice did). Four roles, recessed →
   raised: `--bg-canvas` (app ground) · `--bg`/`--bg-panel` (base surface / chrome)
   · `--bg-elevated` (raised band) · `--bg-raised` (a card that FLOATS on the
-  canvas and casts a `--shadow-1/2/3`). A card reads the *role*, never a raw
+  canvas and casts a `--shadow-1/2/3`). A card reads the _role_, never a raw
   colour, so the same markup floats on every theme; the light theme opts into the
   floating-canvas inversion (tinted ground, white cards) purely by redefining
   `--bg-canvas`/`--bg-raised` under `:root[data-theme='light']`. Elevation is the
@@ -84,7 +117,7 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   (scripts/check-theme-depth.mjs) fails the build if any theme's text, surfaces,
   or border lose contrast — the floors are a ratchet, never lowered to green a run.
 - **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
-  section header, dialog header) is a *band*: it carries `.band` and vertically
+  section header, dialog header) is a _band_: it carries `.band` and vertically
   centres its content with flexbox. Never fake vertical alignment with top
   padding — it drifts the instant a font size or line-height changes (that is
   what twice broke the sidebar/file-input alignment). Bands that sit at the
@@ -99,24 +132,33 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   from `<AppIcon name="…" />`, whose geometry lives in `src/renderer/src/icons.js`
   (Feather/Lucide-style 24×24, sizes to 1em, inherits `currentColor`). Add a new
   icon by adding an entry to that map — never reach for a glyph character. Text
-  glyphs used as *prose* (⌘ in a shortcut label, ↔ in a diff name, the − on the
+  glyphs used as _prose_ (⌘ in a shortcut label, ↔ in a diff name, the − on the
   deletions count) stay text; only standalone/interactive icons are SVG.
 - Every modal is a `BaseDialog` (backdrop, header, `#actions` slot, Escape,
   focus trap). Its panel is BaseDialog's, so a dialog sizes itself with the
   `width` prop — scoped CSS cannot reach into a child. `:escape-closes="false"`
-  for dialogs holding unsaved input. New format/validate tools are a `TEXT_TOOLS`
-  entry (`utils/textTools.js`), never another dialog component.
+  for dialogs holding unsaved input. A new tool is an entry in the registry
+  (`utils/tools.js`), a `Tool*.vue` panel, and a case in `TextToolDialog` /
+  `QuickLookConvert` — never another dialog component. Every tool is a panel:
+  there is no text-buffer/validate path left to fall back on.
 - Objects that cross a boundary (props, composable returns) get a typedef in
   `src/renderer/src/types.js` and a JSDoc annotation; a prop typed `Object`
   documents nothing, so pair it with a `shaped(...)` validator from
   `utils/props.js`.
 - **Prose comments are forbidden.** Code must explain itself through names and
-  structure. A comment is allowed *only* when the code's intent is genuinely
+  structure. A comment is allowed _only_ when the code's intent is genuinely
   ambiguous and cannot be made clear by better naming or refactoring — e.g. a
   non-obvious security invariant, a subtle gotcha, or a "why not the obvious
   thing" note. When one is truly warranted, keep it to a single terse line.
   Never narrate what the next line does, never restate the code in English, and
   never leave block/"wall" comments. When in doubt, delete the comment.
+- **Sweep comments when a feature settles.** Comments written to reason through
+  an in-progress implementation must not survive into the committed code. After
+  finishing or changing a feature — and before committing — re-read every comment
+  you touched and delete or shrink the ones the final code made redundant. A
+  comment that described an earlier approach, restates the now-obvious, or that a
+  rename would erase is stale by definition; only the genuinely-warranted terse
+  "why" lines from the rule above stay.
 - New file formats go through the adapter registry
   (`src/renderer/src/adapters/`) returning a `{ kind, ... }` comparable —
   never special-case a format inside `DiffViewer`.
@@ -138,13 +180,13 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   test goes in the directory matching its subject's source path. Fixtures live
   in `tests/data/`.
 - **Interaction bugs split two ways, and each has a home — this is how the
-  recurring UI regressions get caught.** *Event logic* (does a backdrop click
+  recurring UI regressions get caught.** _Event logic_ (does a backdrop click
   close only when the press began on the backdrop? does Space commit a tag?
   does Escape leave the snippet editor open?) is pulled OUT of the `.vue` file
   into a `composables/` unit and unit-tested there — never left inline where
   nothing exercises it. The Mermaid-viewer resize-closes bug became
   `useBackdropClose` + `useBackdropClose.test.js`; follow that pattern for any
-  new event guard. *Layout* (alignment, sizing, overlap) can't be asserted in
+  new event guard. _Layout_ (alignment, sizing, overlap) can't be asserted in
   jsdom — verify it in the Docker env with screenshots, and encode the
   invariant as a shared class/token (see the band system) so it can't drift.
 - Every behavior change in `src/main/sealing.js`, `vaultCrypt.js`, the
@@ -174,6 +216,17 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
 - Temp/test artifacts (generated key files, `.diffbro` files) must be
   cleaned up from `tests/data/` after verification; only `config-v1.json`
   and `config-v2.json` belong there.
+- **Node 22.12+** (`.nvmrc`, `engines`, `node:22-bookworm-slim`, CI's
+  `node-version: 22` — keep all four in step). On an older major `npm install`
+  warns `EBADENGINE` for the app and for `@electron/rebuild` / `node-abi`,
+  which genuinely require it. Fix the local Node (`nvm use`); never widen
+  `engines` to silence it.
+- Three deprecation warnings on install (`inflight`, `rimraf@2`, `glob@7`) are
+  transitive dev-only dependencies of `electron-builder`, which is already at
+  its latest — `npm audit` reports zero vulnerabilities and nothing we import
+  reaches them. They are upstream's to fix: do NOT add `overrides` to force
+  newer versions inside a build tool, which risks the installer builds for no
+  security gain.
 - After dependency changes, the Docker env needs `make rebuild`
   (volume-shadowed `node_modules`). Prefer `make install` for adding or
   updating dependencies — it writes `package-lock.json` with the
@@ -181,6 +234,20 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   (npm 11). npm majors disagree about optional/platform packages in the
   lock, and a lock written by one fails `npm ci` under the other; keep
   host npm and the Dockerfile's `npm install -g npm@11` in step.
+- **Install scripts are gated** (npm 11): a package may only run one if it is
+  listed in `allowScripts` in `package.json`. The approved six are all build
+  toolchain (`electron`, `esbuild`, `fsevents`, `electron-winstaller`,
+  `vue-demi`) — nothing that ships in the app. A new dependency that wants an
+  install script is part of the network audit above: read what the script does,
+  then `npm install-scripts approve <pkg>`. Every entry is **version-pinned**
+  (`esbuild@0.25.12`, not `esbuild`) so a later version has to be re-reviewed
+  rather than inheriting the approval. Pinning needs a `resolved` URL in BOTH
+  `package-lock.json` and the hidden `node_modules/.package-lock.json` — npm
+  reads the latter; if approve warns "approved by name (all versions)", run
+  `npm install` to refresh the hidden lock and approve again. Never
+  blanket-disable the gate (`--ignore-scripts=false` globally, or deleting the
+  field) — it is the one check that stands between a compromised transitive
+  package and arbitrary code on the build machine.
 - `@emnapi/core` / `@emnapi/runtime` are pinned in devDependencies only to
   work around npm dropping them from the lock (they are transitive
   optionals of vitest's wasm toolchain) — do not remove them just because
@@ -190,5 +257,4 @@ Monaco. Roadmap lives in `DEVELOPMENT_PLAN.md` — keep its checkboxes current.
   (set in `docker/Dockerfile` before `npm ci`, and pass it when adding/updating
   deps). Never run `playwright install` — it would pull Chromium/Firefox/WebKit
   the suite doesn't use.
-- Update `README.md` (including the mermaid diagram) and
-  `DEVELOPMENT_PLAN.md` when architecture or feature status changes.
+- Update `README.md` when architecture or feature status changes.

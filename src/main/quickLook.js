@@ -10,12 +10,17 @@ import { BrowserWindow, app, globalShortcut, ipcMain, screen } from 'electron'
 import { join } from 'path'
 import { DEV_URL } from './env'
 import { readSettings } from './appData'
-import { placeWindow, displayForPoint, resolveAccelerator } from './quickLookCore'
+import { appendLog } from './logger'
+import {
+  placeWindow,
+  displayForPoint,
+  resolveAccelerator,
+  launcherDiagnostics
+} from './quickLookCore'
 
 // Fallback when settings.json has none. Mirror the renderer's
 // DEFAULT_QUICKLOOK_SHORTCUT (settingsStore.js) — keep the two in step.
-const DEFAULT_ACCELERATOR =
-  process.platform === 'darwin' ? 'Shift+Space' : 'CommandOrControl+Shift+Space'
+const DEFAULT_ACCELERATOR = 'CommandOrControl+Shift+Space'
 
 let win = null
 // The accelerator currently registered, so a change unregisters exactly it.
@@ -68,12 +73,43 @@ function ensure() {
   return win
 }
 
+function mainWindow() {
+  return BrowserWindow.getAllWindows().find((w) => w !== win)
+}
+
+// Diagnostics only (source 'quicklook', not an error): captures the display/window
+// layout at each summon/dismiss so an intermittent "main window rises with the
+// overlay" report can be correlated against a real multi-display state.
+function logDiag(event, displays, cursor, launcher) {
+  const m = mainWindow()
+  const main = m
+    ? {
+        visible: m.isVisible(),
+        minimized: m.isMinimized(),
+        focused: m.isFocused(),
+        bounds: m.getBounds()
+      }
+    : null
+  appendLog({
+    source: 'quicklook',
+    message: `launcher ${event}`,
+    context: launcherDiagnostics({ event, displays, cursor, main, launcher })
+  })
+}
+
 // Repositioned every summon onto the display holding the pointer.
 function reveal() {
   const w = ensure()
   const point = screen.getCursorScreenPoint()
-  const display = displayForPoint(screen.getAllDisplays(), point) ?? screen.getPrimaryDisplay()
+  const displays = screen.getAllDisplays()
+  const display = displayForPoint(displays, point) ?? screen.getPrimaryDisplay()
   const { x, y } = placeWindow(display.workArea, w.getBounds())
+  logDiag('reveal', displays, point, {
+    x,
+    y,
+    width: w.getBounds().width,
+    height: w.getBounds().height
+  })
   w.setPosition(x, y)
   // Separate Pinia instance — the renderer re-reads its library and refocuses.
   w.webContents.send('quicklook:show')
@@ -86,16 +122,34 @@ function reveal() {
 // the main window too, which the next summon then drags back up. So instead make
 // the main window briefly non-focusable: the OS can't make it key, the app
 // deactivates back to the previous app, and the main window stays put.
+// The un-focusable window above is a timed state, so anything that wants to
+// focus the main window must end it first — otherwise focus() is a silent no-op
+// and the window surfaces without keyboard focus.
+let refocusTimer = null
+export function allowMainFocus() {
+  if (refocusTimer) {
+    clearTimeout(refocusTimer)
+    refocusTimer = null
+  }
+  const main = mainWindow()
+  if (main && !main.isDestroyed()) main.setFocusable(true)
+}
+
 function hideLauncher() {
+  logDiag('hide', screen.getAllDisplays(), screen.getCursorScreenPoint(), win?.getBounds())
   if (process.platform !== 'darwin') {
     win?.hide()
     return
   }
-  const main = BrowserWindow.getAllWindows().find((w) => w !== win)
+  const main = mainWindow()
   if (main && main.isVisible() && !main.isMinimized()) {
     main.setFocusable(false)
     win?.hide()
-    setTimeout(() => main.setFocusable(true), 300)
+    if (refocusTimer) clearTimeout(refocusTimer)
+    refocusTimer = setTimeout(() => {
+      refocusTimer = null
+      if (!main.isDestroyed()) main.setFocusable(true)
+    }, 300)
   } else {
     win?.hide()
   }
@@ -123,6 +177,7 @@ function openInMain(payload) {
   win?.hide()
   const main = BrowserWindow.getAllWindows().find((w) => w !== win)
   if (!main) return
+  allowMainFocus()
   if (main.isMinimized()) main.restore()
   main.show()
   main.focus()
@@ -148,7 +203,9 @@ function registerShortcut(accel) {
 }
 
 export function registerQuickLook() {
-  const res = registerShortcut(resolveAccelerator(readSettings().quickLookShortcut, DEFAULT_ACCELERATOR))
+  const res = registerShortcut(
+    resolveAccelerator(readSettings().quickLookShortcut, DEFAULT_ACCELERATOR)
+  )
   if (!res.ok) registerShortcut(DEFAULT_ACCELERATOR)
   ipcMain.handle('quicklook:toggle', () => toggleQuickLook())
   ipcMain.handle('quicklook:setShortcut', (_e, accel) => registerShortcut(accel))

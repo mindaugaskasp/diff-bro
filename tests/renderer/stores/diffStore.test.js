@@ -74,7 +74,7 @@ describe('diffStore', () => {
   it('paste-to-compare: confirming reads the clipboard into the first empty side', async () => {
     window.api = { readText: () => Promise.resolve('pasted body') }
     const store = useDiffStore()
-    store.requestPasteFromClipboard()
+    await store.requestPasteFromClipboard()
     expect(store.pastePrompt).toBe('enter')
     await store.confirmPasteEnter()
     expect(store.mode).toBe('paste')
@@ -355,15 +355,11 @@ describe('diffStore', () => {
   it('routes menu actions: tools-base64/json/xml/sql/find-replace/crypt open their dialogs', () => {
     const store = useDiffStore()
     store.handleMenuAction('tools-base64')
-    expect(store.showBase64Dialog).toBe(true)
+    expect(store.textTool).toBe('base64')
     store.handleMenuAction('tools-json')
     expect(store.textTool).toBe('json')
     store.handleMenuAction('tools-xml')
     expect(store.textTool).toBe('xml')
-    store.handleMenuAction('tools-sql')
-    expect(store.textTool).toBe('sql')
-    store.handleMenuAction('tools-find-replace')
-    expect(store.showFindReplaceDialog).toBe(true)
     store.handleMenuAction('tools-crypt')
     expect(store.showCryptDialog).toBe(true)
   })

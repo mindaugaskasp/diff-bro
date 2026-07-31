@@ -18,3 +18,7 @@
 .status.invalid {
   color: var(--danger-bg);
 }
+/* No layout box: the panel keeps the dialog body's own flow. */
+.tt-body {
+  display: contents;
+}

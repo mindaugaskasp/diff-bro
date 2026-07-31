@@ -115,8 +115,8 @@ function close() {
           <h4>Quick look-up</h4>
           <p class="dialog-note">
             A floating search that finds any snippet or saved diff without raising the main window —
-            it works even when Diff Bro is minimized. Click the field, then press the key combination
-            you want.
+            it works even when Diff Bro is minimized. Click the field, then press the key
+            combination you want.
           </p>
           <ShortcutCapture />
         </section>

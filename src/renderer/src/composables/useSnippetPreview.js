@@ -36,7 +36,9 @@ export function useSnippetPreview() {
   async function onRowEnter(entry, e) {
     clearTimeout(hoverTimer)
     clearTimeout(closeTimer)
-    const row = e.currentTarget
+    // Hovering the title opens the card, but it is placed against the whole row
+    // — anchored to the title it lands on top of the row's buttons.
+    const row = e.currentTarget.closest?.('[data-preview-anchor]') ?? e.currentTarget
     hoverTimer = setTimeout(async () => {
       pendingId = entry.id
       let text = cache.get(entry.id)

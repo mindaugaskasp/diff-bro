@@ -9,6 +9,7 @@ import { diffToHtml } from '../utils/diffHtml'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
+import { TOOLS } from '../utils/tools'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -125,18 +126,18 @@ const MENU_ACTIONS = {
   'config-backup': (s) => (s.configMode = 'backup'),
   'config-restore': (s) => (s.configMode = 'restore'),
   settings: (s) => (s.showSettingsDialog = true),
-  'command-palette': (s) => (s.showCommandPalette = true),
-  'tools-base64': (s) => (s.showBase64Dialog = true),
+  'command-palette': (s) => {
+    s.paletteScope = 'all'
+    s.showCommandPalette = true
+  },
+  'tools-base64': (s) => (s.textTool = 'base64'),
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
-  'tools-sql': (s) => (s.textTool = 'sql'),
   'tools-uuid': (s) => (s.textTool = 'uuid'),
   'tools-jwt': (s) => (s.textTool = 'jwt'),
   'tools-epoch': (s) => (s.textTool = 'epoch'),
   'tools-url': (s) => (s.textTool = 'url'),
-  'tools-html': (s) => (s.textTool = 'html'),
   'tools-lines': (s) => (s.textTool = 'lines'),
-  'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)
 }
@@ -178,8 +179,12 @@ export const useDiffStore = defineStore('diff', {
     userTheme: normalizeTheme(loadPersisted('theme')), // persisted Appearance pick
     // The ACTIVE theme components read — userTheme, unless daily rotation is on.
     theme: normalizeTheme(loadPersisted('theme')),
-    // entry id currently in the share dialog (null = closed)
+    // entry id currently in the share dialog (an already-saved diff; null = closed)
     shareEntryId: null,
+    // Pending share of the CURRENT diff, captured but NOT yet persisted:
+    // { name, ttlHours, snapshot, tags }. The local copy is written only when the
+    // share completes, so cancelling the picker/file dialog leaves nothing.
+    shareDraft: null,
     pendingTrustedKey: null, // { key, fingerprint, label } while the name dialog is open
     // { fingerprint, label } while the "remove this key?" confirmation is open.
     pendingUntrust: null,
@@ -191,12 +196,8 @@ export const useDiffStore = defineStore('diff', {
     showShareKeyDialog: false,
     // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
     configMode: null,
-    // Tools menu dialog visibility.
-    showBase64Dialog: false,
-    // Which format/validate tool is open ('json' | 'xml' | 'sql'), null when
-    // none — one dialog serves all of them (see utils/textTools.js).
+    // Which tool panel is open (a registry id), null when none.
     textTool: null,
-    showFindReplaceDialog: false,
     showCryptDialog: false,
     // Settings dialog (data location) visibility.
     showSettingsDialog: false,
@@ -204,6 +205,8 @@ export const useDiffStore = defineStore('diff', {
     showShortcutsDialog: false,
     // ⌘K-style command palette visibility.
     showCommandPalette: false,
+    // What the palette lists: every menu command, or just the tools.
+    paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
     // Content last dismissed per side, so the format-hint banner stays gone until
@@ -239,8 +242,12 @@ export const useDiffStore = defineStore('diff', {
     }
   },
   actions: {
-    async pick(side) {
-      const file = await window.api.openFile(side)
+    // The empty-state format tiles pick into the first free side.
+    pickFormat(format) {
+      return this.pick(this.left ? 'right' : 'left', format)
+    },
+    async pick(side, format) {
+      const file = await window.api.openFile(side, format)
       if (!file) return // dialog cancelled
       // Replacing a side of a complete, unsaved comparison would discard it —
       // ask first. A saved comparison is safe to overwrite, so it skips the
@@ -425,12 +432,15 @@ export const useDiffStore = defineStore('diff', {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
     },
     // Ctrl/Cmd+V paste-to-compare. Ask before reading the clipboard.
-    requestPasteFromClipboard() {
+    async requestPasteFromClipboard() {
       if (this.pastePrompt) return
       if (this.left?.kind === 'spreadsheet' || this.right?.kind === 'spreadsheet') {
         this.showNotice('Paste-to-compare works with text, not a spreadsheet.')
         return
       }
+      // Copied files are unambiguous — load them without asking. The prompt
+      // exists for pasted TEXT, where entering paste mode is a real decision.
+      if (await this.pasteClipboardFiles()) return
       this.pastePrompt = 'enter'
     },
     async confirmPasteEnter() {
@@ -447,6 +457,21 @@ export const useDiffStore = defineStore('diff', {
       } else {
         this.pasteIntoPasteFields(text)
       }
+    },
+    // Two copied files become the two sides; one fills the first free side.
+    // Returns true when the clipboard held files and they were loaded.
+    async pasteClipboardFiles() {
+      const files = (await window.api?.readClipboardFiles?.()) ?? []
+      if (!files.length) return false
+      this.pastePrompt = null
+      this.mode = 'files'
+      if (files.length > 1) {
+        this.receive('left', files[0])
+        this.receive('right', files[1])
+      } else {
+        this.receive(this.left ? 'right' : 'left', files[0])
+      }
+      return true
     },
     // Files mode with something loaded: drop the pasted text into the empty side
     // for an immediate diff; if both sides are full, confirm before overwriting.
@@ -694,6 +719,15 @@ export const useDiffStore = defineStore('diff', {
     },
     handleMenuAction(action) {
       MENU_ACTIONS[action]?.(this)
+      // One choke point, so a tool opened from the menu, a shortcut, the shelf
+      // or the palette all count towards the shelf's recents.
+      const tool = TOOLS.find((t) => t.action === action)
+      if (tool) useSettingsStore().noteToolUsed(tool.id)
+    },
+    // The command palette, scoped to tools (sidebar shelf → "Search tools…").
+    openToolsPalette() {
+      this.paletteScope = 'tools'
+      this.showCommandPalette = true
     },
     // Save first (a share file needs a name + expiry), then the recipient picker.
     shareCurrent() {
@@ -709,12 +743,26 @@ export const useDiffStore = defineStore('diff', {
     shareEntry(id) {
       this.shareEntryId = id
     },
+    // The save step of the "share current diff" flow captured this draft instead of
+    // persisting — opening the recipient picker with it pending (see SaveDiffDialog).
+    beginShareDraft(draft) {
+      this.shareDraft = draft
+    },
     async shareTo(recipientFp) {
+      const vault = useVaultStore()
+      const draft = this.shareDraft
       const id = this.shareEntryId
+      this.shareDraft = null
       this.shareEntryId = null
-      const res = await useVaultStore().share(id, recipientFp)
-      if (res.ok) this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)
-      else if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
+      const res = draft
+        ? await vault.shareDraft(draft, recipientFp)
+        : await vault.share(id, recipientFp)
+      if (res.ok) {
+        if (draft) this.markSaved() // the draft's local twin now exists on disk
+        this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)
+      } else if (res.error) {
+        this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
+      }
     },
     // Import a sealed diff and open it — but only when nothing is on screen; with
     // a diff loaded, keep the view and leave it in External diffs.

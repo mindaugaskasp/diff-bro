@@ -9,6 +9,7 @@ export const SNIPPET_LANGUAGES = [
   { id: 'auto', label: 'Auto-detect' },
   { id: 'plaintext', label: 'Plain text' },
   { id: 'claude', label: 'Claude prompt / link' },
+  { id: 'url', label: 'URL' },
   { id: 'mermaid', label: 'Mermaid diagram' },
   { id: 'json', label: 'JSON' },
   { id: 'sql', label: 'SQL' },

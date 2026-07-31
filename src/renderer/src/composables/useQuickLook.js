@@ -1,30 +1,29 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
-import { useVaultStore } from '../stores/vaultStore'
 import { rank } from '../utils/quickLook'
+import { convertItems } from '../utils/quickLookCommands'
+import { isMac } from '../keys'
 import { useQuickLookKeys } from './useQuickLookKeys'
+import { usePreviewLines } from './usePreviewLines'
 import { useCopyFeedback } from './useCopyFeedback'
 
 // State for the floating quick look-up. The launcher stays lightweight (no
-// Monaco/Mermaid) so a summon is instant, so copy/preview is snippet-only and
-// diffs open into the main window instead.
+// Monaco/Mermaid) so a summon is instant — it lists snippets and the inline
+// convert tools only; diffs stay in the main window.
 
 const MAX_PREVIEW_CHARS = 4000
-const extOf = (name) => /\.([a-z0-9]+)$/i.exec(name ?? '')?.[1]?.toLowerCase() ?? ''
 
 export function useQuickLook() {
   const snippets = useSnippetStore()
-  const vault = useVaultStore()
   const query = ref('')
   const selected = ref(0)
   const snippetText = ref('')
   // 'list' navigates results; 'preview' scrolls the active snippet body.
   const zone = ref('list')
   const previewEl = ref(null)
-  const PREVIEW_STEP = 56
 
-  const items = computed(() => [
-    ...snippets.entries
+  const snippetItems = computed(() =>
+    snippets.entries
       .slice()
       .sort((a, b) => b.createdAt - a.createdAt)
       .map((e) => {
@@ -36,39 +35,58 @@ export function useQuickLook() {
           tags: e.tags ?? [],
           lang: lang === 'plaintext' ? '' : lang
         }
-      }),
-    ...vault.active.map((e) => ({
-      kind: 'diff',
-      id: e.id,
-      name: e.name,
-      tags: e.tags ?? [],
-      lang: extOf(e.name)
-    }))
-  ])
+      })
+  )
 
-  const results = computed(() => rank(query.value, items.value))
+  const toolItems = computed(() => rank(query.value, convertItems()))
+  // Tools lead the list under one collapsed row: a long snippet library would
+  // otherwise bury them, and reaching a tool meant scrolling past everything.
+  // A query that matches a tool opens the section so search still surfaces them.
+  const toolsOpen = ref(false)
+  const results = computed(() => {
+    const snips = rank(query.value, snippetItems.value)
+    const tools = toolItems.value
+    if (!tools.length) return snips
+    const header = { kind: 'tools', id: '__tools__', name: 'Tools', count: tools.length }
+    return toolsOpen.value ? [header, ...tools, ...snips] : [header, ...snips]
+  })
   const current = computed(() => results.value[selected.value] ?? null)
-  const diffMeta = computed(() => {
-    const it = current.value
-    if (it?.kind !== 'diff') return null
-    const e = vault.entries.find((x) => x.id === it.id)
-    return e ? { expiresAt: e.expiresAt, from: e.from, favorite: e.favorite } : null
+  const toolsIndex = () => results.value.findIndex((r) => r.kind === 'tools')
+
+  watch(query, () => {
+    zone.value = 'list'
+    const open = query.value.trim() !== '' && toolItems.value.length > 0
+    toolsOpen.value = open
+    // A tool-matching search lands on the first tool, just past the header.
+    selected.value = open ? 1 : 0
+  })
+  // Collapsing shrinks the list — clamp the selection, but never yank it to the
+  // top the way a fresh query does.
+  watch(results, () => {
+    if (selected.value >= results.value.length) {
+      selected.value = Math.max(0, results.value.length - 1)
+    }
   })
 
-  watch(results, () => {
-    selected.value = 0
-    zone.value = 'list'
-  })
+  function toggleTools() {
+    toolsOpen.value = !toolsOpen.value
+    if (!toolsOpen.value) selected.value = toolsIndex()
+  }
+  // ← / Escape from the expanded section closes it and parks on the header.
+  function collapseTools() {
+    if (!toolsOpen.value) return false
+    toolsOpen.value = false
+    selected.value = toolsIndex()
+    return true
+  }
 
   const canEnterPreview = () => current.value?.kind === 'snippet' && !!previewEl.value
-  function scrollPreview(dir) {
-    previewEl.value?.scrollBy({ top: dir * PREVIEW_STEP })
-  }
 
   // Guarded by id so a fast arrow sweep never renders a stale decrypt.
   watch(current, async (it) => {
     snippetText.value = ''
     zone.value = 'list' // a new (or diff) selection can't stay in snippet-scroll
+    preview.reset()
     if (it?.kind !== 'snippet') return
     const text = await snippets.load(it.id)
     if (current.value?.id === it.id && typeof text === 'string') {
@@ -76,9 +94,25 @@ export function useQuickLook() {
     }
   })
 
+  // A convert tool opens the inline panel; a snippet/diff opens in the main
+  // window. Convert never raises the app — the whole point of doing it here.
+  const convertTool = ref(null) // { id, name, panel } | null
+  // Never cleared: keeps the panel mounted (and its input) after you back out.
+  const lastTool = ref(null)
+  function exitConvert() {
+    convertTool.value = null
+  }
+
   function choose(i) {
     const it = results.value[i]
-    if (it) window.api.quickLookOpen({ kind: it.kind, id: it.id })
+    if (!it) return
+    if (it.kind === 'tools') return toggleTools()
+    if (it.kind === 'command') {
+      convertTool.value = { id: it.id, name: it.name, panel: it.panel }
+      lastTool.value = convertTool.value
+      return
+    }
+    window.api.quickLookOpen({ kind: it.kind, id: it.id })
   }
 
   // Fade the card out (the window is transparent) before the OS hide, so the
@@ -116,29 +150,84 @@ export function useQuickLook() {
     setTimeout(animateOut, HIDE_AFTER_COPY_MS)
   }
 
-  // Separate Pinia instance from the main window — re-read both libraries on
+  // The preview-line concern (↑/↓ stepping, hover, single-line Shift+Cmd+C copy).
+  // onCopied reuses the same copy feedback the whole-snippet copy shows.
+  const preview = usePreviewLines({
+    snippetText,
+    zone,
+    previewEl,
+    current,
+    onCopied: (name) => {
+      copiedName.value = name
+      copiedIndex.value = -1
+      flash()
+      setTimeout(animateOut, HIDE_AFTER_COPY_MS)
+    }
+  })
+
+  // Separate Pinia instance from the main window — re-read the snippet library on
   // each summon to reflect changes made there.
   function refresh() {
     snippets.reload()
-    vault.reload()
     query.value = ''
     selected.value = 0
     snippetText.value = ''
     zone.value = 'list'
+    toolsOpen.value = false
+    preview.reset()
     copiedName.value = ''
     copiedIndex.value = -1
     closing.value = false
+    convertTool.value = null
   }
+
+  const copyKey = isMac ? '⌘C' : 'Ctrl+C'
+  const copyLineKey = isMac ? '⇧⌘C' : 'Ctrl+Shift+C'
+  const footHints = computed(() => {
+    if (zone.value === 'preview') {
+      return [
+        ['↑↓', 'line'],
+        [copyLineKey, 'copy line'],
+        ['←', 'back to list'],
+        ['↵', 'open'],
+        ['Esc', 'back']
+      ]
+    }
+    const hints = [['↑↓', 'navigate']]
+    const kind = current.value?.kind
+    if (kind === 'snippet') hints.push(['→', 'scroll preview'])
+    else if (kind === 'command') hints.push(['→', 'open tool'])
+    else if (kind === 'tools') hints.push(['→', toolsOpen.value ? 'collapse' : 'browse tools'])
+    hints.push(['↵', 'open'], [copyKey, 'copy'], ['Esc', 'close'])
+    return hints
+  })
 
   const { onKeydown } = useQuickLookKeys({
     count: () => results.value.length,
     selected,
     zone,
     canEnterPreview,
-    scrollPreview,
+    movePreview: preview.movePreview,
     onChoose: choose,
     onDismiss: dismiss,
-    onCopy: copy
+    onCopy: copy,
+    onCopyLine: preview.copyLine,
+    onCollapse: collapseTools,
+    // → drills in: a command opens its convert panel, the Tools row expands and
+    // moves onto the first tool — mirroring → into a snippet preview.
+    onExpand: () => {
+      const it = current.value
+      if (it?.kind === 'tools') {
+        toolsOpen.value = true
+        selected.value += 1
+        return true
+      }
+      if (it?.kind === 'command') {
+        choose(selected.value)
+        return true
+      }
+      return false
+    }
   })
 
   return {
@@ -146,8 +235,12 @@ export function useQuickLook() {
     selected,
     results,
     current,
-    diffMeta,
-    snippetText,
+    toolsOpen,
+    snippetLines: preview.snippetLines,
+    lineClass: preview.lineClass,
+    hoverLine: preview.hoverLine,
+    footHints,
+    copyKey,
     zone,
     previewEl,
     choose,
@@ -158,6 +251,9 @@ export function useQuickLook() {
     closing,
     dismiss,
     refresh,
-    onKeydown
+    onKeydown,
+    convertTool,
+    lastTool,
+    exitConvert
   }
 }

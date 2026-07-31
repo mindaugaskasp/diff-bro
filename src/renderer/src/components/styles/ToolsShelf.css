@@ -1,0 +1,79 @@
+/* Tool launcher pinned to the bottom — flex:none keeps it out of the scroll, so
+   it's always visible under the list regardless of how far the list scrolls. */
+.usb-tools {
+  flex: none;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: var(--space-3);
+  /* A brighter accent seam and a soft top-lit gradient lift the footer out of
+     the flat panel and hint it's an interactive shelf, not a status bar. */
+  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 7%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
+}
+.usb-tools-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  margin-right: 2px;
+}
+.usb-tools-label .app-icon {
+  width: 13px;
+  height: 13px;
+}
+.usb-tool {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 10px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.5;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s,
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.usb-tool .app-icon {
+  width: 12px;
+  height: 12px;
+}
+.usb-tool:hover {
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.usb-tool:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+/* The way into the full list: a dashed edge marks it as "more", not a tool. */
+.usb-tool-all {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+/* With no recents yet it is the only control, so it carries the shelf alone. */
+.usb-tool-all.solo {
+  flex: 1;
+  justify-content: center;
+  border-style: solid;
+}

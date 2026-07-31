@@ -114,3 +114,16 @@
 .row-btn.delete:hover {
   color: var(--danger-bg);
 }
+/* Swap the lifetime chip for the actions on hover, so the resting row gives its
+   width to the diff name — the same trade the snippet rows make. */
+.diffacts {
+  display: none;
+  align-items: center;
+  flex-shrink: 0;
+}
+.diff:hover .diffacts {
+  display: inline-flex;
+}
+.diff:hover .state-chip {
+  display: none;
+}

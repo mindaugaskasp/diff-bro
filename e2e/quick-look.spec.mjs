@@ -83,3 +83,54 @@ test('copying names the snippet, flashes on its row, then closes', async ({ app,
     )
     .toBe(false)
 })
+
+// Shift+Cmd+C copies just the highlighted preview line; the whole-snippet copy
+// stays on Cmd+C. The active line steps with ↑/↓ (keyboard) and is marked .hot.
+test('Shift+Cmd+C copies only the active preview line', async ({ app, page }) => {
+  await seededReady(page)
+  const ql = await summon(app, page)
+
+  await ql.locator('.ql-input').fill('Mermaid')
+  await ql.keyboard.press('ArrowRight') // enter preview; line 0 is active
+
+  await expect(ql.locator('.ql-pv-line.hot')).toHaveCount(1)
+  await ql.keyboard.press('ArrowDown') // step to line 2 (index 1)
+  const active = ql.locator('.ql-pv-line').nth(1)
+  await expect(active).toHaveClass(/hot/)
+  const lineText = await active.textContent()
+
+  await ql.keyboard.press('Shift+Control+c') // Linux env → Ctrl+Shift+C
+  await expect(ql.locator('.ql-toast')).toContainText('line 2')
+
+  const clip = await app.evaluate(({ clipboard }) => clipboard.readText())
+  expect(clip).toBe(lineText)
+})
+
+// Arrowing past the visible rows must scroll the list; before this it stopped at
+// the fold and the selection walked off-screen (the Tools section made the list
+// long enough to notice).
+test('arrowing down scrolls the results list to keep the selection visible', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+  const list = ql.locator('.ql-results')
+  const before = await list.evaluate((el) => el.scrollTop)
+
+  // Tools leads the list, so → expands it straight away; then walk to the bottom.
+  await expect(ql.locator('.ql-res.sel')).toContainText('Tools')
+  await ql.keyboard.press('ArrowRight')
+  for (let i = 0; i < 12; i++) await ql.keyboard.press('ArrowDown')
+
+  await expect
+    .poll(async () => {
+      const el = await list.elementHandle()
+      const { scrollTop, scrollHeight, clientHeight } = await el.evaluate((n) => ({
+        scrollTop: n.scrollTop,
+        scrollHeight: n.scrollHeight,
+        clientHeight: n.clientHeight
+      }))
+      return scrollHeight > clientHeight ? scrollTop : -1
+    })
+    .toBeGreaterThan(before)
+})

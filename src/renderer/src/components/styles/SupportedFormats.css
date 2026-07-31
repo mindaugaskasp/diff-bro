@@ -35,6 +35,37 @@
   box-shadow: var(--shadow-1);
   color: var(--text);
   font-size: var(--font-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+}
+.chip:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-1);
+}
+.chip:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.chip.featured:hover {
+  border-color: var(--success-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
+  .chip:hover {
+    transform: none;
+  }
 }
 .chip .ext {
   color: var(--text-dim);

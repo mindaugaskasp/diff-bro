@@ -45,7 +45,7 @@ const title = computed(() => {
 // Live lifetime (vault.now ticks each second): kept, a countdown warming to
 // "soon" in the last stretch, then expired.
 const state = computed(() => {
-  if (props.entry.expiresAt === null) return { cls: 'kept', text: 'kept' }
+  if (props.entry.expiresAt === null) return { cls: 'kept', text: '' }
   const ms = props.entry.expiresAt - vault.now
   if (ms <= 0) return { cls: 'expired', text: 'expired' }
   const h = Math.floor(ms / 3600_000)
@@ -67,7 +67,8 @@ async function open() {
     <button
       class="star"
       :class="{ on: entry.favorite }"
-      :title="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="entry.favorite ? 'Unfavorite' : 'Favorite'"
+      :aria-label="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
       @click="vault.toggleFavorite(entry.id)"
     >
       <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />
@@ -80,7 +81,7 @@ async function open() {
       <span class="lines">
         <span class="l1">
           <span class="name">{{ entry.name }}</span>
-          <span class="state-chip" :class="state.cls">{{ state.text }}</span>
+          <span v-if="state.text" class="state-chip" :class="state.cls">{{ state.text }}</span>
         </span>
         <span class="l2">
           <template v-if="entry.from">
@@ -97,26 +98,30 @@ async function open() {
               <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
             </span>
           </template>
-          <span v-else-if="!entry.from" class="untagged">Default</span>
+          <span v-else-if="!entry.from" class="untagged">Untagged</span>
         </span>
       </span>
     </button>
 
-    <button
-      v-if="!entry.from"
-      class="row-btn"
-      title="Share as sealed file"
-      @click="diff.shareEntry(entry.id)"
-    >
-      <AppIcon name="share" />
-    </button>
-    <button
-      class="row-btn delete"
-      title="Delete now"
-      @click="vault.requestDelete(entry.id, entry.name)"
-    >
-      <AppIcon name="x" />
-    </button>
+    <span class="diffacts">
+      <button
+        v-if="!entry.from"
+        class="row-btn"
+        data-tip="Share"
+        aria-label="Share as sealed file"
+        @click="diff.shareEntry(entry.id)"
+      >
+        <AppIcon name="share" />
+      </button>
+      <button
+        class="row-btn delete"
+        data-tip="Delete"
+        aria-label="Delete now"
+        @click="vault.requestDelete(entry.id, entry.name)"
+      >
+        <AppIcon name="trash" />
+      </button>
+    </span>
   </li>
 </template>
 

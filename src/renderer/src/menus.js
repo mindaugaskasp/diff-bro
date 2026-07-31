@@ -114,68 +114,19 @@ export function buildMenus(store) {
       items: [
         {
           label: 'Base64',
-          items: [
-            {
-              label: 'Encode / Decode',
-              keys: `${MOD}+Shift+B`,
-              run: () => store.handleMenuAction('tools-base64')
-            }
-          ]
+          keys: `${MOD}+Shift+B`,
+          run: () => store.handleMenuAction('tools-base64')
         },
-        {
-          label: 'JSON',
-          items: [
-            {
-              label: 'Format / Validate',
-              keys: `${MOD}+Shift+J`,
-              run: () => store.handleMenuAction('tools-json')
-            }
-          ]
-        },
-        {
-          label: 'XML',
-          items: [
-            {
-              label: 'Format / Validate',
-              keys: `${MOD}+Shift+M`,
-              run: () => store.handleMenuAction('tools-xml')
-            }
-          ]
-        },
-        {
-          label: 'SQL',
-          items: [
-            {
-              label: 'Format / Validate',
-              keys: `${MOD}+Shift+Q`,
-              run: () => store.handleMenuAction('tools-sql')
-            }
-          ]
-        },
-        {
-          label: 'UUID',
-          items: [
-            {
-              label: 'Convert',
-              keys: `${MOD}+Shift+U`,
-              run: () => store.handleMenuAction('tools-uuid')
-            }
-          ]
-        },
+        { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => store.handleMenuAction('tools-json') },
+        { label: 'XML', keys: `${MOD}+Shift+M`, run: () => store.handleMenuAction('tools-xml') },
+        { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => store.handleMenuAction('tools-uuid') },
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
         { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
-        { label: 'HTML Entities', run: () => store.handleMenuAction('tools-html') },
-        { label: 'Sort & Dedupe Lines', run: () => store.handleMenuAction('tools-lines') },
         {
-          label: 'Find & Replace',
-          items: [
-            {
-              label: 'Replace…',
-              keys: `${MOD}+Shift+R`,
-              run: () => store.handleMenuAction('tools-find-replace')
-            }
-          ]
+          label: 'Lines',
+          keys: `${MOD}+Shift+R`,
+          run: () => store.handleMenuAction('tools-lines')
         },
         {
           label: 'Text Encryption',

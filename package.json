@@ -61,5 +61,13 @@
     "monaco-editor": "^0.52.0",
     "prettier": "^3.9.5",
     "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.25.12": true,
+    "fsevents@2.3.3": true,
+    "fsevents@2.3.2": true,
+    "electron@39.8.10": true,
+    "vue-demi@0.14.10": true
   }
 }

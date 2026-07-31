@@ -1,0 +1,228 @@
+.te {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.te-now {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-radius: var(--radius-lg);
+}
+.te-now-l {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 78%, var(--text));
+}
+.te-tick {
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+  animation: te-tick 2s steps(1, end) infinite;
+}
+@keyframes te-tick {
+  50% {
+    opacity: 0.45;
+  }
+}
+.te-now-v {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.te-now-v:hover {
+  color: var(--accent);
+}
+.te-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+/* Stacked full-width lanes: the result rows (ISO / local strings) need the whole
+   width to read without clipping, in both the dialog and the narrow launcher. */
+.te-lanes {
+  display: grid;
+  gap: var(--space-3);
+}
+.te-lane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+}
+.te-lane-k {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+.te-lane-k .app-icon {
+  width: 13px;
+  height: 13px;
+}
+/* The field, calendar button and Now button share one row height. */
+.te-in-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+.te-in-row .btn {
+  height: auto;
+  white-space: nowrap;
+}
+.te-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-h);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-md);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+.te-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* Calendar button: the app's own calendar icon (aligned, modern) with a
+   transparent native datetime-local laid over it — clicking anywhere opens the
+   native picker, whose dropdown is themed via color-scheme (bound in the
+   component). The ugly default indicator glyph is never shown. */
+.te-cal {
+  position: relative;
+  flex: none;
+  width: var(--control-h);
+  height: var(--control-h);
+  display: grid;
+  place-items: center;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.te-cal:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.te-cal-ico {
+  width: 16px;
+  height: 16px;
+}
+.te-cal-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+/* Expand the (invisible) indicator to the whole button so any click opens it. */
+.te-cal-native::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.te-out {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.te-out-v {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.te-rows {
+  display: grid;
+  gap: var(--space-1);
+}
+.te-res {
+  display: grid;
+  grid-template-columns: 66px 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+.te-res-k {
+  font-size: var(--font-2xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.te-res-v {
+  min-width: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  color: var(--text);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.te-copy {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+}
+.te-copy:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.te-hint {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+@media (prefers-reduced-motion: reduce) {
+  .te-tick {
+    animation: none;
+  }
+}

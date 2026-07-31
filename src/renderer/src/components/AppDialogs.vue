@@ -9,9 +9,7 @@ import PasteConfirmDialog from './PasteConfirmDialog.vue'
 import SaveDiffDialog from './SaveDiffDialog.vue'
 import ShareDiffDialog from './ShareDiffDialog.vue'
 import ReplaceDiffDialog from './ReplaceDiffDialog.vue'
-import Base64Dialog from './Base64Dialog.vue'
 import TextToolDialog from './TextToolDialog.vue'
-import FindReplaceDialog from './FindReplaceDialog.vue'
 import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
 import SnippetEditorDialog from './SnippetEditorDialog.vue'
 import SnippetPassphraseDialog from './SnippetPassphraseDialog.vue'
@@ -37,7 +35,7 @@ const errors = useErrorStore()
 <template>
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
-  <ShareDiffDialog v-if="store.shareEntryId" />
+  <ShareDiffDialog v-if="store.shareEntryId || store.shareDraft" />
   <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
   <RemoveTrustedKeyDialog v-if="store.pendingUntrust" />
   <ShareKeyDialog v-if="store.showShareKeyDialog" />
@@ -47,9 +45,7 @@ const errors = useErrorStore()
   <CommandPalette v-if="store.showCommandPalette" />
   <MermaidViewerDialog v-if="store.mermaidView" />
   <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
-  <Base64Dialog v-if="store.showBase64Dialog" />
   <TextToolDialog v-if="store.textTool" :key="store.textTool" :tool="store.textTool" />
-  <FindReplaceDialog v-if="store.showFindReplaceDialog" />
   <EncryptDecryptDialog v-if="store.showCryptDialog" />
   <SnippetEditorDialog v-if="snippets.editingSnippet" />
   <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />

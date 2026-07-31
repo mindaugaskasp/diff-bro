@@ -9,7 +9,7 @@ import { registerFileIpc } from './files'
 import { registerTextToolsIpc } from './textTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
-import { registerQuickLook, destroyQuickLook } from './quickLook'
+import { allowMainFocus, registerQuickLook, destroyQuickLook } from './quickLook'
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 
@@ -31,6 +31,8 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     }
     const win = BrowserWindow.getAllWindows()[0]
     if (!win) return
+    // The launcher may have left this window un-focusable (see quickLook.js).
+    allowMainFocus()
     if (win.isMinimized()) win.restore()
     win.focus()
   })
@@ -53,7 +55,10 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     // Without this, the hidden launcher keeps a window alive and blocks quit.
     mainWin.on('closed', destroyQuickLook)
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+      if (BrowserWindow.getAllWindows().length === 0) return void createWindow()
+      // Re-activating from the dock must be able to take focus even if the
+      // launcher was dismissed moments ago.
+      allowMainFocus()
     })
   })
 }

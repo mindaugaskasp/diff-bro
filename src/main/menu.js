@@ -182,68 +182,31 @@ export function installMenu() {
       submenu: [
         {
           label: 'Base64',
-          submenu: [
-            {
-              label: 'Encode / Decode',
-              accelerator: 'CmdOrCtrl+Shift+B',
-              click: () => sendToFocused('tools-base64')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+B',
+          click: () => sendToFocused('tools-base64')
         },
         {
           label: 'JSON',
-          submenu: [
-            {
-              label: 'Format / Validate',
-              accelerator: 'CmdOrCtrl+Shift+J',
-              click: () => sendToFocused('tools-json')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+J',
+          click: () => sendToFocused('tools-json')
         },
         {
           label: 'XML',
-          submenu: [
-            {
-              label: 'Format / Validate',
-              accelerator: 'CmdOrCtrl+Shift+M',
-              click: () => sendToFocused('tools-xml')
-            }
-          ]
-        },
-        {
-          label: 'SQL',
-          submenu: [
-            {
-              label: 'Format / Validate',
-              accelerator: 'CmdOrCtrl+Shift+Q',
-              click: () => sendToFocused('tools-sql')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => sendToFocused('tools-xml')
         },
         {
           label: 'UUID',
-          submenu: [
-            {
-              label: 'Convert',
-              accelerator: 'CmdOrCtrl+Shift+U',
-              click: () => sendToFocused('tools-uuid')
-            }
-          ]
+          accelerator: 'CmdOrCtrl+Shift+U',
+          click: () => sendToFocused('tools-uuid')
         },
         { label: 'JWT Decode', click: () => sendToFocused('tools-jwt') },
         { label: 'Epoch / Date', click: () => sendToFocused('tools-epoch') },
         { label: 'URL Encode / Decode', click: () => sendToFocused('tools-url') },
-        { label: 'HTML Entities', click: () => sendToFocused('tools-html') },
-        { label: 'Sort & Dedupe Lines', click: () => sendToFocused('tools-lines') },
         {
-          label: 'Find & Replace',
-          submenu: [
-            {
-              label: 'Replace…',
-              accelerator: 'CmdOrCtrl+Shift+R',
-              click: () => sendToFocused('tools-find-replace')
-            }
-          ]
+          label: 'Lines',
+          accelerator: 'CmdOrCtrl+Shift+R',
+          click: () => sendToFocused('tools-lines')
         },
         {
           label: 'Text Encryption',

@@ -15,7 +15,7 @@ a hard promise: it never touches the network.
 ## Why Diff Bro
 
 - **Truly offline.** No account, no telemetry, no auto-update, no CDN. The app
-  makes *zero* network requests — enforced by a session-level kill switch, a
+  makes _zero_ network requests — enforced by a session-level kill switch, a
   strict CSP, and a sandboxed renderer, not just a promise. Your files never
   leave your machine.
 - **Private by default.** Anything you keep — saved diffs, snippets, keys — is
@@ -44,20 +44,28 @@ a hard promise: it never touches the network.
   toolbar (bold, headings, lists, quote, code, links) and a live rendered
   preview, with a Rendered/Plain toggle.
 - **Quick look-up** — a global shortcut summons a floating search over your
-  snippets and saved diffs *without raising the app*; ↑/↓ to browse, **Enter** to
+  snippets and saved diffs _without raising the app_; ↑/↓ to browse, **Enter** to
   open, **Ctrl/Cmd+C** to copy a snippet straight to the clipboard. Rebind the
   shortcut in Settings.
 - **Resizable dialogs** — the snippet editor and the tool windows resize from any
   edge or corner and remember their size between sessions (or a one-click setting
   maximizes them all). Existing snippets open read-only until you press Edit.
-- **Tools** — Base64, JSON / XML / SQL format + validate, UUID convert
-  (canonical ↔ binary hex), find & replace (characters, words, or regex), and
-  passphrase text encryption (AES-256-GCM), with an opt-in raw-key AES-256-CBC
-  decrypt for external payloads.
-- **Yours to arrange** — nine themes (incl. Nord, Sepia, a playful Nyan with a
-  reward cat, and a Matrix digital-rain theme), one tag namespace shared across
-  diffs and snippets, a sidebar that filters by section and tag, and adjustable
-  limits, all remembered between sessions.
+- **Tools** — rich panels, not blank text boxes: **JSON** (pretty / minify /
+  sort keys, a JSONPath filter, and a syntax-coloured collapsible tree),
+  **Base64** (live encode/decode, URL-safe, MIME wrap, byte counts), **UUID**
+  (generate v1/v4/v5/v6/v7, inspect, and reverse-convert), **JWT** (decode and
+  inspect claims), **Epoch** (date ⇄ timestamp with a picker), **URL** (encode /
+  decode with an editable query-param table), **Lines** (split, sort, dedupe,
+  and build lists — e.g. a CSV row into a quoted SQL `IN (…)` list), plus **XML**
+  format + validate, find & replace, and passphrase text encryption
+  (AES-256-GCM) with an opt-in raw-key AES-256-CBC decrypt for external
+  payloads. Your recent tools sit on the sidebar shelf; the rest are one search
+  away.
+- **Yours to arrange** — fourteen themes (incl. Nord, Sepia, Solar, a playful
+  Nyan with a reward cat, a Matrix digital-rain theme, and accessibility-grade
+  Contrast and Beacon), one tag namespace shared across diffs and snippets, a
+  sidebar that filters by section and tag, and adjustable limits, all remembered
+  between sessions.
 
 <p align="center">
   <img src="docs/screenshots/spreadsheet-diff.png" width="820" alt="Two multi-sheet Excel workbooks compared as aligned grids: sheet tabs with per-sheet change counts, changed cells boxed, and an added row shown as a striped gap on the side without it">
@@ -89,10 +97,10 @@ a hard promise: it never touches the network.
 Grab the latest installer from the
 [**latest release**](https://github.com/mindaugaskasp/diff-bro/releases/latest):
 
-| OS | Download |
-| --- | --- |
-| **Windows** (10/11) | `diff-bro-Setup-v<version>.exe` |
-| **macOS** (Apple silicon, 12+) | `diff-bro-v<version>.dmg` |
+| OS                             | Download                        |
+| ------------------------------ | ------------------------------- |
+| **Windows** (10/11)            | `diff-bro-Setup-v<version>.exe` |
+| **macOS** (Apple silicon, 12+) | `diff-bro-v<version>.dmg`       |
 
 **macOS via Homebrew:**
 
@@ -114,7 +122,12 @@ the [security model](docs/security.md).
 
 ## Build from source
 
+Needs **Node 22.12+** (the version Docker and CI use — `nvm use` picks it up
+from `.nvmrc`). Older majors install but warn, and the build toolchain no
+longer supports them.
+
 ```bash
+nvm use          # or install Node 22.12+ yourself
 npm install
 npm run dev      # run locally
 npm run check    # lint + tests
@@ -133,5 +146,4 @@ No local Node? The same flow runs in Docker: `make dev`, `make check`,
 - [Chocolatey release](docs/chocolatey.md) — plan + package skeleton for
   `choco install diffbro`.
 - [Glossary](docs/glossary.md) — every term and abbreviation (IPC, CSP, GCM, …).
-- Coding standards live in [CLAUDE.md](CLAUDE.md); roadmap in
-  [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md).
+- Coding standards live in [CLAUDE.md](CLAUDE.md).

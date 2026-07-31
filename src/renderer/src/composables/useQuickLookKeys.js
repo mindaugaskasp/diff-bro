@@ -12,10 +12,13 @@
  * @param {{ value: number }} o.selected   selected index (a Vue ref, or any {value})
  * @param {(index: number) => void} o.onChoose
  * @param {() => void} o.onDismiss
- * @param {(index: number) => void} [o.onCopy]
+ * @param {(index: number) => void} [o.onCopy]     Cmd/Ctrl+C: copy the whole selected item
+ * @param {() => void} [o.onCopyLine]              Shift+Cmd/Ctrl+C: copy the active preview line
  * @param {{ value: 'list' | 'preview' }} [o.zone]  focus zone (a Vue ref, or any {value})
  * @param {() => boolean} [o.canEnterPreview]       true when the active row has a scrollable preview
- * @param {(dir: 1 | -1) => void} [o.scrollPreview] scroll the preview one step
+ * @param {(dir: 1 | -1) => void} [o.movePreview]  step the active preview line one row
+ * @param {() => boolean} [o.onExpand]  → on a non-preview row (e.g. a command): returns true if it handled it
+ * @param {() => boolean} [o.onCollapse]  ← / Escape in the list (e.g. close an expanded section): true if it handled it
  * @returns {{ onKeydown: (e: KeyboardEvent) => void }}
  */
 export function useQuickLookKeys({
@@ -24,21 +27,26 @@ export function useQuickLookKeys({
   onChoose,
   onDismiss,
   onCopy = () => {},
+  onCopyLine = () => {},
   zone = { value: 'list' },
   canEnterPreview = () => false,
-  scrollPreview = () => {}
+  movePreview = () => {},
+  onExpand = () => false,
+  onCollapse = () => false
 }) {
   const clamp = (i) => Math.max(0, Math.min(i, count() - 1))
   const inPreview = () => zone.value === 'preview'
 
   // A live text selection in the search box copies natively; otherwise Cmd/Ctrl+C
-  // copies the highlighted result. Returns true when it's the copy combo.
+  // copies the highlighted result, and Shift+Cmd/Ctrl+C copies just the active
+  // preview line. Returns true when it's a copy combo.
   function tryCopy(e) {
     if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return false
     const t = e.target
     if (t && t.selectionStart != null && t.selectionStart !== t.selectionEnd) return true
     e.preventDefault()
-    if (count() > 0) onCopy(selected.value)
+    if (e.shiftKey) onCopyLine()
+    else if (count() > 0) onCopy(selected.value)
     return true
   }
 
@@ -51,29 +59,41 @@ export function useQuickLookKeys({
   }
 
   // One handler per key, so the dispatcher below stays flat (each move is either
-  // list-navigation or preview-scroll depending on the zone).
+  // list-navigation or a preview line-step depending on the zone).
   function moveOrScroll(e, dir) {
     e.preventDefault()
-    if (inPreview()) scrollPreview(dir)
+    if (inPreview()) movePreview(dir)
     else selected.value = clamp(selected.value + dir)
   }
+  // → enters the snippet preview, OR hands off to onExpand (a command opens its
+  // convert panel) — same key, so navigation reads the same on every row.
   function enterPreview(e) {
-    if (inPreview() || !caretAtEnd(e) || !canEnterPreview()) return
-    e.preventDefault()
-    zone.value = 'preview'
+    if (inPreview() || !caretAtEnd(e)) return
+    if (canEnterPreview()) {
+      e.preventDefault()
+      zone.value = 'preview'
+    } else if (onExpand()) {
+      e.preventDefault()
+    }
   }
-  function leavePreview(e) {
-    if (!inPreview()) return
-    e.preventDefault()
-    zone.value = 'list'
+  // ← leaves the preview, else collapses an expanded section (onCollapse).
+  function leaveOrCollapse(e) {
+    if (inPreview()) {
+      e.preventDefault()
+      zone.value = 'list'
+    } else if (onCollapse()) {
+      e.preventDefault()
+    }
   }
   function commit(e) {
     e.preventDefault()
     if (count() > 0) onChoose(selected.value)
   }
+  // Escape backs out one level at a time: preview → list → collapse section → dismiss.
   function back(e) {
     e.preventDefault()
     if (inPreview()) zone.value = 'list'
+    else if (onCollapse()) return
     else onDismiss()
   }
 
@@ -81,7 +101,7 @@ export function useQuickLookKeys({
     ArrowDown: (e) => moveOrScroll(e, 1),
     ArrowUp: (e) => moveOrScroll(e, -1),
     ArrowRight: enterPreview,
-    ArrowLeft: leavePreview,
+    ArrowLeft: leaveOrCollapse,
     Enter: commit,
     Escape: back
   }

@@ -1,0 +1,159 @@
+.tj {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.tj-in {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  word-break: break-all;
+}
+.tj-in:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.tj-err {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--danger-border);
+}
+.tj-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tj-badge {
+  font-size: var(--font-2xs);
+  font-weight: 660;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.tj-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-2xs);
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--success-text);
+  background: color-mix(in srgb, var(--success-text) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success-text) 30%, transparent);
+}
+.tj-pill.bad {
+  color: var(--danger-border);
+  background: color-mix(in srgb, var(--danger-border) 14%, transparent);
+  border-color: color-mix(in srgb, var(--danger-border) 32%, transparent);
+}
+.tj-pill .app-icon {
+  width: 12px;
+  height: 12px;
+}
+.tj-claims {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.tj-claim {
+  display: grid;
+  grid-template-columns: 34px auto 1fr;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+}
+.tj-ck {
+  color: var(--accent);
+  font-weight: 600;
+}
+.tj-cv {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.tj-cn {
+  color: var(--text-dim);
+  font-size: var(--font-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tj-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.tj-bh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 640;
+  color: var(--text-dim);
+}
+.tj-copy {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+}
+.tj-copy:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.tj-copy .app-icon {
+  width: 15px;
+  height: 15px;
+}
+.tj-json {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg-raised);
+  white-space: pre;
+}
+.tj-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+.tj-note .app-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}

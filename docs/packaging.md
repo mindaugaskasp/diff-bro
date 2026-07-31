@@ -31,29 +31,29 @@ the packaged binary at pack time:
   fuse wire rewrites the Electron binary and invalidates the linker-signed
   ad-hoc signature it ships with, and `mac.identity: null` means
   electron-builder signs nothing afterwards. Without it the DMG contains an app
-  whose signature is structurally broken (`codesign --verify` reports *"code has
-  no resources but signature indicates they must be present"*), which macOS
-  reports as *"damaged"* and which clearing quarantine does **not** fix. With it,
+  whose signature is structurally broken (`codesign --verify` reports _"code has
+  no resources but signature indicates they must be present"_), which macOS
+  reports as _"damaged"_ and which clearing quarantine does **not** fix. With it,
   `@electron/fuses` re-signs the whole bundle ad-hoc right after the flip.
 
 `enableEmbeddedAsarIntegrityValidation` is intentionally **off** until real
 signing lands: it binds the ASAR hash to the code signature, and on an
 unsigned / ad-hoc-signed macOS build that makes a quarantined app fail to launch
-as *"Diff Bro is damaged"* even after the user clears quarantine. The fuses are
-flipped *before* the ad-hoc re-signature, so the flip order is fine — the
+as _"Diff Bro is damaged"_ even after the user clears quarantine. The fuses are
+flipped _before_ the ad-hoc re-signature, so the flip order is fine — the
 integrity fuse specifically needs a Developer ID signature to be safe.
-Turn it back on together with signing (`DEVELOPMENT_PLAN.md` Phase 3).
+Turn it back on together with code signing.
 
 Code signing (Windows Authenticode + macOS notarization) is the remaining
-prerequisite — see below and `DEVELOPMENT_PLAN.md` Phase 3.
+prerequisite — see below.
 
 ## Windows: enable Developer Mode first
 
 `build:win` extracts electron-builder's `winCodeSign` cache, which contains
 macOS `.dylib` files stored as symlinks. Creating a symlink on Windows needs
 `SeCreateSymbolicLinkPrivilege`, which normal accounts lack unless Developer
-Mode is on — otherwise the build fails with *"Cannot create symbolic link: A
-required privilege is not held by the client."*
+Mode is on — otherwise the build fails with _"Cannot create symbolic link: A
+required privilege is not held by the client."_
 
 Enable it once via **Settings → Privacy & security → For developers → Developer
 Mode**, then re-run. If a build already failed partway, clear the partial cache:
@@ -77,8 +77,8 @@ git tag v0.1.0 && git push origin v0.1.0
 Installers are **version-stamped** (`diff-bro-Setup-v0.1.8.exe`,
 `diff-bro-v0.1.8.dmg` — see `artifactName` in `electron-builder.yml`), so a
 downloaded file stays identifiable once it's away from the release page.
-`${version}` resolves from `package.json`, which the *Sync version to the
-release tag* step rewrites from the tag before packaging.
+`${version}` resolves from `package.json`, which the _Sync version to the
+release tag_ step rewrites from the tag before packaging.
 
 Because the filename changes every release, GitHub's
 `…/releases/latest/download/<name>` shortcut no longer works — it requires a
@@ -87,8 +87,8 @@ change together when the name does: `electron-builder.yml`, the `asset()` /
 `ASSET_TEMPLATE` pair in `scripts/gen-homebrew-cask.mjs`, and the
 `gh release download --pattern` in the `homebrew` job of `release.yml`.
 
-Builds are **unsigned** (no code-signing cert / Apple Developer account yet — see
-`DEVELOPMENT_PLAN.md` Phase 3): Windows shows a SmartScreen warning, and macOS
+Builds are **unsigned** (no code-signing cert / Apple Developer account yet):
+Windows shows a SmartScreen warning, and macOS
 Gatekeeper marks the app "damaged"/"can't be opened" because the download is
 quarantined and unsigned. Clear the quarantine after copying to Applications:
 
@@ -119,8 +119,9 @@ skips cleanly unless two things are configured:
 
 **One-time setup:** create the `homebrew-tap` repo, add the token, then let the
 next release populate `Casks/diff-bro.rb` (or seed it once with `make brew-cask`
-+ a manual copy). Regenerate locally anytime with `make brew-cask`
-(`VERSION=x.y.z` and/or `DMG=dist/diff-bro-v0.1.8.dmg` to override the source).
+
+- a manual copy). Regenerate locally anytime with `make brew-cask`
+  (`VERSION=x.y.z` and/or `DMG=dist/diff-bro-v0.1.8.dmg` to override the source).
 
 Because the build isn't notarized yet, the cask's caveats tell users to clear
 the quarantine flag with `xattr` after installing. Homebrew 6 **removed**

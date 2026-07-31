@@ -17,8 +17,10 @@ defineProps({
     ><u v-else-if="n.type === 'ins'"><JiraInline :nodes="n.inlines" /></u
     ><s v-else-if="n.type === 'del'"><JiraInline :nodes="n.inlines" /></s
     ><code v-else-if="n.type === 'code'" class="ji-mono">{{ n.value }}</code
-    ><span v-else-if="n.type === 'link'" class="ji-link" :title="n.href">{{ n.label }}</span
-  ></template>
+    ><span v-else-if="n.type === 'link'" class="ji-link" :title="n.href">{{
+      n.label
+    }}</span></template
+  >
 </template>
 
 <style scoped src="./styles/JiraInline.css"></style>
