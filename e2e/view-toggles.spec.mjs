@@ -20,7 +20,9 @@ test('ignore-whitespace turns a whitespace-only diff into "No differences"', asy
 })
 
 test('the Paste text button names its destination so the toggle is explicit', async ({ page }) => {
-  const toggle = page.locator('.toolbar .actions button').filter({ hasText: /Paste text|File mode/ })
+  const toggle = page
+    .locator('.toolbar .actions button')
+    .filter({ hasText: /Paste text|File mode/ })
   await expect(toggle).toHaveText('Paste text') // files mode: offers paste
   await toggle.click()
   await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
@@ -35,7 +37,7 @@ test('Swap flips additions and deletions', async ({ page }) => {
   await expect(page.locator('.stats .add')).toHaveText('+1')
   await expect(page.locator('.stats .del')).toContainText('0')
 
-  await page.getByTitle(/Swap sides/).click()
+  await page.getByRole('button', { name: 'Swap sides' }).click()
   await expect(page.locator('.stats .add')).toHaveText('+0')
   await expect(page.locator('.stats .del')).toContainText('1')
 })

@@ -79,6 +79,7 @@ These are the non-negotiables from `CLAUDE.md`, and the file that enforces each:
 | **Keys never cross IPC** | Vault/identity keys stay behind `safeStorage`; only ciphertext is ever returned | `vault.js`, `vaultCrypt.js` |
 | **Untrusted-input caps** | Import files get size caps, shape validation, recomputed fingerprints; `.xlsx` gets decompression-bomb caps and a cell budget | `files.js`, `xlsx/*`, `share.js` |
 | **No injection sinks** | `v-html`, `eval`, `new Function`, `innerHTML` are ESLint-banned | `eslint.config.mjs` |
+| **Capture rect clamped** | `image:capture` / `image:appendSlice` screenshot only a region clamped inside the window's own content, never a forged or unbounded one; a stitched export is capped in height so a renderer-driven loop can't exhaust memory, and the bitmap stays in main | `captureRect.js`, `stitchBitmap.js`, `diffImage.js` |
 
 The renderer **cannot**: read a file by path it made up, obtain a private key,
 evaluate a spreadsheet formula, or make a network request. Each of those is

@@ -81,6 +81,18 @@ export const ICONS = {
     { t: 'rect', x: 4, y: 11, width: 16, height: 10, rx: 2 },
     { t: 'path', d: 'M8 11V7a4 4 0 0 1 8 0v4' }
   ],
+  // Reveal / hide a secret snippet's contents.
+  eye: [
+    { t: 'path', d: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z' },
+    { t: 'circle', cx: 12, cy: 12, r: 3 }
+  ],
+  // The same eye, struck through — contents currently hidden.
+  'eye-off': [
+    { t: 'path', d: 'M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a18.5 18.5 0 0 1-3.2 4.2' },
+    { t: 'path', d: 'M6.5 6.6A18.2 18.2 0 0 0 2 12s3.5 7 10 7a10.7 10.7 0 0 0 4.5-1' },
+    { t: 'path', d: 'M9.9 9.9a3 3 0 0 0 4.2 4.2' },
+    { t: 'line', x1: 3, y1: 3, x2: 21, y2: 21 }
+  ],
   // Open padlock — the shackle swung clear of the body.
   unlock: [
     { t: 'rect', x: 4, y: 11, width: 16, height: 10, rx: 2 },
@@ -227,7 +239,10 @@ export const ICONS = {
   ],
   // Tag — the HTML entities tool's mark.
   tag: [
-    { t: 'path', d: 'M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z' },
+    {
+      t: 'path',
+      d: 'M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z'
+    },
     { t: 'circle', cx: 7.5, cy: 7.5, r: 1.1, fill: true }
   ],
   // Two arrows swapping — the Find & Replace tool's mark.
@@ -236,5 +251,11 @@ export const ICONS = {
     { t: 'path', d: 'M20 7H9a5 5 0 0 0-5 5' },
     { t: 'path', d: 'm8 21-4-4 4-4' },
     { t: 'path', d: 'M4 17h11a5 5 0 0 0 5-5' }
+  ],
+  // A framed picture — exporting a saved diff as a shareable image.
+  image: [
+    { t: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
+    { t: 'circle', cx: 8.5, cy: 8.5, r: 1.5 },
+    { t: 'path', d: 'm21 15-4.5-4.5L6 21' }
   ]
 }

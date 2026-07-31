@@ -55,7 +55,7 @@ watch(
     }"
     :data-section="sectionId"
     :draggable="!locked && !unified"
-    :title="unified || locked ? null : 'Drag to reorder — lock in the toolbar to freeze'"
+    :data-tip="unified || locked ? null : 'Drag to reorder — lock in the toolbar to freeze'"
     @click="$emit('toggle')"
     @dragstart="onDragStart(sectionId, $event)"
     @dragend="onDragEnd"

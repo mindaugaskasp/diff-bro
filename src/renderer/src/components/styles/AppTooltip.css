@@ -10,6 +10,11 @@
   color: var(--text);
   box-shadow: var(--shadow-2);
   font-size: var(--font-xs);
-  white-space: nowrap;
+  /* pre-line, not nowrap: a tip carrying a second line (the saved-diff row's
+     data directory) used to render as one endless strip off both screen edges.
+     The cap keeps the longest one readable and lets the clamp in AppTooltip
+     land it inside the window. */
+  white-space: pre-line;
+  max-width: min(360px, calc(100vw - 2 * var(--space-3)));
   pointer-events: none;
 }

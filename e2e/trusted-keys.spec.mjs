@@ -40,12 +40,14 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
     await expect(mgr.locator('li.key')).toHaveCount(N)
     await expect(mgr.getByText('Teammate 01', { exact: true })).toBeVisible()
     await expect(mgr.getByText('Teammate 15', { exact: true })).toBeVisible()
-    const scrolls = await mgr.locator('.keys').evaluate((el) => el.scrollHeight > el.clientHeight + 1)
+    const scrolls = await mgr
+      .locator('.keys')
+      .evaluate((el) => el.scrollHeight > el.clientHeight + 1)
     expect(scrolls).toBe(true)
 
     // Rename a mid-list key: only that row changes, the count holds.
     const target = mgr.locator('li.key', { hasText: 'Teammate 08' })
-    await target.getByTitle('Rename').click()
+    await target.getByRole('button', { name: 'Rename' }).click()
     await mgr.locator('input.rename').fill('Teammate 08 — laptop')
     await mgr.locator('input.rename').press('Enter')
     await expect(mgr.getByText('Teammate 08 — laptop')).toBeVisible()
@@ -58,10 +60,16 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
         .getByRole('dialog', { name: 'Remove trusted key?' })
         .getByRole('button', { name: 'Remove' })
         .click()
-    await mgr.locator('li.key', { hasText: 'Teammate 03' }).getByTitle('Remove').click()
+    await mgr
+      .locator('li.key', { hasText: 'Teammate 03' })
+      .getByRole('button', { name: 'Remove' })
+      .click()
     await confirmRemove()
     await expect(mgr.locator('li.key')).toHaveCount(N - 1)
-    await mgr.locator('li.key', { hasText: 'Teammate 12' }).getByTitle('Remove').click()
+    await mgr
+      .locator('li.key', { hasText: 'Teammate 12' })
+      .getByRole('button', { name: 'Remove' })
+      .click()
     await confirmRemove()
     await expect(mgr.locator('li.key')).toHaveCount(N - 2)
     await expect(mgr.getByText('Teammate 03', { exact: true })).toBeHidden()

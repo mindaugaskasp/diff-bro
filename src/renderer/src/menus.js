@@ -19,6 +19,7 @@ export function buildMenus(store) {
         { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
         { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
         { label: 'Export Diff as HTML…', run: () => store.handleMenuAction('export-html') },
+        { label: 'Export Diff as Image…', run: () => store.handleMenuAction('export-image') },
         { label: 'Import Snippets…', run: () => store.handleMenuAction('import-snippets') },
         { sep: true },
         { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },

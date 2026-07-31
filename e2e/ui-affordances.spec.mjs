@@ -9,16 +9,19 @@ test('the supported-format tiles are real buttons that open a filtered picker', 
   const tiles = page.locator('.chips button.chip')
   await expect(tiles).toHaveCount(6)
 
-  // Every tile is reachable and says what it opens.
-  for (const title of await tiles.evaluateAll((n) => n.map((b) => b.title))) {
-    expect(title).toMatch(/^Open .+ file$/)
+  // Every tile is reachable and says what it opens. The tip is the app's own
+  // (data-tip), not native `title`, which Electron often never draws.
+  for (const tip of await tiles.evaluateAll((n) => n.map((b) => b.getAttribute('data-tip')))) {
+    expect(tip).toMatch(/^Open .+ file$/)
   }
   await expect(tiles.first()).toBeEnabled()
   await expect(tiles.first()).toContainText('Excel')
 })
 
-// Shortening these tooltips once renamed the buttons: an icon-only button takes
-// its accessible name from title, so the short label must not be the only one.
+// Shortening these tooltips once renamed the buttons: an icon-only button used
+// to take its accessible name from `title`, so the short label must not be the
+// only one. The name now comes from aria-label and the tip from data-tip, which
+// is exactly the pairing this pins.
 test('icon buttons keep a descriptive name alongside the short tooltip', async ({ page }) => {
   const cases = [
     ['New', 'New snippet'],

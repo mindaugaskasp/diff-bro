@@ -19,7 +19,14 @@ function dismiss() {
     <span v-for="[keys, label] in shortcuts" :key="keys" class="hint">
       <kbd>{{ keys }}</kbd> {{ label }}
     </span>
-    <button class="close" title="Hide shortcuts" @click="dismiss"><AppIcon name="x" /></button>
+    <button
+      class="close"
+      data-tip="Hide this bar — bring it back in Settings"
+      aria-label="Hide shortcuts"
+      @click="dismiss"
+    >
+      <AppIcon name="x" />
+    </button>
   </div>
 </template>
 

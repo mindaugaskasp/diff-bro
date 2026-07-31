@@ -8,6 +8,7 @@ import ErrorReportDialog from './ErrorReportDialog.vue'
 import PasteConfirmDialog from './PasteConfirmDialog.vue'
 import SaveDiffDialog from './SaveDiffDialog.vue'
 import ShareDiffDialog from './ShareDiffDialog.vue'
+import DiffImageDialog from './DiffImageDialog.vue'
 import ReplaceDiffDialog from './ReplaceDiffDialog.vue'
 import TextToolDialog from './TextToolDialog.vue'
 import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
@@ -16,6 +17,7 @@ import SnippetPassphraseDialog from './SnippetPassphraseDialog.vue'
 import SnippetDeleteDialog from './SnippetDeleteDialog.vue'
 import SnippetFillDialog from './SnippetFillDialog.vue'
 import VaultCategoryDeleteDialog from './VaultCategoryDeleteDialog.vue'
+import RetagDiffDialog from './RetagDiffDialog.vue'
 import AddTrustedKeyDialog from './AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './TrustedKeysDialog.vue'
 import RemoveTrustedKeyDialog from './RemoveTrustedKeyDialog.vue'
@@ -36,6 +38,7 @@ const errors = useErrorStore()
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
   <ShareDiffDialog v-if="store.shareEntryId || store.shareDraft" />
+  <DiffImageDialog v-if="store.imageEntry" />
   <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
   <RemoveTrustedKeyDialog v-if="store.pendingUntrust" />
   <ShareKeyDialog v-if="store.showShareKeyDialog" />
@@ -52,6 +55,7 @@ const errors = useErrorStore()
   <SnippetDeleteDialog v-if="snippets.pendingDelete" />
   <SnippetFillDialog v-if="snippets.pendingFill" />
   <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
+  <RetagDiffDialog v-if="vault.pendingRetag" />
   <ErrorReportDialog v-if="errors.visible" />
   <PasteConfirmDialog v-if="store.pastePrompt" />
 </template>

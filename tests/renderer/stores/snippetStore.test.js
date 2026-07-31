@@ -411,6 +411,78 @@ describe('snippetStore — tags model', () => {
     expect(store.listed.map((e) => e.name)).toEqual(['Mid'])
   })
 
+  // --- secret snippets ---
+  describe('secret snippets', () => {
+    it('records the flag, and stores the contents exactly as given', async () => {
+      const store = useSnippetStore()
+      const id = await store.add({
+        name: 'Prod API key',
+        content: 'sk-live-DEADBEEF',
+        language: 'auto',
+        secret: true
+      })
+      const entry = store.entries.find((e) => e.id === id)
+      expect(entry.secret).toBe(true)
+      // Masking is a display decision — the snippet itself is untouched, so
+      // copying it still yields the real thing.
+      await expect(store.load(id)).resolves.toBe('sk-live-DEADBEEF')
+    })
+
+    it('is off unless asked for', async () => {
+      const store = useSnippetStore()
+      const id = await store.add({ name: 'Plain', content: 'hello', language: 'auto' })
+      expect(store.entries.find((e) => e.id === id).secret).toBe(false)
+    })
+
+    it('can be turned on and off again by an edit, without re-keying', async () => {
+      const store = useSnippetStore()
+      const id = await store.add({ name: 'Token', content: 'abc', language: 'auto' })
+      const before = store.entries.find((e) => e.id === id).aadSalt
+
+      await store.update(id, { name: 'Token', content: 'abc', language: 'auto', secret: true })
+      expect(store.entries.find((e) => e.id === id).secret).toBe(true)
+
+      await store.update(id, { name: 'Token', content: 'abc', language: 'auto', secret: false })
+      const entry = store.entries.find((e) => e.id === id)
+      expect(entry.secret).toBe(false)
+      expect(entry.aadSalt).toBe(before)
+      await expect(store.load(id)).resolves.toBe('abc')
+    })
+
+    it('stays secret across a backup and restore', async () => {
+      const store = useSnippetStore()
+      await store.add({ name: 'Key', content: 'sk-live-1', language: 'auto', secret: true })
+      await store.add({ name: 'Note', content: 'plain', language: 'auto' })
+      expect((await store.exportAll('pw')).ok).toBe(true)
+
+      setActivePinia(createPinia())
+      localStorage.clear()
+      const fresh = useSnippetStore()
+      await fresh.importSnippets('pw')
+      const byName = Object.fromEntries(fresh.entries.map((e) => [e.name, e]))
+      // A restored secret that came back unmasked would quietly expose it.
+      expect(byName.Key.secret).toBe(true)
+      expect(byName.Note.secret).toBe(false)
+      await expect(fresh.load(byName.Key.id)).resolves.toBe('sk-live-1')
+    })
+
+    it('reads a stored entry as secret only for a real boolean', () => {
+      localStorage.setItem(
+        'diffbro.snippets',
+        JSON.stringify({
+          tags: {},
+          entries: [
+            { id: 'a', name: 'A', tags: [], secret: true },
+            { id: 'b', name: 'B', tags: [], secret: 'yes' },
+            { id: 'c', name: 'C', tags: [] }
+          ]
+        })
+      )
+      const store = useSnippetStore()
+      expect(store.entries.map((e) => e.secret)).toEqual([true, false, false])
+    })
+  })
+
   // --- export / import ---
   it('exports all and reimports into a fresh store with tags + colors intact', async () => {
     const store = useSnippetStore()

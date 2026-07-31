@@ -170,4 +170,23 @@
  * @property {number} height
  */
 
+/**
+ * A rectangle of the renderer's page, in CSS pixels, handed to main so it can
+ * screenshot that region (see utils/captureTarget.js).
+ * @typedef {object} CaptureRect
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
+ */
+
+/**
+ * A diff screenshot main is holding, as previewed by DiffImageDialog.
+ * @typedef {object} DiffImageCapture
+ * @property {string} dataUrl  PNG data URL, for the preview only
+ * @property {number} width    device pixels
+ * @property {number} height
+ * @property {boolean} [truncated]  the diff outran the export's height ceiling
+ */
+
 export {}

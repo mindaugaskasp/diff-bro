@@ -33,6 +33,8 @@ export default defineConfig({
         'src/main/kdf.js',
         'src/main/configBackup.js',
         'src/main/logFormat.js',
+        'src/main/captureRect.js',
+        'src/main/stitchBitmap.js',
         'src/main/xlsx/**',
         'src/renderer/src/stores/**',
         'src/renderer/src/utils/**',

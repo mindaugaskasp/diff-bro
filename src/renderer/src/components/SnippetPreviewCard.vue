@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { shaped } from '../utils/props'
 import MermaidDiagram from './MermaidDiagram.vue'
+import SnippetSecretMask from './SnippetSecretMask.vue'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -13,7 +14,8 @@ const props = defineProps({
 })
 defineEmits(['edit', 'view'])
 const store = useSnippetStore()
-const isMermaid = computed(() => props.preview.lang === 'mermaid')
+// A secret never previews as a diagram — that would render its contents.
+const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.preview.secret)
 </script>
 
 <template>
@@ -27,10 +29,11 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid')
     </div>
     <!-- A Mermaid snippet previews as its rendered diagram;
          clicking it opens the full-screen zoomable viewer. -->
-    <button v-if="isMermaid" class="pv-diagram" title="View full screen" @click="$emit('view')">
+    <button v-if="isMermaid" class="pv-diagram" data-tip="View full screen" @click="$emit('view')">
       <MermaidDiagram :code="preview.text" :debounce="0" />
     </button>
-    <button v-else class="pv-body" title="Open in editor" @click="$emit('edit')">
+    <SnippetSecretMask v-else-if="preview.secret" compact />
+    <button v-else class="pv-body" data-tip="Open in editor" @click="$emit('edit')">
       {{ preview.text }}
     </button>
     <div class="pv-foot">

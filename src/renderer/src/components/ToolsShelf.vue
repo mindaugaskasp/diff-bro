@@ -20,7 +20,7 @@ const recent = computed(() => recentTools(settings.recentTools))
       v-for="tool in recent"
       :key="tool.id"
       class="usb-tool"
-      :title="`${tool.kind} — ${tool.name}`"
+      :data-tip="`${tool.kind} — ${tool.name}`"
       @click="diff.handleMenuAction(tool.action)"
     >
       <AppIcon :name="tool.icon" />{{ tool.name }}
@@ -28,7 +28,7 @@ const recent = computed(() => recentTools(settings.recentTools))
     <button
       class="usb-tool usb-tool-all"
       :class="{ solo: !recent.length }"
-      title="Search every tool"
+      data-tip="Search every tool"
       @click="diff.openToolsPalette()"
     >
       <AppIcon name="search" />{{ recent.length ? 'All tools' : 'Search tools…' }}

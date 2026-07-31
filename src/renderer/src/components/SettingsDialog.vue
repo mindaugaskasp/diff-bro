@@ -92,7 +92,8 @@ function close() {
               type="button"
               class="theme-opt"
               :class="{ active: diff.theme === t.id }"
-              :title="`Use the ${t.label} theme`"
+              :data-tip="`Use the ${t.label} theme`"
+              :aria-label="`Use the ${t.label} theme`"
               @click="diff.setTheme(t.id)"
             >
               <span class="swatch" :style="{ background: t.swatch.bg }">

@@ -16,14 +16,16 @@ function initialFields(editing, existing) {
       name: '',
       content: editing.initialContent ?? '',
       tags: editing.initialTags ?? [],
-      language: editing.initialLanguage ?? 'auto'
+      language: editing.initialLanguage ?? 'auto',
+      secret: false
     }
   }
   return {
     name: existing.name ?? '',
     content: '',
     tags: existing.tags ?? [],
-    language: existing.language || 'auto'
+    language: existing.language || 'auto',
+    secret: existing.secret === true
   }
 }
 
@@ -40,6 +42,13 @@ export function useSnippetDraft() {
 
   const name = ref(initial.name)
   const content = ref(initial.content)
+  const secret = ref(initial.secret)
+  // A new snippet is being typed, so it starts shown; an existing secret opens
+  // masked and only un-masks when its owner asks. Reveal is per-open, never
+  // stored — reopening a secret always starts hidden again.
+  const revealed = ref(isNew.value)
+  const masked = computed(() => secret.value && !revealed.value)
+  const toggleReveal = () => (revealed.value = !revealed.value)
   const saving = ref(false)
   const initialTags = initial.tags
 
@@ -75,8 +84,12 @@ export function useSnippetDraft() {
   }
 
   // Unsaved-changes guard: a dirty draft confirms before closing.
+  const baselineSecret = ref(initial.secret)
   const isDirty = computed(
-    () => name.value !== baselineName.value || content.value !== baselineContent.value
+    () =>
+      name.value !== baselineName.value ||
+      content.value !== baselineContent.value ||
+      secret.value !== baselineSecret.value
   )
   const confirmingDiscard = ref(false)
   function requestClose() {
@@ -107,6 +120,7 @@ export function useSnippetDraft() {
       name: name.value,
       content: content.value,
       language: chosenLanguage.value,
+      secret: secret.value,
       tags,
       tagColors
     }
@@ -123,6 +137,9 @@ export function useSnippetDraft() {
     // Save drops back to view mode rather than closing; reset the dirty baseline.
     baselineName.value = name.value
     baselineContent.value = content.value
+    baselineSecret.value = secret.value
+    // Saved secrets go straight back behind the mask.
+    if (secret.value) revealed.value = false
     editMode.value = false
   }
 
@@ -155,6 +172,10 @@ export function useSnippetDraft() {
     isNew,
     name,
     content,
+    secret,
+    revealed,
+    masked,
+    toggleReveal,
     saving,
     initialTags,
     chosenLanguage,

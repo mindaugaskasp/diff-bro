@@ -19,20 +19,26 @@ defineEmits(['copy', 'edit'])
     <button
       v-if="zone === 'preview'"
       class="btn btn-icon ql-pv-back"
-      title="Back to list (←)"
+      data-tip="Back to the results list (←)"
+      aria-label="Back to list"
       @click="zone = 'list'"
     >
       <AppIcon name="chevron-left" />
     </button>
     <span class="ql-pv-name">{{ current.name }}</span>
     <span v-if="current.lang" class="ql-pv-lang">{{ current.lang }}</span>
-    <button v-if="canEdit" class="btn btn-sm ql-pv-copy" title="Edit here" @click="$emit('edit')">
+    <button
+      v-if="canEdit"
+      class="btn btn-sm ql-pv-copy"
+      data-tip="Edit this snippet without leaving the launcher"
+      @click="$emit('edit')"
+    >
       <AppIcon name="edit" /> Edit
     </button>
     <button
       v-if="current.kind === 'snippet'"
       class="btn btn-sm ql-pv-copy"
-      :title="`Copy contents (${copyKey})`"
+      :data-tip="`Copy the contents to the clipboard (${copyKey})`"
       @click="$emit('copy')"
     >
       <AppIcon :name="copied ? 'check' : 'copy'" /> {{ copied ? 'Copied' : 'Copy' }}

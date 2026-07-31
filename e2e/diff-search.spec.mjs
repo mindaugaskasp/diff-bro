@@ -20,10 +20,10 @@ test('left-side search counts matches and steps through them', async ({ page }) 
   await left.getByPlaceholder('Search left side…').fill('apple')
   await expect(count).toHaveText('1/3')
 
-  await left.getByTitle('Next match').click()
+  await left.getByRole('button', { name: 'Next match' }).click()
   await expect(count).toHaveText('2/3')
 
-  await left.getByTitle('Previous match').click()
+  await left.getByRole('button', { name: 'Previous match' }).click()
   await expect(count).toHaveText('1/3')
 })
 

@@ -6,3 +6,20 @@
 .dv-find-current {
   background: rgba(210, 153, 34, 0.75);
 }
+
+/* Image export in progress. The selection is how the lines were CHOSEN, so in
+   the picture it is nothing but a slab over the very text being exported —
+   likewise the blinking caret and the current-line rule. Search matches stay:
+   those are findings worth keeping in the shot. `!important` is needed, not
+   lazy: Monaco drives the caret's visibility from INLINE style to blink it, and
+   an inline style beats a stylesheet rule. Global, and matched on .content,
+   because Monaco owns this DOM and the capture flag lives on the column. */
+.content.capturing .monaco-editor .selected-text,
+.content.capturing .monaco-editor .focused .selected-text,
+.content.capturing .monaco-editor .selectionHighlight,
+.content.capturing .monaco-editor .wordHighlight,
+.content.capturing .monaco-editor .current-line,
+.content.capturing .monaco-editor .cursors-layer,
+.content.capturing .monaco-editor .cursor {
+  display: none !important;
+}

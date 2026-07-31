@@ -5,6 +5,17 @@ contextBridge.exposeInMainWorld('api', {
   readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   exportDiffHtml: (payload) => ipcRenderer.invoke('diff:exportHtml', payload),
+  // Diff image export (saved diffs only): main screenshots the diff view itself,
+  // so the picture carries the live theme and Monaco's highlighting. The bitmap
+  // stays in main — the renderer only sends a rect and receives a preview URL.
+  captureDiffImage: (rect) => ipcRenderer.invoke('image:capture', rect),
+  // A diff taller than its pane is photographed a viewport at a time and joined
+  // in main; the strips never come back across the boundary.
+  appendDiffImageSlice: (rect, reset) => ipcRenderer.invoke('image:appendSlice', rect, reset),
+  stitchDiffImage: () => ipcRenderer.invoke('image:stitch'),
+  copyDiffImage: () => ipcRenderer.invoke('image:copy'),
+  saveDiffImage: (name) => ipcRenderer.invoke('image:save', name),
+  forgetDiffImage: () => ipcRenderer.invoke('image:forget'),
   // Electron >= 32: File objects in the renderer no longer expose .path,
   // so drag & drop must resolve paths through webUtils in the preload.
   // Resolving here also registers the path with main as a genuine drop, so

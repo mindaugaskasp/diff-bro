@@ -6,6 +6,7 @@ import { installMenu, registerMenuIpc } from './menu'
 import { registerVaultIpc } from './vault'
 import { registerClipboardIpc } from './clipboard'
 import { registerFileIpc } from './files'
+import { registerDiffImageIpc } from './diffImage'
 import { registerTextToolsIpc } from './textTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
@@ -40,6 +41,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerVaultIpc()
     registerClipboardIpc()
     registerFileIpc()
+    registerDiffImageIpc()
     registerTextToolsIpc()
     registerShareIpc()
     registerSnippetIpc()

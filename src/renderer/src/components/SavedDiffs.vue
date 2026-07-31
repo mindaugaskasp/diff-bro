@@ -75,16 +75,24 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
           placeholder="Search diffs & snippets…"
           spellcheck="false"
         />
-        <button v-if="query" class="usb-x" title="Clear search" @click="query = ''">
+        <button
+          v-if="query"
+          class="usb-x"
+          data-tip="Clear the search box"
+          aria-label="Clear search"
+          @click="query = ''"
+        >
           <AppIcon name="x" />
         </button>
       </div>
       <div class="usb-seg">
-        <button :class="{ on: allOn }" title="Show all sections" @click="showAll">All</button>
+        <button :class="{ on: allOn }" data-tip="Show every sidebar section" @click="showAll">
+          All
+        </button>
         <button
           class="star"
           :class="{ on: favOnly }"
-          title="Favorites only"
+          data-tip="Show only diffs and snippets you starred"
           @click="favOnly = !favOnly"
         >
           <AppIcon name="star-filled" />

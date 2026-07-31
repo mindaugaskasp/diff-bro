@@ -26,7 +26,7 @@ const store = useDiffStore()
         <button
           class="chip"
           :class="{ featured: f.featured }"
-          :title="`Open ${f.label} file`"
+          :data-tip="`Open ${f.label} file`"
           @click="store.pickFormat(f.format)"
         >
           <AppIcon :name="f.icon" />

@@ -71,7 +71,7 @@ function exportTag() {
         :class="{ def: t.name === DEFAULT, on: active.has(t.name) }"
         :style="t.color ? { '--tc': t.color } : {}"
         :aria-pressed="active.has(t.name)"
-        :title="
+        :data-tip="
           t.name === DEFAULT ? 'Untagged snippets' : `Filter by ${t.label} · right-click to manage`
         "
         @click="emit('toggle', t.name)"
@@ -87,7 +87,7 @@ function exportTag() {
     <div class="manage" @click.stop>
       <div class="manage-head">
         <span>Manage tag</span>
-        <button class="dialog-close" title="Close" @click="closeManage">
+        <button class="dialog-close" data-tip="Close" @click="closeManage">
           <AppIcon name="x" />
         </button>
       </div>
@@ -106,7 +106,7 @@ function exportTag() {
           class="swatch"
           :style="{ background: c }"
           :aria-pressed="managing.color === c"
-          :title="c"
+          :data-tip="c"
           @click="applyColor(c)"
         ></button>
       </div>

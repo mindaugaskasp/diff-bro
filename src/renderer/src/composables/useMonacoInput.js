@@ -22,7 +22,11 @@ export function useMonacoInput({ container, content, language, readOnly, options
   // `readOnly` may be a ref (view/edit mode) or absent; read it either way.
   const isReadOnly = () => (readOnly ? !!readOnly.value : false)
 
-  onMounted(() => {
+  // Created against whatever container is present, and re-created if one appears
+  // later: a secret snippet unmounts the editor entirely rather than hiding it,
+  // so the plaintext is not sitting in the DOM behind a display:none.
+  function createEditor() {
+    if (editor || !container.value) return
     editor = monaco.editor.create(container.value, {
       value: content.value,
       language: language.value,
@@ -45,7 +49,16 @@ export function useMonacoInput({ container, content, language, readOnly, options
       content.value = editor.getValue()
     })
     ready.value = true
-  })
+  }
+
+  function destroyEditor() {
+    editor?.dispose()
+    editor = null
+    ready.value = false
+  }
+
+  onMounted(createEditor)
+  watch(container, (el) => (el ? createEditor() : destroyEditor()))
 
   watch(content, (value) => {
     if (editor && editor.getValue() !== value) editor.setValue(value)
@@ -58,7 +71,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
     () => diff.theme,
     () => monaco.editor.setTheme(monacoTheme())
   )
-  onBeforeUnmount(() => editor?.dispose())
+  onBeforeUnmount(destroyEditor)
 
   // Replace the content and put the caret back where the user is working.
   function reset(value = '') {
@@ -81,7 +94,10 @@ export function useMonacoInput({ container, content, language, readOnly, options
     editor.executeEdits('toolbar', [{ range: model.getFullModelRange(), text: result.text }])
     editor.pushUndoStop()
     editor.setSelection(
-      monaco.Selection.fromPositions(model.getPositionAt(result.start), model.getPositionAt(result.end))
+      monaco.Selection.fromPositions(
+        model.getPositionAt(result.start),
+        model.getPositionAt(result.end)
+      )
     )
     editor.focus()
   }

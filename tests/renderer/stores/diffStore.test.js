@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { getDiffScroller, setDiffScroller } from '../../../src/renderer/src/utils/diffScroller'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -1166,5 +1168,497 @@ describe('exportDiff', () => {
     }
     await store.exportDiff()
     expect(called).toBe(false)
+  })
+})
+
+describe('exportImage (saved diffs only)', () => {
+  // A .content box for captureRectOf to measure, plus a synchronous rAF so the
+  // "wait for Monaco" frames resolve without a real compositor.
+  function stageViewer() {
+    const el = document.createElement('div')
+    el.className = 'content'
+    el.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 640 })
+    document.body.append(el)
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    return () => el.remove()
+  }
+
+  async function savedDiff(payload, name = 'Nightly config') {
+    const vault = useVaultStore()
+    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+    window.api.vaultDecrypt = async (box) => box.data
+    return vault.save(name, null, payload)
+  }
+
+  const CAPTURE = { dataUrl: 'data:image/png;base64,SHOT', width: 1800, height: 1280 }
+
+  it('opens the saved diff, shoots the diff column, and previews the result', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    let rect = null
+    window.api.captureDiffImage = async (r) => ((rect = r), CAPTURE)
+
+    await store.exportImage(id)
+
+    // The saved diff is what got photographed: it is on screen.
+    expect(store.left).toMatchObject({ name: 'a.txt' })
+    expect(store.right).toMatchObject({ name: 'b.txt' })
+    expect(rect).toEqual({ x: 260, y: 88, width: 900, height: 640 })
+    expect(store.imageEntry).toEqual({ id, name: 'Nightly config', ...CAPTURE })
+    expect(store.imageCapturing).toBe(false)
+    cleanup()
+  })
+
+  it('keeps the app out of its own screenshot while the shutter is open', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    let capturingDuringShot = null
+    window.api.captureDiffImage = async () => {
+      capturingDuringShot = store.imageCapturing
+      return CAPTURE
+    }
+    await store.exportImage(id)
+    // App.vue hides the toast and the shortcut bar off this flag — they float
+    // inside the captured region, so they must be gone when the shot is taken.
+    expect(capturingDuringShot).toBe(true)
+    expect(store.imageCapturing).toBe(false)
+    cleanup()
+  })
+
+  it('waits for frames to pass before capturing, so Monaco has repainted', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    let framesBeforeShot = 0
+    let frames = 0
+    window.requestAnimationFrame = (cb) => {
+      frames++
+      setTimeout(cb, 0)
+    }
+    window.api.captureDiffImage = async () => ((framesBeforeShot = frames), CAPTURE)
+    await store.exportImage(id)
+    expect(framesBeforeShot).toBeGreaterThan(1)
+    cleanup()
+  })
+
+  // The reported bug: the picture showed the two files with no highlights at
+  // all, so a real difference looked like no difference. Monaco computes the
+  // diff in a worker and paints its decorations only when that returns, which
+  // is long after the handful of frames the shutter used to count.
+  it('waits for Monaco to finish diffing before shooting, not just for frames', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    let frames = 0
+    window.requestAnimationFrame = (cb) => {
+      frames++
+      // DiffViewer bumps this from onDidUpdateDiff; here the worker is slow.
+      if (frames === 20) store.diffRevision++
+      setTimeout(cb, 0)
+    }
+    let revisionAtShot = null
+    window.api.captureDiffImage = async () => ((revisionAtShot = store.diffRevision), CAPTURE)
+
+    await store.exportImage(id)
+
+    expect(revisionAtShot).toBe(1)
+    cleanup()
+  })
+
+  // A diff taller than its pane cannot be photographed in one shot, so the
+  // export scrolls Monaco and main joins the strips. Without this the picture
+  // stopped at the bottom of the visible pane.
+  describe('a diff taller than the pane', () => {
+    // .content at y=88 h=640, with Monaco starting at y=140 — so 588px of pane
+    // under a 52px header.
+    function stageTallViewer({ contentHeight }) {
+      const pane = document.createElement('div')
+      pane.className = 'diff-container'
+      pane.getBoundingClientRect = () => ({ top: 140, height: 588 })
+      const el = document.createElement('div')
+      el.className = 'content'
+      el.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 640 })
+      el.append(pane)
+      document.body.append(el)
+      window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+      let scrollTop = 0
+      setDiffScroller({
+        contentHeight: () => contentHeight,
+        viewportHeight: () => 588,
+        scrollTop: () => scrollTop,
+        scrollTo: (top) => (scrollTop = top)
+      })
+      return () => {
+        el.remove()
+        setDiffScroller(null)
+      }
+    }
+
+    it('scrolls through the diff and stitches the strips into one picture', async () => {
+      const cleanup = stageTallViewer({ contentHeight: 1400 })
+      const store = useDiffStore()
+      const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+      const appended = []
+      window.api.captureDiffImage = async () => {
+        throw new Error('a tall diff must not be shot in one frame')
+      }
+      window.api.appendDiffImageSlice = async (rect, reset) => {
+        appended.push({ rect, reset, scrolledTo: getDiffScroller().scrollTop() })
+        return { ok: true }
+      }
+      window.api.stitchDiffImage = async () => CAPTURE
+
+      await store.exportImage(id)
+
+      // 1400px of diff over a 588px pane: two full viewports, then a 224px tail
+      // shot at the scroll clamp (1400 - 588 = 812) and cropped to its bottom.
+      expect(appended.map((a) => a.scrolledTo)).toEqual([0, 588, 812])
+      expect(appended.map((a) => a.reset)).toEqual([true, false, false])
+      // The header rides on the first strip only, never repeated.
+      expect(appended[0].rect).toEqual({ x: 260, y: 88, width: 900, height: 52 + 588 })
+      expect(appended[1].rect).toEqual({ x: 260, y: 140, width: 900, height: 588 })
+      expect(appended[2].rect).toEqual({ x: 260, y: 140 + 364, width: 900, height: 224 })
+      expect(store.imageEntry).toMatchObject({ id, ...CAPTURE, truncated: false })
+      cleanup()
+    })
+
+    it('puts the reader back where they were when the shutter closes', async () => {
+      const cleanup = stageTallViewer({ contentHeight: 1400 })
+      const store = useDiffStore()
+      const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+      getDiffScroller().scrollTo(300)
+      window.api.appendDiffImageSlice = async () => ({ ok: true })
+      window.api.stitchDiffImage = async () => CAPTURE
+      await store.exportImage(id)
+      expect(getDiffScroller().scrollTop()).toBe(300)
+      cleanup()
+    })
+
+    it('stops slicing at the configured ceiling and admits the picture is cut short', async () => {
+      const cleanup = stageTallViewer({ contentHeight: 200_000 })
+      const store = useDiffStore()
+      const settings = useSettingsStore()
+      settings.setMaxExportHeightPx(2940) // five 588px viewports
+      const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+      let covered = 0
+      window.api.appendDiffImageSlice = async (rect, reset) => {
+        covered += reset ? rect.height - 52 : rect.height // the header rides slice one
+        return { ok: true }
+      }
+      window.api.stitchDiffImage = async () => CAPTURE
+      await store.exportImage(id)
+      expect(covered).toBe(2940)
+      expect(store.imageEntry.truncated).toBe(true)
+      cleanup()
+    })
+
+    // The ceiling is in screen pixels, so the same diff exports the same amount
+    // whatever the display scale — expressing it in device pixels made a Retina
+    // machine capture half as much as a 1× one from identical settings.
+    it('covers the same amount of diff whatever the display scale', async () => {
+      const covered = async (dpr) => {
+        setActivePinia(createPinia())
+        const cleanup = stageTallViewer({ contentHeight: 200_000 })
+        window.devicePixelRatio = dpr
+        const store = useDiffStore()
+        useSettingsStore().setMaxExportHeightPx(2940)
+        window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+        window.api.vaultDecrypt = async (box) => box.data
+        const id = await useVaultStore().save('t', null, {
+          mode: 'files',
+          left: FILE('a.txt'),
+          right: FILE('b.txt')
+        })
+        let total = 0
+        window.api.appendDiffImageSlice = async (rect, reset) => {
+          total += reset ? rect.height - 52 : rect.height
+          return { ok: true }
+        }
+        window.api.stitchDiffImage = async () => CAPTURE
+        await store.exportImage(id)
+        cleanup()
+        return total
+      }
+      expect(await covered(1)).toBe(await covered(2))
+    })
+
+    it('gives up on a refused strip instead of stitching a partial picture', async () => {
+      const cleanup = stageTallViewer({ contentHeight: 1400 })
+      const store = useDiffStore()
+      const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+      let stitched = false
+      window.api.appendDiffImageSlice = async (_r, reset) =>
+        reset ? { ok: true } : { error: 'bad-rect' }
+      window.api.stitchDiffImage = async () => ((stitched = true), CAPTURE)
+      await store.exportImage(id)
+      expect(stitched).toBe(false)
+      expect(store.imageEntry).toBeNull()
+      expect(store.notice).toContain('Could not take a picture')
+      cleanup()
+    })
+  })
+
+  // Exporting what's on screen, with lines selected in either pane narrowing the
+  // picture to just those.
+  describe('exportCurrentImage', () => {
+    function stageSelectable({ contentHeight, selection }) {
+      const pane = document.createElement('div')
+      pane.className = 'diff-container'
+      pane.getBoundingClientRect = () => ({ top: 140, height: 588 })
+      const el = document.createElement('div')
+      el.className = 'content'
+      el.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 640 })
+      el.append(pane)
+      document.body.append(el)
+      window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+      let scrollTop = 0
+      setDiffScroller({
+        contentHeight: () => contentHeight,
+        viewportHeight: () => 588,
+        scrollTop: () => scrollTop,
+        scrollTo: (top) => (scrollTop = top),
+        selection: () => selection
+      })
+      return () => {
+        el.remove()
+        setDiffScroller(null)
+      }
+    }
+
+    const loaded = (store) => {
+      store.left = FILE('a.txt')
+      store.right = FILE('b.txt')
+      store.mode = 'files'
+    }
+
+    it('captures only the selected band, not the whole diff', async () => {
+      const cleanup = stageSelectable({
+        contentHeight: 4000,
+        selection: { top: 1000, bottom: 1300 }
+      })
+      const store = useDiffStore()
+      loaded(store)
+      const rects = []
+      window.api.appendDiffImageSlice = async (rect, reset) => (
+        rects.push({ rect, reset }),
+        { ok: true }
+      )
+      window.api.stitchDiffImage = async () => CAPTURE
+      window.api.captureDiffImage = async () => {
+        throw new Error('a selection must not fall back to the whole-column shot')
+      }
+
+      await store.exportCurrentImage()
+
+      expect(rects).toHaveLength(1)
+      // Scrolled to the top of the selection; the header rides above it.
+      expect(rects[0]).toEqual({
+        rect: { x: 260, y: 88, width: 900, height: 52 + 300 },
+        reset: true
+      })
+      expect(store.imageEntry).toMatchObject({ id: null, name: 'a.txt ↔ b.txt' })
+      cleanup()
+    })
+
+    it('reaches a selection at the very end through Monaco’s scroll clamp', async () => {
+      const cleanup = stageSelectable({
+        contentHeight: 4000,
+        selection: { top: 3800, bottom: 4000 }
+      })
+      const store = useDiffStore()
+      loaded(store)
+      const rects = []
+      window.api.appendDiffImageSlice = async (rect) => (rects.push(rect), { ok: true })
+      window.api.stitchDiffImage = async () => CAPTURE
+      await store.exportCurrentImage()
+      // 4000 - 588 = 3412 is as far as it scrolls, so the band sits 388px down.
+      expect(getDiffScroller().scrollTop()).toBe(0) // and it is put back after
+      expect(rects[0].height).toBe(52 + 200)
+      cleanup()
+    })
+
+    it('captures the whole diff when no lines are selected', async () => {
+      const cleanup = stageSelectable({ contentHeight: 300, selection: null })
+      const store = useDiffStore()
+      loaded(store)
+      let rect = null
+      window.api.captureDiffImage = async (r) => ((rect = r), CAPTURE)
+      await store.exportCurrentImage()
+      expect(rect).toEqual({ x: 260, y: 88, width: 900, height: 640 })
+      expect(store.imageEntry).toMatchObject({ id: null })
+      cleanup()
+    })
+
+    it('refuses when there is no comparison on screen', async () => {
+      const cleanup = stageSelectable({ contentHeight: 300, selection: null })
+      const store = useDiffStore()
+      store.mode = 'paste'
+      let called = false
+      window.api.captureDiffImage = async () => ((called = true), CAPTURE)
+      await store.exportCurrentImage()
+      expect(called).toBe(false)
+      expect(store.imageEntry).toBeNull()
+      expect(store.notice).toContain('Nothing to export')
+      cleanup()
+    })
+  })
+
+  it('exports nothing for an id that is not a saved diff', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    // The live comparison is deliberately NOT a source: saved diffs only.
+    store.left = FILE('onscreen.txt')
+    store.right = FILE('other.txt')
+    let called = false
+    window.api.captureDiffImage = async () => ((called = true), CAPTURE)
+    await store.exportImage('no-such-id')
+    expect(store.imageEntry).toBeNull()
+    expect(called).toBe(false)
+    cleanup()
+  })
+
+  it('shoots the SAVED entry, never whatever was already on screen', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({
+      mode: 'files',
+      left: FILE('saved-l.txt'),
+      right: FILE('saved-r.txt')
+    })
+    store.left = FILE('onscreen-l.txt')
+    store.right = FILE('onscreen-r.txt')
+    window.api.captureDiffImage = async () => CAPTURE
+    await store.exportImage(id)
+    expect(store.left).toMatchObject({ name: 'saved-l.txt' })
+    expect(store.right).toMatchObject({ name: 'saved-r.txt' })
+    cleanup()
+  })
+
+  it('reports an entry that no longer decrypts and photographs nothing', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    window.api.vaultDecrypt = async () => null
+    let called = false
+    window.api.captureDiffImage = async () => ((called = true), CAPTURE)
+    await store.exportImage(id)
+    expect(called).toBe(false)
+    expect(store.imageEntry).toBeNull()
+    expect(store.notice).toContain('expired or could not be decrypted')
+    cleanup()
+  })
+
+  it('reports a refused capture instead of opening an empty preview', async () => {
+    const cleanup = stageViewer()
+    const store = useDiffStore()
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    window.api.captureDiffImage = async () => ({ error: 'bad-rect' })
+    await store.exportImage(id)
+    expect(store.imageEntry).toBeNull()
+    expect(store.imageCapturing).toBe(false)
+    expect(store.notice).toContain('Could not take a picture')
+    cleanup()
+  })
+
+  it('does not call main when there is no diff column to measure', async () => {
+    const store = useDiffStore()
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+    let called = false
+    window.api.captureDiffImage = async () => ((called = true), CAPTURE)
+    await store.exportImage(id) // no .content element staged
+    expect(called).toBe(false)
+    expect(store.imageEntry).toBeNull()
+    expect(store.notice).toContain('Could not take a picture')
+  })
+
+  it('copyImage asks main for the capture it is holding, and acknowledges', async () => {
+    const store = useDiffStore()
+    let called = 0
+    window.api.copyDiffImage = async (...args) => {
+      called++
+      // No image bytes travel back to main — it still has the bitmap.
+      expect(args).toHaveLength(0)
+      return { ok: true }
+    }
+    expect(await store.copyImage()).toBe(true)
+    expect(called).toBe(1)
+    expect(store.notice).toContain('copied to clipboard')
+  })
+
+  it('copyImage reports a refusal rather than claiming success', async () => {
+    const store = useDiffStore()
+    window.api.copyDiffImage = async () => ({ ok: false, error: 'nothing-captured' })
+    expect(await store.copyImage()).toBe(false)
+    expect(store.notice).toContain('Could not copy')
+  })
+
+  it('saveImage names the file after the saved diff and says where it landed', async () => {
+    const store = useDiffStore()
+    store.imageEntry = { id: 'x', name: 'Nightly config' }
+    let sentName = null
+    window.api.saveDiffImage = async (name) => {
+      sentName = name
+      return { ok: true, path: '/tmp/Nightly config.png' }
+    }
+    await store.saveImage()
+    expect(sentName).toBe('Nightly config')
+    expect(store.notice).toContain('/tmp/Nightly config.png')
+  })
+
+  it('saveImage stays quiet when the save dialog was cancelled', async () => {
+    const store = useDiffStore()
+    window.api.saveDiffImage = async () => ({ canceled: true })
+    await store.saveImage()
+    expect(store.notice).toBeNull()
+  })
+
+  it('saveImage surfaces a failed write', async () => {
+    const store = useDiffStore()
+    window.api.saveDiffImage = async () => ({ ok: false, error: 'nothing-captured' })
+    await store.saveImage()
+    expect(store.notice).toContain('Could not save')
+  })
+
+  it('closing the preview tells main to drop the bitmap it was holding', async () => {
+    const store = useDiffStore()
+    let forgotten = false
+    window.api.forgetDiffImage = async () => ((forgotten = true), { ok: true })
+    store.imageEntry = { id: 'x', name: 'n', dataUrl: 'data:image/png;base64,SHOT' }
+    store.closeImageExport()
+    expect(store.imageEntry).toBeNull()
+    expect(forgotten).toBe(true)
+  })
+})
+
+describe('exportImage failure handling', () => {
+  it('never leaves the app chrome hidden when the capture throws', async () => {
+    const store = useDiffStore()
+    const vault = useVaultStore()
+    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+    window.api.vaultDecrypt = async (box) => box.data
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    const el = document.createElement('div')
+    el.className = 'content'
+    el.getBoundingClientRect = () => ({ left: 0, top: 0, width: 900, height: 640 })
+    document.body.append(el)
+    const id = await vault.save('boom', null, {
+      mode: 'files',
+      left: FILE('a.txt'),
+      right: FILE('b.txt')
+    })
+    window.api.captureDiffImage = async () => {
+      throw new Error('IPC exploded')
+    }
+
+    await store.exportImage(id)
+
+    // A stuck flag would hide the shortcut bar for the rest of the session.
+    expect(store.imageCapturing).toBe(false)
+    expect(store.imageEntry).toBeNull()
+    expect(store.notice).toContain('Could not take a picture')
+    el.remove()
   })
 })

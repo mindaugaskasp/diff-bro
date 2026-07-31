@@ -23,6 +23,16 @@ export const FILE_TYPE_LIMITS = {
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 
+// How much diff a stitched export may cover, in SCREEN pixels of content — the
+// same amount on every display, which a device-pixel ceiling would not be (it
+// would cover half as much on a Retina screen as on a 1× one). The resulting
+// PNG is this times the display scale. Past it the export stops and says it was
+// cut short. Memory is bounded separately and only in main (stitchBitmap.js),
+// which must not trust a renderer-driven capture loop.
+export const DEFAULT_MAX_EXPORT_HEIGHT_PX = 8000
+export const MAX_EXPORT_HEIGHT_PX_CAP = 12000
+export const MIN_EXPORT_HEIGHT_PX = 1000
+
 // Bounds for a remembered dialog size, so a stale file can't restore an absurd box.
 export const DIALOG_SIZE_MIN = { width: 320, height: 240 }
 export const DIALOG_SIZE_MAX = { width: 3000, height: 3000 }
@@ -41,6 +51,7 @@ export const DEFAULT_SETTINGS = {
   rotateThemeDaily: false,
   fileSizeLimitsMb: defaultFileLimits(),
   maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
+  maxExportHeightPx: DEFAULT_MAX_EXPORT_HEIGHT_PX,
   dialogSizes: {}, // { [key]: { width, height } } from user drag-resizes
   maximizeDialogs: false,
   examplesSeeded: false,
@@ -125,6 +136,12 @@ function readState() {
       16,
       MAX_SNIPPET_SIZE_KB_CAP
     ),
+    maxExportHeightPx: clampNumber(
+      parsed.maxExportHeightPx,
+      DEFAULT_MAX_EXPORT_HEIGHT_PX,
+      MIN_EXPORT_HEIGHT_PX,
+      MAX_EXPORT_HEIGHT_PX_CAP
+    ),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
     examplesSeeded: parsed.examplesSeeded === true,
@@ -169,6 +186,7 @@ export const useSettingsStore = defineStore('settings', {
           // text limit through the pre-per-type key.
           maxComparisonFileMb: this.fileSizeLimitsMb.text,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
+          maxExportHeightPx: this.maxExportHeightPx,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           examplesSeeded: this.examplesSeeded,
@@ -266,6 +284,15 @@ export const useSettingsStore = defineStore('settings', {
         DEFAULT_MAX_SNIPPET_SIZE_KB,
         16,
         MAX_SNIPPET_SIZE_KB_CAP
+      )
+      this.persist()
+    },
+    setMaxExportHeightPx(value) {
+      this.maxExportHeightPx = clampNumber(
+        value,
+        DEFAULT_MAX_EXPORT_HEIGHT_PX,
+        MIN_EXPORT_HEIGHT_PX,
+        MAX_EXPORT_HEIGHT_PX_CAP
       )
       this.persist()
     },

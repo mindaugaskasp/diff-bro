@@ -35,8 +35,21 @@ a hard promise: it never touches the network.
 - **Paste mode** for quick throwaway comparisons, including pasted text against a
   real file — or just hit **Ctrl/Cmd+V** to paste straight into a comparison.
 - **Drag & drop** files onto the window; it warns before discarding unsaved work.
-- **Saved diffs** — encrypted, optionally auto-expiring, and tagged.
+- **Saved diffs** — encrypted, optionally auto-expiring, and tagged (retag any of
+  them later from the row's tag button).
 - **Share** a diff as a sealed, signed file only its intended recipient can open.
+- **Export a saved diff as an image** — a high-resolution screenshot of the diff
+  view itself, so it carries your theme, the split panes and the syntax
+  highlighting rather than a redrawn approximation. Cropped to the change, and a
+  diff taller than the window is scrolled and stitched so the whole comparison
+  lands in one picture — up to a height you set in Settings → Limits, measured
+  on screen so it captures the same amount whatever your display's scaling.
+  Select lines in either pane first to capture just those. Copied straight to
+  the clipboard or saved as a PNG. Taken and kept on-device.
+- **Secret snippets** — mark a snippet secret and its contents never render:
+  the editor, the hover card and the launcher all show `****` with a notice,
+  while copying still puts the real value on the clipboard. Masking is on top of
+  the encryption every snippet already has, not instead of it.
 - **Snippets** — an encrypted, tagged text library with per-language
   highlighting and live **Mermaid** diagram rendering, in a viewer you can drag
   bigger from any corner (and that fills the window when the app goes fullscreen).

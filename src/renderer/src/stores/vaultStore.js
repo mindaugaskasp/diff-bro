@@ -59,6 +59,8 @@ export const useVaultStore = defineStore('vault', {
     entries: readEntries(),
     now: Date.now(),
     pendingDelete: null,
+    // Retag dialog: { id, name, tags } while open, null when closed.
+    pendingRetag: null,
     // Vault key unavailable (locked keychain): hold, never purge — it may return.
     keyError: null
   }),
@@ -104,22 +106,16 @@ export const useVaultStore = defineStore('vault', {
     },
     // ttlHours === null saves a "kept" diff that never expires (the save dialog's
     // "Secure" toggle off); any number gives an auto-expiring diff, capped at
-    // 24 h. `tags` are user tags; the diff's detected format is auto-added.
+    // 24 h. `tags` are the user's only — the format goes on `entry.format`, and
+    // injecting it here too made a user tag matching the format vanish as a
+    // duplicate of the auto one.
     async save(name, ttlHours, payload, tags = []) {
       let expiresAt = null
       if (ttlHours !== null) {
         const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
         expiresAt = Date.now() + hours * 3600_000
       }
-      const auto = diffFormatTag(payload)
-      return this._add({
-        name,
-        payload,
-        createdAt: Date.now(),
-        expiresAt,
-        from: null,
-        tags: auto ? [auto, ...tags] : tags
-      })
+      return this._add({ name, payload, createdAt: Date.now(), expiresAt, from: null, tags })
     },
     // Entry received from another machine: keep the sender's absolute timestamps
     // so it expires at the same moment everywhere, and auto-tag it "imported".
@@ -159,11 +155,19 @@ export const useVaultStore = defineStore('vault', {
       return id
     },
     // Retag a saved diff in place (plaintext metadata — no re-encryption).
-    setTags(id, tags) {
+    setTags(id, tags, colors = {}) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
-      entry.tags = useSnippetStore().registerTags(tags)
+      entry.tags = useSnippetStore().registerTags(tags, colors)
       this.persist()
+    },
+    requestRetag(id) {
+      const entry = this.entries.find((e) => e.id === id)
+      if (!entry) return
+      this.pendingRetag = { id, name: entry.name, tags: [...(entry.tags || [])] }
+    },
+    cancelRetag() {
+      this.pendingRetag = null
     },
     requestDelete(id, name) {
       this.pendingDelete = { id, name }

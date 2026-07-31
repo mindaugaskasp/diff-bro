@@ -1,0 +1,34 @@
+/* Screenshot preview (DiffImageDialog.vue). The picture carries whatever theme
+   it was taken in, so the well around it has to read on all 14: a recessed --bg
+   surface inside the --bg-panel dialog (distinct on every theme), plus a
+   --border keyline on the image itself so a light-theme screenshot still has an
+   edge on the light-ground themes where the well is nearly the same colour. */
+.shot {
+  max-height: 52vh;
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.shot img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-1);
+}
+
+/* Truncation notice. The warning pair is designed together and redefined by
+   every theme, so this re-tints on all 14 — a bare --warning-text would be
+   near-black on the dark grounds, where it is meant to sit ON --warning-bg. */
+.dialog-note.warn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border-radius: var(--radius-sm);
+}

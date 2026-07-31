@@ -22,7 +22,7 @@ test('a chosen theme applies at once and persists across a relaunch', async () =
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
 
     await openSettings(page)
-    await page.getByTitle('Use the Neon theme').click()
+    await page.getByRole('button', { name: 'Use the Neon theme' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'neon')
     await app.close()
 
