@@ -24,7 +24,11 @@ const themesCss = readFileSync(join(root, 'src/renderer/src/styles/themes.css'),
 const clamp = (n) => Math.max(0, Math.min(255, n))
 function parseHex(h) {
   let s = h.replace('#', '').trim()
-  if (s.length === 3) s = s.split('').map((c) => c + c).join('')
+  if (s.length === 3)
+    s = s
+      .split('')
+      .map((c) => c + c)
+      .join('')
   return [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16))
 }
 const chan = (c) => {
@@ -135,7 +139,8 @@ for (const theme of THEMES) {
       continue
     }
     cells[r.key] = ratio
-    if (ratio < r.min) failures.push(`${theme}: ${r.key} ${ratio.toFixed(2)} < ${r.min} (${r.kind})`)
+    if (ratio < r.min)
+      failures.push(`${theme}: ${r.key} ${ratio.toFixed(2)} < ${r.min} (${r.kind})`)
   }
   rows.push({ theme, cells })
 }
@@ -147,13 +152,68 @@ const w = Math.max(...cols.map((c) => c.length), 6)
 console.log('\nTheme surface-depth report (contrast ratios):\n')
 console.log(pad('theme', 9) + cols.map((c) => pad(c, w + 1)).join(''))
 for (const { theme, cells } of rows) {
-  const line = cols.map((c) => pad(typeof cells[c] === 'number' ? cells[c].toFixed(2) : cells[c], w + 1))
+  const line = cols.map((c) =>
+    pad(typeof cells[c] === 'number' ? cells[c].toFixed(2) : cells[c], w + 1)
+  )
   console.log(pad(theme, 9) + line.join(''))
 }
 console.log('\nfloors:    ' + RULES.map((r) => pad(r.min, w + 1)).join(''))
 
+// --- tag ink ---------------------------------------------------------------
+// Tag colours are the one palette that does NOT come from tokens (a user picks
+// them), and they are tuned for dark grounds — raw, they sit at ~1.2 against a
+// light theme's surface and vanish. ui.css inks them toward --text; this checks
+// the result still reads as a UI element on every theme. Both the palette and
+// the mix ratio are read from source so neither can drift from this floor.
+const TAG_INK_MIN = 3.0
+const uiCss = readFileSync(join(root, 'src/renderer/src/styles/ui.css'), 'utf8')
+const storeJs = readFileSync(join(root, 'src/renderer/src/stores/snippetStore.js'), 'utf8')
+const inkPct = uiCss.match(/--tag-ink:\s*color-mix\(in srgb,\s*.+?\s(\d+)%\s*,/)
+if (!inkPct) failures.push('ui.css: no --tag-ink color-mix to check')
+const palette = [...storeJs.matchAll(/'(#[0-9a-f]{6})'/gi)].map((m) => m[1])
+if (palette.length < 5) failures.push('snippetStore.js: no tag palette to check')
+
+// Every surface a chip can sit on, paired with its theme's ink.
+function tagSurfaces() {
+  const out = []
+  for (const theme of THEMES) {
+    const map = mapFor(theme)
+    const text = resolve('--text', map)
+    for (const ground of ['--bg', '--bg-panel', '--bg-elevated']) {
+      out.push({ theme, ground, text, surface: resolve(ground, map) })
+    }
+  }
+  return out
+}
+
+function checkTagInk(p) {
+  let worst = { ratio: Infinity }
+  for (const { theme, ground, text, surface } of tagSurfaces()) {
+    for (const hex of palette) {
+      const ink = parseHex(hex).map((ch, i) => clamp(Math.round(ch * p + text[i] * (1 - p))))
+      const ratio = contrast(ink, surface)
+      if (ratio < worst.ratio) worst = { ratio, theme, ground, hex }
+      if (ratio < TAG_INK_MIN)
+        failures.push(
+          `${theme}: tag ${hex} on ${ground} inks to ${ratio.toFixed(2)} < ${TAG_INK_MIN} (tag-ink)`
+        )
+    }
+  }
+  return worst
+}
+
+if (inkPct && palette.length >= 5) {
+  const worst = checkTagInk(Number(inkPct[1]) / 100)
+  console.log(
+    `tag ink (${inkPct[1]}% toward --text): worst ${worst.ratio.toFixed(2)} — ` +
+      `${worst.theme} ${worst.hex} on ${worst.ground}, floor ${TAG_INK_MIN}\n`
+  )
+}
+
 if (failures.length) {
-  console.error(`\n✗ theme depth: ${failures.length} violation(s) — a theme must keep its layers legible and distinct:\n`)
+  console.error(
+    `\n✗ theme depth: ${failures.length} violation(s) — a theme must keep its layers legible and distinct:\n`
+  )
   for (const f of failures) console.error('  ' + f)
   console.error('\nFix the palette (surface roles in tokens.css); do not lower the floors.\n')
   process.exit(1)

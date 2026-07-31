@@ -24,17 +24,7 @@
   cursor: text;
 }
 .etag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--font-sm);
-  font-weight: 600;
-  line-height: 1;
   padding: 4px 6px 4px 7px;
-  border-radius: var(--radius-pill);
-  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
-  background: color-mix(in srgb, var(--tc) 16%, transparent);
-  color: color-mix(in srgb, var(--tc) 74%, var(--text));
 }
 .etag .x {
   cursor: pointer;
@@ -76,18 +66,8 @@
   gap: 6px;
 }
 .sugg {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--font-sm);
-  font-weight: 600;
   cursor: pointer;
   padding: 3px 8px;
-  border-radius: var(--radius-pill);
-  border: 1px solid color-mix(in srgb, var(--tc) 45%, transparent);
-  background: color-mix(in srgb, var(--tc) 12%, transparent);
-  color: color-mix(in srgb, var(--tc) 72%, var(--text));
-  font-family: inherit;
 }
 
 /* View mode: the tag field is a static chip row — no click affordance, and a

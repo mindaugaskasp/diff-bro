@@ -34,16 +34,17 @@
   background: var(--bg-elevated);
 }
 /* Edit mode: the same discipline, to the ACTIVE editor surface. Without this
-   Monaco paints its stock-'vs' white background + a light current-line border,
-   which read as white artifacts on the app's tinted light surfaces. Pin both to
-   tokens (matching the read-only inputs' --bg surface) and drop the line box. */
+   Monaco paints its stock-'vs' white background, which reads as a white artifact
+   on the app's tinted light surfaces. Pin it to tokens (matching the read-only
+   inputs' --bg surface). The stock current-line rim is dropped globally in
+   styles/monaco.css; marking the cursor's line is this editor's own choice, so
+   only the background belongs here — and only while it is editable. */
 .editor-area.editing .editor :deep(.monaco-editor),
 .editor-area.editing .editor :deep(.monaco-editor-background),
 .editor-area.editing .editor :deep(.monaco-editor .margin) {
   background: var(--bg);
 }
 .editor-area.editing .editor :deep(.monaco-editor .current-line) {
-  border-color: transparent;
   background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 .editor-header {

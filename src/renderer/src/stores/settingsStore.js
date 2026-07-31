@@ -54,6 +54,7 @@ export const DEFAULT_SETTINGS = {
   maxExportHeightPx: DEFAULT_MAX_EXPORT_HEIGHT_PX,
   dialogSizes: {}, // { [key]: { width, height } } from user drag-resizes
   maximizeDialogs: false,
+  shutterSound: true,
   examplesSeeded: false,
   // Global shortcut for the quick look-up launcher (Electron accelerator form).
   quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT
@@ -144,6 +145,8 @@ function readState() {
     ),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
+    // A sound the app makes on its own, so it is escapable; default on.
+    shutterSound: parsed.shutterSound !== false,
     examplesSeeded: parsed.examplesSeeded === true,
     // Most-recent-first tool ids; unknown ids are dropped when rendered.
     recentTools: Array.isArray(parsed.recentTools)
@@ -189,6 +192,7 @@ export const useSettingsStore = defineStore('settings', {
           maxExportHeightPx: this.maxExportHeightPx,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
+          shutterSound: this.shutterSound,
           examplesSeeded: this.examplesSeeded,
           recentTools: this.recentTools,
           quickLookShortcut: this.quickLookShortcut
@@ -254,6 +258,10 @@ export const useSettingsStore = defineStore('settings', {
     },
     setRotateThemeDaily(value) {
       this.rotateThemeDaily = !!value
+      this.persist()
+    },
+    setShutterSound(value) {
+      this.shutterSound = !!value
       this.persist()
     },
     setMaximizeDialogs(value) {

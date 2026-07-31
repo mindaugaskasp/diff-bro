@@ -1,6 +1,7 @@
-// The snippets sidebar's search + tag filter. Text query and tag selection
-// COMPOSE (AND), which is the whole reason the logic lives in one composable
-// instead of being re-derived per shelf — so it gets one home for its tests too.
+// The snippets sidebar's search + tag filter. The query and the tag selection
+// COMPOSE (a query AND a tag), while several selected TAGS widen (either tag) —
+// which is the whole reason the logic lives in one composable instead of being
+// re-derived per shelf, so it gets one home for its tests too.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
@@ -85,15 +86,17 @@ describe('useSnippetFilters — text search', () => {
 })
 
 describe('useSnippetFilters — tag selection', () => {
-  it('AND-composes multiple selected tags', async () => {
+  // Either, not both: a snippet carries several tags, so picking a second one
+  // brings in what it names rather than hiding what the first one matched.
+  it('selecting several tags shows the snippets carrying ANY of them', async () => {
     await seed()
     const f = useSnippetFilters()
-    f.toggleTag('backend')
-    expect(names(f.visibleListed.value).sort()).toEqual(['Auth flow', 'Billing report'])
-    f.toggleTag('auth') // backend AND auth
+    f.toggleTag('auth')
     expect(names(f.visibleListed.value)).toEqual(['Auth flow'])
-    f.toggleTag('auth') // toggling off widens again
+    f.toggleTag('backend') // auth OR backend
     expect(names(f.visibleListed.value).sort()).toEqual(['Auth flow', 'Billing report'])
+    f.toggleTag('backend') // toggling off narrows again
+    expect(names(f.visibleListed.value)).toEqual(['Auth flow'])
   })
 
   it('the DEFAULT sentinel selects only untagged snippets', async () => {

@@ -9,14 +9,16 @@
    The DEFAULT is Light: it lives on the bare :root, so a theme id with no block
    (or before JS runs) renders light rather than flashing dark. */
 :root {
-  /* The content/diff surface stays pure white — the reading plane the app is
-     about — while the chrome (sidebar, toolbars, headers) sits on a cooler,
-     slightly deeper grey so it reads as a distinct layer instead of blending
-     into the content. Depth then comes from the shadow scale, not from heavy
-     borders, which is what kept the old near-white panels looking flat. */
+  /* "Signal": the ground is achromatic on purpose — true neutral greys carry
+     every surface and edge, and the ONE saturated colour is spent on the accent,
+     which is the only thing asking for attention. The previous palette tinted
+     chrome, borders, chips, tab underline and primary button all the same
+     indigo, which spread the one colour with a job thin enough to read as
+     wallpaper. The content/diff surface stays pure white — the reading plane
+     the app is about. */
   --bg: #ffffff;
-  --bg-panel: #e9edf5;
-  --bg-hover: #dce3ef;
+  --bg-panel: #eeefef;
+  --bg-hover: #e2e4e4;
   /* Elevated surface for the sidebar section-header bands. Deliberately DERIVED
      from the panel (not hand-picked per theme): mixing the panel toward the text
      colour darkens it on a light ground and lightens it on a dark one, so a
@@ -25,12 +27,12 @@
      :root definition re-resolves against each theme's own --bg-panel/--text — a
      theme block may still override it if its palette needs a different tone. */
   --bg-elevated: color-mix(in srgb, var(--bg-panel) 88%, var(--text));
-  --border: #d3dae6;
-  --text: #1a1f27;
-  --text-dim: #5a6472;
+  --border: #bcc0c0;
+  --text: #141414;
+  --text-dim: #565a5a;
   /* between --text and --text-dim: for hint text that must stay readable */
-  --text-hint: #3f4753;
-  --accent: #4a5fb0;
+  --text-hint: #363939;
+  --accent: #c2410c;
   /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
      deliberately more saturated than the rest of the palette. */
   --warning-bg: #f0b429;
@@ -66,8 +68,9 @@
 :root[data-theme='light'] {
   --bg-canvas: var(--bg-panel);
   --bg-raised: var(--bg);
-  /* A cool slate drop instead of neutral black — softer on the pale canvas. */
-  --shadow-rgb: 26 40 70;
+  /* Neutral black, matching an achromatic ground — a tinted drop would put a
+     hue back into the one place this palette keeps free of it. */
+  --shadow-rgb: 0 0 0;
 }
 
 /* Dark — low-glare GitHub-night. */

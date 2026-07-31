@@ -11,6 +11,8 @@ test('starts with no recents, opens the tools palette, and runs a tool from it',
   const shelf = page.locator('.usb-tools')
   await expect(shelf).toContainText('Search tools…')
   await expect(shelf.locator('.usb-tool')).toHaveCount(1) // just the search control
+  // The heading names the chips, so with none used yet it is not shown at all.
+  await expect(shelf).not.toContainText('Recent tools')
 
   await page.locator('.usb-tool-all').click()
   const palette = page.locator('.cp')
@@ -39,6 +41,7 @@ test('records recents from the menu and surfaces them in the shelf and palette',
   }
 
   // Most-recent-first, each with its own icon, ahead of the search control.
+  await expect(page.locator('.usb-tools')).toContainText('Recent tools')
   const chips = page.locator('.usb-tool:not(.usb-tool-all)')
   await expect(chips).toHaveCount(2)
   await expect(chips.nth(0)).toContainText('Base64')

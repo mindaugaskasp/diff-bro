@@ -107,6 +107,9 @@ function close() {
           <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
             Show the keyboard-shortcut bar over diffs
           </SettingToggle>
+          <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
+            Play a shutter sound when a diff image is captured
+          </SettingToggle>
           <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
             Maximize tool &amp; snippet windows (turn off to restore each one's size)
           </SettingToggle>

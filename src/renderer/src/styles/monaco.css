@@ -1,0 +1,13 @@
+/* Monaco owns this DOM, so these rules are global on purpose — that is the
+   point: every editor inherits them instead of each host rediscovering the same
+   artifact. Its stock 'vs' palette rims the cursor's line in #eeeeee
+   (editor.lineHighlightBorder), which is a white hairline on the app's tinted
+   surfaces and lands on the editor's top edge at line 1. The app defines no
+   Monaco theme, so the rim has to go here; a host that wants the line marked
+   gives .current-line a token BACKGROUND. Doubled class, not !important:
+   Monaco injects its theme rules at editor construction, so equal specificity
+   would lose on source order. Guarded by e2e/editor-artifacts.spec.mjs. */
+.monaco-editor .view-overlays .current-line.current-line-exact,
+.monaco-editor .margin-view-overlays .current-line.current-line-exact-margin {
+  border-color: transparent;
+}

@@ -2,6 +2,7 @@
 // The sidebar shell: a search + a segmented filter (All / Saved / Shared /
 // Snippets) over one scroll; each group is its own component.
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { toggleTag } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import SavedDiffsSection from './SavedDiffsSection.vue'
@@ -48,7 +49,7 @@ function showAll() {
 
 // One tag filter across the sidebar: the union of diff + snippet tags, most-used
 // first.
-const activeTag = ref('')
+const activeTags = ref([])
 const allTags = computed(() => {
   const counts = {}
   for (const e of vault.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
@@ -61,7 +62,7 @@ const allTags = computed(() => {
     }))
     .sort((a, b) => b.count - a.count)
 })
-const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : name)
+const pickTag = (name) => (activeTags.value = toggleTag(activeTags.value, name))
 </script>
 
 <template>
@@ -110,12 +111,12 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
         <button
           v-for="t in allTags"
           :key="t.name"
-          class="usb-tag"
-          :class="{ on: activeTag === t.name }"
+          class="tag-chip usb-tag"
+          :class="{ on: activeTags.includes(t.name) }"
           :style="{ '--tc': t.color }"
-          @click="toggleTag(t.name)"
+          @click="pickTag(t.name)"
         >
-          <span class="usb-dot" :style="{ background: t.color }" />{{ t.name }}
+          <span class="usb-dot" />{{ t.name }}
           <span class="usb-tct">{{ t.count }}</span>
         </button>
       </div>
@@ -125,21 +126,21 @@ const toggleTag = (name) => (activeTag.value = activeTag.value === name ? '' : n
         v-show="shows('saved')"
         unified
         :search="query"
-        :tag="activeTag"
+        :tags="activeTags"
         :fav-only="favOnly"
       />
       <ExternalDiffsSection
         v-show="shows('shared')"
         unified
         :search="query"
-        :tag="activeTag"
+        :tags="activeTags"
         :fav-only="favOnly"
       />
       <SnippetsPanel
         v-show="shows('snippets')"
         unified
         :search="query"
-        :tag="activeTag"
+        :tags="activeTags"
         :fav-only="favOnly"
       />
     </div>

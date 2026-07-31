@@ -14,11 +14,11 @@ import {
   untilChanged
 } from '../utils/captureTarget'
 import { getDiffScroller } from '../utils/diffScroller'
+import { playShutter } from '../utils/shutter'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
 import { useTabsStore } from './tabsStore'
-import { isBlank } from '../utils/tabs'
 import { TOOLS } from '../utils/tools'
 import { sideName } from '../utils/pasteNames'
 
@@ -131,10 +131,6 @@ const MENU_ACTIONS = {
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
   'export-image': (s) => s.exportCurrentImage(),
-  'tab-new': () => useTabsStore().newTab(),
-  'tab-next': () => useTabsStore().step(1),
-  'tab-prev': () => useTabsStore().step(-1),
-  'tab-close': (s) => s.requestActiveTabClose(),
   'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
@@ -374,6 +370,7 @@ export const useDiffStore = defineStore('diff', {
     // shortcut bar hidden for the rest of the session.
     async _shoot({ band = null, awaitRediff = false } = {}) {
       this.imageCapturing = true
+      playShutter({ enabled: useSettingsStore().shutterSound })
       try {
         // Only a restore re-diffs, and that must land and paint before the shot
         // — counting frames alone photographed the previous diff, or this one
@@ -453,15 +450,6 @@ export const useDiffStore = defineStore('diff', {
       this.showNotice(
         ttlHours ? `Saved — expires in ${ttlHours} h.` : 'Saved — kept until you delete it.'
       )
-    },
-    // Closing the active tab from a menu or accelerator takes the same confirm
-    // path the tab's own × does.
-    requestActiveTabClose() {
-      const tabs = useTabsStore()
-      const tab = tabs.active
-      if (!tab) return
-      if (!tab.diffSaved && !isBlank(tab)) this.pendingTabClose = tab.id
-      else tabs.close(tab.id)
     },
     confirmTabClose() {
       const id = this.pendingTabClose

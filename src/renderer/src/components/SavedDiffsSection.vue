@@ -1,25 +1,26 @@
 <script setup>
 // The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs.
 import { computed, ref } from 'vue'
+import { matchesTags } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { MAX_TABS } from '../utils/tabs'
-import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
   search: { type: String, default: '' },
-  tag: { type: String, default: '' },
+  /** @type {import('vue').PropType<string[]>} */
+  tags: { type: Array, default: () => [] },
   favOnly: { type: Boolean, default: false }
 })
 const q = computed(() => props.search.trim().toLowerCase())
 const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
-  (!props.tag || e.tags.includes(props.tag))
+  matchesTags(e.tags, props.tags)
 
 const tabs = useTabsStore()
 const vault = useVaultStore()
@@ -49,7 +50,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
           :disabled="!tabs.canAdd"
           :data-tip="
             tabs.canAdd
-              ? `New comparison in its own tab (${MOD}+Shift+T)`
+              ? 'New comparison in its own tab'
               : `That is the most comparisons at once (${MAX_TABS}) — close one first`
           "
           aria-label="New comparison"

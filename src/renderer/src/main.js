@@ -8,6 +8,7 @@ import './styles/tokens.css'
 import './styles/themes.css'
 import './styles/base.css'
 import './styles/ui.css'
+import './styles/monaco.css'
 
 // Name the window after the installed version, so it's identifiable at a glance
 // (and lines up with the tag a future Help → Update would open).

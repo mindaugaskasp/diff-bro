@@ -1,14 +1,14 @@
 <script setup>
-// The tag icon shown next to every tag. Colored via the `color` prop (falls
-// back to currentColor so it inherits when unset).
-defineProps({ color: { type: String, default: 'currentColor' } })
+// The `color` prop feeds --tc, not `color`: ui.css inks it against the theme's
+// ground, which a raw dark-ground palette value cannot survive on a light one.
+defineProps({ color: { type: String, default: 'var(--text-dim)' } })
 </script>
 
 <template>
   <svg
     class="tglyph"
     viewBox="0 0 24 24"
-    :style="{ color }"
+    :style="{ '--tc': color }"
     fill="none"
     stroke="currentColor"
     stroke-width="2.2"
