@@ -161,6 +161,164 @@ test('the footer still fits once a dark theme retunes the tokens', async ({ app,
   await footerFitsIn(app, page, 'dark')
 })
 
+// Creating a snippet without raising the app: the + panel writes through the
+// store's real encrypt path, and the name is sentence-cased on the way in.
+test('the + button creates a plaintext snippet under a sentence-cased name', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+  await ql.locator('.ql-add').click()
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+
+  await ql.locator('.ql-compose-name').fill('deploy checklist')
+  await ql.locator('.ql-compose-text').fill('1. build\n2. ship')
+  await ql.locator('.ql-compose .btn-primary').click()
+
+  // Panel closes and the new snippet is in the library, capitalized.
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+  await ql.locator('.ql-input').fill('Deploy')
+  await expect(ql.locator('.ql-res', { hasText: 'Deploy checklist' })).toBeVisible()
+  // Plaintext carries no language chip, which is how it reads as plain.
+  await expect(ql.locator('.ql-pv-lang')).toHaveCount(0)
+
+  // It really round-trips through the vault, not just the in-memory list.
+  await ql.keyboard.press('ArrowRight')
+  await expect(ql.locator('.ql-pv-body')).toContainText('1. build')
+})
+
+// Reading or composing a snippet gives the whole width to the right pane. The
+// grid track animates, so assert the measurable end states plus the fact that a
+// transition is declared — a jump-cut would still pass the width checks alone.
+test('the list collapses for compose and preview, and comes back', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  const width = () =>
+    ql.locator('.ql-results').evaluate((el) => Math.round(el.getBoundingClientRect().width))
+
+  const declared = await ql
+    .locator('.ql-body')
+    .evaluate((el) => getComputedStyle(el).transitionProperty)
+  expect(declared).toContain('grid-template-columns')
+
+  const open = await width()
+  expect(open).toBeGreaterThan(100)
+
+  await ql.locator('.ql-add').click()
+  await expect.poll(width, { timeout: 4000 }).toBeLessThan(5)
+  await ql.keyboard.press('Escape')
+  await expect.poll(width, { timeout: 4000 }).toBe(open)
+
+  await ql.locator('.ql-input').fill('Mermaid')
+  await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
+  await ql.keyboard.press('ArrowRight')
+  await expect.poll(width, { timeout: 4000 }).toBeLessThan(5)
+  await ql.keyboard.press('ArrowLeft')
+  await expect.poll(width, { timeout: 4000 }).toBe(open)
+})
+
+// The card is deliberately flat: no rim, no drop shadow. Its own background is
+// the only thing separating it from the desktop, so the gutter that used to hold
+// a shadow is gone too and the card fills the window.
+test('the launcher card is flat, with no rim or halo', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  const box = await ql.locator('.ql').evaluate((el) => {
+    const cs = getComputedStyle(el)
+    const r = el.getBoundingClientRect()
+    return {
+      border: cs.borderTopWidth,
+      shadow: cs.boxShadow,
+      gutter: Math.round(window.innerHeight - r.bottom) + Math.round(r.left)
+    }
+  })
+  expect(box.border).toBe('0px')
+  expect(box.shadow).toBe('none')
+  expect(box.gutter, 'no leftover gutter once nothing renders into it').toBe(0)
+})
+
+// The search box must never be live while something else owns the launcher —
+// a tool panel, the new-snippet panel, or a snippet being read. Each disables it
+// a different way, so all three are pinned here.
+test('the search box is dead whenever a panel or preview owns the launcher', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+  const input = ql.locator('.ql-input')
+
+  // 1. A tool panel replaces the whole launcher, search band included.
+  await input.fill('epoch')
+  await ql.keyboard.press('Enter')
+  await expect(ql.locator('.qc')).toBeVisible()
+  await expect(input).toBeHidden()
+  await ql.locator('.qc-back').click()
+  await expect(input).toBeVisible()
+
+  // 2. The new-snippet panel rolls the band away entirely.
+  await ql.locator('.ql-add').click()
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await expect(input).toBeHidden()
+  await ql.keyboard.press('Escape')
+  await expect(input).toBeVisible()
+
+  // 3. Reading a snippet keeps the box focused (the arrow driver needs it) but
+  //    read-only, so a stray keystroke cannot refilter the list underneath.
+  await input.fill('Mermaid')
+  await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
+  await ql.keyboard.press('ArrowRight')
+  await expect(ql.locator('.ql-body')).toHaveClass(/in-preview/)
+  await expect(input).toHaveAttribute('readonly', '')
+  await ql.keyboard.press('z')
+  await expect(input).toHaveValue('Mermaid')
+
+  await ql.keyboard.press('ArrowLeft')
+  await expect(input).not.toHaveAttribute('readonly', '')
+})
+
+// The loop the launcher exists for: capture something unnamed, then rename and
+// correct it without ever raising the main window.
+test('an unnamed snippet can be created and then edited in place', async ({ app, page }) => {
+  const ql = await summon(app, page)
+
+  await ql.locator('.ql-add').click()
+  // Typing starts in the body — the name is optional, so it is not the gate.
+  await expect(ql.locator('.ql-compose-text')).toBeFocused()
+  await ql.locator('.ql-compose-text').fill('token=abc123')
+  await ql.locator('.ql-compose .btn-primary').click()
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+
+  // Unnamed snippets are stamped, so a pile of them stays tellable apart.
+  const row = ql.locator('.ql-res', { hasText: 'Untitled' }).first()
+  await expect(row).toBeVisible()
+  await expect(row).toContainText(/Untitled \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
+  await row.click()
+
+  // Edit it right here rather than being bounced to the main window.
+  await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await expect(ql.locator('.ql-compose-title')).toHaveText('Edit snippet')
+  await expect(ql.locator('.ql-compose-text')).toHaveValue('token=abc123')
+
+  await ql.locator('.ql-compose-name').fill('auth token')
+  await ql.locator('.ql-compose .btn-primary').click()
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+
+  // Renamed in place — sentence-cased, and no second copy left behind.
+  await expect(ql.locator('.ql-res', { hasText: 'Auth token' })).toHaveCount(1)
+  await expect(ql.locator('.ql-res', { hasText: 'Untitled' })).toHaveCount(0)
+})
+
+// Selecting a tool swaps in its panel; that swap is animated too.
+test('choosing a tool eases its panel in rather than cutting to it', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await ql.locator('.ql-input').fill('epoch')
+  await ql.keyboard.press('Enter')
+
+  const panel = ql.locator('.qc')
+  await expect(panel).toBeVisible()
+  const eased = await panel.evaluate((el) => getComputedStyle(el).transitionProperty)
+  expect(eased).toMatch(/opacity|transform/)
+})
+
 // Arrowing past the visible rows must scroll the list; before this it stopped at
 // the fold and the selection walked off-screen (the Tools section made the list
 // long enough to notice).

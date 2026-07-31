@@ -32,8 +32,9 @@ let createMain = null
 
 function build() {
   const w = new BrowserWindow({
-    width: 720,
-    height: 480,
+    // The card is flat and fills the window, so these are its exact dimensions.
+    width: 692,
+    height: 452,
     show: false,
     frame: false,
     transparent: true,
@@ -97,6 +98,10 @@ export function ensureMainWindow() {
   if (!main) return null
   if (main.isMinimized()) main.restore()
   main.show()
+  // macOS: focus() raises a window inside the app but does not activate the app
+  // or switch to the Space the window lives on, so a Dock click or a second
+  // launch from elsewhere looks like nothing happened.
+  if (process.platform === 'darwin') app.focus({ steal: true })
   main.focus()
   return main
 }

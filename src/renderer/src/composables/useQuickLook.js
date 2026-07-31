@@ -4,6 +4,7 @@ import { rank } from '../utils/quickLook'
 import { convertItems } from '../utils/quickLookCommands'
 import { isMac } from '../keys'
 import { useQuickLookKeys } from './useQuickLookKeys'
+import { useQuickLookCompose } from './useQuickLookCompose'
 import { usePreviewLines } from './usePreviewLines'
 import { useCopyFeedback } from './useCopyFeedback'
 
@@ -181,9 +182,33 @@ export function useQuickLook() {
     convertTool.value = null
   }
 
+  // add() pushes onto this window's own entries, so the list updates without a
+  // reload; the main window picks it up on its next reload().
+  const compose = useQuickLookCompose({ snippets })
+
+  // Only plaintext snippets edit inline: the panel is a bare textarea, so a
+  // snippet with a language belongs in the main editor where its tooling is.
+  const canEditInline = computed(() => current.value?.kind === 'snippet' && !current.value?.lang)
+  // Loads the FULL body — snippetText here is truncated for preview, and saving
+  // that back would amputate anything past MAX_PREVIEW_CHARS.
+  async function editCurrent() {
+    const it = current.value
+    if (!canEditInline.value) return
+    const text = await snippets.load(it.id)
+    if (typeof text !== 'string') return
+    compose.startEdit({ id: it.id, name: it.name, content: text, tags: it.tags })
+  }
+
   const copyKey = isMac ? '⌘C' : 'Ctrl+C'
   const copyLineKey = isMac ? '⇧⌘C' : 'Ctrl+Shift+C'
+  const saveKey = isMac ? '⌘↵' : 'Ctrl+↵'
   const footHints = computed(() => {
+    if (compose.composing.value) {
+      return [
+        [saveKey, 'save'],
+        ['←/Esc', 'cancel']
+      ]
+    }
     if (zone.value === 'preview') {
       return [
         ['↑↓', 'line'],
@@ -256,6 +281,9 @@ export function useQuickLook() {
     onKeydown,
     convertTool,
     lastTool,
-    exitConvert
+    exitConvert,
+    compose,
+    canEditInline,
+    editCurrent
   }
 }

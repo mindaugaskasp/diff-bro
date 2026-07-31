@@ -21,6 +21,9 @@
   --font-2xl: 20px;
   /* Control heights: sidebar/toolbar controls, then dialog buttons. */
   --control-h-sm: 26px;
+  /* Hint chips (kbd glyphs). Predefined so a font-size change can never
+     silently resize them the way padding-derived boxes did. */
+  --chip-h: 20px;
   --control-h: 30px;
   /* Vertical band rhythm. A "band" is a full-width horizontal strip (the file
      slots row, a section header, the toolbar) that vertically centers its
@@ -53,10 +56,10 @@
      --shadow-3 a modal floating over the scrim. Two layers per level — a tight
      contact shadow plus a soft ambient one — read as real depth, not a blur. */
   --shadow-1: 0 1px 2px rgb(var(--shadow-rgb) / 0.1), 0 1px 3px -1px rgb(var(--shadow-rgb) / 0.08);
-  --shadow-2: 0 2px 6px -1px rgb(var(--shadow-rgb) / 0.12),
-    0 8px 20px -6px rgb(var(--shadow-rgb) / 0.16);
-  --shadow-3: 0 6px 16px -4px rgb(var(--shadow-rgb) / 0.18),
-    0 18px 44px -8px rgb(var(--shadow-rgb) / 0.3);
+  --shadow-2:
+    0 2px 6px -1px rgb(var(--shadow-rgb) / 0.12), 0 8px 20px -6px rgb(var(--shadow-rgb) / 0.16);
+  --shadow-3:
+    0 6px 16px -4px rgb(var(--shadow-rgb) / 0.18), 0 18px 44px -8px rgb(var(--shadow-rgb) / 0.3);
   /* Surface-role contract. Depth in this app is a LAYER ORDER, not a set of
      hand-picked greys per theme — that discipline is what keeps a new theme from
      going flat. Four roles, recessed → raised:

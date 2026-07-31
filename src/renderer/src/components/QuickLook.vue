@@ -6,8 +6,11 @@ import { nextTick, onMounted, ref, watch } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
 import AppIcon from './AppIcon.vue'
+import QuickLookCompose from './QuickLookCompose.vue'
 import QuickLookConvert from './QuickLookConvert.vue'
+import QuickLookPreviewHead from './QuickLookPreviewHead.vue'
 import QuickLookResults from './QuickLookResults.vue'
+import QuickLookSearch from './QuickLookSearch.vue'
 
 const {
   query,
@@ -32,10 +35,25 @@ const {
   onKeydown,
   convertTool,
   lastTool,
-  exitConvert
+  exitConvert,
+  compose,
+  canEditInline,
+  editCurrent
 } = useQuickLook()
+const {
+  composing,
+  name: composeName,
+  body: composeBody,
+  canSave: composeCanSave,
+  saving: composeSaving,
+  editing: composeEditing,
+  start: startCompose,
+  cancel: cancelCompose,
+  save: saveCompose
+} = compose
 const store = useSnippetStore()
 const input = ref(null)
+const composeEl = ref(null)
 
 // Per-kind preview action + lock note — snippet opens, command/tools stay local.
 // A tool speaks for itself (its own icon and action word), so the button never
@@ -62,9 +80,14 @@ onMounted(() => {
 })
 
 // Leaving convert mode must return focus to the search box, or the arrow-key
-// navigation (driven by its @keydown) goes dead.
+// navigation (driven by its @keydown) goes dead. The same applies on the way out
+// of the compose panel, whether it was saved or cancelled.
 watch(convertTool, (tool) => {
   if (!tool) nextTick(focusInput)
+})
+watch(composing, (on) => {
+  if (on) nextTick(() => composeEl.value?.focus())
+  else nextTick(focusInput)
 })
 </script>
 
@@ -72,30 +95,28 @@ watch(convertTool, (tool) => {
   <div class="ql" :class="{ closing }">
     <!-- Mounted once and hidden, never destroyed: backing out to the list must
          not discard what you typed into a tool. -->
-    <QuickLookConvert
-      v-if="lastTool"
-      v-show="convertTool"
-      :tool="lastTool"
-      :visible="!!convertTool"
-      @back="exitConvert"
-    />
+    <transition name="ql-panel">
+      <QuickLookConvert
+        v-if="lastTool"
+        v-show="convertTool"
+        :tool="lastTool"
+        :visible="!!convertTool"
+        @back="exitConvert"
+      />
+    </transition>
     <template v-if="!convertTool">
-      <div class="ql-search band">
-        <AppIcon name="search" class="ql-search-ico" />
-        <input
+      <transition name="ql-band">
+        <QuickLookSearch
+          v-if="!composing"
           ref="input"
-          v-model="query"
-          class="ql-input"
-          type="text"
-          placeholder="Search snippets & tools…"
-          autocomplete="off"
-          spellcheck="false"
+          v-model:query="query"
+          :readonly="zone === 'preview'"
           @keydown="onKeydown"
+          @add="startCompose"
         />
-        <span class="ql-kbd">Esc</span>
-      </div>
+      </transition>
 
-      <div class="ql-body" :class="{ 'in-preview': zone === 'preview' }">
+      <div class="ql-body" :class="{ 'in-preview': zone === 'preview', composing }">
         <QuickLookResults
           v-model:selected="selected"
           :results="results"
@@ -106,27 +127,27 @@ watch(convertTool, (tool) => {
         />
 
         <div class="ql-preview">
-          <template v-if="current">
-            <div class="ql-pv-head band">
-              <button
-                v-if="zone === 'preview'"
-                class="ql-pv-back"
-                title="Back to list (←)"
-                @click="zone = 'list'"
-              >
-                <AppIcon name="chevron-left" />
-              </button>
-              <span class="ql-pv-name">{{ current.name }}</span>
-              <span v-if="current.lang" class="ql-pv-lang">{{ current.lang }}</span>
-              <button
-                v-if="current.kind === 'snippet'"
-                class="btn btn-sm ql-pv-copy"
-                :title="`Copy contents (${copyKey})`"
-                @click="copy(selected)"
-              >
-                <AppIcon :name="copied ? 'check' : 'copy'" /> {{ copied ? 'Copied' : 'Copy' }}
-              </button>
-            </div>
+          <QuickLookCompose
+            v-if="composing"
+            ref="composeEl"
+            v-model:name="composeName"
+            v-model:body="composeBody"
+            :can-save="composeCanSave"
+            :saving="composeSaving"
+            :editing="composeEditing"
+            @save="saveCompose"
+            @cancel="cancelCompose"
+          />
+          <template v-else-if="current">
+            <QuickLookPreviewHead
+              v-model:zone="zone"
+              :current="current"
+              :copied="copied"
+              :copy-key="copyKey"
+              :can-edit="canEditInline"
+              @copy="copy(selected)"
+              @edit="editCurrent"
+            />
             <div v-if="current.tags?.length" class="ql-pv-tags">
               <span v-for="t in current.tags" :key="t" class="ql-pv-tag">
                 <span class="dot" :style="{ background: store.colorOf(t) }"></span>{{ t }}

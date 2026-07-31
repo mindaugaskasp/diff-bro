@@ -424,3 +424,18 @@
   width: 12px;
   height: 12px;
 }
+
+/* Keyboard chip. Shared: the launcher's search band and its footer hints are
+   separate components, so a scoped copy in either would drift. */
+.ql-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--chip-h);
+  padding: 0 var(--space-1);
+  font-size: var(--font-2xs);
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}

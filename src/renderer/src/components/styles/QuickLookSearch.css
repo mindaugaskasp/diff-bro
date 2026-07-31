@@ -1,0 +1,44 @@
+/* Moved out of QuickLook.css with the markup: scoped styles cannot reach a
+   child component, so the band carries its own sheet. */
+/* --- search band --- */
+.ql-search {
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  height: var(--band-row);
+  border-bottom: 1px solid var(--border);
+}
+.ql-search-ico {
+  color: var(--text-dim);
+  flex: none;
+}
+.ql-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: var(--font-lg);
+  caret-color: var(--accent);
+}
+.ql-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* The Esc hint shares the band with the + control, so it takes the control
+   height rather than its own smaller chip height — side by side, a 20px chip
+   next to a 26px button reads as a mistake. */
+.ql-search .ql-kbd {
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+}
+
+/* Parked while the preview has the arrows: the field still holds focus (the key
+   driver depends on it) but takes no text, so it must not look live. */
+.ql-search.parked .ql-input,
+.ql-search.parked .ql-search-ico {
+  opacity: 0.5;
+}
+.ql-search.parked .ql-input {
+  cursor: default;
+}

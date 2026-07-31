@@ -1,0 +1,29 @@
+/* Moved from QuickLook.css with the markup: scoped styles cannot reach a
+   child component, so the band carries its own sheet. */
+.ql-pv-head {
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  height: var(--band-row);
+  border-bottom: 1px solid var(--border);
+}
+.ql-pv-name {
+  flex: 1;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ql-pv-lang {
+  font-size: var(--font-2xs);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: none;
+}
+/* Copy sits in the name header (least travel from the just-selected result),
+   not the footer; the footer keeps the primary Open action. */
+.ql-pv-copy {
+  flex: none;
+}

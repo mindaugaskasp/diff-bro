@@ -7,9 +7,11 @@
   flex-direction: column;
   height: 100%;
   background: var(--bg-panel);
-  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-3);
+  /* Deliberately flat — no rim, no drop shadow. The panel colour is the only
+     thing separating the card from the desktop, so nothing renders into a
+     gutter and quicklook.html keeps none. NOTE: the contrast and beacon themes
+     define a hard keyline on purpose; going flat gives that up for them too. */
   overflow: hidden;
   transform-origin: center top;
   transition:
@@ -68,39 +70,6 @@
   }
 }
 
-/* --- search band --- */
-.ql-search {
-  gap: var(--space-3);
-  padding: 0 var(--space-4);
-  height: var(--band-row);
-  border-bottom: 1px solid var(--border);
-}
-.ql-search-ico {
-  color: var(--text-dim);
-  flex: none;
-}
-.ql-input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  outline: none;
-  color: var(--text);
-  font-size: var(--font-lg);
-  caret-color: var(--accent);
-}
-.ql-input::placeholder {
-  color: var(--text-dim);
-}
-.ql-kbd {
-  font-size: var(--font-2xs);
-  color: var(--text-dim);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 3px 5px;
-}
-
 /* --- body: results | preview ---
    minmax(0, 1fr) + min-height:0 on the items caps the single row at the card
    height so each column scrolls internally instead of overflowing the window
@@ -117,6 +86,10 @@
   margin: 0;
   padding: var(--space-2);
   min-height: 0;
+  /* A grid item defaults to min-width:auto, which would refuse to shrink past
+     its content and defeat the 0fr collapse below. */
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   border-right: 1px solid var(--border);
 }
@@ -198,33 +171,6 @@
   flex-direction: column;
   min-height: 0;
   background: var(--bg);
-}
-.ql-pv-head {
-  gap: var(--space-2);
-  padding: 0 var(--space-4);
-  height: var(--band-row);
-  border-bottom: 1px solid var(--border);
-}
-.ql-pv-name {
-  flex: 1;
-  font-size: var(--font-md);
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ql-pv-lang {
-  font-size: var(--font-2xs);
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  flex: none;
-}
-/* Copy sits in the name header (least travel from the just-selected result),
-   not the footer; the footer keeps the primary Open action. */
-.ql-pv-copy {
-  flex: none;
 }
 .ql-pv-tags {
   display: flex;
@@ -328,15 +274,88 @@
    selection drops to a quiet outline), and the footer hints swap (see template).
    Everything resolves through tokens so it holds on every theme. */
 .ql-results {
-  transition: opacity 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    padding 0.24s ease;
 }
 .ql-preview {
   transition: box-shadow 0.16s ease;
 }
-.ql-body.in-preview .ql-results {
-  opacity: 0.5;
+
+/* Reading or composing a snippet hands the whole width to the right pane: the
+   grid track itself animates to 0fr, so the list slides shut instead of sitting
+   there at half width. Padding goes with it, or a collapsed track still holds
+   its own gutter open. */
+.ql-body {
+  transition: grid-template-columns 0.24s ease;
+}
+.ql-body.in-preview,
+.ql-body.composing {
+  grid-template-columns: 0fr 1fr;
+}
+.ql-body.in-preview .ql-results,
+.ql-body.composing .ql-results {
+  padding-right: 0;
+  padding-left: 0;
   /* Hand the seam to the preview's accent edge so they don't double up. */
   border-right-color: transparent;
+}
+.ql-body.in-preview .ql-results {
+  opacity: 0.5;
+}
+
+/* Selecting a tool swaps the whole launcher for its panel. The panel drifts in
+   from the right — the same direction → drills in — and on the way back it is
+   taken out of flow so the list can lay out underneath it rather than the two
+   splitting the column for the length of the fade. */
+.ql-panel-enter-active,
+.ql-panel-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.ql-panel-leave-active {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--bg);
+}
+.ql-panel-enter-from,
+.ql-panel-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+/* Compose mode takes the search band away rather than leaving a dead field over
+   the editor — it rolls up by its own fixed band height, so the panel grows into
+   the space instead of the whole card jumping. */
+.ql-band-enter-active,
+.ql-band-leave-active {
+  overflow: hidden;
+  transition:
+    height 0.2s ease,
+    opacity 0.14s ease;
+}
+.ql-band-enter-from,
+.ql-band-leave-to {
+  height: 0;
+  opacity: 0;
+}
+.ql-band-enter-to,
+.ql-band-leave-from {
+  height: var(--band-row);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ql-body,
+  .ql-results,
+  .ql-preview,
+  .ql-panel-enter-active,
+  .ql-panel-leave-active,
+  .ql-band-enter-active,
+  .ql-band-leave-active {
+    transition: none;
+  }
 }
 .ql-body.in-preview .ql-res.sel {
   background: transparent;
@@ -348,22 +367,6 @@
 .ql-body.in-preview .ql-preview {
   box-shadow: inset 2px 0 0 0 var(--accent);
   background: color-mix(in srgb, var(--accent) 5%, var(--bg));
-}
-/* Back-to-list affordance in the preview header. */
-.ql-pv-back {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--accent);
-  cursor: pointer;
-  padding: 0;
-  margin-right: calc(-1 * var(--space-1));
-}
-.ql-pv-back .app-icon {
-  width: 16px;
-  height: 16px;
 }
 
 /* --- per-row "Copied" cue ---

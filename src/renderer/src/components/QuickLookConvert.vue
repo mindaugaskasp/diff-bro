@@ -44,13 +44,16 @@ function focusFirstField() {
   })
 }
 onMounted(focusFirstField)
-watch(() => props.visible, (shown) => shown && focusFirstField())
+watch(
+  () => props.visible,
+  (shown) => shown && focusFirstField()
+)
 </script>
 
 <template>
   <div class="qc" @keydown.escape="$emit('back')" @keydown="onKeydown">
     <div class="qc-head band">
-      <button class="qc-back" title="Back (Esc)" @click="$emit('back')">
+      <button class="btn btn-icon qc-back" title="Back (Esc)" @click="$emit('back')">
         <AppIcon name="chevron-left" />
       </button>
       <AppIcon :name="headIcon" class="qc-ico" />

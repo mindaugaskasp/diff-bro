@@ -10,20 +10,6 @@
   height: var(--band-row);
   border-bottom: 1px solid var(--border);
 }
-.qc-back {
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  padding: var(--space-1);
-  border-radius: var(--radius-sm);
-}
-.qc-back:hover {
-  background: var(--bg-hover);
-  color: var(--text);
-}
 .qc-ico {
   color: var(--text-dim);
   flex: none;
