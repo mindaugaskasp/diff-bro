@@ -1,0 +1,85 @@
+/* The new-snippet panel fills the preview pane, so it inherits that column's
+   sizing and only owns the two fields between the shared head/foot bands. */
+.ql-compose {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+/* The preview pane's head/foot styles are scoped to QuickLook.vue and cannot
+   reach a child, so the two bands are restated here against the same tokens. */
+.ql-compose-head {
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  height: var(--band-row);
+  border-bottom: 1px solid var(--border);
+}
+.ql-compose-title {
+  flex: 1;
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.ql-compose-lang {
+  flex: none;
+  font-size: var(--font-2xs);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ql-compose-foot {
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.ql-compose-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+  min-width: 0;
+}
+.ql-compose-actions {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-2);
+}
+
+.ql-compose-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  padding: var(--space-3);
+}
+
+.ql-compose-name,
+.ql-compose-text {
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-sm);
+}
+
+.ql-compose-name:focus,
+.ql-compose-text:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.ql-compose-text {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  font-family: var(--font-mono);
+  line-height: 1.5;
+}

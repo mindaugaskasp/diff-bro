@@ -3,6 +3,7 @@ import { loadPersisted, savePersisted } from '../persist'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
 import { parseSnippetImport } from '../utils/snippetImport'
+import { sentenceCaseName, untitledName } from '../utils/snippetName'
 
 // Snippets of this language hold a link and are deliberately never shared.
 export const URL_LANGUAGE = 'url'
@@ -42,7 +43,10 @@ export const cleanTag = (name) =>
     .trim()
     .toLowerCase()
     .slice(0, 40)
-const cleanName = (name, fallback = 'Untitled snippet') => String(name ?? '').trim() || fallback
+// The one seam every save runs through — add() and update() directly, and
+// import/restore by way of add() — so sentence-casing here covers them all.
+const cleanName = (name, fallback = untitledName()) =>
+  sentenceCaseName(String(name ?? '').trim() || fallback)
 
 // Next unused palette color; cycles once every color is taken.
 function nextColor(tags) {
@@ -79,6 +83,8 @@ function tagsFromCategories(categories) {
 function normalizeEntry(e) {
   return {
     ...e,
+    // Pre-existing snippets have never been edited, so they date from creation.
+    updatedAt: Number.isFinite(e?.updatedAt) ? e.updatedAt : e?.createdAt,
     name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled snippet'),
     tags: Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : []
   }
@@ -270,6 +276,9 @@ export const useSnippetStore = defineStore('snippets', {
         aadSalt,
         name: cleanName(name),
         createdAt,
+        // Free metadata beside createdAt — deliberately NOT in the AAD, so an
+        // edit never has to re-key the entry. Groundwork for snippet history.
+        updatedAt: createdAt,
         language: language || 'auto',
         detected,
         vars: promptVars(eff, content),
@@ -349,6 +358,8 @@ export const useSnippetStore = defineStore('snippets', {
       if (tags !== undefined) entry.tags = this.registerTags(tags, tagColors)
       entry.iv = box.iv
       entry.data = box.data
+      // createdAt is in the AAD and must never move; this is the mutable half.
+      entry.updatedAt = Date.now()
       this.persist()
     },
     remove(id) {

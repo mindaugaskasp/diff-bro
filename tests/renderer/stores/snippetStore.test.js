@@ -199,16 +199,85 @@ describe('snippetStore — tags model', () => {
     const store = useSnippetStore()
     const id = await store.add({ name: 'todo', content: 'old', language: 'auto', tags: ['a'] })
     await store.update(id, {
-      name: 'renamed',
+      name: 'Renamed',
       content: 'new content',
       language: 'python',
       tags: ['b', 'c']
     })
     const e = store.entries[0]
-    expect(e.name).toBe('renamed')
+    expect(e.name).toBe('Renamed')
     expect(e.language).toBe('python')
     expect(e.tags).toEqual(['b', 'c'])
     await expect(store.load(id)).resolves.toBe('new content')
+  })
+
+  // Names are sentence-cased on the way in so the library reads uniformly no
+  // matter how each one was typed — on create, on rename, and on restore.
+  it('sentence-cases the name on add, update and restore', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'auth token', content: 'x', language: 'auto' })
+    expect(store.entries[0].name).toBe('Auth token')
+
+    await store.update(id, { name: 'refresh token', content: 'x', language: 'auto', tags: [] })
+    expect(store.entries[0].name).toBe('Refresh token')
+
+    await store.restoreBundle({ snippets: [{ name: 'from a bundle', content: 'y' }] })
+    expect(store.entries.map((e) => e.name)).toContain('From a bundle')
+  })
+
+  // createdAt is inside the AAD (entryAad), so it can never move — updatedAt is
+  // plain metadata beside it, the way tags are, and exists for the versioning /
+  // history work to build on.
+  describe('timestamps', () => {
+    it('stamps createdAt and updatedAt together on add', async () => {
+      const store = useSnippetStore()
+      await store.add({ name: 'note', content: 'x', language: 'auto' })
+      const e = store.entries[0]
+      expect(e.createdAt).toBeGreaterThan(0)
+      expect(e.updatedAt).toBe(e.createdAt)
+    })
+
+    it('bumps updatedAt on edit and leaves createdAt untouched', async () => {
+      const store = useSnippetStore()
+      const id = await store.add({ name: 'note', content: 'x', language: 'auto' })
+      const { createdAt } = store.entries[0]
+      store.entries[0].updatedAt = createdAt - 5000 // pretend the edit is later
+
+      await store.update(id, { name: 'note', content: 'y', language: 'auto' })
+      const e = store.entries[0]
+      expect(e.createdAt).toBe(createdAt)
+      expect(e.updatedAt).toBeGreaterThan(e.createdAt - 5000)
+      // The AAD still matches, so the new ciphertext decrypts.
+      await expect(store.load(id)).resolves.toBe('y')
+    })
+
+    it('does not touch updatedAt when a save is refused', async () => {
+      const store = useSnippetStore()
+      const id = await store.add({ name: 'note', content: 'x', language: 'auto' })
+      const before = store.entries[0].updatedAt
+      window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
+      await store.update(id, { name: 'nope', content: 'z', language: 'auto' })
+      expect(store.entries[0].updatedAt).toBe(before)
+    })
+
+    it('backfills updatedAt for entries written before the field existed', () => {
+      localStorage.setItem(
+        'diffbro.snippets',
+        JSON.stringify({
+          tags: {},
+          entries: [{ id: 'a', aadSalt: 's', name: 'Old', createdAt: 1000, tags: [] }]
+        })
+      )
+      const store = useSnippetStore()
+      expect(store.entries[0].updatedAt).toBe(1000)
+    })
+  })
+
+  // Timestamped, so a library of unnamed quick captures is still navigable.
+  it('falls back to a timestamped placeholder when the name is blank', async () => {
+    const store = useSnippetStore()
+    await store.add({ name: '   ', content: 'x', language: 'auto' })
+    expect(store.entries[0].name).toMatch(/^Untitled \d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
   })
 
   it('retagging does NOT re-key (the AAD is fixed to id + salt + createdAt)', async () => {
@@ -314,32 +383,32 @@ describe('snippetStore — tags model', () => {
   // --- favorites ---
   it('favorites collects favorited snippets and lifts them out of the main list', async () => {
     const store = useSnippetStore()
-    const a = await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['t'] })
-    const b = await store.add({ name: 'b', content: 'x', language: 'auto', tags: ['t'] })
+    const a = await store.add({ name: 'A', content: 'x', language: 'auto', tags: ['t'] })
+    const b = await store.add({ name: 'B', content: 'x', language: 'auto', tags: ['t'] })
     // add() stamps createdAt from Date.now(), too fast apart to differ reliably;
     // pin explicit times so the newest-first order is deterministic.
     store.entries.find((e) => e.id === a).createdAt = 1000
     store.entries.find((e) => e.id === b).createdAt = 2000
     expect(store.favorites).toHaveLength(0)
-    expect(store.listed.map((e) => e.name)).toEqual(['b', 'a']) // newest first
+    expect(store.listed.map((e) => e.name)).toEqual(['B', 'A']) // newest first
     store.toggleFavorite(a)
-    expect(store.favorites.map((e) => e.name)).toEqual(['a'])
-    expect(store.listed.map((e) => e.name)).toEqual(['b'])
+    expect(store.favorites.map((e) => e.name)).toEqual(['A'])
+    expect(store.listed.map((e) => e.name)).toEqual(['B'])
     expect(localStorage.getItem('diffbro.snippets')).toContain('"favorite":true')
   })
 
   it('orders both the Favorites and All shelves newest-created first', async () => {
     const store = useSnippetStore()
     const ids = {}
-    for (const n of ['old', 'mid', 'new'])
+    for (const n of ['Old', 'Mid', 'New'])
       ids[n] = await store.add({ name: n, content: 'x', language: 'auto', tags: [] })
-    const at = { old: 1000, mid: 2000, new: 3000 }
+    const at = { Old: 1000, Mid: 2000, New: 3000 }
     for (const e of store.entries) e.createdAt = at[e.name]
-    expect(store.listed.map((e) => e.name)).toEqual(['new', 'mid', 'old'])
-    store.toggleFavorite(ids.old)
-    store.toggleFavorite(ids.new)
-    expect(store.favorites.map((e) => e.name)).toEqual(['new', 'old'])
-    expect(store.listed.map((e) => e.name)).toEqual(['mid'])
+    expect(store.listed.map((e) => e.name)).toEqual(['New', 'Mid', 'Old'])
+    store.toggleFavorite(ids.Old)
+    store.toggleFavorite(ids.New)
+    expect(store.favorites.map((e) => e.name)).toEqual(['New', 'Old'])
+    expect(store.listed.map((e) => e.name)).toEqual(['Mid'])
   })
 
   // --- export / import ---
@@ -367,15 +436,15 @@ describe('snippetStore — tags model', () => {
 
   it('exportTag exports only snippets carrying that tag', async () => {
     const store = useSnippetStore()
-    await store.add({ name: 'keep', content: 'A', language: 'auto', tags: ['wanted'] })
-    await store.add({ name: 'skip', content: 'B', language: 'auto', tags: ['other'] })
+    await store.add({ name: 'Keep', content: 'A', language: 'auto', tags: ['wanted'] })
+    await store.add({ name: 'Skip', content: 'B', language: 'auto', tags: ['other'] })
     await store.exportTag('wanted', 'pw')
 
     setActivePinia(createPinia())
     localStorage.clear()
     const fresh = useSnippetStore()
     await fresh.importSnippets('pw')
-    expect(fresh.entries.map((e) => e.name)).toEqual(['keep'])
+    expect(fresh.entries.map((e) => e.name)).toEqual(['Keep'])
   })
 
   it('imports a legacy { categories } bundle, folding each category into a tag', async () => {
@@ -383,8 +452,8 @@ describe('snippetStore — tags model', () => {
     lastExportedFile = await sealSnippets(
       {
         categories: [
-          { name: 'Default', snippets: [{ name: 'loose', content: 'x', language: 'auto' }] },
-          { name: 'SQL', snippets: [{ name: 'q', content: 'SELECT 1', language: 'sql' }] }
+          { name: 'Default', snippets: [{ name: 'Loose', content: 'x', language: 'auto' }] },
+          { name: 'SQL', snippets: [{ name: 'Q', content: 'SELECT 1', language: 'sql' }] }
         ]
       },
       'pw',
@@ -393,8 +462,8 @@ describe('snippetStore — tags model', () => {
     const store = useSnippetStore()
     const res = await store.importSnippets('pw')
     expect(res.ok).toBe(true)
-    const loose = store.entries.find((e) => e.name === 'loose')
-    const q = store.entries.find((e) => e.name === 'q')
+    const loose = store.entries.find((e) => e.name === 'Loose')
+    const q = store.entries.find((e) => e.name === 'Q')
     expect(loose.tags).toEqual([]) // "Default" category → untagged
     expect(q.tags).toEqual(['sql']) // "SQL" category → sql tag
   })
@@ -450,14 +519,14 @@ describe('snippetStore — tags model', () => {
   // each summon to pick up snippets the main window added meanwhile.
   it('reload() re-reads the library persisted by another window', async () => {
     const store = useSnippetStore()
-    await store.add({ name: 'first', content: 'x' })
-    expect(store.entries.map((e) => e.name)).toEqual(['first'])
+    await store.add({ name: 'First', content: 'x' })
+    expect(store.entries.map((e) => e.name)).toEqual(['First'])
     // Simulate the main window persisting a second snippet to disk.
     const raw = JSON.parse(localStorage.getItem('diffbro.snippets'))
-    raw.entries.push({ ...raw.entries[0], id: 'other', name: 'second' })
+    raw.entries.push({ ...raw.entries[0], id: 'other', name: 'Second' })
     localStorage.setItem('diffbro.snippets', JSON.stringify(raw))
     store.reload()
-    expect(store.entries.map((e) => e.name)).toEqual(['first', 'second'])
+    expect(store.entries.map((e) => e.name)).toEqual(['First', 'Second'])
   })
 
   // Older/partial records must not crash the sidebar, whose filters do unguarded

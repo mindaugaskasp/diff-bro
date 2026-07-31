@@ -47,7 +47,10 @@ a hard promise: it never touches the network.
   snippets and saved diffs _without raising the app_; ↑/↓ to browse, **→** to
   step into a preview or the tools, **←** to step back out (and to close it once
   there is nothing left to leave), **Enter** to open, **Ctrl/Cmd+C** to copy a
-  snippet straight to the clipboard. Rebind the shortcut in Settings.
+  snippet straight to the clipboard. **+** captures a quick plaintext snippet
+  without raising the app. Rebind the shortcut in Settings.
+- **Uniform snippet names** — every name is sentence-cased as it is saved, so a
+  library grown over months still reads consistently.
 - **Resizable dialogs** — the snippet editor and the tool windows resize from any
   edge or corner and remember their size between sessions (or a one-click setting
   maximizes them all). Existing snippets open read-only until you press Edit.

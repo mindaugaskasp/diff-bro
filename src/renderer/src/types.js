@@ -54,7 +54,9 @@
  * @property {string} id
  * @property {string} aadSalt      immutable; binds the ciphertext to this entry
  * @property {string} name
- * @property {number} createdAt    epoch ms
+ * @property {number} createdAt    epoch ms; immutable — it is inside the AAD
+ * @property {number} updatedAt    epoch ms of the last edit; plain metadata,
+ *                                 NOT in the AAD, so touching it never re-encrypts
  * @property {string} language     'auto', or an explicit Monaco language id
  * @property {string} [detected]   language detected from the content on save
  * @property {string[]} [vars]     {{placeholders}} in a claude prompt, for the fill-on-copy cue
