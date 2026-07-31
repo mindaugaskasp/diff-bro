@@ -2,9 +2,20 @@ import { describe, expect, it } from 'vitest'
 import {
   clipboardFilePaths,
   pathsFromBinaryPlist,
+  pathsFromHdrop,
   pathsFromPlist,
   pathsFromUriList
 } from '../../src/main/clipboardFiles'
+
+// Explorer copies files as CF_HDROP: a 20-byte DROPFILES header (offset, POINT,
+// fNC, fWide) then a double-null-terminated list of paths.
+function hdrop(paths, { wide = true, offset = 20 } = {}) {
+  const head = Buffer.alloc(20)
+  head.writeUInt32LE(offset, 0)
+  head.writeUInt32LE(wide ? 1 : 0, 16)
+  const list = paths.join('\0') + '\0\0'
+  return Buffer.concat([head, Buffer.from(list, wide ? 'utf16le' : 'latin1')])
+}
 
 // Captured from a real macOS pasteboard (two files copied in Finder). Finder
 // writes the legacy filenames type as a BINARY plist, and it is the only
@@ -145,5 +156,65 @@ describe('macOS pasteboard, as it really arrives', () => {
     const head = Buffer.from('bplist00\xa1\x01\x6f\x10\x0a', 'binary')
     const body = Buffer.from('/tmp/☃.txt', 'utf16le').swap16()
     expect(pathsFromBinaryPlist(Buffer.concat([head, body]))).toEqual(['/tmp/☃.txt'])
+  })
+})
+
+describe('Windows pasteboard', () => {
+  const PATHS = ['C:\\Users\\me\\alpha.txt', 'C:\\Users\\me\\beta.txt']
+
+  it('reads every path out of a wide CF_HDROP', () => {
+    expect(pathsFromHdrop(hdrop(PATHS))).toEqual(PATHS)
+  })
+
+  it('reads an ANSI CF_HDROP too', () => {
+    expect(pathsFromHdrop(hdrop(PATHS, { wide: false }))).toEqual(PATHS)
+  })
+
+  it('handles a UNC path and a unicode filename', () => {
+    const odd = ['\\\\server\\share\\a.txt', 'C:\\tmp\\☃.txt']
+    expect(pathsFromHdrop(hdrop(odd))).toEqual(odd)
+  })
+
+  it('refuses a truncated or nonsense buffer instead of inventing paths', () => {
+    expect(pathsFromHdrop(Buffer.alloc(8))).toEqual([])
+    expect(pathsFromHdrop(hdrop(PATHS, { offset: 9999 }))).toEqual([])
+    expect(pathsFromHdrop(null)).toEqual([])
+  })
+
+  it('is preferred over the single-path FileNameW fallback', () => {
+    const paths = clipboardFilePaths({
+      formats: () => [],
+      readText: () => '',
+      readBuffer: (f) =>
+        f === 'CF_HDROP'
+          ? hdrop(PATHS)
+          : f === 'FileNameW'
+            ? Buffer.from('C:\\only.txt\0', 'utf16le')
+            : Buffer.alloc(0)
+    })
+    expect(paths).toEqual(PATHS)
+  })
+})
+
+// Newer Chromium exposes CF_HDROP as text/uri-list; Electron serves some
+// flavours only through read(), not readBuffer(), so both are tried.
+describe('a flavour served as text rather than a buffer', () => {
+  it('still finds the files', () => {
+    const paths = clipboardFilePaths({
+      formats: () => ['text/uri-list'],
+      readText: (f) => (f === 'text/uri-list' ? 'file:///C:/Users/me/a.txt\r\n' : ''),
+      readBuffer: () => Buffer.alloc(0)
+    })
+    expect(paths).toEqual(['C:/Users/me/a.txt']) // not '/C:/...', which cannot be opened
+  })
+})
+
+describe('windows file URLs', () => {
+  it('drops the leading slash so the drive letter leads', () => {
+    expect(pathsFromUriList('file:///C:/tmp/a.txt')).toEqual(['C:/tmp/a.txt'])
+  })
+
+  it('leaves posix paths alone', () => {
+    expect(pathsFromUriList('file:///tmp/a.txt')).toEqual(['/tmp/a.txt'])
   })
 })

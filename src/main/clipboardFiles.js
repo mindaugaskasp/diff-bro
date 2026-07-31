@@ -12,7 +12,10 @@ function fileUrlToPath(uri) {
     const { pathname, hostname } = new URL(trimmed)
     if (hostname && hostname !== 'localhost') return null // a remote URL, not a file
     const path = decodeURIComponent(pathname)
-    return path.startsWith('/') ? path : null
+    // Windows: file:///C:/x parses to "/C:/x", and that leading slash makes the
+    // path unopenable — the drive letter has to lead.
+    const drive = path.replace(/^\/([A-Za-z]:)/, '$1')
+    return drive.startsWith('/') || /^[A-Za-z]:/.test(drive) ? drive : null
   } catch {
     return null
   }
@@ -56,6 +59,27 @@ export function pathsFromPlist(xml) {
  * @param {Buffer} buf
  * @returns {string[]} absolute paths, in clipboard order
  */
+// Windows Explorer copies files as CF_HDROP: a 20-byte DROPFILES header whose
+// first field is the offset to a double-null-terminated path list, and whose
+// last field says whether those paths are UTF-16.
+/**
+ * @param {Buffer} buf
+ * @returns {string[]}
+ */
+export function pathsFromHdrop(buf) {
+  if (!buf?.length || buf.length < 20) return []
+  const offset = buf.readUInt32LE(0)
+  const wide = buf.readUInt32LE(16) !== 0
+  if (offset < 20 || offset >= buf.length) return []
+
+  return buf
+    .subarray(offset)
+    .toString(wide ? 'utf16le' : 'latin1')
+    .split('\0')
+    .map((path) => path.trim())
+    .filter((path) => /^[A-Za-z]:[\\/]/.test(path) || path.startsWith('\\\\'))
+}
+
 // One string object: 0x5X is ASCII, 0x6X UTF-16BE, with the length inline for
 // short strings and in a trailing int object for longer ones.
 function readPlistString(buf, i) {
@@ -134,10 +158,12 @@ export function clipboardFilePaths(clip) {
 
   const sources = [
     () => pathsFromUriList(buffer('text/uri-list').toString('utf8')),
+    () => pathsFromUriList(text('text/uri-list')),
     () => pathsFromBinaryPlist(buffer('NSFilenamesPboardType')),
     () => pathsFromPlist(buffer('NSFilenamesPboardType').toString('utf8')),
     () => plistUrls(buffer('Apple URL pasteboard type').toString('utf8')),
     () => [fileUrlToPath(text('public.file-url'))].filter(Boolean),
+    () => pathsFromHdrop(buffer('CF_HDROP')),
     () => [buffer('FileNameW').toString('ucs2').replace(/\0+$/, '').trim()].filter(Boolean)
   ]
   for (const read of sources) {
