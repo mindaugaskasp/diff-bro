@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { clipboardFilePaths, pathsFromPlist, pathsFromUriList } from '../../src/main/clipboardFiles'
+import {
+  clipboardFilePaths,
+  pathsFromBinaryPlist,
+  pathsFromPlist,
+  pathsFromUriList
+} from '../../src/main/clipboardFiles'
+
+// Captured from a real macOS pasteboard (two files copied in Finder). Finder
+// writes the legacy filenames type as a BINARY plist, and it is the only
+// flavour that carries every copied file.
+const MAC_BPLIST = Buffer.from(
+  'YnBsaXN0MDCiAQJfEBcvdG1wL2NsaXBkaWFnL2FscGhhLnR4dF8QFi90bXAvY2xpcGRpYWcvYmV0YS50eHQICyUAAAAAAAABAQAAAAAAAAADAAAAAAAAAAAAAAAAAAAAPg==',
+  'base64'
+)
 
 const clip = ({ formats = [], text = '', buffers = {} }) => ({
   formats: () => formats,
@@ -94,5 +107,43 @@ describe('clipboardFilePaths', () => {
   it('is empty when the clipboard holds only text', () => {
     expect(clipboardFilePaths(clip({ formats: ['text/plain'], text: 'a.txt\nb.txt' }))).toEqual([])
     expect(clipboardFilePaths(clip({}))).toEqual([])
+  })
+})
+
+describe('macOS pasteboard, as it really arrives', () => {
+  it('reads every path out of the binary plist Finder writes', () => {
+    expect(pathsFromBinaryPlist(MAC_BPLIST)).toEqual([
+      '/tmp/clipdiag/alpha.txt',
+      '/tmp/clipdiag/beta.txt'
+    ])
+  })
+
+  // macOS lists text/uri-list but hands back nothing for it, so stopping at the
+  // first format that is merely PRESENT loses the files entirely.
+  it('falls past a listed-but-empty flavour to the one holding the files', () => {
+    const paths = clipboardFilePaths({
+      formats: () => ['text/uri-list'],
+      readText: () => '',
+      readBuffer: (f) => (f === 'NSFilenamesPboardType' ? MAC_BPLIST : Buffer.alloc(0))
+    })
+    expect(paths).toEqual(['/tmp/clipdiag/alpha.txt', '/tmp/clipdiag/beta.txt'])
+  })
+
+  // availableFormats() never mentions NSFilenamesPboardType, so gating reads on
+  // it means never reading the files at all.
+  it('finds the files even when availableFormats reports nothing', () => {
+    const paths = clipboardFilePaths({
+      formats: () => [],
+      readText: () => '',
+      readBuffer: (f) => (f === 'NSFilenamesPboardType' ? MAC_BPLIST : Buffer.alloc(0))
+    })
+    expect(paths).toEqual(['/tmp/clipdiag/alpha.txt', '/tmp/clipdiag/beta.txt'])
+  })
+
+  it('handles a unicode path in the binary plist', () => {
+    // 0x6F marks a UTF-16BE string; "/tmp/☃.txt" is 10 code units.
+    const head = Buffer.from('bplist00\xa1\x01\x6f\x10\x0a', 'binary')
+    const body = Buffer.from('/tmp/☃.txt', 'utf16le').swap16()
+    expect(pathsFromBinaryPlist(Buffer.concat([head, body]))).toEqual(['/tmp/☃.txt'])
   })
 })
