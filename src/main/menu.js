@@ -83,6 +83,8 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+I',
           click: () => sendToFocused('import-shared')
         },
+        { label: 'Export Diff as HTML…', click: () => sendToFocused('export-html') },
+        { label: 'Import Snippets…', click: () => sendToFocused('import-snippets') },
         { type: 'separator' },
         { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => sendToFocused('settings') },
         { type: 'separator' },
@@ -117,6 +119,7 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+Shift+C',
           click: () => sendToFocused('copy-diff')
         },
+        { label: 'Apply Patch…', click: () => sendToFocused('apply-patch') },
         { type: 'separator' },
         {
           label: 'Paste Text Mode',
@@ -128,6 +131,12 @@ export function installMenu() {
     {
       label: 'View',
       submenu: [
+        {
+          label: 'Command Palette…',
+          accelerator: 'CmdOrCtrl+Shift+P',
+          click: () => sendToFocused('command-palette')
+        },
+        { type: 'separator' },
         {
           label: 'Toggle Split View',
           accelerator: 'CmdOrCtrl+\\',
@@ -221,6 +230,11 @@ export function installMenu() {
             }
           ]
         },
+        { label: 'JWT Decode', click: () => sendToFocused('tools-jwt') },
+        { label: 'Epoch / Date', click: () => sendToFocused('tools-epoch') },
+        { label: 'URL Encode / Decode', click: () => sendToFocused('tools-url') },
+        { label: 'HTML Entities', click: () => sendToFocused('tools-html') },
+        { label: 'Sort & Dedupe Lines', click: () => sendToFocused('tools-lines') },
         {
           label: 'Find & Replace',
           submenu: [

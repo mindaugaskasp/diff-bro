@@ -1,6 +1,18 @@
 import { formatJson, formatXml, validateJson, validateXml } from './textFormats'
 import { formatSql, validateSql } from './sqlFormat'
 import { convertUuid, validateUuid } from './uuid'
+import {
+  convertEpoch,
+  convertHtmlEntities,
+  convertUrlCode,
+  decodeJwt,
+  sortDedupeLines,
+  validateEpoch,
+  validateHtmlEntities,
+  validateJwt,
+  validateLines,
+  validateUrlCode
+} from './devTools'
 
 // All format/validate tools are one dialog driven by this table: a new tool is
 // an entry here + a menu accelerator, never another dialog component.
@@ -43,6 +55,55 @@ export const TEXT_TOOLS = {
     validLabel: 'Valid UUID',
     requiresValid: true,
     note: 'Converts a canonical 8-4-4-4-12 UUID to its 32-hex (BINARY(16)) form and back.'
+  },
+  jwt: {
+    title: 'JWT Decode',
+    language: 'json',
+    validate: validateJwt,
+    format: decodeJwt,
+    actionLabel: 'Decode',
+    validLabel: 'Valid JWT',
+    requiresValid: true,
+    note: 'Decodes the header and payload. The signature is never verified — never trust the contents.'
+  },
+  epoch: {
+    title: 'Epoch / Date Convert',
+    language: 'plaintext',
+    validate: validateEpoch,
+    format: convertEpoch,
+    actionLabel: 'Convert',
+    validLabel: 'Valid timestamp / date',
+    requiresValid: true,
+    note: 'Unix seconds (or ms) → ISO 8601 UTC, and a parseable date → Unix seconds.'
+  },
+  url: {
+    title: 'URL Encode / Decode',
+    language: 'plaintext',
+    validate: validateUrlCode,
+    format: convertUrlCode,
+    actionLabel: 'Encode / Decode',
+    validLabel: 'Ready',
+    // Percent-encoded input decodes; anything else encodes. Encoding always
+    // works, so the tool stays useful even when a stray % fails to validate.
+    requiresValid: false
+  },
+  html: {
+    title: 'HTML Entities Encode / Decode',
+    language: 'plaintext',
+    validate: validateHtmlEntities,
+    format: convertHtmlEntities,
+    actionLabel: 'Encode / Decode',
+    validLabel: 'Ready',
+    requiresValid: false
+  },
+  lines: {
+    title: 'Sort & Dedupe Lines',
+    language: 'plaintext',
+    validate: validateLines,
+    format: sortDedupeLines,
+    actionLabel: 'Sort & Dedupe',
+    validLabel: 'Ready',
+    requiresValid: false
   }
 }
 

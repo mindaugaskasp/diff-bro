@@ -18,10 +18,12 @@ export function buildMenus(store) {
         { label: 'Save', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
         { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
         { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
+        { label: 'Export Diff as HTML…', run: () => store.handleMenuAction('export-html') },
+        { label: 'Import Snippets…', run: () => store.handleMenuAction('import-snippets') },
         { sep: true },
         { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },
         { sep: true },
-        { label: 'Quit', run: () => window.api.quit() }
+        { label: 'Quit', paletteHidden: true, run: () => window.api.quit() }
       ]
     },
     {
@@ -35,6 +37,7 @@ export function buildMenus(store) {
           keys: `${MOD}+Shift+C`,
           run: () => store.handleMenuAction('copy-diff')
         },
+        { label: 'Apply Patch…', run: () => store.handleMenuAction('apply-patch') },
         { sep: true },
         { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() }
       ]
@@ -43,6 +46,13 @@ export function buildMenus(store) {
       id: 'view',
       label: 'View',
       items: [
+        {
+          label: 'Command Palette…',
+          keys: `${MOD}+Shift+P`,
+          paletteHidden: true,
+          run: () => store.handleMenuAction('command-palette')
+        },
+        { sep: true },
         {
           label: 'Toggle Split View',
           keys: `${MOD}+\\`,
@@ -57,11 +67,26 @@ export function buildMenus(store) {
           run: () => window.api.quickLookToggle()
         },
         { sep: true },
-        { label: 'Zoom In', keys: `${MOD}++`, run: () => window.api.zoom(1) },
-        { label: 'Zoom Out', keys: `${MOD}+-`, run: () => window.api.zoom(-1) },
-        { label: 'Reset Zoom', keys: `${MOD}+0`, run: () => window.api.zoom(0) },
+        { label: 'Zoom In', keys: `${MOD}++`, paletteHidden: true, run: () => window.api.zoom(1) },
+        {
+          label: 'Zoom Out',
+          keys: `${MOD}+-`,
+          paletteHidden: true,
+          run: () => window.api.zoom(-1)
+        },
+        {
+          label: 'Reset Zoom',
+          keys: `${MOD}+0`,
+          paletteHidden: true,
+          run: () => window.api.zoom(0)
+        },
         { sep: true, devOnly: true },
-        { label: 'Toggle Developer Tools', devOnly: true, run: () => window.api.toggleDevTools() }
+        {
+          label: 'Toggle Developer Tools',
+          devOnly: true,
+          paletteHidden: true,
+          run: () => window.api.toggleDevTools()
+        }
       ]
     },
     {
@@ -137,6 +162,11 @@ export function buildMenus(store) {
             }
           ]
         },
+        { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
+        { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
+        { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
+        { label: 'HTML Entities', run: () => store.handleMenuAction('tools-html') },
+        { label: 'Sort & Dedupe Lines', run: () => store.handleMenuAction('tools-lines') },
         {
           label: 'Find & Replace',
           items: [

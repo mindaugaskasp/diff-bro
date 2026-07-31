@@ -87,16 +87,89 @@ function buildHunks(lines) {
   })
 }
 
+// The full aligned line list (each { sign, text, oldNo, newNo }), shared by the
+// patch and the HTML export. { error: 'too-large' } past the guard.
+export function diffLines(leftText, rightText) {
+  const a = splitLines(leftText)
+  const b = splitLines(rightText)
+  if (a.length > MAX_DIFF_LINES || b.length > MAX_DIFF_LINES) return { error: 'too-large' }
+  return { lines: annotate(lcsOps(a, b)) }
+}
+
 // Returns { patch } — '' when the two sides are identical — or { error }.
 export function toUnifiedDiff(
   leftText,
   rightText,
   { leftLabel = 'original', rightLabel = 'changed' } = {}
 ) {
-  const a = splitLines(leftText)
-  const b = splitLines(rightText)
-  if (a.length > MAX_DIFF_LINES || b.length > MAX_DIFF_LINES) return { error: 'too-large' }
-  const hunks = buildHunks(annotate(lcsOps(a, b)))
+  const result = diffLines(leftText, rightText)
+  if (result.error) return result
+  const hunks = buildHunks(result.lines)
   if (!hunks.length) return { patch: '' }
   return { patch: `--- ${leftLabel}\n+++ ${rightLabel}\n${hunks.join('')}` }
+}
+
+const HUNK_HEADER = /^@@ -(\d+)(?:,\d+)? \+\d+(?:,\d+)? @@/
+
+// Parse the hunks out of a unified diff, ignoring the ---/+++ file headers and
+// anything before the first @@. Body lines are context (' '), deletions ('-')
+// or additions ('+'); an empty context line is a single space, so a bare ''
+// (e.g. the split's trailing element) is not part of a hunk. null if there is
+// no hunk at all.
+function parseHunks(patchText) {
+  const hunks = []
+  let cur = null
+  for (const line of patchText.split('\n')) {
+    const m = HUNK_HEADER.exec(line)
+    if (m) {
+      cur = { oldStart: Number(m[1]), lines: [] }
+      hunks.push(cur)
+    } else if (cur && (line[0] === ' ' || line[0] === '+' || line[0] === '-')) {
+      cur.lines.push(line)
+    }
+  }
+  return hunks.length ? hunks : null
+}
+
+// Apply a unified diff to a base string. Exact-match only: a hunk whose context
+// or deletions don't match the base is REJECTED (its index returned) and the
+// rest still apply — never a silent wrong result. Returns { output, rejected }
+// or { error } when the text carries no hunk. Line numbering follows
+// toUnifiedDiff's model (a single trailing newline is not its own line).
+export function applyUnifiedDiff(baseText, patchText) {
+  const hunks = parseHunks(patchText)
+  if (!hunks) return { error: 'not-a-unified-diff' }
+  const out = splitLines(baseText)
+  const rejected = []
+  let offset = 0
+  hunks.forEach((hunk, index) => {
+    const at = Math.max(0, hunk.oldStart - 1 + offset)
+    let p = at
+    let ok = true
+    const replacement = []
+    for (const bodyLine of hunk.lines) {
+      const text = bodyLine.slice(1)
+      if (bodyLine[0] === '+') {
+        replacement.push(text)
+      } else if (out[p] === text) {
+        if (bodyLine[0] === ' ') replacement.push(text)
+        p++
+      } else {
+        ok = false
+        break
+      }
+    }
+    if (!ok) {
+      rejected.push(index)
+      return
+    }
+    out.splice(at, p - at, ...replacement)
+    offset += replacement.length - (p - at)
+  })
+  let output = out.join('\n')
+  // Follow the base's newline convention; content added to an empty file yields
+  // a normal newline-terminated file (the patch itself can't encode this — the
+  // app's diffs carry no "\ No newline at end of file" marker).
+  if ((baseText.endsWith('\n') || baseText === '') && output.length) output += '\n'
+  return { output, rejected }
 }

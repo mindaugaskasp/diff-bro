@@ -4,7 +4,8 @@ import { resolveAdapter } from '../adapters'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
-import { toUnifiedDiff } from '../utils/unifiedDiff'
+import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
+import { diffToHtml } from '../utils/diffHtml'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
@@ -87,6 +88,17 @@ function pastedSide(side, text) {
   return { path: null, name: `${side === 'left' ? 'Left' : 'Right'} (pasted)`, content: text }
 }
 
+// The two compared sides as { name, content }, whether in files or paste mode.
+function comparedSides(s) {
+  if (s.mode === 'paste') {
+    return [
+      s.pasteLeftFile ?? { name: 'Left', content: s.pasteLeft },
+      s.pasteRightFile ?? { name: 'Right', content: s.pasteRight }
+    ]
+  }
+  return [s.left ?? { name: 'Left', content: '' }, s.right ?? { name: 'Right', content: '' }]
+}
+
 // Menu action → store effect. The single list of everything a menu can trigger
 // (named by the accelerators in menu.js / MenuBar.vue).
 const MENU_ACTIONS = {
@@ -99,6 +111,9 @@ const MENU_ACTIONS = {
   swap: (s) => s.swap(),
   clear: (s) => s.clear(),
   'copy-diff': (s) => s.copyDiff(),
+  'apply-patch': (s) => s.applyPatch(),
+  'export-html': (s) => s.exportDiff(),
+  'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
   'toggle-theme': (s) => s.toggleTheme(),
@@ -110,11 +125,17 @@ const MENU_ACTIONS = {
   'config-backup': (s) => (s.configMode = 'backup'),
   'config-restore': (s) => (s.configMode = 'restore'),
   settings: (s) => (s.showSettingsDialog = true),
+  'command-palette': (s) => (s.showCommandPalette = true),
   'tools-base64': (s) => (s.showBase64Dialog = true),
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
   'tools-sql': (s) => (s.textTool = 'sql'),
   'tools-uuid': (s) => (s.textTool = 'uuid'),
+  'tools-jwt': (s) => (s.textTool = 'jwt'),
+  'tools-epoch': (s) => (s.textTool = 'epoch'),
+  'tools-url': (s) => (s.textTool = 'url'),
+  'tools-html': (s) => (s.textTool = 'html'),
+  'tools-lines': (s) => (s.textTool = 'lines'),
   'tools-find-replace': (s) => (s.showFindReplaceDialog = true),
   'tools-crypt': (s) => (s.showCryptDialog = true),
   shortcuts: (s) => (s.showShortcutsDialog = true)
@@ -181,6 +202,8 @@ export const useDiffStore = defineStore('diff', {
     showSettingsDialog: false,
     // Help → Keyboard Shortcuts dialog visibility.
     showShortcutsDialog: false,
+    // ⌘K-style command palette visibility.
+    showCommandPalette: false,
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
     // Content last dismissed per side, so the format-hint banner stays gone until
@@ -230,6 +253,66 @@ export const useDiffStore = defineStore('diff', {
     },
     async drop(side, path) {
       this.receive(side, await window.api.readFile(path))
+    },
+    // Apply a unified .patch to a chosen base file and open base ↔ patched in
+    // the diff view, so the change is shown, not just written.
+    async applyPatch() {
+      const base = await window.api.openFile('base')
+      if (!base || base.error || typeof base.content !== 'string') return
+      const patchFile = await window.api.openFile('patch')
+      if (!patchFile || patchFile.error || typeof patchFile.content !== 'string') return
+      const { output, rejected, error } = applyUnifiedDiff(base.content, patchFile.content)
+      if (error) {
+        this.showNotice(`"${patchFile.name}" is not a unified diff.`)
+        return
+      }
+      this.left = { path: base.path, name: base.name, content: base.content }
+      this.right = { path: null, name: `${base.name} (patched)`, content: output }
+      this.mode = 'files'
+      this.diffSaved = false
+      if (rejected.length) {
+        this.showNotice(
+          `Applied — ${rejected.length} hunk(s) didn't match the base and were skipped.`
+        )
+      }
+    },
+    // Export the current comparison as a self-contained HTML file for a ticket
+    // or PR. The document is built in the renderer (diffToHtml); main only saves.
+    async exportDiff() {
+      const [l, r] = comparedSides(this)
+      const leftText = l.content ?? ''
+      const rightText = r.content ?? ''
+      if (!leftText && !rightText) {
+        this.showNotice('Nothing to export yet.')
+        return
+      }
+      const { html, error } = diffToHtml(leftText, rightText, {
+        leftName: l.name,
+        rightName: r.name
+      })
+      if (error) {
+        this.showNotice('This comparison is too large to export.')
+        return
+      }
+      const res = await window.api.exportDiffHtml({ html, name: `${l.name}-vs-${r.name}` })
+      if (res?.ok) this.showNotice('Exported diff to HTML.')
+    },
+    // Orchestrates the snippet import (the work + validation live in the snippet
+    // store / parser) and reports the outcome through the shared notice.
+    async importSnippets() {
+      const res = await useSnippetStore().importFromFile()
+      if (res?.cancelled) return
+      if (res?.error) {
+        this.showNotice(
+          res.error === 'too-large'
+            ? 'That file is too large to import.'
+            : 'Could not read that file.'
+        )
+        return
+      }
+      this.showNotice(
+        res.count ? `Imported ${res.count} snippet(s).` : 'No snippets found to import.'
+      )
     },
     // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
     // loaded starts fresh on the left; 1 otherwise fills the first empty side.

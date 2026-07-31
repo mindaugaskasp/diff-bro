@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 contextBridge.exposeInMainWorld('api', {
   openFile: (side) => ipcRenderer.invoke('file:open', side),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
+  exportDiffHtml: (payload) => ipcRenderer.invoke('diff:exportHtml', payload),
   // Electron >= 32: File objects in the renderer no longer expose .path,
   // so drag & drop must resolve paths through webUtils in the preload.
   // Resolving here also registers the path with main as a genuine drop, so

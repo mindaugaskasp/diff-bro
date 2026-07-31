@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
+import { parseSnippetImport } from '../utils/snippetImport'
 
 // Personal, non-expiring text library, encrypted at rest with the vault key
 // (crypto in main; the key never enters this store). Organized by TAGS —
@@ -276,6 +277,21 @@ export const useSnippetStore = defineStore('snippets', {
       })
       this.persist()
       return id
+    },
+    // Import snippets from a chosen file (VS Code .code-snippets JSON or any
+    // text file). The file is validated + size-capped in parseSnippetImport;
+    // each draft is re-encrypted through add() before it is stored.
+    async importFromFile() {
+      const file = await window.api.openFile('snippets')
+      if (!file) return { cancelled: true }
+      if (file.error || typeof file.content !== 'string') return { count: 0 }
+      const { snippets, error } = parseSnippetImport(file.content, file.name)
+      if (error) return { error }
+      let count = 0
+      for (const draft of snippets) {
+        if (await this.add(draft)) count++
+      }
+      return { count }
     },
     async load(id) {
       const entry = this.entries.find((e) => e.id === id)
