@@ -3,8 +3,8 @@
 // with no Vue mount.
 //
 // Two focus zones: 'list' (arrows navigate results) and 'preview' (arrows scroll
-// the active snippet). Right/left arrows step between them; Escape backs out one
-// level (preview → list → dismiss).
+// the active snippet). ← and Escape share one back-out ladder — preview → list →
+// collapse section → dismiss — so ← is exit navigation, not just a zone step.
 
 /**
  * @param {object} o
@@ -76,14 +76,28 @@ export function useQuickLookKeys({
       e.preventDefault()
     }
   }
-  // ← leaves the preview, else collapses an expanded section (onCollapse).
+  // ← only exits from the start of the query, mirroring caretAtEnd for →; a
+  // modifier means the field is doing its own word/line jump.
+  function caretAtStart(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return false
+    const t = e.target
+    if (!t || t.selectionStart == null) return true
+    return t.selectionStart === 0 && t.selectionEnd === 0
+  }
+  // Same ladder as Escape, except the search box keeps ← while its caret can move.
   function leaveOrCollapse(e) {
     if (inPreview()) {
       e.preventDefault()
       zone.value = 'list'
-    } else if (onCollapse()) {
-      e.preventDefault()
+      return
     }
+    if (onCollapse()) {
+      e.preventDefault()
+      return
+    }
+    if (!caretAtStart(e)) return
+    e.preventDefault()
+    onDismiss()
   }
   function commit(e) {
     e.preventDefault()

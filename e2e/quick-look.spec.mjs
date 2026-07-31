@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem } from './fixtures.mjs'
 
 // The quick look-up is a SECOND BrowserWindow (quicklook.html), summoned by a
 // global shortcut in real use. Global shortcuts and OS focus are unreliable
@@ -104,6 +104,61 @@ test('Shift+Cmd+C copies only the active preview line', async ({ app, page }) =>
 
   const clip = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(clip).toBe(lineText)
+})
+
+// ← is exit navigation once there is nothing left to back out of, but the search
+// box must keep the key while its caret can still move — otherwise editing a
+// query slams the launcher shut mid-word.
+test('← exits the launcher only once the caret has nowhere left to go', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  const hidden = () =>
+    app.evaluate(({ BrowserWindow }) => {
+      const w = BrowserWindow.getAllWindows().find((x) =>
+        x.webContents.getURL().includes('quicklook')
+      )
+      return w ? !w.isVisible() : true
+    })
+
+  await ql.locator('.ql-input').fill('me') // caret sits at the end
+  await ql.keyboard.press('ArrowLeft') // → caret 1
+  await ql.keyboard.press('ArrowLeft') // → caret 0
+  await expect.poll(hidden, { timeout: 2000 }).toBe(false)
+
+  await ql.keyboard.press('ArrowLeft') // nowhere left to go: exit
+  await expect.poll(hidden, { timeout: 6000 }).toBe(true)
+})
+
+// The footer must advertise ← as the way out, and must still fit: hints live in
+// a fixed-height band with no wrap, so a chip too many pushes them out of sight
+// rather than reflowing. Measured, not eyeballed — and in a dark theme too,
+// since a theme may retune the type scale the band is sized against.
+async function footerFitsIn(app, page, theme) {
+  const ql = await summon(app, page)
+  await expect(ql.locator('html')).toHaveAttribute('data-theme', theme)
+
+  const foot = ql.locator('.ql-foot')
+  const fits = () => foot.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)
+
+  await expect(foot).toContainText('←/Esc')
+  await expect(foot).toContainText('close')
+  expect(await fits(), `footer overflows in ${theme}`).toBe(true)
+
+  // Inside the expanded Tools section ← steps back out instead of closing, and
+  // that longer label is the widest the band ever has to carry.
+  await ql.keyboard.press('ArrowRight')
+  await expect(foot).toContainText('collapse')
+  expect(await fits(), `footer overflows in ${theme} with Tools open`).toBe(true)
+}
+
+test('the footer advertises ← as the exit and still fits the band', async ({ app, page }) => {
+  await footerFitsIn(app, page, 'light')
+})
+
+test('the footer still fits once a dark theme retunes the tokens', async ({ app, page }) => {
+  await clickAppMenuItem(app, 'Toggle Light/Dark Theme')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+
+  await footerFitsIn(app, page, 'dark')
 })
 
 // Arrowing past the visible rows must scroll the list; before this it stopped at

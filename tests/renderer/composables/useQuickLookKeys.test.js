@@ -249,9 +249,48 @@ describe('useQuickLookKeys — onCollapse (← / Escape in the list)', () => {
     expect(pd).toHaveBeenCalled()
   })
 
-  it('ArrowLeft is inert when there is nothing to collapse', () => {
+  // ← is exit navigation: with no preview to leave and no section to collapse,
+  // the only level left to back out of is the launcher itself.
+  it('ArrowLeft dismisses when there is nothing left to back out of', () => {
     const h = collapseHarness(false)
-    expect(h.press('ArrowLeft')).not.toHaveBeenCalled()
+    const pd = h.press('ArrowLeft')
+    expect(h.onDismiss).toHaveBeenCalledTimes(1)
+    expect(pd).toHaveBeenCalled()
+  })
+
+  // …but the search box owns ← while the caret still has somewhere to go, or
+  // editing a query would slam the launcher shut mid-word.
+  it('ArrowLeft stays a caret move while text sits to its left', () => {
+    const h = collapseHarness(false)
+    const pd = h.press('ArrowLeft', {
+      target: { selectionStart: 2, selectionEnd: 2, value: 'diff' }
+    })
+    expect(h.onDismiss).not.toHaveBeenCalled()
+    expect(pd).not.toHaveBeenCalled()
+  })
+
+  it('ArrowLeft dismisses from the start of a non-empty query', () => {
+    const h = collapseHarness(false)
+    h.press('ArrowLeft', { target: { selectionStart: 0, selectionEnd: 0, value: 'diff' } })
+    expect(h.onDismiss).toHaveBeenCalledTimes(1)
+  })
+
+  it('ArrowLeft with a modifier is left to the field (word/line jump)', () => {
+    const h = collapseHarness(false)
+    for (const mod of ['metaKey', 'ctrlKey', 'altKey']) {
+      h.press('ArrowLeft', {
+        [mod]: true,
+        target: { selectionStart: 0, selectionEnd: 0, value: '' }
+      })
+    }
+    expect(h.onDismiss).not.toHaveBeenCalled()
+  })
+
+  it('ArrowLeft collapses before it dismisses, one level at a time', () => {
+    const h = collapseHarness(true)
+    h.press('ArrowLeft')
+    expect(h.onCollapse).toHaveBeenCalled()
+    expect(h.onDismiss).not.toHaveBeenCalled()
   })
 
   it('Escape collapses the section before dismissing', () => {

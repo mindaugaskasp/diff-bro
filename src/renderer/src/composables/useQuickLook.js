@@ -197,8 +197,10 @@ export function useQuickLook() {
     const kind = current.value?.kind
     if (kind === 'snippet') hints.push(['→', 'scroll preview'])
     else if (kind === 'command') hints.push(['→', 'open tool'])
-    else if (kind === 'tools') hints.push(['→', toolsOpen.value ? 'collapse' : 'browse tools'])
-    hints.push(['↵', 'open'], [copyKey, 'copy'], ['Esc', 'close'])
+    else if (kind === 'tools') hints.push(['→', 'browse tools'])
+    // ← and Esc walk the same ladder here, so they share one hint rather than
+    // spending two chips (and two identical labels) on the same action.
+    hints.push(['↵', 'open'], [copyKey, 'copy'], ['←/Esc', toolsOpen.value ? 'collapse' : 'close'])
     return hints
   })
 

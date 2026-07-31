@@ -44,9 +44,10 @@ a hard promise: it never touches the network.
   toolbar (bold, headings, lists, quote, code, links) and a live rendered
   preview, with a Rendered/Plain toggle.
 - **Quick look-up** — a global shortcut summons a floating search over your
-  snippets and saved diffs _without raising the app_; ↑/↓ to browse, **Enter** to
-  open, **Ctrl/Cmd+C** to copy a snippet straight to the clipboard. Rebind the
-  shortcut in Settings.
+  snippets and saved diffs _without raising the app_; ↑/↓ to browse, **→** to
+  step into a preview or the tools, **←** to step back out (and to close it once
+  there is nothing left to leave), **Enter** to open, **Ctrl/Cmd+C** to copy a
+  snippet straight to the clipboard. Rebind the shortcut in Settings.
 - **Resizable dialogs** — the snippet editor and the tool windows resize from any
   edge or corner and remember their size between sessions (or a one-click setting
   maximizes them all). Existing snippets open read-only until you press Edit.
