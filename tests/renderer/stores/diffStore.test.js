@@ -74,7 +74,7 @@ describe('diffStore', () => {
   it('paste-to-compare: confirming reads the clipboard into the first empty side', async () => {
     window.api = { readText: () => Promise.resolve('pasted body') }
     const store = useDiffStore()
-    store.requestPasteFromClipboard()
+    await store.requestPasteFromClipboard()
     expect(store.pastePrompt).toBe('enter')
     await store.confirmPasteEnter()
     expect(store.mode).toBe('paste')

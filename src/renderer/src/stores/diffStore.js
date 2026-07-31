@@ -432,19 +432,18 @@ export const useDiffStore = defineStore('diff', {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
     },
     // Ctrl/Cmd+V paste-to-compare. Ask before reading the clipboard.
-    requestPasteFromClipboard() {
+    async requestPasteFromClipboard() {
       if (this.pastePrompt) return
       if (this.left?.kind === 'spreadsheet' || this.right?.kind === 'spreadsheet') {
         this.showNotice('Paste-to-compare works with text, not a spreadsheet.')
         return
       }
+      // Copied files are unambiguous — load them without asking. The prompt
+      // exists for pasted TEXT, where entering paste mode is a real decision.
+      if (await this.pasteClipboardFiles()) return
       this.pastePrompt = 'enter'
     },
     async confirmPasteEnter() {
-      // Copied files beat the clipboard's text flavour, which holds only their
-      // names — pasting those as content is never what was meant.
-      if (await this.pasteClipboardFiles()) return
-
       const text = (await window.api?.readText?.()) ?? ''
       if (!text.trim()) {
         this.pastePrompt = null

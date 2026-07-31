@@ -31,13 +31,10 @@ test('pasting two copied files compares them as files, not their names', async (
   await copyFiles(app, [left, right])
 
   await page.keyboard.press('ControlOrMeta+v')
-  const confirm = page.getByRole('dialog', { name: 'Paste detected' })
-  if (await confirm.isVisible().catch(() => false)) {
-    await confirm
-      .getByRole('button', { name: /paste|compare|yes/i })
-      .first()
-      .click()
-  }
+
+  // Copied files are unambiguous, so they load straight away — asking
+  // "paste text?" first is a prompt about something the user did not do.
+  await expect(page.getByRole('dialog', { name: 'Paste detected' })).toBeHidden()
 
   // Both slots name the real files, and the diff renders their contents.
   await expect(page.locator('.file-slots-row')).toContainText('alpha.txt')
@@ -50,13 +47,10 @@ test('pasting one copied file fills the first free side', async ({ app, page }) 
   await copyFiles(app, [left])
 
   await page.keyboard.press('ControlOrMeta+v')
-  const confirm = page.getByRole('dialog', { name: 'Paste detected' })
-  if (await confirm.isVisible().catch(() => false)) {
-    await confirm
-      .getByRole('button', { name: /paste|compare|yes/i })
-      .first()
-      .click()
-  }
+
+  // Copied files are unambiguous, so they load straight away — asking
+  // "paste text?" first is a prompt about something the user did not do.
+  await expect(page.getByRole('dialog', { name: 'Paste detected' })).toBeHidden()
   await expect(page.locator('.file-slots-row')).toContainText('alpha.txt')
 })
 
