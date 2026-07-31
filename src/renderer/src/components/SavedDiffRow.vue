@@ -7,6 +7,7 @@ import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useTabsStore } from '../stores/tabsStore'
 import { useDataDir } from '../composables/useDataDir'
 import { languageMonogram } from '../utils/languageMonogram'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
@@ -21,6 +22,7 @@ const props = defineProps({
 const vault = useVaultStore()
 const diff = useDiffStore()
 const snippets = useSnippetStore()
+const tabs = useTabsStore()
 const dataDir = useDataDir()
 
 const SOON_MS = 15 * 60_000
@@ -50,8 +52,10 @@ const state = computed(() => {
 
 async function open() {
   const payload = await vault.load(props.entry.id)
-  if (payload) diff.restore(payload)
-  else diff.showNotice('This saved diff has expired or could not be decrypted.')
+  if (!payload) return diff.showNotice('This saved diff has expired or could not be decrypted.')
+  // Its own tab, keyed by the vault id so clicking the row twice focuses the
+  // one already open rather than stacking a duplicate.
+  tabs.open(payload, { diffSaved: true, entryId: props.entry.id, name: props.entry.name })
 }
 </script>
 

@@ -1,0 +1,325 @@
+import { test, expect } from './fixtures.mjs'
+
+// Tabs are a claim about Monaco: each holds its own comparison, and only the
+// one on screen owns an editor. Neither is checkable in jsdom — there is no
+// real Monaco there to count or to swap models on.
+
+async function compare(page, left, right) {
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByPlaceholder('Paste original text here').fill(left)
+  await page.getByPlaceholder('Paste changed text here').fill(right)
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await expect(page.locator('.diff-container')).toBeVisible()
+}
+
+const tabBar = (page) => page.locator('.diff-tabs')
+// Scoped to the editor: tab LABELS now carry the pasted text's first line too,
+// so an unscoped getByText would match the tab rather than the comparison.
+const inDiff = (page, text) => page.locator('.diff-container').getByText(text)
+// The sidebar offers the same action, so "new comparison" is named twice on
+// purpose — the region says which one is meant.
+const addTab = (page) =>
+  page.locator('.diff-tabs').getByRole('button', { name: 'New comparison', exact: true })
+const tabs = (page) => page.locator('.diff-tabs .tab')
+
+// The × is a hover affordance on an inactive tab (keyboard closes the active
+// one with the accelerator instead). Park the pointer first so the hover is a
+// real arrival — after a dialog closes the cursor is wherever its button was.
+async function clickClose(page, n = 0) {
+  await page.mouse.move(0, 0)
+  await tabs(page).nth(n).hover()
+  await tabs(page)
+    .nth(n)
+    .getByRole('button', { name: /^Close/ })
+    .click()
+}
+
+test('the bar is there from the start, so a second comparison is reachable', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await expect(tabBar(page)).toBeVisible()
+  await expect(tabs(page)).toHaveCount(1)
+
+  await addTab(page).click()
+  await expect(tabs(page)).toHaveCount(2)
+})
+
+test('each tab keeps its own comparison, and switching swaps it', async ({ page }) => {
+  await compare(page, 'first-left', 'first-right')
+  await addTab(page).click()
+  await compare(page, 'second-left', 'second-right')
+  await expect(inDiff(page, 'second-left').first()).toBeVisible()
+
+  await tabs(page).first().click()
+  await expect(inDiff(page, 'first-left').first()).toBeVisible()
+  await expect(inDiff(page, 'second-left')).toHaveCount(0)
+
+  await tabs(page).nth(1).click()
+  await expect(inDiff(page, 'second-left').first()).toBeVisible()
+})
+
+// The memory bound the whole snapshot-swap design exists to guarantee.
+test('only the visible tab owns a Monaco editor', async ({ page }) => {
+  await compare(page, 'one', 'ONE')
+  for (const [l, r] of [
+    ['two', 'TWO'],
+    ['three', 'THREE']
+  ]) {
+    await addTab(page).click()
+    await compare(page, l, r)
+  }
+  await expect(tabs(page)).toHaveCount(3)
+  expect(await page.locator('.monaco-diff-editor').count()).toBe(1)
+
+  await tabs(page).first().click()
+  await expect(inDiff(page, 'one').first()).toBeVisible()
+  expect(await page.locator('.monaco-diff-editor').count()).toBe(1)
+})
+
+test('an unsaved tab confirms before it closes, and a kept one survives', async ({ page }) => {
+  await compare(page, 'precious', 'PRECIOUS')
+  await addTab(page).click()
+  await compare(page, 'throwaway', 'THROWAWAY')
+
+  await page.mouse.move(0, 0)
+  await tabs(page).first().hover()
+  await clickClose(page)
+  const dialog = page.getByRole('dialog', { name: 'Close comparison?' })
+  await expect(dialog).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Keep it open' }).click()
+  await expect(tabs(page)).toHaveCount(2)
+
+  await clickClose(page)
+  await page
+    .getByRole('dialog', { name: 'Close comparison?' })
+    .getByRole('button', { name: 'Close it' })
+    .click()
+  await expect(tabs(page)).toHaveCount(1)
+  await expect(inDiff(page, 'throwaway').first()).toBeVisible()
+})
+
+test('closing the last comparison empties it rather than the window', async ({ page }) => {
+  await compare(page, 'only', 'ONLY')
+  await addTab(page).click()
+  await expect(tabs(page)).toHaveCount(2)
+  await expect(
+    tabs(page)
+      .first()
+      .getByRole('button', { name: /^Close/ })
+  ).toHaveCount(1)
+
+  // The × is a hover affordance on an inactive tab (keyboard uses the
+  // accelerator), so reach it the way a mouse does. Park the pointer first, or
+  await clickClose(page)
+  await page
+    .getByRole('dialog', { name: 'Close comparison?' })
+    .getByRole('button', { name: 'Close it' })
+    .click()
+  await expect(tabs(page)).toHaveCount(1)
+  await expect(tabs(page).first()).toContainText('Untitled')
+  await expect(page.getByRole('button', { name: 'Paste text' })).toBeVisible()
+})
+
+test('a saved diff is focused rather than opened twice', async ({ page }) => {
+  await compare(page, 'saved-left', 'saved-right')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const save = page.getByRole('dialog', { name: 'Save diff' })
+  await save.getByLabel('Name', { exact: true }).fill('Tabbed diff')
+  await save.getByRole('button', { name: 'Save', exact: true }).click()
+
+  // A second, unrelated comparison.
+  await addTab(page).click()
+  await compare(page, 'other', 'OTHER')
+  await expect(tabs(page)).toHaveCount(2)
+
+  // Saving linked the first tab to the entry, so the sidebar focuses that tab
+  // instead of stacking a third copy of the same comparison.
+  const row = page.locator('li.diff', { hasText: 'Tabbed diff' })
+  await row.locator('.stack').click()
+  await expect(tabs(page)).toHaveCount(2)
+  await expect(inDiff(page, 'saved-left').first()).toBeVisible()
+
+  // And again, from the other tab.
+  await tabs(page).nth(1).click()
+  await row.locator('.stack').click()
+  await expect(tabs(page)).toHaveCount(2)
+  await expect(inDiff(page, 'saved-left').first()).toBeVisible()
+})
+
+test('a tab does not resize when the pointer enters it', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await addTab(page).click()
+  await compare(page, 'gamma', 'delta')
+
+  const first = tabs(page).first()
+  await page.mouse.move(0, 0)
+  const before = await first.boundingBox()
+
+  await first.hover()
+  await expect(first.getByRole('button', { name: /^Close/ })).toBeVisible()
+  const during = await first.boundingBox()
+
+  expect(during.width).toBe(before.width)
+  expect(during.x).toBe(before.x)
+
+  // And the tab to its right has not been pushed along either.
+  const neighbour = await tabs(page).nth(1).boundingBox()
+  await page.mouse.move(0, 0)
+  expect((await tabs(page).nth(1).boundingBox()).x).toBe(neighbour.x)
+})
+
+// Pressing + used to go through the same blank-tab reuse meant for OPENING a
+// comparison, so on a fresh window it refilled the tab you were looking at and
+// appeared to do nothing at all.
+test('the + always adds a tab, even from an empty one', async ({ page }) => {
+  await expect(tabs(page)).toHaveCount(1)
+  await expect(tabs(page).first()).toContainText('Untitled')
+
+  await addTab(page).click()
+  await expect(tabs(page)).toHaveCount(2)
+
+  await addTab(page).click()
+  await expect(tabs(page)).toHaveCount(3)
+})
+
+// A tab is the one place a comparison already has a name, so renaming it should
+// be how you name the thing — including when it is saved.
+test('double-clicking a tab renames it', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  const tab = tabs(page).first()
+
+  await tab.locator('.tab-open').dblclick()
+  const box = page.locator('.diff-tabs .tab-rename')
+  await expect(box).toBeVisible()
+  await box.fill('prod vs staging')
+  await box.press('Enter')
+
+  await expect(tab).toContainText('prod vs staging')
+  await expect(page.locator('.diff-tabs .tab-rename')).toHaveCount(0)
+})
+
+test('escape abandons a rename without changing the name', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  const tab = tabs(page).first()
+  const before = (await tab.innerText()).trim()
+
+  await tab.locator('.tab-open').dblclick()
+  await page.locator('.diff-tabs .tab-rename').fill('discard me')
+  await page.locator('.diff-tabs .tab-rename').press('Escape')
+
+  await expect(page.locator('.diff-tabs .tab-rename')).toHaveCount(0)
+  expect((await tab.innerText()).trim()).toBe(before)
+})
+
+test('a renamed tab keeps its name across a switch', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await tabs(page).first().locator('.tab-open').dblclick()
+  await page.locator('.diff-tabs .tab-rename').fill('the important one')
+  await page.locator('.diff-tabs .tab-rename').press('Enter')
+
+  await addTab(page).click()
+  await compare(page, 'gamma', 'delta')
+  await tabs(page).first().click()
+  await expect(tabs(page).first()).toContainText('the important one')
+})
+
+test('the name you gave a tab is the name the save dialog offers', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await tabs(page).first().locator('.tab-open').dblclick()
+  await page.locator('.diff-tabs .tab-rename').fill('release candidate')
+  await page.locator('.diff-tabs .tab-rename').press('Enter')
+
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await expect(dialog.getByLabel('Name', { exact: true })).toHaveValue('release candidate')
+
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.locator('li.diff', { hasText: 'release candidate' })).toBeVisible()
+})
+
+// A tab and the saved diff it holds are the same comparison, so they carry the
+// same name in both directions.
+test('reopening a saved diff restores its name into the tab', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill('Nightly config')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+
+  // Saving names the tab it was saved from.
+  await expect(tabs(page).first()).toContainText('Nightly config')
+
+  // And reopening it elsewhere brings the name with it.
+  await addTab(page).click()
+  await compare(page, 'gamma', 'delta')
+  await page.locator('li.diff', { hasText: 'Nightly config' }).locator('.stack').click()
+  await expect(tabs(page).first()).toContainText('Nightly config')
+})
+
+test('renaming a saved diff’s tab renames it in the sidebar', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill('First name')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.locator('li.diff', { hasText: 'First name' })).toBeVisible()
+
+  await tabs(page).first().locator('.tab-open').dblclick()
+  await page.locator('.diff-tabs .tab-rename').fill('Second name')
+  await page.locator('.diff-tabs .tab-rename').press('Enter')
+
+  await expect(page.locator('li.diff', { hasText: 'Second name' })).toBeVisible()
+  await expect(page.locator('li.diff', { hasText: 'First name' })).toHaveCount(0)
+})
+
+// A lone tab has nothing to fall back to, so closing it would only empty the
+// comparison the Clear button already empties — and the × implied otherwise.
+test('a single tab has no close control', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await expect(tabs(page)).toHaveCount(1)
+  await expect(
+    tabs(page)
+      .first()
+      .getByRole('button', { name: /^Close/ })
+  ).toHaveCount(0)
+
+  await addTab(page).click()
+  await expect(
+    tabs(page)
+      .first()
+      .getByRole('button', { name: /^Close/ })
+  ).toHaveCount(1)
+})
+
+// The name belonged to the comparison, so emptying the tab must take it too.
+test('closing back to one tab does not leave the old name behind', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await tabs(page).first().locator('.tab-open').dblclick()
+  await page.locator('.diff-tabs .tab-rename').fill('the old one')
+  await page.locator('.diff-tabs .tab-rename').press('Enter')
+
+  await addTab(page).click()
+  await clickClose(page, 0)
+  await page
+    .getByRole('dialog', { name: 'Close comparison?' })
+    .getByRole('button', { name: 'Close it' })
+    .click()
+
+  await expect(tabs(page)).toHaveCount(1)
+  await expect(tabs(page).first()).not.toContainText('the old one')
+})
+
+// The sidebar offers the same new-comparison action, and says why when it cannot.
+test('the Saved diffs + opens a new paste comparison, and stops at the cap', async ({ page }) => {
+  const add = page.locator('.sidebar-section', { hasText: 'Saved diffs' }).getByRole('button', {
+    name: 'New comparison'
+  })
+  await add.click()
+  await expect(tabs(page)).toHaveCount(2)
+  await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
+
+  for (let i = 0; i < 4; i++) await add.click()
+  await expect(tabs(page)).toHaveCount(6)
+  await expect(add).toBeDisabled()
+  await expect(add).toHaveAttribute('data-tip', /most comparisons at once \(6\)/)
+})

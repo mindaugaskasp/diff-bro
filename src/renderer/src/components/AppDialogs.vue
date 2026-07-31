@@ -18,6 +18,7 @@ import SnippetDeleteDialog from './SnippetDeleteDialog.vue'
 import SnippetFillDialog from './SnippetFillDialog.vue'
 import VaultCategoryDeleteDialog from './VaultCategoryDeleteDialog.vue'
 import RetagDiffDialog from './RetagDiffDialog.vue'
+import TabCloseDialog from './TabCloseDialog.vue'
 import AddTrustedKeyDialog from './AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './TrustedKeysDialog.vue'
 import RemoveTrustedKeyDialog from './RemoveTrustedKeyDialog.vue'
@@ -56,6 +57,7 @@ const errors = useErrorStore()
   <SnippetFillDialog v-if="snippets.pendingFill" />
   <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
   <RetagDiffDialog v-if="vault.pendingRetag" />
+  <TabCloseDialog v-if="store.pendingTabClose" />
   <ErrorReportDialog v-if="errors.visible" />
   <PasteConfirmDialog v-if="store.pastePrompt" />
 </template>

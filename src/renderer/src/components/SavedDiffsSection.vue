@@ -4,6 +4,9 @@ import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
+import { useTabsStore } from '../stores/tabsStore'
+import { MAX_TABS } from '../utils/tabs'
+import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -18,6 +21,7 @@ const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
   (!props.tag || e.tags.includes(props.tag))
 
+const tabs = useTabsStore()
 const vault = useVaultStore()
 const open = ref(true)
 
@@ -38,7 +42,23 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
       :first="first"
       :unified="unified"
       @toggle="open = !open"
-    />
+    >
+      <template #actions>
+        <button
+          class="btn btn-icon"
+          :disabled="!tabs.canAdd"
+          :data-tip="
+            tabs.canAdd
+              ? `New comparison in its own tab (${MOD}+Shift+T)`
+              : `That is the most comparisons at once (${MAX_TABS}) — close one first`
+          "
+          aria-label="New comparison"
+          @click.stop="tabs.newTab({ paste: true })"
+        >
+          <AppIcon name="plus" />
+        </button>
+      </template>
+    </SectionHeader>
 
     <div v-show="open" class="section-body">
       <p v-if="!hasOwn" class="empty"><AppIcon name="inbox" /> Empty</p>

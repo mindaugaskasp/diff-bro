@@ -12,7 +12,7 @@
 // a 4-character PIN and a 64-character token would look nothing alike.
 export const SECRET_MASK = '************'
 
-export const SECRET_NOTICE = 'Hidden secret snippet — contents stay masked; copy them to use them.'
+export const SECRET_NOTICE = 'Hidden — copy it to use it.'
 
 /**
  * True when this entry's contents must never be drawn.

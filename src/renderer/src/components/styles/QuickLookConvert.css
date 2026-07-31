@@ -45,10 +45,3 @@
   border-top: 1px solid var(--border);
   justify-content: space-between;
 }
-.qc-lock {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--font-xs);
-  color: var(--text-dim);
-}

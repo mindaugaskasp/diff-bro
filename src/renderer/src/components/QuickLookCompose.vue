@@ -63,7 +63,6 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
     </div>
 
     <div class="ql-compose-foot band">
-      <span class="ql-compose-lock"><AppIcon name="lock" /> encrypted on save</span>
       <span class="ql-compose-actions">
         <button class="btn btn-sm" @click="emit('cancel')">Cancel</button>
         <button class="btn btn-primary btn-sm" :disabled="!canSave" @click="emit('save')">

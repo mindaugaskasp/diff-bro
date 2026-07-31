@@ -17,11 +17,15 @@ import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
 import AppToolbar from './components/AppToolbar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
+import DiffTabBar from './components/DiffTabBar.vue'
+import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
 import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
+const tabs = useTabsStore()
+tabs.init()
 const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
@@ -75,76 +79,82 @@ const {
 
     <div class="body">
       <SavedDiffs />
-      <!-- `capturing` hides the floating chrome that lives INSIDE the region the
+      <!-- The comparison column. The tab strip sits OUTSIDE .content so the
+           image export, which photographs .content, still frames only the
+           diff. -->
+      <div class="pane">
+        <DiffTabBar />
+        <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the
            toast would start its fade-leave transition and the shutter would
            catch it mid-fade. -->
-      <main class="content" :class="{ capturing: store.imageCapturing }">
-        <!-- Matrix theme: code rain behind the empty state / diff area, only
+        <main class="content" :class="{ capturing: store.imageCapturing }">
+          <!-- Matrix theme: code rain behind the empty state / diff area, only
              while no diff is loaded (it never sits behind a comparison). -->
-        <MatrixRain
-          v-if="store.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
-          fill
-        />
-        <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row">
-          <div class="slot-half">
-            <FileSlot
-              side="left"
-              :file="store.left"
-              :awaiting="!store.left && !!store.right"
-              @pick="store.pick('left')"
-            />
+          <MatrixRain
+            v-if="store.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
+            fill
+          />
+          <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row">
+            <div class="slot-half">
+              <FileSlot
+                side="left"
+                :file="store.left"
+                :awaiting="!store.left && !!store.right"
+                @pick="store.pick('left')"
+              />
+            </div>
+            <button
+              class="btn btn-ghost swap"
+              :data-tip="`Swap the left and right files (${MOD}+Shift+S)`"
+              aria-label="Swap sides"
+              :disabled="!store.ready"
+              @click="store.swap"
+            >
+              ⇄
+            </button>
+            <div class="slot-half">
+              <FileSlot
+                side="right"
+                :file="store.right"
+                :awaiting="!store.right && !!store.left"
+                @pick="store.pick('right')"
+              />
+            </div>
           </div>
-          <button
-            class="btn btn-ghost swap"
-            :data-tip="`Swap the left and right files (${MOD}+Shift+S)`"
-            aria-label="Swap sides"
-            :disabled="!store.ready"
-            @click="store.swap"
-          >
-            ⇄
-          </button>
-          <div class="slot-half">
-            <FileSlot
-              side="right"
-              :file="store.right"
-              :awaiting="!store.right && !!store.left"
-              @pick="store.pick('right')"
-            />
-          </div>
-        </div>
 
-        <PasteInput v-if="store.mode === 'paste'" />
-        <!-- Content router: pick the viewer by comparable kind. -->
-        <template v-else-if="store.ready">
-          <template v-if="store.comparableKind === 'text'">
-            <FormatHintBanner />
-            <DiffViewer />
+          <PasteInput v-if="store.mode === 'paste'" />
+          <!-- Content router: pick the viewer by comparable kind. -->
+          <template v-else-if="store.ready">
+            <template v-if="store.comparableKind === 'text'">
+              <FormatHintBanner />
+              <DiffViewer />
+            </template>
+            <SpreadsheetDiffViewer v-else />
           </template>
-          <SpreadsheetDiffViewer v-else />
-        </template>
-        <!-- One side loaded: make it obvious a second file is still needed. -->
-        <div v-else-if="store.left || store.right" class="empty waiting">
-          <p class="waiting-title">
-            Loaded <strong>{{ (store.left || store.right).name }}</strong>
-          </p>
-          <p>
-            Now drop or choose the
-            <strong>{{ store.left ? 'right' : 'left' }}</strong> file to compare.
-          </p>
-        </div>
-        <div v-else class="empty">
-          <p class="empty-title">Choose or drop two files to compare.</p>
-          <SupportedFormats />
-        </div>
+          <!-- One side loaded: make it obvious a second file is still needed. -->
+          <div v-else-if="store.left || store.right" class="empty waiting">
+            <p class="waiting-title">
+              Loaded <strong>{{ (store.left || store.right).name }}</strong>
+            </p>
+            <p>
+              Now drop or choose the
+              <strong>{{ store.left ? 'right' : 'left' }}</strong> file to compare.
+            </p>
+          </div>
+          <div v-else class="empty">
+            <p class="empty-title">Choose or drop two files to compare.</p>
+            <SupportedFormats />
+          </div>
 
-        <!-- Notices sit centred over the diff area (anchored to .content). -->
-        <transition name="fade">
-          <div v-if="store.notice" class="notice">{{ store.notice }}</div>
-        </transition>
+          <!-- Notices sit centred over the diff area (anchored to .content). -->
+          <transition name="fade">
+            <div v-if="store.notice" class="notice">{{ store.notice }}</div>
+          </transition>
 
-        <ShortcutBar />
-      </main>
+          <ShortcutBar />
+        </main>
+      </div>
     </div>
 
     <AppDialogs />

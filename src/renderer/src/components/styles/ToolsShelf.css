@@ -5,14 +5,12 @@
   flex-wrap: wrap;
   gap: 5px;
   padding: var(--space-3);
-  /* A brighter accent seam and a soft top-lit gradient lift the footer out of
-     the flat panel and hint it's an interactive shelf, not a status bar. */
-  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--accent) 7%, var(--bg-elevated)),
-    var(--bg-elevated)
-  );
+  /* The same surface and seam as the sidebar's other fixed strips. An
+     accent-tinted gradient and an accent seam used to mark this out as a
+     special zone, which on the light-ground themes just read as a muddy blue
+     band with three shades of the accent competing in it. */
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
 }
 .usb-tools-label {
   display: inline-flex;
@@ -22,7 +20,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--accent);
+  color: var(--text-hint);
   margin-right: 2px;
 }
 .usb-tools-label .app-icon {
@@ -66,14 +64,25 @@
   transform: translateY(0);
   box-shadow: none;
 }
-/* The way into the full list: a dashed edge marks it as "more", not a tool. */
+/* The way into the full list. It opens a search, so it is shaped like the
+   sidebar's own search field rather than a pill: same radius, same surface,
+   same left-aligned glyph-then-label. A full-width lozenge read as a big
+   button and sat oddly in the strip. */
 .usb-tool-all {
-  border-style: dashed;
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-weight: 500;
 }
-/* With no recents yet it is the only control, so it carries the shelf alone. */
 .usb-tool-all.solo {
   flex: 1;
-  justify-content: center;
-  border-style: solid;
+  justify-content: flex-start;
+  padding: 4px 8px;
+}
+/* A search entry point should not light up like a tool it is about to run. */
+.usb-tool-all:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  transform: none;
+  box-shadow: none;
 }

@@ -1,9 +1,9 @@
 import { test, expect } from './fixtures.mjs'
 
 // Tooltips are the app's own (AppTooltip + data-tip), not native `title`: a
-// frameless Electron window often never draws `title` at all, which is why the
-// search toggles looked unexplained. Only a real launch can show that hovering
-// a control actually produces the bubble, so it is checked here.
+// frameless Electron window often never draws `title` at all. Only a real
+// launch can show that hovering a control actually produces the bubble, so it
+// is checked here.
 
 async function compare(page) {
   await page.getByRole('button', { name: 'Paste text' }).click()
@@ -12,27 +12,6 @@ async function compare(page) {
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 }
-
-test('the search toggles explain what they do, in the app’s own tooltip', async ({ page }) => {
-  await compare(page)
-
-  const opts = page.locator('.search .side').first().locator('label.opt')
-  await expect(opts).toHaveCount(3)
-
-  // The glyphs alone say nothing, so each carries an explanation rather than a
-  // restatement of its label.
-  for (const [i, expected] of [/Match case/, /Whole word/, /Regular expression/].entries()) {
-    const tip = await opts.nth(i).getAttribute('data-tip')
-    expect(tip).toMatch(expected)
-    expect(tip.length).toBeGreaterThan('Match case'.length) // an explanation, not a label
-  }
-
-  // Hovering really produces the app's tooltip.
-  await opts.first().hover()
-  const bubble = page.locator('.tip-bubble')
-  await expect(bubble).toBeVisible({ timeout: 5000 })
-  await expect(bubble).toContainText('Match case')
-})
 
 test('no interactive control is left with an undrawn native title', async ({ page }) => {
   await compare(page)

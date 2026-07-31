@@ -4,6 +4,7 @@
 import { useDiffStore } from '../stores/diffStore'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import AppIcon from './AppIcon.vue'
+import { MAX_SIDE_NAME } from '../utils/pasteNames'
 
 const store = useDiffStore()
 
@@ -31,7 +32,19 @@ const rightDrop = useFileTextDrop((content, name, path) =>
             >
             <button class="link" @click="store.clearPasteFile('left')">use text</button>
           </template>
-          <button v-else class="link" @click="store.pastePickFile('left')">load file…</button>
+          <template v-else>
+            <input
+              v-model="store.pasteLeftName"
+              class="side-name"
+              type="text"
+              spellcheck="false"
+              :maxlength="MAX_SIDE_NAME"
+              placeholder="Name this side…"
+              :data-tip="`What to call this side — defaults to &quot;Left (pasted)&quot;`"
+              :aria-label="`Name for the left side`"
+            />
+            <button class="link" @click="store.pastePickFile('left')">load file…</button>
+          </template>
         </div>
         <textarea
           v-if="!store.pasteLeftFile"
@@ -56,7 +69,19 @@ const rightDrop = useFileTextDrop((content, name, path) =>
             >
             <button class="link" @click="store.clearPasteFile('right')">use text</button>
           </template>
-          <button v-else class="link" @click="store.pastePickFile('right')">load file…</button>
+          <template v-else>
+            <input
+              v-model="store.pasteRightName"
+              class="side-name"
+              type="text"
+              spellcheck="false"
+              :maxlength="MAX_SIDE_NAME"
+              placeholder="Name this side…"
+              :data-tip="`What to call this side — defaults to &quot;Right (pasted)&quot;`"
+              :aria-label="`Name for the right side`"
+            />
+            <button class="link" @click="store.pastePickFile('right')">load file…</button>
+          </template>
         </div>
         <textarea
           v-if="!store.pasteRightFile"

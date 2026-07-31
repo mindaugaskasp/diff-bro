@@ -17,7 +17,10 @@ import { getDiffScroller } from '../utils/diffScroller'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
+import { useTabsStore } from './tabsStore'
+import { isBlank } from '../utils/tabs'
 import { TOOLS } from '../utils/tools'
+import { sideName } from '../utils/pasteNames'
 
 const SHARE_ERRORS = {
   'not-a-share-file': 'That file is not a Diff Bro shared diff.',
@@ -128,6 +131,10 @@ const MENU_ACTIONS = {
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
   'export-image': (s) => s.exportCurrentImage(),
+  'tab-new': () => useTabsStore().newTab(),
+  'tab-next': () => useTabsStore().step(1),
+  'tab-prev': () => useTabsStore().step(-1),
+  'tab-close': (s) => s.requestActiveTabClose(),
   'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
@@ -169,6 +176,9 @@ export const useDiffStore = defineStore('diff', {
     // A paste side can instead hold a dropped file (partial paste); null = textarea.
     pasteLeftFile: null,
     pasteRightFile: null,
+    // What to call each pasted side. Empty means "use the placeholder".
+    pasteLeftName: '',
+    pasteRightName: '',
     // Ctrl/Cmd+V flow: null | 'enter' | 'overwrite'; pendingPasteText holds the
     // clipboard text between confirm and overwrite.
     pastePrompt: null,
@@ -232,6 +242,9 @@ export const useDiffStore = defineStore('diff', {
     // Bumped by DiffViewer on every onDidUpdateDiff — the only honest signal
     // that Monaco's diff worker has returned and its decorations are painted.
     diffRevision: 0,
+    // Tab id awaiting a discard confirmation, or null. Closing a tab is the one
+    // way paste-mode text can be lost — it exists nowhere else.
+    pendingTabClose: null,
     // Content last dismissed per side, so the format-hint banner stays gone until
     // that side's content changes.
     dismissedFormatHint: { left: null, right: null }
@@ -421,6 +434,43 @@ export const useDiffStore = defineStore('diff', {
       const shot = await window.api.stitchDiffImage()
       return shot?.error ? shot : { ...shot, truncated: plan.truncated }
     },
+    // Post-save routing: a "save first" chain resumes its deferred action,
+    // otherwise a paste-mode save runs the comparison and confirms the save.
+    async finishSave(wasPaste, ttlHours) {
+      this.markSaved()
+      if (this.replaceAfterSave) {
+        this.showNotice('Saved. Loading the dropped file…')
+        return this.finishReplaceAfterSave()
+      }
+      if (this.pickAfterSave) {
+        this.showNotice('Saved. Loading the file…')
+        return this.finishPickAfterSave()
+      }
+      if (wasPaste) {
+        this.comparePasted()
+        this.markSaved()
+      }
+      this.showNotice(
+        ttlHours ? `Saved — expires in ${ttlHours} h.` : 'Saved — kept until you delete it.'
+      )
+    },
+    // Closing the active tab from a menu or accelerator takes the same confirm
+    // path the tab's own × does.
+    requestActiveTabClose() {
+      const tabs = useTabsStore()
+      const tab = tabs.active
+      if (!tab) return
+      if (!tab.diffSaved && !isBlank(tab)) this.pendingTabClose = tab.id
+      else tabs.close(tab.id)
+    },
+    confirmTabClose() {
+      const id = this.pendingTabClose
+      this.pendingTabClose = null
+      if (id) useTabsStore().close(id)
+    },
+    cancelTabClose() {
+      this.pendingTabClose = null
+    },
     closeImageExport() {
       this.imageEntry = null
       window.api.forgetDiffImage()
@@ -554,8 +604,16 @@ export const useDiffStore = defineStore('diff', {
     comparePasted() {
       // Each side is whichever the user provided: a loaded file, else the
       // textarea's pasted text.
-      const l = this.pasteLeftFile ?? { name: 'Left (pasted)', content: this.pasteLeft }
-      const r = this.pasteRightFile ?? { name: 'Right (pasted)', content: this.pasteRight }
+      // A dropped file brings its own name; typed text takes the one given for
+      // that side, or the placeholder.
+      const l = this.pasteLeftFile ?? {
+        name: sideName('left', this.pasteLeftName),
+        content: this.pasteLeft
+      }
+      const r = this.pasteRightFile ?? {
+        name: sideName('right', this.pasteRightName),
+        content: this.pasteRight
+      }
       this.left = { path: null, name: l.name, content: l.content }
       this.right = { path: null, name: r.name, content: r.content }
       this.mode = 'files'
@@ -804,6 +862,8 @@ export const useDiffStore = defineStore('diff', {
         pasteRight: this.pasteRight,
         pasteLeftFile: this.pasteLeftFile,
         pasteRightFile: this.pasteRightFile,
+        pasteLeftName: this.pasteLeftName,
+        pasteRightName: this.pasteRightName,
         renderSideBySide: this.renderSideBySide,
         ignoreTrimWhitespace: this.ignoreTrimWhitespace
       }
@@ -818,6 +878,8 @@ export const useDiffStore = defineStore('diff', {
       this.pasteRight = payload.pasteRight ?? ''
       this.pasteLeftFile = payload.pasteLeftFile ?? null
       this.pasteRightFile = payload.pasteRightFile ?? null
+      this.pasteLeftName = payload.pasteLeftName ?? ''
+      this.pasteRightName = payload.pasteRightName ?? ''
       this.renderSideBySide = payload.renderSideBySide ?? true
       this.ignoreTrimWhitespace = payload.ignoreTrimWhitespace ?? false
       this.mode = payload.mode ?? 'files'

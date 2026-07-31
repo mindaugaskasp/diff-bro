@@ -33,8 +33,7 @@ async function save() {
     </div>
     <p class="dialog-note">
       A {{ diff.imageEntry.width }} × {{ diff.imageEntry.height }} screenshot of the diff view as it
-      is right now — same theme, same highlighting. It was taken on this machine and goes nowhere
-      until you paste or save it.
+      is right now.
     </p>
     <p v-if="diff.imageEntry.truncated" class="dialog-note warn">
       This diff was longer than the export height — the picture stops partway down. Raise
@@ -47,9 +46,7 @@ async function save() {
         {{ copied ? 'Copied' : 'Copy image' }}
       </button>
       <button type="button" class="btn" :disabled="busy" @click="save">Save PNG…</button>
-      <!-- "Done", not "Close": the header × is already labelled Close, and
-           nothing here is pending to cancel. -->
-      <button type="button" class="btn btn-ghost" @click="diff.closeImageExport()">Done</button>
+      <button type="button" class="btn btn-ghost" @click="diff.closeImageExport()">Close</button>
     </template>
   </BaseDialog>
 </template>
