@@ -51,6 +51,24 @@ export const test = base.extend({
   }
 })
 
+// Click an application-menu item by label. The in-app MenuBar.vue only exists on
+// Windows/Linux (macOS keeps the native bar), so anything that must work on both
+// — or that runs with no window at all — goes through the menu Electron owns.
+export const clickAppMenuItem = (app, label) =>
+  app.evaluate(({ Menu }, wanted) => {
+    const find = (items) => {
+      for (const item of items) {
+        if (item.label === wanted) return item
+        const hit = item.submenu && find(item.submenu.items)
+        if (hit) return hit
+      }
+      return null
+    }
+    const item = find(Menu.getApplicationMenu().items)
+    if (!item) throw new Error(`application menu item not found: ${wanted}`)
+    item.click()
+  }, label)
+
 // Open Settings through the same path a user takes: the in-app File menu.
 export async function openSettings(page) {
   await page.getByRole('button', { name: 'File', exact: true }).click()

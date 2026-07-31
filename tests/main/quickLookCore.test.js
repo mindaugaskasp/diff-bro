@@ -4,6 +4,8 @@ import {
   displayForPoint,
   displayIndexForPoint,
   launcherDiagnostics,
+  launcherSpaceBehavior,
+  needsMainWindow,
   resolveAccelerator
 } from '../../src/main/quickLookCore'
 
@@ -102,6 +104,48 @@ describe('launcherDiagnostics', () => {
     expect(line).toContain('event=hide')
     expect(line).toContain('main=none')
     expect(line).not.toContain('launcherDisplay')
+  })
+})
+
+describe('needsMainWindow', () => {
+  const launcher = { id: 'launcher' }
+  const main = { id: 'main' }
+
+  // The regression: a count-based check sees the warm launcher and never reopens.
+  it('is true when the warm launcher is the only open window', () => {
+    expect(needsMainWindow([launcher], launcher)).toBe(true)
+  })
+
+  it('is true when no windows are open at all', () => {
+    expect(needsMainWindow([], launcher)).toBe(true)
+    expect(needsMainWindow([], null)).toBe(true)
+  })
+
+  it('is false while a main window is open, launcher or not', () => {
+    expect(needsMainWindow([main], launcher)).toBe(false)
+    expect(needsMainWindow([launcher, main], launcher)).toBe(false)
+    expect(needsMainWindow([main], null)).toBe(false)
+  })
+
+  it('tolerates a missing window list', () => {
+    expect(needsMainWindow(undefined, launcher)).toBe(true)
+  })
+})
+
+describe('launcherSpaceBehavior', () => {
+  // The regression: `alwaysOnTop` alone confines the launcher to the app's Space.
+  it('joins every Space above full-screen apps on macOS', () => {
+    expect(launcherSpaceBehavior('darwin')).toEqual({
+      level: 'screen-saver',
+      visibleOnAllWorkspaces: true,
+      visibleOnFullScreen: true
+    })
+  })
+
+  it('is skipped where Spaces do not apply and alwaysOnTop already covers it', () => {
+    expect(launcherSpaceBehavior('win32')).toBe(null)
+    expect(launcherSpaceBehavior('linux')).toBe(null)
+    expect(launcherSpaceBehavior(undefined)).toBe(null)
   })
 })
 

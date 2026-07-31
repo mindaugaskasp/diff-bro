@@ -15,7 +15,9 @@ import {
   placeWindow,
   displayForPoint,
   resolveAccelerator,
-  launcherDiagnostics
+  launcherDiagnostics,
+  launcherSpaceBehavior,
+  needsMainWindow
 } from './quickLookCore'
 
 // Fallback when settings.json has none. Mirror the renderer's
@@ -25,6 +27,8 @@ const DEFAULT_ACCELERATOR = 'CommandOrControl+Shift+Space'
 let win = null
 // The accelerator currently registered, so a change unregisters exactly it.
 let currentAccelerator = null
+// Injected by registerQuickLook, so this module never owns the main window.
+let createMain = null
 
 function build() {
   const w = new BrowserWindow({
@@ -51,6 +55,14 @@ function build() {
     }
   })
 
+  const space = launcherSpaceBehavior(process.platform)
+  if (space) {
+    w.setAlwaysOnTop(true, space.level)
+    w.setVisibleOnAllWorkspaces(space.visibleOnAllWorkspaces, {
+      visibleOnFullScreen: space.visibleOnFullScreen
+    })
+  }
+
   // Cloned from window.js: never open external links or navigate away.
   w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   w.webContents.on('will-navigate', (e, url) => {
@@ -74,7 +86,19 @@ function ensure() {
 }
 
 function mainWindow() {
-  return BrowserWindow.getAllWindows().find((w) => w !== win)
+  return BrowserWindow.getAllWindows().find((w) => w !== win) ?? null
+}
+
+// Also ends the un-focusable state hideLauncher leaves behind, without which
+// focus() below is a silent no-op.
+export function ensureMainWindow() {
+  allowMainFocus()
+  const main = needsMainWindow(BrowserWindow.getAllWindows(), win) ? createMain?.() : mainWindow()
+  if (!main) return null
+  if (main.isMinimized()) main.restore()
+  main.show()
+  main.focus()
+  return main
 }
 
 // Diagnostics only (source 'quicklook', not an error): captures the display/window
@@ -175,13 +199,12 @@ function onShortcut() {
 // a plain-string channel, so the id travels separately).
 function openInMain(payload) {
   win?.hide()
-  const main = BrowserWindow.getAllWindows().find((w) => w !== win)
+  const main = ensureMainWindow()
   if (!main) return
-  allowMainFocus()
-  if (main.isMinimized()) main.restore()
-  main.show()
-  main.focus()
-  main.webContents.send('quicklook:openInMain', payload)
+  const send = () => main.webContents.send('quicklook:openInMain', payload)
+  // A window we just created has no listener yet, so the payload would be lost.
+  if (main.webContents.isLoading()) main.webContents.once('did-finish-load', send)
+  else send()
 }
 
 // Releases the previous binding first. 'invalid' = Electron rejected the string;
@@ -202,7 +225,8 @@ function registerShortcut(accel) {
   }
 }
 
-export function registerQuickLook() {
+export function registerQuickLook(openMainWindow) {
+  createMain = openMainWindow
   const res = registerShortcut(
     resolveAccelerator(readSettings().quickLookShortcut, DEFAULT_ACCELERATOR)
   )

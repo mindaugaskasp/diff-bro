@@ -61,6 +61,32 @@ export function displayForPoint(displays, point) {
   return (i >= 0 ? list[i] : list[0]) ?? null
 }
 
+/**
+ * Whether the app is running with no main window. Counting windows is wrong: the
+ * launcher is kept warm and rebuilt on the next shortcut press, so on macOS —
+ * where closing the main window leaves the app alive — the count never returns
+ * to zero and the main window is never reopened.
+ * @param {Array<unknown>} windows
+ * @param {unknown} launcher
+ * @returns {boolean}
+ */
+export function needsMainWindow(windows, launcher) {
+  return !(windows ?? []).some((w) => w && w !== launcher)
+}
+
+/**
+ * How the launcher must be told to escape its own Space, or null where that has
+ * no meaning. `alwaysOnTop: true` alone leaves a macOS window inside the app's
+ * Space, so the shortcut appears to do nothing over a full-screen app — the
+ * window has to join all Spaces as a full-screen auxiliary, above that app.
+ * @param {string} platform
+ * @returns {{level:string,visibleOnAllWorkspaces:boolean,visibleOnFullScreen:boolean}|null}
+ */
+export function launcherSpaceBehavior(platform) {
+  if (platform !== 'darwin') return null
+  return { level: 'screen-saver', visibleOnAllWorkspaces: true, visibleOnFullScreen: true }
+}
+
 const centre = (b) => (b ? { x: b.x + b.width / 2, y: b.y + b.height / 2 } : null)
 
 /**

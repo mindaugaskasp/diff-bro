@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app } from 'electron'
 import { applyHeadlessSwitches, installNetworkKillSwitch } from './security'
 import { createWindow } from './window'
 import { registerAppDataIpc } from './appData'
@@ -9,7 +9,7 @@ import { registerFileIpc } from './files'
 import { registerTextToolsIpc } from './textTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
-import { allowMainFocus, registerQuickLook, destroyQuickLook } from './quickLook'
+import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLook'
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 
@@ -29,12 +29,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
       app.exit(0)
       return
     }
-    const win = BrowserWindow.getAllWindows()[0]
-    if (!win) return
-    // The launcher may have left this window un-focusable (see quickLook.js).
-    allowMainFocus()
-    if (win.isMinimized()) win.restore()
-    win.focus()
+    ensureMainWindow()
   })
 
   app.whenReady().then(() => {
@@ -50,16 +45,16 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerSnippetIpc()
     registerLoggerIpc()
     registerLinkIpc()
-    const mainWin = createWindow()
-    registerQuickLook()
-    // Without this, the hidden launcher keeps a window alive and blocks quit.
-    mainWin.on('closed', destroyQuickLook)
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) return void createWindow()
-      // Re-activating from the dock must be able to take focus even if the
-      // launcher was dismissed moments ago.
-      allowMainFocus()
-    })
+    // Every main window, not just the first: without this the hidden launcher
+    // keeps a window alive and blocks quit.
+    const openMainWindow = () => {
+      const w = createWindow()
+      w.on('closed', destroyQuickLook)
+      return w
+    }
+    openMainWindow()
+    registerQuickLook(openMainWindow)
+    app.on('activate', ensureMainWindow)
   })
 }
 

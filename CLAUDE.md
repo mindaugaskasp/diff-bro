@@ -209,6 +209,22 @@ regression test from decoration.
   is trusted-click, so `navigator.clipboard` writes there hit the deny-all
   permission handler and fail: clipboard writes go through `window.api.copyText`
   (main process, `src/main/clipboard.js`), never `navigator.clipboard`.
+- **macOS-only E2E runs on the Mac, not in Docker.** Some window-lifecycle bugs
+  cannot exist on Linux — closing the last window quits the app there
+  (`window-all-closed`), so the "app alive with no main window" state is
+  unreachable. Those specs guard themselves with
+  `test.skip(process.platform !== 'darwin', …)` so `make e2e` stays green, and
+  are run natively instead:
+  `env -u ELECTRON_RUN_AS_NODE npx playwright test e2e/<spec>` after
+  `npm run build`. **The `env -u` is not optional** — the agent shell exports
+  `ELECTRON_RUN_AS_NODE=1`, which silently runs Electron as plain Node;
+  the tell is `electron --version` printing a Node version and Playwright
+  failing with `Process failed to launch!`. `e2e/quick-look-window-recovery.spec.mjs`
+  is the worked example: it closes the main window, summons the launcher through
+  the View ▸ Quick Look-up menu item (with no window there is no renderer to call
+  `window.api`), then emits `activate` the way a Dock click does. A skipped spec
+  proves nothing, so verify a macOS-gated test red→green by hand:
+  `git stash push -- src/main/ && npm run build`, run it, restore.
 
 ## Workflow
 
