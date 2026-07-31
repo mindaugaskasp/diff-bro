@@ -71,3 +71,34 @@ test('a tool panel reports bad input instead of failing silently', async ({ app,
   await ql.getByLabel('Base64 input').fill('%%% not base64 %%%')
   await expect(ql.locator('.tb-err')).toBeVisible()
 })
+
+// Leaving a panel used to destroy it, so an accidental Escape threw away
+// whatever you had typed. Re-entering must find the work still there.
+test('a tool panel keeps its input when you leave and come back', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await enterBase64(ql)
+  await ql.getByLabel('Base64 input').fill('keep me')
+  await expect(ql.locator('.tb-text')).toHaveText('a2VlcCBtZQ==')
+
+  await ql.keyboard.press('Escape')
+  await expect(ql.locator('.ql-input')).toBeVisible()
+
+  await enterBase64(ql)
+  await expect(ql.getByLabel('Base64 input')).toHaveValue('keep me')
+  await expect(ql.locator('.tb-text')).toHaveText('a2VlcCBtZQ==')
+})
+
+// Options are part of that state too — a re-entered panel that silently reset
+// its mode would encode when you had asked it to decode.
+test('a tool panel keeps its mode and options too', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await enterBase64(ql)
+  await ql.locator('.seg-opt', { hasText: 'Decode' }).click()
+  await ql.getByLabel('Base64 input').fill('a2VlcCBtZQ==')
+  await expect(ql.locator('.tb-text')).toHaveText('keep me')
+
+  await ql.locator('.qc-back').click()
+  await enterBase64(ql)
+  await expect(ql.locator('.seg-opt.on')).toHaveText('Decode')
+  await expect(ql.locator('.tb-text')).toHaveText('keep me')
+})

@@ -5,12 +5,9 @@
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
-import { languageMonogram } from '../utils/languageMonogram'
 import AppIcon from './AppIcon.vue'
 import QuickLookConvert from './QuickLookConvert.vue'
-
-// Same type anchor the sidebar rows use, so a result reads the same everywhere.
-const mono = (lang) => languageMonogram(lang)
+import QuickLookResults from './QuickLookResults.vue'
 
 const {
   query,
@@ -34,39 +31,11 @@ const {
   refresh,
   onKeydown,
   convertTool,
+  lastTool,
   exitConvert
 } = useQuickLook()
 const store = useSnippetStore()
 const input = ref(null)
-const listEl = ref(null)
-
-// Keep the highlighted row in view as the arrows move it — without this the
-// list stops scrolling once the selection passes the visible rows.
-watch(selected, (i) => listEl.value?.children?.[i]?.scrollIntoView({ block: 'nearest' }))
-
-// Row helpers — precomputed so the template rows stay one line each.
-const monoStyle = (it) => ({ '--fam': it.kind === 'snippet' ? mono(it.lang).family : '' })
-const monoText = (it) => (it.kind === 'snippet' ? mono(it.lang).label : '')
-const tagStyle = (it) => ({ background: store.colorOf(it.tags?.[0]) })
-const rowIcon = () => (toolsOpen.value ? 'chevron-down' : 'chevron-right')
-const kindLabel = (it) =>
-  it.kind === 'command' ? it.action : it.kind === 'tools' ? `${it.count} tools` : it.kind
-// The seam sits under the tools block, above the first snippet; selection stays
-// index-based so nav is one flat list.
-const isSectionStart = (i) =>
-  results.value[i]?.kind === 'snippet' &&
-  !!results.value[i - 1] &&
-  results.value[i - 1].kind !== 'snippet'
-const resClass = (i) => {
-  const it = results.value[i]
-  return {
-    sel: i === selected.value,
-    copied: copied.value && i === copiedIndex.value,
-    'group-start': isSectionStart(i),
-    section: it?.kind === 'tools',
-    sub: it?.kind === 'command'
-  }
-}
 
 // Per-kind preview action + lock note — snippet opens, command/tools stay local.
 // A tool speaks for itself (its own icon and action word), so the button never
@@ -101,8 +70,16 @@ watch(convertTool, (tool) => {
 
 <template>
   <div class="ql" :class="{ closing }">
-    <QuickLookConvert v-if="convertTool" :tool="convertTool" @back="exitConvert" />
-    <template v-else>
+    <!-- Mounted once and hidden, never destroyed: backing out to the list must
+         not discard what you typed into a tool. -->
+    <QuickLookConvert
+      v-if="lastTool"
+      v-show="convertTool"
+      :tool="lastTool"
+      :visible="!!convertTool"
+      @back="exitConvert"
+    />
+    <template v-if="!convertTool">
       <div class="ql-search band">
         <AppIcon name="search" class="ql-search-ico" />
         <input
@@ -119,31 +96,14 @@ watch(convertTool, (tool) => {
       </div>
 
       <div class="ql-body" :class="{ 'in-preview': zone === 'preview' }">
-        <ul ref="listEl" class="ql-results">
-          <li v-if="!results.length" class="ql-empty">No snippet or tool matches.</li>
-          <li
-            v-for="(it, i) in results"
-            :key="it.kind + it.id"
-            class="ql-res"
-            :class="resClass(i)"
-            @click="selected = i"
-            @dblclick="choose(i)"
-          >
-            <span v-if="it.kind === 'command'" class="monogram cmd"
-              ><AppIcon :name="it.icon"
-            /></span>
-            <span v-else-if="it.count" class="monogram sec"><AppIcon :name="rowIcon()" /></span>
-            <span v-else class="monogram" :style="monoStyle(it)">{{ monoText(it) }}</span>
-            <span class="ql-name">{{ it.name }}</span>
-            <span v-if="it.tags?.[0]" class="ql-tag" :style="tagStyle(it)">{{ it.tags[0] }}</span>
-            <span class="ql-kind">{{ kindLabel(it) }}</span>
-            <Transition name="ql-copychip">
-              <span v-if="copied && i === copiedIndex" class="ql-res-copied" aria-live="polite">
-                <AppIcon name="check" /> Copied
-              </span>
-            </Transition>
-          </li>
-        </ul>
+        <QuickLookResults
+          v-model:selected="selected"
+          :results="results"
+          :copied="copied"
+          :copied-index="copiedIndex"
+          :tools-open="toolsOpen"
+          @choose="choose"
+        />
 
         <div class="ql-preview">
           <template v-if="current">

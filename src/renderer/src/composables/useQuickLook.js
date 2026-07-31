@@ -97,6 +97,8 @@ export function useQuickLook() {
   // A convert tool opens the inline panel; a snippet/diff opens in the main
   // window. Convert never raises the app — the whole point of doing it here.
   const convertTool = ref(null) // { id, name, panel } | null
+  // Never cleared: keeps the panel mounted (and its input) after you back out.
+  const lastTool = ref(null)
   function exitConvert() {
     convertTool.value = null
   }
@@ -107,6 +109,7 @@ export function useQuickLook() {
     if (it.kind === 'tools') return toggleTools()
     if (it.kind === 'command') {
       convertTool.value = { id: it.id, name: it.name, panel: it.panel }
+      lastTool.value = convertTool.value
       return
     }
     window.api.quickLookOpen({ kind: it.kind, id: it.id })
@@ -250,6 +253,7 @@ export function useQuickLook() {
     refresh,
     onKeydown,
     convertTool,
+    lastTool,
     exitConvert
   }
 }
