@@ -75,7 +75,11 @@ const {
 
     <div class="body">
       <SavedDiffs />
-      <main class="content">
+      <!-- `capturing` hides the floating chrome that lives INSIDE the region the
+           image export photographs. It is a class, not a v-if: removing the
+           toast would start its fade-leave transition and the shutter would
+           catch it mid-fade. -->
+      <main class="content" :class="{ capturing: store.imageCapturing }">
         <!-- Matrix theme: code rain behind the empty state / diff area, only
              while no diff is loaded (it never sits behind a comparison). -->
         <MatrixRain
@@ -93,7 +97,8 @@ const {
           </div>
           <button
             class="btn btn-ghost swap"
-            :title="`Swap sides (${MOD}+Shift+S)`"
+            :data-tip="`Swap the left and right files (${MOD}+Shift+S)`"
+            aria-label="Swap sides"
             :disabled="!store.ready"
             @click="store.swap"
           >

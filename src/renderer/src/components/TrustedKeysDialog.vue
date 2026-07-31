@@ -81,10 +81,20 @@ function close() {
             <span class="fp">{{ k.fingerprint }}</span>
           </div>
           <span v-if="diff.lastAddedTrustedFp === k.fingerprint" class="added-badge">Added</span>
-          <button class="icon" title="Rename" @click="startRename(k)">
+          <button
+            class="icon"
+            data-tip="Rename this key"
+            aria-label="Rename"
+            @click="startRename(k)"
+          >
             <AppIcon name="edit" />
           </button>
-          <button class="icon delete" title="Remove" @click="diff.pendingUntrust = k">
+          <button
+            class="icon delete"
+            data-tip="Stop trusting this key"
+            aria-label="Remove"
+            @click="diff.pendingUntrust = k"
+          >
             <AppIcon name="x" />
           </button>
         </li>

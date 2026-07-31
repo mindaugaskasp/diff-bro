@@ -6,7 +6,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
-import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { TAG_PALETTE, useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 
 const KEY = randomBytes(32)
 const PAYLOAD = { mode: 'paste', pasteLeft: 'secret left', pasteRight: 'secret right' }
@@ -239,11 +239,46 @@ describe('vaultStore', () => {
     expect(snippets.colorOf('work')).toBeTruthy()
   })
 
+  // The format lives on `entry.format` (the row's monogram reads it). Injecting
+  // it into `tags` too made a user tag that matched the format indistinguishable
+  // from the auto one, so the row dropped it as redundant and said "Untagged".
+  it('keeps a user tag that matches the diff format, and leaves an untagged diff untagged', async () => {
+    const vault = useVaultStore()
+    const jsonDiff = { mode: 'file', left: { name: 'a.json' }, right: { name: 'b.json' } }
+    const picked = await vault.save('picked', 1, jsonDiff, ['json'])
+    const bare = await vault.save('bare', 1, jsonDiff)
+    expect(vault.entries.find((e) => e.id === picked).tags).toEqual(['json'])
+    expect(vault.entries.find((e) => e.id === bare).tags).toEqual([])
+  })
+
   it('setTags retags a saved diff in place', async () => {
     const vault = useVaultStore()
     const id = await vault.save('t', 1, PAYLOAD, ['a'])
     vault.setTags(id, ['b', 'c'])
     expect(vault.entries.find((e) => e.id === id).tags).toEqual(['b', 'c'])
+  })
+
+  it('setTags keeps the colors picked for tags the registry has never seen', async () => {
+    const vault = useVaultStore()
+    const snippets = useSnippetStore()
+    const id = await vault.save('t', 1, PAYLOAD)
+    vault.setTags(id, ['fresh'], { fresh: TAG_PALETTE[3] })
+    expect(snippets.colorOf('fresh')).toBe(TAG_PALETTE[3])
+  })
+
+  it('requestRetag opens the retag dialog on an entry and its current tags', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('t', 1, PAYLOAD, ['a'])
+    vault.requestRetag(id)
+    expect(vault.pendingRetag).toEqual({ id, name: 't', tags: ['a'] })
+    vault.cancelRetag()
+    expect(vault.pendingRetag).toBeNull()
+  })
+
+  it('requestRetag ignores an id that is no longer in the vault', () => {
+    const vault = useVaultStore()
+    vault.requestRetag('gone')
+    expect(vault.pendingRetag).toBeNull()
   })
 
   it('auto-tags an imported diff "imported"', async () => {

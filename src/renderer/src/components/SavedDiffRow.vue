@@ -8,7 +8,8 @@ import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDataDir } from '../composables/useDataDir'
-import { languageMonogram, isMappedLanguage } from '../utils/languageMonogram'
+import { languageMonogram } from '../utils/languageMonogram'
+import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 
@@ -23,17 +24,9 @@ const snippets = useSnippetStore()
 const dataDir = useDataDir()
 
 const SOON_MS = 15 * 60_000
-// Prefer the explicit format; fall back to a format-shaped tag so diffs saved
-// before the field existed still show a real monogram instead of TXT.
-const formatKey = computed(
-  () => props.entry.format || (props.entry.tags || []).find(isMappedLanguage) || null
-)
+const formatKey = computed(() => rowFormatKey(props.entry))
 const mono = computed(() => languageMonogram(formatKey.value))
-// Drop tags that restate other signals: the format (the monogram) and the local
-// "imported" auto-tag (the External section already says so).
-const shownTags = computed(() =>
-  (props.entry.tags || []).filter((t) => t !== formatKey.value && t !== 'imported')
-)
+const shownTags = computed(() => rowTags(props.entry))
 const tagColor = (t) => snippets.colorOf(t) || 'var(--text-dim)'
 
 const title = computed(() => {
@@ -67,17 +60,20 @@ async function open() {
     <button
       class="star"
       :class="{ on: entry.favorite }"
-      :data-tip="entry.favorite ? 'Unfavorite' : 'Favorite'"
+      :data-tip="entry.favorite ? 'Remove from favorites' : 'Pin to the top of the list'"
       :aria-label="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
       @click="vault.toggleFavorite(entry.id)"
     >
       <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />
     </button>
 
-    <button class="stack" :title="title" @click="open">
-      <span class="monogram" :style="{ '--fam': mono.family }" :title="formatKey || ''">{{
-        mono.label
-      }}</span>
+    <button class="stack" :data-tip="title" @click="open">
+      <span
+        class="monogram"
+        :style="{ '--fam': mono.family }"
+        :data-tip="formatKey ? `Format: ${formatKey}` : 'Plain text comparison'"
+        >{{ mono.label }}</span
+      >
       <span class="lines">
         <span class="l1">
           <span class="name">{{ entry.name }}</span>
@@ -86,7 +82,7 @@ async function open() {
         <span class="l2">
           <template v-if="entry.from">
             <span class="from">from {{ entry.from }}</span>
-            <span class="trust-mark" title="Verified — sealed by a trusted sender">
+            <span class="trust-mark" data-tip="Verified — the signature matched a key you trust">
               <AppIcon name="shield-check" />
             </span>
           </template>
@@ -105,9 +101,25 @@ async function open() {
 
     <span class="diffacts">
       <button
+        class="row-btn"
+        data-tip="Export this diff as a picture (PNG)"
+        aria-label="Export as image"
+        @click="diff.exportImage(entry.id)"
+      >
+        <AppIcon name="image" />
+      </button>
+      <button
+        class="row-btn"
+        data-tip="Edit this diff's tags"
+        aria-label="Edit tags"
+        @click="vault.requestRetag(entry.id)"
+      >
+        <AppIcon name="tag" />
+      </button>
+      <button
         v-if="!entry.from"
         class="row-btn"
-        data-tip="Share"
+        data-tip="Seal this diff for one trusted recipient"
         aria-label="Share as sealed file"
         @click="diff.shareEntry(entry.id)"
       >
@@ -115,7 +127,7 @@ async function open() {
       </button>
       <button
         class="row-btn delete"
-        data-tip="Delete"
+        data-tip="Delete this saved diff now"
         aria-label="Delete now"
         @click="vault.requestDelete(entry.id, entry.name)"
       >

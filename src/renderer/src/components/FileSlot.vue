@@ -22,7 +22,7 @@ const emit = defineEmits(['pick'])
     class="slot"
     :class="{ filled: !!file, awaiting }"
     :data-side="side"
-    :title="file ? file.path : `Choose ${side} file`"
+    :data-tip="file ? file.path : `Choose ${side} file`"
     @click="emit('pick')"
   >
     <span v-if="file" class="name">{{ file.name }}</span>

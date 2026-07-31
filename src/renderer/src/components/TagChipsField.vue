@@ -36,7 +36,7 @@ defineExpose(field)
           v-if="!readonly"
           type="button"
           class="x"
-          :title="`Remove ${t}`"
+          :data-tip="`Remove ${t}`"
           @click.stop="field.remove(t)"
         >
           <AppIcon name="x" />

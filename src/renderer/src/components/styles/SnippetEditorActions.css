@@ -1,0 +1,15 @@
+/* Action-row styles, moved here with the buttons they belong to. */
+.spacer {
+  flex: 1;
+}
+/* Copy acknowledgement: a brief success tint so the click clearly landed. */
+.btn.copied {
+  color: var(--success-text);
+  border-color: color-mix(in srgb, var(--success-text) 45%, var(--border));
+}
+/* Armed clear: a danger cue so the second, destructive click is deliberate. */
+.btn.armed {
+  border-color: var(--danger-border);
+  color: var(--danger-bg);
+  font-weight: 600;
+}

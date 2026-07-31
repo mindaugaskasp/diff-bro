@@ -158,3 +158,24 @@
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* Secret toggle: an inline checkbox row, overriding the stacked column layout
+   the dialog gives its other labels (same shape as the save dialog's Secure). */
+.secret-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+.secret-toggle input[type='checkbox'] {
+  width: auto;
+  min-width: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.secret-toggle strong {
+  font-weight: 700;
+}

@@ -131,3 +131,9 @@
 .row-btn.delete:hover {
   color: var(--danger-bg);
 }
+
+/* Lock beside the monogram: this row's contents never render anywhere. */
+.secret-mark {
+  flex: none;
+  color: var(--text-hint);
+}

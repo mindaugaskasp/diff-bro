@@ -61,7 +61,7 @@ async function copy(text) {
   <div class="te" :class="{ compact }">
     <div class="te-now">
       <span class="te-now-l"><AppIcon name="clock" class="te-tick" /> Now</span>
-      <button class="te-now-v" :title="`Copy ${live}`" @click="copy(live)">{{ live }}</button>
+      <button class="te-now-v" :data-tip="`Copy ${live}`" @click="copy(live)">{{ live }}</button>
     </div>
 
     <div class="te-controls">

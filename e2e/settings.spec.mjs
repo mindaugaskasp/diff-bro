@@ -8,7 +8,7 @@ test.describe('Settings domain panes', () => {
     await openSettings(page)
 
     // Appearance is the default pane: theme swatches + the shortcut-bar toggle.
-    await expect(page.getByTitle('Use the Light theme')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Use the Light theme' })).toBeVisible()
     await expect(page.getByText('Show the keyboard-shortcut bar over diffs')).toBeVisible()
     // Other panes' content is not mounted yet.
     await expect(page.getByRole('heading', { name: 'Data folder' })).toBeHidden()
@@ -16,7 +16,7 @@ test.describe('Settings domain panes', () => {
     // Storage pane.
     await page.getByRole('button', { name: 'Storage', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Data folder' })).toBeVisible()
-    await expect(page.getByTitle('Use the Light theme')).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Use the Light theme' })).toBeHidden()
 
     // Limits pane (per-file-type size caps).
     await page.getByRole('button', { name: 'Limits', exact: true }).click()

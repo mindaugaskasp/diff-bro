@@ -4,7 +4,10 @@ import {
   useSettingsStore,
   SECTIONS,
   FILE_TYPE_LIMITS,
-  MAX_SNIPPET_SIZE_KB_CAP
+  MAX_SNIPPET_SIZE_KB_CAP,
+  DEFAULT_MAX_EXPORT_HEIGHT_PX,
+  MAX_EXPORT_HEIGHT_PX_CAP,
+  MIN_EXPORT_HEIGHT_PX
 } from '../../../src/renderer/src/stores/settingsStore'
 import { MAX_RECENT_TOOLS, recentTools } from '../../../src/renderer/src/utils/tools'
 
@@ -96,6 +99,26 @@ describe('settingsStore', () => {
     expect(s.maxSnippetSizeKb).toBeGreaterThan(0)
     s.setMaxSnippetSizeKb(10_000_000)
     expect(s.maxSnippetSizeKb).toBe(MAX_SNIPPET_SIZE_KB_CAP)
+  })
+
+  it('clamps the diff-image height to its safe range, and survives a reload', () => {
+    const s = useSettingsStore()
+    expect(s.maxExportHeightPx).toBe(DEFAULT_MAX_EXPORT_HEIGHT_PX)
+    s.setMaxExportHeightPx('not a number')
+    expect(s.maxExportHeightPx).toBe(DEFAULT_MAX_EXPORT_HEIGHT_PX)
+    s.setMaxExportHeightPx(999_999)
+    expect(s.maxExportHeightPx).toBe(MAX_EXPORT_HEIGHT_PX_CAP)
+    s.setMaxExportHeightPx(1)
+    expect(s.maxExportHeightPx).toBe(MIN_EXPORT_HEIGHT_PX)
+
+    s.setMaxExportHeightPx(6500)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().maxExportHeightPx).toBe(6500)
+  })
+
+  it('rejects a hand-edited diff-image height outside the range', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ maxExportHeightPx: 5_000_000 }))
+    expect(useSettingsStore().maxExportHeightPx).toBe(MAX_EXPORT_HEIGHT_PX_CAP)
   })
 
   it('migrates the pre-per-type maxComparisonFileMb into the text limit', () => {

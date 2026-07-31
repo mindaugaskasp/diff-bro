@@ -33,7 +33,12 @@ defineExpose({
       :readonly="readonly"
       @keydown="$emit('keydown', $event)"
     />
-    <button class="btn btn-icon ql-add" title="New plaintext snippet" @click="$emit('add')">
+    <button
+      class="btn btn-icon ql-add"
+      data-tip="Capture a new plaintext snippet"
+      aria-label="New plaintext snippet"
+      @click="$emit('add')"
+    >
       <AppIcon name="plus" />
     </button>
     <span class="ql-kbd">Esc</span>

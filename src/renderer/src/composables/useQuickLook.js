@@ -1,5 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
+import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
 import { rank } from '../utils/quickLook'
 import { convertItems } from '../utils/quickLookCommands'
 import { isMac } from '../keys'
@@ -34,6 +35,7 @@ export function useQuickLook() {
           id: e.id,
           name: e.name,
           tags: e.tags ?? [],
+          secret: isSecret(e),
           lang: lang === 'plaintext' ? '' : lang
         }
       })
@@ -89,6 +91,11 @@ export function useQuickLook() {
     zone.value = 'list' // a new (or diff) selection can't stay in snippet-scroll
     preview.reset()
     if (it?.kind !== 'snippet') return
+    // A secret is never decrypted to be previewed — only to be copied.
+    if (it.secret) {
+      snippetText.value = SECRET_MASK
+      return
+    }
     const text = await snippets.load(it.id)
     if (current.value?.id === it.id && typeof text === 'string') {
       snippetText.value = text.slice(0, MAX_PREVIEW_CHARS)

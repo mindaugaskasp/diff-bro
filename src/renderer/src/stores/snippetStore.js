@@ -80,13 +80,20 @@ function tagsFromCategories(categories) {
 
 // Coerce name/tags so old/partial data can't throw the sidebar's unguarded field
 // access (not in the AAD, so decryption is unaffected).
+const entryName = (e) =>
+  typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled snippet')
+const entryTags = (e) => (Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : [])
+
 function normalizeEntry(e) {
   return {
     ...e,
     // Pre-existing snippets have never been edited, so they date from creation.
     updatedAt: Number.isFinite(e?.updatedAt) ? e.updatedAt : e?.createdAt,
-    name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled snippet'),
-    tags: Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : []
+    name: entryName(e),
+    // Only a real `true` masks: a hand-edited store must not be able to unmask a
+    // secret with a missing field, nor mask one with a stray truthy value.
+    secret: e?.secret === true,
+    tags: entryTags(e)
   }
 }
 
@@ -257,7 +264,7 @@ export const useSnippetStore = defineStore('snippets', {
         initialTags: []
       }
     },
-    async add({ name, content, language, tags = [], tagColors = {} }) {
+    async add({ name, content, language, tags = [], tagColors = {}, secret = false }) {
       const id = crypto.randomUUID()
       const createdAt = Date.now()
       const aadSalt = crypto.randomUUID()
@@ -283,6 +290,9 @@ export const useSnippetStore = defineStore('snippets', {
         detected,
         vars: promptVars(eff, content),
         favorite: false,
+        // Display-only: the contents are already encrypted at rest, so this
+        // decides what gets drawn, never what gets stored (see secretSnippet.js).
+        secret: secret === true,
         tags: applied,
         iv: box.iv,
         data: box.data
@@ -339,7 +349,7 @@ export const useSnippetStore = defineStore('snippets', {
     },
     // tags optional; the AAD is unchanged, so this is a metadata + content
     // update, no re-key.
-    async update(id, { name, content, language, tags, tagColors = {} }) {
+    async update(id, { name, content, language, tags, tagColors = {}, secret }) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
       const box = await window.api.vaultEncrypt(
@@ -356,6 +366,7 @@ export const useSnippetStore = defineStore('snippets', {
       if (language) entry.language = language
       entry.vars = promptVars(languageOf(entry), content)
       if (tags !== undefined) entry.tags = this.registerTags(tags, tagColors)
+      if (secret !== undefined) entry.secret = secret === true
       entry.iv = box.iv
       entry.data = box.data
       // createdAt is in the AAD and must never move; this is the mutable half.
@@ -440,6 +451,9 @@ export const useSnippetStore = defineStore('snippets', {
             name: entry.name,
             content,
             language: entry.language ?? 'auto',
+            // Carried so a restored secret comes back masked; a bundle that
+            // dropped the flag would silently expose it on the other side.
+            secret: entry.secret === true,
             tags: [...entry.tags]
           })
         }
@@ -464,6 +478,7 @@ export const useSnippetStore = defineStore('snippets', {
           name: s.name,
           content: s.content,
           language: s.language,
+          secret: s.secret === true,
           tags: Array.isArray(s.tags) ? s.tags : []
         })
       }

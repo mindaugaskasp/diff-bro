@@ -6,6 +6,14 @@ import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
+import {
+  afterFrames,
+  captureRectOf,
+  captureRegionOf,
+  planSlices,
+  untilChanged
+} from '../utils/captureTarget'
+import { getDiffScroller } from '../utils/diffScroller'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
@@ -100,6 +108,11 @@ function comparedSides(s) {
   return [s.left ?? { name: 'Left', content: '' }, s.right ?? { name: 'Right', content: '' }]
 }
 
+// Frames to let Monaco lay out and tokenize a restored diff before the shot.
+const CAPTURE_FRAMES = 4
+// Frames for a scrolled viewport to render its new lines between slices.
+const SCROLL_FRAMES = 3
+
 // Menu action → store effect. The single list of everything a menu can trigger
 // (named by the accelerators in menu.js / MenuBar.vue).
 const MENU_ACTIONS = {
@@ -114,6 +127,7 @@ const MENU_ACTIONS = {
   'copy-diff': (s) => s.copyDiff(),
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
+  'export-image': (s) => s.exportCurrentImage(),
   'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
@@ -209,6 +223,15 @@ export const useDiffStore = defineStore('diff', {
     paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
+    // Image export of a SAVED diff: { id, name, dataUrl, width, height } while
+    // the preview is open, null when closed. See exportImage().
+    imageEntry: null,
+    // True between opening the saved diff and taking its picture, so the app can
+    // stay out of the shot (no dialog, no toast) while the shutter is open.
+    imageCapturing: false,
+    // Bumped by DiffViewer on every onDidUpdateDiff — the only honest signal
+    // that Monaco's diff worker has returned and its decorations are painted.
+    diffRevision: 0,
     // Content last dismissed per side, so the format-hint banner stays gone until
     // that side's content changes.
     dismissedFormatHint: { left: null, right: null }
@@ -222,6 +245,9 @@ export const useDiffStore = defineStore('diff', {
         : !!(s.left || s.right),
     // Two sides that diff to nothing — an affirmative "identical" state.
     identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
+    // A comparison is actually on screen to photograph. Paste mode shows two
+    // textareas, not a diff, so there is nothing to take a picture of there.
+    canExportImage: (s) => s.mode !== 'paste' && !!s.left && !!s.right,
     canSave: (s) =>
       s.mode === 'paste'
         ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
@@ -303,6 +329,113 @@ export const useDiffStore = defineStore('diff', {
       }
       const res = await window.api.exportDiffHtml({ html, name: `${l.name}-vs-${r.name}` })
       if (res?.ok) this.showNotice('Exported diff to HTML.')
+    },
+    // Export a SAVED diff as a picture of the app's own diff view: the entry is
+    // opened first, so the screenshot shows the real thing, with this theme's
+    // colours and Monaco's highlighting, rather than a redrawn approximation
+    // that would drift from the app.
+    async exportImage(id) {
+      const vault = useVaultStore()
+      const entry = vault.entries.find((e) => e.id === id)
+      if (!entry) return
+      const payload = await vault.load(id)
+      if (!payload) {
+        return this.showNotice('This saved diff has expired or could not be decrypted.')
+      }
+      this.restore(payload)
+      // Restoring replaces the models, so there is never a selection to honour.
+      const res = await this._shoot({ awaitRediff: true })
+      if (res?.error) return this.showNotice('Could not take a picture of this diff.')
+      this.imageEntry = { id, name: entry.name, ...res }
+    },
+    // Export what is on screen right now, saved or not. Lines selected in either
+    // pane narrow the picture to just those; with none it covers the whole diff.
+    async exportCurrentImage() {
+      if (!this.canExportImage) return this.showNotice('Nothing to export yet.')
+      const res = await this._shoot({ band: getDiffScroller()?.selection() ?? null })
+      if (res?.error) return this.showNotice('Could not take a picture of this diff.')
+      const [l, r] = comparedSides(this)
+      this.imageEntry = { id: null, name: `${l.name} ↔ ${r.name}`, ...res }
+    },
+    // The shutter. `finally` matters: a stuck imageCapturing would leave the
+    // shortcut bar hidden for the rest of the session.
+    async _shoot({ band = null, awaitRediff = false } = {}) {
+      this.imageCapturing = true
+      try {
+        // Only a restore re-diffs, and that must land and paint before the shot
+        // — counting frames alone photographed the previous diff, or this one
+        // with no highlights. Waiting for a re-diff that isn't coming would just
+        // burn the timeout, so exporting what's already on screen skips it.
+        if (awaitRediff) await untilChanged(() => this.diffRevision)
+        await afterFrames(CAPTURE_FRAMES)
+        return await this._shootRegion(band)
+      } catch {
+        return { error: 'capture-failed' }
+      } finally {
+        this.imageCapturing = false
+      }
+    },
+    // One shot when the whole diff fits its pane, scroll-and-stitch otherwise.
+    // A band always takes the sliced path: the single-shot rect starts at the
+    // top of the column, which is exactly what a chosen range is not.
+    async _shootRegion(band) {
+      const scroller = getDiffScroller()
+      const region = scroller && captureRegionOf()
+      const plan = region ? this._planShots(scroller, band) : { slices: [], truncated: false }
+      if (plan.slices.length > 1 || (band && plan.slices.length)) {
+        return this._shootTall(plan, region, scroller)
+      }
+      if (band) return { error: 'no-view' }
+      // Short diff, or a viewer with no Monaco behind it (the spreadsheet grid):
+      // captureRectOf already crops the empty pane away.
+      const rect = captureRectOf()
+      return rect ? window.api.captureDiffImage(rect) : { error: 'no-view' }
+    },
+    _planShots(scroller, band) {
+      return planSlices({
+        contentHeight: scroller.contentHeight(),
+        viewportHeight: scroller.viewportHeight(),
+        maxHeight: useSettingsStore().maxExportHeightPx,
+        from: band?.top ?? 0,
+        to: band?.bottom
+      })
+    },
+    async _shootTall(plan, region, scroller) {
+      const was = scroller.scrollTop()
+      const { x, width, y: top } = region.content
+      const headerHeight = region.editorY - top
+      try {
+        for (const [i, s] of plan.slices.entries()) {
+          scroller.scrollTo(s.scrollTop)
+          await afterFrames(SCROLL_FRAMES)
+          const rect =
+            i === 0
+              ? { x, y: top, width, height: headerHeight + s.height }
+              : { x, y: region.editorY + s.offsetY, width, height: s.height }
+          const added = await window.api.appendDiffImageSlice(rect, i === 0)
+          if (added?.error) return added
+        }
+      } finally {
+        scroller.scrollTo(was)
+      }
+      const shot = await window.api.stitchDiffImage()
+      return shot?.error ? shot : { ...shot, truncated: plan.truncated }
+    },
+    closeImageExport() {
+      this.imageEntry = null
+      window.api.forgetDiffImage()
+    },
+    // Both act on the capture main is still holding — no image bytes are sent
+    // back across the boundary to be re-decoded.
+    async copyImage() {
+      const res = await window.api.copyDiffImage()
+      this.showNotice(res?.ok ? 'Diff image copied to clipboard.' : 'Could not copy the image.')
+      return !!res?.ok
+    },
+    async saveImage() {
+      const res = await window.api.saveDiffImage(this.imageEntry?.name ?? 'diff')
+      if (res?.ok) this.showNotice(`Saved diff image to ${res.path}`)
+      else if (!res?.canceled) this.showNotice('Could not save the image.')
     },
     // Orchestrates the snippet import (the work + validation live in the snippet
     // store / parser) and reports the outcome through the shared notice.
@@ -676,6 +809,9 @@ export const useDiffStore = defineStore('diff', {
       }
     },
     restore(payload) {
+      // The incoming diff has not been computed yet; keeping the outgoing one's
+      // counts would caption it with another comparison's numbers.
+      this.stats = null
       this.left = payload.left
       this.right = payload.right
       this.pasteLeft = payload.pasteLeft ?? ''

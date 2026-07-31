@@ -41,6 +41,14 @@
   position: relative;
   isolation: isolate;
 }
+/* Image export in progress: the toast and the shortcut bar float over the diff
+   column, which is exactly the region being photographed, so they leave the
+   frame. display:none applies on the next style recalc with no transition to
+   catch — a v-if would fade out and land in the shot. */
+.content.capturing .notice,
+.content.capturing :deep(.shortcut-bar) {
+  display: none;
+}
 .empty {
   height: 100%;
   display: flex;

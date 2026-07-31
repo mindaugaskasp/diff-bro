@@ -111,7 +111,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
           type="button"
           class="dialog-close"
           aria-label="Close"
-          title="Close"
+          data-tip="Close"
           @click="emit('close')"
         >
           <AppIcon name="x" />

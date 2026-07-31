@@ -87,16 +87,30 @@ onBeforeUnmount(() => {
       <div class="head">
         <span class="title">{{ view.name || 'Diagram' }}</span>
         <div class="tools">
-          <button class="tbtn" title="Zoom out" @click="zoom(1 / 1.2)">
+          <button class="tbtn" data-tip="Zoom out" aria-label="Zoom out" @click="zoom(1 / 1.2)">
             <AppIcon name="minus" />
           </button>
           <span class="pct" @click="fit">{{ pct }}%</span>
-          <button class="tbtn" title="Zoom in" @click="zoom(1.2)"><AppIcon name="plus" /></button>
-          <button class="tbtn wide" title="Fit to window" @click="fit">Fit</button>
-          <button class="tbtn" :title="maxed ? 'Restore size' : 'Maximize'" @click="toggleMaxed">
+          <button class="tbtn" data-tip="Zoom in" aria-label="Zoom in" @click="zoom(1.2)">
+            <AppIcon name="plus" />
+          </button>
+          <button class="tbtn wide" data-tip="Scale the diagram to fit the window" @click="fit">
+            Fit
+          </button>
+          <button
+            class="tbtn"
+            :data-tip="maxed ? 'Restore the previous size' : 'Fill the window'"
+            :aria-label="maxed ? 'Restore size' : 'Maximize'"
+            @click="toggleMaxed"
+          >
             <AppIcon :name="maxed ? 'restore' : 'maximize'" />
           </button>
-          <button class="tbtn close" title="Close (Esc)" @click="close">
+          <button
+            class="tbtn close"
+            data-tip="Close the viewer (Esc)"
+            aria-label="Close"
+            @click="close"
+          >
             <AppIcon name="x" />
           </button>
         </div>

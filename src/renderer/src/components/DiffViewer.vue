@@ -2,8 +2,10 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
-import { makeSearch } from '../composables/useDiffSearch'
+import { makeSearch, SEARCH_OPTIONS } from '../composables/useDiffSearch'
 import { isDarkTheme } from '../utils/themes'
+import { diffLineStats } from '../utils/diffStats'
+import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
@@ -59,17 +61,13 @@ onMounted(() => {
   origDecos = editor.getOriginalEditor().createDecorationsCollection([])
   modDecos = editor.getModifiedEditor().createDecorationsCollection([])
   editor.onDidUpdateDiff(() => {
-    const changes = editor.getLineChanges() ?? []
-    let additions = 0
-    let deletions = 0
-    for (const c of changes) {
-      if (c.modifiedEndLineNumber > 0)
-        additions += c.modifiedEndLineNumber - c.modifiedStartLineNumber + 1
-      if (c.originalEndLineNumber > 0)
-        deletions += c.originalEndLineNumber - c.originalStartLineNumber + 1
-    }
-    store.stats = { additions, deletions }
+    const stats = diffLineStats(editor.getLineChanges())
+    store.stats = stats
+    // Monaco fires this once before its worker has returned anything; that is
+    // not a diff to report, to call identical, or to photograph.
+    if (stats) store.diffRevision++
   })
+  setDiffScroller(monacoDiffScroller(() => editor))
   setModels()
 })
 
@@ -94,6 +92,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  setDiffScroller(null)
   // Editor first (releases its models); disposing attached models throws.
   editor?.dispose()
   leftModel?.dispose()
@@ -130,17 +129,15 @@ onBeforeUnmount(() => {
             @keyup.escape="s.ref.query = ''"
           />
         </div>
-        <label class="opt" title="Match case">
-          <input v-model="s.ref.matchCase" type="checkbox" />
-          Aa
-        </label>
-        <label class="opt" title="Whole word">
-          <input v-model="s.ref.wholeWord" type="checkbox" />
-          W
-        </label>
-        <label class="opt" title="Regular expression (limited for safety)">
-          <input v-model="s.ref.isRegex" type="checkbox" />
-          .*
+        <label
+          v-for="o in SEARCH_OPTIONS"
+          :key="o.key"
+          class="opt"
+          :data-tip="o.tip"
+          :aria-label="o.label"
+        >
+          <input v-model="s.ref[o.key]" type="checkbox" />
+          {{ o.glyph }}
         </label>
         <span class="count">
           <template v-if="s.ref.error">bad regex</template>
@@ -152,12 +149,19 @@ onBeforeUnmount(() => {
         <button
           class="nav"
           :disabled="!s.ref.matchCount"
-          title="Previous match"
+          data-tip="Jump to the previous match"
+          aria-label="Previous match"
           @click="s.ref.step(-1)"
         >
           <AppIcon name="chevron-left" />
         </button>
-        <button class="nav" :disabled="!s.ref.matchCount" title="Next match" @click="s.ref.step(1)">
+        <button
+          class="nav"
+          :disabled="!s.ref.matchCount"
+          data-tip="Jump to the next match (or press Enter in the box)"
+          aria-label="Next match"
+          @click="s.ref.step(1)"
+        >
           <AppIcon name="chevron-right" />
         </button>
       </div>

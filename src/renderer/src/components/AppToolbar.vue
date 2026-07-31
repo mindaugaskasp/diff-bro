@@ -45,14 +45,14 @@ const pasteToggleTitle = computed(() =>
         <button
           class="btn btn-ghost"
           :class="{ active: inPaste }"
-          :title="pasteToggleTitle"
+          :data-tip="pasteToggleTitle"
           @click="store.togglePasteMode"
         >
           {{ pasteToggleLabel }}
         </button>
         <button
           class="btn btn-primary"
-          :title="`Save this diff, encrypted and auto-expiring (${MOD}+S)`"
+          :data-tip="`Save this diff, encrypted and auto-expiring (${MOD}+S)`"
           :disabled="!store.canSave"
           @click="store.showSaveDialog = true"
         >
@@ -60,7 +60,7 @@ const pasteToggleTitle = computed(() =>
         </button>
         <button
           class="btn btn-ghost"
-          title="Share this diff as a sealed file for one trusted recipient"
+          data-tip="Share this diff as a sealed file for one trusted recipient"
           :disabled="!store.canSave"
           @click="store.shareCurrent()"
         >
@@ -68,7 +68,7 @@ const pasteToggleTitle = computed(() =>
         </button>
         <button
           class="btn btn-ghost"
-          :title="
+          :data-tip="
             store.comparableKind === 'text'
               ? `Copy this diff as a unified patch (${MOD}+Shift+C)`
               : 'Copy diff is only available for text comparisons'
@@ -80,7 +80,19 @@ const pasteToggleTitle = computed(() =>
         </button>
         <button
           class="btn btn-ghost"
-          :title="`Clear both files (${MOD}+K)`"
+          :data-tip="
+            store.canExportImage
+              ? 'Export this diff as an image — select lines first to capture just those'
+              : 'Load two files to export an image'
+          "
+          :disabled="!store.canExportImage"
+          @click="store.exportCurrentImage()"
+        >
+          <AppIcon name="image" /> Image
+        </button>
+        <button
+          class="btn btn-ghost"
+          :data-tip="`Clear both files (${MOD}+K)`"
           :disabled="!store.left && !store.right"
           @click="store.clear"
         >

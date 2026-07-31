@@ -66,7 +66,7 @@ const clearLabel = computed(() =>
       <button
         class="btn btn-ghost"
         :class="{ armed: clearArmed }"
-        :title="
+        :data-tip="
           clearArmed
             ? 'Click again to permanently delete every log file'
             : 'Delete all local log files'

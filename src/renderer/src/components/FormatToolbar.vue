@@ -20,7 +20,7 @@ defineEmits(['action'])
       type="button"
       class="fmt-btn"
       :class="{ 'fmt-btn-text': a.text }"
-      :title="a.title"
+      :data-tip="a.title"
       :aria-label="a.title"
       @mousedown.prevent
       @click="$emit('action', a.id)"

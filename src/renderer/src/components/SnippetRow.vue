@@ -11,6 +11,7 @@ import { parseTemplateVars } from '../utils/templateVars'
 import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
+import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
@@ -83,7 +84,10 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
     </button>
     <button class="entry" @click="store.editingSnippet = { id: entry.id }">
-      <span class="monogram" :style="{ '--fam': mono.family }" :title="lang">{{ mono.label }}</span>
+      <span class="monogram" :style="{ '--fam': mono.family }" :data-tip="`Language: ${lang}`">{{
+        mono.label
+      }}</span>
+      <AppIcon v-if="isSecret(entry)" class="secret-mark" name="lock" :data-tip="SECRET_NOTICE" />
       <span
         class="nm"
         @mouseenter="$emit('hoverTitle', $event)"
@@ -93,7 +97,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <span
         v-if="entry.vars?.length"
         class="varchip"
-        :title="`${entry.vars.length} variable${entry.vars.length > 1 ? 's' : ''} to fill on copy: ${entry.vars.join(', ')}`"
+        :data-tip="`${entry.vars.length} placeholder${entry.vars.length > 1 ? 's' : ''} you're asked to fill when copying: ${entry.vars.join(', ')}`"
       >
         <AppIcon name="braces" />{{ entry.vars.length }}
       </span>

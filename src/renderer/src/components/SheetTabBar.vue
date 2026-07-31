@@ -18,7 +18,7 @@ defineEmits(['select'])
       :class="{ active: i === active, missing: sheet.present !== 'both' }"
       role="tab"
       :aria-selected="i === active"
-      :title="
+      :data-tip="
         sheet.present === 'left'
           ? 'Only in the left file'
           : sheet.present === 'right'

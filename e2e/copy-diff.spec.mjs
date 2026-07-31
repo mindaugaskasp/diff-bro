@@ -63,7 +63,9 @@ test('pasted content is syntax-highlighted via content detection', async ({ page
         const set = new Set()
         document
           .querySelectorAll('.diff-container .view-lines span[class*="mtk"]')
-          .forEach((s) => s.className.split(/\s+/).forEach((c) => c.startsWith('mtk') && set.add(c)))
+          .forEach((s) =>
+            s.className.split(/\s+/).forEach((c) => c.startsWith('mtk') && set.add(c))
+          )
         return set.size
       })
     )

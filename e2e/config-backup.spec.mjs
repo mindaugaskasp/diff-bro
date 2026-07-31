@@ -1,6 +1,13 @@
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { test, expect, openSettings, openMenu, stubSaveDialog, stubOpenDialog } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openSettings,
+  openMenu,
+  stubSaveDialog,
+  stubOpenDialog
+} from './fixtures.mjs'
 
 // Config backup seals identity keys, trusted hosts, snippets and settings into
 // one passphrase-encrypted file; restore applies it back. The crypto is
@@ -11,7 +18,7 @@ test('backing up then restoring recovers the saved settings', async ({ app, page
 
   // A distinctive theme to carry through the backup.
   await openSettings(page)
-  await page.getByTitle('Use the Neon theme').click()
+  await page.getByRole('button', { name: 'Use the Neon theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'neon')
   await page.keyboard.press('Escape')
 

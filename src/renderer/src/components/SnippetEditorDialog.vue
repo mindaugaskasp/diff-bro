@@ -9,15 +9,14 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
-import { useArmedAction } from '../composables/useArmedAction'
-import { useCopyFeedback } from '../composables/useCopyFeedback'
 import TagChipsField from './TagChipsField.vue'
+import SnippetEditorActions from './SnippetEditorActions.vue'
+import SnippetSecretMask from './SnippetSecretMask.vue'
 import MermaidPreview from './MermaidPreview.vue'
 import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
 import BaseDialog from './BaseDialog.vue'
-import AppIcon from './AppIcon.vue'
 
 const languages = SNIPPET_LANGUAGES
 const settings = useSettingsStore()
@@ -29,6 +28,9 @@ const {
   isNew,
   name,
   content,
+  secret,
+  masked,
+  toggleReveal,
   saving,
   initialTags,
   chosenLanguage,
@@ -74,18 +76,17 @@ function applyAction(id) {
   applySelectionEdit((model) => apply(id, model))
 }
 
-// Clearing can discard a lot of typing, so it is a two-step confirm.
-const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => reset(''))
-const clearTitle = computed(() =>
-  clearArmed.value
-    ? 'Click again to clear the editor'
-    : 'Clear the editor (e.g. remove pasted content)'
-)
-
-// Inline "Copied" acknowledgement on the button — a toast sits behind the modal.
-const { copied, flash } = useCopyFeedback()
+// The action row owns its own copy/clear feedback; this is its handle for the
+// "Copied" flash, which only fires once the clipboard write actually succeeded.
+const actions = ref(null)
 async function copyAndFlash() {
-  if (await copyContent()) flash()
+  if (await copyContent()) actions.value?.flash()
+}
+// Revealing has to relayout Monaco: it was hidden behind the mask, so it
+// measured itself at zero and would otherwise come back blank.
+function revealAndLayout() {
+  toggleReveal()
+  nextTick(layout)
 }
 
 // A file dropped on the editor loads its contents.
@@ -127,6 +128,13 @@ function saveSnippet() {
       </label>
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />
+    <label
+      class="secret-toggle"
+      data-tip="Keep the contents masked everywhere; copying still works"
+    >
+      <input v-model="secret" type="checkbox" :disabled="readOnly" />
+      <span><strong>Secret</strong> — hide the contents behind ****</span>
+    </label>
     <div class="editor-header">
       <span>Content <span v-if="editMode" class="drop-hint">— or drop a file here</span></span>
       <div class="editor-controls">
@@ -154,60 +162,35 @@ function saveSnippet() {
       @dragover.capture.prevent.stop
       @drop.capture.prevent.stop="editMode && onDropFile($event)"
     >
-      <div v-show="!hasPreview || plain" ref="container" class="editor"></div>
-      <JiraRendered v-if="isJira && !plain" class="editor rendered" :content="content" />
-      <MarkdownRendered v-if="isMarkdown && !plain" class="editor rendered" :content="content" />
+      <div v-if="(!hasPreview || plain) && !masked" ref="container" class="editor"></div>
+      <JiraRendered v-if="isJira && !plain && !masked" class="editor rendered" :content="content" />
+      <MarkdownRendered
+        v-if="isMarkdown && !plain && !masked"
+        class="editor rendered"
+        :content="content"
+      />
+      <SnippetSecretMask v-if="masked" />
     </div>
     <p v-if="editMode && !content.trim()" class="required-hint">A snippet needs content to save.</p>
-    <MermaidPreview v-if="isMermaid" :code="content" @expand="expandDiagram" />
+    <MermaidPreview v-if="isMermaid && !masked" :code="content" @expand="expandDiagram" />
     <template #actions>
-      <button
-        v-if="editMode"
-        class="btn btn-sm btn-ghost"
-        :disabled="!canFormat"
-        :title="
-          canFormat
-            ? `Pretty-print as ${language.toUpperCase()}`
-            : 'Formatting is available for JSON, XML, or SQL'
-        "
-        @click="formatContent"
-      >
-        Format
-      </button>
-      <button
-        class="btn btn-sm btn-ghost"
-        :class="{ copied }"
-        :disabled="!content"
-        :title="copied ? 'Copied to clipboard' : 'Copy content'"
-        @click="copyAndFlash"
-      >
-        {{ copied ? 'Copied' : 'Copy' }}
-      </button>
-      <button
-        v-if="editMode"
-        class="btn btn-sm btn-ghost"
-        :class="{ armed: clearArmed }"
-        :disabled="!content"
-        :title="clearTitle"
-        @click="content && clearContent()"
-      >
-        {{ clearArmed ? 'Confirm clear' : 'Clear' }}
-      </button>
-      <span class="spacer" />
-      <button v-if="!editMode" class="btn btn-primary" @click="startEditing">
-        <AppIcon name="edit" /> Edit
-      </button>
-      <button
-        v-else
-        class="btn btn-primary"
-        :disabled="!name.trim() || !content.trim() || saving"
-        @click="saveSnippet"
-      >
-        Save
-      </button>
-      <button class="btn btn-ghost" @click="requestClose">
-        {{ editMode ? 'Cancel' : 'Close' }}
-      </button>
+      <SnippetEditorActions
+        ref="actions"
+        :edit-mode="editMode"
+        :can-format="canFormat"
+        :language="language"
+        :has-content="!!content"
+        :can-save="!!name.trim() && !!content.trim() && !saving"
+        :secret="secret"
+        :masked="masked"
+        @format="formatContent"
+        @copy="copyAndFlash"
+        @clear="reset('')"
+        @reveal="revealAndLayout"
+        @edit="startEditing"
+        @save="saveSnippet"
+        @close="requestClose"
+      />
     </template>
 
     <!-- Unsaved-changes guard: shown over the actions when a dirty draft is

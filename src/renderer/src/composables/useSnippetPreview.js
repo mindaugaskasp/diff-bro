@@ -1,5 +1,6 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
+import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
 import { useDiffStore } from '../stores/diffStore'
 
 // Hover preview: decrypt on demand, debounced (only the row the pointer settles
@@ -41,11 +42,16 @@ export function useSnippetPreview() {
     const row = e.currentTarget.closest?.('[data-preview-anchor]') ?? e.currentTarget
     hoverTimer = setTimeout(async () => {
       pendingId = entry.id
-      let text = cache.get(entry.id)
-      if (text === undefined) {
-        text = await store.load(entry.id)
-        if (text == null) return // key unavailable / dropped — no preview
-        cache.set(entry.id, text)
+      // A secret is never decrypted for a preview at all — the plaintext has no
+      // reason to exist here, so it never reaches the cache or the card.
+      let text = SECRET_MASK
+      if (!isSecret(entry)) {
+        text = cache.get(entry.id)
+        if (text === undefined) {
+          text = await store.load(entry.id)
+          if (text == null) return // key unavailable / dropped — no preview
+          cache.set(entry.id, text)
+        }
       }
       if (pendingId !== entry.id) return // pointer already moved on
       const lang = languageOf(entry)
@@ -55,6 +61,7 @@ export function useSnippetPreview() {
         tags: entry.tags,
         // plaintext is the boring default — no badge for it.
         lang: lang === 'plaintext' ? '' : lang,
+        secret: isSecret(entry),
         text: text.slice(0, MAX_PREVIEW_CHARS),
         style: cardStyle(row)
       }
@@ -79,7 +86,7 @@ export function useSnippetPreview() {
   }
   // Reload the full source (the preview text is truncated) for the viewer.
   async function openDiagram() {
-    if (!preview.value) return
+    if (!preview.value || preview.value.secret) return
     const { id, name } = preview.value
     preview.value = null
     const code = await store.load(id)

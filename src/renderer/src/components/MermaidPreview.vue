@@ -15,7 +15,7 @@ defineEmits(['expand'])
         type="button"
         class="btn btn-sm btn-ghost"
         :disabled="!code.trim()"
-        title="Open the full, resizable diagram viewer"
+        data-tip="Open the full, resizable diagram viewer"
         @click="$emit('expand')"
       >
         <AppIcon name="expand" /> Expand
