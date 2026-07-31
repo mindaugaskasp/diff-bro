@@ -113,3 +113,30 @@ test('the tools shelf has equal space above and below its chips', async ({ page 
   })
   expect(pad.top, `top ${pad.top} vs bottom ${pad.bottom}`).toBe(pad.bottom)
 })
+
+// Saved-diff rows: the actions crowded the name at rest, the delete glyph was a
+// bare ✕ rather than the trash the rest of the app uses, and non-expiring diffs
+// carried a "kept" label that said nothing a blank space would not.
+test('saved-diff actions stay out of the way until the row is hovered', async ({ page }) => {
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByPlaceholder('Paste original text here').fill('a')
+  await page.getByPlaceholder('Paste changed text here').fill('b')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const save = page.getByRole('dialog', { name: 'Save diff' })
+  await save.getByLabel('Name', { exact: true }).fill('Row spacing')
+  await save.getByRole('button', { name: 'Save', exact: true }).click()
+
+  const row = page.locator('li.diff', { hasText: 'Row spacing' })
+  await expect(row).toBeVisible()
+
+  // At rest the actions are hidden, so the name gets the width.
+  await expect(row.getByRole('button', { name: 'Delete now' })).toBeHidden()
+  await expect(row).not.toContainText('kept')
+
+  await row.hover()
+  const del = row.getByRole('button', { name: 'Delete now' })
+  await expect(del).toBeVisible()
+  // The trash icon, like every other delete in the app.
+  await expect(del.locator('svg path').first()).toHaveAttribute('d', /M3 6h18|M19 6v14/)
+})

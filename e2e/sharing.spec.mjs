@@ -78,6 +78,8 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     const row = pageA.locator('.diff', { hasText: 'Shared work' })
     await expect(row).toBeVisible()
     await stubSaveDialog(appA, join(exchange, 'sealed-placeholder'))
+    // Row actions only appear on hover now, so the name gets the width.
+    await row.hover()
     await row.getByRole('button', { name: 'Share as sealed file' }).click()
     const shareDlg = pageA.getByRole('dialog', { name: 'Share diff' })
     await expect(shareDlg).toBeVisible()

@@ -65,7 +65,15 @@ regression test from decoration.
 6. **Untrusted input is hostile.** Files chosen for import (`.diffbro`,
    `.diffbrokey`) get size caps, shape validation, and recomputed
    fingerprints before use. Keep it that way for any new import surface.
-7. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
+7. **Leaving the sandbox is fenced in main.** `shell.openExternal` is reachable
+   only through `src/main/links.js`, which validates in the MAIN process and
+   confirms with the user first: Claude links against the strict claude.ai
+   allowlist, a URL snippet's link against an http(s)-only scheme check
+   (`linkPolicy.js`). The scheme check is the fence — openExternal will
+   otherwise open a local file, run a script handler, or launch another app.
+   **URL snippets are local-only**: `_bundle` and `restoreBundle` drop them, so
+   a link can never arrive in a shared bundle and be opened by one click.
+8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only
    through Vue text interpolation.
 

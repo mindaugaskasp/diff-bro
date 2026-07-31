@@ -21,6 +21,7 @@ export const MONOGRAM_FAMILIES = {
 // and diffFormatTag() (diffs); both are lowercase Monaco/format names.
 const MAP = {
   claude: ['CL', 'ai'],
+  url: ['URL', 'web'],
   mermaid: ['MMD', 'diagram'],
   sql: ['SQL', 'db'],
   json: ['JSON', 'data'],

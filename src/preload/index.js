@@ -94,6 +94,7 @@ contextBridge.exposeInMainWorld('api', {
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
   // Opens a stored link ONLY if main validates it as a claude.ai URL, after a
   // confirm dialog; any other URL is refused (see src/main/links.js).
+  openLink: (url) => ipcRenderer.invoke('link:open', url),
   openClaudeLink: (url) => ipcRenderer.invoke('link:openClaude', url),
   readText: () => ipcRenderer.invoke('clipboard:read'),
   // Data-location settings.

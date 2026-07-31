@@ -4,6 +4,9 @@ import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
 import { parseSnippetImport } from '../utils/snippetImport'
 
+// Snippets of this language hold a link and are deliberately never shared.
+export const URL_LANGUAGE = 'url'
+
 // Personal, non-expiring text library, encrypted at rest with the vault key
 // (crypto in main; the key never enters this store). Organized by TAGS —
 // plaintext metadata, deliberately NOT in the AAD, so retagging never re-encrypts.
@@ -417,7 +420,9 @@ export const useSnippetStore = defineStore('snippets', {
     // A plaintext bundle { snippets:[{name,content,language,tags}], tags:{name:{color}} }.
     async _bundle(entries) {
       const snippets = []
-      for (const entry of entries) {
+      // A URL snippet is local-only: it must never leave this machine, so a
+      // shared bundle can never carry a link someone else's click would open.
+      for (const entry of entries.filter((e) => e.language !== URL_LANGUAGE)) {
         const content = await this.load(entry.id)
         if (content !== null) {
           snippets.push({
@@ -442,6 +447,8 @@ export const useSnippetStore = defineStore('snippets', {
       if (Array.isArray(bundle?.categories)) return this._restoreLegacyBundle(bundle.categories)
       this._registerBundleTags(bundle?.tags)
       for (const s of bundle?.snippets ?? []) {
+        // The other half of the rule: a crafted bundle cannot plant one either.
+        if (s.language === URL_LANGUAGE) continue
         await this.add({
           name: s.name,
           content: s.content,
@@ -468,6 +475,7 @@ export const useSnippetStore = defineStore('snippets', {
         const tag = cleanTag(category.name)
         const tags = tag && tag !== 'default' ? [tag] : []
         for (const s of category.snippets ?? []) {
+          if (s.language === URL_LANGUAGE) continue
           await this.add({ name: s.name, content: s.content, language: s.language, tags })
         }
       }

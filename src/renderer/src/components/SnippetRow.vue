@@ -26,6 +26,7 @@ const lang = computed(() => languageOf(props.entry))
 const mono = computed(() => languageMonogram(lang.value))
 const isDiagram = computed(() => lang.value === 'mermaid')
 const isClaude = computed(() => lang.value === 'claude')
+const isUrl = computed(() => lang.value === 'url')
 // Drop the tag that just restates the monogram (the auto format tag), so the
 // tag word carries information the type anchor doesn't already.
 const shownTags = computed(() => props.entry.tags.filter((t) => t !== lang.value))
@@ -47,6 +48,14 @@ async function viewDiagram(entry) {
 }
 // Opening is gated by the main-process claude.ai allowlist; this only offers a
 // candidate URL from the snippet.
+// A URL snippet is the whole link; main fences the scheme and confirms.
+async function openUrl() {
+  const content = await store.load(props.entry.id)
+  const url = content?.trim().split(/\s+/)[0]
+  const res = url ? await window.api.openLink(url) : { error: 'empty' }
+  if (res?.error) diff.showNotice('That snippet has no link Diff Bro can open.')
+}
+
 async function openLink() {
   const content = await store.load(props.entry.id)
   const url = content != null ? firstClaudeUrl(content) : null
@@ -104,6 +113,15 @@ defineEmits(['hoverTitle', 'leaveTitle'])
         @click="viewDiagram(entry)"
       >
         <AppIcon name="diagram" />
+      </button>
+      <button
+        v-if="isUrl"
+        class="row-btn"
+        data-tip="Open"
+        aria-label="Open link in browser"
+        @click="openUrl"
+      >
+        <AppIcon name="link" />
       </button>
       <button
         v-if="isClaude"
