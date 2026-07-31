@@ -3,12 +3,14 @@ import { ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useVaultStore, DEFAULT_TTL_HOURS, TTL_OPTIONS } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useTabsStore } from '../stores/tabsStore'
 import BaseDialog from './BaseDialog.vue'
 import TagChipsField from './TagChipsField.vue'
 
 const diff = useDiffStore()
 const vault = useVaultStore()
 const snippets = useSnippetStore()
+const tabs = useTabsStore()
 
 const name = ref('')
 // Secure = auto-expiring (the app's default). Off keeps the diff indefinitely.
@@ -18,10 +20,13 @@ const nameInput = ref(null)
 const tagField = ref(null)
 
 onMounted(() => {
+  // A tab the reader renamed has already been given the name for this
+  // comparison; asking for it again would be asking twice.
   name.value =
-    diff.mode === 'paste'
+    tabs.active?.customTitle ||
+    (diff.mode === 'paste'
       ? `Pasted text (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
-      : `${diff.left?.name ?? '?'} ↔ ${diff.right?.name ?? '?'}`
+      : `${diff.left?.name ?? '?'} ↔ ${diff.right?.name ?? '?'}`)
   nameInput.value?.focus()
   nameInput.value?.select()
 })
@@ -64,30 +69,13 @@ async function save() {
     )
     return
   }
-  await finishSave(wasPaste)
-}
-
-// Post-save routing: a "save first" chain resumes its deferred action, otherwise
-// a paste-mode save runs the comparison and we confirm the save.
-async function finishSave(wasPaste) {
-  diff.markSaved()
-  if (diff.replaceAfterSave) {
-    diff.showNotice('Saved (encrypted). Loading the dropped file…')
-    await diff.finishReplaceAfterSave()
-  } else if (diff.pickAfterSave) {
-    diff.showNotice('Saved (encrypted). Loading the file…')
-    diff.finishPickAfterSave()
-  } else {
-    if (wasPaste) {
-      diff.comparePasted()
-      diff.markSaved()
-    }
-    diff.showNotice(
-      secure.value
-        ? `Saved (encrypted) — expires in ${ttl.value} h.`
-        : 'Saved (encrypted) — kept until you delete it.'
-    )
+  // The tab and the entry are now the same comparison, so the tab takes the
+  // name that was just saved and links to it.
+  if (tabs.active) {
+    tabs.active.entryId = id
+    tabs.rename(tabs.activeId, name.value.trim())
   }
+  await diff.finishSave(wasPaste, secure.value ? ttl.value : null)
 }
 
 function cancel() {
@@ -126,8 +114,8 @@ function cancel() {
       <p class="dialog-note">
         {{
           secure
-            ? 'Stored encrypted on this machine only and deleted automatically — 24 hours is the maximum.'
-            : 'Stored encrypted on this machine only and kept until you delete it — no expiry.'
+            ? 'Deletes itself automatically — 24 hours is the maximum.'
+            : 'Kept until you delete it.'
         }}
       </p>
       <div class="dialog-actions">

@@ -32,6 +32,29 @@
   letter-spacing: 0.5px;
   color: var(--text-hint);
 }
+/* Naming a pasted side. Quiet until touched — it is optional, so it must not
+   read as a field waiting to be filled in. */
+.side-name {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--font-sm);
+  padding: 2px 6px;
+}
+.side-name::placeholder {
+  color: var(--text-dim);
+}
+.side-name:hover {
+  border-color: var(--border);
+}
+.side-name:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg);
+}
 .file-name {
   flex: 1;
   min-width: 0;

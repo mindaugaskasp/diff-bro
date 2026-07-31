@@ -20,7 +20,7 @@ async function saveJsonDiff(page, name, tag) {
     await dialog.getByPlaceholder('add a tag…').press('Enter')
   }
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.getByText(name)).toBeVisible()
+  await expect(page.locator('li.diff', { hasText: name })).toBeVisible()
   return page.locator('li.diff', { hasText: name })
 }
 

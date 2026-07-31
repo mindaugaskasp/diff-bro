@@ -1,0 +1,150 @@
+/* Comparison tabs. A band, so the height comes from the shared control scale
+   rather than from padding — which drifts the moment a font size changes.
+
+   Separation is deliberately layered, because no single cue is strong on all
+   14 themes: the hairline is faintest on light (1.20) and bloom (1.24), while
+   the active tab's surface step is faintest on meridian and matrix (both 1.05).
+   They are weak in DIFFERENT themes, so together a tab boundary always reads.
+   The two keyline themes get the loudest version of it (beacon 14.91,
+   contrast 16.87), which is exactly what they ask for. */
+.diff-tabs {
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex: none;
+}
+/* Width follows the name. Tabs only give ground once the row is full: they
+   shrink together down to a floor rather than the bar scrolling, so all six
+   stay reachable without a hidden overflow. */
+.diff-tabs .tab {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 32ch;
+}
+.diff-tabs .tab-open {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--space-2);
+  height: 100%;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: var(--font-md);
+  cursor: pointer;
+}
+/* A hairline between neighbours only — never a box per tab, which would fight
+   the bar's own bottom rule. */
+.diff-tabs .tab + .tab {
+  border-left: 1px solid var(--border);
+}
+.diff-tabs .tab:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.diff-tabs .tab.active {
+  color: var(--text);
+  background: var(--bg);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+/* Renaming in place: same box as the label it replaces, so the tab does not
+   resize while it is being typed in. */
+.diff-tabs .tab-rename {
+  width: 20ch;
+  height: var(--control-h);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--font-md);
+}
+.diff-tabs .tab-rename:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.diff-tabs .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Unsaved marker. It stays put on hover: swapping it for the close control
+   changed the tab's width mid-hover, so the strip jittered under the pointer. */
+.diff-tabs .dirty {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+.diff-tabs .tab-close {
+  /* Always laid out, only revealed — hidden with visibility rather than
+     display, so showing it costs no width and cannot shift the tabs. It stays
+     un-clickable while hidden, which display:none also gave us. */
+  visibility: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--chip-h);
+  height: var(--chip-h);
+  flex: none;
+  margin-right: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+/* Mouse affordance only: a hidden button cannot take focus, so keyboard users
+   close the active comparison with the accelerator instead of tabbing to an ×
+   they cannot see. Reaching it requires hovering the tab. */
+.diff-tabs .tab:hover .tab-close,
+.diff-tabs .tab.active .tab-close {
+  visibility: visible;
+}
+.diff-tabs .tab-close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+.diff-tabs .add {
+  /* border:0 first — a <button> keeps the UA's 2px black border on any side an
+     override does not name, which painted a black box around the + on every
+     theme. */
+  border: 0;
+  border-left: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: var(--control-h);
+  flex: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.diff-tabs .add:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.diff-tabs .add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Keyboard focus. Without this the controls fall back to Chromium's own black
+   ring, which reads as a stray dark box on every light theme — the app's own
+   ring is the accent, matching the tool inputs. */
+.diff-tabs .tab-open:focus-visible,
+.diff-tabs .tab-close:focus-visible,
+.diff-tabs .add:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}

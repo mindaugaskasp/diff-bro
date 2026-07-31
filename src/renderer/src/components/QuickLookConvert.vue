@@ -73,10 +73,6 @@ watch(
         <ToolXml v-else-if="tool.panel === 'xml'" compact />
       </KeepAlive>
     </div>
-
-    <div class="qc-foot band">
-      <span class="qc-lock"><AppIcon name="lock" /> stays on this machine</span>
-    </div>
   </div>
 </template>
 

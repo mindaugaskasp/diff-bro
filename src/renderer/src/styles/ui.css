@@ -79,10 +79,16 @@
   color: var(--text-on-accent);
 }
 
-/* Secondary action: reads as a control only on hover. */
+/* Tertiary action (Cancel, Close). No fill — but the base --border is nearly
+   invisible against a panel on the light-ground themes (1.20 on light, 1.24 on
+   bloom), so a ghost button had no perceivable edge at all and read as text.
+   Mixed halfway to --text the edge clears the 3:1 UI-component threshold on all
+   14 (weakest sepia 3.21), while beacon and contrast barely move because their
+   keylines already max out. */
 .btn-ghost {
   background: none;
   color: var(--text-dim);
+  border-color: color-mix(in srgb, var(--border) 50%, var(--text));
 }
 
 .btn-danger:hover:not(:disabled) {

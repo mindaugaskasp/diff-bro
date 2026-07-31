@@ -161,6 +161,18 @@ export const useVaultStore = defineStore('vault', {
       entry.tags = useSnippetStore().registerTags(tags, colors)
       this.persist()
     },
+    // Rename a saved diff in place. Like tags, the name is plaintext metadata
+    // beside the ciphertext and deliberately outside the AAD, so this never
+    // re-keys the entry.
+    rename(id, name) {
+      const entry = this.entries.find((e) => e.id === id)
+      const clean = String(name ?? '')
+        .trim()
+        .slice(0, 120)
+      if (!entry || !clean) return
+      entry.name = clean
+      this.persist()
+    },
     requestRetag(id) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return

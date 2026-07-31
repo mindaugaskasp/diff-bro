@@ -27,14 +27,17 @@ test('a saved diff persists across a relaunch and reopens', async () => {
     await dialog.getByRole('button', { name: 'Save', exact: true }).click()
 
     // It confirms with a toast and lands in the Saved diffs sidebar.
-    await expect(page.getByText('Saved (encrypted)')).toBeVisible()
-    await expect(page.getByText(NAME)).toBeVisible()
+    await expect(page.getByText(/^Saved —/)).toBeVisible()
+    // The name is now in two places — the sidebar row and the tab it was saved
+    // from — so both are named explicitly.
+    await expect(page.locator('li.diff', { hasText: NAME })).toBeVisible()
+    await expect(page.locator('.diff-tabs .tab', { hasText: NAME })).toBeVisible()
     await app.close()
 
     // Relaunch the same profile: the encrypted entry must decrypt and list.
     app = await launchApp(userDataDir)
     page = await firstReadyPage(app)
-    const row = page.getByText(NAME)
+    const row = page.locator('li.diff', { hasText: NAME })
     await expect(row).toBeVisible()
 
     // Reopening restores the diff — vault:decrypt of the snapshot, then Monaco

@@ -20,6 +20,27 @@ export function buildMenus(store) {
         { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
         { label: 'Export Diff as HTML…', run: () => store.handleMenuAction('export-html') },
         { label: 'Export Diff as Image…', run: () => store.handleMenuAction('export-image') },
+        { sep: true },
+        {
+          label: 'New Comparison',
+          keys: `${MOD}+Shift+T`,
+          run: () => store.handleMenuAction('tab-new')
+        },
+        {
+          label: 'Close Comparison',
+          keys: `${MOD}+Shift+W`,
+          run: () => store.handleMenuAction('tab-close')
+        },
+        {
+          label: 'Next Comparison',
+          keys: 'Ctrl+Tab',
+          run: () => store.handleMenuAction('tab-next')
+        },
+        {
+          label: 'Previous Comparison',
+          keys: 'Ctrl+Shift+Tab',
+          run: () => store.handleMenuAction('tab-prev')
+        },
         { label: 'Import Snippets…', run: () => store.handleMenuAction('import-snippets') },
         { sep: true },
         { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },

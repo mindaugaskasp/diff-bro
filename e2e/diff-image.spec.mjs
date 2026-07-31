@@ -22,7 +22,7 @@ async function saveDiff(page, name, texts) {
   const dialog = page.getByRole('dialog', { name: 'Save diff' })
   await dialog.getByLabel('Name', { exact: true }).fill(name)
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.getByText(name)).toBeVisible()
+  await expect(page.locator('li.diff', { hasText: name })).toBeVisible()
 }
 
 async function openImageExport(page, name) {
@@ -159,7 +159,7 @@ test('closing the preview makes main drop the captured bitmap', async ({ page })
   const NAME = 'E2E forget image'
   await saveDiff(page, NAME)
   const dialog = await openImageExport(page, NAME)
-  await dialog.getByRole('button', { name: 'Done' }).click()
+  await dialog.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
   await expect(dialog).toHaveCount(0)
 
   // Nothing is held any more, so a copy has nothing to put on the clipboard.
@@ -234,6 +234,19 @@ async function pasteCompare(page, left, right) {
   await expect(page.locator('.diff-container')).toBeVisible()
 }
 
+// The three actions read as one set; each shrink-wrapping its own label left
+// "Close" half the width of "Copy image".
+test("the export dialog's actions share a width", async ({ page }) => {
+  await saveDiff(page, 'E2E button widths')
+  const dialog = await openImageExport(page, 'E2E button widths')
+  await expect(dialog.locator('.shot img')).toBeVisible()
+  const widths = await dialog
+    .locator('.dialog-actions .btn')
+    .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
+  expect(widths.length).toBe(3)
+  expect(new Set(widths).size).toBe(1)
+})
+
 const shotHeight = async (page) => {
   const dialog = page.getByRole('dialog', { name: 'Export as image' })
   await expect(dialog.locator('.shot img')).toBeVisible()
@@ -241,7 +254,7 @@ const shotHeight = async (page) => {
     .match(/(\d+) × (\d+)/)
     .slice(1)
     .map(Number)
-  await dialog.getByRole('button', { name: 'Done' }).click()
+  await dialog.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
   await expect(dialog).toHaveCount(0)
   return h
 }

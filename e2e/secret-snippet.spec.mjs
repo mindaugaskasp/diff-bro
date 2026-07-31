@@ -24,7 +24,7 @@ test('a saved secret is masked on screen but copies in full', async ({ app, page
 
   // Saving drops straight back behind the mask, with the notice.
   await expect(view.locator('.secret-mask')).toBeVisible()
-  await expect(view.getByText(/Hidden secret snippet/)).toBeVisible()
+  await expect(view.getByText(/Hidden — copy it/)).toBeVisible()
   await expect(view.locator('.secret-mask')).toContainText('****')
 
   // The contents are nowhere in the rendered page.

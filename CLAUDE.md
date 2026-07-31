@@ -174,6 +174,17 @@ regression test from decoration.
   `src/renderer/src/types.js` and a JSDoc annotation; a prop typed `Object`
   documents nothing, so pair it with a `shaped(...)` validator from
   `utils/props.js`.
+- **Never re-sell the offline guarantee in the UI.** It is stated in the README
+  and `docs/security.md`; repeating "stored encrypted on this machine only",
+  "stays on this machine", "goes nowhere", "encrypted on save" or a padlock chip
+  in every dialog, toast and footer does not make it truer — it reads as
+  protesting too much, and it crowds out the thing the control actually does.
+  UI copy states the **user-visible fact** ("Deletes itself automatically — 24
+  hours is the maximum"), never the security posture behind it. The one
+  exception is where encryption is the user's decision in that moment and they
+  need to know the consequence — a passphrase they must not lose, or
+  AES-256-CBC being unauthenticated. Those explain a choice; the rest was
+  decoration.
 - **Prose comments are forbidden.** Code must explain itself through names and
   structure. A comment is allowed _only_ when the code's intent is genuinely
   ambiguous and cannot be made clear by better naming or refactoring — e.g. a

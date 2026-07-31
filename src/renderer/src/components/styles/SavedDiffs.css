@@ -73,26 +73,32 @@
   align-items: center;
   gap: 5px;
 }
+/* Same radius as every other control in the app. Fully-rounded lozenges at this
+   width read as chunky, and every section is ON by default — so with the old
+   accent fill the whole row arrived as a wall of accent. */
 .usb-seg button {
   flex: 0 0 auto;
   background: none;
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius);
   color: var(--text-dim);
   cursor: pointer;
-  padding: 3px 11px;
+  padding: 2px 9px;
   font-size: var(--font-sm);
-  font-weight: 600;
+  font-weight: 500;
   font-family: inherit;
 }
 .usb-seg button:hover:not(.on) {
   color: var(--text);
   border-color: var(--text-dim);
 }
+/* "Showing" is the resting state of every section, so it is the quiet one: a
+   normal control on the panel. The accent marks the edge, not the whole chip. */
 .usb-seg button.on {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--bg);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--text);
+  font-weight: 600;
 }
 /* ★ favorites: a compact gold toggle, sat next to All ahead of the sections. */
 .usb-seg .star {

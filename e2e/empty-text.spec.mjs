@@ -21,6 +21,6 @@ test('the Saved diffs helper text disappears after saving one diff', async ({ pa
   await dialog.getByLabel('Name', { exact: true }).fill('E2E empty-text diff')
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
 
-  await expect(page.getByText('E2E empty-text diff')).toBeVisible()
+  await expect(page.locator('li.diff', { hasText: 'E2E empty-text diff' })).toBeVisible()
   await expect(emptyText).toBeHidden() // gone now that a diff is filed
 })

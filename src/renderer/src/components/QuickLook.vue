@@ -64,7 +64,6 @@ const ACTIONS = {
 }
 const previewAction = (it) =>
   it.kind === 'command' ? { icon: it.icon, label: it.action } : ACTIONS[it.kind]
-const lockLabel = (it) => (it.kind === 'snippet' ? 'decrypted on demand' : 'runs on this machine')
 
 function focusInput() {
   input.value?.focus()
@@ -171,7 +170,6 @@ watch(composing, (on) => {
             </div>
 
             <div class="ql-pv-foot band">
-              <span class="ql-lock"><AppIcon name="lock" /> {{ lockLabel(current) }}</span>
               <span class="ql-pv-actions">
                 <button class="btn btn-primary btn-sm" @click="choose(selected)">
                   <AppIcon :name="previewAction(current).icon" /> {{ previewAction(current).label }}

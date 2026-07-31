@@ -1,9 +1,13 @@
 <script setup>
+// Searching a pane is Monaco's own find widget (Cmd/Ctrl+F), not a bar of our
+// own: it is already per-pane, already collapsed until asked for, and already
+// carries the case/word/regex toggles, the match count and the navigation the
+// hand-rolled row duplicated above the diff.
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
-import { makeSearch, SEARCH_OPTIONS } from '../composables/useDiffSearch'
 import { isDarkTheme } from '../utils/themes'
+import { diffEditorOptions } from '../utils/diffEditorOptions'
 import { diffLineStats } from '../utils/diffStats'
 import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
 import AppIcon from './AppIcon.vue'
@@ -14,19 +18,6 @@ const container = ref(null)
 let editor = null
 let leftModel = null
 let rightModel = null
-let origDecos = null
-let modDecos = null
-
-const leftSearch = makeSearch(
-  () => leftModel,
-  () => editor?.getOriginalEditor(),
-  () => origDecos
-)
-const rightSearch = makeSearch(
-  () => rightModel,
-  () => editor?.getModifiedEditor(),
-  () => modDecos
-)
 
 function setModels() {
   const left = store.leftComparable
@@ -41,25 +32,17 @@ function setModels() {
   // Dispose OLD models only AFTER setModel switched — an attached model throws.
   prevLeft?.dispose()
   prevRight?.dispose()
-  // Re-apply any active queries to the new content.
-  leftSearch.run()
-  rightSearch.run()
 }
 
 onMounted(() => {
-  editor = monaco.editor.createDiffEditor(container.value, {
-    theme: isDarkTheme(store.theme) ? 'vs-dark' : 'vs',
-    automaticLayout: true,
-    readOnly: true,
-    originalEditable: false,
-    renderSideBySide: store.renderSideBySide,
-    ignoreTrimWhitespace: store.ignoreTrimWhitespace,
-    scrollBeyondLastLine: false,
-    contextmenu: false,
-    minimap: { enabled: false }
-  })
-  origDecos = editor.getOriginalEditor().createDecorationsCollection([])
-  modDecos = editor.getModifiedEditor().createDecorationsCollection([])
+  editor = monaco.editor.createDiffEditor(
+    container.value,
+    diffEditorOptions({
+      dark: isDarkTheme(store.theme),
+      renderSideBySide: store.renderSideBySide,
+      ignoreTrimWhitespace: store.ignoreTrimWhitespace
+    })
+  )
   editor.onDidUpdateDiff(() => {
     const stats = diffLineStats(editor.getLineChanges())
     store.stats = stats
@@ -72,14 +55,6 @@ onMounted(() => {
 })
 
 watch(() => [store.left, store.right], setModels)
-watch(
-  () => [leftSearch.query, leftSearch.isRegex, leftSearch.matchCase, leftSearch.wholeWord],
-  leftSearch.run
-)
-watch(
-  () => [rightSearch.query, rightSearch.isRegex, rightSearch.matchCase, rightSearch.wholeWord],
-  rightSearch.run
-)
 watch(
   () => [store.renderSideBySide, store.ignoreTrimWhitespace],
   ([split, ignoreWs]) => {
@@ -106,65 +81,6 @@ onBeforeUnmount(() => {
     <div v-if="store.identical" class="identical-row">
       <AppIcon name="check" class="ok" />
       <span>No differences — both sides are identical</span>
-    </div>
-    <div class="search">
-      <div
-        v-for="s in [
-          { ref: leftSearch, label: 'left' },
-          { ref: rightSearch, label: 'right' }
-        ]"
-        :key="s.label"
-        class="side"
-      >
-        <span class="side-label">{{ s.label }}</span>
-        <div class="search-box" :class="{ error: s.ref.error }">
-          <AppIcon class="search-glyph" name="search" />
-          <input
-            v-model="s.ref.query"
-            type="search"
-            class="search-input"
-            :placeholder="`Search ${s.label} side…`"
-            spellcheck="false"
-            @keyup.enter="s.ref.step(1)"
-            @keyup.escape="s.ref.query = ''"
-          />
-        </div>
-        <label
-          v-for="o in SEARCH_OPTIONS"
-          :key="o.key"
-          class="opt"
-          :data-tip="o.tip"
-          :aria-label="o.label"
-        >
-          <input v-model="s.ref[o.key]" type="checkbox" />
-          {{ o.glyph }}
-        </label>
-        <span class="count">
-          <template v-if="s.ref.error">bad regex</template>
-          <template v-else-if="s.ref.query && s.ref.matchCount"
-            >{{ s.ref.currentIndex }}/{{ s.ref.matchCount }}</template
-          >
-          <template v-else-if="s.ref.query">none</template>
-        </span>
-        <button
-          class="nav"
-          :disabled="!s.ref.matchCount"
-          data-tip="Jump to the previous match"
-          aria-label="Previous match"
-          @click="s.ref.step(-1)"
-        >
-          <AppIcon name="chevron-left" />
-        </button>
-        <button
-          class="nav"
-          :disabled="!s.ref.matchCount"
-          data-tip="Jump to the next match (or press Enter in the box)"
-          aria-label="Next match"
-          @click="s.ref.step(1)"
-        >
-          <AppIcon name="chevron-right" />
-        </button>
-      </div>
     </div>
     <div ref="container" class="diff-container"></div>
   </div>
