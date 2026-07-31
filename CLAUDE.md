@@ -103,7 +103,36 @@ regression test from decoration.
   `npm run check:styles` (scripts/check-style-tokens.mjs) fails the build on a
   hardcoded color, font-size or radius in `components/styles/` — add a token
   rather than a literal, or `/* token-exempt: reason */` when a literal is
-  genuinely right. New UI must be checked in both themes.
+  genuinely right. New UI must be checked in EVERY theme — see the
+  design-proposal rule below, not just the two you happen to have open.
+- **A UI/UX proposal is not a proposal until it has been checked against every
+  supported theme.** `themes.css` ships 14 — light, dark, solar, neon, nord,
+  sepia, dim, beacon, meridian, linen, bloom, nyan, matrix, contrast — and seven
+  are light-ground. A design validated on one or two is a redesign waiting to
+  happen, and redoing it costs far more than checking it would have. Before
+  proposing OR building any visual change: read the real token values out of
+  `themes.css` (parse them, never guess), render the idea against all 14, and
+  say per theme where it breaks and why. Hardcoded colour is the usual culprit —
+  a black rim plus a white top highlight is a dark-panel idiom that dies on
+  every light theme; express it through `--border` / `--text` / `--shadow-rgb` /
+  `--accent` so it re-tints itself. Two themes carry a contract, not a palette:
+  `contrast` (`--border: #111111`) and `beacon` (`--border: #e0e0e0`) use a hard
+  keyline deliberately, so anything that removes or softens a border is
+  disqualified there and `npm run check:themes` is right to fail it. High-chroma
+  accents (`matrix` #00ff41, `nyan` #ff2ecb, `neon` #22d3ee) turn any
+  accent-tinted glow into a halo. A finished proposal carries the per-theme
+  verdict, the exact token-driven CSS, and the trade-offs; a single-theme mockup
+  is not a proposal.
+- **Controls and glyphs use the predefined size scale — never a bespoke box.**
+  `--control-h` (30px), `--control-h-sm` (26px) and `--chip-h` (20px) in
+  `tokens.css` are the only heights a button, icon button or key chip may take,
+  and `ui.css` already ships `.btn`, `.btn-sm`, `.btn-icon` and `.ql-kbd` for
+  them. Never let a control's height fall out of padding + font-size: that is how
+  the Esc chip drifted to 19px beside a 26px button, and it silently re-breaks on
+  any type change. Reach for the existing class before writing CSS — three
+  separate bespoke copies of `.btn-icon` had accumulated before anyone noticed. A
+  class two components need lives in `ui.css`; a scoped copy in the second one
+  will drift.
 - **Depth is a surface-role contract, not per-theme greys** — this is what keeps
   a theme from going flat (the light theme twice did). Four roles, recessed →
   raised: `--bg-canvas` (app ground) · `--bg`/`--bg-panel` (base surface / chrome)

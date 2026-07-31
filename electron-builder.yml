@@ -58,8 +58,20 @@ win:
   # mac name below).
   artifactName: diff-bro-Setup-v${version}.${ext}
 mac:
+  # zip rides alongside the DMG deliberately. A DMG mounts a volume, and its
+  # window geometry lives in a .DS_Store keyed to the volume NAME — so every
+  # copy left un-ejected forces the next mount to "… 1", "… 2", which no longer
+  # matches and opens with whatever window state Finder last used (full screen,
+  # in the worst case). The zip has nothing to mount, so it cannot strand
+  # anything. A disk image cannot eject itself (nothing in it executes), and
+  # having the app shell out to hdiutil would put process spawning into a main
+  # process that has none — not worth it for a cosmetic fix.
   target:
     - dmg
+    - zip
+  # Applies to both artifacts: diff-bro-v<version>.dmg / .zip. The Homebrew cask
+  # generator (scripts/gen-homebrew-cask.mjs) hardcodes the .dmg name — keep the
+  # two in step if this template ever changes.
   artifactName: diff-bro-v${version}.${ext}
   category: public.app-category.developer-tools
   # No Apple Developer cert yet (see DEVELOPMENT_PLAN.md Phase 3) — without
