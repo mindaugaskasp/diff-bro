@@ -372,18 +372,16 @@
   font-size: var(--font-2xs);
   font-weight: 700;
 }
-/* Tag ink. The tag palette is tuned for dark grounds, so a raw tag colour sits
-   at ~1.2–1.9 against the seven light themes' surfaces. Mixing toward --text
-   moves the hue away from the ground in EVERY theme; check-theme-depth.mjs
-   reads this percentage and holds it to the 3.0 non-text floor across all 14
-   (worst 3.22, sepia #76e3ea on --bg-elevated). Declared on the chip, not
-   :root — a custom property resolves var(--tc) where it is DECLARED, so a :root
-   token would bind one --tc for every tag alike. Legibility never rides on the
-   tag colour: labels stay --text. */
+/* Tag ink. A tag colour is picked by the user, so only its LIGHTNESS can be
+   wrong for the ground — and only lightness is changed, to --tag-l, leaving hue
+   and chroma alone. Mixing toward --text instead drains chroma with it: #39c5cf
+   came out near-black and two different greens became one. Declared on the chip,
+   not :root — a custom property resolves var(--tc) where it is DECLARED.
+   check-theme-depth.mjs holds this to the 3.0 non-text floor on all 14. */
 .tag-word,
 .tag-chip,
 .tglyph {
-  --tag-ink: color-mix(in srgb, var(--tc, var(--text-dim)) 32%, var(--text));
+  --tag-ink: oklch(from var(--tc, var(--text-dim)) var(--tag-l) c h);
 }
 .tag-word {
   flex: none;
@@ -401,8 +399,9 @@
   border-radius: var(--radius-pill);
   background: var(--tag-ink);
 }
-/* The one tag pill: filter chips, field pills, suggestions. Colour identifies,
-   tokens keep it readable — an inked keyline over a --text label. */
+/* The one tag pill: filter chips, field pills, suggestions. At rest it is an
+   OUTLINE — a neutral keyline and a --text label, with the tag's colour carried
+   by the glyph alone. Inking every resting border made all of them look picked. */
 .tag-chip {
   display: inline-flex;
   align-items: center;
@@ -412,14 +411,43 @@
   font-weight: 600;
   line-height: 1;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--tag-ink);
-  background: color-mix(in srgb, var(--tc, var(--text-dim)) 14%, transparent);
+  border: 1px solid var(--border);
+  background: none;
   color: var(--text);
 }
 /* Only the interactive pills (filter chips, suggestions) — a field pill is a
    span and has nothing to press. */
 button.tag-chip:hover {
-  background: color-mix(in srgb, var(--tc, var(--text-dim)) 24%, transparent);
+  border-color: var(--tag-ink);
+  background: color-mix(in srgb, var(--tc, var(--text-dim)) 14%, transparent);
+}
+/* Picked: a SOLID inked pill against an outlined one. Two tints of the same hue
+   were indistinguishable; fill-vs-no-fill reads before the colour does. The
+   label flips to the ground colour, which is dark on light themes and light on
+   dark ones, so it stays legible either way (worst 4.69, sepia). */
+.tag-chip.on {
+  background: var(--tag-ink);
+  border-color: var(--tag-ink);
+  color: var(--bg);
+}
+.tag-chip.on .tglyph {
+  color: var(--bg);
+}
+.tag-chip.on .usb-dot {
+  background: var(--bg);
+}
+/* The usage count sits with the pill, not in each component's stylesheet, so it
+   can follow the label onto the fill instead of staying a dim neutral there. */
+.tag-chip .ct,
+.tag-chip .usb-tct {
+  color: var(--text-hint);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.tag-chip.on .ct,
+.tag-chip.on .usb-tct {
+  color: inherit;
+  opacity: 0.75;
 }
 .tag-word .tw-label {
   overflow: hidden;

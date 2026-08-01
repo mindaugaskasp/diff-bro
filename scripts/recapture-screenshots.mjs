@@ -32,26 +32,26 @@ const DATA = join(ROOT, 'tests/data')
 // Mirrors snippetStore's TAG_PALETTE (kept in sync by hand — it only drives the
 // demo tag colors, nothing load-bearing).
 const TAG_PALETTE = [
-  '#4c8dff',
-  '#39c5cf',
-  '#3fb950',
-  '#56d364',
-  '#d29922',
-  '#e0823d',
-  '#f85149',
-  '#db61a2',
-  '#a371f7',
-  '#6cb6ff',
-  '#2da44e',
-  '#e3b341',
-  '#ff7b72',
-  '#bc8cff',
-  '#76e3ea',
-  '#f0883e',
-  '#ffa8cc',
-  '#8957e5',
-  '#cf222e',
-  '#8b949e'
+  '#e9687e',
+  '#c18f00',
+  '#18b46d',
+  '#00a7d8',
+  '#a87eeb',
+  '#ea6c5a',
+  '#aa9a00',
+  '#00b292',
+  '#299ff4',
+  '#c075d7',
+  '#e57431',
+  '#8ca507',
+  '#00afab',
+  '#6594fa',
+  '#d46ebd',
+  '#d68200',
+  '#62ae45',
+  '#00abc0',
+  '#8a89f7',
+  '#e1699f'
 ]
 
 const XLSX_A = join(DATA, 'budget-2024.xlsx')

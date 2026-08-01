@@ -16,6 +16,10 @@
      indigo, which spread the one colour with a job thin enough to read as
      wallpaper. The content/diff surface stays pure white — the reading plane
      the app is about. */
+  /* A tag's colour is picked by the user, not the theme, so it cannot be a
+     token — it is re-lightened to this in OKLCH (ui.css) with its hue and chroma
+     left alone. Light grounds darken the tag; the seven dark ones raise it. */
+  --tag-l: 0.47;
   --bg: #ffffff;
   --bg-panel: #eeefef;
   --bg-hover: #e2e4e4;
@@ -75,6 +79,7 @@
 
 /* Dark — low-glare GitHub-night. */
 :root[data-theme='dark'] {
+  --tag-l: 0.8;
   --bg: #0d1117;
   --bg-panel: #161b22;
   --bg-hover: #21262d;
@@ -119,6 +124,7 @@
 
 /* Neon — electric cyan and neon add/remove on deep navy. */
 :root[data-theme='neon'] {
+  --tag-l: 0.8;
   --bg: #090d18;
   --bg-panel: #111829;
   --bg-hover: #1b2540;
@@ -142,6 +148,7 @@
 /* Nord — the low-saturation arctic palette; calm frost-blue accent on slate,
    soft green/red for add/remove. Easy on the eyes for long sessions. */
 :root[data-theme='nord'] {
+  --tag-l: 0.8;
   --bg: #2e3440;
   --bg-panel: #3b4252;
   --bg-hover: #434c5e;
@@ -190,6 +197,7 @@
    graphite ground with soft warm-white ink and a single muted amber-gold
    accent. Lower glare for long night sessions. */
 :root[data-theme='dim'] {
+  --tag-l: 0.8;
   --bg: #1b1917;
   --bg-panel: #232019;
   --bg-hover: #2c2820;
@@ -214,6 +222,7 @@
    WCAG-AAA. Pure-black ground, pure-white ink, saturated accent, bright hard
    borders. */
 :root[data-theme='beacon'] {
+  --tag-l: 0.8;
   --bg: #000000;
   --bg-panel: #0b0b0b;
   --bg-hover: #1a1a1a;
@@ -312,6 +321,7 @@
    and lime/rose diff colors. The chaos (the rainbow lane + reward cat) lives in
    non-content chrome (see NyanLane), so diffs stay legible. */
 :root[data-theme='nyan'] {
+  --tag-l: 0.8;
   --bg: #160a20;
   --bg-panel: #231033;
   --bg-hover: #2e1642;
@@ -337,6 +347,7 @@
 /* Matrix — phosphor green on near-black, like a CRT terminal. Pairs with the
    falling-glyph rain lane (MatrixRain.vue), the counterpart to Nyan's cat. */
 :root[data-theme='matrix'] {
+  --tag-l: 0.8;
   --bg: #020a04;
   --bg-panel: #061309;
   --bg-hover: #0c2312;

@@ -12,28 +12,32 @@ export const URL_LANGUAGE = 'url'
 // (crypto in main; the key never enters this store). Organized by TAGS —
 // plaintext metadata, deliberately NOT in the AAD, so retagging never re-encrypts.
 
-// 20-color palette; a new tag takes the next unused color, then cycles.
+// 20 colours, evenly spaced around the OKLCH hue wheel at one lightness and
+// chroma, and interleaved so two tags made in a row land on opposite sides of it.
+// The previous set had 20 entries but only ~8 distinct hues (three greens within
+// 3 deg, three reds within 2), which the ink normalisation in ui.css then made
+// indistinguishable. A new tag takes the next unused colour, then cycles.
 export const TAG_PALETTE = [
-  '#4c8dff',
-  '#39c5cf',
-  '#3fb950',
-  '#56d364',
-  '#d29922',
-  '#e0823d',
-  '#f85149',
-  '#db61a2',
-  '#a371f7',
-  '#6cb6ff',
-  '#2da44e',
-  '#e3b341',
-  '#ff7b72',
-  '#bc8cff',
-  '#76e3ea',
-  '#f0883e',
-  '#ffa8cc',
-  '#8957e5',
-  '#cf222e',
-  '#8b949e'
+  '#e9687e',
+  '#c18f00',
+  '#18b46d',
+  '#00a7d8',
+  '#a87eeb',
+  '#ea6c5a',
+  '#aa9a00',
+  '#00b292',
+  '#299ff4',
+  '#c075d7',
+  '#e57431',
+  '#8ca507',
+  '#00afab',
+  '#6594fa',
+  '#d46ebd',
+  '#d68200',
+  '#62ae45',
+  '#00abc0',
+  '#8a89f7',
+  '#e1699f'
 ]
 // Per-entry tag cap (one slot is often the auto-added format tag).
 export const MAX_TAGS = 20

@@ -162,36 +162,86 @@ console.log('\nfloors:    ' + RULES.map((r) => pad(r.min, w + 1)).join(''))
 // --- tag ink ---------------------------------------------------------------
 // Tag colours are the one palette that does NOT come from tokens (a user picks
 // them), and they are tuned for dark grounds — raw, they sit at ~1.2 against a
-// light theme's surface and vanish. ui.css inks them toward --text; this checks
-// the result still reads as a UI element on every theme. Both the palette and
-// the mix ratio are read from source so neither can drift from this floor.
+// light theme's surface and vanish. ui.css re-lightens them per ground in OKLCH,
+// keeping the picked hue and chroma so a green still reads green. This checks
+// the result still registers as a UI element on every theme; the palette and the
+// per-theme lightness are read from source so neither can drift from the floor.
 const TAG_INK_MIN = 3.0
 const uiCss = readFileSync(join(root, 'src/renderer/src/styles/ui.css'), 'utf8')
 const storeJs = readFileSync(join(root, 'src/renderer/src/stores/snippetStore.js'), 'utf8')
-const inkPct = uiCss.match(/--tag-ink:\s*color-mix\(in srgb,\s*.+?\s(\d+)%\s*,/)
-if (!inkPct) failures.push('ui.css: no --tag-ink color-mix to check')
+const inkL = uiCss.match(/--tag-ink:\s*oklch\(from .+?\s+var\((--[a-z-]+)\)\s+c\s+h\)/)
+if (!inkL) failures.push('ui.css: no --tag-ink oklch(from …) to check')
 const palette = [...storeJs.matchAll(/'(#[0-9a-f]{6})'/gi)].map((m) => m[1])
 if (palette.length < 5) failures.push('snippetStore.js: no tag palette to check')
 
-// Every surface a chip can sit on, paired with its theme's ink.
-function tagSurfaces() {
+// --- OKLab (Björn Ottosson) ------------------------------------------------
+const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+const toGamma = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055)
+function srgbToOklab([r, g, b]) {
+  const [R, G, B] = [r, g, b].map((c) => toLinear(c / 255))
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B)
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B)
+  const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B)
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  ]
+}
+function oklabToSrgb([L, A, B]) {
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s
+  ].map((c) => toGamma(c) * 255)
+}
+const inGamut = (rgb) => rgb.every((c) => c >= -0.5 && c <= 255.5)
+// Set lightness, keep hue and chroma — reducing chroma if that puts the colour
+// out of sRGB, which is what CSS Color 4 gamut mapping does.
+function relight(hex, L) {
+  const [, A, B] = srgbToOklab(parseHex(hex))
+  const C = Math.hypot(A, B)
+  const H = Math.atan2(B, A)
+  const at = (c) => oklabToSrgb([L, c * Math.cos(H), c * Math.sin(H)])
+  const fit = () => {
+    if (inGamut(at(C))) return C
+    let lo = 0
+    let hi = C
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2
+      if (inGamut(at(mid))) lo = mid
+      else hi = mid
+    }
+    return lo
+  }
+  return at(fit()).map((c) => clamp(Math.round(c)))
+}
+
+// Every surface a chip can sit on, paired with its theme's ink lightness.
+function tagSurfaces(lToken) {
   const out = []
   for (const theme of THEMES) {
     const map = mapFor(theme)
-    const text = resolve('--text', map)
+    const L = Number(map[lToken])
     for (const ground of ['--bg', '--bg-panel', '--bg-elevated']) {
-      out.push({ theme, ground, text, surface: resolve(ground, map) })
+      out.push({ theme, ground, L, surface: resolve(ground, map) })
     }
   }
   return out
 }
 
-function checkTagInk(p) {
+function checkTagInk(lToken) {
   let worst = { ratio: Infinity }
-  for (const { theme, ground, text, surface } of tagSurfaces()) {
+  for (const { theme, ground, L, surface } of tagSurfaces(lToken)) {
+    if (!Number.isFinite(L)) {
+      failures.push(`${theme}: ${lToken} is not a number (tag-ink)`)
+      continue
+    }
     for (const hex of palette) {
-      const ink = parseHex(hex).map((ch, i) => clamp(Math.round(ch * p + text[i] * (1 - p))))
-      const ratio = contrast(ink, surface)
+      const ratio = contrast(relight(hex, L), surface)
       if (ratio < worst.ratio) worst = { ratio, theme, ground, hex }
       if (ratio < TAG_INK_MIN)
         failures.push(
@@ -202,10 +252,10 @@ function checkTagInk(p) {
   return worst
 }
 
-if (inkPct && palette.length >= 5) {
-  const worst = checkTagInk(Number(inkPct[1]) / 100)
+if (inkL && palette.length >= 5) {
+  const worst = checkTagInk(inkL[1])
   console.log(
-    `tag ink (${inkPct[1]}% toward --text): worst ${worst.ratio.toFixed(2)} — ` +
+    `tag ink (OKLCH lightness ${inkL[1]}): worst ${worst.ratio.toFixed(2)} — ` +
       `${worst.theme} ${worst.hex} on ${worst.ground}, floor ${TAG_INK_MIN}\n`
   )
 }

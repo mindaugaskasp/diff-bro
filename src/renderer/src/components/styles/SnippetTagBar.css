@@ -56,26 +56,11 @@
 }
 .chip.def {
   --tc: var(--text-dim);
-  background: none;
-  border-color: var(--border);
 }
-.chip .ct {
-  color: var(--text-hint);
-  font-weight: 500;
-}
-/* Selected: the tint deepens and the keyline doubles, so "on" reads from the
-   shape rather than from a colour shift the pastel palette cannot carry. */
-.chip.on {
-  background: color-mix(in srgb, var(--tc) 26%, transparent);
-  box-shadow: inset 0 0 0 1px var(--tag-ink);
-}
-.chip.def.on {
-  border-color: var(--text-dim);
-}
-/* Soften every non-selected chip while a filter is active, so the active pops. */
+/* Soften every non-selected chip while a filter is active, so the picked one
+   pops. Gentle now that the picked chip is a solid fill — 0.34 buried them. */
 .tagbar.has-active .chip:not(.on) {
-  opacity: 0.34;
-  filter: saturate(0.45);
+  opacity: 0.6;
 }
 .tagbar.has-active .chip:not(.on):hover {
   opacity: 0.9;
