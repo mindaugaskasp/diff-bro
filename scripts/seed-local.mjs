@@ -1,33 +1,30 @@
 #!/usr/bin/env node
-// `make local-seed` — fill YOUR OWN install with test data, then quit.
+// `make local-seed` — fill YOUR OWN install with test data. Runs on the host,
+// not in Docker, because the target is the real user-data directory.
 //
-// Unlike every other Make target this runs natively on the host, because the
-// point is the real user-data directory: the vault key lives behind the OS
-// keychain there, and only the app itself can encrypt through it.
+// Fixtures and the plaintext seed are built here; everything needing the vault
+// key happens in seed-worker.cjs. It MERGES — every entry carries the `seed`
+// tag, which is what lets `--clean` remove exactly this and nothing else.
 //
-// It MERGES. Existing snippets and saved diffs are read, the seed is appended,
-// and the result written back — nothing you already had is replaced. Every
-// entry it writes carries the `seed` tag, which is what lets `--clean` remove
-// exactly this and nothing else.
-//
-// Diff Bro must be closed: a second launch hands its argv to the running app
-// and exits, so there would be no renderer to seed through.
+// Diff Bro must be closed: a second launch hands its argv to the running app.
 
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { _electron as electron } from '@playwright/test'
 import { makeXlsx } from './lib/makeXlsx.mjs'
 import { createIdentityKeys } from '../src/main/sealing.js'
 import { SEED_TAG, localDiffs, localSnippets } from './lib/seedLocal.mjs'
 
-/* global window -- referenced only inside page.evaluate, which runs in the renderer */
-
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
-// Outside the repo on purpose: these are files to open in the app, not sources.
-const SEED_DIR = process.env.SEED_DIR || join(homedir(), 'DiffBro-seed')
+// Inside the repo but gitignored: keeps the fixtures beside the project they
+// belong to, with no chance of committing 80 MB of generated log. No leading
+// dot — Finder hides those, and the open dialog needs Cmd+Shift+. to show them,
+// which is a poor way to reach files whose whole purpose is being opened.
+// Override with SEED_DIR.
+const SEED_DIR = process.env.SEED_DIR || join(ROOT, 'seed-files')
 
 // Mirrors snippetStore's TAG_PALETTE. Cosmetic only.
 const TAG_PALETTE = [
@@ -144,6 +141,37 @@ const TEXT_FILES = {
   ).join(',\n')}\n}\n`
 }
 
+// Streaming only engages past STREAM_THRESHOLD_BYTES (32 MB, src/main/files.js),
+// so a "big" file of a few thousand lines proves nothing — it opens in Monaco
+// like any other. These are sized to cross it.
+// Written a chunk at a time, because building 36 MB as one JS string to hand to
+// writeFileSync is exactly the memory behaviour the feature exists to avoid.
+// Measured at ~76 bytes/line: 550k clears the 32 MB threshold with room to
+// spare. 400k came to 29 MB and quietly opened in Monaco instead.
+const STREAM_LINES = 550_000
+const CHUNK_LINES = 20_000
+
+function writeStreamedPair(dir) {
+  const line = (i, changed) =>
+    `${String(i).padStart(9, '0')} ${changed ? 'THIS LINE WAS EDITED' : 'request ok'} ` +
+    `session=${(i * 2654435761) % 1_000_000} latency=${i % 997}ms path=/api/v2/resource/${i % 5000}\n`
+
+  const write = (name, edit) => {
+    const path = join(dir, name)
+    writeFileSync(path, '')
+    for (let start = 0; start < STREAM_LINES; start += CHUNK_LINES) {
+      let chunk = ''
+      for (let i = start; i < Math.min(start + CHUNK_LINES, STREAM_LINES); i++) {
+        chunk += line(i, edit && i % 5000 === 0)
+      }
+      writeFileSync(path, chunk, { flag: 'a' })
+    }
+    return path
+  }
+
+  return [write('huge-before.log', false), write('huge-after.log', true)]
+}
+
 function writeFixtures() {
   mkdirSync(SEED_DIR, { recursive: true })
   for (const [name, bytes] of Object.entries(FILES)) writeFileSync(join(SEED_DIR, name), bytes)
@@ -152,264 +180,102 @@ function writeFixtures() {
   }
 }
 
-async function launch() {
+// One addressed to a single recipient and one to all three, so the "not for you"
+// refusal and the multi-recipient path each have a real file to try.
+const SEALED = [
+  { name: 'Sealed for Alice', all: false },
+  { name: 'Sealed for all three', all: true }
+].map((s) => ({
+  ...s,
+  snapshot: {
+    mode: 'files',
+    renderSideBySide: true,
+    ignoreTrimWhitespace: false,
+    left: { path: null, name: 'sealed-before.json', content: '{ "n": 1 }' },
+    right: { path: null, name: 'sealed-after.json', content: '{ "n": 2 }' }
+  }
+}))
+
+function runWorker(payload) {
   if (!existsSync(MAIN)) {
     throw new Error(`build/ is missing — run "npm run build" first (looked for ${MAIN}).`)
   }
-  // No --user-data-dir: the real install is the whole point. SEED_USER_DATA
-  // points it at a throwaway one instead, which is how this script is tested
-  // without touching anybody's vault.
-  //
-  // `.` from ROOT, never the entry FILE: handed a path with no package.json
-  // beside it, Electron falls back to the name "Electron" — a different
-  // userData directory AND a different safeStorage keychain entry, so the seed
-  // would land where `npm run dev` never looks. It must be `.` rather than an
-  // absolute ROOT because cliWords reads an unrecognised leading path as a
-  // command (this checkout is "diff-bro", which its ENTRY pattern misses).
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-seed-'))
+  const payloadPath = join(dir, 'payload.json')
+  const resultPath = join(dir, 'result.json')
+  writeFileSync(payloadPath, JSON.stringify(payload))
+
+  const electronBin = join(ROOT, 'node_modules', '.bin', 'electron')
+  // Exercises the script without touching anybody's real vault.
   const sandbox = process.env.SEED_USER_DATA
-  const args = sandbox ? ['.', `--user-data-dir=${sandbox}`] : ['.']
-  const app = await electron.launch({ args, cwd: ROOT }).catch((err) => {
-    throw new Error(
-      `could not start Diff Bro — is it already running? Quit it and try again.\n  (${err.message})`
-    )
-  })
-  const page = await app.firstWindow()
-  await page.locator('.app').waitFor({ state: 'visible', timeout: 30_000 })
-  return { app, page }
-}
+  const args = [join(ROOT, 'scripts', 'seed-worker.cjs')]
+  if (sandbox) args.push(`--user-data-dir=${sandbox}`)
+  args.push(payloadPath, resultPath)
 
-// One read of both store files. Everything else takes them as arguments, so
-// the parse lives in exactly one place — page.evaluate bodies cannot share a
-// helper, they are serialised into the renderer whole.
-async function readStores(page) {
-  return page.evaluate(() => {
-    const read = (name) => {
-      try {
-        return JSON.parse(window.api.storeLoad(name) || '{}')
-      } catch {
-        return {}
-      }
-    }
-    return { snippets: read('snippets'), vault: read('vault') }
-  })
-}
-
-// Merge into whatever is already stored. Runs in the renderer because that is
-// where window.api lives; the vault key never crosses back.
-async function writeStores(page, existing, { snippets, diffs, palette, seedTag }) {
-  return page.evaluate(
-    async ({ existing, snippets, diffs, palette, seedTag }) => {
-      const tags = { ...(existing.snippets.tags ?? {}) }
-      let rank = Object.keys(tags).length
-      const ensure = (names) => {
-        const out = []
-        for (const raw of names) {
-          const n = String(raw).trim().toLowerCase().slice(0, 40)
-          if (!n || out.includes(n) || out.length >= 20) continue
-          if (!tags[n]) {
-            tags[n] = { color: palette[Object.keys(tags).length % palette.length], rank: ++rank }
-          }
-          out.push(n)
-        }
-        return out
-      }
-      const seal = async (text, aad) => {
-        const box = await window.api.vaultEncrypt(text, aad)
-        if (box?.error) throw new Error('vault key unavailable: ' + box.error)
-        return box
-      }
-      const fmtTag = (l) => (l && l !== 'auto' && l !== 'plaintext' ? l : null)
-
-      let t = Date.now()
-      const newSnippets = []
-      for (const s of snippets) {
-        const id = crypto.randomUUID()
-        const aadSalt = crypto.randomUUID()
-        const createdAt = t
-        t -= 3 * 3600_000
-        const box = await seal(s.content, [id, aadSalt, createdAt].join('|'))
-        const ft = fmtTag(s.language)
-        newSnippets.push({
-          id,
-          aadSalt,
-          name: s.name,
-          createdAt,
-          language: s.language,
-          detected: s.language,
-          favorite: !!s.favorite,
-          secret: s.secret === true,
-          tags: ensure(ft ? [ft, ...s.tags] : s.tags),
-          iv: box.iv,
-          data: box.data
-        })
-      }
-
-      const newDiffs = []
-      for (const d of diffs) {
-        const id = crypto.randomUUID()
-        const from = d.from ?? null
-        const aad = [id, d.createdAt, d.expiresAt, from ?? ''].join('|')
-        const box = await seal(JSON.stringify(d.payload), aad)
-        newDiffs.push({
-          id,
-          name: d.name,
-          createdAt: d.createdAt,
-          expiresAt: d.expiresAt,
-          from,
-          favorite: !!d.favorite,
-          tags: ensure(d.tags),
-          iv: box.iv,
-          data: box.data
-        })
-      }
-
-      const yours = (list) => (list ?? []).filter((e) => !e.tags?.includes(seedTag))
-      const keptSnippets = yours(existing.snippets.entries)
-      const keptDiffs = yours(existing.vault.entries)
-      await window.api.storeSave(
-        'snippets',
-        JSON.stringify({ tags, entries: [...newSnippets, ...keptSnippets] })
-      )
-      await window.api.storeSave('vault', JSON.stringify({ entries: [...newDiffs, ...keptDiffs] }))
-      return {
-        snippets: newSnippets.length,
-        diffs: newDiffs.length,
-        kept: keptSnippets.length + keptDiffs.length
-      }
-    },
-    { existing, snippets, diffs, palette, seedTag }
-  )
-}
-
-async function removeSeeded(page, existing, seedTag, keyPrefix) {
-  const keys = await page.evaluate(async (prefix) => {
-    let gone = 0
-    for (const k of await window.api.listTrustedKeys()) {
-      if (!String(k.label ?? '').startsWith(prefix)) continue
-      await window.api.removeTrusted(k.fingerprint)
-      gone += 1
-    }
-    return gone
-  }, keyPrefix)
-
-  const entries = await page.evaluate(
-    async ({ existing, seedTag }) => {
-      const yours = (list) => (list ?? []).filter((e) => !e.tags?.includes(seedTag))
-      const snippets = yours(existing.snippets.entries)
-      const diffs = yours(existing.vault.entries)
-      const before =
-        (existing.snippets.entries ?? []).length + (existing.vault.entries ?? []).length
-      await window.api.storeSave(
-        'snippets',
-        JSON.stringify({ tags: existing.snippets.tags ?? {}, entries: snippets })
-      )
-      await window.api.storeSave('vault', JSON.stringify({ entries: diffs }))
-      return before - snippets.length - diffs.length
-    },
-    { existing, seedTag }
-  )
-  return { entries, keys }
-}
-
-// Real trusted keys, so the share dialog has someone to address. Their private
-// halves are thrown away with this process — a sealed file addressed to one is
-// for exercising the SEND path and the "not for you" refusal, never for opening.
-async function addRecipients(page, recipients) {
-  return page.evaluate(
-    async (list) => {
-      let added = 0
-      for (const r of list) {
-        const res = await window.api.addTrustedKeyNamed(r.pub, r.label)
-        if (res?.ok || res?.added) added += 1
-      }
-      return added
-    },
-    recipients.map((r) => ({ label: r.label, pub: r.pub }))
-  )
-}
-
-// Seal a couple of the seeded diffs to those recipients, straight to disk.
-async function writeSealed(app, page, dir) {
-  const out = []
-  for (const [i, spec] of [
-    { name: 'Sealed for Alice', to: 0 },
-    { name: 'Sealed for all three', to: null }
-  ].entries()) {
-    const target = join(dir, `sealed-${i + 1}.diffbro`)
-    await app.evaluate(({ dialog }, fp) => {
-      dialog.showSaveDialog = async () => ({ canceled: false, filePath: fp })
-    }, target)
-    const res = await page.evaluate(
-      async ({ name, only }) => {
-        const fps = (await window.api.listTrustedKeys()).map((k) => k.fingerprint)
-        const to = only === null ? fps : [fps[only]]
-        if (!to.length || to.some((x) => !x)) return { error: 'no-recipients' }
-        return window.api.shareExport(
-          {
-            name,
-            createdAt: Date.now(),
-            expiresAt: Date.now() + 24 * 3600_000,
-            snapshot: {
-              mode: 'files',
-              renderSideBySide: true,
-              ignoreTrimWhitespace: false,
-              left: { path: null, name: 'sealed-before.json', content: '{ "n": 1 }' },
-              right: { path: null, name: 'sealed-after.json', content: '{ "n": 2 }' }
-            }
-          },
-          to
-        )
-      },
-      { name: spec.name, only: spec.to }
-    )
-    if (res?.ok || res?.path) out.push(res.path ?? target)
-  }
-  return out
-}
-
-async function main() {
-  const clean = process.argv.includes('--clean')
-  const { app, page } = await launch()
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE // would run the worker as plain Node, with no safeStorage
+  // The worker reports its own failures through resultPath, so a non-zero exit
+  // is only fatal when nothing was written there.
   try {
-    if (clean) {
-      const { entries, keys } = await removeSeeded(
-        page,
-        await readStores(page),
-        SEED_TAG,
-        SEED_KEY_PREFIX
-      )
-      rmSync(SEED_DIR, { recursive: true, force: true })
-      console.log(
-        `Removed ${entries} seeded entries, ${keys} seeded trusted keys, and ${SEED_DIR}.`
-      )
-      return
-    }
-
-    writeFixtures()
-    const now = Date.now()
-    const counts = await writeStores(page, await readStores(page), {
-      snippets: localSnippets(),
-      diffs: localDiffs(now),
-      palette: TAG_PALETTE,
-      seedTag: SEED_TAG
-    })
-    const recipients = await addRecipients(page, RECIPIENTS)
-    const sealed = await writeSealed(app, page, SEED_DIR)
-
-    console.log(
-      `Seeded ${counts.snippets} snippets and ${counts.diffs} diffs (tagged "${SEED_TAG}").`
-    )
-    console.log(`Kept ${counts.kept} entries that were already there.`)
-    console.log(`Added ${recipients} trusted keys: ${RECIPIENTS.map((r) => r.label).join(', ')}.`)
-    console.log(`Files to open: ${SEED_DIR}`)
-    if (sealed.length) console.log(`Sealed shares: ${sealed.join(', ')}`)
-    console.log('\nStart Diff Bro to see them. "make local-seed-clean" takes it all back out.')
-  } finally {
-    await app.close().catch(() => {})
+    execFileSync(electronBin, args, { cwd: ROOT, env, stdio: 'ignore' })
+  } catch {
+    /* empty */
   }
+  let result
+  try {
+    result = JSON.parse(readFileSync(resultPath, 'utf-8'))
+  } catch {
+    throw new Error('could not start Diff Bro — is it already running? Quit it and try again.')
+  }
+  if (result.error) throw new Error(result.error)
+  return result
 }
 
-main().catch((err) => {
+function main() {
+  if (process.argv.includes('--clean')) {
+    const res = runWorker({
+      clean: true,
+      seedTag: SEED_TAG,
+      keyPrefix: SEED_KEY_PREFIX,
+      seedDir: SEED_DIR
+    })
+    console.log(
+      `Removed ${res.removed} seeded entries, ${res.keys} seeded trusted keys, and ${SEED_DIR}.`
+    )
+    return
+  }
+
+  writeFixtures()
+  const streamed = writeStreamedPair(SEED_DIR)
+  const res = runWorker({
+    clean: false,
+    seedTag: SEED_TAG,
+    keyPrefix: SEED_KEY_PREFIX,
+    palette: TAG_PALETTE,
+    seedDir: SEED_DIR,
+    snippets: localSnippets(),
+    diffs: localDiffs(Date.now()),
+    recipients: RECIPIENTS.map((r) => ({ label: r.label, pub: r.pub })),
+    sealed: SEALED
+  })
+
+  console.log(`Seeded ${res.snippets} snippets and ${res.diffs} diffs (tagged "${SEED_TAG}").`)
+  console.log(`Kept ${res.kept} entries that were already there.`)
+  console.log(`Added ${res.keys} trusted keys: ${RECIPIENTS.map((r) => r.label).join(', ')}.`)
+  console.log(`Data directory: ${res.dataDir}`)
+  console.log(`Files to open: ${SEED_DIR}`)
+  const mb = (f) => (statSync(f).size / 1024 / 1024).toFixed(1)
+  console.log(
+    `Streamed pair (open both to exercise it): ` +
+      streamed.map((f) => `${basename(f)} ${mb(f)} MB`).join(', ')
+  )
+  if (res.sealed?.length) console.log(`Sealed shares: ${res.sealed.join(', ')}`)
+  console.log('\nStart Diff Bro to see them. "make local-seed-clean" takes it all back out.')
+}
+
+try {
+  main()
+} catch (err) {
   console.error(`local-seed: ${err.message}`)
   process.exit(1)
-})
+}

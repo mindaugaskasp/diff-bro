@@ -20,6 +20,9 @@ const comparison = (l, r) => ({ mode: 'files', left: FILE(l), right: FILE(r) })
 function withTabs(...comparisons) {
   const tabs = useTabsStore()
   tabs.init()
+  // A booted app has already read the stored session back (App.vue awaits
+  // restoreSession on mount); saveSession refuses to write before that.
+  tabs.sessionReady = true
   for (const c of comparisons) tabs.open(c)
   return tabs
 }
@@ -347,6 +350,31 @@ describe('the session, across a quit', () => {
     return tabs
   }
 
+  // The debounced save races the restore on launch: a file dropped inside the
+  // 500ms window, before restoreSession() has read storage, used to overwrite
+  // the stored session with the one tab that had just been opened — the rest
+  // were gone. Only the EMPTY branch consulted sessionReady.
+  it('does not overwrite a session that has not been read back yet', async () => {
+    const first = withTabs(comparison('a.txt', 'b.txt'), comparison('c.txt', 'd.txt'))
+    await first.saveSession()
+    const sealed = stored()
+
+    // A fresh launch where the user drops a file before restoreSession resolves.
+    setActivePinia(createPinia())
+    const tabs = useTabsStore()
+    tabs.init()
+    useDiffStore().left = FILE('dropped.txt')
+    await tabs.saveSession()
+
+    expect(stored()).toBe(sealed)
+
+    // Once the restore has happened, saving is live again.
+    await tabs.restoreSession()
+    useDiffStore().left = FILE('later.txt')
+    await tabs.saveSession()
+    expect(stored()).not.toBe(sealed)
+  })
+
   it('reopens every comparison, on the tab that was in front', async () => {
     const tabs = withTabs(comparison('a.txt', 'b.txt'), comparison('c.txt', 'd.txt'))
     tabs.activate(tabs.tabs[0].id)
@@ -671,6 +699,7 @@ describe('the structure toggle belongs to its comparison', () => {
     const diff = useDiffStore()
     const tabs = useTabsStore()
     tabs.init()
+    tabs.sessionReady = true // as a booted app is, after restoreSession
     tabs.open(json('{"a":1}', '{"a":2}'))
     diff.semanticView = true
     diff.renderSideBySide = false

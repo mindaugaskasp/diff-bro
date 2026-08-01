@@ -89,6 +89,21 @@ export function verifyRotation(record, oldSignPub, newPub) {
   }
 }
 
+/**
+ * A public key rebuilt to the current format, carrying only what a peer may act
+ * on. `rotation` travels: it is ADVISORY and vouchedBy verifies it against a key
+ * from the local trust store, never from the file, so passing it through cannot
+ * be used to assert anything on its own. Dropping it silently killed the whole
+ * rotation note.
+ * @param {object} key
+ * @returns {{ format: string, sign: string, box: string, rotation?: object }}
+ */
+export function rebuiltPublicKey(key) {
+  const out = { format: KEY_FORMAT, sign: key.sign, box: key.box }
+  if (key.rotation) out.rotation = key.rotation
+  return out
+}
+
 // Cosmetic display label only — never part of the fingerprint or any trust
 // decision, so treat as untrusted: strip control chars, collapse, hard-cap.
 export const MAX_LABEL_LEN = 80
@@ -297,6 +312,24 @@ export function openSealedWith(file, identities, trustedList, now = Date.now()) 
   return last
 }
 
+// The signature check, or null when it passes. A trust store entry is untrusted
+// INPUT — it can be hand-edited, and the config-restore path once wrote it
+// unvalidated — so a key that will not parse is a verdict about the file, never
+// an exception thrown past an IPC boundary where nothing catches it.
+function signatureVerdict(payload, audience, signature, trusted) {
+  try {
+    const ok = verify(
+      null,
+      signedData(payload, audience), // the signature names the whole audience
+      createPublicKey(trusted.sign),
+      Buffer.from(signature, 'base64')
+    )
+    return ok ? null : { error: 'bad-signature', from: trusted.label }
+  } catch {
+    return { error: 'bad-trusted-key', from: trusted.label }
+  }
+}
+
 export function openSealed(file, me, trustedList, now = Date.now()) {
   if (!hasShareShape(file)) return { error: 'not-a-share-file' }
   const mine = file.keys.find((k) => k?.to === me.pub.fingerprint)
@@ -339,13 +372,8 @@ export function openSealed(file, me, trustedList, now = Date.now()) {
   if (!trusted) return { error: 'unknown-signer', signer: inner.signer }
 
   const payload = Buffer.from(inner.payload, 'base64')
-  const ok = verify(
-    null,
-    signedData(payload, audience), // the signature names the whole audience
-    createPublicKey(trusted.sign),
-    Buffer.from(inner.signature, 'base64')
-  )
-  if (!ok) return { error: 'bad-signature', from: trusted.label }
+  const verdict = signatureVerdict(payload, audience, inner.signature, trusted)
+  if (verdict) return verdict
 
   let entry
   try {

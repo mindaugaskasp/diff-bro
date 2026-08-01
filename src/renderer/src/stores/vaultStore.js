@@ -306,8 +306,12 @@ export const useVaultStore = defineStore('vault', {
         recipientFps
       )
       // Only a written file persists the local twin — a cancel writes nothing.
-      if (res.ok) this.recordShare(await this.save(name, ttlHours, snapshot, tags), recipientFps)
-      return res
+      if (!res.ok) return res
+      // The sealed file is already sent; a local copy that could not be saved
+      // (locked vault key) is reported rather than passed off as a full share.
+      const id = await this.save(name, ttlHours, snapshot, tags)
+      if (id) this.recordShare(id, recipientFps)
+      return { ...res, localCopy: !!id }
     },
     async importShared() {
       return this._ingestShared(await window.api.shareImport())

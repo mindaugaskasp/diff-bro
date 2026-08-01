@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { execFileSync } from 'node:child_process'
 import { delimiter, dirname, join } from 'node:path'
 import {
   installShim,
@@ -37,7 +38,7 @@ describe('shimScript', () => {
   it('execs the app and forwards arguments intact', () => {
     const s = shimScript(APP, 'darwin')
     expect(s).toMatch(/^#!\/bin\/sh/)
-    expect(s).toContain(`exec "${APP}" "$@"`)
+    expect(s).toContain(`exec '${APP}' "$@"`)
   })
 
   it('writes a .cmd that forwards %* on windows', () => {
@@ -98,5 +99,33 @@ describe('shimStatus / removeShim', () => {
     writeFileSync(target, 'someone elses\n')
     expect(removeShim({ home, platform: 'darwin' }).ok).toBe(false)
     expect(readFileSync(target, 'utf8')).toContain('someone elses')
+  })
+})
+
+// The app path is interpolated into a /bin/sh script. Self-inflicted only (the
+// user would have to install to a path like this) but a single quote or a $(…)
+// otherwise ends the quoted string and the rest is executed.
+describe('an app path with shell metacharacters', () => {
+  // Asked of a REAL shell rather than a regex: the script is rewritten so the
+  // exec target is echoed instead of run, and sh reports the single word it
+  // actually resolved to. A path that broke out would print something else, or
+  // fail the syntax check outright.
+  const execTarget = (exePath) => {
+    const script = shimScript(exePath, 'darwin').replace('exec ', 'printf %s ')
+    expect(() => execFileSync('sh', ['-n'], { input: script })).not.toThrow()
+    return execFileSync('sh', ['-s', '--'], { input: script, encoding: 'utf-8' })
+  }
+
+  it('passes a path holding quotes and a command substitution through untouched', () => {
+    const nasty = '/Applications/Diff "; touch /tmp/pwned; $(id) `id` Bro/Diff Bro'
+    expect(execTarget(nasty)).toBe(nasty)
+  })
+
+  it('survives an embedded single quote', () => {
+    expect(execTarget("/opt/Bob's Diff/bro")).toBe("/opt/Bob's Diff/bro")
+  })
+
+  it('leaves an ordinary path alone', () => {
+    expect(execTarget('/usr/local/bin/diffbro')).toBe('/usr/local/bin/diffbro')
   })
 })

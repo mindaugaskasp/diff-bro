@@ -1,7 +1,7 @@
 import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } from 'electron'
 import { homedir } from 'os'
 import { ISSUE_BASE, buildIssueUrl } from './issueUrl'
-import { toggleQuickLook } from './quickLook'
+import { isLauncher, toggleQuickLook } from './quickLook'
 
 // Leaves the offline sandbox, so confirm first — showing the prefill, since
 // this is the moment that text stops being local.
@@ -41,8 +41,17 @@ function focusedWindow() {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
 }
 
+// Menu actions act on the DOCUMENT, which only the main window has. With the
+// launcher up it is the focused window, so ⌘S/⌘K/⌘1 used to go to a renderer
+// that has no handler for them and silently do nothing.
+function documentWindow() {
+  const focused = focusedWindow()
+  if (!isLauncher(focused)) return focused
+  return BrowserWindow.getAllWindows().find((w) => !isLauncher(w)) ?? null
+}
+
 function sendToFocused(action) {
-  focusedWindow()?.webContents.send('menu:action', action)
+  documentWindow()?.webContents.send('menu:action', action)
 }
 
 // Clamped zoom (roughly 60%–250%) so it can never run away.

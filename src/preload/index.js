@@ -5,6 +5,12 @@ contextBridge.exposeInMainWorld('api', {
   readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   exportDiffHtml: (payload) => ipcRenderer.invoke('diff:exportHtml', payload),
+  // Streamed comparison: files too large to hold are indexed by line in main
+  // and aligned over those digests. The renderer gets the alignment, then asks
+  // for the line windows it is showing — the text never crosses whole.
+  streamOpen: (leftPath, rightPath) => ipcRenderer.invoke('stream:open', { leftPath, rightPath }),
+  streamLines: (payload) => ipcRenderer.invoke('stream:lines', payload),
+  streamClose: (token) => ipcRenderer.invoke('stream:close', token),
   // Diff image export (saved diffs only): main screenshots the diff view itself,
   // so the picture carries the live theme and Monaco's highlighting. The bitmap
   // stays in main — the renderer only sends a rect and receives a preview URL.
@@ -129,6 +135,9 @@ contextBridge.exposeInMainWorld('api', {
   cliStatus: () => ipcRenderer.invoke('cli:status'),
   cliInstall: () => ipcRenderer.invoke('cli:install'),
   cliRemove: () => ipcRenderer.invoke('cli:remove'),
+  // Rolling local backups of snippets and kept diffs (src/main/autoBackup.js).
+  listBackups: () => ipcRenderer.invoke('backup:list'),
+  restoreBackup: (name) => ipcRenderer.invoke('backup:restore', name),
   hashText: (text) => ipcRenderer.invoke('hash:text', text),
   hashFile: () => ipcRenderer.invoke('hash:file'),
   gitToolStatus: () => ipcRenderer.invoke('git:toolStatus'),

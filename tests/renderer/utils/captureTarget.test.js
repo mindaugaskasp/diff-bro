@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CAPTURE_SELECTOR,
+  EDITOR_SELECTOR,
   afterFrames,
   captureRectOf,
   captureRegionOf,
@@ -227,6 +228,28 @@ describe('captureRegionOf', () => {
       content: { x: 260, y: 89, width: 900, height: 640 },
       editorY: 300
     })
+  })
+
+  // The streamed viewer has no Monaco behind it; its row list must still be
+  // found, or a streamed comparison could not be photographed at all.
+  it('finds the streamed viewer’s row list as well as Monaco', () => {
+    expect(EDITOR_SELECTOR).toContain('.diff-container')
+    expect(EDITOR_SELECTOR).toContain('.stream-rows')
+    const doc = {
+      querySelector: (sel) =>
+        sel === CAPTURE_SELECTOR
+          ? {
+              getBoundingClientRect: () => COLUMN,
+              // Stands for a document where only .stream-rows exists: the
+              // combined selector has to match it.
+              querySelector: (inner) =>
+                inner === EDITOR_SELECTOR
+                  ? { getBoundingClientRect: () => ({ top: 150, height: 500 }) }
+                  : null
+            }
+          : null
+    }
+    expect(captureRegionOf({ doc })).toMatchObject({ editorY: 150 })
   })
 })
 

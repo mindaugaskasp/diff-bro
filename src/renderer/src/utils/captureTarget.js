@@ -7,11 +7,13 @@
 // The comparison column: the file-slots row, the format banner and the viewer.
 // The toolbar, the sidebar and any dialog are deliberately outside it.
 export const CAPTURE_SELECTOR = '.content'
-// Monaco's host inside that column. The strip above it (file slots, format
-// banner) belongs in the picture once, at the top — never repeated per slice.
-export const EDITOR_SELECTOR = '.diff-container'
-// Monaco renders one of these per visible line, in both panes.
-const LINE_SELECTOR = '.view-line'
+// The scrolling viewer inside that column — Monaco's host, or the streamed
+// viewer's row list. The strip above it (file slots, format banner, the
+// streamed marker) belongs in the picture once, at the top, never repeated per
+// slice.
+export const EDITOR_SELECTOR = '.diff-container, .stream-rows'
+// One per rendered line: Monaco's own, or a streamed row.
+const LINE_SELECTOR = '.view-line, .srow'
 // Breathing room under the last line, and a floor so a one-line diff still
 // produces a picture rather than a sliver.
 const BOTTOM_PAD = 14

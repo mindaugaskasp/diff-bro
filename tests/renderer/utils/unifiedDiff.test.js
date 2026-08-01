@@ -115,3 +115,27 @@ describe('applyUnifiedDiff', () => {
     expect(applyUnifiedDiff('a\n', 'not a patch at all')).toEqual({ error: 'not-a-unified-diff' })
   })
 })
+
+// MAX_DIFF_LINES guards diff GENERATION, not Apply Patch on a user-supplied
+// .patch. A single huge hunk spread into splice() blew the argument limit and
+// threw RangeError before any of the patch was applied.
+describe('a very large hunk', () => {
+  it('applies without spreading an unbounded array into splice', () => {
+    const COUNT = 200_000
+    const base = 'first\n'
+    const added = Array.from({ length: COUNT }, (_, i) => `line ${i}`)
+    const patch = [
+      '--- a/big.txt',
+      '+++ b/big.txt',
+      `@@ -1,1 +1,${COUNT + 1} @@`,
+      ' first',
+      ...added.map((l) => `+${l}`)
+    ].join('\n')
+
+    const res = applyUnifiedDiff(base, patch)
+    expect(res.error).toBeFalsy()
+    expect(res.rejected).toEqual([])
+    expect(res.output.split('\n')).toHaveLength(COUNT + 2) // +1 context, +1 trailing
+    expect(res.output.endsWith(`line ${COUNT - 1}\n`)).toBe(true)
+  })
+})

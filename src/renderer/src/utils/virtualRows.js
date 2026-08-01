@@ -9,6 +9,7 @@
 // from these, so the arithmetic and the layout cannot drift apart.
 export const SD_ROW_H = 22
 export const GRID_ROW_H = 24
+export const STREAM_ROW_H = 18
 
 // Rows kept beyond each edge, so a fast scroll doesn't reach blank space before
 // the next frame lands.

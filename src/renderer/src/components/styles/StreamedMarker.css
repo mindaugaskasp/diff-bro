@@ -1,0 +1,44 @@
+/* The band that marks a streamed comparison. Ground, keyline and ink are the
+   same chrome tokens the file-slots row above it and the status strip below it
+   use, so it re-tints on all 14 themes; the accent is spent on a solid left
+   rule rather than a tinted fill, which keeps the high-chroma accents (matrix,
+   nyan, neon) reading as a mark instead of a glow. Display and vertical
+   centring come from .band in ui.css. */
+.stream-mark {
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  font-size: var(--font-sm);
+}
+.mark-icon {
+  flex: none;
+  color: var(--accent);
+}
+.mark-title {
+  flex: none;
+  font-weight: 600;
+  color: var(--text);
+}
+.mark-why {
+  color: var(--text-hint);
+}
+/* Reuses the designed warning pair, the one combination guaranteed legible on
+   both light and dark grounds. */
+.mark-capped {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: var(--font-2xs);
+  font-weight: 600;
+}
+.mark-limits {
+  flex: none;
+  margin-left: auto;
+  padding-left: var(--space-3);
+  color: var(--text-dim);
+}

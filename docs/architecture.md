@@ -67,7 +67,11 @@ flowchart TB
   pure, unit-tested crypto cores: `sealing.js`
   (sealed diff sharing), `vaultCrypt.js` (saved-diff vault), `snippetSealing.js`
   (snippet export), `textCrypt.js` (Tools encrypt/decrypt), `configBackup.js`
-  (config backup). `share.js` is the thin Electron glue.
+  (config backup). `share.js` is the thin Electron glue. The streamed
+  comparison follows the same split: `lineIndexCore.js` (chunked line scanning +
+  digests), `lineIndex.js` (the index and its windowed reads), `hashDiff.js`
+  (alignment over digests) and `streamWindow.js` (range policy) are pure and
+  unit-tested; `streamedDiff.js` is the IPC glue.
 - `src/preload` — the `contextBridge` `window.api`.
 - `src/renderer` — the Vue app: `adapters/`, `stores/` (Pinia), and
   `components/` (viewer, sidebar, dialogs), plus pure `utils/`

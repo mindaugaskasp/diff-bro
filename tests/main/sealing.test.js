@@ -14,6 +14,7 @@ import {
   ROTATION_FORMAT,
   openSealed,
   openSealedWith,
+  rebuiltPublicKey,
   sealEntry,
   signRotation,
   verifyRotation,
@@ -331,6 +332,18 @@ describe('openSealed', () => {
     expect(openSealed(reSealed, bob, bobTrustsAlice, NOW).error).toBe('bad-signature')
   })
 
+  // A trusted-keys file is not necessarily one this app wrote — the config
+  // restore path used to write it unvalidated, and it can be hand-edited. A key
+  // that will not parse must be a verdict, never a throw: openSealed rejecting
+  // its IPC promise left the user with no message at all.
+  it('reports a trusted entry whose key will not parse instead of throwing', () => {
+    const { seal, bob, bobTrustsAlice } = makePeers()
+    const file = seal()
+    const corrupt = [{ ...bobTrustsAlice[0], sign: 'not a PEM at all' }]
+    expect(() => openSealed(file, bob, corrupt, NOW)).not.toThrow()
+    expect(openSealed(file, bob, corrupt, NOW).error).toBe('bad-trusted-key')
+  })
+
   it('rejects expired payloads and over-long TTLs at import time', () => {
     const { bob, bobTrustsAlice, seal } = makePeers()
     expect(openSealed(seal(), bob, bobTrustsAlice, NOW + 3600_000 + 1).error).toBe('expired')
@@ -629,5 +642,39 @@ describe('openSealedWith', () => {
       'not-for-you'
     )
     expect(openSealedWith(file, [], []).error).toBe('not-for-you')
+  })
+})
+
+// A key file is rebuilt to the current format on import, and that rebuild used
+// to list its fields by hand — dropping the rotation record, which made the
+// "this key replaces one you trust" note unreachable in every path.
+describe('rebuiltPublicKey', () => {
+  it('carries the rotation record through', () => {
+    const older = createIdentityKeys()
+    const newer = createIdentityKeys()
+    const rotation = signRotation({
+      oldPriv: older.priv,
+      oldFp: older.pub.fingerprint,
+      newPriv: newer.priv,
+      newFp: newer.pub.fingerprint
+    })
+    const rebuilt = rebuiltPublicKey({ ...newer.pub, rotation })
+
+    expect(rebuilt.rotation).toEqual(rotation)
+    // …and it still verifies after the round trip, which is the point.
+    expect(verifyRotation(rebuilt.rotation, older.pub.sign, rebuilt)).toBe(true)
+  })
+
+  it('normalises the format and keeps only key material', () => {
+    const id = createIdentityKeys()
+    const rebuilt = rebuiltPublicKey({ ...id.pub, format: 'diffbro-key/1', label: 'whatever' })
+    expect(rebuilt.format).toBe(KEY_FORMAT)
+    // A label from the FILE is untrusted display text; the importer names the key.
+    expect(rebuilt.label).toBeUndefined()
+    expect(Object.keys(rebuilt).sort()).toEqual(['box', 'format', 'sign'])
+  })
+
+  it('omits rotation entirely when the key has none', () => {
+    expect('rotation' in rebuiltPublicKey(createIdentityKeys().pub)).toBe(false)
   })
 })

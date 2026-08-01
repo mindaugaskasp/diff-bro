@@ -10,6 +10,7 @@ import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
 import ToolsShelf from './ToolsShelf.vue'
 import TagManagePopover from './TagManagePopover.vue'
+import TagPickerPopover from './TagPickerPopover.vue'
 import AppIcon from './AppIcon.vue'
 
 const vault = useVaultStore()
@@ -64,6 +65,24 @@ const allTags = computed(() => {
     .sort((a, b) => b.count - a.count)
 })
 const pickTag = (name) => (activeTags.value = toggleTag(activeTags.value, name))
+
+// Two rows' worth. Diffs and snippets are what the sidebar is FOR; an unbounded
+// tag bar pushed them into a sliver the moment a library grew past a few dozen
+// tags. The rest live behind the picker, which is searchable and so is better
+// at fifty tags than the flat wall ever was.
+const TAG_BAR_LIMIT = 8
+const showAllTags = ref(false)
+
+// Selected tags come first whatever their count: a filter you cannot see is
+// worse than one you cannot reach, and rank alone would hide your own choice
+// behind "+42 more".
+const barTags = computed(() => {
+  const chosen = allTags.value.filter((t) => activeTags.value.includes(t.name))
+  const rest = allTags.value.filter((t) => !activeTags.value.includes(t.name))
+  return [...chosen, ...rest].slice(0, Math.max(TAG_BAR_LIMIT, chosen.length))
+})
+const overflowCount = computed(() => allTags.value.length - barTags.value.length)
+const clearTags = () => (activeTags.value = [])
 // Right-click is the only way in: a tag chip's primary job is filtering, and a
 // second visible control on every chip would crowd the bar.
 const managing = ref('')
@@ -115,7 +134,7 @@ const managing = ref('')
       </div>
       <div v-if="allTags.length" class="usb-tags">
         <button
-          v-for="t in allTags"
+          v-for="t in barTags"
           :key="t.name"
           class="tag-chip usb-tag"
           :class="{ on: activeTags.includes(t.name) }"
@@ -127,9 +146,28 @@ const managing = ref('')
           <span class="usb-dot" />{{ t.name }}
           <span class="usb-tct">{{ t.count }}</span>
         </button>
+        <button
+          v-if="overflowCount > 0"
+          class="tag-chip usb-more"
+          data-tip="Every tag, searchable"
+          @click="showAllTags = true"
+        >
+          +{{ overflowCount }} more
+        </button>
+      </div>
+      <div v-if="activeTags.length" class="usb-filtering">
+        <span>{{ activeTags.length }} tag{{ activeTags.length === 1 ? '' : 's' }} selected</span>
+        <button class="usb-clear" data-tip="Drop every tag filter" @click="clearTags">Clear</button>
       </div>
     </div>
     <TagManagePopover v-if="managing" :name="managing" @close="managing = ''" />
+    <TagPickerPopover
+      v-if="showAllTags"
+      :tags="allTags"
+      :active="activeTags"
+      @pick="pickTag"
+      @close="showAllTags = false"
+    />
 
     <div class="usb-scroll">
       <SavedDiffsSection

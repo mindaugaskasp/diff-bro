@@ -13,6 +13,7 @@ import {
   encodePublicKey,
   fingerprint,
   isAcceptedKeyFormat,
+  rebuiltPublicKey,
   openSealedWith,
   sealEntry,
   shareFilename,
@@ -21,6 +22,7 @@ import {
   ttlError
 } from './sealing'
 import { openConfig, sealConfig } from './configBackup'
+import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
 import { validateSnippetBundle } from './snippetSealing'
 
 const PLAIN_PREFIX = 'plain:'
@@ -40,13 +42,6 @@ const retiredPath = () => dataFile('retired-keys.key')
 // Identity present but unloadable (locked keychain, corruption). Surface it,
 // never regenerate — that would silently rotate the public key and break every
 // peer's trust.
-class IdentityUnavailable extends Error {
-  constructor() {
-    super('identity-unavailable')
-    this.name = 'IdentityUnavailable'
-  }
-}
-
 export async function getIdentity() {
   const [privRes, pubRes] = await Promise.allSettled([
     readFile(privPath()),
@@ -89,12 +84,9 @@ function decodeIdentity(rawPriv, rawPub) {
 async function upgradeIdentityFormat(identity) {
   const currentFp = fingerprint(identity.pub.sign, identity.pub.box)
   if (identity.pub.format === KEY_FORMAT && identity.pub.fingerprint === currentFp) return identity
-  const pub = {
-    format: KEY_FORMAT,
-    sign: identity.pub.sign,
-    box: identity.pub.box,
-    fingerprint: currentFp
-  }
+  // Spread first: rebuilding field-by-field erased the rotation record and the
+  // user's own display name every time a format upgrade ran.
+  const pub = { ...identity.pub, format: KEY_FORMAT, fingerprint: currentFp }
   await persistIdentity(identity.priv, pub)
   return { priv: identity.priv, pub }
 }
@@ -217,7 +209,7 @@ async function parseKeyFileAt(path) {
   if (!isAcceptedKeyFormat(key.format) || !key.sign || !key.box) throw new Error('bad format')
   const embedded = cleanLabel(key.label)
   return {
-    key: { format: KEY_FORMAT, sign: key.sign, box: key.box },
+    key: rebuiltPublicKey(key),
     fp: fingerprint(key.sign, key.box),
     defaultLabel: embedded || basename(path).replace(/\.diffbrokey$/i, '')
   }
@@ -228,19 +220,6 @@ async function storeTrusted(key, fp, label) {
   trusted.push({ fingerprint: fp, label: (label || fp).trim() || fp, sign: key.sign, box: key.box })
   await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
 }
-
-// Surface an unloadable identity as a plain error object rather than a rejected
-// IPC promise.
-const guardIdentity =
-  (fn) =>
-  async (...args) => {
-    try {
-      return await fn(...args)
-    } catch (err) {
-      if (err instanceof IdentityUnavailable) return { error: 'identity-unavailable' }
-      throw err
-    }
-  }
 
 // Size + filename-integrity guards on the untrusted file before openSealed does
 // the crypto vetting. Shared by the dialog and drag-drop importers.
@@ -417,7 +396,9 @@ export function registerShareIpc() {
   })
 
   ipcMain.handle('share:removeTrusted', async (e, fp) => {
-    const trusted = (await readTrusted()).filter((t) => t.fingerprint !== fp)
+    const before = await readTrusted()
+    const trusted = before.filter((t) => t.fingerprint !== fp)
+    if (trusted.length === before.length) return { ok: false, error: 'unknown-recipient' }
     await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
     return { ok: true }
   })
@@ -527,12 +508,34 @@ async function readConfigFile(path) {
   }
 }
 
+// Keep the outgoing key as decrypt-only, exactly as rotateIdentity does:
+// replacing an identity outright orphans every diff sealed to it that has not
+// been imported yet.
+async function retireCurrentIdentity(incomingFp) {
+  let previous
+  try {
+    previous = await getIdentity()
+  } catch {
+    return
+  }
+  if (previous.pub.fingerprint === incomingFp) return
+  const retired = [{ priv: previous.priv, pub: previous.pub }, ...(await readRetired())]
+  await writeFile(retiredPath(), wrapSecret(JSON.stringify(retired)), { mode: 0o600 })
+}
+
 // A decryptable backup is still validated (same checks as a snippet import)
 // before anything is applied.
 async function applyRestoredConfig({ identity, trusted, snippets, settings }) {
-  if (snippets != null && validateSnippetBundle(snippets)) return { error: 'malformed' }
-  if (identity?.priv && identity?.pub) await persistIdentity(identity.priv, identity.pub)
-  if (Array.isArray(trusted)) await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
+  const vetted = validateRestoredConfig(
+    { identity, trusted, snippets },
+    { snippetError: validateSnippetBundle }
+  )
+  if (vetted.error) return { error: vetted.error }
+  if (vetted.identity) {
+    await retireCurrentIdentity(vetted.identity.pub.fingerprint)
+    await persistIdentity(vetted.identity.priv, vetted.identity.pub)
+  }
+  if (vetted.trusted) await writeFile(trustPath(), JSON.stringify(vetted.trusted, null, 2))
   // Snippets + settings go back to the renderer to re-encrypt locally.
   return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
 }

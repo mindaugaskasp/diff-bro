@@ -18,6 +18,7 @@ import {
 } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { execFile } from 'node:child_process'
+import { shQuote } from './shellQuote'
 
 export const GIT_TOOL_NAME = 'diffbro'
 const MARK = '# diff-bro git tool'
@@ -56,7 +57,7 @@ dir=$(mktemp -d "\${TMPDIR:-/tmp}/${TEMP_PREFIX}XXXXXX") || exit 1
 mkdir -p "$dir/before" "$dir/after" || exit 1
 cp -- "$1" "$dir/before/$name" 2>/dev/null
 cp -- "$2" "$dir/after/$name" 2>/dev/null
-exec "${exePath}" difftool "$dir/before/$name" "$dir/after/$name"
+exec ${shQuote(exePath)} difftool "$dir/before/$name" "$dir/after/$name"
 `
 }
 

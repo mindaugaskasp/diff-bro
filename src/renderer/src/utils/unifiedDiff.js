@@ -131,6 +131,22 @@ function parseHunks(patchText) {
   return hunks.length ? hunks : null
 }
 
+// Spreading the replacement into splice() passes one argument per line, which a
+// hunk from a user-supplied .patch can push past the engine's argument limit —
+// MAX_DIFF_LINES only bounds diffs this app GENERATES. Chunked so the size of a
+// hunk cannot decide whether Apply Patch works.
+const SPLICE_CHUNK = 8192
+function spliceIn(list, at, removeCount, replacement) {
+  if (replacement.length <= SPLICE_CHUNK) {
+    list.splice(at, removeCount, ...replacement)
+    return
+  }
+  list.splice(at, removeCount)
+  for (let i = 0; i < replacement.length; i += SPLICE_CHUNK) {
+    list.splice(at + i, 0, ...replacement.slice(i, i + SPLICE_CHUNK))
+  }
+}
+
 // Apply a unified diff to a base string. Exact-match only: a hunk whose context
 // or deletions don't match the base is REJECTED (its index returned) and the
 // rest still apply — never a silent wrong result. Returns { output, rejected }
@@ -163,7 +179,7 @@ export function applyUnifiedDiff(baseText, patchText) {
       rejected.push(index)
       return
     }
-    out.splice(at, p - at, ...replacement)
+    spliceIn(out, at, p - at, replacement)
     offset += replacement.length - (p - at)
   })
   let output = out.join('\n')

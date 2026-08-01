@@ -83,7 +83,10 @@ export function helpText(topic) {
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
 // run it is [electron, ., ...args], and Chromium switches can appear anywhere.
 const isSwitch = (a) => a.startsWith('-')
-const ENTRY = /(electron|diffbro|diff bro|\.|main\/index\.js)$/i
+// Structural, not by name: an entry point is a PATH, and every command is a bare
+// word. Matching on names instead meant any clone directory not called exactly
+// `diffbro` was read as a command, which exits before a window exists.
+const isPath = (a) => a === '.' || a.includes('/') || a.includes('\\')
 
 /**
  * The user-supplied words of a launch, with the executable, the entry point and
@@ -93,8 +96,9 @@ const ENTRY = /(electron|diffbro|diff bro|\.|main\/index\.js)$/i
  */
 export function cliWords(argv) {
   const words = (argv ?? []).filter((a) => typeof a === 'string' && !isSwitch(a))
-  let i = 0
-  while (i < words.length && (i === 0 || ENTRY.test(words[i]))) i++
+  // argv[0] is always the binary; at most one entry path may follow it.
+  let i = words.length ? 1 : 0
+  if (i < words.length && isPath(words[i])) i++
   return words.slice(i)
 }
 

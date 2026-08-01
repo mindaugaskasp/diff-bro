@@ -9,6 +9,7 @@ import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
 import StructureDiffViewer from './components/StructureDiffViewer.vue'
+import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
 import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
@@ -149,6 +150,7 @@ const {
               <DiffViewer />
             </template>
             <StructureDiffViewer v-else-if="store.comparableKind === 'tree'" />
+            <StreamedDiffViewer v-else-if="store.comparableKind === 'streamed'" />
             <SpreadsheetDiffViewer v-else />
           </template>
           <!-- One side loaded: make it obvious a second file is still needed. -->

@@ -7,6 +7,7 @@ import { useDiffStore } from '../stores/diffStore'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { SD_ROW_H } from '../utils/virtualRows'
+import { visibleStructureRows } from '../utils/structuralDiff'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
@@ -18,22 +19,7 @@ const identical = computed(() => {
 })
 // Unchanged rows are the bulk of a config file and say nothing, so they collapse
 // away unless the reader asks for the whole document.
-const shown = computed(() => {
-  const rows = result.value?.rows ?? []
-  if (store.structureShowAll) return rows
-  const keep = new Set()
-  for (const row of rows) {
-    if (row.status === 'same') continue
-    keep.add(row.path)
-    // Its ancestors stay, or a changed leaf would float with no context.
-    let path = row.path
-    while (path.includes('.')) {
-      path = path.slice(0, path.lastIndexOf('.'))
-      keep.add(path)
-    }
-  }
-  return rows.filter((r) => keep.has(r.path))
-})
+const shown = computed(() => visibleStructureRows(result.value?.rows ?? [], store.structureShowAll))
 const rows = ref(null)
 useCaptureRegion(rows)
 // Only the visible slice reaches the DOM; the spacers hold the scroll height.

@@ -675,3 +675,43 @@ describe('sealed recipients', () => {
     expect(vault.entries[0].sharedTo).toEqual([{ fp: 'FP-OK', at: 0 }])
   })
 })
+
+// The sealed file is already written and gone by the time the local copy is
+// attempted, so a vault key that will not unlock must be reported — silently
+// keeping no local twin looks identical to a successful share.
+describe('shareDraft when the local copy cannot be saved', () => {
+  it('reports the sealed file was sent without a local copy', async () => {
+    const vault = useVaultStore()
+    window.api = {
+      shareExport: async () => ({ ok: true, path: '/tmp/out.diffbro' }),
+      vaultEncrypt: async () => ({ error: 'vault-key-unavailable' })
+    }
+
+    const res = await vault.shareDraft(
+      { name: 'draft', ttlHours: 24, snapshot: { mode: 'files' } },
+      ['fp1']
+    )
+
+    expect(res.ok).toBe(true)
+    expect(res.localCopy).toBe(false)
+    expect(vault.entries).toHaveLength(0)
+  })
+
+  it('says nothing extra when the local twin was saved', async () => {
+    const vault = useVaultStore()
+    window.api = {
+      shareExport: async () => ({ ok: true, path: '/tmp/out.diffbro' }),
+      vaultEncrypt: async (plaintext) => ({ iv: 'iv', data: plaintext }),
+      vaultDecrypt: async (box) => box.data
+    }
+
+    const res = await vault.shareDraft(
+      { name: 'draft', ttlHours: 24, snapshot: { mode: 'files' } },
+      ['fp1']
+    )
+
+    expect(res.ok).toBe(true)
+    expect(res.localCopy).toBe(true)
+    expect(vault.entries).toHaveLength(1)
+  })
+})

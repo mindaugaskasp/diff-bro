@@ -156,7 +156,7 @@ screenshots: up ## Refresh README screenshots (auto-drives the app in the contai
 #
 # It merges: what you already had is kept, everything it writes is tagged
 # "seed", and local-seed-clean removes exactly that. Files to open land in
-# ~/DiffBro-seed (override with SEED_DIR=…).
+# seed-files/ (gitignored; override with SEED_DIR=…).
 #
 # `env -u ELECTRON_RUN_AS_NODE` is not optional — an agent shell exports it, and
 # Electron then silently runs as plain Node.

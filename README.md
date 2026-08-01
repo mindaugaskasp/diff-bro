@@ -27,10 +27,10 @@
 
 ## Install
 
-| OS                             | Get it                                                                                       |
-| ------------------------------ | -------------------------------------------------------------------------------------------- |
-| **Windows** 10/11              | [`diff-bro-Setup-v<version>.exe`](https://github.com/mindaugaskasp/diff-bro/releases/latest)   |
-| **macOS** 12+ (Apple silicon)  | [`diff-bro-v<version>.dmg`](https://github.com/mindaugaskasp/diff-bro/releases/latest) or Homebrew |
+| OS                            | Get it                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Windows** 10/11             | [`diff-bro-Setup-v<version>.exe`](https://github.com/mindaugaskasp/diff-bro/releases/latest)       |
+| **macOS** 12+ (Apple silicon) | [`diff-bro-v<version>.dmg`](https://github.com/mindaugaskasp/diff-bro/releases/latest) or Homebrew |
 
 ```bash
 brew tap mindaugaskasp/tap
@@ -43,19 +43,20 @@ Builds are **unsigned**, so SmartScreen and Gatekeeper warn on first launch (the
 
 ## What it does
 
-|                          |                                                                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Compare**              | Two files or pasted text, split or inline, word-level highlights, in-view search, and a live re-diff when a file changes on disk.       |
-| **Understand structure** | JSON, YAML and XML compared as _data_: reordering keys or reformatting stops counting, and unchanged keys collapse away.                |
-| **Excel**                | `.xlsx` workbooks as aligned grids — sheet tabs, cell-level highlights, and inserted rows that don't cascade.                           |
-| **Keep**                 | Saved diffs: encrypted, tagged, optionally auto-expiring. Your open tabs come back on the next launch.                                  |
-| **Share**                | One signed file only the recipients you ticked can open, carrying the expiry you chose so every copy dies at the same moment.           |
-| **Export as image**      | A real screenshot of the diff view — your theme, panes and highlighting — cropped to the change and stitched if it's taller than the window. |
-| **Snippets**             | An encrypted, tagged text library with per-language highlighting, live Mermaid, Markdown/Jira preview, and secret snippets that render as `****`. |
-| **Quick look-up**        | A global shortcut searches your snippets and diffs without raising the app; copy one straight to the clipboard.                          |
-| **Tools**                | JSON, Base64, UUID, JWT, Epoch, URL, Lines, XML, find & replace, text encryption — rich panels, not blank text boxes.                    |
-| **Terminal**             | `diffbro compare a.json b.json` opens a comparison in the running app. No port, no daemon.                                              |
-| **Yours to arrange**     | Fourteen themes (Nord, Sepia, Solar, Nyan, Matrix, plus accessibility-grade Contrast and Beacon), shared tags, adjustable limits.        |
+|                          |                                                                                                                                                                                                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Compare**              | Two files or pasted text, split or inline, word-level highlights, in-view search, and a live re-diff when a file changes on disk.                                                                                                                                      |
+| **Understand structure** | JSON, YAML and XML compared as _data_: reordering keys or reformatting stops counting, and unchanged keys collapse away.                                                                                                                                               |
+| **Excel**                | `.xlsx` workbooks as aligned grids — sheet tabs, cell-level highlights, and inserted rows that don't cascade.                                                                                                                                                          |
+| **Huge files**           | Past 32 MB a file is indexed by line instead of loaded, and the rows you're looking at are read from disk as you scroll — a multi-gigabyte log opens in seconds. Marked as streamed, with the few actions that need the whole text saying so rather than half-working. |
+| **Keep**                 | Saved diffs: encrypted, tagged, optionally auto-expiring. Your open tabs come back on the next launch.                                                                                                                                                                 |
+| **Share**                | One signed file only the recipients you ticked can open, carrying the expiry you chose so every copy dies at the same moment.                                                                                                                                          |
+| **Export as image**      | A real screenshot of the diff view — your theme, panes and highlighting — cropped to the change and stitched if it's taller than the window.                                                                                                                           |
+| **Snippets**             | An encrypted, tagged text library with per-language highlighting, live Mermaid, Markdown/Jira preview, and secret snippets that render as `****`.                                                                                                                      |
+| **Quick look-up**        | A global shortcut searches your snippets and diffs without raising the app; copy one straight to the clipboard.                                                                                                                                                        |
+| **Tools**                | JSON, Base64, UUID, JWT, Epoch, URL, Lines, XML, checksums, a regex tester, find & replace, text encryption — rich panels, not blank text boxes.                                                                                                                       |
+| **Terminal**             | `diffbro compare a.json b.json` opens a comparison in the running app. No port, no daemon.                                                                                                                                                                             |
+| **Yours to arrange**     | Fourteen themes (Nord, Sepia, Solar, Nyan, Matrix, plus accessibility-grade Contrast and Beacon), shared tags, adjustable limits.                                                                                                                                      |
 
 <details>
 <summary>The smaller things</summary>
@@ -135,15 +136,15 @@ registry rather than into the viewer.
 
 ## Docs
 
-| Doc                                        | What's in it                                          |
-| ------------------------------------------ | ----------------------------------------------------- |
-| [Architecture](docs/architecture.md)       | Processes, trust boundary, directory map              |
-| [IPC & security](docs/ipc-security.md)     | How renderer↔main talk, and what the sandbox blocks    |
-| [Security model](docs/security.md)         | Offline guarantee, sharing, keys, backup              |
-| [Packaging](docs/packaging.md)             | Installers, signing notes, CI                         |
-| [Chocolatey](docs/chocolatey.md)           | Plan + package skeleton for `choco install diffbro`   |
-| [Glossary](docs/glossary.md)               | Every term and abbreviation (IPC, CSP, GCM, …)        |
-| [Standards](docs/standards.md)             | Coding standards and the rules the build enforces     |
+| Doc                                    | What's in it                                        |
+| -------------------------------------- | --------------------------------------------------- |
+| [Architecture](docs/architecture.md)   | Processes, trust boundary, directory map            |
+| [IPC & security](docs/ipc-security.md) | How renderer↔main talk, and what the sandbox blocks |
+| [Security model](docs/security.md)     | Offline guarantee, sharing, keys, backup            |
+| [Packaging](docs/packaging.md)         | Installers, signing notes, CI                       |
+| [Chocolatey](docs/chocolatey.md)       | Plan + package skeleton for `choco install diffbro` |
+| [Glossary](docs/glossary.md)           | Every term and abbreviation (IPC, CSP, GCM, …)      |
+| [Standards](docs/standards.md)         | Coding standards and the rules the build enforces   |
 
 ## License
 

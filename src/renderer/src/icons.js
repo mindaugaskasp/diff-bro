@@ -17,6 +17,13 @@ export const ICONS = {
     { t: 'path', d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }
   ],
   x: [{ t: 'path', d: 'M18 6 6 18M6 6l12 12' }],
+  // A framed band between two out-of-frame lines: the window a streamed
+  // comparison holds onto a file far longer than it.
+  stream: [
+    { t: 'path', d: 'M5 4h14' },
+    { t: 'path', d: 'M5 20h14' },
+    { t: 'rect', x: 3, y: 9, width: 18, height: 6, rx: 1 }
+  ],
   // Trash can — the destructive delete action on a row.
   trash: [
     { t: 'path', d: 'M3 6h18' },

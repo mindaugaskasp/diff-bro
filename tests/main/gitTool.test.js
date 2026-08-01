@@ -85,7 +85,7 @@ describe('gitToolScript', () => {
     expect(s).toContain(`mktemp -d "${'${TMPDIR:-/tmp}'}/${TEMP_PREFIX}XXXXXX"`)
     expect(s).toContain('cp -- "$1" "$dir/before/$name"')
     expect(s).toContain('cp -- "$2" "$dir/after/$name"')
-    expect(s).toContain(`exec "${APP}" difftool "$dir/before/$name" "$dir/after/$name"`)
+    expect(s).toContain(`exec '${APP}' difftool "$dir/before/$name" "$dir/after/$name"`)
   })
 
   // The copies keep the repo's filename, so the comparison is labelled

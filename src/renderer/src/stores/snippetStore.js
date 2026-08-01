@@ -197,6 +197,8 @@ const IMPORT_ERRORS = {
   'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
   'wrong-passphrase': 'Wrong passphrase, or the file is corrupted.',
   'bad-signature': 'Signature check failed — the file was modified or corrupted.',
+  'bad-trusted-key':
+    'The stored public key for this sender is unreadable — remove it and add their key file again.',
   corrupted: 'The file could not be read after decryption.',
   malformed: 'That snippets file is not shaped like a valid export and was rejected.',
   'too-large': 'That snippets file exceeds the allowed size limits and was rejected.'

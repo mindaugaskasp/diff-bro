@@ -31,6 +31,31 @@
  */
 
 /**
+ * What main reports when it opens a streamed comparison: the alignment, the
+ * counts, and whether either side outran the index's line cap. `runs` is the
+ * flat quintuple encoding from src/main/hashDiff.js.
+ * @typedef {object} StreamSummary
+ * @property {string} token        handle for the windowed line reads
+ * @property {Int32Array} runs
+ * @property {number} additions
+ * @property {number} deletions
+ * @property {boolean} approximate the files differ too widely to align exactly
+ * @property {number} leftLines
+ * @property {number} rightLines
+ * @property {boolean} truncated   the line cap was hit before the end of a file
+ * @property {number} maxLines
+ */
+
+/**
+ * One display row of a streamed comparison (see utils/streamRows.js). A line is
+ * null where that side has no counterpart on this row.
+ * @typedef {object} StreamRow
+ * @property {'same'|'chg'|'del'|'ins'} status
+ * @property {number|null} leftLine   0-based
+ * @property {number|null} rightLine
+ */
+
+/**
  * The comparable produced by xlsxAdapter for the (upcoming) grid viewer.
  * @typedef {object} SpreadsheetComparable
  * @property {'spreadsheet'} kind

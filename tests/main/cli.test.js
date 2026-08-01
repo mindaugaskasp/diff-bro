@@ -25,6 +25,25 @@ describe('cliWords', () => {
     expect(cliWords(PACKAGED)).toEqual([])
     expect(cliWords(DEV)).toEqual([])
   })
+
+  // The entry point is whatever path the launcher passes; it is NOT always named
+  // after the package. A clone directory called anything else used to be read as
+  // a command and killed the launch before a window existed.
+  it('drops an entry path whatever the checkout is called', () => {
+    expect(cliWords(['/usr/bin/electron', '/Users/x/Projects/diff-bro'])).toEqual([])
+    expect(cliWords(['/usr/bin/electron', '/Users/x/src/my-fork', 'compare', 'a', 'b'])).toEqual([
+      'compare',
+      'a',
+      'b'
+    ])
+    expect(cliWords(['/usr/bin/electron', 'C:\\work\\checkout'])).toEqual([])
+  })
+
+  // A path is the only thing that may be skipped as an entry — a bare misspelled
+  // word must still reach parseCli so it can be reported.
+  it('keeps a bare word that is not a path', () => {
+    expect(cliWords([...PACKAGED, 'frobnicate'])).toEqual(['frobnicate'])
+  })
 })
 
 describe('parseCli — compare', () => {
@@ -82,6 +101,15 @@ describe('parseCli — the other verbs', () => {
   it('reports an unknown command instead of doing nothing', () => {
     expect(parseCli([...PACKAGED, 'frobnicate']).error).toMatch(/Unknown command/)
     expect(parseCli([...PACKAGED, 'create', 'diff']).error).toMatch(/Unknown command/)
+  })
+
+  // Launching by absolute path is a normal start, not a typo: erroring here
+  // exits before any window exists, so the app never opens at all.
+  it('starts normally when launched by an absolute checkout path', () => {
+    expect(parseCli(['/usr/bin/electron', '/Users/x/Projects/diff-bro'])).toEqual({
+      command: null,
+      error: null
+    })
   })
 
   // A double-click or a Dock launch carries no words; that must stay a normal

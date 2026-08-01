@@ -81,10 +81,19 @@ test('the screenshot is of the saved diff, and excludes the app chrome', async (
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.getByText('yankee').first()).toBeVisible()
 
-  await openImageExport(page, 'First diff')
+  const dialog = await openImageExport(page, 'First diff')
 
-  // Exporting opened the SAVED diff — that is what got photographed.
-  await expect(page.getByText('BRAVO!').first()).toBeVisible()
+  // The SAVED diff is what got photographed — the preview names it and carries
+  // a real picture.
+  const preview = dialog.locator('.shot img')
+  await expect(preview).toHaveAttribute('alt', 'Diff view of First diff')
+  await expect(preview).toHaveJSProperty('complete', true)
+
+  // ...and the unsaved comparison the user was working on is still there.
+  // Exporting used to replace it AND mark it saved, so it vanished with no
+  // discard prompt.
+  await expect(page.getByText('yankee').first()).toBeVisible()
+  await expect(page.getByText('BRAVO!')).toHaveCount(0)
 
   // The toast and the shortcut bar float INSIDE the captured column. The store
   // test proves the flag is up while the shutter is open; this proves the flag

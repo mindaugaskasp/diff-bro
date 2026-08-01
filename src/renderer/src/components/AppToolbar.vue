@@ -2,11 +2,31 @@
 // Top bar: stats, display toggles, document actions, theme switch. Every action
 // has a menu twin (menu.js / MenuBar.vue).
 import { computed } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
+import { STREAMED_LIMITS, useDiffStore } from '../stores/diffStore'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
+
+// A disabled control has to say WHY, and a streamed comparison disables three of
+// them for the same underlying reason with three different consequences.
+const saveTip = computed(() => {
+  if (store.isStreamed) return STREAMED_LIMITS.save
+  if (store.canSave && !store.hasUnsavedWork) {
+    return 'Already saved — change something to save it again'
+  }
+  return `Save this diff to the sidebar (${MOD}+S)`
+})
+const shareTip = computed(() =>
+  store.isStreamed
+    ? STREAMED_LIMITS.share
+    : 'Share this diff as a sealed file for one trusted recipient'
+)
+const copyTip = computed(() => {
+  if (store.isStreamed) return STREAMED_LIMITS.copy
+  if (store.comparableKind !== 'text') return 'Copy diff is only available for text comparisons'
+  return `Copy this diff as a unified patch (${MOD}+Shift+C)`
+})
 
 // The button names its destination (files ⇄ paste).
 const inPaste = computed(() => store.mode === 'paste')
@@ -73,11 +93,7 @@ const clearTitle = computed(() =>
         </button>
         <button
           class="btn btn-primary"
-          :data-tip="
-            store.canSave && !store.hasUnsavedWork
-              ? 'Already saved — change something to save it again'
-              : `Save this diff to the sidebar (${MOD}+S)`
-          "
+          :data-tip="saveTip"
           :disabled="!store.hasUnsavedWork"
           @click="store.showSaveDialog = true"
         >
@@ -85,7 +101,7 @@ const clearTitle = computed(() =>
         </button>
         <button
           class="btn btn-ghost"
-          data-tip="Share this diff as a sealed file for one trusted recipient"
+          :data-tip="shareTip"
           :disabled="!store.canSave"
           @click="store.shareCurrent()"
         >
@@ -93,11 +109,7 @@ const clearTitle = computed(() =>
         </button>
         <button
           class="btn btn-ghost"
-          :data-tip="
-            store.comparableKind === 'text'
-              ? `Copy this diff as a unified patch (${MOD}+Shift+C)`
-              : 'Copy diff is only available for text comparisons'
-          "
+          :data-tip="copyTip"
           :disabled="!store.ready || store.comparableKind !== 'text'"
           @click="store.copyDiff()"
         >

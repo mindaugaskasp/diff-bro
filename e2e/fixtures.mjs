@@ -61,7 +61,11 @@ export const test = base.extend({
       .locator('.err-msg')
       .allTextContents()
       .catch(() => [])
-    const seen = [...thrown, ...shown]
+    // The same benign framework noise the app itself classifies as ignorable
+    // (errorStore's IGNORED): a Monaco cancellation fires whenever a model is
+    // disposed mid-operation, which a test that deletes things does routinely.
+    const NOISE = /cancell?ed|ResizeObserver loop|^Script error\.?$/i
+    const seen = [...thrown, ...shown].filter((m) => !NOISE.test(m))
     if (seen.length) {
       throw new Error(`the renderer reported an error during this test: ${seen.join(' · ')}`)
     }

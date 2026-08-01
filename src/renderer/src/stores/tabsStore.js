@@ -271,15 +271,19 @@ export const useTabsStore = defineStore('tabs', {
     async saveSession() {
       if (!useSettingsStore().restoreSession) return
       if (typeof window.api?.vaultEncrypt !== 'function') return
+      // Nothing may be written before the stored session has been read back:
+      // the debounce races the restore, and a file dropped inside that window
+      // used to overwrite every other comparison with the one just opened.
+      if (!this.sessionReady) return
       const diff = useDiffStore()
       const packed = packSession(this.tabs, this.activeId, {
         snapshot: diff.snapshot(),
         diffSaved: diff.diffSaved
       })
       if (!packed) {
-        // Only clear a session we were able to READ. A locked keychain is
-        // temporary; the comparisons behind it are not ours to throw away.
-        if (this.sessionReady) savePersisted('session', EMPTY_ENVELOPE)
+        // A locked keychain is temporary; the comparisons behind it are not
+        // ours to throw away.
+        savePersisted('session', EMPTY_ENVELOPE)
         return
       }
       const box = await window.api.vaultEncrypt(JSON.stringify(packed), SESSION_AAD)
@@ -288,7 +292,6 @@ export const useTabsStore = defineStore('tabs', {
         'session',
         JSON.stringify({ version: SESSION_VERSION, iv: box.iv, data: box.data })
       )
-      this.sessionReady = true
     },
     /**
      * Reopen last session's comparisons, replacing the blank tab init() made.

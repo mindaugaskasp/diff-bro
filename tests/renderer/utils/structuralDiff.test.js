@@ -6,7 +6,8 @@ import {
   MAX_TREE_ROWS,
   diffStructures,
   parseStructured,
-  structuredKind
+  structuredKind,
+  visibleStructureRows
 } from '../../../src/renderer/src/utils/structuralDiff'
 
 const rowsOf = (a, b) => diffStructures(a, b).rows
@@ -254,5 +255,60 @@ describe('YAML', () => {
       'e: [*d,*d,*d,*d,*d,*d,*d,*d,*d]'
     ].join('\n')
     expect(parseStructured(bomb, 'yaml').error).toBeTruthy()
+  })
+})
+
+// A dotted key is ordinary in Helm/ConfigMap data blocks, flattened property
+// files and log4j configs — it must not be able to impersonate a nested path.
+describe('paths are unambiguous', () => {
+  it('keeps a dotted key distinct from the nesting it looks like', () => {
+    const { rows } = diffStructures({ 'a.b': 1, a: { b: 2 } }, { 'a.b': 9, a: { b: 2 } })
+    const paths = rows.map((r) => r.path)
+    expect(new Set(paths).size).toBe(paths.length)
+    // The one that CHANGED is the flat key, not the nested leaf.
+    const changed = rows.filter((r) => r.status === 'changed')
+    expect(changed).toHaveLength(1)
+    expect(changed[0].label).toBe('a.b')
+  })
+
+  it('gives every row a parent that resolves to another row', () => {
+    const { rows } = diffStructures({ 'a.b': 1, a: { b: 2 } }, { 'a.b': 9, a: { b: 2 } })
+    const byPath = new Map(rows.map((r) => [r.path, r]))
+    for (const row of rows) {
+      if (row.parent === null) continue
+      expect(byPath.has(row.parent)).toBe(true)
+    }
+  })
+
+  it('does not drop a container held under an empty-string key', () => {
+    const { rows } = diffStructures({ '': { x: 1 } }, { '': { x: 2 } })
+    expect(rows.some((r) => r.container && r.label === '')).toBe(true)
+    expect(rows.find((r) => r.label === 'x').status).toBe('changed')
+  })
+})
+
+describe('visibleStructureRows', () => {
+  it('keeps a changed row and its ancestors, and drops unrelated ones', () => {
+    const { rows } = diffStructures(
+      { db: { host: 'local', port: 1 }, other: { k: 'v' } },
+      { db: { host: 'prod', port: 1 }, other: { k: 'v' } }
+    )
+    const labels = visibleStructureRows(rows, false).map((r) => r.path)
+    expect(labels).toContain('db')
+    expect(labels).toContain('db.host')
+    expect(labels).not.toContain('db.port')
+    expect(labels).not.toContain('other')
+  })
+
+  it('walks ancestors by structure, so a dotted key cannot reveal a sibling', () => {
+    const { rows } = diffStructures({ 'a.b': 1, a: { b: 2 } }, { 'a.b': 9, a: { b: 2 } })
+    const shown = visibleStructureRows(rows, false).map((r) => r.label)
+    // The nested a.b leaf is unchanged and has no changed descendant.
+    expect(shown).toEqual(['a.b'])
+  })
+
+  it('returns everything when the reader asks for the whole document', () => {
+    const { rows } = diffStructures({ a: { b: 1 } }, { a: { b: 2 } })
+    expect(visibleStructureRows(rows, true)).toBe(rows)
   })
 })

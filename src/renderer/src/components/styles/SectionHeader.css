@@ -171,3 +171,26 @@
     animation: none;
   }
 }
+
+/* The match count while a filter is on. A section with none stays visible and
+   says zero — that IS the answer to "why is this empty", so it dims rather
+   than disappearing. */
+.section-count {
+  flex: none;
+  min-width: var(--chip-h);
+  height: var(--chip-h);
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.section-count.none {
+  background: transparent;
+  color: var(--text-hint);
+}

@@ -9,7 +9,8 @@ import { parseXml } from './xml'
  * @typedef {object} TreeRow
  * @property {number} depth
  * @property {string} label       key, index, or element name
- * @property {string} path        dotted path, unique per row
+ * @property {string} path        dotted path, unique per row (separator escaped)
+ * @property {string|null} parent the containing row's path, null at the top
  * @property {'same'|'added'|'removed'|'changed'} status
  * @property {boolean} container  opens an object/array rather than holding a value
  * @property {string} [left]      the value on the left, rendered
@@ -146,16 +147,23 @@ function alignItems(left, right) {
 }
 
 const MISSING = Symbol('missing')
-const childPath = (path, label) => (path ? `${path}.${label}` : label)
+// A label may legitimately contain the separator (Helm data blocks, flattened
+// property files), so it is escaped rather than joined raw — two rows sharing a
+// path collided in the viewer's key and made one row inherit another's
+// visibility. The root's path is null, which an empty-string key cannot forge.
+const escapeSegment = (label) => String(label).replace(/\\/g, '\\\\').replace(/\./g, '\\.')
+const childPath = (path, label) =>
+  path === null ? escapeSegment(label) : `${path}.${escapeSegment(label)}`
 
 // One row plus, for a branch, every row beneath it. `status` is forced on a
 // whole subtree that was added or removed, so its children read the same way.
 function walk(ctx, value, forced) {
-  const { rows, label, path, depth } = ctx
+  const { rows, label, path, parent, depth } = ctx
   rows.push({
     depth,
     label,
     path,
+    parent,
     status: forced,
     container: isBranch(value),
     ...(isBranch(value)
@@ -172,7 +180,11 @@ function walk(ctx, value, forced) {
         .sort()
         .map((k) => [k, value[k]])
   for (const [key, child] of entries) {
-    walk({ rows, label: key, path: childPath(path, key), depth: depth + 1 }, child, forced)
+    walk(
+      { rows, label: key, path: childPath(path, key), parent: path, depth: depth + 1 },
+      child,
+      forced
+    )
   }
 }
 
@@ -187,6 +199,7 @@ const slotAt = ({ rows, path, depth }, label) => ({
   rows,
   label,
   path: childPath(path, label),
+  parent: path,
   depth: depth + 1
 })
 const itemAt = (list, index) => (index < 0 ? MISSING : list[index])
@@ -215,11 +228,11 @@ const compareBranch = (ctx, left, right) =>
 // Both sides present. A branch facing a scalar (or an array facing an object) is
 // one change, not a merge — descending would pair unrelated things.
 function compare(ctx, left, right) {
-  const { rows, label, path, depth } = ctx
+  const { rows, label, path, parent, depth } = ctx
   const sameShape =
     isBranch(left) && isBranch(right) && Array.isArray(left) === Array.isArray(right)
   if (sameShape) {
-    rows.push({ depth, label, path, status: 'same', container: true })
+    rows.push({ depth, label, path, parent, status: 'same', container: true })
     compareBranch(ctx, left, right)
     return
   }
@@ -228,6 +241,7 @@ function compare(ctx, left, right) {
     depth,
     label,
     path,
+    parent,
     status: same ? 'same' : 'changed',
     container: isBranch(left) || isBranch(right),
     left: render(left),
@@ -245,10 +259,10 @@ function compare(ctx, left, right) {
  */
 export function diffStructures(left, right) {
   const rows = []
-  compare({ rows, label: '', path: '', depth: -1 }, left, right)
+  compare({ rows, label: '', path: null, parent: null, depth: -1 }, left, right)
   // The synthetic root is scaffolding — unless the whole document IS a scalar,
   // in which case that row is the only thing there is to report.
-  const body = rows.filter((r) => r.path !== '' || !r.container)
+  const body = rows.filter((r) => r.path !== null || !r.container)
   const stats = { added: 0, removed: 0, changed: 0 }
   for (const row of body) {
     if (row.status !== 'same') stats[row.status] += 1
@@ -258,4 +272,29 @@ export function diffStructures(left, right) {
     hidden: Math.max(0, body.length - MAX_TREE_ROWS),
     stats
   }
+}
+
+/**
+ * The rows worth showing: everything, or just what changed plus the ancestors
+ * that give it context. Ancestors are followed through `parent` rather than by
+ * splitting the path, so a key containing the separator cannot pull an unrelated
+ * row into view.
+ * @param {TreeRow[]} rows
+ * @param {boolean} showAll
+ * @returns {TreeRow[]}
+ */
+export function visibleStructureRows(rows, showAll) {
+  if (showAll) return rows
+  const parentOf = new Map(rows.map((r) => [r.path, r.parent]))
+  const keep = new Set()
+  for (const row of rows) {
+    if (row.status === 'same') continue
+    keep.add(row.path)
+    let path = row.parent
+    while (path != null && !keep.has(path)) {
+      keep.add(path)
+      path = parentOf.get(path) ?? null
+    }
+  }
+  return rows.filter((r) => keep.has(r.path))
 }

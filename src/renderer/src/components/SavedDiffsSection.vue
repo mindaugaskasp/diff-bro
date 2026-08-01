@@ -22,6 +22,10 @@ const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
   matchesTags(e.tags, props.tags)
 
+// A filter is on when there is a search term or a tag selected — the only time
+// a per-section count is worth the space.
+const filtering = computed(() => !!q.value || props.tags.length > 0)
+
 const tabs = useTabsStore()
 const vault = useVaultStore()
 const open = ref(true)
@@ -42,6 +46,8 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
       :open="open"
       :first="first"
       :unified="unified"
+      :count="rows.length"
+      :filtering="filtering"
       @toggle="open = !open"
     >
       <template #actions>
