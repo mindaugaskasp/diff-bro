@@ -130,6 +130,12 @@ const heldNote = (names) => {
 
 export const DISK_NOTICE_MS = 10_000
 
+// Stitching only ever scrolls DOWN, so columns off the right edge are not in
+// the picture. The dialog says so rather than handing over a crop that looks
+// complete. Monaco reports none — its pane is as wide as the window.
+const withHiddenColumns = (res) =>
+  res?.error ? res : { ...res, hiddenColumns: getDiffScroller()?.hiddenColumns?.() ?? 0 }
+
 // Frames to let Monaco lay out and tokenize a restored diff before the shot.
 const CAPTURE_FRAMES = 4
 // Frames for a scrolled viewport to render its new lines between slices.
@@ -163,6 +169,7 @@ const MENU_ACTIONS = {
   'toggle-theme': (s) => s.toggleTheme(),
   'import-shared': (s) => s.importShared(),
   'export-pubkey': (s) => (s.showShareKeyDialog = true),
+  'rotate-key': (s) => (s.showRotateKeyDialog = true),
   'copy-pubkey': (s) => (s.showShareKeyDialog = true),
   'add-trusted-key': (s) => s.addTrustedKey(),
   'manage-keys': (s) => (s.showTrustedKeysDialog = true),
@@ -176,6 +183,8 @@ const MENU_ACTIONS = {
   'tools-base64': (s) => (s.textTool = 'base64'),
   'tools-json': (s) => (s.textTool = 'json'),
   'tools-xml': (s) => (s.textTool = 'xml'),
+  'tools-hash': (s) => (s.textTool = 'hash'),
+  'tools-regex': (s) => (s.textTool = 'regex'),
   'tools-uuid': (s) => (s.textTool = 'uuid'),
   'tools-jwt': (s) => (s.textTool = 'jwt'),
   'tools-epoch': (s) => (s.textTool = 'epoch'),
@@ -217,6 +226,8 @@ export const useDiffStore = defineStore('diff', {
     diskNotice: null,
     // The `diffbro compare` refusal when every tab is in use (utils/cli message).
     cliBlocked: null,
+    // Everything that refusal has covered since it was last dismissed.
+    blockedFiles: [],
     // save-diff dialog visibility
     showSaveDialog: false,
     // when true, the save dialog flows straight into the share dialog
@@ -248,6 +259,7 @@ export const useDiffStore = defineStore('diff', {
     showTrustedKeysDialog: false,
     // "Share my public key" dialog visibility (name + export/copy your key).
     showShareKeyDialog: false,
+    showRotateKeyDialog: false,
     // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
     configMode: null,
     // Which tool panel is open (a registry id), null when none.
@@ -289,11 +301,9 @@ export const useDiffStore = defineStore('diff', {
     // Two sides that diff to nothing — an affirmative "identical" state.
     identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
     // A comparison is actually on screen to photograph. Paste mode shows two
-    // textareas, not a diff. The spreadsheet grid scrolls inside itself with no
-    // scroller to drive, so the shutter could only ever catch the visible slice
-    // — it is refused rather than silently truncated.
+    // textareas, not a diff.
     canExportImage() {
-      return this.mode !== 'paste' && !!this.left && !!this.right && !this.isSpreadsheet
+      return this.mode !== 'paste' && !!this.left && !!this.right
     },
     isSpreadsheet() {
       return (
@@ -418,9 +428,6 @@ export const useDiffStore = defineStore('diff', {
         return this.showNotice('This saved diff has expired or could not be decrypted.')
       }
       this.restore(payload)
-      if (this.isSpreadsheet) {
-        return this.showNotice('Image export is not available for spreadsheet comparisons yet.')
-      }
       // Restoring replaces the models, so there is never a selection to honour.
       const res = await this._shoot({ awaitRediff: true })
       if (res?.error) return this.showNotice('Could not take a picture of this diff.')
@@ -429,9 +436,6 @@ export const useDiffStore = defineStore('diff', {
     // Export what is on screen right now, saved or not. Lines selected in either
     // pane narrow the picture to just those; with none it covers the whole diff.
     async exportCurrentImage() {
-      if (this.isSpreadsheet) {
-        return this.showNotice('Image export is not available for spreadsheet comparisons yet.')
-      }
       if (!this.canExportImage) return this.showNotice('Nothing to export yet.')
       const res = await this._shoot({ band: getDiffScroller()?.selection() ?? null })
       if (res?.error) return this.showNotice('Could not take a picture of this diff.')
@@ -450,7 +454,7 @@ export const useDiffStore = defineStore('diff', {
         // burn the timeout, so exporting what's already on screen skips it.
         if (awaitRediff) await untilChanged(() => this.diffRevision)
         await afterFrames(CAPTURE_FRAMES)
-        return await this._shootRegion(band)
+        return withHiddenColumns(await this._shootRegion(band))
       } catch {
         return { error: 'capture-failed' }
       } finally {
@@ -462,7 +466,7 @@ export const useDiffStore = defineStore('diff', {
     // top of the column, which is exactly what a chosen range is not.
     async _shootRegion(band) {
       const scroller = getDiffScroller()
-      const region = scroller && captureRegionOf()
+      const region = scroller && captureRegionOf({ viewport: scroller.viewportEl?.() ?? null })
       const plan = region ? this._planShots(scroller, band) : { slices: [], truncated: false }
       if (plan.slices.length > 1 || (band && plan.slices.length)) {
         return this._shootTall(plan, region, scroller)
@@ -982,7 +986,9 @@ export const useDiffStore = defineStore('diff', {
     async runCliCommand(command) {
       if (command?.name === 'create-snippet') useSnippetStore().startNewSnippetFrom('', 'auto')
       else if (command?.name === 'clipboard-save') await this.saveClipboardSnippet(command.text)
-      else if (command?.name === 'compare') await this.compareFromCli(command.files)
+      else if (command?.name === 'compare') {
+        await this.compareFromCli(command.files, command.transient === true)
+      }
     },
     async saveClipboardSnippet(text) {
       if (!String(text ?? '').trim()) {
@@ -997,18 +1003,26 @@ export const useDiffStore = defineStore('diff', {
       })
       if (id) snippets.editingSnippet = { id }
     },
-    async compareFromCli(files) {
+    dismissCliBlocked() {
+      this.cliBlocked = null
+      this.blockedFiles = []
+    },
+    async compareFromCli(files, transient = false) {
       const tabs = useTabsStore()
       // Whether there is room HERE comes from the live comparison, not the
       // active tab's snapshot: a snapshot is only captured when tabs switch, so
       // the tab you are looking at still reads as blank while it holds a diff.
       if (this.left || this.right) {
-        if (!tabs.canAdd) {
-          this.cliBlocked = tabsFullMessage(files, MAX_TABS)
+        if (!tabs.canHost(transient)) {
+          // Every launch blocked so far, not just this one: git calls the tool
+          // once per conflicted file and moves on without reading the answer.
+          this.blockedFiles = [...this.blockedFiles, ...(files ?? [])]
+          this.cliBlocked = tabsFullMessage(this.blockedFiles, MAX_TABS)
           return
         }
-        tabs.newTab()
+        tabs.newTab({ transient })
       }
+      tabs.markActiveTransient(transient)
       const sides = ['left', 'right']
       for (const [i, path] of (files ?? []).entries()) {
         // A path from a shell is not one the app chose, so the read is allowed
@@ -1158,7 +1172,8 @@ export const useDiffStore = defineStore('diff', {
         this.pendingTrustedKey = {
           key: res.key,
           fingerprint: res.fingerprint,
-          label: res.defaultLabel
+          label: res.defaultLabel,
+          vouchedBy: res.vouchedBy ?? null
         }
       } else if (res.error === 'own-key') {
         this.showNotice("That's your own public key — you don't need to trust yourself.")
@@ -1173,7 +1188,8 @@ export const useDiffStore = defineStore('diff', {
         this.pendingTrustedKey = {
           key: res.key,
           fingerprint: res.fingerprint,
-          label: res.defaultLabel
+          label: res.defaultLabel,
+          vouchedBy: res.vouchedBy ?? null
         }
       } else if (res.error === 'own-key') {
         this.showNotice("That's your own public key — you don't need to trust yourself.")

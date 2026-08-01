@@ -1,8 +1,10 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
-import { pageRows } from '../utils/spreadsheetDiff'
+import { useCaptureRegion } from '../composables/useCaptureRegion'
+import { useVirtualRows } from '../composables/useVirtualRows'
+import { GRID_ROW_H } from '../utils/virtualRows'
 import SheetTabBar from './SheetTabBar.vue'
 import SpreadsheetGrid from './SpreadsheetGrid.vue'
 import AppIcon from './AppIcon.vue'
@@ -10,9 +12,15 @@ import AppIcon from './AppIcon.vue'
 const store = useDiffStore()
 const { sheets, active, activeSheet, totals, identical, select } = useSpreadsheetDiff()
 
-// Cap rendered rows so a huge sheet can't freeze the window (no virtualization
-// yet — see pageRows).
-const view = computed(() => pageRows(activeSheet.value?.rows ?? []))
+const allRows = computed(() => activeSheet.value?.rows ?? [])
+
+// The grids scroll as one box — which is both what an image export
+// photographs and what the row window is measured from. One window drives
+// BOTH grids, or the two sides would scroll out of alignment.
+const grids = ref(null)
+useCaptureRegion(grids)
+const win = useVirtualRows(grids, () => allRows.value.length, GRID_ROW_H)
+const windowed = computed(() => allRows.value.slice(win.value.start, win.value.end))
 
 // Clear the Monaco +/− stat; the grid shows its own changed/added/removed strip.
 onMounted(() => {
@@ -29,9 +37,21 @@ onMounted(() => {
       <span>No differences — every sheet matches</span>
     </div>
 
-    <div v-if="activeSheet" class="grids">
-      <SpreadsheetGrid :rows="view.rows" side="left" :columns="activeSheet.columns" />
-      <SpreadsheetGrid :rows="view.rows" side="right" :columns="activeSheet.columns" />
+    <div
+      v-if="activeSheet"
+      ref="grids"
+      class="grids"
+      :style="{ '--grid-row-h': `${GRID_ROW_H}px` }"
+    >
+      <SpreadsheetGrid
+        v-for="side in ['left', 'right']"
+        :key="side"
+        :rows="windowed"
+        :side="side"
+        :columns="activeSheet.columns"
+        :pad-top="win.padTop"
+        :pad-bottom="win.padBottom"
+      />
     </div>
 
     <div class="status band">
@@ -43,7 +63,7 @@ onMounted(() => {
         <span class="add">+{{ totals.added }} rows</span>
         <span class="del">−{{ totals.removed }} rows</span>
       </template>
-      <span v-if="view.hidden" class="capped">first {{ view.rows.length }} rows shown</span>
+      <span class="capped">{{ allRows.length }} rows</span>
       <span class="right">{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
     </div>
   </div>

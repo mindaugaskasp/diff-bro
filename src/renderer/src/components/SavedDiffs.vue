@@ -9,6 +9,7 @@ import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
 import ToolsShelf from './ToolsShelf.vue'
+import TagManagePopover from './TagManagePopover.vue'
 import AppIcon from './AppIcon.vue'
 
 const vault = useVaultStore()
@@ -63,6 +64,9 @@ const allTags = computed(() => {
     .sort((a, b) => b.count - a.count)
 })
 const pickTag = (name) => (activeTags.value = toggleTag(activeTags.value, name))
+// Right-click is the only way in: a tag chip's primary job is filtering, and a
+// second visible control on every chip would crowd the bar.
+const managing = ref('')
 </script>
 
 <template>
@@ -116,13 +120,17 @@ const pickTag = (name) => (activeTags.value = toggleTag(activeTags.value, name))
           class="tag-chip usb-tag"
           :class="{ on: activeTags.includes(t.name) }"
           :style="{ '--tc': t.color }"
+          :data-tip="`Filter by ${t.name} · right-click to manage`"
           @click="pickTag(t.name)"
+          @contextmenu.prevent="managing = t.name"
         >
           <span class="usb-dot" />{{ t.name }}
           <span class="usb-tct">{{ t.count }}</span>
         </button>
       </div>
     </div>
+    <TagManagePopover v-if="managing" :name="managing" @close="managing = ''" />
+
     <div class="usb-scroll">
       <SavedDiffsSection
         v-show="shows('saved')"

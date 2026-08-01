@@ -20,6 +20,8 @@ export const TOOLS = [
   { id: 'epoch', name: 'Epoch', icon: 'clock', kind: 'Convert', action: 'tools-epoch' },
   { id: 'url', name: 'URL', icon: 'link', kind: 'Encode', action: 'tools-url' },
   { id: 'lines', name: 'Lines', icon: 'list', kind: 'Transform', action: 'tools-lines' },
+  { id: 'hash', name: 'Checksum', icon: 'fingerprint', kind: 'Verify', action: 'tools-hash' },
+  { id: 'regex', name: 'Regex', icon: 'regex', kind: 'Test', action: 'tools-regex' },
   { id: 'crypt', name: 'Encrypt', icon: 'lock', kind: 'Encrypt', action: 'tools-crypt' },
   { id: 'patch', name: 'Patch', icon: 'file', kind: 'Apply', action: 'apply-patch' }
 ]

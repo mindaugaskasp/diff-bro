@@ -9,6 +9,8 @@ import ToolUrl from './ToolUrl.vue'
 import ToolJwt from './ToolJwt.vue'
 import ToolJson from './ToolJson.vue'
 import ToolLines from './ToolLines.vue'
+import ToolHash from './ToolHash.vue'
+import ToolRegex from './ToolRegex.vue'
 import ToolBase64 from './ToolBase64.vue'
 import ToolXml from './ToolXml.vue'
 
@@ -29,6 +31,8 @@ const PANEL_ICONS = {
   jwt: 'shield-check',
   json: 'braces',
   lines: 'list',
+  hash: 'fingerprint',
+  regex: 'regex',
   base64: 'binary',
   xml: 'code'
 }
@@ -74,6 +78,8 @@ watch(
         <ToolJwt v-else-if="tool.panel === 'jwt'" compact />
         <ToolJson v-else-if="tool.panel === 'json'" compact />
         <ToolLines v-else-if="tool.panel === 'lines'" compact />
+        <ToolHash v-else-if="tool.panel === 'hash'" compact />
+        <ToolRegex v-else-if="tool.panel === 'regex'" compact />
         <ToolBase64 v-else-if="tool.panel === 'base64'" compact />
         <ToolXml v-else-if="tool.panel === 'xml'" compact />
       </KeepAlive>

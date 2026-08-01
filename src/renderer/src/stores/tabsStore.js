@@ -11,6 +11,7 @@ import {
   cleanTabName,
   isBlank,
   nextActiveId,
+  recyclableTab,
   tabTitle
 } from '../utils/tabs'
 import {
@@ -28,7 +29,13 @@ import {
 // memory bound, by construction rather than by bookkeeping.
 // Defaults as an object rather than destructuring defaults: open() sits right
 // on the complexity limit and every `=` in a signature counts against it.
-const OPEN_DEFAULTS = { diffSaved: false, entryId: null, reuseBlank: true, name: '' }
+const OPEN_DEFAULTS = {
+  diffSaved: false,
+  entryId: null,
+  reuseBlank: true,
+  name: '',
+  transient: false
+}
 
 // The session file is sealed with the vault key, like a saved diff — it holds
 // the same thing (whole file contents), so it is stored the same way. The AAD
@@ -47,6 +54,11 @@ export const useTabsStore = defineStore('tabs', {
   getters: {
     active: (s) => s.tabs.find((t) => t.id === s.activeId) ?? null,
     canAdd: (s) => canAddTab(s.tabs),
+    // Whether a comparison can be hosted at all — a free tab, or, for one git
+    // handed over, a throwaway git tab to recycle.
+    /** @returns {(transient: boolean) => boolean} */
+    canHost: (s) => (transient) =>
+      canAddTab(s.tabs) || (!!transient && !!recyclableTab(s.tabs, s.activeId)),
     // Always shown once there is a document. Hiding it at one tab looked tidier
     // but left no way to reach the "+" that makes the second one — the bar has
     // to be present for tabs to be discoverable at all.
@@ -129,7 +141,7 @@ export const useTabsStore = defineStore('tabs', {
      * @param {{ diffSaved?: boolean, entryId?: string, reuseBlank?: boolean }} [opts]
      */
     open(snapshot, opts) {
-      const { diffSaved, entryId, reuseBlank, name } = { ...OPEN_DEFAULTS, ...opts }
+      const { diffSaved, entryId, reuseBlank, name, transient } = { ...OPEN_DEFAULTS, ...opts }
       const wanted = snapshot ?? blankSnapshot()
       const existing = entryId ? this.tabs.find((t) => t.entryId === entryId) : null
       if (existing) {
@@ -141,21 +153,41 @@ export const useTabsStore = defineStore('tabs', {
       // one whether it is blank reuses a tab that is not.
       this._capture()
       const full = this._withCurrentView(wanted)
-      const spare = reuseBlank && isBlank(this.active) ? this.active : null
-      if (spare) return this._fill(spare, full, { diffSaved, entryId, name })
+      const spare = this._reusable({ reuseBlank, transient })
+      if (spare) {
+        spare.transient = transient
+        return this._fill(spare, full, { diffSaved, entryId, name })
+      }
       if (!this.canAdd) {
         useDiffStore().showNotice(
           `That is the most comparisons at once (${MAX_TABS}). Close one first.`
         )
         return null
       }
-      const tab = createTab(full, { diffSaved })
+      const tab = createTab(full, { diffSaved, transient })
       this.tabs.push(tab)
       return this._fill(tab, full, { diffSaved, entryId, name })
     },
-    newTab({ paste = false } = {}) {
+    // A tab this comparison may take over. Blank first; failing that, and only
+    // for one git handed us, the OLDEST other tab that also came from git —
+    // those hold copies in a temp directory git has already deleted, so they are
+    // throwaway by construction. `git mergetool` walks a whole conflict list
+    // without waiting for anyone, and refusing the seventh conflict to protect
+    // the first is backwards.
+    _reusable({ reuseBlank, transient }) {
+      if (reuseBlank && isBlank(this.active)) return this.active
+      if (!transient || this.canAdd) return null
+      return recyclableTab(this.tabs, this.activeId)
+    },
+    // What git handed over is the COMPARISON, not the tab: one that lands in a
+    // tab that already existed is just as throwaway as one that made its own.
+    /** @param {boolean} transient */
+    markActiveTransient(transient) {
+      if (this.active) this.active.transient = !!transient
+    },
+    newTab({ paste = false, transient = false } = {}) {
       const diff = useDiffStore()
-      const id = this.open(blankSnapshot(diff), { reuseBlank: false })
+      const id = this.open(blankSnapshot(diff), { reuseBlank: false, transient })
       if (id && paste) diff.mode = 'paste'
       return id
     },

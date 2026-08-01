@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useVaultStore } from './vaultStore'
 import { loadPersisted, savePersisted } from '../persist'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
@@ -61,6 +62,13 @@ function nextColor(tags) {
   )
 }
 // Monotonic recency rank (higher = more recent), derived from stored ranks.
+const dropTag = (entries, name) => {
+  for (const e of entries ?? []) {
+    const i = e.tags?.indexOf(name) ?? -1
+    if (i > -1) e.tags.splice(i, 1)
+  }
+}
+
 function nextRank(tags) {
   const ranks = Object.values(tags).map((t) => t.rank)
   return (ranks.length ? Math.max(...ranks) : 0) + 1
@@ -227,7 +235,17 @@ export const useSnippetStore = defineStore('snippets', {
     },
     // How many snippets carry no tags (the Default catch-all).
     defaultCount: (s) => s.entries.filter((e) => !e.tags.length).length,
-    colorOf: (s) => (name) => s.tags[cleanTag(name)]?.color ?? null
+    colorOf: (s) => (name) => s.tags[cleanTag(name)]?.color ?? null,
+    // What a tag is holding, so the confirm can say it BEFORE anything goes.
+    /** @returns {(name: string) => { snippets: number, diffs: number }} */
+    taggedCount: (s) => (name) => {
+      const n = cleanTag(name)
+      const has = (e) => e.tags?.includes(n)
+      return {
+        snippets: s.entries.filter(has).length,
+        diffs: useVaultStore().entries.filter(has).length
+      }
+    }
   },
   actions: {
     persist() {
@@ -418,25 +436,40 @@ export const useSnippetStore = defineStore('snippets', {
       }
       this.persist()
     },
-    deleteTag(name) {
+    /**
+     * Remove a tag from the registry. By default the records keep living and
+     * only lose the label; `withEntries` deletes everything carrying it.
+     *
+     * Saved diffs draw from this same registry (vaultStore calls registerTags),
+     * so both sides are swept — a tag left on a saved diff would be one the app
+     * no longer knows the colour of.
+     * @param {string} name
+     * @param {{ withEntries?: boolean }} [opts]
+     */
+    deleteTag(name, { withEntries = false } = {}) {
       const n = cleanTag(name)
       if (!this.tags[n]) return
       delete this.tags[n]
-      for (const e of this.entries) {
-        const i = e.tags.indexOf(n)
-        if (i > -1) e.tags.splice(i, 1)
+      const vault = useVaultStore()
+      if (withEntries) {
+        for (const e of this.entries.filter((e) => e.tags.includes(n))) this.remove(e.id)
+        for (const e of vault.entries.filter((e) => e.tags?.includes(n))) vault.remove(e.id)
       }
+      dropTag(this.entries, n)
+      dropTag(vault.entries, n)
+      vault.persist()
       this.persist()
     },
     // --- delete confirmation flow (snippet | tag) ---
     requestDelete(type, id, name) {
       this.pendingDelete = { type, id, name }
     },
-    confirmDelete() {
+    /** @param {{ withEntries?: boolean }} [opts]  tag deletes only */
+    confirmDelete({ withEntries = false } = {}) {
       const pending = this.pendingDelete
       this.pendingDelete = null
       if (!pending) return
-      if (pending.type === 'tag') this.deleteTag(pending.id)
+      if (pending.type === 'tag') this.deleteTag(pending.id, { withEntries })
       else this.remove(pending.id)
     },
     cancelDelete() {

@@ -8,6 +8,7 @@ import { registerClipboardIpc } from './clipboard'
 import { registerFileIpc } from './files'
 import { registerDiffImageIpc } from './diffImage'
 import { registerTextToolsIpc } from './textTools'
+import { registerHashIpc } from './hashTools'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
 import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLook'
@@ -61,6 +62,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerFileIpc()
     registerDiffImageIpc()
     registerTextToolsIpc()
+    registerHashIpc()
     registerShareIpc()
     registerSnippetIpc()
     registerLoggerIpc()

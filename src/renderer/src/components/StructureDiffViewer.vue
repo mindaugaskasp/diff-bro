@@ -2,8 +2,11 @@
 // The structure-aware view: one tree of the two documents merged, each row
 // marked with what happened to it. Rows carry their own depth, so this renders
 // a flat list rather than nesting components (see utils/structuralDiff).
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useCaptureRegion } from '../composables/useCaptureRegion'
+import { useVirtualRows } from '../composables/useVirtualRows'
+import { SD_ROW_H } from '../utils/virtualRows'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
@@ -31,6 +34,13 @@ const shown = computed(() => {
   }
   return rows.filter((r) => keep.has(r.path))
 })
+const rows = ref(null)
+useCaptureRegion(rows)
+// Only the visible slice reaches the DOM; the spacers hold the scroll height.
+// Rows are a fixed height by CSS, which is what makes the arithmetic exact.
+const win = useVirtualRows(rows, () => shown.value.length, SD_ROW_H)
+const windowed = computed(() => shown.value.slice(win.value.start, win.value.end))
+
 const MARK = { added: '+', removed: '−', changed: '~', same: '' }
 const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightType
 </script>
@@ -46,9 +56,17 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
       This comparison can no longer be read as {{ store.structuredFormat ?? 'structured data' }}.
     </div>
 
-    <div v-else class="sd-rows" role="list" aria-label="Structural differences">
+    <div
+      v-else
+      ref="rows"
+      class="sd-rows"
+      role="list"
+      aria-label="Structural differences"
+      :style="{ '--sd-row-h': `${SD_ROW_H}px` }"
+    >
+      <div class="sd-pad" :style="{ height: `${win.padTop}px` }"></div>
       <div
-        v-for="row in shown"
+        v-for="row in windowed"
         :key="row.path"
         class="sd-row"
         :class="row.status"
@@ -66,6 +84,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
           <span v-if="retyped(row)" class="sd-type">{{ row.leftType }} → {{ row.rightType }}</span>
         </template>
       </div>
+      <div class="sd-pad" :style="{ height: `${win.padBottom}px` }"></div>
     </div>
 
     <div class="sd-status band">
@@ -73,6 +92,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
       <span class="add">+{{ result?.stats.added ?? 0 }}</span>
       <span class="del">−{{ result?.stats.removed ?? 0 }}</span>
       <span v-if="result?.hidden" class="capped">first {{ result.rows.length }} rows shown</span>
+      <span class="count">{{ shown.length }} rows</span>
       <span class="right">
         <label class="sd-all">
           <input v-model="store.structureShowAll" type="checkbox" />

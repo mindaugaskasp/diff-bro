@@ -55,6 +55,11 @@ contextBridge.exposeInMainWorld('api', {
   addTrustedKeyNamed: (key, label) => ipcRenderer.invoke('share:addTrustedKeyNamed', key, label),
   renameTrusted: (fp, label) => ipcRenderer.invoke('share:renameTrusted', fp, label),
   removeTrusted: (fp) => ipcRenderer.invoke('share:removeTrusted', fp),
+  // Key rotation. Retired keys stay on this machine as decrypt-only; no key
+  // material crosses this boundary in either direction (rule 4).
+  rotateKey: () => ipcRenderer.invoke('share:rotate'),
+  retiredKeyCount: () => ipcRenderer.invoke('share:retiredCount'),
+  destroyRetiredKeys: () => ipcRenderer.invoke('share:destroyRetired'),
   // Configuration backup/restore (passphrase-encrypted; identity keys stay
   // in the main process, only travelling inside the encrypted blob).
   backupConfig: (snippets, settings, passphrase) =>
@@ -79,9 +84,9 @@ contextBridge.exposeInMainWorld('api', {
   toggleDevTools: () => ipcRenderer.invoke('app:toggleDevTools'),
   isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
   quit: () => ipcRenderer.invoke('app:quit'),
-  // Opens the project's "new issue" page (a fixed URL, chosen in main) in the
-  // OS browser. No URL crosses from the renderer.
-  reportIssue: () => ipcRenderer.invoke('app:reportIssue'),
+  // No URL crosses from the renderer — only an error message for the prefilled
+  // title, which main anonymises. The address itself is chosen in main.
+  reportIssue: (title) => ipcRenderer.invoke('app:reportIssue', { title }),
   // Local error log (written by the main process, never sent anywhere). The
   // renderer forwards its own uncaught errors and can read/clear/reveal the log
   // and choose where it's stored.
@@ -124,6 +129,11 @@ contextBridge.exposeInMainWorld('api', {
   cliStatus: () => ipcRenderer.invoke('cli:status'),
   cliInstall: () => ipcRenderer.invoke('cli:install'),
   cliRemove: () => ipcRenderer.invoke('cli:remove'),
+  hashText: (text) => ipcRenderer.invoke('hash:text', text),
+  hashFile: () => ipcRenderer.invoke('hash:file'),
+  gitToolStatus: () => ipcRenderer.invoke('git:toolStatus'),
+  gitToolRegister: () => ipcRenderer.invoke('git:register'),
+  gitToolUnregister: () => ipcRenderer.invoke('git:unregister'),
   onMenuAction: (handler) => {
     ipcRenderer.on('menu:action', (_e, action) => handler(action))
   },

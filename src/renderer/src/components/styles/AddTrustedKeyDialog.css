@@ -6,3 +6,12 @@ code {
 .dialog-backdrop {
   z-index: 40;
 }
+
+/* A rotation claim: real information, but never a substitute for checking the
+   fingerprint — so it reads as a note, not as a green tick. */
+.vouch {
+  padding: var(--space-2) var(--space-3);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border-radius: var(--radius-sm);
+}

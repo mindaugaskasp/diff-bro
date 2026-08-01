@@ -232,6 +232,19 @@ export const ICONS = {
   ],
   // Hash — the UUID tool's mark.
   hash: [{ t: 'path', d: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18' }],
+  // Nested arches — a checksum identifies a file the way a print identifies a
+  // hand, which is the whole idea the tool trades on.
+  fingerprint: [
+    { t: 'path', d: 'M12 11a2 2 0 0 1 2 2c0 2.5-.4 4.8-1.2 6.9' },
+    { t: 'path', d: 'M8.5 13a3.5 3.5 0 0 1 7 0c0 3-.5 5.7-1.5 8' },
+    { t: 'path', d: 'M5 13a7 7 0 0 1 14 0c0 1.6-.1 3.2-.4 4.7' },
+    { t: 'path', d: 'M5.5 8.5a7.8 7.8 0 0 1 13 0' }
+  ],
+  // The bracket-star-bracket of a pattern: /.*/ read as a shape.
+  regex: [
+    { t: 'path', d: 'M8 4 5 12l3 8M16 4l3 8-3 8' },
+    { t: 'path', d: 'M12 9v6M9.5 10.5l5 3M14.5 10.5l-5 3' }
+  ],
   // Encoded bytes in a frame — the Base64 tool's mark.
   binary: [
     { t: 'rect', x: 3, y: 5, width: 18, height: 14, rx: 2 },

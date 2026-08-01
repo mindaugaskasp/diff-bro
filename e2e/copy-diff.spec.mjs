@@ -72,7 +72,7 @@ test('pasted content is syntax-highlighted via content detection', async ({ page
     .toBeGreaterThanOrEqual(2)
 })
 
-// Layout guard for the band system (CLAUDE.md): the new Copy diff button must
+// Layout guard for the band system (docs/standards.md): the new Copy diff button must
 // sit in the toolbar band, line up with its neighbours, and never push the bar
 // into a horizontal scroll. jsdom has no layout, so this can only be checked in
 // a real launch.

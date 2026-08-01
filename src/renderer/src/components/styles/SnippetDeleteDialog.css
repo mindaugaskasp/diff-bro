@@ -1,0 +1,20 @@
+/* The opt-in that turns "remove the label" into "remove the records". */
+.also {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-md);
+  color: var(--text);
+}
+
+/* The warning pair is designed together and redefined by every theme, so this
+   re-tints on all 14 — a bare --warning-text would be near-black on the dark
+   grounds, where it is meant to sit ON --warning-bg. */
+.dialog-note.warn {
+  padding: var(--space-2) var(--space-3);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border-radius: var(--radius-sm);
+}

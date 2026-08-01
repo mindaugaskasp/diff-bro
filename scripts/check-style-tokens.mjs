@@ -5,7 +5,7 @@
 // two slightly different buttons — the exact drift ui.css exists to prevent.
 //
 // Deliberately a small script rather than a stylelint dependency: this repo
-// keeps its dependency surface minimal (CLAUDE.md), and the rule set is tiny.
+// keeps its dependency surface minimal (docs/standards.md), and the rule set is tiny.
 //
 // Escape hatches, used sparingly and with a reason:
 //   * a `/* token-exempt: why */` comment on the line before the declaration

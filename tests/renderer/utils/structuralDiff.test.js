@@ -243,7 +243,7 @@ describe('YAML', () => {
     expect(rows.find((r) => r.path === 'db.port').status).toBe('same')
   })
 
-  // Untrusted input is hostile (CLAUDE.md #6): an anchor bomb must not be
+  // Untrusted input is hostile (docs/standards.md #6): an anchor bomb must not be
   // allowed to expand until the renderer dies.
   it('refuses an alias bomb instead of expanding it', () => {
     const bomb = [

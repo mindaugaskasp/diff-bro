@@ -66,7 +66,8 @@ There is no other door.
 
 ## What is blocked, and where
 
-These are the non-negotiables from `CLAUDE.md`, and the file that enforces each:
+These are the non-negotiables from [standards.md](standards.md), and the file
+that enforces each:
 
 | Guard | What it stops | Where |
 |---|---|---|
@@ -150,16 +151,45 @@ sequenceDiagram
 
   Note over R: window.onerror / unhandledrejection / Vue errorHandler
   R->>M: invoke('log:error', { message, stack, context })
-  M->>M: add app version+platform, redact home dir → ~
+  M->>M: add app version+platform, anonymise (logRedact.js)
   M->>M: format entry, cap the day's file, pick diffbro-YYYY-MM-DD.log
   M->>D: append (prune files older than 7 days)
   Note over M,D: LOCAL ONLY — never sent anywhere
   R->>M: (from the dialog) log:read → copy to clipboard, or reportIssue → open GitHub in OS browser
 ```
 
-Even the "Report on GitHub" action doesn't send anything from the app: it hands a
-**fixed** issue URL to the OS browser (the only outward link, chosen in main —
-the renderer can only trigger it, never choose the address).
+Even the "Report on GitHub" action doesn't send anything from the app: it hands
+the issue URL to the OS browser (the only outward link) and you submit the form
+yourself. `issueUrl.js` owns the **origin and path**; the renderer may pass an
+error message for the prefilled title, never a URL. That message is anonymised
+by the same `logRedact.js` rules, capped at 120 characters and encoded with
+`URLSearchParams`, so it cannot bolt on a `labels=`/`assignees=` parameter or a
+fragment. The confirmation dialog shows the address and the prefilled title
+before anything opens.
+
+#### Anonymisation happens on the way in
+
+The log is the one artifact a user is invited to copy out, and its directory is
+user-chosen — it can be a synced folder. So `logRedact.js` scrubs an entry
+**before it is written**, not when it is read: nothing sensitive reaches the file
+in the first place. It replaces
+
+| in the entry | becomes |
+| --- | --- |
+| the home dir | `~` |
+| another account's home (`/Users/x`, `/home/x`, `C:\Users\x`) | `<user>` |
+| a UNC host and share | `\\<host>\<share>` |
+| a path to a document the app opens | `~/…/<file>.xlsx` — extension kept, name and directories dropped |
+| a URL's path, query and fragment | `https://host/<path>` |
+| an email address / IPv4 address | `<email>` / `<ip>` |
+| a 32+ char hex or 40+ char base64 run (fingerprints, digests, wrapped keys) | `<hex:64>` / `<b64:44>` |
+
+Source paths in a stack trace are deliberately left alone (`.js`, `.vue`, … are
+not document extensions), so a trace stays readable. Two limits are worth
+knowing: base64 containing `/` is only partly caught, and a parser error that
+interpolates **file content** into its message cannot be detected by shape — the
+field caps in `logFormat.js` bound it, and the user still reads the log before
+pasting it.
 
 ---
 

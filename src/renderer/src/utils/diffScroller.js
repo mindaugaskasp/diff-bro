@@ -10,6 +10,9 @@
  * @property {() => number} scrollTop
  * @property {(top: number) => void} scrollTo
  * @property {() => ({ top: number, bottom: number } | null)} selection
+ * @property {() => Element|null} viewportEl  the box the picture is cut from
+ * @property {() => number} [hiddenColumns]   content wider than the viewport,
+ *                          in whole screenfuls — a picture cannot reach it
  */
 
 /** @type {DiffScroller | null} */
@@ -81,12 +84,46 @@ export function monacoScroller(paneOf, panesOf = () => [paneOf()]) {
     viewportHeight: () => paneOf().getLayoutInfo().height,
     scrollTop: () => paneOf().getScrollTop(),
     scrollTo: (top) => paneOf().setScrollTop(top),
+    viewportEl: () => paneOf().getDomNode?.() ?? null,
     selection: () => {
       for (const pane of panesOf()) {
         const band = selectedBand(pane)
         if (band) return band
       }
       return null
+    }
+  }
+}
+
+/**
+ * A DiffScroller over a plain scrolling element — the spreadsheet grids, the
+ * structure list, anything that is not Monaco. Same contract, so the export
+ * scrolls and stitches it exactly as it does a tall diff, and a virtualized
+ * list (which keeps no offscreen rows either) works for the same reason.
+ * @param {() => Element|null} elOf  read lazily: the element outlives no re-render
+ * @returns {DiffScroller}
+ */
+export function elementScroller(elOf) {
+  const el = () => elOf() ?? { scrollHeight: 0, clientHeight: 0, scrollTop: 0 }
+  return {
+    contentHeight: () => el().scrollHeight,
+    viewportHeight: () => el().clientHeight,
+    scrollTop: () => el().scrollTop,
+    scrollTo: (top) => {
+      const node = elOf()
+      if (node) node.scrollTop = top
+    },
+    viewportEl: () => elOf(),
+    // Selecting lines is a Monaco idea; a grid has no equivalent, so a picture
+    // of one is always the whole thing.
+    selection: () => null,
+    // Stitching only scrolls DOWN. A grid wider than the window would be cut
+    // off at the right edge with nothing to show for it, so the count is
+    // reported rather than the loss being silent.
+    hiddenColumns: () => {
+      const node = elOf()
+      if (!node?.clientWidth) return 0
+      return Math.max(0, Math.ceil((node.scrollWidth - node.clientWidth) / node.clientWidth))
     }
   }
 }

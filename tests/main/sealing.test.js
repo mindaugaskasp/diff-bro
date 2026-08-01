@@ -11,8 +11,12 @@ import {
   encodePublicKey,
   fingerprint,
   isAcceptedKeyFormat,
+  ROTATION_FORMAT,
   openSealed,
+  openSealedWith,
   sealEntry,
+  signRotation,
+  verifyRotation,
   shareFilename,
   ttlError
 } from '../../src/main/sealing'
@@ -495,5 +499,135 @@ describe('multi-recipient sealing', () => {
     const file = seal(makeEntry(), [members[0], members[0]])
     expect(file.keys).toHaveLength(1)
     expect(openSealed(file, members[0], trustsAlice, NOW).ok).toBe(true)
+  })
+})
+
+// --- key rotation ---------------------------------------------------------
+// Rotation exists for one threat only: a leaked private key must stop being
+// able to speak for you. It does NOT make past shares unreadable — those were
+// encrypted to the RECIPIENT's key; yours only signed them. The tests below
+// pin both halves of that, because the wrong belief about it is the dangerous
+// one.
+describe('key rotation', () => {
+  const rotate = () => {
+    const older = createIdentityKeys()
+    const newer = createIdentityKeys()
+    const record = signRotation({
+      oldPriv: older.priv,
+      oldFp: older.pub.fingerprint,
+      newPriv: newer.priv,
+      newFp: newer.pub.fingerprint
+    })
+    return { older, newer, record }
+  }
+
+  it('is vouched for by BOTH the old key and the new one', () => {
+    const { older, newer, record } = rotate()
+    expect(record.from).toBe(older.pub.fingerprint)
+    expect(record.to).toBe(newer.pub.fingerprint)
+    expect(verifyRotation(record, older.pub.sign, newer.pub)).toBe(true)
+  })
+
+  // Without the old key's signature, anyone could announce themselves as the
+  // successor to a key you trust.
+  it('is rejected when the previous key did not sign it', () => {
+    const { older, newer, record } = rotate()
+    const impostor = createIdentityKeys()
+    const forged = signRotation({
+      oldPriv: impostor.priv,
+      oldFp: older.pub.fingerprint,
+      newPriv: newer.priv,
+      newFp: newer.pub.fingerprint
+    })
+    expect(verifyRotation(forged, older.pub.sign, newer.pub)).toBe(false)
+    // …and the genuine one still fails against the wrong predecessor.
+    expect(verifyRotation(record, impostor.pub.sign, newer.pub)).toBe(false)
+  })
+
+  // Without the new key's own signature, a leaked record could be re-pointed
+  // at a key its holder never controlled.
+  it('is rejected when the new key did not claim it', () => {
+    const { older, newer, record } = rotate()
+    const other = createIdentityKeys()
+    expect(
+      verifyRotation({ ...record, bySelf: record.byPrevious }, older.pub.sign, newer.pub)
+    ).toBe(false)
+    // A record for a different key does not vouch for this one.
+    expect(verifyRotation(record, older.pub.sign, other.pub)).toBe(false)
+  })
+
+  it('is rejected when any field it covers is edited', () => {
+    const { older, newer, record } = rotate()
+    for (const edit of [{ at: record.at + 1 }, { from: 'f'.repeat(32) }, { format: 'nope' }]) {
+      expect(verifyRotation({ ...record, ...edit }, older.pub.sign, newer.pub)).toBe(false)
+    }
+  })
+
+  it('is rejected outright when it is not a rotation record at all', () => {
+    const { older, newer } = rotate()
+    for (const junk of [null, undefined, {}, { format: ROTATION_FORMAT }, 'string']) {
+      expect(verifyRotation(junk, older.pub.sign, newer.pub)).toBe(false)
+    }
+  })
+})
+
+describe('openSealedWith', () => {
+  const trusted = (id, label) => ({ ...id.pub, fingerprint: id.pub.fingerprint, label })
+
+  it('opens with the current identity', () => {
+    const sender = createIdentityKeys()
+    const me = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(me, 'me')]
+    )
+    const out = openSealedWith(file, [me], [trusted(sender, 'sender')])
+    expect(out.error).toBeUndefined()
+    expect(out.entry.name).toBe(makeEntry().name)
+  })
+
+  // Rotating a key must not destroy diffs already sent to the old one. A
+  // retired key still decrypts; it is simply never used to seal or sign again.
+  it('still opens a diff sealed to a key that has since been retired', () => {
+    const sender = createIdentityKeys()
+    const retired = createIdentityKeys()
+    const current = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(retired, 'me-before')]
+    )
+
+    expect(openSealed(file, current, [trusted(sender, 's')]).error).toBe('not-for-you')
+    expect(openSealedWith(file, [current, retired], [trusted(sender, 's')]).error).toBeUndefined()
+  })
+
+  // A real verdict about the file must not be masked by trying more keys.
+  it('reports a tampered file rather than moving on to the next key', () => {
+    const sender = createIdentityKeys()
+    const me = createIdentityKeys()
+    const spare = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(me, 'me')]
+    )
+    file.ciphertext = Buffer.from('tampered').toString('base64')
+    expect(openSealedWith(file, [me, spare], [trusted(sender, 's')]).error).toBe('tampered')
+  })
+
+  it('says "not for you" when none of this machine’s keys is addressed', () => {
+    const sender = createIdentityKeys()
+    const them = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(them, 'them')]
+    )
+    expect(openSealedWith(file, [createIdentityKeys()], [trusted(sender, 's')]).error).toBe(
+      'not-for-you'
+    )
+    expect(openSealedWith(file, [], []).error).toBe('not-for-you')
   })
 })

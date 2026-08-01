@@ -10,7 +10,9 @@ export const CONVERT_TOOLS = [
   { id: 'json', name: 'JSON', panel: 'json' },
   { id: 'xml', name: 'XML', panel: 'xml' },
   { id: 'uuid', name: 'UUID', panel: 'uuid' },
-  { id: 'lines', name: 'Lines', panel: 'lines' }
+  { id: 'lines', name: 'Lines', panel: 'lines' },
+  { id: 'hash', name: 'Checksum', panel: 'hash' },
+  { id: 'regex', name: 'Regex', panel: 'regex' }
 ]
 
 // kind:'command' routes a choice into the panel instead of openInMain.

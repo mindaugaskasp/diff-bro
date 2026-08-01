@@ -13,7 +13,7 @@
 // scripts/render-dmg-background.mjs.
 //
 // Rendering goes through the Electron already in devDependencies — no added
-// rasterizer (CLAUDE.md rule 2), same engine that draws the UI. BMP is encoded
+// rasterizer (docs/standards.md rule 2), same engine that draws the UI. BMP is encoded
 // inline (24-bit, bottom-up) because NSIS needs BMP and there is no dependency
 // that would produce one. If this exits with "Cannot read properties of
 // undefined (reading 'whenReady')", ELECTRON_RUN_AS_NODE=1 is set — run

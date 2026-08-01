@@ -54,13 +54,6 @@ export function formatLogEntry(record = {}, now = new Date()) {
   return lines.join('\n') + '\n'
 }
 
-// Replace the home dir with ~ so a pasted log doesn't leak the account/path.
-export function redactHome(text, homeDir) {
-  if (!homeDir) return text
-  const escaped = homeDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return String(text).replace(new RegExp(escaped, 'g'), '~')
-}
-
 // Drop whole oldest entries (each starts with "[") until the day's file fits.
 export function capLog(existing, entry, maxBytes) {
   let combined = (existing ?? '') + entry

@@ -18,9 +18,10 @@ import { parseXml } from './xml'
  * @property {string} [rightType]
  */
 
-// The viewer draws a row per node with no virtualization, so an uncapped tree is
-// a frozen window. Counts still cover the whole document — only drawing stops.
-export const MAX_TREE_ROWS = 5000
+// The viewer windows its rows now, so this is no longer a rendering limit — it
+// is a MEMORY one: every row is an object held for the whole comparison. Counts
+// still cover the whole document; only the list stops.
+export const MAX_TREE_ROWS = 200_000
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const isBranch = (v) => Array.isArray(v) || isObject(v)
@@ -57,7 +58,7 @@ function xmlValue(node) {
 }
 
 // An anchor bomb expands geometrically, so the alias budget is the guard that
-// keeps a hostile file from taking the renderer down with it (CLAUDE.md #6).
+// keeps a hostile file from taking the renderer down with it (docs/standards.md #6).
 const YAML_OPTIONS = { maxAliasCount: 100, prettyErrors: false }
 
 const PARSERS = {

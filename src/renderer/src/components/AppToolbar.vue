@@ -14,11 +14,11 @@ const pasteToggleLabel = computed(() => (inPaste.value ? 'File mode' : 'Paste te
 const pasteToggleTitle = computed(() =>
   inPaste.value ? `Back to comparing files (${MOD}+T)` : `Compare pasted text (${MOD}+T)`
 )
-// Spreadsheets are refused outright, so the tip says that rather than the
-// generic "load two files".
+// A grid has no line selection to narrow the picture to, so the tip drops that
+// half rather than promising something the viewer cannot do.
 const imageTitle = computed(() => {
-  if (store.isSpreadsheet) return 'Image export is not available for spreadsheet comparisons yet'
   if (!store.canExportImage) return 'Load two files to export an image'
+  if (store.isSpreadsheet) return 'Export this comparison as an image'
   return 'Export this diff as an image — select lines first to capture just those'
 })
 // Clear empties the paste panes as well as the file slots.

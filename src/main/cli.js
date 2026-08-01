@@ -21,6 +21,17 @@ export const COMMANDS = [
   tab in use, Diff Bro says so and opens nothing — close a tab and repeat.`
   },
   {
+    topic: 'difftool',
+    usage: 'diffbro difftool <file> <file>',
+    summary: 'open a comparison git handed over',
+    detail: `What \`git difftool\` and \`git mergetool\` run. Same as compare,
+  except the two files are known to be throwaway copies git made.
+
+  Because they are throwaway, a merge with more conflicts than there are
+  tabs reuses the oldest of them instead of running out — \`git mergetool\`
+  walks the whole conflict list without waiting for anyone.`
+  },
+  {
     topic: 'create',
     usage: 'diffbro create snippet',
     summary: 'open a new snippet in the editor',
@@ -97,18 +108,19 @@ export function cliWords(argv) {
 // the whole thing as unknown rather than half-accepting it.
 const VERBS = {
   compare: (rest, resolve) => parseCompare(rest, resolve),
+  difftool: (rest, resolve) => parseCompare(rest, resolve, true),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
   cb: (rest) => (rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null),
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
 }
 
-function parseCompare(rest, resolve) {
+function parseCompare(rest, resolve, transient = false) {
   // An empty word is not a path — resolving it would silently mean the cwd.
   const paths = rest.filter((p) => p.trim())
   if (!paths.length) return { command: null, error: 'compare needs a file path.' }
   if (paths.length > 2) return { command: null, error: 'compare takes at most two files.' }
-  return { command: { name: 'compare', files: paths.map(resolve) }, error: null }
+  return { command: { name: 'compare', files: paths.map(resolve), transient }, error: null }
 }
 
 /**

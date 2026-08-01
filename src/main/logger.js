@@ -12,14 +12,8 @@ import {
 } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
-import {
-  capLog,
-  dailyLogName,
-  formatLogEntry,
-  isLogFileName,
-  redactHome,
-  staleLogFiles
-} from './logFormat'
+import { capLog, dailyLogName, formatLogEntry, isLogFileName, staleLogFiles } from './logFormat'
+import { redactSensitive } from './logRedact'
 
 const MAX_DAY_BYTES = 512 * 1024 // one day's file
 const KEEP_DAYS = 7
@@ -63,7 +57,9 @@ export function appendLog(record) {
     const dir = getLogDir()
     ensureDir(dir)
     const file = join(dir, dailyLogName())
-    const entry = redactHome(formatLogEntry({ ...record, ...envInfo() }), homedir())
+    const entry = redactSensitive(formatLogEntry({ ...record, ...envInfo() }), {
+      homeDir: homedir()
+    })
     const existing = existsSync(file) ? readFileSync(file, 'utf-8') : ''
     writeFileSync(file, capLog(existing, entry, MAX_DAY_BYTES))
     pruneOldLogs(dir)

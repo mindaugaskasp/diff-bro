@@ -10,3 +10,8 @@
   font-size: var(--font-md);
   color: var(--text-dim);
 }
+
+.setting-toggle.disabled {
+  cursor: default;
+  opacity: 0.55;
+}

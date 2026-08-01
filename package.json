@@ -4,7 +4,7 @@
   "description": "Desktop file diff viewer with GitHub-style rendering",
   "main": "./build/main/index.js",
   "author": "Mindaugas",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "engines": {
     "node": ">=22.12.0"
   },

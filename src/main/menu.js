@@ -1,14 +1,26 @@
 import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } from 'electron'
+import { homedir } from 'os'
+import { ISSUE_BASE, buildIssueUrl } from './issueUrl'
 import { toggleQuickLook } from './quickLook'
 
-// Fixed in main so the renderer can trigger it but never supply a URL — no
-// open-any-URL surface.
-const ISSUE_URL = 'https://github.com/mindaugaskasp/diff-bro/issues/new'
-
-// The one action that leaves the offline sandbox (hands the URL to the OS
-// browser), so confirm first.
-async function promptAndOpenIssue(win) {
+// Leaves the offline sandbox, so confirm first — showing the prefill, since
+// this is the moment that text stops being local.
+async function promptAndOpenIssue(win, title) {
   const parent = win ?? BrowserWindow.getFocusedWindow()
+  const url = buildIssueUrl({
+    title,
+    appVersion: app.getVersion(),
+    platform: `${process.platform} ${process.arch}`,
+    homeDir: homedir()
+  })
+  const prefilled = new URL(url).searchParams.get('title')
+  const detail = [
+    `Diff Bro itself stays offline. This opens your web browser (which does connect to the internet) at:\n\n${ISSUE_BASE}`,
+    prefilled && `\n\nPrefilled title:\n\n${prefilled}`,
+    '\n\nYou review and submit the issue yourself; nothing is sent from the app.'
+  ]
+    .filter(Boolean)
+    .join('')
   const { response } = await dialog.showMessageBox(parent, {
     type: 'question',
     buttons: ['Cancel', 'Open in browser'],
@@ -16,13 +28,13 @@ async function promptAndOpenIssue(win) {
     cancelId: 0,
     title: 'Report an Issue',
     message: 'Open the issue tracker in your browser?',
-    detail: `Diff Bro itself stays offline. This opens your web browser (which does connect to the internet) at:\n\n${ISSUE_URL}`
+    detail
   })
-  if (response === 1) shell.openExternal(ISSUE_URL)
+  if (response === 1) shell.openExternal(url)
 }
 
 // Every accelerator here must have a twin in the renderer's MenuBar.vue
-// (CLAUDE.md); this hidden native menu keeps the shortcuts working on Win/Linux.
+// (docs/standards.md); this hidden native menu keeps the shortcuts working on Win/Linux.
 
 function focusedWindow() {
   // Fall back to the first window: bare Xvfb reports no keyboard focus.
@@ -194,6 +206,7 @@ export function installMenu() {
         { type: 'separator' },
         { label: 'Add Trusted Key', click: () => sendToFocused('add-trusted-key') },
         { label: 'Manage Trusted Keys', click: () => sendToFocused('manage-keys') },
+        { label: 'Replace My Key…', click: () => sendToFocused('rotate-key') },
         { type: 'separator' },
         {
           label: 'Configuration',
@@ -235,6 +248,8 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+Shift+R',
           click: () => sendToFocused('tools-lines')
         },
+        { label: 'Checksum / Hash', click: () => sendToFocused('tools-hash') },
+        { label: 'Regex Tester', click: () => sendToFocused('tools-regex') },
         {
           label: 'Text Encryption',
           submenu: [
@@ -275,8 +290,9 @@ export function registerMenuIpc() {
   ipcMain.on('app:version', (e) => {
     e.returnValue = app.getVersion()
   })
-  ipcMain.handle('app:reportIssue', (e) =>
-    promptAndOpenIssue(BrowserWindow.fromWebContents(e.sender))
+  // Untrusted: only a title is read, and buildIssueUrl anonymises and encodes it.
+  ipcMain.handle('app:reportIssue', (e, payload = {}) =>
+    promptAndOpenIssue(BrowserWindow.fromWebContents(e.sender), payload?.title)
   )
   // Report packaged state so the renderer can hide dev-only menu entries.
   ipcMain.handle('app:isPackaged', () => app.isPackaged)

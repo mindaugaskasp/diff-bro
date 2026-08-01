@@ -11,6 +11,12 @@ const error = ref('')
 const refresh = async () => (status.value = await window.api.cliStatus())
 onMounted(refresh)
 
+// A Vue template resolves identifiers against the component, not global scope,
+// and `window` is not one of the globals it allows — reaching window.api from
+// the markup gets `undefined` and throws on click.
+const install = () => run(window.api.cliInstall)
+const uninstall = () => run(window.api.cliRemove)
+
 async function run(fn) {
   busy.value = true
   error.value = ''
@@ -42,15 +48,10 @@ async function run(fn) {
     <p v-if="error" class="hint">{{ error }}</p>
 
     <div class="dialog-actions">
-      <button
-        v-if="status?.installed"
-        class="btn btn-ghost"
-        :disabled="busy"
-        @click="run(window.api.cliRemove)"
-      >
+      <button v-if="status?.installed" class="btn btn-ghost" :disabled="busy" @click="uninstall">
         Remove
       </button>
-      <button class="btn btn-primary" :disabled="busy" @click="run(window.api.cliInstall)">
+      <button class="btn btn-primary" :disabled="busy" @click="install">
         {{ status?.installed ? 'Reinstall' : 'Install' }}
       </button>
     </div>

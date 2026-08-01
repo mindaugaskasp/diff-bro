@@ -582,3 +582,96 @@ describe('how long a diff lives', () => {
     expect(vault.entries[0].expiresAt - Date.now()).toBeGreaterThan(167 * HOUR)
   })
 })
+
+// Removing a trusted key does nothing to what has already been sent to it —
+// that file is on someone else's machine. The point of the record is that the
+// reader can see their exposure at the moment they decide.
+describe('sealed recipients', () => {
+  const sealsOk = () => (window.api.shareExport = async () => ({ ok: true, to: 'bob' }))
+
+  it('records who a diff was sealed for, and when', async () => {
+    const vault = useVaultStore()
+    sealsOk()
+    const id = await vault.save('quarterly', null, PAYLOAD)
+    await vault.share(id, ['FP-ALICE', 'FP-BOB'])
+
+    expect(vault.entries[0].sharedTo.map((r) => r.fp)).toEqual(['FP-ALICE', 'FP-BOB'])
+    expect(vault.entries[0].sharedTo[0].at).toBeGreaterThan(0)
+  })
+
+  // Cancelling the save dialog writes no file, so it is not a share.
+  it('records nothing when the seal was not written', async () => {
+    const vault = useVaultStore()
+    window.api.shareExport = async () => ({ canceled: true })
+    const id = await vault.save('quarterly', null, PAYLOAD)
+    await vault.share(id, ['FP-ALICE'])
+    expect(vault.entries[0].sharedTo).toEqual([])
+  })
+
+  it('re-sharing to the same key updates when, rather than stacking', async () => {
+    const vault = useVaultStore()
+    sealsOk()
+    const id = await vault.save('quarterly', null, PAYLOAD)
+    await vault.share(id, ['FP-ALICE'])
+    const first = vault.entries[0].sharedTo[0].at
+    await vault.share(id, ['FP-ALICE'])
+
+    expect(vault.entries[0].sharedTo).toHaveLength(1)
+    expect(vault.entries[0].sharedTo[0].at).toBeGreaterThanOrEqual(first)
+  })
+
+  it('answers what a key has been sent, most recent first', async () => {
+    const vault = useVaultStore()
+    sealsOk()
+    const older = await vault.save('older', null, PAYLOAD)
+    const newer = await vault.save('newer', null, PAYLOAD)
+    await vault.share(older, ['FP-ALICE'])
+    vault.entries.find((e) => e.id === older).sharedTo[0].at = 1000
+    await vault.share(newer, ['FP-ALICE', 'FP-BOB'])
+
+    expect(vault.sharedWith('FP-ALICE').map((s) => s.name)).toEqual(['newer', 'older'])
+    expect(vault.sharedWith('FP-BOB').map((s) => s.name)).toEqual(['newer'])
+    expect(vault.sharedWith('FP-NOBODY')).toEqual([])
+  })
+
+  // This is a list of who ELSE you sent something to. It is local metadata and
+  // must never leave the machine inside a share.
+  it('never travels inside the sealed file', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => ((sealed = entry), { ok: true, to: 'bob' })
+    const id = await vault.save('quarterly', null, PAYLOAD)
+    await vault.share(id, ['FP-ALICE'])
+    await vault.share(id, ['FP-BOB'])
+
+    expect(vault.entries[0].sharedTo).toHaveLength(2)
+    expect(JSON.stringify(sealed)).not.toContain('FP-ALICE')
+    expect(sealed.sharedTo).toBeUndefined()
+  })
+
+  // A share of the CURRENT diff seals first and only then saves the local twin,
+  // so the record has to land on the entry that save created.
+  it('records a draft share against the local twin it creates', async () => {
+    const vault = useVaultStore()
+    sealsOk()
+    await vault.shareDraft({ name: 'draft', ttlHours: null, snapshot: PAYLOAD }, ['FP-ALICE'])
+
+    expect(vault.entries).toHaveLength(1)
+    expect(vault.entries[0].sharedTo.map((r) => r.fp)).toEqual(['FP-ALICE'])
+  })
+
+  it('survives a reload, and shrugs off a hand-edited record', async () => {
+    const vault = useVaultStore()
+    sealsOk()
+    const id = await vault.save('quarterly', null, PAYLOAD)
+    await vault.share(id, ['FP-ALICE'])
+
+    vault.reload()
+    expect(vault.sharedWith('FP-ALICE')).toHaveLength(1)
+
+    vault.entries[0].sharedTo = [{ fp: 42 }, null, { at: 5 }, { fp: 'FP-OK', at: 'soon' }]
+    vault.persist()
+    vault.reload()
+    expect(vault.entries[0].sharedTo).toEqual([{ fp: 'FP-OK', at: 0 }])
+  })
+})

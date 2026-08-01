@@ -30,7 +30,19 @@ describe('cliWords', () => {
 describe('parseCli — compare', () => {
   it('takes one file', () => {
     const { command } = parseCli([...PACKAGED, 'compare', 'a.json'])
-    expect(command).toEqual({ name: 'compare', files: ['a.json'] })
+    expect(command).toEqual({ name: 'compare', files: ['a.json'], transient: false })
+  })
+
+  // What the git difftool launcher runs. Same comparison, flagged as one git
+  // made throwaway copies for, so a merge with more conflicts than tabs can
+  // recycle them rather than running out.
+  it('marks a difftool launch as throwaway', () => {
+    const { command } = parseCli([...PACKAGED, 'difftool', 'before/a.json', 'after/a.json'])
+    expect(command).toEqual({
+      name: 'compare',
+      files: ['before/a.json', 'after/a.json'],
+      transient: true
+    })
   })
 
   it('takes two files', () => {

@@ -124,6 +124,7 @@ export function buildMenus(store) {
         { sep: true },
         { label: 'Add Trusted Key', run: () => store.addTrustedKey() },
         { label: 'Manage Trusted Keys', run: () => store.handleMenuAction('manage-keys') },
+        { label: 'Replace My Key…', run: () => store.handleMenuAction('rotate-key') },
         { sep: true },
         {
           label: 'Configuration',
@@ -150,6 +151,14 @@ export function buildMenus(store) {
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
         { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
+        {
+          label: 'Checksum / Hash',
+          run: () => store.handleMenuAction('tools-hash')
+        },
+        {
+          label: 'Regex Tester',
+          run: () => store.handleMenuAction('tools-regex')
+        },
         {
           label: 'Lines',
           keys: `${MOD}+Shift+R`,

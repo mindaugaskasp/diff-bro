@@ -30,7 +30,7 @@ function limitBytesFor(type) {
 }
 
 // Provenance allowlist. file:read serves ONLY paths the user chose (open dialog
-// or a real drop). CLAUDE.md assumes a compromised renderer, where a raw path
+// or a real drop). docs/standards.md assumes a compromised renderer, where a raw path
 // arg would be an arbitrary-file-read primitive (SSH keys, vault.key, …), so a
 // path is readable only after being registered here through a trusted channel.
 const allowedPaths = new Set()

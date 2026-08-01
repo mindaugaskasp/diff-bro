@@ -18,7 +18,7 @@ const ELECTRON = createRequire(import.meta.url)('electron')
 
 function runCli(userDataDir, args) {
   // DELETE the key — assigning undefined leaves "undefined" in the child env,
-  // which Electron reads as truthy and runs itself as plain Node (CLAUDE.md).
+  // which Electron reads as truthy and runs itself as plain Node (docs/standards.md).
   const env = { ...process.env }
   delete env.ELECTRON_RUN_AS_NODE
   return new Promise((resolve) => {

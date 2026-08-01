@@ -3,7 +3,6 @@ import {
   formatLogEntry,
   dailyLogName,
   isLogFileName,
-  redactHome,
   capLog,
   staleLogFiles
 } from '../../src/main/logFormat'
@@ -50,16 +49,6 @@ describe('dailyLogName / isLogFileName', () => {
     expect(isLogFileName('diffbro-2026-07-05.log')).toBe(true)
     expect(isLogFileName('vault.key')).toBe(false)
     expect(isLogFileName('diffbro-2026-07-05.txt')).toBe(false)
-  })
-})
-
-describe('redactHome', () => {
-  it('replaces every occurrence of the home path with ~', () => {
-    const text = '/Users/jane/Docs/a.txt and /Users/jane/b'
-    expect(redactHome(text, '/Users/jane')).toBe('~/Docs/a.txt and ~/b')
-  })
-  it('is a no-op without a home dir', () => {
-    expect(redactHome('untouched', '')).toBe('untouched')
   })
 })
 

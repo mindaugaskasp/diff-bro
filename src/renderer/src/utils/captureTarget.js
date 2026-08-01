@@ -73,29 +73,37 @@ export function afterFrames(frames = 3, win = window) {
 }
 
 /**
- * The column and, within it, Monaco's viewport — the two boxes a stitched
- * export is cut from. Null when the diff column isn't on screen.
- * @param {Document} [doc]
+ * The column and, within it, the scrolling viewport — the two boxes a stitched
+ * export is cut from. The strip above the viewport (file slots, format banner,
+ * sheet tabs) belongs in the picture once, at the top.
+ *
+ * The viewport is whatever the registered scroller says it is, so this works
+ * for Monaco, the spreadsheet grids and the structure list alike; the selector
+ * is only the fallback for a scroller that predates the field.
+ * @param {{ viewport?: Element|null, doc?: Document }} [opts]
  * @returns {{ content: import('../types').CaptureRect, editorY: number } | null}
  */
-export function captureRegionOf(doc = document) {
+export function captureRegionOf({ viewport = null, doc = document } = {}) {
   const el = doc.querySelector(CAPTURE_SELECTOR)
-  if (!el) return null
-  const r = el.getBoundingClientRect()
-  if (!r.width || !r.height) return null
-  const pane = el.querySelector?.(EDITOR_SELECTOR)
-  const paneRect = pane?.getBoundingClientRect()
-  if (!paneRect?.height) return null
-  return {
-    content: {
-      x: Math.round(r.left),
-      y: Math.round(r.top),
-      width: Math.round(r.width),
-      height: Math.round(r.height)
-    },
-    editorY: Math.round(paneRect.top)
-  }
+  const column = rectOf(el)
+  if (!column?.width) return null
+  const pane = rectOf(viewport ?? el.querySelector?.(EDITOR_SELECTOR))
+  return pane ? { content: boxOf(column), editorY: Math.round(pane.top) } : null
 }
+
+// A box that is actually on screen, or null — an unmounted or collapsed one has
+// nothing to photograph.
+const rectOf = (node) => {
+  const r = node?.getBoundingClientRect?.()
+  return r?.height ? r : null
+}
+
+const boxOf = (r) => ({
+  x: Math.round(r.left),
+  y: Math.round(r.top),
+  width: Math.round(r.width),
+  height: Math.round(r.height)
+})
 
 /**
  * @typedef {object} CaptureSlice

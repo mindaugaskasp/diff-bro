@@ -51,7 +51,7 @@ describe('previewText', () => {
 
 describe('the notice', () => {
   // States the fact (it is hidden, copying still works) without re-selling the
-  // encryption behind it — see the UI-copy rule in CLAUDE.md.
+  // encryption behind it — see the UI-copy rule in docs/standards.md.
   it('says it is hidden and that copying still works', () => {
     expect(SECRET_NOTICE).toMatch(/hidden/i)
     expect(SECRET_NOTICE).toMatch(/copy/i)

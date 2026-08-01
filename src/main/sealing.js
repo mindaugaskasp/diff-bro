@@ -35,6 +35,60 @@ export const MAX_TTL_MS = 7 * 24 * 3600 * 1000
 export const ACCEPTED_KEY_FORMATS = ['diffbro-key/2', 'diffbro-key/1']
 export const isAcceptedKeyFormat = (fmt) => ACCEPTED_KEY_FORMATS.includes(fmt)
 
+// A key rotation, stated by the key material itself. Signed by BOTH halves —
+// the old key says "this is my successor", the new one says "I claim that
+// predecessor" — so neither signature alone can re-point a rotation.
+//
+// This is ADVISORY and must be presented as such. If the old private key leaked,
+// whoever holds it can sign a rotation to a key of their own; the record turns
+// "unknown key, verify out of band" into "a successor to a key you already
+// trust", which is a downgrade of the check, never a replacement for it.
+export const ROTATION_FORMAT = 'diffbro-rotation/1'
+
+const rotationBytes = (from, to, at) => Buffer.from(`${ROTATION_FORMAT}|${from}|${to}|${at}`)
+
+/**
+ * @param {{ oldPriv: object, oldFp: string, newPriv: object, newFp: string, at?: number }} o
+ * @returns {{ format: string, from: string, to: string, at: number,
+ *             byPrevious: string, bySelf: string }}
+ */
+export function signRotation({ oldPriv, oldFp, newPriv, newFp, at = Date.now() }) {
+  const bytes = rotationBytes(oldFp, newFp, at)
+  return {
+    format: ROTATION_FORMAT,
+    from: oldFp,
+    to: newFp,
+    at,
+    byPrevious: sign(null, bytes, createPrivateKey(oldPriv.sign)).toString('base64'),
+    bySelf: sign(null, bytes, createPrivateKey(newPriv.sign)).toString('base64')
+  }
+}
+
+/**
+ * Whether a rotation record really was signed by both keys it names.
+ * `oldSignPub` comes from the trusted key already held — never from the file,
+ * or the record would be vouching for itself.
+ * @param {object} record
+ * @param {string} oldSignPub  PEM of the previously trusted signing key
+ * @param {{ sign: string, box: string }} newPub
+ * @returns {boolean}
+ */
+export function verifyRotation(record, oldSignPub, newPub) {
+  if (record?.format !== ROTATION_FORMAT) return false
+  if (typeof record.from !== 'string' || typeof record.to !== 'string') return false
+  if (!Number.isFinite(record.at)) return false
+  // The record must describe THESE keys, not merely be well-formed.
+  if (record.to !== fingerprint(newPub.sign, newPub.box)) return false
+  const bytes = rotationBytes(record.from, record.to, record.at)
+  try {
+    const ok = (sigB64, pem) =>
+      verify(null, bytes, createPublicKey(pem), Buffer.from(String(sigB64), 'base64'))
+    return ok(record.byPrevious, oldSignPub) && ok(record.bySelf, newPub.sign)
+  } catch {
+    return false
+  }
+}
+
 // Cosmetic display label only — never part of the fingerprint or any trust
 // decision, so treat as untrusted: strip control chars, collapse, hard-cap.
 export const MAX_LABEL_LEN = 80
@@ -218,6 +272,31 @@ export function sealEntry(entry, sender, recipients) {
 // Open a sealed file as `me` ({ priv: {box}, pub: {fingerprint} }) against a
 // trusted-senders list ([{ fingerprint, label, sign }]). Returns
 // { ok, entry, from } or { error, ... } with the codes the UI maps to text.
+/**
+ * Open a sealed diff with any of the identities this machine holds — the
+ * current one first, then RETIRED ones.
+ *
+ * Rotation must not orphan mail already in flight: a share sealed to the old
+ * key before it was replaced is still addressed to a key this machine has, and
+ * refusing it would make rotating a key destroy unopened diffs. Retired keys
+ * only ever DECRYPT; nothing is signed or sealed with them again.
+ * @param {object} file
+ * @param {object[]} identities  current first
+ * @param {object[]} trustedList
+ * @param {number} [now]
+ */
+export function openSealedWith(file, identities, trustedList, now = Date.now()) {
+  let last = { error: 'not-for-you' }
+  for (const me of identities ?? []) {
+    const res = openSealed(file, me, trustedList, now)
+    // "not for you" is the only answer worth trying another key on; anything
+    // else is a real verdict about the file itself.
+    if (res.error !== 'not-for-you') return res
+    last = res
+  }
+  return last
+}
+
 export function openSealed(file, me, trustedList, now = Date.now()) {
   if (!hasShareShape(file)) return { error: 'not-a-share-file' }
   const mine = file.keys.find((k) => k?.to === me.pub.fingerprint)

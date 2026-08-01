@@ -9,12 +9,16 @@
 SERVICE := node
 VNC_URL := http://localhost:6080/vnc.html
 
+# seed-local imports src/main/sealing.js so the demo keys are in the app's own
+# format; package.json has no "type", so Node warns about re-parsing it as ESM.
+SEED_NODE_FLAGS := --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
+
 # One-shot container for build/lint/test work: no display, no entrypoint.
 RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
 .PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
         clean dev check test e2e lint build package-win package-linux package-mac audit-fix \
-        brew-cask screenshots
+        brew-cask screenshots local-seed local-seed-clean
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -117,7 +121,7 @@ package-mac: ## Build the macOS DMG -> dist/ (must run natively on macOS)
 	@command -v npm >/dev/null 2>&1 || { \
 		echo "error: macOS packaging needs Node/npm on the host (e.g. 'brew install node@20')."; \
 		exit 1; }
-	@# The lockfile is written by npm 11 (see the Dockerfile and CLAUDE.md); an
+	@# The lockfile is written by npm 11 (see the Dockerfile and docs/standards.md); an
 	@# install from a different major rewrites it and breaks `npm ci` in the
 	@# container, so refuse before the damage rather than after.
 	@[ "$$(npm -v | cut -d. -f1)" = "11" ] || { \
@@ -145,3 +149,23 @@ brew-cask: ## Regenerate the Homebrew cask for the current (or VERSION=x.y.z) re
 screenshots: up ## Refresh README screenshots (auto-drives the app in the container). SHOTS="name ..." for a subset
 	docker compose exec -T $(SERVICE) npm run build
 	docker compose exec -T $(SERVICE) node scripts/recapture-screenshots.mjs $(SHOTS)
+
+# The one target that runs on the HOST rather than in the container: it seeds
+# YOUR install, whose vault key lives behind this machine's keychain. Quit Diff
+# Bro first — a second launch just hands its argv to the running one.
+#
+# It merges: what you already had is kept, everything it writes is tagged
+# "seed", and local-seed-clean removes exactly that. Files to open land in
+# ~/DiffBro-seed (override with SEED_DIR=…).
+#
+# `env -u ELECTRON_RUN_AS_NODE` is not optional — an agent shell exports it, and
+# Electron then silently runs as plain Node.
+local-seed: ## Fill your local install with test data (host-only; quit the app first)
+	@[ -x node_modules/.bin/electron-vite ] || { \
+		echo "error: host dependencies are not installed — run 'npm install' here first."; \
+		exit 1; }
+	npm run build
+	env -u ELECTRON_RUN_AS_NODE node $(SEED_NODE_FLAGS) scripts/seed-local.mjs
+
+local-seed-clean: ## Remove everything local-seed added (host-only; quit the app first)
+	env -u ELECTRON_RUN_AS_NODE node $(SEED_NODE_FLAGS) scripts/seed-local.mjs --clean

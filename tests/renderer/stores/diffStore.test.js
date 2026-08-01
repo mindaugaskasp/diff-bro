@@ -5,7 +5,11 @@ import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
-import { getDiffScroller, setDiffScroller } from '../../../src/renderer/src/utils/diffScroller'
+import {
+  elementScroller,
+  getDiffScroller,
+  setDiffScroller
+} from '../../../src/renderer/src/utils/diffScroller'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -1206,7 +1210,7 @@ describe('exportImage (saved diffs only)', () => {
     expect(store.left).toMatchObject({ name: 'a.txt' })
     expect(store.right).toMatchObject({ name: 'b.txt' })
     expect(rect).toEqual({ x: 260, y: 88, width: 900, height: 640 })
-    expect(store.imageEntry).toEqual({ id, name: 'Nightly config', ...CAPTURE })
+    expect(store.imageEntry).toMatchObject({ id, name: 'Nightly config', ...CAPTURE })
     expect(store.imageCapturing).toBe(false)
     cleanup()
   })
@@ -1989,6 +1993,11 @@ describe('the file-changed label', () => {
 // The grid scrolls inside itself with no scroller to drive, so the shutter could
 // only ever catch the visible slice. Refused outright rather than truncated.
 describe('image export and the spreadsheet grid', () => {
+  const SHOT = { dataUrl: 'data:image/png;base64,GRID', width: 900, height: 1800 }
+  // jsdom's scroll metrics are read-only getters that always answer 0.
+  const sizeOf = (el, dims) => {
+    for (const [k, value] of Object.entries(dims)) Object.defineProperty(el, k, { value })
+  }
   const grid = (name) => ({
     path: `/tmp/${name}`,
     name,
@@ -1996,12 +2005,15 @@ describe('image export and the spreadsheet grid', () => {
     sheets: [{ name: 'S1', rows: [['a', 1]] }]
   })
 
-  it('is not offered for a spreadsheet comparison', () => {
+  // The grid scrolls inside itself with no Monaco behind it. It registers its
+  // own scroller, which is all the export needs — scroll a viewport at a time
+  // and stitch, exactly as for a tall diff.
+  it('is offered for a spreadsheet comparison', () => {
     const store = useDiffStore()
     store.left = grid('a.xlsx')
     store.right = grid('b.xlsx')
     expect(store.isSpreadsheet).toBe(true)
-    expect(store.canExportImage).toBe(false)
+    expect(store.canExportImage).toBe(true)
   })
 
   it('is still offered for a text comparison', () => {
@@ -2012,12 +2024,61 @@ describe('image export and the spreadsheet grid', () => {
     expect(store.canExportImage).toBe(true)
   })
 
-  it('says so instead of shooting when asked anyway', async () => {
+  it('scrolls and stitches the grid the way it does a tall diff', async () => {
     const store = useDiffStore()
     store.left = grid('a.xlsx')
     store.right = grid('b.xlsx')
+
+    const grids = document.createElement('div')
+    grids.getBoundingClientRect = () => ({ top: 140, height: 600 })
+    sizeOf(grids, { scrollHeight: 1800, clientHeight: 600, scrollWidth: 900, clientWidth: 900 })
+    const column = document.createElement('div')
+    column.className = 'content'
+    column.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 700 })
+    column.append(grids)
+    document.body.append(column)
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    setDiffScroller(elementScroller(() => grids))
+
+    const tops = []
+    window.api.appendDiffImageSlice = async (rect) => {
+      tops.push(rect.y)
+      return { ok: true }
+    }
+    window.api.stitchDiffImage = async () => SHOT
+
     await store.exportCurrentImage()
-    expect(store.notice).toMatch(/spreadsheet/i)
-    expect(store.imageEntry).toBeNull()
+
+    expect(tops).toHaveLength(3)
+    expect(store.imageEntry).toMatchObject({ ...SHOT, hiddenColumns: 0 })
+    column.remove()
+    setDiffScroller(null)
+  })
+
+  // A grid wider than the window loses its right-hand columns to a picture that
+  // only scrolls down. The dialog is told, rather than handing over a crop that
+  // looks complete.
+  it('reports the columns a picture cannot reach', async () => {
+    const store = useDiffStore()
+    store.left = grid('a.xlsx')
+    store.right = grid('b.xlsx')
+
+    const grids = document.createElement('div')
+    grids.getBoundingClientRect = () => ({ top: 140, height: 600 })
+    sizeOf(grids, { scrollHeight: 600, clientHeight: 600, scrollWidth: 2700, clientWidth: 900 })
+    const column = document.createElement('div')
+    column.className = 'content'
+    column.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 700 })
+    column.append(grids)
+    document.body.append(column)
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    setDiffScroller(elementScroller(() => grids))
+    window.api.captureDiffImage = async () => SHOT
+
+    await store.exportCurrentImage()
+
+    expect(store.imageEntry?.hiddenColumns).toBe(2)
+    column.remove()
+    setDiffScroller(null)
   })
 })

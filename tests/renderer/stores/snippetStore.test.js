@@ -8,6 +8,7 @@ import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { createIdentityKeys } from '../../../src/main/sealing'
 import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
+import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import {
   EXAMPLE_SNIPPET,
   MAX_TAGS,
@@ -17,6 +18,11 @@ import {
 } from '../../../src/renderer/src/stores/snippetStore'
 
 const KEY = randomBytes(32)
+const DIFF = {
+  mode: 'files',
+  left: { name: 'a', content: '1' },
+  right: { name: 'b', content: '2' }
+}
 const IDENTITY = createIdentityKeys()
 let lastExportedFile = null
 
@@ -340,6 +346,57 @@ describe('snippetStore — tags model', () => {
     expect(store.tags.gone).toBeUndefined()
     expect(store.entries).toHaveLength(1)
     expect(store.entries[0].tags).toEqual(['stay'])
+  })
+
+  // Saved diffs draw from the SAME tag registry (vaultStore calls
+  // snippetStore.registerTags), so a tag deleted here has to leave them too —
+  // otherwise a saved diff keeps a tag the app no longer knows the colour of.
+  it('deleteTag also strips the tag from saved diffs', async () => {
+    const store = useSnippetStore()
+    const vault = useVaultStore()
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['gone'] })
+    await vault.save('a diff', null, DIFF, ['gone', 'stay'])
+
+    store.deleteTag('gone')
+
+    expect(vault.entries[0].tags).toEqual(['stay'])
+  })
+
+  it('deleteTag can take the snippets and saved diffs with it', async () => {
+    const store = useSnippetStore()
+    const vault = useVaultStore()
+    await store.add({ name: 'doomed', content: 'x', language: 'auto', tags: ['gone'] })
+    await store.add({ name: 'spared', content: 'x', language: 'auto', tags: ['stay'] })
+    await vault.save('doomed diff', null, DIFF, ['gone'])
+    await vault.save('spared diff', null, DIFF, ['stay'])
+
+    store.deleteTag('gone', { withEntries: true })
+
+    expect(store.entries.map((e) => e.name.toLowerCase())).toEqual(['spared'])
+    expect(vault.entries.map((e) => e.name)).toEqual(['spared diff'])
+    expect(store.tags.gone).toBeUndefined()
+  })
+
+  // Carrying the tag among others still means carrying it: the reader asked for
+  // everything under that tag to go.
+  it('deletes a record that carries the tag alongside others', async () => {
+    const store = useSnippetStore()
+    await store.add({ name: 'multi', content: 'x', language: 'auto', tags: ['gone', 'stay'] })
+    store.deleteTag('gone', { withEntries: true })
+    expect(store.entries).toHaveLength(0)
+    expect(store.tags.stay).toBeTruthy()
+  })
+
+  it('counts what a tag would take with it, before anything is deleted', async () => {
+    const store = useSnippetStore()
+    const vault = useVaultStore()
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['t'] })
+    await store.add({ name: 'b', content: 'x', language: 'auto', tags: ['t'] })
+    await vault.save('d', null, DIFF, ['t'])
+
+    expect(store.taggedCount('t')).toEqual({ snippets: 2, diffs: 1 })
+    expect(store.entries).toHaveLength(2)
+    expect(vault.entries).toHaveLength(1)
   })
 
   it('recolorTag only accepts palette colors', async () => {

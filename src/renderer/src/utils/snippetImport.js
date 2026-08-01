@@ -1,5 +1,5 @@
 // Parse an imported file into snippet drafts ({ name, content, language, tags }).
-// This is an UNTRUSTED input surface (CLAUDE.md #6): everything is size-capped
+// This is an UNTRUSTED input surface (docs/standards.md #6): everything is size-capped
 // and shape-validated here, and the caller re-encrypts each draft through the
 // vault before it is ever stored. Pure, so it's unit-tested.
 //

@@ -8,10 +8,10 @@ const diff = useDiffStore()
 </script>
 
 <template>
-  <BaseDialog width="380px" title="No free tab" @close="diff.cliBlocked = null">
+  <BaseDialog width="380px" title="No free tab" @close="diff.dismissCliBlocked()">
     <p class="dialog-note">{{ diff.cliBlocked }}</p>
     <template #actions>
-      <button class="btn btn-primary" @click="diff.cliBlocked = null">Got it</button>
+      <button class="btn btn-primary" @click="diff.dismissCliBlocked()">Got it</button>
     </template>
   </BaseDialog>
 </template>

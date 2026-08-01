@@ -46,8 +46,25 @@ export const test = base.extend({
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
   },
+  // Every test is also a detector for an uncaught renderer error. Nothing here
+  // asserts it on purpose — the point is the ones that slip through a flow
+  // nobody wrote a test for. A template reaching `window` threw on click for
+  // months without a single spec noticing, because no spec clicked that button.
   page: async ({ app }, use) => {
-    await use(await firstReadyPage(app))
+    const page = await firstReadyPage(app)
+    const thrown = []
+    page.on('pageerror', (err) => thrown.push(err.message))
+    await use(page)
+    // The app catches renderer errors and shows this dialog rather than letting
+    // them reach `pageerror`, so both have to be looked at.
+    const shown = await page
+      .locator('.err-msg')
+      .allTextContents()
+      .catch(() => [])
+    const seen = [...thrown, ...shown]
+    if (seen.length) {
+      throw new Error(`the renderer reported an error during this test: ${seen.join(' · ')}`)
+    }
   }
 })
 

@@ -13,7 +13,7 @@
 // string). Run `env -u ELECTRON_RUN_AS_NODE npm run render:dmg-bg`.
 //
 // Rendering goes through the Electron already in devDependencies rather than a
-// new rasterizer: no added dependency (CLAUDE.md rule 2), and it is the same
+// new rasterizer: no added dependency (docs/standards.md rule 2), and it is the same
 // engine that draws the app, so the SVG renders identically to the UI. Loaded
 // from a file:// URL with JavaScript disabled and no network access.
 import { writeFileSync } from 'fs'

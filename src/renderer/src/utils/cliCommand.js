@@ -1,16 +1,34 @@
 // Text the renderer builds for a `diffbro …` launch. Lives here, not beside the
 // parser in src/main, because the renderer never imports from the main process.
 
+// Past this the dialog is a wall of filenames and the count says it better.
+const MAX_NAMED = 5
+
+const listOf = (names) => {
+  if (names.length <= 2) return names.join(' and ')
+  const shown = names.slice(0, MAX_NAMED)
+  const rest = names.length - shown.length
+  if (rest) return `${shown.join(', ')} and ${rest} more`
+  return `${shown.slice(0, -1).join(', ')} and ${shown.at(-1)}`
+}
+
 /**
  * The refusal shown when every tab is in use. Names the files, because the
  * point of the message is that THOSE are the ones that did not open.
+ *
+ * Takes every path blocked SO FAR, not just the latest: `git mergetool` calls
+ * the tool once per conflicted file and moves straight on, so the launches
+ * arrive back to back and each one used to overwrite the message the one before
+ * it raised. Duplicates collapse — a git comparison is one filename twice, as
+ * a before and an after copy.
  * @param {string[]} files
  * @param {number} max
  * @returns {string}
  */
 export function tabsFullMessage(files, max) {
   const names = (files ?? []).map((f) => String(f).split(/[\\/]/).pop()).filter(Boolean)
-  const subject = names.length ? names.join(' and ') : 'those files'
+  const unique = [...new Set(names)]
+  const subject = unique.length ? listOf(unique) : 'those files'
   return `Can't open ${subject} — all ${max} comparisons are in use. Close one and try again.`
 }
 

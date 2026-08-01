@@ -104,6 +104,44 @@ short one for anything sensitive, and a week only when convenience matters more.
 binding, and integrity — but not freshness or once-only delivery. Treat a share
 as "this sender sent me this content, valid until its expiry", not "this is new."
 
+**Revocation is not a thing a `.diffbro` can have.** Once the file is on someone
+else's disk and they hold the private key it is addressed to, nothing on your
+machine changes bytes on theirs. What exists instead, in order of how
+enforceable it actually is:
+
+- **Expiry** — signed and checked on open, by our own code reading the local
+  clock. A deadline, not a control: a patched build or a rolled-back clock
+  opens it anyway. This is the closest thing to revocation there is, which is
+  why the sender picks the window.
+- **Removing a trusted key** — real, and local: no _future_ share can be
+  addressed to them. It does nothing to what has already been sent.
+- **Replacing your key** — see below. It is about impersonation, not recall.
+
+## Replacing your key (rotation)
+
+**Security → Replace My Key** generates a new identity and keeps the previous
+one as **decrypt-only**. What it buys is narrow and worth stating exactly:
+
+- A leaked private key stops being able to **sign new files in your name**, once
+  each peer holds your new key.
+- It does **not** make diffs you already shared unreadable. Those were encrypted
+  to the _recipient's_ key; yours only signed them.
+
+The old private key is **retired, never silently destroyed** — a diff sealed to
+it before the rotation is still addressed to a key this machine holds, and
+`openSealedWith` tries the current identity first, then each retired one. Only a
+retired key ever decrypts; nothing is signed or sealed with one again. Destroying
+them is a separate, acknowledged action (the right move after a leak), and it
+permanently gives up any unopened diff addressed to them.
+
+A new key carries a **rotation record** — `{ from, to, at }` signed by _both_ the
+old key and the new one — so a peer who already trusts the old fingerprint sees
+"this replaces a key you trust" instead of "unknown key". It is **advisory**:
+whoever holds a leaked private key can sign a rotation to a key of their own, so
+the record downgrades the out-of-band check and never replaces it. The predecessor's
+signing key is read from the local trust store, never from the file, and the
+import dialog names which key vouched and still says to verify.
+
 ## Keys and formats
 
 - Identity private keys are wrapped by the OS keychain in `userData` and never

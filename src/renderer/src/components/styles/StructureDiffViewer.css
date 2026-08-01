@@ -34,13 +34,22 @@
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
   font-size: var(--font-sm);
 }
+/* Every row is EXACTLY --sd-row-h tall: the list is virtualized, and a row that
+   wraps makes the spacers lie and the scroll jump. The value comes from
+   utils/virtualRows (the component binds it), so the arithmetic and the layout
+   cannot drift. Long values ellipsise rather than wrap. */
 .sd-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  padding: 1px var(--space-4) 1px calc(var(--space-4) + var(--indent) * 16px);
-  min-height: 20px;
+  padding: 0 var(--space-4) 0 calc(var(--space-4) + var(--indent) * 16px);
+  height: var(--sd-row-h);
   border-left: 3px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sd-pad {
+  flex: none;
 }
 .sd-row.added {
   background: color-mix(in srgb, var(--success-text) 16%, transparent);
@@ -74,7 +83,8 @@
 }
 .sd-val {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--text-dim);
 }
 .sd-row.changed .sd-val.old {

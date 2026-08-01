@@ -37,6 +37,8 @@ export const blankSnapshot = (view = {}) => ({
  * @property {string} [customTitle] a name typed by the reader; wins over `title`
  * @property {import('../types').DiffSnapshot} snapshot
  * @property {boolean} diffSaved  whether this comparison is already in the vault
+ * @property {boolean} [transient] git handed this one over; both sides are
+ *                     throwaway copies, so it may be recycled when tabs run out
  */
 
 /**
@@ -90,8 +92,11 @@ export function tabTitle(snapshot) {
  * @param {{ diffSaved?: boolean }} [opts]
  * @returns {DiffTab}
  */
-export function createTab(snapshot = blankSnapshot(), { diffSaved = false } = {}) {
-  return { id: nextId(), title: tabTitle(snapshot), snapshot, diffSaved }
+export function createTab(
+  snapshot = blankSnapshot(),
+  { diffSaved = false, transient = false } = {}
+) {
+  return { id: nextId(), title: tabTitle(snapshot), snapshot, diffSaved, transient }
 }
 
 // Long enough for "prod vs staging", short enough not to overrun the bar.
@@ -118,6 +123,16 @@ export const tabLabel = (tab) => tab?.customTitle || tab?.title || UNTITLED
 
 /** @param {DiffTab[]} tabs */
 export const canAddTab = (tabs) => (tabs?.length ?? 0) < MAX_TABS
+
+/**
+ * The tab a git-handed comparison may take over when there is no free one: the
+ * oldest holding another git comparison, never the one being looked at.
+ * @param {DiffTab[]} tabs
+ * @param {string} activeId
+ * @returns {DiffTab|null}
+ */
+export const recyclableTab = (tabs, activeId) =>
+  (tabs ?? []).find((t) => t.transient && t.id !== activeId) ?? null
 
 /**
  * Which tab to show once `closingId` goes. Closing the tab you are looking at

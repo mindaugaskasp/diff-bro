@@ -5,7 +5,11 @@ const props = defineProps({
   /** @type {import('vue').PropType<Array<object>>} */
   rows: { type: Array, required: true },
   side: { type: String, required: true }, // 'left' | 'right'
-  columns: { type: Number, required: true }
+  columns: { type: Number, required: true },
+  // The rows above and below the window, as height. The list is virtualized;
+  // these keep the scrollbar measuring the whole sheet.
+  padTop: { type: Number, default: 0 },
+  padBottom: { type: Number, default: 0 }
 })
 
 const rowData = (entry) => (props.side === 'left' ? entry.left : entry.right)
@@ -43,12 +47,19 @@ function formatCell(value) {
       </tr>
     </thead>
     <tbody>
+      <tr v-if="padTop" class="pad" :style="{ height: `${padTop}px` }" aria-hidden="true"></tr>
       <tr v-for="(entry, r) in rows" :key="r" :class="rowClass(entry)">
         <th class="rownum">{{ rowData(entry) === null ? '·' : rowIndex(entry) + 1 }}</th>
         <td v-for="c in columns" :key="c" :class="cellClass(entry, c - 1)">
           {{ formatCell(rowData(entry)?.[c - 1]) }}
         </td>
       </tr>
+      <tr
+        v-if="padBottom"
+        class="pad"
+        :style="{ height: `${padBottom}px` }"
+        aria-hidden="true"
+      ></tr>
     </tbody>
   </table>
 </template>
