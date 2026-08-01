@@ -15,7 +15,9 @@ import {
   writeSync
 } from 'fs'
 import { join } from 'path'
-import { DATA_FILES, planDataDirMove } from './dataFiles'
+// Extension required, unlike the rest of src/main: seed-worker.cjs loads this
+// module without a bundler. tests/scripts/seedWorker.test.js guards it.
+import { DATA_FILES, planDataDirMove } from './dataFiles.js'
 
 const pointerPath = () => join(app.getPath('userData'), 'data-location.json')
 

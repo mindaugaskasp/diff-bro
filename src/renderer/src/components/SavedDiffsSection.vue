@@ -6,7 +6,7 @@ import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { MAX_TABS } from '../utils/tabs'
+import { tabsFullNotice } from '../utils/tabs'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -57,7 +57,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
           :data-tip="
             tabs.canAdd
               ? 'New comparison, ready for pasted text'
-              : `That is the most comparisons at once (${MAX_TABS}) — close one first`
+              : `${tabsFullNotice(tabs.tabs)} — close one first`
           "
           aria-label="New comparison from pasted text"
           @click.stop="tabs.newTab({ paste: true })"

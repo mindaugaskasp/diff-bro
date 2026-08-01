@@ -7,11 +7,12 @@
 // and assistive tech, which is how it was first written.
 import { nextTick, ref, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { MAX_TABS, MAX_TAB_NAME, tabLabel } from '../utils/tabs'
+import { MAX_TAB_NAME, tabLabel, tabsFullNotice } from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
 import TabContextMenu from './TabContextMenu.vue'
 import { useTabContextMenu } from '../composables/useTabContextMenu'
+import { useTabOverflow } from '../composables/useTabOverflow'
 import { MOD } from '../keys'
 
 const tabs = useTabsStore()
@@ -50,6 +51,15 @@ function commitRename() {
   renamingId.value = null
 }
 
+const track = ref(null)
+const overflow = useTabOverflow(track, () => tabs.activeId)
+// A tab appearing or leaving changes what fits, and the strip is re-measured
+// after the DOM has caught up rather than on the same tick.
+watch(
+  () => tabs.tabs.length,
+  () => nextTick(overflow.measure)
+)
+
 const menu = useTabContextMenu(() => tabs.tabs)
 const run = (id, action) => tabs.requestMenuAction(id, action)
 function pick(action) {
@@ -68,58 +78,86 @@ function onTabKey(e, tab) {
 </script>
 
 <template>
-  <div v-if="tabs.visible" class="diff-tabs band" role="tablist" aria-label="Open comparisons">
-    <div
-      v-for="tab in tabs.tabs"
-      :key="tab.id"
-      class="tab"
-      :class="{ active: tab.id === tabs.activeId }"
-      @contextmenu.prevent="menu.show(tab.id, { x: $event.clientX, y: $event.clientY })"
+  <div v-if="tabs.visible" class="diff-tabs band">
+    <button
+      v-if="overflow.state.value.overflowing"
+      class="scroll scroll-left"
+      :disabled="overflow.state.value.atStart"
+      data-tip="Scroll tabs left"
+      aria-label="Scroll tabs left"
+      @click="overflow.scrollLeft()"
     >
-      <input
-        v-if="renamingId === tab.id"
-        ref="nameInput"
-        v-model="draft"
-        class="tab-rename"
-        type="text"
-        spellcheck="false"
-        :maxlength="MAX_TAB_NAME"
-        :aria-label="`Rename ${tabLabel(tab)}`"
-        @keyup.enter="commitRename"
-        @keyup.escape="renamingId = null"
-        @blur="commitRename"
-      />
-      <button
-        v-else
-        class="tab-open"
-        role="tab"
-        :aria-selected="tab.id === tabs.activeId"
-        :data-tip="`${tabLabel(tab)} — double-click to rename`"
-        @click="tabs.activate(tab.id)"
-        @dblclick="startRename(tab)"
-        @auxclick.middle.prevent="tabs.requestClose(tab.id)"
-        @keydown="onTabKey($event, tab)"
+      <AppIcon name="chevron-left" />
+    </button>
+
+    <div
+      ref="track"
+      class="track"
+      role="tablist"
+      aria-label="Open comparisons"
+      @scroll="overflow.measure()"
+    >
+      <div
+        v-for="tab in tabs.tabs"
+        :key="tab.id"
+        class="tab"
+        :class="{ active: tab.id === tabs.activeId }"
+        :data-active="tab.id === tabs.activeId"
+        @contextmenu.prevent="menu.show(tab.id, { x: $event.clientX, y: $event.clientY })"
       >
-        <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
-        <span class="name">{{ tabLabel(tab) }}</span>
-      </button>
-      <button
-        v-if="tabs.tabs.length > 1"
-        class="tab-close"
-        :aria-label="`Close ${tabLabel(tab)}`"
-        @click="tabs.requestClose(tab.id)"
-      >
-        <AppIcon name="x" />
-      </button>
+        <input
+          v-if="renamingId === tab.id"
+          ref="nameInput"
+          v-model="draft"
+          class="tab-rename"
+          type="text"
+          spellcheck="false"
+          :maxlength="MAX_TAB_NAME"
+          :aria-label="`Rename ${tabLabel(tab)}`"
+          @keyup.enter="commitRename"
+          @keyup.escape="renamingId = null"
+          @blur="commitRename"
+        />
+        <button
+          v-else
+          class="tab-open"
+          role="tab"
+          :aria-selected="tab.id === tabs.activeId"
+          :data-tip="`${tabLabel(tab)} — double-click to rename`"
+          @click="tabs.activate(tab.id)"
+          @dblclick="startRename(tab)"
+          @auxclick.middle.prevent="tabs.requestClose(tab.id)"
+          @keydown="onTabKey($event, tab)"
+        >
+          <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
+          <span class="name">{{ tabLabel(tab) }}</span>
+        </button>
+        <button
+          v-if="tabs.tabs.length > 1"
+          class="tab-close"
+          :aria-label="`Close ${tabLabel(tab)}`"
+          @click="tabs.requestClose(tab.id)"
+        >
+          <AppIcon name="x" />
+        </button>
+      </div>
     </div>
+
+    <button
+      v-if="overflow.state.value.overflowing"
+      class="scroll scroll-right"
+      :disabled="overflow.state.value.atEnd"
+      data-tip="Scroll tabs right"
+      aria-label="Scroll tabs right"
+      @click="overflow.scrollRight()"
+    >
+      <AppIcon name="chevron-right" />
+    </button>
+
     <button
       class="add"
       :disabled="!tabs.canAdd"
-      :data-tip="
-        tabs.canAdd
-          ? `New comparison (${MOD}+Shift+T)`
-          : `That is the most comparisons at once (${MAX_TABS})`
-      "
+      :data-tip="tabs.canAdd ? `New comparison (${MOD}+Shift+T)` : tabsFullNotice(tabs.tabs)"
       aria-label="New comparison"
       @click="tabs.newTab()"
     >

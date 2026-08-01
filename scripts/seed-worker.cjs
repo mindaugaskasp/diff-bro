@@ -5,9 +5,9 @@
 // an empty-password key, and the seed then writes a vault the real app can
 // never read. That is why none of this runs in the app's renderer.
 //
-// CommonJS, and only leaf modules imported: share.js imports './appData' with
-// no extension, so the app's own modules are bundler-targeted and will not load
-// standalone.
+// CommonJS, and only modules whose import graph carries file extensions: the
+// rest of src/main is bundler-targeted (share.js imports './appData') and will
+// not load standalone. tests/scripts/seedWorker.test.js guards the three below.
 
 const { app, safeStorage } = require('electron')
 const { randomBytes, randomUUID } = require('node:crypto')

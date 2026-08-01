@@ -10,12 +10,30 @@
 .diff-tabs {
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
-  overflow-x: auto;
   flex: none;
 }
-/* Width follows the name. Tabs only give ground once the row is full: they
-   shrink together down to a floor rather than the bar scrolling, so all six
-   stay reachable without a hidden overflow. */
+/* The strip scrolls; the BAR keeps its bottom keyline unbroken, which is what
+   beacon and contrast hold as a contract. The app-wide scrollbar is 10px inside
+   a 30px band — a third of the row, sitting on the active tab's accent rule —
+   so it is suppressed here and the chevrons are the affordance instead. */
+.diff-tabs .track {
+  display: flex;
+  align-items: center;
+  /* Sized to its tabs, not to the bar: the + follows the strip rather than
+     being pinned to the far right of the window. It still gives ground first,
+     which is what lets the tabs shrink and then scroll. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.diff-tabs .track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Width follows the name. Tabs give ground together as the row fills, but only
+   down to a floor: past that the label is a stub, so the track scrolls instead.
+   20ch ≈ the dirty dot, ~11 characters and the close control. */
 .diff-tabs .tab {
   display: inline-flex;
   align-items: center;
@@ -24,12 +42,16 @@
   color: var(--text-dim);
   white-space: nowrap;
   flex: 0 1 auto;
-  min-width: 0;
+  min-width: 20ch;
   max-width: 32ch;
 }
 .diff-tabs .tab-open {
   display: inline-flex;
   align-items: center;
+  /* Fills the row. With a min-width floor the tab is wider than its label, and
+     without this the gap either side of the text belonged to the row rather
+     than the button — so clicking a tab anywhere but on its name did nothing. */
+  flex: 1;
   min-width: 0;
   gap: var(--space-2);
   height: 100%;
@@ -114,6 +136,35 @@
   background: var(--bg-hover);
   color: var(--text);
 }
+.diff-tabs .scroll {
+  /* Same geometry and skin as .add, which this bar already proves on all 14
+     themes — so the chevrons inherit its contrast rather than adding a pair. */
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: var(--control-h);
+  flex: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.diff-tabs .scroll-left {
+  border-right: 1px solid var(--border);
+}
+.diff-tabs .scroll-right {
+  border-left: 1px solid var(--border);
+}
+.diff-tabs .scroll:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.diff-tabs .scroll:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .diff-tabs .add {
   /* border:0 first — a <button> keeps the UA's 2px black border on any side an
      override does not name, which painted a black box around the + on every
@@ -144,6 +195,7 @@
    ring is the accent, matching the tool inputs. */
 .diff-tabs .tab-open:focus-visible,
 .diff-tabs .tab-close:focus-visible,
+.diff-tabs .scroll:focus-visible,
 .diff-tabs .add:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);

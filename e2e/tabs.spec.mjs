@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs'
+import { MAX_TABS } from '../src/renderer/src/utils/tabs.js'
 
 // Tabs are a claim about Monaco: each holds its own comparison, and only the
 // one on screen owns an editor. Neither is checkable in jsdom — there is no
@@ -32,6 +33,17 @@ async function clickClose(page, n = 0) {
     .nth(n)
     .getByRole('button', { name: /^Close/ })
     .click()
+}
+
+// The × on an inactive tab is revealed by hover, so asking whether it is THERE
+// means hovering first — otherwise the answer depends on wherever the pointer
+// was left by the previous step.
+async function closeControl(page, n = 0) {
+  await page.mouse.move(0, 0)
+  await tabs(page).nth(n).hover()
+  return tabs(page)
+    .nth(n)
+    .getByRole('button', { name: /^Close/ })
 }
 
 test('the bar is there from the start, so a second comparison is reachable', async ({ page }) => {
@@ -102,14 +114,9 @@ test('closing the last comparison empties it rather than the window', async ({ p
   await compare(page, 'only', 'ONLY')
   await addTab(page).click()
   await expect(tabs(page)).toHaveCount(2)
-  await expect(
-    tabs(page)
-      .first()
-      .getByRole('button', { name: /^Close/ })
-  ).toHaveCount(1)
+  await expect(await closeControl(page, 0)).toHaveCount(1)
 
-  // The × is a hover affordance on an inactive tab (keyboard uses the
-  // accelerator), so reach it the way a mouse does. Park the pointer first, or
+  // Park the pointer first, or
   await clickClose(page)
   await page
     .getByRole('dialog', { name: 'Close comparison?' })
@@ -284,11 +291,7 @@ test('a single tab has no close control', async ({ page }) => {
   ).toHaveCount(0)
 
   await addTab(page).click()
-  await expect(
-    tabs(page)
-      .first()
-      .getByRole('button', { name: /^Close/ })
-  ).toHaveCount(1)
+  await expect(await closeControl(page, 0)).toHaveCount(1)
 })
 
 // The name belonged to the comparison, so emptying the tab must take it too.
@@ -318,10 +321,13 @@ test('the Saved diffs + opens a new paste comparison, and stops at the cap', asy
   await expect(tabs(page)).toHaveCount(2)
   await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
 
-  for (let i = 0; i < 4; i++) await add.click()
-  await expect(tabs(page)).toHaveCount(6)
+  while (await add.isEnabled()) await add.click()
+  await expect(tabs(page)).toHaveCount(MAX_TABS)
   await expect(add).toBeDisabled()
-  await expect(add).toHaveAttribute('data-tip', /most comparisons at once \(6\)/)
+  await expect(add).toHaveAttribute(
+    'data-tip',
+    new RegExp(`most comparisons at once \\(${MAX_TABS}\\)`)
+  )
 })
 
 // A diff or snippet carries several tags, so the filter takes several too —

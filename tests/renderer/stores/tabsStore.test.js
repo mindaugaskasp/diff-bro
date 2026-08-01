@@ -817,3 +817,42 @@ describe('the structure toggle belongs to its comparison', () => {
     delete window.api
   })
 })
+
+// Sixteen tabs makes the session's byte budget bite routinely, and a comparison
+// left out of the session is one that will not come back.
+describe('comparisons too large to reopen', () => {
+  beforeEach(() => {
+    window.api = {
+      vaultEncrypt: async (text, aad) => vaultEncrypt(SESSION_KEY, text, aad),
+      vaultDecrypt: async (box, aad) => vaultDecrypt(SESSION_KEY, box, aad)
+    }
+  })
+  afterEach(() => {
+    delete window.api
+  })
+
+  const huge = () => ({ mode: 'files', left: FILE('huge.txt'), right: FILE('huge2.txt') })
+
+  it('says so once, not on every debounced save', async () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    tabs.open(huge())
+    // Bigger than the per-tab ceiling, so the session cannot carry it.
+    diff.left = { path: '/tmp/huge.txt', name: 'huge.txt', content: 'x'.repeat(2_100_000) }
+
+    await tabs.saveSession()
+    expect(diff.notice).toMatch(/too large to reopen/)
+
+    diff.notice = ''
+    await tabs.saveSession()
+    expect(diff.notice).toBe('')
+  })
+
+  it('says nothing while everything still fits', async () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    await tabs.saveSession()
+    expect(diff.notice ?? '').not.toMatch(/too large to reopen/)
+    expect(tabs.sessionDropped).toBe(0)
+  })
+})

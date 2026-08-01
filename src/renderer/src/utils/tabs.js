@@ -2,9 +2,15 @@
 // the diffStore snapshot that IS the document (see diffStore.snapshot()), so
 // nothing here needs Vue, the store, or Monaco.
 
-// Each tab holds both sides' full contents, so this is a memory bound, not a
-// taste one. Only the active tab has Monaco models; the rest are plain text.
-export const MAX_TABS = 6
+// A rail, not the bound: past this the strip stops being navigable however
+// little it holds. The real ceiling is the budget below.
+export const MAX_TABS = 16
+
+// What every open tab may hold between them, in characters (UTF-16, so roughly
+// half this many bytes twice over). A tab keeps BOTH sides in full, which is
+// what the old count of six was really guarding — badly, since it charged a
+// streamed pair holding nothing the same as two 200 MB files.
+export const MAX_LIVE_CHARS = 96_000_000
 
 let seq = 0
 const nextId = () => `tab-${++seq}`
@@ -121,8 +127,39 @@ export const cleanTabName = (name) =>
  */
 export const tabLabel = (tab) => tab?.customTitle || tab?.title || UNTITLED
 
+// A streamed side is a path the viewer reads windows from, so it costs nothing
+// to hold; a grid costs its cells.
+function sideCost(side) {
+  if (!side || side.kind === 'streamed') return 0
+  if (side.kind === 'spreadsheet') {
+    return (side.sheets ?? []).reduce((n, s) => n + s.rows.length * (s.rows[0]?.length ?? 0), 0)
+  }
+  return side.content?.length ?? 0
+}
+
+/**
+ * What one tab is holding, in characters.
+ * @param {DiffTab} [tab]
+ * @returns {number}
+ */
+export function tabCost(tab) {
+  const s = tab?.snapshot ?? {}
+  return (
+    sideCost(s.left) +
+    sideCost(s.right) +
+    sideCost(s.pasteLeftFile) +
+    sideCost(s.pasteRightFile) +
+    (s.pasteLeft?.length ?? 0) +
+    (s.pasteRight?.length ?? 0)
+  )
+}
+
 /** @param {DiffTab[]} tabs */
-export const canAddTab = (tabs) => (tabs?.length ?? 0) < MAX_TABS
+export const tabsCost = (tabs) => (tabs ?? []).reduce((n, t) => n + tabCost(t), 0)
+
+/** @param {DiffTab[]} tabs */
+export const canAddTab = (tabs) =>
+  (tabs?.length ?? 0) < MAX_TABS && tabsCost(tabs) < MAX_LIVE_CHARS
 
 /**
  * The tab a git-handed comparison may take over when there is no free one: the
@@ -195,3 +232,14 @@ export function isBlank(tab) {
     !s.left && !s.right && !s.pasteLeft && !s.pasteRight && !s.pasteLeftFile && !s.pasteRightFile
   )
 }
+
+/**
+ * Why no more comparisons may be opened, in terms of what the reader can see
+ * rather than which limit was hit.
+ * @param {DiffTab[]} tabs
+ * @returns {string}
+ */
+export const tabsFullNotice = (tabs) =>
+  (tabs?.length ?? 0) >= MAX_TABS
+    ? `That is the most comparisons at once (${MAX_TABS})`
+    : 'These comparisons already hold about as much text as one window can'

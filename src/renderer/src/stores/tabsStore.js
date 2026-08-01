@@ -5,7 +5,6 @@ import { useSettingsStore } from './settingsStore'
 import { loadPersisted, savePersisted } from '../persist'
 import { tabsClosedBy } from '../utils/tabMenu'
 import {
-  MAX_TABS,
   blankSnapshot,
   canAddTab,
   createTab,
@@ -14,7 +13,8 @@ import {
   nextActiveId,
   nextActiveIdAfterClosing,
   recyclableTab,
-  tabTitle
+  tabTitle,
+  tabsFullNotice
 } from '../utils/tabs'
 import {
   EMPTY_ENVELOPE,
@@ -51,7 +51,10 @@ export const useTabsStore = defineStore('tabs', {
     activeId: null,
     // The stored session has been read (or found absent) and may now be written
     // over. False while the vault key is unavailable — see saveSession.
-    sessionReady: false
+    sessionReady: false,
+    // How many comparisons the last write could not fit, so the warning is
+    // raised when that number changes rather than on every debounced save.
+    sessionDropped: 0
   }),
   getters: {
     active: (s) => s.tabs.find((t) => t.id === s.activeId) ?? null,
@@ -161,9 +164,7 @@ export const useTabsStore = defineStore('tabs', {
         return this._fill(spare, full, { diffSaved, entryId, name })
       }
       if (!this.canAdd) {
-        useDiffStore().showNotice(
-          `That is the most comparisons at once (${MAX_TABS}). Close one first.`
-        )
+        useDiffStore().showNotice(`${tabsFullNotice(this.tabs)}. Close one first.`)
         return null
       }
       const tab = createTab(full, { diffSaved, transient })
@@ -328,11 +329,24 @@ export const useTabsStore = defineStore('tabs', {
         savePersisted('session', EMPTY_ENVELOPE)
         return
       }
+      this._reportDropped(packed.dropped)
       const box = await window.api.vaultEncrypt(JSON.stringify(packed), SESSION_AAD)
       if (box?.error) return
       savePersisted(
         'session',
         JSON.stringify({ version: SESSION_VERSION, iv: box.iv, data: box.data })
+      )
+    },
+    // A comparison too big for the session is one that will not come back, and
+    // saving it is the way to keep it.
+    _reportDropped(count) {
+      if (count === this.sessionDropped) return
+      this.sessionDropped = count
+      if (!count) return
+      const [what, verb, it] =
+        count === 1 ? ['comparison', 'is', 'it'] : ['comparisons', 'are', 'them']
+      useDiffStore().showNotice(
+        `${count} open ${what} ${verb} too large to reopen next launch — save ${it} to keep ${it}.`
       )
     },
     /**
