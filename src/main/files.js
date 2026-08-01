@@ -38,6 +38,13 @@ const allowedPaths = new Set()
 // added, so evicting the oldest never revokes a path still in use.
 const MAX_ALLOWED_PATHS = 64
 
+// A path named on the app's own command line carries the same authority as one
+// picked in the open dialog: the user typed it in their shell. Vouching for it
+// HERE keeps the renderer unable to read anything it was not handed.
+export function allowCliPath(filePath) {
+  allow(filePath)
+}
+
 function allow(filePath) {
   if (typeof filePath !== 'string' || !filePath) return
   const abs = resolve(filePath)

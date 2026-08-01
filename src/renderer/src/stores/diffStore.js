@@ -6,6 +6,9 @@ import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
+import { clipboardSnippetName, tabsFullMessage } from '../utils/cliCommand'
+import { detectSnippetLanguage } from '../utils/detectLanguage'
+import { MAX_TABS } from '../utils/tabs'
 import {
   afterFrames,
   captureRectOf,
@@ -183,6 +186,8 @@ export const useDiffStore = defineStore('diff', {
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
     notice: null,
+    // The `diffbro compare` refusal when every tab is in use (utils/cli message).
+    cliBlocked: null,
     // save-diff dialog visibility
     showSaveDialog: false,
     // when true, the save dialog flows straight into the share dialog
@@ -874,6 +879,43 @@ export const useDiffStore = defineStore('diff', {
       // Opened from a saved diff: it already exists in the vault, so replacing
       // it later needs no "you'll lose it" prompt.
       this.diffSaved = true
+    },
+    // A `diffbro …` launch, forwarded by main. Files are read through the same
+    // readFile IPC as a drop, so the CLI opens nothing the app could not.
+    async runCliCommand(command) {
+      if (command?.name === 'create-snippet') useSnippetStore().startNewSnippetFrom('', 'auto')
+      else if (command?.name === 'clipboard-save') await this.saveClipboardSnippet(command.text)
+      else if (command?.name === 'compare') await this.compareFromCli(command.files)
+    },
+    async saveClipboardSnippet(text) {
+      if (!String(text ?? '').trim()) {
+        this.showNotice('The clipboard is empty.')
+        return
+      }
+      const snippets = useSnippetStore()
+      const id = await snippets.add({
+        name: clipboardSnippetName(),
+        content: text,
+        language: detectSnippetLanguage(text)
+      })
+      if (id) snippets.editingSnippet = { id }
+    },
+    async compareFromCli(files) {
+      const tabs = useTabsStore()
+      // Whether there is room HERE comes from the live comparison, not the
+      // active tab's snapshot: a snapshot is only captured when tabs switch, so
+      // the tab you are looking at still reads as blank while it holds a diff.
+      if (this.left || this.right) {
+        if (!tabs.canAdd) {
+          this.cliBlocked = tabsFullMessage(files, MAX_TABS)
+          return
+        }
+        tabs.newTab()
+      }
+      const sides = ['left', 'right']
+      for (const [i, path] of (files ?? []).entries()) {
+        this.receive(sides[i], await window.api.readFile(path))
+      }
     },
     // A result chosen in the quick look-up (main forwards { kind, id }); the big
     // view does the load/restore the launcher stays out of.

@@ -13,6 +13,7 @@ import { registerSnippetIpc } from './snippets'
 import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLook'
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
+import { registerCliIpc, routeCliArgv } from './cliRoute'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
@@ -24,13 +25,16 @@ installCrashHooks()
 if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
   app.quit()
 } else {
-  app.on('second-instance', (_event, _argv, _cwd, additionalData) => {
+  // A `diffbro …` launch is a second instance: the lock hands us its argv and
+  // cwd, so the command runs here rather than starting a second app.
+  app.on('second-instance', (_event, argv, cwd, additionalData) => {
     if (additionalData?.version && additionalData.version !== app.getVersion()) {
       app.relaunch()
       app.exit(0)
       return
     }
     ensureMainWindow()
+    routeCliArgv(argv, cwd)
   })
 
   app.whenReady().then(() => {
@@ -47,6 +51,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerSnippetIpc()
     registerLoggerIpc()
     registerLinkIpc()
+    registerCliIpc()
     // Every main window, not just the first: without this the hidden launcher
     // keeps a window alive and blocks quit.
     const openMainWindow = () => {
@@ -56,6 +61,9 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     }
     openMainWindow()
     registerQuickLook(openMainWindow)
+    // A cold `diffbro …`: this process IS the launch, so its own argv carries
+    // the command. It waits for the renderer to announce itself.
+    routeCliArgv(process.argv, process.cwd())
     app.on('activate', ensureMainWindow)
   })
 }

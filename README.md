@@ -78,6 +78,11 @@ a hard promise: it never touches the network.
   (AES-256-GCM) with an opt-in raw-key AES-256-CBC decrypt for external
   payloads. Your recent tools sit on the sidebar shelf; the rest are one search
   away.
+- **Terminal command** — install `diffbro` from Settings ▸ Terminal, then
+  `diffbro compare a.json b.json` opens a comparison in the running app,
+  `diffbro create snippet` opens a new snippet, and `diffbro cb save` keeps what
+  you just copied. A second launch hands its arguments to the running window
+  through Electron's single-instance lock — nothing listens on a port.
 - **Yours to arrange** — fourteen themes (incl. Nord, Sepia, Solar, a playful
   Nyan with a reward cat, a Matrix digital-rain theme, and accessibility-grade
   Contrast and Beacon), one tag namespace shared across diffs and snippets, a

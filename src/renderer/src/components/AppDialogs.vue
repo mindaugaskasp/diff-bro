@@ -6,6 +6,7 @@ import { useVaultStore } from '../stores/vaultStore'
 import { useErrorStore } from '../stores/errorStore'
 import ErrorReportDialog from './ErrorReportDialog.vue'
 import PasteConfirmDialog from './PasteConfirmDialog.vue'
+import CliBlockedDialog from './CliBlockedDialog.vue'
 import SaveDiffDialog from './SaveDiffDialog.vue'
 import ShareDiffDialog from './ShareDiffDialog.vue'
 import DiffImageDialog from './DiffImageDialog.vue'
@@ -60,4 +61,5 @@ const errors = useErrorStore()
   <TabCloseDialog v-if="store.pendingTabClose" />
   <ErrorReportDialog v-if="errors.visible" />
   <PasteConfirmDialog v-if="store.pastePrompt" />
+  <CliBlockedDialog v-if="store.cliBlocked" />
 </template>

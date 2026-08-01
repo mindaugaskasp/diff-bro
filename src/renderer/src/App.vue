@@ -32,6 +32,10 @@ const settings = useSettingsStore()
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
+// The `diffbro` command: main holds anything that arrived before this window
+// existed, and releases it once we say we are listening.
+window.api.onCliCommand((command) => store.runCliCommand(command))
+window.api.cliReady()
 usePasteShortcut(() => store.requestPasteFromClipboard())
 // Re-diff loaded files + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {

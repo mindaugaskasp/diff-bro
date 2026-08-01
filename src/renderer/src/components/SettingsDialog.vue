@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
+import CliSettings from './CliSettings.vue'
 import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
@@ -22,6 +23,7 @@ const TABS = [
   { id: 'storage', label: 'Storage' },
   { id: 'limits', label: 'Limits' },
   { id: 'logs', label: 'Logs' },
+  { id: 'cli', label: 'Terminal' },
   { id: 'fun', label: 'Fun' }
 ]
 
@@ -148,6 +150,8 @@ function close() {
         </section>
 
         <LogSettings v-else-if="tab === 'logs'" />
+
+        <CliSettings v-else-if="tab === 'cli'" />
 
         <section v-else-if="tab === 'fun'">
           <h4>Fun</h4>
