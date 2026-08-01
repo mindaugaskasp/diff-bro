@@ -78,9 +78,20 @@ onMounted(() => {
   })
 })
 
-// Leaving convert mode must return focus to the search box, or the arrow-key
-// navigation (driven by its @keydown) goes dead. The same applies on the way out
-// of the compose panel, whether it was saved or cancelled.
+// The whole keyboard model hangs off the search box's @keydown, so ANY control
+// that takes focus kills arrow navigation — clicking the preview's back arrow
+// did exactly that. Hand the keyboard back once, here, rather than per path:
+// a click lands on a button, the button's own handler has already run, and the
+// search box takes focus again unless a mode owns it (the compose textarea, a
+// tool panel) or the click was on a field.
+function reclaimKeyboard(e) {
+  if (composing.value || convertTool.value) return
+  if (e.target.closest('input, textarea, [contenteditable]')) return
+  input.value?.reclaim()
+}
+
+// Leaving convert mode must return focus to the search box, and the same applies
+// on the way out of the compose panel, whether it was saved or cancelled.
 watch(convertTool, (tool) => {
   if (!tool) nextTick(focusInput)
 })
@@ -91,7 +102,7 @@ watch(composing, (on) => {
 </script>
 
 <template>
-  <div class="ql" :class="{ closing }">
+  <div class="ql" :class="{ closing }" @click="reclaimKeyboard">
     <!-- Mounted once and hidden, never destroyed: backing out to the list must
          not discard what you typed into a tool. -->
     <transition name="ql-panel">
@@ -148,8 +159,14 @@ watch(composing, (on) => {
               @edit="editCurrent"
             />
             <div v-if="current.tags?.length" class="ql-pv-tags">
-              <span v-for="t in current.tags" :key="t" class="ql-pv-tag">
-                <span class="dot" :style="{ background: store.colorOf(t) }"></span>{{ t }}
+              <span
+                v-for="t in current.tags"
+                :key="t"
+                class="tag-word"
+                :style="{ '--tc': store.colorOf(t) }"
+              >
+                <span class="tw-dot"></span>
+                <span class="tw-label">{{ t }}</span>
               </span>
             </div>
 

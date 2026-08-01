@@ -15,7 +15,10 @@ defineExpose({
   focus: () => {
     input.value?.focus()
     input.value?.select()
-  }
+  },
+  // Reclaim the keyboard without re-selecting what was typed — used when a
+  // click parked focus on a button mid-search.
+  reclaim: () => input.value?.focus()
 })
 </script>
 

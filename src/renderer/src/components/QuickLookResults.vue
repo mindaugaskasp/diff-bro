@@ -22,7 +22,7 @@ watch(selected, (i) => listEl.value?.children?.[i]?.scrollIntoView({ block: 'nea
 const mono = (lang) => languageMonogram(lang)
 const monoStyle = (it) => ({ '--fam': it.kind === 'snippet' ? mono(it.lang).family : '' })
 const monoText = (it) => (it.kind === 'snippet' ? mono(it.lang).label : '')
-const tagStyle = (it) => ({ background: store.colorOf(it.tags?.[0]) })
+const tagStyle = (it) => ({ '--tc': store.colorOf(it.tags?.[0]) })
 const rowIcon = () => (props.toolsOpen ? 'chevron-down' : 'chevron-right')
 const kindLabel = (it) =>
   it.kind === 'command' ? it.action : it.kind === 'tools' ? `${it.count} tools` : it.kind
@@ -57,7 +57,11 @@ const resClass = (i) => ({
       <span v-else-if="it.count" class="monogram sec"><AppIcon :name="rowIcon()" /></span>
       <span v-else class="monogram" :style="monoStyle(it)">{{ monoText(it) }}</span>
       <span class="ql-name">{{ it.name }}</span>
-      <span v-if="it.tags?.[0]" class="ql-tag" :style="tagStyle(it)">{{ it.tags[0] }}</span>
+      <span v-if="it.tags?.[0]" class="tag-word" :style="tagStyle(it)">
+        <span class="tw-dot"></span>
+        <span class="tw-label">{{ it.tags[0] }}</span>
+        <span v-if="it.tags.length > 1" class="tw-more">+{{ it.tags.length - 1 }}</span>
+      </span>
       <span class="ql-kind">{{ kindLabel(it) }}</span>
       <Transition name="ql-copychip">
         <span v-if="copied && i === copiedIndex" class="ql-res-copied" aria-live="polite">
