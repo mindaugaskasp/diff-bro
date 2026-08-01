@@ -32,9 +32,26 @@ const DATA = join(ROOT, 'tests/data')
 // Mirrors snippetStore's TAG_PALETTE (kept in sync by hand — it only drives the
 // demo tag colors, nothing load-bearing).
 const TAG_PALETTE = [
-  '#4c8dff', '#39c5cf', '#3fb950', '#56d364', '#d29922', '#e0823d', '#f85149',
-  '#db61a2', '#a371f7', '#6cb6ff', '#2da44e', '#e3b341', '#ff7b72', '#bc8cff',
-  '#76e3ea', '#f0883e', '#ffa8cc', '#8957e5', '#cf222e', '#8b949e'
+  '#4c8dff',
+  '#39c5cf',
+  '#3fb950',
+  '#56d364',
+  '#d29922',
+  '#e0823d',
+  '#f85149',
+  '#db61a2',
+  '#a371f7',
+  '#6cb6ff',
+  '#2da44e',
+  '#e3b341',
+  '#ff7b72',
+  '#bc8cff',
+  '#76e3ea',
+  '#f0883e',
+  '#ffa8cc',
+  '#8957e5',
+  '#cf222e',
+  '#8b949e'
 ]
 
 const XLSX_A = join(DATA, 'budget-2024.xlsx')
@@ -46,15 +63,48 @@ function writeXlsxFixtures() {
   writeFileSync(
     XLSX_A,
     makeXlsx([
-      { name: 'Summary', rows: [['Metric', 'Q2', 'Q3'], ['Revenue', 1180, 1245], ['Costs', 640, 690], ['Headcount', 42, 44]] },
-      { name: 'Regions', rows: [['Region', 'Users', 'MRR'], ['EMEA', 9200, 74000], ['APAC', 6100, 48000], ['LATAM', 2100, 15000]] }
+      {
+        name: 'Summary',
+        rows: [
+          ['Metric', 'Q2', 'Q3'],
+          ['Revenue', 1180, 1245],
+          ['Costs', 640, 690],
+          ['Headcount', 42, 44]
+        ]
+      },
+      {
+        name: 'Regions',
+        rows: [
+          ['Region', 'Users', 'MRR'],
+          ['EMEA', 9200, 74000],
+          ['APAC', 6100, 48000],
+          ['LATAM', 2100, 15000]
+        ]
+      }
     ])
   )
   writeFileSync(
     XLSX_B,
     makeXlsx([
-      { name: 'Summary', rows: [['Metric', 'Q2', 'Q3'], ['Revenue', 1180, 1310], ['Costs', 640, 690], ['Headcount', 42, 47], ['Runway (mo)', 18, 21]] },
-      { name: 'Regions', rows: [['Region', 'Users', 'MRR'], ['EMEA', 9200, 74000], ['APAC', 6800, 52000], ['NA', 3400, 29000]] }
+      {
+        name: 'Summary',
+        rows: [
+          ['Metric', 'Q2', 'Q3'],
+          ['Revenue', 1180, 1310],
+          ['Costs', 640, 690],
+          ['Headcount', 42, 47],
+          ['Runway (mo)', 18, 21]
+        ]
+      },
+      {
+        name: 'Regions',
+        rows: [
+          ['Region', 'Users', 'MRR'],
+          ['EMEA', 9200, 74000],
+          ['APAC', 6800, 52000],
+          ['NA', 3400, 29000]
+        ]
+      }
     ])
   )
 }
@@ -72,7 +122,8 @@ async function seed(page) {
         for (const raw of names) {
           const n = String(raw).trim().toLowerCase().slice(0, 40)
           if (!n || out.includes(n) || out.length >= 20) continue
-          if (!tags[n]) tags[n] = { color: palette[Object.keys(tags).length % palette.length], rank: ++rank }
+          if (!tags[n])
+            tags[n] = { color: palette[Object.keys(tags).length % palette.length], rank: ++rank }
           else tags[n].rank = ++rank
           out.push(n)
         }
@@ -91,9 +142,16 @@ async function seed(page) {
         if (box?.error) throw new Error('vault key unavailable: ' + box.error)
         const ft = fmtTag(s.language)
         snippetEntries.push({
-          id, aadSalt, name: s.name, createdAt,
-          language: s.language, detected: s.language, favorite: !!s.favorite,
-          tags: ensure(ft ? [ft, ...s.tags] : s.tags), iv: box.iv, data: box.data
+          id,
+          aadSalt,
+          name: s.name,
+          createdAt,
+          language: s.language,
+          detected: s.language,
+          favorite: !!s.favorite,
+          tags: ensure(ft ? [ft, ...s.tags] : s.tags),
+          iv: box.iv,
+          data: box.data
         })
       }
 
@@ -107,8 +165,15 @@ async function seed(page) {
         )
         if (box?.error) throw new Error('vault key unavailable: ' + box.error)
         vaultEntries.push({
-          id, name: d.name, createdAt: d.createdAt, expiresAt: d.expiresAt,
-          from, favorite: !!d.favorite, tags: ensure(d.tags), iv: box.iv, data: box.data
+          id,
+          name: d.name,
+          createdAt: d.createdAt,
+          expiresAt: d.expiresAt,
+          from,
+          favorite: !!d.favorite,
+          tags: ensure(d.tags),
+          iv: box.iv,
+          data: box.data
         })
       }
 
@@ -139,7 +204,9 @@ async function setTheme(page, label) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
   await page.getByText('Settings', { exact: true }).click()
   const dlg = page.getByRole('dialog', { name: 'Settings' })
-  await dlg.locator(`.theme-opt[title="Use the ${label} theme"]`).click()
+  // By accessible name, not the tooltip attribute: tooltips moved from native
+  // `title` to `data-tip` and silently broke this.
+  await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
   await page.keyboard.press('Escape')
   await dlg.waitFor({ state: 'hidden' })
 }
