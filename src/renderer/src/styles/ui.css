@@ -415,16 +415,10 @@
   background: none;
   color: var(--text);
 }
-/* Only the interactive pills (filter chips, suggestions) — a field pill is a
-   span and has nothing to press. */
-button.tag-chip:hover {
-  border-color: var(--tag-ink);
-  background: color-mix(in srgb, var(--tc, var(--text-dim)) 14%, transparent);
-}
 /* Picked: a SOLID inked pill against an outlined one. Two tints of the same hue
    were indistinguishable; fill-vs-no-fill reads before the colour does. The
    label flips to the ground colour, which is dark on light themes and light on
-   dark ones, so it stays legible either way (worst 4.69, sepia). */
+   dark ones, so it stays legible either way. */
 .tag-chip.on {
   background: var(--tag-ink);
   border-color: var(--tag-ink);
@@ -436,6 +430,24 @@ button.tag-chip:hover {
 .tag-chip.on .usb-dot {
   background: var(--bg);
 }
+/* Hover INVERTS the picked pill — the tag's colour on the surface instead of the
+   surface on the tag's colour. Only the interactive pills get it; a field pill
+   is a span with nothing to press. It must set every property .on sets, and sit
+   after it: `button.tag-chip:hover` already outranks `.tag-chip.on`, so a
+   partial rule left .on's ground-coloured label behind on a cleared fill —
+   white-on-white. Same ink/--bg pair as .on, so it is legible by the same
+   check-theme-depth floor. */
+button.tag-chip:hover {
+  background: var(--bg);
+  border-color: var(--tag-ink);
+  color: var(--tag-ink);
+}
+button.tag-chip:hover .tglyph {
+  color: var(--tag-ink);
+}
+button.tag-chip:hover .usb-dot {
+  background: var(--tag-ink);
+}
 /* The usage count sits with the pill, not in each component's stylesheet, so it
    can follow the label onto the fill instead of staying a dim neutral there. */
 .tag-chip .ct,
@@ -445,7 +457,9 @@ button.tag-chip:hover {
   font-variant-numeric: tabular-nums;
 }
 .tag-chip.on .ct,
-.tag-chip.on .usb-tct {
+.tag-chip.on .usb-tct,
+button.tag-chip:hover .ct,
+button.tag-chip:hover .usb-tct {
   color: inherit;
   opacity: 0.75;
 }

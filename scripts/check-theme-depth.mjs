@@ -167,6 +167,7 @@ console.log('\nfloors:    ' + RULES.map((r) => pad(r.min, w + 1)).join(''))
 // the result still registers as a UI element on every theme; the palette and the
 // per-theme lightness are read from source so neither can drift from the floor.
 const TAG_INK_MIN = 3.0
+const TAG_LABEL_MIN = 4.5
 const uiCss = readFileSync(join(root, 'src/renderer/src/styles/ui.css'), 'utf8')
 const storeJs = readFileSync(join(root, 'src/renderer/src/stores/snippetStore.js'), 'utf8')
 const inkL = uiCss.match(/--tag-ink:\s*oklch\(from .+?\s+var\((--[a-z-]+)\)\s+c\s+h\)/)
@@ -252,11 +253,36 @@ function checkTagInk(lToken) {
   return worst
 }
 
+// A picked chip is the ink filled with a --bg label; hovering inverts it to an
+// ink label on --bg. Both are TEXT on the same pair, so it carries the 4.5 floor.
+function checkTagLabel(lToken) {
+  let worst = { ratio: Infinity }
+  for (const theme of THEMES) {
+    const map = mapFor(theme)
+    const L = Number(map[lToken])
+    const ground = resolve('--bg', map)
+    for (const hex of palette) {
+      const ratio = contrast(relight(hex, L), ground)
+      if (ratio < worst.ratio) worst = { ratio, theme, hex }
+      if (ratio < TAG_LABEL_MIN)
+        failures.push(
+          `${theme}: tag ${hex} label/fill against --bg is ${ratio.toFixed(2)} < ${TAG_LABEL_MIN} (tag-label)`
+        )
+    }
+  }
+  return worst
+}
+
 if (inkL && palette.length >= 5) {
   const worst = checkTagInk(inkL[1])
   console.log(
     `tag ink (OKLCH lightness ${inkL[1]}): worst ${worst.ratio.toFixed(2)} — ` +
-      `${worst.theme} ${worst.hex} on ${worst.ground}, floor ${TAG_INK_MIN}\n`
+      `${worst.theme} ${worst.hex} on ${worst.ground}, floor ${TAG_INK_MIN}`
+  )
+  const label = checkTagLabel(inkL[1])
+  console.log(
+    `tag label (picked fill / hover invert): worst ${label.ratio.toFixed(2)} — ` +
+      `${label.theme} ${label.hex}, floor ${TAG_LABEL_MIN}\n`
   )
 }
 
