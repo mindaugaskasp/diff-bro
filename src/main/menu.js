@@ -85,6 +85,27 @@ export function installMenu() {
         },
         { label: 'Export Diff as HTML…', click: () => sendToFocused('export-html') },
         { label: 'Export Diff as Image…', click: () => sendToFocused('export-image') },
+        { type: 'separator' },
+        {
+          label: 'New Comparison',
+          accelerator: 'CmdOrCtrl+Shift+T',
+          click: () => sendToFocused('tab-new')
+        },
+        {
+          label: 'Close Comparison',
+          accelerator: 'CmdOrCtrl+Shift+W',
+          click: () => sendToFocused('tab-close')
+        },
+        {
+          label: 'Next Comparison',
+          accelerator: 'Ctrl+Tab',
+          click: () => sendToFocused('tab-next')
+        },
+        {
+          label: 'Previous Comparison',
+          accelerator: 'Ctrl+Shift+Tab',
+          click: () => sendToFocused('tab-prev')
+        },
         { label: 'Import Snippets…', click: () => sendToFocused('import-snippets') },
         { type: 'separator' },
         { label: 'Settings', accelerator: 'CmdOrCtrl+,', click: () => sendToFocused('settings') },

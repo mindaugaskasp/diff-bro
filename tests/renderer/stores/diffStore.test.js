@@ -4,6 +4,7 @@ import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
 import { getDiffScroller, setDiffScroller } from '../../../src/renderer/src/utils/diffScroller'
 
 beforeEach(() => {
@@ -1660,5 +1661,64 @@ describe('exportImage failure handling', () => {
     expect(store.imageEntry).toBeNull()
     expect(store.notice).toContain('Could not take a picture')
     el.remove()
+  })
+})
+
+// Closing the active tab from the File menu (or Cmd+Shift+W). This wiring was
+// once dropped by an unrelated commit and nothing noticed, because nothing
+// tested it — the menu item stayed, the action behind it did not.
+describe('closing the active comparison from the menu', () => {
+  const load = (store) => {
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+  }
+
+  it('asks first when the comparison would be lost', () => {
+    const store = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    load(store)
+    tabs.syncActiveTitle()
+
+    store.handleMenuAction('tab-close')
+    expect(store.pendingTabClose).toBe(tabs.activeId)
+    expect(tabs.tabs).toHaveLength(1)
+
+    store.confirmTabClose()
+    expect(store.pendingTabClose).toBeNull()
+    expect(store.left).toBeNull()
+  })
+
+  it('closes a saved or empty comparison without asking', () => {
+    const store = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') }, { diffSaved: true })
+    tabs.open({ mode: 'files', left: FILE('c.txt'), right: FILE('d.txt') }, { diffSaved: true })
+
+    store.handleMenuAction('tab-close')
+    expect(store.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(1)
+
+    // A blank tab holds nothing to lose either.
+    store.handleMenuAction('tab-close')
+    expect(store.pendingTabClose).toBeNull()
+  })
+
+  it('opens and steps between comparisons from the menu', () => {
+    const store = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    load(store)
+
+    store.handleMenuAction('tab-new')
+    expect(tabs.tabs).toHaveLength(2)
+    const [first, second] = tabs.tabs.map((t) => t.id)
+    expect(tabs.activeId).toBe(second)
+
+    store.handleMenuAction('tab-next')
+    expect(tabs.activeId).toBe(first)
+    store.handleMenuAction('tab-prev')
+    expect(tabs.activeId).toBe(second)
   })
 })

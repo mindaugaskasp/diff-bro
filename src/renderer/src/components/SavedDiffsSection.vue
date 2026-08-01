@@ -7,6 +7,7 @@ import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { MAX_TABS } from '../utils/tabs'
+import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -50,7 +51,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
           :disabled="!tabs.canAdd"
           :data-tip="
             tabs.canAdd
-              ? 'New comparison in its own tab'
+              ? `New comparison in its own tab (${MOD}+Shift+T)`
               : `That is the most comparisons at once (${MAX_TABS}) — close one first`
           "
           aria-label="New comparison"

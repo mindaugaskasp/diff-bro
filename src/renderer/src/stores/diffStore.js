@@ -134,6 +134,10 @@ const MENU_ACTIONS = {
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
   'export-image': (s) => s.exportCurrentImage(),
+  'tab-new': () => useTabsStore().newTab(),
+  'tab-next': () => useTabsStore().step(1),
+  'tab-prev': () => useTabsStore().step(-1),
+  'tab-close': (s) => s.requestActiveTabClose(),
   'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
@@ -455,6 +459,18 @@ export const useDiffStore = defineStore('diff', {
       this.showNotice(
         ttlHours ? `Saved — expires in ${ttlHours} h.` : 'Saved — kept until you delete it.'
       )
+    },
+    // Closing the active tab from a menu or accelerator takes the same confirm
+    // path the tab's own × does. Whether there is anything to lose comes from
+    // the LIVE document, not the tab's snapshot: a snapshot is only captured
+    // when tabs switch, so the tab you are looking at still reads as blank
+    // while it holds work — and the confirm never appeared.
+    requestActiveTabClose() {
+      const tabs = useTabsStore()
+      const tab = tabs.active
+      if (!tab) return
+      if (!this.diffSaved && this.hasActive) this.pendingTabClose = tab.id
+      else tabs.close(tab.id)
     },
     confirmTabClose() {
       const id = this.pendingTabClose

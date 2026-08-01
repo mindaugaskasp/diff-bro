@@ -10,6 +10,7 @@ import { useTabsStore } from '../stores/tabsStore'
 import { MAX_TABS, MAX_TAB_NAME, isBlank, tabLabel } from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
+import { MOD } from '../keys'
 
 const tabs = useTabsStore()
 const diff = useDiffStore()
@@ -94,7 +95,9 @@ function requestClose(tab) {
       class="add"
       :disabled="!tabs.canAdd"
       :data-tip="
-        tabs.canAdd ? 'New comparison' : `That is the most comparisons at once (${MAX_TABS})`
+        tabs.canAdd
+          ? `New comparison (${MOD}+Shift+T)`
+          : `That is the most comparisons at once (${MAX_TABS})`
       "
       aria-label="New comparison"
       @click="tabs.newTab()"
