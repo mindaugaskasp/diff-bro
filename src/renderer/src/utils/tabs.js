@@ -172,6 +172,22 @@ export const recyclableTab = (tabs, activeId) =>
   (tabs ?? []).find((t) => t.transient && t.id !== activeId) ?? null
 
 /**
+ * The tab one step along the strip, or null at either end. Unlike step(), which
+ * cycles, this is for a control that disables itself when there is nowhere to
+ * go.
+ * @param {DiffTab[]} tabs
+ * @param {string} activeId
+ * @param {1|-1} delta
+ * @returns {string|null}
+ */
+export function adjacentTabId(tabs, activeId, delta) {
+  const list = tabs ?? []
+  const i = list.findIndex((t) => t.id === activeId)
+  if (i === -1) return null
+  return list[i + delta]?.id ?? null
+}
+
+/**
  * Which tab to show once `closingId` goes. Closing the tab you are looking at
  * moves right, then left — the editor convention, and it never lands on a tab
  * that is itself about to disappear.

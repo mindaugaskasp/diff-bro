@@ -85,6 +85,11 @@ export function buildMenus(store) {
           keys: `${MOD}+\\`,
           run: () => store.handleMenuAction('toggle-split')
         },
+        {
+          label: 'Toggle Sidebar',
+          keys: `${MOD}+B`,
+          run: () => store.handleMenuAction('toggle-sidebar')
+        },
         { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => store.toggleTheme() },
         { sep: true },
         {

@@ -304,3 +304,31 @@ describe('settingsStore', () => {
     expect(recentTools(s.recentTools).map((t) => t.id)).toEqual(['json', 'uuid'])
   })
 })
+
+// The sidebar is 256px of an eighth of the window, permanently. Collapsing it
+// is a preference, so it has to survive a relaunch like the others.
+describe('the collapsed sidebar', () => {
+  it('starts expanded', () => {
+    expect(useSettingsStore().sidebarCollapsed).toBe(false)
+  })
+
+  it('remembers being collapsed across a reload', () => {
+    useSettingsStore().setSidebarCollapsed(true)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().sidebarCollapsed).toBe(true)
+  })
+
+  it('comes back expanded once it is opened again', () => {
+    const s = useSettingsStore()
+    s.setSidebarCollapsed(true)
+    s.setSidebarCollapsed(false)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().sidebarCollapsed).toBe(false)
+  })
+
+  it('ignores a hand-edited non-boolean', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ sidebarCollapsed: 'yes' }))
+    setActivePinia(createPinia())
+    expect(useSettingsStore().sidebarCollapsed).toBe(false)
+  })
+})

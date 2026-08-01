@@ -179,6 +179,11 @@ export function installMenu() {
           accelerator: 'CmdOrCtrl+Shift+P',
           click: () => sendToFocused('command-palette')
         },
+        {
+          label: 'Toggle Sidebar',
+          accelerator: 'CmdOrCtrl+B',
+          click: () => sendToFocused('toggle-sidebar')
+        },
         { type: 'separator' },
         {
           label: 'Toggle Structure View',

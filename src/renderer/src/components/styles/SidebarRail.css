@@ -1,0 +1,77 @@
+/* The collapsed sidebar. Its top cell is --band-row, the SAME height the
+   file-slots row and every sidebar section header carry, so collapsing moves
+   the sidebar's width and nothing else — a rail that skipped it would knock
+   those two rows out of step. */
+.rail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+.rail-band {
+  height: var(--band-row);
+  flex: none;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+}
+.rail-btn {
+  position: relative;
+  width: var(--control-h);
+  height: var(--control-h);
+  margin-top: var(--space-2);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.rail-band .rail-btn {
+  margin-top: 0;
+}
+.rail-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.rail-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+/* Reads against the accent on every theme, including the high-chroma ones,
+   because it sits ON the accent rather than beside it. */
+.rail-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+.rail-gap {
+  flex: 1;
+}
+
+/* The way back out, kept separate from the section icons: expanding should not
+   require picking a section you did not want. Bordered like the collapse
+   control it mirrors. */
+.rail-expand {
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.rail-expand:hover {
+  border-color: var(--text-dim);
+}

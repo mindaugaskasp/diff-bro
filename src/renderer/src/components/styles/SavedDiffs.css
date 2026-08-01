@@ -1,5 +1,8 @@
 .saved {
   width: 256px;
+  /* Animated so the comparison widening does not read as a jump cut. Monaco
+     carries automaticLayout, so the editor follows the width on its own. */
+  transition: width 160ms ease;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-panel);
@@ -11,6 +14,17 @@
   flex-direction: column;
   overflow: hidden; /* the body scrolls, not the whole aside */
 }
+/* Collapsed to the rail. The width is the only thing that changes — the border,
+   the lift and the surface role are the sidebar's either way. */
+.saved.collapsed {
+  width: 48px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .saved {
+    transition: none;
+  }
+}
+
 /* Fixed control strip: search + the segmented group filter. */
 .usb-controls {
   flex: none;
@@ -20,49 +34,6 @@
   padding: var(--space-3) var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
-}
-.usb-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: var(--space-1);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0 6px 0 8px;
-}
-.usb-search:focus-within {
-  border-color: var(--accent);
-}
-.usb-glyph {
-  flex: none;
-  color: var(--text-dim);
-  font-size: var(--font-md);
-}
-.usb-search input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  color: var(--text);
-  padding: 5px 0;
-  font-size: var(--font-md);
-}
-.usb-search input:focus {
-  outline: none;
-}
-.usb-x {
-  flex: none;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--font-xl);
-  line-height: 1;
-  padding: 0 2px;
-}
-.usb-x:hover {
-  color: var(--text);
 }
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,

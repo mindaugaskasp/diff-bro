@@ -856,3 +856,38 @@ describe('comparisons too large to reopen', () => {
     expect(tabs.sessionDropped).toBe(0)
   })
 })
+
+// Clearing empties the comparison, but the tab went on claiming to BE the saved
+// diff it no longer held — and open() focuses a tab already showing an entry
+// rather than loading it, so the saved diff could not be opened again.
+describe('clearing a tab opened from the vault', () => {
+  it('lets the saved diff be opened again afterwards', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs()
+    tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
+    expect(tabs.active.entryId).toBe('vault-1')
+
+    diff.clear()
+    expect(tabs.active.entryId).toBe(null)
+
+    tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
+    expect(diff.left.name).toBe('saved.json')
+    expect(diff.right.name).toBe('saved2.json')
+  })
+
+  it('does not leave a hollow tab standing in for the entry', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs()
+    tabs.open(comparison('a.json', 'b.json'), { diffSaved: true, entryId: 'vault-7' })
+    diff.clear()
+    expect(tabs.tabs.filter((t) => t.entryId === 'vault-7')).toHaveLength(0)
+  })
+
+  it('leaves an unlinked tab alone', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('scratch.txt', 'scratch2.txt'))
+    diff.clear()
+    expect(tabs.active.entryId ?? null).toBe(null)
+    expect(diff.left).toBeNull()
+  })
+})

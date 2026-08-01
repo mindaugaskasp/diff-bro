@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MAX_TABS,
+  adjacentTabId,
   MAX_LIVE_CHARS,
   tabCost,
   tabsCost,
@@ -267,5 +268,28 @@ describe('tabsFullNotice', () => {
     const notice = tabsFullNotice([costing(MAX_LIVE_CHARS + 1)])
     expect(notice).toMatch(/as much text as one window can/)
     expect(notice).not.toContain(String(MAX_TABS))
+  })
+})
+
+// The strip's chevrons move the comparison you are looking at, not just the
+// view — panning the strip away from the active tab is what made scrolling feel
+// disconnected from it. No wrap: at either end there is nothing to step to.
+describe('adjacentTabId', () => {
+  const three = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+  it('steps to the neighbour in each direction', () => {
+    expect(adjacentTabId(three, 'b', 1)).toBe('c')
+    expect(adjacentTabId(three, 'b', -1)).toBe('a')
+  })
+
+  it('stops at both ends rather than wrapping', () => {
+    expect(adjacentTabId(three, 'c', 1)).toBe(null)
+    expect(adjacentTabId(three, 'a', -1)).toBe(null)
+  })
+
+  it('is null for a single tab, an empty strip, or an unknown active id', () => {
+    expect(adjacentTabId([{ id: 'a' }], 'a', 1)).toBe(null)
+    expect(adjacentTabId([], 'a', 1)).toBe(null)
+    expect(adjacentTabId(three, 'nope', 1)).toBe(null)
   })
 })

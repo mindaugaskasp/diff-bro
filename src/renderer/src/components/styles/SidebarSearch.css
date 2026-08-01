@@ -1,0 +1,80 @@
+/* The sidebar's search row. These rules live here rather than in SavedDiffs.css
+   because scoped CSS does not reach into a child component — the markup moved
+   and left its styling behind, which is exactly what that rule is for. */
+.usb-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+.usb-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 6px 0 8px;
+}
+.usb-search:focus-within {
+  border-color: var(--accent);
+}
+.usb-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 5px 0;
+  font-size: var(--font-md);
+}
+.usb-search input:focus {
+  outline: none;
+}
+.usb-glyph {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.usb-x {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-xl);
+  line-height: 1;
+  padding: 0 2px;
+}
+.usb-x:hover {
+  color: var(--text);
+}
+
+/* Matches the search box's height so the row reads as one control strip, and
+   carries the same keyline — a borderless glyph beside a bordered field looked
+   like it had been dropped there. */
+.usb-collapse {
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.usb-collapse:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+  border-color: var(--text-dim);
+}
+.usb-collapse:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}

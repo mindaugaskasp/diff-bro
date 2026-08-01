@@ -178,6 +178,10 @@ const MENU_ACTIONS = {
   'tab-close': (s) => s.requestActiveTabClose(),
   'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
+  'toggle-sidebar': () => {
+    const settings = useSettingsStore()
+    settings.setSidebarCollapsed(!settings.sidebarCollapsed)
+  },
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
   'toggle-structure': (s) => {
     if (s.canCompareStructure) s.semanticView = !s.semanticView
@@ -1118,6 +1122,11 @@ export const useDiffStore = defineStore('diff', {
       this.right = null
       this.stats = null
       this.diffSaved = false
+      // The tab stops BEING the saved diff it was opened from. Leaving the link
+      // behind left a hollow tab claiming that entry, and open() focuses a tab
+      // already showing one rather than loading it — so the saved diff could
+      // not be opened again.
+      useTabsStore().unlinkActiveEntry()
       // Also wipe paste-mode text and files so a cleared session never leaves
       // the previous content lingering behind.
       this.pasteLeft = ''

@@ -244,6 +244,10 @@ export const useTabsStore = defineStore('tabs', {
     },
     // Its saved diff is gone, so the tab must stop claiming to be in the vault:
     // "saved" is what silences the discard prompts.
+    // The active tab no longer shows the saved diff it was opened from.
+    unlinkActiveEntry() {
+      if (this.active) this.active.entryId = null
+    },
     /** @param {string} entryId */
     forgetEntry(entryId) {
       for (const tab of this.tabs) {

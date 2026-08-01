@@ -440,3 +440,29 @@ test('a hovering tooltip is not photographed with the diff', async ({ app, page 
   })
   expect(leaked).toBe(false)
 })
+
+// The truncation and hidden-column notices are prose with a <strong> in them.
+// As a flex container the paragraph made every text run its own column, so the
+// sentence came apart into three pieces.
+test('a warning note reads as one sentence, not as columns', async ({ page }) => {
+  await saveDiff(page, 'E2E warn note')
+  const dialog = await openImageExport(page, 'E2E warn note')
+  await expect(dialog).toBeVisible()
+
+  const laidOut = await page.evaluate(() => {
+    // Render the same note the dialog uses, with the same classes.
+    const p = document.createElement('p')
+    p.className = 'dialog-note warn'
+    p.innerHTML = 'Raise <strong id="probe">Max diff image height</strong> in Settings to capture.'
+    document.querySelector('.dialog')?.appendChild(p)
+    const strong = p.querySelector('#probe').getBoundingClientRect()
+    const box = p.getBoundingClientRect()
+    const display = getComputedStyle(p).display
+    p.remove()
+    return { display, strongLeft: strong.left, boxLeft: box.left, strongWidth: strong.width }
+  })
+  expect(laidOut.display).not.toBe('flex')
+  // Inline flow: the bold run starts after the text before it, not in its own
+  // column pinned away from the paragraph's edge.
+  expect(laidOut.strongLeft).toBeGreaterThan(laidOut.boxLeft)
+})

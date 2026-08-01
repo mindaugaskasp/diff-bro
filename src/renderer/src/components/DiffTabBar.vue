@@ -7,7 +7,7 @@
 // and assistive tech, which is how it was first written.
 import { nextTick, ref, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { MAX_TAB_NAME, tabLabel, tabsFullNotice } from '../utils/tabs'
+import { MAX_TAB_NAME, adjacentTabId, tabLabel, tabsFullNotice } from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
 import TabContextMenu from './TabContextMenu.vue'
@@ -53,6 +53,14 @@ function commitRename() {
 
 const track = ref(null)
 const overflow = useTabOverflow(track, () => tabs.activeId)
+// The chevrons carry the comparison you are looking at rather than panning away
+// from it — the strip and the active tab move together, and the reveal watcher
+// scrolls the new one into view.
+const stepTo = (delta) => {
+  const id = adjacentTabId(tabs.tabs, tabs.activeId, delta)
+  if (id) tabs.activate(id)
+}
+const canStep = (delta) => !!adjacentTabId(tabs.tabs, tabs.activeId, delta)
 // A tab appearing or leaving changes what fits, and the strip is re-measured
 // after the DOM has caught up rather than on the same tick.
 watch(
@@ -80,12 +88,12 @@ function onTabKey(e, tab) {
 <template>
   <div v-if="tabs.visible" class="diff-tabs band">
     <button
-      v-if="overflow.state.value.overflowing"
+      v-if="overflow.overflowing.value"
       class="scroll scroll-left"
-      :disabled="overflow.state.value.atStart"
-      data-tip="Scroll tabs left"
-      aria-label="Scroll tabs left"
-      @click="overflow.scrollLeft()"
+      :disabled="!canStep(-1)"
+      data-tip="Previous comparison"
+      aria-label="Previous comparison"
+      @click="stepTo(-1)"
     >
       <AppIcon name="chevron-left" />
     </button>
@@ -144,12 +152,12 @@ function onTabKey(e, tab) {
     </div>
 
     <button
-      v-if="overflow.state.value.overflowing"
+      v-if="overflow.overflowing.value"
       class="scroll scroll-right"
-      :disabled="overflow.state.value.atEnd"
-      data-tip="Scroll tabs right"
-      aria-label="Scroll tabs right"
-      @click="overflow.scrollRight()"
+      :disabled="!canStep(1)"
+      data-tip="Next comparison"
+      aria-label="Next comparison"
+      @click="stepTo(1)"
     >
       <AppIcon name="chevron-right" />
     </button>

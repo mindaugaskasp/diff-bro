@@ -24,6 +24,24 @@ test('more than six comparisons can be open at once', async ({ page }) => {
   await expect(tabs(page)).toHaveCount(9)
 })
 
+// The floor is for a crowded strip. Held unconditionally, a lone tab was padded
+// out to 20ch and read as a stray empty one.
+test('a single tab is sized to its name, not to the floor', async ({ page }) => {
+  await addTabs(page, 1)
+  await expect(tabs(page)).toHaveCount(1)
+  const only = await tabs(page)
+    .first()
+    .evaluate((el) => el.getBoundingClientRect().width)
+  expect(only).toBeLessThan(126)
+
+  // ...and the floor comes back the moment there is something to crowd it.
+  await bar(page).getByRole('button', { name: 'New comparison' }).click()
+  const widths = await tabs(page).evaluateAll((els) =>
+    els.map((e) => e.getBoundingClientRect().width)
+  )
+  expect(Math.min(...widths)).toBeGreaterThan(90)
+})
+
 test('a few tabs neither scroll nor show chevrons', async ({ page }) => {
   await addTabs(page, 3)
   await expect(chevrons(page)).toHaveCount(0)
@@ -55,49 +73,50 @@ test('the scrolling track shows no scrollbar of its own', async ({ page }) => {
   expect(gap).toBe(0)
 })
 
-test('the chevrons scroll the strip and disable themselves at each end', async ({ page }) => {
+// The chevrons carry the comparison, not just the view: panning the strip away
+// from the tab you are on is what made scrolling feel disconnected from it.
+test('the chevrons move the active comparison and bring it into view', async ({ page }) => {
   await addTabs(page, 12)
-  const left = page.getByRole('button', { name: 'Scroll tabs left' })
-  const right = page.getByRole('button', { name: 'Scroll tabs right' })
+  const prev = page.getByRole('button', { name: 'Previous comparison' })
+  const next = page.getByRole('button', { name: 'Next comparison' })
+  const activeIdx = () =>
+    tabs(page).evaluateAll((els) => els.findIndex((e) => e.classList.contains('active')))
 
-  // The newest tab is the active one, so the strip already sits at its end.
-  await expect(right).toBeDisabled()
-  await expect(left).toBeEnabled()
+  // The newest tab is active, so there is nowhere further right to go.
+  expect(await activeIdx()).toBe(11)
+  await expect(next).toBeDisabled()
+  await expect(prev).toBeEnabled()
 
-  const start = await track(page).evaluate((el) => el.scrollLeft)
-  await left.click()
-  await expect.poll(() => track(page).evaluate((el) => el.scrollLeft)).toBeLessThan(start)
-  await expect(right).toBeEnabled()
+  await prev.click()
+  await expect.poll(activeIdx).toBe(10)
+  await expect(next).toBeEnabled()
 
-  // Back to the start: the chevron disables itself rather than being clickable
-  // with nowhere left to go.
-  while (await left.isEnabled()) await left.click()
-  await expect(left).toBeDisabled()
-  expect(await track(page).evaluate((el) => el.scrollLeft)).toBeLessThanOrEqual(1)
+  // Stepping far enough left leaves the tab off-screen unless it is revealed.
+  for (let i = 0; i < 8; i++) await prev.click()
+  await expect.poll(activeIdx).toBe(2)
+  const shown = await page.locator('.diff-tabs .tab.active').evaluate((el) => {
+    const t = el.closest('.track').getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    return r.left >= t.left - 1 && r.right <= t.right + 1
+  })
+  expect(shown).toBe(true)
+
+  // ...and it stops at the first tab rather than wrapping round.
+  while (await prev.isEnabled()) await prev.click()
+  await expect.poll(activeIdx).toBe(0)
+  await expect(prev).toBeDisabled()
 })
 
-// Stepping to a tab must bring it into view, or the strip walks somewhere the
-// reader cannot see. Opening the twelfth is exactly that case: it is created
-// off the right edge.
-test('the active tab is always scrolled into view', async ({ page }) => {
+// A tab is created off the right edge once the strip is full, so opening one
+// has to bring it into view or you land on a comparison you cannot see.
+test('a newly opened tab is scrolled into view', async ({ page }) => {
   await addTabs(page, 12)
-
-  const inView = (sel) =>
-    page.locator(sel).evaluate((el) => {
-      const t = el.closest('.track').getBoundingClientRect()
-      const r = el.getBoundingClientRect()
-      return r.left >= t.left - 1 && r.right <= t.right + 1
-    })
-  expect(await inView('.diff-tabs .tab.active')).toBe(true)
-
-  // ...and again after scrolling away and picking a different tab.
-  await page.getByRole('button', { name: 'Scroll tabs left' }).click()
-  await page.getByRole('button', { name: 'Scroll tabs left' }).click()
-  const visible = tabs(page)
-    .filter({ has: page.getByRole('tab') })
-    .first()
-  await visible.getByRole('tab').click()
-  expect(await inView('.diff-tabs .tab.active')).toBe(true)
+  const shown = await page.locator('.diff-tabs .tab.active').evaluate((el) => {
+    const t = el.closest('.track').getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    return r.left >= t.left - 1 && r.right <= t.right + 1
+  })
+  expect(shown).toBe(true)
 })
 
 test('the bar keeps one unbroken keyline under the whole strip', async ({ page }) => {

@@ -42,8 +42,13 @@
   color: var(--text-dim);
   white-space: nowrap;
   flex: 0 1 auto;
-  min-width: 20ch;
   max-width: 32ch;
+}
+/* The floor is there to stop tabs grinding each other down to a stub, so it
+   applies only once there is something to be crowded by — a lone tab sized to a
+   20ch minimum just looked like an empty one sitting there. */
+.diff-tabs .tab:not(:only-child) {
+  min-width: 20ch;
 }
 .diff-tabs .tab-open {
   display: inline-flex;

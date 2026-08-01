@@ -164,6 +164,9 @@ function readState() {
     // off forgets the stored one too (see tabsStore.setRestoreSession).
     restoreSession: parsed.restoreSession !== false,
     autoBackup: parsed.autoBackup !== false,
+    // The sidebar collapsed to its rail. Off by default: the library is how a
+    // comparison is usually reached.
+    sidebarCollapsed: parsed.sidebarCollapsed === true,
     autoBackupHours: clampBackupHours(parsed.autoBackupHours),
     examplesSeeded: parsed.examplesSeeded === true,
     // Most-recent-first tool ids; unknown ids are dropped when rendered.
@@ -213,6 +216,7 @@ export const useSettingsStore = defineStore('settings', {
           shutterSound: this.shutterSound,
           restoreSession: this.restoreSession,
           autoBackup: this.autoBackup,
+          sidebarCollapsed: this.sidebarCollapsed,
           autoBackupHours: this.autoBackupHours,
           examplesSeeded: this.examplesSeeded,
           recentTools: this.recentTools,
@@ -291,6 +295,10 @@ export const useSettingsStore = defineStore('settings', {
     },
     setAutoBackupHours(hours) {
       this.autoBackupHours = clampBackupHours(hours)
+      this.persist()
+    },
+    setSidebarCollapsed(value) {
+      this.sidebarCollapsed = value === true
       this.persist()
     },
     setRestoreSession(value) {
