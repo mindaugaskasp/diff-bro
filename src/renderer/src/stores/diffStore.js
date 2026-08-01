@@ -586,6 +586,10 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice(`"${file.name}" could not be read as a spreadsheet — ${file.message}.`)
         return
       }
+      if (file.error === 'unreadable') {
+        this.showNotice(`"${file.name}" could not be read — is it a folder?`)
+        return
+      }
       // Any other error shape (e.g. a path main refused to serve) is not a
       // loadable file — never assign it to a side.
       if (file.error) return
@@ -914,7 +918,13 @@ export const useDiffStore = defineStore('diff', {
       }
       const sides = ['left', 'right']
       for (const [i, path] of (files ?? []).entries()) {
-        this.receive(sides[i], await window.api.readFile(path))
+        // A path from a shell is not one the app chose, so the read is allowed
+        // to fail outright rather than answer with an error shape.
+        try {
+          this.receive(sides[i], await window.api.readFile(path))
+        } catch {
+          this.showNotice(`Could not open "${String(path).split(/[\\/]/).pop()}".`)
+        }
       }
     },
     // A result chosen in the quick look-up (main forwards { kind, id }); the big

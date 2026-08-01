@@ -77,6 +77,48 @@ describe('runCliCommand — compare', () => {
   })
 })
 
+// A path typed in a shell is not a file the app chose: it can be a directory, a
+// binary, a dead symlink, or gone by the time it is read. None of those may take
+// the command down silently.
+describe('runCliCommand — hostile paths', () => {
+  it('survives a path the reader rejects outright, and says why', async () => {
+    window.api.readFile = async () => {
+      throw new Error("EISDIR: illegal operation on a directory, read '/work/dir'")
+    }
+    const store = useDiffStore()
+    withTabs()
+    await expect(
+      store.runCliCommand({ name: 'compare', files: ['/work/dir'] })
+    ).resolves.toBeUndefined()
+    expect(store.left).toBeNull()
+    expect(store.notice).toBeTruthy()
+  })
+
+  it('does not load a binary file into a side', async () => {
+    window.api.readFile = async (p) => ({ error: 'binary', name: String(p).split('/').pop() })
+    const store = useDiffStore()
+    withTabs()
+    await store.runCliCommand({ name: 'compare', files: ['/work/logo.png'] })
+    expect(store.left).toBeNull()
+    expect(store.notice).toMatch(/binary/i)
+  })
+
+  // Refused paths already return a shape rather than throwing; the command must
+  // still not leave a half-loaded comparison behind.
+  it('loads neither side when the second file is refused', async () => {
+    window.api.readFile = async (p) =>
+      String(p).endsWith('b.json')
+        ? { error: 'not-permitted' }
+        : { path: p, name: 'a.json', content: '{}' }
+    const store = useDiffStore()
+    withTabs()
+    await store.runCliCommand({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
+    expect(store.left?.name).toBe('a.json')
+    expect(store.right).toBeNull()
+    expect(store.ready).toBe(false)
+  })
+})
+
 describe('runCliCommand — snippets', () => {
   it('create snippet opens an empty editor', async () => {
     const store = useDiffStore()

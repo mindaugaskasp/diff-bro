@@ -180,7 +180,19 @@ export function registerFileIpc() {
       return { error: 'not-permitted' }
     }
     if (isUnderUserData(filePath)) return { error: 'not-permitted' }
-    return readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
+    try {
+      return await readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
+    } catch (err) {
+      // A path can be a directory, gone, or unreadable — from a drop as easily
+      // as from the command line. Answer with a shape; a rejected invoke would
+      // surface in the renderer as a throw nobody is positioned to catch.
+      return {
+        error: 'unreadable',
+        name: basename(filePath),
+        path: filePath,
+        message: err?.message
+      }
+    }
   })
 
   // Save-dialog + write for the diff HTML export. The renderer builds the whole

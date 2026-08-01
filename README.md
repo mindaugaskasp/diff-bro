@@ -81,7 +81,8 @@ a hard promise: it never touches the network.
 - **Terminal command** — install `diffbro` from Settings ▸ Terminal, then
   `diffbro compare a.json b.json` opens a comparison in the running app,
   `diffbro create snippet` opens a new snippet, and `diffbro cb save` keeps what
-  you just copied. A second launch hands its arguments to the running window
+  you just copied. `diffbro help` lists them; `diffbro help <command>` explains
+  one. A second launch hands its arguments to the running window
   through Electron's single-instance lock — nothing listens on a port.
 - **Yours to arrange** — fourteen themes (incl. Nord, Sepia, Solar, a playful
   Nyan with a reward cat, a Matrix digital-rain theme, and accessibility-grade

@@ -14,9 +14,23 @@ import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLo
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
+import { CLI_USAGE, helpText, parseCli } from './cli'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
+
+// `diffbro help` and a malformed command answer in the TERMINAL: they print and
+// exit before any window is made and before the single-instance lock is touched,
+// so asking what a command does never raises the app over what you were doing.
+const cold = parseCli(process.argv)
+if (cold.command?.name === 'help') {
+  const { text, ok } = helpText(cold.command.topic)
+  process.stdout.write(`${text}\n`)
+  app.exit(ok ? 0 : 1)
+} else if (cold.error) {
+  process.stderr.write(`${cold.error}\n\n${CLI_USAGE}\n`)
+  app.exit(1)
+}
 
 // Single instance. When a newer build is launched over a running one (no
 // auto-updater by design), the loser's version differs, so the running instance
