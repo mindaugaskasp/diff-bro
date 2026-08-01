@@ -10,6 +10,8 @@ import { useTabsStore } from '../stores/tabsStore'
 import { MAX_TABS, MAX_TAB_NAME, tabLabel } from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
+import TabContextMenu from './TabContextMenu.vue'
+import { useTabContextMenu } from '../composables/useTabContextMenu'
 import { MOD } from '../keys'
 
 const tabs = useTabsStore()
@@ -47,6 +49,22 @@ function commitRename() {
   if (renamingId.value) tabs.rename(renamingId.value, draft.value)
   renamingId.value = null
 }
+
+const menu = useTabContextMenu(() => tabs.tabs)
+const run = (id, action) => tabs.requestMenuAction(id, action)
+function pick(action) {
+  const id = menu.anchorId.value
+  menu.close()
+  run(id, action)
+}
+// Shift+F10 is the platform's "open the context menu here", so the strip is
+// reachable without a pointer.
+function onTabKey(e, tab) {
+  if (!(e.key === 'F10' && e.shiftKey) && e.key !== 'ContextMenu') return
+  e.preventDefault()
+  const box = e.currentTarget.getBoundingClientRect()
+  menu.show(tab.id, { x: box.left + 8, y: box.bottom }, true)
+}
 </script>
 
 <template>
@@ -56,6 +74,7 @@ function commitRename() {
       :key="tab.id"
       class="tab"
       :class="{ active: tab.id === tabs.activeId }"
+      @contextmenu.prevent="menu.show(tab.id, { x: $event.clientX, y: $event.clientY })"
     >
       <input
         v-if="renamingId === tab.id"
@@ -79,6 +98,7 @@ function commitRename() {
         @click="tabs.activate(tab.id)"
         @dblclick="startRename(tab)"
         @auxclick.middle.prevent="tabs.requestClose(tab.id)"
+        @keydown="onTabKey($event, tab)"
       >
         <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
         <span class="name">{{ tabLabel(tab) }}</span>
@@ -105,6 +125,17 @@ function commitRename() {
     >
       <AppIcon name="plus" />
     </button>
+
+    <TabContextMenu
+      v-if="menu.open.value"
+      :at="menu.at.value"
+      :items="menu.items.value"
+      :cursor="menu.cursor.value"
+      @pick="pick"
+      @hover="menu.cursor.value = $event"
+      @key="menu.keyHandler(run)($event)"
+      @close="menu.close()"
+    />
   </div>
 </template>
 

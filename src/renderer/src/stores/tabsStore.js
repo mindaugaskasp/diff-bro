@@ -3,6 +3,7 @@ import { useDiffStore } from './diffStore'
 import { useVaultStore } from './vaultStore'
 import { useSettingsStore } from './settingsStore'
 import { loadPersisted, savePersisted } from '../persist'
+import { tabsClosedBy } from '../utils/tabMenu'
 import {
   MAX_TABS,
   blankSnapshot,
@@ -11,6 +12,7 @@ import {
   cleanTabName,
   isBlank,
   nextActiveId,
+  nextActiveIdAfterClosing,
   recyclableTab,
   tabTitle
 } from '../utils/tabs'
@@ -194,10 +196,50 @@ export const useTabsStore = defineStore('tabs', {
     // The single close guard — menu, ×, and middle-click all arrive here.
     /** @param {string} id */
     requestClose(id) {
-      const tab = this.tabs.find((t) => t.id === id)
-      if (!tab) return
-      if (this.unsaved(tab)) useDiffStore().pendingTabClose = tab.id
-      else this.close(tab.id)
+      this.requestCloseMany([id])
+    },
+    /**
+     * Close a whole set, asking ONCE about whatever unsaved work it holds. One
+     * prompt per tab would mean four dialogs for one "close to the right".
+     * @param {string[]} ids
+     */
+    requestCloseMany(ids) {
+      const open = (ids ?? []).filter((id) => this.tabs.some((t) => t.id === id))
+      if (!open.length) return
+      const risky = open.filter((id) => this.unsaved(this.tabs.find((t) => t.id === id)))
+      if (risky.length) useDiffStore().pendingTabClose = open
+      else this.closeMany(open)
+    },
+    /**
+     * @param {string} anchorId  the tab the menu was opened on
+     * @param {import('../utils/tabMenu').TabMenuAction} action
+     */
+    requestMenuAction(anchorId, action) {
+      this.requestCloseMany(tabsClosedBy(this.tabs, anchorId, action).map((t) => t.id))
+    },
+    /**
+     * Remove a set in one pass. close() in a loop would capture and re-show —
+     * and so re-diff — once per tab for a single click.
+     * @param {string[]} ids
+     */
+    closeMany(ids) {
+      const closing = new Set(ids ?? [])
+      const survivors = this.tabs.filter((t) => !closing.has(t.id))
+      // Nothing survives: fall through to close()'s last-tab path, which blanks
+      // the comparison rather than leaving an empty window.
+      if (!survivors.length) {
+        const keep = this.active ?? this.tabs[this.tabs.length - 1]
+        this.tabs = [keep]
+        this.activeId = keep.id
+        this.close(keep.id)
+        return
+      }
+      const goingTo = nextActiveIdAfterClosing(this.tabs, [...closing], this.activeId)
+      if (!closing.has(this.activeId)) this._capture()
+      this.tabs = survivors
+      const next = this.tabs.find((t) => t.id === goingTo)
+      if (next && next.id !== this.activeId) this._show(next)
+      else this.activeId = next?.id ?? null
     },
     // Its saved diff is gone, so the tab must stop claiming to be in the vault:
     // "saved" is what silences the discard prompts.

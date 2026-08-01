@@ -610,7 +610,7 @@ describe('requestClose', () => {
     diff.right = FILE('precious2.txt')
 
     tabs.requestClose(tabs.activeId)
-    expect(diff.pendingTabClose).toBe(tabs.activeId)
+    expect(diff.pendingTabClose).toEqual([tabs.activeId])
     expect(tabs.tabs).toHaveLength(2)
   })
 
@@ -631,12 +631,111 @@ describe('requestClose', () => {
     tabs.open(comparison('b.txt', 'b2.txt'), { diffSaved: true })
 
     tabs.requestClose(first)
-    expect(diff.pendingTabClose).toBe(first)
+    expect(diff.pendingTabClose).toEqual([first])
 
     diff.pendingTabClose = null
     tabs.requestClose('tab-gone')
     expect(diff.pendingTabClose).toBeNull()
     expect(tabs.tabs).toHaveLength(2)
+  })
+})
+
+// Bulk closes from the tab context menu. The trap they all share: the discard
+// prompt used to name ONE comparison, so four unsaved tabs meant four dialogs.
+describe('closing several tabs at once', () => {
+  const saved = (tabs, l, r) => tabs.open(comparison(l, r), { diffSaved: true })
+
+  // All four already in the vault, so the close path is exercised without the
+  // discard prompt getting in the way — that has its own tests below.
+  const fourSaved = () => {
+    const tabs = withTabs()
+    saved(tabs, 'a.txt', 'a2.txt')
+    saved(tabs, 'b.txt', 'b2.txt')
+    saved(tabs, 'c.txt', 'c2.txt')
+    saved(tabs, 'd.txt', 'd2.txt')
+    return tabs
+  }
+
+  it('closes to the right of the anchor, keeping the anchor', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
+    expect(tabs.tabs.map((t) => t.title)).toEqual(['a.txt ↔ a2.txt', 'b.txt ↔ b2.txt'])
+  })
+
+  it('closes to the left of the anchor, keeping the anchor', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[2].id, 'close-left')
+    expect(tabs.tabs.map((t) => t.title)).toEqual(['c.txt ↔ c2.txt', 'd.txt ↔ d2.txt'])
+  })
+
+  it('closes every other tab, leaving the anchor active', () => {
+    const tabs = fourSaved()
+    const anchor = tabs.tabs[1].id
+    tabs.requestMenuAction(anchor, 'close-others')
+    expect(tabs.tabs).toHaveLength(1)
+    expect(tabs.activeId).toBe(anchor)
+  })
+
+  // close() already refuses to leave an empty window; Close All rides on that
+  // rather than inventing a second empty state.
+  it('close-all leaves one blank comparison, not an empty window', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-all')
+    expect(tabs.tabs).toHaveLength(1)
+    expect(tabs.visible).toBe(true)
+    expect(useDiffStore().left).toBeNull()
+    expect(useDiffStore().right).toBeNull()
+  })
+
+  it('moves off a closed active tab onto a survivor', () => {
+    const tabs = fourSaved()
+    tabs.activate(tabs.tabs[3].id)
+    tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
+    expect(tabs.activeId).toBe(tabs.tabs[1].id)
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('asks ONCE for a bulk close, listing every unsaved tab it would take', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    saved(tabs, 'saved.txt', 'saved2.txt')
+    tabs.open(comparison('dirty1.txt', 'x.txt'))
+    tabs.open(comparison('dirty2.txt', 'y.txt'))
+
+    tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
+    expect(diff.pendingTabClose).toHaveLength(2)
+    expect(tabs.tabs).toHaveLength(4)
+
+    diff.confirmTabClose()
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('closes without asking when nothing in the set is unsaved', () => {
+    const diff = useDiffStore()
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-right')
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(1)
+  })
+
+  it('keeps every tab when the prompt is declined', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    tabs.open(comparison('dirty.txt', 'x.txt'))
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-all')
+    expect(diff.pendingTabClose).toBeTruthy()
+
+    diff.cancelTabClose()
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('does nothing for an action that would close nothing', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-left')
+    expect(tabs.tabs).toHaveLength(4)
+    expect(useDiffStore().pendingTabClose).toBeNull()
   })
 })
 

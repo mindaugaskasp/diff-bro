@@ -300,8 +300,9 @@ export const useDiffStore = defineStore('diff', {
     // Bumped by DiffViewer on every onDidUpdateDiff — the only honest signal
     // that Monaco's diff worker has returned and its decorations are painted.
     diffRevision: 0,
-    // Tab id awaiting a discard confirmation, or null. Closing a tab is the one
-    // way paste-mode text can be lost — it exists nowhere else.
+    // The tab ids awaiting a discard confirmation, or null. Closing a tab is the
+    // one way paste-mode text can be lost — it exists nowhere else. A SET, so a
+    // bulk close asks once rather than once per tab.
     pendingTabClose: null,
     // Content last dismissed per side, so the format-hint banner stays gone until
     // that side's content changes.
@@ -590,9 +591,9 @@ export const useDiffStore = defineStore('diff', {
       if (tabs.activeId) tabs.requestClose(tabs.activeId)
     },
     confirmTabClose() {
-      const id = this.pendingTabClose
+      const ids = this.pendingTabClose
       this.pendingTabClose = null
-      if (id) useTabsStore().close(id)
+      if (ids?.length) useTabsStore().closeMany(ids)
     },
     cancelTabClose() {
       this.pendingTabClose = null

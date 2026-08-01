@@ -1697,7 +1697,7 @@ describe('closing the active comparison from the menu', () => {
     tabs.syncActiveTitle()
 
     store.handleMenuAction('tab-close')
-    expect(store.pendingTabClose).toBe(tabs.activeId)
+    expect(store.pendingTabClose).toEqual([tabs.activeId])
     expect(tabs.tabs).toHaveLength(1)
 
     store.confirmTabClose()

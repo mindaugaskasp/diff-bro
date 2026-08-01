@@ -152,6 +152,27 @@ export function nextActiveId(tabs, closingId, activeId) {
 }
 
 /**
+ * Which tab to show once a whole SET goes. Same convention as nextActiveId —
+ * right, then left — but resolved against every survivor at once, so a bulk
+ * close lands somewhere real instead of hopping through the tabs it is
+ * removing.
+ * @param {DiffTab[]} tabs   before the close
+ * @param {string[]} closingIds
+ * @param {string} activeId
+ * @returns {string|null}    null when nothing survives
+ */
+export function nextActiveIdAfterClosing(tabs, closingIds, activeId) {
+  const list = tabs ?? []
+  const closing = new Set(closingIds ?? [])
+  if (!list.some((t) => !closing.has(t.id))) return null
+  if (!closing.has(activeId)) return activeId
+  const from = list.findIndex((t) => t.id === activeId)
+  for (let i = from + 1; i < list.length; i++) if (!closing.has(list[i].id)) return list[i].id
+  for (let i = from - 1; i >= 0; i--) if (!closing.has(list[i].id)) return list[i].id
+  return null
+}
+
+/**
  * A tab with the same comparison already open, so the sidebar focuses it
  * instead of stacking duplicates.
  * @param {DiffTab[]} tabs

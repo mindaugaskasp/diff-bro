@@ -235,4 +235,15 @@
  * @property {boolean} [truncated]  the diff outran the export's height ceiling
  */
 
+/**
+ * One row of the tab context menu. A separator carries only `sep`; every other
+ * item is always present and answers `enabled` instead of being dropped, so the
+ * menu's shape does not change with the tab it was opened on.
+ * @typedef {object} TabMenuItem
+ * @property {import('./utils/tabMenu').TabMenuAction} [action]
+ * @property {string} [label]
+ * @property {boolean} [enabled]
+ * @property {true} [sep]
+ */
+
 export {}

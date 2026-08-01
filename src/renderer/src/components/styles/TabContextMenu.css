@@ -1,0 +1,59 @@
+/* A menu floating over the comparison, so it takes the raised surface role and
+   the popover shadow level. The keyline is doing the real work, not the shadow:
+   --shadow-rgb is 0 0 0 on every theme but meridian, linen and bloom, so on the
+   seven dark grounds the drop lands black on near-black and separates nothing.
+   The border carries it everywhere; the shadow is a bonus where it tints. */
+.ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.ctx {
+  position: fixed;
+  min-width: 232px;
+  padding: var(--space-1) 0;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--font-md);
+  text-align: left;
+  cursor: pointer;
+}
+/* Pointer and keyboard land on the same highlight, so there is never a second
+   "where am I" marker competing with the first. */
+.ctx-item:hover:not(:disabled),
+.ctx-item.hot:not(:disabled) {
+  background: var(--bg-hover);
+}
+/* Disabled, never hidden: an item that vanished would move the ones under it,
+   so the same click would mean different things on different tabs. */
+.ctx-item:disabled {
+  color: var(--text-dim);
+  opacity: 0.45;
+  cursor: default;
+}
+.ctx-item.danger:not(:disabled) {
+  color: var(--accent);
+  font-weight: 600;
+}
+.ctx-item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.ctx-sep {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--border);
+}
