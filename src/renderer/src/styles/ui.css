@@ -415,16 +415,20 @@
   background: none;
   color: var(--text);
 }
-/* Picked: a SOLID inked pill against an outlined one. Two tints of the same hue
+/* Applied: a SOLID inked pill against an outlined one. Two tints of the same hue
    were indistinguishable; fill-vs-no-fill reads before the colour does. The
    label flips to the ground colour, which is dark on light themes and light on
-   dark ones, so it stays legible either way. */
-.tag-chip.on {
+   dark ones, so it stays legible either way. `.on` is a filter chip you picked;
+   `.etag` is a tag the diff or snippet already carries — applied either way, and
+   the state that actually shows the colour, which an outline could not. */
+.tag-chip.on,
+.tag-chip.etag {
   background: var(--tag-ink);
   border-color: var(--tag-ink);
   color: var(--bg);
 }
-.tag-chip.on .tglyph {
+.tag-chip.on .tglyph,
+.tag-chip.etag .tglyph {
   color: var(--bg);
 }
 .tag-chip.on .usb-dot {
@@ -458,6 +462,7 @@ button.tag-chip:hover .usb-dot {
 }
 .tag-chip.on .ct,
 .tag-chip.on .usb-tct,
+.tag-chip.etag .ct,
 button.tag-chip:hover .ct,
 button.tag-chip:hover .usb-tct {
   color: inherit;
