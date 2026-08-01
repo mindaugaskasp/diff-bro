@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../../../src/renderer/src/utils/markdownMarkup'
+import {
+  MARKDOWN_ACTIONS,
+  applyMarkdownAction
+} from '../../../src/renderer/src/utils/markdownMarkup'
 
 // Selection [start,end) over `text`.
 const model = (text, start, end = start) => ({ text, start, end })

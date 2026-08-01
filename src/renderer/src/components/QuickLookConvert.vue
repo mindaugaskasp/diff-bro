@@ -53,7 +53,12 @@ watch(
 <template>
   <div class="qc" @keydown.escape="$emit('back')" @keydown="onKeydown">
     <div class="qc-head band">
-      <button class="btn btn-icon qc-back" data-tip="Back (Esc)" @click="$emit('back')">
+      <button
+        class="btn btn-icon qc-back"
+        data-tip="Back (Esc)"
+        aria-label="Back to the results"
+        @click="$emit('back')"
+      >
         <AppIcon name="chevron-left" />
       </button>
       <AppIcon :name="headIcon" class="qc-ico" />

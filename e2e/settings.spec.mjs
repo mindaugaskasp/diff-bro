@@ -28,3 +28,27 @@ test.describe('Settings domain panes', () => {
     await expect(page.getByRole('heading', { name: 'Logs' })).toBeVisible()
   })
 })
+
+// Every Settings pane links the shared pane CSS. CliSettings did not, and
+// scoped styles cannot reach into a child — so the Terminal pane rendered its
+// path as bare body text with no box at all.
+test('the Terminal pane is styled like every other Settings pane', async ({ page }) => {
+  await openSettings(page)
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+
+  await dialog.getByRole('button', { name: 'Storage', exact: true }).click()
+  const storageBox = await dialog.locator('.path').evaluate((el) => {
+    const s = getComputedStyle(el)
+    return { border: s.borderTopWidth, radius: s.borderTopLeftRadius, display: s.display }
+  })
+  expect(storageBox.display).toBe('flex')
+  expect(parseFloat(storageBox.border)).toBeGreaterThan(0)
+
+  await dialog.getByRole('button', { name: 'Terminal', exact: true }).click()
+  await expect(dialog.locator('.path')).toBeVisible()
+  const cliBox = await dialog.locator('.path').evaluate((el) => {
+    const s = getComputedStyle(el)
+    return { border: s.borderTopWidth, radius: s.borderTopLeftRadius, display: s.display }
+  })
+  expect(cliBox).toEqual(storageBox)
+})

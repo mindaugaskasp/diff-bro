@@ -11,7 +11,7 @@
 export function tabsFullMessage(files, max) {
   const names = (files ?? []).map((f) => String(f).split(/[\\/]/).pop()).filter(Boolean)
   const subject = names.length ? names.join(' and ') : 'those files'
-  return `Can't open ${subject} — all ${max} tabs are in use. Close a tab and try again.`
+  return `Can't open ${subject} — all ${max} comparisons are in use. Close one and try again.`
 }
 
 /**

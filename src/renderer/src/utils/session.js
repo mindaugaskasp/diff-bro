@@ -31,6 +31,11 @@ function readSide(side) {
   return {
     path: str(side.path, null) || null,
     name: str(side.name, 'Untitled'),
+    // The refresh guard needs its baseline back, or a restored formatted side
+    // reports a change nobody made (see diffStore._reloadSlot).
+    ...(side.edited === true
+      ? { edited: true, diskContent: str(side.diskContent, null) ?? undefined }
+      : {}),
     ...text,
     ...grid
   }
@@ -54,7 +59,8 @@ export function readSnapshot(raw) {
     pasteLeftName: str(raw.pasteLeftName),
     pasteRightName: str(raw.pasteRightName),
     renderSideBySide: raw.renderSideBySide !== false,
-    ignoreTrimWhitespace: raw.ignoreTrimWhitespace === true
+    ignoreTrimWhitespace: raw.ignoreTrimWhitespace === true,
+    semanticView: raw.semanticView === true
   }
 }
 

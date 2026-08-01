@@ -94,6 +94,8 @@ const pickTag = (name) => (activeTags.value = toggleTag(activeTags.value, name))
           class="star"
           :class="{ on: favOnly }"
           data-tip="Show only diffs and snippets you starred"
+          aria-label="Show only starred diffs and snippets"
+          :aria-pressed="favOnly"
           @click="favOnly = !favOnly"
         >
           <AppIcon name="star-filled" />

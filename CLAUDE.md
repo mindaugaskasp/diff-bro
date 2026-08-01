@@ -46,7 +46,10 @@ regression test from decoration.
    auto-update, no CDN assets — ever.
 2. **New dependencies need a network audit.** Before adding any package:
    confirm it makes no runtime network calls, then run `npm audit`. Prefer
-   zero new production dependencies.
+   zero new production dependencies. `yaml` (structure-aware comparison) passed
+   this: zero runtime deps, no network/`eval`/`child_process` in its shipped
+   code, no install scripts, clean audit. Parsing runs with `maxAliasCount` so
+   an anchor bomb cannot expand.
 3. **Renderer never touches Node or Electron.** All fs, dialog, and crypto
    work lives in the main process behind small, validated IPC handlers.
    The renderer talks only to `window.api` (preload). ESLint enforces this
@@ -56,10 +59,17 @@ regression test from decoration.
    `safeStorage` in userData. Never add an IPC handler that returns key
    material to the renderer.
 5. **Crypto invariants** (see `src/main/sealing.js` and `vaultCrypt.js`):
-   sealed shares are sign-then-encrypt, bound to one recipient in both the
-   signature (payload ‖ recipient-fp) and the GCM AAD; saved-diff metadata
-   is authenticated as AAD; expiry is capped at 24 h and enforced on both
-   the sealing and opening side. Any change to these files requires
+   sealed shares are sign-then-encrypt, bound to the AUDIENCE (the sorted,
+   digested recipient set — see `audienceOf`) in both the signature
+   (payload ‖ audience) and the content GCM AAD, with each per-recipient
+   wrapped content key additionally bound by `format ‖ recipient-fp ‖ audience`.
+   Never weaken that to a single fingerprint, and never let the list travel
+   unbound; saved-diff metadata
+   is authenticated as AAD; expiry is capped at ONE WEEK (`MAX_TTL_MS` /
+   `MAX_KEEP_HOURS` — keep the two in step) and enforced on both the sealing
+   and opening side. The sender picks the window and the recipient gets that
+   same window; a `.diffbro` has no replay protection by design, so this
+   ceiling IS the replay window. Any change to these files requires
    updating `tests/` in the same change AND re-verifying the share
    roundtrip in the Docker env.
 6. **Untrusted input is hostile.** Files chosen for import (`.diffbro`,

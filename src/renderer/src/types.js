@@ -17,6 +17,10 @@
  * @property {SheetGrid[]} [sheets]  parsed worksheets when kind === 'spreadsheet'
  * @property {string} [encoding]
  * @property {number} [size]    bytes on disk
+ * @property {boolean} [edited] the app rewrote this copy (Format), so it is no
+ *   longer the file on disk — see diffStore._reloadSlot
+ * @property {string} [diskContent] what was read before that rewrite, the
+ *   baseline the on-focus refresh measures a disk change against
  */
 
 /**

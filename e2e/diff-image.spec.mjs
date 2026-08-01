@@ -1,7 +1,7 @@
 import { readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { test, expect, stubSaveDialog } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, stubSaveDialog } from './fixtures.mjs'
 
 // Exporting a saved diff as an image is only real in a launched app: the picture
 // is taken by webContents.capturePage in the MAIN process, and copying it puts a
@@ -390,4 +390,44 @@ test('opening a saved diff never flashes "both sides are identical"', async ({ p
 test('two genuinely identical sides still say so', async ({ page }) => {
   await pasteCompare(page, 'same\nlines', 'same\nlines')
   await expect(page.locator('.identical-row')).toBeVisible()
+})
+
+// The shutter captures a page-coordinate rect, so anything floating over the
+// diff area lands in the picture. A click on the Image button dismisses its own
+// tooltip (pointerdown), but triggering the export from the application menu
+// never touches the pointer — the tip stays up, right over the top of the region
+// being photographed. `.capturing` cannot reach it either: the tooltip is
+// teleported to <body>, outside the region's element tree.
+test('a hovering tooltip is not photographed with the diff', async ({ app, page }) => {
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByPlaceholder('Paste original text here').fill('alpha\nbeta')
+  await page.getByPlaceholder('Paste changed text here').fill('alpha\nGAMMA')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await expect(page.locator('.diff-container')).toBeVisible()
+
+  await page.getByRole('button', { name: /^Image/ }).hover()
+  await expect(page.locator('.tip-bubble')).toBeVisible()
+
+  // Sample the DOM while the shutter is open: `.content.capturing` is exactly
+  // that window, and nothing may float over the region during it. Checking only
+  // after the dialog appears proves nothing — opening it steals focus, which
+  // dismisses the tip long after the picture was already taken.
+  await page.evaluate(() => {
+    window.__tipLeak = false
+    window.__tipTimer = setInterval(() => {
+      if (document.querySelector('.content.capturing') && document.querySelector('.tip-bubble')) {
+        window.__tipLeak = true
+      }
+    }, 5)
+  })
+
+  // The menu path leaves the pointer — and the tip — exactly where they were.
+  await clickAppMenuItem(app, 'Export Diff as Image…')
+  await expect(page.getByRole('dialog', { name: 'Export as image' })).toBeVisible()
+
+  const leaked = await page.evaluate(() => {
+    clearInterval(window.__tipTimer)
+    return window.__tipLeak
+  })
+  expect(leaked).toBe(false)
 })

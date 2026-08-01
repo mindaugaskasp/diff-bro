@@ -56,3 +56,5 @@ async function run(fn) {
     </div>
   </section>
 </template>
+
+<style scoped src="./styles/SettingsDialog.css"></style>

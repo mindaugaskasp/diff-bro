@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
-import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
+import {
+  MAX_KEEP_HOURS,
+  TTL_OPTIONS,
+  useVaultStore
+} from '../../../src/renderer/src/stores/vaultStore'
 import { TAG_PALETTE, useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 
 const KEY = randomBytes(32)
@@ -55,11 +59,11 @@ describe('vaultStore', () => {
     expect(raw).not.toContain('secret left')
   })
 
-  it('clamps the TTL to the 24 h maximum', async () => {
+  it('clamps the TTL to the keep ceiling', async () => {
     const vault = useVaultStore()
     await vault.save('long', 9999, PAYLOAD)
     const entry = vault.entries[0]
-    expect(entry.expiresAt - entry.createdAt).toBeLessThanOrEqual(24 * 3600_000)
+    expect(entry.expiresAt - entry.createdAt).toBeLessThanOrEqual(MAX_KEEP_HOURS * 3600_000)
   })
 
   it('ttlHours null saves a kept (non-expiring) diff that survives tick and loads', async () => {
@@ -72,14 +76,14 @@ describe('vaultStore', () => {
     await expect(vault.load(id)).resolves.toEqual(PAYLOAD)
   })
 
-  it('sharing a kept diff seals it with a fresh ≤24 h expiry', async () => {
+  it('sharing a kept diff seals it with a fresh full-length expiry', async () => {
     const vault = useVaultStore()
     let sealed = null
     window.api.shareExport = async (entry) => ((sealed = entry), { ok: true, to: 'bob' })
     const id = await vault.save('kept', null, PAYLOAD)
     await vault.share(id, 'FP')
     expect(sealed.expiresAt).toBeGreaterThan(Date.now())
-    expect(sealed.expiresAt - sealed.createdAt).toBeLessThanOrEqual(24 * 3600_000)
+    expect(sealed.expiresAt - sealed.createdAt).toBe(MAX_KEEP_HOURS * 3600_000)
   })
 
   it('sharing a secure diff keeps its own timestamps', async () => {
@@ -132,7 +136,7 @@ describe('vaultStore', () => {
     expect(vault.entries).toHaveLength(0)
   })
 
-  it('shareDraft: a kept draft seals a fresh ≤24 h copy but keeps the local twin', async () => {
+  it('shareDraft: a kept draft seals a fresh full-length copy, twin stays kept', async () => {
     const vault = useVaultStore()
     let sealed = null
     window.api.shareExport = async (entry) => (
@@ -141,7 +145,7 @@ describe('vaultStore', () => {
     )
     await vault.shareDraft({ name: 'kept', ttlHours: null, snapshot: PAYLOAD, tags: [] }, 'FP')
     expect(sealed.expiresAt).toBeGreaterThan(Date.now())
-    expect(sealed.expiresAt - sealed.createdAt).toBeLessThanOrEqual(24 * 3600_000)
+    expect(sealed.expiresAt - sealed.createdAt).toBe(MAX_KEEP_HOURS * 3600_000)
     expect(vault.entries[0].expiresAt).toBe(null)
   })
 
@@ -515,5 +519,66 @@ describe('vaultStore', () => {
     const vault = useVaultStore()
     expect(vault.entries[0].tags).toEqual([])
     expect(typeof vault.entries[0].name).toBe('string')
+  })
+})
+
+// One ceiling for kept and sealed both, enforced by sealing.js at each end.
+describe('how long a diff lives', () => {
+  const HOUR = 3600_000
+
+  it('keeps a local diff for as long as a week', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('week long', 168, PAYLOAD)
+    const entry = vault.entries.find((e) => e.id === id)
+    expect(entry.expiresAt - Date.now()).toBeGreaterThan(167 * HOUR)
+    await expect(vault.load(id)).resolves.toEqual(PAYLOAD)
+  })
+
+  it('offers a week as the longest option, and nothing beyond it', () => {
+    expect(TTL_OPTIONS.map((o) => o.hours)).toEqual([1, 8, 24, 48, 72, 168])
+    expect(Math.max(...TTL_OPTIONS.map((o) => o.hours))).toBe(MAX_KEEP_HOURS)
+  })
+
+  it('clamps a TTL asked for beyond the ceiling', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('too long', 10_000, PAYLOAD)
+    const entry = vault.entries.find((e) => e.id === id)
+    expect(entry.expiresAt - Date.now()).toBeLessThanOrEqual(MAX_KEEP_HOURS * HOUR + 1000)
+  })
+
+  it('sends the expiry the sender chose, not a shorter one of its own', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('week long', 168, PAYLOAD)
+    const entry = vault.entries.find((e) => e.id === id)
+    let sealed = null
+    window.api.shareExport = async (e) => ((sealed = e), { ok: true })
+
+    await vault.share(id, 'FP')
+    // Both copies die at the same moment — that is the point of sending it.
+    expect(sealed.createdAt).toBe(entry.createdAt)
+    expect(sealed.expiresAt).toBe(entry.expiresAt)
+    expect(sealed.expiresAt - sealed.createdAt).toBeGreaterThan(167 * HOUR)
+  })
+
+  it('still sends a short diff on its original clock, so it dies together', async () => {
+    const vault = useVaultStore()
+    const id = await vault.save('short', 8, PAYLOAD)
+    const entry = vault.entries.find((e) => e.id === id)
+    let sealed = null
+    window.api.shareExport = async (e) => ((sealed = e), { ok: true })
+
+    await vault.share(id, 'FP')
+    expect(sealed.createdAt).toBe(entry.createdAt)
+    expect(sealed.expiresAt).toBe(entry.expiresAt)
+  })
+
+  it('shareDraft seals the chosen week, and the local twin matches it', async () => {
+    const vault = useVaultStore()
+    let sealed = null
+    window.api.shareExport = async (entry) => ((sealed = entry), { ok: true })
+
+    await vault.shareDraft({ name: 'wk', ttlHours: 168, snapshot: PAYLOAD, tags: [] }, 'FP')
+    expect(sealed.expiresAt - sealed.createdAt).toBeGreaterThan(167 * HOUR)
+    expect(vault.entries[0].expiresAt - Date.now()).toBeGreaterThan(167 * HOUR)
   })
 })

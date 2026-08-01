@@ -10,5 +10,8 @@ export const xlsxAdapter = {
   /** @returns {import('../types').SpreadsheetComparable} */
   toComparable(file) {
     return { kind: 'spreadsheet', sheets: file.sheets ?? [] }
-  }
+  },
+  // A grid, never a `content` string: comparing that put undefined against
+  // undefined and no workbook ever looked changed.
+  sameContent: (a, b) => JSON.stringify(a?.sheets ?? null) === JSON.stringify(b?.sheets ?? null)
 }

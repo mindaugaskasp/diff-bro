@@ -87,7 +87,7 @@ function exportTag() {
     <div class="manage" @click.stop>
       <div class="manage-head">
         <span>Manage tag</span>
-        <button class="dialog-close" data-tip="Close" @click="closeManage">
+        <button class="dialog-close" data-tip="Close" aria-label="Close" @click="closeManage">
           <AppIcon name="x" />
         </button>
       </div>
@@ -107,6 +107,7 @@ function exportTag() {
           :style="{ background: c }"
           :aria-pressed="managing.color === c"
           :data-tip="c"
+          :aria-label="`Use colour ${c}`"
           @click="applyColor(c)"
         ></button>
       </div>

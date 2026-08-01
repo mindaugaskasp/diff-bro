@@ -41,7 +41,7 @@ contextBridge.exposeInMainWorld('api', {
   // Sealed diff sharing (sign-then-encrypt, keys managed in main).
   listTrustedKeys: () => ipcRenderer.invoke('share:listTrusted'),
   myFingerprint: () => ipcRenderer.invoke('share:myFingerprint'),
-  shareExport: (entry, recipientFp) => ipcRenderer.invoke('share:export', entry, recipientFp),
+  shareExport: (entry, recipientFps) => ipcRenderer.invoke('share:export', entry, recipientFps),
   shareImport: () => ipcRenderer.invoke('share:import'),
   // Drag-drop variant: import a sealed .diffbro dropped on the window, by path.
   shareImportPath: (path) => ipcRenderer.invoke('share:importPath', path),

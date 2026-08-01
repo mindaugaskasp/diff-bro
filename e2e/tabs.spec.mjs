@@ -358,3 +358,97 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
   await chip('alpha').click()
   await expect(page.locator('li.diff')).toHaveCount(1)
 })
+
+// The tab you are looking at IS the live document: its snapshot is only
+// refreshed when tabs switch, so anything that asks the snapshot about it is
+// asking a stale copy. That let the × discard unsaved work in silence.
+test('the × on the ACTIVE tab confirms before discarding its work', async ({ page }) => {
+  await compare(page, 'first-left', 'first-right')
+  await addTab(page).click()
+  await compare(page, 'precious', 'PRECIOUS')
+
+  await clickClose(page, 1)
+  const dialog = page.getByRole('dialog', { name: 'Close comparison?' })
+  await expect(dialog).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Keep it open' }).click()
+  await expect(tabs(page)).toHaveCount(2)
+  await expect(inDiff(page, 'precious').first()).toBeVisible()
+})
+
+// The unsaved marker read the same stale snapshot, so it was wrong in both
+// directions on the one tab a reader is actually looking at.
+test('the unsaved marker follows the comparison on screen', async ({ page }) => {
+  const dot = () => tabs(page).first().locator('.dirty')
+  // A blank tab holds nothing to lose, so it is not "unsaved".
+  await expect(dot()).toHaveCount(0)
+
+  await compare(page, 'alpha', 'beta')
+  await expect(dot()).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const save = page.getByRole('dialog', { name: 'Save diff' })
+  await save.getByLabel('Name', { exact: true }).fill('Marked diff')
+  await save.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.locator('li.diff', { hasText: 'Marked diff' })).toBeVisible()
+  // Saved — and the marker goes now, not on the next tab switch.
+  await expect(dot()).toHaveCount(0)
+
+  // Editing it brings the marker straight back.
+  await page.getByRole('button', { name: 'Swap sides' }).click()
+  await expect(dot()).toHaveCount(1)
+})
+
+// The dialog names the comparison, and a name the reader typed IS its name.
+test('the close confirmation calls a renamed tab by its name', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  await tabs(page).first().locator('.tab-open').dblclick()
+  await page.locator('.diff-tabs .tab-rename').fill('prod vs staging')
+  await page.locator('.diff-tabs .tab-rename').press('Enter')
+
+  await addTab(page).click()
+  await clickClose(page, 0)
+  await expect(page.getByRole('dialog', { name: 'Close comparison?' })).toContainText(
+    'prod vs staging'
+  )
+})
+
+// The label watcher listed pasteLeft but not pasteRight, so filling only the
+// "Changed" pane left the tab reading Untitled while the "Original" pane
+// retitled it immediately.
+test('a tab retitles from either paste pane', async ({ page }) => {
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await expect(tabs(page).first()).toContainText('Untitled')
+
+  await page.getByPlaceholder('Paste changed text here').fill('right-hand side only')
+  await expect(tabs(page).first()).toContainText('Pasted text')
+})
+
+// Saving a comparison that is already in the vault only ever added a second row
+// saying the same thing, so the action is not offered until something changes.
+test('a comparison cannot be saved twice into two rows', async ({ page }) => {
+  await compare(page, 'alpha', 'beta')
+  const save = page.getByRole('button', { name: 'Save', exact: true })
+  await expect(save).toBeEnabled()
+
+  await save.click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill('Only once')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.locator('li.diff', { hasText: 'Only once' })).toBeVisible()
+
+  // Nothing has changed, so there is nothing to save.
+  await expect(save).toBeDisabled()
+
+  // Editing it offers the save again — and it rewrites the diff it came from
+  // rather than stacking a duplicate beside it.
+  await page.getByRole('button', { name: 'Swap sides' }).click()
+  await expect(save).toBeEnabled()
+  await save.click()
+  const update = page.getByRole('dialog', { name: 'Update diff' })
+  await expect(update.getByLabel('Name', { exact: true })).toHaveValue('Only once')
+  await update.getByRole('button', { name: 'Update', exact: true }).click()
+
+  await expect(page.locator('li.diff')).toHaveCount(1)
+  await expect(save).toBeDisabled()
+})

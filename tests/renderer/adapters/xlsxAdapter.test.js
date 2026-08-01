@@ -29,3 +29,28 @@ describe('xlsxAdapter', () => {
     })
   })
 })
+
+// Only the adapter knows what a side's content IS: asking `content` of a
+// spreadsheet compares undefined to undefined.
+describe('sameContent', () => {
+  const grid = (v) => sheetFile([{ name: 'S1', rows: [['a', v]] }])
+
+  it('sees a changed grid, and an unchanged one', () => {
+    expect(xlsxAdapter.sameContent(grid(1), grid(1))).toBe(true)
+    expect(xlsxAdapter.sameContent(grid(2), grid(1))).toBe(false)
+  })
+
+  it('sees a sheet added or removed', () => {
+    const two = sheetFile([
+      { name: 'S1', rows: [] },
+      { name: 'S2', rows: [] }
+    ])
+    expect(xlsxAdapter.sameContent(two, sheetFile([{ name: 'S1', rows: [] }]))).toBe(false)
+  })
+
+  it('text compares its content, and copes with a missing side', () => {
+    expect(textAdapter.sameContent({ content: 'a' }, { content: 'a' })).toBe(true)
+    expect(textAdapter.sameContent({ content: 'a' }, { content: 'b' })).toBe(false)
+    expect(xlsxAdapter.sameContent(grid(1), null)).toBe(false)
+  })
+})

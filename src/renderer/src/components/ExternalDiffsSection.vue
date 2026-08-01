@@ -67,7 +67,11 @@ function startImport() {
     <div v-show="open" class="section-body">
       <p v-if="!hasImported" class="empty"><AppIcon name="inbox" /> Empty</p>
 
-      <ul v-if="rows.length" class="rows">
+      <ul v-else class="rows">
+        <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
+        <li v-if="!rows.length" class="empty small">
+          No shared diffs match — try removing a filter.
+        </li>
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>
     </div>

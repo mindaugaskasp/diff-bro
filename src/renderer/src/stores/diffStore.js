@@ -1,6 +1,8 @@
 import { toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
+import { structureAdapter } from '../adapters/structureAdapter'
+import { diffStructures, structuredKind } from '../utils/structuralDiff'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
@@ -34,7 +36,7 @@ const SHARE_ERRORS = {
     'Sealed correctly, but signed by an unknown sender — add their public key first (File → Add Trusted Key).',
   'bad-signature': 'Signature check failed — the file was modified or corrupted.',
   expired: 'This shared diff has already expired.',
-  'invalid-ttl': 'Rejected: shared diffs cannot live longer than 24 hours.',
+  'invalid-ttl': 'Rejected: shared diffs cannot live longer than a week.',
   'unknown-recipient': 'Recipient not found among trusted keys.',
   renamed:
     'This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.',
@@ -45,6 +47,7 @@ const SHARE_ERRORS = {
 }
 
 let noticeTimer = null
+let diskNoticeTimer = null
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme
@@ -114,6 +117,19 @@ function comparedSides(s) {
   return [s.left ?? { name: 'Left', content: '' }, s.right ?? { name: 'Right', content: '' }]
 }
 
+const reloadedNote = (names) => {
+  if (!names.length) return ''
+  if (names.length === 1) return `"${names[0]}" changed on disk — diff reloaded.`
+  return `${names.length} files changed on disk — diff reloaded.`
+}
+const heldNote = (names) => {
+  if (!names.length) return ''
+  const which = names.length === 1 ? `"${names[0]}"` : `${names.length} files`
+  return `${which} changed on disk — your formatted copy was kept. Open it again to take the new one.`
+}
+
+export const DISK_NOTICE_MS = 10_000
+
 // Frames to let Monaco lay out and tokenize a restored diff before the shot.
 const CAPTURE_FRAMES = 4
 // Frames for a scrolled viewport to render its new lines between slices.
@@ -125,7 +141,7 @@ const MENU_ACTIONS = {
   'open-left': (s) => s.pick('left'),
   'open-right': (s) => s.pick('right'),
   save: (s) => {
-    if (s.canSave) s.showSaveDialog = true
+    if (s.hasUnsavedWork) s.showSaveDialog = true
   },
   'share-current': (s) => s.shareCurrent(),
   swap: (s) => s.swap(),
@@ -141,6 +157,9 @@ const MENU_ACTIONS = {
   'import-snippets': (s) => s.importSnippets(),
   'toggle-paste': (s) => s.togglePasteMode(),
   'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
+  'toggle-structure': (s) => {
+    if (s.canCompareStructure) s.semanticView = !s.semanticView
+  },
   'toggle-theme': (s) => s.toggleTheme(),
   'import-shared': (s) => s.importShared(),
   'export-pubkey': (s) => (s.showShareKeyDialog = true),
@@ -171,6 +190,10 @@ export const useDiffStore = defineStore('diff', {
     left: null, // { path, name, content, encoding, size }
     right: null,
     renderSideBySide: true,
+    // Compare the two sides as data rather than as lines, when both parse.
+    semanticView: false,
+    // Unchanged rows are most of a config file; off, the tree shows only what moved.
+    structureShowAll: false,
     ignoreTrimWhitespace: false,
     // 'files' shows the diff viewer, 'paste' shows the two-textarea input.
     mode: 'files',
@@ -190,6 +213,8 @@ export const useDiffStore = defineStore('diff', {
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
     notice: null,
+    // A file moved under the comparison: its own dismissible label, not a toast.
+    diskNotice: null,
     // The `diffbro compare` refusal when every tab is in use (utils/cli message).
     cliBlocked: null,
     // save-diff dialog visibility
@@ -264,17 +289,49 @@ export const useDiffStore = defineStore('diff', {
     // Two sides that diff to nothing — an affirmative "identical" state.
     identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
     // A comparison is actually on screen to photograph. Paste mode shows two
-    // textareas, not a diff, so there is nothing to take a picture of there.
-    canExportImage: (s) => s.mode !== 'paste' && !!s.left && !!s.right,
+    // textareas, not a diff. The spreadsheet grid scrolls inside itself with no
+    // scroller to drive, so the shutter could only ever catch the visible slice
+    // — it is refused rather than silently truncated.
+    canExportImage() {
+      return this.mode !== 'paste' && !!this.left && !!this.right && !this.isSpreadsheet
+    },
+    isSpreadsheet() {
+      return (
+        this.leftComparable?.kind === 'spreadsheet' || this.rightComparable?.kind === 'spreadsheet'
+      )
+    },
+    // Distinct from canSave, which only asks whether a comparison is here at all
+    // (Share and the paste-mode Compare want that one).
+    hasUnsavedWork() {
+      return this.canSave && !this.diffSaved
+    },
     canSave: (s) =>
       s.mode === 'paste'
         ? !!(s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile)
         : s.ready,
     leftComparable: (s) => (s.left ? resolveAdapter(s.left).toComparable(s.left) : null),
     rightComparable: (s) => (s.right ? resolveAdapter(s.right).toComparable(s.right) : null),
+    // The format both sides are, or null when a structural comparison is not on
+    // offer (different formats, unparseable, or not structured at all).
+    structuredFormat: (s) =>
+      s.ready && s.left?.content !== undefined && s.right?.content !== undefined
+        ? structuredKind(s.left, s.right)
+        : null,
+    canCompareStructure() {
+      return !!this.structuredFormat
+    },
+    structureDiff() {
+      const kind = this.structuredFormat
+      if (!kind) return null
+      const left = structureAdapter.toComparable(this.left, kind)
+      const right = structureAdapter.toComparable(this.right, kind)
+      if (left.error || right.error) return null
+      return diffStructures(left.value, right.value)
+    },
     // Which viewer the loaded comparison needs: 'text' (Monaco) or 'spreadsheet'
     // (grid). Text is the default so an empty/paste state routes to Monaco.
     comparableKind() {
+      if (this.semanticView && this.canCompareStructure) return 'tree'
       return this.leftComparable?.kind ?? this.rightComparable?.kind ?? 'text'
     },
     leftFormatHint: (s) => formatHintFor(s.left, s.dismissedFormatHint.left),
@@ -361,6 +418,9 @@ export const useDiffStore = defineStore('diff', {
         return this.showNotice('This saved diff has expired or could not be decrypted.')
       }
       this.restore(payload)
+      if (this.isSpreadsheet) {
+        return this.showNotice('Image export is not available for spreadsheet comparisons yet.')
+      }
       // Restoring replaces the models, so there is never a selection to honour.
       const res = await this._shoot({ awaitRediff: true })
       if (res?.error) return this.showNotice('Could not take a picture of this diff.')
@@ -369,6 +429,9 @@ export const useDiffStore = defineStore('diff', {
     // Export what is on screen right now, saved or not. Lines selected in either
     // pane narrow the picture to just those; with none it covers the whole diff.
     async exportCurrentImage() {
+      if (this.isSpreadsheet) {
+        return this.showNotice('Image export is not available for spreadsheet comparisons yet.')
+      }
       if (!this.canExportImage) return this.showNotice('Nothing to export yet.')
       const res = await this._shoot({ band: getDiffScroller()?.selection() ?? null })
       if (res?.error) return this.showNotice('Could not take a picture of this diff.')
@@ -460,17 +523,9 @@ export const useDiffStore = defineStore('diff', {
         ttlHours ? `Saved — expires in ${ttlHours} h.` : 'Saved — kept until you delete it.'
       )
     },
-    // Closing the active tab from a menu or accelerator takes the same confirm
-    // path the tab's own × does. Whether there is anything to lose comes from
-    // the LIVE document, not the tab's snapshot: a snapshot is only captured
-    // when tabs switch, so the tab you are looking at still reads as blank
-    // while it holds work — and the confirm never appeared.
     requestActiveTabClose() {
       const tabs = useTabsStore()
-      const tab = tabs.active
-      if (!tab) return
-      if (!this.diffSaved && this.hasActive) this.pendingTabClose = tab.id
-      else tabs.close(tab.id)
+      if (tabs.activeId) tabs.requestClose(tabs.activeId)
     },
     confirmTabClose() {
       const id = this.pendingTabClose
@@ -662,19 +717,14 @@ export const useDiffStore = defineStore('diff', {
         this.pasteIntoPasteFields(text)
       }
     },
-    // Two copied files become the two sides; one fills the first free side.
-    // Returns true when the clipboard held files and they were loaded.
+    // Routed through dropFiles so copied files land exactly like dropped ones,
+    // confirm included. Returns true when the clipboard held files.
     async pasteClipboardFiles() {
       const files = (await window.api?.readClipboardFiles?.()) ?? []
-      if (!files.length) return false
+      const paths = files.map((f) => f?.path).filter(Boolean)
+      if (!paths.length) return false
       this.pastePrompt = null
-      this.mode = 'files'
-      if (files.length > 1) {
-        this.receive('left', files[0])
-        this.receive('right', files[1])
-      } else {
-        this.receive(this.left ? 'right' : 'left', files[0])
-      }
+      await this.dropFiles(paths)
       return true
     },
     // Files mode with something loaded: drop the pasted text into the empty side
@@ -784,17 +834,31 @@ export const useDiffStore = defineStore('diff', {
     toggleTheme() {
       this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
     },
-    // Re-read one slot quietly; returns the file name if its content changed.
+    /**
+     * Re-read one slot quietly.
+     * @param {string} slot
+     * @returns {Promise<{ name: string, held: boolean }|null>} null when nothing
+     *   moved; `held` when the file changed but the app's own copy was kept.
+     */
     async _reloadSlot(slot) {
       const current = this[slot]
       if (!current?.path) return null
       try {
         const file = await window.api.readFile(current.path, { quiet: true })
-        if (!file || file.error || file.content === current.content) return null
+        if (!file || file.error) return null
+        // Measured against the copy that WAS on disk, or Format's own rewrite
+        // reads as someone else's edit. Both moved = report, never resolve: this
+        // refresh is a background event nobody asked for.
+        if (current.edited) {
+          if (file.content === current.diskContent) return null
+          return { name: file.name, held: true }
+        }
+        // What counts as changed is the format's business, not this one's.
+        if (resolveAdapter(file).sameContent(file, current)) return null
         this[slot] = slot.startsWith('paste')
           ? { name: file.name, content: file.content, path: file.path }
           : file
-        return file.name
+        return { name: file.name, held: false }
       } catch {
         // File gone or unreadable now; keep showing the last loaded state.
         return null
@@ -803,16 +867,26 @@ export const useDiffStore = defineStore('diff', {
     // Follow external edits on focus; one coalesced notice so simultaneous
     // changes don't race the toast timer.
     async refreshFromDisk() {
-      const changed = []
+      const moved = []
       for (const slot of ['left', 'right', 'pasteLeftFile', 'pasteRightFile']) {
-        const name = await this._reloadSlot(slot)
-        if (name) changed.push(name)
+        const result = await this._reloadSlot(slot)
+        if (result) moved.push(result)
       }
-      if (changed.length === 1) {
-        this.showNotice(`"${changed[0]}" changed on disk — diff reloaded.`)
-      } else if (changed.length > 1) {
-        this.showNotice(`${changed.length} files changed on disk — diff reloaded.`)
-      }
+      if (!moved.length) return
+      const reloaded = moved.filter((m) => !m.held).map((m) => m.name)
+      const held = moved.filter((m) => m.held).map((m) => m.name)
+      // No longer the copy in the vault, so it stops claiming to be it.
+      if (reloaded.length) this.diffSaved = false
+      this.showDiskNotice([reloadedNote(reloaded), heldNote(held)].filter(Boolean).join(' '))
+    },
+    showDiskNotice(text) {
+      this.diskNotice = text
+      clearTimeout(diskNoticeTimer)
+      diskNoticeTimer = setTimeout(() => (this.diskNotice = null), DISK_NOTICE_MS)
+    },
+    dismissDiskNotice() {
+      clearTimeout(diskNoticeTimer)
+      this.diskNotice = null
     },
     // Recompute a clean git-style patch (Monaco's on-screen diff isn't one).
     // Clipboard goes through main — navigator.clipboard is denied here.
@@ -850,7 +924,8 @@ export const useDiffStore = defineStore('diff', {
       const hint = side === 'left' ? this.leftFormatHint : this.rightFormatHint
       if (!file || !hint?.valid) return
       const pretty = hint.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
-      this[side] = { ...file, content: pretty }
+      // diskContent is the baseline _reloadSlot measures against.
+      this[side] = { ...file, content: pretty, edited: true, diskContent: file.content }
       this.diffSaved = false
     },
     dismissFormatHint(side) {
@@ -878,7 +953,8 @@ export const useDiffStore = defineStore('diff', {
         pasteLeftName: this.pasteLeftName,
         pasteRightName: this.pasteRightName,
         renderSideBySide: this.renderSideBySide,
-        ignoreTrimWhitespace: this.ignoreTrimWhitespace
+        ignoreTrimWhitespace: this.ignoreTrimWhitespace,
+        semanticView: this.semanticView
       }
     },
     restore(payload) {
@@ -895,6 +971,7 @@ export const useDiffStore = defineStore('diff', {
       this.pasteRightName = payload.pasteRightName ?? ''
       this.renderSideBySide = payload.renderSideBySide ?? true
       this.ignoreTrimWhitespace = payload.ignoreTrimWhitespace ?? false
+      this.semanticView = payload.semanticView === true
       this.mode = payload.mode ?? 'files'
       // Opened from a saved diff: it already exists in the vault, so replacing
       // it later needs no "you'll lose it" prompt.
@@ -1002,15 +1079,17 @@ export const useDiffStore = defineStore('diff', {
     beginShareDraft(draft) {
       this.shareDraft = draft
     },
-    async shareTo(recipientFp) {
+    async shareTo(recipientFps) {
+      // A plain array of strings: a reactive one is a Proxy, which structured
+      // clone refuses at the IPC boundary.
+      const to = (Array.isArray(recipientFps) ? [...recipientFps] : [recipientFps]).filter(Boolean)
+      if (!to.length) return
       const vault = useVaultStore()
       const draft = this.shareDraft
       const id = this.shareEntryId
       this.shareDraft = null
       this.shareEntryId = null
-      const res = draft
-        ? await vault.shareDraft(draft, recipientFp)
-        : await vault.share(id, recipientFp)
+      const res = draft ? await vault.shareDraft(draft, to) : await vault.share(id, to)
       if (res.ok) {
         if (draft) this.markSaved() // the draft's local twin now exists on disk
         this.showNotice(`Sealed shared diff for "${res.to}" written to ${res.path}`)

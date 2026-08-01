@@ -29,7 +29,13 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
     </div>
     <!-- A Mermaid snippet previews as its rendered diagram;
          clicking it opens the full-screen zoomable viewer. -->
-    <button v-if="isMermaid" class="pv-diagram" data-tip="View full screen" @click="$emit('view')">
+    <button
+      v-if="isMermaid"
+      class="pv-diagram"
+      data-tip="View full screen"
+      aria-label="View this diagram full screen"
+      @click="$emit('view')"
+    >
       <MermaidDiagram :code="preview.text" :debounce="0" />
     </button>
     <SnippetSecretMask v-else-if="preview.secret" compact />

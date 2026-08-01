@@ -51,3 +51,19 @@ test('Split view toggles between side-by-side and inline', async ({ page }) => {
   await page.getByLabel('Split view').uncheck()
   await expect(sideBySide).toHaveCount(0) // now inline
 })
+
+// Clear wipes the paste panes too, and Ctrl/Cmd+K always could — but the button
+// was gated on the FILE slots, so it greyed out over the text it would clear.
+test('Clear is available over pasted text, not just loaded files', async ({ page }) => {
+  const clear = page.getByRole('button', { name: 'Clear', exact: true })
+  await expect(clear).toBeDisabled() // nothing anywhere yet
+
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByPlaceholder('Paste original text here').fill('some pasted work')
+  await expect(clear).toBeEnabled()
+  await expect(clear).toHaveAttribute('data-tip', /Clear/)
+
+  await clear.click()
+  await expect(page.getByPlaceholder('Paste original text here')).toHaveValue('')
+  await expect(clear).toBeDisabled()
+})

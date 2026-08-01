@@ -76,6 +76,11 @@ export function buildMenus(store) {
         },
         { sep: true },
         {
+          label: 'Toggle Structure View',
+          keys: `${MOD}+Shift+D`,
+          run: () => store.handleMenuAction('toggle-structure')
+        },
+        {
           label: 'Toggle Split View',
           keys: `${MOD}+\\`,
           run: () => store.handleMenuAction('toggle-split')

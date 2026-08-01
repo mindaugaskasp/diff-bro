@@ -26,7 +26,8 @@ export const blankSnapshot = (view = {}) => ({
   pasteLeftName: '',
   pasteRightName: '',
   renderSideBySide: view.renderSideBySide ?? true,
-  ignoreTrimWhitespace: view.ignoreTrimWhitespace ?? false
+  ignoreTrimWhitespace: view.ignoreTrimWhitespace ?? false,
+  semanticView: false
 })
 
 /**

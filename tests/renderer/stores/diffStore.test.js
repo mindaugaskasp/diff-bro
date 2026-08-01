@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
+import { DISK_NOTICE_MS, useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
@@ -609,7 +609,7 @@ describe('diffStore', () => {
     }
     await store.refreshFromDisk()
     expect(store.left.content).toBe('edited elsewhere')
-    expect(store.notice).toContain('changed on disk')
+    expect(store.diskNotice).toContain('changed on disk')
   })
 
   it('refreshFromDisk leaves the last good state when the file is gone', async () => {
@@ -952,7 +952,7 @@ describe('diffStore', () => {
     await store.refreshFromDisk()
     expect(store.left.content).toBe('NEW /tmp/a.txt')
     expect(store.right.content).toBe('NEW /tmp/b.txt')
-    expect(store.notice).toBe('2 files changed on disk — diff reloaded.')
+    expect(store.diskNotice).toBe('2 files changed on disk — diff reloaded.')
   })
 
   it('refreshFromDisk also follows a partial-paste file and keeps its shape', async () => {
@@ -965,7 +965,7 @@ describe('diffStore', () => {
       content: 'fresh body',
       path: '/tmp/src.txt'
     })
-    expect(store.notice).toContain('src.txt')
+    expect(store.diskNotice).toContain('src.txt')
   })
 
   it('a partial-paste file without a path is never re-read from disk', async () => {
@@ -1720,5 +1720,304 @@ describe('closing the active comparison from the menu', () => {
     expect(tabs.activeId).toBe(first)
     store.handleMenuAction('tab-prev')
     expect(tabs.activeId).toBe(second)
+  })
+})
+
+// "Saved" is what silences the discard prompts, so a comparison that no longer
+// matches the vault copy must stop claiming to be it.
+describe('staying honest about what is saved', () => {
+  const FILE_AT = (name, content) => ({ path: `/tmp/${name}`, name, content })
+
+  it('a file changing on disk makes the reloaded comparison unsaved again', async () => {
+    const store = useDiffStore()
+    store.left = FILE_AT('a.txt', 'before')
+    store.right = FILE_AT('b.txt', 'other')
+    store.markSaved()
+    window.api = {
+      readFile: async (path) =>
+        path.endsWith('a.txt')
+          ? { path, name: 'a.txt', content: 'edited elsewhere' }
+          : { path, name: 'b.txt', content: 'other' }
+    }
+
+    await store.refreshFromDisk()
+    expect(store.left.content).toBe('edited elsewhere')
+    expect(store.diffSaved).toBe(false)
+  })
+
+  it('leaves a diff alone when nothing on disk actually changed', async () => {
+    const store = useDiffStore()
+    store.left = FILE_AT('a.txt', 'same')
+    store.markSaved()
+    window.api = { readFile: async (path) => ({ path, name: 'a.txt', content: 'same' }) }
+
+    await store.refreshFromDisk()
+    expect(store.diffSaved).toBe(true)
+  })
+})
+
+// Copied files land exactly like dropped ones, confirm included.
+describe('pasting copied files', () => {
+  const AT = (name) => ({ path: `/tmp/${name}`, name, content: `content of ${name}` })
+
+  it('asks before it replaces a complete, unsaved comparison', async () => {
+    const store = useDiffStore()
+    store.left = AT('old-left.txt')
+    store.right = AT('old-right.txt')
+    window.api = {
+      readClipboardFiles: async () => [AT('new-left.txt'), AT('new-right.txt')],
+      readFile: async (path) => AT(path.split('/').pop())
+    }
+
+    await store.requestPasteFromClipboard()
+    expect(store.pendingReplace).toEqual(['/tmp/new-left.txt', '/tmp/new-right.txt'])
+    expect(store.left.name).toBe('old-left.txt')
+
+    await store.confirmReplace()
+    expect(store.left.name).toBe('new-left.txt')
+    expect(store.right.name).toBe('new-right.txt')
+  })
+
+  it('replaces a SAVED comparison without asking, like a drop does', async () => {
+    const store = useDiffStore()
+    store.left = AT('old-left.txt')
+    store.right = AT('old-right.txt')
+    store.markSaved()
+    window.api = {
+      readClipboardFiles: async () => [AT('new-left.txt'), AT('new-right.txt')],
+      readFile: async (path) => AT(path.split('/').pop())
+    }
+
+    await store.requestPasteFromClipboard()
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('new-left.txt')
+  })
+
+  it('still fills the free side straight away when nothing would be lost', async () => {
+    const store = useDiffStore()
+    store.left = AT('kept.txt')
+    window.api = {
+      readClipboardFiles: async () => [AT('second.txt')],
+      readFile: async (path) => AT(path.split('/').pop())
+    }
+
+    await store.requestPasteFromClipboard()
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('kept.txt')
+    expect(store.right.name).toBe('second.txt')
+  })
+})
+
+// The change check compared `content`, which a spreadsheet has none of, so no
+// workbook ever reloaded.
+describe('following a spreadsheet on disk', () => {
+  const book = (v) => ({
+    path: '/tmp/book.xlsx',
+    name: 'book.xlsx',
+    kind: 'spreadsheet',
+    sheets: [{ name: 'S1', rows: [['a', v]] }]
+  })
+
+  it('reloads a workbook whose grid changed, and says so', async () => {
+    const store = useDiffStore()
+    store.left = book(1)
+    store.markSaved()
+    window.api = { readFile: async () => book(2) }
+
+    await store.refreshFromDisk()
+    expect(store.left.sheets[0].rows[0][1]).toBe(2)
+    expect(store.diskNotice).toContain('changed on disk')
+    expect(store.diffSaved).toBe(false)
+  })
+
+  it('leaves an untouched workbook alone', async () => {
+    const store = useDiffStore()
+    store.left = book(1)
+    store.markSaved()
+    window.api = { readFile: async () => book(1) }
+
+    await store.refreshFromDisk()
+    expect(store.diskNotice).toBeNull()
+    expect(store.diffSaved).toBe(true)
+  })
+})
+
+// A second save adds nothing but a duplicate row, so it is not offered.
+describe('saving the same comparison twice', () => {
+  it('is not offered while the comparison on screen is already saved', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.hasUnsavedWork).toBe(true)
+
+    store.markSaved()
+    expect(store.canSave).toBe(true) // there is still a comparison to share
+    expect(store.hasUnsavedWork).toBe(false)
+
+    store.handleMenuAction('save')
+    expect(store.showSaveDialog).toBe(false)
+  })
+
+  it('is offered again the moment the comparison changes', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.markSaved()
+
+    store.swap()
+    expect(store.hasUnsavedWork).toBe(true)
+  })
+
+  it('is never offered for an empty comparison', () => {
+    expect(useDiffStore().hasUnsavedWork).toBe(false)
+  })
+})
+
+// Format rewrites a side in memory, so the app's copy and the file diverge. The
+// focus re-read saw a difference it had caused itself, threw the formatting
+// away, and reported a disk change that never happened.
+describe('when the app and the disk have both moved', () => {
+  const UGLY = '{"a":1}'
+  const onDisk = (content) => ({ path: '/tmp/a.json', name: 'a.json', content })
+
+  it('keeps a side the app reformatted, and does not claim the disk changed', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+    const formatted = store.left.content
+    expect(formatted).not.toBe(UGLY)
+
+    window.api = { readFile: async () => onDisk(UGLY) }
+    await store.refreshFromDisk()
+
+    expect(store.left.content).toBe(formatted)
+    expect(store.diskNotice).toBeNull()
+  })
+
+  it('holds the app’s copy when the file ALSO changed, and says which', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+    const formatted = store.left.content
+
+    window.api = { readFile: async () => onDisk('{"a":2}') }
+    await store.refreshFromDisk()
+
+    expect(store.left.content).toBe(formatted)
+    expect(store.diskNotice).toContain('a.json')
+    expect(store.diskNotice).toContain('changed on disk')
+    expect(store.diskNotice).toContain('kept')
+  })
+
+  it('follows the disk again once the side is reloaded from it', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+
+    // Re-picking the file is the deliberate "take theirs".
+    store.receive('left', onDisk('{"a":2}'))
+    window.api = { readFile: async () => onDisk('{"a":3}') }
+    await store.refreshFromDisk()
+
+    expect(store.left.content).toBe('{"a":3}')
+    expect(store.diskNotice).toContain('diff reloaded')
+  })
+
+  it('still reloads an untouched side while another is held back', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: 'old' }
+
+    window.api = {
+      readFile: async (path) =>
+        path.endsWith('a.json') ? onDisk('{"a":9}') : { ...store.right, content: 'new' }
+    }
+    await store.refreshFromDisk()
+
+    expect(store.right.content).toBe('new')
+    expect(store.diskNotice).toContain('a.json')
+    expect(store.diskNotice).toContain('b.json')
+  })
+})
+
+// A held, dismissible label — not a toast that clears itself out from under you.
+describe('the file-changed label', () => {
+  const onDisk = (content) => ({ path: '/tmp/a.txt', name: 'a.txt', content })
+
+  it('goes up on a disk change and clears itself after its window', async () => {
+    vi.useFakeTimers()
+    try {
+      const store = useDiffStore()
+      store.left = onDisk('before')
+      window.api = { readFile: async () => onDisk('after') }
+
+      await store.refreshFromDisk()
+      expect(store.diskNotice).toContain('a.txt')
+
+      vi.advanceTimersByTime(DISK_NOTICE_MS - 1)
+      expect(store.diskNotice).not.toBeNull()
+      vi.advanceTimersByTime(1)
+      expect(store.diskNotice).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('outlives the ordinary toast, which would have cleared first', () => {
+    expect(DISK_NOTICE_MS).toBeGreaterThan(5000)
+  })
+
+  it('can be dismissed by hand, and stays dismissed', () => {
+    vi.useFakeTimers()
+    try {
+      const store = useDiffStore()
+      store.showDiskNotice('"a.txt" changed on disk — diff reloaded.')
+      store.dismissDiskNotice()
+      expect(store.diskNotice).toBeNull()
+
+      // The timer it cancelled cannot come back and blank a later one.
+      store.showDiskNotice('second')
+      vi.advanceTimersByTime(DISK_NOTICE_MS - 1)
+      expect(store.diskNotice).toBe('second')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+// The grid scrolls inside itself with no scroller to drive, so the shutter could
+// only ever catch the visible slice. Refused outright rather than truncated.
+describe('image export and the spreadsheet grid', () => {
+  const grid = (name) => ({
+    path: `/tmp/${name}`,
+    name,
+    kind: 'spreadsheet',
+    sheets: [{ name: 'S1', rows: [['a', 1]] }]
+  })
+
+  it('is not offered for a spreadsheet comparison', () => {
+    const store = useDiffStore()
+    store.left = grid('a.xlsx')
+    store.right = grid('b.xlsx')
+    expect(store.isSpreadsheet).toBe(true)
+    expect(store.canExportImage).toBe(false)
+  })
+
+  it('is still offered for a text comparison', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.isSpreadsheet).toBe(false)
+    expect(store.canExportImage).toBe(true)
+  })
+
+  it('says so instead of shooting when asked anyway', async () => {
+    const store = useDiffStore()
+    store.left = grid('a.xlsx')
+    store.right = grid('b.xlsx')
+    await store.exportCurrentImage()
+    expect(store.notice).toMatch(/spreadsheet/i)
+    expect(store.imageEntry).toBeNull()
   })
 })

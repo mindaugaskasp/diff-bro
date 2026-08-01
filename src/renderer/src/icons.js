@@ -252,6 +252,11 @@ export const ICONS = {
     { t: 'path', d: 'm8 21-4-4 4-4' },
     { t: 'path', d: 'M4 17h11a5 5 0 0 0 5-5' }
   ],
+  // Two lanes running opposite ways — exchanging the left and right files.
+  swap: [
+    { t: 'path', d: 'M4 9h16M16 5l4 4-4 4' },
+    { t: 'path', d: 'M20 15H4M8 11l-4 4 4 4' }
+  ],
   // A framed picture — exporting a saved diff as a shareable image.
   image: [
     { t: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },

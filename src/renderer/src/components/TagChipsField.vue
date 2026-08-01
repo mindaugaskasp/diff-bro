@@ -42,6 +42,7 @@ defineExpose(field)
           type="button"
           class="x"
           :data-tip="`Remove ${t}`"
+          :aria-label="`Remove tag ${t}`"
           @click.stop="field.remove(t)"
         >
           <AppIcon name="x" />

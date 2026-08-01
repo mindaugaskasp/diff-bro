@@ -201,24 +201,29 @@ export function registerShareIpc() {
     }
   })
 
-  // Export one saved diff as a sealed file addressed to `recipientFp`.
+  // Export one saved diff as a sealed file addressed to one recipient or several.
   // entry: { name, createdAt, expiresAt, snapshot }
   ipcMain.handle(
     'share:export',
-    guardIdentity(async (e, entry, recipientFp) => {
-      const recipient = (await readTrusted()).find((t) => t.fingerprint === recipientFp)
-      if (!recipient) return { error: 'unknown-recipient' }
+    guardIdentity(async (e, entry, recipientFps) => {
+      const wanted = [...new Set(Array.isArray(recipientFps) ? recipientFps : [recipientFps])]
+      const trusted = await readTrusted()
+      const recipients = wanted.map((fp) => trusted.find((t) => t.fingerprint === fp))
+      if (!recipients.length || recipients.some((r) => !r)) return { error: 'unknown-recipient' }
 
       // Enforce the TTL at signing too — never sign timestamps a receiver rejects.
       const invalid = ttlError(entry)
       if (invalid) return { error: invalid }
 
       const { priv, pub } = await getIdentity()
-      const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipient)
+      const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipients)
       // Filename is forced (a ciphertext hash); the user only picks WHERE.
       const forcedName = shareFilename(file)
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Share diff (sealed for one recipient)',
+        title:
+          recipients.length > 1
+            ? `Share diff (sealed for ${recipients.length} recipients)`
+            : 'Share diff (sealed for one recipient)',
         defaultPath: forcedName,
         filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
       })
@@ -226,7 +231,7 @@ export function registerShareIpc() {
 
       const outPath = join(dirname(filePath), forcedName)
       await writeFile(outPath, JSON.stringify(file, null, 2))
-      return { ok: true, path: outPath, to: recipient.label }
+      return { ok: true, path: outPath, to: recipients.map((r) => r.label).join(', ') }
     })
   )
 

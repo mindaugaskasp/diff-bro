@@ -49,5 +49,6 @@ export const textAdapter = {
     const language =
       EXT_TO_LANGUAGE[ext] ?? detectSnippetLanguage(file.content?.slice(0, DETECT_LIMIT) ?? '')
     return { kind: 'text', text: file.content, language }
-  }
+  },
+  sameContent: (a, b) => a?.content === b?.content
 }

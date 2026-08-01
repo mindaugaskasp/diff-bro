@@ -7,7 +7,7 @@
 // and assistive tech, which is how it was first written.
 import { nextTick, ref, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { MAX_TABS, MAX_TAB_NAME, isBlank, tabLabel } from '../utils/tabs'
+import { MAX_TABS, MAX_TAB_NAME, tabLabel } from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
 import { MOD } from '../keys'
@@ -18,7 +18,17 @@ const diff = useDiffStore()
 // The label follows the live comparison, so a tab stops saying "Untitled" the
 // moment a file lands in it.
 watch(
-  () => [diff.left, diff.right, diff.mode, diff.pasteLeftFile, diff.pasteRightFile, diff.pasteLeft],
+  () => [
+    diff.left,
+    diff.right,
+    diff.mode,
+    diff.pasteLeftFile,
+    diff.pasteRightFile,
+    diff.pasteLeft,
+    diff.pasteRight,
+    diff.pasteLeftName,
+    diff.pasteRightName
+  ],
   () => tabs.syncActiveTitle()
 )
 
@@ -36,15 +46,6 @@ function startRename(tab) {
 function commitRename() {
   if (renamingId.value) tabs.rename(renamingId.value, draft.value)
   renamingId.value = null
-}
-
-// A tab with content that was never saved: closing it is the only way to lose
-// paste-mode text, so it asks first. Asked of the SNAPSHOT, never of the label —
-// matching on display text meant renaming the empty tab silently stopped it
-// confirming.
-function requestClose(tab) {
-  if (!tab.diffSaved && !isBlank(tab)) diff.pendingTabClose = tab.id
-  else tabs.close(tab.id)
 }
 </script>
 
@@ -77,16 +78,16 @@ function requestClose(tab) {
         :data-tip="`${tabLabel(tab)} — double-click to rename`"
         @click="tabs.activate(tab.id)"
         @dblclick="startRename(tab)"
-        @auxclick.middle.prevent="requestClose(tab)"
+        @auxclick.middle.prevent="tabs.requestClose(tab.id)"
       >
-        <span v-if="!tab.diffSaved" class="dirty" aria-hidden="true"></span>
+        <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
         <span class="name">{{ tabLabel(tab) }}</span>
       </button>
       <button
         v-if="tabs.tabs.length > 1"
         class="tab-close"
         :aria-label="`Close ${tabLabel(tab)}`"
-        @click="requestClose(tab)"
+        @click="tabs.requestClose(tab.id)"
       >
         <AppIcon name="x" />
       </button>

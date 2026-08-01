@@ -160,6 +160,11 @@ export function installMenu() {
         },
         { type: 'separator' },
         {
+          label: 'Toggle Structure View',
+          accelerator: 'CmdOrCtrl+Shift+D',
+          click: () => sendToFocused('toggle-structure')
+        },
+        {
           label: 'Toggle Split View',
           accelerator: 'CmdOrCtrl+\\',
           click: () => sendToFocused('toggle-split')

@@ -157,3 +157,75 @@ test('a file that is not a public key is rejected', async ({ app, page }) => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// One file, a whole team. The crypto is unit-tested; this guards the wiring —
+// the multi-select picker, one sealed file on disk, and BOTH recipients opening
+// it on their own machines with their own keys.
+test('one sealed file opens for every recipient it was addressed to', async () => {
+  test.setTimeout(180_000) // three Electron instances + two key exchanges
+  const exchange = mkdtempSync(join(tmpdir(), 'diffbro-team-'))
+  const dirA = freshUserDataDir()
+  const dirB = freshUserDataDir()
+  const dirC = freshUserDataDir()
+  const appA = await launchApp(dirA)
+  const pageA = await firstReadyPage(appA)
+  const appB = await launchApp(dirB)
+  const pageB = await firstReadyPage(appB)
+  const appC = await launchApp(dirC)
+  const pageC = await firstReadyPage(appC)
+  const keyA = join(exchange, 'alice.diffbrokey')
+  const keyB = join(exchange, 'bob.diffbrokey')
+  const keyC = join(exchange, 'carol.diffbrokey')
+  try {
+    await exportKey(appA, pageA, 'Alice', keyA)
+    await exportKey(appB, pageB, 'Bob', keyB)
+    await exportKey(appC, pageC, 'Carol', keyC)
+
+    // Alice trusts both; each of them trusts Alice, so they can verify her signature.
+    await addTrusted(appA, pageA, keyB)
+    await addTrusted(appA, pageA, keyC)
+    await addTrusted(appB, pageB, keyA)
+    await addTrusted(appC, pageC, keyA)
+
+    await pageA.getByRole('button', { name: 'Paste text' }).click()
+    await pageA.getByPlaceholder('Paste original text here').fill('team before')
+    await pageA.getByPlaceholder('Paste changed text here').fill('team after')
+    await pageA.getByRole('button', { name: 'Compare', exact: true }).click()
+    await pageA.getByRole('button', { name: 'Save', exact: true }).click()
+    const saveDlg = pageA.getByRole('dialog', { name: 'Save diff' })
+    await saveDlg.getByLabel('Name').fill('Team review')
+    await saveDlg.getByRole('button', { name: 'Save', exact: true }).click()
+
+    const row = pageA.locator('.diff', { hasText: 'Team review' })
+    await stubSaveDialog(appA, join(exchange, 'sealed-placeholder'))
+    await row.hover()
+    await row.getByRole('button', { name: 'Share as sealed file' }).click()
+    const shareDlg = pageA.getByRole('dialog', { name: 'Share diff' })
+
+    // Tick both recipients — one file, two names.
+    for (const name of ['Bob', 'Carol']) {
+      const box = shareDlg.locator('.recipient', { hasText: name }).locator('input')
+      if (!(await box.isChecked())) await box.check()
+    }
+    await expect(shareDlg.getByText(/only these 2 can open/)).toBeVisible()
+    await shareDlg.getByRole('button', { name: 'Create file' }).click()
+    await expect(pageA.getByText(/Sealed shared diff/i)).toBeVisible()
+
+    const sealed = readdirSync(exchange).filter((f) => f.endsWith('.diffbro'))
+    expect(sealed).toHaveLength(1) // ONE file, not one per recipient
+
+    for (const [app_, page_] of [
+      [appB, pageB],
+      [appC, pageC]
+    ]) {
+      await stubOpenDialog(app_, join(exchange, sealed[0]))
+      await page_.getByRole('button', { name: /Import a shared diff/ }).click()
+      await expect(page_.getByText(/Opened "Team review" from Alice/)).toBeVisible()
+    }
+  } finally {
+    await appA.close()
+    await appB.close()
+    await appC.close()
+    for (const d of [dirA, dirB, dirC, exchange]) rmSync(d, { recursive: true, force: true })
+  }
+})

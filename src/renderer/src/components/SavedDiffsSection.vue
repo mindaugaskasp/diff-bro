@@ -7,7 +7,6 @@ import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { MAX_TABS } from '../utils/tabs'
-import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -51,10 +50,10 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
           :disabled="!tabs.canAdd"
           :data-tip="
             tabs.canAdd
-              ? `New comparison in its own tab (${MOD}+Shift+T)`
+              ? 'New comparison, ready for pasted text'
               : `That is the most comparisons at once (${MAX_TABS}) — close one first`
           "
-          aria-label="New comparison"
+          aria-label="New comparison from pasted text"
           @click.stop="tabs.newTab({ paste: true })"
         >
           <AppIcon name="plus" />
@@ -64,7 +63,11 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
 
     <div v-show="open" class="section-body">
       <p v-if="!hasOwn" class="empty"><AppIcon name="inbox" /> Empty</p>
-      <ul v-if="rows.length" class="rows">
+      <ul v-else class="rows">
+        <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
+        <li v-if="!rows.length" class="empty small">
+          No saved diffs match — try removing a filter.
+        </li>
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>
     </div>

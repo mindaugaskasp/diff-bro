@@ -1,0 +1,56 @@
+/* The on-disk-change label: a held notice with its own dismiss, not a flash.
+   Surface roles only, so it re-tints on every theme and keeps the hard keyline
+   contrast/beacon rely on. */
+.disk-notice {
+  position: absolute;
+  top: calc(var(--band-row) + var(--space-3));
+  right: var(--space-3);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 46%;
+  padding: 0 6px 0 10px;
+  min-height: var(--control-h);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: var(--font-sm);
+  box-shadow: var(--shadow-2);
+}
+.disk-notice .dn-icon {
+  flex: none;
+  color: var(--text-dim);
+}
+.dn-text {
+  min-width: 0;
+}
+.dn-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.dn-x:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+/* The label fades with App.vue's shared transition, which is not scoped here. */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

@@ -29,6 +29,10 @@ a hard promise: it never touches the network.
 - **Diff** two files or pasted text — split or inline, word-level highlights,
   syntax highlighting, in-view search, and a live re-diff when a file changes on
   disk. Copy the result as a git-style unified patch.
+- **Structure-aware comparison** — turn on **Structure** and JSON, YAML or XML is
+  compared as _data_, not as lines: reordering keys or reformatting stops
+  counting, and a real change is reported on the key it happened to, with both
+  values and a note when the type changed. Unchanged keys collapse away.
 - **Excel (.xlsx) comparison** — a structured **grid** diff with sheet tabs and
   cell / row-level highlighting, aligned so an inserted row doesn't cascade.
   Parsed entirely offline by a small custom reader (no heavyweight dependency).
@@ -41,7 +45,9 @@ a hard promise: it never touches the network.
   off in **Settings → Storage**, which also forgets the stored one.
 - **Saved diffs** — encrypted, optionally auto-expiring, and tagged (retag any of
   them later from the row's tag button).
-- **Share** a diff as a sealed, signed file only its intended recipient can open.
+- **Share** a diff as a sealed, signed file only its intended recipients can
+  open — tick one person or a whole team and they all get **one** file, carrying
+  the expiry you chose so every copy dies at the same moment.
 - **Export a saved diff as an image** — a high-resolution screenshot of the diff
   view itself, so it carries your theme, the split panes and the syntax
   highlighting rather than a redrawn approximation. Cropped to the change, and a
@@ -89,7 +95,7 @@ a hard promise: it never touches the network.
   one. A second launch hands its arguments to the running window
   through Electron's single-instance lock — nothing listens on a port.
 - **Yours to arrange** — fourteen themes (incl. Nord, Sepia, Solar, a playful
-  Nyan with a reward cat, a Matrix digital-rain theme, and accessibility-grade
+  Nyan cat, a Matrix digital-rain theme, and accessibility-grade
   Contrast and Beacon), one tag namespace shared across diffs and snippets, a
   sidebar that filters by section and tag, and adjustable limits, all remembered
   between sessions.

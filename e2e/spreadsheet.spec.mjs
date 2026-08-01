@@ -98,3 +98,27 @@ test('rejects a corrupt .xlsx with a notice instead of loading it', async ({ app
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// The grid scrolls inside itself and has no Monaco scroller behind it, so the
+// shutter can only ever catch the visible slice — a silently truncated picture.
+// Until it can stitch, the action says so rather than lying.
+test('image export is not offered for a spreadsheet comparison', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-img-'))
+  const leftPath = join(dir, 'budget-left.xlsx')
+  const rightPath = join(dir, 'budget-right.xlsx')
+  writeFileSync(leftPath, LEFT)
+  writeFileSync(rightPath, RIGHT)
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    const image = page.getByRole('button', { name: /^Image/ })
+    await expect(image).toBeDisabled()
+    await expect(image).toHaveAttribute('data-tip', /spreadsheet/i)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

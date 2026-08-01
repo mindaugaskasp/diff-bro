@@ -9,23 +9,38 @@ describe('resizeCentered', () => {
   // Centered growth: the cursor delta counts double so the dragged edge tracks
   // the pointer while both sides move out.
   it('grows width from the east edge by twice the cursor delta', () => {
-    expect(resizeCentered({ ...base, handle: 'e', dx: 50, dy: 0 })).toEqual({ width: 700, height: 400 })
+    expect(resizeCentered({ ...base, handle: 'e', dx: 50, dy: 0 })).toEqual({
+      width: 700,
+      height: 400
+    })
   })
 
   it('grows width from the west edge when dragged left', () => {
-    expect(resizeCentered({ ...base, handle: 'w', dx: -50, dy: 0 })).toEqual({ width: 700, height: 400 })
+    expect(resizeCentered({ ...base, handle: 'w', dx: -50, dy: 0 })).toEqual({
+      width: 700,
+      height: 400
+    })
   })
 
   it('grows height from the south edge, leaving width untouched', () => {
-    expect(resizeCentered({ ...base, handle: 's', dx: 0, dy: 30 })).toEqual({ width: 600, height: 460 })
+    expect(resizeCentered({ ...base, handle: 's', dx: 0, dy: 30 })).toEqual({
+      width: 600,
+      height: 460
+    })
   })
 
   it('grows height from the north edge when dragged up', () => {
-    expect(resizeCentered({ ...base, handle: 'n', dx: 0, dy: -30 })).toEqual({ width: 600, height: 460 })
+    expect(resizeCentered({ ...base, handle: 'n', dx: 0, dy: -30 })).toEqual({
+      width: 600,
+      height: 460
+    })
   })
 
   it('changes both dimensions from a corner', () => {
-    expect(resizeCentered({ ...base, handle: 'se', dx: 25, dy: 25 })).toEqual({ width: 650, height: 450 })
+    expect(resizeCentered({ ...base, handle: 'se', dx: 25, dy: 25 })).toEqual({
+      width: 650,
+      height: 450
+    })
   })
 
   it('clamps to the minimum when dragged small', () => {
@@ -41,6 +56,8 @@ describe('resizeCentered', () => {
 
   it('exposes all eight handles', () => {
     expect(RESIZE_HANDLES).toHaveLength(8)
-    expect(RESIZE_HANDLES).toEqual(expect.arrayContaining(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']))
+    expect(RESIZE_HANDLES).toEqual(
+      expect.arrayContaining(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'])
+    )
   })
 })

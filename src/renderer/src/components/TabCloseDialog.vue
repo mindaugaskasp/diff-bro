@@ -4,13 +4,16 @@
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useTabsStore } from '../stores/tabsStore'
+import { tabLabel } from '../utils/tabs'
 import BaseDialog from './BaseDialog.vue'
 
 const diff = useDiffStore()
 const tabs = useTabsStore()
-const title = computed(
-  () => tabs.tabs.find((t) => t.id === diff.pendingTabClose)?.title ?? 'this comparison'
-)
+// The label, not the derived title — a name the reader typed IS its name.
+const title = computed(() => {
+  const tab = tabs.tabs.find((t) => t.id === diff.pendingTabClose)
+  return tab ? tabLabel(tab) : 'this comparison'
+})
 </script>
 
 <template>

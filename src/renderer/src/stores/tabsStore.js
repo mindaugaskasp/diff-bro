@@ -50,7 +50,16 @@ export const useTabsStore = defineStore('tabs', {
     // Always shown once there is a document. Hiding it at one tab looked tidier
     // but left no way to reach the "+" that makes the second one — the bar has
     // to be present for tabs to be discoverable at all.
-    visible: (s) => s.tabs.length > 0
+    visible: (s) => s.tabs.length > 0,
+    // A tab's own snapshot is only refreshed when tabs switch, so for the one on
+    // screen it is stale by definition — that one is asked of the live document.
+    /** @returns {(tab: import('../utils/tabs').DiffTab) => boolean} */
+    unsaved: (s) => (tab) => {
+      if (!tab) return false
+      if (tab.id !== s.activeId) return !tab.diffSaved && !isBlank(tab)
+      const diff = useDiffStore()
+      return !diff.diffSaved && diff.hasActive
+    }
   },
   actions: {
     // The window opens on whatever the diff store already holds, so the first
@@ -94,7 +103,8 @@ export const useTabsStore = defineStore('tabs', {
       return {
         ...snapshot,
         renderSideBySide: snapshot.renderSideBySide ?? diff.renderSideBySide,
-        ignoreTrimWhitespace: snapshot.ignoreTrimWhitespace ?? diff.ignoreTrimWhitespace
+        ignoreTrimWhitespace: snapshot.ignoreTrimWhitespace ?? diff.ignoreTrimWhitespace,
+        semanticView: snapshot.semanticView === true
       }
     },
     _fill(tab, snapshot, { diffSaved, entryId, name }) {
@@ -134,7 +144,9 @@ export const useTabsStore = defineStore('tabs', {
       const spare = reuseBlank && isBlank(this.active) ? this.active : null
       if (spare) return this._fill(spare, full, { diffSaved, entryId, name })
       if (!this.canAdd) {
-        useDiffStore().showNotice(`That's the most tabs at once (${MAX_TABS}). Close one first.`)
+        useDiffStore().showNotice(
+          `That is the most comparisons at once (${MAX_TABS}). Close one first.`
+        )
         return null
       }
       const tab = createTab(full, { diffSaved })
@@ -146,6 +158,25 @@ export const useTabsStore = defineStore('tabs', {
       const id = this.open(blankSnapshot(diff), { reuseBlank: false })
       if (id && paste) diff.mode = 'paste'
       return id
+    },
+    // The single close guard — menu, ×, and middle-click all arrive here.
+    /** @param {string} id */
+    requestClose(id) {
+      const tab = this.tabs.find((t) => t.id === id)
+      if (!tab) return
+      if (this.unsaved(tab)) useDiffStore().pendingTabClose = tab.id
+      else this.close(tab.id)
+    },
+    // Its saved diff is gone, so the tab must stop claiming to be in the vault:
+    // "saved" is what silences the discard prompts.
+    /** @param {string} entryId */
+    forgetEntry(entryId) {
+      for (const tab of this.tabs) {
+        if (tab.entryId !== entryId) continue
+        tab.entryId = null
+        tab.diffSaved = false
+        if (tab.id === this.activeId) useDiffStore().diffSaved = false
+      }
     },
     close(id) {
       const target = this.tabs.find((t) => t.id === id)

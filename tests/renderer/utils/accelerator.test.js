@@ -6,7 +6,14 @@ import {
 } from '../../../src/renderer/src/utils/accelerator'
 
 // A minimal keydown: the util reads e.code and the modifier flags.
-const ev = (code, mods = {}) => ({ code, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...mods })
+const ev = (code, mods = {}) => ({
+  code,
+  ctrlKey: false,
+  metaKey: false,
+  altKey: false,
+  shiftKey: false,
+  ...mods
+})
 
 describe('acceleratorFromEvent', () => {
   it('builds a cross-platform accelerator from modifiers + a letter', () => {

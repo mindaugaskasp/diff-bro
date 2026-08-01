@@ -26,7 +26,12 @@ describe('replaceText', () => {
   })
 
   it('supports regex with backreferences', () => {
-    const r = replaceText({ text: 'John Smith', find: '(\\w+) (\\w+)', replace: '$2 $1', mode: 'regex' })
+    const r = replaceText({
+      text: 'John Smith',
+      find: '(\\w+) (\\w+)',
+      replace: '$2 $1',
+      mode: 'regex'
+    })
     expect(r.output).toBe('Smith John')
     expect(r.count).toBe(1)
   })

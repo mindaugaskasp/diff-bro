@@ -54,6 +54,7 @@
    frame. display:none applies on the next style recalc with no transition to
    catch — a v-if would fade out and land in the shot. */
 .content.capturing .notice,
+.content.capturing .disk-notice,
 .content.capturing :deep(.shortcut-bar) {
   display: none;
 }
@@ -94,6 +95,7 @@
   text-align: center;
   box-shadow: var(--shadow-3);
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s;
