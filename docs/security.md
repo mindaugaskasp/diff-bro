@@ -30,8 +30,20 @@ held by the OS keychain (`safeStorage`). The entry's plaintext metadata is bound
 as GCM AAD, so tampering (e.g. extending an expiry) makes the entry
 undecryptable. Every entry auto-expires — default 1 h, hard cap 24 h.
 
+**The open comparisons are stored the same way.** Whatever is open when you quit
+is reopened on the next launch, so `session.json` holds the compared file
+contents — the same class of data as a saved diff, and sealed with the same
+vault key (AAD `session|v1`). It is rewritten as you work, replaced by an empty
+marker once you close the last comparison, and never restored from a file that
+fails authentication. A locked keychain leaves it untouched rather than
+discarding it. **Settings → Storage** turns the whole thing off — which also
+forgets the session already stored, rather than merely skipping the next write. There is one difference from a loaded file: a restored comparison
+is the text as you left it, and stops following the file on disk until you open
+that file again — a path is only re-readable after you choose it (see the
+provenance allowlist in `src/main/files.js`).
+
 **Where data lives.** Saved diffs (`vault.json`), snippets (`snippets.json`),
-and the key files (`identity.*`, `trusted-keys.json`, `vault.key`) are written
+the open session (`session.json`), and the key files (`identity.*`, `trusted-keys.json`, `vault.key`) are written
 as files in a **configurable data directory** (Settings → Data folder), which
 defaults to `userData`. Pointing it at a folder you control — under Documents,
 say — means the data **survives an app reinstall** that wipes `userData`; the
@@ -39,7 +51,7 @@ folder is self-contained, so re-pointing at it after reinstall restores
 everything. Writes are atomic (temp file + rename) so a crash can't corrupt a
 store. Only a pointer to the location stays in `userData`.
 
-**Metadata is not encrypted.** Only diff/snippet *content* is encrypted. The
+**Metadata is not encrypted.** Only diff/snippet _content_ is encrypted. The
 entry name, category names, timestamps, favorite flag, and a shared diff's
 sender label are stored in plaintext in `vault.json` / `snippets.json` (they
 organize the UI and form the AAD). Names can leak content — e.g.
@@ -47,7 +59,7 @@ organize the UI and form the AAD). Names can leak content — e.g.
 the data directory might be read by someone else.
 
 **Key loss is not silent.** The vault and identity keys are regenerated only on a
-genuinely first run (the key file is absent). If a key file *exists* but can't be
+genuinely first run (the key file is absent). If a key file _exists_ but can't be
 loaded right now — a locked keychain, a DPAPI error after a profile move, a
 recoverable corruption — the main process surfaces a distinct
 `vault-key-unavailable` / `identity-unavailable` error and **never overwrites the

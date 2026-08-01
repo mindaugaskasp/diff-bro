@@ -52,6 +52,11 @@ h4 {
   margin: 0 0 8px;
   font-size: var(--font-md);
 }
+/* A second group in the same pane needs air above it, or its heading reads as
+   part of the hint line that precedes it. */
+h4:not(:first-child) {
+  margin-top: var(--space-4);
+}
 .path {
   display: flex;
   align-items: center;

@@ -35,6 +35,10 @@ a hard promise: it never touches the network.
 - **Paste mode** for quick throwaway comparisons, including pasted text against a
   real file — or just hit **Ctrl/Cmd+V** to paste straight into a comparison.
 - **Drag & drop** files onto the window; it warns before discarding unsaved work.
+- **Picks up where you left off** — the comparisons open when you quit, tabs and
+  all, are reopened on the next launch (stored encrypted, like everything else
+  Diff Bro keeps). Close the last one and the next launch starts clean. Turn it
+  off in **Settings → Storage**, which also forgets the stored one.
 - **Saved diffs** — encrypted, optionally auto-expiring, and tagged (retag any of
   them later from the row's tag button).
 - **Share** a diff as a sealed, signed file only its intended recipient can open.

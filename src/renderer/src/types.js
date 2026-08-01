@@ -34,6 +34,23 @@
  */
 
 /**
+ * A whole comparison, detached from the store: what a saved diff decrypts to,
+ * what a tab holds while it is not on screen, and what the session restores.
+ * @typedef {object} DiffSnapshot
+ * @property {'files'|'paste'} mode
+ * @property {LoadedFile|null} left
+ * @property {LoadedFile|null} right
+ * @property {string} pasteLeft
+ * @property {string} pasteRight
+ * @property {LoadedFile|null} pasteLeftFile   a file dropped on a paste side
+ * @property {LoadedFile|null} pasteRightFile
+ * @property {string} pasteLeftName   what to call the pasted side ('' = placeholder)
+ * @property {string} pasteRightName
+ * @property {boolean} renderSideBySide
+ * @property {boolean} ignoreTrimWhitespace
+ */
+
+/**
  * A saved diff, as stored in the vault (content encrypted at rest).
  * @typedef {object} VaultEntry
  * @property {string} id

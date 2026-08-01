@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { THEMES } from '../utils/themes'
@@ -9,12 +9,10 @@ import CliSettings from './CliSettings.vue'
 import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
+import StorageSettings from './StorageSettings.vue'
 
 const diff = useDiffStore()
 const settings = useSettingsStore()
-const dir = ref('')
-const isDefault = ref(true)
-const busy = ref(false)
 
 // One pane shows at a time behind the left rail.
 const TABS = [
@@ -34,35 +32,6 @@ function toggleDailyTheme(on) {
 }
 const tab = ref('appearance')
 
-async function refresh() {
-  const res = await window.api.dataDirGet()
-  dir.value = res.dir
-  isDefault.value = res.isDefault
-}
-onMounted(refresh)
-
-// Moving the data folder restarts so key caches rebuild from the new location.
-async function choose() {
-  busy.value = true
-  try {
-    const res = await window.api.dataDirChoose()
-    if (res.ok) await window.api.relaunch()
-  } finally {
-    busy.value = false
-  }
-}
-async function reset() {
-  busy.value = true
-  try {
-    const res = await window.api.dataDirReset()
-    if (res.ok) await window.api.relaunch()
-  } finally {
-    busy.value = false
-  }
-}
-function reveal() {
-  window.api.dataDirReveal()
-}
 function close() {
   diff.showSettingsDialog = false
 }
@@ -127,27 +96,7 @@ function close() {
           <ShortcutCapture />
         </section>
 
-        <section v-else-if="tab === 'storage'">
-          <h4>Data folder</h4>
-          <p class="dialog-note">
-            Where saved diffs, snippets, and your keys are stored. Put it in a folder you control
-            (e.g. Documents or a synced folder) so your data <strong>survives a reinstall</strong>.
-            The folder is self-contained — after reinstalling, point Diff Bro back at it to restore
-            everything.
-          </p>
-          <div class="path">
-            <code :title="dir">{{ dir }}</code>
-            <span v-if="isDefault" class="badge">default</span>
-          </div>
-          <div class="dialog-actions">
-            <button class="btn btn-ghost" :disabled="busy" @click="reveal">Reveal</button>
-            <button class="btn btn-ghost" :disabled="busy || isDefault" @click="reset">
-              Use default
-            </button>
-            <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
-          </div>
-          <p class="hint">Changing the folder restarts Diff Bro.</p>
-        </section>
+        <StorageSettings v-else-if="tab === 'storage'" />
 
         <LogSettings v-else-if="tab === 'logs'" />
 

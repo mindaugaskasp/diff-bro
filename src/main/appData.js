@@ -21,6 +21,7 @@ import { join } from 'path'
 const DATA_FILES = [
   'vault.json', // saved diffs (encrypted at rest)
   'snippets.json', // snippet library (encrypted at rest)
+  'session.json', // the comparisons left open (encrypted at rest)
   'identity.key', // private identity key (OS-keychain wrapped)
   'identity.pub', // public identity key
   'trusted-keys.json', // trusted peers
