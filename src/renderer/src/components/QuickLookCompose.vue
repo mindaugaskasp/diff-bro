@@ -2,7 +2,6 @@
 // The launcher's new-snippet panel: it fills the preview pane while composing.
 // Plaintext only, so there is no language picker and no Monaco here.
 import { nextTick, ref } from 'vue'
-import { MOD } from '../keys'
 import { useCaretBackOut } from '../composables/useCaretBackOut'
 import AppIcon from './AppIcon.vue'
 
@@ -66,7 +65,7 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
       <span class="ql-compose-actions">
         <button class="btn btn-sm" @click="emit('cancel')">Cancel</button>
         <button class="btn btn-primary btn-sm" :disabled="!canSave" @click="emit('save')">
-          <AppIcon name="check" /> {{ saving ? 'Saving…' : `Save (${MOD}↵)` }}
+          <AppIcon name="check" /> {{ saving ? 'Saving…' : 'Save' }}
         </button>
       </span>
     </div>

@@ -347,3 +347,28 @@ test('arrowing down scrolls the results list to keep the selection visible', asy
     })
     .toBeGreaterThan(before)
 })
+
+// The launcher's keyboard model assumes the search box holds focus — onKeydown
+// is bound to it. So ANY control that takes focus kills arrow navigation, which
+// is what clicking the preview's back arrow did. Asserted through the visible
+// consequence (the selection stops moving), not through document.activeElement.
+test('arrow keys still work after clicking a launcher button', async ({ app, page }) => {
+  await seededReady(page)
+  const ql = await summon(app, page)
+  await ql.locator('.ql-input').fill('Example')
+  await expect(ql.locator('.ql-res').first()).toBeVisible()
+  const count = await ql.locator('.ql-res').count()
+  expect(count, 'needs two results for ArrowDown to have somewhere to go').toBeGreaterThan(1)
+  const selectedName = () => ql.locator('.ql-res.sel').first().innerText()
+
+  await ql.keyboard.press('ArrowRight') // into the preview zone
+  await expect(ql.locator('.ql-pv-back')).toBeVisible()
+  const before = await selectedName()
+
+  await ql.locator('.ql-pv-back').click() // mouse click parks focus on the button
+  await ql.keyboard.press('ArrowDown')
+
+  await expect
+    .poll(selectedName, { message: 'ArrowDown after a button click must still move the selection' })
+    .not.toBe(before)
+})

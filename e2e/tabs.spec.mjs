@@ -323,3 +323,38 @@ test('the Saved diffs + opens a new paste comparison, and stops at the cap', asy
   await expect(add).toBeDisabled()
   await expect(add).toHaveAttribute('data-tip', /most comparisons at once \(6\)/)
 })
+
+// A diff or snippet carries several tags, so the filter takes several too —
+// selecting two shows the rows carrying either.
+test('several tags can be selected, and they widen the list', async ({ page }) => {
+  const save = async (name, tag) => {
+    await compare(page, `left-${name}`, `right-${name}`)
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    const d = page.getByRole('dialog', { name: 'Save diff' })
+    await d.getByLabel('Name', { exact: true }).fill(name)
+    for (const t of tag) {
+      await d.getByPlaceholder('add a tag…').fill(t)
+      await d.getByPlaceholder('add a tag…').press('Enter')
+    }
+    await d.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.locator('li.diff', { hasText: name })).toBeVisible()
+    await addTab(page).click()
+  }
+  await save('Both tags', ['alpha', 'beta'])
+  await save('Only alpha', ['alpha'])
+
+  const chip = (t) => page.locator('.usb-tag', { hasText: t })
+  await chip('beta').click()
+  await expect(page.locator('li.diff')).toHaveCount(1)
+  await expect(page.locator('li.diff', { hasText: 'Both tags' })).toBeVisible()
+
+  // Adding a tag WIDENS: the alpha-only diff joins rather than being hidden for
+  // lacking beta.
+  await chip('alpha').click()
+  await expect(chip('alpha')).toHaveClass(/on/)
+  await expect(chip('beta')).toHaveClass(/on/)
+  await expect(page.locator('li.diff')).toHaveCount(2)
+
+  await chip('alpha').click()
+  await expect(page.locator('li.diff')).toHaveCount(1)
+})

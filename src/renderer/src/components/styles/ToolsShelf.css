@@ -1,9 +1,12 @@
 /* Tool launcher pinned to the bottom — flex:none keeps it out of the scroll, so
    it's always visible under the list regardless of how far the list scrolls. */
+/* Two lines at most: the recents, then the way into the full list. The row used
+   to wrap, so the footer grew a line every few tools and the search moved. */
 .usb-tools {
   flex: none;
-  flex-wrap: wrap;
-  gap: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   padding: var(--space-3);
   /* The same surface and seam as the sidebar's other fixed strips. An
      accent-tinted gradient and an accent seam used to mark this out as a
@@ -11,6 +14,24 @@
      band with three shades of the accent competing in it. */
   border-top: 1px solid var(--border);
   background: var(--bg-elevated);
+}
+/* Label over its row, not beside it: the sidebar is narrow enough that an
+   inline "Recent tools" wrapped onto two lines and squeezed the chips. */
+.usb-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.usb-recent-row {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.usb-recent-row::-webkit-scrollbar {
+  display: none;
 }
 .usb-tools-label {
   display: inline-flex;
@@ -21,7 +42,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-hint);
-  margin-right: 2px;
 }
 .usb-tools-label .app-icon {
   width: 13px;
@@ -73,8 +93,7 @@
   color: var(--text-dim);
   font-weight: 500;
 }
-.usb-tool-all.solo {
-  flex: 1;
+.usb-tool-all {
   justify-content: flex-start;
   padding: 4px 8px;
 }

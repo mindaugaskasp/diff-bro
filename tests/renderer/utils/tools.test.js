@@ -76,9 +76,14 @@ describe('noteRecent', () => {
     expect(noteRecent(['json', 'uuid', 'xml'], 'xml')).toEqual(['xml', 'json', 'uuid'])
   })
 
-  it('caps the list at MAX_RECENT_TOOLS', () => {
+  // Written against the cap rather than a literal list, so changing how many
+  // recents the shelf holds does not mean rewriting the expectation.
+  it('caps the list at MAX_RECENT_TOOLS, keeping the most recent', () => {
     const ids = ['json', 'xml', 'lines', 'uuid', 'jwt']
-    expect(noteRecent(ids, 'epoch')).toEqual(['epoch', 'json', 'xml', 'lines', 'uuid'])
+    const out = noteRecent(ids, 'epoch')
+    expect(out).toHaveLength(MAX_RECENT_TOOLS)
+    expect(out[0]).toBe('epoch')
+    expect(out).toEqual(['epoch', ...ids].slice(0, MAX_RECENT_TOOLS))
   })
 
   it('ignores an unknown tool but still returns a capped list', () => {

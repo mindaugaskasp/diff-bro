@@ -2,6 +2,7 @@
 // Snippets sidebar layout; filtering is useSnippetFilters, previews
 // useSnippetPreview, rows SnippetRow.
 import { computed, ref, watch } from 'vue'
+import { matchesTags } from '../utils/tagFilter'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
 import { useSnippetPreview } from '../composables/useSnippetPreview'
@@ -14,7 +15,8 @@ const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
   search: { type: String, default: '' },
-  tag: { type: String, default: '' },
+  /** @type {import('vue').PropType<string[]>} */
+  tags: { type: Array, default: () => [] },
   favOnly: { type: Boolean, default: false }
 })
 
@@ -31,7 +33,7 @@ watch(
   (v) => (query.value = v),
   { immediate: true }
 )
-const byTag = (list) => (props.tag ? list.filter((e) => e.tags.includes(props.tag)) : list)
+const byTag = (list) => list.filter((e) => matchesTags(e.tags, props.tags))
 // One list, favorites first; the ★ filter keeps only them.
 const rows = computed(() => {
   const favs = byTag(visibleFavorites.value)

@@ -38,6 +38,13 @@ const allowedPaths = new Set()
 // added, so evicting the oldest never revokes a path still in use.
 const MAX_ALLOWED_PATHS = 64
 
+// A path named on the app's own command line carries the same authority as one
+// picked in the open dialog: the user typed it in their shell. Vouching for it
+// HERE keeps the renderer unable to read anything it was not handed.
+export function allowCliPath(filePath) {
+  allow(filePath)
+}
+
 function allow(filePath) {
   if (typeof filePath !== 'string' || !filePath) return
   const abs = resolve(filePath)
@@ -173,7 +180,19 @@ export function registerFileIpc() {
       return { error: 'not-permitted' }
     }
     if (isUnderUserData(filePath)) return { error: 'not-permitted' }
-    return readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
+    try {
+      return await readFileForRenderer(BrowserWindow.fromWebContents(e.sender), filePath, opts)
+    } catch (err) {
+      // A path can be a directory, gone, or unreadable — from a drop as easily
+      // as from the command line. Answer with a shape; a rejected invoke would
+      // surface in the renderer as a throw nobody is positioned to catch.
+      return {
+        error: 'unreadable',
+        name: basename(filePath),
+        path: filePath,
+        message: err?.message
+      }
+    }
   })
 
   // Save-dialog + write for the diff HTML export. The renderer builds the whole

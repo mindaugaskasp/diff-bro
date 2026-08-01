@@ -193,6 +193,20 @@ describe('settingsStore', () => {
     expect(useSettingsStore().dialogSize('snippet')).toEqual({ width: 720, height: 560 })
   })
 
+  // Reopening last session's comparisons is opt-OUT, so an absent (or junk)
+  // stored value must read as on.
+  it('persists the reopen-comparisons toggle, defaulting to on', () => {
+    const s = useSettingsStore()
+    expect(s.restoreSession).toBe(true)
+    s.setRestoreSession(false)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().restoreSession).toBe(false)
+
+    localStorage.setItem('diffbro.settings', JSON.stringify({ restoreSession: 'sure' }))
+    setActivePinia(createPinia())
+    expect(useSettingsStore().restoreSession).toBe(true)
+  })
+
   it('persists the maximize-dialogs toggle', () => {
     const s = useSettingsStore()
     expect(s.maximizeDialogs).toBe(false)

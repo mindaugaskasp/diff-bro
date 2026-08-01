@@ -372,6 +372,17 @@
   font-size: var(--font-2xs);
   font-weight: 700;
 }
+/* Tag ink. A tag colour is picked by the user, so only its LIGHTNESS can be
+   wrong for the ground — and only lightness is changed, to --tag-l, leaving hue
+   and chroma alone. Mixing toward --text instead drains chroma with it: #39c5cf
+   came out near-black and two different greens became one. Declared on the chip,
+   not :root — a custom property resolves var(--tc) where it is DECLARED.
+   check-theme-depth.mjs holds this to the 3.0 non-text floor on all 14. */
+.tag-word,
+.tag-chip,
+.tglyph {
+  --tag-ink: oklch(from var(--tc, var(--text-dim)) var(--tag-l) c h);
+}
 .tag-word {
   flex: none;
   min-width: 0;
@@ -386,6 +397,76 @@
   width: 7px;
   height: 7px;
   border-radius: var(--radius-pill);
+  background: var(--tag-ink);
+}
+/* The one tag pill: filter chips, field pills, suggestions. At rest it is an
+   OUTLINE — a neutral keyline and a --text label, with the tag's colour carried
+   by the glyph alone. Inking every resting border made all of them look picked. */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  line-height: 1;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+}
+/* Applied: a SOLID inked pill against an outlined one. Two tints of the same hue
+   were indistinguishable; fill-vs-no-fill reads before the colour does. The
+   label flips to the ground colour, which is dark on light themes and light on
+   dark ones, so it stays legible either way. `.on` is a filter chip you picked;
+   `.etag` is a tag the diff or snippet already carries — applied either way, and
+   the state that actually shows the colour, which an outline could not. */
+.tag-chip.on,
+.tag-chip.etag {
+  background: var(--tag-ink);
+  border-color: var(--tag-ink);
+  color: var(--bg);
+}
+.tag-chip.on .tglyph,
+.tag-chip.etag .tglyph {
+  color: var(--bg);
+}
+.tag-chip.on .usb-dot {
+  background: var(--bg);
+}
+/* Hover INVERTS the picked pill — the tag's colour on the surface instead of the
+   surface on the tag's colour. Only the interactive pills get it; a field pill
+   is a span with nothing to press. It must set every property .on sets, and sit
+   after it: `button.tag-chip:hover` already outranks `.tag-chip.on`, so a
+   partial rule left .on's ground-coloured label behind on a cleared fill —
+   white-on-white. Same ink/--bg pair as .on, so it is legible by the same
+   check-theme-depth floor. */
+button.tag-chip:hover {
+  background: var(--bg);
+  border-color: var(--tag-ink);
+  color: var(--tag-ink);
+}
+button.tag-chip:hover .tglyph {
+  color: var(--tag-ink);
+}
+button.tag-chip:hover .usb-dot {
+  background: var(--tag-ink);
+}
+/* The usage count sits with the pill, not in each component's stylesheet, so it
+   can follow the label onto the fill instead of staying a dim neutral there. */
+.tag-chip .ct,
+.tag-chip .usb-tct {
+  color: var(--text-hint);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.tag-chip.on .ct,
+.tag-chip.on .usb-tct,
+.tag-chip.etag .ct,
+button.tag-chip:hover .ct,
+button.tag-chip:hover .usb-tct {
+  color: inherit;
+  opacity: 0.75;
 }
 .tag-word .tw-label {
   overflow: hidden;

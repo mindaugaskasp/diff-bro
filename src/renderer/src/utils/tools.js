@@ -24,7 +24,10 @@ export const TOOLS = [
   { id: 'patch', name: 'Patch', icon: 'file', kind: 'Apply', action: 'apply-patch' }
 ]
 
-export const MAX_RECENT_TOOLS = 5
+// Three is what fits the sidebar without the row wrapping on every use; the
+// list is most-recent-first, so the shelf rotates with what you actually reach
+// for rather than accumulating.
+export const MAX_RECENT_TOOLS = 3
 
 const BY_ID = new Map(TOOLS.map((t) => [t.id, t]))
 

@@ -1,13 +1,17 @@
 // The tab store's whole job is that the diffStore keeps being THE ACTIVE
 // DOCUMENT: switching folds the live comparison back into its tab and unfolds
 // the next one, so nothing is ever held in two places at once.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { randomBytes } from 'crypto'
+import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { MAX_TABS, tabLabel } from '../../../src/renderer/src/utils/tabs'
 
+const SESSION_KEY = randomBytes(32)
 const FILE = (name, content = 'x') => ({ path: `/tmp/${name}`, name, content })
 const comparison = (l, r) => ({ mode: 'files', left: FILE(l), right: FILE(r) })
 
@@ -316,5 +320,207 @@ describe('a tab holding a saved diff', () => {
     const tabs = withTabs(comparison('a.txt', 'b.txt'))
     tabs.rename(tabs.activeId, 'just a tab')
     expect(vault.entries).toHaveLength(0)
+  })
+})
+
+// Session persistence. The mocked window.api routes through the REAL vault
+// crypto, so what lands in storage is genuinely sealed and a tampered file
+// genuinely fails to open — the two things this feature turns on.
+describe('the session, across a quit', () => {
+  const stored = () => localStorage.getItem('diffbro.session')
+
+  beforeEach(() => {
+    window.api = {
+      vaultEncrypt: async (plaintext, aad) => vaultEncrypt(SESSION_KEY, plaintext, aad),
+      vaultDecrypt: async (box, aad) => vaultDecrypt(SESSION_KEY, box, aad)
+    }
+  })
+  afterEach(() => {
+    delete window.api
+  })
+
+  // A fresh app against the same storage: what the next launch sees.
+  const relaunch = () => {
+    setActivePinia(createPinia())
+    const tabs = useTabsStore()
+    tabs.init()
+    return tabs
+  }
+
+  it('reopens every comparison, on the tab that was in front', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'), comparison('c.txt', 'd.txt'))
+    tabs.activate(tabs.tabs[0].id)
+    await tabs.saveSession()
+
+    const next = relaunch()
+    await expect(next.restoreSession()).resolves.toBe(2)
+    expect(next.tabs.map((t) => t.title)).toEqual(['a.txt ↔ b.txt', 'c.txt ↔ d.txt'])
+    expect(next.active.title).toBe('a.txt ↔ b.txt')
+    expect(useDiffStore().left.name).toBe('a.txt')
+  })
+
+  it('stores the file contents sealed, never in the clear', async () => {
+    const tabs = withTabs({ mode: 'paste', pasteLeft: 'the-secret-text', pasteRight: '' })
+    await tabs.saveSession()
+    expect(stored()).not.toContain('the-secret-text')
+
+    const next = relaunch()
+    await next.restoreSession()
+    expect(useDiffStore().pasteLeft).toBe('the-secret-text')
+    expect(useDiffStore().mode).toBe('paste')
+  })
+
+  // The active tab's own snapshot is only refreshed on a switch, so saving it
+  // would store the comparison as it was before the last edits.
+  it('keeps the edits made since the last tab switch', async () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    diff.right = FILE('edited.txt')
+    await tabs.saveSession()
+
+    const next = relaunch()
+    await next.restoreSession()
+    expect(useDiffStore().right.name).toBe('edited.txt')
+  })
+
+  it('brings a tab back with its typed name and its saved-diff identity', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    tabs.open(comparison('cfg.json', 'cfg2.json'), { diffSaved: true, entryId: 'vault-7' })
+    tabs.rename(tabs.activeId, 'prod vs staging')
+    await tabs.saveSession()
+
+    const next = relaunch()
+    await next.restoreSession()
+    expect(tabLabel(next.active)).toBe('prod vs staging')
+    expect(next.active.entryId).toBe('vault-7')
+    // Opening that saved diff again focuses the restored tab instead of stacking
+    // a duplicate on top of it.
+    expect(next.open(comparison('cfg.json', 'cfg2.json'), { entryId: 'vault-7' })).toBe(
+      next.active.id
+    )
+    expect(next.tabs).toHaveLength(2)
+  })
+
+  it('opens clean when nothing was left open', async () => {
+    const tabs = relaunch()
+    await expect(tabs.restoreSession()).resolves.toBe(0)
+    expect(tabs.tabs).toHaveLength(1)
+    expect(tabs.active.title).toBe('Untitled')
+  })
+
+  it('forgets the session once the last comparison is closed', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    await tabs.saveSession()
+    tabs.close(tabs.activeId)
+    await tabs.saveSession()
+
+    const next = relaunch()
+    await expect(next.restoreSession()).resolves.toBe(0)
+    expect(useDiffStore().left).toBeNull()
+  })
+
+  it('refuses a tampered session rather than restoring what it says', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    await tabs.saveSession()
+    const box = JSON.parse(stored())
+    const flipped = Buffer.from(box.data, 'base64')
+    flipped[0] ^= 0xff
+    localStorage.setItem(
+      'diffbro.session',
+      JSON.stringify({ ...box, data: flipped.toString('base64') })
+    )
+
+    const next = relaunch()
+    await expect(next.restoreSession()).resolves.toBe(0)
+    expect(useDiffStore().left).toBeNull()
+  })
+
+  it('refuses a session sealed for something other than a session', async () => {
+    const snapshot = JSON.stringify({ version: 1, tabs: [] })
+    const box = await vaultEncrypt(SESSION_KEY, snapshot, 'saved-diff')
+    localStorage.setItem('diffbro.session', JSON.stringify(box))
+    await expect(relaunch().restoreSession()).resolves.toBe(0)
+  })
+
+  // A locked keychain is temporary. Clearing the file there would throw away
+  // comparisons that are still perfectly restorable on the next launch.
+  it('keeps the stored session when the vault key cannot be unlocked', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    await tabs.saveSession()
+    const sealed = stored()
+
+    const next = relaunch()
+    window.api.vaultDecrypt = async () => ({ error: 'vault-key-unavailable' })
+    await expect(next.restoreSession()).resolves.toBe(0)
+    // The empty window it left behind must not be written over the session.
+    await next.saveSession()
+    expect(stored()).toBe(sealed)
+  })
+
+  it('writes nothing at all when the key is unavailable', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
+    await tabs.saveSession()
+    expect(stored()).toBeNull()
+  })
+})
+
+// Settings → Storage → "Reopen the comparisons that were open when I quit".
+describe('when reopening comparisons is turned off', () => {
+  beforeEach(() => {
+    window.api = {
+      vaultEncrypt: async (plaintext, aad) => vaultEncrypt(SESSION_KEY, plaintext, aad),
+      vaultDecrypt: async (box, aad) => vaultDecrypt(SESSION_KEY, box, aad)
+    }
+  })
+  afterEach(() => {
+    delete window.api
+  })
+
+  it('is on to begin with', () => {
+    expect(useSettingsStore().restoreSession).toBe(true)
+  })
+
+  it('forgets the session already stored the moment it is turned off', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    await tabs.saveSession()
+    expect(localStorage.getItem('diffbro.session')).toContain('"data"')
+
+    tabs.setRestoreSession(false)
+    expect(localStorage.getItem('diffbro.session')).not.toContain('"data"')
+    expect(useSettingsStore().restoreSession).toBe(false)
+  })
+
+  it('stores nothing while it is off', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    tabs.setRestoreSession(false)
+    tabs.open(comparison('c.txt', 'd.txt'))
+    await tabs.saveSession()
+    expect(localStorage.getItem('diffbro.session')).not.toContain('"data"')
+  })
+
+  // The choice outlives the quit — it is written to settings, not just held.
+  it('opens on an empty comparison next launch', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    await tabs.saveSession()
+    useSettingsStore().setRestoreSession(false)
+
+    setActivePinia(createPinia())
+    const next = useTabsStore()
+    next.init()
+    await expect(next.restoreSession()).resolves.toBe(0)
+    expect(useDiffStore().left).toBeNull()
+  })
+
+  it('starts storing again once it is turned back on', async () => {
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    tabs.setRestoreSession(false)
+    tabs.setRestoreSession(true)
+    await tabs.saveSession()
+
+    setActivePinia(createPinia())
+    const next = useTabsStore()
+    next.init()
+    await expect(next.restoreSession()).resolves.toBe(1)
   })
 })

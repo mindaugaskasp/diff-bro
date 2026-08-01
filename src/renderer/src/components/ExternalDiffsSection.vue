@@ -1,6 +1,7 @@
 <script setup>
 // The "External diffs" section: diffs shared by others, each signed by its sender.
 import { computed, ref } from 'vue'
+import { matchesTags } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
 import { useDiffStore } from '../stores/diffStore'
 import SavedDiffRow from './SavedDiffRow.vue'
@@ -12,7 +13,8 @@ const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
   search: { type: String, default: '' },
-  tag: { type: String, default: '' },
+  /** @type {import('vue').PropType<string[]>} */
+  tags: { type: Array, default: () => [] },
   favOnly: { type: Boolean, default: false }
 })
 
@@ -23,7 +25,7 @@ const open = ref(true)
 const q = computed(() => props.search.trim().toLowerCase())
 const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
-  (!props.tag || e.tags.includes(props.tag))
+  matchesTags(e.tags, props.tags)
 // One list, favorited (starred) shared diffs first — no separate Favorites shelf.
 const rows = computed(() =>
   (props.favOnly

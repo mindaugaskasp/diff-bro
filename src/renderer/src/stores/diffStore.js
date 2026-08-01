@@ -6,6 +6,9 @@ import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
+import { clipboardSnippetName, tabsFullMessage } from '../utils/cliCommand'
+import { detectSnippetLanguage } from '../utils/detectLanguage'
+import { MAX_TABS } from '../utils/tabs'
 import {
   afterFrames,
   captureRectOf,
@@ -14,11 +17,11 @@ import {
   untilChanged
 } from '../utils/captureTarget'
 import { getDiffScroller } from '../utils/diffScroller'
+import { playShutter } from '../utils/shutter'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { useSettingsStore } from './settingsStore'
 import { useTabsStore } from './tabsStore'
-import { isBlank } from '../utils/tabs'
 import { TOOLS } from '../utils/tools'
 import { sideName } from '../utils/pasteNames'
 
@@ -187,6 +190,8 @@ export const useDiffStore = defineStore('diff', {
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
     notice: null,
+    // The `diffbro compare` refusal when every tab is in use (utils/cli message).
+    cliBlocked: null,
     // save-diff dialog visibility
     showSaveDialog: false,
     // when true, the save dialog flows straight into the share dialog
@@ -374,6 +379,7 @@ export const useDiffStore = defineStore('diff', {
     // shortcut bar hidden for the rest of the session.
     async _shoot({ band = null, awaitRediff = false } = {}) {
       this.imageCapturing = true
+      playShutter({ enabled: useSettingsStore().shutterSound })
       try {
         // Only a restore re-diffs, and that must land and paint before the shot
         // — counting frames alone photographed the previous diff, or this one
@@ -455,12 +461,15 @@ export const useDiffStore = defineStore('diff', {
       )
     },
     // Closing the active tab from a menu or accelerator takes the same confirm
-    // path the tab's own × does.
+    // path the tab's own × does. Whether there is anything to lose comes from
+    // the LIVE document, not the tab's snapshot: a snapshot is only captured
+    // when tabs switch, so the tab you are looking at still reads as blank
+    // while it holds work — and the confirm never appeared.
     requestActiveTabClose() {
       const tabs = useTabsStore()
       const tab = tabs.active
       if (!tab) return
-      if (!tab.diffSaved && !isBlank(tab)) this.pendingTabClose = tab.id
+      if (!this.diffSaved && this.hasActive) this.pendingTabClose = tab.id
       else tabs.close(tab.id)
     },
     confirmTabClose() {
@@ -591,6 +600,10 @@ export const useDiffStore = defineStore('diff', {
       }
       if (file.error === 'xlsx') {
         this.showNotice(`"${file.name}" could not be read as a spreadsheet — ${file.message}.`)
+        return
+      }
+      if (file.error === 'unreadable') {
+        this.showNotice(`"${file.name}" could not be read — is it a folder?`)
         return
       }
       // Any other error shape (e.g. a path main refused to serve) is not a
@@ -886,6 +899,49 @@ export const useDiffStore = defineStore('diff', {
       // Opened from a saved diff: it already exists in the vault, so replacing
       // it later needs no "you'll lose it" prompt.
       this.diffSaved = true
+    },
+    // A `diffbro …` launch, forwarded by main. Files are read through the same
+    // readFile IPC as a drop, so the CLI opens nothing the app could not.
+    async runCliCommand(command) {
+      if (command?.name === 'create-snippet') useSnippetStore().startNewSnippetFrom('', 'auto')
+      else if (command?.name === 'clipboard-save') await this.saveClipboardSnippet(command.text)
+      else if (command?.name === 'compare') await this.compareFromCli(command.files)
+    },
+    async saveClipboardSnippet(text) {
+      if (!String(text ?? '').trim()) {
+        this.showNotice('The clipboard is empty.')
+        return
+      }
+      const snippets = useSnippetStore()
+      const id = await snippets.add({
+        name: clipboardSnippetName(),
+        content: text,
+        language: detectSnippetLanguage(text)
+      })
+      if (id) snippets.editingSnippet = { id }
+    },
+    async compareFromCli(files) {
+      const tabs = useTabsStore()
+      // Whether there is room HERE comes from the live comparison, not the
+      // active tab's snapshot: a snapshot is only captured when tabs switch, so
+      // the tab you are looking at still reads as blank while it holds a diff.
+      if (this.left || this.right) {
+        if (!tabs.canAdd) {
+          this.cliBlocked = tabsFullMessage(files, MAX_TABS)
+          return
+        }
+        tabs.newTab()
+      }
+      const sides = ['left', 'right']
+      for (const [i, path] of (files ?? []).entries()) {
+        // A path from a shell is not one the app chose, so the read is allowed
+        // to fail outright rather than answer with an error shape.
+        try {
+          this.receive(sides[i], await window.api.readFile(path))
+        } catch {
+          this.showNotice(`Could not open "${String(path).split(/[\\/]/).pop()}".`)
+        }
+      }
     },
     // A result chosen in the quick look-up (main forwards { kind, id }); the big
     // view does the load/restore the launcher stays out of.

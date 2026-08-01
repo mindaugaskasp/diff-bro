@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { useDiffStore } from './diffStore'
 import { useVaultStore } from './vaultStore'
+import { useSettingsStore } from './settingsStore'
+import { loadPersisted, savePersisted } from '../persist'
 import {
   MAX_TABS,
   blankSnapshot,
@@ -11,6 +13,13 @@ import {
   nextActiveId,
   tabTitle
 } from '../utils/tabs'
+import {
+  EMPTY_ENVELOPE,
+  SESSION_VERSION,
+  packSession,
+  readEnvelope,
+  readSession
+} from '../utils/session'
 
 // Several comparisons open at once. The diffStore stays exactly what it was —
 // THE ACTIVE DOCUMENT — and a tab is the snapshot it round-trips through
@@ -21,11 +30,19 @@ import {
 // on the complexity limit and every `=` in a signature counts against it.
 const OPEN_DEFAULTS = { diffSaved: false, entryId: null, reuseBlank: true, name: '' }
 
+// The session file is sealed with the vault key, like a saved diff — it holds
+// the same thing (whole file contents), so it is stored the same way. The AAD
+// binds it to this store and shape, so a box lifted from anywhere else fails.
+const SESSION_AAD = 'session|v1'
+
 export const useTabsStore = defineStore('tabs', {
   state: () => ({
     /** @type {import('../utils/tabs').DiffTab[]} */
     tabs: [],
-    activeId: null
+    activeId: null,
+    // The stored session has been read (or found absent) and may now be written
+    // over. False while the vault key is unavailable — see saveSession.
+    sessionReady: false
   }),
   getters: {
     active: (s) => s.tabs.find((t) => t.id === s.activeId) ?? null,
@@ -182,6 +199,75 @@ export const useTabsStore = defineStore('tabs', {
       const tab = this.active
       if (!tab) return
       tab.title = tabTitle(useDiffStore().snapshot())
+    },
+    /**
+     * Write the open comparisons out, so closing the app is not a loss. Sealed
+     * with the vault key (never plaintext: this is the file contents you were
+     * reading). Called on a debounce — see useSessionPersistence.
+     */
+    async saveSession() {
+      if (!useSettingsStore().restoreSession) return
+      if (typeof window.api?.vaultEncrypt !== 'function') return
+      const diff = useDiffStore()
+      const packed = packSession(this.tabs, this.activeId, {
+        snapshot: diff.snapshot(),
+        diffSaved: diff.diffSaved
+      })
+      if (!packed) {
+        // Only clear a session we were able to READ. A locked keychain is
+        // temporary; the comparisons behind it are not ours to throw away.
+        if (this.sessionReady) savePersisted('session', EMPTY_ENVELOPE)
+        return
+      }
+      const box = await window.api.vaultEncrypt(JSON.stringify(packed), SESSION_AAD)
+      if (box?.error) return
+      savePersisted(
+        'session',
+        JSON.stringify({ version: SESSION_VERSION, iv: box.iv, data: box.data })
+      )
+      this.sessionReady = true
+    },
+    /**
+     * Reopen last session's comparisons, replacing the blank tab init() made.
+     * Runs before the window accepts anything else, so nothing it restores can
+     * land on top of a diff the user already asked for.
+     * @returns {Promise<number>} how many tabs came back
+     */
+    async restoreSession() {
+      if (!useSettingsStore().restoreSession) return 0
+      const box = readEnvelope(loadPersisted('session'))
+      if (!box || typeof window.api?.vaultDecrypt !== 'function') {
+        this.sessionReady = true
+        return 0
+      }
+      const plaintext = await window.api.vaultDecrypt(box, SESSION_AAD)
+      // An { error } is the KEY, not the file: keep the session for a launch
+      // where the keychain is open rather than overwriting it with nothing.
+      if (plaintext && typeof plaintext === 'object') return 0
+      this.sessionReady = true
+      const session = readSession(plaintext)
+      if (!session) return 0
+      this._restoreTabs(session)
+      return session.tabs.length
+    },
+    /**
+     * Settings → Storage. Turning it off forgets what is already stored:
+     * leaving the last comparisons on disk after "don't reopen them" would be a
+     * promise only half kept.
+     * @param {boolean} on
+     */
+    setRestoreSession(on) {
+      useSettingsStore().setRestoreSession(on)
+      if (!on) savePersisted('session', EMPTY_ENVELOPE)
+    },
+    _restoreTabs(session) {
+      this.tabs = session.tabs.map((stored) => {
+        const tab = createTab(stored.snapshot, { diffSaved: stored.diffSaved })
+        tab.entryId = stored.entryId
+        tab.customTitle = cleanTabName(stored.customTitle)
+        return tab
+      })
+      this._show(this.tabs[session.tabs.findIndex((t) => t.active)] ?? this.tabs[0])
     }
   }
 })

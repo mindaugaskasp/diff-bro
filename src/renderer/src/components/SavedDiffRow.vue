@@ -92,8 +92,8 @@ async function open() {
           </template>
           <template v-if="shownTags.length">
             <span v-if="entry.from" class="sep">·</span>
-            <span class="tag-word">
-              <span class="tw-dot" :style="{ background: tagColor(shownTags[0]) }"></span>
+            <span class="tag-word" :style="{ '--tc': tagColor(shownTags[0]) }">
+              <span class="tw-dot"></span>
               <span class="tw-label">{{ shownTags[0] }}</span>
               <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
             </span>

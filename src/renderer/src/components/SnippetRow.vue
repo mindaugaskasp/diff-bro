@@ -101,8 +101,12 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       >
         <AppIcon name="braces" />{{ entry.vars.length }}
       </span>
-      <span v-if="shownTags.length" class="tag-word">
-        <span class="tw-dot" :style="{ background: store.colorOf(shownTags[0]) }"></span>
+      <span
+        v-if="shownTags.length"
+        class="tag-word"
+        :style="{ '--tc': store.colorOf(shownTags[0]) }"
+      >
+        <span class="tw-dot"></span>
         <span class="tw-label">{{ shownTags[0] }}</span>
         <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
       </span>

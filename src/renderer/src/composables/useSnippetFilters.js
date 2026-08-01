@@ -33,7 +33,10 @@ export function useSnippetFilters() {
       entry.tags.some((t) => t.includes(q)) ||
       (!entry.tags.length && 'default'.includes(q))
     const has = (t) => (t === DEFAULT_TAG ? entry.tags.length === 0 : entry.tags.includes(t))
-    const byTags = activeTags.value.size === 0 || [...activeTags.value].every(has)
+    // Either, not both: picking a second tag widens the list. Requiring every
+    // selected tag hid a snippet carrying only the first one, which is the
+    // opposite of what selecting it asked for.
+    const byTags = activeTags.value.size === 0 || [...activeTags.value].some(has)
     return byText && byTags
   }
 

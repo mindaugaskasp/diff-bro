@@ -67,7 +67,7 @@ function exportTag() {
       <button
         v-for="t in chips"
         :key="t.name"
-        class="chip"
+        class="tag-chip chip"
         :class="{ def: t.name === DEFAULT, on: active.has(t.name) }"
         :style="t.color ? { '--tc': t.color } : {}"
         :aria-pressed="active.has(t.name)"

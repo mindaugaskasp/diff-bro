@@ -30,7 +30,12 @@ defineExpose(field)
       Tags <span class="hint">— up to {{ MAX_TAGS }}, or leave empty for Default</span>
     </div>
     <div class="tagfield" :class="{ ro: readonly }" @click="!readonly && field.inputEl?.focus()">
-      <span v-for="t in field.tags" :key="t" class="etag" :style="{ '--tc': field.colorFor(t) }">
+      <span
+        v-for="t in field.tags"
+        :key="t"
+        class="tag-chip etag"
+        :style="{ '--tc': field.colorFor(t) }"
+      >
         <TagGlyph :color="field.colorFor(t)" />{{ t }}
         <button
           v-if="!readonly"
@@ -64,7 +69,7 @@ defineExpose(field)
         v-for="s in field.suggestions"
         :key="s"
         type="button"
-        class="sugg"
+        class="tag-chip sugg"
         :style="{ '--tc': store.colorOf(s) }"
         @mousedown.prevent
         @click="field.add(s)"

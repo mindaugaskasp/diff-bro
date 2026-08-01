@@ -115,6 +115,15 @@ contextBridge.exposeInMainWorld('api', {
   dataDirReveal: () => ipcRenderer.invoke('datadir:reveal'),
   relaunch: () => ipcRenderer.invoke('app:relaunch'),
   // App-menu actions (Open Left, Swap, …) arrive from the main process.
+  // The `diffbro` terminal command. One-way, main → renderer, plus the shim
+  // installer behind Settings; no key material and no paths the renderer chose.
+  cliReady: () => ipcRenderer.send('cli:ready'),
+  onCliCommand: (handler) => {
+    ipcRenderer.on('cli:command', (_e, command) => handler(command))
+  },
+  cliStatus: () => ipcRenderer.invoke('cli:status'),
+  cliInstall: () => ipcRenderer.invoke('cli:install'),
+  cliRemove: () => ipcRenderer.invoke('cli:remove'),
   onMenuAction: (handler) => {
     ipcRenderer.on('menu:action', (_e, action) => handler(action))
   },

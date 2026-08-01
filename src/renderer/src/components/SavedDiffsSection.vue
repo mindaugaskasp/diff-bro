@@ -1,6 +1,7 @@
 <script setup>
 // The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs.
 import { computed, ref } from 'vue'
+import { matchesTags } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
@@ -13,13 +14,14 @@ const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
   search: { type: String, default: '' },
-  tag: { type: String, default: '' },
+  /** @type {import('vue').PropType<string[]>} */
+  tags: { type: Array, default: () => [] },
   favOnly: { type: Boolean, default: false }
 })
 const q = computed(() => props.search.trim().toLowerCase())
 const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
-  (!props.tag || e.tags.includes(props.tag))
+  matchesTags(e.tags, props.tags)
 
 const tabs = useTabsStore()
 const vault = useVaultStore()

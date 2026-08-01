@@ -35,6 +35,10 @@ a hard promise: it never touches the network.
 - **Paste mode** for quick throwaway comparisons, including pasted text against a
   real file — or just hit **Ctrl/Cmd+V** to paste straight into a comparison.
 - **Drag & drop** files onto the window; it warns before discarding unsaved work.
+- **Picks up where you left off** — the comparisons open when you quit, tabs and
+  all, are reopened on the next launch (stored encrypted, like everything else
+  Diff Bro keeps). Close the last one and the next launch starts clean. Turn it
+  off in **Settings → Storage**, which also forgets the stored one.
 - **Saved diffs** — encrypted, optionally auto-expiring, and tagged (retag any of
   them later from the row's tag button).
 - **Share** a diff as a sealed, signed file only its intended recipient can open.
@@ -78,6 +82,12 @@ a hard promise: it never touches the network.
   (AES-256-GCM) with an opt-in raw-key AES-256-CBC decrypt for external
   payloads. Your recent tools sit on the sidebar shelf; the rest are one search
   away.
+- **Terminal command** — install `diffbro` from Settings ▸ Terminal, then
+  `diffbro compare a.json b.json` opens a comparison in the running app,
+  `diffbro create snippet` opens a new snippet, and `diffbro cb save` keeps what
+  you just copied. `diffbro help` lists them; `diffbro help <command>` explains
+  one. A second launch hands its arguments to the running window
+  through Electron's single-instance lock — nothing listens on a port.
 - **Yours to arrange** — fourteen themes (incl. Nord, Sepia, Solar, a playful
   Nyan with a reward cat, a Matrix digital-rain theme, and accessibility-grade
   Contrast and Beacon), one tag namespace shared across diffs and snippets, a

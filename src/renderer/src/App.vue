@@ -4,6 +4,7 @@ import { useDiffStore } from './stores/diffStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
 import { usePasteShortcut } from './composables/usePasteShortcut'
+import { useSessionPersistence } from './composables/useSessionPersistence'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
@@ -32,11 +33,25 @@ const settings = useSettingsStore()
 store.initTheme()
 window.api.onMenuAction((action) => store.handleMenuAction(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
+// The `diffbro` command: main holds anything that arrived before this window
+// existed, and releases it only once the restored session is in place (below),
+// so a comparison the user asked for is never overwritten by an old one.
+window.api.onCliCommand((command) => store.runCliCommand(command))
 usePasteShortcut(() => store.requestPasteFromClipboard())
+// Nothing is written until the stored session has been read back (or found
+// absent), so a blank startup window can never overwrite it.
+useSessionPersistence()
 // Re-diff loaded files + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {
   store.refreshFromDisk()
   store.resolveActiveTheme()
+})
+
+// Reopen last session's comparisons, then let main release any `diffbro`
+// command it was holding for this window.
+onMounted(async () => {
+  await tabs.restoreSession()
+  window.api.cliReady()
 })
 
 // First run only: seed the example snippet into an empty library, once.
