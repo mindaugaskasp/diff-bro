@@ -73,8 +73,18 @@ downgrades to a comment rather than failing at the API.
 Setting one up is a one-time web step, and there are two shapes:
 
 - **A GitHub App you own** — no second email, tokens expire hourly, permissions
-  scoped to `Pull requests: read & write`. Install it on the repo and mint an
-  installation token into `DIFFBRO_REVIEW_TOKEN`.
+  scoped to `Pull requests: read & write`. An installation token cannot be copied
+  from the UI, so `scripts/review-token.mjs` mints one from the App ID and the
+  downloaded `.pem`:
+
+  ```sh
+  export DIFFBRO_REVIEW_APP_ID=<app id>
+  export DIFFBRO_REVIEW_KEY=~/.config/diffbro/reviewer.pem
+  export DIFFBRO_REVIEW_TOKEN=$(node scripts/review-token.mjs)
+  ```
+
+  The token lasts an hour; re-run the last line when it expires.
+
 - **A machine account** — simpler: a second GitHub account added as a
   collaborator, `gh auth login` as it, then `DIFFBRO_REVIEW_USER=<name>`.
 
