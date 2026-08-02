@@ -1,6 +1,13 @@
 # specs/
 
-One directory per feature: `specs/<feature-slug>/plan.md`.
+One directory per feature: `specs/YYYY-MM-DD-<description>/plan.md`.
+
+```
+specs/2026-08-02-tab-ui-redesign/plan.md
+```
+
+The date is the day the spec was created — it fixes chronology in `ls` order
+and never changes, even when the work runs long or is picked up months later.
 
 Committed on purpose. `quality-audit.md` is a gitignored scratchpad; a spec is
 the record of *why* the code looks the way it does, and is worth more six months
@@ -12,13 +19,15 @@ closes with `/validate`. Template: `.claude/skills/implement/plan-template.md`.
 ## Conventions
 
 - **One spec, one branch**, created before the first edit:
-  `feat/` · `fix/` · `improvement/` + the slug →
-  `specs/tab-ui-redesign/` gives `improvement/tab-ui-redesign`. `fix/` needs a
-  reproduction, `improvement/` is existing behaviour made better, `feat/` is a
-  new capability. Specs share a branch only on *direct* overlap — same files,
-  same reason, or one cannot run without the other's unmerged work — and the
-  reason goes in Decisions.
-- **Slug is kebab-case** and matches the branch's short description.
+  `feat/` · `fix/` · `improvement/` + the description, **without the date** —
+  `specs/2026-08-02-tab-ui-redesign/` gives `improvement/tab-ui-redesign`. The
+  prefix already carries the meaning a date would add, and dated branches read
+  as stale long before they are. `fix/` needs a reproduction, `improvement/` is
+  existing behaviour made better, `feat/` is a new capability. Specs share a
+  branch only on *direct* overlap — same files, same reason, or one cannot run
+  without the other's unmerged work — and the reason goes in Decisions.
+- **Description is kebab-case** and identical in the directory and the branch,
+  so `ls -d specs/*-<description>` finds the spec without knowing its date.
 - **Status is the truth:** `draft` → `approved` → `in-progress` → `shipped`.
   Never shipped with steps outstanding.
 - **Decisions is append-only** — it stops settled questions being re-litigated.

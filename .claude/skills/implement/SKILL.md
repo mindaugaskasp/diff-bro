@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Plan and build a feature in DiffBro under a tracked spec — specs/<slug>/plan.md holding the problem, the solution, and a progress-tracked plan bound to this repo's standards, including which docs go stale. Stops for approval before code, branches, closes with /validate. Use for /implement, or any feature or fix large enough to need a plan.
+description: Plan and build a feature in DiffBro under a tracked spec — specs/YYYY-MM-DD-<slug>/plan.md holding the problem, the solution, and a progress-tracked plan bound to this repo's standards, including which docs go stale. Stops for approval before code, branches, closes with /validate. Use for /implement, or any feature or fix large enough to need a plan.
 ---
 
 # Implement
@@ -11,7 +11,17 @@ description: Plan and build a feature in DiffBro under a tracked spec — specs/
 
 `/implement <name>` → kebab-case slug. No argument: derive one, say which.
 
-Then check `specs/<slug>/plan.md`:
+Specs are dated: `specs/YYYY-MM-DD-<slug>/plan.md`, the date being the day the
+spec was created and never touched again. The branch drops it
+(`improvement/<slug>`) — the prefix already carries the meaning there.
+
+Look up by slug, not by guessing a date:
+
+```sh
+ls -d specs/*-<slug> 2>/dev/null
+```
+
+Then, on the plan it finds:
 
 | state | do |
 |---|---|
@@ -36,9 +46,9 @@ Decisions.
 
 ## 3. Write the plan
 
-Copy this skill's `plan-template.md` to `specs/<slug>/plan.md`. It documents its
-own sections — fill **all** of them. `<Feature title>` or an unfilled `| ... |`
-row means unfinished.
+Copy this skill's `plan-template.md` to `specs/$(date +%F)-<slug>/plan.md`. It
+documents its own sections — fill **all** of them. `<Feature title>` or an
+unfilled `| ... |` row means unfinished.
 
 Three things the template assumes you know:
 

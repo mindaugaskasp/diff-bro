@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Totals the Claude token usage recorded for this repo between two timestamps,
-// for the `Claude tokens used` row in specs/<slug>/plan.md.
+// for the `Claude tokens used` row in specs/YYYY-MM-DD-<slug>/plan.md.
 //
 // Reads Claude Code's own session transcripts (~/.claude/projects/*/*.jsonl) —
 // no dependency, no network, nothing to install. A feature usually spans
