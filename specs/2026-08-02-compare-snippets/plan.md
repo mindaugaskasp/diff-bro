@@ -1,15 +1,15 @@
 # Compare snippets by dragging them into the diff pane
 
-|                                         |                               |
-| --------------------------------------- | ----------------------------- |
-| **Status**                              | in-progress                   |
-| **Progress**                            | 2 / 11 steps                  |
-| **Branch**                              | `feat/compare-snippets`       |
-| **Started**                             | 2026-08-02                    |
-| **Finished**                            | —                             |
-| **Bugs found and fixed this iteration** | 0 / 0                         |
-| **Token baseline**                      | 2026-08-02T20:17:25Z          |
-| **Claude tokens used**                  | not measured                  |
+|                                         |                         |
+| --------------------------------------- | ----------------------- |
+| **Status**                              | in-progress             |
+| **Progress**                            | 3 / 11 steps            |
+| **Branch**                              | `feat/compare-snippets` |
+| **Started**                             | 2026-08-02              |
+| **Finished**                            | —                       |
+| **Bugs found and fixed this iteration** | 0 / 0                   |
+| **Token baseline**                      | 2026-08-02T20:17:25Z    |
+| **Claude tokens used**                  | not measured            |
 
 ## Problem
 
@@ -183,7 +183,7 @@ Written before the code; each bug's test watched failing first.
       them fail.
 - [x] 2. `src/renderer/src/utils/snippetSource.js` — pure: entry + content → side
       source, `null` for a secret or unknown entry.
-- [ ] 3. `src/renderer/src/composables/useSnippetDrag.js` — `dragstart` payload
+- [x] 3. `src/renderer/src/composables/useSnippetDrag.js` — `dragstart` payload
       (id only) and the drop-type guard, factored out of the SFC so it is
       unit-testable (the standards' rule for event logic).
 - [ ] 4. `SnippetRow.vue` — `draggable` on the row, `draggable="false"` on the
@@ -206,10 +206,11 @@ Written before the code; each bug's test watched failing first.
 
 ### Outstanding — where this branch stopped
 
-The pure core is written and unit-tested (`snippetSource.js`, 9 tests): the
-entry→side mapping, the secret refusal, and defensive parsing of the drag
-payload. Nothing is wired to the UI yet — steps 3-11 remain, starting with the
-`useSnippetDrag` composable and `SnippetRow.vue`.
+The core and the event logic are written and unit-tested — `snippetSource.js`
+(9 tests) and `useSnippetDrag.js` (6). Between them they cover the entry→side
+mapping, the secret refusal on both the drag and the map, and defensive parsing
+of the drag payload. Nothing is wired to the UI yet: steps 4-11 remain, starting
+with `draggable` on `SnippetRow.vue`.
 
 ## Decisions
 
