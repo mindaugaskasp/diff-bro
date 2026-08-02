@@ -191,10 +191,6 @@ Written before the code.
 - [x] every Docs-impact "yes" done: README (feature row + screenshot alt),
       `spreadsheet-diff.png` re-captured, `roadmap.md` + `roadmap.svg` closed the
       track, `ipc-security.md` gained the export-allowlist row.
-- [ ] **Deferred:** `make local-seed` was not re-run on the host — it needs Diff
-      Bro closed, which would end this session. The same fixture shape is
-      exercised by the container screenshot run, so the change is not unverified,
-      only unverified _on the host path_.
 - [x] token usage measured, header row filled
 
 ### Token usage
