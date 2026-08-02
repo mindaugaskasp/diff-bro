@@ -182,6 +182,28 @@ test('aligns columns across an insert and forgives sub-material noise', async ({
     await page.locator('.seg-opt', { hasText: '±0.01' }).click()
     await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
     await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
+
+    // A threshold of your own — the field only exists once Custom is picked, and
+    // an empty one compares exactly rather than forgiving everything.
+    await page.locator('.seg-opt', { hasText: 'Custom' }).click()
+    const value = page.getByLabel('Custom tolerance')
+    const unit = (name) => page.getByRole('group', { name: 'Unit' }).getByRole('button', { name })
+    await expect(value).toBeVisible()
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+
+    // 0.004 of 90 is ~0.0044%, so a raw 0.001 leaves it changed and 0.01 does not.
+    await unit('abs').click()
+    await value.fill('0.001')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await value.fill('0.01')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
+
+    // ...and as a percentage, which is what materiality actually means.
+    await unit('%').click()
+    await value.fill('0.001')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await value.fill('0.01')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

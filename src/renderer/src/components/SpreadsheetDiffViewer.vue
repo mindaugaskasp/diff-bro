@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import { TOLERANCES, useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
+import { TOLERANCES, TOLERANCE_UNITS, useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { GRID_ROW_H } from '../utils/virtualRows'
@@ -20,7 +20,9 @@ const {
   select,
   showFormulas,
   hasFormulas,
-  toleranceId
+  toleranceId,
+  customValue,
+  customUnit
 } = useSpreadsheetDiff()
 
 const allRows = computed(() => activeSheet.value?.rows ?? [])
@@ -53,6 +55,27 @@ onMounted(() => {
           :options="TOLERANCES"
           data-tip="Numbers closer than this count as the same figure"
         />
+        <!-- Only when asked for, so the band does not grow for the four presets
+             that cover the common thresholds. -->
+        <template v-if="toleranceId === 'custom'">
+          <input
+            v-model="customValue"
+            class="tol-value"
+            type="number"
+            min="0"
+            step="any"
+            inputmode="decimal"
+            placeholder="0"
+            aria-label="Custom tolerance"
+            data-tip="Leave it empty to compare exactly"
+          />
+          <SegmentedControl
+            v-model:value="customUnit"
+            compact
+            label="Unit"
+            :options="TOLERANCE_UNITS"
+          />
+        </template>
         <button
           v-if="hasFormulas"
           class="btn btn-sm"

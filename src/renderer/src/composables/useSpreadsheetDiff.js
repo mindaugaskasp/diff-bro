@@ -8,7 +8,16 @@ export const TOLERANCES = [
   { value: 'exact', label: 'Exact', tolerance: null },
   { value: 'abs', label: '±0.01', tolerance: { abs: 0.01 } },
   { value: 'half', label: '±0.5%', tolerance: { pct: 0.5 } },
-  { value: 'one', label: '±1%', tolerance: { pct: 1 } }
+  { value: 'one', label: '±1%', tolerance: { pct: 1 } },
+  // The threshold the engagement set, which is never one of four numbers.
+  { value: 'custom', label: 'Custom', tolerance: null }
+]
+
+// Explicit, never sniffed from the text: "50" meaning half a percent or fifty
+// pounds is not something to guess at.
+export const TOLERANCE_UNITS = [
+  { value: 'pct', label: '%' },
+  { value: 'abs', label: 'abs' }
 ]
 
 // Per-sheet diff of the two loaded spreadsheets + the active tab.
@@ -18,8 +27,19 @@ export function useSpreadsheetDiff() {
 
   const showFormulas = ref(false)
   const toleranceId = ref('exact')
-  const tolerance = computed(
-    () => TOLERANCES.find((t) => t.value === toleranceId.value)?.tolerance ?? null
+  const customValue = ref('')
+  const customUnit = ref('pct')
+  // Empty, unparseable or non-positive reads as Exact: a zero threshold forgives
+  // nothing while claiming a tolerance is set.
+  const customTolerance = computed(() => {
+    const n = Number(String(customValue.value).trim())
+    if (!Number.isFinite(n) || n <= 0) return null
+    return customUnit.value === 'abs' ? { abs: n } : { pct: n }
+  })
+  const tolerance = computed(() =>
+    toleranceId.value === 'custom'
+      ? customTolerance.value
+      : (TOLERANCES.find((t) => t.value === toleranceId.value)?.tolerance ?? null)
   )
 
   const sheets = computed(() =>
@@ -68,6 +88,9 @@ export function useSpreadsheetDiff() {
     select,
     showFormulas,
     hasFormulas,
-    toleranceId
+    toleranceId,
+    customValue,
+    customUnit,
+    tolerance
   }
 }

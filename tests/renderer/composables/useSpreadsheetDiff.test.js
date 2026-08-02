@@ -61,3 +61,41 @@ describe('useSpreadsheetDiff', () => {
     expect(activeSheet.value.name).toBe('One')
   })
 })
+
+// A materiality threshold belongs to the engagement, not to a preset list: ±2%
+// and ±50 are as ordinary as ±1%, and neither was reachable.
+describe('a tolerance of your own', () => {
+  it('reads the typed value as a percentage or a raw amount, by the switch', () => {
+    const { toleranceId, customValue, customUnit, tolerance } = useSpreadsheetDiff()
+    toleranceId.value = 'custom'
+
+    customValue.value = '2.5'
+    customUnit.value = 'pct'
+    expect(tolerance.value).toEqual({ pct: 2.5 })
+
+    customUnit.value = 'abs'
+    expect(tolerance.value).toEqual({ abs: 2.5 })
+  })
+
+  // A zero threshold forgives nothing while claiming a tolerance is set, so an
+  // empty or nonsense field has to read as the honest thing: Exact.
+  it('falls back to exact rather than to a threshold that forgives nothing', () => {
+    const { toleranceId, customValue, customUnit, tolerance } = useSpreadsheetDiff()
+    toleranceId.value = 'custom'
+    customUnit.value = 'pct'
+
+    for (const bad of ['', '   ', 'abc', '0', '-4']) {
+      customValue.value = bad
+      expect(tolerance.value, `"${bad}" should read as exact`).toBeNull()
+    }
+  })
+
+  it('leaves the presets alone', () => {
+    const { toleranceId, customValue, tolerance } = useSpreadsheetDiff()
+    customValue.value = '99'
+    toleranceId.value = 'one'
+    expect(tolerance.value).toEqual({ pct: 1 })
+    toleranceId.value = 'exact'
+    expect(tolerance.value).toBeNull()
+  })
+})
