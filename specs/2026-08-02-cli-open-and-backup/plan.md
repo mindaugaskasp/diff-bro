@@ -1,15 +1,15 @@
 # `diffbro open` and `diffbro backup`
 
-|                                         |                               |
-| --------------------------------------- | ----------------------------- |
-| **Status**                              | in-progress                   |
-| **Progress**                            | 12 / 12 steps                 |
-| **Branch**                              | `feat/cli-open-and-backup`    |
-| **Started**                             | 2026-08-02                    |
-| **Finished**                            | —                             |
-| **Bugs found and fixed this iteration** | 0 / 0                         |
-| **Token baseline**                      | 2026-08-02T20:11:28Z          |
-| **Claude tokens used**                  | not measured                  |
+|                                         |                                |
+| --------------------------------------- | ------------------------------ |
+| **Status**                              | in-progress                    |
+| **Progress**                            | 12 / 12 steps                  |
+| **Branch**                              | `feat/cli-open-and-backup`     |
+| **Started**                             | 2026-08-02                     |
+| **Finished**                            | —                              |
+| **Bugs found and fixed this iteration** | 0 / 0                          |
+| **Token baseline**                      | 2026-08-02T20:11:28Z           |
+| **Claude tokens used**                  | 77,035,828 (mostly cache read) |
 
 ## Problem
 
@@ -206,12 +206,18 @@ Written before the code; each bug's test watched failing first.
 
 ## Validation
 
-- [ ] `/validate` — summary here, full report in `quality-audit.md`
-- [ ] `npm run check` — real output
-- [ ] flows seen running in the Docker env (`make e2e`)
-- [ ] every Docs-impact "yes" done
-- [ ] seed fixtures: n/a, recorded above
-- [ ] token usage measured, header row filled
+- [x] `/validate` — ran; full report in `quality-audit.md`. Found `session` sealed
+      but never restored (fixed here, test first). The PR review then found the
+      bigger one: the restored `vault` bundle reached the renderer with no
+      main-side caps, unlike `snippets` beside it. Both fixed.
+- [x] `npm run check` — exit 0, **1901 passed**, 2 skipped, coverage floors unchanged
+- [x] flows seen running in the Docker env — `e2e/cli.spec.mjs` +
+      `e2e/config-backup.spec.mjs`, **10 passed** (the config-backup three matter
+      because this changed the `config:backup` IPC signature)
+- [x] every Docs-impact "yes" done — README, `docs/security.md`,
+      `docs/ipc-security.md` (two guard rows)
+- [x] seed fixtures: n/a — no new format
+- [x] token usage measured, header row filled
 
 ### Token usage
 
@@ -219,12 +225,20 @@ Written before the code; each bug's test watched failing first.
 node .claude/skills/implement/token-usage.mjs --since <token baseline>
 ```
 
-| category    | tokens |
-| ----------- | -----: |
-| input       |        |
-| output      |        |
-| cache write |        |
-| cache read  |        |
-| **total**   |        |
+| category    |     tokens |
+| ----------- | ---------: |
+| input       |        350 |
+| output      |    126,459 |
+| cache write |    226,771 |
+| cache read  | 76,682,248 |
+| **total**   | 77,035,828 |
 
-**Outcome:**
+**Outcome:** shipped to PR #18 — reviewed by `diff-bro-reviewer[bot]`, both
+blocking findings fixed, `reviewDecision: APPROVED`. Status stays `in-progress`
+until it merges: under the new _Landing it_ convention, landing on `main` is what
+finishes a spec.
+
+Four follow-ups deliberately not taken here, all recorded on the PR: the
+synchronous `zipSync`/`writeFileSync` (a large vault blocks the main process), a
+bad CLI path reported only in the GUI, the dialog closing on a failed write, and
+a loose e2e button selector.
