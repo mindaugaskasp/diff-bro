@@ -250,7 +250,7 @@ test('exports the spreadsheet grid as a stitched picture', async ({ app, page })
     await page.locator('.slot[data-side="right"]').click()
     await expect(page.locator('.grids')).toBeVisible()
 
-    const image = page.getByRole('button', { name: /^Image/ })
+    const image = page.getByRole('button', { name: /^Capture/ })
     await expect(image).toBeEnabled()
     await image.click()
 

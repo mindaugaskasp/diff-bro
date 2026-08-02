@@ -183,7 +183,7 @@ test('disables what a streamed comparison cannot do, and says why', async ({ app
     await expect(copy).toHaveAttribute('data-tip', /Too large to copy/)
 
     // Image export stays available: the viewer registers a real scroller.
-    await expect(page.getByRole('button', { name: 'Image' })).toBeEnabled()
+    await expect(page.getByRole('button', { name: 'Capture' })).toBeEnabled()
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

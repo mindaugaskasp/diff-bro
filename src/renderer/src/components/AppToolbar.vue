@@ -127,7 +127,7 @@ const clearTitle = computed(() =>
           :disabled="!store.canExportImage"
           @click="store.exportCurrentImage()"
         >
-          <AppIcon name="image" /> Image
+          <AppIcon name="image" /> Capture
         </button>
         <button
           v-if="!store.isSavedDiff"

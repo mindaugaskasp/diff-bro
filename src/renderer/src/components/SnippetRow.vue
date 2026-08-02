@@ -144,7 +144,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <button
         v-if="!isSecret(entry)"
         class="row-btn"
-        :data-tip="isDiagram ? 'Image of the diagram' : 'Image'"
+        :data-tip="isDiagram ? 'Capture the diagram' : 'Capture'"
         aria-label="Export as image"
         @click="diff.exportSnippetImage(entry.id)"
       >
