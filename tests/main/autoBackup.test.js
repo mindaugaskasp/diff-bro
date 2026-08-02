@@ -138,8 +138,15 @@ describe('writeBackup and rotate', () => {
     expect(listBackups(dir)).toHaveLength(0)
   })
 
+  // A FILE standing where a parent directory must be: mkdir under it fails with
+  // ENOTDIR at once, on every platform. It used to point at /proc, which only
+  // LOOKS unwritable everywhere — on Linux a recursive mkdir into procfs blocks
+  // forever inside the syscall, so the worker could not even be timed out and CI
+  // sat on this one line for an hour.
   it('reports rather than throws when the directory cannot be written', () => {
-    const res = writeBackup({ dir: '/proc/nope/nested', vault: VAULT, snippets: SNIPPETS })
+    const blocker = join(dir, 'not-a-directory')
+    writeFileSync(blocker, 'x')
+    const res = writeBackup({ dir: join(blocker, 'nested'), vault: VAULT, snippets: SNIPPETS })
     expect(res.ok).toBe(false)
     expect(res.error).toBeTruthy()
   })

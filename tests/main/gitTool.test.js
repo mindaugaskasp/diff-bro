@@ -259,11 +259,16 @@ describe('runGit', () => {
 })
 
 describe('registerGitTool — failure paths', () => {
+  // A file where the home directory should be: writing under it fails with
+  // ENOTDIR everywhere. /proc looked unwritable on every platform and is not —
+  // on Linux a recursive mkdir into procfs never returns (see autoBackup.test).
   it('reports the fs error rather than throwing when the target is unwritable', async () => {
     const { git } = fakeGit()
+    const blocker = join(home, 'not-a-directory')
+    writeFileSync(blocker, 'x')
     const res = await registerGitTool({
       exePath: APP,
-      home: '/proc/nonexistent-and-unwritable',
+      home: join(blocker, 'nested'),
       platform: 'darwin',
       git
     })

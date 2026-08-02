@@ -25,6 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dbus dbus-x11 \
     # In-container test tooling: synthetic input + screenshots
     xdotool scrot \
+    # The app registers itself as a git difftool, and tests/main/gitTool.test.js
+    # invokes a real git. Without it the suite cannot pass in the env the repo
+    # says to run it in, which is how a red check becomes background noise.
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
