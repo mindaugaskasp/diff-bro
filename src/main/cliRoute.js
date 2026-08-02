@@ -34,6 +34,12 @@ export function routeCliArgv(argv, cwd) {
     process.stderr.write(`${error}\n`)
     return
   }
+  // `open` with no file has nothing to tell the renderer — the window IS the
+  // answer, so it never reaches deliver's pending queue.
+  if (command?.name === 'raise') {
+    ensureMainWindow()?.focus()
+    return
+  }
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
   if (command?.name === 'compare') command.files.forEach(allowCliPath)

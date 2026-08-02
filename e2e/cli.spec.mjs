@@ -157,3 +157,47 @@ test('`diffbro help` prints without opening a window', async () => {
     rmSync(userDataDir, { recursive: true, force: true })
   }
 })
+
+// `open` with no file has nothing to send the renderer — the raised window is
+// the whole answer, so this proves it does NOT leave a half-loaded comparison
+// or a pending command behind.
+test('`diffbro open` raises the app without touching the comparison', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+
+    await runCli(userDataDir, ['open'])
+
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
+    await expect(page.locator('.slot[data-side="left"]')).toContainText('left file…')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+test('`diffbro open <file>` fills the left side and waits for the right', async () => {
+  const userDataDir = freshUserDataDir()
+  const work = mkdtempSync(join(tmpdir(), 'diffbro-cli-'))
+  const only = join(work, 'only.json')
+  writeFileSync(only, '{"a":1}')
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+
+    await runCli(userDataDir, ['open', only])
+
+    await expect(page.locator('.slot[data-side="left"]')).toContainText('only.json', {
+      timeout: 15000
+    })
+    await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+    rmSync(work, { recursive: true, force: true })
+  }
+})

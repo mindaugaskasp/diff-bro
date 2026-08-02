@@ -2,13 +2,13 @@
 
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
-| **Status**                              | draft                         |
-| **Progress**                            | 0 / 12 steps                  |
+| **Status**                              | in-progress                   |
+| **Progress**                            | 4 / 12 steps                  |
 | **Branch**                              | `feat/cli-open-and-backup`    |
 | **Started**                             | 2026-08-02                    |
 | **Finished**                            | —                             |
 | **Bugs found and fixed this iteration** | 0 / 0                         |
-| **Token baseline**                      | written when the build starts |
+| **Token baseline**                      | 2026-08-02T20:11:28Z          |
 | **Claude tokens used**                  | not measured                  |
 
 ## Problem
@@ -166,15 +166,15 @@ Written before the code; each bug's test watched failing first.
 
 ## Implementation plan
 
-- [ ] 1. Failing unit tests in `tests/main/cli.test.js` for `open` and `backup`
+- [x] 1. Failing unit tests in `tests/main/cli.test.js` for `open` and `backup`
       parsing, including the rejection cases. Watch them fail.
-- [ ] 2. Add `open` to `COMMANDS` and `VERBS` in `src/main/cli.js`; a bare `open`
+- [x] 2. Add `open` to `COMMANDS` and `VERBS` in `src/main/cli.js`; a bare `open`
       yields `{name: 'raise'}`, `open <path>` yields the existing `compare`
       shape with one file, two paths error.
-- [ ] 3. Route `raise` in `src/main/cliRoute.js` — `ensureMainWindow()` +
+- [x] 3. Route `raise` in `src/main/cliRoute.js` — `ensureMainWindow()` +
       `focus()` with no renderer message; confirm `deliver(null)` is not the
       accidental path.
-- [ ] 4. Add `backup` to `COMMANDS`/`VERBS` with the path resolved through the
+- [x] 4. Add `backup` to `COMMANDS`/`VERBS` with the path resolved through the
       same cwd resolver `compare` uses.
 - [ ] 5. Failing unit tests for the extended bundle and the zip writer. Watch
       them fail.
