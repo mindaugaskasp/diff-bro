@@ -5,7 +5,7 @@
 | **Status**                              | draft                      |
 | **Progress**                            | 0 / 16 steps               |
 | **Branch**                              | `feat/mermaid-visual-diff` |
-| **Started**                             | —                          |
+| **Started**                             | 2026-08-02                 |
 | **Finished**                            | —                          |
 | **Bugs found and fixed this iteration** | 0 / 0                      |
 | **Token baseline**                      | —                          |
