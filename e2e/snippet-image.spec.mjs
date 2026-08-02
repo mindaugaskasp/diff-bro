@@ -21,12 +21,18 @@ const reportedSize = async (dialog) =>
     .slice(1)
     .map(Number)
 
-async function createSnippet(page, name, body) {
+// Pasted, not typed: Monaco auto-indents every Enter and at this length drops a
+// keystroke outright, merging two statements into unparseable Mermaid.
+async function createSnippet({ page, app }, name, body) {
   await page.getByRole('button', { name: 'New snippet' }).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
-  await page.keyboard.type(body)
+  await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), body)
+  await app.evaluate(({ BrowserWindow }) =>
+    (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
+  )
+  await expect(editor.locator('.view-line').first()).not.toHaveText('')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   await page
     .getByRole('dialog', { name: 'Snippet', exact: true })
@@ -95,8 +101,8 @@ test('the diagram picture is drawn, not an empty frame', async ({ app, page }) =
   expect(painted).toBeGreaterThan(20)
 })
 
-test('a code snippet is photographed with its colouring and its name', async ({ page }) => {
-  await createSnippet(page, 'Deploy config', '{ "replicas": 3, "image": "web:1.2" }')
+test('a code snippet is photographed with its colouring and its name', async ({ app, page }) => {
+  await createSnippet({ page, app }, 'Deploy config', '{ "replicas": 3, "image": "web:1.2" }')
 
   const dialog = await shoot(page, 'Deploy config')
   const preview = dialog.locator('.shot img')
@@ -173,9 +179,9 @@ test('a secret snippet offers no image button', async ({ page }) => {
 // Mermaid keeps the whole diagram in the DOM, but capturePage only ever sees
 // what is composited — so a tall one has to scroll and stitch, exactly as a tall
 // diff does.
-test('a diagram taller than the pane is stitched, not cut at the fold', async ({ page }) => {
+test('a diagram taller than the pane is stitched, not cut at the fold', async ({ app, page }) => {
   const nodes = Array.from({ length: 60 }, (_, i) => `  N${i} --> N${i + 1}`).join('\n')
-  await createSnippet(page, 'Tall flow', `flowchart TD\n${nodes}`)
+  await createSnippet({ page, app }, 'Tall flow', `flowchart TD\n${nodes}`)
 
   const dialog = await shoot(page, 'Tall flow')
   await expect(dialog.locator('.shot img')).toBeVisible()
