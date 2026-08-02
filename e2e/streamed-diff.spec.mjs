@@ -85,7 +85,11 @@ test('compares two files too large to hold, streamed', async ({ app, page }) => 
         clientHeight: el.clientHeight,
         rendered: el.querySelectorAll('.srow').length
       }))
-    await expect.poll(async () => (await measure()).scrollHeight).toBeGreaterThan(lines * 10)
+    // Explicit, not the config's 8s default: this lands after a 68 MB file has
+    // been indexed, and the box is measured a frame or two after that.
+    await expect
+      .poll(async () => (await measure()).scrollHeight, { timeout: 30_000 })
+      .toBeGreaterThan(lines * 10)
     const geometry = await measure()
     // ~690k lines at 18px each: the scrollbar must reflect all of it.
     expect(geometry.scrollHeight).toBeGreaterThan(lines * 10)
@@ -105,10 +109,15 @@ test('compares two files too large to hold, streamed', async ({ app, page }) => 
     expect(heights).toHaveLength(1)
 
     // --- the status strip reports the real line counts --------------------
-    await expect(page.locator('.status .right')).toContainText(lines.toLocaleString())
+    // These three wait on WORK, not on layout: the counts appear only once main
+    // has hashed and aligned ~690k lines on both sides. Eight seconds is
+    // generous on an idle box and tight at the end of a long suite, which is the
+    // shape of a flake rather than of a bug.
+    const DIFFED = { timeout: 60_000 }
+    await expect(page.locator('.status .right')).toContainText(lines.toLocaleString(), DIFFED)
     // One line differs on each side.
-    await expect(page.locator('.status .add')).toHaveText('+1')
-    await expect(page.locator('.status .del')).toContainText('1')
+    await expect(page.locator('.status .add')).toHaveText('+1', DIFFED)
+    await expect(page.locator('.status .del')).toContainText('1', DIFFED)
 
     // --- the change is reachable, and both panes agree on the row ---------
     // Sampling the two panes in ONE evaluateAll: two sequential reads can
@@ -123,7 +132,9 @@ test('compares two files too large to hold, streamed', async ({ app, page }) => 
         const cells = els[0]?.querySelectorAll('.txt') ?? []
         return { left: cells[0]?.textContent ?? '', right: cells[1]?.textContent ?? '' }
       })
-    await expect.poll(async () => (await readPair()).right).toContain('THIS LINE WAS EDITED')
+    await expect
+      .poll(async () => (await readPair()).right, { timeout: 30_000 })
+      .toContain('THIS LINE WAS EDITED')
     const pair = await readPair()
     expect(pair.right).toContain('THIS LINE WAS EDITED')
     expect(pair.left).not.toContain('THIS LINE WAS EDITED')
@@ -133,16 +144,26 @@ test('compares two files too large to hold, streamed', async ({ app, page }) => 
     await rows.evaluate((el) => el.scrollTo({ top: el.scrollHeight }))
     // Read in ONE evaluate: the spacers are siblings of the rows, so the last
     // ROW has to be picked out of the list rather than by a CSS position.
-    const atEnd = await rows.evaluate((el) => {
-      const all = [...el.querySelectorAll('.srow')]
-      return {
-        scrollTop: el.scrollTop,
-        scrollHeight: el.scrollHeight,
-        clientHeight: el.clientHeight,
-        rendered: all.length,
-        lastLine: all.at(-1)?.querySelector('.ln')?.textContent?.trim()
-      }
-    })
+    const readEnd = () =>
+      rows.evaluate((el) => {
+        const all = [...el.querySelectorAll('.srow')]
+        return {
+          scrollTop: el.scrollTop,
+          scrollHeight: el.scrollHeight,
+          clientHeight: el.clientHeight,
+          rendered: all.length,
+          lastLine: all.at(-1)?.querySelector('.ln')?.textContent?.trim()
+        }
+      })
+    // scrollTop moves synchronously; the WINDOW does not. The list re-renders on
+    // the scroll event and fills the rows from disk after that, so sampling here
+    // reads the previous window — the one parked at the edited line. That is the
+    // intermittent this test kept failing on: it reported line 5039 for a file
+    // ending at 463008, and only when the re-render lost the race.
+    await expect
+      .poll(async () => (await readEnd()).lastLine, { timeout: 30_000 })
+      .toBe(String(lines))
+    const atEnd = await readEnd()
     expect(atEnd.scrollTop + atEnd.clientHeight).toBeGreaterThan(atEnd.scrollHeight - 40)
     // The last row is the file's last LINE — the window really moved that far.
     expect(Number(atEnd.lastLine)).toBe(lines)

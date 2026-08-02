@@ -3,6 +3,8 @@ build/
 dist/
 coverage/
 test-results/
+# Traces copied out of test-results/ before the next run wipes it (see `make e2e`).
+e2e-failures/
 playwright-report/
 .claude/settings.local.json
 # Agent worktrees are whole checkouts of this repo nested inside it.
