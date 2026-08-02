@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding: sample comparison, coach marks, what's new on upgrade. Tabs: right-click menu, close left/right/all, one prompt per batch. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — three tracks. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding: sample comparison, coach marks, what's new on upgrade. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -61,7 +61,7 @@ flowchart LR
   now --> next --> later
 ```
 
-- **1 · row identity** — `opts.keyColumn` exists (`spreadsheetDiff.js:75`) with
+- **1 · row identity** — `opts.keyColumn` exists (`spreadsheetDiff.js:78`) with
   no UI, takes one column, and rows pair by LCS over row signatures: the same
   export sorted differently reads as 100% changed. Key-based matching,
   composite keys, duplicate-key detection
@@ -120,33 +120,6 @@ Off the board, unsequenced:
 
 ---
 
-## Tab management
-
-```mermaid
-flowchart TB
-  rc["right-click — DiffTabBar.vue"] --> menu["context menu · new<br>close · others · left · right · all"]
-  menu --> many["requestCloseMany · new<br>resolve the survivor set once"]
-  hit["× · middle-click · File menu"] --> one["requestClose — tabsStore.js:196"]
-  many --> g{"any unsaved?"}
-  one --> g
-  g -->|no| c["close"]
-  g -->|yes| d["TabCloseDialog<br>one prompt for N tabs"]
-  d --> c
-```
-
-- `requestClose` is the documented single close guard — a batch routes through
-  the same gate, never around it
-- `diffStore.pendingTabClose` holds **one** id; a batch prompt needs a set
-- `close()` _resets_ the last tab instead of removing it (`tabsStore.js:213`) —
-  a naive loop would reset it repeatedly
-- In-renderer menu, not a native Electron one: precedent at `SavedDiffs.vue:144`,
-  backdrop dismiss at `MenuBar.vue:86` (rule 3)
-- Placement, outside-click and Escape go in a composable, unit-tested; flip the
-  popup near a viewport edge
-- Any shortcut lands in both the hidden app menu and `MenuBar.vue`
-
----
-
 ## Onboarding
 
 ```mermaid
@@ -161,7 +134,7 @@ stateDiagram-v2
 ```
 
 - No first-run flag exists in `stores/` or `src/main/`; empty state is inline at
-  `App.vue:157-167`
+  `App.vue:170`
 - Store a **version integer**, not a boolean — carries "what's new" with no
   auto-update
 - Undiscoverable today: Quick look-up shortcut · Structure toggle · sealed share
