@@ -77,3 +77,26 @@ describe('useSnippetDrag — recognising a drop', () => {
     ])
   })
 })
+
+// During dragenter/dragover the drag data store is in PROTECTED mode: `types`
+// is readable but getData() returns "". A guard that reads the payload therefore
+// never fires on a real drag — and a synthetic DataTransfer in a test would not
+// show it, because synthetic events are not protected.
+describe('useSnippetDrag — the dragenter guard', () => {
+  const { isSnippetDragType } = useSnippetDrag()
+
+  it('recognises a snippet drag from the types alone', () => {
+    const protectedTransfer = {
+      types: [DRAG_TYPE],
+      getData: () => {
+        throw new Error('getData must not be called during dragenter')
+      }
+    }
+    expect(isSnippetDragType(protectedTransfer)).toBe(true)
+  })
+
+  it('is false for a file drag and for nothing', () => {
+    expect(isSnippetDragType({ types: ['Files'], getData: () => '' })).toBe(false)
+    expect(isSnippetDragType(null)).toBe(false)
+  })
+})

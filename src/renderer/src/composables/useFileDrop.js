@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { dragIdsFrom } from '../utils/snippetSource'
+import { isSnippetDragType } from './useSnippetDrag'
 
 // Load a dropped file's text into a tool input. getPathForFile registers the
 // path with main's read allowlist (src/main/files.js).
@@ -25,7 +26,8 @@ export function useWindowFileDrop(store, suppressed) {
 
   const hasFiles = (e) => Array.from(e.dataTransfer?.types ?? []).includes('Files')
   const snippetIds = (e) => dragIdsFrom(e.dataTransfer)
-  const carries = (e) => hasFiles(e) || snippetIds(e).length > 0
+  // Types only: the payload is unreadable until drop.
+  const carries = (e) => hasFiles(e) || isSnippetDragType(e.dataTransfer)
   // A drop released over a file slot targets that side.
   const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
 
@@ -33,15 +35,19 @@ export function useWindowFileDrop(store, suppressed) {
     if (!carries(e) || suppressed.value) return
     depth.value += 1
     active.value = true
-    snippetDrag.value = snippetIds(e).length > 0
+    snippetDrag.value = isSnippetDragType(e.dataTransfer)
   }
   function onDragLeave() {
     depth.value = Math.max(0, depth.value - 1)
-    if (depth.value === 0) active.value = false
+    if (depth.value === 0) {
+      active.value = false
+      snippetDrag.value = false
+    }
   }
   async function onDrop(e) {
     depth.value = 0
     active.value = false
+    snippetDrag.value = false
     if (suppressed.value) return
     const ids = snippetIds(e)
     if (ids.length) {

@@ -5,6 +5,11 @@
 import { isSecret } from '../utils/secretSnippet'
 import { DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
 
+// dragenter/dragover see a PROTECTED drag data store: `types` is readable but
+// getData() returns "". A guard that reads the payload therefore never fires on
+// a real drag, so the enter path asks the types and nothing else.
+export const isSnippetDragType = (transfer) => Array.from(transfer?.types ?? []).includes(DRAG_TYPE)
+
 export function useSnippetDrag() {
   /**
    * @param {DragEvent} e
@@ -26,6 +31,7 @@ export function useSnippetDrag() {
   return {
     startDrag,
     snippetIdsIn: dragIdsFrom,
+    isSnippetDragType,
     isSnippetDrag: (transfer) => dragIdsFrom(transfer).length > 0
   }
 }
