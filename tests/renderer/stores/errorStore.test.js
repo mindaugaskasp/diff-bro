@@ -60,6 +60,29 @@ describe('errorStore', () => {
     expect(window.api.logError).not.toHaveBeenCalled()
   })
 
+  // Monaco throws this when its diff worker returns nothing because the models
+  // were swapped mid-computation — which is what a re-diff after a file changes
+  // on disk does. Its own source says "Text models might be disposed!" two lines
+  // above the throw, and it handles the CANCELLED case but not this one. The
+  // next re-diff produces the real result, so raising a dialog over it puts a
+  // scrim across the app for a race the user never caused.
+  it('ignores the diff worker losing a race with a model swap', () => {
+    const s = useErrorStore()
+    s.capture(new Error('no diff result available'), 'unhandledrejection')
+    s.capture({ reason: new Error('no diff result available') }, 'unhandledrejection')
+    expect(s.visible).toBe(false)
+    expect(window.api.logError).not.toHaveBeenCalled()
+  })
+
+  // The caller needs to know, so it can stop a noise rejection being reported as
+  // unhandled on top of being ignored.
+  it('says whether it recorded, so noise can be silenced at the source', () => {
+    const s = useErrorStore()
+    expect(s.capture(new Error('no diff result available'), 'unhandledrejection')).toBe(false)
+    expect(s.capture(new Error('Canceled'), 'unhandledrejection')).toBe(false)
+    expect(s.capture(new Error('something real'), 'window.error')).toBe(true)
+  })
+
   it('never throws when the log bridge is unavailable', () => {
     window.api = {}
     const s = useErrorStore()

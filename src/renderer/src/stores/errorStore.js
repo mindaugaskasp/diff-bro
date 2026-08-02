@@ -11,7 +11,18 @@ function messageOf(reason) {
 
 // Benign framework noise (Monaco cancellations, ResizeObserver loop, opaque
 // cross-origin "Script error.") — never a crash, never logged.
-const IGNORED = [/cancell?ed/i, /CancellationError/i, /ResizeObserver loop/i, /^Script error\.?$/i]
+// Framework noise the reader did not cause and cannot act on. The last one is
+// Monaco's: its diff worker throws when it returns no result because the models
+// were replaced under it — what a re-diff after a file changes on disk does. It
+// guards the cancelled case and not this one, and the next re-diff yields the
+// real result, so a dialog here is a scrim over a race that already resolved.
+const IGNORED = [
+  /cancell?ed/i,
+  /CancellationError/i,
+  /ResizeObserver loop/i,
+  /^Script error\.?$/i,
+  /no diff result available/i
+]
 
 function isIgnorable(err) {
   const reason = err?.reason ?? err?.error ?? err
@@ -37,13 +48,18 @@ export const useErrorStore = defineStore('error', {
     lastAt: 0
   }),
   actions: {
+    /**
+     * @returns {boolean} whether it was recorded — false means the store
+     * decided this one does not matter, which the caller uses to keep it out of
+     * the console as well.
+     */
     capture(err, context = '') {
-      if (isIgnorable(err)) return
+      if (isIgnorable(err)) return false
       const record = toRecord(err, context)
       const sig = `${record.context}|${record.message}`
       const now = Date.now()
       // Drop an identical repeat inside the window — no log, no re-raise.
-      if (sig === this.lastSignature && now - this.lastAt < THROTTLE_MS) return
+      if (sig === this.lastSignature && now - this.lastAt < THROTTLE_MS) return true
       this.lastSignature = sig
       this.lastAt = now
       try {
@@ -54,6 +70,7 @@ export const useErrorStore = defineStore('error', {
       this.lastError = { message: record.message, when: now }
       // Don't stack dialogs — if one is already up, keep it.
       if (!this.visible) this.visible = true
+      return true
     },
     dismiss() {
       this.visible = false
