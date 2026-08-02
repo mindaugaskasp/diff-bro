@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { shaped } from '../utils/props'
 import MermaidDiagram from './MermaidDiagram.vue'
+import SnippetCode from './SnippetCode.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import AppIcon from './AppIcon.vue'
 
@@ -40,7 +41,7 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
     </button>
     <SnippetSecretMask v-else-if="preview.secret" compact />
     <button v-else class="pv-body" data-tip="Open in editor" @click="$emit('edit')">
-      {{ preview.text }}
+      <SnippetCode :code="preview.text" :language="preview.lang" />
     </button>
     <div class="pv-foot">
       <span class="pv-tags">
