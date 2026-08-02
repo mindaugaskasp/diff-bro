@@ -223,6 +223,9 @@ export const useSnippetStore = defineStore('snippets', {
     keyError: null
   }),
   getters: {
+    // Whether Mermaid's renderer is worth warming at idle: a library with no
+    // diagram in it should not pay for a 2.8 MB chunk it will never render.
+    hasDiagrams: (s) => s.entries.some((e) => languageOf(e) === 'mermaid'),
     favorites: (s) => s.entries.filter((e) => e.favorite).sort((a, b) => b.createdAt - a.createdAt),
     listed: (s) => s.entries.filter((e) => !e.favorite).sort((a, b) => b.createdAt - a.createdAt),
     // In-use tags, most-recent first; unused ones stay in the registry (keeping

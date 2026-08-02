@@ -27,6 +27,7 @@ import FormatHintBanner from './components/FormatHintBanner.vue'
 import AppIcon from './components/AppIcon.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
+import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
@@ -46,6 +47,8 @@ usePasteShortcut(() => store.requestPasteFromClipboard())
 // Nothing is written until the stored session has been read back (or found
 // absent), so a blank startup window can never overwrite it.
 useSessionPersistence()
+// Mermaid's renderer, pulled in at idle so no first render stops the app.
+useDiagramWarmup()
 // Re-diff loaded files + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {
   store.refreshFromDisk()

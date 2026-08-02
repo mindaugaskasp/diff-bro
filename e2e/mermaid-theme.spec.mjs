@@ -199,3 +199,20 @@ test('the diagram never sits on a ground it was not drawn for', async ({ app, pa
   // briefly drawn against the other one.
   expect(worst).toBeGreaterThan(3)
 })
+
+// Mermaid's renderer is a 2.8 MB chunk kept out of the main bundle, so the first
+// diagram of a session cost ~400ms of stopped app — measured, and reported as a
+// freeze. It is pulled in at idle now, before anything asks for it.
+test('the diagram renderer is ready before anything needs it', async ({ page }) => {
+  // Nothing has rendered a diagram: no preview hovered, no viewer, no capture.
+  expect(await page.locator('.mermaid-diagram').count()).toBe(0)
+
+  await expect
+    .poll(() => page.evaluate(() => performance.getEntriesByName('mermaid-ready').length), {
+      timeout: 15000
+    })
+    .toBe(1)
+
+  // Still nothing rendered — the warm is what loaded it, not a render.
+  expect(await page.locator('.mermaid-diagram').count()).toBe(0)
+})
