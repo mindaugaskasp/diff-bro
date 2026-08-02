@@ -2,13 +2,13 @@
 
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
-| **Status**                              | draft                         |
-| **Progress**                            | 0 / 11 steps                  |
+| **Status**                              | in-progress                   |
+| **Progress**                            | 2 / 11 steps                  |
 | **Branch**                              | `feat/compare-snippets`       |
 | **Started**                             | 2026-08-02                    |
 | **Finished**                            | —                             |
 | **Bugs found and fixed this iteration** | 0 / 0                         |
-| **Token baseline**                      | written when the build starts |
+| **Token baseline**                      | 2026-08-02T20:17:25Z          |
 | **Claude tokens used**                  | not measured                  |
 
 ## Problem
@@ -179,9 +179,9 @@ Written before the code; each bug's test watched failing first.
 
 ## Implementation plan
 
-- [ ] 1. Failing unit tests for `snippetSource` and the drag/drop guard. Watch
+- [x] 1. Failing unit tests for `snippetSource` and the drag/drop guard. Watch
       them fail.
-- [ ] 2. `src/renderer/src/utils/snippetSource.js` — pure: entry + content → side
+- [x] 2. `src/renderer/src/utils/snippetSource.js` — pure: entry + content → side
       source, `null` for a secret or unknown entry.
 - [ ] 3. `src/renderer/src/composables/useSnippetDrag.js` — `dragstart` payload
       (id only) and the drop-type guard, factored out of the SFC so it is
@@ -203,6 +203,13 @@ Written before the code; each bug's test watched failing first.
 - [ ] 10. `e2e/compare-snippets.spec.mjs`; run in the container.
 - [ ] 11. Docs (README row, `docs/security.md`), `npx prettier --write` on
       touched files, `npm run check`, `/validate`.
+
+### Outstanding — where this branch stopped
+
+The pure core is written and unit-tested (`snippetSource.js`, 9 tests): the
+entry→side mapping, the secret refusal, and defensive parsing of the drag
+payload. Nothing is wired to the UI yet — steps 3-11 remain, starting with the
+`useSnippetDrag` composable and `SnippetRow.vue`.
 
 ## Decisions
 
