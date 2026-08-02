@@ -48,6 +48,7 @@ const {
   discardDraft,
   formatContent,
   copyContent,
+  captureImage,
   expandDiagram
 } = useSnippetDraft()
 
@@ -185,6 +186,7 @@ function saveSnippet() {
         :masked="masked"
         @format="formatContent"
         @copy="copyAndFlash"
+        @capture="captureImage"
         @clear="reset('')"
         @reveal="revealAndLayout"
         @edit="startEditing"

@@ -123,6 +123,36 @@ export function rotate(dir, keep = KEEP_GENERATIONS) {
 }
 
 /**
+ * Delete backups older than `days`. The manual lever beside rotate()'s generation
+ * count — which trims by count and says nothing about age or bytes.
+ *
+ * It takes an AGE, never a filename: the caller cannot name a file to remove.
+ * Every candidate comes from listBackups, which only yields names that parse as
+ * one of ours, so anything else sharing the folder is untouched.
+ * @param {string} dir
+ * @param {number} days
+ * @param {number} [now]
+ * @returns {{ removed: number, freed: number }}
+ */
+export function pruneOlderThan(dir, days, now = Date.now()) {
+  if (!Number.isFinite(days) || days <= 0) return { removed: 0, freed: 0 }
+  const cutoff = now - days * 86_400_000
+  let removed = 0
+  let freed = 0
+  for (const { name, at, bytes } of listBackups(dir)) {
+    if (at >= cutoff) continue
+    try {
+      rmSync(join(dir, name), { force: true })
+      removed += 1
+      freed += bytes
+    } catch {
+      continue
+    }
+  }
+  return { removed, freed }
+}
+
+/**
  * @param {{ dir: string, vault: object, snippets: object, at?: number }} o
  * @returns {{ ok: boolean, name?: string, error?: string }}
  */

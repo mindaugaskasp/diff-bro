@@ -17,6 +17,7 @@ import {
   clampWindowHours,
   isDue,
   listBackups,
+  pruneOlderThan,
   readBackup,
   rotate,
   writeBackup
@@ -162,5 +163,61 @@ describe('readBackup', () => {
     writeFileSync(join(dir, name), 'not json at all')
     expect(readBackup(dir, name)).toEqual({ ok: false, error: 'unreadable' })
     expect(readBackup(dir, backupName(Date.now() - HOUR)).ok).toBe(false)
+  })
+})
+
+// The manual lever beside rotate()'s automatic generation count: backups pile up
+// on a clock, and the only alternative was deleting files by hand in a folder
+// holding the reader's keys.
+describe('pruneOlderThan', () => {
+  const DAY = 86_400_000
+  const put = (at, bytes = 10) => {
+    const name = backupName(at)
+    writeFileSync(join(dir, name), 'x'.repeat(bytes))
+    return name
+  }
+
+  it('removes what is past the cutoff and keeps what is not', () => {
+    const now = Date.UTC(2026, 0, 20)
+    const old = put(now - 10 * DAY)
+    const recent = put(now - 2 * DAY)
+
+    const res = pruneOlderThan(dir, 7, now)
+
+    expect(res.removed).toBe(1)
+    expect(listBackups(dir).map((b) => b.name)).toEqual([recent])
+    expect(res.freed).toBeGreaterThan(0)
+    expect(old).not.toBe(recent)
+  })
+
+  // The folder holds the reader's data. A prune that deleted whatever it found
+  // there would be a different, much worse feature.
+  it('touches nothing that is not one of its own backups', () => {
+    const now = Date.UTC(2026, 0, 20)
+    put(now - 30 * DAY)
+    writeFileSync(join(dir, 'notes.txt'), 'not a backup')
+    writeFileSync(join(dir, 'vault.json'), '{}')
+
+    const res = pruneOlderThan(dir, 7, now)
+
+    expect(res.removed).toBe(1)
+    expect(readFileSync(join(dir, 'notes.txt'), 'utf8')).toBe('not a backup')
+    expect(readFileSync(join(dir, 'vault.json'), 'utf8')).toBe('{}')
+  })
+
+  it('reports the bytes it freed, so the button can say so first', () => {
+    const now = Date.UTC(2026, 0, 20)
+    put(now - 10 * DAY, 300)
+    put(now - 11 * DAY, 200)
+    expect(pruneOlderThan(dir, 7, now)).toMatchObject({ removed: 2, freed: 500 })
+  })
+
+  it('is a no-op on a missing folder or a nonsense age', () => {
+    expect(pruneOlderThan(join(dir, 'nope'), 7)).toEqual({ removed: 0, freed: 0 })
+    const now = Date.now()
+    put(now - 100 * 86_400_000)
+    expect(pruneOlderThan(dir, 0, now)).toEqual({ removed: 0, freed: 0 })
+    expect(pruneOlderThan(dir, -5, now)).toEqual({ removed: 0, freed: 0 })
+    expect(pruneOlderThan(dir, 'week', now)).toEqual({ removed: 0, freed: 0 })
   })
 })

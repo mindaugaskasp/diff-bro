@@ -139,6 +139,7 @@ contextBridge.exposeInMainWorld('api', {
   // Rolling local backups of snippets and kept diffs (src/main/autoBackup.js).
   listBackups: () => ipcRenderer.invoke('backup:list'),
   restoreBackup: (name) => ipcRenderer.invoke('backup:restore', name),
+  pruneBackups: (days) => ipcRenderer.invoke('backup:prune', days),
   hashText: (text) => ipcRenderer.invoke('hash:text', text),
   hashFile: () => ipcRenderer.invoke('hash:file'),
   gitToolStatus: () => ipcRenderer.invoke('git:toolStatus'),

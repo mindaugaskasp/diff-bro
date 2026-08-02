@@ -187,3 +187,36 @@ test('a diagram taller than the pane is stitched, not cut at the fold', async ({
   }))
   expect(h).toBeGreaterThan(paneHeight * dpr * 1.5)
 })
+
+// The row icon is hover-only and shares a narrow row with three others, which is
+// a thin way to reach a feature. Viewing a snippet is when you are actually
+// looking at the thing you want a picture of, so the action is explicit there.
+test('a snippet is captured from the view its contents are shown in', async ({ page }) => {
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
+
+  const capture = view.getByRole('button', { name: 'Capture', exact: true })
+  await expect(capture).toBeVisible()
+  await capture.click()
+
+  // The editor gets out of the way first — a dialog over the diff column would
+  // be photographed with it.
+  await expect(view).toHaveCount(0)
+
+  const dialog = page.getByRole('dialog', { name: 'Export as image' })
+  const preview = dialog.locator('.shot img')
+  await expect(preview).toBeVisible()
+  await expect(preview).toHaveAttribute('alt', `Diagram: ${DIAGRAM}`)
+  const src = await preview.getAttribute('src')
+  expect(Buffer.from(src.split(',')[1], 'base64').subarray(0, 8).equals(PNG_MAGIC)).toBe(true)
+})
+
+// Editing is not viewing: the button belongs to the read-only state, beside the
+// other things you do WITH a snippet rather than TO it.
+test('the capture action is not offered while editing', async ({ page }) => {
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await view.getByRole('button', { name: 'Edit' }).click()
+  await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+})

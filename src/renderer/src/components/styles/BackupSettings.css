@@ -28,3 +28,11 @@
   color: var(--warning-text);
   border-radius: var(--radius-sm);
 }
+
+/* The prune row: the age and the button that names what it will remove. */
+.prune {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

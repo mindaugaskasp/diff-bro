@@ -168,6 +168,15 @@ export function useSnippetDraft() {
     return true
   }
 
+  // A picture of the SNIPPET, not of the editor: the dialog closes first, the
+  // way the diagram expander does, and the stage is photographed underneath it.
+  function captureImage() {
+    if (!editing.id) return
+    const id = editing.id
+    close()
+    diff.exportSnippetImage(id)
+  }
+
   function expandDiagram() {
     if (!content.value.trim()) return
     // Close the editor first, or it would stack over the viewer.
@@ -202,6 +211,7 @@ export function useSnippetDraft() {
     discardDraft,
     formatContent,
     copyContent,
+    captureImage,
     expandDiagram
   }
 }
