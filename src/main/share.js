@@ -547,7 +547,7 @@ async function retireCurrentIdentity(incomingFp) {
 // before anything is applied.
 async function applyRestoredConfig({ identity, trusted, snippets, settings, vault, session }) {
   const vetted = validateRestoredConfig(
-    { identity, trusted, snippets },
+    { identity, trusted, snippets, vault },
     { snippetError: validateSnippetBundle }
   )
   if (vetted.error) return { error: vetted.error }
@@ -556,14 +556,13 @@ async function applyRestoredConfig({ identity, trusted, snippets, settings, vaul
     await persistIdentity(vetted.identity.priv, vetted.identity.pub)
   }
   if (vetted.trusted) await writeFile(trustPath(), JSON.stringify(vetted.trusted, null, 2))
-  // Back to the renderer to re-encrypt locally: the stores own the entry shapes
-  // and each vets what it is handed (vaultStore.restoreBundle drops a malformed
-  // diff rather than trusting it).
+  // Vetted here, re-encrypted there: main caps the shape and the count before
+  // the renderer is handed anything to loop over.
   return {
     ok: true,
     snippets: snippets ?? null,
     settings: settings ?? null,
-    vault: vault ?? null,
+    vault: vetted.vault,
     session: typeof session === 'string' ? session : null
   }
 }

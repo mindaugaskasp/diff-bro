@@ -50,7 +50,8 @@ export const COMMANDS = [
 
   Diff Bro asks for a passphrase first — the archive is encrypted with it,
   which is what makes the backup restorable on another machine. Lose the
-  passphrase and the archive cannot be opened. Restore it from Settings.`
+  passphrase and the archive cannot be opened. Restore it from
+  Security → Configuration → Restore.`
   },
   {
     topic: 'create',
