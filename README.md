@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <b>Stop pasting production config into an online diff tool.</b><br>
+  <b>Stop pasting production configs into an online diff tool.</b><br>
   Compare two files, keep the ones worth keeping, and hand one to a teammate
   sealed —<br>with no account, no telemetry and not one network request.
 </p>
