@@ -55,8 +55,7 @@ export function useWindowFileDrop(store, suppressed) {
     if (paths.length) await dropPaths(paths, sideUnder(e))
   }
 
-  // A key and a sealed diff are not comparisons — each opens its own flow, and
-  // .diffbrokey is checked first because .diffbro is a suffix of neither.
+  // A dropped key or sealed diff is not a comparison: each opens its own flow.
   async function dropPaths(paths, targetSide) {
     const keyPath = paths.find((p) => p.toLowerCase().endsWith('.diffbrokey'))
     if (keyPath) return store.receiveDroppedKey(keyPath)
