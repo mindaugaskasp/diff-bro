@@ -1,7 +1,7 @@
 /* The collapsed sidebar. Its top cell is --band-row, the SAME height the
    file-slots row and every sidebar section header carry, so collapsing moves
    the sidebar's width and nothing else — a rail that skipped it would knock
-   those two rows out of step. */
+   those two rows out of step, and the toggle in that cell would move. */
 .rail {
   height: 100%;
   display: flex;
@@ -61,17 +61,4 @@
 }
 .rail-gap {
   flex: 1;
-}
-
-/* The way back out, kept separate from the section icons: expanding should not
-   require picking a section you did not want. Bordered like the collapse
-   control it mirrors. */
-.rail-expand {
-  margin-bottom: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-}
-.rail-expand:hover {
-  border-color: var(--text-dim);
 }

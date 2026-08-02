@@ -84,15 +84,17 @@ const FILES = {
       ]
     }
   ]),
+  // An inserted column and a sub-cent nudge, so the column alignment and the
+  // tolerance control both have something to do when opened by hand.
   'budget-2025.xlsx': makeXlsx([
     {
       name: 'Summary',
       rows: [
-        ['Metric', 'Q2', 'Q3'],
-        ['Revenue', 1180, 1310],
-        ['Costs', 640, 690],
-        ['Headcount', 42, 47],
-        ['Runway (mo)', 18, 21]
+        ['Metric', 'Q2', 'Q2 forecast', 'Q3'],
+        ['Revenue', 1180, 1200, 1310],
+        ['Costs', 640.004, 650, 690],
+        ['Headcount', 42, 42, 47],
+        ['Runway (mo)', 18, 18, 21]
       ]
     },
     {
@@ -132,6 +134,12 @@ const FILES = {
 const TEXT_FILES = {
   'service-before.yaml': 'service:\n  name: diff-engine\n  replicas: 3\n  features: [a, b]\n',
   'service-after.yaml': 'service:\n  replicas: 6\n  name: diff-engine\n  features: [b, a, c]\n',
+  // Two .csv files on disk: the Grid toggle only appears when BOTH sides are
+  // delimited, so a pair is the only useful fixture.
+  'totals-before.csv':
+    'region,q2,q3\n"Nordics, EMEA",9200,74000\nAPAC,6100,48000\nLATAM,2100,15000\n',
+  'totals-after.csv':
+    'region,q2,q2 forecast,q3\n"Nordics, EMEA",9200.004,9400,74000\nAPAC,6800,7000,52000\nNA,3400,3600,29000\n',
   'catalog-before.xml': '<catalog><item id="1"><price>9.99</price></item></catalog>\n',
   'catalog-after.xml': '<catalog><item id="1"><price>12.50</price></item></catalog>\n',
   'huge-before.json': `{\n${Array.from({ length: 5000 }, (_, i) => `  "k${i}": ${i}`).join(',\n')}\n}\n`,

@@ -1,10 +1,9 @@
 .sheet-tabs {
   gap: 2px;
   padding: 0 var(--space-2);
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
   overflow-x: auto;
-  flex: none;
+  flex: 1;
+  min-width: 0;
 }
 .sheet-tabs .tab {
   display: inline-flex;
@@ -45,4 +44,9 @@
 }
 .sheet-tabs .tab.missing .name {
   font-style: italic;
+}
+/* Hidden in the source workbook — the sheet is still compared, and says so.
+   No opacity: the mark carries meaning, so it holds the tab label's contrast. */
+.sheet-tabs .tab .hidden-mark {
+  flex: none;
 }

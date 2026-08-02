@@ -87,13 +87,15 @@ function writeXlsxFixtures() {
     XLSX_B,
     makeXlsx([
       {
+        // The inserted column is the point of the shot: without one the
+        // picture argues the diff still shifts everything after an insert.
         name: 'Summary',
         rows: [
-          ['Metric', 'Q2', 'Q3'],
-          ['Revenue', 1180, 1310],
-          ['Costs', 640, 690],
-          ['Headcount', 42, 47],
-          ['Runway (mo)', 18, 21]
+          ['Metric', 'Q2', 'Q2 forecast', 'Q3'],
+          ['Revenue', 1180, 1200, 1310],
+          ['Costs', 640, 650, 690],
+          ['Headcount', 42, 42, 47],
+          ['Runway (mo)', 18, 18, 21]
         ]
       },
       {

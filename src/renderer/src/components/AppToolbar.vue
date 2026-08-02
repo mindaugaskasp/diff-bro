@@ -28,6 +28,14 @@ const copyTip = computed(() => {
   return `Copy this diff as a unified patch (${MOD}+Shift+C)`
 })
 
+// Delimited text swaps the tree for a grid, so the toggle explains the view it
+// actually gives rather than a format name it does not have.
+const structureTip = computed(() =>
+  store.delimitedFormat
+    ? `Compare as a grid — rows aligned by their first column, changes shown per cell (${MOD}+Shift+D)`
+    : `Compare as ${store.structuredFormat.toUpperCase()} data — key order and formatting stop counting (${MOD}+Shift+D)`
+)
+
 // The button names its destination (files ⇄ paste).
 const inPaste = computed(() => store.mode === 'paste')
 const pasteToggleLabel = computed(() => (inPaste.value ? 'File mode' : 'Paste text'))
@@ -41,7 +49,8 @@ const imageTitle = computed(() => {
   if (store.isSpreadsheet) return 'Export this comparison as an image'
   return 'Export this diff as an image — select lines first to capture just those'
 })
-// Clear empties the paste panes as well as the file slots.
+// Clear empties the paste panes as well as the file slots. It leaves the bar
+// entirely on a vault-backed diff, which has nothing of its own to throw away.
 const clearTitle = computed(() =>
   inPaste.value ? `Clear the pasted text (${MOD}+K)` : `Clear both files (${MOD}+K)`
 )
@@ -70,12 +79,9 @@ const clearTitle = computed(() =>
           <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
           Ignore whitespace
         </label>
-        <label
-          v-if="store.canCompareStructure"
-          :data-tip="`Compare as ${store.structuredFormat.toUpperCase()} data — key order and formatting stop counting (${MOD}+Shift+D)`"
-        >
+        <label v-if="store.canCompareStructure" :data-tip="structureTip">
           <input v-model="store.semanticView" type="checkbox" />
-          Structure
+          {{ store.structureLabel }}
         </label>
       </div>
 
@@ -124,9 +130,10 @@ const clearTitle = computed(() =>
           <AppIcon name="image" /> Image
         </button>
         <button
+          v-if="!store.isSavedDiff"
           class="btn btn-ghost"
           :data-tip="clearTitle"
-          :disabled="!store.hasActive"
+          :disabled="!store.canClear"
           @click="store.clear"
         >
           Clear

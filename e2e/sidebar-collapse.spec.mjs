@@ -58,7 +58,7 @@ test('the rail has its own expand button', async ({ page }) => {
 test('the collapse control matches the search box it sits beside', async ({ page }) => {
   const row = await page.evaluate(() => {
     const box = document.querySelector('.usb-search').getBoundingClientRect()
-    const btn = document.querySelector('.usb-collapse').getBoundingClientRect()
+    const btn = document.querySelector('.sidebar-toggle').getBoundingClientRect()
     return { gap: btn.left - box.right, boxH: box.height, btnH: btn.height }
   })
   expect(row.gap).toBeGreaterThanOrEqual(5)
@@ -126,4 +126,35 @@ test('the collapsed sidebar survives a relaunch', async () => {
   } finally {
     rmSync(userDataDir, { recursive: true, force: true })
   }
+})
+
+// One logical toggle should not move. It used to: collapse sat in the sidebar's
+// top band and expand at the foot of the rail, 724px apart and two different
+// sizes, so getting back out meant crossing the whole sidebar.
+test('collapse and expand are the same control in the same place', async ({ page }) => {
+  const box = (l) => l.boundingBox()
+  const collapseBox = await box(collapse(page))
+  await collapse(page).click()
+  await expect(rail(page)).toBeVisible()
+  const expandBtn = page.getByRole('button', { name: 'Expand the sidebar' })
+  const expandBox = await box(expandBtn)
+
+  // Same row: both sit in the band the sidebar and the rail share.
+  expect(Math.abs(expandBox.y - collapseBox.y)).toBeLessThanOrEqual(1)
+  // Same control, so the same size off the shared scale.
+  expect(expandBox.width).toBe(collapseBox.width)
+  expect(expandBox.height).toBe(collapseBox.height)
+
+  // And it toggles back from there.
+  await expandBtn.click()
+  await expect.poll(() => widthOf(page)).toBeGreaterThan(200)
+})
+
+// The rail's top cell is the toggle now, so search became one of the icons that
+// opens the sidebar on its way somewhere.
+test('search is still reachable from the collapsed rail', async ({ page }) => {
+  await collapse(page).click()
+  await page.getByRole('button', { name: 'Search diffs and snippets' }).click()
+  await expect.poll(() => widthOf(page)).toBeGreaterThan(200)
+  await expect(page.locator('.usb-search input')).toBeFocused()
 })

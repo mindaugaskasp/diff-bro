@@ -271,6 +271,7 @@ export function useQuickLook() {
     current,
     toolsOpen,
     snippetLines: preview.snippetLines,
+    snippetSpans: preview.snippetSpans,
     lineClass: preview.lineClass,
     hoverLine: preview.hoverLine,
     footHints,

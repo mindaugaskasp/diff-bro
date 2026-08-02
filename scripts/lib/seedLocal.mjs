@@ -72,6 +72,17 @@ spec:
             limits: { cpu: "1", memory: 512Mi }`
   },
   {
+    // csv is not a Monaco language, so this is honestly plain text.
+    name: 'Cost centre codes',
+    language: 'plaintext',
+    tags: ['csv', 'finance'],
+    content: `code,centre,owner
+1000,Platform,ana
+1200,"Data, Analytics",bo
+1400,Support,cai
+`
+  },
+  {
     name: 'Release checklist',
     language: 'markdown',
     tags: ['release', 'process'],
@@ -177,6 +188,19 @@ const YAML_AFTER = `service:
  * @param {number} now
  * @returns {object[]} vault entries, all tagged `seed`
  */
+// A quoted comma in the region column, so the grid has to keep a field whole
+// rather than splitting on every comma it sees.
+const CSV_BEFORE = `region,q2,q3
+"Nordics, EMEA",9200,74000
+APAC,6100,48000
+LATAM,2100,15000
+`
+const CSV_AFTER = `region,q2,q2 forecast,q3
+"Nordics, EMEA",9200.004,9400,74000
+APAC,6800,7000,52000
+NA,3400,3600,29000
+`
+
 export function sizeRangeDiffs(now) {
   return [
     {
@@ -229,6 +253,20 @@ export function sizeRangeDiffs(now) {
       payload: pair(
         { name: 'missing.ts', content: '' },
         { name: 'added.ts', content: lines(60, (i) => `export const item${i} = ${i}`) }
+      )
+    },
+    {
+      // Two .csv names are what makes the toolbar offer Grid instead of
+      // Structure: an inserted column, a row swap, and a sub-cent nudge, so the
+      // column alignment and the tolerance control both have something to do.
+      name: 'Export totals — grid view',
+      tags: ['csv', 'grid'],
+      createdAt: now - 45 * 60_000,
+      expiresAt: null,
+      from: null,
+      payload: pair(
+        { name: 'totals-before.csv', content: CSV_BEFORE },
+        { name: 'totals-after.csv', content: CSV_AFTER }
       )
     },
     {

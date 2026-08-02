@@ -7,15 +7,54 @@ function normCell(v) {
   return v === null || v === undefined ? '' : v
 }
 
-export function cellsEqual(a, b) {
-  return normCell(a) === normCell(b)
+// A tagged cell (see sheetCells.comparableCell) is { v, k, x }: the value, what
+// stands behind it, and whether a tolerance may touch it. Splitting the first
+// two is what lets a tolerance forgive a formula cell's result without
+// forgiving the formula being replaced.
+function parts(cell) {
+  return cell && typeof cell === 'object' ? cell : { v: cell, k: '' }
+}
+
+/**
+ * The two cells' values, ignoring what stands behind them. Tolerance is dropped
+ * where either side is exact-only — the serial behind a date is not an amount,
+ * so a percentage of it is meaningless.
+ */
+export function valuesEqual(a, b, tolerance = null) {
+  const l = parts(a)
+  const r = parts(b)
+  const t = l.x || r.x ? null : tolerance
+  return normCell(l.v) === normCell(r.v) || withinTolerance(l.v, r.v, t)
+}
+
+/**
+ * Whether two numbers are close enough to count as the same.
+ * @param {{abs?: number, pct?: number}|null} tolerance
+ */
+export function withinTolerance(a, b, tolerance) {
+  // A sign change is material at any threshold: a number that crossed zero is
+  // never "the same figure, rounded differently".
+  if (!tolerance || !comparableNumbers(a, b) || a * b < 0) return false
+  const delta = Math.abs(a - b)
+  if (tolerance.abs != null && delta <= tolerance.abs) return true
+  if (tolerance.pct == null) return false
+  const scale = Math.max(Math.abs(a), Math.abs(b))
+  return scale > 0 && (delta / scale) * 100 <= tolerance.pct
+}
+
+function comparableNumbers(a, b) {
+  return Number.isFinite(a) && Number.isFinite(b)
+}
+
+export function cellsEqual(a, b, tolerance = null) {
+  return parts(a).k === parts(b).k && valuesEqual(a, b, tolerance)
 }
 
 // Column indices whose values differ between two rows.
-export function changedCells(left, right) {
+export function changedCells(left, right, tolerance = null) {
   const n = Math.max(left.length, right.length)
   const cols = []
-  for (let i = 0; i < n; i++) if (!cellsEqual(left[i], right[i])) cols.push(i)
+  for (let i = 0; i < n; i++) if (!cellsEqual(left[i], right[i], tolerance)) cols.push(i)
   return cols
 }
 
@@ -28,8 +67,10 @@ function rowSignature(row) {
   return JSON.stringify(trimmed)
 }
 
-function keyOf(row, keyColumn) {
-  return String(normCell(row[keyColumn]))
+// Per-row pairing key. Kept separate from the row's diff identity: a key cell
+// whose formula was replaced by its value still names the same row.
+export function rowKeys(rows, keyColumn = 0) {
+  return rows.map((row) => String(normCell(row[keyColumn])))
 }
 
 // Classic LCS backtrace over signature arrays -> ops of { t:'eq'|'del'|'ins' }.
@@ -70,25 +111,27 @@ function positionalOps(leftSig, rightSig) {
 }
 
 // One gap → changed/removed/added, pairing del+ins rows by matching key.
-function emitGap(gap, leftRows, rightRows, keyColumn) {
+function emitGap(gap, leftRows, rightRows, keys) {
   const dels = gap.filter((o) => o.t === 'del').map((o) => o.i)
   const ins = gap.filter((o) => o.t === 'ins').map((o) => o.j)
   const byKey = new Map()
   for (const j of ins) {
-    const k = keyOf(rightRows[j], keyColumn)
+    const k = keys.right[j]
     if (!byKey.has(k)) byKey.set(k, [])
     byKey.get(k).push(j)
   }
   const used = new Set()
   const out = []
   for (const i of dels) {
-    const queue = byKey.get(keyOf(leftRows[i], keyColumn))
+    const queue = byKey.get(keys.left[i])
     if (queue && queue.length) {
       const j = queue.shift()
       used.add(j)
-      const changed = changedCells(leftRows[i], rightRows[j])
+      const changed = changedCells(leftRows[i], rightRows[j], keys.tolerance)
       out.push({
-        status: 'changed',
+        // Nothing differs once the tolerance is applied, so the rows ARE the
+        // same — the LCS could not know that, since it matches signatures whole.
+        status: changed.length ? 'changed' : 'same',
         left: leftRows[i],
         right: rightRows[j],
         leftIndex: i,
@@ -121,11 +164,11 @@ function emitGap(gap, leftRows, rightRows, keyColumn) {
   return out
 }
 
-function buildEntries(ops, leftRows, rightRows, keyColumn) {
+function buildEntries(ops, leftRows, rightRows, keys) {
   const out = []
   let gap = []
   const flush = () => {
-    if (gap.length) out.push(...emitGap(gap, leftRows, rightRows, keyColumn))
+    if (gap.length) out.push(...emitGap(gap, leftRows, rightRows, keys))
     gap = []
   }
   for (const op of ops) {
@@ -147,7 +190,9 @@ function buildEntries(ops, leftRows, rightRows, keyColumn) {
 }
 
 /**
- * Align two sheets' rows into a list of paired entries.
+ * Align two sheets' rows into a list of paired entries. `leftKeys`/`rightKeys`
+ * override the pairing keys when the rows carry a diff identity that is not the
+ * value a reader would recognise the row by (see spreadsheetDiff).
  * @returns {Array<{status:'same'|'changed'|'added'|'removed', left, right,
  *   leftIndex:number|null, rightIndex:number|null, changed:number[]}>}
  */
@@ -160,5 +205,10 @@ export function alignRows(leftRows = [], rightRows = [], opts = {}) {
     leftRows.length * rightRows.length > budget
       ? positionalOps(leftSig, rightSig)
       : lcsOps(leftSig, rightSig)
-  return buildEntries(ops, leftRows, rightRows, keyColumn)
+  const keys = {
+    left: opts.leftKeys ?? rowKeys(leftRows, keyColumn),
+    right: opts.rightKeys ?? rowKeys(rightRows, keyColumn),
+    tolerance: opts.tolerance ?? null
+  }
+  return buildEntries(ops, leftRows, rightRows, keys)
 }

@@ -1,16 +1,27 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import { useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
+import { TOLERANCES, useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { GRID_ROW_H } from '../utils/virtualRows'
 import SheetTabBar from './SheetTabBar.vue'
 import SpreadsheetGrid from './SpreadsheetGrid.vue'
+import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
-const { sheets, active, activeSheet, totals, identical, select } = useSpreadsheetDiff()
+const {
+  sheets,
+  active,
+  activeSheet,
+  totals,
+  identical,
+  select,
+  showFormulas,
+  hasFormulas,
+  toleranceId
+} = useSpreadsheetDiff()
 
 const allRows = computed(() => activeSheet.value?.rows ?? [])
 
@@ -30,7 +41,41 @@ onMounted(() => {
 
 <template>
   <div class="sheet-viewer">
-    <SheetTabBar :sheets="sheets" :active="active" @select="select" />
+    <!-- The grid's own chrome: its tabs on the left, the controls that change
+         what the grid SAYS on the right. They sat in the status band until the
+         floating shortcut bar grew over them. -->
+    <div class="sheet-bar band">
+      <SheetTabBar :sheets="sheets" :active="active" @select="select" />
+      <div class="grid-tools">
+        <SegmentedControl
+          v-model:value="toleranceId"
+          label="Tolerance"
+          :options="TOLERANCES"
+          data-tip="Numbers closer than this count as the same figure"
+        />
+        <button
+          v-if="hasFormulas"
+          class="btn btn-sm"
+          :class="{ active: showFormulas }"
+          :data-tip="
+            showFormulas ? 'Back to the values each formula produced' : 'Show formulas, not results'
+          "
+          @click="showFormulas = !showFormulas"
+        >
+          <AppIcon name="braces" />
+          Formulas
+        </button>
+        <button
+          class="btn btn-sm"
+          data-tip="Save every change as a CSV table"
+          :disabled="identical"
+          @click="store.exportChangeRegister(sheets)"
+        >
+          <AppIcon name="table" />
+          Register
+        </button>
+      </div>
+    </div>
 
     <div v-if="identical" class="identical-row">
       <AppIcon name="check" class="ok" />
@@ -49,6 +94,9 @@ onMounted(() => {
         :rows="windowed"
         :side="side"
         :columns="activeSheet.columns"
+        :meta="side === 'left' ? activeSheet.leftMeta : activeSheet.rightMeta"
+        :hidden-rows="side === 'left' ? activeSheet.leftHidden : activeSheet.rightHidden"
+        :show-formulas="showFormulas"
         :pad-top="win.padTop"
         :pad-bottom="win.padBottom"
       />
@@ -62,6 +110,9 @@ onMounted(() => {
         <span class="chg">◆ {{ totals.changed }} changed</span>
         <span class="add">+{{ totals.added }} rows</span>
         <span class="del">−{{ totals.removed }} rows</span>
+        <span v-if="totals.columns" class="cols">
+          ⇄ {{ totals.columns }} column{{ totals.columns === 1 ? '' : 's' }}
+        </span>
       </template>
       <span class="capped">{{ allRows.length }} rows</span>
       <span class="right">{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>

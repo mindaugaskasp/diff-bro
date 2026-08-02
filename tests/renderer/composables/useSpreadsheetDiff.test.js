@@ -18,7 +18,7 @@ describe('useSpreadsheetDiff', () => {
     store.right = book([{ name: 'S', rows: [['a', 2]] }])
     const { sheets, totals, identical } = useSpreadsheetDiff()
     expect(sheets.value).toHaveLength(1)
-    expect(totals.value).toEqual({ changed: 1, added: 0, removed: 0 })
+    expect(totals.value).toEqual({ changed: 1, added: 0, removed: 0, columns: 0 })
     expect(identical.value).toBe(false)
   })
 

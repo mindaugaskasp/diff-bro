@@ -1,11 +1,14 @@
 /* The sidebar's search row. These rules live here rather than in SavedDiffs.css
    because scoped CSS does not reach into a child component — the markup moved
    and left its styling behind, which is exactly what that rule is for. */
+/* A real band row, not a row with padding above it: the rail centres the same
+   toggle in --band-row, and 10px of container padding above a 26px control put
+   it 3px high of that. Centred by the band, so it cannot drift on a type change. */
 .usb-top {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-1);
+  min-height: var(--band-row);
 }
 .usb-search {
   flex: 1;
@@ -50,31 +53,4 @@
 }
 .usb-x:hover {
   color: var(--text);
-}
-
-/* Matches the search box's height so the row reads as one control strip, and
-   carries the same keyline — a borderless glyph beside a bordered field looked
-   like it had been dropped there. */
-.usb-collapse {
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--text-dim);
-  cursor: pointer;
-}
-.usb-collapse:hover {
-  color: var(--text);
-  background: var(--bg-hover);
-  border-color: var(--text-dim);
-}
-.usb-collapse:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
 }

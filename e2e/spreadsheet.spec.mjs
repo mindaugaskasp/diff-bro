@@ -1,6 +1,6 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, stubOpenDialog, stubSaveDialog } from './fixtures.mjs'
 import { zipSync, strToU8 } from 'fflate'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -14,7 +14,7 @@ const XML = '<?xml version="1.0" encoding="UTF-8"?>'
 const inlineStr = (ref, text) => `<c r="${ref}" t="inlineStr"><is><t>${text}</t></is></c>`
 const num = (ref, v) => `<c r="${ref}"><v>${v}</v></c>`
 
-function buildXlsx(rowsXml) {
+function buildXlsx(rowsXml, extra = {}) {
   const files = {
     'xl/workbook.xml':
       `${XML}<workbook xmlns:r="r"><sheets>` +
@@ -23,12 +23,32 @@ function buildXlsx(rowsXml) {
       `${XML}<Relationships><Relationship Id="rId1" ` +
       'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" ' +
       'Target="worksheets/sheet1.xml"/></Relationships>',
-    'xl/worksheets/sheet1.xml': `${XML}<worksheet><sheetData>${rowsXml}</sheetData></worksheet>`
+    'xl/worksheets/sheet1.xml': `${XML}<worksheet><sheetData>${rowsXml}</sheetData></worksheet>`,
+    ...extra
   }
   const map = {}
   for (const [k, v] of Object.entries(files)) map[k] = strToU8(v)
   return Buffer.from(zipSync(map))
 }
+
+// Two files that a values-only diff calls identical: same numbers on screen, but
+// the right file's total was pasted over the formula that produced it, and its
+// date column is formatted rather than raw.
+const STYLES =
+  `${XML}<styleSheet><cellXfs>` +
+  '<xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/>' +
+  '</cellXfs></styleSheet>'
+const formulaSheet = (f) =>
+  `<row r="1">${num('A1', 45870)}${num('B1', 100)}</row>` +
+  `<row r="2" hidden="1">${num('A2', 45871)}${num('B2', 50)}</row>` +
+  `<row r="3">${inlineStr('A3', 'Total')}<c r="B3">${f}<v>150</v></c></row>`
+const DATED_LEFT = buildXlsx(
+  formulaSheet('<f>SUM(B1:B2)</f>').replace(/<c r="A(\d)"/g, '<c r="A$1" s="1"'),
+  { 'xl/styles.xml': STYLES }
+)
+const DATED_RIGHT = buildXlsx(formulaSheet('').replace(/<c r="A(\d)"/g, '<c r="A$1" s="1"'), {
+  'xl/styles.xml': STYLES
+})
 
 // Left: North 120, plus a West row. Right: North 150 (changed cell), West
 // replaced by Central (one removed + one added row).
@@ -77,6 +97,121 @@ test('opens two .xlsx files and renders the aligned grid diff', async ({ app, pa
     await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
     await expect(page.locator('.status .add')).toHaveText('+1 rows')
     await expect(page.locator('.status .del')).toHaveText('−1 rows')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The roadmap's headline spreadsheet bug, end to end: every number on screen is
+// the same, so a values-only diff called these files identical.
+test('catches a formula overwritten by its own value, and dates as dates', async ({
+  app,
+  page
+}) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-f-'))
+  const leftPath = join(dir, 'model-left.xlsx')
+  const rightPath = join(dir, 'model-right.xlsx')
+  writeFileSync(leftPath, DATED_LEFT)
+  writeFileSync(rightPath, DATED_RIGHT)
+
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    // styles.xml is read, so the serial renders as a date rather than 45870.
+    await expect(page.locator('.grid td', { hasText: '2025-08-01' }).first()).toBeVisible()
+    await expect(page.locator('.grid td', { hasText: '45870' })).toHaveCount(0)
+
+    // The formula cell is marked, and the one whose formula went away is flagged
+    // even though both sides still read 150.
+    await expect(page.locator('.grid td.has-f')).toHaveCount(1)
+    await expect(page.locator('.grid td.cell-fchg').first()).toHaveText('150')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+
+    // Hidden row 2 is compared, and its gutter says where it came from.
+    await expect(page.locator('.grid tr.row-hidden')).toHaveCount(2)
+
+    // Formulas view swaps results for the expressions behind them.
+    await page.getByRole('button', { name: 'Formulas' }).click()
+    await expect(page.locator('.grid td', { hasText: '=SUM(B1:B2)' })).toBeVisible()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// An inserted column used to shift every column after it, and float noise was
+// indistinguishable from an edit.
+const COL_LEFT = buildXlsx(
+  `<row r="1">${inlineStr('A1', 'Region')}${inlineStr('B1', 'Q1')}${inlineStr('C1', 'Q2')}</row>` +
+    `<row r="2">${inlineStr('A2', 'North')}${num('B2', 100)}${num('C2', 120)}</row>` +
+    `<row r="3">${inlineStr('A3', 'South')}${num('B3', 70)}${num('C3', 90)}</row>`
+)
+const COL_RIGHT = buildXlsx(
+  `<row r="1">${inlineStr('A1', 'Region')}${inlineStr('B1', 'Q1')}` +
+    `${inlineStr('C1', 'Forecast')}${inlineStr('D1', 'Q2')}</row>` +
+    `<row r="2">${inlineStr('A2', 'North')}${num('B2', 100)}${num('C2', 111)}${num('D2', 120)}</row>` +
+    `<row r="3">${inlineStr('A3', 'South')}${num('B3', 70)}${num('C3', 88)}${num('D3', 90.004)}</row>`
+)
+
+test('aligns columns across an insert and forgives sub-material noise', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-c-'))
+  const leftPath = join(dir, 'cols-left.xlsx')
+  const rightPath = join(dir, 'cols-right.xlsx')
+  writeFileSync(leftPath, COL_LEFT)
+  writeFileSync(rightPath, COL_RIGHT)
+
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    // The inserted column is reported once, and Q2 still lines up with Q2 —
+    // only the 90 -> 90.004 cell reads as changed, not every cell after B.
+    await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.grid thead th.col-added')).toHaveCount(1)
+    // The left grid has no such column, so it shows a striped gap.
+    await expect(page.locator('.grid thead th.ghost-col')).toHaveCount(1)
+
+    // A 0.004 difference is below a 0.01 tolerance: nothing material is left.
+    await page.locator('.seg-opt', { hasText: '±0.01' }).click()
+    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
+    await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('exports the change register as a CSV', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-reg-'))
+  const leftPath = join(dir, 'cols-left.xlsx')
+  const rightPath = join(dir, 'cols-right.xlsx')
+  const out = join(dir, 'register.csv')
+  writeFileSync(leftPath, COL_LEFT)
+  writeFileSync(rightPath, COL_RIGHT)
+
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    await stubSaveDialog(app, out)
+    await page.getByRole('button', { name: 'Register' }).click()
+    await expect(page.locator('.notice')).toContainText('Exported')
+
+    const csv = readFileSync(out, 'utf8')
+    expect(csv.split('\r\n')[0]).toBe('Sheet,Cell,Column,Change,Before,After')
+    expect(csv).toContain('Column added')
+    expect(csv).toContain('Forecast')
+    // The changed cell, reported at its own A1 reference on each side.
+    expect(csv).toContain('Q2,Value,90,90.004')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

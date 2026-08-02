@@ -34,7 +34,7 @@ defineExpose({ focus: () => box.value?.focus() })
       </button>
     </div>
     <button
-      class="usb-collapse"
+      class="btn btn-icon sidebar-toggle"
       data-tip="Collapse the sidebar"
       aria-label="Collapse the sidebar"
       @click="emit('collapse')"

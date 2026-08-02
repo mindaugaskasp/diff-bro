@@ -78,6 +78,15 @@ export function mayReadPath(filePath) {
   return allowedPaths.has(resolve(filePath)) && !isUnderUserData(filePath)
 }
 
+// `format` is only ever a key here, so no caller can name `.exe`; the null
+// prototype keeps 'constructor' from resolving up the chain.
+const EXPORT_FORMATS = Object.freeze(
+  Object.assign(Object.create(null), {
+    html: { ext: 'html', label: 'HTML', title: 'Export diff as HTML' },
+    csv: { ext: 'csv', label: 'CSV', title: 'Export the change register' }
+  })
+)
+
 // Gated on the .xlsx extension too, so a plain .zip isn't read as a spreadsheet.
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 function looksLikeXlsx(name, buffer) {
@@ -221,21 +230,21 @@ export function registerFileIpc() {
     }
   })
 
-  // Save-dialog + write for the diff HTML export. The renderer builds the whole
-  // self-contained document (utils/diffHtml.js); main only writes it where the
-  // user chooses. Plain text out — never touches the allowed-paths read gate.
-  ipcMain.handle('diff:exportHtml', async (e, payload) => {
-    const { html, name } = payload || {}
-    if (typeof html !== 'string') return { error: 'bad-args' }
+  // The one place the app writes renderer-supplied text, so there is a single
+  // write surface to audit. Never touches the allowed-paths read gate.
+  ipcMain.handle('diff:exportFile', async (e, payload) => {
+    const { text, name, format } = payload || {}
+    const spec = EXPORT_FORMATS[format]
+    if (typeof text !== 'string' || !spec) return { error: 'bad-args' }
     const win = BrowserWindow.fromWebContents(e.sender)
     const safe = String(name || 'diff').replace(/[\\/:*?"<>|]/g, '-')
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
-      title: 'Export diff as HTML',
-      defaultPath: `${safe}.html`,
-      filters: [{ name: 'HTML', extensions: ['html'] }]
+      title: spec.title,
+      defaultPath: `${safe}.${spec.ext}`,
+      filters: [{ name: spec.label, extensions: [spec.ext] }]
     })
     if (canceled || !filePath) return { canceled: true }
-    await writeFile(filePath, html, 'utf8')
+    await writeFile(filePath, text, 'utf8')
     return { ok: true, path: filePath }
   })
 }

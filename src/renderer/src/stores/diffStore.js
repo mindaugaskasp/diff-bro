@@ -2,12 +2,15 @@ import { toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
 import { structureAdapter } from '../adapters/structureAdapter'
+import { csvAdapter } from '../adapters/csvAdapter'
 import { diffStructures, structuredKind } from '../utils/structuralDiff'
+import { delimitedKind } from '../utils/csv'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
+import { changeRegister, toCsv } from '../utils/changeRegister'
 import { clipboardSnippetName, tabsFullMessage } from '../utils/cliCommand'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { MAX_TABS } from '../utils/tabs'
@@ -167,7 +170,9 @@ const MENU_ACTIONS = {
   },
   'share-current': (s) => s.shareCurrent(),
   swap: (s) => s.swap(),
-  clear: (s) => s.clear(),
+  clear: (s) => {
+    if (s.canClear) s.clear()
+  },
   'copy-diff': (s) => s.copyDiff(),
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
@@ -338,6 +343,18 @@ export const useDiffStore = defineStore('diff', {
     hasUnsavedWork() {
       return this.canSave && !this.diffSaved
     },
+    // What is on screen came out of the vault — saved here or imported as an
+    // external diff — rather than being scratch work.
+    isSavedDiff() {
+      return this.hasActive && this.diffSaved
+    },
+    // Clear throws work away, and a vault-backed tab has none to throw: emptying
+    // it left the tab still holding the old snapshot, so the pane went blank
+    // while the tab claimed the diff and reopening the entry made a second tab.
+    // Closing the tab is the way out of one of those.
+    canClear() {
+      return this.hasActive && !this.diffSaved
+    },
     // Saving keeps its own encrypted copy of both sides, which is exactly what a
     // file too large to hold cannot provide.
     canSave() {
@@ -354,8 +371,19 @@ export const useDiffStore = defineStore('diff', {
       s.ready && s.left?.content !== undefined && s.right?.content !== undefined
         ? structuredKind(s.left, s.right)
         : null,
+    // The delimiter both sides parse as, when they are delimited text — the same
+    // toggle, showing a grid instead of a tree.
+    delimitedFormat: (s) =>
+      s.ready && s.left?.content !== undefined && s.right?.content !== undefined
+        ? delimitedKind(s.left, s.right)
+        : null,
     canCompareStructure() {
-      return !!this.structuredFormat
+      return !!this.structuredFormat || !!this.delimitedFormat
+    },
+    // What the toggle calls itself: delimited text becomes a grid, everything
+    // else a tree.
+    structureLabel() {
+      return this.delimitedFormat ? 'Grid' : 'Structure'
     },
     structureDiff() {
       const kind = this.structuredFormat
@@ -372,10 +400,26 @@ export const useDiffStore = defineStore('diff', {
     // streamed — and a streamed side has no content in memory, so the structure
     // toggle above it can never be on.
     comparableKind() {
+      if (this.semanticView && this.delimitedFormat) return 'spreadsheet'
       if (this.semanticView && this.canCompareStructure) return 'tree'
       const kinds = [this.leftComparable?.kind, this.rightComparable?.kind]
       if (kinds.includes('streamed')) return 'streamed'
       return kinds.find(Boolean) ?? 'text'
+    },
+    // The two grids the spreadsheet viewer diffs — parsed from a workbook, or
+    // from delimited text the reader asked to see as a grid.
+    gridSheets() {
+      const delimiter = this.delimitedFormat
+      if (this.semanticView && delimiter) {
+        return {
+          left: csvAdapter.toComparable(this.left, delimiter).sheets,
+          right: csvAdapter.toComparable(this.right, delimiter).sheets
+        }
+      }
+      return {
+        left: this.leftComparable?.sheets ?? [],
+        right: this.rightComparable?.sheets ?? []
+      }
     },
     isStreamed() {
       return this.comparableKind === 'streamed'
@@ -461,8 +505,24 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice('This comparison is too large to export.')
         return
       }
-      const res = await window.api.exportDiffHtml({ html, name: `${l.name}-vs-${r.name}` })
+      const res = await window.api.exportDiffFile({
+        text: html,
+        format: 'html',
+        name: `${l.name}-vs-${r.name}`
+      })
       if (res?.ok) this.showNotice('Exported diff to HTML.')
+    },
+    // The grid diff as a table a reviewer can take away. The register is built
+    // here and only its finished text crosses the boundary.
+    async exportChangeRegister(sheets) {
+      const rows = changeRegister(sheets)
+      if (rows.length < 2) {
+        this.showNotice('No changes to export.')
+        return
+      }
+      const name = `${this.left?.name ?? 'left'}-vs-${this.right?.name ?? 'right'}-changes`
+      const res = await window.api.exportDiffFile({ text: toCsv(rows), format: 'csv', name })
+      if (res?.ok) this.showNotice(`Exported ${rows.length - 1} changes.`)
     },
     // Export a SAVED diff as a picture of the app's own diff view: the entry is
     // opened first, so the screenshot shows the real thing, with this theme's

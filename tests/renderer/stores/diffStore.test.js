@@ -71,6 +71,61 @@ describe('diffStore', () => {
     expect(store.comparableKind).toBe('text')
   })
 
+  // Delimited text reuses the structure toggle: off it is still a text diff,
+  // on it routes to the same grid a workbook gets.
+  describe('CSV grid view', () => {
+    const CSV = (name, body) => ({ path: `/tmp/${name}`, name, content: body })
+    const loadCsv = (store) => {
+      store.receive('left', CSV('a.csv', 'id,qty\n1,7'))
+      store.receive('right', CSV('b.csv', 'id,qty\n1,9'))
+      return store
+    }
+
+    it('offers the toggle and calls it Grid', () => {
+      const store = loadCsv(useDiffStore())
+      expect(store.delimitedFormat).toBe(',')
+      expect(store.canCompareStructure).toBe(true)
+      expect(store.structureLabel).toBe('Grid')
+    })
+
+    it('stays a text comparison until the toggle is on', () => {
+      const store = loadCsv(useDiffStore())
+      expect(store.comparableKind).toBe('text')
+      store.semanticView = true
+      expect(store.comparableKind).toBe('spreadsheet')
+    })
+
+    it('parses both sides into grids for the viewer', () => {
+      const store = loadCsv(useDiffStore())
+      store.semanticView = true
+      expect(store.gridSheets.left[0].rows).toEqual([
+        ['id', 'qty'],
+        [1, 7]
+      ])
+      expect(store.gridSheets.right[0].rows[1]).toEqual([1, 9])
+    })
+
+    it('keeps naming the toggle Structure for JSON', () => {
+      const store = useDiffStore()
+      store.receive('left', CSV('a.json', '{"a":1}'))
+      store.receive('right', CSV('b.json', '{"a":2}'))
+      expect(store.delimitedFormat).toBeNull()
+      expect(store.structureLabel).toBe('Structure')
+      store.semanticView = true
+      expect(store.comparableKind).toBe('tree')
+    })
+
+    // A workbook never goes through the CSV path, toggle or not.
+    it('leaves a parsed workbook on the grid it already has', () => {
+      const store = useDiffStore()
+      const sheets = [{ name: 'S1', rows: [['a', 1]] }]
+      store.receive('left', { path: '/tmp/l.xlsx', name: 'l.xlsx', kind: 'spreadsheet', sheets })
+      store.receive('right', { path: '/tmp/r.xlsx', name: 'r.xlsx', kind: 'spreadsheet', sheets })
+      expect(store.delimitedFormat).toBeNull()
+      expect(store.gridSheets.left).toEqual(sheets)
+    })
+  })
+
   it('refuses a spreadsheet dropped into paste mode', () => {
     const store = useDiffStore()
     store.receivePasteFile('left', { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] })
@@ -323,6 +378,34 @@ describe('diffStore', () => {
     expect(store.right).toBeNull()
     expect(store.pasteLeft).toBe('')
     expect(store.pasteRight).toBe('')
+  })
+
+  // Clearing a vault-backed tab emptied the document but left the tab holding
+  // the old snapshot, so the pane went blank while the tab still claimed the
+  // diff — and reopening that entry spawned a second tab instead of reusing it.
+  it('offers Clear for scratch work only, and hides it on a vault-backed diff', () => {
+    const store = useDiffStore()
+    expect(store.canClear).toBe(false)
+    expect(store.isSavedDiff).toBe(false) // an empty tab keeps the button
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.canClear).toBe(true)
+    expect(store.isSavedDiff).toBe(false)
+    store.diffSaved = true
+    expect(store.canClear).toBe(false)
+    expect(store.isSavedDiff).toBe(true)
+  })
+
+  it('ignores a Clear from the menu on a saved or external diff', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.diffSaved = true
+    store.handleMenuAction('clear')
+    expect(store.left).not.toBeNull()
+    store.diffSaved = false
+    store.handleMenuAction('clear')
+    expect(store.left).toBeNull()
   })
 
   it('routes menu actions: toggle-split flips the view option', () => {
@@ -1154,20 +1237,21 @@ describe('exportDiff', () => {
     store.left = { path: null, name: 'a.js', content: 'a\nb\n' }
     store.right = { path: null, name: 'b.js', content: 'a\nB\n' }
     let sent = null
-    window.api.exportDiffHtml = async (payload) => {
+    window.api.exportDiffFile = async (payload) => {
       sent = payload
       return { ok: true, path: '/tmp/out.html' }
     }
     await store.exportDiff()
     expect(sent.name).toBe('a.js-vs-b.js')
-    expect(sent.html).toContain('<!doctype html>')
-    expect(sent.html).toContain('a.js ↔ b.js')
+    expect(sent.format).toBe('html')
+    expect(sent.text).toContain('<!doctype html>')
+    expect(sent.text).toContain('a.js ↔ b.js')
   })
 
   it('does nothing (no IPC) when there is nothing to compare', async () => {
     const store = useDiffStore()
     let called = false
-    window.api.exportDiffHtml = async () => {
+    window.api.exportDiffFile = async () => {
       called = true
       return { ok: true }
     }
@@ -2176,7 +2260,7 @@ describe('diffStore — streamed comparisons', () => {
   it('refuses an HTML export, naming the reason', async () => {
     const store = loadStreamed(useDiffStore())
     let exported = false
-    window.api.exportDiffHtml = async () => {
+    window.api.exportDiffFile = async () => {
       exported = true
       return { ok: true }
     }

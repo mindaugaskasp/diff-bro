@@ -2,10 +2,11 @@ import { unzipSync } from 'fflate'
 import { XlsxError } from './errors'
 
 // Only the parts a value diff reads are inflated; everything else (external
-// links, VBA, media, styles) stays compressed, so its parser is never a
-// reachable attack surface.
+// links, VBA, media, drawings) stays compressed, so its parser is never a
+// reachable attack surface. styles.xml is in because a date is otherwise shown
+// as its serial — and only its numFmt/cellXfs ids are interpreted (styles.js).
 const ALLOWED =
-  /^xl\/(workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/sheet\d+\.xml)$/
+  /^xl\/(workbook\.xml|styles\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/sheet\d+\.xml)$/
 
 export function isAllowedEntry(name) {
   return ALLOWED.test(name)

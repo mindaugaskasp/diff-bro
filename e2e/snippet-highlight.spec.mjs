@@ -1,4 +1,6 @@
-import { test, expect } from './fixtures.mjs'
+import { rmSync } from 'node:fs'
+
+import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 
 // Highlighting is only real in a launched app: Monaco does the tokenising, it
 // cannot be imported under vitest, and JSON in particular only tokenises once a
@@ -118,4 +120,34 @@ test('a secret snippet is masked, never highlighted', async ({ page }) => {
   // tokenised either — the mask stands in for the body.
   expect(await card.innerText()).not.toContain('s3cret-value')
   await expect(card.locator('.syn')).toHaveCount(0)
+})
+
+// The tests above create each snippet through the editor, which mounts a Monaco
+// editor of that language — so the grammar is already loaded by the time the
+// preview asks for it. That is NOT the state a user starts in: on a fresh
+// launch, hovering a snippet is the first thing that ever asks for its
+// language. Relaunching the same profile puts the app back in that state.
+test('the FIRST preview after a launch is coloured, not plain', async () => {
+  const userDataDir = freshUserDataDir()
+  try {
+    let app = await launchApp(userDataDir)
+    let page = await firstReadyPage(app)
+    await addSnippet(page, {
+      name: 'Cold YAML',
+      language: 'yaml',
+      body: '# a note\nreplicas: 3\nname: bro'
+    })
+    await app.close()
+
+    // Fresh process: no Monaco language has been loaded yet.
+    app = await launchApp(userDataDir)
+    page = await firstReadyPage(app)
+    const card = await previewOf(page, 'Cold YAML')
+    await expect
+      .poll(() => rolesIn(card), { timeout: 2000 })
+      .toEqual(expect.arrayContaining(['comment', 'property']))
+    await app.close()
+  } finally {
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
 })

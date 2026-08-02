@@ -55,6 +55,10 @@
   color: var(--danger-border);
   font-weight: 600;
 }
+.status .cols {
+  color: var(--accent);
+  font-weight: 600;
+}
 .status .only {
   font-style: italic;
 }
@@ -64,4 +68,29 @@
 }
 .status .right {
   margin-left: auto;
+}
+
+/* Sheet tabs + the grid's view controls share one band, so the tabs scroll
+   under a fixed set of controls instead of pushing them off the edge. */
+.sheet-bar {
+  flex: none;
+  gap: var(--space-3);
+  padding-right: var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.grid-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  margin-left: auto;
+}
+/* Formulas toggle: same "on" cue as the toolbar's locked padlock. */
+.grid-tools .btn {
+  gap: var(--space-1);
+}
+.grid-tools .btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
 }

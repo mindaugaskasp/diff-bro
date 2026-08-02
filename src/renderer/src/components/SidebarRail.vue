@@ -26,16 +26,27 @@ const groups = computed(() => [
 
 <template>
   <div class="rail">
+    <!-- The band the expanded sidebar puts its collapse control in, holding the
+         same control in its other state. The toggle never moves. -->
     <div class="rail-band band">
       <button
-        class="rail-btn"
-        data-tip="Search diffs & snippets"
-        aria-label="Search diffs and snippets"
-        @click="emit('expand', 'search')"
+        class="btn btn-icon sidebar-toggle"
+        data-tip="Expand the sidebar"
+        aria-label="Expand the sidebar"
+        @click="emit('expand', null)"
       >
-        <AppIcon name="search" />
+        <AppIcon name="chevron-right" />
       </button>
     </div>
+
+    <button
+      class="rail-btn"
+      data-tip="Search diffs & snippets"
+      aria-label="Search diffs and snippets"
+      @click="emit('expand', 'search')"
+    >
+      <AppIcon name="search" />
+    </button>
 
     <button
       v-for="g in groups"
@@ -50,15 +61,6 @@ const groups = computed(() => [
     </button>
 
     <div class="rail-gap"></div>
-
-    <button
-      class="rail-btn rail-expand"
-      data-tip="Expand the sidebar"
-      aria-label="Expand the sidebar"
-      @click="emit('expand', null)"
-    >
-      <AppIcon name="chevron-right" />
-    </button>
 
     <button class="rail-btn" data-tip="Tools" aria-label="Tools" @click="emit('expand', 'tools')">
       <AppIcon name="wrench" />

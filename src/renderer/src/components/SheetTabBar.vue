@@ -1,5 +1,6 @@
 <script setup>
 import { arrayOfShape } from '../utils/props'
+import AppIcon from './AppIcon.vue'
 
 defineProps({
   /** @type {import('vue').PropType<Array<object>>} */
@@ -7,6 +8,14 @@ defineProps({
   active: { type: Number, required: true }
 })
 defineEmits(['select'])
+
+function tipFor(sheet) {
+  const hidden = sheet.hidden ? 'Hidden sheet — ' : ''
+  if (sheet.present === 'left') return `${hidden}only in the left file`
+  if (sheet.present === 'right') return `${hidden}only in the right file`
+  const changes = `${sheet.changes} change${sheet.changes === 1 ? '' : 's'}`
+  return hidden ? `${hidden}${changes}` : changes
+}
 </script>
 
 <template>
@@ -18,15 +27,10 @@ defineEmits(['select'])
       :class="{ active: i === active, missing: sheet.present !== 'both' }"
       role="tab"
       :aria-selected="i === active"
-      :data-tip="
-        sheet.present === 'left'
-          ? 'Only in the left file'
-          : sheet.present === 'right'
-            ? 'Only in the right file'
-            : `${sheet.changes} change${sheet.changes === 1 ? '' : 's'}`
-      "
+      :data-tip="tipFor(sheet)"
       @click="$emit('select', i)"
     >
+      <AppIcon v-if="sheet.hidden" name="eye-off" class="hidden-mark" />
       <span class="name">{{ sheet.name || '(unnamed)' }}</span>
       <span v-if="sheet.present !== 'both'" class="badge only">only {{ sheet.present }}</span>
       <span v-else-if="sheet.changes" class="badge">{{ sheet.changes }}</span>
