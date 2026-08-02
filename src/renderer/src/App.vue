@@ -128,7 +128,7 @@ const {
               />
             </div>
             <button
-              class="btn btn-ghost swap"
+              class="btn swap"
               :data-tip="`Swap the left and right files (${MOD}+Shift+S)`"
               aria-label="Swap sides"
               :disabled="!store.ready"

@@ -57,10 +57,8 @@ function reveal() {
       <span v-if="isDefault" class="badge">default</span>
     </div>
     <div class="dialog-actions">
-      <button class="btn btn-ghost" :disabled="busy" @click="reveal">Reveal</button>
-      <button class="btn btn-ghost" :disabled="busy || isDefault" @click="reset">
-        Use default
-      </button>
+      <button class="btn" :disabled="busy" @click="reveal">Reveal</button>
+      <button class="btn" :disabled="busy || isDefault" @click="reset">Use default</button>
       <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
     </div>
     <p class="hint">Changing the folder restarts Diff Bro.</p>

@@ -49,7 +49,7 @@ defineExpose({ flash })
 <template>
   <button
     v-if="editMode"
-    class="btn btn-sm btn-ghost"
+    class="btn btn-sm"
     :disabled="!canFormat"
     :data-tip="formatTip"
     @click="emit('format')"
@@ -58,7 +58,7 @@ defineExpose({ flash })
   </button>
   <button
     v-if="secret"
-    class="btn btn-sm btn-ghost"
+    class="btn btn-sm"
     :data-tip="masked ? 'Show the contents' : 'Hide the contents again'"
     @click="emit('reveal')"
   >
@@ -66,7 +66,7 @@ defineExpose({ flash })
     {{ masked ? 'Show' : 'Hide' }}
   </button>
   <button
-    class="btn btn-sm btn-ghost"
+    class="btn btn-sm"
     :class="{ copied }"
     :disabled="!hasContent"
     :data-tip="copyTip"
@@ -76,7 +76,7 @@ defineExpose({ flash })
   </button>
   <button
     v-if="editMode"
-    class="btn btn-sm btn-ghost"
+    class="btn btn-sm"
     :class="{ armed: clearArmed }"
     :disabled="!hasContent"
     :data-tip="clearTip"

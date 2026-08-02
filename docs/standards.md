@@ -127,6 +127,22 @@ regression test from decoration.
   rather than a literal, or `/* token-exempt: reason */` when a literal is
   genuinely right. New UI must be checked in EVERY theme — see the
   design-proposal rule below, not just the two you happen to have open.
+- **A control must read as a control BEFORE it is touched, and `.btn-ghost` is
+  only ever the dismissive twin.** Quiet is right for a Cancel or Close standing
+  next to a primary that means the opposite; a lone ghost in a row reads as
+  unavailable, which is how the whole diff toolbar came to look switched off
+  until hovered. A neutral action with no primary beside it is a plain `.btn`.
+  The resting `.btn` carries three cues on three axes — the `--btn-face` veil
+  (the theme's own ink at 14%, so it steps toward the text on any ground rather
+  than picking a surface that only lifts on half the palettes), the `--btn-edge`
+  keyline at the 3:1 non-text floor, and `--shadow-1`. Hover and press step the
+  same ladder (`--btn-face-hover` / `--btn-face-press`); the accent goes on the
+  keyline and NEVER on the label, which scores below 4.5:1 on five themes. Off
+  is the opposite language — flat, no lift, weak keyline — never the same
+  properties at a lower opacity. `npm run check:themes` holds the resting face,
+  its label and its edge to floors on all 14; that check exists because nothing
+  measured the affordance the first time and a whole toolbar shipped looking
+  disabled.
 - **A UI/UX proposal is not a proposal until it has been checked against every
   supported theme.** `themes.css` ships 14 — light, dark, solar, neon, nord,
   sepia, dim, beacon, meridian, linen, bloom, nyan, matrix, contrast — and seven
@@ -166,7 +182,8 @@ regression test from decoration.
   `--shadow-*` scale in tokens.css (tinted per theme by `--shadow-rgb`) — reach
   for a level, don't hand-roll an `rgba()` drop. `npm run check:themes`
   (scripts/check-theme-depth.mjs) fails the build if any theme's text, surfaces,
-  or border lose contrast — the floors are a ratchet, never lowered to green a run.
+  border or resting control face lose contrast — the floors are a ratchet, never
+  lowered to green a run.
 - **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
   section header, dialog header) is a _band_: it carries `.band` and vertically
   centres its content with flexbox. Never fake vertical alignment with top

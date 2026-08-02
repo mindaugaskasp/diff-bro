@@ -35,9 +35,9 @@ function report() {
     <p v-if="store.lastError" class="err-msg">{{ store.lastError.message }}</p>
 
     <template #actions>
-      <button class="btn btn-ghost" @click="reveal">Reveal log</button>
-      <button class="btn btn-ghost" @click="copyLog">{{ copied ? 'Copied' : 'Copy log' }}</button>
-      <button class="btn btn-ghost" @click="report">Report on GitHub</button>
+      <button class="btn" @click="reveal">Reveal log</button>
+      <button class="btn" @click="copyLog">{{ copied ? 'Copied' : 'Copy log' }}</button>
+      <button class="btn" @click="report">Report on GitHub</button>
       <button class="btn btn-primary" @click="close">Dismiss</button>
     </template>
   </BaseDialog>

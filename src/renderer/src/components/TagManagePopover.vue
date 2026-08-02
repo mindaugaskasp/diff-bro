@@ -70,7 +70,7 @@ function exportTag() {
         ></button>
       </div>
       <div class="manage-actions">
-        <button class="btn btn-sm btn-ghost btn-danger" @click="remove">Delete tag</button>
+        <button class="btn btn-sm btn-danger" @click="remove">Delete tag</button>
         <span class="spacer" />
         <button class="btn btn-sm" @click="exportTag">Export…</button>
         <button class="btn btn-sm btn-primary" @click="applyRename">Rename</button>

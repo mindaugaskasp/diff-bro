@@ -67,7 +67,7 @@ function close() {
 
     <template #actions>
       <button class="btn btn-primary" :disabled="busy" @click="save">Save to file…</button>
-      <button class="btn btn-ghost" :disabled="busy" @click="copy">Copy to clipboard</button>
+      <button class="btn" :disabled="busy" @click="copy">Copy to clipboard</button>
       <button class="btn btn-ghost" @click="close">Close</button>
     </template>
   </BaseDialog>

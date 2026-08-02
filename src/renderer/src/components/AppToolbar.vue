@@ -90,7 +90,7 @@ const clearTitle = computed(() =>
       <!-- Document actions -->
       <div class="group actions">
         <button
-          class="btn btn-ghost"
+          class="btn"
           :class="{ active: inPaste }"
           :data-tip="pasteToggleTitle"
           @click="store.togglePasteMode"
@@ -106,7 +106,7 @@ const clearTitle = computed(() =>
           Save
         </button>
         <button
-          class="btn btn-ghost"
+          class="btn"
           :data-tip="shareTip"
           :disabled="!store.canSave"
           @click="store.shareCurrent()"
@@ -114,7 +114,7 @@ const clearTitle = computed(() =>
           Share
         </button>
         <button
-          class="btn btn-ghost"
+          class="btn"
           :data-tip="copyTip"
           :disabled="!store.ready || store.comparableKind !== 'text'"
           @click="store.copyDiff()"
@@ -122,7 +122,7 @@ const clearTitle = computed(() =>
           <AppIcon name="copy" /> Copy diff
         </button>
         <button
-          class="btn btn-ghost"
+          class="btn"
           :data-tip="imageTitle"
           :disabled="!store.canExportImage"
           @click="store.exportCurrentImage()"
@@ -131,7 +131,7 @@ const clearTitle = computed(() =>
         </button>
         <button
           v-if="!store.isSavedDiff"
-          class="btn btn-ghost"
+          class="btn"
           :data-tip="clearTitle"
           :disabled="!store.canClear"
           @click="store.clear"

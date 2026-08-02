@@ -25,9 +25,9 @@ const onConfirm = () => (isPick.value ? diff.confirmPick() : diff.confirmReplace
       >). Save it first if you want to keep it.
     </p>
     <template #actions>
-      <button class="btn btn-ghost" @click="onCancel">Cancel</button>
+      <button class="btn" @click="onCancel">Cancel</button>
       <span class="spacer" />
-      <button class="btn btn-ghost" @click="onSaveFirst">Save first</button>
+      <button class="btn" @click="onSaveFirst">Save first</button>
       <button class="btn btn-destructive" @click="onConfirm">Replace anyway</button>
     </template>
   </BaseDialog>

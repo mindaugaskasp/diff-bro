@@ -173,10 +173,8 @@ function close() {
     </label>
     <p v-if="error" class="error">{{ error }}</p>
     <template #actions>
-      <button class="btn btn-ghost" :disabled="!output" @click="useOutputAsInput">
-        Use output as input
-      </button>
-      <button class="btn btn-ghost" :disabled="!output" @click="copyOutput">Copy output</button>
+      <button class="btn" :disabled="!output" @click="useOutputAsInput">Use output as input</button>
+      <button class="btn" :disabled="!output" @click="copyOutput">Copy output</button>
       <button class="btn btn-ghost" @click="close">Close</button>
     </template>
   </BaseDialog>

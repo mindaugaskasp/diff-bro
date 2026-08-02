@@ -24,7 +24,7 @@ const settings = useSettingsStore()
       />
       <button
         type="button"
-        class="btn btn-sm btn-ghost"
+        class="btn btn-sm"
         :disabled="!code.trim()"
         data-tip="Open the full, resizable diagram viewer"
         @click="$emit('expand')"

@@ -27,6 +27,11 @@
   min-height: var(--band-row);
 }
 
+/* The neutral workhorse — every action that is not its group's one affirmative
+   choice. It must read as pressable AT REST, on three axes: face, keyline, lift.
+   Flat + dim is the language :disabled speaks, which is why the toolbar looked
+   switched off until hovered. The face is --btn-face and not --bg, which is
+   DARKER than the panel on every dark theme and so read as a recessed well. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -34,9 +39,9 @@
   gap: var(--space-2);
   height: var(--control-h);
   padding: 0 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--btn-edge);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--btn-face);
   color: var(--text);
   font-family: inherit;
   font-size: var(--font-md);
@@ -44,18 +49,38 @@
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
+  /* Reads at 12.5–18.9 on the seven light grounds; invisible on the dark ones,
+     where the lighter face carries the lift instead. */
+  box-shadow: var(--shadow-1);
   transition:
     color 0.12s,
     border-color 0.12s,
-    background 0.12s;
+    background 0.12s,
+    box-shadow 0.12s;
 }
+/* The accent goes on the keyline, never the label — as label colour it is under
+   4.5:1 on five themes (solar 3.21 … light 4.49), and over a face on ten. */
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
-  color: var(--accent);
-  background: var(--bg-hover);
+  background: var(--btn-face-hover);
 }
+.btn:active:not(:disabled) {
+  background: var(--btn-face-press);
+  box-shadow: none;
+}
+/* A toggle that is ON — AppToolbar bound .active for a long time with no rule. */
+.btn.active {
+  background: var(--btn-face-press);
+  border-color: var(--accent);
+}
+/* Off is FLAT — no plate, no lift, weak keyline. Opacity alone left enabled and
+   disabled one step apart on one axis. */
 .btn:disabled {
-  opacity: 0.5;
+  background: none;
+  border-color: var(--border);
+  color: var(--text-dim);
+  box-shadow: none;
+  opacity: 0.7;
   cursor: default;
 }
 
@@ -78,17 +103,34 @@
   border-color: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
   color: var(--text-on-accent);
 }
+/* A filled variant keeps its fill when pressed or unavailable; .btn's neutral
+   faces are more specific and would otherwise strip its identity. */
+.btn-primary:active:not(:disabled),
+.btn-destructive:active:not(:disabled) {
+  box-shadow: none;
+}
+.btn-primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
+}
+.btn-primary:disabled {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  opacity: 0.5;
+}
 
-/* Tertiary action (Cancel, Close). No fill — but the base --border is nearly
-   invisible against a panel on the light-ground themes (1.20 on light, 1.24 on
-   bloom), so a ghost button had no perceivable edge at all and read as text.
-   Mixed halfway to --text the edge clears the 3:1 UI-component threshold on all
-   14 (weakest sepia 3.21), while beacon and contrast barely move because their
-   keylines already max out. */
+/* The DISMISSIVE TWIN of a primary — Cancel, Close, Dismiss — and nothing else.
+   A lone ghost reads as unavailable; a neutral action with no primary beside it
+   is a plain `.btn`. See docs/standards.md. */
 .btn-ghost {
   background: none;
   color: var(--text-dim);
-  border-color: color-mix(in srgb, var(--border) 50%, var(--text));
+  border-color: var(--btn-edge);
+  box-shadow: none;
+}
+/* .btn:hover no longer recolours a label, and dim ink is this one's rest. */
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text);
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -103,7 +145,8 @@
   font-size: var(--font-sm);
 }
 
-/* Square, borderless glyph button (header affordances, row actions). */
+/* Square, borderless glyph button (header affordances, row actions). Flat by
+   design — a plate on every row action would make the sidebar heavy. */
 .btn-icon {
   width: var(--control-h-sm);
   height: var(--control-h-sm);
@@ -112,6 +155,7 @@
   background: none;
   color: var(--text-dim);
   font-size: var(--font-lg);
+  box-shadow: none;
 }
 
 /* Fills its slot — the default for the stacked sidebar actions. */
@@ -120,12 +164,9 @@
 }
 
 /* The sidebar's collapse/expand control: ONE button in two states, so both
-   sides use this and it never changes size or position between them. The edge
-   follows .btn-ghost's recipe rather than a bare --border, which scores
-   1.24–2.59 against the sidebar panel on eleven of the fourteen themes and so
-   read as no edge at all. */
+   sides use this and it never changes size or position between them. */
 .sidebar-toggle {
-  border-color: color-mix(in srgb, var(--border) 50%, var(--text));
+  border-color: var(--btn-edge);
   background: var(--bg);
   color: var(--text-dim);
 }

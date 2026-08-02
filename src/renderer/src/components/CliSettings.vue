@@ -48,7 +48,7 @@ async function run(fn) {
     <p v-if="error" class="hint">{{ error }}</p>
 
     <div class="dialog-actions">
-      <button v-if="status?.installed" class="btn btn-ghost" :disabled="busy" @click="uninstall">
+      <button v-if="status?.installed" class="btn" :disabled="busy" @click="uninstall">
         Remove
       </button>
       <button class="btn btn-primary" :disabled="busy" @click="install">

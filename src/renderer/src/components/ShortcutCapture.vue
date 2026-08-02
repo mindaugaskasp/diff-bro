@@ -72,7 +72,7 @@ function onKeydown(e) {
     <button
       v-if="!isDefault"
       type="button"
-      class="btn btn-ghost btn-sm"
+      class="btn btn-sm"
       @click="apply(DEFAULT_QUICKLOOK_SHORTCUT)"
     >
       Reset

@@ -87,7 +87,8 @@ function mapFor(theme) {
   return map
 }
 
-// Resolve a token to an [r,g,b], following var() and one color-mix(in srgb …).
+// Resolve a token to an [r,g,b], or [r,g,b,a] when it is a veil (the ink at low
+// alpha over transparent) — alpha has to survive to be painted, not flattened.
 function resolve(name, map, seen = new Set()) {
   if (seen.has(name)) throw new Error(`cycle at ${name}`)
   seen.add(name)
@@ -95,19 +96,34 @@ function resolve(name, map, seen = new Set()) {
   if (v == null) throw new Error(`missing ${name}`)
   return evalColor(v, map, seen)
 }
+const alphaOf = (c) => (c.length > 3 ? c[3] : 1)
 function evalColor(v, map, seen) {
   v = v.trim()
+  if (v === 'transparent') return [0, 0, 0, 0]
   if (v.startsWith('#')) return parseHex(v)
   const varM = v.match(/^var\((--[a-z0-9-]+)\)$/i)
   if (varM) return resolve(varM[1], map, new Set(seen))
-  const mixM = v.match(/^color-mix\(in srgb,\s*(.+?)\s+(\d+)%\s*,\s*(.+?)\)$/i)
+  const mixM = v.match(/^color-mix\(in srgb,\s*(.+?)\s+([\d.]+)%\s*,\s*(.+?)\)$/i)
   if (mixM) {
     const a = evalColor(mixM[1], map, seen)
     const b = evalColor(mixM[3], map, seen)
     const p = Number(mixM[2]) / 100
-    return a.map((ch, i) => clamp(Math.round(ch * p + b[i] * (1 - p))))
+    // Premultiplied, per CSS color-mix; two opaque colours reduce to a plain mix.
+    const [aa, ba] = [alphaOf(a), alphaOf(b)]
+    const alpha = aa * p + ba * (1 - p)
+    if (alpha === 0) return [0, 0, 0, 0]
+    const rgb = [0, 1, 2].map((i) =>
+      clamp(Math.round((a[i] * aa * p + b[i] * ba * (1 - p)) / alpha))
+    )
+    return alpha === 1 ? rgb : [...rgb, alpha]
   }
   throw new Error(`cannot evaluate "${v}"`)
+}
+function over(fg, bg) {
+  const a = alphaOf(fg)
+  return a === 1
+    ? fg.slice(0, 3)
+    : [0, 1, 2].map((i) => clamp(Math.round(fg[i] * a + bg[i] * (1 - a))))
 }
 
 // --- the contract ----------------------------------------------------------
@@ -120,7 +136,13 @@ const RULES = [
   { key: 'raised/canvas', a: 'bg-raised', b: 'bg-canvas', min: 1.04, kind: 'surface' },
   { key: 'panel/bg', a: 'bg-panel', b: 'bg', min: 1.03, kind: 'surface' },
   // The divider must be visible against the chrome it edges.
-  { key: 'border/panel', a: 'border', b: 'bg-panel', min: 1.11, kind: 'border' }
+  { key: 'border/panel', a: 'border', b: 'bg-panel', min: 1.11, kind: 'border' },
+  // A control must read as a control BEFORE it is touched: the toolbar shipped
+  // with a 1.00 resting fill and dim ink — what :disabled looks like — because
+  // nothing measured the affordance.
+  { key: 'btn-face/panel', a: 'btn-face', b: 'bg-panel', min: 1.25, kind: 'control' },
+  { key: 'btn-label/face', a: 'text', b: 'btn-face', min: 4.5, kind: 'text' },
+  { key: 'btn-edge/panel', a: 'btn-edge', b: 'bg-panel', min: 3.0, kind: 'control' }
 ]
 const tok = (n) => `--${n}`
 
@@ -132,7 +154,9 @@ for (const theme of THEMES) {
   for (const r of RULES) {
     let ratio
     try {
-      ratio = contrast(resolve(tok(r.a), map), resolve(tok(r.b), map))
+      // A veil is only a colour once painted, so both sides land on the chrome.
+      const ground = resolve('--bg-panel', map)
+      ratio = contrast(over(resolve(tok(r.a), map), ground), over(resolve(tok(r.b), map), ground))
     } catch (e) {
       failures.push(`${theme}: ${r.key} — ${e.message}`)
       cells[r.key] = 'ERR'

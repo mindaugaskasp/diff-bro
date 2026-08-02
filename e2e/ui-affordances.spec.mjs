@@ -207,3 +207,93 @@ test('the preview survives the pointer travelling into it', async ({ page }) => 
   await page.waitForTimeout(400)
   await expect(card).toBeVisible()
 })
+
+// A control's painted surface and its ratio against the band behind it.
+// Chromium resolves color-mix() to rgba() or color(srgb …) by version, so both.
+const SURFACE = (buttonSel, groundSel) => `(() => {
+  const parse = (s) => {
+    const rgb = s.match(/^rgba?\\(([^)]+)\\)$/)
+    if (rgb) {
+      const p = rgb[1].split(/[\\s,/]+/).filter(Boolean).map(Number)
+      return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }
+    }
+    const srgb = s.match(/^color\\(srgb ([^)]+)\\)$/)
+    if (srgb) {
+      const p = srgb[1].split(/[\\s/]+/).filter(Boolean).map(Number)
+      return { r: p[0] * 255, g: p[1] * 255, b: p[2] * 255, a: p.length > 3 ? p[3] : 1 }
+    }
+    throw new Error('cannot parse colour: ' + s)
+  }
+  const over = (fg, bg) => [
+    fg.r * fg.a + bg.r * (1 - fg.a),
+    fg.g * fg.a + bg.g * (1 - fg.a),
+    fg.b * fg.a + bg.b * (1 - fg.a)
+  ]
+  const chan = (c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
+  const lum = ([r, g, b]) => 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b)
+  const btn = document.querySelector(${JSON.stringify(buttonSel)})
+  const ground = document.querySelector(${JSON.stringify(groundSel)})
+  const bs = getComputedStyle(btn)
+  const face = parse(bs.backgroundColor)
+  const gc = parse(getComputedStyle(ground).backgroundColor)
+  const painted = over(face, gc)
+  const bare = [gc.r, gc.g, gc.b]
+  const [hi, lo] = [lum(painted), lum(bare)].sort((a, b) => b - a)
+  return {
+    alpha: face.a,
+    shadow: bs.boxShadow,
+    contrast: (hi + 0.05) / (lo + 0.05),
+    background: bs.backgroundColor
+  }
+})()`
+
+// A ghost button had no fill, so its contrast against the band was exactly 1.00
+// — the same nothing a disabled control shows.
+test('a resting toolbar button has a surface of its own', async ({ page }) => {
+  const paste = page.getByRole('button', { name: 'Paste text' })
+  await expect(paste).toBeEnabled()
+
+  const s = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+  expect(s.alpha, `resting background was ${s.background}`).toBeGreaterThan(0)
+  expect(s.contrast, 'the button must be distinguishable from the band it sits on').toBeGreaterThan(
+    1.2
+  )
+})
+
+// Enabled and disabled used to differ by one alpha step on one axis. Whatever
+// the resting state gains, disabled must not have.
+test('a disabled toolbar button differs from a resting one by more than opacity', async ({
+  page
+}) => {
+  const capture = page.getByRole('button', { name: 'Capture' })
+  await expect(capture).toBeDisabled()
+
+  const rest = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+  // Not the primary — a disabled Save keeps its accent fill on purpose.
+  const off = await page.evaluate(SURFACE('.toolbar .btn:disabled:not(.btn-primary)', '.toolbar'))
+
+  expect(rest.alpha, 'a resting button paints a plate').toBeGreaterThan(0)
+  expect(off.alpha, 'a disabled button paints none').toBe(0)
+  expect(rest.shadow, 'a resting button is lifted').not.toBe('none')
+  expect(off.shadow, 'a disabled button is flat').toBe('none')
+})
+
+// AppToolbar bound :class="{ active: inPaste }" for a long time with no
+// .btn.active rule anywhere — the toggle had no on-state at all.
+test('the paste-mode toggle shows an on-state', async ({ page }) => {
+  const toggle = page.getByRole('button', { name: 'Paste text' })
+  const before = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+
+  await toggle.click()
+  await expect(page.getByRole('button', { name: 'File mode' })).toBeVisible()
+  // After a click the pointer still hovers, and mid-transition the computed
+  // value is an interpolated oklab() rather than the declared colour.
+  await page.mouse.move(0, 0)
+  await page.waitForTimeout(250)
+
+  const on = await page.evaluate(SURFACE('.toolbar .btn.active', '.toolbar'))
+  expect(
+    on.contrast,
+    'the pressed toggle must read differently from a resting button'
+  ).toBeGreaterThan(before.contrast * 1.15)
+})

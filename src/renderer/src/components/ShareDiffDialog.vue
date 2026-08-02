@@ -77,7 +77,7 @@ function close() {
         It expires at the same moment as your local copy.
       </p>
       <div class="dialog-actions">
-        <button type="button" class="btn btn-sm btn-ghost" @click="diff.addTrustedKey()">
+        <button type="button" class="btn btn-sm" @click="diff.addTrustedKey()">
           Add recipient…
         </button>
         <span class="spacer" />
@@ -104,7 +104,7 @@ function close() {
         <strong>Give them your key</strong>
         <span class="step-hint">Name it and send it — they import it to receive your diffs.</span>
       </div>
-      <button type="button" class="btn btn-sm btn-ghost" @click="diff.showShareKeyDialog = true">
+      <button type="button" class="btn btn-sm" @click="diff.showShareKeyDialog = true">
         Share my key…
       </button>
     </div>

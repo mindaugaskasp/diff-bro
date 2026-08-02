@@ -74,4 +74,16 @@
      check-theme-depth.mjs can prove none of the roles collapse into each other. */
   --bg-canvas: var(--bg);
   --bg-raised: var(--bg-panel);
+  /* Control face — a veil of the theme's own ink, NOT a surface colour: over any
+     ground it steps toward the text, which is the raised direction on that
+     ground, so one .btn lifts off --bg, --bg-panel and --bg-elevated alike. A
+     fixed colour can only lift on half the palettes. 22% is the ceiling that
+     keeps nord's label above 4.5:1; check-theme-depth.mjs holds all 14. */
+  --btn-face: color-mix(in srgb, var(--text) 14%, transparent);
+  --btn-face-hover: color-mix(in srgb, var(--text) 22%, transparent);
+  --btn-face-press: color-mix(in srgb, var(--text) 30%, transparent);
+  /* Control keyline. A bare --border scores 1.20 against the panel on light and
+     1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
+     floor on all 14 (weakest sepia 3.19). */
+  --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
 }
