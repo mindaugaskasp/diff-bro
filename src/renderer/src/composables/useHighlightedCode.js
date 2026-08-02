@@ -1,7 +1,7 @@
 // The Monaco half of the snippet preview's highlighting: make sure the language
 // is loaded, tokenize, and hand the pure mapper the result. Kept out of
 // utils/highlight.js so that stays testable without Monaco.
-import { computed, shallowRef, watchEffect } from 'vue'
+import { computed, ref, shallowRef, watchEffect } from 'vue'
 import * as monaco from 'monaco-editor'
 import { spansFor } from '../utils/highlight'
 
@@ -49,10 +49,13 @@ function tokenizeLines(body, lang) {
 /**
  * @param {() => string} text
  * @param {() => string} language  a Monaco language id, '' for none
- * @returns {{ lines: import('vue').Ref<{text: string, role: string}[][]> }}
+ * @returns {{ lines: import('vue').Ref<{text: string, role: string}[][]>,
+ *            settled: import('vue').Ref<boolean> }}
  */
 export function useHighlightedCode(text, language) {
   const lines = shallowRef([])
+  // For a one-shot reader (the screenshot stage): the grammar landed, or never will.
+  const settled = ref(false)
   const source = computed(() => String(text() ?? ''))
 
   watchEffect((onCleanup) => {
@@ -60,12 +63,14 @@ export function useHighlightedCode(text, language) {
     const body = source.value
     let timer = null
     let stopped = false
+    settled.value = false
     onCleanup(() => {
       stopped = true
       clearTimeout(timer)
     })
     if (!lang || lang === 'plaintext') {
       lines.value = plain(body)
+      settled.value = true
       return
     }
     warm(lang)
@@ -74,9 +79,10 @@ export function useHighlightedCode(text, language) {
       const { lines: painted, typed } = tokenizeLines(body, lang)
       lines.value = painted
       if (!typed && i < RETRY_MS.length) timer = setTimeout(() => attempt(i + 1), RETRY_MS[i])
+      else settled.value = true
     }
     attempt(0)
   })
 
-  return { lines }
+  return { lines, settled }
 }

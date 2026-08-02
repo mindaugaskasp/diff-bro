@@ -6,7 +6,8 @@ import { csvAdapter } from '../adapters/csvAdapter'
 import { diffStructures, structuredKind } from '../utils/structuralDiff'
 import { delimitedKind } from '../utils/csv'
 import { useVaultStore } from './vaultStore'
-import { useSnippetStore } from './snippetStore'
+import { languageOf, useSnippetStore } from './snippetStore'
+import { isSecret } from '../utils/secretSnippet'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
@@ -19,7 +20,8 @@ import {
   captureRectOf,
   captureRegionOf,
   planSlices,
-  untilChanged
+  untilChanged,
+  untilTrue
 } from '../utils/captureTarget'
 import { getDiffScroller } from '../utils/diffScroller'
 import { playShutter } from '../utils/shutter'
@@ -159,6 +161,10 @@ const SCROLL_FRAMES = 3
 // arrive on an IPC round-trip rather than the next frame. Counting frames alone
 // photographs empty rows; this waits for the viewer to say it filled them.
 const STREAM_SETTLE_FRAMES = 90
+// Mermaid renders behind a 2.8 MB import and a cold grammar retries for ~700 ms.
+// Generous because it resolves the moment the stage paints — this only bounds a
+// render that never arrives.
+const SHOT_READY_FRAMES = 600
 
 // Menu action → store effect. The single list of everything a menu can trigger
 // (named by the accelerators in menu.js / MenuBar.vue).
@@ -300,9 +306,12 @@ export const useDiffStore = defineStore('diff', {
     paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
-    // Image export of a SAVED diff: { id, name, dataUrl, width, height } while
-    // the preview is open, null when closed. See exportImage().
+    // A finished picture while its preview is open, null when closed: { id,
+    // name, subject: 'diff' | 'snippet' | 'diagram', dataUrl, width, height }.
     imageEntry: null,
+    // The snippet being photographed right now, or null. See exportSnippetImage.
+    /** @type {import('../types').SnippetShot | null} */
+    snippetShot: null,
     // True between opening the saved diff and taking its picture, so the app can
     // stay out of the shot (no dialog, no toast) while the shutter is open.
     imageCapturing: false,
@@ -547,11 +556,49 @@ export const useDiffStore = defineStore('diff', {
         // Restoring replaces the models, so there is never a selection to honour.
         const res = await this._shoot({ awaitRediff: true })
         if (res?.error) return this.showNotice('Could not take a picture of this diff.')
-        this.imageEntry = { id, name: entry.name, ...res }
+        this.imageEntry = { id, name: entry.name, subject: 'diff', ...res }
       } finally {
         this.restore(live)
         this.diffSaved = liveSaved
       }
+    },
+    // A picture of the app's own rendering — a diagram for Mermaid, coloured code
+    // otherwise. The stage covers the diff column for one shot, then comes down.
+    async exportSnippetImage(id) {
+      const snippets = useSnippetStore()
+      const entry = snippets.entries.find((e) => e.id === id)
+      if (!entry) return
+      // Refused before anything decrypts it: a picture of a mask is useless, and
+      // a picture of the plaintext is the leak the mask exists to prevent.
+      if (isSecret(entry)) {
+        return this.showNotice('Hidden snippets can’t be exported as an image.')
+      }
+      const code = await snippets.load(id)
+      if (code == null) return this.showNotice('That snippet could not be opened.')
+      const lang = languageOf(entry)
+      const diagram = lang === 'mermaid'
+      this.snippetShot = { name: entry.name, lang, code, ready: false, failed: false }
+      try {
+        const shot = this.snippetShot
+        await untilTrue(() => shot.ready || shot.failed, { frames: SHOT_READY_FRAMES })
+        if (shot.failed) return this.showNotice('That diagram could not be rendered.')
+        const res = await this._shoot()
+        if (res?.error) return this.showNotice('Could not take a picture of this snippet.')
+        this.imageEntry = {
+          id,
+          name: entry.name,
+          subject: diagram ? 'diagram' : 'snippet',
+          ...res
+        }
+      } finally {
+        this.snippetShot = null
+      }
+    },
+    snippetShotPainted() {
+      if (this.snippetShot) this.snippetShot.ready = true
+    },
+    snippetShotFailed() {
+      if (this.snippetShot) this.snippetShot.failed = true
     },
     // Export what is on screen right now, saved or not. Lines selected in either
     // pane narrow the picture to just those; with none it covers the whole diff.
@@ -560,7 +607,7 @@ export const useDiffStore = defineStore('diff', {
       const res = await this._shoot({ band: getDiffScroller()?.selection() ?? null })
       if (res?.error) return this.showNotice('Could not take a picture of this diff.')
       const [l, r] = comparedSides(this)
-      this.imageEntry = { id: null, name: `${l.name} ↔ ${r.name}`, ...res }
+      this.imageEntry = { id: null, name: `${l.name} ↔ ${r.name}`, subject: 'diff', ...res }
     },
     // The shutter. `finally` matters: a stuck imageCapturing would leave the
     // shortcut bar hidden for the rest of the session.

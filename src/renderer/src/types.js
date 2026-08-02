@@ -243,6 +243,16 @@
  */
 
 /**
+ * A snippet on the capture stage while its picture is taken (SnippetShot.vue).
+ * @typedef {object} SnippetShot
+ * @property {string} name
+ * @property {string} lang    snippet language id; `mermaid` stages a diagram
+ * @property {string} code
+ * @property {boolean} ready  the stage has painted — the shutter waits on this
+ * @property {boolean} failed the diagram would not render; no picture is taken
+ */
+
+/**
  * A diff screenshot main is holding, as previewed by DiffImageDialog.
  * @typedef {object} DiffImageCapture
  * @property {string} dataUrl  PNG data URL, for the preview only

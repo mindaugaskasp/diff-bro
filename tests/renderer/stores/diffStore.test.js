@@ -1764,6 +1764,160 @@ describe('exportImage failure handling', () => {
   })
 })
 
+// A snippet is photographed by putting it on a stage over the diff column and
+// firing the SAME shutter. The stage is a component, so these tests drive its
+// "I'm painted" signal by hand — what they pin is the store's half: the subject
+// staged, the wait before the shot, and the stage always coming down.
+describe('exportSnippetImage', () => {
+  const CAPTURE = { dataUrl: 'data:image/png;base64,SHOT', width: 1200, height: 700 }
+
+  function stageColumn() {
+    const el = document.createElement('div')
+    el.className = 'content'
+    el.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 640 })
+    document.body.append(el)
+    return () => el.remove()
+  }
+
+  // Paint the stage a few frames in, the way the real component does once its
+  // highlighting settles or Mermaid returns.
+  function paintAfter(store, frames, mark = 'ready') {
+    let seen = 0
+    window.requestAnimationFrame = (cb) => {
+      seen++
+      if (seen === frames && store.snippetShot) store.snippetShot[mark] = true
+      setTimeout(cb, 0)
+    }
+    return () => seen
+  }
+
+  async function addSnippet(over = {}) {
+    const snippets = useSnippetStore()
+    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
+    window.api.vaultDecrypt = async (box) => box.data
+    return snippets.add({
+      name: 'Deploy steps',
+      content: '{ "a": 1 }',
+      language: 'json',
+      ...over
+    })
+  }
+
+  it('stages the snippet, shoots it, and previews it', async () => {
+    const cleanup = stageColumn()
+    const store = useDiffStore()
+    const id = await addSnippet()
+    paintAfter(store, 2)
+    let staged = null
+    window.api.captureDiffImage = async () => {
+      staged = store.snippetShot && { ...store.snippetShot }
+      return CAPTURE
+    }
+
+    await store.exportSnippetImage(id)
+
+    // The snippet really was on screen when the shutter opened...
+    expect(staged).toMatchObject({ name: 'Deploy steps', lang: 'json', code: '{ "a": 1 }' })
+    expect(store.imageEntry).toMatchObject({ id, name: 'Deploy steps', subject: 'snippet' })
+    // ...and the column is the user's again afterwards.
+    expect(store.snippetShot).toBeNull()
+    expect(store.imageCapturing).toBe(false)
+    cleanup()
+  })
+
+  it('names a diagram as a diagram, since that is what was photographed', async () => {
+    const cleanup = stageColumn()
+    const store = useDiffStore()
+    const id = await addSnippet({
+      name: 'Flow',
+      content: 'flowchart TD\n A-->B',
+      language: 'mermaid'
+    })
+    paintAfter(store, 2)
+    window.api.captureDiffImage = async () => CAPTURE
+
+    await store.exportSnippetImage(id)
+
+    expect(store.imageEntry).toMatchObject({ name: 'Flow', subject: 'diagram' })
+    cleanup()
+  })
+
+  // Counting frames is what once photographed a diff with no highlights at all.
+  // Mermaid renders behind a 2.8 MB dynamic import and a cold grammar tokenizes
+  // untyped, so the stage says when it is painted and the shutter waits.
+  it('does not shoot until the stage says it is painted', async () => {
+    const cleanup = stageColumn()
+    const store = useDiffStore()
+    const id = await addSnippet()
+    const frames = paintAfter(store, 30)
+    let framesAtShot = null
+    window.api.captureDiffImage = async () => ((framesAtShot = frames()), CAPTURE)
+
+    await store.exportSnippetImage(id)
+
+    expect(framesAtShot).toBeGreaterThanOrEqual(30)
+    expect(store.imageEntry).toMatchObject({ subject: 'snippet' })
+    cleanup()
+  })
+
+  it('takes no picture of a diagram that would not render', async () => {
+    const cleanup = stageColumn()
+    const store = useDiffStore()
+    const id = await addSnippet({ name: 'Broken', content: 'flowchart ???', language: 'mermaid' })
+    paintAfter(store, 2, 'failed')
+    let shots = 0
+    window.api.captureDiffImage = async () => (shots++, CAPTURE)
+
+    await store.exportSnippetImage(id)
+
+    expect(shots).toBe(0)
+    expect(store.imageEntry).toBeNull()
+    expect(store.notice).toContain('could not be rendered')
+    expect(store.snippetShot).toBeNull()
+    cleanup()
+  })
+
+  // A photograph of a masked secret is either useless or a leak, so it is
+  // refused before anything decrypts it.
+  it('refuses a secret snippet without decrypting it', async () => {
+    const cleanup = stageColumn()
+    const store = useDiffStore()
+    const id = await addSnippet({ name: 'API key', content: 'sk-live-xyz', secret: true })
+    let decrypts = 0
+    const decrypt = window.api.vaultDecrypt
+    window.api.vaultDecrypt = async (box) => (decrypts++, decrypt(box))
+    let shots = 0
+    window.api.captureDiffImage = async () => (shots++, CAPTURE)
+
+    await store.exportSnippetImage(id)
+
+    expect(decrypts).toBe(0)
+    expect(shots).toBe(0)
+    expect(store.imageEntry).toBeNull()
+    expect(store.snippetShot).toBeNull()
+    expect(store.notice).toContain('Hidden')
+    cleanup()
+  })
+
+  it('takes the stage down even when the capture fails', async () => {
+    const cleanup = stageColumn()
+    const store = useDiffStore()
+    const id = await addSnippet()
+    paintAfter(store, 2)
+    window.api.captureDiffImage = async () => {
+      throw new Error('IPC exploded')
+    }
+
+    await store.exportSnippetImage(id)
+
+    expect(store.snippetShot).toBeNull()
+    expect(store.imageCapturing).toBe(false)
+    expect(store.imageEntry).toBeNull()
+    expect(store.notice).toContain('Could not take a picture')
+    cleanup()
+  })
+})
+
 // Closing the active tab from the File menu (or Cmd+Shift+W). This wiring was
 // once dropped by an unrelated commit and nothing noticed, because nothing
 // tested it — the menu item stayed, the action behind it did not.

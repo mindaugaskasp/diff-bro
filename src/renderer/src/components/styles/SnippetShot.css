@@ -1,0 +1,59 @@
+/* Covers the diff column rather than replacing it: the viewer underneath keeps
+   its editor, its scroll position and its selection through the shot. */
+.snippet-shot {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+/* Same band the file-slots row is, so the picture's header sits where the app's
+   own header sits. */
+.shot-head {
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+.shot-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+.shot-lang {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.shot-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3) var(--space-4);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  color: var(--text);
+}
+/* MermaidDiagram centres itself in a full-height host, which would frame a small
+   diagram in empty space and clamp a tall one to the pane. Shrink-wrapped and
+   top-aligned instead: the crop hugs the diagram, and a tall one overflows into
+   the stitch loop. */
+.shot-figure {
+  padding: var(--space-3) 0;
+}
+.shot-figure :deep(.mermaid-diagram),
+.shot-figure :deep(.host) {
+  height: auto;
+  align-items: flex-start;
+}

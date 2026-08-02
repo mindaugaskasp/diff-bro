@@ -15,6 +15,7 @@ import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
+import SnippetShot from './components/SnippetShot.vue'
 import MenuBar from './components/MenuBar.vue'
 import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
@@ -176,6 +177,9 @@ const {
           <DiskChangeNotice />
 
           <ShortcutBar />
+
+          <!-- The photo studio: covers this column while a snippet is shot. -->
+          <SnippetShot v-if="store.snippetShot" :shot="store.snippetShot" />
         </main>
       </div>
     </div>
