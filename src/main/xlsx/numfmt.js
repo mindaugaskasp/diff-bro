@@ -47,6 +47,17 @@ export function formatKind(code) {
   return body.includes('%') ? 'percent' : 'other'
 }
 
+const TEMPORAL = new Set(['date', 'time', 'datetime'])
+
+/**
+ * Whether this format's number is a date serial rather than an amount. A
+ * materiality tolerance must never reach one: 1% of the serial 45870 is over a
+ * year.
+ */
+export function isTemporal(code) {
+  return TEMPORAL.has(formatKind(code))
+}
+
 const DAY_MS = 86_400_000
 // 1899-12-30, the epoch that makes serial 61 (1900-03-01) land correctly.
 const EPOCH_1900 = Date.UTC(1899, 11, 30)

@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { miniSpans } from '../utils/miniHighlight'
 
 // The active-line concern for the snippet preview, pulled out of useQuickLook so
 // the index math (↑/↓ stepping, hover → index, single-line copy) unit-tests on
@@ -15,6 +16,12 @@ import { computed, ref } from 'vue'
 export function usePreviewLines({ snippetText, zone, previewEl, current, onCopied }) {
   const previewLine = ref(0)
   const snippetLines = computed(() => snippetText.value.split('\n'))
+  // Coloured runs per line, for the template to paint. The launcher carries no
+  // Monaco (see utils/miniHighlight), and a secret is masked rather than
+  // decrypted — there is nothing there to tokenize either way.
+  const snippetSpans = computed(() =>
+    snippetLines.value.map((line) => miniSpans(line, current.value?.lang ?? ''))
+  )
   const reset = () => (previewLine.value = 0)
 
   // ↑/↓ step the highlighted line and keep it in view (a long snippet scrolls as
@@ -51,5 +58,14 @@ export function usePreviewLines({ snippetText, zone, previewEl, current, onCopie
     if (res?.ok) onCopied(`line ${previewLine.value + 1}`)
   }
 
-  return { previewLine, snippetLines, reset, movePreview, lineClass, hoverLine, copyLine }
+  return {
+    previewLine,
+    snippetLines,
+    snippetSpans,
+    reset,
+    movePreview,
+    lineClass,
+    hoverLine,
+    copyLine
+  }
 }

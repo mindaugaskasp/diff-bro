@@ -139,4 +139,14 @@ describe('cellsEqual — tagged cells', () => {
     // The tolerance forgives the result, never the formula going away.
     expect(cellsEqual(cell(500.004, '=SUM'), 500, { abs: 0.01 })).toBe(false)
   })
+
+  // Materiality is about amounts. 0.5% of the serial 45870 is 229 days.
+  it('never lets a tolerance reach an exact-only cell', () => {
+    const date = (v) => ({ v, k: '', x: true })
+    expect(cellsEqual(date(45870), date(46100), { pct: 1 })).toBe(false)
+    expect(cellsEqual(date(45870), date(45870.004), { abs: 0.01 })).toBe(false)
+    expect(cellsEqual(date(45870), date(45870), { pct: 1 })).toBe(true)
+    // One side date-formatted and the other not is still one comparison.
+    expect(cellsEqual(date(45870), 46100, { pct: 1 })).toBe(false)
+  })
 })

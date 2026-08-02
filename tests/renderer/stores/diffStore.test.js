@@ -380,6 +380,34 @@ describe('diffStore', () => {
     expect(store.pasteRight).toBe('')
   })
 
+  // Clearing a vault-backed tab emptied the document but left the tab holding
+  // the old snapshot, so the pane went blank while the tab still claimed the
+  // diff — and reopening that entry spawned a second tab instead of reusing it.
+  it('offers Clear for scratch work only, and hides it on a vault-backed diff', () => {
+    const store = useDiffStore()
+    expect(store.canClear).toBe(false)
+    expect(store.isSavedDiff).toBe(false) // an empty tab keeps the button
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.canClear).toBe(true)
+    expect(store.isSavedDiff).toBe(false)
+    store.diffSaved = true
+    expect(store.canClear).toBe(false)
+    expect(store.isSavedDiff).toBe(true)
+  })
+
+  it('ignores a Clear from the menu on a saved or external diff', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.diffSaved = true
+    store.handleMenuAction('clear')
+    expect(store.left).not.toBeNull()
+    store.diffSaved = false
+    store.handleMenuAction('clear')
+    expect(store.left).toBeNull()
+  })
+
   it('routes menu actions: toggle-split flips the view option', () => {
     const store = useDiffStore()
     const before = store.renderSideBySide

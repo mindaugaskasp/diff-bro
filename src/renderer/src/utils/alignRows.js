@@ -7,11 +7,24 @@ function normCell(v) {
   return v === null || v === undefined ? '' : v
 }
 
-// A tagged cell (see sheetCells.comparableCell) is { v, k }: the value plus what
-// stands behind it. Splitting the two is what lets a tolerance forgive a formula
-// cell's result without forgiving the formula being replaced.
+// A tagged cell (see sheetCells.comparableCell) is { v, k, x }: the value, what
+// stands behind it, and whether a tolerance may touch it. Splitting the first
+// two is what lets a tolerance forgive a formula cell's result without
+// forgiving the formula being replaced.
 function parts(cell) {
   return cell && typeof cell === 'object' ? cell : { v: cell, k: '' }
+}
+
+/**
+ * The two cells' values, ignoring what stands behind them. Tolerance is dropped
+ * where either side is exact-only — the serial behind a date is not an amount,
+ * so a percentage of it is meaningless.
+ */
+export function valuesEqual(a, b, tolerance = null) {
+  const l = parts(a)
+  const r = parts(b)
+  const t = l.x || r.x ? null : tolerance
+  return normCell(l.v) === normCell(r.v) || withinTolerance(l.v, r.v, t)
 }
 
 /**
@@ -34,10 +47,7 @@ function comparableNumbers(a, b) {
 }
 
 export function cellsEqual(a, b, tolerance = null) {
-  const l = parts(a)
-  const r = parts(b)
-  if (l.k !== r.k) return false
-  return normCell(l.v) === normCell(r.v) || withinTolerance(l.v, r.v, tolerance)
+  return parts(a).k === parts(b).k && valuesEqual(a, b, tolerance)
 }
 
 // Column indices whose values differ between two rows.

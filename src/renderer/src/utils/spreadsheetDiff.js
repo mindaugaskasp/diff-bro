@@ -1,8 +1,8 @@
 // Workbook diff: pair sheets by name, pair their columns (alignColumns), align
 // each pair's rows (alignRows), roll up per-sheet stats. Pure.
-import { alignRows, cellsEqual, rowKeys } from './alignRows'
+import { alignRows, rowKeys, valuesEqual } from './alignRows'
 import { alignColumns, pairedColumns } from './alignColumns'
-import { comparableRows, metaIndex } from './sheetCells'
+import { comparableCell, comparableRows, metaAt, metaIndex } from './sheetCells'
 
 // 0 -> "A", 25 -> "Z", 26 -> "AA" (bijective base-26), for the grid's column
 // headers.
@@ -32,13 +32,22 @@ function attachValues(entry, left, right) {
 
 // A changed row's columns split two ways: the value moved, or it did not and
 // something behind it did — a formula replaced by its own cached value, or an
-// error where the text reads the same.
-function classifyChanged(entry, columns, tolerance) {
+// error where the text reads the same. Comparing the tagged cells rather than
+// the raw ones is what carries the no-tolerance mark on a date this far.
+function classifyChanged(entry, columns, ctx) {
   const value = []
   const formula = []
   for (const c of entry.changed) {
     const col = columns[c]
-    if (cellsEqual(entry.left?.[col.left], entry.right?.[col.right], tolerance)) formula.push(c)
+    const l = comparableCell(
+      entry.left?.[col.left],
+      metaAt(ctx.leftMeta, entry.leftIndex, col.left)
+    )
+    const r = comparableCell(
+      entry.right?.[col.right],
+      metaAt(ctx.rightMeta, entry.rightIndex, col.right)
+    )
+    if (valuesEqual(l, r, ctx.tolerance)) formula.push(c)
     else value.push(c)
   }
   entry.changed = value
@@ -95,10 +104,11 @@ function bothSides(name, left, right, opts) {
     return acc
   }, [])
 
+  const state = sheetState(left, right)
   for (const entry of rows) {
     entry.changed = entry.changed.map((c) => pairAt[c])
     attachValues(entry, left, right)
-    if (entry.status === 'changed') classifyChanged(entry, columns, tolerance)
+    if (entry.status === 'changed') classifyChanged(entry, columns, { ...state, tolerance })
     else entry.formulaChanged = []
   }
 
@@ -112,7 +122,7 @@ function bothSides(name, left, right, opts) {
     columnsAdded: columns.filter((c) => c.left === null).length,
     columnsRemoved: columns.filter((c) => c.right === null).length,
     changes: total(stats),
-    ...sheetState(left, right)
+    ...state
   }
 }
 

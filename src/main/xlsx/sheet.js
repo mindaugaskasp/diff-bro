@@ -2,7 +2,7 @@ import { Parser } from 'saxen'
 import { XlsxError, rejectDoctype } from './errors'
 import { colToIndex } from './parse'
 import { toR1C1, shiftFormula } from './r1c1'
-import { displayText } from './numfmt'
+import { displayText, isTemporal } from './numfmt'
 
 export const SHEET_DEFAULTS = { maxCells: 2_000_000, maxMetaCells: 100_000 }
 
@@ -120,7 +120,10 @@ function cellMeta(st, ctx, row) {
   if (st.type === 'e') meta.e = true
   const code = Number.isInteger(st.style) ? ctx.formats[st.style] : undefined
   const display = code ? displayText(st.value, code, ctx.date1904) : null
-  if (display !== null) meta.d = display
+  if (display !== null) {
+    meta.d = display
+    if (isTemporal(code)) meta.dt = true
+  }
   return meta
 }
 

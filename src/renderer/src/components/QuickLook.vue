@@ -18,7 +18,7 @@ const {
   results,
   current,
   toolsOpen,
-  snippetLines,
+  snippetSpans,
   lineClass,
   hoverLine,
   footHints,
@@ -177,7 +177,14 @@ watch(composing, (on) => {
               :class="{ scrolling: zone === 'preview' }"
               @mouseover="hoverLine"
             >
-              <div v-for="(line, i) in snippetLines" :key="i" :class="lineClass(i)">{{ line }}</div>
+              <div v-for="(spans, i) in snippetSpans" :key="i" :class="lineClass(i)">
+                <span
+                  v-for="(span, j) in spans"
+                  :key="j"
+                  :class="span.role && `syn-${span.role}`"
+                  >{{ span.text }}</span
+                >
+              </div>
             </div>
             <div v-else class="ql-pv-msg">
               <p v-if="current.kind === 'tools'">

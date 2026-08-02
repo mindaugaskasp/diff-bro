@@ -76,4 +76,14 @@ describe('comparableRows', () => {
     const plain = { rows: [[1, 2]] }
     expect(comparableRows(plain)).toBe(plain.rows)
   })
+
+  it('marks a date cell exact-only, so a tolerance cannot reach the serial', () => {
+    const dated = { rows: [[45870]], cells: [[0, 0, { d: '2025-08-01', dt: true }]] }
+    expect(comparableRows(dated)[0][0]).toEqual({ v: 45870, k: '', x: true })
+  })
+
+  it('leaves a formatted number that is not temporal alone', () => {
+    const pct = { rows: [[0.125]], cells: [[0, 0, { d: '12.50%' }]] }
+    expect(comparableRows(pct)[0][0]).toBe(0.125)
+  })
 })

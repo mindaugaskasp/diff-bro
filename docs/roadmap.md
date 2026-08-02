@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Spreadsheet, shipped: formula capture + R1C1, number formats, materiality tolerance, change register, hidden state + error cells, column alignment. Onboarding: sample comparison, coach marks, what's new on upgrade. Tabs: right-click menu, close left/right/all, one prompt per batch. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — four tracks. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding: sample comparison, coach marks, what's new on upgrade. Tabs: right-click menu, close left/right/all, one prompt per batch. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -10,7 +10,9 @@ sections below.</sup>
 
 ## Spreadsheet
 
-**Shipped.** The track is closed.
+**Built** — formulas captured and normalised to R1C1 (`r1c1.js`), number formats
+(`numfmt.js`), materiality tolerance, change register, hidden state + error
+cells, columns paired by header, `.csv`/`.tsv` through the same grid.
 
 ```mermaid
 flowchart TB
@@ -33,24 +35,69 @@ flowchart TB
   end
 ```
 
-- **1 · formulas** — `<f>` captured length-capped and normalised to R1C1
-  (`r1c1.js`), so a formula replaced by its own cached value is a change and a
-  row insert is not; a shared formula expands onto its followers
-- **2 · number formats** — `styles.xml` parsed (`numfmt.js`), so a date renders
-  as a date rather than 45870
-- **3 · materiality tolerance** — an absolute floor or a percentage; a sign
-  change is material at any threshold
-- **4 · change register** — every change as a CSV table, formula-injection
-  escaped, through the one validated `diff:exportFile` handler
-- **5 · anomaly flags** — hidden sheets and rows marked, error cells compared
-  as errors, formulas viewable instead of results
-- **6 · column alignment** — columns paired by header (LCS), one-sided columns
-  shown as ghosts and reported once instead of per row
-- **CSV** — `.csv`/`.tsv` opt into the same grid through the Structure toggle,
-  which renames itself **Grid**
 - Capture is not evaluation: nothing in `src/main/xlsx/` computes a formula, and
   the reader still refuses a DOCTYPE and caps every part it inflates
-- Out of scope: pivot tables, charts, conditional formatting, cell comments
+
+**Reopened.** The track closed against a _model_ diff. Comparing _data_ — a
+trial balance, a GL export, a board pack — hits the gaps below.
+
+```mermaid
+flowchart LR
+  subgraph now["now"]
+    direction TB
+    a["1 · row identity<br>key columns · re-sorted rows"]
+    b["2 · header row offset"]
+  end
+  subgraph next["next"]
+    direction TB
+    c["3 · amounts read as amounts"]
+    d["4 · Δ and net variance"]
+  end
+  subgraph later["later"]
+    direction TB
+    e["5 · reading a big diff"]
+    f["6 · caps that announce themselves"]
+  end
+  now --> next --> later
+```
+
+- **1 · row identity** — `opts.keyColumn` exists (`spreadsheetDiff.js:75`) with
+  no UI, takes one column, and rows pair by LCS over row signatures: the same
+  export sorted differently reads as 100% changed. Key-based matching,
+  composite keys, duplicate-key detection
+- **2 · header row offset** — `alignColumns.js:16` reads `rows[0]`. A title row
+  above the header fails `usable()` and drops silently to positional pairing,
+  which is the failure it was written to prevent
+- **3 · amounts read as amounts** — `numfmt.js` renders date, time and percent;
+  everything else falls through to the raw float, so a P&L shows `1234567.891`
+  and never `(1,234)`. A currency or rounding change is invisible today
+- **4 · Δ** — nothing computes the difference. Per cell, net per column, and
+  whether both sides still foot — in the grid and in the register
+- **5 · reading a big diff** — no changes-only view, no next/prev, no search, no
+  "twenty biggest movements". On 40k rows the grid is scroll-and-hope
+- **6 · silent caps** — the 400-char formula cap (`sheet.js:11`) makes two long
+  formulas sharing a prefix compare EQUAL; `maxMetaCells` (`sheet.js:137`) drops
+  formula and format comparison past 100k cells; `csvAdapter` sets `truncated`
+  and nothing renders it. A cap that hides is worse than a cap
+- **Tolerance** is four presets, global, and `abs` OR `pct`
+  (`alignRows.js:39-40`); materiality is "under €100 AND under 0.5%", per
+  column. Date serials are now exempt (`meta.dt` — a percentage of 45870 is
+  months), but a bare year in a General-formatted cell still reads as an amount,
+  which only per-column thresholds fix
+
+Off the board, unsequenced:
+
+- **structure** — `definedNames` already sit in the parsed `workbook.xml`, and a
+  repointed named range rewrites every formula that uses it; hidden COLUMNS go
+  unread though rows do not; then merged cells, data validation, conditional
+  formatting, comments
+- **the deliverable** — a CSV of a workbook diff hands the reader the wrong
+  format back. Highlighted `.xlsx`, an exec summary, a per-change note ("FX
+  revaluation") carried into the export, provenance on the register
+- **reconciliation** — many-to-one matching, unmatched on both sides,
+  group-by-account rollups. A different engine from row alignment: decide
+  whether the track goes there before building toward it
+- Still out of scope: pivot tables, charts
 
 ---
 

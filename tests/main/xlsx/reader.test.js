@@ -157,7 +157,8 @@ describe('readXlsx — number formats', () => {
     })
     const [{ rows, cells }] = readXlsx(buf).sheets
     expect(rows).toEqual([[45870]]) // the raw value still drives the diff
-    expect(cells).toEqual([[0, 0, { d: '2025-08-01' }]])
+    // `dt` is what keeps a materiality tolerance off the serial downstream.
+    expect(cells).toEqual([[0, 0, { d: '2025-08-01', dt: true }]])
   })
 
   it('renders a percentage and a custom datetime format', () => {
@@ -170,7 +171,7 @@ describe('readXlsx — number formats', () => {
     const [{ cells }] = readXlsx(buf).sheets
     expect(cells).toEqual([
       [0, 0, { d: '12.50%' }],
-      [0, 1, { d: '2025-08-01 12:00:00' }]
+      [0, 1, { d: '2025-08-01 12:00:00', dt: true }]
     ])
   })
 

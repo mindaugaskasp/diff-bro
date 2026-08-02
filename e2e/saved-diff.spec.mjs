@@ -113,3 +113,34 @@ test('a diff can be kept for as long as a week', async () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// Clear throws work away, and a vault-backed tab has none of its own: emptying
+// one left the tab still holding its old snapshot, so the pane went blank while
+// the tab went on claiming the diff, and reopening the entry built a second tab
+// instead of reusing that one. The button leaves the bar rather than sitting
+// there doing damage.
+test('Clear leaves the toolbar once the diff is in the vault', async () => {
+  const dir = freshUserDataDir()
+  const app = await launchApp(dir)
+  try {
+    const page = await firstReadyPage(app)
+    const clear = page.locator('header.toolbar').getByRole('button', { name: 'Clear' })
+
+    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
+    await page.getByPlaceholder('Paste changed text here').fill('one\nZULU')
+    await page.getByRole('button', { name: 'Compare', exact: true }).click()
+    await expect(clear).toBeEnabled()
+
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    const save = page.getByRole('dialog', { name: 'Save diff' })
+    await save.getByLabel('Name', { exact: true }).fill('Vault-backed diff')
+    await save.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.locator('li.diff', { hasText: 'Vault-backed diff' })).toBeVisible()
+
+    await expect(clear).toHaveCount(0)
+  } finally {
+    await app.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

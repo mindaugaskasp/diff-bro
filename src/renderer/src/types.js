@@ -43,6 +43,7 @@
  * @property {string} [n]  the same formula in R1C1, so position stops mattering
  * @property {string} [d]  what its number format asks to be shown instead
  * @property {true} [e]    the cell holds an error value (#REF!, #DIV/0! …)
+ * @property {true} [dt]   the value is a date serial, so no tolerance may touch it
  */
 
 /**

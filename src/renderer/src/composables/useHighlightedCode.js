@@ -20,10 +20,31 @@ function warm(languageId) {
   }
 }
 
+// Warming only STARTS the load — monaco registers a grammar asynchronously and
+// says nothing when it lands, so the first tokenize of a cold language comes
+// back untyped and the preview rendered plain until a second hover.
+const RETRY_MS = [0, 30, 90, 200, 400]
+
 const plain = (text) =>
   String(text ?? '')
     .split('\n')
     .map((line) => [{ text: line, role: '' }])
+
+// `typed` is false while the grammar is still loading — every token comes back
+// with an empty type, which is also what a language with no grammar gives.
+function tokenizeLines(body, lang) {
+  let tokens = null
+  try {
+    tokens = monaco.editor.tokenize(body, lang)
+  } catch {
+    return { lines: plain(body), typed: false }
+  }
+  if (!tokens) return { lines: plain(body), typed: false }
+  return {
+    lines: body.split('\n').map((line, i) => spansFor(line, tokens[i])),
+    typed: tokens.some((line) => line?.some((t) => t.type !== ''))
+  }
+}
 
 /**
  * @param {() => string} text
@@ -34,23 +55,27 @@ export function useHighlightedCode(text, language) {
   const lines = shallowRef([])
   const source = computed(() => String(text() ?? ''))
 
-  watchEffect(() => {
+  watchEffect((onCleanup) => {
     const lang = language()
     const body = source.value
+    let timer = null
+    let stopped = false
+    onCleanup(() => {
+      stopped = true
+      clearTimeout(timer)
+    })
     if (!lang || lang === 'plaintext') {
       lines.value = plain(body)
       return
     }
     warm(lang)
-    let tokens = null
-    try {
-      tokens = monaco.editor.tokenize(body, lang)
-    } catch {
-      tokens = null
+    const attempt = (i) => {
+      if (stopped) return
+      const { lines: painted, typed } = tokenizeLines(body, lang)
+      lines.value = painted
+      if (!typed && i < RETRY_MS.length) timer = setTimeout(() => attempt(i + 1), RETRY_MS[i])
     }
-    lines.value = tokens
-      ? body.split('\n').map((line, i) => spansFor(line, tokens[i]))
-      : plain(body)
+    attempt(0)
   })
 
   return { lines }

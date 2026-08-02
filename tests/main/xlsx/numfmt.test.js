@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { builtinFormat, displayText, formatKind, serialToDate } from '../../../src/main/xlsx/numfmt'
+import {
+  builtinFormat,
+  displayText,
+  formatKind,
+  isTemporal,
+  serialToDate
+} from '../../../src/main/xlsx/numfmt'
 
 describe('formatKind', () => {
   it('recognises dates, times and both together', () => {
@@ -63,6 +69,17 @@ describe('displayText', () => {
     // Outside the representable serial range: better a number than a wrong date.
     expect(displayText(-5, 'yyyy-mm-dd')).toBeNull()
     expect(displayText(9e9, 'yyyy-mm-dd')).toBeNull()
+  })
+})
+
+describe('isTemporal', () => {
+  it('separates the formats whose number is a date serial from the rest', () => {
+    expect(isTemporal('yyyy-mm-dd')).toBe(true)
+    expect(isTemporal('h:mm:ss')).toBe(true)
+    expect(isTemporal('m/d/yy h:mm')).toBe(true)
+    expect(isTemporal('0.00%')).toBe(false)
+    expect(isTemporal('#,##0.00')).toBe(false)
+    expect(isTemporal('')).toBe(false)
   })
 })
 

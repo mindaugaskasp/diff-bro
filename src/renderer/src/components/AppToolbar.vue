@@ -49,7 +49,8 @@ const imageTitle = computed(() => {
   if (store.isSpreadsheet) return 'Export this comparison as an image'
   return 'Export this diff as an image — select lines first to capture just those'
 })
-// Clear empties the paste panes as well as the file slots.
+// Clear empties the paste panes as well as the file slots. It leaves the bar
+// entirely on a vault-backed diff, which has nothing of its own to throw away.
 const clearTitle = computed(() =>
   inPaste.value ? `Clear the pasted text (${MOD}+K)` : `Clear both files (${MOD}+K)`
 )
@@ -129,9 +130,10 @@ const clearTitle = computed(() =>
           <AppIcon name="image" /> Image
         </button>
         <button
+          v-if="!store.isSavedDiff"
           class="btn btn-ghost"
           :data-tip="clearTitle"
-          :disabled="!store.hasActive"
+          :disabled="!store.canClear"
           @click="store.clear"
         >
           Clear

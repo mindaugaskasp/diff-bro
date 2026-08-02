@@ -173,6 +173,29 @@ describe('diffWorkbooks — materiality tolerance', () => {
     const [s] = diffWorkbooks(left, right, { tolerance: { pct: 1 } })
     expect(s.stats.changed).toBe(0) // 0.4% and 0.0008% both under 1%
   })
+
+  // A tolerance is a statement about amounts. Left to run on the serial behind a
+  // date, 1% of 45870 forgives well over a year.
+  const dated = (serial) => ({
+    name: 'S',
+    rows: [
+      ['Invoice', 'Due'],
+      ['INV-1', serial]
+    ],
+    cells: [[1, 1, { d: '2025-08-01', dt: true }]]
+  })
+
+  it('never forgives a date that moved, however generous the threshold', () => {
+    const [s] = diffWorkbooks([dated(45870)], [dated(46100)], { tolerance: { pct: 1 } })
+    expect(s.stats.changed).toBe(1)
+    expect(s.rows[1].changed).toEqual([1])
+    expect(s.rows[1].formulaChanged).toEqual([])
+  })
+
+  it('still reports a date that did not move as unchanged', () => {
+    const [s] = diffWorkbooks([dated(45870)], [dated(45870)], { tolerance: { pct: 1 } })
+    expect(s.stats.changed).toBe(0)
+  })
 })
 
 describe('diffWorkbooks — sheet state', () => {

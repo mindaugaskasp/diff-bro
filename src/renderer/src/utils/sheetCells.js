@@ -43,12 +43,24 @@ export function cellText(value, meta, showFormulas) {
  * The two stay SEPARATE fields rather than one joined string so a tolerance can
  * forgive the value while still catching the formula going away, and so text
  * that happens to read like a formula can never collide with a real one.
- * @returns {unknown|{v: unknown, k: string}} the raw value where there is
- *   nothing to add — most cells, and no allocation for them.
+ *
+ * `x` marks a cell no tolerance may touch: a date is stored as a serial, and a
+ * materiality threshold read against 45870 forgives months.
+ * @returns {unknown|{v: unknown, k: string, x?: true}} the raw value where
+ *   there is nothing to add — most cells, and no allocation for them.
  */
 export function comparableCell(value, meta) {
-  if (!meta?.f && !meta?.e) return value
-  return { v: value, k: meta.e ? '#' : `=${meta.n ?? meta.f}` }
+  if (!meta) return value
+  const { f, e, dt } = meta
+  if (!f && !e && !dt) return value
+  const cell = { v: value, k: standsBehind(meta) }
+  if (dt) cell.x = true
+  return cell
+}
+
+function standsBehind(meta) {
+  if (meta.e) return '#'
+  return meta.f ? `=${meta.n ?? meta.f}` : ''
 }
 
 /** The sheet's rows as the diff sees them; the raw grid when nothing is tagged. */

@@ -170,7 +170,9 @@ const MENU_ACTIONS = {
   },
   'share-current': (s) => s.shareCurrent(),
   swap: (s) => s.swap(),
-  clear: (s) => s.clear(),
+  clear: (s) => {
+    if (s.canClear) s.clear()
+  },
   'copy-diff': (s) => s.copyDiff(),
   'apply-patch': (s) => s.applyPatch(),
   'export-html': (s) => s.exportDiff(),
@@ -340,6 +342,18 @@ export const useDiffStore = defineStore('diff', {
     // (Share and the paste-mode Compare want that one).
     hasUnsavedWork() {
       return this.canSave && !this.diffSaved
+    },
+    // What is on screen came out of the vault — saved here or imported as an
+    // external diff — rather than being scratch work.
+    isSavedDiff() {
+      return this.hasActive && this.diffSaved
+    },
+    // Clear throws work away, and a vault-backed tab has none to throw: emptying
+    // it left the tab still holding the old snapshot, so the pane went blank
+    // while the tab claimed the diff and reopening the entry made a second tab.
+    // Closing the tab is the way out of one of those.
+    canClear() {
+      return this.hasActive && !this.diffSaved
     },
     // Saving keeps its own encrypted copy of both sides, which is exactly what a
     // file too large to hold cannot provide.

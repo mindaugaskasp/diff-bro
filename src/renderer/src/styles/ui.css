@@ -119,6 +119,17 @@
   width: 100%;
 }
 
+/* The sidebar's collapse/expand control: ONE button in two states, so both
+   sides use this and it never changes size or position between them. The edge
+   follows .btn-ghost's recipe rather than a bare --border, which scores
+   1.24–2.59 against the sidebar panel on eleven of the fourteen themes and so
+   read as no edge at all. */
+.sidebar-toggle {
+  border-color: color-mix(in srgb, var(--border) 50%, var(--text));
+  background: var(--bg);
+  color: var(--text-dim);
+}
+
 /* --- Sidebar section rhythm ---------------------------------------------
    App-wide left/right inset for a section's own controls, so they line up
    across sections from one place instead of restating pixel padding. Values
