@@ -68,6 +68,7 @@ Builds are **unsigned**, so SmartScreen and Gatekeeper warn on first launch (the
 - **Quick look-up keys** — ↑/↓ browse, **→** steps into a preview or the tools, **←** steps back out, **Enter** opens, **+** captures a plaintext snippet without raising the app.
 - **Resizable dialogs** — the snippet editor and tool windows resize from any edge and remember their size; existing snippets open read-only until you press Edit.
 - **Uniform snippet names** — every name is sentence-cased on save, so a library grown over months still reads consistently.
+- **Repair a pasted diagram** — Mermaid copied out of Word or Confluence arrives with `—>` where `-->` was, curly quotes and non-breaking spaces; **Repair** in the snippet editor puts them all back.
 - **More terminal commands** — `diffbro create snippet` opens a new snippet, `diffbro cb save` keeps what you just copied, and `diffbro help <command>` explains one. A second launch hands its arguments to the running window through Electron's single-instance lock.
 - **The tools in full** — JSON (pretty/minify/sort, JSONPath filter, collapsible tree), Base64 (URL-safe, MIME wrap), UUID (v1/v4/v5/v6/v7, inspect, convert), JWT, Epoch, URL (editable query-param table), Lines (split, sort, dedupe, build a SQL `IN (…)` list), XML format + validate, find & replace, and AES-256-GCM passphrase encryption with an opt-in raw-key CBC decrypt for external payloads.
 

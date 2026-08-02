@@ -61,6 +61,38 @@ export function stripMermaidFence(text) {
   return lines.slice(start + 1, end - 1).join('\n')
 }
 
+// What a copy/paste does to a diagram — never its grammar. Every rule maps a
+// character back to the one that replaced it, which is why they are safe to run
+// unasked-for on someone's text; a diagram that was simply wrong stays wrong.
+const ZERO_WIDTH = /[\u200b-\u200d\ufeff]/g
+const ODD_SPACE = /[\u00a0\u2002-\u200a\u202f]/g
+// Only arrow-SHAPED dashes. An em dash inside a label is the author's writing;
+// `—>` never is.
+const DASH_ARROW = /[\u2014\u2013](?=>)/g
+const DASH_ARROW_BACK = /(?<=<)[\u2014\u2013]/g
+
+/**
+ * Undo the damage rich-text tooling does to pasted Mermaid.
+ * @param {unknown} text
+ * @returns {string}
+ */
+export function repairMermaid(text) {
+  const src = String(text ?? '')
+    .replace(ZERO_WIDTH, '')
+    .replace(/\r\n?/g, '\n')
+  return stripMermaidFence(src)
+    .replace(ODD_SPACE, ' ')
+    .replace(DASH_ARROW, '--')
+    .replace(DASH_ARROW_BACK, '--')
+    .replace(/\u2192/g, '-->')
+    .replace(/\u2190/g, '<--')
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[ \t]+$/gm, '')
+    .replace(/^(?:[ \t]*\n)+/, '')
+    .replace(/(?:\n[ \t]*)+$/, '')
+}
+
 // True when the first real line (past `---` frontmatter and `%%` directives)
 // starts with a Mermaid keyword.
 export function looksLikeMermaid(text) {

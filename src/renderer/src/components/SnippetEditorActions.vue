@@ -22,11 +22,16 @@ const emit = defineEmits(['format', 'copy', 'clear', 'reveal', 'edit', 'save', '
 const { copied, flash } = useCopyFeedback()
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
-const formatTip = computed(() =>
-  props.canFormat
-    ? `Pretty-print as ${props.language.toUpperCase()}`
-    : 'Formatting is available for JSON, XML, or SQL'
-)
+// Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
+// control says which of the two it is about to do.
+const isRepair = computed(() => props.language === 'mermaid')
+const formatLabel = computed(() => (isRepair.value ? 'Repair' : 'Format'))
+const formatTip = computed(() => {
+  if (!props.canFormat) return 'Formatting is available for JSON, XML, SQL or Mermaid'
+  return isRepair.value
+    ? 'Put back the arrows, quotes and spaces a paste broke'
+    : `Pretty-print as ${props.language.toUpperCase()}`
+})
 const clearTip = computed(() =>
   clearArmed.value
     ? 'Click again to clear the editor'
@@ -49,7 +54,7 @@ defineExpose({ flash })
     :data-tip="formatTip"
     @click="emit('format')"
   >
-    Format
+    {{ formatLabel }}
   </button>
   <button
     v-if="secret"

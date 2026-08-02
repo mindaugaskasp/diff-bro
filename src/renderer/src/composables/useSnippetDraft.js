@@ -5,8 +5,10 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { formatJson, formatXml } from '../utils/textFormats'
 import { formatSql } from '../utils/sqlFormat'
+import { repairMermaid } from '../utils/mermaid'
 
-const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql }
+// Mermaid's entry repairs rather than pretty-prints — see repairMermaid.
+const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql, mermaid: repairMermaid }
 
 // A blank draft or the existing snippet's metadata; its content arrives later
 // (decrypted).
@@ -148,7 +150,12 @@ export function useSnippetDraft() {
     const fmt = FORMATTERS[language.value]
     if (!fmt) return
     try {
-      content.value = fmt(content.value)
+      const next = fmt(content.value)
+      // A repair's effect is often invisible, so it reports either way.
+      if (isMermaid.value) {
+        diff.showNotice(next === content.value ? 'Nothing to repair.' : 'Repaired the diagram.')
+      }
+      content.value = next
     } catch {
       diff.showNotice(`Couldn't format — the content isn't valid ${language.value.toUpperCase()}.`)
     }

@@ -5,6 +5,7 @@ import {
   looksLikeMermaid,
   mermaidThemeFor,
   nextDiagramId,
+  repairMermaid,
   stripMermaidFence
 } from '../../../src/renderer/src/utils/mermaid'
 import { detectSnippetLanguage } from '../../../src/renderer/src/utils/detectLanguage'
@@ -102,6 +103,69 @@ describe('diagramPaperFor', () => {
     expect(diagramPaperFor('matrix', 'light')).toBe('light')
     expect(diagramPaperFor('light', 'dark')).toBe('dark')
     expect(diagramPaperFor('sepia', 'dark')).toBe('dark')
+  })
+})
+
+// Everything here is damage a COPY did, not a diagram someone wrote wrong: the
+// characters are invisible in an editor, so the error Mermaid reports names a
+// token rather than the glyph that caused it. Written as escapes on purpose —
+// the literals are indistinguishable from the characters they replace.
+describe('repairMermaid', () => {
+  const EM = '—' // — what Word makes of "--"
+  const EN = '–' // –
+  const NBSP = ' '
+  const NARROW = ' '
+  const ZWSP = '​'
+  const BOM = '﻿'
+
+  it('puts back arrows that autocorrect ate', () => {
+    expect(repairMermaid(`flowchart TD\n  A ${EM}> B`)).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid(`flowchart TD\n  A ${EN}> B`)).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid('flowchart TD\n  A → B')).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid(`flowchart LR\n  A <${EM} B`)).toBe('flowchart LR\n  A <-- B')
+  })
+
+  // The case that decides whether this is safe to run on someone's text: a dash
+  // inside a label is their writing, not transport damage.
+  it('leaves an em dash inside a label alone', () => {
+    const kept = `flowchart TD\n  A[Build ${EM} then ship] --> B`
+    expect(repairMermaid(kept)).toBe(kept)
+  })
+
+  // A non-breaking space looks exactly like a space and is not one.
+  it('normalises the spaces rich text brings with it', () => {
+    expect(repairMermaid(`flowchart TD\n ${NBSP} A${NARROW}--> B`)).toBe('flowchart TD\n   A --> B')
+  })
+
+  // Word replaces the quotes AROUND a label, which is what breaks it.
+  it('straightens smart quotes', () => {
+    expect(repairMermaid('flowchart TD\n  A[“hi”] --> B')).toBe('flowchart TD\n  A["hi"] --> B')
+    expect(repairMermaid('flowchart TD\n  A[‘hi’] --> B')).toBe("flowchart TD\n  A['hi'] --> B")
+  })
+
+  it('peels a copied code fence, strips a BOM and zero-width characters', () => {
+    expect(repairMermaid('```mermaid\nflowchart TD\n  A --> B\n```')).toBe(
+      'flowchart TD\n  A --> B'
+    )
+    expect(repairMermaid(`${BOM}flowchart TD\n  A${ZWSP} --> B`)).toBe('flowchart TD\n  A --> B')
+  })
+
+  it('normalises line endings and trailing whitespace', () => {
+    expect(repairMermaid('flowchart TD\r\n  A --> B   \r\n')).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid('\n\nflowchart TD\n  A --> B\n\n\n')).toBe('flowchart TD\n  A --> B')
+  })
+
+  it('returns a clean diagram byte-identical, and is idempotent', () => {
+    const clean = 'sequenceDiagram\n  Alice->>Bob: hi\n  Bob-->>Alice: hello'
+    expect(repairMermaid(clean)).toBe(clean)
+    const once = repairMermaid(`flowchart TD\r\n  A ${EM}> B  `)
+    expect(repairMermaid(once)).toBe(once)
+  })
+
+  it('survives empty and non-string input', () => {
+    expect(repairMermaid('')).toBe('')
+    expect(repairMermaid(null)).toBe('')
+    expect(repairMermaid(undefined)).toBe('')
   })
 })
 
