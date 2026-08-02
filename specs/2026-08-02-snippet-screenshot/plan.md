@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | shipped |
 | **Progress** | 13 / 13 steps |
-| **Branch** | `feat/snippet-screenshot` |
+| **Branch** | `feat/diagrams-snippets-rail` (one commit per spec; planned as `feat/snippet-screenshot`) |
 | **Started** | 2026-08-02 |
 | **Finished** | 2026-08-02 |
 | **Bugs found and fixed this iteration** | 1 / 1 |

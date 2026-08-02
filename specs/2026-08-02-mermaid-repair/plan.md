@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | shipped |
 | **Progress** | 8 / 8 steps |
-| **Branch** | `feat/mermaid-repair` |
+| **Branch** | `feat/diagrams-snippets-rail` (one commit per spec; planned as `feat/mermaid-repair`) |
 | **Started** | 2026-08-02 |
 | **Finished** | 2026-08-02 |
 | **Bugs found and fixed this iteration** | 0 / 0 |

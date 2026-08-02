@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | shipped |
 | **Progress** | 11 / 11 steps |
-| **Branch** | `feat/mermaid-diagram-theme` |
+| **Branch** | `feat/diagrams-snippets-rail` (one commit per spec; planned as `feat/mermaid-diagram-theme`) |
 | **Started** | 2026-08-02 |
 | **Finished** | 2026-08-02 |
 | **Bugs found and fixed this iteration** | 0 / 0 |
