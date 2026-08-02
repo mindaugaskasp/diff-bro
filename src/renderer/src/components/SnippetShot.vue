@@ -1,7 +1,6 @@
 <script setup>
-// The photo studio. A snippet claims the diff column for the length of one shot
-// (diffStore.snippetShot), is photographed by the same shutter a diff is, and is
-// gone — so the picture is the app's own rendering, never a redraw.
+// The photo studio: a snippet claims the diff column for one shot
+// (diffStore.snippetShot), so the picture is the app's own rendering.
 import { computed, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
