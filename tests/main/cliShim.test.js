@@ -13,6 +13,9 @@ import {
 } from '../../src/main/cliShim'
 
 const APP = '/Applications/Diff Bro.app/Contents/MacOS/Diff Bro'
+// Windows has no exec bit to set or read, so the mode check only means something
+// on a POSIX host. The path assertions still run everywhere.
+const POSIX_HOST = process.platform !== 'win32'
 let home
 
 beforeEach(() => {
@@ -60,7 +63,7 @@ describe('installShim', () => {
     expect(r.ok).toBe(true)
     expect(r.target).toBe(join(home, '.local/bin/diffbro'))
     expect(readFileSync(r.target, 'utf8')).toContain(APP)
-    expect(statSync(r.target).mode & 0o111).toBeTruthy()
+    if (POSIX_HOST) expect(statSync(r.target).mode & 0o111).toBeTruthy()
   })
 
   it('is idempotent — reinstalling over our own shim rewrites it', () => {

@@ -6,7 +6,7 @@
 // live in the installer below.
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { delimiter, dirname, join } from 'node:path'
+import { delimiter, dirname, posix, win32 } from 'node:path'
 import { shQuote } from './shellQuote'
 
 export const SHIM_NAME = 'diffbro'
@@ -18,10 +18,13 @@ export const SHIM_NAME = 'diffbro'
  * @returns {string}
  */
 export function shimTarget({ platform = process.platform, home, localAppData }) {
+  // The TARGET platform's separator, never the host's: bare `join` builds a
+  // backslash path for ~/.local/bin when the tests run on Windows.
   if (platform === 'win32') {
+    const { join } = win32
     return join(localAppData || join(home, 'AppData', 'Local'), 'DiffBro', 'bin', 'diffbro.cmd')
   }
-  return join(home, '.local', 'bin', SHIM_NAME)
+  return posix.join(home, '.local', 'bin', SHIM_NAME)
 }
 
 // A marker rather than a version string: the shim is rewritten on every install,
@@ -88,7 +91,8 @@ export function installShim({ exePath, home, platform = process.platform, localA
     }
     mkdirSync(dirname(target), { recursive: true })
     writeFileSync(target, shimScript(exePath, platform), 'utf8')
-    if (platform !== 'win32') chmodSync(target, 0o755)
+    // Windows has no exec bit, and a host check is what gitTool.js already does.
+    if (platform !== 'win32' && process.platform !== 'win32') chmodSync(target, 0o755)
     return { ok: true, target, onPath: onPath(target) }
   } catch (e) {
     return { ok: false, target, onPath: onPath(target), error: e.message }

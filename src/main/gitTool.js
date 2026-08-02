@@ -16,7 +16,7 @@ import {
   statSync,
   writeFileSync
 } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, posix, win32 } from 'node:path'
 import { execFile } from 'node:child_process'
 import { shQuote } from './shellQuote'
 
@@ -30,10 +30,12 @@ const MARK = '# diff-bro git tool'
  * @returns {string}
  */
 export function gitToolTarget({ platform = process.platform, home, localAppData }) {
+  // The TARGET platform's separator, never the host's — see cliShim.shimTarget.
   if (platform === 'win32') {
-    return join(localAppData || join(home, 'AppData', 'Local'), 'DiffBro', 'bin', 'diffbro-git')
+    const { join: wjoin } = win32
+    return wjoin(localAppData || wjoin(home, 'AppData', 'Local'), 'DiffBro', 'bin', 'diffbro-git')
   }
-  return join(home, '.local', 'bin', 'diffbro-git')
+  return posix.join(home, '.local', 'bin', 'diffbro-git')
 }
 
 // git hands a difftool two TEMPORARY files and deletes them the moment the

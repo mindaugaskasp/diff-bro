@@ -26,6 +26,9 @@ import {
 } from '../../src/main/gitTool'
 
 const APP = '/Applications/Diff Bro.app/Contents/MacOS/Diff Bro'
+// Windows has no exec bit to set or read — registerGitTool already skips the
+// chmod there. The path and git-config assertions still run everywhere.
+const POSIX_HOST = process.platform !== 'win32'
 let home
 
 beforeEach(() => {
@@ -152,7 +155,7 @@ describe('registerGitTool', () => {
 
     const target = gitToolTarget({ platform: 'darwin', home })
     expect(readFileSync(target, 'utf8')).toContain(APP)
-    expect(statSync(target).mode & 0o111).toBeTruthy()
+    if (POSIX_HOST) expect(statSync(target).mode & 0o111).toBeTruthy()
     expect(config[`difftool.${GIT_TOOL_NAME}.cmd`]).toContain(target)
     expect(config['diff.tool']).toBe(GIT_TOOL_NAME)
   })
