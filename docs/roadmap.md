@@ -79,7 +79,8 @@ flowchart LR
   formulas sharing a prefix compare EQUAL; `maxMetaCells` (`sheet.js:137`) drops
   formula and format comparison past 100k cells; `csvAdapter` sets `truncated`
   and nothing renders it. A cap that hides is worse than a cap
-- **Tolerance** is four presets, global, and `abs` OR `pct`
+- **Tolerance** takes a threshold of your own now (`useSpreadsheetDiff.js:7`,
+  percentage or raw), but it is still global and still `abs` OR `pct`
   (`alignRows.js:39-40`); materiality is "under €100 AND under 0.5%", per
   column. Date serials are now exempt (`meta.dt` — a percentage of 45870 is
   months), but a bare year in a General-formatted cell still reads as an amount,
@@ -92,11 +93,29 @@ Off the board, unsequenced:
   unread though rows do not; then merged cells, data validation, conditional
   formatting, comments
 - **the deliverable** — a CSV of a workbook diff hands the reader the wrong
-  format back. Highlighted `.xlsx`, an exec summary, a per-change note ("FX
-  revaluation") carried into the export, provenance on the register
+  format back (`changeRegister.js --> diff:exportFile`). Wanted, in order of
+  value: a highlighted **`.xlsx`** that opens as a workbook with the changed
+  cells marked and the register as its own sheet; a **PDF / print** file note —
+  title block, totals, the register — that goes into a workpaper unedited; an
+  exec summary; a per-change note ("FX revaluation") carried into the export;
+  provenance on the register
+- **totals that stop agreeing** — the grid has every cell and never checks the
+  arithmetic: a sum row that no longer matches its components after the change
+  is the single most useful thing a finance reader wants flagged, and it is
+  computable from what `spreadsheetDiff.js` already holds
+- **statement mode** — match rows by a date+amount key and show only what is
+  unmatched, rather than aligning positionally. It is the bank-statement and
+  ledger shape, and the same one a household needs for "what is new since last
+  month" (`alignRows.js`, `opts.keyColumn`)
 - **reconciliation** — many-to-one matching, unmatched on both sides,
   group-by-account rollups. A different engine from row alignment: decide
   whether the track goes there before building toward it
+- **compare against the saved copy** — the vault already holds an encrypted
+  earlier version of a file; one click to diff what is on disk against it is a
+  shorter path than finding the old file (`vaultStore`)
+- **order-insensitive text** — the same "identical, differently ordered" problem
+  outside structured formats. Specced, semantics undecided:
+  `specs/2026-08-02-unordered-text-compare/`
 - Still out of scope: pivot tables, charts
 
 ---
