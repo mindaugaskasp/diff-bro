@@ -61,7 +61,7 @@ function identityOf(token) {
   }
 }
 
-function main() {
+function parseArgs() {
   const pr = process.argv[2]
   const event = arg('event', 'COMMENT').toUpperCase()
   const bodyFile = arg('body-file')
@@ -69,11 +69,11 @@ function main() {
     throw new Error('Usage: pr-review.mjs <pr> [--event E] --body-file F')
   if (!EVENTS.includes(event)) throw new Error(`--event must be one of ${EVENTS.join(', ')}`)
   if (!bodyFile) throw new Error('--body-file is required')
+  return { pr, event, bodyFile }
+}
 
-  const body = readFileSync(bodyFile, 'utf-8')
-  const repo = gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner'])
-  const author = gh(['pr', 'view', pr, '--json', 'author', '--jq', '.author.login'])
-
+/** The identity to post as, and the event it is actually allowed to post. */
+function resolveReviewer(event, author) {
   let token = reviewToken()
   let who = 'the active gh account'
   if (token) {
@@ -88,15 +88,20 @@ function main() {
       token = null
     }
   }
+  if (token || event === 'COMMENT') return { token, who, effective: event }
+  process.stderr.write(
+    `! no separate review identity configured, so "${event}" was downgraded to a comment.\n` +
+      `  Set DIFFBRO_REVIEW_TOKEN or DIFFBRO_REVIEW_USER — see specs/README.md.\n`
+  )
+  return { token, who, effective: 'COMMENT' }
+}
 
-  let effective = event
-  if (!token && event !== 'COMMENT') {
-    effective = 'COMMENT'
-    process.stderr.write(
-      `! no separate review identity configured, so "${event}" was downgraded to a comment.\n` +
-        `  Set DIFFBRO_REVIEW_TOKEN or DIFFBRO_REVIEW_USER — see specs/README.md.\n`
-    )
-  }
+function main() {
+  const { pr, event, bodyFile } = parseArgs()
+  const body = readFileSync(bodyFile, 'utf-8')
+  const repo = gh(['repo', 'view', '--json', 'nameWithOwner', '--jq', '.nameWithOwner'])
+  const author = gh(['pr', 'view', pr, '--json', 'author', '--jq', '.author.login'])
+  const { token, who, effective } = resolveReviewer(event, author)
 
   const out = gh(
     [
