@@ -35,7 +35,7 @@ flowchart LR
   subgraph MAIN["MAIN PROCESS — trusted (Node · fs · crypto)"]
     IPC["ipcMain handlers<br/>validate every call"]
     FILES["files.js<br/>path allowlist + per-type size caps"]
-    XLSX["xlsx reader<br/>bomb caps · no formulas · DOCTYPE reject"]
+    XLSX["xlsx reader<br/>bomb caps · formulas captured, never evaluated · DOCTYPE reject"]
     VAULT["vaultCrypt / sealing<br/>AES-256-GCM · Ed25519"]
     LOGGER["logger.js<br/>local daily error log"]
     SEC["security.js<br/>kill switch · deny-all perms · will-navigate"]
@@ -79,7 +79,7 @@ that enforces each:
 | **Path provenance allowlist**                | `file:read` only serves a path the user actually picked or dropped — not one the renderer invents                                                                                                                                                                     | `files.js`                                          |
 | **Streamed window bounds**                   | `stream:lines` serves only a session token main issued, for a side and a line range that is validated and **refused** (never clamped) when out of range or wider than the row ceiling; the paths behind a session clear the same `mayReadPath` gate as any other read | `streamedDiff.js`, `streamWindow.js`                |
 | **Keys never cross IPC**                     | Vault/identity keys stay behind `safeStorage`; only ciphertext is ever returned                                                                                                                                                                                       | `vault.js`, `vaultCrypt.js`                         |
-| **Untrusted-input caps**                     | Import files get size caps, shape validation, recomputed fingerprints; `.xlsx` gets decompression-bomb caps and a cell budget                                                                                                                                         | `files.js`, `xlsx/*`, `share.js`                    |
+| **Untrusted-input caps**                     | Import files get size caps, shape validation, recomputed fingerprints; `.xlsx` gets decompression-bomb caps, a cell budget, a per-cell formula-length cap and a ceiling on how many cells may carry extras                                                            | `files.js`, `xlsx/*`, `share.js`                    |
 | **No injection sinks**                       | `v-html`, `eval`, `new Function`, `innerHTML` are ESLint-banned                                                                                                                                                                                                       | `eslint.config.mjs`                                 |
 | **Capture rect clamped**                     | `image:capture` / `image:appendSlice` screenshot only a region clamped inside the window's own content, never a forged or unbounded one; a stitched export is capped in height so a renderer-driven loop can't exhaust memory, and the bitmap stays in main           | `captureRect.js`, `stitchBitmap.js`, `diffImage.js` |
 
@@ -109,7 +109,7 @@ sequenceDiagram
   M->>M: showOpenDialog → allow(path)
   M->>D: read bytes (size-capped per file type)
   alt looks like .xlsx (PK zip magic)
-    M->>M: readXlsx — bomb caps, no formulas, reject DOCTYPE
+    M->>M: readXlsx — bomb caps, formulas captured not evaluated, reject DOCTYPE
     M-->>R: { kind:'spreadsheet', sheets } or { error:'xlsx' }
   else text
     M->>M: detect encoding, decode
@@ -175,15 +175,15 @@ user-chosen — it can be a synced folder. So `logRedact.js` scrubs an entry
 **before it is written**, not when it is read: nothing sensitive reaches the file
 in the first place. It replaces
 
-| in the entry | becomes |
-| --- | --- |
-| the home dir | `~` |
-| another account's home (`/Users/x`, `/home/x`, `C:\Users\x`) | `<user>` |
-| a UNC host and share | `\\<host>\<share>` |
-| a path to a document the app opens | `~/…/<file>.xlsx` — extension kept, name and directories dropped |
-| a URL's path, query and fragment | `https://host/<path>` |
-| an email address / IPv4 address | `<email>` / `<ip>` |
-| a 32+ char hex or 40+ char base64 run (fingerprints, digests, wrapped keys) | `<hex:64>` / `<b64:44>` |
+| in the entry                                                                | becomes                                                          |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| the home dir                                                                | `~`                                                              |
+| another account's home (`/Users/x`, `/home/x`, `C:\Users\x`)                | `<user>`                                                         |
+| a UNC host and share                                                        | `\\<host>\<share>`                                               |
+| a path to a document the app opens                                          | `~/…/<file>.xlsx` — extension kept, name and directories dropped |
+| a URL's path, query and fragment                                            | `https://host/<path>`                                            |
+| an email address / IPv4 address                                             | `<email>` / `<ip>`                                               |
+| a 32+ char hex or 40+ char base64 run (fingerprints, digests, wrapped keys) | `<hex:64>` / `<b64:44>`                                          |
 
 Source paths in a stack trace are deliberately left alone (`.js`, `.vue`, … are
 not document extensions), so a trace stays readable. Two limits are worth

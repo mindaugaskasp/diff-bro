@@ -37,35 +37,35 @@
     <rect x="30" y="150" width="273" height="334" rx="12" fill="#f6f0e4"/>
     <text x="45" y="188" font-size="15" font-weight="600" letter-spacing="-0.15" fill="#221e16">Spreadsheet</text>
     <text x="288" y="188" font-size="12" text-anchor="end"
-          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">6</text>
+          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">3 open</text>
     <rect x="45" y="202" width="243" height="2" fill="#d9a441"/>
 
     <rect x="45" y="213" width="243" height="30" rx="5" fill="#d9a441"/>
-    <text x="55" y="232" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">1</text>
-    <text x="71" y="232" font-size="12.5" fill="#1c1710">Formula capture + R1C1</text>
+    <text x="55" y="232" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">3</text>
+    <text x="71" y="232" font-size="12.5" fill="#1c1710">Materiality tolerance</text>
 
     <rect x="45" y="250" width="243" height="30" rx="5" fill="#d9a441"/>
-    <text x="55" y="269" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">2</text>
-    <text x="71" y="269" font-size="12.5" fill="#1c1710">Number formats</text>
+    <text x="55" y="269" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">6</text>
+    <text x="71" y="269" font-size="12.5" fill="#1c1710">Column alignment</text>
 
     <rect x="45" y="287" width="243" height="30" rx="5" fill="#e9ce9b"/>
-    <text x="55" y="306" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">3</text>
-    <text x="71" y="306" font-size="12.5" fill="#1c1710">Materiality tolerance</text>
+    <text x="55" y="306" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">4</text>
+    <text x="71" y="306" font-size="12.5" fill="#1c1710">Change register</text>
 
-    <rect x="45" y="324" width="243" height="30" rx="5" fill="#e9ce9b"/>
-    <text x="55" y="343" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1c1710" fill-opacity="0.7">4</text>
-    <text x="71" y="343" font-size="12.5" fill="#1c1710">Change register</text>
+    <rect x="45" y="324" width="243" height="30" rx="5" fill="#eae0cb"/>
+    <path d="M55 339 l4 4 l7 -9" fill="none" stroke="#6f6247" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="71" y="343" font-size="12.5" fill="#6f6247">Formula capture + R1C1</text>
 
-    <rect x="45" y="361" width="243" height="30" rx="5" fill="#f0dfc0"/>
-    <text x="55" y="380" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#4f4634">5</text>
-    <text x="71" y="380" font-size="12.5" fill="#4f4634">Anomaly flags</text>
+    <rect x="45" y="361" width="243" height="30" rx="5" fill="#eae0cb"/>
+    <path d="M55 376 l4 4 l7 -9" fill="none" stroke="#6f6247" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="71" y="380" font-size="12.5" fill="#6f6247">Number formats</text>
 
-    <rect x="45" y="398" width="243" height="30" rx="5" fill="#f0dfc0"/>
-    <text x="55" y="417" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#4f4634">6</text>
-    <text x="71" y="417" font-size="12.5" fill="#4f4634">Column alignment</text>
+    <rect x="45" y="398" width="243" height="30" rx="5" fill="#eae0cb"/>
+    <path d="M55 413 l4 4 l7 -9" fill="none" stroke="#6f6247" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="71" y="417" font-size="12.5" fill="#6f6247">Hidden state + error cells</text>
 
     <line x1="45" y1="446" x2="288" y2="446" stroke="#ddd0b6" stroke-dasharray="3 3"/>
-    <text x="45" y="465" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">sheet.js:51 drops &lt;f&gt;</text>
+    <text x="45" y="465" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">csv · tsv compare as a grid</text>
 
     <!-- ============ card 2 · onboarding ============ -->
     <rect x="319" y="150" width="273" height="223" rx="12" fill="#f6f0e4"/>

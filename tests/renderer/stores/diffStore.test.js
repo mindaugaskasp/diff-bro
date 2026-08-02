@@ -71,6 +71,61 @@ describe('diffStore', () => {
     expect(store.comparableKind).toBe('text')
   })
 
+  // Delimited text reuses the structure toggle: off it is still a text diff,
+  // on it routes to the same grid a workbook gets.
+  describe('CSV grid view', () => {
+    const CSV = (name, body) => ({ path: `/tmp/${name}`, name, content: body })
+    const loadCsv = (store) => {
+      store.receive('left', CSV('a.csv', 'id,qty\n1,7'))
+      store.receive('right', CSV('b.csv', 'id,qty\n1,9'))
+      return store
+    }
+
+    it('offers the toggle and calls it Grid', () => {
+      const store = loadCsv(useDiffStore())
+      expect(store.delimitedFormat).toBe(',')
+      expect(store.canCompareStructure).toBe(true)
+      expect(store.structureLabel).toBe('Grid')
+    })
+
+    it('stays a text comparison until the toggle is on', () => {
+      const store = loadCsv(useDiffStore())
+      expect(store.comparableKind).toBe('text')
+      store.semanticView = true
+      expect(store.comparableKind).toBe('spreadsheet')
+    })
+
+    it('parses both sides into grids for the viewer', () => {
+      const store = loadCsv(useDiffStore())
+      store.semanticView = true
+      expect(store.gridSheets.left[0].rows).toEqual([
+        ['id', 'qty'],
+        [1, 7]
+      ])
+      expect(store.gridSheets.right[0].rows[1]).toEqual([1, 9])
+    })
+
+    it('keeps naming the toggle Structure for JSON', () => {
+      const store = useDiffStore()
+      store.receive('left', CSV('a.json', '{"a":1}'))
+      store.receive('right', CSV('b.json', '{"a":2}'))
+      expect(store.delimitedFormat).toBeNull()
+      expect(store.structureLabel).toBe('Structure')
+      store.semanticView = true
+      expect(store.comparableKind).toBe('tree')
+    })
+
+    // A workbook never goes through the CSV path, toggle or not.
+    it('leaves a parsed workbook on the grid it already has', () => {
+      const store = useDiffStore()
+      const sheets = [{ name: 'S1', rows: [['a', 1]] }]
+      store.receive('left', { path: '/tmp/l.xlsx', name: 'l.xlsx', kind: 'spreadsheet', sheets })
+      store.receive('right', { path: '/tmp/r.xlsx', name: 'r.xlsx', kind: 'spreadsheet', sheets })
+      expect(store.delimitedFormat).toBeNull()
+      expect(store.gridSheets.left).toEqual(sheets)
+    })
+  })
+
   it('refuses a spreadsheet dropped into paste mode', () => {
     const store = useDiffStore()
     store.receivePasteFile('left', { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] })

@@ -2,7 +2,9 @@ import { toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
 import { structureAdapter } from '../adapters/structureAdapter'
+import { csvAdapter } from '../adapters/csvAdapter'
 import { diffStructures, structuredKind } from '../utils/structuralDiff'
+import { delimitedKind } from '../utils/csv'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
@@ -354,8 +356,19 @@ export const useDiffStore = defineStore('diff', {
       s.ready && s.left?.content !== undefined && s.right?.content !== undefined
         ? structuredKind(s.left, s.right)
         : null,
+    // The delimiter both sides parse as, when they are delimited text — the same
+    // toggle, showing a grid instead of a tree.
+    delimitedFormat: (s) =>
+      s.ready && s.left?.content !== undefined && s.right?.content !== undefined
+        ? delimitedKind(s.left, s.right)
+        : null,
     canCompareStructure() {
-      return !!this.structuredFormat
+      return !!this.structuredFormat || !!this.delimitedFormat
+    },
+    // What the toggle calls itself: delimited text becomes a grid, everything
+    // else a tree.
+    structureLabel() {
+      return this.delimitedFormat ? 'Grid' : 'Structure'
     },
     structureDiff() {
       const kind = this.structuredFormat
@@ -372,10 +385,26 @@ export const useDiffStore = defineStore('diff', {
     // streamed — and a streamed side has no content in memory, so the structure
     // toggle above it can never be on.
     comparableKind() {
+      if (this.semanticView && this.delimitedFormat) return 'spreadsheet'
       if (this.semanticView && this.canCompareStructure) return 'tree'
       const kinds = [this.leftComparable?.kind, this.rightComparable?.kind]
       if (kinds.includes('streamed')) return 'streamed'
       return kinds.find(Boolean) ?? 'text'
+    },
+    // The two grids the spreadsheet viewer diffs — parsed from a workbook, or
+    // from delimited text the reader asked to see as a grid.
+    gridSheets() {
+      const delimiter = this.delimitedFormat
+      if (this.semanticView && delimiter) {
+        return {
+          left: csvAdapter.toComparable(this.left, delimiter).sheets,
+          right: csvAdapter.toComparable(this.right, delimiter).sheets
+        }
+      }
+      return {
+        left: this.leftComparable?.sheets ?? [],
+        right: this.rightComparable?.sheets ?? []
+      }
     },
     isStreamed() {
       return this.comparableKind === 'streamed'

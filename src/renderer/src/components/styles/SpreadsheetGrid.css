@@ -43,6 +43,36 @@
   background: color-mix(in srgb, var(--warning-bg) 26%, transparent);
   box-shadow: inset 0 0 0 1.5px var(--warning-border);
 }
+/* The value reads the same but the cell behind it does not — a formula replaced
+   by its own result, or an error where the text matches. A dashed accent rim
+   rather than a fill: it must not compete with a real value change, and a tint
+   would be a second warm block on the row. */
+.grid td.cell-fchg {
+  outline: 1px dashed var(--accent);
+  outline-offset: -2px;
+}
+/* A cell that holds a formula, marked at the corner so the Formulas toggle is
+   discoverable from the grid itself. */
+.grid td.has-f {
+  position: relative;
+}
+.grid td.has-f::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-top: 5px solid color-mix(in srgb, var(--text-dim) 75%, transparent);
+  border-left: 5px solid transparent;
+}
+/* An error cell (#REF!, #DIV/0!) is rimmed, not recoloured: as TEXT the danger
+   tokens fall under 4.5:1 on nord, dark, dim and nyan, and the cell already
+   reads "#REF!" — the rim only has to find it. --danger-bg rather than
+   --danger-border because that is the one that clears 3:1 against the cell on
+   all fourteen (nord's border token sits at 2.24). */
+.grid td.err {
+  box-shadow: inset 0 0 0 1.5px var(--danger-bg);
+  font-weight: 600;
+}
 /* Whole-row states — added on the right side, removed on the left. */
 .grid tr.added td,
 .grid tr.added .rownum {
@@ -54,6 +84,14 @@
   background: color-mix(in srgb, var(--danger-border) 16%, transparent);
   color: var(--danger-border);
 }
+/* Hidden in the source sheet: still compared, and the gutter says so. Marked
+   with a bar rather than lowered opacity — --text-dim on --bg-panel only just
+   clears 3:1, and fading it broke that on eight of the fourteen themes. */
+.grid tr.row-hidden .rownum {
+  font-style: italic;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--text-dim) 70%, transparent);
+}
+
 /* Ghost: the aligned gap opposite an added/removed row, striped so it reads as
    "nothing here" while keeping both grids row-for-row aligned. */
 .grid tr.ghost td,

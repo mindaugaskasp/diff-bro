@@ -98,6 +98,112 @@ describe('readXlsx — happy path', () => {
   })
 })
 
+describe('readXlsx — formulas', () => {
+  it('captures the formula text and its R1C1 normal form', () => {
+    const { sheets } = readXlsx(sampleWorkbook())
+    // B2 (row 1, col 1) holds =B1+50, one row above itself.
+    expect(sheets[0].cells).toEqual([[1, 1, { f: 'B1+50', n: 'R[-1]C+50' }]])
+    // The cached value is still what the grid compares.
+    expect(sheets[0].rows[1][1]).toBe(150)
+  })
+
+  it('expands a shared formula onto every follower cell', () => {
+    const buf = sampleWorkbook({
+      'xl/worksheets/sheet1.xml': sheet(
+        '<row r="1"><c r="A1"><v>1</v></c>' +
+          '<c r="B1"><f t="shared" si="0" ref="B1:B2">A1*2</f><v>2</v></c></row>' +
+          '<row r="2"><c r="A2"><v>3</v></c>' +
+          '<c r="B2"><f t="shared" si="0"/><v>6</v></c></row>'
+      )
+    })
+    const [{ cells }] = readXlsx(buf).sheets
+    expect(cells).toEqual([
+      [0, 1, { f: 'A1*2', n: 'RC[-1]*2' }],
+      [1, 1, { f: 'A2*2', n: 'RC[-1]*2' }]
+    ])
+  })
+
+  it('caps a pathologically long formula instead of holding it whole', () => {
+    const long = `A1+${'1+'.repeat(600)}1`
+    const buf = sampleWorkbook({
+      'xl/worksheets/sheet1.xml': sheet(`<row r="1"><c r="A1"><f>${long}</f><v>1</v></c></row>`)
+    })
+    const [{ cells }] = readXlsx(buf).sheets
+    expect(cells[0][2].f.length).toBeLessThanOrEqual(400)
+  })
+
+  it('marks an error cell so it never reads as ordinary text', () => {
+    const buf = sampleWorkbook({
+      'xl/worksheets/sheet1.xml': sheet('<row r="1"><c r="A1" t="e"><v>#REF!</v></c></row>')
+    })
+    const [{ rows, cells }] = readXlsx(buf).sheets
+    expect(rows).toEqual([['#REF!']])
+    expect(cells).toEqual([[0, 0, { e: true }]])
+  })
+})
+
+describe('readXlsx — number formats', () => {
+  const styles = (codes) =>
+    `${XML}<styleSheet><numFmts>` +
+    codes.custom.map((c, i) => `<numFmt numFmtId="${164 + i}" formatCode="${c}"/>`).join('') +
+    '</numFmts><cellStyleXfs><xf numFmtId="0"/></cellStyleXfs><cellXfs>' +
+    codes.xfs.map((id) => `<xf numFmtId="${id}" applyNumberFormat="1"/>`).join('') +
+    '</cellXfs></styleSheet>'
+
+  it('renders a date-formatted serial as a date, not a number', () => {
+    const buf = sampleWorkbook({
+      'xl/styles.xml': styles({ custom: [], xfs: [0, 14] }),
+      'xl/worksheets/sheet1.xml': sheet('<row r="1"><c r="A1" s="1"><v>45870</v></c></row>')
+    })
+    const [{ rows, cells }] = readXlsx(buf).sheets
+    expect(rows).toEqual([[45870]]) // the raw value still drives the diff
+    expect(cells).toEqual([[0, 0, { d: '2025-08-01' }]])
+  })
+
+  it('renders a percentage and a custom datetime format', () => {
+    const buf = sampleWorkbook({
+      'xl/styles.xml': styles({ custom: ['yyyy\\-mm\\-dd\\ hh:mm'], xfs: [10, 164] }),
+      'xl/worksheets/sheet1.xml': sheet(
+        '<row r="1"><c r="A1" s="0"><v>0.125</v></c><c r="B1" s="1"><v>45870.5</v></c></row>'
+      )
+    })
+    const [{ cells }] = readXlsx(buf).sheets
+    expect(cells).toEqual([
+      [0, 0, { d: '12.50%' }],
+      [0, 1, { d: '2025-08-01 12:00:00' }]
+    ])
+  })
+
+  it('leaves a General-formatted number with no display override', () => {
+    const buf = sampleWorkbook({
+      'xl/styles.xml': styles({ custom: [], xfs: [0] }),
+      'xl/worksheets/sheet1.xml': sheet('<row r="1"><c r="A1" s="0"><v>45870</v></c></row>')
+    })
+    expect(readXlsx(buf).sheets[0].cells).toEqual([])
+  })
+})
+
+describe('readXlsx — hidden state', () => {
+  it('reports hidden sheets and hidden rows', () => {
+    const buf = buildXlsx({
+      'xl/workbook.xml':
+        `${XML}<workbook xmlns:r="r"><sheets>` +
+        '<sheet name="Shown" sheetId="1" r:id="rId1"/>' +
+        '<sheet name="Gone" sheetId="2" state="hidden" r:id="rId2"/></sheets></workbook>',
+      'xl/_rels/workbook.xml.rels': rels(['worksheets/sheet1.xml', 'worksheets/sheet2.xml']),
+      'xl/worksheets/sheet1.xml': sheet(
+        '<row r="1"><c r="A1"><v>1</v></c></row>' +
+          '<row r="2" hidden="1"><c r="A2"><v>2</v></c></row>'
+      ),
+      'xl/worksheets/sheet2.xml': sheet('<row r="1"><c r="A1"><v>9</v></c></row>')
+    })
+    const { sheets } = readXlsx(buf)
+    expect(sheets[0].hidden).toBe(false)
+    expect(sheets[0].hiddenRows).toEqual([1])
+    expect(sheets[1].hidden).toBe(true)
+  })
+})
+
 describe('readXlsx — security refusals', () => {
   it('rejects a DOCTYPE (XXE / billion-laughs guard)', () => {
     const buf = sampleWorkbook({
@@ -169,8 +275,9 @@ describe('unit helpers', () => {
     expect(isAllowedEntry('xl/worksheets/sheet12.xml')).toBe(true)
     expect(isAllowedEntry('xl/sharedStrings.xml')).toBe(true)
     expect(isAllowedEntry('xl/_rels/workbook.xml.rels')).toBe(true)
+    expect(isAllowedEntry('xl/styles.xml')).toBe(true)
     expect(isAllowedEntry('xl/vbaProject.bin')).toBe(false)
-    expect(isAllowedEntry('xl/styles.xml')).toBe(false)
+    expect(isAllowedEntry('xl/theme/theme1.xml')).toBe(false)
     expect(isAllowedEntry('xl/worksheets/_rels/sheet1.xml.rels')).toBe(false)
   })
 

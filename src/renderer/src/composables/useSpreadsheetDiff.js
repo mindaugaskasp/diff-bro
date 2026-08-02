@@ -7,9 +7,9 @@ export function useSpreadsheetDiff() {
   const store = useDiffStore()
   const active = ref(0)
 
-  const sheets = computed(() =>
-    diffWorkbooks(store.leftComparable?.sheets ?? [], store.rightComparable?.sheets ?? [])
-  )
+  const showFormulas = ref(false)
+
+  const sheets = computed(() => diffWorkbooks(store.gridSheets.left, store.gridSheets.right))
 
   // Clamp to the last sheet if the active index falls out of range.
   const activeSheet = computed(() => {
@@ -36,5 +36,8 @@ export function useSpreadsheetDiff() {
     if (index >= 0 && index < sheets.value.length) active.value = index
   }
 
-  return { sheets, active, activeSheet, totals, identical, select }
+  // Only worth offering where a formula exists to show.
+  const hasFormulas = computed(() => sheets.value.some((s) => s.hasFormulas))
+
+  return { sheets, active, activeSheet, totals, identical, select, showFormulas, hasFormulas }
 }

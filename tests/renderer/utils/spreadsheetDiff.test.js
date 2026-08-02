@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  diffWorkbooks,
-  columnName
-} from '../../../src/renderer/src/utils/spreadsheetDiff'
+import { diffWorkbooks, columnName } from '../../../src/renderer/src/utils/spreadsheetDiff'
 
 const sheet = (name, rows) => ({ name, rows })
 
@@ -60,3 +57,50 @@ describe('diffWorkbooks', () => {
   })
 })
 
+describe('diffWorkbooks — formulas', () => {
+  // The bug the roadmap names: a formula replaced by its own cached value leaves
+  // every displayed number identical, so a value-only diff reported "unchanged".
+  it('reports a formula hardcoded to its own cached value as changed', () => {
+    const left = [
+      { name: 'S', rows: [[10, 20, 30]], cells: [[0, 2, { f: 'A1+B1', n: 'RC[-2]+RC[-1]' }]] }
+    ]
+    const right = [{ name: 'S', rows: [[10, 20, 30]], cells: [] }]
+    const [s] = diffWorkbooks(left, right)
+    expect(s.stats.changed).toBe(1)
+    expect(s.rows[0].formulaChanged).toEqual([2])
+    expect(s.rows[0].changed).toEqual([])
+  })
+
+  // R1C1 normalisation: an inserted row rewrites every A1 formula below it, and
+  // comparing the raw text would flag all of them.
+  it('treats a row-shifted formula as unchanged once normalised', () => {
+    const left = [{ name: 'S', rows: [[1], [2]], cells: [[1, 0, { f: 'A1*2', n: 'R[-1]C*2' }]] }]
+    const right = [{ name: 'S', rows: [[1], [2]], cells: [[1, 0, { f: 'A1*2', n: 'R[-1]C*2' }]] }]
+    expect(diffWorkbooks(left, right)[0].stats.changed).toBe(0)
+  })
+
+  it('flags a changed value and a changed formula separately', () => {
+    const left = [{ name: 'S', rows: [[1, 2]], cells: [[0, 1, { f: 'A1+1', n: 'RC[-1]+1' }]] }]
+    const right = [{ name: 'S', rows: [[1, 5]], cells: [[0, 1, { f: 'A1+4', n: 'RC[-1]+4' }]] }]
+    const [s] = diffWorkbooks(left, right)
+    expect(s.rows[0].changed).toEqual([1])
+    expect(s.rows[0].formulaChanged).toEqual([])
+  })
+
+  it('distinguishes an error cell from text that reads the same', () => {
+    const left = [{ name: 'S', rows: [['#REF!']], cells: [[0, 0, { e: true }]] }]
+    const right = [{ name: 'S', rows: [['#REF!']], cells: [] }]
+    expect(diffWorkbooks(left, right)[0].stats.changed).toBe(1)
+  })
+})
+
+describe('diffWorkbooks — sheet state', () => {
+  it('carries hidden sheet state and per-side hidden rows through', () => {
+    const left = [{ name: 'S', rows: [['a'], ['b']], hidden: true, hiddenRows: [1] }]
+    const right = [{ name: 'S', rows: [['a'], ['b']], hiddenRows: [] }]
+    const [s] = diffWorkbooks(left, right)
+    expect(s.hidden).toBe(true)
+    expect(s.leftHidden.has(1)).toBe(true)
+    expect(s.rightHidden.has(1)).toBe(false)
+  })
+})

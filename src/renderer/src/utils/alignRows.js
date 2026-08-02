@@ -28,8 +28,10 @@ function rowSignature(row) {
   return JSON.stringify(trimmed)
 }
 
-function keyOf(row, keyColumn) {
-  return String(normCell(row[keyColumn]))
+// Per-row pairing key. Kept separate from the row's diff identity: a key cell
+// whose formula was replaced by its value still names the same row.
+export function rowKeys(rows, keyColumn = 0) {
+  return rows.map((row) => String(normCell(row[keyColumn])))
 }
 
 // Classic LCS backtrace over signature arrays -> ops of { t:'eq'|'del'|'ins' }.
@@ -70,19 +72,19 @@ function positionalOps(leftSig, rightSig) {
 }
 
 // One gap → changed/removed/added, pairing del+ins rows by matching key.
-function emitGap(gap, leftRows, rightRows, keyColumn) {
+function emitGap(gap, leftRows, rightRows, keys) {
   const dels = gap.filter((o) => o.t === 'del').map((o) => o.i)
   const ins = gap.filter((o) => o.t === 'ins').map((o) => o.j)
   const byKey = new Map()
   for (const j of ins) {
-    const k = keyOf(rightRows[j], keyColumn)
+    const k = keys.right[j]
     if (!byKey.has(k)) byKey.set(k, [])
     byKey.get(k).push(j)
   }
   const used = new Set()
   const out = []
   for (const i of dels) {
-    const queue = byKey.get(keyOf(leftRows[i], keyColumn))
+    const queue = byKey.get(keys.left[i])
     if (queue && queue.length) {
       const j = queue.shift()
       used.add(j)
@@ -121,11 +123,11 @@ function emitGap(gap, leftRows, rightRows, keyColumn) {
   return out
 }
 
-function buildEntries(ops, leftRows, rightRows, keyColumn) {
+function buildEntries(ops, leftRows, rightRows, keys) {
   const out = []
   let gap = []
   const flush = () => {
-    if (gap.length) out.push(...emitGap(gap, leftRows, rightRows, keyColumn))
+    if (gap.length) out.push(...emitGap(gap, leftRows, rightRows, keys))
     gap = []
   }
   for (const op of ops) {
@@ -147,7 +149,9 @@ function buildEntries(ops, leftRows, rightRows, keyColumn) {
 }
 
 /**
- * Align two sheets' rows into a list of paired entries.
+ * Align two sheets' rows into a list of paired entries. `leftKeys`/`rightKeys`
+ * override the pairing keys when the rows carry a diff identity that is not the
+ * value a reader would recognise the row by (see spreadsheetDiff).
  * @returns {Array<{status:'same'|'changed'|'added'|'removed', left, right,
  *   leftIndex:number|null, rightIndex:number|null, changed:number[]}>}
  */
@@ -160,5 +164,9 @@ export function alignRows(leftRows = [], rightRows = [], opts = {}) {
     leftRows.length * rightRows.length > budget
       ? positionalOps(leftSig, rightSig)
       : lcsOps(leftSig, rightSig)
-  return buildEntries(ops, leftRows, rightRows, keyColumn)
+  const keys = {
+    left: opts.leftKeys ?? rowKeys(leftRows, keyColumn),
+    right: opts.rightKeys ?? rowKeys(rightRows, keyColumn)
+  }
+  return buildEntries(ops, leftRows, rightRows, keys)
 }

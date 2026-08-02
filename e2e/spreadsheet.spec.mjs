@@ -14,7 +14,7 @@ const XML = '<?xml version="1.0" encoding="UTF-8"?>'
 const inlineStr = (ref, text) => `<c r="${ref}" t="inlineStr"><is><t>${text}</t></is></c>`
 const num = (ref, v) => `<c r="${ref}"><v>${v}</v></c>`
 
-function buildXlsx(rowsXml) {
+function buildXlsx(rowsXml, extra = {}) {
   const files = {
     'xl/workbook.xml':
       `${XML}<workbook xmlns:r="r"><sheets>` +
@@ -23,12 +23,32 @@ function buildXlsx(rowsXml) {
       `${XML}<Relationships><Relationship Id="rId1" ` +
       'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" ' +
       'Target="worksheets/sheet1.xml"/></Relationships>',
-    'xl/worksheets/sheet1.xml': `${XML}<worksheet><sheetData>${rowsXml}</sheetData></worksheet>`
+    'xl/worksheets/sheet1.xml': `${XML}<worksheet><sheetData>${rowsXml}</sheetData></worksheet>`,
+    ...extra
   }
   const map = {}
   for (const [k, v] of Object.entries(files)) map[k] = strToU8(v)
   return Buffer.from(zipSync(map))
 }
+
+// Two files that a values-only diff calls identical: same numbers on screen, but
+// the right file's total was pasted over the formula that produced it, and its
+// date column is formatted rather than raw.
+const STYLES =
+  `${XML}<styleSheet><cellXfs>` +
+  '<xf numFmtId="0"/><xf numFmtId="14" applyNumberFormat="1"/>' +
+  '</cellXfs></styleSheet>'
+const formulaSheet = (f) =>
+  `<row r="1">${num('A1', 45870)}${num('B1', 100)}</row>` +
+  `<row r="2" hidden="1">${num('A2', 45871)}${num('B2', 50)}</row>` +
+  `<row r="3">${inlineStr('A3', 'Total')}<c r="B3">${f}<v>150</v></c></row>`
+const DATED_LEFT = buildXlsx(
+  formulaSheet('<f>SUM(B1:B2)</f>').replace(/<c r="A(\d)"/g, '<c r="A$1" s="1"'),
+  { 'xl/styles.xml': STYLES }
+)
+const DATED_RIGHT = buildXlsx(formulaSheet('').replace(/<c r="A(\d)"/g, '<c r="A$1" s="1"'), {
+  'xl/styles.xml': STYLES
+})
 
 // Left: North 120, plus a West row. Right: North 150 (changed cell), West
 // replaced by Central (one removed + one added row).
@@ -77,6 +97,46 @@ test('opens two .xlsx files and renders the aligned grid diff', async ({ app, pa
     await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
     await expect(page.locator('.status .add')).toHaveText('+1 rows')
     await expect(page.locator('.status .del')).toHaveText('−1 rows')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The roadmap's headline spreadsheet bug, end to end: every number on screen is
+// the same, so a values-only diff called these files identical.
+test('catches a formula overwritten by its own value, and dates as dates', async ({
+  app,
+  page
+}) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-f-'))
+  const leftPath = join(dir, 'model-left.xlsx')
+  const rightPath = join(dir, 'model-right.xlsx')
+  writeFileSync(leftPath, DATED_LEFT)
+  writeFileSync(rightPath, DATED_RIGHT)
+
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    // styles.xml is read, so the serial renders as a date rather than 45870.
+    await expect(page.locator('.grid td', { hasText: '2025-08-01' }).first()).toBeVisible()
+    await expect(page.locator('.grid td', { hasText: '45870' })).toHaveCount(0)
+
+    // The formula cell is marked, and the one whose formula went away is flagged
+    // even though both sides still read 150.
+    await expect(page.locator('.grid td.has-f')).toHaveCount(1)
+    await expect(page.locator('.grid td.cell-fchg').first()).toHaveText('150')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+
+    // Hidden row 2 is compared, and its gutter says where it came from.
+    await expect(page.locator('.grid tr.row-hidden')).toHaveCount(2)
+
+    // Formulas view swaps results for the expressions behind them.
+    await page.getByRole('button', { name: 'Formulas' }).click()
+    await expect(page.locator('.grid td', { hasText: '=SUM(B1:B2)' })).toBeVisible()
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

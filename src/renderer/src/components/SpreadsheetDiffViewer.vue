@@ -10,7 +10,8 @@ import SpreadsheetGrid from './SpreadsheetGrid.vue'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
-const { sheets, active, activeSheet, totals, identical, select } = useSpreadsheetDiff()
+const { sheets, active, activeSheet, totals, identical, select, showFormulas, hasFormulas } =
+  useSpreadsheetDiff()
 
 const allRows = computed(() => activeSheet.value?.rows ?? [])
 
@@ -49,6 +50,9 @@ onMounted(() => {
         :rows="windowed"
         :side="side"
         :columns="activeSheet.columns"
+        :meta="side === 'left' ? activeSheet.leftMeta : activeSheet.rightMeta"
+        :hidden-rows="side === 'left' ? activeSheet.leftHidden : activeSheet.rightHidden"
+        :show-formulas="showFormulas"
         :pad-top="win.padTop"
         :pad-bottom="win.padBottom"
       />
@@ -64,7 +68,23 @@ onMounted(() => {
         <span class="del">−{{ totals.removed }} rows</span>
       </template>
       <span class="capped">{{ allRows.length }} rows</span>
-      <span class="right">{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
+      <!-- Right-hand group: the floating shortcut bar sits over the middle of
+           this band, and a control there would be unclickable. -->
+      <span class="right">
+        <button
+          v-if="hasFormulas"
+          class="btn btn-sm"
+          :class="{ active: showFormulas }"
+          :data-tip="
+            showFormulas ? 'Back to the values each formula produced' : 'Show formulas, not results'
+          "
+          @click="showFormulas = !showFormulas"
+        >
+          <AppIcon name="braces" />
+          Formulas
+        </button>
+        <span>{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
+      </span>
     </div>
   </div>
 </template>

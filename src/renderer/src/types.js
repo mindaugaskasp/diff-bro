@@ -24,10 +24,25 @@
  */
 
 /**
- * One worksheet from a spreadsheet: a dense grid of cell values.
+ * One worksheet from a spreadsheet: a dense grid of cell values, plus whatever
+ * sparse extras its cells carry. Delimited text (csvAdapter) produces the same
+ * shape with no extras.
  * @typedef {object} SheetGrid
  * @property {string} name
  * @property {Array<Array<string|number|boolean|null>>} rows
+ * @property {boolean} [hidden]        the workbook hides this sheet
+ * @property {number[]} [hiddenRows]   0-based indices of hidden rows
+ * @property {Array<[number, number, CellMeta]>} [cells]  sparse [row, col, meta]
+ * @property {boolean} [truncated]     the row cap was hit before the end
+ */
+
+/**
+ * What one cell carries beyond its value. Absent fields mean "nothing to say".
+ * @typedef {object} CellMeta
+ * @property {string} [f]  formula in A1 notation, without the leading `=`
+ * @property {string} [n]  the same formula in R1C1, so position stops mattering
+ * @property {string} [d]  what its number format asks to be shown instead
+ * @property {true} [e]    the cell holds an error value (#REF!, #DIV/0! …)
  */
 
 /**

@@ -11,7 +11,7 @@ host beyond Docker itself.
 make dev                 # or: npm run docker:up / docker compose up --build
 ```
 
-Then open **http://localhost:6080/vnc.html** and click *Connect*.
+Then open **http://localhost:6080/vnc.html** and click _Connect_.
 
 The container's entrypoint already runs `electron-vite dev` — do **not** start
 a second one with `docker compose exec … npm run dev`; the two instances fight
@@ -22,13 +22,13 @@ and `scrot` work straight away).
 - The source tree is bind-mounted into the container and runs under
   `electron-vite dev`, so edits on the host hot-reload inside the container.
 - Sample files to diff live in `tests/data/` → `/app/tests/data` in the
-  container (use *File → Open Left/Right* or the toolbar slots; drag & drop
+  container (use _File → Open Left/Right_ or the toolbar slots; drag & drop
   from the host doesn't cross the VNC boundary).
 - Stop with `Ctrl+C` or `npm run docker:down`.
 
 ## Packaging
 
-`make package-win` does *not* use the dev container. It runs the separate
+`make package-win` does _not_ use the dev container. It runs the separate
 `builder` service, pinned to `linux/amd64` and built from the Dockerfile's
 `packaging` stage, because electron-builder's bundled `makensis` is x86_64-only
 and its NSIS steps shell out to wine (64- **and** 32-bit — the uninstaller is
@@ -47,6 +47,11 @@ Node installed locally.
   Electron binaries never mix with the Windows/macOS ones on the host.
   After changing dependencies in `package.json`, refresh them with
   `make rebuild` (`docker compose down -v && docker compose up --build`).
+- Because `build` is one of those volumes, a `npm run build` on the HOST never
+  reaches the container. `make e2e` is safe — `test:e2e` builds first — but
+  running Playwright directly (`docker compose exec node npx playwright test …`)
+  tests whatever the container built last. Rebuild inside it first:
+  `docker compose exec node npx electron-vite build`.
 - The container runs Chromium with `--no-sandbox` (required as root in a
   container) and software rendering. That's fine for functional testing but
   is **not** representative for performance measurements.
@@ -57,8 +62,8 @@ Node installed locally.
 - The offline kill switch is active in the container exactly as on the
   desktop; only the local Vite dev server is allowed through (dev mode).
 - Some keyboard shortcuts (Ctrl+1/Ctrl+2 = browser tab switch, Ctrl+T = new
-  tab) are captured by *your* browser before they reach noVNC — use the
+  tab) are captured by _your_ browser before they reach noVNC — use the
   app's File menu for those actions when testing through the browser.
-- What this does *not* test: native window chrome, OS file dialogs of the
+- What this does _not_ test: native window chrome, OS file dialogs of the
   host platform, host drag & drop, installer behavior. Those still need a
   real `npm run dev` / packaged build on the target OS.

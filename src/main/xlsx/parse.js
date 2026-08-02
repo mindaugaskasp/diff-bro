@@ -43,17 +43,28 @@ export function parseSharedStrings(xml) {
 }
 
 // workbook.xml lists sheets in display order with a relationship id that
-// _rels/workbook.xml.rels maps to the actual worksheet path.
+// _rels/workbook.xml.rels maps to the actual worksheet path. `date1904` picks
+// the epoch every date serial in the file is counted from.
 export function parseWorkbook(xml) {
   rejectDoctype(xml)
   const sheets = []
+  let date1904 = false
   const p = newParser((name, getAttrs) => {
-    if (name !== 'sheet') return
-    const a = getAttrs()
-    sheets.push({ name: decode(a['name'] ?? ''), rid: a['r:id'] ?? a['r:Id'] ?? '' })
+    if (name === 'workbookPr') {
+      const v = getAttrs()['date1904']
+      date1904 = v === '1' || v === 'true'
+    } else if (name === 'sheet') {
+      const a = getAttrs()
+      const state = a['state'] ?? ''
+      sheets.push({
+        name: decode(a['name'] ?? ''),
+        rid: a['r:id'] ?? a['r:Id'] ?? '',
+        hidden: state === 'hidden' || state === 'veryHidden'
+      })
+    }
   })
   p.parse(xml)
-  return sheets
+  return { sheets, date1904 }
 }
 
 // Attacker-controlled ids as keys go in a Map, never a plain object (proto-safe).

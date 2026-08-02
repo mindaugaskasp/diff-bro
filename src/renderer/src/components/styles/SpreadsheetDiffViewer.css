@@ -64,4 +64,15 @@
 }
 .status .right {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+/* Formulas toggle: same "on" cue as the toolbar's locked padlock. */
+.status .btn {
+  gap: var(--space-1);
+}
+.status .btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
 }

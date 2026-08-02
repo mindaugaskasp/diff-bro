@@ -46,3 +46,8 @@
 .sheet-tabs .tab.missing .name {
   font-style: italic;
 }
+/* Hidden in the source workbook — the sheet is still compared, and says so.
+   No opacity: the mark carries meaning, so it holds the tab label's contrast. */
+.sheet-tabs .tab .hidden-mark {
+  flex: none;
+}
