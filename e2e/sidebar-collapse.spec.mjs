@@ -1,5 +1,5 @@
 import { rmSync } from 'node:fs'
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import { test, expect, launchApp, freshUserDataDir, firstReadyPage, openMenu } from './fixtures.mjs'
 
 // Collapsing is layout and persistence, so it only answers in a real window:
 // jsdom has no widths to animate and no relaunch to survive.
@@ -53,6 +53,33 @@ test('the rail has its own expand button', async ({ page }) => {
   await expect(page.getByPlaceholder('Search diffs & snippets…')).toBeVisible()
 })
 
+// Reported twice from a build where the rail's toggle sat at the foot: it reads
+// as the control having fallen off. The two states hold the SAME control, so it
+// must not move — asserted as a vertical position, not a screenshot.
+test('the toggle keeps its position when the sidebar collapses', async ({ page }) => {
+  const centreOf = (sel) =>
+    page.evaluate((s) => {
+      const r = document.querySelector(s)?.getBoundingClientRect()
+      return r ? r.top + r.height / 2 : null
+    }, sel)
+
+  const expanded = await centreOf('aside.saved .usb-top .sidebar-toggle')
+  expect(expanded).not.toBeNull()
+
+  await collapse(page).click()
+  await expect(rail(page)).toBeVisible()
+  const collapsed = await centreOf('aside.saved .rail-band .sidebar-toggle')
+
+  expect(collapsed).not.toBeNull()
+  // It is in the TOP band — the failure being guarded against is it sliding to
+  // the foot of the rail, which is half a window away.
+  const railHeight = await rail(page).evaluate((el) => el.getBoundingClientRect().height)
+  expect(collapsed).toBeLessThan(railHeight / 4)
+  // ...and lands where it was. Both states hold the same control now, so this
+  // is the whole of "the toggle never moves".
+  expect(Math.abs(collapsed - expanded)).toBeLessThanOrEqual(3)
+})
+
 // The row is one control strip: a borderless glyph jammed against a bordered
 // field read as dropped in rather than placed.
 test('the collapse control matches the search box it sits beside', async ({ page }) => {
@@ -85,8 +112,29 @@ test('the rail is built from the size scale, not a bespoke box', async ({ page }
     const btn = document.querySelector('aside.saved .rail-btn').getBoundingClientRect()
     return { band, bandToken: px('--band-row'), btn: btn.height, btnToken: px('--control-h') }
   })
-  expect(scale.band).toBeCloseTo(scale.bandToken, 0)
+  // The band is the shared row PLUS the tab strip above the comparison column,
+  // which is what puts its rule on the same line as the file slots' — see the
+  // alignment test below. Still composed from tokens, never a bespoke number.
+  expect(scale.band).toBeCloseTo(scale.bandToken + scale.btnToken + 1, 0)
   expect(scale.btn).toBeCloseTo(scale.btnToken, 0)
+})
+
+// "The side looks detached": the rail's first rule sat 31px above the line under
+// the file slots, so the two columns read as unrelated grids.
+test('the rail rule lands on the same line as the file slots', async ({ page }) => {
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByPlaceholder('Paste original text here').fill('a')
+  await page.getByPlaceholder('Paste changed text here').fill('b')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await expect(page.locator('.diff-container')).toBeVisible()
+  await collapse(page).click()
+  await expect(rail(page)).toBeVisible()
+
+  const rows = await page.evaluate(() => {
+    const bottom = (s) => Math.round(document.querySelector(s).getBoundingClientRect().bottom)
+    return { band: bottom('.rail-band'), slots: bottom('.file-slots-row') }
+  })
+  expect(Math.abs(rows.band - rows.slots)).toBeLessThanOrEqual(1)
 })
 
 // Asked for explicitly: the comparison must not jump when the sidebar goes.
@@ -128,33 +176,101 @@ test('the collapsed sidebar survives a relaunch', async () => {
   }
 })
 
-// One logical toggle should not move. It used to: collapse sat in the sidebar's
-// top band and expand at the foot of the rail, 724px apart and two different
-// sizes, so getting back out meant crossing the whole sidebar.
-test('collapse and expand are the same control in the same place', async ({ page }) => {
-  const box = (l) => l.boundingBox()
-  const collapseBox = await box(collapse(page))
+// Open a tool from the menu and close it again, so it lands in the recents.
+async function useTool(page, name) {
+  await openMenu(page, 'Tools', name)
+  const dialog = page.getByRole('dialog', { name })
+  await expect(dialog).toBeVisible()
+  await dialog.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
+  await expect(dialog).toHaveCount(0)
+}
+
+// Collapsing used to cost you the tools: the rail's only tools control expands
+// the sidebar again. Recents now open where they stand.
+test('the rail runs a recent tool without expanding the sidebar', async ({ page }) => {
+  // Use two tools so there is a recents list at all.
+  await useTool(page, 'Base64')
+  await useTool(page, 'UUID')
+
   await collapse(page).click()
   await expect(rail(page)).toBeVisible()
-  const expandBtn = page.getByRole('button', { name: 'Expand the sidebar' })
-  const expandBox = await box(expandBtn)
 
-  // Same row: both sit in the band the sidebar and the rail share.
-  expect(Math.abs(expandBox.y - collapseBox.y)).toBeLessThanOrEqual(1)
-  // Same control, so the same size off the shared scale.
-  expect(expandBox.width).toBe(collapseBox.width)
-  expect(expandBox.height).toBe(collapseBox.height)
+  // Most-recent-first, under the rule that groups the tools corner.
+  await expect(rail(page).locator('.rail-rule')).toBeVisible()
+  const tools = rail(page).locator('.rail-recent .rail-btn')
+  await expect(tools).toHaveCount(2)
 
-  // And it toggles back from there.
-  await expandBtn.click()
-  await expect.poll(() => widthOf(page)).toBeGreaterThan(200)
+  await rail(page).getByRole('button', { name: 'Generate UUID' }).click()
+  await expect(page.getByRole('dialog', { name: 'UUID' })).toBeVisible()
+  // ...and the sidebar is still collapsed, which is the whole point.
+  await expect(rail(page)).toBeVisible()
+  await expect(page.locator('.usb-top')).toHaveCount(0)
 })
 
-// The rail's top cell is the toggle now, so search became one of the icons that
-// opens the sidebar on its way somewhere.
-test('search is still reachable from the collapsed rail', async ({ page }) => {
+// Nine is what the rail has room for; the shelf keeps its measured three.
+test('the rail remembers as many tools as it has room for', async ({ page }) => {
+  const used = [
+    'Base64',
+    'UUID',
+    'JWT',
+    'Epoch',
+    'URL',
+    'Lines',
+    'XML',
+    'JSON',
+    'Checksum',
+    'Regex'
+  ]
+  for (const name of used) await useTool(page, name)
   await collapse(page).click()
-  await page.getByRole('button', { name: 'Search diffs and snippets' }).click()
-  await expect.poll(() => widthOf(page)).toBeGreaterThan(200)
-  await expect(page.locator('.usb-search input')).toBeFocused()
+  await expect(rail(page).locator('.rail-recent .rail-btn')).toHaveCount(9)
+  // The oldest fell off rather than the newest never arriving.
+  await expect(rail(page).getByRole('button', { name: 'Test Regex' })).toBeVisible()
+  await expect(rail(page).getByRole('button', { name: 'Encode Base64' })).toHaveCount(0)
+})
+
+// Asked for explicitly: the tools take the leftover column. A fixed count either
+// wastes a tall window or is clipped on a short one, so the rail measures.
+test('the rail fits its tools to the window, and re-fits when it changes', async ({
+  app,
+  page
+}) => {
+  const used = ['Base64', 'UUID', 'JWT', 'Epoch', 'URL', 'Lines', 'XML', 'JSON', 'Checksum']
+  for (const name of used) await useTool(page, name)
+  await collapse(page).click()
+  await expect(rail(page)).toBeVisible()
+
+  const shown = () => rail(page).locator('.rail-recent .rail-btn').count()
+  const setHeight = (h) =>
+    app.evaluate(({ BrowserWindow }, height) => {
+      const [w] = BrowserWindow.getAllWindows()
+      const [width] = w.getContentSize()
+      w.setContentSize(width, height)
+    }, h)
+
+  await setHeight(900)
+  await expect.poll(shown).toBe(9) // everything remembered fits
+
+  await setHeight(420)
+  // Fewer, and never a clipped one: what is drawn still ends inside the box.
+  await expect.poll(shown).toBeLessThan(9)
+  const fits = await page.evaluate(() => {
+    const box = document.querySelector('.rail-recent').getBoundingClientRect()
+    const last = [...document.querySelectorAll('.rail-recent .rail-btn')].at(-1)
+    return !last || last.getBoundingClientRect().bottom <= box.bottom + 1
+  })
+  expect(fits).toBe(true)
+
+  await setHeight(900)
+  await expect.poll(shown).toBe(9) // ...and back
+})
+
+// The wrench used to expand the sidebar, which is the one thing a collapsed
+// rail's tools control must not do.
+test('the rail wrench opens the tools palette, sidebar still collapsed', async ({ page }) => {
+  await collapse(page).click()
+  await rail(page).getByRole('button', { name: 'Tools' }).click()
+  await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()
+  await expect(rail(page)).toBeVisible()
+  await expect(page.locator('.usb-top')).toHaveCount(0)
 })

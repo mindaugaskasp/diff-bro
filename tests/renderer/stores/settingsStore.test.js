@@ -9,7 +9,7 @@ import {
   MAX_EXPORT_HEIGHT_PX_CAP,
   MIN_EXPORT_HEIGHT_PX
 } from '../../../src/renderer/src/stores/settingsStore'
-import { MAX_RECENT_TOOLS, recentTools } from '../../../src/renderer/src/utils/tools'
+import { MAX_RECENT_TOOLS, TOOLS, recentTools } from '../../../src/renderer/src/utils/tools'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -292,10 +292,25 @@ describe('settingsStore', () => {
     s.noteToolUsed('json') // promotes, never duplicates
     expect(s.recentTools).toEqual(['json', 'base64'])
 
-    for (const id of ['xml', 'lines', 'uuid', 'jwt']) s.noteToolUsed(id)
+    // Overflow the cap, whatever it is, and check the newest survived it.
+    for (const t of TOOLS) s.noteToolUsed(t.id)
     expect(s.recentTools).toHaveLength(MAX_RECENT_TOOLS)
-    expect(s.recentTools[0]).toBe('jwt')
+    expect(s.recentTools[0]).toBe(TOOLS.at(-1).id)
     expect(JSON.parse(localStorage.getItem('diffbro.settings')).recentTools).toEqual(s.recentTools)
+  })
+
+  // The rail draws every remembered tool, so a stale cap in readState would
+  // silently starve it however high the surface's own limit went.
+  it('reads back every remembered tool, not just the shelf-sized slice', () => {
+    const s = useSettingsStore()
+    for (const id of ['json', 'base64', 'xml', 'lines', 'uuid']) s.noteToolUsed(id)
+    expect(s.recentTools).toHaveLength(5)
+
+    setActivePinia(createPinia())
+    const reloaded = useSettingsStore()
+    expect(reloaded.recentTools).toEqual(['uuid', 'lines', 'xml', 'base64', 'json'])
+    expect(recentTools(reloaded.recentTools)).toHaveLength(5)
+    expect(MAX_RECENT_TOOLS).toBeGreaterThanOrEqual(5)
   })
 
   it('ignores an unknown tool id without persisting a change', () => {

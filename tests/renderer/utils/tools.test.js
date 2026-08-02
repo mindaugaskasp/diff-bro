@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MAX_RECENT_TOOLS,
+  SHELF_RECENT_TOOLS,
   TOOLS,
   noteRecent,
   recentTools,
@@ -65,6 +66,24 @@ describe('recentTools', () => {
     expect(recentTools(undefined)).toEqual([])
     expect(recentTools([])).toEqual([])
   })
+
+  // Surfaces disagree about how many fit: the collapsed rail shows every one it
+  // remembers, the expanded shelf fewer, because its chips carry labels and wrap.
+  it('takes a smaller limit from a surface that has less room', () => {
+    const ids = TOOLS.map((t) => t.id)
+    expect(recentTools(ids, SHELF_RECENT_TOOLS)).toHaveLength(SHELF_RECENT_TOOLS)
+    expect(SHELF_RECENT_TOOLS).toBeLessThan(MAX_RECENT_TOOLS)
+  })
+
+  // The number REMEMBERED has to be at least the largest surface, or the rail
+  // could never fill up whatever its own limit said.
+  it('remembers as many as the rail has room for', () => {
+    expect(MAX_RECENT_TOOLS).toBe(9)
+    let ids = []
+    for (const t of TOOLS.slice(0, MAX_RECENT_TOOLS + 1)) ids = noteRecent(ids, t.id)
+    expect(ids).toHaveLength(MAX_RECENT_TOOLS)
+    expect(recentTools(ids)).toHaveLength(MAX_RECENT_TOOLS)
+  })
 })
 
 describe('noteRecent', () => {
@@ -79,7 +98,10 @@ describe('noteRecent', () => {
   // Written against the cap rather than a literal list, so changing how many
   // recents the shelf holds does not mean rewriting the expectation.
   it('caps the list at MAX_RECENT_TOOLS, keeping the most recent', () => {
-    const ids = ['json', 'xml', 'lines', 'uuid', 'jwt']
+    // Enough to overflow whatever the cap is, so this survives it changing.
+    const ids = TOOLS.filter((t) => t.id !== 'epoch')
+      .map((t) => t.id)
+      .slice(0, MAX_RECENT_TOOLS)
     const out = noteRecent(ids, 'epoch')
     expect(out).toHaveLength(MAX_RECENT_TOOLS)
     expect(out[0]).toBe('epoch')

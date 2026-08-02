@@ -26,10 +26,12 @@ export const TOOLS = [
   { id: 'patch', name: 'Patch', icon: 'file', kind: 'Apply', action: 'apply-patch' }
 ]
 
-// Three is what fits the sidebar without the row wrapping on every use; the
-// list is most-recent-first, so the shelf rotates with what you actually reach
-// for rather than accumulating.
-export const MAX_RECENT_TOOLS = 3
+// How many are remembered — at least as many as the largest surface draws, or
+// that surface could never fill up. The list is most-recent-first, so it rotates
+// with what you actually reach for rather than accumulating.
+export const MAX_RECENT_TOOLS = 9
+// The expanded shelf draws fewer: its chips carry a label and wrap past three.
+export const SHELF_RECENT_TOOLS = 3
 
 const BY_ID = new Map(TOOLS.map((t) => [t.id, t]))
 
@@ -42,9 +44,10 @@ export const toolById = (id) => BY_ID.get(id)
 // Stored ids outlive the registry (hand-edited settings, a removed tool).
 /**
  * @param {string[]} ids  most-recent-first
+ * @param {number} [limit]  how many this surface has room for
  * @returns {Tool[]}
  */
-export function recentTools(ids) {
+export function recentTools(ids, limit = MAX_RECENT_TOOLS) {
   const seen = new Set()
   const out = []
   for (const id of ids || []) {
@@ -52,7 +55,7 @@ export function recentTools(ids) {
     if (!tool || seen.has(id)) continue
     seen.add(id)
     out.push(tool)
-    if (out.length === MAX_RECENT_TOOLS) break
+    if (out.length === limit) break
   }
   return out
 }
