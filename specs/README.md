@@ -50,3 +50,43 @@ reviewable — by a machine first, then by a person who is not reading it cold.
 - **Every comment is answered and resolved before a human is asked to look**, so
   what reaches them is a PR that has already been read, not one still carrying
   its first-pass questions.
+
+### The review identity
+
+GitHub refuses **Request changes** on your own pull request, so a reviewer that
+shares the author's account can only ever leave a comment — the review stops
+being a gate and becomes a suggestion. Reviews therefore go through:
+
+```sh
+node scripts/pr-review.mjs <pr> --event REQUEST_CHANGES --body-file review.md
+```
+
+It resolves a reviewer in this order, and refuses to pretend: if the identity it
+finds is the PR author, or none is configured, it says so on stderr and
+downgrades to a comment rather than failing at the API.
+
+| variable               | what it is                                         |
+| ---------------------- | -------------------------------------------------- |
+| `DIFFBRO_REVIEW_TOKEN` | a PAT or App installation token for the reviewer   |
+| `DIFFBRO_REVIEW_USER`  | a second account already added via `gh auth login` |
+
+Setting one up is a one-time web step, and there are two shapes:
+
+- **A GitHub App you own** — no second email, tokens expire hourly, permissions
+  scoped to `Pull requests: read & write`. An installation token cannot be copied
+  from the UI, so `scripts/review-token.mjs` mints one from the App ID and the
+  downloaded `.pem`:
+
+  ```sh
+  export DIFFBRO_REVIEW_APP_ID=4467218   # diff-bro-reviewer
+  export DIFFBRO_REVIEW_KEY=~/.config/diffbro/reviewer.pem
+  export DIFFBRO_REVIEW_TOKEN=$(node scripts/review-token.mjs)
+  ```
+
+  The token lasts an hour; re-run the last line when it expires.
+
+- **A machine account** — simpler: a second GitHub account added as a
+  collaborator, `gh auth login` as it, then `DIFFBRO_REVIEW_USER=<name>`.
+
+Never commit either. The token belongs in the shell environment or a secret
+store, not in this repo.
