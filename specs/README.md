@@ -78,7 +78,7 @@ Setting one up is a one-time web step, and there are two shapes:
   downloaded `.pem`:
 
   ```sh
-  export DIFFBRO_REVIEW_APP_ID=<app id>
+  export DIFFBRO_REVIEW_APP_ID=4467218   # diff-bro-reviewer
   export DIFFBRO_REVIEW_KEY=~/.config/diffbro/reviewer.pem
   export DIFFBRO_REVIEW_TOKEN=$(node scripts/review-token.mjs)
   ```

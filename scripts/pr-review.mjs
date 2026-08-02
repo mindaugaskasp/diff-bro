@@ -31,7 +31,13 @@ function gh(args, token) {
   delete env.GH_TOKEN
   delete env.GITHUB_TOKEN
   if (token) env.GH_TOKEN = token
-  return execFileSync('gh', args, { env, encoding: 'utf-8' }).trim()
+  // stderr is captured, not inherited: identityOf expects a 403 and handles it,
+  // and gh printing that failure would read as the review having gone wrong.
+  return execFileSync('gh', args, {
+    env,
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim()
 }
 
 function reviewToken() {
@@ -42,6 +48,16 @@ function reviewToken() {
     return gh(['auth', 'token', '--user', user])
   } catch {
     throw new Error(`DIFFBRO_REVIEW_USER=${user} is not a logged-in gh account (gh auth login).`)
+  }
+}
+
+// An App installation token cannot call /user — it is a bot by construction, so
+// null here means "not the human author" rather than "unknown, be careful".
+function identityOf(token) {
+  try {
+    return gh(['api', 'user', '--jq', '.login'], token)
+  } catch {
+    return null
   }
 }
 
@@ -61,12 +77,13 @@ function main() {
   let token = reviewToken()
   let who = 'the active gh account'
   if (token) {
-    who = gh(['api', 'user', '--jq', '.login'], token)
+    const login = identityOf(token)
+    who = login ?? 'the app installation'
     // The whole reason this script exists: same identity means GitHub will
     // reject anything stronger than a comment.
-    if (who === author) {
+    if (login && login === author) {
       process.stderr.write(
-        `! review identity (${who}) is the PR author — GitHub allows only a comment.\n`
+        `! review identity (${login}) is the PR author — GitHub allows only a comment.\n`
       )
       token = null
     }
