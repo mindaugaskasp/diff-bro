@@ -8,9 +8,16 @@
   flex-direction: column;
   align-items: center;
   overflow: hidden;
+  padding-bottom: var(--space-2);
 }
+/* Grows DOWNWARD by exactly the tab strip above the comparison column
+   (--control-h + its keyline), so this rule lands ON the line under the file
+   slots instead of 31px above it. The padding is one pixel less than that: the
+   band's OWN keyline comes out of the content box too, and without allowing for
+   it the toggle centres half a pixel off the one in the expanded sidebar. */
 .rail-band {
-  height: var(--band-row);
+  height: calc(var(--band-row) + var(--control-h) + 1px);
+  padding-bottom: var(--control-h);
   flex: none;
   justify-content: center;
   border-bottom: 1px solid var(--border);
@@ -59,6 +66,23 @@
   line-height: 15px;
   text-align: center;
 }
-.rail-gap {
+/* The same line the search band carries, so the rail reads as one strip with two
+   rules rather than a border plus a decoration. */
+.rail-rule {
+  width: 100%;
+  height: 1px;
+  margin-top: var(--space-2);
+  flex: none;
+  background: var(--border);
+}
+/* Takes the leftover column and is measured for it (useFittingCount), so the
+   count follows the window rather than a guess. It doubles as the spacer that
+   holds the wrench at the foot, which is why it is always in the layout. */
+.rail-recent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }

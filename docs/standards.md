@@ -271,6 +271,13 @@ regression test from decoration.
   is trusted-click, so `navigator.clipboard` writes there hit the deny-all
   permission handler and fail: clipboard writes go through `window.api.copyText`
   (main process, `src/main/clipboard.js`), never `navigator.clipboard`.
+- **A failing E2E keeps its trace.** Playwright clears `test-results/` at the
+  START of a run, so a failure's trace is destroyed by the next run — which is
+  how three sightings of the same intermittent were lost with nothing to show
+  for them. `make e2e` copies the artifacts to a timestamped `e2e-failures/`
+  folder before that can happen; open one with
+  `npx playwright show-trace e2e-failures/<stamp>/<test>/trace.zip`. Never
+  delete `test-results/` while chasing an intermittent.
 - **macOS-only E2E runs on the Mac, not in Docker.** Some window-lifecycle bugs
   cannot exist on Linux — closing the last window quits the app there
   (`window-all-closed`), so the "app alive with no main window" state is

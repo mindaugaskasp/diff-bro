@@ -64,3 +64,20 @@ test('a change on disk raises a dismissible label', async ({ app, page }) => {
 
   rmSync(dir, { recursive: true, force: true })
 })
+
+// Monaco's diff worker throws "no diff result available" when it returns nothing
+// because the models were replaced under it — which is what the re-diff above
+// does. It guards the CANCELLED case and not this one. Left alone it reached the
+// window as an unhandled rejection, raised the report dialog, and put a scrim
+// across the app: the click that failed on CI was blocked by that backdrop, not
+// by anything to do with the notice it was aiming at.
+test('a diff worker losing a race with a model swap raises no dialog', async ({ page }) => {
+  await page.evaluate(() => {
+    // The shape the handler actually sees, not a synthetic call into the store.
+    Promise.reject(new Error('no diff result available'))
+  })
+  await page.waitForTimeout(500)
+
+  await expect(page.locator('.dialog-backdrop')).toHaveCount(0)
+  await expect(page.locator('.err-msg')).toHaveCount(0)
+})

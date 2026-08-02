@@ -17,6 +17,18 @@
 .host.hidden {
   display: none;
 }
+/* A pinned diagram sits on its own sheet, not on --bg. On the host rather than
+   the wrapper, so the error card never lands on a sheet of the wrong polarity. */
+.host[data-paper] {
+  padding: var(--space-3);
+  border-radius: var(--radius);
+}
+.host[data-paper='light'] {
+  background: var(--diagram-paper-light);
+}
+.host[data-paper='dark'] {
+  background: var(--diagram-paper-dark);
+}
 .host :deep(svg) {
   max-width: 100%;
   max-height: 100%;

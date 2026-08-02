@@ -7,13 +7,17 @@
 // The comparison column: the file-slots row, the format banner and the viewer.
 // The toolbar, the sidebar and any dialog are deliberately outside it.
 export const CAPTURE_SELECTOR = '.content'
+// A subject that is not a diff — a snippet, a diagram — claims the region for
+// the length of one shot by putting a stage over that column (SnippetShot.vue).
+export const STAGE_SELECTOR = '[data-capture-stage]'
 // The scrolling viewer inside that column — Monaco's host, or the streamed
 // viewer's row list. The strip above it (file slots, format banner, the
 // streamed marker) belongs in the picture once, at the top, never repeated per
 // slice.
 export const EDITOR_SELECTOR = '.diff-container, .stream-rows'
-// One per rendered line: Monaco's own, or a streamed row.
-const LINE_SELECTOR = '.view-line, .srow'
+// One per rendered line: Monaco's own, a streamed row, or a snippet line — plus
+// the diagram figure, which is a single box standing in for all of them.
+const LINE_SELECTOR = '.view-line, .srow, .syn-line, .shot-figure'
 // Breathing room under the last line, and a floor so a one-line diff still
 // produces a picture rather than a sliver.
 const BOTTOM_PAD = 14
@@ -38,7 +42,7 @@ function lastLineBottom(root) {
  * @returns {import('../types').CaptureRect | null}
  */
 export function captureRectOf(doc = document) {
-  const el = doc.querySelector(CAPTURE_SELECTOR)
+  const el = regionElement(doc)
   if (!el) return null
   const r = el.getBoundingClientRect()
   if (!r.width || !r.height) return null
@@ -86,12 +90,15 @@ export function afterFrames(frames = 3, win = window) {
  * @returns {{ content: import('../types').CaptureRect, editorY: number } | null}
  */
 export function captureRegionOf({ viewport = null, doc = document } = {}) {
-  const el = doc.querySelector(CAPTURE_SELECTOR)
+  const el = regionElement(doc)
   const column = rectOf(el)
   if (!column?.width) return null
   const pane = rectOf(viewport ?? el.querySelector?.(EDITOR_SELECTOR))
   return pane ? { content: boxOf(column), editorY: Math.round(pane.top) } : null
 }
+
+const regionElement = (doc) =>
+  doc.querySelector(STAGE_SELECTOR) ?? doc.querySelector(CAPTURE_SELECTOR)
 
 // A box that is actually on screen, or null — an unmounted or collapsed one has
 // nothing to photograph.
@@ -155,6 +162,29 @@ export function planSlices({ contentHeight, viewportHeight, maxHeight = Infinity
  * @param {{ frames?: number, win?: Window }} [opts]
  * @returns {Promise<boolean>} true if it changed, false if the budget ran out
  */
+/**
+ * Poll `read` each frame until it is truthy, giving up after `frames`. The
+ * sibling of `untilChanged` for a subject that reports when it is painted: a
+ * stage that is ready before the first frame must cost nothing, which is exactly
+ * what "has it changed?" cannot express.
+ * @param {() => unknown} read
+ * @param {{ frames?: number, win?: Window }} [opts]
+ * @returns {Promise<boolean>} true if it came true, false if the budget ran out
+ */
+export function untilTrue(read, { frames = 240, win = window } = {}) {
+  return new Promise((resolve) => {
+    if (read()) return resolve(true)
+    let left = Math.max(1, frames)
+    const step = () => {
+      if (read()) return resolve(true)
+      left -= 1
+      if (left <= 0) return resolve(false)
+      win.requestAnimationFrame(step)
+    }
+    win.requestAnimationFrame(step)
+  })
+}
+
 export function untilChanged(read, { frames = 240, win = window } = {}) {
   const before = read()
   return new Promise((resolve) => {

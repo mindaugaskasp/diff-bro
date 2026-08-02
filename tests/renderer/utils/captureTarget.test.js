@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   CAPTURE_SELECTOR,
   EDITOR_SELECTOR,
@@ -6,7 +6,8 @@ import {
   captureRectOf,
   captureRegionOf,
   planSlices,
-  untilChanged
+  untilChanged,
+  untilTrue
 } from '../../../src/renderer/src/utils/captureTarget'
 
 // A stand-in for the diff column: its own box, plus the per-line boxes Monaco
@@ -79,6 +80,103 @@ describe('captureRectOf', () => {
     // jsdom lays nothing out, so the rect is zero — the point is that it looked.
     expect(captureRectOf()).toBeNull()
     div.remove()
+  })
+})
+
+// A real jsdom tree, so the selectors are exercised as strings rather than
+// mocked away — the stage is claimed by an attribute and cropped by class.
+function stagedDoc({ stage, column, boxes = [] }) {
+  document.body.innerHTML = ''
+  const make = (rect, attrs) => {
+    const el = document.createElement('div')
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+    el.getBoundingClientRect = () => rect
+    document.body.append(el)
+    return el
+  }
+  if (column) make(column, { class: 'content' })
+  const el = stage ? make(stage, { 'data-capture-stage': '' }) : null
+  for (const { cls, bottom } of boxes) {
+    const box = document.createElement('div')
+    box.className = cls
+    box.getBoundingClientRect = () => ({ height: 19, bottom })
+    ;(el ?? document.querySelector('.content')).append(box)
+  }
+  return document
+}
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})
+
+describe('the capture stage', () => {
+  // A snippet is photographed by putting it on a stage over the diff column, so
+  // "the region" stops being the column for as long as one is up.
+  it('is measured instead of the diff column when one is present', () => {
+    const doc = stagedDoc({
+      column: COLUMN,
+      stage: { left: 300, top: 100, width: 500, height: 400 }
+    })
+    expect(captureRectOf(doc)).toMatchObject({ x: 300, y: 100, width: 500 })
+  })
+
+  it('leaves the diff column as the region when no stage is up', () => {
+    const doc = stagedDoc({ column: COLUMN })
+    expect(captureRectOf(doc)).toMatchObject({ x: 260, y: 89, width: 900 })
+  })
+
+  // Same crop the diff export already does, so a six-line snippet is not
+  // exported as a mostly-empty page.
+  it('crops to the last rendered snippet line', () => {
+    const doc = stagedDoc({
+      stage: COLUMN,
+      boxes: [
+        { cls: 'syn-line', bottom: 180 },
+        { cls: 'syn-line', bottom: 300 }
+      ]
+    })
+    expect(captureRectOf(doc).height).toBe(225) // 300 - 88.6 + 14
+  })
+
+  it('crops to the diagram when the stage holds one', () => {
+    const doc = stagedDoc({ stage: COLUMN, boxes: [{ cls: 'shot-figure', bottom: 420 }] })
+    expect(captureRectOf(doc).height).toBe(345) // 420 - 88.6 + 14
+  })
+})
+
+describe('untilTrue', () => {
+  const frameWin = () => ({ requestAnimationFrame: (cb) => setTimeout(cb, 0) })
+
+  // The difference from untilChanged: a subject that is ALREADY painted must not
+  // cost a frame, let alone the whole budget.
+  it('resolves at once when the condition already holds', async () => {
+    let frames = 0
+    const win = {
+      requestAnimationFrame: (cb) => {
+        frames++
+        setTimeout(cb, 0)
+      }
+    }
+    await expect(untilTrue(() => true, { win })).resolves.toBe(true)
+    expect(frames).toBe(0)
+  })
+
+  it('waits for the frame the condition turns true on', async () => {
+    let ready = false
+    let frames = 0
+    const win = {
+      requestAnimationFrame: (cb) => {
+        frames++
+        if (frames === 9) ready = true
+        setTimeout(cb, 0)
+      }
+    }
+    await expect(untilTrue(() => ready, { win })).resolves.toBe(true)
+    expect(frames).toBe(9)
+  })
+
+  it('gives up after the budget rather than hanging the shutter', async () => {
+    await expect(untilTrue(() => false, { frames: 5, win: frameWin() })).resolves.toBe(false)
   })
 })
 

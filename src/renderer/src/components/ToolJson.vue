@@ -4,6 +4,7 @@ import { stringifyJson, jsonPath, sortDeep } from '../utils/json'
 import SegmentedControl from './SegmentedControl.vue'
 import JsonTree from './JsonTree.vue'
 import AppIcon from './AppIcon.vue'
+import { offerToolOutput } from '../composables/useToolOutput'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -51,6 +52,12 @@ async function copy(text) {
   copied.value = true
   setTimeout(() => (copied.value = false), 900)
 }
+
+// Offer this panel's result to the dialog's Save-as-snippet action.
+offerToolOutput(
+  () => shaped.value ?? '',
+  () => 'json'
+)
 </script>
 
 <template>

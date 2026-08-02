@@ -91,8 +91,21 @@ test: ## Run the test suite in the container
 # Unlike `check`/`test`, E2E needs the virtual display, so it runs INSIDE the
 # up container (which owns Xvfb :99) rather than a one-off `run` container.
 # `up` is a dependency so the display is guaranteed to be there first.
+# Playwright clears test-results/ at the START of a run, so a failure's trace is
+# destroyed by the NEXT run — which is how three sightings of the streamed-diff
+# flake were lost. On failure the artifacts are copied to a timestamped folder
+# first; the exit status is preserved so the target still fails.
 e2e: up ## Build + drive the app end-to-end with Playwright in the running container
-	docker compose exec -T $(SERVICE) npm run test:e2e
+	@docker compose exec -T $(SERVICE) npm run test:e2e; \
+	status=$$?; \
+	if [ $$status -ne 0 ]; then \
+		stamp=$$(date -u +%Y%m%dT%H%M%SZ); \
+		docker compose exec -T $(SERVICE) sh -c "mkdir -p e2e-failures && cp -r test-results e2e-failures/$$stamp" >/dev/null 2>&1 \
+			&& echo "" \
+			&& echo "  Failure artifacts (traces) kept in e2e-failures/$$stamp" \
+			&& echo "  Inspect: npx playwright show-trace e2e-failures/$$stamp/<test>/trace.zip"; \
+	fi; \
+	exit $$status
 
 lint: ## Run ESLint in the container
 	$(RUN_NPM) -- run lint

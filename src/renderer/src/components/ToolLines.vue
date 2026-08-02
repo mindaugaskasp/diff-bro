@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { processLines } from '../utils/lines'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
+import { offerToolOutput } from '../composables/useToolOutput'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -66,6 +67,12 @@ async function copy() {
   copied.value = true
   setTimeout(() => (copied.value = false), 900)
 }
+
+// Offer this panel's result to the dialog's Save-as-snippet action.
+offerToolOutput(
+  () => result.value.output ?? '',
+  () => 'plaintext'
+)
 </script>
 
 <template>

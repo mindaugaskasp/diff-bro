@@ -12,7 +12,10 @@ export function installErrorHandlers(app, pinia) {
     if (e.error) store.capture(e.error, 'window.error')
     else if (e.message) store.capture(e.message, 'window.error')
   })
-  window.addEventListener('unhandledrejection', (e) =>
-    store.capture(e.reason, 'unhandledrejection')
-  )
+  window.addEventListener('unhandledrejection', (e) => {
+    // A rejection the store classifies as noise is handled — by deciding it does
+    // not matter — so it is stopped here rather than left to be reported as
+    // unhandled on top of that.
+    if (store.capture(e.reason, 'unhandledrejection') === false) e.preventDefault()
+  })
 }

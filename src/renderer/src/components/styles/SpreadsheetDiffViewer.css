@@ -94,3 +94,21 @@
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* The custom threshold's field. Height comes from the control scale, never from
+   padding, so it sits on the same row as the segments beside it. */
+.tol-value {
+  width: 72px;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-sm);
+}
+.tol-value:focus {
+  outline: none;
+  border-color: var(--accent);
+}

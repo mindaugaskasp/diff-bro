@@ -272,7 +272,7 @@ test('selected lines are exported on their own, not the whole diff', async ({ pa
   await pasteCompare(page, TALL_LEFT, TALL_RIGHT)
 
   // Baseline: no selection captures everything.
-  await page.getByRole('button', { name: 'Image', exact: true }).click()
+  await page.getByRole('button', { name: 'Capture', exact: true }).click()
   const whole = await shotHeight(page)
 
   // Select six lines in the modified pane: click one, then extend five rows.
@@ -286,7 +286,7 @@ test('selected lines are exported on their own, not the whole diff', async ({ pa
     return { header: pane.top - content.top, lineHeight: line.height, dpr: window.devicePixelRatio }
   })
 
-  await page.getByRole('button', { name: 'Image', exact: true }).click()
+  await page.getByRole('button', { name: 'Capture', exact: true }).click()
   const selected = await shotHeight(page)
 
   // The picture is the file-slots header plus exactly the six chosen lines.
@@ -298,7 +298,7 @@ test('selected lines are exported on their own, not the whole diff', async ({ pa
 test('the toolbar export needs a comparison, and covers everything without a selection', async ({
   page
 }) => {
-  const button = page.getByRole('button', { name: 'Image', exact: true })
+  const button = page.getByRole('button', { name: 'Capture', exact: true })
   await expect(button).toBeDisabled() // nothing loaded yet
 
   await pasteCompare(page, 'alpha\nbravo\ncharlie', 'alpha\nBRAVO!\ncharlie')
@@ -323,18 +323,18 @@ test('a fresh selection replaces the previous one, on either side', async ({ pag
   // Three lines on the right.
   await page.locator('.editor.modified .view-line').nth(1).click()
   for (let i = 0; i < 2; i++) await page.keyboard.press('Shift+ArrowDown')
-  await page.getByRole('button', { name: 'Image', exact: true }).click()
+  await page.getByRole('button', { name: 'Capture', exact: true }).click()
   expect(linesIn(await shotHeight(page))).toBe(3)
 
   // Now seven on the LEFT — the right pane still holds its own selection.
   await page.locator('.editor.original .view-line').nth(1).click()
   for (let i = 0; i < 6; i++) await page.keyboard.press('Shift+ArrowDown')
-  await page.getByRole('button', { name: 'Image', exact: true }).click()
+  await page.getByRole('button', { name: 'Capture', exact: true }).click()
   expect(linesIn(await shotHeight(page))).toBe(7)
 
   // Collapsing back to a caret means "not those lines any more".
   await page.locator('.editor.original .view-line').nth(1).click()
-  await page.getByRole('button', { name: 'Image', exact: true }).click()
+  await page.getByRole('button', { name: 'Capture', exact: true }).click()
   expect(linesIn(await shotHeight(page))).toBeGreaterThan(20)
 })
 
@@ -414,7 +414,7 @@ test('a hovering tooltip is not photographed with the diff', async ({ app, page 
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 
-  await page.getByRole('button', { name: /^Image/ }).hover()
+  await page.getByRole('button', { name: /^Capture/ }).hover()
   await expect(page.locator('.tip-bubble')).toBeVisible()
 
   // Sample the DOM while the shutter is open: `.content.capturing` is exactly

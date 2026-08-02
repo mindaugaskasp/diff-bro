@@ -8,9 +8,13 @@ import { useResizable } from '../composables/useResizable'
 import { useFullScreen } from '../composables/useFullScreen'
 import { useZoomPan } from '../composables/useZoomPan'
 import MermaidDiagram from './MermaidDiagram.vue'
+import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
+import { useSettingsStore } from '../stores/settingsStore'
+import { DIAGRAM_THEME_OPTIONS } from '../utils/mermaid'
 
 const diff = useDiffStore()
+const settings = useSettingsStore()
 const view = computed(() => diff.mermaidView) // { name, code }
 const isFullScreen = useFullScreen()
 
@@ -97,6 +101,13 @@ onBeforeUnmount(() => {
           <button class="tbtn wide" data-tip="Scale the diagram to fit the window" @click="fit">
             Fit
           </button>
+          <SegmentedControl
+            compact
+            label="Theme"
+            :value="settings.diagramTheme"
+            :options="DIAGRAM_THEME_OPTIONS"
+            @update:value="settings.setDiagramTheme($event)"
+          />
           <button
             class="tbtn"
             :data-tip="maxed ? 'Restore the previous size' : 'Fill the window'"

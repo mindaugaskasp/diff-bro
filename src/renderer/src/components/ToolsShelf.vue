@@ -4,13 +4,13 @@
 import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import { recentTools } from '../utils/tools'
+import { SHELF_RECENT_TOOLS, recentTools } from '../utils/tools'
 import AppIcon from './AppIcon.vue'
 
 const diff = useDiffStore()
 const settings = useSettingsStore()
 
-const recent = computed(() => recentTools(settings.recentTools))
+const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOOLS))
 </script>
 
 <template>

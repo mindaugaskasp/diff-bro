@@ -15,6 +15,7 @@ import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
+import SnippetShot from './components/SnippetShot.vue'
 import MenuBar from './components/MenuBar.vue'
 import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
@@ -26,6 +27,7 @@ import FormatHintBanner from './components/FormatHintBanner.vue'
 import AppIcon from './components/AppIcon.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
+import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 
 const store = useDiffStore()
@@ -45,6 +47,8 @@ usePasteShortcut(() => store.requestPasteFromClipboard())
 // Nothing is written until the stored session has been read back (or found
 // absent), so a blank startup window can never overwrite it.
 useSessionPersistence()
+// Mermaid's renderer, pulled in at idle so no first render stops the app.
+useDiagramWarmup()
 // Re-diff loaded files + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {
   store.refreshFromDisk()
@@ -176,6 +180,9 @@ const {
           <DiskChangeNotice />
 
           <ShortcutBar />
+
+          <!-- The photo studio: covers this column while a snippet is shot. -->
+          <SnippetShot v-if="store.snippetShot" :shot="store.snippetShot" />
         </main>
       </div>
     </div>

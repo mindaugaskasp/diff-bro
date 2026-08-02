@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSnippetDraft } from '../../../src/renderer/src/composables/useSnippetDraft'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 
 // The snippet editor's only exits (Cancel, ×) run through requestClose. This
 // covers the unsaved-changes guard that keeps a stray click from discarding
@@ -83,5 +84,39 @@ describe('useSnippetDraft — view/edit mode', () => {
     expect(draft.editMode.value).toBe(false)
     draft.startEditing()
     expect(draft.editMode.value).toBe(true)
+  })
+})
+
+// Pasted Mermaid arrives with autocorrected arrows and rich-text spaces. Repair
+// rides the Format button the editor already has, rather than a second control.
+describe('useSnippetDraft — repairing a diagram', () => {
+  const BROKEN = 'flowchart TD\n  A —> B  '
+
+  it('offers Format for a Mermaid draft', () => {
+    const { draft } = newDraft()
+    draft.chosenLanguage.value = 'mermaid'
+    expect(draft.canFormat.value).toBe(false) // nothing to repair yet
+    draft.content.value = BROKEN
+    expect(draft.canFormat.value).toBe(true)
+  })
+
+  it('repairs the content and says it did', () => {
+    const { draft } = newDraft()
+    draft.chosenLanguage.value = 'mermaid'
+    draft.content.value = BROKEN
+    draft.formatContent()
+    expect(draft.content.value).toBe('flowchart TD\n  A --> B')
+    expect(useDiffStore().notice).toContain('Repaired')
+  })
+
+  // The effect is often invisible, so silence on a clean diagram would read as a
+  // broken button.
+  it('says so when there was nothing to repair', () => {
+    const { draft } = newDraft()
+    draft.chosenLanguage.value = 'mermaid'
+    draft.content.value = 'flowchart TD\n  A --> B'
+    draft.formatContent()
+    expect(draft.content.value).toBe('flowchart TD\n  A --> B')
+    expect(useDiffStore().notice).toContain('Nothing to repair')
   })
 })

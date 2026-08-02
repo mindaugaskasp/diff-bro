@@ -17,16 +17,21 @@ const props = defineProps({
   secret: { type: Boolean, default: false },
   masked: { type: Boolean, default: false }
 })
-const emit = defineEmits(['format', 'copy', 'clear', 'reveal', 'edit', 'save', 'close'])
+const emit = defineEmits(['format', 'copy', 'capture', 'clear', 'reveal', 'edit', 'save', 'close'])
 
 const { copied, flash } = useCopyFeedback()
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
-const formatTip = computed(() =>
-  props.canFormat
-    ? `Pretty-print as ${props.language.toUpperCase()}`
-    : 'Formatting is available for JSON, XML, or SQL'
-)
+// Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
+// control says which of the two it is about to do.
+const isRepair = computed(() => props.language === 'mermaid')
+const formatLabel = computed(() => (isRepair.value ? 'Repair' : 'Format'))
+const formatTip = computed(() => {
+  if (!props.canFormat) return 'Formatting is available for JSON, XML, SQL or Mermaid'
+  return isRepair.value
+    ? 'Put back the arrows, quotes and spaces a paste broke'
+    : `Pretty-print as ${props.language.toUpperCase()}`
+})
 const clearTip = computed(() =>
   clearArmed.value
     ? 'Click again to clear the editor'
@@ -49,7 +54,7 @@ defineExpose({ flash })
     :data-tip="formatTip"
     @click="emit('format')"
   >
-    Format
+    {{ formatLabel }}
   </button>
   <button
     v-if="secret"
@@ -80,6 +85,16 @@ defineExpose({ flash })
     {{ clearArmed ? 'Confirm clear' : 'Clear' }}
   </button>
   <span class="spacer" />
+  <!-- Viewing is when you are looking at the thing you want a picture of. Never
+       for a secret: the store refuses it too. -->
+  <button
+    v-if="!editMode && !secret"
+    class="btn"
+    data-tip="A picture of this snippet, as the app draws it"
+    @click="emit('capture')"
+  >
+    <AppIcon name="image" /> Capture
+  </button>
   <button v-if="!editMode" class="btn btn-primary" @click="emit('edit')">
     <AppIcon name="edit" /> Edit
   </button>

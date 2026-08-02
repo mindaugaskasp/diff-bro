@@ -18,6 +18,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
+.seg.compact {
+  height: var(--control-h-sm);
+  align-items: center;
+}
+.seg.compact .seg-opt {
+  padding: 0 var(--space-2);
+  font-size: var(--font-xs);
+}
 .seg-opt {
   border: 0;
   background: transparent;

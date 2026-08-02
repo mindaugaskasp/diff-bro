@@ -4,6 +4,7 @@ import { parseXml, stringifyXml, xpath } from '../utils/xml'
 import SegmentedControl from './SegmentedControl.vue'
 import XmlTree from './XmlTree.vue'
 import AppIcon from './AppIcon.vue'
+import { offerToolOutput } from '../composables/useToolOutput'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -44,6 +45,12 @@ async function copy() {
   copied.value = true
   setTimeout(() => (copied.value = false), 900)
 }
+
+// Offer this panel's result to the dialog's Save-as-snippet action.
+offerToolOutput(
+  () => shaped.value ?? '',
+  () => 'xml'
+)
 </script>
 
 <template>

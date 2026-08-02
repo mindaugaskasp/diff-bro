@@ -140,6 +140,16 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       >
         <AppIcon name="link" />
       </button>
+      <!-- Never for a secret — the store refuses it too, so this is the affordance. -->
+      <button
+        v-if="!isSecret(entry)"
+        class="row-btn"
+        :data-tip="isDiagram ? 'Capture the diagram' : 'Capture'"
+        aria-label="Export as image"
+        @click="diff.exportSnippetImage(entry.id)"
+      >
+        <AppIcon name="image" />
+      </button>
       <button
         class="row-btn"
         data-tip="Copy"

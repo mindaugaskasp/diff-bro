@@ -4,7 +4,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { BACKUP_HOURS, useSettingsStore } from '../stores/settingsStore'
 import { ago } from '../utils/relativeTime'
+import { byteSize } from '../utils/byteSize'
 import SettingToggle from './SettingToggle.vue'
+import SegmentedControl from './SegmentedControl.vue'
 
 const settings = useSettingsStore()
 const backups = ref([])
@@ -16,6 +18,27 @@ const refresh = async () => (backups.value = (await window.api.listBackups()) ??
 onMounted(refresh)
 
 const latest = computed(() => backups.value[0] ?? null)
+
+// What the backups are costing, and what a prune would give back — named before
+// it happens, so the button is never a guess.
+const AGES = [
+  { value: '7', label: '1 week' },
+  { value: '14', label: '2 weeks' }
+]
+const age = ref('7')
+const used = computed(() => backups.value.reduce((n, b) => n + (b.bytes ?? 0), 0))
+const stale = computed(() => {
+  const cutoff = Date.now() - Number(age.value) * 86_400_000
+  return backups.value.filter((b) => b.at < cutoff)
+})
+const staleBytes = computed(() => stale.value.reduce((n, b) => n + (b.bytes ?? 0), 0))
+
+async function prune() {
+  busy.value = true
+  await window.api.pruneBackups(Number(age.value))
+  busy.value = false
+  await refresh()
+}
 
 async function restore(name) {
   busy.value = true
@@ -55,9 +78,23 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
     </p>
 
     <p v-if="latest" class="hint">
-      Last backup {{ ago(latest.at) }} ago · {{ backups.length }} kept.
+      Last backup {{ ago(latest.at) }} ago · {{ backups.length }} kept · {{ byteSize(used) }} on
+      disk.
     </p>
     <p v-else class="hint">No backups yet.</p>
+
+    <!-- The button names its consequence: a delete that says "clear old backups"
+         makes the reader guess what goes. -->
+    <div v-if="backups.length" class="prune">
+      <SegmentedControl v-model:value="age" compact label="Older than" :options="AGES" />
+      <button class="btn btn-sm" :disabled="busy || !stale.length" @click="prune">
+        {{
+          stale.length
+            ? `Delete ${stale.length} backup${stale.length > 1 ? 's' : ''} (${byteSize(staleBytes)})`
+            : 'Nothing that old'
+        }}
+      </button>
+    </div>
 
     <div v-if="backups.length" class="restore">
       <button

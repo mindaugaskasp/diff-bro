@@ -729,3 +729,49 @@ describe('importFromFile', () => {
     expect(store.entries.length).toBe(before)
   })
 })
+
+// The contract the tool dialog's Save-as-snippet depends on: everything filled
+// except the one thing the app cannot infer.
+describe('startNewSnippetFrom', () => {
+  it('opens the editor with the content and language, and no name', () => {
+    const store = useSnippetStore()
+    store.startNewSnippetFrom('{"a":1}', 'json')
+    expect(store.editingSnippet).toEqual({
+      id: null,
+      initialContent: '{"a":1}',
+      initialLanguage: 'json',
+      initialTags: []
+    })
+  })
+
+  it('falls back to auto-detection when the panel names no language', () => {
+    const store = useSnippetStore()
+    store.startNewSnippetFrom('plain text', '')
+    expect(store.editingSnippet.initialLanguage).toBe('auto')
+  })
+})
+
+// Mermaid's renderer is a 2.8 MB chunk kept out of the main bundle, so the first
+// diagram of a session pays ~400ms for it — long enough to read as a freeze.
+// Warming it needs to know whether this library has any diagram at all; warming
+// it for someone who has never drawn one is startup work for nothing.
+describe('hasDiagrams', () => {
+  it('is false for an empty library and for one with no diagrams', () => {
+    const store = useSnippetStore()
+    expect(store.hasDiagrams).toBe(false)
+    store.entries = [
+      { id: 'a', language: 'json', detected: 'json' },
+      { id: 'b', language: 'auto', detected: 'plaintext' }
+    ]
+    expect(store.hasDiagrams).toBe(false)
+  })
+
+  it('is true when a snippet is a diagram, chosen or detected', () => {
+    const store = useSnippetStore()
+    store.entries = [{ id: 'a', language: 'mermaid', detected: 'plaintext' }]
+    expect(store.hasDiagrams).toBe(true)
+
+    store.entries = [{ id: 'b', language: 'auto', detected: 'mermaid' }]
+    expect(store.hasDiagrams).toBe(true)
+  })
+})

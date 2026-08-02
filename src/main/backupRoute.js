@@ -5,7 +5,14 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
 import { dataFile, getDataDir, readSettings } from './appData'
-import { DEFAULT_WINDOW_HOURS, isDue, listBackups, readBackup, writeBackup } from './autoBackup'
+import {
+  DEFAULT_WINDOW_HOURS,
+  isDue,
+  listBackups,
+  pruneOlderThan,
+  readBackup,
+  writeBackup
+} from './autoBackup'
 
 export const backupDir = () => join(getDataDir(), 'backups')
 
@@ -41,8 +48,19 @@ export function backupIfDue(now = Date.now()) {
   return res
 }
 
+// The only ages the pane offers. An allow-list, not a range: the renderer names
+// a choice, never an arbitrary number, and never a file.
+export const PRUNE_DAYS = [7, 14]
+
 export function registerBackupIpc() {
   ipcMain.handle('backup:list', () => listBackups(backupDir()))
+
+  // Deletes ONLY backups, ONLY in the backup folder, ONLY past the age given —
+  // and the age must be one this app offers. The renderer cannot name a file.
+  ipcMain.handle('backup:prune', (e, days) => {
+    if (!PRUNE_DAYS.includes(days)) return { ok: false, error: 'bad-request' }
+    return { ok: true, ...pruneOlderThan(backupDir(), days) }
+  })
 
   // Restore writes the store files directly and the renderer reloads from them;
   // nothing is decrypted on either side of this, so a restore cannot fail

@@ -61,6 +61,38 @@ export function stripMermaidFence(text) {
   return lines.slice(start + 1, end - 1).join('\n')
 }
 
+// What a copy/paste does to a diagram — never its grammar. Every rule maps a
+// character back to the one that replaced it, which is why they are safe to run
+// unasked-for on someone's text; a diagram that was simply wrong stays wrong.
+const ZERO_WIDTH = /[\u200b-\u200d\ufeff]/g
+const ODD_SPACE = /[\u00a0\u2002-\u200a\u202f]/g
+// Only arrow-SHAPED dashes. An em dash inside a label is the author's writing;
+// `—>` never is.
+const DASH_ARROW = /[\u2014\u2013](?=>)/g
+const DASH_ARROW_BACK = /(?<=<)[\u2014\u2013]/g
+
+/**
+ * Undo the damage rich-text tooling does to pasted Mermaid.
+ * @param {unknown} text
+ * @returns {string}
+ */
+export function repairMermaid(text) {
+  const src = String(text ?? '')
+    .replace(ZERO_WIDTH, '')
+    .replace(/\r\n?/g, '\n')
+  return stripMermaidFence(src)
+    .replace(ODD_SPACE, ' ')
+    .replace(DASH_ARROW, '--')
+    .replace(DASH_ARROW_BACK, '--')
+    .replace(/\u2192/g, '-->')
+    .replace(/\u2190/g, '<--')
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[ \t]+$/gm, '')
+    .replace(/^(?:[ \t]*\n)+/, '')
+    .replace(/(?:\n[ \t]*)+$/, '')
+}
+
 // True when the first real line (past `---` frontmatter and `%%` directives)
 // starts with a Mermaid keyword.
 export function looksLikeMermaid(text) {
@@ -80,11 +112,48 @@ export function looksLikeMermaid(text) {
   return false
 }
 
-// Diagram theme paired to the app theme: dark-ground themes get Mermaid's dark
-// theme, light-ground ones its clean default — so diagram text never blends into
-// the canvas. Callers re-render when the app theme flips.
-export function mermaidThemeFor(appTheme) {
-  return isDarkTheme(appTheme) ? 'dark' : 'default'
+// The one-of-N choice behind settings.diagramTheme, shared by both controls.
+export const DIAGRAM_THEME_OPTIONS = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' }
+]
+
+/** @param {unknown} value @returns {boolean} */
+export const isDiagramTheme = (value) => DIAGRAM_THEME_OPTIONS.some((o) => o.value === value)
+
+/**
+ * Which of Mermaid's two themes a resolved mode renders in.
+ * @param {'light'|'dark'} mode
+ * @returns {'default'|'dark'}
+ */
+export function mermaidThemeFor(mode) {
+  return mode === 'dark' ? 'dark' : 'default'
+}
+
+/**
+ * The mode a diagram actually renders in. `auto` pairs it to the app's ground so
+ * diagram text never blends into the canvas; light/dark override that.
+ * @param {string} appTheme
+ * @param {'auto'|'light'|'dark'} [pref]
+ * @returns {'light'|'dark'}
+ */
+export function effectiveDiagramMode(appTheme, pref) {
+  if (pref === 'light' || pref === 'dark') return pref
+  return isDarkTheme(appTheme) ? 'dark' : 'light'
+}
+
+/**
+ * The ground an overridden diagram has to bring with it, or '' to keep the app
+ * surface. Mermaid's themes are drawn for their own ground, so a light diagram
+ * left on a dark --bg is dark text on a dark wall.
+ * @param {string} appTheme
+ * @param {'auto'|'light'|'dark'} [pref]
+ * @returns {''|'light'|'dark'}
+ */
+export function diagramPaperFor(appTheme, pref) {
+  const mode = effectiveDiagramMode(appTheme, pref)
+  return mode === effectiveDiagramMode(appTheme, 'auto') ? '' : mode
 }
 
 // Per-render DOM id. Mermaid needs a unique, CSS-selector-safe id for the

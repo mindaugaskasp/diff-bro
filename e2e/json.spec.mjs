@@ -168,7 +168,7 @@ test('a structural comparison can still be exported as an image', async ({ app, 
     await page.getByRole('checkbox', { name: 'Structure' }).check()
     await expect(page.locator('.structure-diff')).toBeVisible()
 
-    await page.getByRole('button', { name: /Image/ }).click()
+    await page.getByRole('button', { name: /Capture/ }).click()
     await expect(page.getByRole('dialog', { name: 'Export as image' })).toBeVisible()
     await expect(page.locator('.notice')).toHaveCount(0)
   } finally {

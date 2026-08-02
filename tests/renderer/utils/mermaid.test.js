@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  diagramPaperFor,
+  effectiveDiagramMode,
   looksLikeMermaid,
   mermaidThemeFor,
   nextDiagramId,
+  repairMermaid,
   stripMermaidFence
 } from '../../../src/renderer/src/utils/mermaid'
 import { detectSnippetLanguage } from '../../../src/renderer/src/utils/detectLanguage'
+import { THEMES, isDarkTheme } from '../../../src/renderer/src/utils/themes'
 
 describe('looksLikeMermaid', () => {
   it('recognizes common diagram openings', () => {
@@ -54,11 +58,114 @@ describe('stripMermaidFence', () => {
 })
 
 describe('mermaidThemeFor', () => {
-  it('pairs the diagram theme to the app theme', () => {
+  it('names the Mermaid theme for a resolved mode', () => {
     expect(mermaidThemeFor('light')).toBe('default')
     expect(mermaidThemeFor('dark')).toBe('dark')
-    expect(mermaidThemeFor('neon')).toBe('dark') // a dark-ground theme
-    expect(mermaidThemeFor(undefined)).toBe('default') // Light is the default ground
+    expect(mermaidThemeFor(undefined)).toBe('default') // light is the default ground
+  })
+})
+
+describe('effectiveDiagramMode', () => {
+  it('follows the app theme on auto, for every theme', () => {
+    for (const t of THEMES) {
+      expect(effectiveDiagramMode(t.id, 'auto')).toBe(isDarkTheme(t.id) ? 'dark' : 'light')
+    }
+  })
+
+  it('lets an explicit choice win over the app theme', () => {
+    expect(effectiveDiagramMode('dark', 'light')).toBe('light')
+    expect(effectiveDiagramMode('light', 'dark')).toBe('dark')
+    expect(effectiveDiagramMode('matrix', 'light')).toBe('light')
+  })
+
+  // A hand-edited settings file is the only way this happens, and it must read
+  // as "follow the app" rather than freezing the diagram in one mode.
+  it('treats a missing or unknown preference as auto', () => {
+    expect(effectiveDiagramMode('dark', undefined)).toBe('dark')
+    expect(effectiveDiagramMode('dark', 'sepia')).toBe('dark')
+    expect(effectiveDiagramMode('sepia', '')).toBe('light')
+  })
+})
+
+describe('diagramPaperFor', () => {
+  // The default must not re-ground a single theme: with auto, the diagram keeps
+  // sitting on --bg, which is what Mermaid's two themes are tuned against.
+  it('asks for no paper of its own while the mode agrees with the app', () => {
+    for (const t of THEMES) expect(diagramPaperFor(t.id, 'auto')).toBe('')
+    expect(diagramPaperFor('dark', 'dark')).toBe('')
+    expect(diagramPaperFor('sepia', 'light')).toBe('')
+  })
+
+  // Mermaid's light theme draws dark text; on a dark --bg that is unreadable, so
+  // an overridden diagram brings its own ground.
+  it('names the paper when the diagram disagrees with the app ground', () => {
+    expect(diagramPaperFor('dark', 'light')).toBe('light')
+    expect(diagramPaperFor('matrix', 'light')).toBe('light')
+    expect(diagramPaperFor('light', 'dark')).toBe('dark')
+    expect(diagramPaperFor('sepia', 'dark')).toBe('dark')
+  })
+})
+
+// Everything here is damage a COPY did, not a diagram someone wrote wrong: the
+// characters are invisible in an editor, so the error Mermaid reports names a
+// token rather than the glyph that caused it. Written as escapes on purpose —
+// the literals are indistinguishable from the characters they replace.
+describe('repairMermaid', () => {
+  const EM = '—' // — what Word makes of "--"
+  const EN = '–' // –
+  const NBSP = ' '
+  const NARROW = ' '
+  const ZWSP = '​'
+  const BOM = '﻿'
+
+  it('puts back arrows that autocorrect ate', () => {
+    expect(repairMermaid(`flowchart TD\n  A ${EM}> B`)).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid(`flowchart TD\n  A ${EN}> B`)).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid('flowchart TD\n  A → B')).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid(`flowchart LR\n  A <${EM} B`)).toBe('flowchart LR\n  A <-- B')
+  })
+
+  // The case that decides whether this is safe to run on someone's text: a dash
+  // inside a label is their writing, not transport damage.
+  it('leaves an em dash inside a label alone', () => {
+    const kept = `flowchart TD\n  A[Build ${EM} then ship] --> B`
+    expect(repairMermaid(kept)).toBe(kept)
+  })
+
+  // A non-breaking space looks exactly like a space and is not one.
+  it('normalises the spaces rich text brings with it', () => {
+    expect(repairMermaid(`flowchart TD\n ${NBSP} A${NARROW}--> B`)).toBe('flowchart TD\n   A --> B')
+  })
+
+  // Word replaces the quotes AROUND a label, which is what breaks it.
+  it('straightens smart quotes', () => {
+    expect(repairMermaid('flowchart TD\n  A[“hi”] --> B')).toBe('flowchart TD\n  A["hi"] --> B')
+    expect(repairMermaid('flowchart TD\n  A[‘hi’] --> B')).toBe("flowchart TD\n  A['hi'] --> B")
+  })
+
+  it('peels a copied code fence, strips a BOM and zero-width characters', () => {
+    expect(repairMermaid('```mermaid\nflowchart TD\n  A --> B\n```')).toBe(
+      'flowchart TD\n  A --> B'
+    )
+    expect(repairMermaid(`${BOM}flowchart TD\n  A${ZWSP} --> B`)).toBe('flowchart TD\n  A --> B')
+  })
+
+  it('normalises line endings and trailing whitespace', () => {
+    expect(repairMermaid('flowchart TD\r\n  A --> B   \r\n')).toBe('flowchart TD\n  A --> B')
+    expect(repairMermaid('\n\nflowchart TD\n  A --> B\n\n\n')).toBe('flowchart TD\n  A --> B')
+  })
+
+  it('returns a clean diagram byte-identical, and is idempotent', () => {
+    const clean = 'sequenceDiagram\n  Alice->>Bob: hi\n  Bob-->>Alice: hello'
+    expect(repairMermaid(clean)).toBe(clean)
+    const once = repairMermaid(`flowchart TD\r\n  A ${EM}> B  `)
+    expect(repairMermaid(once)).toBe(once)
+  })
+
+  it('survives empty and non-string input', () => {
+    expect(repairMermaid('')).toBe('')
+    expect(repairMermaid(null)).toBe('')
+    expect(repairMermaid(undefined)).toBe('')
   })
 })
 

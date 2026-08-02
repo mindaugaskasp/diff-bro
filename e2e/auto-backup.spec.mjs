@@ -54,3 +54,38 @@ test('the Storage pane offers it on by default, and can restore', async ({ page 
   await page.getByRole('button', { name: 'Replace them' }).click()
   await expect(page.getByText(/Restored \d+ diffs and \d+ snippets/)).toBeVisible()
 })
+
+// The pane never said what the backups cost, and the only way to reclaim any was
+// deleting files by hand in the folder that holds the reader's keys.
+test('the storage pane reports what backups cost and offers the age back', async ({ page }) => {
+  await saveKeptDiff(page, 'Uses space')
+  await openSettings(page)
+  await page.getByRole('button', { name: /Storage/ }).click()
+
+  // The size is real, not a placeholder.
+  const line = page.locator('.hint', { hasText: 'on disk' })
+  await expect(line).toBeVisible()
+  const shown = await line.innerText()
+  expect(shown).toMatch(/\d+(\.\d+)?\s?(B|KB|MB)/)
+
+  // Every backup here was just written, so nothing is a week old and the button
+  // says so rather than offering a delete that would remove nothing.
+  const prune = page.locator('.prune button.btn')
+  await expect(prune).toHaveText('Nothing that old')
+  await expect(prune).toBeDisabled()
+})
+
+// The handler takes an AGE, never a filename — a renderer that can name a file
+// is a renderer that can name the wrong one.
+test('the prune handler refuses an age it does not offer', async ({ page }) => {
+  const bad = await page.evaluate(async () => [
+    await window.api.pruneBackups(9999),
+    await window.api.pruneBackups('7'),
+    await window.api.pruneBackups(-1)
+  ])
+  for (const res of bad) expect(res).toEqual({ ok: false, error: 'bad-request' })
+
+  // ...and still holds the backups it was asked to spare.
+  const kept = await page.evaluate(() => window.api.listBackups())
+  expect(kept.length).toBeGreaterThan(0)
+})
