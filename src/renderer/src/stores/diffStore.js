@@ -8,6 +8,7 @@ import { delimitedKind } from '../utils/csv'
 import { useVaultStore } from './vaultStore'
 import { languageOf, useSnippetStore } from './snippetStore'
 import { isSecret } from '../utils/secretSnippet'
+import { snippetSource } from '../utils/snippetSource'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
@@ -1168,6 +1169,29 @@ export const useDiffStore = defineStore('diff', {
       else if (command?.name === 'compare') {
         await this.compareFromCli(command.files, command.transient === true)
       }
+    },
+    /**
+     * Compare snippets dropped from the sidebar. Ids only — the content is read
+     * here, so a drag can never carry a decrypted body. Routed through the same
+     * dropFiles the file path uses, so the replace guard and one-then-wait are
+     * not re-implemented where they could drift.
+     * @param {string[]} ids
+     * @param {string|null} [targetSide]
+     */
+    async dropSnippets(ids, targetSide = null) {
+      const snippets = useSnippetStore()
+      const sources = []
+      for (const id of ids) {
+        const entry = snippets.entries.find((e) => e.id === id)
+        if (!entry) continue
+        if (isSecret(entry)) {
+          this.showNotice('Hidden snippets can’t be compared.')
+          return
+        }
+        const source = snippetSource(entry, await snippets.load(id))
+        if (source) sources.push(source)
+      }
+      if (sources.length) await this.dropFiles(sources, targetSide)
     },
     async saveClipboardSnippet(text) {
       if (!String(text ?? '').trim()) {

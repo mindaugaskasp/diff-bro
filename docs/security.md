@@ -169,6 +169,11 @@ written only in the main process and only leaves it inside the encrypted blob.
 ## Snippets
 
 The snippet library is encrypted at rest with the same vault key (no expiry). A
+snippet can be dragged into the diff pane to be compared; a **secret** one
+cannot, for the same reason it has no image export — the mask exists so the
+plaintext is not on screen, and a diff pane is the largest screen there is. Only
+the snippet's id rides the drag, never its body, so a drop target outside the app
+cannot read it. A
 category (or the whole library) can be exported as a passphrase-protected,
 **signed** `.diffbrosnip` file — no recipient key exchange needed. On import, a
 decryptable file is still treated as hostile (the passphrase gates

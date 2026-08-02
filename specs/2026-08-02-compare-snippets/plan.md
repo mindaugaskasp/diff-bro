@@ -186,31 +186,23 @@ Written before the code; each bug's test watched failing first.
 - [x] 3. `src/renderer/src/composables/useSnippetDrag.js` — `dragstart` payload
       (id only) and the drop-type guard, factored out of the SFC so it is
       unit-testable (the standards' rule for event logic).
-- [ ] 4. `SnippetRow.vue` — `draggable` on the row, `draggable="false"` on the
+- [x] 4. `SnippetRow.vue` — `draggable` on the row, `draggable="false"` on the
       hover actions, not draggable at all when secret. Confirm click-to-open and
       the hover buttons still work.
-- [ ] 5. Teach `useWindowFileDrop` the snippet type: admit it in `hasFiles`'
+- [x] 5. Teach `useWindowFileDrop` the snippet type: admit it in `hasFiles`'
       sibling guard and branch the drop to the snippet path, keeping the existing
       `.diffbrokey` / `.diffbro` short-circuits ahead of it.
-- [ ] 6. `diffStore.dropSnippets(ids, targetSide)` — resolve ids → load content →
+- [x] 6. `diffStore.dropSnippets(ids, targetSide)` — resolve ids → load content →
       map through `snippetSource` → hand to the existing `dropFiles`. Refuse
       secrets with a notice.
-- [ ] 7. Failing unit test for live sync. Watch it fail.
-- [ ] 8. `src/renderer/src/composables/useSnippetDiffSync.js` — watch the live
+- [x] 7. Failing unit test for live sync. Watch it fail.
+- [x] 8. `src/renderer/src/composables/useSnippetDiffSync.js` — watch the live
       `snippetId`s, re-read on `updatedAt` change, feed back through `receive`.
       Stop on clear/replace; survive deletion.
-- [ ] 9. Drop-card copy for a snippet drag; verify no glow is added (theme table).
-- [ ] 10. `e2e/compare-snippets.spec.mjs`; run in the container.
-- [ ] 11. Docs (README row, `docs/security.md`), `npx prettier --write` on
+- [x] 9. Drop-card copy for a snippet drag; verify no glow is added (theme table).
+- [x] 10. `e2e/compare-snippets.spec.mjs`; run in the container.
+- [x] 11. Docs (README row, `docs/security.md`), `npx prettier --write` on
       touched files, `npm run check`, `/validate`.
-
-### Outstanding — where this branch stopped
-
-The core and the event logic are written and unit-tested — `snippetSource.js`
-(9 tests) and `useSnippetDrag.js` (6). Between them they cover the entry→side
-mapping, the secret refusal on both the drag and the map, and defensive parsing
-of the drag payload. Nothing is wired to the UI yet: steps 4-11 remain, starting
-with `draggable` on `SnippetRow.vue`.
 
 ## Decisions
 

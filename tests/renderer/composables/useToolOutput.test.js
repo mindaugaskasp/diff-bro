@@ -30,7 +30,12 @@ afterEach(() => {
 describe('useToolOutput', () => {
   it('offers what the panel currently holds, read lazily', () => {
     const text = ref('first')
-    const unmount = mountWith(() => offerToolOutput(() => text.value, () => 'json'))
+    const unmount = mountWith(() =>
+      offerToolOutput(
+        () => text.value,
+        () => 'json'
+      )
+    )
     expect(toolOutput()).toEqual({ text: 'first', language: 'json' })
     text.value = 'second'
     expect(toolOutput().text).toBe('second')
@@ -38,7 +43,12 @@ describe('useToolOutput', () => {
   })
 
   it('offers nothing while the panel is empty', () => {
-    const unmount = mountWith(() => offerToolOutput(() => '   ', () => 'plaintext'))
+    const unmount = mountWith(() =>
+      offerToolOutput(
+        () => '   ',
+        () => 'plaintext'
+      )
+    )
     expect(toolOutput()).toBeNull()
     unmount()
   })
@@ -46,7 +56,12 @@ describe('useToolOutput', () => {
   // A stale offer would let the NEXT tool save the previous one's output — the
   // same bug the capture region had before it handed the slot back.
   it('takes the offer back when the panel unmounts', () => {
-    const unmount = mountWith(() => offerToolOutput(() => 'kept', () => 'plaintext'))
+    const unmount = mountWith(() =>
+      offerToolOutput(
+        () => 'kept',
+        () => 'plaintext'
+      )
+    )
     expect(toolOutput()).not.toBeNull()
     unmount()
     expect(toolOutput()).toBeNull()
