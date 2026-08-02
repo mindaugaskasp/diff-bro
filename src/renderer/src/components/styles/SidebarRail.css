@@ -12,11 +12,12 @@
 }
 /* Grows DOWNWARD by exactly the tab strip above the comparison column
    (--control-h + its keyline), so this rule lands ON the line under the file
-   slots instead of 31px above it. The padding keeps the content box at
-   --band-row, so the toggle stays centred where it always was. */
+   slots instead of 31px above it. The padding is one pixel less than that: the
+   band's OWN keyline comes out of the content box too, and without allowing for
+   it the toggle centres half a pixel off the one in the expanded sidebar. */
 .rail-band {
   height: calc(var(--band-row) + var(--control-h) + 1px);
-  padding-bottom: calc(var(--control-h) + 1px);
+  padding-bottom: var(--control-h);
   flex: none;
   justify-content: center;
   border-bottom: 1px solid var(--border);

@@ -75,9 +75,10 @@ test('the toggle keeps its position when the sidebar collapses', async ({ page }
   // the foot of the rail, which is half a window away.
   const railHeight = await rail(page).evaluate((el) => el.getBoundingClientRect().height)
   expect(collapsed).toBeLessThan(railHeight / 4)
-  // ...and lands where it was. Both states hold the same control now, so this
-  // is the whole of "the toggle never moves".
-  expect(Math.abs(collapsed - expanded)).toBeLessThanOrEqual(3)
+  // ...and lands EXACTLY where it was. Both states put the same control in a
+  // --band-row content box, so "the toggle never moves" is literal — a tolerance
+  // here would just hide the next half-pixel of drift.
+  expect(collapsed).toBe(expanded)
 })
 
 // The row is one control strip: a borderless glyph jammed against a bordered
