@@ -5,7 +5,10 @@ import sonarjs from 'eslint-plugin-sonarjs'
 import globals from 'globals'
 
 export default [
-  { ignores: ['build/**', 'dist/**', 'node_modules/**'] },
+  // `.claude/` holds agent worktrees — whole checkouts of this repo, nested
+  // inside it. Linting them makes `npm run check` report someone else's
+  // half-finished code as this tree's failure.
+  { ignores: ['build/**', 'dist/**', 'node_modules/**', '.claude/**'] },
 
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
@@ -37,6 +40,21 @@ export default [
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'vue/no-v-html': 'error',
+      // A template expression is evaluated against the COMPONENT, not global
+      // scope, and Vue's allowed-globals list has no `window`. ESLint cannot see
+      // that on its own: renderer files are given browser globals, so
+      // vue/no-undef-properties considers `window` legitimately defined and says
+      // nothing — which is how `@click="run(window.api.cliInstall)"` shipped and
+      // threw on every click.
+      'vue/no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'MemberExpression > Identifier.object[name=/^(window|document|globalThis|navigator|localStorage)$/]',
+          message:
+            'A template cannot reach browser globals — Vue resolves identifiers against the component. Expose it from <script setup> instead.'
+        }
+      ],
       // Function shape. A function that trips these is usually two functions,
       // and a call with five positional arguments wants an options object.
       complexity: ['error', 10],
@@ -119,7 +137,7 @@ export default [
 
   // Renderer layering. utils/ is the pure core — no framework, no stores, no
   // components — which is what keeps it unit-testable without mounting
-  // anything (see the testing rules in CLAUDE.md). Composables may use Vue and
+  // anything (see the testing rules in docs/standards.md). Composables may use Vue and
   // stores, but never reach back into components.
   {
     files: ['src/renderer/src/utils/**'],

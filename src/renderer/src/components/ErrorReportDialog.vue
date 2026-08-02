@@ -21,7 +21,7 @@ function reveal() {
   window.api.revealLog()
 }
 function report() {
-  window.api.reportIssue()
+  window.api.reportIssue(store.lastError?.message)
 }
 </script>
 

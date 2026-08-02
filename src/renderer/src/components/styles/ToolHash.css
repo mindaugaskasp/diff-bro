@@ -1,0 +1,117 @@
+.th {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.th-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.th-chk,
+.th-file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.th-in {
+  min-height: 84px;
+  resize: vertical;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+}
+.th-in:focus,
+.th-field:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.th-fname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.th-fname.bad {
+  color: var(--danger-border);
+}
+.th-compare {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.th-field {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+}
+.th-verdict {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  font-size: var(--font-sm);
+  color: var(--danger-border);
+}
+.th-verdict.ok {
+  color: var(--success-text);
+}
+.th-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.th-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+/* The matched row, tinted from the theme's own accent so it re-tints on all 14
+   rather than carrying a colour of its own. */
+.th-row.hit {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.th-algo {
+  flex: none;
+  width: 64px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.th-row.hit .th-algo {
+  color: var(--text);
+}
+.th-digest {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  color: var(--text);
+}
+.th-copy {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+}
+.th-copy:hover {
+  color: var(--text);
+}

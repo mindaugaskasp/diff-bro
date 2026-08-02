@@ -58,6 +58,16 @@
      dark grounds, so this default serves every dark theme; the light block
      below tints it cool. A theme may override it for a coloured shadow. */
   --shadow-rgb: 0 0 0;
+  /* Syntax colours for the snippet preview. Solved per theme against that
+     theme's own --bg and --bg-hover: every one clears 4.5:1, and the five are
+     kept apart in Lab so they read as different colours rather than five
+     shades of one. Comments carry almost no chroma, which is what separates
+     them from `property`. */
+  --syn-keyword: #8b35b6;
+  --syn-string: #246b41;
+  --syn-number: #8b4e18;
+  --syn-property: #226587;
+  --syn-comment: #5f6267;
 }
 
 /* Light opts into the FLOATING-CANVAS surface model (see the surface-role
@@ -98,6 +108,11 @@
   --scrim: rgba(0, 0, 0, 0.5);
   --favorite: #d29922;
   --text-on-accent: #ffffff;
+  --syn-keyword: #ba7dd9;
+  --syn-string: #38a867;
+  --syn-number: #da7c2b;
+  --syn-property: #3b9dce;
+  --syn-comment: #8d9096;
 }
 
 /* Solar — warm, high-key light; vivid orange accent, amber favourites. */
@@ -120,6 +135,11 @@
   --scrim: rgba(58, 40, 12, 0.42);
   --favorite: #f08c00;
   --text-on-accent: #ffffff;
+  --syn-keyword: #8b35b6;
+  --syn-string: #246b41;
+  --syn-number: #8f5019;
+  --syn-property: #226587;
+  --syn-comment: #62656a;
 }
 
 /* Neon — electric cyan and neon add/remove on deep navy. */
@@ -143,6 +163,11 @@
   --scrim: rgba(0, 0, 0, 0.6);
   --favorite: #fde047;
   --text-on-accent: #04121a;
+  --syn-keyword: #ba7dd9;
+  --syn-string: #38a867;
+  --syn-number: #da7f2f;
+  --syn-property: #3f9fcf;
+  --syn-comment: #8d9096;
 }
 
 /* Nord — the low-saturation arctic palette; calm frost-blue accent on slate,
@@ -167,6 +192,11 @@
   --scrim: rgba(0, 0, 0, 0.5);
   --favorite: #ebcb8b;
   --text-on-accent: #2e3440;
+  --syn-keyword: #d0c0e7;
+  --syn-string: #add194;
+  --syn-number: #e8bea1;
+  --syn-property: #9ccdde;
+  --syn-comment: #bcbec2;
 }
 
 /* Sepia — a deep, saturated PARCHMENT (distinct from Solar's pale sunny cream):
@@ -191,6 +221,11 @@
   --scrim: rgba(42, 32, 14, 0.44);
   --favorite: #a3760a;
   --text-on-accent: #ffffff;
+  --syn-keyword: #732b73;
+  --syn-string: #1f512b;
+  --syn-number: #72391d;
+  --syn-property: #224b67;
+  --syn-comment: #4e4b46;
 }
 
 /* Dim — the warm counterpart to the cool darks (Dark/Neon/Nord): a warm
@@ -216,6 +251,11 @@
   --scrim: rgba(10, 8, 4, 0.55);
   --favorite: #e6b34d;
   --text-on-accent: #201a10;
+  --syn-keyword: #cd7acd;
+  --syn-string: #42ae5d;
+  --syn-number: #d58258;
+  --syn-property: #629fcb;
+  --syn-comment: #969188;
 }
 
 /* Beacon — the dark sibling of Contrast: an accessibility-grade dark aimed at
@@ -241,6 +281,11 @@
   --scrim: rgba(0, 0, 0, 0.6);
   --favorite: #ffd23f;
   --text-on-accent: #000000;
+  --syn-keyword: #c794e0;
+  --syn-string: #3ebb73;
+  --syn-number: #e09452;
+  --syn-property: #60afd7;
+  --syn-comment: #a0a2a7;
 }
 
 /* Meridian — a low-glare daytime coding light (the Solarized-Light lane): a
@@ -266,6 +311,11 @@
   --favorite: #b3780a;
   --text-on-accent: #ffffff;
   --shadow-rgb: 20 40 45;
+  --syn-keyword: #8b35b6;
+  --syn-string: #246b41;
+  --syn-number: #8f5019;
+  --syn-property: #226587;
+  --syn-comment: #62656a;
 }
 
 /* Linen — a quiet warm light between Solar's vivid sun and Sepia's saturated
@@ -291,6 +341,11 @@
   --favorite: #a3760a;
   --text-on-accent: #ffffff;
   --shadow-rgb: 40 34 20;
+  --syn-keyword: #8532ae;
+  --syn-string: #22673f;
+  --syn-number: #864b18;
+  --syn-property: #216283;
+  --syn-comment: #5f6267;
 }
 
 /* Bloom — the only rose/plum accent in the set, kept low-saturation and
@@ -315,6 +370,11 @@
   --favorite: #b07a1a;
   --text-on-accent: #ffffff;
   --shadow-rgb: 50 30 40;
+  --syn-keyword: #8231aa;
+  --syn-string: #21633d;
+  --syn-number: #864b18;
+  --syn-property: #205f7e;
+  --syn-comment: #5b5d62;
 }
 
 /* Nyan — playful but usable: a readable deep-violet base with hot-pink accent
@@ -342,6 +402,11 @@
   --scrim: rgba(10, 2, 16, 0.55);
   --favorite: #ffd23f;
   --text-on-accent: #1a0410;
+  --syn-keyword: #e75ac4;
+  --syn-string: #23a499;
+  --syn-number: #b38a0f;
+  --syn-property: #aa7de8;
+  --syn-comment: #94849a;
 }
 
 /* Matrix — phosphor green on near-black, like a CRT terminal. Pairs with the
@@ -366,6 +431,11 @@
   --scrim: rgba(0, 8, 2, 0.6);
   --favorite: #7cfc00;
   --text-on-accent: #012009;
+  --syn-keyword: #27a50d;
+  --syn-string: #18a55e;
+  --syn-number: #789c0d;
+  --syn-property: #2e9e8b;
+  --syn-comment: #768f76;
 }
 
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
@@ -389,4 +459,9 @@
   --scrim: rgba(0, 0, 0, 0.55);
   --favorite: #a35c00;
   --text-on-accent: #ffffff;
+  --syn-keyword: #6a288a;
+  --syn-string: #1b5031;
+  --syn-number: #6c3d13;
+  --syn-property: #194c66;
+  --syn-comment: #494b50;
 }

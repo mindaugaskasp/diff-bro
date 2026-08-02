@@ -1,11 +1,15 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
+import { DISK_NOTICE_MS, useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
-import { getDiffScroller, setDiffScroller } from '../../../src/renderer/src/utils/diffScroller'
+import {
+  elementScroller,
+  getDiffScroller,
+  setDiffScroller
+} from '../../../src/renderer/src/utils/diffScroller'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -609,7 +613,7 @@ describe('diffStore', () => {
     }
     await store.refreshFromDisk()
     expect(store.left.content).toBe('edited elsewhere')
-    expect(store.notice).toContain('changed on disk')
+    expect(store.diskNotice).toContain('changed on disk')
   })
 
   it('refreshFromDisk leaves the last good state when the file is gone', async () => {
@@ -952,7 +956,7 @@ describe('diffStore', () => {
     await store.refreshFromDisk()
     expect(store.left.content).toBe('NEW /tmp/a.txt')
     expect(store.right.content).toBe('NEW /tmp/b.txt')
-    expect(store.notice).toBe('2 files changed on disk — diff reloaded.')
+    expect(store.diskNotice).toBe('2 files changed on disk — diff reloaded.')
   })
 
   it('refreshFromDisk also follows a partial-paste file and keeps its shape', async () => {
@@ -965,7 +969,7 @@ describe('diffStore', () => {
       content: 'fresh body',
       path: '/tmp/src.txt'
     })
-    expect(store.notice).toContain('src.txt')
+    expect(store.diskNotice).toContain('src.txt')
   })
 
   it('a partial-paste file without a path is never re-read from disk', async () => {
@@ -1198,15 +1202,19 @@ describe('exportImage (saved diffs only)', () => {
     const store = useDiffStore()
     const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
     let rect = null
-    window.api.captureDiffImage = async (r) => ((rect = r), CAPTURE)
+    let shot = null
+    window.api.captureDiffImage = async (r) => {
+      rect = r
+      // What is on screen AT THE SHOT is the saved diff; afterwards it is not.
+      shot = [store.left?.name, store.right?.name]
+      return CAPTURE
+    }
 
     await store.exportImage(id)
 
-    // The saved diff is what got photographed: it is on screen.
-    expect(store.left).toMatchObject({ name: 'a.txt' })
-    expect(store.right).toMatchObject({ name: 'b.txt' })
+    expect(shot).toEqual(['a.txt', 'b.txt'])
     expect(rect).toEqual({ x: 260, y: 88, width: 900, height: 640 })
-    expect(store.imageEntry).toEqual({ id, name: 'Nightly config', ...CAPTURE })
+    expect(store.imageEntry).toMatchObject({ id, name: 'Nightly config', ...CAPTURE })
     expect(store.imageCapturing).toBe(false)
     cleanup()
   })
@@ -1530,10 +1538,18 @@ describe('exportImage (saved diffs only)', () => {
     })
     store.left = FILE('onscreen-l.txt')
     store.right = FILE('onscreen-r.txt')
-    window.api.captureDiffImage = async () => CAPTURE
+    store.diffSaved = false
+    let shot = null
+    window.api.captureDiffImage = async () => {
+      shot = [store.left?.name, store.right?.name]
+      return CAPTURE
+    }
     await store.exportImage(id)
-    expect(store.left).toMatchObject({ name: 'saved-l.txt' })
-    expect(store.right).toMatchObject({ name: 'saved-r.txt' })
+    expect(shot).toEqual(['saved-l.txt', 'saved-r.txt'])
+    // ...and the comparison the user was working on is handed straight back.
+    expect(store.left).toMatchObject({ name: 'onscreen-l.txt' })
+    expect(store.right).toMatchObject({ name: 'onscreen-r.txt' })
+    expect(store.diffSaved).toBe(false)
     cleanup()
   })
 
@@ -1681,7 +1697,7 @@ describe('closing the active comparison from the menu', () => {
     tabs.syncActiveTitle()
 
     store.handleMenuAction('tab-close')
-    expect(store.pendingTabClose).toBe(tabs.activeId)
+    expect(store.pendingTabClose).toEqual([tabs.activeId])
     expect(tabs.tabs).toHaveLength(1)
 
     store.confirmTabClose()
@@ -1720,5 +1736,601 @@ describe('closing the active comparison from the menu', () => {
     expect(tabs.activeId).toBe(first)
     store.handleMenuAction('tab-prev')
     expect(tabs.activeId).toBe(second)
+  })
+})
+
+// "Saved" is what silences the discard prompts, so a comparison that no longer
+// matches the vault copy must stop claiming to be it.
+describe('staying honest about what is saved', () => {
+  const FILE_AT = (name, content) => ({ path: `/tmp/${name}`, name, content })
+
+  it('a file changing on disk makes the reloaded comparison unsaved again', async () => {
+    const store = useDiffStore()
+    store.left = FILE_AT('a.txt', 'before')
+    store.right = FILE_AT('b.txt', 'other')
+    store.markSaved()
+    window.api = {
+      readFile: async (path) =>
+        path.endsWith('a.txt')
+          ? { path, name: 'a.txt', content: 'edited elsewhere' }
+          : { path, name: 'b.txt', content: 'other' }
+    }
+
+    await store.refreshFromDisk()
+    expect(store.left.content).toBe('edited elsewhere')
+    expect(store.diffSaved).toBe(false)
+  })
+
+  it('leaves a diff alone when nothing on disk actually changed', async () => {
+    const store = useDiffStore()
+    store.left = FILE_AT('a.txt', 'same')
+    store.markSaved()
+    window.api = { readFile: async (path) => ({ path, name: 'a.txt', content: 'same' }) }
+
+    await store.refreshFromDisk()
+    expect(store.diffSaved).toBe(true)
+  })
+})
+
+// Copied files land exactly like dropped ones, confirm included.
+describe('pasting copied files', () => {
+  const AT = (name) => ({ path: `/tmp/${name}`, name, content: `content of ${name}` })
+
+  it('asks before it replaces a complete, unsaved comparison', async () => {
+    const store = useDiffStore()
+    store.left = AT('old-left.txt')
+    store.right = AT('old-right.txt')
+    window.api = {
+      readClipboardFiles: async () => [AT('new-left.txt'), AT('new-right.txt')],
+      readFile: async (path) => AT(path.split('/').pop())
+    }
+
+    await store.requestPasteFromClipboard()
+    // What matters is that it WAITS, holding both incoming files, and has not
+    // touched the comparison on screen — not how the pending pair is carried.
+    expect(store.pendingReplace).toHaveLength(2)
+    expect(store.pendingReplace.map((f) => f.name)).toEqual(['new-left.txt', 'new-right.txt'])
+    expect(store.left.name).toBe('old-left.txt')
+
+    await store.confirmReplace()
+    expect(store.left.name).toBe('new-left.txt')
+    expect(store.right.name).toBe('new-right.txt')
+  })
+
+  it('replaces a SAVED comparison without asking, like a drop does', async () => {
+    const store = useDiffStore()
+    store.left = AT('old-left.txt')
+    store.right = AT('old-right.txt')
+    store.markSaved()
+    window.api = {
+      readClipboardFiles: async () => [AT('new-left.txt'), AT('new-right.txt')],
+      readFile: async (path) => AT(path.split('/').pop())
+    }
+
+    await store.requestPasteFromClipboard()
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('new-left.txt')
+  })
+
+  it('still fills the free side straight away when nothing would be lost', async () => {
+    const store = useDiffStore()
+    store.left = AT('kept.txt')
+    window.api = {
+      readClipboardFiles: async () => [AT('second.txt')],
+      readFile: async (path) => AT(path.split('/').pop())
+    }
+
+    await store.requestPasteFromClipboard()
+    expect(store.pendingReplace).toBeNull()
+    expect(store.left.name).toBe('kept.txt')
+    expect(store.right.name).toBe('second.txt')
+  })
+})
+
+// The change check compared `content`, which a spreadsheet has none of, so no
+// workbook ever reloaded.
+describe('following a spreadsheet on disk', () => {
+  const book = (v) => ({
+    path: '/tmp/book.xlsx',
+    name: 'book.xlsx',
+    kind: 'spreadsheet',
+    sheets: [{ name: 'S1', rows: [['a', v]] }]
+  })
+
+  it('reloads a workbook whose grid changed, and says so', async () => {
+    const store = useDiffStore()
+    store.left = book(1)
+    store.markSaved()
+    window.api = { readFile: async () => book(2) }
+
+    await store.refreshFromDisk()
+    expect(store.left.sheets[0].rows[0][1]).toBe(2)
+    expect(store.diskNotice).toContain('changed on disk')
+    expect(store.diffSaved).toBe(false)
+  })
+
+  it('leaves an untouched workbook alone', async () => {
+    const store = useDiffStore()
+    store.left = book(1)
+    store.markSaved()
+    window.api = { readFile: async () => book(1) }
+
+    await store.refreshFromDisk()
+    expect(store.diskNotice).toBeNull()
+    expect(store.diffSaved).toBe(true)
+  })
+})
+
+// A second save adds nothing but a duplicate row, so it is not offered.
+describe('saving the same comparison twice', () => {
+  it('is not offered while the comparison on screen is already saved', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.hasUnsavedWork).toBe(true)
+
+    store.markSaved()
+    expect(store.canSave).toBe(true) // there is still a comparison to share
+    expect(store.hasUnsavedWork).toBe(false)
+
+    store.handleMenuAction('save')
+    expect(store.showSaveDialog).toBe(false)
+  })
+
+  it('is offered again the moment the comparison changes', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    store.markSaved()
+
+    store.swap()
+    expect(store.hasUnsavedWork).toBe(true)
+  })
+
+  it('is never offered for an empty comparison', () => {
+    expect(useDiffStore().hasUnsavedWork).toBe(false)
+  })
+})
+
+// Format rewrites a side in memory, so the app's copy and the file diverge. The
+// focus re-read saw a difference it had caused itself, threw the formatting
+// away, and reported a disk change that never happened.
+describe('when the app and the disk have both moved', () => {
+  const UGLY = '{"a":1}'
+  const onDisk = (content) => ({ path: '/tmp/a.json', name: 'a.json', content })
+
+  it('keeps a side the app reformatted, and does not claim the disk changed', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+    const formatted = store.left.content
+    expect(formatted).not.toBe(UGLY)
+
+    window.api = { readFile: async () => onDisk(UGLY) }
+    await store.refreshFromDisk()
+
+    expect(store.left.content).toBe(formatted)
+    expect(store.diskNotice).toBeNull()
+  })
+
+  it('holds the app’s copy when the file ALSO changed, and says which', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+    const formatted = store.left.content
+
+    window.api = { readFile: async () => onDisk('{"a":2}') }
+    await store.refreshFromDisk()
+
+    expect(store.left.content).toBe(formatted)
+    expect(store.diskNotice).toContain('a.json')
+    expect(store.diskNotice).toContain('changed on disk')
+    expect(store.diskNotice).toContain('kept')
+  })
+
+  it('follows the disk again once the side is reloaded from it', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+
+    // Re-picking the file is the deliberate "take theirs".
+    store.receive('left', onDisk('{"a":2}'))
+    window.api = { readFile: async () => onDisk('{"a":3}') }
+    await store.refreshFromDisk()
+
+    expect(store.left.content).toBe('{"a":3}')
+    expect(store.diskNotice).toContain('diff reloaded')
+  })
+
+  it('still reloads an untouched side while another is held back', async () => {
+    const store = useDiffStore()
+    store.left = onDisk(UGLY)
+    store.formatSide('left')
+    store.right = { path: '/tmp/b.json', name: 'b.json', content: 'old' }
+
+    window.api = {
+      readFile: async (path) =>
+        path.endsWith('a.json') ? onDisk('{"a":9}') : { ...store.right, content: 'new' }
+    }
+    await store.refreshFromDisk()
+
+    expect(store.right.content).toBe('new')
+    expect(store.diskNotice).toContain('a.json')
+    expect(store.diskNotice).toContain('b.json')
+  })
+})
+
+// A held, dismissible label — not a toast that clears itself out from under you.
+describe('the file-changed label', () => {
+  const onDisk = (content) => ({ path: '/tmp/a.txt', name: 'a.txt', content })
+
+  it('goes up on a disk change and clears itself after its window', async () => {
+    vi.useFakeTimers()
+    try {
+      const store = useDiffStore()
+      store.left = onDisk('before')
+      window.api = { readFile: async () => onDisk('after') }
+
+      await store.refreshFromDisk()
+      expect(store.diskNotice).toContain('a.txt')
+
+      vi.advanceTimersByTime(DISK_NOTICE_MS - 1)
+      expect(store.diskNotice).not.toBeNull()
+      vi.advanceTimersByTime(1)
+      expect(store.diskNotice).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('outlives the ordinary toast, which would have cleared first', () => {
+    expect(DISK_NOTICE_MS).toBeGreaterThan(5000)
+  })
+
+  it('can be dismissed by hand, and stays dismissed', () => {
+    vi.useFakeTimers()
+    try {
+      const store = useDiffStore()
+      store.showDiskNotice('"a.txt" changed on disk — diff reloaded.')
+      store.dismissDiskNotice()
+      expect(store.diskNotice).toBeNull()
+
+      // The timer it cancelled cannot come back and blank a later one.
+      store.showDiskNotice('second')
+      vi.advanceTimersByTime(DISK_NOTICE_MS - 1)
+      expect(store.diskNotice).toBe('second')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+// The grid scrolls inside itself with no scroller to drive, so the shutter could
+// only ever catch the visible slice. Refused outright rather than truncated.
+describe('image export and the spreadsheet grid', () => {
+  const SHOT = { dataUrl: 'data:image/png;base64,GRID', width: 900, height: 1800 }
+  // jsdom's scroll metrics are read-only getters that always answer 0.
+  const sizeOf = (el, dims) => {
+    for (const [k, value] of Object.entries(dims)) Object.defineProperty(el, k, { value })
+  }
+  const grid = (name) => ({
+    path: `/tmp/${name}`,
+    name,
+    kind: 'spreadsheet',
+    sheets: [{ name: 'S1', rows: [['a', 1]] }]
+  })
+
+  // The grid scrolls inside itself with no Monaco behind it. It registers its
+  // own scroller, which is all the export needs — scroll a viewport at a time
+  // and stitch, exactly as for a tall diff.
+  it('is offered for a spreadsheet comparison', () => {
+    const store = useDiffStore()
+    store.left = grid('a.xlsx')
+    store.right = grid('b.xlsx')
+    expect(store.isSpreadsheet).toBe(true)
+    expect(store.canExportImage).toBe(true)
+  })
+
+  it('is still offered for a text comparison', () => {
+    const store = useDiffStore()
+    store.left = FILE('a.txt')
+    store.right = FILE('b.txt')
+    expect(store.isSpreadsheet).toBe(false)
+    expect(store.canExportImage).toBe(true)
+  })
+
+  it('scrolls and stitches the grid the way it does a tall diff', async () => {
+    const store = useDiffStore()
+    store.left = grid('a.xlsx')
+    store.right = grid('b.xlsx')
+
+    const grids = document.createElement('div')
+    grids.getBoundingClientRect = () => ({ top: 140, height: 600 })
+    sizeOf(grids, { scrollHeight: 1800, clientHeight: 600, scrollWidth: 900, clientWidth: 900 })
+    const column = document.createElement('div')
+    column.className = 'content'
+    column.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 700 })
+    column.append(grids)
+    document.body.append(column)
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    setDiffScroller(elementScroller(() => grids))
+
+    const tops = []
+    window.api.appendDiffImageSlice = async (rect) => {
+      tops.push(rect.y)
+      return { ok: true }
+    }
+    window.api.stitchDiffImage = async () => SHOT
+
+    await store.exportCurrentImage()
+
+    expect(tops).toHaveLength(3)
+    expect(store.imageEntry).toMatchObject({ ...SHOT, hiddenColumns: 0 })
+    column.remove()
+    setDiffScroller(null)
+  })
+
+  // A grid wider than the window loses its right-hand columns to a picture that
+  // only scrolls down. The dialog is told, rather than handing over a crop that
+  // looks complete.
+  it('reports the columns a picture cannot reach', async () => {
+    const store = useDiffStore()
+    store.left = grid('a.xlsx')
+    store.right = grid('b.xlsx')
+
+    const grids = document.createElement('div')
+    grids.getBoundingClientRect = () => ({ top: 140, height: 600 })
+    sizeOf(grids, { scrollHeight: 600, clientHeight: 600, scrollWidth: 2700, clientWidth: 900 })
+    const column = document.createElement('div')
+    column.className = 'content'
+    column.getBoundingClientRect = () => ({ left: 260, top: 88, width: 900, height: 700 })
+    column.append(grids)
+    document.body.append(column)
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0)
+    setDiffScroller(elementScroller(() => grids))
+    window.api.captureDiffImage = async () => SHOT
+
+    await store.exportCurrentImage()
+
+    expect(store.imageEntry?.hiddenColumns).toBe(2)
+    column.remove()
+    setDiffScroller(null)
+  })
+})
+
+// A file past the streamed threshold arrives as a descriptor with no `content`.
+const BIG = (name) => ({ path: `/big/${name}`, name, size: 60 * 1024 * 1024, kind: 'streamed' })
+
+function loadStreamed(store) {
+  store.receive('left', BIG('left.log'))
+  store.receive('right', BIG('right.log'))
+  return store
+}
+
+describe('diffStore — streamed comparisons', () => {
+  it('accepts a streamed descriptor into a slot', () => {
+    const store = loadStreamed(useDiffStore())
+    expect(store.ready).toBe(true)
+    expect(store.notice).toBeNull()
+    expect(store.leftComparable).toEqual({
+      kind: 'streamed',
+      path: '/big/left.log',
+      name: 'left.log',
+      size: 60 * 1024 * 1024
+    })
+  })
+
+  it('routes to the streamed viewer', () => {
+    expect(loadStreamed(useDiffStore()).comparableKind).toBe('streamed')
+    expect(loadStreamed(useDiffStore()).isStreamed).toBe(true)
+  })
+
+  // One side too large makes the WHOLE comparison streamed — there is no text
+  // for the other side to be diffed against in an editor model.
+  it('is streamed when only the RIGHT side is too large', () => {
+    const store = useDiffStore()
+    store.receive('left', FILE('small.txt'))
+    store.receive('right', BIG('huge.log'))
+    expect(store.comparableKind).toBe('streamed')
+  })
+
+  it('is streamed when only the LEFT side is too large', () => {
+    const store = useDiffStore()
+    store.receive('left', BIG('huge.log'))
+    store.receive('right', FILE('small.txt'))
+    expect(store.comparableKind).toBe('streamed')
+  })
+
+  it('leaves an ordinary comparison on the text viewer', () => {
+    const store = useDiffStore()
+    store.receive('left', FILE('a.txt'))
+    store.receive('right', FILE('b.txt'))
+    expect(store.comparableKind).toBe('text')
+    expect(store.isStreamed).toBe(false)
+  })
+
+  it('refuses to save, which would keep a copy of both files', () => {
+    const store = loadStreamed(useDiffStore())
+    expect(store.canSave).toBe(false)
+  })
+
+  it('refuses to share, since sharing goes through saving', () => {
+    const store = loadStreamed(useDiffStore())
+    store.shareCurrent()
+    expect(store.showSaveDialog).toBe(false)
+    expect(store.notice).toBeTruthy()
+  })
+
+  it('refuses to copy a patch, naming the reason', async () => {
+    const store = loadStreamed(useDiffStore())
+    let copied = false
+    window.api.copyText = async () => {
+      copied = true
+      return { ok: true }
+    }
+    await store.copyDiff()
+    expect(copied).toBe(false)
+    expect(store.notice).toContain('Too large to copy as a patch')
+  })
+
+  it('refuses an HTML export, naming the reason', async () => {
+    const store = loadStreamed(useDiffStore())
+    let exported = false
+    window.api.exportDiffHtml = async () => {
+      exported = true
+      return { ok: true }
+    }
+    await store.exportDiff()
+    expect(exported).toBe(false)
+    expect(store.notice).toContain('Too large to export')
+  })
+
+  // Deliberately still allowed: the streamed viewer registers a scroller, so a
+  // picture of what is on screen is a real picture.
+  it('still allows an image export', () => {
+    expect(loadStreamed(useDiffStore()).canExportImage).toBe(true)
+  })
+
+  it('refuses a streamed file dropped into a paste side', () => {
+    const store = useDiffStore()
+    store.receivePasteFile('left', BIG('huge.log'))
+    expect(store.pasteLeftFile).toBeNull()
+    expect(store.notice).toContain('too large to paste against')
+  })
+
+  it('knows a streamed pair needs two files on disk', () => {
+    const store = loadStreamed(useDiffStore())
+    expect(store.streamedPairReady).toBe(true)
+    store.right = { path: null, name: 'Right (pasted)', content: 'typed' }
+    expect(store.streamedPairReady).toBe(false)
+  })
+
+  // The streamed viewer opens a session from BOTH paths. A mixed pair reads as
+  // streamed, but the small side's comparable is an ordinary text one carrying
+  // no path — so the paths must come from the loaded files, not the comparables.
+  it('exposes both paths for a mixed streamed/ordinary pair', () => {
+    const store = useDiffStore()
+    store.receive('left', BIG('huge.log'))
+    store.receive('right', FILE('small.txt'))
+    expect(store.isStreamed).toBe(true)
+    expect(store.rightComparable.path).toBeUndefined()
+    expect(store.streamedPairReady).toBe(true)
+    expect([store.left.path, store.right.path]).toEqual(['/big/huge.log', '/tmp/small.txt'])
+  })
+
+  it('is not pair-ready when a streamed side sits opposite pasted text', () => {
+    const store = useDiffStore()
+    store.receive('left', BIG('huge.log'))
+    store.right = { path: null, name: 'Right (pasted)', content: 'typed' }
+    expect(store.isStreamed).toBe(true)
+    expect(store.streamedPairReady).toBe(false)
+  })
+
+  it('keeps saving available once the streamed side is cleared', () => {
+    const store = loadStreamed(useDiffStore())
+    expect(store.canSave).toBe(false)
+    store.receive('left', FILE('a.txt'))
+    store.receive('right', FILE('b.txt'))
+    expect(store.canSave).toBe(true)
+  })
+})
+
+// clipboard:readFiles already reads each file through the same path file:read
+// uses, so re-reading by path put the "Large file — load anyway?" prompt in
+// front of the user twice for one paste.
+describe('pasteClipboardFiles', () => {
+  it('uses the file objects it was handed instead of reading them again', async () => {
+    const store = useDiffStore()
+    const readFile = vi.fn(async (path) => ({ path, name: path.split('/').pop(), content: 'x' }))
+    window.api = {
+      readFile,
+      readClipboardFiles: async () => [FILE('a.txt'), FILE('b.txt')]
+    }
+
+    expect(await store.pasteClipboardFiles()).toBe(true)
+    expect(readFile).not.toHaveBeenCalled()
+    expect(store.left.name).toBe('a.txt')
+    expect(store.right.name).toBe('b.txt')
+  })
+
+  it('is false, and touches nothing, when the clipboard holds no files', async () => {
+    const store = useDiffStore()
+    window.api = { readClipboardFiles: async () => [] }
+    expect(await store.pasteClipboardFiles()).toBe(false)
+    expect(store.left).toBeNull()
+  })
+
+  it('drops entries the main process refused to read', async () => {
+    const store = useDiffStore()
+    window.api = {
+      readClipboardFiles: async () => [null, FILE('only.txt')]
+    }
+    expect(await store.pasteClipboardFiles()).toBe(true)
+    expect(store.left.name).toBe('only.txt')
+    expect(store.right).toBeNull()
+  })
+})
+
+// Exporting a picture of a SAVED diff must not take the live document hostage:
+// it used to replace it, mark it saved (so no discard prompt could fire), and
+// leave the tab claiming to hold a comparison it no longer had.
+describe('exportImage', () => {
+  const seedEntry = async (store) => {
+    const vault = useVaultStore()
+    vault.entries = [{ id: 'e1', name: 'saved one' }]
+    vault.load = async () => ({
+      mode: 'files',
+      left: FILE('old-left.txt'),
+      right: FILE('old-right.txt')
+    })
+    store._shoot = async () => ({ dataUrl: 'data:image/png;base64,zzz' })
+    return vault
+  }
+
+  it('leaves unsaved work on screen exactly as it was', async () => {
+    const store = useDiffStore()
+    await seedEntry(store)
+    store.mode = 'paste'
+    store.pasteLeft = 'work in progress'
+    store.pasteRight = 'other side'
+    store.diffSaved = false
+
+    await store.exportImage('e1')
+
+    expect(store.mode).toBe('paste')
+    expect(store.pasteLeft).toBe('work in progress')
+    expect(store.pasteRight).toBe('other side')
+    expect(store.diffSaved).toBe(false)
+    expect(store.imageEntry).toMatchObject({ id: 'e1', name: 'saved one' })
+  })
+
+  it('restores a loaded file comparison, not just paste text', async () => {
+    const store = useDiffStore()
+    await seedEntry(store)
+    store.left = FILE('live-left.txt')
+    store.right = FILE('live-right.txt')
+    store.diffSaved = false
+
+    await store.exportImage('e1')
+
+    expect(store.left.name).toBe('live-left.txt')
+    expect(store.right.name).toBe('live-right.txt')
+    expect(store.diffSaved).toBe(false)
+  })
+
+  it('puts the live document back even when the shot fails', async () => {
+    const store = useDiffStore()
+    await seedEntry(store)
+    store._shoot = async () => ({ error: 'capture-failed' })
+    store.mode = 'paste'
+    store.pasteLeft = 'work in progress'
+    store.diffSaved = false
+
+    await store.exportImage('e1')
+
+    expect(store.pasteLeft).toBe('work in progress')
+    expect(store.diffSaved).toBe(false)
+    expect(store.imageEntry).toBeNull()
+    expect(store.notice).toBeTruthy()
   })
 })

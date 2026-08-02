@@ -14,7 +14,13 @@ const props = defineProps({
   // The topmost section aligns its label with the file-slot row.
   first: { type: Boolean, default: false },
   // Quiet group-label mode: no band fill, drag-reorder, or lock cue.
-  unified: { type: Boolean, default: false }
+  unified: { type: Boolean, default: false },
+  // How many rows survived the search/tag filter. Shown only while one is on:
+  // a resting sidebar does not need every section counting itself, but a
+  // filtered one has to say where the matches are — including the sections
+  // that have none, which is the answer to "why is this empty".
+  count: { type: Number, default: null },
+  filtering: { type: Boolean, default: false }
 })
 defineEmits(['toggle'])
 
@@ -65,6 +71,9 @@ watch(
     <AppIcon class="chev" :class="{ open }" name="chevron-right" />
     <span v-if="icon" class="section-icon"><AppIcon :name="icon" /></span>
     <span class="section-title">{{ title }}</span>
+    <span v-if="filtering && count !== null" class="section-count" :class="{ none: count === 0 }">
+      {{ count }}
+    </span>
     <span v-if="$slots.actions" class="actions-slot"><slot name="actions" /></span>
   </div>
 </template>

@@ -35,6 +35,11 @@ async function save() {
       A {{ diff.imageEntry.width }} × {{ diff.imageEntry.height }} screenshot of the diff view as it
       is right now.
     </p>
+    <p v-if="diff.imageEntry.hiddenColumns" class="dialog-note warn">
+      About {{ diff.imageEntry.hiddenColumns }} more
+      {{ diff.imageEntry.hiddenColumns === 1 ? 'screen' : 'screens' }} of columns sit off the right
+      edge and aren’t in the picture. Widen the window to take them in.
+    </p>
     <p v-if="diff.imageEntry.truncated" class="dialog-note warn">
       This diff was longer than the export height — the picture stops partway down. Raise
       <strong>Max diff image height</strong> in Settings → Limits to capture more.

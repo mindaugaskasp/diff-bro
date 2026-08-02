@@ -91,7 +91,7 @@ linux:
   category: Development
   # Deliberately no `executableArgs: --no-sandbox` here: the .deb ships
   # chrome-sandbox SUID and the AppImage falls back to Electron's namespace
-  # sandbox, so the OS sandbox stays on (CLAUDE.md rule 1).
+  # sandbox, so the OS sandbox stays on (docs/standards.md rule 1).
 deb:
   # dpkg requires a "Name <email>" maintainer. Kept here rather than as an
   # `author` object in package.json so the address stays packaging metadata.

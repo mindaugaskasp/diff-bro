@@ -2,9 +2,15 @@
 // the diffStore snapshot that IS the document (see diffStore.snapshot()), so
 // nothing here needs Vue, the store, or Monaco.
 
-// Each tab holds both sides' full contents, so this is a memory bound, not a
-// taste one. Only the active tab has Monaco models; the rest are plain text.
-export const MAX_TABS = 6
+// A rail, not the bound: past this the strip stops being navigable however
+// little it holds. The real ceiling is the budget below.
+export const MAX_TABS = 16
+
+// What every open tab may hold between them, in characters (UTF-16, so roughly
+// half this many bytes twice over). A tab keeps BOTH sides in full, which is
+// what the old count of six was really guarding — badly, since it charged a
+// streamed pair holding nothing the same as two 200 MB files.
+export const MAX_LIVE_CHARS = 96_000_000
 
 let seq = 0
 const nextId = () => `tab-${++seq}`
@@ -26,7 +32,8 @@ export const blankSnapshot = (view = {}) => ({
   pasteLeftName: '',
   pasteRightName: '',
   renderSideBySide: view.renderSideBySide ?? true,
-  ignoreTrimWhitespace: view.ignoreTrimWhitespace ?? false
+  ignoreTrimWhitespace: view.ignoreTrimWhitespace ?? false,
+  semanticView: false
 })
 
 /**
@@ -36,6 +43,8 @@ export const blankSnapshot = (view = {}) => ({
  * @property {string} [customTitle] a name typed by the reader; wins over `title`
  * @property {import('../types').DiffSnapshot} snapshot
  * @property {boolean} diffSaved  whether this comparison is already in the vault
+ * @property {boolean} [transient] git handed this one over; both sides are
+ *                     throwaway copies, so it may be recycled when tabs run out
  */
 
 /**
@@ -89,8 +98,11 @@ export function tabTitle(snapshot) {
  * @param {{ diffSaved?: boolean }} [opts]
  * @returns {DiffTab}
  */
-export function createTab(snapshot = blankSnapshot(), { diffSaved = false } = {}) {
-  return { id: nextId(), title: tabTitle(snapshot), snapshot, diffSaved }
+export function createTab(
+  snapshot = blankSnapshot(),
+  { diffSaved = false, transient = false } = {}
+) {
+  return { id: nextId(), title: tabTitle(snapshot), snapshot, diffSaved, transient }
 }
 
 // Long enough for "prod vs staging", short enough not to overrun the bar.
@@ -115,8 +127,65 @@ export const cleanTabName = (name) =>
  */
 export const tabLabel = (tab) => tab?.customTitle || tab?.title || UNTITLED
 
+// A streamed side is a path the viewer reads windows from, so it costs nothing
+// to hold; a grid costs its cells.
+function sideCost(side) {
+  if (!side || side.kind === 'streamed') return 0
+  if (side.kind === 'spreadsheet') {
+    return (side.sheets ?? []).reduce((n, s) => n + s.rows.length * (s.rows[0]?.length ?? 0), 0)
+  }
+  return side.content?.length ?? 0
+}
+
+/**
+ * What one tab is holding, in characters.
+ * @param {DiffTab} [tab]
+ * @returns {number}
+ */
+export function tabCost(tab) {
+  const s = tab?.snapshot ?? {}
+  return (
+    sideCost(s.left) +
+    sideCost(s.right) +
+    sideCost(s.pasteLeftFile) +
+    sideCost(s.pasteRightFile) +
+    (s.pasteLeft?.length ?? 0) +
+    (s.pasteRight?.length ?? 0)
+  )
+}
+
 /** @param {DiffTab[]} tabs */
-export const canAddTab = (tabs) => (tabs?.length ?? 0) < MAX_TABS
+export const tabsCost = (tabs) => (tabs ?? []).reduce((n, t) => n + tabCost(t), 0)
+
+/** @param {DiffTab[]} tabs */
+export const canAddTab = (tabs) =>
+  (tabs?.length ?? 0) < MAX_TABS && tabsCost(tabs) < MAX_LIVE_CHARS
+
+/**
+ * The tab a git-handed comparison may take over when there is no free one: the
+ * oldest holding another git comparison, never the one being looked at.
+ * @param {DiffTab[]} tabs
+ * @param {string} activeId
+ * @returns {DiffTab|null}
+ */
+export const recyclableTab = (tabs, activeId) =>
+  (tabs ?? []).find((t) => t.transient && t.id !== activeId) ?? null
+
+/**
+ * The tab one step along the strip, or null at either end. Unlike step(), which
+ * cycles, this is for a control that disables itself when there is nowhere to
+ * go.
+ * @param {DiffTab[]} tabs
+ * @param {string} activeId
+ * @param {1|-1} delta
+ * @returns {string|null}
+ */
+export function adjacentTabId(tabs, activeId, delta) {
+  const list = tabs ?? []
+  const i = list.findIndex((t) => t.id === activeId)
+  if (i === -1) return null
+  return list[i + delta]?.id ?? null
+}
 
 /**
  * Which tab to show once `closingId` goes. Closing the tab you are looking at
@@ -133,6 +202,27 @@ export function nextActiveId(tabs, closingId, activeId) {
   const i = list.findIndex((t) => t.id === closingId)
   if (i === -1) return activeId
   return list[i + 1]?.id ?? list[i - 1]?.id ?? null
+}
+
+/**
+ * Which tab to show once a whole SET goes. Same convention as nextActiveId —
+ * right, then left — but resolved against every survivor at once, so a bulk
+ * close lands somewhere real instead of hopping through the tabs it is
+ * removing.
+ * @param {DiffTab[]} tabs   before the close
+ * @param {string[]} closingIds
+ * @param {string} activeId
+ * @returns {string|null}    null when nothing survives
+ */
+export function nextActiveIdAfterClosing(tabs, closingIds, activeId) {
+  const list = tabs ?? []
+  const closing = new Set(closingIds ?? [])
+  if (!list.some((t) => !closing.has(t.id))) return null
+  if (!closing.has(activeId)) return activeId
+  const from = list.findIndex((t) => t.id === activeId)
+  for (let i = from + 1; i < list.length; i++) if (!closing.has(list[i].id)) return list[i].id
+  for (let i = from - 1; i >= 0; i--) if (!closing.has(list[i].id)) return list[i].id
+  return null
 }
 
 /**
@@ -158,3 +248,14 @@ export function isBlank(tab) {
     !s.left && !s.right && !s.pasteLeft && !s.pasteRight && !s.pasteLeftFile && !s.pasteRightFile
   )
 }
+
+/**
+ * Why no more comparisons may be opened, in terms of what the reader can see
+ * rather than which limit was hit.
+ * @param {DiffTab[]} tabs
+ * @returns {string}
+ */
+export const tabsFullNotice = (tabs) =>
+  (tabs?.length ?? 0) >= MAX_TABS
+    ? `That is the most comparisons at once (${MAX_TABS})`
+    : 'These comparisons already hold about as much text as one window can'

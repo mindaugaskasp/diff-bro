@@ -1,7 +1,7 @@
 import { app, session } from 'electron'
 import { DEV_URL } from './env'
 
-// OFFLINE GUARANTEE — do not weaken (CLAUDE.md rule 1). Every request is blocked
+// OFFLINE GUARANTEE — do not weaken (docs/standards.md rule 1). Every request is blocked
 // at the session level except local schemes (and the Vite dev server in dev).
 export function installNetworkKillSwitch() {
   // Deny every Chromium permission request — nothing here needs any.

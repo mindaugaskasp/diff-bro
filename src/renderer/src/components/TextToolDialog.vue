@@ -15,6 +15,8 @@ import ToolJson from './ToolJson.vue'
 import ToolLines from './ToolLines.vue'
 import ToolBase64 from './ToolBase64.vue'
 import ToolXml from './ToolXml.vue'
+import ToolHash from './ToolHash.vue'
+import ToolRegex from './ToolRegex.vue'
 
 const props = defineProps({
   // A tool id from the registry — which panel this dialog is showing.
@@ -45,6 +47,8 @@ function close() {
       <ToolLines v-else-if="tool === 'lines'" />
       <ToolBase64 v-else-if="tool === 'base64'" />
       <ToolXml v-else-if="tool === 'xml'" />
+      <ToolHash v-else-if="tool === 'hash'" />
+      <ToolRegex v-else-if="tool === 'regex'" />
     </div>
     <template #actions>
       <button class="btn btn-ghost" @click="close">Close</button>

@@ -18,18 +18,30 @@ export const SHORTCUT_GROUPS = [
     ]
   },
   {
+    group: 'Comparisons',
+    items: [
+      { keys: `${MOD}+Shift+T`, label: 'New comparison' },
+      { keys: `${MOD}+Shift+W`, label: 'Close comparison' },
+      { keys: 'Ctrl+Tab', label: 'Next comparison' },
+      { keys: 'Ctrl+Shift+Tab', label: 'Previous comparison' }
+    ]
+  },
+  {
     group: 'Edit',
     items: [
       { keys: `${MOD}+Shift+S`, label: 'Swap sides' },
       { keys: `${MOD}+K`, label: 'Clear' },
       { keys: `${MOD}+Shift+C`, label: 'Copy diff as patch' },
-      { keys: `${MOD}+T`, label: 'Paste text mode' }
+      { keys: `${MOD}+T`, label: 'Paste text mode' },
+      { keys: `${MOD}+V`, label: 'Paste to compare' }
     ]
   },
   {
     group: 'View',
     items: [
+      { keys: `${MOD}+Shift+P`, label: 'Command palette' },
       { keys: `${MOD}+\\`, label: 'Toggle split view' },
+      { keys: `${MOD}+Shift+D`, label: 'Toggle structure view' },
       { keys: `${MOD}+D`, label: 'Toggle light/dark theme' },
       { keys: `${MOD}++`, label: 'Zoom in' },
       { keys: `${MOD}+-`, label: 'Zoom out' },

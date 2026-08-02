@@ -40,6 +40,10 @@ const rows = computed(() => {
   return props.favOnly ? favs : [...favs, ...byTag(visibleListed.value)]
 })
 
+// A filter is on when there is a search term or a tag selected — the only time
+// a per-section count is worth the space.
+const filtering = computed(() => !!props.search.trim() || props.tags.length > 0)
+
 // Expand the section and open a blank snippet.
 function newSnippet() {
   sectionOpen.value = true
@@ -56,6 +60,8 @@ function newSnippet() {
       :open="sectionOpen"
       :first="first"
       :unified="unified"
+      :count="rows.length"
+      :filtering="filtering"
       @toggle="sectionOpen = !sectionOpen"
     >
       <template #actions>

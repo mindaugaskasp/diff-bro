@@ -8,6 +8,15 @@ import { MAX_RECENT_TOOLS, noteRecent } from '../utils/tools'
 // did). Mirrored in src/main/quickLook.js — keep the two in step.
 export const DEFAULT_QUICKLOOK_SHORTCUT = 'CommandOrControl+Shift+Space'
 
+// Mirrors autoBackup.js's MIN/MAX_WINDOW_HOURS. Main clamps independently, so a
+// hand-edited settings file cannot widen the window.
+export const BACKUP_HOURS = [1, 3, 6, 12, 24]
+const clampBackupHours = (h) => {
+  const n = Number(h)
+  if (!Number.isFinite(n)) return 6
+  return Math.min(Math.max(Math.round(n), BACKUP_HOURS[0]), BACKUP_HOURS.at(-1))
+}
+
 // Organizational, non-secret preferences, persisted as PLAINTEXT settings.json
 // (nothing sensitive; encrypted data stays in the vault/snippet stores).
 
@@ -56,6 +65,9 @@ export const DEFAULT_SETTINGS = {
   maximizeDialogs: false,
   shutterSound: true,
   restoreSession: true,
+  // On by default: the point is protection from corruption nobody sees coming.
+  autoBackup: true,
+  autoBackupHours: 6,
   examplesSeeded: false,
   // Global shortcut for the quick look-up launcher (Electron accelerator form).
   quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT
@@ -151,6 +163,11 @@ function readState() {
     // Reopen the comparisons that were open at quit. On by default; turning it
     // off forgets the stored one too (see tabsStore.setRestoreSession).
     restoreSession: parsed.restoreSession !== false,
+    autoBackup: parsed.autoBackup !== false,
+    // The sidebar collapsed to its rail. Off by default: the library is how a
+    // comparison is usually reached.
+    sidebarCollapsed: parsed.sidebarCollapsed === true,
+    autoBackupHours: clampBackupHours(parsed.autoBackupHours),
     examplesSeeded: parsed.examplesSeeded === true,
     // Most-recent-first tool ids; unknown ids are dropped when rendered.
     recentTools: Array.isArray(parsed.recentTools)
@@ -198,6 +215,9 @@ export const useSettingsStore = defineStore('settings', {
           maximizeDialogs: this.maximizeDialogs,
           shutterSound: this.shutterSound,
           restoreSession: this.restoreSession,
+          autoBackup: this.autoBackup,
+          sidebarCollapsed: this.sidebarCollapsed,
+          autoBackupHours: this.autoBackupHours,
           examplesSeeded: this.examplesSeeded,
           recentTools: this.recentTools,
           quickLookShortcut: this.quickLookShortcut
@@ -267,6 +287,18 @@ export const useSettingsStore = defineStore('settings', {
     },
     setShutterSound(value) {
       this.shutterSound = !!value
+      this.persist()
+    },
+    setAutoBackup(value) {
+      this.autoBackup = value === true
+      this.persist()
+    },
+    setAutoBackupHours(hours) {
+      this.autoBackupHours = clampBackupHours(hours)
+      this.persist()
+    },
+    setSidebarCollapsed(value) {
+      this.sidebarCollapsed = value === true
       this.persist()
     },
     setRestoreSession(value) {

@@ -31,6 +31,11 @@ function readSide(side) {
   return {
     path: str(side.path, null) || null,
     name: str(side.name, 'Untitled'),
+    // The refresh guard needs its baseline back, or a restored formatted side
+    // reports a change nobody made (see diffStore._reloadSlot).
+    ...(side.edited === true
+      ? { edited: true, diskContent: str(side.diskContent, null) ?? undefined }
+      : {}),
     ...text,
     ...grid
   }
@@ -54,7 +59,8 @@ export function readSnapshot(raw) {
     pasteLeftName: str(raw.pasteLeftName),
     pasteRightName: str(raw.pasteRightName),
     renderSideBySide: raw.renderSideBySide !== false,
-    ignoreTrimWhitespace: raw.ignoreTrimWhitespace === true
+    ignoreTrimWhitespace: raw.ignoreTrimWhitespace === true,
+    semanticView: raw.semanticView === true
   }
 }
 
@@ -80,18 +86,25 @@ const packTab = (tab, snapshot, diffSaved) => ({
 export function packSession(tabs, activeId, live) {
   const kept = []
   let budget = MAX_SESSION_BYTES
+  // A comparison left out is a comparison lost on the next launch, so the count
+  // travels with the session rather than the tabs going quietly. A blank tab is
+  // not a loss — there was nothing in it.
+  let dropped = 0
   for (const tab of tabs ?? []) {
     const isLive = live && tab.id === activeId
     const snapshot = isLive ? live.snapshot : tab.snapshot
     if (isBlank({ snapshot })) continue
     const packed = packTab(tab, snapshot, isLive ? live.diffSaved : tab.diffSaved)
     const size = JSON.stringify(packed).length
-    if (size > MAX_TAB_BYTES || size > budget) continue
+    if (size > MAX_TAB_BYTES || size > budget) {
+      dropped += 1
+      continue
+    }
     budget -= size
     kept.push({ ...packed, active: tab.id === activeId })
   }
   if (!kept.length) return null
-  return { version: SESSION_VERSION, tabs: kept }
+  return { version: SESSION_VERSION, tabs: kept, dropped }
 }
 
 function readTab(raw) {

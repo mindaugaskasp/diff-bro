@@ -1,6 +1,6 @@
 // The snippet editor's tag-chips field. Its event logic — what commits a tag,
 // what dedupes, the cap, Backspace-pops — is exactly the kind of interaction
-// CLAUDE.md says to pull OUT of the .vue file and unit-test here (the "does
+// docs/standards.md says to pull OUT of the .vue file and unit-test here (the "does
 // Space commit a tag?" example), rather than leave inline where nothing
 // exercises it. Suggestions need the real tag registry, so the store's crypto
 // is wired through the same mock the store tests use.

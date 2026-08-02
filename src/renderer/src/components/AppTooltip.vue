@@ -2,7 +2,8 @@
 // One tooltip for the whole window; icon buttons opt in with data-tip. Native
 // `title` is drawn by the OS — the app cannot see, style or time it, and in a
 // frameless Electron window it often never appears at all.
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useDiffStore } from '../stores/diffStore'
 
 const DELAY_MS = 300
 // Kept clear of the window edge. The OS drew its own tips inside the screen;
@@ -13,6 +14,16 @@ const text = ref('')
 const style = ref(null)
 const bubble = ref(null)
 let timer = null
+
+// The image export photographs a page-coordinate REGION, so anything floating
+// over the diff lands in the picture — and this bubble is teleported to <body>,
+// where the region's `.capturing` class cannot reach it. A click dismisses its
+// own tip, but a menu or palette export never touches the pointer.
+const store = useDiffStore()
+watch(
+  () => store.imageCapturing,
+  (capturing) => capturing && hide()
+)
 
 // Placed under the anchor, then nudged back inside the window. The nudge is
 // measured rather than assumed: the bubble wraps, so its size is not known
@@ -77,7 +88,15 @@ onBeforeUnmount(() => {
   <!-- To body: inside the app tree a parent stacking context capped it, so it
        had a box and passed a visibility check while never being painted. -->
   <Teleport to="body">
-    <div v-if="text" ref="bubble" class="tip-bubble" :style="style" role="tooltip">{{ text }}</div>
+    <div
+      v-if="text && !store.imageCapturing"
+      ref="bubble"
+      class="tip-bubble"
+      :style="style"
+      role="tooltip"
+    >
+      {{ text }}
+    </div>
   </Teleport>
 </template>
 

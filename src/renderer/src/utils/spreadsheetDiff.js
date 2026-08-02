@@ -49,14 +49,6 @@ function total(stats) {
   return stats.changed + stats.added + stats.removed
 }
 
-// No row virtualization yet, so cap the rows handed to the viewer and report how
-// many are held back rather than freezing the window.
-export const RENDER_ROW_CAP = 3000
-export function pageRows(rows, cap = RENDER_ROW_CAP) {
-  if (rows.length <= cap) return { rows, hidden: 0 }
-  return { rows: rows.slice(0, cap), hidden: rows.length - cap }
-}
-
 /**
  * @returns {Array<{name:string, present:'both'|'left'|'right', rows:Array,
  *   stats:{changed:number,added:number,removed:number}, columns:number,

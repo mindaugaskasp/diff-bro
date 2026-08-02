@@ -3,15 +3,18 @@ import { useDiffStore } from './diffStore'
 import { useVaultStore } from './vaultStore'
 import { useSettingsStore } from './settingsStore'
 import { loadPersisted, savePersisted } from '../persist'
+import { tabsClosedBy } from '../utils/tabMenu'
 import {
-  MAX_TABS,
   blankSnapshot,
   canAddTab,
   createTab,
   cleanTabName,
   isBlank,
   nextActiveId,
-  tabTitle
+  nextActiveIdAfterClosing,
+  recyclableTab,
+  tabTitle,
+  tabsFullNotice
 } from '../utils/tabs'
 import {
   EMPTY_ENVELOPE,
@@ -28,7 +31,13 @@ import {
 // memory bound, by construction rather than by bookkeeping.
 // Defaults as an object rather than destructuring defaults: open() sits right
 // on the complexity limit and every `=` in a signature counts against it.
-const OPEN_DEFAULTS = { diffSaved: false, entryId: null, reuseBlank: true, name: '' }
+const OPEN_DEFAULTS = {
+  diffSaved: false,
+  entryId: null,
+  reuseBlank: true,
+  name: '',
+  transient: false
+}
 
 // The session file is sealed with the vault key, like a saved diff — it holds
 // the same thing (whole file contents), so it is stored the same way. The AAD
@@ -42,15 +51,32 @@ export const useTabsStore = defineStore('tabs', {
     activeId: null,
     // The stored session has been read (or found absent) and may now be written
     // over. False while the vault key is unavailable — see saveSession.
-    sessionReady: false
+    sessionReady: false,
+    // How many comparisons the last write could not fit, so the warning is
+    // raised when that number changes rather than on every debounced save.
+    sessionDropped: 0
   }),
   getters: {
     active: (s) => s.tabs.find((t) => t.id === s.activeId) ?? null,
     canAdd: (s) => canAddTab(s.tabs),
+    // Whether a comparison can be hosted at all — a free tab, or, for one git
+    // handed over, a throwaway git tab to recycle.
+    /** @returns {(transient: boolean) => boolean} */
+    canHost: (s) => (transient) =>
+      canAddTab(s.tabs) || (!!transient && !!recyclableTab(s.tabs, s.activeId)),
     // Always shown once there is a document. Hiding it at one tab looked tidier
     // but left no way to reach the "+" that makes the second one — the bar has
     // to be present for tabs to be discoverable at all.
-    visible: (s) => s.tabs.length > 0
+    visible: (s) => s.tabs.length > 0,
+    // A tab's own snapshot is only refreshed when tabs switch, so for the one on
+    // screen it is stale by definition — that one is asked of the live document.
+    /** @returns {(tab: import('../utils/tabs').DiffTab) => boolean} */
+    unsaved: (s) => (tab) => {
+      if (!tab) return false
+      if (tab.id !== s.activeId) return !tab.diffSaved && !isBlank(tab)
+      const diff = useDiffStore()
+      return !diff.diffSaved && diff.hasActive
+    }
   },
   actions: {
     // The window opens on whatever the diff store already holds, so the first
@@ -94,7 +120,8 @@ export const useTabsStore = defineStore('tabs', {
       return {
         ...snapshot,
         renderSideBySide: snapshot.renderSideBySide ?? diff.renderSideBySide,
-        ignoreTrimWhitespace: snapshot.ignoreTrimWhitespace ?? diff.ignoreTrimWhitespace
+        ignoreTrimWhitespace: snapshot.ignoreTrimWhitespace ?? diff.ignoreTrimWhitespace,
+        semanticView: snapshot.semanticView === true
       }
     },
     _fill(tab, snapshot, { diffSaved, entryId, name }) {
@@ -119,7 +146,7 @@ export const useTabsStore = defineStore('tabs', {
      * @param {{ diffSaved?: boolean, entryId?: string, reuseBlank?: boolean }} [opts]
      */
     open(snapshot, opts) {
-      const { diffSaved, entryId, reuseBlank, name } = { ...OPEN_DEFAULTS, ...opts }
+      const { diffSaved, entryId, reuseBlank, name, transient } = { ...OPEN_DEFAULTS, ...opts }
       const wanted = snapshot ?? blankSnapshot()
       const existing = entryId ? this.tabs.find((t) => t.entryId === entryId) : null
       if (existing) {
@@ -131,21 +158,104 @@ export const useTabsStore = defineStore('tabs', {
       // one whether it is blank reuses a tab that is not.
       this._capture()
       const full = this._withCurrentView(wanted)
-      const spare = reuseBlank && isBlank(this.active) ? this.active : null
-      if (spare) return this._fill(spare, full, { diffSaved, entryId, name })
+      const spare = this._reusable({ reuseBlank, transient })
+      if (spare) {
+        spare.transient = transient
+        return this._fill(spare, full, { diffSaved, entryId, name })
+      }
       if (!this.canAdd) {
-        useDiffStore().showNotice(`That's the most tabs at once (${MAX_TABS}). Close one first.`)
+        useDiffStore().showNotice(`${tabsFullNotice(this.tabs)}. Close one first.`)
         return null
       }
-      const tab = createTab(full, { diffSaved })
+      const tab = createTab(full, { diffSaved, transient })
       this.tabs.push(tab)
       return this._fill(tab, full, { diffSaved, entryId, name })
     },
-    newTab({ paste = false } = {}) {
+    // A tab this comparison may take over. Blank first; failing that, and only
+    // for one git handed us, the OLDEST other tab that also came from git —
+    // those hold copies in a temp directory git has already deleted, so they are
+    // throwaway by construction. `git mergetool` walks a whole conflict list
+    // without waiting for anyone, and refusing the seventh conflict to protect
+    // the first is backwards.
+    _reusable({ reuseBlank, transient }) {
+      if (reuseBlank && isBlank(this.active)) return this.active
+      if (!transient || this.canAdd) return null
+      return recyclableTab(this.tabs, this.activeId)
+    },
+    // What git handed over is the COMPARISON, not the tab: one that lands in a
+    // tab that already existed is just as throwaway as one that made its own.
+    /** @param {boolean} transient */
+    markActiveTransient(transient) {
+      if (this.active) this.active.transient = !!transient
+    },
+    newTab({ paste = false, transient = false } = {}) {
       const diff = useDiffStore()
-      const id = this.open(blankSnapshot(diff), { reuseBlank: false })
+      const id = this.open(blankSnapshot(diff), { reuseBlank: false, transient })
       if (id && paste) diff.mode = 'paste'
       return id
+    },
+    // The single close guard — menu, ×, and middle-click all arrive here.
+    /** @param {string} id */
+    requestClose(id) {
+      this.requestCloseMany([id])
+    },
+    /**
+     * Close a whole set, asking ONCE about whatever unsaved work it holds. One
+     * prompt per tab would mean four dialogs for one "close to the right".
+     * @param {string[]} ids
+     */
+    requestCloseMany(ids) {
+      const open = (ids ?? []).filter((id) => this.tabs.some((t) => t.id === id))
+      if (!open.length) return
+      const risky = open.filter((id) => this.unsaved(this.tabs.find((t) => t.id === id)))
+      if (risky.length) useDiffStore().pendingTabClose = open
+      else this.closeMany(open)
+    },
+    /**
+     * @param {string} anchorId  the tab the menu was opened on
+     * @param {import('../utils/tabMenu').TabMenuAction} action
+     */
+    requestMenuAction(anchorId, action) {
+      this.requestCloseMany(tabsClosedBy(this.tabs, anchorId, action).map((t) => t.id))
+    },
+    /**
+     * Remove a set in one pass. close() in a loop would capture and re-show —
+     * and so re-diff — once per tab for a single click.
+     * @param {string[]} ids
+     */
+    closeMany(ids) {
+      const closing = new Set(ids ?? [])
+      const survivors = this.tabs.filter((t) => !closing.has(t.id))
+      // Nothing survives: fall through to close()'s last-tab path, which blanks
+      // the comparison rather than leaving an empty window.
+      if (!survivors.length) {
+        const keep = this.active ?? this.tabs[this.tabs.length - 1]
+        this.tabs = [keep]
+        this.activeId = keep.id
+        this.close(keep.id)
+        return
+      }
+      const goingTo = nextActiveIdAfterClosing(this.tabs, [...closing], this.activeId)
+      if (!closing.has(this.activeId)) this._capture()
+      this.tabs = survivors
+      const next = this.tabs.find((t) => t.id === goingTo)
+      if (next && next.id !== this.activeId) this._show(next)
+      else this.activeId = next?.id ?? null
+    },
+    // Its saved diff is gone, so the tab must stop claiming to be in the vault:
+    // "saved" is what silences the discard prompts.
+    // The active tab no longer shows the saved diff it was opened from.
+    unlinkActiveEntry() {
+      if (this.active) this.active.entryId = null
+    },
+    /** @param {string} entryId */
+    forgetEntry(entryId) {
+      for (const tab of this.tabs) {
+        if (tab.entryId !== entryId) continue
+        tab.entryId = null
+        tab.diffSaved = false
+        if (tab.id === this.activeId) useDiffStore().diffSaved = false
+      }
     },
     close(id) {
       const target = this.tabs.find((t) => t.id === id)
@@ -208,24 +318,40 @@ export const useTabsStore = defineStore('tabs', {
     async saveSession() {
       if (!useSettingsStore().restoreSession) return
       if (typeof window.api?.vaultEncrypt !== 'function') return
+      // Nothing may be written before the stored session has been read back:
+      // the debounce races the restore, and a file dropped inside that window
+      // used to overwrite every other comparison with the one just opened.
+      if (!this.sessionReady) return
       const diff = useDiffStore()
       const packed = packSession(this.tabs, this.activeId, {
         snapshot: diff.snapshot(),
         diffSaved: diff.diffSaved
       })
       if (!packed) {
-        // Only clear a session we were able to READ. A locked keychain is
-        // temporary; the comparisons behind it are not ours to throw away.
-        if (this.sessionReady) savePersisted('session', EMPTY_ENVELOPE)
+        // A locked keychain is temporary; the comparisons behind it are not
+        // ours to throw away.
+        savePersisted('session', EMPTY_ENVELOPE)
         return
       }
+      this._reportDropped(packed.dropped)
       const box = await window.api.vaultEncrypt(JSON.stringify(packed), SESSION_AAD)
       if (box?.error) return
       savePersisted(
         'session',
         JSON.stringify({ version: SESSION_VERSION, iv: box.iv, data: box.data })
       )
-      this.sessionReady = true
+    },
+    // A comparison too big for the session is one that will not come back, and
+    // saving it is the way to keep it.
+    _reportDropped(count) {
+      if (count === this.sessionDropped) return
+      this.sessionDropped = count
+      if (!count) return
+      const [what, verb, it] =
+        count === 1 ? ['comparison', 'is', 'it'] : ['comparisons', 'are', 'them']
+      useDiffStore().showNotice(
+        `${count} open ${what} ${verb} too large to reopen next launch — save ${it} to keep ${it}.`
+      )
     },
     /**
      * Reopen last session's comparisons, replacing the blank tab init() made.

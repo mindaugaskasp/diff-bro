@@ -186,3 +186,38 @@ describe('readEnvelope', () => {
     expect(readEnvelope(JSON.stringify({ iv: 1, data: 2 }))).toBeNull()
   })
 })
+
+// The session has a byte budget, and tabs that do not fit are left out. With a
+// ceiling of six that was rare; at sixteen it is routine, so the count has to
+// come back rather than the tabs going quietly.
+describe('what the session could not keep', () => {
+  const heavy = (id, chars) => ({
+    id,
+    snapshot: { ...blankSnapshot(), left: { name: `${id}.txt`, content: 'x'.repeat(chars) } },
+    diffSaved: true
+  })
+
+  it('reports nothing dropped when everything fits', () => {
+    expect(packSession([tab('tab-1'), tab('tab-2')], 'tab-1').dropped).toBe(0)
+  })
+
+  it('counts a tab too big for the whole session', () => {
+    const packed = packSession([heavy('a', 10), heavy('b', MAX_SESSION_BYTES + 10)], 'a')
+    expect(packed.tabs).toHaveLength(1)
+    expect(packed.dropped).toBe(1)
+  })
+
+  it('counts every tab that ran past the budget, not just the first', () => {
+    const big = Math.floor(MAX_TAB_BYTES * 0.9)
+    const many = Array.from({ length: 8 }, (_, i) => heavy(`t${i}`, big))
+    const packed = packSession(many, 't0')
+    expect(packed.tabs.length).toBeLessThan(8)
+    expect(packed.dropped).toBe(8 - packed.tabs.length)
+  })
+
+  // A blank tab is not "dropped" — there was never anything in it to lose.
+  it('does not count blank tabs as losses', () => {
+    const packed = packSession([tab('tab-1'), { id: 'blank', snapshot: blankSnapshot() }], 'tab-1')
+    expect(packed.dropped).toBe(0)
+  })
+})

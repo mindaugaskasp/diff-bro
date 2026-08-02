@@ -83,17 +83,17 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     >
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
     </button>
-    <button class="entry" @click="store.editingSnippet = { id: entry.id }">
+    <button
+      class="entry"
+      @click="store.editingSnippet = { id: entry.id }"
+      @mouseenter="$emit('hoverTitle', $event)"
+      @mouseleave="$emit('leaveTitle')"
+    >
       <span class="monogram" :style="{ '--fam': mono.family }" :data-tip="`Language: ${lang}`">{{
         mono.label
       }}</span>
       <AppIcon v-if="isSecret(entry)" class="secret-mark" name="lock" :data-tip="SECRET_NOTICE" />
-      <span
-        class="nm"
-        @mouseenter="$emit('hoverTitle', $event)"
-        @mouseleave="$emit('leaveTitle')"
-        >{{ entry.name }}</span
-      >
+      <span class="nm">{{ entry.name }}</span>
       <span
         v-if="entry.vars?.length"
         class="varchip"

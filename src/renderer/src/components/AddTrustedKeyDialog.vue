@@ -24,6 +24,11 @@ async function add() {
         <code>{{ diff.pendingTrustedKey?.fingerprint }}</code
         >.
       </p>
+      <p v-if="diff.pendingTrustedKey?.vouchedBy" class="dialog-note vouch">
+        This key says it replaces <strong>{{ diff.pendingTrustedKey.vouchedBy }}</strong
+        >, and that key signed the claim. Check the fingerprint with them anyway — anyone holding
+        their old key could have signed it.
+      </p>
       <label>
         Name
         <input

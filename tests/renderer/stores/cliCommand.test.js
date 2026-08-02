@@ -77,6 +77,78 @@ describe('runCliCommand — compare', () => {
   })
 })
 
+// `git mergetool` walks the WHOLE conflict list, calling the tool once per file
+// and moving on the instant it returns — which, behind the single-instance
+// lock, is immediately. A merge with more conflicts than there are tabs
+// therefore lands here N times in a row with nobody reading the answer.
+describe('runCliCommand — a git merge with more conflicts than tabs', () => {
+  // What the difftool launcher passes: its own copies of git's temp files.
+  const conflict = (name) => [
+    `/tmp/diffbro-git-aB3/before/${name}`,
+    `/tmp/diffbro-git-aB3/after/${name}`
+  ]
+  const openConflict = (store, name) =>
+    store.runCliCommand({ name: 'compare', files: conflict(name), transient: true })
+
+  // Read from the snapshots, not the titles: the ACTIVE tab's snapshot is stale
+  // by design, so its title still says "Untitled" while it holds a comparison.
+  const holds = (tabs, name) =>
+    tabs.tabs.some((t) => t.snapshot?.left?.name === name) || useDiffStore().left?.name === name
+
+  // No manual newTab: a launch that finds a comparison on screen opens its own
+  // tab, which is exactly the path git drives.
+  const fillWith = async (store, open) => {
+    for (let i = 0; i < MAX_TABS; i++) await open(store, `f${i}.txt`)
+  }
+
+  it('names every conflict it could not open, not just the last one', async () => {
+    const store = useDiffStore()
+    const tabs = withTabs()
+    // Six tabs of the reader's OWN work — nothing here is safe to recycle.
+    await fillWith(store, (s, n) => s.runCliCommand({ name: 'compare', files: [`/work/${n}`] }))
+    expect(tabs.canAdd).toBe(false)
+
+    for (const name of ['f7.txt', 'f8.txt', 'f9.txt']) await openConflict(store, name)
+
+    // Each launch overwrote the dialog the one before it raised, so f7 and f8
+    // were dropped without ever being mentioned.
+    expect(store.cliBlocked).toContain('f7.txt')
+    expect(store.cliBlocked).toContain('f8.txt')
+    expect(store.cliBlocked).toContain('f9.txt')
+  })
+
+  // A comparison git handed us is throwaway by construction: both sides are
+  // copies in a temp directory git has already deleted. Refusing the seventh
+  // conflict to protect the first one is backwards.
+  it('recycles the oldest throwaway git comparison instead of refusing', async () => {
+    const store = useDiffStore()
+    const tabs = withTabs()
+    await fillWith(store, openConflict)
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+
+    await openConflict(store, 'f7.txt')
+
+    expect(store.cliBlocked).toBeNull()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+    expect(store.left?.name).toBe('f7.txt')
+    // The oldest conflict made way; the ones after it are untouched.
+    expect(holds(tabs, 'f0.txt')).toBe(false)
+    expect(holds(tabs, 'f4.txt')).toBe(true)
+  })
+
+  // The reader's own comparisons are not the launcher's to reclaim.
+  it('never recycles a tab the reader opened themselves', async () => {
+    const store = useDiffStore()
+    const tabs = withTabs()
+    await fillWith(store, (s, n) => s.runCliCommand({ name: 'compare', files: [`/work/${n}`] }))
+
+    await openConflict(store, 'f7.txt')
+
+    expect(holds(tabs, 'f0.txt')).toBe(true)
+    expect(store.cliBlocked).toContain('f7.txt')
+  })
+})
+
 // A path typed in a shell is not a file the app chose: it can be a directory, a
 // binary, a dead symlink, or gone by the time it is read. None of those may take
 // the command down silently.

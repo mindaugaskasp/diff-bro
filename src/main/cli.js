@@ -21,6 +21,17 @@ export const COMMANDS = [
   tab in use, Diff Bro says so and opens nothing — close a tab and repeat.`
   },
   {
+    topic: 'difftool',
+    usage: 'diffbro difftool <file> <file>',
+    summary: 'open a comparison git handed over',
+    detail: `What \`git difftool\` and \`git mergetool\` run. Same as compare,
+  except the two files are known to be throwaway copies git made.
+
+  Because they are throwaway, a merge with more conflicts than there are
+  tabs reuses the oldest of them instead of running out — \`git mergetool\`
+  walks the whole conflict list without waiting for anyone.`
+  },
+  {
     topic: 'create',
     usage: 'diffbro create snippet',
     summary: 'open a new snippet in the editor',
@@ -72,7 +83,10 @@ export function helpText(topic) {
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
 // run it is [electron, ., ...args], and Chromium switches can appear anywhere.
 const isSwitch = (a) => a.startsWith('-')
-const ENTRY = /(electron|diffbro|diff bro|\.|main\/index\.js)$/i
+// Structural, not by name: an entry point is a PATH, and every command is a bare
+// word. Matching on names instead meant any clone directory not called exactly
+// `diffbro` was read as a command, which exits before a window exists.
+const isPath = (a) => a === '.' || a.includes('/') || a.includes('\\')
 
 /**
  * The user-supplied words of a launch, with the executable, the entry point and
@@ -82,8 +96,9 @@ const ENTRY = /(electron|diffbro|diff bro|\.|main\/index\.js)$/i
  */
 export function cliWords(argv) {
   const words = (argv ?? []).filter((a) => typeof a === 'string' && !isSwitch(a))
-  let i = 0
-  while (i < words.length && (i === 0 || ENTRY.test(words[i]))) i++
+  // argv[0] is always the binary; at most one entry path may follow it.
+  let i = words.length ? 1 : 0
+  if (i < words.length && isPath(words[i])) i++
   return words.slice(i)
 }
 
@@ -97,18 +112,19 @@ export function cliWords(argv) {
 // the whole thing as unknown rather than half-accepting it.
 const VERBS = {
   compare: (rest, resolve) => parseCompare(rest, resolve),
+  difftool: (rest, resolve) => parseCompare(rest, resolve, true),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
   cb: (rest) => (rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null),
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
 }
 
-function parseCompare(rest, resolve) {
+function parseCompare(rest, resolve, transient = false) {
   // An empty word is not a path — resolving it would silently mean the cwd.
   const paths = rest.filter((p) => p.trim())
   if (!paths.length) return { command: null, error: 'compare needs a file path.' }
   if (paths.length > 2) return { command: null, error: 'compare takes at most two files.' }
-  return { command: { name: 'compare', files: paths.map(resolve) }, error: null }
+  return { command: { name: 'compare', files: paths.map(resolve), transient }, error: null }
 }
 
 /**

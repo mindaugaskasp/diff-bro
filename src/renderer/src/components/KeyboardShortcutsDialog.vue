@@ -46,7 +46,9 @@ function close() {
       <section v-for="g in groups" :key="g.group" class="group">
         <h4>{{ g.group }}</h4>
         <ul>
-          <li v-for="s in g.items" :key="s.keys">
+          <!-- Keyed by label: the quick look-up binding is user-chosen and may
+               land on a combination already listed. -->
+          <li v-for="s in g.items" :key="s.label">
             <span class="label">{{ s.label }}</span>
             <kbd>{{ s.keys }}</kbd>
           </li>

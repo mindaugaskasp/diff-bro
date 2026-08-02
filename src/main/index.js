@@ -6,8 +6,12 @@ import { installMenu, registerMenuIpc } from './menu'
 import { registerVaultIpc } from './vault'
 import { registerClipboardIpc } from './clipboard'
 import { registerFileIpc } from './files'
+import { registerStreamedDiffIpc } from './streamedDiff'
 import { registerDiffImageIpc } from './diffImage'
 import { registerTextToolsIpc } from './textTools'
+import { registerHashIpc } from './hashTools'
+import { backupIfDue, registerBackupIpc } from './backupRoute'
+import { setBackupHook } from './appData'
 import { registerShareIpc } from './share'
 import { registerSnippetIpc } from './snippets'
 import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLook'
@@ -59,8 +63,12 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerVaultIpc()
     registerClipboardIpc()
     registerFileIpc()
+    registerStreamedDiffIpc()
     registerDiffImageIpc()
     registerTextToolsIpc()
+    registerHashIpc()
+    registerBackupIpc()
+    setBackupHook(backupIfDue)
     registerShareIpc()
     registerSnippetIpc()
     registerLoggerIpc()

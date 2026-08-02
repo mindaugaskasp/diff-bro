@@ -6,3 +6,41 @@ code {
   color: var(--text);
   font-size: var(--font-xs);
 }
+
+/* What this key has already been sent. Set apart from the question above it:
+   it is context for the decision, not part of what Remove does. */
+.sent {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.sent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow: auto;
+}
+.sent-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  font-size: var(--font-sm);
+}
+.sent-list li + li {
+  border-top: 1px solid var(--border);
+}
+.sent-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.sent-when {
+  flex: none;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}

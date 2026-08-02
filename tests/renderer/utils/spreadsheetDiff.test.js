@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   diffWorkbooks,
-  columnName,
-  pageRows,
-  RENDER_ROW_CAP
+  columnName
 } from '../../../src/renderer/src/utils/spreadsheetDiff'
 
 const sheet = (name, rows) => ({ name, rows })
@@ -62,21 +60,3 @@ describe('diffWorkbooks', () => {
   })
 })
 
-describe('pageRows', () => {
-  it('returns everything untouched below the cap', () => {
-    const rows = [1, 2, 3]
-    expect(pageRows(rows, 10)).toEqual({ rows, hidden: 0 })
-  })
-
-  it('caps the rendered rows and reports how many are held back', () => {
-    const rows = Array.from({ length: 25 }, (_, i) => i)
-    const out = pageRows(rows, 10)
-    expect(out.rows).toHaveLength(10)
-    expect(out.hidden).toBe(15)
-  })
-
-  it('has a sane default cap', () => {
-    expect(RENDER_ROW_CAP).toBeGreaterThanOrEqual(1000)
-    expect(pageRows(Array.from({ length: RENDER_ROW_CAP + 1 }, () => 0)).hidden).toBe(1)
-  })
-})

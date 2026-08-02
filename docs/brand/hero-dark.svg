@@ -1,0 +1,115 @@
+<!-- README hero, dark-ground half of the pair README.md serves through
+     <picture>; hero-light.svg is the light-ground twin and the two must keep
+     the same geometry so switching GitHub themes does not shift the layout.
+     Palette is the brand's: charcoal tile, cream mark, one amber seam. The
+     ghosted panes on the right are decoration — they fade in from the middle
+     so nothing ever crowds the wordmark. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-label="Diff Bro — an offline-only diff viewer for Windows and macOS">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#2f2a1c"/>
+      <stop offset="0.55" stop-color="#1c180e"/>
+      <stop offset="1" stop-color="#120f08"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="22%" cy="14%" r="62%">
+      <stop offset="0" stop-color="#e8a13a" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#e8a13a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.46" stop-color="#000000"/>
+      <stop offset="0.60" stop-color="#ffffff"/>
+      <stop offset="0.93" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#4d4d4d"/>
+    </linearGradient>
+    <mask id="paneFade">
+      <rect width="1280" height="340" fill="url(#fade)"/>
+    </mask>
+    <clipPath id="card">
+      <rect x="0" y="0" width="1280" height="340" rx="26"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect width="1280" height="340" fill="url(#panel)"/>
+    <rect width="1280" height="340" fill="url(#glow)"/>
+
+    <g mask="url(#paneFade)">
+      <rect x="690" y="46" width="262" height="248" rx="10" fill="#f4ede0" fill-opacity="0.025"/>
+      <rect x="968" y="46" width="262" height="248" rx="10" fill="#f4ede0" fill-opacity="0.025"/>
+
+      <g fill="#f4ede0" fill-opacity="0.09">
+        <rect x="706" y="64" width="150" height="9" rx="4.5"/>
+        <rect x="718" y="86" width="118" height="9" rx="4.5"/>
+        <rect x="718" y="130" width="164" height="9" rx="4.5"/>
+        <rect x="730" y="152" width="96" height="9" rx="4.5"/>
+        <rect x="718" y="196" width="132" height="9" rx="4.5"/>
+        <rect x="706" y="240" width="88" height="9" rx="4.5"/>
+        <rect x="706" y="262" width="118" height="9" rx="4.5"/>
+      </g>
+      <g fill="#f87171" fill-opacity="0.20">
+        <rect x="694" y="104" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="718" y="108" width="176" height="9" rx="4.5"/>
+        <rect x="694" y="170" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="730" y="174" width="128" height="9" rx="4.5"/>
+        <rect x="694" y="214" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="718" y="218" width="102" height="9" rx="4.5"/>
+      </g>
+
+      <g fill="#f4ede0" fill-opacity="0.09">
+        <rect x="984" y="64" width="150" height="9" rx="4.5"/>
+        <rect x="996" y="86" width="118" height="9" rx="4.5"/>
+        <rect x="996" y="130" width="164" height="9" rx="4.5"/>
+        <rect x="1008" y="152" width="96" height="9" rx="4.5"/>
+        <rect x="996" y="196" width="132" height="9" rx="4.5"/>
+        <rect x="984" y="262" width="118" height="9" rx="4.5"/>
+      </g>
+      <g fill="#4ade80" fill-opacity="0.22">
+        <rect x="972" y="104" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="996" y="108" width="196" height="9" rx="4.5"/>
+        <rect x="972" y="170" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="1008" y="174" width="146" height="9" rx="4.5"/>
+        <rect x="972" y="214" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="996" y="218" width="120" height="9" rx="4.5"/>
+        <rect x="972" y="236" width="254" height="18" rx="5" fill-opacity="0.10"/>
+        <rect x="996" y="240" width="84" height="9" rx="4.5"/>
+      </g>
+    </g>
+
+    <rect width="1280" height="340" fill="url(#sheen)"/>
+  </g>
+
+  <rect x="0.75" y="0.75" width="1278.5" height="338.5" rx="25.25" fill="none"
+        stroke="#f4ede0" stroke-opacity="0.10" stroke-width="1.5"/>
+
+  <g transform="translate(34,70) scale(2)">
+    <path d="M32 22 H50 A28 28 0 0 1 50 78 H32 Z" fill="none"
+          stroke="#f4ede0" stroke-width="10" stroke-linejoin="round"/>
+    <circle cx="45" cy="50" r="7.5" fill="#f4ede0"/>
+    <circle cx="63" cy="50" r="7.5" fill="#f4ede0"/>
+    <rect x="52" y="46" width="4" height="8" rx="2" fill="#e8a13a"/>
+  </g>
+
+  <text x="216" y="164" fill="#f4ede0"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="58" font-weight="700" letter-spacing="-0.5">Diff Bro</text>
+  <text x="217" y="206" fill="#a99a7f"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="19">An offline-only diff viewer for Windows and macOS</text>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+     font-size="13.5" letter-spacing="0.3" text-anchor="middle">
+    <rect x="216" y="232" width="122" height="28" rx="14" fill="#f4ede0" fill-opacity="0.05"
+          stroke="#f4ede0" stroke-opacity="0.16"/>
+    <text x="277" y="250.5" fill="#cdbfa6">Zero network</text>
+    <rect x="348" y="232" width="176" height="28" rx="14" fill="#f4ede0" fill-opacity="0.05"
+          stroke="#f4ede0" stroke-opacity="0.16"/>
+    <text x="436" y="250.5" fill="#cdbfa6">Encrypted on-device</text>
+    <rect x="534" y="232" width="140" height="28" rx="14" fill="#f4ede0" fill-opacity="0.05"
+          stroke="#f4ede0" stroke-opacity="0.16"/>
+    <text x="604" y="250.5" fill="#cdbfa6">Monaco editor</text>
+  </g>
+</svg>

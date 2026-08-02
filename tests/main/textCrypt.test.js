@@ -142,9 +142,9 @@ describe('decryptTextRaw (AES-256-CBC interop)', () => {
 
   it('decrypts with hex key, IV, and ciphertext', () => {
     const ct = cbc(PLAIN).toString('hex')
-    expect(decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: IV.toString('hex') })).toEqual(
-      { ok: true, plaintext: PLAIN }
-    )
+    expect(
+      decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: IV.toString('hex') })
+    ).toEqual({ ok: true, plaintext: PLAIN })
   })
 
   it('accepts base64 for every field', () => {
@@ -180,14 +180,20 @@ describe('decryptTextRaw (AES-256-CBC interop)', () => {
 
   it('rejects ciphertext that is not whole 16-byte blocks', () => {
     expect(
-      decryptTextRaw({ ciphertext: 'aabbcc', key: KEY.toString('hex'), iv: IV.toString('hex') }).error
+      decryptTextRaw({ ciphertext: 'aabbcc', key: KEY.toString('hex'), iv: IV.toString('hex') })
+        .error
     ).toMatch(/whole 16-byte blocks/)
   })
 
   it('refuses a non-CBC algorithm and missing fields', () => {
     const ct = cbc(PLAIN).toString('hex')
     expect(
-      decryptTextRaw({ ciphertext: ct, key: KEY.toString('hex'), iv: IV.toString('hex'), algorithm: 'aes-256-gcm' })
+      decryptTextRaw({
+        ciphertext: ct,
+        key: KEY.toString('hex'),
+        iv: IV.toString('hex'),
+        algorithm: 'aes-256-gcm'
+      })
     ).toEqual({ ok: false, error: 'Unsupported algorithm.' })
     expect(decryptTextRaw({}).ok).toBe(false)
   })

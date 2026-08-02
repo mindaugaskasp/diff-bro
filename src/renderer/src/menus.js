@@ -76,9 +76,19 @@ export function buildMenus(store) {
         },
         { sep: true },
         {
+          label: 'Toggle Structure View',
+          keys: `${MOD}+Shift+D`,
+          run: () => store.handleMenuAction('toggle-structure')
+        },
+        {
           label: 'Toggle Split View',
           keys: `${MOD}+\\`,
           run: () => store.handleMenuAction('toggle-split')
+        },
+        {
+          label: 'Toggle Sidebar',
+          keys: `${MOD}+B`,
+          run: () => store.handleMenuAction('toggle-sidebar')
         },
         { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => store.toggleTheme() },
         { sep: true },
@@ -119,6 +129,7 @@ export function buildMenus(store) {
         { sep: true },
         { label: 'Add Trusted Key', run: () => store.addTrustedKey() },
         { label: 'Manage Trusted Keys', run: () => store.handleMenuAction('manage-keys') },
+        { label: 'Replace My Key…', run: () => store.handleMenuAction('rotate-key') },
         { sep: true },
         {
           label: 'Configuration',
@@ -145,6 +156,14 @@ export function buildMenus(store) {
         { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
         { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
         { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
+        {
+          label: 'Checksum / Hash',
+          run: () => store.handleMenuAction('tools-hash')
+        },
+        {
+          label: 'Regex Tester',
+          run: () => store.handleMenuAction('tools-regex')
+        },
         {
           label: 'Lines',
           keys: `${MOD}+Shift+R`,

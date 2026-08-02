@@ -8,9 +8,16 @@ import BaseDialog from './BaseDialog.vue'
 const diff = useDiffStore()
 
 const recipients = ref([])
-const selected = ref(null)
-const selectedFingerprint = computed(() => selected.value)
+// A set, not a single pick: one file can be sealed for a whole team.
+const selected = ref([])
 const myFingerprint = ref('')
+const chosen = computed(() =>
+  recipients.value.filter((r) => selected.value.includes(r.fingerprint))
+)
+const toggle = (fp) =>
+  (selected.value = selected.value.includes(fp)
+    ? selected.value.filter((f) => f !== fp)
+    : [...selected.value, fp])
 
 onMounted(async () => {
   // Asking for the fingerprint creates this install's keypairs on first use.
@@ -20,15 +27,20 @@ onMounted(async () => {
 
 async function refresh(preferFp) {
   recipients.value = await window.api.listTrustedKeys()
-  selected.value =
-    preferFp ?? selected.value ?? recipients.value[recipients.value.length - 1]?.fingerprint ?? null
+  const known = recipients.value.map((r) => r.fingerprint)
+  selected.value = selected.value.filter((fp) => known.includes(fp))
+  // A key added from here is the one you just went to fetch, so it starts ticked.
+  if (preferFp && known.includes(preferFp) && !selected.value.includes(preferFp)) {
+    selected.value = [...selected.value, preferFp]
+  }
+  if (!selected.value.length && known.length === 1) selected.value = [known[0]]
 }
 
 // Refresh the recipient list once the "Add trusted key" dialog closes.
 watch(
   () => diff.pendingTrustedKey,
   (val, old) => {
-    if (old && !val) refresh()
+    if (old && !val) refresh(diff.lastAddedTrustedFp)
   }
 )
 
@@ -42,25 +54,36 @@ function close() {
   <!-- Normal case: at least one trusted recipient exists. -->
   <BaseDialog v-if="recipients.length" width="400px" title="Share diff" @close="close">
     <form class="dialog-form" @submit.prevent="diff.shareTo(selected)">
-      <label>
-        Seal for recipient
-        <select v-model="selected">
-          <option v-for="r in recipients" :key="r.fingerprint" :value="r.fingerprint">
-            {{ r.label }} · {{ r.fingerprint.slice(0, 8) }}…
-          </option>
-        </select>
-      </label>
-      <p v-if="selectedFingerprint" class="fp-hint">Fingerprint: {{ selectedFingerprint }}</p>
+      <div class="field-label">Seal for</div>
+      <ul class="recipients">
+        <li v-for="r in recipients" :key="r.fingerprint">
+          <label class="recipient">
+            <input
+              type="checkbox"
+              :checked="selected.includes(r.fingerprint)"
+              @change="toggle(r.fingerprint)"
+            />
+            <span class="rc-name">{{ r.label }}</span>
+            <code class="rc-fp">{{ r.fingerprint.slice(0, 8) }}…</code>
+          </label>
+        </li>
+      </ul>
       <p class="dialog-note">
-        The file is encrypted so only this recipient can open it, and signed so any modification —
-        including its expiry time — is rejected. It expires at the same moment as your local copy.
+        {{
+          chosen.length > 1
+            ? `One file only these ${chosen.length} can open, signed so any modification — including its expiry time — is rejected.`
+            : 'The file is encrypted so only the chosen recipient can open it, and signed so any modification — including its expiry time — is rejected.'
+        }}
+        It expires at the same moment as your local copy.
       </p>
       <div class="dialog-actions">
         <button type="button" class="btn btn-sm btn-ghost" @click="diff.addTrustedKey()">
           Add recipient…
         </button>
         <span class="spacer" />
-        <button type="submit" class="btn btn-primary" :disabled="!selected">Create file</button>
+        <button type="submit" class="btn btn-primary" :disabled="!selected.length">
+          Create file
+        </button>
         <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
       </div>
     </form>
@@ -69,8 +92,8 @@ function close() {
   <!-- First-time setup: no trusted keys yet. -->
   <BaseDialog v-else width="400px" title="Share diff — one-time setup" @close="close">
     <p class="dialog-note">
-      Shared diffs are sealed for one specific person, so you and your bro first swap public keys —
-      once, in both directions. Your keys already exist (created automatically, fingerprint
+      Shared diffs are sealed for named people, so you and your bro first swap public keys — once,
+      in both directions. Your keys already exist (created automatically, fingerprint
       <code>{{ myFingerprint }}</code
       >); the private half never leaves this machine.
     </p>

@@ -21,6 +21,9 @@ ul {
   width: 15px;
   height: 15px;
 }
+.empty.small {
+  list-style: none;
+}
 /* A group header (Favorites) — chevron + icon + name + count. */
 .grp-head {
   display: flex;

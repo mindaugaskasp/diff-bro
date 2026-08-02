@@ -21,6 +21,9 @@ ul {
   width: 15px;
   height: 15px;
 }
+.empty.small {
+  list-style: none;
+}
 .favorites-group {
   list-style: none;
   margin: 0;

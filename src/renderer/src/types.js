@@ -17,6 +17,10 @@
  * @property {SheetGrid[]} [sheets]  parsed worksheets when kind === 'spreadsheet'
  * @property {string} [encoding]
  * @property {number} [size]    bytes on disk
+ * @property {boolean} [edited] the app rewrote this copy (Format), so it is no
+ *   longer the file on disk — see diffStore._reloadSlot
+ * @property {string} [diskContent] what was read before that rewrite, the
+ *   baseline the on-focus refresh measures a disk change against
  */
 
 /**
@@ -24,6 +28,31 @@
  * @typedef {object} SheetGrid
  * @property {string} name
  * @property {Array<Array<string|number|boolean|null>>} rows
+ */
+
+/**
+ * What main reports when it opens a streamed comparison: the alignment, the
+ * counts, and whether either side outran the index's line cap. `runs` is the
+ * flat quintuple encoding from src/main/hashDiff.js.
+ * @typedef {object} StreamSummary
+ * @property {string} token        handle for the windowed line reads
+ * @property {Int32Array} runs
+ * @property {number} additions
+ * @property {number} deletions
+ * @property {boolean} approximate the files differ too widely to align exactly
+ * @property {number} leftLines
+ * @property {number} rightLines
+ * @property {boolean} truncated   the line cap was hit before the end of a file
+ * @property {number} maxLines
+ */
+
+/**
+ * One display row of a streamed comparison (see utils/streamRows.js). A line is
+ * null where that side has no counterpart on this row.
+ * @typedef {object} StreamRow
+ * @property {'same'|'chg'|'del'|'ins'} status
+ * @property {number|null} leftLine   0-based
+ * @property {number|null} rightLine
  */
 
 /**
@@ -204,6 +233,17 @@
  * @property {number} width    device pixels
  * @property {number} height
  * @property {boolean} [truncated]  the diff outran the export's height ceiling
+ */
+
+/**
+ * One row of the tab context menu. A separator carries only `sep`; every other
+ * item is always present and answers `enabled` instead of being dropped, so the
+ * menu's shape does not change with the tab it was opened on.
+ * @typedef {object} TabMenuItem
+ * @property {import('./utils/tabMenu').TabMenuAction} [action]
+ * @property {string} [label]
+ * @property {boolean} [enabled]
+ * @property {true} [sep]
  */
 
 export {}

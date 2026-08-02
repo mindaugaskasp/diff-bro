@@ -7,11 +7,13 @@
 // The comparison column: the file-slots row, the format banner and the viewer.
 // The toolbar, the sidebar and any dialog are deliberately outside it.
 export const CAPTURE_SELECTOR = '.content'
-// Monaco's host inside that column. The strip above it (file slots, format
-// banner) belongs in the picture once, at the top — never repeated per slice.
-export const EDITOR_SELECTOR = '.diff-container'
-// Monaco renders one of these per visible line, in both panes.
-const LINE_SELECTOR = '.view-line'
+// The scrolling viewer inside that column — Monaco's host, or the streamed
+// viewer's row list. The strip above it (file slots, format banner, the
+// streamed marker) belongs in the picture once, at the top, never repeated per
+// slice.
+export const EDITOR_SELECTOR = '.diff-container, .stream-rows'
+// One per rendered line: Monaco's own, or a streamed row.
+const LINE_SELECTOR = '.view-line, .srow'
 // Breathing room under the last line, and a floor so a one-line diff still
 // produces a picture rather than a sliver.
 const BOTTOM_PAD = 14
@@ -73,29 +75,37 @@ export function afterFrames(frames = 3, win = window) {
 }
 
 /**
- * The column and, within it, Monaco's viewport — the two boxes a stitched
- * export is cut from. Null when the diff column isn't on screen.
- * @param {Document} [doc]
+ * The column and, within it, the scrolling viewport — the two boxes a stitched
+ * export is cut from. The strip above the viewport (file slots, format banner,
+ * sheet tabs) belongs in the picture once, at the top.
+ *
+ * The viewport is whatever the registered scroller says it is, so this works
+ * for Monaco, the spreadsheet grids and the structure list alike; the selector
+ * is only the fallback for a scroller that predates the field.
+ * @param {{ viewport?: Element|null, doc?: Document }} [opts]
  * @returns {{ content: import('../types').CaptureRect, editorY: number } | null}
  */
-export function captureRegionOf(doc = document) {
+export function captureRegionOf({ viewport = null, doc = document } = {}) {
   const el = doc.querySelector(CAPTURE_SELECTOR)
-  if (!el) return null
-  const r = el.getBoundingClientRect()
-  if (!r.width || !r.height) return null
-  const pane = el.querySelector?.(EDITOR_SELECTOR)
-  const paneRect = pane?.getBoundingClientRect()
-  if (!paneRect?.height) return null
-  return {
-    content: {
-      x: Math.round(r.left),
-      y: Math.round(r.top),
-      width: Math.round(r.width),
-      height: Math.round(r.height)
-    },
-    editorY: Math.round(paneRect.top)
-  }
+  const column = rectOf(el)
+  if (!column?.width) return null
+  const pane = rectOf(viewport ?? el.querySelector?.(EDITOR_SELECTOR))
+  return pane ? { content: boxOf(column), editorY: Math.round(pane.top) } : null
 }
+
+// A box that is actually on screen, or null — an unmounted or collapsed one has
+// nothing to photograph.
+const rectOf = (node) => {
+  const r = node?.getBoundingClientRect?.()
+  return r?.height ? r : null
+}
+
+const boxOf = (r) => ({
+  x: Math.round(r.left),
+  y: Math.round(r.top),
+  width: Math.round(r.width),
+  height: Math.round(r.height)
+})
 
 /**
  * @typedef {object} CaptureSlice

@@ -28,7 +28,8 @@ compromised renderer can't turn `file:read` into an arbitrary-file-read primitiv
 Saved comparisons are AES-256-GCM encrypted at rest with an install-specific key
 held by the OS keychain (`safeStorage`). The entry's plaintext metadata is bound
 as GCM AAD, so tampering (e.g. extending an expiry) makes the entry
-undecryptable. Every entry auto-expires — default 1 h, hard cap 24 h.
+undecryptable. Every entry auto-expires — default 1 h, up to a week (or is
+kept until you delete it).
 
 **The open comparisons are stored the same way.** Whatever is open when you quit
 is reopened on the next launch, so `session.json` holds the compared file
@@ -69,13 +70,26 @@ new identity (which would silently break every peer's trust).
 
 ## Sharing diffs (sealed `.diffbro` files)
 
-A shared diff is **sign-then-encrypt**, sealed for one recipient:
+A shared diff is **sign-then-encrypt**, sealed for an **audience** — one
+recipient or a whole team, in one file:
 
-- Signed with the sender's Ed25519 key over `payload ‖ recipient-fingerprint`
-  (a recipient can't re-seal it for a third party).
-- Encrypted with AES-256-GCM under a key from X25519 ECDH using a **fresh
-  ephemeral key per file**; the GCM AAD covers `format ‖ recipient-fingerprint`.
-- The absolute expiry is signed and enforced on both ends — 24 h max.
+- The diff is encrypted **once** with AES-256-GCM under a random content key.
+  That key is then wrapped separately for each recipient, using X25519 ECDH from
+  a **fresh ephemeral key per file**. Adding a recipient adds a wrapped key, not
+  a second copy of the diff.
+- The audience — the sorted set of recipient fingerprints, digested — is what
+  everything commits to: the Ed25519 signature covers `payload ‖ audience`, the
+  content's GCM AAD covers `format ‖ audience`, and each wrapped key's AAD covers
+  `format ‖ recipient-fingerprint ‖ audience`. So the recipient list cannot be
+  edited, a key cannot be lifted from one recipient's slot into another's, and a
+  recipient cannot re-seal the diff for a third party.
+- The absolute expiry is signed and enforced on both ends — one week max.
+  You choose it when saving; every copy dies at the same moment.
+
+**The recipient list is not secret.** It travels in the clear so each recipient
+can recompute the audience and verify the bindings above. Everyone the file is
+addressed to therefore learns who else received it, and anyone holding the file
+sees the fingerprints (not the names) it was sealed for.
 
 **Filename integrity.** The on-disk name is a hash of the (authenticated)
 ciphertext, so it leaks nothing about the diff and a **renamed file is refused**
@@ -83,11 +97,50 @@ on import. **Trusted keys must be named**: importing or dropping a `.diffbrokey`
 prompts for a label, and adding your own key is rejected. Manage names via
 **Security → Manage Trusted Keys**.
 
-**No replay protection (by design).** Within its ≤ 24 h TTL a `.diffbro` file can
-be imported repeatedly, and a re-delivered old share is indistinguishable from a
-new one. Sealing guarantees confidentiality, sender authenticity, recipient
+**No replay protection (by design).** Within its TTL a `.diffbro` file can be
+imported repeatedly, and a re-delivered old share is indistinguishable from a
+new one. The expiry you choose is therefore also the replay window — pick a
+short one for anything sensitive, and a week only when convenience matters more. Sealing guarantees confidentiality, sender authenticity, recipient
 binding, and integrity — but not freshness or once-only delivery. Treat a share
 as "this sender sent me this content, valid until its expiry", not "this is new."
+
+**Revocation is not a thing a `.diffbro` can have.** Once the file is on someone
+else's disk and they hold the private key it is addressed to, nothing on your
+machine changes bytes on theirs. What exists instead, in order of how
+enforceable it actually is:
+
+- **Expiry** — signed and checked on open, by our own code reading the local
+  clock. A deadline, not a control: a patched build or a rolled-back clock
+  opens it anyway. This is the closest thing to revocation there is, which is
+  why the sender picks the window.
+- **Removing a trusted key** — real, and local: no _future_ share can be
+  addressed to them. It does nothing to what has already been sent.
+- **Replacing your key** — see below. It is about impersonation, not recall.
+
+## Replacing your key (rotation)
+
+**Security → Replace My Key** generates a new identity and keeps the previous
+one as **decrypt-only**. What it buys is narrow and worth stating exactly:
+
+- A leaked private key stops being able to **sign new files in your name**, once
+  each peer holds your new key.
+- It does **not** make diffs you already shared unreadable. Those were encrypted
+  to the _recipient's_ key; yours only signed them.
+
+The old private key is **retired, never silently destroyed** — a diff sealed to
+it before the rotation is still addressed to a key this machine holds, and
+`openSealedWith` tries the current identity first, then each retired one. Only a
+retired key ever decrypts; nothing is signed or sealed with one again. Destroying
+them is a separate, acknowledged action (the right move after a leak), and it
+permanently gives up any unopened diff addressed to them.
+
+A new key carries a **rotation record** — `{ from, to, at }` signed by _both_ the
+old key and the new one — so a peer who already trusts the old fingerprint sees
+"this replaces a key you trust" instead of "unknown key". It is **advisory**:
+whoever holds a leaked private key can sign a rotation to a key of their own, so
+the record downgrades the out-of-band check and never replaces it. The predecessor's
+signing key is read from the local trust store, never from the file, and the
+import dialog names which key vouched and still says to verify.
 
 ## Keys and formats
 
@@ -96,10 +149,10 @@ as "this sender sent me this content, valid until its expiry", not "this is new.
   (a public key isn't secret — this just stops casual text-editor readability;
   legacy plain-JSON keys are still accepted).
 - Every trust decision keys off a **128-bit fingerprint** (32 hex chars) over
-  both public keys — trusted-key lookup, the recipient binding in the signature,
+  both public keys — trusted-key lookup, the audience binding in the signature,
   and the GCM AAD. 128 bits keeps a targeted crafted-keypair second preimage at
   ~2¹²⁸ and collisions (adversary controls both keys) at ~2⁶⁴.
-- Wire formats are versioned (`diffbro-key/2`, `diffbro-share/3`) and matched
+- Wire formats are versioned (`diffbro-key/2`, `diffbro-share/4`) and matched
   exactly. **Rotation:** if a format is found vulnerable, bump its version
   constant in `src/main/sealing.js` and ship a release — old-format files then
   stop opening and all new files use the new version. (The current versions

@@ -25,12 +25,43 @@ describe('cliWords', () => {
     expect(cliWords(PACKAGED)).toEqual([])
     expect(cliWords(DEV)).toEqual([])
   })
+
+  // The entry point is whatever path the launcher passes; it is NOT always named
+  // after the package. A clone directory called anything else used to be read as
+  // a command and killed the launch before a window existed.
+  it('drops an entry path whatever the checkout is called', () => {
+    expect(cliWords(['/usr/bin/electron', '/Users/x/Projects/diff-bro'])).toEqual([])
+    expect(cliWords(['/usr/bin/electron', '/Users/x/src/my-fork', 'compare', 'a', 'b'])).toEqual([
+      'compare',
+      'a',
+      'b'
+    ])
+    expect(cliWords(['/usr/bin/electron', 'C:\\work\\checkout'])).toEqual([])
+  })
+
+  // A path is the only thing that may be skipped as an entry — a bare misspelled
+  // word must still reach parseCli so it can be reported.
+  it('keeps a bare word that is not a path', () => {
+    expect(cliWords([...PACKAGED, 'frobnicate'])).toEqual(['frobnicate'])
+  })
 })
 
 describe('parseCli — compare', () => {
   it('takes one file', () => {
     const { command } = parseCli([...PACKAGED, 'compare', 'a.json'])
-    expect(command).toEqual({ name: 'compare', files: ['a.json'] })
+    expect(command).toEqual({ name: 'compare', files: ['a.json'], transient: false })
+  })
+
+  // What the git difftool launcher runs. Same comparison, flagged as one git
+  // made throwaway copies for, so a merge with more conflicts than tabs can
+  // recycle them rather than running out.
+  it('marks a difftool launch as throwaway', () => {
+    const { command } = parseCli([...PACKAGED, 'difftool', 'before/a.json', 'after/a.json'])
+    expect(command).toEqual({
+      name: 'compare',
+      files: ['before/a.json', 'after/a.json'],
+      transient: true
+    })
   })
 
   it('takes two files', () => {
@@ -70,6 +101,15 @@ describe('parseCli — the other verbs', () => {
   it('reports an unknown command instead of doing nothing', () => {
     expect(parseCli([...PACKAGED, 'frobnicate']).error).toMatch(/Unknown command/)
     expect(parseCli([...PACKAGED, 'create', 'diff']).error).toMatch(/Unknown command/)
+  })
+
+  // Launching by absolute path is a normal start, not a typo: erroring here
+  // exits before any window exists, so the app never opens at all.
+  it('starts normally when launched by an absolute checkout path', () => {
+    expect(parseCli(['/usr/bin/electron', '/Users/x/Projects/diff-bro'])).toEqual({
+      command: null,
+      error: null
+    })
   })
 
   // A double-click or a Dock launch carries no words; that must stay a normal

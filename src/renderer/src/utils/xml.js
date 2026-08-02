@@ -1,6 +1,6 @@
 // DOMParser in 'text/xml' executes nothing and resolves no external entities,
 // and the document is never inserted into the page — only read into plain
-// objects the template renders as text (CLAUDE.md #7).
+// objects the template renders as text (docs/standards.md #7).
 import { formatXml, validateXml } from './textFormats'
 
 /**

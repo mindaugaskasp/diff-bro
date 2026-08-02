@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  elementScroller,
   getDiffScroller,
   monacoDiffScroller,
   monacoScroller,
@@ -191,5 +192,59 @@ describe('monacoDiffScroller selection freshness', () => {
     const { original, scroller } = build()
     original.selection = sel(2, 3)
     expect(scroller.selection()).toEqual({ top: 20, bottom: 60 })
+  })
+})
+
+// The grid viewer and the structure list are plain scrolling boxes with no
+// Monaco behind them. Giving them the same contract is the whole of "stitch a
+// picture of any scrollable region": the export already knows how to scroll a
+// viewport at a time and join the shots.
+describe('elementScroller', () => {
+  const box = (over = {}) => ({
+    scrollHeight: 2400,
+    clientHeight: 600,
+    scrollWidth: 900,
+    clientWidth: 900,
+    scrollTop: 0,
+    ...over
+  })
+
+  it('reports the region\u2019s own scroll geometry', () => {
+    const el = box()
+    const s = elementScroller(() => el)
+    expect(s.contentHeight()).toBe(2400)
+    expect(s.viewportHeight()).toBe(600)
+    expect(s.viewportEl()).toBe(el)
+  })
+
+  it('scrolls the element the export is stitching', () => {
+    const el = box()
+    const s = elementScroller(() => el)
+    s.scrollTo(1200)
+    expect(el.scrollTop).toBe(1200)
+    expect(s.scrollTop()).toBe(1200)
+  })
+
+  // A grid has no line selection, so a picture of one is always the whole thing.
+  it('never narrows the picture to a selection', () => {
+    expect(elementScroller(() => box()).selection()).toBeNull()
+  })
+
+  // Stitching only scrolls DOWN. Columns off the right edge are simply not in
+  // the picture, and a crop that looks complete is the one thing an export
+  // must not hand over.
+  it('counts the screenfuls of columns a picture cannot reach', () => {
+    expect(elementScroller(() => box()).hiddenColumns()).toBe(0)
+    expect(elementScroller(() => box({ scrollWidth: 2600 })).hiddenColumns()).toBe(2)
+  })
+
+  // Read lazily, so a re-render that swaps the node cannot leave the export
+  // scrolling an element nobody can see.
+  it('survives the element going away', () => {
+    const s = elementScroller(() => null)
+    expect(s.contentHeight()).toBe(0)
+    expect(s.viewportEl()).toBeNull()
+    expect(s.hiddenColumns()).toBe(0)
+    expect(() => s.scrollTo(100)).not.toThrow()
   })
 })

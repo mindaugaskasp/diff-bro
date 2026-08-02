@@ -23,6 +23,9 @@ const diff = useDiffStore()
 
 const open = ref(true)
 const q = computed(() => props.search.trim().toLowerCase())
+// A filter is on when there is a search term or a tag selected — the only time
+// a per-section count is worth the space.
+const filtering = computed(() => !!q.value || props.tags.length > 0)
 const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
   matchesTags(e.tags, props.tags)
@@ -51,6 +54,8 @@ function startImport() {
       :open="open"
       :first="first"
       :unified="unified"
+      :count="rows.length"
+      :filtering="filtering"
       @toggle="open = !open"
     >
       <template #actions>
@@ -67,7 +72,11 @@ function startImport() {
     <div v-show="open" class="section-body">
       <p v-if="!hasImported" class="empty"><AppIcon name="inbox" /> Empty</p>
 
-      <ul v-if="rows.length" class="rows">
+      <ul v-else class="rows">
+        <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
+        <li v-if="!rows.length" class="empty small">
+          No shared diffs match — try removing a filter.
+        </li>
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>
     </div>

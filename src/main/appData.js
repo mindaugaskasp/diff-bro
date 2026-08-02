@@ -15,18 +15,9 @@ import {
   writeSync
 } from 'fs'
 import { join } from 'path'
-
-// Every file that makes up this install's data — copied together when the
-// location changes, so the folder is self-contained and portable.
-const DATA_FILES = [
-  'vault.json', // saved diffs (encrypted at rest)
-  'snippets.json', // snippet library (encrypted at rest)
-  'session.json', // the comparisons left open (encrypted at rest)
-  'identity.key', // private identity key (OS-keychain wrapped)
-  'identity.pub', // public identity key
-  'trusted-keys.json', // trusted peers
-  'vault.key' // vault encryption key (OS-keychain wrapped)
-]
+// Extension required, unlike the rest of src/main: seed-worker.cjs loads this
+// module without a bundler. tests/scripts/seedWorker.test.js guards it.
+import { DATA_FILES, planDataDirMove } from './dataFiles.js'
 
 const pointerPath = () => join(app.getPath('userData'), 'data-location.json')
 
@@ -87,22 +78,37 @@ function writeStore(name, contents) {
   writeFileAtomic(join(getDataDir(), `${name}.json`), String(contents))
 }
 
-// Non-destructive: keeps existing files at the destination (so re-pointing after
-// a reinstall restores them) and copies over source-only files.
-function setDataDir(newDir) {
+// Non-destructive either way. Choosing a folder keeps what is already there, so
+// re-pointing after a reinstall restores it; a reset carries the data in use
+// home instead, because stale copies left in userData would otherwise silently
+// win over everything made while the data lived elsewhere.
+function setDataDir(newDir, { sourceWins = false } = {}) {
   const current = getDataDir()
   const resolved = String(newDir)
   mkdirSync(resolved, { recursive: true })
   if (resolved !== current) {
-    for (const f of DATA_FILES) {
-      const src = join(current, f)
-      const dest = join(resolved, f)
-      if (existsSync(src) && !existsSync(dest)) copyFileSync(src, dest)
+    const plan = planDataDirMove({
+      files: DATA_FILES,
+      exists: existsSync,
+      from: current,
+      to: resolved,
+      join,
+      sourceWins
+    })
+    for (const { from, to, displace } of plan) {
+      if (displace) renameSync(to, displace)
+      copyFileSync(from, to)
     }
   }
   writeFileSync(pointerPath(), JSON.stringify({ dir: resolved }, null, 2))
   cachedDir = resolved
   return resolved
+}
+
+let backupIfDue = () => {}
+/** @param {() => void} fn  set by backupRoute, which imports from here */
+export function setBackupHook(fn) {
+  backupIfDue = fn
 }
 
 export function registerAppDataIpc() {
@@ -114,6 +120,9 @@ export function registerAppDataIpc() {
   ipcMain.handle('store:save', (e, name, contents) => {
     if (typeof name !== 'string' || typeof contents !== 'string') return { error: 'bad-request' }
     writeStore(name, contents)
+    // A save is what OFFERS a backup; autoBackup's window decides whether one
+    // is actually taken.
+    if (name === 'vault' || name === 'snippets') backupIfDue()
     return { ok: true }
   })
 
@@ -131,8 +140,12 @@ export function registerAppDataIpc() {
     return { ok: true, dir: setDataDir(filePaths[0]) }
   })
 
-  // Reset to the default (userData) location, copying the data back.
-  ipcMain.handle('datadir:reset', () => ({ ok: true, dir: setDataDir(app.getPath('userData')) }))
+  // Reset to the default (userData) location, carrying the data in use back with
+  // it — anything stale already sitting there is moved aside, never obeyed.
+  ipcMain.handle('datadir:reset', () => ({
+    ok: true,
+    dir: setDataDir(app.getPath('userData'), { sourceWins: true })
+  }))
 
   ipcMain.handle('datadir:reveal', () => {
     shell.openPath(getDataDir())

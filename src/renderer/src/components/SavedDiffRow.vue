@@ -105,6 +105,7 @@ async function open() {
 
     <span class="diffacts">
       <button
+        v-if="entry.format !== 'excel'"
         class="row-btn"
         data-tip="Export this diff as a picture (PNG)"
         aria-label="Export as image"

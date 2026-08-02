@@ -98,3 +98,34 @@ test('rejects a corrupt .xlsx with a notice instead of loading it', async ({ app
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// The grid scrolls inside itself with no Monaco behind it. It registers its own
+// scroller, so the export scrolls and stitches it the same way it does a tall
+// diff — capturePage only ever sees what is composited, whatever the viewer.
+test('exports the spreadsheet grid as a stitched picture', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-img-'))
+  const leftPath = join(dir, 'budget-left.xlsx')
+  const rightPath = join(dir, 'budget-right.xlsx')
+  writeFileSync(leftPath, LEFT)
+  writeFileSync(rightPath, RIGHT)
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    const image = page.getByRole('button', { name: /^Image/ })
+    await expect(image).toBeEnabled()
+    await image.click()
+
+    // A real picture of the grid, not a placeholder: the preview carries PNG
+    // bytes and the dialog reports the size it actually captured.
+    const shot = page.locator('.shot img')
+    await expect(shot).toBeVisible()
+    await expect(shot).toHaveAttribute('src', /^data:image\/png;base64,/)
+    await expect(page.locator('.dialog-note').first()).toContainText(/\d+ × \d+ screenshot/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

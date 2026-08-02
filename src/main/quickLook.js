@@ -17,7 +17,8 @@ import {
   resolveAccelerator,
   launcherDiagnostics,
   launcherSpaceBehavior,
-  needsMainWindow
+  needsMainWindow,
+  swapShortcut
 } from './quickLookCore'
 
 // Fallback when settings.json has none. Mirror the renderer's
@@ -89,6 +90,13 @@ function ensure() {
 function mainWindow() {
   return BrowserWindow.getAllWindows().find((w) => w !== win) ?? null
 }
+
+/**
+ * Whether a window is the launcher. It holds no document and never wires
+ * onMenuAction, so a menu action routed to it is simply dropped.
+ * @param {import('electron').BrowserWindow|null} candidate
+ */
+export const isLauncher = (candidate) => !!candidate && candidate === win
 
 // Also ends the un-focusable state hideLauncher leaves behind, without which
 // focus() below is a silent no-op.
@@ -212,22 +220,17 @@ function openInMain(payload) {
   else send()
 }
 
-// Releases the previous binding first. 'invalid' = Electron rejected the string;
-// 'unavailable' = another app already holds the combo.
+// 'invalid' = the string is not a registerable binding; 'unavailable' = another
+// app already holds the combo. On either, the working shortcut is left alone.
 function registerShortcut(accel) {
-  if (currentAccelerator) {
-    globalShortcut.unregister(currentAccelerator)
-    currentAccelerator = null
-  }
-  try {
-    if (globalShortcut.register(accel, onShortcut)) {
-      currentAccelerator = accel
-      return { ok: true }
-    }
-    return { ok: false, error: 'unavailable' }
-  } catch {
-    return { ok: false, error: 'invalid' }
-  }
+  const res = swapShortcut({
+    current: currentAccelerator,
+    next: accel,
+    register: (a) => globalShortcut.register(a, onShortcut),
+    unregister: (a) => globalShortcut.unregister(a)
+  })
+  currentAccelerator = res.current
+  return res.ok ? { ok: true } : { ok: false, error: res.error }
 }
 
 export function registerQuickLook(openMainWindow) {

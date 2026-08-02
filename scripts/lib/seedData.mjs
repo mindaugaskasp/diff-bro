@@ -184,6 +184,55 @@ const jsonPair = (a, b) => ({
   right: { path: null, name: b.name, content: b.content }
 })
 
+// A workbook side carries the GRID the xlsx adapter reads (kind + sheets), never
+// a content string — a text stand-in makes the viewer open it as one line and
+// call two identical placeholders "no differences".
+const sheetSide = (name, sheets) => ({ path: null, name, kind: 'spreadsheet', sheets })
+const sheetPair = (a, b) => ({
+  mode: 'files',
+  renderSideBySide: true,
+  ignoreTrimWhitespace: false,
+  left: sheetSide(a.name, a.sheets),
+  right: sheetSide(b.name, b.sheets)
+})
+
+// Same shape both years so the grid lines up and the changes read as edits
+// rather than as a rewritten sheet: Q3 is revised, and Q4 is new in 2025.
+const BUDGET_2024 = [
+  {
+    name: 'Q3',
+    rows: [
+      ['Cost centre', 'Owner', 'Budget', 'Spent'],
+      ['Infrastructure', 'Platform', 48000, 46120],
+      ['Licences', 'IT', 12500, 12500],
+      ['Travel', 'Sales', 9000, 7430],
+      ['Contractors', 'Delivery', 31000, 33800],
+      ['Total', '', 100500, 99850]
+    ]
+  }
+]
+const BUDGET_2025 = [
+  {
+    name: 'Q3',
+    rows: [
+      ['Cost centre', 'Owner', 'Budget', 'Spent'],
+      ['Infrastructure', 'Platform', 52000, 46120],
+      ['Licences', 'IT', 12500, 11900],
+      ['Travel', 'Sales', 9000, 7430],
+      ['Contractors', 'Delivery', 24000, 33800],
+      ['Total', '', 97500, 99850]
+    ]
+  },
+  {
+    name: 'Q4',
+    rows: [
+      ['Cost centre', 'Owner', 'Budget', 'Spent'],
+      ['Infrastructure', 'Platform', 55000, 0],
+      ['Licences', 'IT', 13750, 0]
+    ]
+  }
+]
+
 // Saved (own) diffs — from: null. A mix of json / xml / text / excel so the
 // sidebar shows the range of format tags.
 export function savedDiffs(now) {
@@ -228,9 +277,9 @@ export function savedDiffs(now) {
       createdAt: now - 3 * DAY,
       expiresAt: null,
       from: null,
-      payload: jsonPair(
-        { name: 'budget-2024.xlsx', content: '(spreadsheet)' },
-        { name: 'budget-2025.xlsx', content: '(spreadsheet)' }
+      payload: sheetPair(
+        { name: 'budget-2024.xlsx', sheets: BUDGET_2024 },
+        { name: 'budget-2025.xlsx', sheets: BUDGET_2025 }
       )
     }
   ]

@@ -1,0 +1,125 @@
+.stream-viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The one scrolling box. Both panes live inside it as grid columns, so the two
+   sides cannot drift out of row alignment and there is a single scroller for
+   the image export to drive. */
+.stream-rows {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-md);
+  line-height: 1;
+}
+
+/* EVERY row is exactly the height bound inline from ROW_HEIGHT
+   (utils/virtualRows.js). The spacers above and below stand in for the millions
+   of rows that are not rendered and are computed from that number, so a row of
+   any other height makes them lie and the list jumps while scrolling. Nothing
+   here may add height: no borders, no padding, no wrapping. */
+.srow {
+  display: grid;
+  grid-template-columns: 56px 1fr 56px 1fr;
+  align-items: center;
+}
+.srow .ln {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: var(--space-2);
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  overflow: hidden;
+}
+/* The divider between the two panes. A left keyline adds width, never height. */
+.srow .ln.mid {
+  border-left: 1px solid var(--border);
+}
+.srow .txt {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  color: var(--text);
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* Row states, per SIDE — the left pane shows what went, the right what came.
+   Same tints and the same striped "nothing here" ghost as the spreadsheet grid,
+   so the two viewers read alike. */
+.srow .txt.del {
+  background: color-mix(in srgb, var(--danger-border) 16%, transparent);
+}
+.srow .txt.add {
+  background: color-mix(in srgb, var(--success-text) 16%, transparent);
+}
+.srow .txt.ghost {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    color-mix(in srgb, var(--border) 55%, transparent) 5px,
+    color-mix(in srgb, var(--border) 55%, transparent) 10px
+  );
+}
+
+.stream-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  color: var(--text-dim);
+  font-size: var(--font-lg);
+  text-align: center;
+}
+
+.identical-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--success-text);
+  font-size: var(--font-md);
+}
+.identical-row .ok {
+  flex: none;
+}
+
+.status {
+  gap: var(--space-4);
+  padding: 0 var(--space-3);
+  min-height: var(--control-h);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+}
+.status .add {
+  color: var(--success-text);
+  font-weight: 600;
+}
+.status .del {
+  color: var(--danger-border);
+  font-weight: 600;
+}
+.status .capped {
+  color: var(--text-hint);
+  font-style: italic;
+}
+.status .right {
+  margin-left: auto;
+}

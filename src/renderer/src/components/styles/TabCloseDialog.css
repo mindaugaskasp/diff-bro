@@ -1,0 +1,12 @@
+/* The comparisons a bulk close would discard, named so the count is checkable
+   rather than taken on trust. Capped and scrolled: the list must not push the
+   buttons off a short window. */
+.risk-list {
+  margin: var(--space-2) 0 0;
+  padding: 0 0 0 var(--space-4);
+  max-height: 148px;
+  overflow-y: auto;
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+  line-height: 1.7;
+}

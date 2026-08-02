@@ -110,7 +110,10 @@ describe('useQuickLookCompose', () => {
       const { update, c } = harness()
       c.startEdit({ id: 'abc', name: 'N', content: 'x', tags: ['work', 'keys'] })
       await c.save()
-      expect(update).toHaveBeenCalledWith('abc', expect.objectContaining({ tags: ['work', 'keys'] }))
+      expect(update).toHaveBeenCalledWith(
+        'abc',
+        expect.objectContaining({ tags: ['work', 'keys'] })
+      )
     })
 
     it('start() clears edit mode so the next + creates rather than overwrites', async () => {

@@ -20,6 +20,9 @@ const comparison = (l, r) => ({ mode: 'files', left: FILE(l), right: FILE(r) })
 function withTabs(...comparisons) {
   const tabs = useTabsStore()
   tabs.init()
+  // A booted app has already read the stored session back (App.vue awaits
+  // restoreSession on mount); saveSession refuses to write before that.
+  tabs.sessionReady = true
   for (const c of comparisons) tabs.open(c)
   return tabs
 }
@@ -172,7 +175,7 @@ describe('opening', () => {
     tabs.init()
     for (let i = 0; i < MAX_TABS + 3; i++) tabs.open(comparison(`a${i}.txt`, `b${i}.txt`))
     expect(tabs.tabs).toHaveLength(MAX_TABS)
-    expect(diff.notice).toContain('most tabs')
+    expect(diff.notice).toContain('most comparisons')
   })
 
   it('gives a new tab the view toggles already in use', () => {
@@ -346,6 +349,31 @@ describe('the session, across a quit', () => {
     tabs.init()
     return tabs
   }
+
+  // The debounced save races the restore on launch: a file dropped inside the
+  // 500ms window, before restoreSession() has read storage, used to overwrite
+  // the stored session with the one tab that had just been opened — the rest
+  // were gone. Only the EMPTY branch consulted sessionReady.
+  it('does not overwrite a session that has not been read back yet', async () => {
+    const first = withTabs(comparison('a.txt', 'b.txt'), comparison('c.txt', 'd.txt'))
+    await first.saveSession()
+    const sealed = stored()
+
+    // A fresh launch where the user drops a file before restoreSession resolves.
+    setActivePinia(createPinia())
+    const tabs = useTabsStore()
+    tabs.init()
+    useDiffStore().left = FILE('dropped.txt')
+    await tabs.saveSession()
+
+    expect(stored()).toBe(sealed)
+
+    // Once the restore has happened, saving is live again.
+    await tabs.restoreSession()
+    useDiffStore().left = FILE('later.txt')
+    await tabs.saveSession()
+    expect(stored()).not.toBe(sealed)
+  })
 
   it('reopens every comparison, on the tab that was in front', async () => {
     const tabs = withTabs(comparison('a.txt', 'b.txt'), comparison('c.txt', 'd.txt'))
@@ -522,5 +550,344 @@ describe('when reopening comparisons is turned off', () => {
     const next = useTabsStore()
     next.init()
     await expect(next.restoreSession()).resolves.toBe(1)
+  })
+})
+
+// A tab's snapshot only refreshes on a switch, so asking it about the tab you
+// are LOOKING at reads a stale copy — which is how the unsaved marker came out
+// backwards and the close guard waved unsaved work through.
+describe('the tab on screen, asked about itself', () => {
+  it('is unsaved the moment work lands in it, without waiting for a switch', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    expect(tabs.unsaved(tabs.active)).toBe(false) // blank: nothing to lose
+
+    diff.left = FILE('a.txt')
+    diff.right = FILE('b.txt')
+    expect(tabs.unsaved(tabs.active)).toBe(true)
+  })
+
+  it('stops being unsaved as soon as it is saved, not on the next switch', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    diff.left = FILE('a.txt')
+    diff.right = FILE('b.txt')
+
+    diff.markSaved()
+    expect(tabs.unsaved(tabs.active)).toBe(false)
+  })
+
+  it('goes back to unsaved when a saved comparison is edited', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(comparison('a.txt', 'b.txt'), { diffSaved: true })
+    expect(tabs.unsaved(tabs.active)).toBe(false)
+
+    diff.swap()
+    expect(tabs.unsaved(tabs.active)).toBe(true)
+  })
+
+  it('still answers from the snapshot for a tab that is not on screen', () => {
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    const first = tabs.activeId
+    tabs.open(comparison('b.txt', 'b2.txt'), { diffSaved: true })
+
+    expect(tabs.unsaved(tabs.tabs.find((t) => t.id === first))).toBe(true)
+    expect(tabs.unsaved(tabs.active)).toBe(false)
+  })
+})
+
+describe('requestClose', () => {
+  it('asks before discarding the work in the tab on screen', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('keep.txt', 'keep2.txt'))
+    tabs.newTab()
+    // Work done since the tab was made — its snapshot has not caught up.
+    diff.left = FILE('precious.txt')
+    diff.right = FILE('precious2.txt')
+
+    tabs.requestClose(tabs.activeId)
+    expect(diff.pendingTabClose).toEqual([tabs.activeId])
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('closes a saved or empty tab without asking', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    tabs.newTab()
+
+    tabs.requestClose(tabs.activeId)
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(1)
+  })
+
+  it('asks about a background tab from its snapshot, and ignores one that is gone', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    const first = tabs.activeId
+    tabs.open(comparison('b.txt', 'b2.txt'), { diffSaved: true })
+
+    tabs.requestClose(first)
+    expect(diff.pendingTabClose).toEqual([first])
+
+    diff.pendingTabClose = null
+    tabs.requestClose('tab-gone')
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(2)
+  })
+})
+
+// Bulk closes from the tab context menu. The trap they all share: the discard
+// prompt used to name ONE comparison, so four unsaved tabs meant four dialogs.
+describe('closing several tabs at once', () => {
+  const saved = (tabs, l, r) => tabs.open(comparison(l, r), { diffSaved: true })
+
+  // All four already in the vault, so the close path is exercised without the
+  // discard prompt getting in the way — that has its own tests below.
+  const fourSaved = () => {
+    const tabs = withTabs()
+    saved(tabs, 'a.txt', 'a2.txt')
+    saved(tabs, 'b.txt', 'b2.txt')
+    saved(tabs, 'c.txt', 'c2.txt')
+    saved(tabs, 'd.txt', 'd2.txt')
+    return tabs
+  }
+
+  it('closes to the right of the anchor, keeping the anchor', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
+    expect(tabs.tabs.map((t) => t.title)).toEqual(['a.txt ↔ a2.txt', 'b.txt ↔ b2.txt'])
+  })
+
+  it('closes to the left of the anchor, keeping the anchor', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[2].id, 'close-left')
+    expect(tabs.tabs.map((t) => t.title)).toEqual(['c.txt ↔ c2.txt', 'd.txt ↔ d2.txt'])
+  })
+
+  it('closes every other tab, leaving the anchor active', () => {
+    const tabs = fourSaved()
+    const anchor = tabs.tabs[1].id
+    tabs.requestMenuAction(anchor, 'close-others')
+    expect(tabs.tabs).toHaveLength(1)
+    expect(tabs.activeId).toBe(anchor)
+  })
+
+  // close() already refuses to leave an empty window; Close All rides on that
+  // rather than inventing a second empty state.
+  it('close-all leaves one blank comparison, not an empty window', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-all')
+    expect(tabs.tabs).toHaveLength(1)
+    expect(tabs.visible).toBe(true)
+    expect(useDiffStore().left).toBeNull()
+    expect(useDiffStore().right).toBeNull()
+  })
+
+  it('moves off a closed active tab onto a survivor', () => {
+    const tabs = fourSaved()
+    tabs.activate(tabs.tabs[3].id)
+    tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
+    expect(tabs.activeId).toBe(tabs.tabs[1].id)
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('asks ONCE for a bulk close, listing every unsaved tab it would take', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    saved(tabs, 'saved.txt', 'saved2.txt')
+    tabs.open(comparison('dirty1.txt', 'x.txt'))
+    tabs.open(comparison('dirty2.txt', 'y.txt'))
+
+    tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
+    expect(diff.pendingTabClose).toHaveLength(2)
+    expect(tabs.tabs).toHaveLength(4)
+
+    diff.confirmTabClose()
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('closes without asking when nothing in the set is unsaved', () => {
+    const diff = useDiffStore()
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-right')
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(1)
+  })
+
+  it('keeps every tab when the prompt is declined', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    tabs.open(comparison('dirty.txt', 'x.txt'))
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-all')
+    expect(diff.pendingTabClose).toBeTruthy()
+
+    diff.cancelTabClose()
+    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(2)
+  })
+
+  it('does nothing for an action that would close nothing', () => {
+    const tabs = fourSaved()
+    tabs.requestMenuAction(tabs.tabs[0].id, 'close-left')
+    expect(tabs.tabs).toHaveLength(4)
+    expect(useDiffStore().pendingTabClose).toBeNull()
+  })
+})
+
+describe('forgetEntry', () => {
+  it('unlinks the tab holding a deleted diff and marks it unsaved again', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(comparison('a.txt', 'b.txt'), { diffSaved: true, entryId: 'gone-1' })
+
+    tabs.forgetEntry('gone-1')
+    expect(tabs.active.entryId).toBeNull()
+    expect(diff.diffSaved).toBe(false)
+    expect(tabs.unsaved(tabs.active)).toBe(true)
+  })
+
+  it('leaves every other tab alone', () => {
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(comparison('a.txt', 'b.txt'), { diffSaved: true, entryId: 'keep-1' })
+    tabs.open(comparison('c.txt', 'd.txt'), { diffSaved: true, entryId: 'gone-1' })
+
+    tabs.forgetEntry('gone-1')
+    expect(tabs.tabs[0].entryId).toBe('keep-1')
+    expect(tabs.tabs[0].diffSaved).toBe(true)
+  })
+})
+
+// The view toggles sit together in the toolbar and read as properties of the
+// comparison you are looking at. Split view and ignore-whitespace travel with
+// their tab; structure view was global, so setting it in one tab silently
+// changed the other.
+describe('the structure toggle belongs to its comparison', () => {
+  const json = (l, r) => ({
+    mode: 'files',
+    left: { path: '/tmp/l.json', name: 'l.json', content: l },
+    right: { path: '/tmp/r.json', name: 'r.json', content: r }
+  })
+
+  it('stays with the tab it was set in', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(json('{"a":1}', '{"a":2}'))
+    const first = tabs.activeId
+    diff.semanticView = true
+
+    tabs.open(json('{"b":1}', '{"b":2}'))
+    expect(diff.semanticView).toBe(false)
+
+    tabs.activate(first)
+    expect(diff.semanticView).toBe(true)
+  })
+
+  it('comes back with a restored session, like the other view toggles', async () => {
+    window.api = {
+      vaultEncrypt: async (text, aad) => vaultEncrypt(SESSION_KEY, text, aad),
+      vaultDecrypt: async (box, aad) => vaultDecrypt(SESSION_KEY, box, aad)
+    }
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.sessionReady = true // as a booted app is, after restoreSession
+    tabs.open(json('{"a":1}', '{"a":2}'))
+    diff.semanticView = true
+    diff.renderSideBySide = false
+    await tabs.saveSession()
+
+    setActivePinia(createPinia())
+    window.api = {
+      vaultEncrypt: async (text, aad) => vaultEncrypt(SESSION_KEY, text, aad),
+      vaultDecrypt: async (box, aad) => vaultDecrypt(SESSION_KEY, box, aad)
+    }
+    const next = useTabsStore()
+    next.init()
+    await next.restoreSession()
+    expect(useDiffStore().semanticView).toBe(true)
+    expect(useDiffStore().renderSideBySide).toBe(false)
+    delete window.api
+  })
+})
+
+// Sixteen tabs makes the session's byte budget bite routinely, and a comparison
+// left out of the session is one that will not come back.
+describe('comparisons too large to reopen', () => {
+  beforeEach(() => {
+    window.api = {
+      vaultEncrypt: async (text, aad) => vaultEncrypt(SESSION_KEY, text, aad),
+      vaultDecrypt: async (box, aad) => vaultDecrypt(SESSION_KEY, box, aad)
+    }
+  })
+  afterEach(() => {
+    delete window.api
+  })
+
+  const huge = () => ({ mode: 'files', left: FILE('huge.txt'), right: FILE('huge2.txt') })
+
+  it('says so once, not on every debounced save', async () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    tabs.open(huge())
+    // Bigger than the per-tab ceiling, so the session cannot carry it.
+    diff.left = { path: '/tmp/huge.txt', name: 'huge.txt', content: 'x'.repeat(2_100_000) }
+
+    await tabs.saveSession()
+    expect(diff.notice).toMatch(/too large to reopen/)
+
+    diff.notice = ''
+    await tabs.saveSession()
+    expect(diff.notice).toBe('')
+  })
+
+  it('says nothing while everything still fits', async () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('a.txt', 'a2.txt'))
+    await tabs.saveSession()
+    expect(diff.notice ?? '').not.toMatch(/too large to reopen/)
+    expect(tabs.sessionDropped).toBe(0)
+  })
+})
+
+// Clearing empties the comparison, but the tab went on claiming to BE the saved
+// diff it no longer held — and open() focuses a tab already showing an entry
+// rather than loading it, so the saved diff could not be opened again.
+describe('clearing a tab opened from the vault', () => {
+  it('lets the saved diff be opened again afterwards', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs()
+    tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
+    expect(tabs.active.entryId).toBe('vault-1')
+
+    diff.clear()
+    expect(tabs.active.entryId).toBe(null)
+
+    tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
+    expect(diff.left.name).toBe('saved.json')
+    expect(diff.right.name).toBe('saved2.json')
+  })
+
+  it('does not leave a hollow tab standing in for the entry', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs()
+    tabs.open(comparison('a.json', 'b.json'), { diffSaved: true, entryId: 'vault-7' })
+    diff.clear()
+    expect(tabs.tabs.filter((t) => t.entryId === 'vault-7')).toHaveLength(0)
+  })
+
+  it('leaves an unlinked tab alone', () => {
+    const diff = useDiffStore()
+    const tabs = withTabs(comparison('scratch.txt', 'scratch2.txt'))
+    diff.clear()
+    expect(tabs.active.entryId ?? null).toBe(null)
+    expect(diff.left).toBeNull()
   })
 })

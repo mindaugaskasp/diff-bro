@@ -5,6 +5,11 @@ coverage/
 test-results/
 playwright-report/
 .claude/settings.local.json
+# Agent worktrees are whole checkouts of this repo nested inside it.
+.claude/worktrees/
+# `make local-seed` fixtures — generated, and the streamed pair alone is 80 MB.
+seed-files/
 .DS_Store
 *.log
 *~
+quality-audit.md

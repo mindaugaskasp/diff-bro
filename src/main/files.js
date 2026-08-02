@@ -15,6 +15,14 @@ const TYPE_LIMITS = {
   spreadsheet: { default: 25, cap: 100 }
 }
 
+// Past this a text file is compared STREAMED — indexed by line and read a
+// window at a time — instead of being loaded whole into an editor model.
+// Three times the 10 MB default soft prompt, so an ordinarily-large file keeps
+// the full editor (highlighting, search, save, share) and only genuinely
+// unmanageable ones give those up; an editor model plus its tokenizer costs
+// several times the file's own size, which is what stops paying off here.
+export const STREAM_THRESHOLD_BYTES = 32 * 1024 * 1024
+
 function fileTypeFor(name) {
   return /\.xlsx$/i.test(name) ? 'spreadsheet' : 'text'
 }
@@ -30,7 +38,7 @@ function limitBytesFor(type) {
 }
 
 // Provenance allowlist. file:read serves ONLY paths the user chose (open dialog
-// or a real drop). CLAUDE.md assumes a compromised renderer, where a raw path
+// or a real drop). docs/standards.md assumes a compromised renderer, where a raw path
 // arg would be an arbitrary-file-read primitive (SSH keys, vault.key, …), so a
 // path is readable only after being registered here through a trusted channel.
 const allowedPaths = new Set()
@@ -63,6 +71,13 @@ function isUnderUserData(filePath) {
   return abs === base || abs.startsWith(base + sep)
 }
 
+// The read gate, as one question. Exported so the streamed comparison can ask
+// it too — a second reader must clear the SAME bar, never keep its own list.
+export function mayReadPath(filePath) {
+  if (typeof filePath !== 'string' || !filePath) return false
+  return allowedPaths.has(resolve(filePath)) && !isUnderUserData(filePath)
+}
+
 // Gated on the .xlsx extension too, so a plain .zip isn't read as a spreadsheet.
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 function looksLikeXlsx(name, buffer) {
@@ -89,24 +104,35 @@ function readXlsxForRenderer(buffer, filePath, name, size) {
   }
 }
 
+// The soft "this is big" prompt. False means the user declined, or that asking
+// was not allowed here.
+async function allowsLargeLoad({ win, name, size, quiet }) {
+  if (size <= limitBytesFor(fileTypeFor(name))) return true
+  // quiet mode (focus refresh) must never pop a dialog — skip the reload.
+  if (quiet) return false
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    title: 'Large file',
+    message: `"${name}" is ${(size / 1024 / 1024).toFixed(1)} MB.`,
+    detail: 'Diffing very large files can be slow. Load it anyway?',
+    buttons: ['Load anyway', 'Cancel'],
+    defaultId: 1,
+    cancelId: 1
+  })
+  return response !== 1
+}
+
 async function readFileForRenderer(win, filePath, opts = {}) {
   const name = basename(filePath)
 
   const { size } = await stat(filePath)
-  if (size > limitBytesFor(fileTypeFor(name))) {
-    // quiet mode (focus refresh) must never pop a dialog — skip the reload.
-    if (opts.quiet) return null
-    const { response } = await dialog.showMessageBox(win, {
-      type: 'warning',
-      title: 'Large file',
-      message: `"${name}" is ${(size / 1024 / 1024).toFixed(1)} MB.`,
-      detail: 'Diffing very large files can be slow. Load it anyway?',
-      buttons: ['Load anyway', 'Cancel'],
-      defaultId: 1,
-      cancelId: 1
-    })
-    if (response === 1) return null
+  // Too big to hold: hand back a descriptor and let the streamed viewer index
+  // it. No size prompt — streaming is the answer to the question that prompt
+  // asks, so asking it would only offer a worse way to do the same thing.
+  if (fileTypeFor(name) === 'text' && size > STREAM_THRESHOLD_BYTES) {
+    return { path: filePath, name, size, kind: 'streamed' }
   }
+  if (!(await allowsLargeLoad({ win, name, size, quiet: opts.quiet }))) return null
 
   const buffer = await readFile(filePath)
 

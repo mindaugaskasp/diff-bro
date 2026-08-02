@@ -1,32 +1,33 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import { useVaultStore, DEFAULT_TTL_HOURS, TTL_OPTIONS } from '../stores/vaultStore'
+import { TTL_OPTIONS } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useTabsStore } from '../stores/tabsStore'
+import { useSaveDiffTarget } from '../composables/useSaveDiffTarget'
 import BaseDialog from './BaseDialog.vue'
 import TagChipsField from './TagChipsField.vue'
 
 const diff = useDiffStore()
-const vault = useVaultStore()
 const snippets = useSnippetStore()
 const tabs = useTabsStore()
+// A comparison already in the vault is rewritten, not saved a second time.
+const { isUpdate, initial, commit } = useSaveDiffTarget()
 
 const name = ref('')
 // Secure = auto-expiring (the app's default). Off keeps the diff indefinitely.
 const secure = ref(true)
-const ttl = ref(DEFAULT_TTL_HOURS)
+const ttl = ref(1)
+const startTags = ref([])
 const nameInput = ref(null)
 const tagField = ref(null)
 
 onMounted(() => {
-  // A tab the reader renamed has already been given the name for this
-  // comparison; asking for it again would be asking twice.
-  name.value =
-    tabs.active?.customTitle ||
-    (diff.mode === 'paste'
-      ? `Pasted text (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
-      : `${diff.left?.name ?? '?'} ↔ ${diff.right?.name ?? '?'}`)
+  const start = initial()
+  name.value = start.name
+  secure.value = start.secure
+  ttl.value = start.ttl
+  startTags.value = start.tags
   nameInput.value?.focus()
   nameInput.value?.select()
 })
@@ -53,12 +54,12 @@ async function save() {
     return
   }
 
-  const id = await vault.save(
-    name.value.trim(),
-    secure.value ? ttl.value : null,
-    diff.snapshot(),
-    userTags
-  )
+  const id = await commit({
+    name: name.value.trim(),
+    ttlHours: secure.value ? ttl.value : null,
+    snapshot: diff.snapshot(),
+    tags: userTags
+  })
   diff.showSaveDialog = false
   // null id means the vault key couldn't be unlocked — nothing was saved.
   if (!id) {
@@ -78,6 +79,16 @@ async function save() {
   await diff.finishSave(wasPaste, secure.value ? ttl.value : null)
 }
 
+// An update rewrites the diff this tab already is; a save makes a new one.
+const dialogTitle = computed(() => {
+  if (diff.saveThenShare) return 'Share diff — step 1 of 2: save it'
+  return isUpdate.value ? 'Update diff' : 'Save diff'
+})
+const submitLabel = computed(() => {
+  if (diff.saveThenShare) return 'Next: choose recipient'
+  return isUpdate.value ? 'Update' : 'Save'
+})
+
 function cancel() {
   diff.showSaveDialog = false
   diff.saveThenShare = false
@@ -88,17 +99,13 @@ function cancel() {
 </script>
 
 <template>
-  <BaseDialog
-    width="340px"
-    :title="diff.saveThenShare ? 'Share diff — step 1 of 2: save it' : 'Save diff'"
-    @close="cancel"
-  >
+  <BaseDialog width="340px" :title="dialogTitle" @close="cancel">
     <form class="dialog-form" @submit.prevent="save">
       <label>
         Name
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
       </label>
-      <TagChipsField ref="tagField" />
+      <TagChipsField ref="tagField" :initial="startTags" />
       <label class="toggle">
         <input v-model="secure" type="checkbox" />
         <span><strong>Secure</strong> — auto-expiring (deletes itself)</span>
@@ -114,13 +121,13 @@ function cancel() {
       <p class="dialog-note">
         {{
           secure
-            ? 'Deletes itself automatically — 24 hours is the maximum.'
+            ? 'Deletes itself automatically — a week is the longest it can live.'
             : 'Kept until you delete it.'
         }}
       </p>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary">
-          {{ diff.saveThenShare ? 'Next: choose recipient' : 'Save' }}
+          {{ submitLabel }}
         </button>
         <button type="button" class="btn btn-ghost" @click="cancel">Cancel</button>
       </div>

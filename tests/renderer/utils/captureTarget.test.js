@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CAPTURE_SELECTOR,
+  EDITOR_SELECTOR,
   afterFrames,
   captureRectOf,
   captureRegionOf,
@@ -202,19 +203,53 @@ describe('captureRegionOf', () => {
 
   it('reports the column and where Monaco starts inside it', () => {
     const doc = columnWith({ top: 140.7, height: 588 })
-    expect(captureRegionOf(doc)).toEqual({
+    expect(captureRegionOf({ doc })).toEqual({
       content: { x: 260, y: 89, width: 900, height: 640 },
       editorY: 141
     })
   })
 
-  it('returns null when there is no Monaco pane — the grid viewer has none', () => {
-    expect(captureRegionOf(columnWith(null))).toBeNull()
-    expect(captureRegionOf(columnWith({ top: 140, height: 0 }))).toBeNull()
+  it('returns null when the column holds nothing that scrolls', () => {
+    expect(captureRegionOf({ doc: columnWith(null) })).toBeNull()
+    expect(captureRegionOf({ doc: columnWith({ top: 140, height: 0 }) })).toBeNull()
   })
 
   it('returns null when the diff column is not on screen', () => {
-    expect(captureRegionOf({ querySelector: () => null })).toBeNull()
+    expect(captureRegionOf({ doc: { querySelector: () => null } })).toBeNull()
+  })
+
+  // The grid viewer and the structure list have no .diff-container, so the
+  // selector finds nothing — the scroller names its own box instead, which is
+  // what lets any scrolling region be stitched rather than only Monaco.
+  it('takes the viewport the scroller names, over the Monaco selector', () => {
+    const doc = columnWith(null)
+    const viewport = { getBoundingClientRect: () => ({ top: 300.4, height: 420 }) }
+    expect(captureRegionOf({ viewport, doc })).toEqual({
+      content: { x: 260, y: 89, width: 900, height: 640 },
+      editorY: 300
+    })
+  })
+
+  // The streamed viewer has no Monaco behind it; its row list must still be
+  // found, or a streamed comparison could not be photographed at all.
+  it('finds the streamed viewer’s row list as well as Monaco', () => {
+    expect(EDITOR_SELECTOR).toContain('.diff-container')
+    expect(EDITOR_SELECTOR).toContain('.stream-rows')
+    const doc = {
+      querySelector: (sel) =>
+        sel === CAPTURE_SELECTOR
+          ? {
+              getBoundingClientRect: () => COLUMN,
+              // Stands for a document where only .stream-rows exists: the
+              // combined selector has to match it.
+              querySelector: (inner) =>
+                inner === EDITOR_SELECTOR
+                  ? { getBoundingClientRect: () => ({ top: 150, height: 500 }) }
+                  : null
+            }
+          : null
+    }
+    expect(captureRegionOf({ doc })).toMatchObject({ editorY: 150 })
   })
 })
 

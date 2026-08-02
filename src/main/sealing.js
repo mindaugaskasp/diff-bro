@@ -1,8 +1,8 @@
 // Pure crypto core for sealed diff sharing (share.js owns the IPC/glue). A
 // .diffbro file is sign-then-encrypt: an Ed25519-signed inner envelope inside
-// AES-256-GCM (key = HKDF over ECDH to the recipient). Both layers bind the
-// recipient — signature covers payload‖recipient-fp, GCM AAD covers
-// format‖recipient-fp — so a signed payload can't be re-sealed or re-addressed.
+// AES-256-GCM under a random content key, which is itself wrapped per recipient
+// (HKDF over ECDH). Both layers bind the AUDIENCE — the whole recipient set —
+// so a signed payload can't be re-sealed or re-addressed. See audienceOf.
 import {
   createCipheriv,
   createDecipheriv,
@@ -22,14 +22,87 @@ import {
 // SHARE_FORMAT, so a bump re-keys/re-binds). key/2 + share/3 widened the
 // fingerprint to 128 bits.
 export const KEY_FORMAT = 'diffbro-key/2'
-export const SHARE_FORMAT = 'diffbro-share/3'
-export const MAX_TTL_MS = 24 * 3600 * 1000
+// share/4 seals to an AUDIENCE rather than one recipient: the diff is encrypted
+// once under a random content key, and that key is wrapped per recipient.
+export const SHARE_FORMAT = 'diffbro-share/4'
+// Enforced when signing AND when opening. Keep in step with vaultStore's
+// MAX_KEEP_HOURS. With no replay protection by design, this IS the replay window.
+export const MAX_TTL_MS = 7 * 24 * 3600 * 1000
 
 // Key FILES stay importable across the bump: the fingerprint is always
 // RECOMPUTED at 128 bits on import, never trusted from the file. Shares are
 // matched exactly, since their 64-bit binding was baked into signature + AAD.
 export const ACCEPTED_KEY_FORMATS = ['diffbro-key/2', 'diffbro-key/1']
 export const isAcceptedKeyFormat = (fmt) => ACCEPTED_KEY_FORMATS.includes(fmt)
+
+// A key rotation, stated by the key material itself. Signed by BOTH halves —
+// the old key says "this is my successor", the new one says "I claim that
+// predecessor" — so neither signature alone can re-point a rotation.
+//
+// This is ADVISORY and must be presented as such. If the old private key leaked,
+// whoever holds it can sign a rotation to a key of their own; the record turns
+// "unknown key, verify out of band" into "a successor to a key you already
+// trust", which is a downgrade of the check, never a replacement for it.
+export const ROTATION_FORMAT = 'diffbro-rotation/1'
+
+const rotationBytes = (from, to, at) => Buffer.from(`${ROTATION_FORMAT}|${from}|${to}|${at}`)
+
+/**
+ * @param {{ oldPriv: object, oldFp: string, newPriv: object, newFp: string, at?: number }} o
+ * @returns {{ format: string, from: string, to: string, at: number,
+ *             byPrevious: string, bySelf: string }}
+ */
+export function signRotation({ oldPriv, oldFp, newPriv, newFp, at = Date.now() }) {
+  const bytes = rotationBytes(oldFp, newFp, at)
+  return {
+    format: ROTATION_FORMAT,
+    from: oldFp,
+    to: newFp,
+    at,
+    byPrevious: sign(null, bytes, createPrivateKey(oldPriv.sign)).toString('base64'),
+    bySelf: sign(null, bytes, createPrivateKey(newPriv.sign)).toString('base64')
+  }
+}
+
+/**
+ * Whether a rotation record really was signed by both keys it names.
+ * `oldSignPub` comes from the trusted key already held — never from the file,
+ * or the record would be vouching for itself.
+ * @param {object} record
+ * @param {string} oldSignPub  PEM of the previously trusted signing key
+ * @param {{ sign: string, box: string }} newPub
+ * @returns {boolean}
+ */
+export function verifyRotation(record, oldSignPub, newPub) {
+  if (record?.format !== ROTATION_FORMAT) return false
+  if (typeof record.from !== 'string' || typeof record.to !== 'string') return false
+  if (!Number.isFinite(record.at)) return false
+  // The record must describe THESE keys, not merely be well-formed.
+  if (record.to !== fingerprint(newPub.sign, newPub.box)) return false
+  const bytes = rotationBytes(record.from, record.to, record.at)
+  try {
+    const ok = (sigB64, pem) =>
+      verify(null, bytes, createPublicKey(pem), Buffer.from(String(sigB64), 'base64'))
+    return ok(record.byPrevious, oldSignPub) && ok(record.bySelf, newPub.sign)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * A public key rebuilt to the current format, carrying only what a peer may act
+ * on. `rotation` travels: it is ADVISORY and vouchedBy verifies it against a key
+ * from the local trust store, never from the file, so passing it through cannot
+ * be used to assert anything on its own. Dropping it silently killed the whole
+ * rotation note.
+ * @param {object} key
+ * @returns {{ format: string, sign: string, box: string, rotation?: object }}
+ */
+export function rebuiltPublicKey(key) {
+  const out = { format: KEY_FORMAT, sign: key.sign, box: key.box }
+  if (key.rotation) out.rotation = key.rotation
+  return out
+}
 
 // Cosmetic display label only — never part of the fingerprint or any trust
 // decision, so treat as untrusted: strip control chars, collapse, hard-cap.
@@ -77,7 +150,7 @@ export function createIdentityKeys() {
 }
 
 // 'expired' | 'invalid-ttl' | null — enforced when signing AND when opening,
-// so a shared diff can never outlive 24 h anywhere.
+// so a shared diff can never outlive MAX_TTL_MS anywhere.
 export function ttlError(entry, now = Date.now()) {
   if (!Number.isFinite(entry?.createdAt) || !Number.isFinite(entry?.expiresAt)) return 'invalid-ttl'
   if (entry.expiresAt <= now) return 'expired'
@@ -87,8 +160,25 @@ export function ttlError(entry, now = Date.now()) {
 
 const deriveKey = (ecdhSecret, salt) =>
   Buffer.from(hkdfSync('sha256', ecdhSecret, salt, HKDF_INFO, 32))
-const signedData = (payload, recipientFp) => Buffer.concat([payload, Buffer.from(recipientFp)])
-const aadFor = (recipientFp) => Buffer.from(`${SHARE_FORMAT}|${recipientFp}`)
+
+/**
+ * The whole recipient set, as one value. Everything commits to THIS rather than
+ * to a single fingerprint, which is what stops a sealed file being re-addressed:
+ * edit the list and the signature and both AAD layers stop matching. Sorted, so
+ * the same set always digests the same however it was ordered.
+ * @param {string[]} fingerprints
+ * @returns {string}
+ */
+export function audienceOf(fingerprints) {
+  const sorted = [...new Set(fingerprints)].sort()
+  return createHash('sha256').update(sorted.join('|')).digest('hex').slice(0, 32)
+}
+
+const signedData = (payload, audience) => Buffer.concat([payload, Buffer.from(audience)])
+// The content is bound to the audience; each wrapped key additionally to the one
+// recipient it was wrapped for, so a key lifted from another entry fails.
+const contentAad = (audience) => Buffer.from(`${SHARE_FORMAT}|${audience}`)
+const keyAad = (recipientFp, audience) => Buffer.from(`${SHARE_FORMAT}|${recipientFp}|${audience}`)
 
 // A public key isn't secret, so the `dbk1:` envelope is obfuscation, not
 // encryption. Import still accepts legacy plain JSON; the fingerprint is always
@@ -105,16 +195,14 @@ export function decodePublicKey(text) {
   return JSON.parse(t) // legacy plain-JSON key file
 }
 
+const isFingerprintList = (v) =>
+  Array.isArray(v) && v.length > 0 && v.every((fp) => typeof fp === 'string')
+
 export function hasShareShape(file) {
-  return !!(
-    file &&
-    file.format === SHARE_FORMAT &&
-    file.to &&
-    file.epk &&
-    file.iv &&
-    file.tag &&
-    file.ciphertext
-  )
+  if (!file || file.format !== SHARE_FORMAT) return false
+  if (!isFingerprintList(file.to)) return false
+  if (!Array.isArray(file.keys) || !file.keys.length) return false
+  return !!(file.epk && file.iv && file.tag && file.ciphertext)
 }
 
 // Derived from the GCM-authenticated ciphertext: reveals nothing about the diff
@@ -126,9 +214,43 @@ export function shareFilename(file) {
   )
 }
 
-// Seal `entry` for one recipient. sender: { priv: {sign}, fingerprint }.
-// recipient: { fingerprint, box (public PEM) }. Returns the share-file object.
-export function sealEntry(entry, sender, recipient) {
+// One recipient or a list; a lone one is just an audience of one.
+const asList = (recipients) => (Array.isArray(recipients) ? recipients : [recipients])
+
+// The content key, wrapped to one recipient under a shared ephemeral key. Each
+// recipient's own X25519 key makes their ECDH secret — and so their wrap — distinct.
+function wrapContentKey(cek, ephPrivateKey, recipient, audience) {
+  const secret = diffieHellman({
+    privateKey: ephPrivateKey,
+    publicKey: createPublicKey(recipient.box)
+  })
+  const salt = randomBytes(16)
+  const iv = randomBytes(12)
+  const cipher = createCipheriv('aes-256-gcm', deriveKey(secret, salt), iv)
+  cipher.setAAD(keyAad(recipient.fingerprint, audience))
+  const key = Buffer.concat([cipher.update(cek), cipher.final()])
+  return {
+    to: recipient.fingerprint,
+    salt: salt.toString('base64'),
+    iv: iv.toString('base64'),
+    tag: cipher.getAuthTag().toString('base64'),
+    key: key.toString('base64')
+  }
+}
+
+/**
+ * Seal `entry` for one recipient or a whole team.
+ * @param {object} entry
+ * @param {{ priv: { sign: string }, fingerprint: string }} sender
+ * @param {{ fingerprint: string, box: string }|Array<{ fingerprint: string, box: string }>} recipients
+ * @returns {object} the share-file
+ */
+export function sealEntry(entry, sender, recipients) {
+  const list = asList(recipients).filter((r) => r?.fingerprint && r?.box)
+  const unique = [...new Map(list.map((r) => [r.fingerprint, r])).values()]
+  if (!unique.length) throw new Error('sealEntry: no recipients')
+  const audience = audienceOf(unique.map((r) => r.fingerprint))
+
   const payload = Buffer.from(JSON.stringify(entry))
   const inner = Buffer.from(
     JSON.stringify({
@@ -136,28 +258,26 @@ export function sealEntry(entry, sender, recipient) {
       signer: sender.fingerprint,
       signature: sign(
         null,
-        signedData(payload, recipient.fingerprint),
+        signedData(payload, audience),
         createPrivateKey(sender.priv.sign)
       ).toString('base64')
     })
   )
 
-  const eph = generateKeyPairSync('x25519')
-  const secret = diffieHellman({
-    privateKey: eph.privateKey,
-    publicKey: createPublicKey(recipient.box)
-  })
-  const salt = randomBytes(16)
+  const cek = randomBytes(32)
   const iv = randomBytes(12)
-  const cipher = createCipheriv('aes-256-gcm', deriveKey(secret, salt), iv)
-  cipher.setAAD(aadFor(recipient.fingerprint))
+  const cipher = createCipheriv('aes-256-gcm', cek, iv)
+  cipher.setAAD(contentAad(audience))
   const ciphertext = Buffer.concat([cipher.update(inner), cipher.final()])
 
+  const eph = generateKeyPairSync('x25519')
+  // Sorted, so `to` and `keys` line up and two seals of the same set look alike.
+  const ordered = [...unique].sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1))
   return {
     format: SHARE_FORMAT,
-    to: recipient.fingerprint,
+    to: ordered.map((r) => r.fingerprint),
     epk: eph.publicKey.export({ type: 'spki', format: 'pem' }),
-    salt: salt.toString('base64'),
+    keys: ordered.map((r) => wrapContentKey(cek, eph.privateKey, r, audience)),
     iv: iv.toString('base64'),
     tag: cipher.getAuthTag().toString('base64'),
     ciphertext: ciphertext.toString('base64')
@@ -167,23 +287,76 @@ export function sealEntry(entry, sender, recipient) {
 // Open a sealed file as `me` ({ priv: {box}, pub: {fingerprint} }) against a
 // trusted-senders list ([{ fingerprint, label, sign }]). Returns
 // { ok, entry, from } or { error, ... } with the codes the UI maps to text.
+/**
+ * Open a sealed diff with any of the identities this machine holds — the
+ * current one first, then RETIRED ones.
+ *
+ * Rotation must not orphan mail already in flight: a share sealed to the old
+ * key before it was replaced is still addressed to a key this machine has, and
+ * refusing it would make rotating a key destroy unopened diffs. Retired keys
+ * only ever DECRYPT; nothing is signed or sealed with them again.
+ * @param {object} file
+ * @param {object[]} identities  current first
+ * @param {object[]} trustedList
+ * @param {number} [now]
+ */
+export function openSealedWith(file, identities, trustedList, now = Date.now()) {
+  let last = { error: 'not-for-you' }
+  for (const me of identities ?? []) {
+    const res = openSealed(file, me, trustedList, now)
+    // "not for you" is the only answer worth trying another key on; anything
+    // else is a real verdict about the file itself.
+    if (res.error !== 'not-for-you') return res
+    last = res
+  }
+  return last
+}
+
+// The signature check, or null when it passes. A trust store entry is untrusted
+// INPUT — it can be hand-edited, and the config-restore path once wrote it
+// unvalidated — so a key that will not parse is a verdict about the file, never
+// an exception thrown past an IPC boundary where nothing catches it.
+function signatureVerdict(payload, audience, signature, trusted) {
+  try {
+    const ok = verify(
+      null,
+      signedData(payload, audience), // the signature names the whole audience
+      createPublicKey(trusted.sign),
+      Buffer.from(signature, 'base64')
+    )
+    return ok ? null : { error: 'bad-signature', from: trusted.label }
+  } catch {
+    return { error: 'bad-trusted-key', from: trusted.label }
+  }
+}
+
 export function openSealed(file, me, trustedList, now = Date.now()) {
   if (!hasShareShape(file)) return { error: 'not-a-share-file' }
-  if (file.to !== me.pub.fingerprint) return { error: 'not-for-you' }
+  const mine = file.keys.find((k) => k?.to === me.pub.fingerprint)
+  if (!mine || !file.to.includes(me.pub.fingerprint)) return { error: 'not-for-you' }
+  // Recomputed from the list the FILE carries, so any edit to it fails the AADs
+  // below rather than being taken at face value.
+  const audience = audienceOf(file.to)
 
-  // Decrypt; a failed GCM tag means the file was modified in transit.
+  // Unwrap our copy of the content key, then the diff. A failed GCM tag either
+  // way means the file (or its recipient list) was modified in transit.
   let inner
   try {
     const secret = diffieHellman({
       privateKey: createPrivateKey(me.priv.box),
       publicKey: createPublicKey(file.epk)
     })
-    const decipher = createDecipheriv(
+    const unwrap = createDecipheriv(
       'aes-256-gcm',
-      deriveKey(secret, Buffer.from(file.salt, 'base64')),
-      Buffer.from(file.iv, 'base64')
+      deriveKey(secret, Buffer.from(mine.salt, 'base64')),
+      Buffer.from(mine.iv, 'base64')
     )
-    decipher.setAAD(aadFor(me.pub.fingerprint))
+    unwrap.setAAD(keyAad(me.pub.fingerprint, audience))
+    unwrap.setAuthTag(Buffer.from(mine.tag, 'base64'))
+    const cek = Buffer.concat([unwrap.update(Buffer.from(mine.key, 'base64')), unwrap.final()])
+
+    const decipher = createDecipheriv('aes-256-gcm', cek, Buffer.from(file.iv, 'base64'))
+    decipher.setAAD(contentAad(audience))
     decipher.setAuthTag(Buffer.from(file.tag, 'base64'))
     inner = JSON.parse(
       Buffer.concat([
@@ -199,13 +372,8 @@ export function openSealed(file, me, trustedList, now = Date.now()) {
   if (!trusted) return { error: 'unknown-signer', signer: inner.signer }
 
   const payload = Buffer.from(inner.payload, 'base64')
-  const ok = verify(
-    null,
-    signedData(payload, me.pub.fingerprint), // signature must name US as recipient
-    createPublicKey(trusted.sign),
-    Buffer.from(inner.signature, 'base64')
-  )
-  if (!ok) return { error: 'bad-signature', from: trusted.label }
+  const verdict = signatureVerdict(payload, audience, inner.signature, trusted)
+  if (verdict) return verdict
 
   let entry
   try {

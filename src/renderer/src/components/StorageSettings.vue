@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useTabsStore } from '../stores/tabsStore'
 import SettingToggle from './SettingToggle.vue'
+import BackupSettings from './BackupSettings.vue'
 
 // The "Storage" settings pane: where this install's data lives, and what comes
 // back the next time the app opens.
@@ -63,6 +64,8 @@ function reveal() {
       <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
     </div>
     <p class="hint">Changing the folder restarts Diff Bro.</p>
+
+    <BackupSettings />
 
     <h4>On launch</h4>
     <SettingToggle :checked="settings.restoreSession" @change="tabs.setRestoreSession">

@@ -1,5 +1,8 @@
 .saved {
   width: 256px;
+  /* Animated so the comparison widening does not read as a jump cut. Monaco
+     carries automaticLayout, so the editor follows the width on its own. */
+  transition: width 160ms ease;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-panel);
@@ -11,6 +14,17 @@
   flex-direction: column;
   overflow: hidden; /* the body scrolls, not the whole aside */
 }
+/* Collapsed to the rail. The width is the only thing that changes — the border,
+   the lift and the surface role are the sidebar's either way. */
+.saved.collapsed {
+  width: 48px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .saved {
+    transition: none;
+  }
+}
+
 /* Fixed control strip: search + the segmented group filter. */
 .usb-controls {
   flex: none;
@@ -20,49 +34,6 @@
   padding: var(--space-3) var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
-}
-.usb-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: var(--space-1);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0 6px 0 8px;
-}
-.usb-search:focus-within {
-  border-color: var(--accent);
-}
-.usb-glyph {
-  flex: none;
-  color: var(--text-dim);
-  font-size: var(--font-md);
-}
-.usb-search input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  color: var(--text);
-  padding: 5px 0;
-  font-size: var(--font-md);
-}
-.usb-search input:focus {
-  outline: none;
-}
-.usb-x {
-  flex: none;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--font-xl);
-  line-height: 1;
-  padding: 0 2px;
-}
-.usb-x:hover {
-  color: var(--text);
 }
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
@@ -120,8 +91,28 @@
   gap: 4px;
   margin-top: var(--space-1);
   margin-bottom: var(--space-1);
-  padding-top: var(--space-3);
-  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+/* A dim separator LINE between the section filters and the tags — a rule of its
+   own with equal air either side, not a border welded to the chip row. Inset at
+   both ends so it reads as a hairline between two groups rather than a divider
+   cutting the panel in half; content-box clipping insets the visible line
+   without narrowing the row the chips wrap in.
+
+   Tinted from --text, not --border: several themes set a border barely distinct
+   from the panel it sits on (the depth guard's floor for it is deliberately
+   low), so a border-derived hairline vanished on exactly the light grounds this
+   was meant to help. --text is the one token guaranteed to read against the
+   panel everywhere, and 15% of it is a whisper rather than a rule. */
+.usb-tags::before {
+  content: '';
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  height: 1px;
+  margin-block: var(--space-3);
+  padding-inline: var(--space-4);
+  background: color-mix(in srgb, var(--text) 15%, transparent);
+  background-clip: content-box;
 }
 .usb-tag {
   cursor: pointer;
@@ -140,4 +131,40 @@
   min-height: 0;
   overflow-y: auto;
   padding-bottom: var(--space-4);
+}
+
+/* The overflow keeps the chip shape — it stands in for tags, so it belongs in
+   their row — but carries no colour dot, because it is not one. */
+.usb-more {
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-dim);
+}
+.usb-more:hover {
+  border-style: solid;
+  color: var(--text);
+}
+/* Clearing is an ACTION, not a tag, and inside the chip row it read as one more
+   selected tag whatever shape it took. It belongs on its own line, beside the
+   thing it undoes: how many tags are on. */
+.usb-filtering {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--pad-inset-x) 0;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.usb-clear {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.usb-clear:hover {
+  color: var(--text);
 }

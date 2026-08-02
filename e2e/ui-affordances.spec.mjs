@@ -50,10 +50,12 @@ test('a tool panel copy button has a hover tooltip, not just an aria-label', asy
 
 // The preview used to open from anywhere on the row, so it appeared while you
 // were only reaching for the row's buttons.
-test('the snippet preview opens from the title only', async ({ page }) => {
+test('the snippet preview opens from the row, but not from its controls', async ({ page }) => {
   const row = page.locator('li.row').first()
   await expect(row).toBeVisible()
 
+  // The star and the row actions keep their own tooltips; they do not summon
+  // a preview card.
   await row.locator('.star').hover()
   await page.waitForTimeout(500)
   await expect(page.locator('.preview')).toHaveCount(0)
@@ -68,6 +70,29 @@ test('the snippet preview opens from the title only', async ({ page }) => {
   ])
   const overlaps = card.x < rowBox.x + rowBox.width && card.x + card.width > rowBox.x
   expect(overlaps, 'the preview must not sit on top of the row').toBe(false)
+})
+
+// The trigger used to be the name SPAN, which is only as tall as its glyphs: a
+// few pixels of vertical drift left it and the card vanished mid-reach.
+test('the preview target is the full height of the row', async ({ page }) => {
+  const row = page.locator('li.row').first()
+  const entry = row.locator('.entry')
+  await expect(entry).toBeVisible()
+
+  const box = await entry.boundingBox()
+  const name = await row.locator('.nm').boundingBox()
+  // The name text does not fill the row, so a taller target is a real gain.
+  expect(box.height).toBeGreaterThan(name.height + 2)
+
+  // Near the top edge of the row's main area.
+  await page.mouse.move(0, 0)
+  await entry.hover({ position: { x: Math.round(box.width / 2), y: 2 } })
+  await expect(page.locator('.preview')).toBeVisible()
+
+  // And drifting down to the bottom edge keeps it open.
+  await entry.hover({ position: { x: Math.round(box.width / 2), y: box.height - 2 } })
+  await page.waitForTimeout(300)
+  await expect(page.locator('.preview')).toBeVisible()
 })
 
 // The first section label is a pseudo-element above its row; too small a margin
@@ -142,4 +167,43 @@ test('saved-diff actions stay out of the way until the row is hovered', async ({
   await expect(del).toBeVisible()
   // The trash icon, like every other delete in the app.
   await expect(del.locator('svg path').first()).toHaveAttribute('d', /M3 6h18|M19 6v14/)
+})
+
+// A glyph like ⇄ tofus into a [] box on any font that lacks it, which is why
+// every standalone icon in the app is an SVG from icons.js.
+test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
+  const swap = page.getByRole('button', { name: 'Swap sides' })
+  await expect(swap.locator('svg.app-icon')).toHaveCount(1)
+  expect((await swap.innerText()).trim()).toBe('')
+})
+
+// data-tip is the app's own tooltip; assistive tech never sees it. An icon-only
+// button that carries no aria-label has no name at all.
+test('every icon-only button carries an accessible name', async ({ page }) => {
+  // Reach the ones that only exist once something is open.
+  await page.getByRole('button', { name: 'New snippet' }).click()
+  const editor = page.getByRole('dialog').first()
+  await expect(editor).toBeVisible()
+
+  const unnamed = await page.evaluate(() =>
+    [...document.querySelectorAll('button')]
+      .filter((b) => b.offsetParent !== null)
+      .filter((b) => !b.innerText.trim() && !b.getAttribute('aria-label'))
+      .map((b) => b.className || b.getAttribute('data-tip') || '(anonymous)')
+  )
+  expect(unnamed).toEqual([])
+})
+
+// Reaching the card means crossing the gap between the sidebar and the card,
+// where neither is hovered — the close delay has to outlast that trip.
+test('the preview survives the pointer travelling into it', async ({ page }) => {
+  const row = page.locator('li.row').first()
+  await row.locator('.entry').hover()
+  const card = page.locator('.preview')
+  await expect(card).toBeVisible()
+
+  const box = await card.boundingBox()
+  await page.mouse.move(box.x + 20, box.y + 20, { steps: 12 })
+  await page.waitForTimeout(400)
+  await expect(card).toBeVisible()
 })

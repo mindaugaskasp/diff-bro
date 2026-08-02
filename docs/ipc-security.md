@@ -66,20 +66,22 @@ There is no other door.
 
 ## What is blocked, and where
 
-These are the non-negotiables from `CLAUDE.md`, and the file that enforces each:
+These are the non-negotiables from [standards.md](standards.md), and the file
+that enforces each:
 
-| Guard | What it stops | Where |
-|---|---|---|
-| **Sandbox + `contextIsolation`** | Renderer has no Node/Electron globals; can't `require('fs')` | `window.js` (webPreferences) |
-| **Network kill switch** | `webRequest.onBeforeRequest` cancels every request that isn't `file:`/`blob:`/`data:` (fetch, XHR, images, workers…) | `security.js` |
-| **CSP** | `connect-src 'self'`, `object-src 'none'` — second layer against outbound requests | renderer CSP meta |
-| **Deny-all permission handler** | `setPermissionRequestHandler` rejects camera, clipboard-read, geolocation, everything | `security.js` |
-| **`will-navigate` / `setWindowOpenHandler`** | Renderer can't navigate away or open external windows | `security.js` |
-| **Path provenance allowlist** | `file:read` only serves a path the user actually picked or dropped — not one the renderer invents | `files.js` |
-| **Keys never cross IPC** | Vault/identity keys stay behind `safeStorage`; only ciphertext is ever returned | `vault.js`, `vaultCrypt.js` |
-| **Untrusted-input caps** | Import files get size caps, shape validation, recomputed fingerprints; `.xlsx` gets decompression-bomb caps and a cell budget | `files.js`, `xlsx/*`, `share.js` |
-| **No injection sinks** | `v-html`, `eval`, `new Function`, `innerHTML` are ESLint-banned | `eslint.config.mjs` |
-| **Capture rect clamped** | `image:capture` / `image:appendSlice` screenshot only a region clamped inside the window's own content, never a forged or unbounded one; a stitched export is capped in height so a renderer-driven loop can't exhaust memory, and the bitmap stays in main | `captureRect.js`, `stitchBitmap.js`, `diffImage.js` |
+| Guard                                        | What it stops                                                                                                                                                                                                                                                         | Where                                               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| **Sandbox + `contextIsolation`**             | Renderer has no Node/Electron globals; can't `require('fs')`                                                                                                                                                                                                          | `window.js` (webPreferences)                        |
+| **Network kill switch**                      | `webRequest.onBeforeRequest` cancels every request that isn't `file:`/`blob:`/`data:` (fetch, XHR, images, workers…)                                                                                                                                                  | `security.js`                                       |
+| **CSP**                                      | `connect-src 'self'`, `object-src 'none'` — second layer against outbound requests                                                                                                                                                                                    | renderer CSP meta                                   |
+| **Deny-all permission handler**              | `setPermissionRequestHandler` rejects camera, clipboard-read, geolocation, everything                                                                                                                                                                                 | `security.js`                                       |
+| **`will-navigate` / `setWindowOpenHandler`** | Renderer can't navigate away or open external windows                                                                                                                                                                                                                 | `security.js`                                       |
+| **Path provenance allowlist**                | `file:read` only serves a path the user actually picked or dropped — not one the renderer invents                                                                                                                                                                     | `files.js`                                          |
+| **Streamed window bounds**                   | `stream:lines` serves only a session token main issued, for a side and a line range that is validated and **refused** (never clamped) when out of range or wider than the row ceiling; the paths behind a session clear the same `mayReadPath` gate as any other read | `streamedDiff.js`, `streamWindow.js`                |
+| **Keys never cross IPC**                     | Vault/identity keys stay behind `safeStorage`; only ciphertext is ever returned                                                                                                                                                                                       | `vault.js`, `vaultCrypt.js`                         |
+| **Untrusted-input caps**                     | Import files get size caps, shape validation, recomputed fingerprints; `.xlsx` gets decompression-bomb caps and a cell budget                                                                                                                                         | `files.js`, `xlsx/*`, `share.js`                    |
+| **No injection sinks**                       | `v-html`, `eval`, `new Function`, `innerHTML` are ESLint-banned                                                                                                                                                                                                       | `eslint.config.mjs`                                 |
+| **Capture rect clamped**                     | `image:capture` / `image:appendSlice` screenshot only a region clamped inside the window's own content, never a forged or unbounded one; a stitched export is capped in height so a renderer-driven loop can't exhaust memory, and the bitmap stays in main           | `captureRect.js`, `stitchBitmap.js`, `diffImage.js` |
 
 The renderer **cannot**: read a file by path it made up, obtain a private key,
 evaluate a spreadsheet formula, or make a network request. Each of those is
@@ -150,16 +152,45 @@ sequenceDiagram
 
   Note over R: window.onerror / unhandledrejection / Vue errorHandler
   R->>M: invoke('log:error', { message, stack, context })
-  M->>M: add app version+platform, redact home dir → ~
+  M->>M: add app version+platform, anonymise (logRedact.js)
   M->>M: format entry, cap the day's file, pick diffbro-YYYY-MM-DD.log
   M->>D: append (prune files older than 7 days)
   Note over M,D: LOCAL ONLY — never sent anywhere
   R->>M: (from the dialog) log:read → copy to clipboard, or reportIssue → open GitHub in OS browser
 ```
 
-Even the "Report on GitHub" action doesn't send anything from the app: it hands a
-**fixed** issue URL to the OS browser (the only outward link, chosen in main —
-the renderer can only trigger it, never choose the address).
+Even the "Report on GitHub" action doesn't send anything from the app: it hands
+the issue URL to the OS browser (the only outward link) and you submit the form
+yourself. `issueUrl.js` owns the **origin and path**; the renderer may pass an
+error message for the prefilled title, never a URL. That message is anonymised
+by the same `logRedact.js` rules, capped at 120 characters and encoded with
+`URLSearchParams`, so it cannot bolt on a `labels=`/`assignees=` parameter or a
+fragment. The confirmation dialog shows the address and the prefilled title
+before anything opens.
+
+#### Anonymisation happens on the way in
+
+The log is the one artifact a user is invited to copy out, and its directory is
+user-chosen — it can be a synced folder. So `logRedact.js` scrubs an entry
+**before it is written**, not when it is read: nothing sensitive reaches the file
+in the first place. It replaces
+
+| in the entry | becomes |
+| --- | --- |
+| the home dir | `~` |
+| another account's home (`/Users/x`, `/home/x`, `C:\Users\x`) | `<user>` |
+| a UNC host and share | `\\<host>\<share>` |
+| a path to a document the app opens | `~/…/<file>.xlsx` — extension kept, name and directories dropped |
+| a URL's path, query and fragment | `https://host/<path>` |
+| an email address / IPv4 address | `<email>` / `<ip>` |
+| a 32+ char hex or 40+ char base64 run (fingerprints, digests, wrapped keys) | `<hex:64>` / `<b64:44>` |
+
+Source paths in a stack trace are deliberately left alone (`.js`, `.vue`, … are
+not document extensions), so a trace stays readable. Two limits are worth
+knowing: base64 containing `/` is only partly caught, and a parser error that
+interpolates **file content** into its message cannot be detected by shape — the
+field caps in `logFormat.js` bound it, and the user still reads the log before
+pasting it.
 
 ---
 

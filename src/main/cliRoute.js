@@ -3,10 +3,11 @@
 // parsing and the shim content are the tested cores.
 
 import { app, clipboard, ipcMain } from 'electron'
-import { homedir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { parseCli } from './cli'
 import { installShim, removeShim, shimStatus } from './cliShim'
+import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from './gitTool'
 import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
 
@@ -56,4 +57,10 @@ export function registerCliIpc() {
   ipcMain.handle('cli:status', () => shimStatus(where()))
   ipcMain.handle('cli:install', () => installShim(where()))
   ipcMain.handle('cli:remove', () => removeShim(where()))
+
+  ipcMain.handle('git:toolStatus', () => gitToolStatus(where()))
+  ipcMain.handle('git:register', () => registerGitTool(where()))
+  ipcMain.handle('git:unregister', () => unregisterGitTool(where()))
+  // The launcher's copies of git's temp files have no other owner.
+  sweepGitTemp(tmpdir())
 }

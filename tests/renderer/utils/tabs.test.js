@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   MAX_TABS,
+  adjacentTabId,
+  MAX_LIVE_CHARS,
+  tabCost,
+  tabsCost,
+  tabsFullNotice,
   MAX_TAB_NAME,
   cleanTabName,
   tabLabel,
@@ -184,5 +189,107 @@ describe('renaming', () => {
     expect(cleanTabName('x'.repeat(200))).toHaveLength(MAX_TAB_NAME)
     expect(cleanTabName('   ')).toBe('')
     expect(cleanTabName(undefined)).toBe('')
+  })
+})
+
+// The ceiling was a plain count standing in for a memory bound — every tab
+// holds both sides in full. A streamed side holds nothing (it is a path the
+// viewer reads windows from), so the count charged the cheapest tabs the same
+// rent as a pair of 200 MB files.
+describe('what a tab costs', () => {
+  const withSnapshot = (snapshot) => ({ id: 'x', snapshot })
+  const text = (n) => 'x'.repeat(n)
+
+  it('counts both sides of a file comparison', () => {
+    expect(
+      tabCost(withSnapshot({ left: { content: text(100) }, right: { content: text(50) } }))
+    ).toBe(150)
+  })
+
+  it('counts pasted text and pasted files', () => {
+    expect(tabCost(withSnapshot({ pasteLeft: text(30), pasteRight: text(20) }))).toBe(50)
+    expect(tabCost(withSnapshot({ pasteLeftFile: { content: text(40) } }))).toBe(40)
+  })
+
+  it('charges a streamed side nothing at all', () => {
+    const streamed = { kind: 'streamed', path: '/tmp/huge.log', name: 'huge.log', size: 9e9 }
+    expect(tabCost(withSnapshot({ left: streamed, right: streamed }))).toBe(0)
+  })
+
+  it('counts a spreadsheet by its cells', () => {
+    const sheets = [{ name: 'S', rows: [[1, 2, 3], [4, 5, 6]] }]
+    expect(tabCost(withSnapshot({ left: { kind: 'spreadsheet', sheets } }))).toBe(6)
+  })
+
+  it('is zero for a blank or malformed tab', () => {
+    expect(tabCost(withSnapshot({}))).toBe(0)
+    expect(tabCost(undefined)).toBe(0)
+  })
+})
+
+describe('canAddTab — budget as well as count', () => {
+  const costing = (chars) => ({ id: 'c', snapshot: { left: { content: 'x'.repeat(chars) } } })
+  const streamed = () => ({
+    id: 's',
+    snapshot: { left: { kind: 'streamed', path: '/a' }, right: { kind: 'streamed', path: '/b' } }
+  })
+
+  it('allows well past the old six when the tabs are small', () => {
+    expect(MAX_TABS).toBeGreaterThan(6)
+    expect(canAddTab(Array.from({ length: 7 }, () => costing(1000)))).toBe(true)
+  })
+
+  it('refuses once the open comparisons hold about as much as one window can', () => {
+    expect(canAddTab([costing(MAX_LIVE_CHARS + 1)])).toBe(false)
+  })
+
+  it('never charges streamed comparisons against the budget', () => {
+    const many = Array.from({ length: MAX_TABS - 1 }, streamed)
+    expect(tabsCost(many)).toBe(0)
+    expect(canAddTab(many)).toBe(true)
+  })
+
+  it('still stops at the count rail, so the strip stays navigable', () => {
+    expect(canAddTab(Array.from({ length: MAX_TABS }, streamed))).toBe(false)
+  })
+})
+
+describe('tabsFullNotice', () => {
+  const costing = (chars) => ({ id: 'c', snapshot: { left: { content: 'x'.repeat(chars) } } })
+
+  it('names the count when the rail is what stopped it', () => {
+    expect(tabsFullNotice(Array.from({ length: MAX_TABS }, () => costing(1)))).toContain(
+      String(MAX_TABS)
+    )
+  })
+
+  // The user-visible fact, not the constant behind it.
+  it('says what is actually full when the budget is what stopped it', () => {
+    const notice = tabsFullNotice([costing(MAX_LIVE_CHARS + 1)])
+    expect(notice).toMatch(/as much text as one window can/)
+    expect(notice).not.toContain(String(MAX_TABS))
+  })
+})
+
+// The strip's chevrons move the comparison you are looking at, not just the
+// view — panning the strip away from the active tab is what made scrolling feel
+// disconnected from it. No wrap: at either end there is nothing to step to.
+describe('adjacentTabId', () => {
+  const three = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+  it('steps to the neighbour in each direction', () => {
+    expect(adjacentTabId(three, 'b', 1)).toBe('c')
+    expect(adjacentTabId(three, 'b', -1)).toBe('a')
+  })
+
+  it('stops at both ends rather than wrapping', () => {
+    expect(adjacentTabId(three, 'c', 1)).toBe(null)
+    expect(adjacentTabId(three, 'a', -1)).toBe(null)
+  })
+
+  it('is null for a single tab, an empty strip, or an unknown active id', () => {
+    expect(adjacentTabId([{ id: 'a' }], 'a', 1)).toBe(null)
+    expect(adjacentTabId([], 'a', 1)).toBe(null)
+    expect(adjacentTabId(three, 'nope', 1)).toBe(null)
   })
 })

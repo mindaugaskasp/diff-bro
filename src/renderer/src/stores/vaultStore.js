@@ -1,22 +1,44 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { useSnippetStore } from './snippetStore'
+import { useTabsStore } from './tabsStore'
 
 // Content crypto runs in main (vault:encrypt/decrypt); this store never sees the
 // key. Only name/tags/timestamps are plaintext.
 export const DEFAULT_TTL_HOURS = 1
-export const MAX_TTL_HOURS = 24
+// Keep in step with sealing.js MAX_TTL_MS: one ceiling for kept and sealed both.
+export const MAX_KEEP_HOURS = 168
 export const TTL_OPTIONS = [
   { label: '1 hour', hours: 1 },
   { label: '8 hours', hours: 8 },
-  { label: '24 hours', hours: 24 }
+  { label: '24 hours', hours: 24 },
+  { label: '2 days', hours: 48 },
+  { label: '3 days', hours: 72 },
+  { label: '1 week', hours: 168 }
 ]
+const MAX_KEEP_MS = MAX_KEEP_HOURS * 3600_000
 
 // Timestamps bind the ciphertext as AES-GCM AAD (tampering expiresAt makes the
 // entry undecryptable); name/tags/favorite are deliberately excluded so they
 // stay editable free metadata.
 const entryAad = (id, createdAt, expiresAt, from) =>
   [id, createdAt, expiresAt, from ?? ''].join('|')
+
+// Clamped on the way in, so no caller can exceed the ceiling.
+const ttlSpan = (hours) =>
+  Math.min(Math.max(hours || DEFAULT_TTL_HOURS, 0.1), MAX_KEEP_HOURS) * 3600_000
+
+/**
+ * The sender's own window, so both copies die together. A kept diff has none to
+ * send and sealing demands a finite one, so it goes with a fresh full window.
+ * @param {{ createdAt: number, expiresAt: number|null }} entry
+ * @param {number} now
+ * @returns {{ createdAt: number, expiresAt: number }}
+ */
+function sealedWindow(entry, now) {
+  if (entry.expiresAt === null) return { createdAt: now, expiresAt: now + MAX_KEEP_MS }
+  return { createdAt: entry.createdAt, expiresAt: entry.expiresAt }
+}
 
 const EXT_TAG = { yml: 'yaml', htm: 'html', md: 'markdown', xlsx: 'excel', txt: null, text: null }
 export function diffFormatTag(payload) {
@@ -44,7 +66,8 @@ function readEntries() {
       const clean = {
         ...e,
         name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled diff'),
-        tags: Array.isArray(e.tags) ? e.tags.filter((t) => typeof t === 'string') : []
+        tags: Array.isArray(e.tags) ? e.tags.filter((t) => typeof t === 'string') : [],
+        sharedTo: readSharedTo(e.sharedTo)
       }
       delete clean.categoryId
       return clean
@@ -52,6 +75,21 @@ function readEntries() {
   } catch {
     return []
   }
+}
+
+// Who a diff was sealed for, and when. LOCAL ONLY, by construction: sealEntry
+// is handed { name, createdAt, expiresAt, snapshot, tags } and never the entry
+// itself, so this cannot travel inside a share — which matters, because it is a
+// list of who else you sent something to.
+//
+// Only the fingerprint is kept. Labels are resolved live from the trust store,
+// so renaming a key renames it here too, and removing one leaves the record
+// honest rather than stale.
+function readSharedTo(raw) {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter((r) => typeof r?.fp === 'string' && r.fp)
+    .map((r) => ({ fp: r.fp, at: Number.isFinite(r.at) ? r.at : 0 }))
 }
 
 export const useVaultStore = defineStore('vault', {
@@ -85,7 +123,19 @@ export const useVaultStore = defineStore('vault', {
     },
     importedOthers() {
       return this.importedActive.filter((e) => !e.favorite)
-    }
+    },
+    // Every diff sealed for a fingerprint, most recent first. Asked before a
+    // trusted key is removed, so the answer to "what did I send this person"
+    // is on screen at the moment the decision is made.
+    /** @returns {(fp: string) => Array<{ id, name, at }>} */
+    sharedWith: (s) => (fp) =>
+      s.entries
+        .flatMap((e) =>
+          (e.sharedTo ?? [])
+            .filter((r) => r.fp === fp)
+            .map((r) => ({ id: e.id, name: e.name, at: r.at }))
+        )
+        .sort((a, b) => b.at - a.at)
   },
   actions: {
     persist() {
@@ -105,17 +155,43 @@ export const useVaultStore = defineStore('vault', {
       if (this.entries.length !== before) this.persist()
     },
     // ttlHours === null saves a "kept" diff that never expires (the save dialog's
-    // "Secure" toggle off); any number gives an auto-expiring diff, capped at
-    // 24 h. `tags` are the user's only — the format goes on `entry.format`, and
-    // injecting it here too made a user tag matching the format vanish as a
-    // duplicate of the auto one.
+    // "Secure" toggle off); any number gives an auto-expiring diff, capped at the
+    // keep ceiling. `tags` are the user's only — the format goes on
+    // `entry.format`, and injecting it here too made a user tag matching the
+    // format vanish as a duplicate of the auto one.
     async save(name, ttlHours, payload, tags = []) {
-      let expiresAt = null
-      if (ttlHours !== null) {
-        const hours = Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS)
-        expiresAt = Date.now() + hours * 3600_000
-      }
+      const expiresAt = ttlHours === null ? null : Date.now() + ttlSpan(ttlHours)
       return this._add({ name, payload, createdAt: Date.now(), expiresAt, from: null, tags })
+    },
+    /**
+     * Re-seal an entry in place: same diff, newer contents, so id/createdAt/star
+     * survive. The AAD moves with the new expiry, so the old ciphertext cannot
+     * be replayed under it.
+     * @param {string} id
+     * @param {{ name: string, ttlHours: number|null, payload: object, tags: string[] }} next
+     * @returns {Promise<string|null>} the id, or null when the key is unavailable
+     */
+    async update(id, { name, ttlHours, payload, tags = [] }) {
+      const entry = this.entries.find((e) => e.id === id)
+      // A diff someone else signed is theirs; the caller makes a new one.
+      if (!entry || entry.from) return null
+      const expiresAt = ttlHours === null ? null : Date.now() + ttlSpan(ttlHours)
+      const box = await window.api.vaultEncrypt(
+        JSON.stringify(payload),
+        entryAad(entry.id, entry.createdAt, expiresAt, entry.from)
+      )
+      if (box?.error) {
+        this.keyError = box.error
+        return null
+      }
+      entry.expiresAt = expiresAt
+      entry.name = name || entry.name
+      entry.format = diffFormatTag(payload)
+      entry.tags = useSnippetStore().registerTags(tags)
+      entry.iv = box.iv
+      entry.data = box.data
+      this.persist()
+      return entry.id
     },
     // Entry received from another machine: keep the sender's absolute timestamps
     // so it expires at the same moment everywhere, and auto-tag it "imported".
@@ -148,6 +224,9 @@ export const useVaultStore = defineStore('vault', {
         format: diffFormatTag(payload),
         favorite: false,
         tags: applied,
+        // Same shape as a loaded entry, so nothing has to care whether this one
+        // has been through the store file yet.
+        sharedTo: [],
         iv,
         data
       })
@@ -194,47 +273,45 @@ export const useVaultStore = defineStore('vault', {
     },
     // Decrypt an entry and hand it to the main process, which signs it and
     // seals it for the chosen recipient.
-    async share(id, recipientFp) {
+    async share(id, recipientFps) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return { error: 'missing' }
       const payload = await this.load(id)
       if (!payload) return { error: 'missing' }
-      // Sealed shares MUST carry a finite, ≤24 h expiry (sealing.js enforces it
-      // both signing and opening). A kept (non-expiring) diff therefore gets a
-      // fresh 24 h window for its shared copy — the local original is untouched.
-      const now = Date.now()
-      const createdAt = entry.expiresAt === null ? now : entry.createdAt
-      const expiresAt = entry.expiresAt ?? now + MAX_TTL_HOURS * 3600_000
+      const { createdAt, expiresAt } = sealedWindow(entry, Date.now())
       // Tags travel with the diff (inside the signed+encrypted payload), so the
       // recipient sees them. The auto "imported" tag is local-only — never send
       // it, or a re-shared diff would accumulate "imported" tags.
       const tags = entry.tags.filter((t) => t !== 'imported')
-      return window.api.shareExport(
+      const res = await window.api.shareExport(
         { name: entry.name, createdAt, expiresAt, snapshot: payload, tags },
-        recipientFp
+        recipientFps
       )
+      // Only a WRITTEN file is a share. Cancelling the save dialog must not
+      // leave a record of something that was never sent.
+      if (res?.ok) this.recordShare(id, recipientFps)
+      return res
     },
     // Share the CURRENT diff WITHOUT first persisting a local copy: seal from the
     // in-memory snapshot, and only once the sealed file is actually written do we
     // save the local twin. So cancelling the recipient picker OR the file dialog
     // leaves nothing behind (see diffStore.shareCurrent) — a share is all-or-nothing.
-    async shareDraft({ name, ttlHours, snapshot, tags = [] }, recipientFp) {
+    async shareDraft({ name, ttlHours, snapshot, tags = [] }, recipientFps) {
       const now = Date.now()
-      const localExpiresAt =
-        ttlHours === null
-          ? null
-          : now + Math.min(Math.max(ttlHours || DEFAULT_TTL_HOURS, 0.1), MAX_TTL_HOURS) * 3600_000
-      // The sealed copy MUST carry a finite ≤24 h expiry (sealing.js enforces it);
-      // a kept local diff therefore shares with a fresh 24 h window.
-      const expiresAt = localExpiresAt ?? now + MAX_TTL_HOURS * 3600_000
+      const localExpiresAt = ttlHours === null ? null : now + ttlSpan(ttlHours)
+      const { expiresAt } = sealedWindow({ createdAt: now, expiresAt: localExpiresAt }, now)
       const cleanTags = tags.filter((t) => t !== 'imported')
       const res = await window.api.shareExport(
         { name, createdAt: now, expiresAt, snapshot, tags: cleanTags },
-        recipientFp
+        recipientFps
       )
       // Only a written file persists the local twin — a cancel writes nothing.
-      if (res.ok) await this.save(name, ttlHours, snapshot, tags)
-      return res
+      if (!res.ok) return res
+      // The sealed file is already sent; a local copy that could not be saved
+      // (locked vault key) is reported rather than passed off as a full share.
+      const id = await this.save(name, ttlHours, snapshot, tags)
+      if (id) this.recordShare(id, recipientFps)
+      return { ...res, localCopy: !!id }
     },
     async importShared() {
       return this._ingestShared(await window.api.shareImport())
@@ -287,8 +364,24 @@ export const useVaultStore = defineStore('vault', {
         return null
       }
     },
+    /**
+     * Note that this diff was sealed for these recipients. Re-sharing to the
+     * same key updates when, rather than stacking duplicates.
+     * @param {string} id
+     * @param {string[]} recipientFps
+     */
+    recordShare(id, recipientFps) {
+      const entry = this.entries.find((e) => e.id === id)
+      if (!entry) return
+      const at = Date.now()
+      const byFp = new Map((entry.sharedTo ?? []).map((r) => [r.fp, r]))
+      for (const fp of recipientFps ?? []) if (fp) byFp.set(fp, { fp, at })
+      entry.sharedTo = [...byFp.values()]
+      this.persist()
+    },
     remove(id) {
       this.entries = this.entries.filter((e) => e.id !== id)
+      useTabsStore().forgetEntry(id)
       this.persist()
     },
     toggleFavorite(id) {

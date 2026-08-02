@@ -29,3 +29,29 @@ describe('shortcuts', () => {
     }
   })
 })
+
+// This list IS what Help ▸ Keyboard Shortcuts shows, so a binding missing here
+// is a binding nobody can discover. The tabs feature shipped four and none of
+// them appeared.
+describe('what the dialog advertises', () => {
+  const keysFor = (label) =>
+    SHORTCUT_GROUPS.flatMap((g) => g.items).find((i) => i.label === label)?.keys
+  const mod = navigator.platform.toUpperCase().includes('MAC') ? 'Cmd' : 'Ctrl'
+
+  it('lists every comparison-tab binding the menu defines', () => {
+    expect(keysFor('New comparison')).toBe(`${mod}+Shift+T`)
+    expect(keysFor('Close comparison')).toBe(`${mod}+Shift+W`)
+    expect(keysFor('Next comparison')).toBe('Ctrl+Tab')
+    expect(keysFor('Previous comparison')).toBe('Ctrl+Shift+Tab')
+  })
+
+  it('lists the command palette and paste-to-compare', () => {
+    expect(keysFor('Command palette')).toBe(`${mod}+Shift+P`)
+    expect(keysFor('Paste to compare')).toBe(`${mod}+V`)
+  })
+
+  it('never advertises the same combination twice', () => {
+    const all = SHORTCUT_GROUPS.flatMap((g) => g.items).map((i) => i.keys)
+    expect(new Set(all).size).toBe(all.length)
+  })
+})

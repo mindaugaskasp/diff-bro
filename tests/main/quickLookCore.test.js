@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   placeWindow,
   displayForPoint,
@@ -6,6 +6,8 @@ import {
   launcherDiagnostics,
   launcherSpaceBehavior,
   needsMainWindow,
+  isValidAccelerator,
+  swapShortcut,
   resolveAccelerator
 } from '../../src/main/quickLookCore'
 
@@ -159,5 +161,129 @@ describe('resolveAccelerator', () => {
     expect(resolveAccelerator('', FALLBACK)).toBe(FALLBACK)
     expect(resolveAccelerator('   ', FALLBACK)).toBe(FALLBACK)
     expect(resolveAccelerator(42, FALLBACK)).toBe(FALLBACK)
+  })
+})
+
+// The renderer validates before it asks, but settingsStore claims "the main
+// process still guards its own registration" — so it has to be true here.
+// A compromised renderer is the threat model (docs/standards.md rule 3), and a
+// bare key claimed system-wide is exactly what that buys.
+describe('isValidAccelerator (main-side guard)', () => {
+  it('requires a modifier and exactly one key', () => {
+    expect(isValidAccelerator('CommandOrControl+Shift+Space')).toBe(true)
+    expect(isValidAccelerator('Alt+D')).toBe(true)
+  })
+
+  it('refuses a bare key, a modifier alone, and junk', () => {
+    expect(isValidAccelerator('A')).toBe(false)
+    expect(isValidAccelerator('Shift')).toBe(false)
+    expect(isValidAccelerator('CommandOrControl+A+B')).toBe(false)
+    expect(isValidAccelerator('')).toBe(false)
+    expect(isValidAccelerator(null)).toBe(false)
+    expect(isValidAccelerator({ toString: () => 'Alt+D' })).toBe(false)
+  })
+})
+
+// Unregistering before trying the replacement left the user with NO working
+// shortcut when the new one was already owned by another app — and the UI still
+// displayed the old binding, so nothing said it was dead.
+describe('swapShortcut', () => {
+  const CURRENT = 'CommandOrControl+Shift+Space'
+
+  it('registers the replacement and only then drops the old one', () => {
+    const order = []
+    const res = swapShortcut({
+      current: CURRENT,
+      next: 'Alt+D',
+      register: (a) => (order.push(`register:${a}`), true),
+      unregister: (a) => order.push(`unregister:${a}`)
+    })
+    expect(res).toEqual({ ok: true, current: 'Alt+D' })
+    expect(order).toEqual(['register:Alt+D', `unregister:${CURRENT}`])
+  })
+
+  it('keeps the working shortcut when the replacement is unavailable', () => {
+    const unregister = vi.fn()
+    const res = swapShortcut({
+      current: CURRENT,
+      next: 'Alt+D',
+      register: () => false,
+      unregister
+    })
+    expect(res).toEqual({ ok: false, error: 'unavailable', current: CURRENT })
+    expect(unregister).not.toHaveBeenCalled()
+  })
+
+  it('keeps the working shortcut when registering throws', () => {
+    const unregister = vi.fn()
+    const res = swapShortcut({
+      current: CURRENT,
+      next: 'Alt+D',
+      register: () => {
+        throw new Error('bad accelerator')
+      },
+      unregister
+    })
+    expect(res).toEqual({ ok: false, error: 'unavailable', current: CURRENT })
+    expect(unregister).not.toHaveBeenCalled()
+  })
+
+  it('refuses an invalid accelerator without touching the registration at all', () => {
+    const register = vi.fn()
+    const unregister = vi.fn()
+    const res = swapShortcut({ current: CURRENT, next: 'A', register, unregister })
+    expect(res).toEqual({ ok: false, error: 'invalid', current: CURRENT })
+    expect(register).not.toHaveBeenCalled()
+    expect(unregister).not.toHaveBeenCalled()
+  })
+
+  it('is a no-op when the requested binding is already the live one', () => {
+    const register = vi.fn()
+    const unregister = vi.fn()
+    const res = swapShortcut({ current: CURRENT, next: CURRENT, register, unregister })
+    expect(res).toEqual({ ok: true, current: CURRENT })
+    expect(register).not.toHaveBeenCalled()
+    expect(unregister).not.toHaveBeenCalled()
+  })
+
+  it('registers with nothing to roll back on first run', () => {
+    const unregister = vi.fn()
+    const res = swapShortcut({
+      current: null,
+      next: 'Alt+D',
+      register: () => true,
+      unregister
+    })
+    expect(res).toEqual({ ok: true, current: 'Alt+D' })
+    expect(unregister).not.toHaveBeenCalled()
+  })
+})
+
+// The mirroring is deliberate (the renderer tree cannot be imported in main),
+// so this pins the two copies together: a rule changed on one side and not the
+// other fails here rather than in the field.
+describe('accelerator validity matches the renderer definition', () => {
+  it('agrees on every shape the capture UI can produce', async () => {
+    const renderer = await import('../../src/renderer/src/utils/accelerator')
+    const corpus = [
+      'CommandOrControl+Shift+Space',
+      'Alt+D',
+      'CommandOrControl+Alt+Shift+F12',
+      'Super+K',
+      'A',
+      'Shift',
+      'CommandOrControl',
+      'CommandOrControl+A+B',
+      'CommandOrControl+',
+      '+A',
+      '',
+      'Space'
+    ]
+    for (const accel of corpus) {
+      expect([accel, isValidAccelerator(accel)]).toEqual([
+        accel,
+        renderer.isValidAccelerator(accel)
+      ])
+    }
   })
 })

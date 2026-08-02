@@ -7,6 +7,7 @@
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { delimiter, dirname, join } from 'node:path'
+import { shQuote } from './shellQuote'
 
 export const SHIM_NAME = 'diffbro'
 
@@ -38,7 +39,7 @@ export function shimScript(exePath, platform = process.platform) {
   }
   // exec so the shim leaves no shell behind, and "$@" so paths with spaces
   // survive as single arguments.
-  return `#!/bin/sh\n${MARK}\nexec "${exePath}" "$@"\n`
+  return `#!/bin/sh\n${MARK}\nexec ${shQuote(exePath)} "$@"\n`
 }
 
 /**

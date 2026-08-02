@@ -24,6 +24,7 @@ import AddTrustedKeyDialog from './AddTrustedKeyDialog.vue'
 import TrustedKeysDialog from './TrustedKeysDialog.vue'
 import RemoveTrustedKeyDialog from './RemoveTrustedKeyDialog.vue'
 import ShareKeyDialog from './ShareKeyDialog.vue'
+import RotateKeyDialog from './RotateKeyDialog.vue'
 import ConfigBackupDialog from './ConfigBackupDialog.vue'
 import SettingsDialog from './SettingsDialog.vue'
 import KeyboardShortcutsDialog from './KeyboardShortcutsDialog.vue'
@@ -44,6 +45,7 @@ const errors = useErrorStore()
   <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
   <RemoveTrustedKeyDialog v-if="store.pendingUntrust" />
   <ShareKeyDialog v-if="store.showShareKeyDialog" />
+  <RotateKeyDialog v-if="store.showRotateKeyDialog" />
   <ConfigBackupDialog v-if="store.configMode" />
   <SettingsDialog v-if="store.showSettingsDialog" />
   <KeyboardShortcutsDialog v-if="store.showShortcutsDialog" />

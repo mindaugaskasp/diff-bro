@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { shaped } from '../utils/props'
 import MermaidDiagram from './MermaidDiagram.vue'
+import SnippetCode from './SnippetCode.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import AppIcon from './AppIcon.vue'
 
@@ -29,12 +30,18 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
     </div>
     <!-- A Mermaid snippet previews as its rendered diagram;
          clicking it opens the full-screen zoomable viewer. -->
-    <button v-if="isMermaid" class="pv-diagram" data-tip="View full screen" @click="$emit('view')">
+    <button
+      v-if="isMermaid"
+      class="pv-diagram"
+      data-tip="View full screen"
+      aria-label="View this diagram full screen"
+      @click="$emit('view')"
+    >
       <MermaidDiagram :code="preview.text" :debounce="0" />
     </button>
     <SnippetSecretMask v-else-if="preview.secret" compact />
     <button v-else class="pv-body" data-tip="Open in editor" @click="$emit('edit')">
-      {{ preview.text }}
+      <SnippetCode :code="preview.text" :language="preview.lang" />
     </button>
     <div class="pv-foot">
       <span class="pv-tags">

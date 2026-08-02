@@ -27,3 +27,8 @@ export function filtersFor(format) {
 }
 
 export const FORMAT_IDS = Object.keys(FILTERS)
+
+// Marks a path as a user document rather than source code, for logRedact.js.
+export const DOC_EXTENSIONS = [
+  ...new Set(Object.values(FILTERS).flatMap((f) => f.flatMap((entry) => entry.extensions)))
+]

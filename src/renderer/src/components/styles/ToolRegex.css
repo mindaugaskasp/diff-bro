@@ -1,0 +1,138 @@
+.tre {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.mono {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+.tre-pat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tre-slash {
+  color: var(--text-hint);
+  font-size: var(--font-lg);
+}
+.tre-field {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-sm);
+}
+.tre-field:focus,
+.tre-in:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.tre-flags {
+  display: flex;
+  gap: var(--space-2);
+}
+/* Flags are chips, not a text field: an invalid flag cannot be typed. */
+.tre-flag {
+  width: var(--chip-h);
+  height: var(--chip-h);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-dim);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  padding: 0;
+}
+.tre-flag.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+}
+.tre-in {
+  min-height: 84px;
+  resize: vertical;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: var(--space-2) var(--space-3);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-sm);
+}
+.tre-bh {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.tre-warn {
+  color: var(--warning-bg);
+}
+.tre-err {
+  font-size: var(--font-sm);
+  color: var(--danger-border);
+}
+.tre-out,
+.tre-preview {
+  max-height: 200px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* A match, tinted from the theme's own accent — the same idiom the structure
+   view uses for added/removed rows, so it re-tints on all 14 rather than
+   carrying a colour that dies on the seven light grounds. */
+.tre-out .hit {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}
+.tre-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tre-group {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--font-sm);
+}
+.tre-gname {
+  flex: none;
+  width: 72px;
+  color: var(--text-dim);
+}
+.tre-gval {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.tre-replace {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tre-copy {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+}
+.tre-copy:hover {
+  color: var(--text);
+}

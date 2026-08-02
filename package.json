@@ -4,7 +4,7 @@
   "description": "Desktop file diff viewer with GitHub-style rendering",
   "main": "./build/main/index.js",
   "author": "Mindaugas",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -36,7 +36,8 @@
     "mermaid": "^11.16.0",
     "pinia": "^2.2.6",
     "saxen": "^11.1.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "yaml": "^2.9.0"
   },
   "//overrides": "brace-expansion <=5.0.7 has an OOM-DoS advisory (GHSA-mh99-v99m-4gvg), fixed only in 5.0.8. It reaches us solely through electron-builder's build-time glob chain (a devDependency; not in the shipped app), and npm's only offered fix is a breaking electron-builder downgrade. 5.0.8 keeps the same expand() API, so pinning it clears the whole minimatch/glob chain without touching electron-builder.",
   "overrides": {

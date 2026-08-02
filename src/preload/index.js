@@ -5,6 +5,12 @@ contextBridge.exposeInMainWorld('api', {
   readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   exportDiffHtml: (payload) => ipcRenderer.invoke('diff:exportHtml', payload),
+  // Streamed comparison: files too large to hold are indexed by line in main
+  // and aligned over those digests. The renderer gets the alignment, then asks
+  // for the line windows it is showing — the text never crosses whole.
+  streamOpen: (leftPath, rightPath) => ipcRenderer.invoke('stream:open', { leftPath, rightPath }),
+  streamLines: (payload) => ipcRenderer.invoke('stream:lines', payload),
+  streamClose: (token) => ipcRenderer.invoke('stream:close', token),
   // Diff image export (saved diffs only): main screenshots the diff view itself,
   // so the picture carries the live theme and Monaco's highlighting. The bitmap
   // stays in main — the renderer only sends a rect and receives a preview URL.
@@ -41,7 +47,7 @@ contextBridge.exposeInMainWorld('api', {
   // Sealed diff sharing (sign-then-encrypt, keys managed in main).
   listTrustedKeys: () => ipcRenderer.invoke('share:listTrusted'),
   myFingerprint: () => ipcRenderer.invoke('share:myFingerprint'),
-  shareExport: (entry, recipientFp) => ipcRenderer.invoke('share:export', entry, recipientFp),
+  shareExport: (entry, recipientFps) => ipcRenderer.invoke('share:export', entry, recipientFps),
   shareImport: () => ipcRenderer.invoke('share:import'),
   // Drag-drop variant: import a sealed .diffbro dropped on the window, by path.
   shareImportPath: (path) => ipcRenderer.invoke('share:importPath', path),
@@ -55,6 +61,11 @@ contextBridge.exposeInMainWorld('api', {
   addTrustedKeyNamed: (key, label) => ipcRenderer.invoke('share:addTrustedKeyNamed', key, label),
   renameTrusted: (fp, label) => ipcRenderer.invoke('share:renameTrusted', fp, label),
   removeTrusted: (fp) => ipcRenderer.invoke('share:removeTrusted', fp),
+  // Key rotation. Retired keys stay on this machine as decrypt-only; no key
+  // material crosses this boundary in either direction (rule 4).
+  rotateKey: () => ipcRenderer.invoke('share:rotate'),
+  retiredKeyCount: () => ipcRenderer.invoke('share:retiredCount'),
+  destroyRetiredKeys: () => ipcRenderer.invoke('share:destroyRetired'),
   // Configuration backup/restore (passphrase-encrypted; identity keys stay
   // in the main process, only travelling inside the encrypted blob).
   backupConfig: (snippets, settings, passphrase) =>
@@ -79,9 +90,9 @@ contextBridge.exposeInMainWorld('api', {
   toggleDevTools: () => ipcRenderer.invoke('app:toggleDevTools'),
   isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
   quit: () => ipcRenderer.invoke('app:quit'),
-  // Opens the project's "new issue" page (a fixed URL, chosen in main) in the
-  // OS browser. No URL crosses from the renderer.
-  reportIssue: () => ipcRenderer.invoke('app:reportIssue'),
+  // No URL crosses from the renderer — only an error message for the prefilled
+  // title, which main anonymises. The address itself is chosen in main.
+  reportIssue: (title) => ipcRenderer.invoke('app:reportIssue', { title }),
   // Local error log (written by the main process, never sent anywhere). The
   // renderer forwards its own uncaught errors and can read/clear/reveal the log
   // and choose where it's stored.
@@ -124,6 +135,14 @@ contextBridge.exposeInMainWorld('api', {
   cliStatus: () => ipcRenderer.invoke('cli:status'),
   cliInstall: () => ipcRenderer.invoke('cli:install'),
   cliRemove: () => ipcRenderer.invoke('cli:remove'),
+  // Rolling local backups of snippets and kept diffs (src/main/autoBackup.js).
+  listBackups: () => ipcRenderer.invoke('backup:list'),
+  restoreBackup: (name) => ipcRenderer.invoke('backup:restore', name),
+  hashText: (text) => ipcRenderer.invoke('hash:text', text),
+  hashFile: () => ipcRenderer.invoke('hash:file'),
+  gitToolStatus: () => ipcRenderer.invoke('git:toolStatus'),
+  gitToolRegister: () => ipcRenderer.invoke('git:register'),
+  gitToolUnregister: () => ipcRenderer.invoke('git:unregister'),
   onMenuAction: (handler) => {
     ipcRenderer.on('menu:action', (_e, action) => handler(action))
   },

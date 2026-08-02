@@ -11,8 +11,13 @@ import {
   encodePublicKey,
   fingerprint,
   isAcceptedKeyFormat,
+  ROTATION_FORMAT,
   openSealed,
+  openSealedWith,
+  rebuiltPublicKey,
   sealEntry,
+  signRotation,
+  verifyRotation,
   shareFilename,
   ttlError
 } from '../../src/main/sealing'
@@ -57,7 +62,7 @@ describe('format versioning / revocation', () => {
   it('the current sealed format still opens (sanity)', () => {
     const { seal, bob, bobTrustsAlice } = makePeers()
     expect(openSealed(seal(), bob, bobTrustsAlice).ok).toBe(true)
-    expect(SHARE_FORMAT).toBe('diffbro-share/3')
+    expect(SHARE_FORMAT).toBe('diffbro-share/4')
   })
 })
 
@@ -177,7 +182,7 @@ describe('ttlError', () => {
   it('rejects expired entries', () => {
     expect(ttlError(makeEntry({ expiresAt: NOW - 1 }), NOW)).toBe('expired')
   })
-  it('rejects lifetimes over 24 h', () => {
+  it('rejects lifetimes past the ceiling', () => {
     expect(ttlError(makeEntry({ expiresAt: NOW + MAX_TTL_MS + 1 }), NOW)).toBe('invalid-ttl')
   })
   it('rejects missing or non-numeric timestamps', () => {
@@ -196,22 +201,25 @@ describe('sealEntry', () => {
       'epk',
       'format',
       'iv',
-      'salt',
+      'keys',
       'tag',
       'to'
     ])
+    // The per-recipient wraps carry no plaintext either.
+    expect(Object.keys(file.keys[0]).sort()).toEqual(['iv', 'key', 'salt', 'tag', 'to'])
     const raw = JSON.stringify(file)
     for (const probe of ['secret left', 'test diff', 'expiresAt', 'snapshot']) {
       expect(raw).not.toContain(probe)
     }
   })
 
-  it('uses a fresh ephemeral key, salt, iv, and ciphertext per file', () => {
+  it('uses a fresh ephemeral key, content key, salt, iv, and ciphertext per file', () => {
     const { seal } = makePeers()
     const a = seal()
     const b = seal()
     expect(a.epk).not.toBe(b.epk)
-    expect(a.salt).not.toBe(b.salt)
+    expect(a.keys[0].salt).not.toBe(b.keys[0].salt)
+    expect(a.keys[0].key).not.toBe(b.keys[0].key)
     expect(a.iv).not.toBe(b.iv)
     expect(a.ciphertext).not.toBe(b.ciphertext)
   })
@@ -268,12 +276,9 @@ describe('openSealed', () => {
   it('rejects a re-addressed "to" field (AAD binding)', () => {
     const { bob, bobTrustsAlice, seal } = makePeers()
     const file = seal()
-    // Attacker rewrites the routing header to bob's fingerprint on a file
-    // sealed with bob's key but different AAD — simulate by flipping `to`
-    // then restoring it so only the AAD check can catch a mismatch. The
-    // real-world equivalent: decryption must fail whenever `to` and the
-    // AAD disagree, which GCM enforces because we derive AAD from `to`.
-    const forged = { ...file, to: bob.pub.fingerprint.split('').reverse().join('') }
+    // The audience is derived from `to`, and both AAD layers commit to it, so a
+    // rewritten routing header can only fail — never redirect a sealed file.
+    const forged = { ...file, to: [bob.pub.fingerprint.split('').reverse().join('')] }
     expect(['not-for-you', 'tampered']).toContain(
       openSealed(forged, bob, bobTrustsAlice, NOW).error
     )
@@ -327,10 +332,349 @@ describe('openSealed', () => {
     expect(openSealed(reSealed, bob, bobTrustsAlice, NOW).error).toBe('bad-signature')
   })
 
-  it('rejects expired payloads and TTLs over 24 h at import time', () => {
+  // A trusted-keys file is not necessarily one this app wrote — the config
+  // restore path used to write it unvalidated, and it can be hand-edited. A key
+  // that will not parse must be a verdict, never a throw: openSealed rejecting
+  // its IPC promise left the user with no message at all.
+  it('reports a trusted entry whose key will not parse instead of throwing', () => {
+    const { seal, bob, bobTrustsAlice } = makePeers()
+    const file = seal()
+    const corrupt = [{ ...bobTrustsAlice[0], sign: 'not a PEM at all' }]
+    expect(() => openSealed(file, bob, corrupt, NOW)).not.toThrow()
+    expect(openSealed(file, bob, corrupt, NOW).error).toBe('bad-trusted-key')
+  })
+
+  it('rejects expired payloads and over-long TTLs at import time', () => {
     const { bob, bobTrustsAlice, seal } = makePeers()
     expect(openSealed(seal(), bob, bobTrustsAlice, NOW + 3600_000 + 1).error).toBe('expired')
     const tooLong = seal(makeEntry({ expiresAt: NOW + MAX_TTL_MS + 1 }))
     expect(openSealed(tooLong, bob, bobTrustsAlice, NOW).error).toBe('invalid-ttl')
+  })
+})
+
+// The sender's chosen expiry travels intact, up to the same week a diff can be
+// kept locally. The ceiling moved; it did not go away, and both ends still check.
+describe('the sealed lifetime ceiling', () => {
+  it('is a week', () => {
+    expect(MAX_TTL_MS).toBe(7 * 24 * 3600 * 1000)
+  })
+
+  it('accepts the lifetimes the save dialog offers, up to a week', () => {
+    for (const hours of [1, 8, 24, 48, 72, 168]) {
+      const entry = makeEntry({ createdAt: NOW, expiresAt: NOW + hours * 3600 * 1000 })
+      expect(ttlError(entry, NOW), `${hours} h should seal`).toBeNull()
+    }
+  })
+
+  it('still refuses anything past it, at both ends', () => {
+    const { bob, bobTrustsAlice, seal } = makePeers()
+    const entry = makeEntry({ createdAt: NOW, expiresAt: NOW + MAX_TTL_MS + 1 })
+    expect(ttlError(entry, NOW)).toBe('invalid-ttl')
+    expect(openSealed(seal(entry), bob, bobTrustsAlice, NOW).error).toBe('invalid-ttl')
+  })
+
+  it('opens a week-long share end to end', () => {
+    const { bob, bobTrustsAlice, seal } = makePeers()
+    const entry = makeEntry({ createdAt: NOW, expiresAt: NOW + 7 * 24 * 3600 * 1000 })
+    const opened = openSealed(seal(entry), bob, bobTrustsAlice, NOW)
+    expect(opened.error).toBeUndefined()
+    expect(opened.entry.expiresAt).toBe(entry.expiresAt)
+  })
+})
+
+// One diff sealed for a whole team. The content is encrypted once under a random
+// content key, and that key is wrapped per recipient — so the file grows by a
+// key, not by a copy of the diff. Every binding the single-recipient format had
+// still holds: sign-then-encrypt, and the AUDIENCE (the whole recipient set) is
+// what the signature and both AAD layers commit to.
+function makeTeam(count = 3) {
+  const alice = createIdentityKeys()
+  const members = Array.from({ length: count }, () => createIdentityKeys())
+  const trustsAlice = [
+    { fingerprint: alice.pub.fingerprint, label: 'alice', sign: alice.pub.sign, box: alice.pub.box }
+  ]
+  const seal = (entry = makeEntry(), who = members) =>
+    sealEntry(
+      entry,
+      { priv: alice.priv, fingerprint: alice.pub.fingerprint },
+      who.map((m) => ({ fingerprint: m.pub.fingerprint, box: m.pub.box }))
+    )
+  return { alice, members, trustsAlice, seal }
+}
+
+describe('multi-recipient sealing', () => {
+  it('every named recipient opens the same file and gets the same diff', () => {
+    const { members, trustsAlice, seal } = makeTeam(3)
+    const entry = makeEntry()
+    const file = seal(entry)
+
+    for (const m of members) {
+      const opened = openSealed(file, m, trustsAlice, NOW)
+      expect(opened.ok).toBe(true)
+      expect(opened.entry).toEqual(entry)
+      expect(opened.from).toBe('alice')
+    }
+  })
+
+  it('encrypts the diff once, however many recipients there are', () => {
+    const { seal, members } = makeTeam(5)
+    const one = seal(makeEntry(), members.slice(0, 1))
+    const five = seal(makeEntry(), members)
+    // The payload is not duplicated per recipient; only the wrapped keys are.
+    expect(five.ciphertext.length).toBe(one.ciphertext.length)
+    expect(five.keys).toHaveLength(5)
+    expect(one.keys).toHaveLength(1)
+  })
+
+  it('refuses someone who is not in the audience', () => {
+    const { seal, trustsAlice } = makeTeam(2)
+    const stranger = createIdentityKeys()
+    expect(openSealed(seal(), stranger, trustsAlice, NOW)).toEqual({ error: 'not-for-you' })
+  })
+
+  it('a single recipient is just an audience of one, and still opens', () => {
+    const { members, trustsAlice, seal } = makeTeam(1)
+    expect(openSealed(seal(), members[0], trustsAlice, NOW).ok).toBe(true)
+  })
+
+  it('accepts one recipient passed on its own, not in a list', () => {
+    const { bob, bobTrustsAlice, seal } = makePeers()
+    expect(openSealed(seal(), bob, bobTrustsAlice, NOW).ok).toBe(true)
+  })
+
+  // The re-addressing guard: the audience is committed to by the signature AND
+  // by both AAD layers, so the recipient list cannot be edited after the fact.
+  it('refuses a file whose recipient list was edited', () => {
+    const { members, trustsAlice, seal } = makeTeam(3)
+    const file = seal()
+    // Drop a member who is NOT the one opening it, so the failure can only be
+    // the audience binding rather than "you are not on the list".
+    const me = members[0].pub.fingerprint
+    const victim = file.to.find((fp) => fp !== me)
+    const dropped = {
+      ...file,
+      to: file.to.filter((fp) => fp !== victim),
+      keys: file.keys.filter((k) => k.to !== victim)
+    }
+    expect(openSealed(dropped, members[0], trustsAlice, NOW).error).toBe('tampered')
+
+    const stranger = createIdentityKeys()
+    const widened = { ...file, to: [...file.to, stranger.pub.fingerprint] }
+    expect(openSealed(widened, members[0], trustsAlice, NOW).error).toBe('tampered')
+  })
+
+  it('refuses a wrapped key lifted from another recipient', () => {
+    const { members, trustsAlice, seal } = makeTeam(2)
+    const file = seal()
+    const me = members[0].pub.fingerprint
+    const other = file.keys.find((k) => k.to !== me)
+    // My slot, carrying somebody else's wrapped key: the per-recipient AAD is
+    // what makes that unusable rather than merely wrong.
+    const swapped = {
+      ...file,
+      keys: file.keys.map((k) => (k.to === me ? { ...other, to: me } : k))
+    }
+    expect(openSealed(swapped, members[0], trustsAlice, NOW).error).toBe('tampered')
+  })
+
+  it('refuses a tampered payload for every recipient', () => {
+    const { members, trustsAlice, seal } = makeTeam(2)
+    const file = seal()
+    const bad = Buffer.from(file.ciphertext, 'base64')
+    bad[0] ^= 0xff
+    const tampered = { ...file, ciphertext: bad.toString('base64') }
+    for (const m of members) {
+      expect(openSealed(tampered, m, trustsAlice, NOW).error).toBe('tampered')
+    }
+  })
+
+  it('refuses a signature from someone the recipient does not trust', () => {
+    const { members, seal } = makeTeam(2)
+    expect(openSealed(seal(), members[0], [], NOW).error).toBe('unknown-signer')
+  })
+
+  it('names the same file whatever recipient asks, and changes when the set does', () => {
+    const { seal, members } = makeTeam(3)
+    const file = seal()
+    expect(shareFilename(file)).toMatch(/^[0-9a-f]{32}\.diffbro$/)
+    expect(shareFilename(seal(makeEntry(), members.slice(0, 2)))).not.toBe(shareFilename(file))
+  })
+
+  it('rejects a seal addressed to nobody', () => {
+    const { alice } = makeTeam(1)
+    expect(() =>
+      sealEntry(makeEntry(), { priv: alice.priv, fingerprint: alice.pub.fingerprint }, [])
+    ).toThrow()
+  })
+
+  it('deduplicates a recipient named twice', () => {
+    const { members, trustsAlice, seal } = makeTeam(1)
+    const file = seal(makeEntry(), [members[0], members[0]])
+    expect(file.keys).toHaveLength(1)
+    expect(openSealed(file, members[0], trustsAlice, NOW).ok).toBe(true)
+  })
+})
+
+// --- key rotation ---------------------------------------------------------
+// Rotation exists for one threat only: a leaked private key must stop being
+// able to speak for you. It does NOT make past shares unreadable — those were
+// encrypted to the RECIPIENT's key; yours only signed them. The tests below
+// pin both halves of that, because the wrong belief about it is the dangerous
+// one.
+describe('key rotation', () => {
+  const rotate = () => {
+    const older = createIdentityKeys()
+    const newer = createIdentityKeys()
+    const record = signRotation({
+      oldPriv: older.priv,
+      oldFp: older.pub.fingerprint,
+      newPriv: newer.priv,
+      newFp: newer.pub.fingerprint
+    })
+    return { older, newer, record }
+  }
+
+  it('is vouched for by BOTH the old key and the new one', () => {
+    const { older, newer, record } = rotate()
+    expect(record.from).toBe(older.pub.fingerprint)
+    expect(record.to).toBe(newer.pub.fingerprint)
+    expect(verifyRotation(record, older.pub.sign, newer.pub)).toBe(true)
+  })
+
+  // Without the old key's signature, anyone could announce themselves as the
+  // successor to a key you trust.
+  it('is rejected when the previous key did not sign it', () => {
+    const { older, newer, record } = rotate()
+    const impostor = createIdentityKeys()
+    const forged = signRotation({
+      oldPriv: impostor.priv,
+      oldFp: older.pub.fingerprint,
+      newPriv: newer.priv,
+      newFp: newer.pub.fingerprint
+    })
+    expect(verifyRotation(forged, older.pub.sign, newer.pub)).toBe(false)
+    // …and the genuine one still fails against the wrong predecessor.
+    expect(verifyRotation(record, impostor.pub.sign, newer.pub)).toBe(false)
+  })
+
+  // Without the new key's own signature, a leaked record could be re-pointed
+  // at a key its holder never controlled.
+  it('is rejected when the new key did not claim it', () => {
+    const { older, newer, record } = rotate()
+    const other = createIdentityKeys()
+    expect(
+      verifyRotation({ ...record, bySelf: record.byPrevious }, older.pub.sign, newer.pub)
+    ).toBe(false)
+    // A record for a different key does not vouch for this one.
+    expect(verifyRotation(record, older.pub.sign, other.pub)).toBe(false)
+  })
+
+  it('is rejected when any field it covers is edited', () => {
+    const { older, newer, record } = rotate()
+    for (const edit of [{ at: record.at + 1 }, { from: 'f'.repeat(32) }, { format: 'nope' }]) {
+      expect(verifyRotation({ ...record, ...edit }, older.pub.sign, newer.pub)).toBe(false)
+    }
+  })
+
+  it('is rejected outright when it is not a rotation record at all', () => {
+    const { older, newer } = rotate()
+    for (const junk of [null, undefined, {}, { format: ROTATION_FORMAT }, 'string']) {
+      expect(verifyRotation(junk, older.pub.sign, newer.pub)).toBe(false)
+    }
+  })
+})
+
+describe('openSealedWith', () => {
+  const trusted = (id, label) => ({ ...id.pub, fingerprint: id.pub.fingerprint, label })
+
+  it('opens with the current identity', () => {
+    const sender = createIdentityKeys()
+    const me = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(me, 'me')]
+    )
+    const out = openSealedWith(file, [me], [trusted(sender, 'sender')])
+    expect(out.error).toBeUndefined()
+    expect(out.entry.name).toBe(makeEntry().name)
+  })
+
+  // Rotating a key must not destroy diffs already sent to the old one. A
+  // retired key still decrypts; it is simply never used to seal or sign again.
+  it('still opens a diff sealed to a key that has since been retired', () => {
+    const sender = createIdentityKeys()
+    const retired = createIdentityKeys()
+    const current = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(retired, 'me-before')]
+    )
+
+    expect(openSealed(file, current, [trusted(sender, 's')]).error).toBe('not-for-you')
+    expect(openSealedWith(file, [current, retired], [trusted(sender, 's')]).error).toBeUndefined()
+  })
+
+  // A real verdict about the file must not be masked by trying more keys.
+  it('reports a tampered file rather than moving on to the next key', () => {
+    const sender = createIdentityKeys()
+    const me = createIdentityKeys()
+    const spare = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(me, 'me')]
+    )
+    file.ciphertext = Buffer.from('tampered').toString('base64')
+    expect(openSealedWith(file, [me, spare], [trusted(sender, 's')]).error).toBe('tampered')
+  })
+
+  it('says "not for you" when none of this machine’s keys is addressed', () => {
+    const sender = createIdentityKeys()
+    const them = createIdentityKeys()
+    const file = sealEntry(
+      makeEntry(),
+      { priv: sender.priv, fingerprint: sender.pub.fingerprint },
+      [trusted(them, 'them')]
+    )
+    expect(openSealedWith(file, [createIdentityKeys()], [trusted(sender, 's')]).error).toBe(
+      'not-for-you'
+    )
+    expect(openSealedWith(file, [], []).error).toBe('not-for-you')
+  })
+})
+
+// A key file is rebuilt to the current format on import, and that rebuild used
+// to list its fields by hand — dropping the rotation record, which made the
+// "this key replaces one you trust" note unreachable in every path.
+describe('rebuiltPublicKey', () => {
+  it('carries the rotation record through', () => {
+    const older = createIdentityKeys()
+    const newer = createIdentityKeys()
+    const rotation = signRotation({
+      oldPriv: older.priv,
+      oldFp: older.pub.fingerprint,
+      newPriv: newer.priv,
+      newFp: newer.pub.fingerprint
+    })
+    const rebuilt = rebuiltPublicKey({ ...newer.pub, rotation })
+
+    expect(rebuilt.rotation).toEqual(rotation)
+    // …and it still verifies after the round trip, which is the point.
+    expect(verifyRotation(rebuilt.rotation, older.pub.sign, rebuilt)).toBe(true)
+  })
+
+  it('normalises the format and keeps only key material', () => {
+    const id = createIdentityKeys()
+    const rebuilt = rebuiltPublicKey({ ...id.pub, format: 'diffbro-key/1', label: 'whatever' })
+    expect(rebuilt.format).toBe(KEY_FORMAT)
+    // A label from the FILE is untrusted display text; the importer names the key.
+    expect(rebuilt.label).toBeUndefined()
+    expect(Object.keys(rebuilt).sort()).toEqual(['box', 'format', 'sign'])
+  })
+
+  it('omits rotation entirely when the key has none', () => {
+    expect('rotation' in rebuiltPublicKey(createIdentityKeys().pub)).toBe(false)
   })
 })

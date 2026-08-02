@@ -8,6 +8,8 @@ import { useSessionPersistence } from './composables/useSessionPersistence'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
+import StructureDiffViewer from './components/StructureDiffViewer.vue'
+import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
 import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
@@ -21,6 +23,8 @@ import SavedDiffs from './components/SavedDiffs.vue'
 import DiffTabBar from './components/DiffTabBar.vue'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
+import AppIcon from './components/AppIcon.vue'
+import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
 import { MOD, isMac } from './keys'
 
@@ -126,7 +130,7 @@ const {
               :disabled="!store.ready"
               @click="store.swap"
             >
-              ⇄
+              <AppIcon name="swap" />
             </button>
             <div class="slot-half">
               <FileSlot
@@ -145,6 +149,8 @@ const {
               <FormatHintBanner />
               <DiffViewer />
             </template>
+            <StructureDiffViewer v-else-if="store.comparableKind === 'tree'" />
+            <StreamedDiffViewer v-else-if="store.comparableKind === 'streamed'" />
             <SpreadsheetDiffViewer v-else />
           </template>
           <!-- One side loaded: make it obvious a second file is still needed. -->
@@ -166,6 +172,8 @@ const {
           <transition name="fade">
             <div v-if="store.notice" class="notice">{{ store.notice }}</div>
           </transition>
+
+          <DiskChangeNotice />
 
           <ShortcutBar />
         </main>

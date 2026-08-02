@@ -1,0 +1,116 @@
+<!-- README hero, light-ground half of the pair README.md serves through
+     <picture>; hero-dark.svg is the twin and the two must keep the same
+     geometry so switching GitHub themes does not shift the layout. Warm paper
+     is the DMG backdrop's field, and the mark keeps its own charcoal tile so
+     the brand reads the same on either ground. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-label="Diff Bro — an offline-only diff viewer for Windows and macOS">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#faf5ea"/>
+      <stop offset="0.55" stop-color="#f4ecdd"/>
+      <stop offset="1" stop-color="#ece2cf"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="20%" cy="12%" r="60%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="tile" cx="50%" cy="-8%" r="140%">
+      <stop offset="0" stop-color="#332f26"/>
+      <stop offset="0.72" stop-color="#171309"/>
+    </radialGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0.46" stop-color="#000000"/>
+      <stop offset="0.60" stop-color="#ffffff"/>
+      <stop offset="0.93" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#4d4d4d"/>
+    </linearGradient>
+    <mask id="paneFade"><rect width="1280" height="340" fill="url(#fade)"/></mask>
+    <filter id="tileShadow" x="-40%" y="-40%" width="180%" height="200%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#6e5a2f" flood-opacity="0.28"/>
+    </filter>
+    <clipPath id="card"><rect width="1280" height="340" rx="26"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect width="1280" height="340" fill="url(#paper)"/>
+    <rect width="1280" height="340" fill="url(#warm)"/>
+
+    <g mask="url(#paneFade)">
+      <rect x="690" y="46" width="262" height="248" rx="10" fill="#ffffff" fill-opacity="0.6"
+            stroke="#d8ccb4" stroke-width="1.5"/>
+      <rect x="968" y="46" width="262" height="248" rx="10" fill="#ffffff" fill-opacity="0.6"
+            stroke="#d8ccb4" stroke-width="1.5"/>
+
+      <g fill="#6e5a2f" fill-opacity="0.16">
+        <rect x="706" y="64" width="150" height="9" rx="4.5"/>
+        <rect x="718" y="86" width="118" height="9" rx="4.5"/>
+        <rect x="718" y="130" width="164" height="9" rx="4.5"/>
+        <rect x="730" y="152" width="96" height="9" rx="4.5"/>
+        <rect x="718" y="196" width="132" height="9" rx="4.5"/>
+        <rect x="706" y="240" width="88" height="9" rx="4.5"/>
+        <rect x="706" y="262" width="118" height="9" rx="4.5"/>
+      </g>
+      <g>
+        <rect x="694" y="104" width="254" height="18" rx="5" fill="#e5534b" fill-opacity="0.14"/>
+        <rect x="718" y="108" width="176" height="9" rx="4.5" fill="#b02b22" fill-opacity="0.32"/>
+        <rect x="694" y="170" width="254" height="18" rx="5" fill="#e5534b" fill-opacity="0.14"/>
+        <rect x="730" y="174" width="128" height="9" rx="4.5" fill="#b02b22" fill-opacity="0.32"/>
+        <rect x="694" y="214" width="254" height="18" rx="5" fill="#e5534b" fill-opacity="0.14"/>
+        <rect x="718" y="218" width="102" height="9" rx="4.5" fill="#b02b22" fill-opacity="0.32"/>
+      </g>
+
+      <g fill="#6e5a2f" fill-opacity="0.16">
+        <rect x="984" y="64" width="150" height="9" rx="4.5"/>
+        <rect x="996" y="86" width="118" height="9" rx="4.5"/>
+        <rect x="996" y="130" width="164" height="9" rx="4.5"/>
+        <rect x="1008" y="152" width="96" height="9" rx="4.5"/>
+        <rect x="996" y="196" width="132" height="9" rx="4.5"/>
+        <rect x="984" y="262" width="118" height="9" rx="4.5"/>
+      </g>
+      <g>
+        <rect x="972" y="104" width="254" height="18" rx="5" fill="#2da44e" fill-opacity="0.16"/>
+        <rect x="996" y="108" width="196" height="9" rx="4.5" fill="#1a7f37" fill-opacity="0.34"/>
+        <rect x="972" y="170" width="254" height="18" rx="5" fill="#2da44e" fill-opacity="0.16"/>
+        <rect x="1008" y="174" width="146" height="9" rx="4.5" fill="#1a7f37" fill-opacity="0.34"/>
+        <rect x="972" y="214" width="254" height="18" rx="5" fill="#2da44e" fill-opacity="0.16"/>
+        <rect x="996" y="218" width="120" height="9" rx="4.5" fill="#1a7f37" fill-opacity="0.34"/>
+        <rect x="972" y="236" width="254" height="18" rx="5" fill="#2da44e" fill-opacity="0.16"/>
+        <rect x="996" y="240" width="84" height="9" rx="4.5" fill="#1a7f37" fill-opacity="0.34"/>
+      </g>
+    </g>
+  </g>
+
+  <rect x="0.75" y="0.75" width="1278.5" height="338.5" rx="25.25" fill="none"
+        stroke="#d8ccb4" stroke-width="1.5"/>
+
+  <g filter="url(#tileShadow)">
+    <rect x="64" y="106" width="128" height="128" rx="29" fill="url(#tile)"/>
+  </g>
+  <g transform="translate(74.5,115) scale(1.1)">
+    <path d="M32 22 H50 A28 28 0 0 1 50 78 H32 Z" fill="none"
+          stroke="#f4ede0" stroke-width="10" stroke-linejoin="round"/>
+    <circle cx="45" cy="50" r="7.5" fill="#f4ede0"/>
+    <circle cx="63" cy="50" r="7.5" fill="#f4ede0"/>
+    <rect x="52" y="46" width="4" height="8" rx="2" fill="#e8a13a"/>
+  </g>
+
+  <text x="230" y="164" fill="#2a2620"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="58" font-weight="700" letter-spacing="-0.5">Diff Bro</text>
+  <text x="231" y="206" fill="#857c6c"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        font-size="19">An offline-only diff viewer for Windows and macOS</text>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+     font-size="13.5" letter-spacing="0.3" text-anchor="middle">
+    <rect x="230" y="232" width="122" height="28" rx="14" fill="#ffffff" fill-opacity="0.7"
+          stroke="#d8ccb4"/>
+    <text x="291" y="250.5" fill="#6a5f47">Zero network</text>
+    <rect x="362" y="232" width="176" height="28" rx="14" fill="#ffffff" fill-opacity="0.7"
+          stroke="#d8ccb4"/>
+    <text x="450" y="250.5" fill="#6a5f47">Encrypted on-device</text>
+    <rect x="548" y="232" width="140" height="28" rx="14" fill="#ffffff" fill-opacity="0.7"
+          stroke="#d8ccb4"/>
+    <text x="618" y="250.5" fill="#6a5f47">Monaco editor</text>
+  </g>
+</svg>

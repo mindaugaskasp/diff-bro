@@ -49,3 +49,39 @@ code {
   padding: 4px 10px;
   font-size: var(--font-md);
 }
+
+/* Recipient set. A row is a full-width hit target so the whole line ticks. */
+.recipients {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 4px;
+  max-height: 190px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.recipient {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--control-h-sm);
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.recipient:hover {
+  background: var(--bg-hover);
+}
+.rc-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rc-fp {
+  flex: none;
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+}

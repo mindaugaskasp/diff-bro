@@ -6,6 +6,7 @@ import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
 import CliSettings from './CliSettings.vue'
+import GitToolSettings from './GitToolSettings.vue'
 import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
@@ -100,7 +101,10 @@ function close() {
 
         <LogSettings v-else-if="tab === 'logs'" />
 
-        <CliSettings v-else-if="tab === 'cli'" />
+        <template v-else-if="tab === 'cli'">
+          <CliSettings />
+          <GitToolSettings />
+        </template>
 
         <section v-else-if="tab === 'fun'">
           <h4>Fun</h4>

@@ -2,7 +2,7 @@
 // has two keypairs (private halves wrapped by the OS keychain); peers exchange
 // public .diffbrokey files both ways before a (single-recipient) share works.
 import { clipboard, dialog, ipcMain, safeStorage } from 'electron'
-import { readFile, stat, writeFile } from 'fs/promises'
+import { readFile, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join } from 'path'
 import { dataFile } from './appData'
 import {
@@ -13,12 +13,16 @@ import {
   encodePublicKey,
   fingerprint,
   isAcceptedKeyFormat,
-  openSealed,
+  rebuiltPublicKey,
+  openSealedWith,
   sealEntry,
   shareFilename,
+  signRotation,
+  verifyRotation,
   ttlError
 } from './sealing'
 import { openConfig, sealConfig } from './configBackup'
+import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
 import { validateSnippetBundle } from './snippetSealing'
 
 const PLAIN_PREFIX = 'plain:'
@@ -30,17 +34,14 @@ const MAX_KEY_FILE_BYTES = 64 * 1024
 const privPath = () => dataFile('identity.key')
 const pubPath = () => dataFile('identity.pub')
 const trustPath = () => dataFile('trusted-keys.json')
+// Keys this machine has rotated away from. They DECRYPT and nothing else — a
+// diff sealed to the old key before it was replaced is still addressed to a key
+// we hold, and rotating must not destroy mail already in flight.
+const retiredPath = () => dataFile('retired-keys.key')
 
 // Identity present but unloadable (locked keychain, corruption). Surface it,
 // never regenerate — that would silently rotate the public key and break every
 // peer's trust.
-class IdentityUnavailable extends Error {
-  constructor() {
-    super('identity-unavailable')
-    this.name = 'IdentityUnavailable'
-  }
-}
-
 export async function getIdentity() {
   const [privRes, pubRes] = await Promise.allSettled([
     readFile(privPath()),
@@ -83,14 +84,80 @@ function decodeIdentity(rawPriv, rawPub) {
 async function upgradeIdentityFormat(identity) {
   const currentFp = fingerprint(identity.pub.sign, identity.pub.box)
   if (identity.pub.format === KEY_FORMAT && identity.pub.fingerprint === currentFp) return identity
-  const pub = {
-    format: KEY_FORMAT,
-    sign: identity.pub.sign,
-    box: identity.pub.box,
-    fingerprint: currentFp
-  }
+  // Spread first: rebuilding field-by-field erased the rotation record and the
+  // user's own display name every time a format upgrade ran.
+  const pub = { ...identity.pub, format: KEY_FORMAT, fingerprint: currentFp }
   await persistIdentity(identity.priv, pub)
   return { priv: identity.priv, pub }
+}
+
+/**
+ * Every identity this machine can DECRYPT with: the current one first, then the
+ * retired ones. Nothing here is ever used to sign or seal.
+ * @returns {Promise<object[]>}
+ */
+export async function decryptionIdentities() {
+  return [await getIdentity(), ...(await readRetired())]
+}
+
+async function readRetired() {
+  let raw
+  try {
+    raw = await readFile(retiredPath())
+  } catch {
+    return []
+  }
+  try {
+    const isPlain = raw.subarray(0, PLAIN_PREFIX.length).toString() === PLAIN_PREFIX
+    if (isPlain && safeStorage.isEncryptionAvailable()) return []
+    const json = isPlain
+      ? raw.subarray(PLAIN_PREFIX.length).toString()
+      : safeStorage.decryptString(raw)
+    const list = JSON.parse(json)
+    return Array.isArray(list) ? list.filter((k) => k?.priv?.box && k?.pub?.fingerprint) : []
+  } catch {
+    return []
+  }
+}
+
+const wrapSecret = (json) =>
+  safeStorage.isEncryptionAvailable()
+    ? safeStorage.encryptString(json)
+    : Buffer.from(PLAIN_PREFIX + json)
+
+/**
+ * Replace this machine's identity, keeping the old one as decrypt-only.
+ *
+ * What this DOES buy: a leaked private key stops being able to sign new files
+ * in your name, once your peers hold the new key. What it does NOT: it cannot
+ * make already-sent diffs unreadable — those are encrypted to the RECIPIENT's
+ * key, and yours only signed them.
+ * @returns {Promise<{ ok: true, fingerprint: string, retired: number }>}
+ */
+export async function rotateIdentity() {
+  const previous = await getIdentity()
+  const next = createIdentityKeys()
+  const rotation = signRotation({
+    oldPriv: previous.priv,
+    oldFp: previous.pub.fingerprint,
+    newPriv: next.priv,
+    newFp: next.pub.fingerprint
+  })
+  const retired = [{ priv: previous.priv, pub: previous.pub }, ...(await readRetired())]
+  await writeFile(retiredPath(), wrapSecret(JSON.stringify(retired)), { mode: 0o600 })
+  await persistIdentity(next.priv, { ...next.pub, rotation })
+  return { ok: true, fingerprint: next.pub.fingerprint, retired: retired.length }
+}
+
+/**
+ * Destroy the retired private keys. Separate and deliberate: it is the right
+ * move when a key LEAKED, and it permanently gives up every unopened diff
+ * addressed to those keys.
+ */
+export async function destroyRetiredKeys() {
+  const count = (await readRetired()).length
+  await rm(retiredPath(), { force: true })
+  return { ok: true, destroyed: count }
 }
 
 // Private half wrapped by the OS keychain (safeStorage) where available.
@@ -142,7 +209,7 @@ async function parseKeyFileAt(path) {
   if (!isAcceptedKeyFormat(key.format) || !key.sign || !key.box) throw new Error('bad format')
   const embedded = cleanLabel(key.label)
   return {
-    key: { format: KEY_FORMAT, sign: key.sign, box: key.box },
+    key: rebuiltPublicKey(key),
     fp: fingerprint(key.sign, key.box),
     defaultLabel: embedded || basename(path).replace(/\.diffbrokey$/i, '')
   }
@@ -153,19 +220,6 @@ async function storeTrusted(key, fp, label) {
   trusted.push({ fingerprint: fp, label: (label || fp).trim() || fp, sign: key.sign, box: key.box })
   await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
 }
-
-// Surface an unloadable identity as a plain error object rather than a rejected
-// IPC promise.
-const guardIdentity =
-  (fn) =>
-  async (...args) => {
-    try {
-      return await fn(...args)
-    } catch (err) {
-      if (err instanceof IdentityUnavailable) return { error: 'identity-unavailable' }
-      throw err
-    }
-  }
 
 // Size + filename-integrity guards on the untrusted file before openSealed does
 // the crypto vetting. Shared by the dialog and drag-drop importers.
@@ -182,7 +236,7 @@ async function openSharedFileAt(path) {
   if (file?.ciphertext && basename(path) !== shareFilename(file)) {
     return { error: 'renamed' }
   }
-  return openSealed(file, await getIdentity(), await readTrusted())
+  return openSealedWith(file, await decryptionIdentities(), await readTrusted())
 }
 
 export function registerShareIpc() {
@@ -192,6 +246,16 @@ export function registerShareIpc() {
 
   // Creates the keypairs on first use (no manual "generate keys" step); null if
   // the identity can't be loaded.
+  // Rotation is deliberate and irreversible in one direction: the old key is
+  // retired (decrypt-only), never deleted, so unopened diffs addressed to it
+  // still open.
+  ipcMain.handle(
+    'share:rotate',
+    guardIdentity(async () => rotateIdentity())
+  )
+  ipcMain.handle('share:retiredCount', async () => (await readRetired()).length)
+  ipcMain.handle('share:destroyRetired', async () => destroyRetiredKeys())
+
   ipcMain.handle('share:myFingerprint', async () => {
     try {
       return (await getIdentity()).pub.fingerprint
@@ -201,24 +265,29 @@ export function registerShareIpc() {
     }
   })
 
-  // Export one saved diff as a sealed file addressed to `recipientFp`.
+  // Export one saved diff as a sealed file addressed to one recipient or several.
   // entry: { name, createdAt, expiresAt, snapshot }
   ipcMain.handle(
     'share:export',
-    guardIdentity(async (e, entry, recipientFp) => {
-      const recipient = (await readTrusted()).find((t) => t.fingerprint === recipientFp)
-      if (!recipient) return { error: 'unknown-recipient' }
+    guardIdentity(async (e, entry, recipientFps) => {
+      const wanted = [...new Set(Array.isArray(recipientFps) ? recipientFps : [recipientFps])]
+      const trusted = await readTrusted()
+      const recipients = wanted.map((fp) => trusted.find((t) => t.fingerprint === fp))
+      if (!recipients.length || recipients.some((r) => !r)) return { error: 'unknown-recipient' }
 
       // Enforce the TTL at signing too — never sign timestamps a receiver rejects.
       const invalid = ttlError(entry)
       if (invalid) return { error: invalid }
 
       const { priv, pub } = await getIdentity()
-      const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipient)
+      const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipients)
       // Filename is forced (a ciphertext hash); the user only picks WHERE.
       const forcedName = shareFilename(file)
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Share diff (sealed for one recipient)',
+        title:
+          recipients.length > 1
+            ? `Share diff (sealed for ${recipients.length} recipients)`
+            : 'Share diff (sealed for one recipient)',
         defaultPath: forcedName,
         filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
       })
@@ -226,7 +295,7 @@ export function registerShareIpc() {
 
       const outPath = join(dirname(filePath), forcedName)
       await writeFile(outPath, JSON.stringify(file, null, 2))
-      return { ok: true, path: outPath, to: recipient.label }
+      return { ok: true, path: outPath, to: recipients.map((r) => r.label).join(', ') }
     })
   )
 
@@ -310,7 +379,8 @@ export function registerShareIpc() {
         ok: true,
         key: parsed.key,
         fingerprint: parsed.fp,
-        defaultLabel: parsed.defaultLabel
+        defaultLabel: parsed.defaultLabel,
+        vouchedBy: await vouchedBy(parsed.key)
       }
     })
   )
@@ -326,7 +396,9 @@ export function registerShareIpc() {
   })
 
   ipcMain.handle('share:removeTrusted', async (e, fp) => {
-    const trusted = (await readTrusted()).filter((t) => t.fingerprint !== fp)
+    const before = await readTrusted()
+    const trusted = before.filter((t) => t.fingerprint !== fp)
+    if (trusted.length === before.length) return { ok: false, error: 'unknown-recipient' }
     await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
     return { ok: true }
   })
@@ -348,10 +420,30 @@ export function registerShareIpc() {
         ok: true,
         key: parsed.key,
         fingerprint: parsed.fp,
-        defaultLabel: parsed.defaultLabel
+        defaultLabel: parsed.defaultLabel,
+        vouchedBy: await vouchedBy(parsed.key)
       }
     })
   )
+
+  /**
+   * The label of an ALREADY-TRUSTED key that signed this one's rotation record —
+   * or null. The predecessor's signing key is read from the trust store, never
+   * from the file, or the record would be vouching for itself.
+   *
+   * Advisory by construction: whoever holds a leaked private key can sign a
+   * rotation to a key of their own, so this downgrades the out-of-band check and
+   * never replaces it. The UI must say WHICH key vouched.
+   * @param {object} key
+   * @returns {Promise<string|null>}
+   */
+  async function vouchedBy(key) {
+    const record = key?.rotation
+    if (!record?.from) return null
+    const previous = (await readTrusted()).find((t) => t.fingerprint === record.from)
+    if (!previous?.sign) return null
+    return verifyRotation(record, previous.sign, key) ? previous.label || record.from : null
+  }
 
   // Fingerprint recomputed from the key material — the renderer's is never trusted.
   ipcMain.handle(
@@ -360,8 +452,9 @@ export function registerShareIpc() {
       if (!isAcceptedKeyFormat(key?.format) || !key.sign || !key.box) return { error: 'not-a-key' }
       const fp = fingerprint(key.sign, key.box)
       if (fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
+      const vouch = await vouchedBy(key)
       await storeTrusted(key, fp, label)
-      return { ok: true, label: (label || fp).trim() || fp, fingerprint: fp }
+      return { ok: true, label: (label || fp).trim() || fp, fingerprint: fp, vouchedBy: vouch }
     })
   )
 
@@ -415,12 +508,34 @@ async function readConfigFile(path) {
   }
 }
 
+// Keep the outgoing key as decrypt-only, exactly as rotateIdentity does:
+// replacing an identity outright orphans every diff sealed to it that has not
+// been imported yet.
+async function retireCurrentIdentity(incomingFp) {
+  let previous
+  try {
+    previous = await getIdentity()
+  } catch {
+    return
+  }
+  if (previous.pub.fingerprint === incomingFp) return
+  const retired = [{ priv: previous.priv, pub: previous.pub }, ...(await readRetired())]
+  await writeFile(retiredPath(), wrapSecret(JSON.stringify(retired)), { mode: 0o600 })
+}
+
 // A decryptable backup is still validated (same checks as a snippet import)
 // before anything is applied.
 async function applyRestoredConfig({ identity, trusted, snippets, settings }) {
-  if (snippets != null && validateSnippetBundle(snippets)) return { error: 'malformed' }
-  if (identity?.priv && identity?.pub) await persistIdentity(identity.priv, identity.pub)
-  if (Array.isArray(trusted)) await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
+  const vetted = validateRestoredConfig(
+    { identity, trusted, snippets },
+    { snippetError: validateSnippetBundle }
+  )
+  if (vetted.error) return { error: vetted.error }
+  if (vetted.identity) {
+    await retireCurrentIdentity(vetted.identity.pub.fingerprint)
+    await persistIdentity(vetted.identity.priv, vetted.identity.pub)
+  }
+  if (vetted.trusted) await writeFile(trustPath(), JSON.stringify(vetted.trusted, null, 2))
   // Snippets + settings go back to the renderer to re-encrypt locally.
   return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
 }

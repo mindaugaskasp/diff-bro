@@ -3,7 +3,9 @@ import { parseInline, parseJira } from '../../../src/renderer/src/utils/jiraRend
 
 // Compact view of an inline run: type plus text/label for readability.
 const flat = (nodes) =>
-  nodes.map((n) => (n.type === 'text' ? n.value : n.type === 'link' ? `link:${n.label}|${n.href}` : n.type))
+  nodes.map((n) =>
+    n.type === 'text' ? n.value : n.type === 'link' ? `link:${n.label}|${n.href}` : n.type
+  )
 
 describe('parseInline', () => {
   it('leaves plain text as a single text node', () => {
