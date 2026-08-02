@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
+  diagramPaperFor,
+  effectiveDiagramMode,
   looksLikeMermaid,
   mermaidThemeFor,
   nextDiagramId,
   stripMermaidFence
 } from '../../../src/renderer/src/utils/mermaid'
 import { detectSnippetLanguage } from '../../../src/renderer/src/utils/detectLanguage'
+import { THEMES, isDarkTheme } from '../../../src/renderer/src/utils/themes'
 
 describe('looksLikeMermaid', () => {
   it('recognizes common diagram openings', () => {
@@ -54,11 +57,51 @@ describe('stripMermaidFence', () => {
 })
 
 describe('mermaidThemeFor', () => {
-  it('pairs the diagram theme to the app theme', () => {
+  it('names the Mermaid theme for a resolved mode', () => {
     expect(mermaidThemeFor('light')).toBe('default')
     expect(mermaidThemeFor('dark')).toBe('dark')
-    expect(mermaidThemeFor('neon')).toBe('dark') // a dark-ground theme
-    expect(mermaidThemeFor(undefined)).toBe('default') // Light is the default ground
+    expect(mermaidThemeFor(undefined)).toBe('default') // light is the default ground
+  })
+})
+
+describe('effectiveDiagramMode', () => {
+  it('follows the app theme on auto, for every theme', () => {
+    for (const t of THEMES) {
+      expect(effectiveDiagramMode(t.id, 'auto')).toBe(isDarkTheme(t.id) ? 'dark' : 'light')
+    }
+  })
+
+  it('lets an explicit choice win over the app theme', () => {
+    expect(effectiveDiagramMode('dark', 'light')).toBe('light')
+    expect(effectiveDiagramMode('light', 'dark')).toBe('dark')
+    expect(effectiveDiagramMode('matrix', 'light')).toBe('light')
+  })
+
+  // A hand-edited settings file is the only way this happens, and it must read
+  // as "follow the app" rather than freezing the diagram in one mode.
+  it('treats a missing or unknown preference as auto', () => {
+    expect(effectiveDiagramMode('dark', undefined)).toBe('dark')
+    expect(effectiveDiagramMode('dark', 'sepia')).toBe('dark')
+    expect(effectiveDiagramMode('sepia', '')).toBe('light')
+  })
+})
+
+describe('diagramPaperFor', () => {
+  // The default must not re-ground a single theme: with auto, the diagram keeps
+  // sitting on --bg, which is what Mermaid's two themes are tuned against.
+  it('asks for no paper of its own while the mode agrees with the app', () => {
+    for (const t of THEMES) expect(diagramPaperFor(t.id, 'auto')).toBe('')
+    expect(diagramPaperFor('dark', 'dark')).toBe('')
+    expect(diagramPaperFor('sepia', 'light')).toBe('')
+  })
+
+  // Mermaid's light theme draws dark text; on a dark --bg that is unreadable, so
+  // an overridden diagram brings its own ground.
+  it('names the paper when the diagram disagrees with the app ground', () => {
+    expect(diagramPaperFor('dark', 'light')).toBe('light')
+    expect(diagramPaperFor('matrix', 'light')).toBe('light')
+    expect(diagramPaperFor('light', 'dark')).toBe('dark')
+    expect(diagramPaperFor('sepia', 'dark')).toBe('dark')
   })
 })
 

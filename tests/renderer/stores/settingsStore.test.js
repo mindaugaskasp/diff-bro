@@ -207,6 +207,20 @@ describe('settingsStore', () => {
     expect(useSettingsStore().restoreSession).toBe(true)
   })
 
+  // Diagrams follow the app theme until told otherwise; the override has to
+  // survive a reload, or it is a preference only until the next launch.
+  it('persists the diagram theme, defaulting to auto', () => {
+    const s = useSettingsStore()
+    expect(s.diagramTheme).toBe('auto')
+    s.setDiagramTheme('light')
+    setActivePinia(createPinia())
+    expect(useSettingsStore().diagramTheme).toBe('light')
+
+    localStorage.setItem('diffbro.settings', JSON.stringify({ diagramTheme: 'sepia' }))
+    setActivePinia(createPinia())
+    expect(useSettingsStore().diagramTheme).toBe('auto')
+  })
+
   it('persists the maximize-dialogs toggle', () => {
     const s = useSettingsStore()
     expect(s.maximizeDialogs).toBe(false)

@@ -3,7 +3,9 @@
 // choice. `options` is [{ value, label }]; the picked value is v-model:value.
 defineProps({
   label: { type: String, default: '' },
-  options: { type: Array, required: true }
+  options: { type: Array, required: true },
+  // Dense toolbar row: pinned to --control-h-sm, not grown from its padding.
+  compact: { type: Boolean, default: false }
 })
 const model = defineModel('value', { type: String, required: true })
 </script>
@@ -11,7 +13,7 @@ const model = defineModel('value', { type: String, required: true })
 <template>
   <div class="seg-field">
     <span v-if="label" class="seg-label">{{ label }}</span>
-    <div class="seg" role="group" :aria-label="label || undefined">
+    <div class="seg" :class="{ compact }" role="group" :aria-label="label || undefined">
       <button
         v-for="opt in options"
         :key="opt.value"

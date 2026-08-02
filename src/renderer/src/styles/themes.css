@@ -58,6 +58,12 @@
      dark grounds, so this default serves every dark theme; the light block
      below tints it cool. A theme may override it for a coloured shadow. */
   --shadow-rgb: 0 0 0;
+  /* The ground a diagram brings with it when its theme is pinned away from the
+     app's (settings.diagramTheme). The one pair no theme block may re-tint:
+     pinning a diagram light is precisely the request not to follow the palette.
+     Mermaid's two themes are drawn for these two grounds. */
+  --diagram-paper-light: #ffffff;
+  --diagram-paper-dark: #161b22;
   /* Syntax colours for the snippet preview. Solved per theme against that
      theme's own --bg and --bg-hover: every one clears 4.5:1, and the five are
      kept apart in Lab so they read as different colours rather than five

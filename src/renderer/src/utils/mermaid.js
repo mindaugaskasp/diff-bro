@@ -80,11 +80,48 @@ export function looksLikeMermaid(text) {
   return false
 }
 
-// Diagram theme paired to the app theme: dark-ground themes get Mermaid's dark
-// theme, light-ground ones its clean default — so diagram text never blends into
-// the canvas. Callers re-render when the app theme flips.
-export function mermaidThemeFor(appTheme) {
-  return isDarkTheme(appTheme) ? 'dark' : 'default'
+// The one-of-N choice behind settings.diagramTheme, shared by both controls.
+export const DIAGRAM_THEME_OPTIONS = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' }
+]
+
+/** @param {unknown} value @returns {boolean} */
+export const isDiagramTheme = (value) => DIAGRAM_THEME_OPTIONS.some((o) => o.value === value)
+
+/**
+ * Which of Mermaid's two themes a resolved mode renders in.
+ * @param {'light'|'dark'} mode
+ * @returns {'default'|'dark'}
+ */
+export function mermaidThemeFor(mode) {
+  return mode === 'dark' ? 'dark' : 'default'
+}
+
+/**
+ * The mode a diagram actually renders in. `auto` pairs it to the app's ground so
+ * diagram text never blends into the canvas; light/dark override that.
+ * @param {string} appTheme
+ * @param {'auto'|'light'|'dark'} [pref]
+ * @returns {'light'|'dark'}
+ */
+export function effectiveDiagramMode(appTheme, pref) {
+  if (pref === 'light' || pref === 'dark') return pref
+  return isDarkTheme(appTheme) ? 'dark' : 'light'
+}
+
+/**
+ * The ground an overridden diagram has to bring with it, or '' to keep the app
+ * surface. Mermaid's themes are drawn for their own ground, so a light diagram
+ * left on a dark --bg is dark text on a dark wall.
+ * @param {string} appTheme
+ * @param {'auto'|'light'|'dark'} [pref]
+ * @returns {''|'light'|'dark'}
+ */
+export function diagramPaperFor(appTheme, pref) {
+  const mode = effectiveDiagramMode(appTheme, pref)
+  return mode === effectiveDiagramMode(appTheme, 'auto') ? '' : mode
 }
 
 // Per-render DOM id. Mermaid needs a unique, CSS-selector-safe id for the

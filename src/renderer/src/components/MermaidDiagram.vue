@@ -1,8 +1,10 @@
 <script setup>
 // The SVG is inserted with DOMParser + replaceChildren, never innerHTML/v-html
 // (rule 7); Mermaid already sanitized it at securityLevel 'strict'.
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { diagramPaperFor, effectiveDiagramMode } from '../utils/mermaid'
 import { renderMermaid } from '../composables/useMermaid'
 
 const props = defineProps({
@@ -13,9 +15,14 @@ const props = defineProps({
 const emit = defineEmits(['rendered', 'error'])
 
 const diff = useDiffStore()
+const settings = useSettingsStore()
 const host = ref(null)
 const error = ref('')
 const loading = ref(false)
+const mode = computed(() => effectiveDiagramMode(diff.theme, settings.diagramTheme))
+// Set only when pinned against the app's ground: Mermaid's light theme draws
+// dark text, so it has to bring its own paper.
+const paper = computed(() => diagramPaperFor(diff.theme, settings.diagramTheme))
 let timer = null
 // Only the newest render may touch the DOM (a fast edit can outrace an old one).
 let renderSeq = 0
@@ -30,7 +37,7 @@ async function doRender() {
   const mine = ++renderSeq
   loading.value = true
   try {
-    const svg = await renderMermaid(code, diff.theme)
+    const svg = await renderMermaid(code, mode.value)
     if (mine !== renderSeq) return
     // Adopt the <svg> node; no string is ever assigned to innerHTML.
     const parsed = new DOMParser().parseFromString(svg, 'text/html')
@@ -67,13 +74,14 @@ function schedule() {
   timer = setTimeout(doRender, props.debounce)
 }
 
-watch(() => [props.code, diff.theme], schedule, { immediate: true })
+// Keyed on the RESOLVED mode, so a pinned diagram doesn't re-render on a theme flip.
+watch(() => [props.code, mode.value], schedule, { immediate: true })
 onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>
   <div class="mermaid-diagram">
-    <div ref="host" class="host" :class="{ hidden: !!error }"></div>
+    <div ref="host" class="host" :class="{ hidden: !!error }" :data-paper="paper || null"></div>
     <p v-if="error" class="err">
       <span class="err-title">Diagram error</span>
       <span class="err-msg">{{ error }}</span>

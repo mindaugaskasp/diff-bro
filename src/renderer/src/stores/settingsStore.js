@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { isValidAccelerator } from '../utils/accelerator'
 import { MAX_RECENT_TOOLS, noteRecent } from '../utils/tools'
+import { isDiagramTheme } from '../utils/mermaid'
 
 // Default quick look-up shortcut: Cmd/Ctrl+Shift+Space on every platform. Two
 // modifiers so it can't fire while typing capitals (the old macOS Shift+Space
@@ -64,6 +65,8 @@ export const DEFAULT_SETTINGS = {
   dialogSizes: {}, // { [key]: { width, height } } from user drag-resizes
   maximizeDialogs: false,
   shutterSound: true,
+  // 'auto' pairs diagrams to the app's ground; 'light'/'dark' pin them.
+  diagramTheme: 'auto',
   restoreSession: true,
   // On by default: the point is protection from corruption nobody sees coming.
   autoBackup: true,
@@ -160,6 +163,7 @@ function readState() {
     maximizeDialogs: parsed.maximizeDialogs === true,
     // A sound the app makes on its own, so it is escapable; default on.
     shutterSound: parsed.shutterSound !== false,
+    diagramTheme: isDiagramTheme(parsed.diagramTheme) ? parsed.diagramTheme : 'auto',
     // Reopen the comparisons that were open at quit. On by default; turning it
     // off forgets the stored one too (see tabsStore.setRestoreSession).
     restoreSession: parsed.restoreSession !== false,
@@ -214,6 +218,7 @@ export const useSettingsStore = defineStore('settings', {
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           shutterSound: this.shutterSound,
+          diagramTheme: this.diagramTheme,
           restoreSession: this.restoreSession,
           autoBackup: this.autoBackup,
           sidebarCollapsed: this.sidebarCollapsed,
@@ -287,6 +292,10 @@ export const useSettingsStore = defineStore('settings', {
     },
     setShutterSound(value) {
       this.shutterSound = !!value
+      this.persist()
+    },
+    setDiagramTheme(value) {
+      this.diagramTheme = isDiagramTheme(value) ? value : 'auto'
       this.persist()
     },
     setAutoBackup(value) {
