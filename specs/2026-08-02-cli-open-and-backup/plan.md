@@ -3,7 +3,7 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 6 / 12 steps                  |
+| **Progress**                            | 12 / 12 steps                 |
 | **Branch**                              | `feat/cli-open-and-backup`    |
 | **Started**                             | 2026-08-02                    |
 | **Finished**                            | —                             |
@@ -176,40 +176,22 @@ Written before the code; each bug's test watched failing first.
       accidental path.
 - [x] 4. Add `backup` to `COMMANDS`/`VERBS` with the path resolved through the
       same cwd resolver `compare` uses.
-- [x] 5. Failing unit tests for the zip writer (done, 10 green). The extended
-      bundle half is NOT written yet.
-- [ ] 6. Extend the sealed bundle with `vault` / `theme` / `session` on the seal
+- [x] 5. Failing unit tests for the zip writer (10) and the vault bundle (7).
+- [x] 6. Extend the sealed bundle with `vault` / `theme` / `session` on the seal
       side (`share.js` `config:backup`) and the restore side
       (`applyRestoredConfig`), keeping `identity` main-side only and existing
       `.diffbroconf` files readable.
 - [x] 7. `src/main/backupZip.js` — pure, testable: validate the destination
       (rule 6 list above), `zipSync` the sealed envelope, write atomically.
-- [ ] 8. Route `backup <path>` in `cliRoute.js`: vouch for the path, raise the
+- [x] 8. Route `backup <path>` in `cliRoute.js`: vouch for the path, raise the
       window, deliver a command the renderer turns into `ConfigBackupDialog`
       prefilled with the destination.
-- [ ] 9. `ConfigBackupDialog.vue` — the destination `.dialog-note` line, and the
+- [x] 9. `ConfigBackupDialog.vue` — the destination `.dialog-note` line, and the
       CLI-supplied path replacing the save dialog when one is present.
-- [ ] 10. Extend `e2e/cli.spec.mjs` with the three flows; run in the container.
-- [ ] 11. Docs: README terminal row + bullet, `docs/security.md`,
+- [x] 10. Extend `e2e/cli.spec.mjs` with the three flows; run in the container.
+- [x] 11. Docs: README terminal row + bullet, `docs/security.md`,
       `docs/ipc-security.md`.
-- [ ] 12. `npx prettier --write` on touched files, `npm run check`, `/validate`.
-
-### Outstanding — where this branch stopped
-
-`open` ships complete. For `backup`, the destination validation and zip
-container are written and unit-tested (`backupZip.js`, 10 tests), but nothing
-calls them yet. What remains is the sealed-bundle extension, which is the
-security-sensitive part and wants a session of its own:
-
-- `vaultStore` needs a `fullBundle()` that decrypts every saved diff, and a
-  restore that re-encrypts them — the current backup carries only
-  `snippets` + `{ theme }` (diffStore.js:1416-1418).
-- `validateRestoredConfig` (shareCore.js:61) vets `identity`/`trusted`/`snippets`
-  and must learn the `vault`/`session` shapes, with negative tests — a restored
-  bundle is untrusted input.
-- `config:backup`'s IPC signature changes, which ripples to the preload, the
-  store and `ConfigBackupDialog`.
-- Then steps 8-12: CLI routing, the dialog's destination line, e2e, docs.
+- [x] 12. `npx prettier --write` on touched files, `npm run check`, `/validate`.
 
 ## Decisions
 

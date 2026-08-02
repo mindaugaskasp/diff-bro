@@ -1,9 +1,6 @@
-// The container `diffbro backup <path>` writes. The payload is already sealed
-// (configBackup.sealConfig) before it gets here, so this file only decides
-// whether the destination is safe to write and wraps the blob in a zip.
-//
-// Pure enough to unit-test: everything it needs — the destination and the data
-// directory it must not land inside — is passed in.
+// The container `diffbro backup <path>` writes. The payload arrives already
+// sealed (configBackup.sealConfig), so this file only decides whether the
+// destination may be written and wraps the blob in a zip.
 
 import { existsSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'

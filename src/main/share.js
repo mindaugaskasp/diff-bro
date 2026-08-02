@@ -4,7 +4,7 @@
 import { clipboard, dialog, ipcMain, safeStorage } from 'electron'
 import { readFile, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, join } from 'path'
-import { dataFile } from './appData'
+import { dataFile, getDataDir } from './appData'
 import {
   KEY_FORMAT,
   cleanLabel,
@@ -22,6 +22,7 @@ import {
   ttlError
 } from './sealing'
 import { openConfig, sealConfig } from './configBackup'
+import { checkDestination, writeBackupZip } from './backupZip'
 import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
 import { validateSnippetBundle } from './snippetSealing'
 
@@ -458,12 +459,12 @@ export function registerShareIpc() {
     })
   )
 
-  // Config backup: identity keypair + trusted keys + snippets + settings. The
-  // private key only leaves this process inside the passphrase-encrypted blob
-  // (rule 4). Diffs are excluded (ephemeral).
+  // The private key only leaves this process inside the passphrase-encrypted
+  // blob (rule 4) — which is why identity and trusted are read HERE, in main,
+  // rather than passed in by the renderer.
   ipcMain.handle(
     'config:backup',
-    guardIdentity(async (e, snippets, settings, passphrase) => {
+    guardIdentity(async (e, bundle, passphrase) => {
       if (typeof passphrase !== 'string' || !passphrase) return { error: 'bad-request' }
       const { canceled, filePath } = await dialog.showSaveDialog({
         title: 'Back up configuration',
@@ -472,11 +473,21 @@ export function registerShareIpc() {
       })
       if (canceled || !filePath) return { canceled: true }
 
-      const identity = await getIdentity()
-      const trusted = await readTrusted()
-      const blob = await sealConfig({ identity, trusted, snippets, settings }, passphrase)
-      await writeFile(filePath, blob)
+      await writeFile(filePath, await sealBundle(bundle, passphrase))
       return { ok: true, path: filePath }
+    })
+  )
+
+  // The same seal, written to a path the CLI named instead of one a dialog
+  // chose, wrapped in a zip. backupZip owns whether that path may be written.
+  ipcMain.handle(
+    'config:backupTo',
+    guardIdentity(async (e, bundle, passphrase, target) => {
+      if (typeof passphrase !== 'string' || !passphrase) return { error: 'bad-request' }
+      if (typeof target !== 'string' || !target) return { error: 'bad-request' }
+      const problem = checkDestination(target, getDataDir())
+      if (problem) return { error: problem }
+      return writeBackupZip(target, await sealBundle(bundle, passphrase), getDataDir())
     })
   )
 
@@ -495,6 +506,15 @@ export function registerShareIpc() {
     if (!res.ok) return { error: res.error }
     return applyRestoredConfig(res.bundle)
   })
+}
+
+// One sealing path for both destinations. identity/trusted are read in main and
+// go straight into the envelope — they are never handed to the renderer.
+async function sealBundle(bundle, passphrase) {
+  const identity = await getIdentity()
+  const trusted = await readTrusted()
+  const { snippets = null, settings = null, vault = null, session = null } = bundle ?? {}
+  return sealConfig({ identity, trusted, snippets, settings, vault, session }, passphrase)
 }
 
 // Size-capped read; null on anything unreadable or oversized.
@@ -525,7 +545,7 @@ async function retireCurrentIdentity(incomingFp) {
 
 // A decryptable backup is still validated (same checks as a snippet import)
 // before anything is applied.
-async function applyRestoredConfig({ identity, trusted, snippets, settings }) {
+async function applyRestoredConfig({ identity, trusted, snippets, settings, vault, session }) {
   const vetted = validateRestoredConfig(
     { identity, trusted, snippets },
     { snippetError: validateSnippetBundle }
@@ -536,6 +556,14 @@ async function applyRestoredConfig({ identity, trusted, snippets, settings }) {
     await persistIdentity(vetted.identity.priv, vetted.identity.pub)
   }
   if (vetted.trusted) await writeFile(trustPath(), JSON.stringify(vetted.trusted, null, 2))
-  // Snippets + settings go back to the renderer to re-encrypt locally.
-  return { ok: true, snippets: snippets ?? null, settings: settings ?? null }
+  // Back to the renderer to re-encrypt locally: the stores own the entry shapes
+  // and each vets what it is handed (vaultStore.restoreBundle drops a malformed
+  // diff rather than trusting it).
+  return {
+    ok: true,
+    snippets: snippets ?? null,
+    settings: settings ?? null,
+    vault: vault ?? null,
+    session: typeof session === 'string' ? session : null
+  }
 }
