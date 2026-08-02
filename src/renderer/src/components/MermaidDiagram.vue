@@ -20,9 +20,13 @@ const host = ref(null)
 const error = ref('')
 const loading = ref(false)
 const mode = computed(() => effectiveDiagramMode(diff.theme, settings.diagramTheme))
-// Set only when pinned against the app's ground: Mermaid's light theme draws
-// dark text, so it has to bring its own paper.
-const paper = computed(() => diagramPaperFor(diff.theme, settings.diagramTheme))
+// The mode the SVG ON SCREEN was drawn for, which lags `mode` by one async
+// render. The paper is computed from THAT, not from the preference: flipping the
+// ground the moment the button is pressed leaves the old diagram — drawn for the
+// opposite ground — sitting on the new sheet for a few hundred ms. Deriving it
+// from the painted mode also keeps an app-theme flip correct with no re-render.
+const painted = ref(mode.value)
+const paper = computed(() => diagramPaperFor(diff.theme, painted.value))
 let timer = null
 // Only the newest render may touch the DOM (a fast edit can outrace an old one).
 let renderSeq = 0
@@ -32,6 +36,7 @@ async function doRender() {
   if (!code) {
     host.value?.replaceChildren()
     error.value = ''
+    painted.value = mode.value
     return
   }
   const mine = ++renderSeq
@@ -46,6 +51,7 @@ async function doRender() {
     svgEl.removeAttribute('width') // let CSS own the width so it scales to fit
     svgEl.removeAttribute('height')
     host.value?.replaceChildren(document.importNode(svgEl, true))
+    painted.value = mode.value
     error.value = ''
     emit('rendered')
   } catch (e) {

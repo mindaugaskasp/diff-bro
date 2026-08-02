@@ -141,3 +141,61 @@ test('the diagram theme survives a relaunch, set from the editor preview', async
     rmSync(userDataDir, { recursive: true, force: true })
   }
 })
+
+// Sample ink-vs-ground contrast continuously across a theme switch. The bug is a
+// TRANSIENT: the paper flips with the preference while the diagram is still the
+// one drawn for the old ground, so for a few frames light ink sits on a white
+// sheet. Only a continuous probe can see it.
+test('the diagram never sits on a ground it was not drawn for', async ({ app, page }) => {
+  await clickAppMenuItem(app, 'Settings')
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+  await page.getByRole('button', { name: 'Use the Dark theme' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.keyboard.press('Escape')
+
+  await page.getByText('Example — Mermaid diagram').click()
+  const editor = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const host = editor.locator('.mmd-preview .host')
+  await expect(editor.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
+  // Auto on a dark app: dark diagram, no paper — the state the switch leaves.
+  expect(await host.getAttribute('data-paper')).toBeNull()
+  await page.waitForTimeout(400)
+
+  await page.evaluate(() => {
+    const lum = (v) => {
+      const [r, g, b] = v
+        .match(/[\d.]+/g)
+        .slice(0, 3)
+        .map(Number)
+      const c = (x) => (x / 255 <= 0.03928 ? x / 255 / 12.92 : ((x / 255 + 0.055) / 1.055) ** 2.4)
+      return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b)
+    }
+    const groundOf = (el) => {
+      for (let n = el; n; n = n.parentElement) {
+        const bg = getComputedStyle(n).backgroundColor
+        if (bg && !bg.includes('rgba(0, 0, 0, 0)')) return bg
+      }
+      return 'rgb(255, 255, 255)'
+    }
+    window.__worst = 99
+    window.__probe = setInterval(() => {
+      const el = document.querySelector('.mmd-preview .host')
+      const text = el?.querySelector('svg text')
+      if (!text) return
+      const [hi, lo] = [lum(getComputedStyle(text).fill), lum(groundOf(el))].sort((a, b) => b - a)
+      window.__worst = Math.min(window.__worst, (hi + 0.05) / (lo + 0.05))
+    }, 8)
+  })
+
+  await themeButton(editor, 'Light').click()
+  await expect(host).toHaveAttribute('data-paper', 'light')
+  await page.waitForTimeout(1200)
+
+  const worst = await page.evaluate(() => {
+    clearInterval(window.__probe)
+    return window.__worst
+  })
+  // Mermaid's themes clear 4.5 on their own ground; near 1 means the diagram was
+  // briefly drawn against the other one.
+  expect(worst).toBeGreaterThan(3)
+})
