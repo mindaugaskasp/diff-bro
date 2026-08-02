@@ -92,10 +92,12 @@
   box-shadow: inset 2px 0 0 color-mix(in srgb, var(--text-dim) 70%, transparent);
 }
 
-/* Ghost: the aligned gap opposite an added/removed row, striped so it reads as
-   "nothing here" while keeping both grids row-for-row aligned. */
+/* Ghost: the aligned gap opposite an added/removed row or column, striped so it
+   reads as "nothing here" while keeping both grids cell-for-cell aligned. */
 .grid tr.ghost td,
-.grid tr.ghost .rownum {
+.grid tr.ghost .rownum,
+.grid td.ghost-col,
+.grid thead th.ghost-col {
   color: transparent;
   background: repeating-linear-gradient(
     45deg,
@@ -104,4 +106,27 @@
     color-mix(in srgb, var(--border) 55%, transparent) 5px,
     color-mix(in srgb, var(--border) 55%, transparent) 10px
   );
+}
+/* A whole column only one file has — the same tints as the row states above,
+   so it reads as one column rather than a change on every row. */
+.grid thead th.col-added,
+.grid thead th.col-removed {
+  color: var(--text);
+  font-weight: 700;
+}
+.grid thead th.col-added,
+.grid td.col-added {
+  background: color-mix(in srgb, var(--success-text) 16%, transparent);
+}
+.grid thead th.col-removed,
+.grid td.col-removed {
+  background: color-mix(in srgb, var(--danger-border) 16%, transparent);
+}
+/* A one-sided column inside an added/removed ROW keeps the row's colour: the
+   row state is the stronger fact, and two washes stacked read as neither. */
+.grid tr.added td.col-added,
+.grid tr.added td.col-removed,
+.grid tr.removed td.col-added,
+.grid tr.removed td.col-removed {
+  background: none;
 }

@@ -10,6 +10,7 @@ import { useSnippetStore } from './snippetStore'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
+import { changeRegister, toCsv } from '../utils/changeRegister'
 import { clipboardSnippetName, tabsFullMessage } from '../utils/cliCommand'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { MAX_TABS } from '../utils/tabs'
@@ -490,8 +491,24 @@ export const useDiffStore = defineStore('diff', {
         this.showNotice('This comparison is too large to export.')
         return
       }
-      const res = await window.api.exportDiffHtml({ html, name: `${l.name}-vs-${r.name}` })
+      const res = await window.api.exportDiffFile({
+        text: html,
+        format: 'html',
+        name: `${l.name}-vs-${r.name}`
+      })
       if (res?.ok) this.showNotice('Exported diff to HTML.')
+    },
+    // The grid diff as a table a reviewer can take away. The register is built
+    // here and only its finished text crosses the boundary.
+    async exportChangeRegister(sheets) {
+      const rows = changeRegister(sheets)
+      if (rows.length < 2) {
+        this.showNotice('No changes to export.')
+        return
+      }
+      const name = `${this.left?.name ?? 'left'}-vs-${this.right?.name ?? 'right'}-changes`
+      const res = await window.api.exportDiffFile({ text: toCsv(rows), format: 'csv', name })
+      if (res?.ok) this.showNotice(`Exported ${rows.length - 1} changes.`)
     },
     // Export a SAVED diff as a picture of the app's own diff view: the entry is
     // opened first, so the screenshot shows the real thing, with this theme's

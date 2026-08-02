@@ -6,7 +6,8 @@ const props = defineProps({
   /** @type {import('vue').PropType<Array<object>>} */
   rows: { type: Array, required: true },
   side: { type: String, required: true }, // 'left' | 'right'
-  columns: { type: Number, required: true },
+  /** @type {import('vue').PropType<Array<{left: number|null, right: number|null}>>} */
+  columns: { type: Array, required: true },
   /** @type {import('vue').PropType<Map<number, import('../types').CellMeta>>} */
   meta: { type: Map, required: true },
   /** @type {import('vue').PropType<Set<number>>} */
@@ -20,7 +21,9 @@ const props = defineProps({
 
 const rowData = (entry) => (props.side === 'left' ? entry.left : entry.right)
 const rowIndex = (entry) => (props.side === 'left' ? entry.leftIndex : entry.rightIndex)
-const metaOf = (entry, col) => metaAt(props.meta, rowIndex(entry), col)
+// Which of THIS side's columns an aligned column is; null means it has none,
+// and the cell renders as a ghost so both grids stay column-for-column aligned.
+const colIndex = (col) => (props.side === 'left' ? col.left : col.right)
 
 // A "ghost" (striped gap) on the side with no counterpart keeps both grids aligned.
 function rowClass(entry) {
@@ -32,19 +35,32 @@ function rowClass(entry) {
   return hidden.trim()
 }
 
-function cellClass(entry, col) {
-  const m = metaOf(entry, col)
+// A column only one side has: a ghost here, marked as added/removed there.
+function colClass(col) {
+  if (colIndex(col) === null) return 'ghost-col'
+  if (col.left === null) return 'col-added'
+  if (col.right === null) return 'col-removed'
+  return ''
+}
+
+function cellClass(entry, col, ci) {
+  const i = colIndex(col)
+  const m = metaAt(props.meta, rowIndex(entry), i)
+  const state = colClass(col)
   return {
-    num: typeof rowData(entry)?.[col] === 'number',
-    'cell-chg': entry.changed.includes(col),
-    'cell-fchg': entry.formulaChanged.includes(col),
+    num: typeof rowData(entry)?.[i] === 'number',
+    'cell-chg': entry.changed.includes(ci),
+    'cell-fchg': entry.formulaChanged.includes(ci),
     'has-f': !!m?.f,
-    err: !!m?.e
+    err: !!m?.e,
+    [state]: !!state
   }
 }
 
 function text(entry, col) {
-  return cellText(rowData(entry)?.[col], metaOf(entry, col), props.showFormulas)
+  const i = colIndex(col)
+  if (i === null) return ''
+  return cellText(rowData(entry)?.[i], metaAt(props.meta, rowIndex(entry), i), props.showFormulas)
 }
 </script>
 
@@ -53,7 +69,9 @@ function text(entry, col) {
     <thead>
       <tr>
         <th class="rownum"></th>
-        <th v-for="c in columns" :key="c">{{ columnName(c - 1) }}</th>
+        <th v-for="(col, ci) in columns" :key="ci" :class="colClass(col)" :data-tip="col.name">
+          {{ colIndex(col) === null ? '·' : columnName(colIndex(col)) }}
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -65,8 +83,8 @@ function text(entry, col) {
         >
           {{ rowData(entry) === null ? '·' : rowIndex(entry) + 1 }}
         </th>
-        <td v-for="c in columns" :key="c" :class="cellClass(entry, c - 1)">
-          {{ text(entry, c - 1) }}
+        <td v-for="(col, ci) in columns" :key="ci" :class="cellClass(entry, col, ci)">
+          {{ text(entry, col) }}
         </td>
       </tr>
       <tr

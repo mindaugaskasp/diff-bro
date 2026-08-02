@@ -7,15 +7,44 @@ function normCell(v) {
   return v === null || v === undefined ? '' : v
 }
 
-export function cellsEqual(a, b) {
-  return normCell(a) === normCell(b)
+// A tagged cell (see sheetCells.comparableCell) is { v, k }: the value plus what
+// stands behind it. Splitting the two is what lets a tolerance forgive a formula
+// cell's result without forgiving the formula being replaced.
+function parts(cell) {
+  return cell && typeof cell === 'object' ? cell : { v: cell, k: '' }
+}
+
+/**
+ * Whether two numbers are close enough to count as the same.
+ * @param {{abs?: number, pct?: number}|null} tolerance
+ */
+export function withinTolerance(a, b, tolerance) {
+  // A sign change is material at any threshold: a number that crossed zero is
+  // never "the same figure, rounded differently".
+  if (!tolerance || !comparableNumbers(a, b) || a * b < 0) return false
+  const delta = Math.abs(a - b)
+  if (tolerance.abs != null && delta <= tolerance.abs) return true
+  if (tolerance.pct == null) return false
+  const scale = Math.max(Math.abs(a), Math.abs(b))
+  return scale > 0 && (delta / scale) * 100 <= tolerance.pct
+}
+
+function comparableNumbers(a, b) {
+  return Number.isFinite(a) && Number.isFinite(b)
+}
+
+export function cellsEqual(a, b, tolerance = null) {
+  const l = parts(a)
+  const r = parts(b)
+  if (l.k !== r.k) return false
+  return normCell(l.v) === normCell(r.v) || withinTolerance(l.v, r.v, tolerance)
 }
 
 // Column indices whose values differ between two rows.
-export function changedCells(left, right) {
+export function changedCells(left, right, tolerance = null) {
   const n = Math.max(left.length, right.length)
   const cols = []
-  for (let i = 0; i < n; i++) if (!cellsEqual(left[i], right[i])) cols.push(i)
+  for (let i = 0; i < n; i++) if (!cellsEqual(left[i], right[i], tolerance)) cols.push(i)
   return cols
 }
 
@@ -88,9 +117,11 @@ function emitGap(gap, leftRows, rightRows, keys) {
     if (queue && queue.length) {
       const j = queue.shift()
       used.add(j)
-      const changed = changedCells(leftRows[i], rightRows[j])
+      const changed = changedCells(leftRows[i], rightRows[j], keys.tolerance)
       out.push({
-        status: 'changed',
+        // Nothing differs once the tolerance is applied, so the rows ARE the
+        // same — the LCS could not know that, since it matches signatures whole.
+        status: changed.length ? 'changed' : 'same',
         left: leftRows[i],
         right: rightRows[j],
         leftIndex: i,
@@ -166,7 +197,8 @@ export function alignRows(leftRows = [], rightRows = [], opts = {}) {
       : lcsOps(leftSig, rightSig)
   const keys = {
     left: opts.leftKeys ?? rowKeys(leftRows, keyColumn),
-    right: opts.rightKeys ?? rowKeys(rightRows, keyColumn)
+    right: opts.rightKeys ?? rowKeys(rightRows, keyColumn),
+    tolerance: opts.tolerance ?? null
   }
   return buildEntries(ops, leftRows, rightRows, keys)
 }

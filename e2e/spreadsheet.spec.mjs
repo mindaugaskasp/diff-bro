@@ -1,6 +1,6 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, stubOpenDialog, stubSaveDialog } from './fixtures.mjs'
 import { zipSync, strToU8 } from 'fflate'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -137,6 +137,81 @@ test('catches a formula overwritten by its own value, and dates as dates', async
     // Formulas view swaps results for the expressions behind them.
     await page.getByRole('button', { name: 'Formulas' }).click()
     await expect(page.locator('.grid td', { hasText: '=SUM(B1:B2)' })).toBeVisible()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// An inserted column used to shift every column after it, and float noise was
+// indistinguishable from an edit.
+const COL_LEFT = buildXlsx(
+  `<row r="1">${inlineStr('A1', 'Region')}${inlineStr('B1', 'Q1')}${inlineStr('C1', 'Q2')}</row>` +
+    `<row r="2">${inlineStr('A2', 'North')}${num('B2', 100)}${num('C2', 120)}</row>` +
+    `<row r="3">${inlineStr('A3', 'South')}${num('B3', 70)}${num('C3', 90)}</row>`
+)
+const COL_RIGHT = buildXlsx(
+  `<row r="1">${inlineStr('A1', 'Region')}${inlineStr('B1', 'Q1')}` +
+    `${inlineStr('C1', 'Forecast')}${inlineStr('D1', 'Q2')}</row>` +
+    `<row r="2">${inlineStr('A2', 'North')}${num('B2', 100)}${num('C2', 111)}${num('D2', 120)}</row>` +
+    `<row r="3">${inlineStr('A3', 'South')}${num('B3', 70)}${num('C3', 88)}${num('D3', 90.004)}</row>`
+)
+
+test('aligns columns across an insert and forgives sub-material noise', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-c-'))
+  const leftPath = join(dir, 'cols-left.xlsx')
+  const rightPath = join(dir, 'cols-right.xlsx')
+  writeFileSync(leftPath, COL_LEFT)
+  writeFileSync(rightPath, COL_RIGHT)
+
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    // The inserted column is reported once, and Q2 still lines up with Q2 —
+    // only the 90 -> 90.004 cell reads as changed, not every cell after B.
+    await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
+    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.grid thead th.col-added')).toHaveCount(1)
+    // The left grid has no such column, so it shows a striped gap.
+    await expect(page.locator('.grid thead th.ghost-col')).toHaveCount(1)
+
+    // A 0.004 difference is below a 0.01 tolerance: nothing material is left.
+    await page.locator('.seg-opt', { hasText: '±0.01' }).click()
+    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
+    await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('exports the change register as a CSV', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-reg-'))
+  const leftPath = join(dir, 'cols-left.xlsx')
+  const rightPath = join(dir, 'cols-right.xlsx')
+  const out = join(dir, 'register.csv')
+  writeFileSync(leftPath, COL_LEFT)
+  writeFileSync(rightPath, COL_RIGHT)
+
+  try {
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+    await expect(page.locator('.grids')).toBeVisible()
+
+    await stubSaveDialog(app, out)
+    await page.getByRole('button', { name: 'Register' }).click()
+    await expect(page.locator('.notice')).toContainText('Exported')
+
+    const csv = readFileSync(out, 'utf8')
+    expect(csv.split('\r\n')[0]).toBe('Sheet,Cell,Column,Change,Before,After')
+    expect(csv).toContain('Column added')
+    expect(csv).toContain('Forecast')
+    // The changed cell, reported at its own A1 reference on each side.
+    expect(csv).toContain('Q2,Value,90,90.004')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

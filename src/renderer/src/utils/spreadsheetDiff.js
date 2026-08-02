@@ -1,6 +1,7 @@
-// Workbook diff: pair sheets by name, align each pair's rows (alignRows), roll
-// up per-sheet stats. Pure.
+// Workbook diff: pair sheets by name, pair their columns (alignColumns), align
+// each pair's rows (alignRows), roll up per-sheet stats. Pure.
 import { alignRows, cellsEqual, rowKeys } from './alignRows'
+import { alignColumns, pairedColumns } from './alignColumns'
 import { comparableRows, metaIndex } from './sheetCells'
 
 // 0 -> "A", 25 -> "Z", 26 -> "AA" (bijective base-26), for the grid's column
@@ -18,12 +19,8 @@ export function columnName(index) {
 
 function statsOf(rows) {
   const stats = { changed: 0, added: 0, removed: 0 }
-  let columns = 0
-  for (const r of rows) {
-    if (r.status !== 'same') stats[r.status]++
-    columns = Math.max(columns, r.left?.length ?? 0, r.right?.length ?? 0)
-  }
-  return { stats, columns }
+  for (const r of rows) if (r.status !== 'same') stats[r.status]++
+  return stats
 }
 
 // alignRows works on the comparison view of each sheet, so the paired entries
@@ -36,11 +33,12 @@ function attachValues(entry, left, right) {
 // A changed row's columns split two ways: the value moved, or it did not and
 // something behind it did — a formula replaced by its own cached value, or an
 // error where the text reads the same.
-function classifyChanged(entry) {
+function classifyChanged(entry, columns, tolerance) {
   const value = []
   const formula = []
   for (const c of entry.changed) {
-    if (cellsEqual(entry.left?.[c], entry.right?.[c])) formula.push(c)
+    const col = columns[c]
+    if (cellsEqual(entry.left?.[col.left], entry.right?.[col.right], tolerance)) formula.push(c)
     else value.push(c)
   }
   entry.changed = value
@@ -60,25 +58,59 @@ function sheetState(left, right) {
   }
 }
 
-function bothSides(name, left, right, opts) {
+// Rows re-indexed into the paired-column space, so one inserted column cannot
+// shift every column after it out of alignment.
+function project(rows, indices) {
+  return rows.map((row) => indices.map((i) => row[i]))
+}
+
+function alignedRows(left, right, columns, opts) {
+  const pairs = pairedColumns(columns)
   const keyColumn = opts.keyColumn ?? 0
-  const rows = alignRows(comparableRows(left), comparableRows(right), {
-    ...opts,
-    leftKeys: rowKeys(left.rows ?? [], keyColumn),
-    rightKeys: rowKeys(right.rows ?? [], keyColumn)
-  })
+  return alignRows(
+    project(
+      comparableRows(left),
+      pairs.map((c) => c.left)
+    ),
+    project(
+      comparableRows(right),
+      pairs.map((c) => c.right)
+    ),
+    {
+      ...opts,
+      leftKeys: rowKeys(left.rows ?? [], pairs[keyColumn]?.left ?? 0),
+      rightKeys: rowKeys(right.rows ?? [], pairs[keyColumn]?.right ?? 0)
+    }
+  )
+}
+
+function bothSides(name, left, right, opts) {
+  const columns = alignColumns(left.rows ?? [], right.rows ?? [])
+  const tolerance = opts.tolerance ?? null
+  const rows = alignedRows(left, right, columns, { ...opts, tolerance })
+  // Where each paired column sits in the DISPLAY order, so a changed cell is
+  // reported at the index the grid actually renders.
+  const pairAt = columns.reduce((acc, c, i) => {
+    if (c.left !== null && c.right !== null) acc.push(i)
+    return acc
+  }, [])
+
   for (const entry of rows) {
+    entry.changed = entry.changed.map((c) => pairAt[c])
     attachValues(entry, left, right)
-    if (entry.status === 'changed') classifyChanged(entry)
+    if (entry.status === 'changed') classifyChanged(entry, columns, tolerance)
     else entry.formulaChanged = []
   }
-  const { stats, columns } = statsOf(rows)
+
+  const stats = statsOf(rows)
   return {
     name,
     present: 'both',
     rows,
     stats,
     columns,
+    columnsAdded: columns.filter((c) => c.left === null).length,
+    columnsRemoved: columns.filter((c) => c.right === null).length,
     changes: total(stats),
     ...sheetState(left, right)
   }
@@ -95,9 +127,21 @@ function oneSide(name, sheet, side) {
     changed: [],
     formulaChanged: []
   }))
-  const { stats, columns } = statsOf(rows)
+  const own = sheet.rows ?? []
+  const columns = side === 'left' ? alignColumns(own, []) : alignColumns([], own)
+  const stats = statsOf(rows)
   const state = side === 'left' ? sheetState(sheet, null) : sheetState(null, sheet)
-  return { name, present: side, rows, stats, columns, changes: total(stats), ...state }
+  return {
+    name,
+    present: side,
+    rows,
+    stats,
+    columns,
+    columnsAdded: 0,
+    columnsRemoved: 0,
+    changes: total(stats),
+    ...state
+  }
 }
 
 function total(stats) {
@@ -106,8 +150,10 @@ function total(stats) {
 
 /**
  * @returns {Array<{name:string, present:'both'|'left'|'right', rows:Array,
- *   stats:{changed:number,added:number,removed:number}, columns:number,
- *   changes:number, hidden:boolean, leftMeta:Map, rightMeta:Map,
+ *   stats:{changed:number,added:number,removed:number},
+ *   columns:Array<{left:number|null,right:number|null,name:string}>,
+ *   columnsAdded:number, columnsRemoved:number, changes:number,
+ *   hidden:boolean, hasFormulas:boolean, leftMeta:Map, rightMeta:Map,
  *   leftHidden:Set<number>, rightHidden:Set<number>}>}
  */
 export function diffWorkbooks(leftSheets = [], rightSheets = [], opts = {}) {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  TAG,
   cellText,
   comparableRows,
   displayValue,
@@ -62,8 +61,8 @@ describe('cellText', () => {
 describe('comparableRows', () => {
   it('folds the formula and the error flag into the cell identity', () => {
     const [first, second] = comparableRows(sheet)
-    expect(first).toEqual([1, 2, `3${TAG}=RC[-2]+RC[-1]`])
-    expect(second).toEqual(['a', 45870, `#REF!${TAG}#`])
+    expect(first).toEqual([1, 2, { v: 3, k: '=RC[-2]+RC[-1]' }])
+    expect(second).toEqual(['a', 45870, { v: '#REF!', k: '#' }])
   })
 
   // A formula overwritten by its own cached value: same number, different cell.

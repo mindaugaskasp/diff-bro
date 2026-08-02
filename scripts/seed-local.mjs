@@ -84,15 +84,17 @@ const FILES = {
       ]
     }
   ]),
+  // An inserted column and a sub-cent nudge, so the column alignment and the
+  // tolerance control both have something to do when opened by hand.
   'budget-2025.xlsx': makeXlsx([
     {
       name: 'Summary',
       rows: [
-        ['Metric', 'Q2', 'Q3'],
-        ['Revenue', 1180, 1310],
-        ['Costs', 640, 690],
-        ['Headcount', 42, 47],
-        ['Runway (mo)', 18, 21]
+        ['Metric', 'Q2', 'Q2 forecast', 'Q3'],
+        ['Revenue', 1180, 1200, 1310],
+        ['Costs', 640.004, 650, 690],
+        ['Headcount', 42, 42, 47],
+        ['Runway (mo)', 18, 18, 21]
       ]
     },
     {

@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Spreadsheet, three open: materiality tolerance, column alignment, change register; done: formula capture + R1C1, number formats, hidden state + error cells. Onboarding: sample comparison, coach marks, what's new on upgrade. Tabs: right-click menu, close left/right/all, one prompt per batch. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — four tracks. Spreadsheet, shipped: formula capture + R1C1, number formats, materiality tolerance, change register, hidden state + error cells, column alignment. Onboarding: sample comparison, coach marks, what's new on upgrade. Tabs: right-click menu, close left/right/all, one prompt per batch. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -9,6 +9,8 @@ sections below.</sup>
 ---
 
 ## Spreadsheet
+
+**Shipped.** The track is closed.
 
 ```mermaid
 flowchart TB
@@ -23,25 +25,29 @@ flowchart TB
   sh --> ad["adapters/xlsxAdapter.js<br>adapters/csvAdapter.js — delimited text"]
   subgraph rend["renderer"]
     direction TB
-    ad --> dw["utils/spreadsheetDiff.js — diffWorkbooks<br>utils/sheetCells.js — cell identity"]
-    dw --> al["utils/alignRows.js<br>3 · materiality tolerance<br>6 · column alignment"]
-    al --> g["SpreadsheetGrid.vue<br>4 · change register export"]
+    ad --> ac["utils/alignColumns.js — pair columns by header"]
+    ac --> dw["utils/spreadsheetDiff.js — diffWorkbooks<br>utils/sheetCells.js — cell identity"]
+    dw --> al["utils/alignRows.js — rows + tolerance"]
+    al --> g["SpreadsheetGrid.vue"]
+    al --> cr["utils/changeRegister.js --> diff:exportFile"]
   end
 ```
 
-**Done.** `<f>` is captured length-capped and normalised to R1C1 (`r1c1.js`), so
-a formula replaced by its own cached value is a change and a row insert is not;
-a shared formula is expanded onto its followers. `styles.xml` is parsed for
-number formats (`numfmt.js`), so a date renders as a date rather than 45870.
-Hidden sheets and rows are marked, error cells are compared as errors, and the
-grid can show formulas instead of results. Delimited text (`.csv`/`.tsv`) opts
-into the same grid through the Structure toggle, which renames itself **Grid**.
-
-**Open.**
-
-- 3 · materiality tolerance — two numbers within a threshold count as equal
-- 6 · column alignment — an inserted column should not mark every cell changed
-- 4 · change register — the change list as an exportable table
+- **1 · formulas** — `<f>` captured length-capped and normalised to R1C1
+  (`r1c1.js`), so a formula replaced by its own cached value is a change and a
+  row insert is not; a shared formula expands onto its followers
+- **2 · number formats** — `styles.xml` parsed (`numfmt.js`), so a date renders
+  as a date rather than 45870
+- **3 · materiality tolerance** — an absolute floor or a percentage; a sign
+  change is material at any threshold
+- **4 · change register** — every change as a CSV table, formula-injection
+  escaped, through the one validated `diff:exportFile` handler
+- **5 · anomaly flags** — hidden sheets and rows marked, error cells compared
+  as errors, formulas viewable instead of results
+- **6 · column alignment** — columns paired by header (LCS), one-sided columns
+  shown as ghosts and reported once instead of per row
+- **CSV** — `.csv`/`.tsv` opt into the same grid through the Structure toggle,
+  which renames itself **Grid**
 - Capture is not evaluation: nothing in `src/main/xlsx/` computes a formula, and
   the reader still refuses a DOCTYPE and caps every part it inflates
 - Out of scope: pivot tables, charts, conditional formatting, cell comments

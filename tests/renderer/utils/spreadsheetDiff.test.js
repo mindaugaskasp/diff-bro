@@ -33,7 +33,7 @@ describe('diffWorkbooks', () => {
     expect(s.present).toBe('both')
     expect(s.stats).toEqual({ changed: 1, added: 1, removed: 1 })
     expect(s.changes).toBe(3)
-    expect(s.columns).toBe(2)
+    expect(s.columns).toHaveLength(2)
   })
 
   it('flags a sheet present in only the left file', () => {
@@ -91,6 +91,87 @@ describe('diffWorkbooks — formulas', () => {
     const left = [{ name: 'S', rows: [['#REF!']], cells: [[0, 0, { e: true }]] }]
     const right = [{ name: 'S', rows: [['#REF!']], cells: [] }]
     expect(diffWorkbooks(left, right)[0].stats.changed).toBe(1)
+  })
+})
+
+describe('diffWorkbooks — column alignment', () => {
+  // Insert one column and every column after it shifts, so a values-only
+  // comparison reported the whole right-hand side of the sheet as changed.
+  const left = [
+    sheet('S', [
+      ['Region', 'Q1', 'Q2'],
+      ['North', 10, 20]
+    ])
+  ]
+  const right = [
+    sheet('S', [
+      ['Region', 'Q1', 'Forecast', 'Q2'],
+      ['North', 10, 99, 20]
+    ])
+  ]
+
+  it('reports the inserted column once, not as a change on every row', () => {
+    const [s] = diffWorkbooks(left, right)
+    expect(s.stats.changed).toBe(0)
+    expect(s.columnsAdded).toBe(1)
+    expect(s.columnsRemoved).toBe(0)
+  })
+
+  it('lines the surviving columns up with each other', () => {
+    const [s] = diffWorkbooks(left, right)
+    // Four display columns; "Forecast" exists only on the right.
+    expect(s.columns.map((c) => c.name)).toEqual(['Region', 'Q1', 'Forecast', 'Q2'])
+    expect(s.columns.map((c) => c.left)).toEqual([0, 1, null, 2])
+    expect(s.columns.map((c) => c.right)).toEqual([0, 1, 2, 3])
+  })
+
+  it('still finds a real cell change once the columns line up', () => {
+    const moved = [
+      sheet('S', [
+        ['Region', 'Q1', 'Forecast', 'Q2'],
+        ['North', 10, 99, 25]
+      ])
+    ]
+    const [s] = diffWorkbooks(left, moved)
+    expect(s.stats.changed).toBe(1)
+    expect(s.rows[1].changed).toEqual([3]) // Q2, at its ALIGNED index
+  })
+
+  it('reports a removed column from the left', () => {
+    const [s] = diffWorkbooks(right, left)
+    expect(s.columnsRemoved).toBe(1)
+    expect(s.stats.changed).toBe(0)
+  })
+})
+
+describe('diffWorkbooks — materiality tolerance', () => {
+  const left = [
+    sheet('S', [
+      ['Metric', 'Value'],
+      ['Revenue', 1000],
+      ['Costs', 500.004]
+    ])
+  ]
+  const right = [
+    sheet('S', [
+      ['Metric', 'Value'],
+      ['Revenue', 1004],
+      ['Costs', 500]
+    ])
+  ]
+
+  it('counts everything when the tolerance is exact', () => {
+    expect(diffWorkbooks(left, right)[0].stats.changed).toBe(2)
+  })
+
+  it('drops a difference under the absolute floor', () => {
+    const [s] = diffWorkbooks(left, right, { tolerance: { abs: 0.01 } })
+    expect(s.stats.changed).toBe(1) // 500.004 vs 500 forgiven, 1000 vs 1004 not
+  })
+
+  it('drops a difference under the relative threshold', () => {
+    const [s] = diffWorkbooks(left, right, { tolerance: { pct: 1 } })
+    expect(s.stats.changed).toBe(0) // 0.4% and 0.0008% both under 1%
   })
 })
 

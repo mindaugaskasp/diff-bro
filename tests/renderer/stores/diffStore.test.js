@@ -1209,20 +1209,21 @@ describe('exportDiff', () => {
     store.left = { path: null, name: 'a.js', content: 'a\nb\n' }
     store.right = { path: null, name: 'b.js', content: 'a\nB\n' }
     let sent = null
-    window.api.exportDiffHtml = async (payload) => {
+    window.api.exportDiffFile = async (payload) => {
       sent = payload
       return { ok: true, path: '/tmp/out.html' }
     }
     await store.exportDiff()
     expect(sent.name).toBe('a.js-vs-b.js')
-    expect(sent.html).toContain('<!doctype html>')
-    expect(sent.html).toContain('a.js ↔ b.js')
+    expect(sent.format).toBe('html')
+    expect(sent.text).toContain('<!doctype html>')
+    expect(sent.text).toContain('a.js ↔ b.js')
   })
 
   it('does nothing (no IPC) when there is nothing to compare', async () => {
     const store = useDiffStore()
     let called = false
-    window.api.exportDiffHtml = async () => {
+    window.api.exportDiffFile = async () => {
       called = true
       return { ok: true }
     }
@@ -2231,7 +2232,7 @@ describe('diffStore — streamed comparisons', () => {
   it('refuses an HTML export, naming the reason', async () => {
     const store = loadStreamed(useDiffStore())
     let exported = false
-    window.api.exportDiffHtml = async () => {
+    window.api.exportDiffFile = async () => {
       exported = true
       return { ok: true }
     }

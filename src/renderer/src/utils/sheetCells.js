@@ -34,18 +34,21 @@ export function cellText(value, meta, showFormulas) {
   return meta?.d ?? displayValue(value)
 }
 
-// A separator no cell value can contain, so a text cell reading `3 =RC[-1]`
-// can never collide with a formula cell that produced 3.
-export const TAG = '\u0000'
-
-// A cell's identity for the diff. The formula is part of it — in R1C1 form, so
-// a row insert does not rewrite every formula below into a false change — and so
-// is holding an error rather than text that merely reads like one. Without this
-// a formula overwritten by its own cached value looked unchanged.
-function comparableCell(value, meta) {
+/**
+ * A cell's identity for the diff: the value, plus what stands behind it — a
+ * formula in R1C1 form (so a row insert does not rewrite every formula below
+ * into a false change) or an error marker. Without this a formula overwritten
+ * by its own cached value looked unchanged.
+ *
+ * The two stay SEPARATE fields rather than one joined string so a tolerance can
+ * forgive the value while still catching the formula going away, and so text
+ * that happens to read like a formula can never collide with a real one.
+ * @returns {unknown|{v: unknown, k: string}} the raw value where there is
+ *   nothing to add — most cells, and no allocation for them.
+ */
+export function comparableCell(value, meta) {
   if (!meta?.f && !meta?.e) return value
-  const tag = meta.e ? `${TAG}#` : `${TAG}=${meta.n ?? meta.f}`
-  return `${displayValue(value)}${tag}`
+  return { v: value, k: meta.e ? '#' : `=${meta.n ?? meta.f}` }
 }
 
 /** The sheet's rows as the diff sees them; the raw grid when nothing is tagged. */
