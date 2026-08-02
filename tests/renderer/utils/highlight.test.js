@@ -65,7 +65,12 @@ describe('spansFor', () => {
 
   it('reassembles the line exactly, character for character', () => {
     const line = '  "n": 42,  '
-    const spans = spansFor(line, [tok(0, ''), tok(2, 'string.key.json'), tok(5, ''), tok(7, 'number.json')])
+    const spans = spansFor(line, [
+      tok(0, ''),
+      tok(2, 'string.key.json'),
+      tok(5, ''),
+      tok(7, 'number.json')
+    ])
     expect(spans.map((s) => s.text).join('')).toBe(line)
   })
 

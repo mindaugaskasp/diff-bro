@@ -2,8 +2,8 @@
 
 |                                         |                            |
 | --------------------------------------- | -------------------------- |
-| **Status**                              | draft                      |
-| **Progress**                            | 0 / 16 steps               |
+| **Status**                              | in-progress                |
+| **Progress**                            | 3 / 16 steps               |
 | **Branch**                              | `feat/mermaid-visual-diff` |
 | **Started**                             | 2026-08-02                 |
 | **Finished**                            | —                          |
@@ -205,14 +205,14 @@ so the risky part is unit-testable before any UI exists.
 
 ## Implementation plan
 
-- [ ] 1. `utils/diagramModel.js` — `modelFrom(text)` wrapping
+- [x] 1. `utils/diagramModel.js` — `modelFrom(text)` wrapping
       `getDiagramFromText` + `getData()` into `{type, nodes, edges, groups}`;
       returns `null` for unsupported types, `{error}` on parse failure. Tests first.
-- [ ] 2. `utils/diagramDiff.js` — `diffDiagrams(a, b)` → per-node and per-edge
+- [x] 2. `utils/diagramDiff.js` — `diffDiagrams(a, b)` → per-node and per-edge
       `added|removed|changed|same`, keyed on **semantic id, never `domId`**
       (`domId`'s counter is not stable across parses: `classId-Animal-0` on parse
       vs `classId-Animal-2` on render). Tests first.
-- [ ] 3. Rename detection — pair a removed with an added node on identical label,
+- [x] 3. Rename detection — pair a removed with an added node on identical label,
       report as `renamed`. Tests first.
 - [ ] 4. `utils/diagramUnion.js` — emit the union source with `:::status` and no
       `classDef`; quote and escape labels. Tests first, including the injection
@@ -245,6 +245,24 @@ so the risky part is unit-testable before any UI exists.
       glossary terms.
 - [ ] 16. `make screenshots SHOTS="diagram-diff"` in the container; check the
       frame is correctly seeded before committing it.
+
+### Outstanding — where this branch stopped
+
+The model and diff layers are written and unit-tested (19 tests): parsing all
+four supported types, the ER id normalisation, node/edge add/remove/change, and
+rename pairing. Steps 4-16 remain — the union emitter, focus mode, the three
+tokens and the theme-depth ratchet, the viewer component, seeds, e2e, docs and
+the screenshot.
+
+Two things the probe settled that the plan assumed:
+
+- **The feasibility claim holds.** `getDiagramFromText().db.getData()` returns
+  `{nodes, edges}` for flowchart, state, class and ER, in jsdom, with no render.
+- **ER ids are NOT stable**, which the plan did not anticipate. An ER node's id
+  carries its parse position (`entity-CUSTOMER-0`), so inserting an entity above
+  renumbers every one below and the whole diagram reads as rewritten — the same
+  class of problem the plan flagged for `domId`. `diagramModel` strips the
+  counter so the name is the identity; there is a test for it.
 
 ## Decisions
 

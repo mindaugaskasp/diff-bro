@@ -217,7 +217,15 @@ describe('what a tab costs', () => {
   })
 
   it('counts a spreadsheet by its cells', () => {
-    const sheets = [{ name: 'S', rows: [[1, 2, 3], [4, 5, 6]] }]
+    const sheets = [
+      {
+        name: 'S',
+        rows: [
+          [1, 2, 3],
+          [4, 5, 6]
+        ]
+      }
+    ]
     expect(tabCost(withSnapshot({ left: { kind: 'spreadsheet', sheets } }))).toBe(6)
   })
 
