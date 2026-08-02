@@ -729,3 +729,24 @@ describe('importFromFile', () => {
     expect(store.entries.length).toBe(before)
   })
 })
+
+// The contract the tool dialog's Save-as-snippet depends on: everything filled
+// except the one thing the app cannot infer.
+describe('startNewSnippetFrom', () => {
+  it('opens the editor with the content and language, and no name', () => {
+    const store = useSnippetStore()
+    store.startNewSnippetFrom('{"a":1}', 'json')
+    expect(store.editingSnippet).toEqual({
+      id: null,
+      initialContent: '{"a":1}',
+      initialLanguage: 'json',
+      initialTags: []
+    })
+  })
+
+  it('falls back to auto-detection when the panel names no language', () => {
+    const store = useSnippetStore()
+    store.startNewSnippetFrom('plain text', '')
+    expect(store.editingSnippet.initialLanguage).toBe('auto')
+  })
+})

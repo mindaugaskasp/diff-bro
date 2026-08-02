@@ -6,6 +6,7 @@
 import { computed, ref } from 'vue'
 import { parseJwt, jwtClaims } from '../utils/jwt'
 import AppIcon from './AppIcon.vue'
+import { offerToolOutput } from '../composables/useToolOutput'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -28,6 +29,12 @@ async function copy(text) {
   copied.value = text
   setTimeout(() => (copied.value = ''), 900)
 }
+
+// Offer this panel's result to the dialog's Save-as-snippet action.
+offerToolOutput(
+  () => payloadJson.value ?? '',
+  () => 'json'
+)
 </script>
 
 <template>
