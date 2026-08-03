@@ -31,18 +31,28 @@ describe('unionSource', () => {
     expect(src).not.toMatch(/style\s+\w+\s+fill:/i)
   })
 
-  // An edge carries status too, or a re-pointed arrow — the one-character change
-  // a text diff reads worst — arrives as a grey line like any other.
-  it('classes each edge by its status', async () => {
-    const src = await union(
-      'flowchart TD\n  A[A] --> B[B]\n',
-      'flowchart TD\n  A[A] --> C[C]\n'
-    )
-    expect(src).toMatch(/e\d+@-->/)
-    expect(src).toMatch(/^\s*class e\d+ added$/m)
-    expect(src).toMatch(/^\s*class e\d+ removed$/m)
-    // `class` is a statement, not a classDef — no inline style is emitted.
+  // A re-pointed arrow is the one-character change a text diff reads worst, so
+  // an edge has to carry status too. A `class` statement on an edge is parsed
+  // and then IGNORED by the renderer, so status goes through mermaid's own link
+  // syntax: dotted for removed, thick for added.
+  it('draws a removed edge dotted and an added edge thick', async () => {
+    const src = await union('flowchart TD\n  A[A] --> B[B]\n', 'flowchart TD\n  A[A] --> C[C]\n')
+    expect(src).toMatch(/A ==> C/)
+    expect(src).toMatch(/A -\.-> B/)
     expect(src).not.toMatch(/classDef/i)
+  })
+
+  it('keeps an edge label while carrying its status', async () => {
+    const src = await union(
+      'flowchart TD\n  A[A] -- yes --> B[B]\n',
+      'flowchart TD\n  A[A] -- yes --> C[C]\n'
+    )
+    expect(src).toMatch(/A == yes ==> C/)
+    expect(src).toMatch(/A -\. yes \.-> B/)
+    // Still a diagram mermaid accepts, labels and all.
+    const back = await modelFrom(src)
+    expect(back.error).toBeUndefined()
+    expect(back.edges.some((e) => e.label === 'yes')).toBe(true)
   })
 
   it('marks an unchanged node as same rather than leaving it bare', async () => {

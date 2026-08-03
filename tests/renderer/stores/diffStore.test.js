@@ -2614,3 +2614,18 @@ describe('diagram comparison', () => {
     expect(diff.canCompareDiagram).toBe(false)
   })
 })
+
+// Pasted text is a comparison like any other — comparePasted() fills left/right,
+// so the Diagram toggle must be offered there too.
+describe('diagram comparison from pasted text', () => {
+  it('offers the diagram view after comparing two pasted diagrams', () => {
+    const diff = useDiffStore()
+    diff.mode = 'paste'
+    diff.pasteLeft = 'flowchart TD\n  A --> B'
+    diff.pasteRight = 'flowchart TD\n  A --> C'
+    diff.comparePasted()
+    expect(diff.canCompareDiagram).toBe(true)
+    diff.semanticView = true
+    expect(diff.comparableKind).toBe('diagram')
+  })
+})

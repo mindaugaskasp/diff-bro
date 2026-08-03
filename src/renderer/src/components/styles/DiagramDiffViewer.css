@@ -157,23 +157,16 @@
   fill: var(--bg) !important;
 }
 
-/* Edges carry the same status language as nodes: solid accent for added, dashed
-   for removed. Mermaid draws a link as a <path>, and its own id-scoped rule sets
-   the stroke — hence !important here too. */
-.dg-stage :deep(path.added),
-.dg-stage :deep(.added > path) {
-  stroke: var(--dg-add) !important;
-  stroke-width: 2px !important;
-}
-.dg-stage :deep(path.removed),
-.dg-stage :deep(.removed > path) {
+/* Edges speak the same language as nodes. The union emitter writes a DOTTED
+   link for removed and a THICK one for added, so mermaid's own
+   edge-pattern-dotted / edge-thickness-thick classes are a reliable stand-in for
+   status — reliable because this view generates every edge in the source. */
+.dg-stage :deep(.edge-pattern-dotted) {
   stroke: var(--dg-del) !important;
   stroke-width: 2px !important;
-  stroke-dasharray: 6 4 !important;
 }
-.dg-stage :deep(path.changed),
-.dg-stage :deep(.changed > path) {
-  stroke: var(--dg-chg) !important;
+.dg-stage :deep(.edge-thickness-thick) {
+  stroke: var(--dg-add) !important;
   stroke-width: 2px !important;
 }
 
@@ -190,11 +183,15 @@
   color: var(--dg-chg);
   font-size: var(--font-xs);
 }
-.dg-stage.split {
-  align-items: stretch;
+.dg-stage.split .dg-zoom {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-evenly;
   gap: var(--space-4);
+  width: 100%;
 }
+/* Panes start at the top, so the first rank lands at the same height on each
+   side rather than each diagram being centred in its own box. */
 .dg-pane {
   display: flex;
   flex-direction: column;
@@ -209,4 +206,56 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-dim);
+}
+
+/* Zoom controls sit with the diagram type, at the quiet end of the legend. */
+.lg-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.dg-zbtn,
+.dg-pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius);
+  background: var(--btn-face);
+  color: var(--text);
+  font-size: var(--font-xs);
+  cursor: pointer;
+}
+.dg-pct {
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+}
+.dg-type {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+/* Panning is a drag, so the cursor says so before it is tried. */
+.dg-stage {
+  cursor: grab;
+}
+.dg-stage:active {
+  cursor: grabbing;
+}
+/* MermaidDiagram is height:100%; inside an auto-height transformed wrapper that
+   resolves to zero and the diagram vanishes. Shrink-wrap it instead. */
+/* A flex child shrinks to content, so a MermaidDiagram inside it resolves its
+   width:100% against zero and the diagram disappears. */
+.dg-zoom {
+  width: 100%;
+  min-width: 0;
+}
+.dg-zoom :deep(.mermaid-diagram),
+.dg-zoom :deep(.host),
+.dg-pane :deep(.mermaid-diagram),
+.dg-pane :deep(.host) {
+  height: auto;
+  align-items: flex-start;
 }

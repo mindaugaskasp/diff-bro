@@ -36,13 +36,24 @@ const nodeLine = (n) => {
   return `  ${safeId(n.id)}["${label}"]:::${n.status}`
 }
 
-// An edge id (mermaid >= 11.3) lets `class` carry its status. `class` is a
-// STATEMENT, unlike classDef — it names a class without emitting an inline
-// style, so the colour stays ours to theme.
-const edgeLine = (e, i) => {
+// Status through mermaid's OWN link syntax, because a `class` statement on an
+// edge is parsed and then ignored: the rendered path carries only
+// `edge-pattern-solid flowchart-link`. A dotted link renders
+// `edge-pattern-dotted` and a thick one `edge-thickness-thick`, and since this
+// file generates every edge in the source, those two classes mean exactly
+// "removed" and "added" — which is what the stylesheet then colours.
+const LINK = {
+  removed: { open: '-.', close: '.->', plain: '-.->' },
+  added: { open: '==', close: '==>', plain: '==>' },
+  changed: { open: '--', close: '-->', plain: '-->' },
+  same: { open: '--', close: '-->', plain: '-->' }
+}
+
+const edgeLine = (e) => {
+  const link = LINK[e.status] ?? LINK.same
   const label = safeLabel(e.label)
-  const arrow = label ? `-- ${label} -->` : '-->'
-  return `  ${safeId(e.start)} e${i}@${arrow} ${safeId(e.end)}`
+  const arrow = label ? `${link.open} ${label} ${link.close}` : link.plain
+  return `  ${safeId(e.start)} ${arrow} ${safeId(e.end)}`
 }
 
 /**
@@ -54,8 +65,6 @@ export function unionSource(diff, type) {
   const header = HEADERS[type] ?? 'flowchart TD'
   const lines = [header]
   for (const n of diff?.nodes ?? []) lines.push(nodeLine(n))
-  const edges = diff?.edges ?? []
-  edges.forEach((e, i) => lines.push(edgeLine(e, i)))
-  edges.forEach((e, i) => lines.push(`  class e${i} ${e.status}`))
+  for (const e of diff?.edges ?? []) lines.push(edgeLine(e))
   return `${lines.join('\n')}\n`
 }

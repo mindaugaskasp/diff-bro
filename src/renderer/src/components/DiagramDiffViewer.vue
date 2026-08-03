@@ -5,6 +5,8 @@ import { modelFrom } from '../utils/diagramModel'
 import { diffDiagrams } from '../utils/diagramDiff'
 import { unionSource } from '../utils/diagramUnion'
 import { focusDiff } from '../utils/diagramFocus'
+import { useZoomPan } from '../composables/useZoomPan'
+import AppIcon from './AppIcon.vue'
 import MermaidDiagram from './MermaidDiagram.vue'
 import DiagramChangeRegister from './DiagramChangeRegister.vue'
 
@@ -20,9 +22,17 @@ const type = ref('')
 // earlier run can resolve after a newer one and leave the picture showing one
 // revision while the register shows another. Same guard MermaidDiagram carries.
 let buildSeq = 0
+// The same pan/zoom the Mermaid viewer dialog uses — a 35-node service map is
+// unreadable at fit-width, and a second gesture implementation would drift.
+const { scale, tx, ty, pct, zoom, fit, onWheel, onDown, onMove, onUp } = useZoomPan()
 
 const changed = (list) => (list ?? []).filter((x) => x.status !== 'same')
 const tally = (list, status) => (list ?? []).filter((x) => x.status === status).length
+
+const zoomStyle = computed(() => ({
+  transform: `translate(${tx.value}px, ${ty.value}px) scale(${scale.value})`,
+  transformOrigin: 'top center'
+}))
 
 const nodeRows = computed(() => changed(full.value?.nodes))
 const edgeRows = computed(() => changed(full.value?.edges))
@@ -75,7 +85,16 @@ watch(
       <span class="lg del"><span class="lgchip">−</span>removed</span>
       <span class="lg chg"><span class="lgchip">±</span>changed</span>
       <span class="lg same"><span class="lgchip">·</span>unchanged</span>
-      <span class="lg-right">{{ type }}</span>
+      <span class="lg-right">
+        <button class="dg-zbtn" data-tip="Zoom out" aria-label="Zoom out" @click="zoom(1 / 1.2)">
+          <AppIcon name="minus" />
+        </button>
+        <button class="dg-pct" data-tip="Reset to fit" @click="fit">{{ pct }}%</button>
+        <button class="dg-zbtn" data-tip="Zoom in" aria-label="Zoom in" @click="zoom(1.2)">
+          <AppIcon name="plus" />
+        </button>
+        <span class="dg-type">{{ type }}</span>
+      </span>
     </div>
 
     <p v-if="store.renderSideBySide && !error" class="dg-drift">
@@ -83,19 +102,29 @@ watch(
     </p>
 
     <div class="dg-body">
-      <div class="dg-stage" :class="{ split: store.renderSideBySide }">
+      <div
+        class="dg-stage"
+        :class="{ split: store.renderSideBySide }"
+        @wheel="onWheel"
+        @pointerdown="onDown"
+        @pointermove="onMove"
+        @pointerup="onUp"
+        @pointercancel="onUp"
+      >
         <p v-if="error" class="dg-error">{{ error }}</p>
-        <template v-else-if="store.renderSideBySide">
-          <div class="dg-pane">
-            <span class="dg-ttl">before</span>
-            <MermaidDiagram :code="beforeSrc" :debounce="0" />
-          </div>
-          <div class="dg-pane">
-            <span class="dg-ttl">after</span>
-            <MermaidDiagram :code="afterSrc" :debounce="0" />
-          </div>
-        </template>
-        <MermaidDiagram v-else :code="source" :debounce="0" />
+        <div v-else class="dg-zoom" :style="zoomStyle">
+          <template v-if="store.renderSideBySide">
+            <div class="dg-pane">
+              <span class="dg-ttl">before</span>
+              <MermaidDiagram :code="beforeSrc" :debounce="0" />
+            </div>
+            <div class="dg-pane">
+              <span class="dg-ttl">after</span>
+              <MermaidDiagram :code="afterSrc" :debounce="0" />
+            </div>
+          </template>
+          <MermaidDiagram v-else :code="source" :debounce="0" />
+        </div>
       </div>
       <DiagramChangeRegister
         v-if="nodeRows.length || edgeRows.length"
