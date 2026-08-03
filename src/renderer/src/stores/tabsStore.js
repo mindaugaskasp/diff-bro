@@ -10,42 +10,31 @@ import {
   createTab,
   cleanTabName,
   isBlank,
+  OPEN_DEFAULTS,
   nextActiveId,
   nextActiveIdAfterClosing,
   recyclableTab,
-  tabTitle,
-  tabsFullNotice
+  tabTitle
 } from '../utils/tabs'
 import {
   EMPTY_ENVELOPE,
+  SESSION_AAD,
   SESSION_VERSION,
   packSession,
   readEnvelope,
   readSession
 } from '../utils/session'
+import { droppedTabsNotice, tabsFullNotice } from '../utils/tabNotices'
 
-// Several comparisons open at once. The diffStore stays exactly what it was —
-// THE ACTIVE DOCUMENT — and a tab is the snapshot it round-trips through
-// snapshot()/restore(). Switching therefore costs one re-diff, and only the tab
-// you are looking at owns Monaco models; the rest are inert text. That is the
-// memory bound, by construction rather than by bookkeeping.
-// Defaults as an object rather than destructuring defaults: open() sits right
-// on the complexity limit and every `=` in a signature counts against it.
-const OPEN_DEFAULTS = {
-  diffSaved: false,
-  entryId: null,
-  reuseBlank: true,
-  name: '',
-  transient: false
-}
-
-// The session file is sealed with the vault key, like a saved diff — it holds
-// the same thing (whole file contents), so it is stored the same way. The AAD
-// binds it to this store and shape, so a box lifted from anywhere else fails.
-const SESSION_AAD = 'session|v1'
+// Several comparisons open at once. The diffStore stays THE ACTIVE DOCUMENT and
+// a tab is the snapshot it round-trips through snapshot()/restore(), so only the
+// tab you are looking at owns Monaco models — the memory bound by construction.
 
 export const useTabsStore = defineStore('tabs', {
   state: () => ({
+    // The tab ids awaiting a discard confirmation, or null. Closing a tab is
+    // the one way paste-mode text can be lost — it exists nowhere else.
+    pendingClose: null,
     /** @type {import('../utils/tabs').DiffTab[]} */
     tabs: [],
     activeId: null,
@@ -79,6 +68,25 @@ export const useTabsStore = defineStore('tabs', {
     }
   },
   actions: {
+    // Clearing spans both stores: the comparison empties, and the tab stops
+    // BEING the saved diff it was opened from. Leaving the link behind left a
+    // hollow tab claiming that entry, and open() focuses a tab already showing
+    // one rather than loading it — so the saved diff could not be opened again.
+    clearActive() {
+      useDiffStore().clear()
+      this.unlinkActiveEntry()
+    },
+    requestActiveClose() {
+      if (this.activeId) this.requestClose(this.activeId)
+    },
+    confirmClose() {
+      const ids = this.pendingClose
+      this.pendingClose = null
+      if (ids?.length) this.closeMany(ids)
+    },
+    cancelClose() {
+      this.pendingClose = null
+    },
     // The window opens on whatever the diff store already holds, so the first
     // tab is the current comparison rather than a blank one pushed in front.
     init() {
@@ -208,7 +216,7 @@ export const useTabsStore = defineStore('tabs', {
       const open = (ids ?? []).filter((id) => this.tabs.some((t) => t.id === id))
       if (!open.length) return
       const risky = open.filter((id) => this.unsaved(this.tabs.find((t) => t.id === id)))
-      if (risky.length) useDiffStore().pendingTabClose = open
+      if (risky.length) this.pendingClose = open
       else this.closeMany(open)
     },
     /**
@@ -316,23 +324,23 @@ export const useTabsStore = defineStore('tabs', {
      * reading). Called on a debounce — see useSessionPersistence.
      */
     async saveSession() {
-      if (!useSettingsStore().restoreSession) return
-      if (typeof window.api?.vaultEncrypt !== 'function') return
-      // Nothing may be written before the stored session has been read back:
-      // the debounce races the restore, and a file dropped inside that window
-      // used to overwrite every other comparison with the one just opened.
-      if (!this.sessionReady) return
+      // sessionReady: nothing may be written before the stored session has been
+      // read back — the debounce races the restore, and a file dropped inside
+      // that window used to overwrite every other comparison with the one just
+      // opened.
+      const usable =
+        useSettingsStore().restoreSession &&
+        typeof window.api?.vaultEncrypt === 'function' &&
+        this.sessionReady
+      if (!usable) return
       const diff = useDiffStore()
       const packed = packSession(this.tabs, this.activeId, {
         snapshot: diff.snapshot(),
         diffSaved: diff.diffSaved
       })
-      if (!packed) {
-        // A locked keychain is temporary; the comparisons behind it are not
-        // ours to throw away.
-        savePersisted('session', EMPTY_ENVELOPE)
-        return
-      }
+      // A locked keychain is temporary; the comparisons behind it are not ours
+      // to throw away.
+      if (!packed) return savePersisted('session', EMPTY_ENVELOPE)
       this._reportDropped(packed.dropped)
       const box = await window.api.vaultEncrypt(JSON.stringify(packed), SESSION_AAD)
       if (box?.error) return
@@ -341,24 +349,15 @@ export const useTabsStore = defineStore('tabs', {
         JSON.stringify({ version: SESSION_VERSION, iv: box.iv, data: box.data })
       )
     },
-    // A comparison too big for the session is one that will not come back, and
-    // saving it is the way to keep it.
     _reportDropped(count) {
       if (count === this.sessionDropped) return
       this.sessionDropped = count
-      if (!count) return
-      const [what, verb, it] =
-        count === 1 ? ['comparison', 'is', 'it'] : ['comparisons', 'are', 'them']
-      useDiffStore().showNotice(
-        `${count} open ${what} ${verb} too large to reopen next launch — save ${it} to keep ${it}.`
-      )
+      if (count) useDiffStore().showNotice(droppedTabsNotice(count))
     },
-    /**
-     * Reopen last session's comparisons, replacing the blank tab init() made.
+    /** Reopen last session's comparisons, replacing the blank tab init() made.
      * Runs before the window accepts anything else, so nothing it restores can
      * land on top of a diff the user already asked for.
-     * @returns {Promise<number>} how many tabs came back
-     */
+     * @returns {Promise<number>} how many tabs came back */
     async restoreSession() {
       if (!useSettingsStore().restoreSession) return 0
       const box = readEnvelope(loadPersisted('session'))

@@ -5,8 +5,11 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
+import { useUiStore } from '../stores/uiStore'
 
 const store = useDiffStore()
+
+const ui = useUiStore()
 const settings = useSettingsStore()
 const input = ref('')
 const { onDropFile } = useFileTextDrop((text) => {
@@ -85,7 +88,7 @@ async function copyOutput() {
 }
 
 function close() {
-  store.showCryptDialog = false
+  ui.showCryptDialog = false
 }
 </script>
 

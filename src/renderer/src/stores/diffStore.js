@@ -1,4 +1,3 @@
-import { toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
 import { structureAdapter } from '../adapters/structureAdapter'
@@ -6,54 +5,17 @@ import { csvAdapter } from '../adapters/csvAdapter'
 import { diffStructures, structuredKind } from '../utils/structuralDiff'
 import { delimitedKind } from '../utils/csv'
 import { useVaultStore } from './vaultStore'
-import { languageOf, useSnippetStore } from './snippetStore'
+import { useSnippetStore } from './snippetStore'
 import { isSecret } from '../utils/secretSnippet'
 import { snippetSource } from '../utils/snippetSource'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
 import { diffToHtml } from '../utils/diffHtml'
 import { changeRegister, toCsv } from '../utils/changeRegister'
-import { clipboardSnippetName, tabsFullMessage } from '../utils/cliCommand'
+import { clipboardSnippetName } from '../utils/cliCommand'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
-import { MAX_TABS } from '../utils/tabs'
-import {
-  afterFrames,
-  captureRectOf,
-  captureRegionOf,
-  planSlices,
-  untilChanged,
-  untilTrue
-} from '../utils/captureTarget'
-import { getDiffScroller } from '../utils/diffScroller'
-import { playShutter } from '../utils/shutter'
-import { loadPersisted, savePersisted } from '../persist'
-import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { looksLikeMermaid } from '../utils/mermaid'
-import { useSettingsStore } from './settingsStore'
-import { useTabsStore } from './tabsStore'
-import { TOOLS } from '../utils/tools'
 import { sideName } from '../utils/pasteNames'
-
-const SHARE_ERRORS = {
-  'not-a-share-file': 'That file is not a Diff Bro shared diff.',
-  'not-for-you':
-    'This shared diff is sealed for a different machine — it can only be opened by its addressed recipient.',
-  tampered: 'Rejected: the file was modified in transit (or is corrupted) — decryption failed.',
-  'unknown-signer':
-    'Sealed correctly, but signed by an unknown sender — add their public key first (File → Add Trusted Key).',
-  'bad-signature': 'Signature check failed — the file was modified or corrupted.',
-  'bad-trusted-key':
-    'The stored public key for this sender is unreadable — remove it and add their key file again.',
-  expired: 'This shared diff has already expired.',
-  'invalid-ttl': 'Rejected: shared diffs cannot live longer than a week.',
-  'unknown-recipient': 'Recipient not found among trusted keys.',
-  renamed:
-    'This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.',
-  'identity-unavailable':
-    'Your identity key couldn’t be unlocked (the OS keychain may be locked). Nothing was changed — unlock it and try again.',
-  'vault-key-unavailable':
-    'The saved-diff key couldn’t be unlocked (the OS keychain may be locked). Your saved diffs and snippets are intact — unlock it and try again.'
-}
 
 // What a streamed comparison cannot do, and why — in terms of the consequence
 // the user can see, not the mechanism. One source for the disabled tooltips and
@@ -67,10 +29,6 @@ export const STREAMED_LIMITS = {
 
 let noticeTimer = null
 let diskNoticeTimer = null
-
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme
-}
 
 // null once dismissed for the current content, or once it's already pretty.
 function formatHintFor(file, dismissedContent) {
@@ -120,11 +78,6 @@ function mergeFormatBanner(left, right) {
   }
 }
 
-// A pasted side has no path, so it's never re-read from disk on focus.
-function pastedSide(side, text) {
-  return { path: null, name: `${side === 'left' ? 'Left' : 'Right'} (pasted)`, content: text }
-}
-
 // The two compared sides as { name, content }, whether in files or paste mode.
 function comparedSides(s) {
   if (s.mode === 'paste') {
@@ -149,84 +102,6 @@ const heldNote = (names) => {
 
 export const DISK_NOTICE_MS = 10_000
 
-// Stitching only ever scrolls DOWN, so columns off the right edge are not in
-// the picture. The dialog says so rather than handing over a crop that looks
-// complete. Monaco reports none — its pane is as wide as the window.
-const withHiddenColumns = (res) =>
-  res?.error ? res : { ...res, hiddenColumns: getDiffScroller()?.hiddenColumns?.() ?? 0 }
-
-// Frames to let Monaco lay out and tokenize a restored diff before the shot.
-const CAPTURE_FRAMES = 4
-// Frames for a scrolled viewport to render its new lines between slices.
-const SCROLL_FRAMES = 3
-// A streamed viewer fetches a scrolled-to window from disk, so its new rows
-// arrive on an IPC round-trip rather than the next frame. Counting frames alone
-// photographs empty rows; this waits for the viewer to say it filled them.
-const STREAM_SETTLE_FRAMES = 90
-// Mermaid renders behind a 2.8 MB import and a cold grammar retries for ~700 ms.
-// Generous because it resolves the moment the stage paints — this only bounds a
-// render that never arrives.
-const SHOT_READY_FRAMES = 600
-
-// Menu action → store effect. The single list of everything a menu can trigger
-// (named by the accelerators in menu.js / MenuBar.vue).
-const MENU_ACTIONS = {
-  'open-left': (s) => s.pick('left'),
-  'open-right': (s) => s.pick('right'),
-  save: (s) => {
-    if (s.hasUnsavedWork) s.showSaveDialog = true
-  },
-  'share-current': (s) => s.shareCurrent(),
-  swap: (s) => s.swap(),
-  clear: (s) => {
-    if (s.canClear) s.clear()
-  },
-  'copy-diff': (s) => s.copyDiff(),
-  'apply-patch': (s) => s.applyPatch(),
-  'export-html': (s) => s.exportDiff(),
-  'export-image': (s) => s.exportCurrentImage(),
-  'tab-new': () => useTabsStore().newTab(),
-  'tab-next': () => useTabsStore().step(1),
-  'tab-prev': () => useTabsStore().step(-1),
-  'tab-close': (s) => s.requestActiveTabClose(),
-  'import-snippets': (s) => s.importSnippets(),
-  'toggle-paste': (s) => s.togglePasteMode(),
-  'toggle-sidebar': () => {
-    const settings = useSettingsStore()
-    settings.setSidebarCollapsed(!settings.sidebarCollapsed)
-  },
-  'toggle-split': (s) => (s.renderSideBySide = !s.renderSideBySide),
-  'toggle-structure': (s) => {
-    if (s.canCompareStructure) s.semanticView = !s.semanticView
-  },
-  'toggle-theme': (s) => s.toggleTheme(),
-  'import-shared': (s) => s.importShared(),
-  'export-pubkey': (s) => (s.showShareKeyDialog = true),
-  'rotate-key': (s) => (s.showRotateKeyDialog = true),
-  'copy-pubkey': (s) => (s.showShareKeyDialog = true),
-  'add-trusted-key': (s) => s.addTrustedKey(),
-  'manage-keys': (s) => (s.showTrustedKeysDialog = true),
-  'config-backup': (s) => (s.configMode = 'backup'),
-  'config-restore': (s) => (s.configMode = 'restore'),
-  settings: (s) => (s.showSettingsDialog = true),
-  'command-palette': (s) => {
-    s.paletteScope = 'all'
-    s.showCommandPalette = true
-  },
-  'tools-base64': (s) => (s.textTool = 'base64'),
-  'tools-json': (s) => (s.textTool = 'json'),
-  'tools-xml': (s) => (s.textTool = 'xml'),
-  'tools-hash': (s) => (s.textTool = 'hash'),
-  'tools-regex': (s) => (s.textTool = 'regex'),
-  'tools-uuid': (s) => (s.textTool = 'uuid'),
-  'tools-jwt': (s) => (s.textTool = 'jwt'),
-  'tools-epoch': (s) => (s.textTool = 'epoch'),
-  'tools-url': (s) => (s.textTool = 'url'),
-  'tools-lines': (s) => (s.textTool = 'lines'),
-  'tools-crypt': (s) => (s.showCryptDialog = true),
-  shortcuts: (s) => (s.showShortcutsDialog = true)
-}
-
 export const useDiffStore = defineStore('diff', {
   state: () => ({
     left: null, // { path, name, content, encoding, size }
@@ -249,10 +124,6 @@ export const useDiffStore = defineStore('diff', {
     // What to call each pasted side. Empty means "use the placeholder".
     pasteLeftName: '',
     pasteRightName: '',
-    // Ctrl/Cmd+V flow: null | 'enter' | 'overwrite'; pendingPasteText holds the
-    // clipboard text between confirm and overwrite.
-    pastePrompt: null,
-    pendingPasteText: '',
     // { additions, deletions } from the diff editor, null before first diff
     stats: null,
     // transient user-facing message (binary file rejected, etc.)
@@ -263,13 +134,11 @@ export const useDiffStore = defineStore('diff', {
     cliBlocked: null,
     // Set by `diffbro backup <path>`: the destination the terminal named, which
     // the passphrase dialog writes to instead of asking for one.
-    pendingBackupPath: null,
     // Everything that refusal has covered since it was last dismissed.
     blockedFiles: [],
     // save-diff dialog visibility
     showSaveDialog: false,
     // when true, the save dialog flows straight into the share dialog
-    saveThenShare: false,
     // Dropped paths / picked file awaiting the "replace current diff?" confirm;
     // the *AfterSave twins carry them through the save dialog on "Save first".
     pendingReplace: null,
@@ -279,56 +148,9 @@ export const useDiffStore = defineStore('diff', {
     // Saved (or opened from a saved diff) and unchanged since, so overwriting is
     // safe and skips the replace prompt. Any edit clears it.
     diffSaved: false,
-    userTheme: normalizeTheme(loadPersisted('theme')), // persisted Appearance pick
-    // The ACTIVE theme components read — userTheme, unless daily rotation is on.
-    theme: normalizeTheme(loadPersisted('theme')),
-    // entry id currently in the share dialog (an already-saved diff; null = closed)
-    shareEntryId: null,
-    // Pending share of the CURRENT diff, captured but NOT yet persisted:
-    // { name, ttlHours, snapshot, tags }. The local copy is written only when the
-    // share completes, so cancelling the picker/file dialog leaves nothing.
-    shareDraft: null,
-    pendingTrustedKey: null, // { key, fingerprint, label } while the name dialog is open
-    // { fingerprint, label } while the "remove this key?" confirmation is open.
-    pendingUntrust: null,
-    // So the manager can highlight the just-added key; cleared when it closes.
-    lastAddedTrustedFp: null,
-    // Trusted-keys management dialog visibility.
-    showTrustedKeysDialog: false,
-    // "Share my public key" dialog visibility (name + export/copy your key).
-    showShareKeyDialog: false,
-    showRotateKeyDialog: false,
-    // Config backup/restore passphrase dialog: 'backup' | 'restore' | null.
-    configMode: null,
-    // Which tool panel is open (a registry id), null when none.
-    textTool: null,
-    showCryptDialog: false,
-    // Settings dialog (data location) visibility.
-    showSettingsDialog: false,
-    // Help → Keyboard Shortcuts dialog visibility.
-    showShortcutsDialog: false,
-    // ⌘K-style command palette visibility.
-    showCommandPalette: false,
-    // What the palette lists: every menu command, or just the tools.
-    paletteScope: 'all',
-    // Mermaid diagram viewer: { name, code } while open, null when closed.
-    mermaidView: null,
-    // A finished picture while its preview is open, null when closed: { id,
-    // name, subject: 'diff' | 'snippet' | 'diagram', dataUrl, width, height }.
-    imageEntry: null,
-    // The snippet being photographed right now, or null. See exportSnippetImage.
-    /** @type {import('../types').SnippetShot | null} */
-    snippetShot: null,
-    // True between opening the saved diff and taking its picture, so the app can
-    // stay out of the shot (no dialog, no toast) while the shutter is open.
-    imageCapturing: false,
     // Bumped by DiffViewer on every onDidUpdateDiff — the only honest signal
     // that Monaco's diff worker has returned and its decorations are painted.
     diffRevision: 0,
-    // The tab ids awaiting a discard confirmation, or null. Closing a tab is the
-    // one way paste-mode text can be lost — it exists nowhere else. A SET, so a
-    // bulk close asks once rather than once per tab.
-    pendingTabClose: null,
     // Content last dismissed per side, so the format-hint banner stays gone until
     // that side's content changes.
     dismissedFormatHint: { left: null, right: null }
@@ -344,11 +166,6 @@ export const useDiffStore = defineStore('diff', {
     identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
     // A comparison is actually on screen to photograph. Paste mode shows two
     // textareas, not a diff, so there is nothing to take a picture of there.
-    // A streamed comparison IS photographable: its viewer registers a real
-    // scroller, so the export scrolls and stitches it like any other.
-    canExportImage() {
-      return this.mode !== 'paste' && !!this.left && !!this.right
-    },
     isSpreadsheet() {
       return (
         this.leftComparable?.kind === 'spreadsheet' || this.rightComparable?.kind === 'spreadsheet'
@@ -560,150 +377,6 @@ export const useDiffStore = defineStore('diff', {
       const res = await window.api.exportDiffFile({ text: toCsv(rows), format: 'csv', name })
       if (res?.ok) this.showNotice(`Exported ${rows.length - 1} changes.`)
     },
-    // Export a SAVED diff as a picture of the app's own diff view: the entry is
-    // opened first, so the screenshot shows the real thing, with this theme's
-    // colours and Monaco's highlighting, rather than a redrawn approximation
-    // that would drift from the app.
-    async exportImage(id) {
-      const vault = useVaultStore()
-      const entry = vault.entries.find((e) => e.id === id)
-      if (!entry) return
-      const payload = await vault.load(id)
-      if (!payload) {
-        return this.showNotice('This saved diff has expired or could not be decrypted.')
-      }
-      // The saved diff is only ON SCREEN long enough to be photographed. Leaving
-      // it there replaced the user's live comparison, marked it saved (so no
-      // discard prompt could ever fire) and left the tab claiming a document it
-      // no longer held.
-      const live = this.snapshot()
-      const liveSaved = this.diffSaved
-      this.restore(payload)
-      try {
-        // Restoring replaces the models, so there is never a selection to honour.
-        const res = await this._shoot({ awaitRediff: true })
-        if (res?.error) return this.showNotice('Could not take a picture of this diff.')
-        this.imageEntry = { id, name: entry.name, subject: 'diff', ...res }
-      } finally {
-        this.restore(live)
-        this.diffSaved = liveSaved
-      }
-    },
-    // A picture of the app's own rendering — a diagram for Mermaid, coloured code
-    // otherwise. The stage covers the diff column for one shot, then comes down.
-    async exportSnippetImage(id) {
-      const snippets = useSnippetStore()
-      const entry = snippets.entries.find((e) => e.id === id)
-      if (!entry) return
-      // Refused before anything decrypts it: a picture of a mask is useless, and
-      // a picture of the plaintext is the leak the mask exists to prevent.
-      if (isSecret(entry)) {
-        return this.showNotice('Hidden snippets can’t be exported as an image.')
-      }
-      const code = await snippets.load(id)
-      if (code == null) return this.showNotice('That snippet could not be opened.')
-      const lang = languageOf(entry)
-      const diagram = lang === 'mermaid'
-      this.snippetShot = { name: entry.name, lang, code, ready: false, failed: false }
-      try {
-        const shot = this.snippetShot
-        await untilTrue(() => shot.ready || shot.failed, { frames: SHOT_READY_FRAMES })
-        if (shot.failed) return this.showNotice('That diagram could not be rendered.')
-        const res = await this._shoot()
-        if (res?.error) return this.showNotice('Could not take a picture of this snippet.')
-        this.imageEntry = {
-          id,
-          name: entry.name,
-          subject: diagram ? 'diagram' : 'snippet',
-          ...res
-        }
-      } finally {
-        this.snippetShot = null
-      }
-    },
-    snippetShotPainted() {
-      if (this.snippetShot) this.snippetShot.ready = true
-    },
-    snippetShotFailed() {
-      if (this.snippetShot) this.snippetShot.failed = true
-    },
-    // Export what is on screen right now, saved or not. Lines selected in either
-    // pane narrow the picture to just those; with none it covers the whole diff.
-    async exportCurrentImage() {
-      if (!this.canExportImage) return this.showNotice('Nothing to export yet.')
-      const res = await this._shoot({ band: getDiffScroller()?.selection() ?? null })
-      if (res?.error) return this.showNotice('Could not take a picture of this diff.')
-      const [l, r] = comparedSides(this)
-      this.imageEntry = { id: null, name: `${l.name} ↔ ${r.name}`, subject: 'diff', ...res }
-    },
-    // The shutter. `finally` matters: a stuck imageCapturing would leave the
-    // shortcut bar hidden for the rest of the session.
-    async _shoot({ band = null, awaitRediff = false } = {}) {
-      this.imageCapturing = true
-      playShutter({ enabled: useSettingsStore().shutterSound })
-      try {
-        // Only a restore re-diffs, and that must land and paint before the shot
-        // — counting frames alone photographed the previous diff, or this one
-        // with no highlights. Waiting for a re-diff that isn't coming would just
-        // burn the timeout, so exporting what's already on screen skips it.
-        if (awaitRediff) await untilChanged(() => this.diffRevision)
-        await afterFrames(CAPTURE_FRAMES)
-        return withHiddenColumns(await this._shootRegion(band))
-      } catch {
-        return { error: 'capture-failed' }
-      } finally {
-        this.imageCapturing = false
-      }
-    },
-    // One shot when the whole diff fits its pane, scroll-and-stitch otherwise.
-    // A band always takes the sliced path: the single-shot rect starts at the
-    // top of the column, which is exactly what a chosen range is not.
-    async _shootRegion(band) {
-      const scroller = getDiffScroller()
-      const region = scroller && captureRegionOf({ viewport: scroller.viewportEl?.() ?? null })
-      const plan = region ? this._planShots(scroller, band) : { slices: [], truncated: false }
-      if (plan.slices.length > 1 || (band && plan.slices.length)) {
-        return this._shootTall(plan, region, scroller)
-      }
-      if (band) return { error: 'no-view' }
-      // Short diff, or a viewer with no Monaco behind it (the spreadsheet grid):
-      // captureRectOf already crops the empty pane away.
-      const rect = captureRectOf()
-      return rect ? window.api.captureDiffImage(rect) : { error: 'no-view' }
-    },
-    _planShots(scroller, band) {
-      return planSlices({
-        contentHeight: scroller.contentHeight(),
-        viewportHeight: scroller.viewportHeight(),
-        maxHeight: useSettingsStore().maxExportHeightPx,
-        from: band?.top ?? 0,
-        to: band?.bottom
-      })
-    },
-    async _shootTall(plan, region, scroller) {
-      const was = scroller.scrollTop()
-      const { x, width, y: top } = region.content
-      const headerHeight = region.editorY - top
-      try {
-        for (const [i, s] of plan.slices.entries()) {
-          scroller.scrollTo(s.scrollTop)
-          if (i > 0 && this.isStreamed) {
-            await untilChanged(() => this.diffRevision, { frames: STREAM_SETTLE_FRAMES })
-          }
-          await afterFrames(SCROLL_FRAMES)
-          const rect =
-            i === 0
-              ? { x, y: top, width, height: headerHeight + s.height }
-              : { x, y: region.editorY + s.offsetY, width, height: s.height }
-          const added = await window.api.appendDiffImageSlice(rect, i === 0)
-          if (added?.error) return added
-        }
-      } finally {
-        scroller.scrollTo(was)
-      }
-      const shot = await window.api.stitchDiffImage()
-      return shot?.error ? shot : { ...shot, truncated: plan.truncated }
-    },
     // Post-save routing: a "save first" chain resumes its deferred action,
     // otherwise a paste-mode save runs the comparison and confirms the save.
     async finishSave(wasPaste, ttlHours) {
@@ -723,34 +396,6 @@ export const useDiffStore = defineStore('diff', {
       this.showNotice(
         ttlHours ? `Saved — expires in ${ttlHours} h.` : 'Saved — kept until you delete it.'
       )
-    },
-    requestActiveTabClose() {
-      const tabs = useTabsStore()
-      if (tabs.activeId) tabs.requestClose(tabs.activeId)
-    },
-    confirmTabClose() {
-      const ids = this.pendingTabClose
-      this.pendingTabClose = null
-      if (ids?.length) useTabsStore().closeMany(ids)
-    },
-    cancelTabClose() {
-      this.pendingTabClose = null
-    },
-    closeImageExport() {
-      this.imageEntry = null
-      window.api.forgetDiffImage()
-    },
-    // Both act on the capture main is still holding — no image bytes are sent
-    // back across the boundary to be re-decoded.
-    async copyImage() {
-      const res = await window.api.copyDiffImage()
-      this.showNotice(res?.ok ? 'Diff image copied to clipboard.' : 'Could not copy the image.')
-      return !!res?.ok
-    },
-    async saveImage() {
-      const res = await window.api.saveDiffImage(this.imageEntry?.name ?? 'diff')
-      if (res?.ok) this.showNotice(`Saved diff image to ${res.path}`)
-      else if (!res?.canceled) this.showNotice('Could not save the image.')
     },
     // Orchestrates the snippet import (the work + validation live in the snippet
     // store / parser) and reports the outcome through the shared notice.
@@ -891,88 +536,6 @@ export const useDiffStore = defineStore('diff', {
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'
     },
-    // Ctrl/Cmd+V paste-to-compare. Ask before reading the clipboard.
-    async requestPasteFromClipboard() {
-      if (this.pastePrompt) return
-      if (this.left?.kind === 'spreadsheet' || this.right?.kind === 'spreadsheet') {
-        this.showNotice('Paste-to-compare works with text, not a spreadsheet.')
-        return
-      }
-      // Copied files are unambiguous — load them without asking. The prompt
-      // exists for pasted TEXT, where entering paste mode is a real decision.
-      if (await this.pasteClipboardFiles()) return
-      this.pastePrompt = 'enter'
-    },
-    async confirmPasteEnter() {
-      const text = (await window.api?.readText?.()) ?? ''
-      if (!text.trim()) {
-        this.pastePrompt = null
-        this.showNotice('The clipboard is empty — nothing to paste.')
-        return
-      }
-      // A loaded comparison: paste into its empty side, not the paste textareas
-      // (which would orphan the loaded file).
-      if (this.mode === 'files' && (this.left || this.right)) {
-        this.pasteIntoComparison(text)
-      } else {
-        this.pasteIntoPasteFields(text)
-      }
-    },
-    // Routed through dropFiles so copied files land exactly like dropped ones,
-    // confirm included. Returns true when the clipboard held files.
-    async pasteClipboardFiles() {
-      const files = ((await window.api?.readClipboardFiles?.()) ?? []).filter(Boolean)
-      if (!files.length) return false
-      this.pastePrompt = null
-      await this.dropFiles(files)
-      return true
-    },
-    // Files mode with something loaded: drop the pasted text into the empty side
-    // for an immediate diff; if both sides are full, confirm before overwriting.
-    pasteIntoComparison(text) {
-      if (this.left && this.right) {
-        this.pendingPasteText = text
-        this.pastePrompt = 'overwrite'
-        return
-      }
-      const side = this.left ? 'right' : 'left'
-      this[side] = pastedSide(side, text)
-      this.diffSaved = false
-      this.pastePrompt = null
-    },
-    // Empty state or already in paste mode: fill the first empty paste field.
-    pasteIntoPasteFields(text) {
-      this.mode = 'paste'
-      const leftFull = !!(this.pasteLeft || this.pasteLeftFile)
-      const rightFull = !!(this.pasteRight || this.pasteRightFile)
-      if (!leftFull) {
-        this.pasteLeft = text
-        this.pastePrompt = null
-      } else if (!rightFull) {
-        this.pasteRight = text
-        this.pastePrompt = null
-      } else {
-        this.pendingPasteText = text
-        this.pastePrompt = 'overwrite'
-      }
-    },
-    // Both sides were full and the user agreed to overwrite: replace the LEFT
-    // side with the pasted text, keeping the right — in whichever mode.
-    confirmPasteOverwrite() {
-      const text = this.pendingPasteText
-      this.pendingPasteText = ''
-      this.pastePrompt = null
-      if (this.mode === 'files') {
-        this.left = pastedSide('left', text)
-        this.diffSaved = false
-      } else {
-        this.pasteLeft = text
-      }
-    },
-    cancelPaste() {
-      this.pendingPasteText = ''
-      this.pastePrompt = null
-    },
     // Load a file into one paste side without leaving paste mode (partial
     // paste). `file` is a LoadedFile from the open dialog or a dropped file.
     receivePasteFile(side, file) {
@@ -1010,36 +573,7 @@ export const useDiffStore = defineStore('diff', {
     clearPasteFile(side) {
       this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = null
     },
-    initTheme() {
-      this.resolveActiveTheme()
-    },
-    // Idempotent, so calling on focus rolls the daily theme over at midnight.
-    resolveActiveTheme() {
-      const rotate = useSettingsStore().rotateThemeDaily
-      this.theme = rotate ? themeForDay() : this.userTheme
-      applyTheme(this.theme)
-    },
     // Open the Mermaid viewer for a diagram's decrypted source.
-    openMermaid(name, code) {
-      this.mermaidView = { name, code }
-    },
-    closeMermaid() {
-      this.mermaidView = null
-    },
-    // Select any of the named themes (Settings picker). Unknown ids fall back
-    // to the default rather than leaving the app unstyled.
-    setTheme(id) {
-      this.userTheme = normalizeTheme(id)
-      savePersisted('theme', this.userTheme)
-      // While rotating, the pick is saved for later but the active theme stays
-      // the day's; otherwise it applies immediately.
-      this.resolveActiveTheme()
-    },
-    // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
-    // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
-    toggleTheme() {
-      this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
-    },
     /**
      * Re-read one slot quietly.
      * @param {string} slot
@@ -1189,18 +723,6 @@ export const useDiffStore = defineStore('diff', {
     },
     // A `diffbro …` launch, forwarded by main. Files are read through the same
     // readFile IPC as a drop, so the CLI opens nothing the app could not.
-    async runCliCommand(command) {
-      if (command?.name === 'create-snippet') useSnippetStore().startNewSnippetFrom('', 'auto')
-      else if (command?.name === 'clipboard-save') await this.saveClipboardSnippet(command.text)
-      else if (command?.name === 'compare') {
-        await this.compareFromCli(command.files, command.transient === true)
-      } else if (command?.name === 'backup') {
-        // The passphrase is asked for here, not in the terminal: the bundle is
-        // assembled in the renderer, so this is where the flow already lives.
-        this.pendingBackupPath = command.path
-        this.configMode = 'backup'
-      }
-    },
     /**
      * Compare snippets dropped from the sidebar. Ids only — the content is read
      * here, so a drag can never carry a decrypted body. Routed through the same
@@ -1241,33 +763,6 @@ export const useDiffStore = defineStore('diff', {
       this.cliBlocked = null
       this.blockedFiles = []
     },
-    async compareFromCli(files, transient = false) {
-      const tabs = useTabsStore()
-      // Whether there is room HERE comes from the live comparison, not the
-      // active tab's snapshot: a snapshot is only captured when tabs switch, so
-      // the tab you are looking at still reads as blank while it holds a diff.
-      if (this.left || this.right) {
-        if (!tabs.canHost(transient)) {
-          // Every launch blocked so far, not just this one: git calls the tool
-          // once per conflicted file and moves on without reading the answer.
-          this.blockedFiles = [...this.blockedFiles, ...(files ?? [])]
-          this.cliBlocked = tabsFullMessage(this.blockedFiles, MAX_TABS)
-          return
-        }
-        tabs.newTab({ transient })
-      }
-      tabs.markActiveTransient(transient)
-      const sides = ['left', 'right']
-      for (const [i, path] of (files ?? []).entries()) {
-        // A path from a shell is not one the app chose, so the read is allowed
-        // to fail outright rather than answer with an error shape.
-        try {
-          this.receive(sides[i], await window.api.readFile(path))
-        } catch {
-          this.showNotice(`Could not open "${String(path).split(/[\\/]/).pop()}".`)
-        }
-      }
-    },
     // A result chosen in the quick look-up (main forwards { kind, id }); the big
     // view does the load/restore the launcher stays out of.
     async openFromQuickLook(payload) {
@@ -1284,11 +779,6 @@ export const useDiffStore = defineStore('diff', {
       this.right = null
       this.stats = null
       this.diffSaved = false
-      // The tab stops BEING the saved diff it was opened from. Leaving the link
-      // behind left a hollow tab claiming that entry, and open() focuses a tab
-      // already showing one rather than loading it — so the saved diff could
-      // not be opened again.
-      useTabsStore().unlinkActiveEntry()
       // Also wipe paste-mode text and files so a cleared session never leaves
       // the previous content lingering behind.
       this.pasteLeft = ''
@@ -1300,210 +790,6 @@ export const useDiffStore = defineStore('diff', {
       this.notice = text
       clearTimeout(noticeTimer)
       noticeTimer = setTimeout(() => (this.notice = null), 5000)
-    },
-    handleMenuAction(action) {
-      MENU_ACTIONS[action]?.(this)
-      // One choke point, so a tool opened from the menu, a shortcut, the shelf
-      // or the palette all count towards the shelf's recents.
-      const tool = TOOLS.find((t) => t.action === action)
-      if (tool) useSettingsStore().noteToolUsed(tool.id)
-    },
-    // The command palette, scoped to tools (sidebar shelf → "Search tools…").
-    openToolsPalette() {
-      this.paletteScope = 'tools'
-      this.showCommandPalette = true
-    },
-    // Save first (a share file needs a name + expiry), then the recipient picker.
-    shareCurrent() {
-      if (!this.canSave) {
-        this.showNotice('Nothing to share yet — load two files or paste some text first.')
-        return
-      }
-      this.saveThenShare = true
-      this.showSaveDialog = true
-    },
-    // Opens the recipient picker (a share file is sealed for one recipient).
-    // With no trusted keys yet, the dialog walks through the one-time setup.
-    shareEntry(id) {
-      this.shareEntryId = id
-    },
-    // The save step of the "share current diff" flow captured this draft instead of
-    // persisting — opening the recipient picker with it pending (see SaveDiffDialog).
-    beginShareDraft(draft) {
-      this.shareDraft = draft
-    },
-    async shareTo(recipientFps) {
-      // A plain array of strings: a reactive one is a Proxy, which structured
-      // clone refuses at the IPC boundary.
-      const to = (Array.isArray(recipientFps) ? [...recipientFps] : [recipientFps]).filter(Boolean)
-      if (!to.length) return
-      const vault = useVaultStore()
-      const draft = this.shareDraft
-      const id = this.shareEntryId
-      this.shareDraft = null
-      this.shareEntryId = null
-      const res = draft ? await vault.shareDraft(draft, to) : await vault.share(id, to)
-      if (res.ok) {
-        if (draft && res.localCopy !== false) this.markSaved()
-        // The sealed file is sent either way; only the local twin can fail here,
-        // and saying so is the difference between "shared" and "shared, and you
-        // have no copy of what you sent".
-        this.showNotice(
-          res.localCopy === false
-            ? `Sealed shared diff for "${res.to}" written to ${res.path} — but your own copy could not be saved, so this diff is not in your saved list.`
-            : `Sealed shared diff for "${res.to}" written to ${res.path}`
-        )
-      } else if (res.error) {
-        this.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
-      }
-    },
-    // Import a sealed diff and open it — but only when nothing is on screen; with
-    // a diff loaded, keep the view and leave it in External diffs.
-    async importShared() {
-      const res = await useVaultStore().importShared()
-      if (!res.ok) {
-        if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
-        return
-      }
-      if (this.hasActive) {
-        this.showNotice(
-          `Imported "${res.entry.name}" from ${res.from} into External diffs — kept your current diff open; select it there to view.`
-        )
-        return
-      }
-      await this._openImported(res)
-      this.showNotice(`Opened "${res.entry.name}" from ${res.from} — same expiry as on the sender.`)
-    },
-    // A dropped .diffbro opens straight away (a drop is an explicit "show me
-    // this", so unlike menu-import it ignores hasActive).
-    async receiveDroppedSharedDiff(path) {
-      const res = await useVaultStore().importSharedFromPath(path)
-      if (!res.ok) {
-        if (res.error) this.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
-        return
-      }
-      await this._openImported(res)
-      this.showNotice(
-        `Imported "${res.entry.name}" from ${res.from} — same expiry as on the sender.`
-      )
-    },
-    // Decrypt a just-imported share and show it (shared by drop + menu paths).
-    async _openImported(res) {
-      const payload = await useVaultStore().load(res.id)
-      if (payload) this.restore(payload)
-    },
-    // Export this install's public key, tagged with the user's display name.
-    async runExportKey(label) {
-      const res = await window.api.exportPublicKey(label)
-      if (res.ok) {
-        this.showShareKeyDialog = false
-        this.showNotice(
-          `Your public key was saved. Send this file to the other person — they import it. To receive their diffs, import THEIR key (Security → Add Trusted Key).`
-        )
-      }
-    },
-    async runCopyKey(label) {
-      const res = await window.api.copyPublicKey(label)
-      if (res.ok) {
-        this.showShareKeyDialog = false
-        this.showNotice(
-          `Your public key was copied. Send it to the other person — they import it. To receive their diffs, import THEIR key.`
-        )
-      }
-    },
-    // Pick a key file, then require a name before adding.
-    async addTrustedKey() {
-      const res = await window.api.addTrustedKey()
-      if (res.ok) {
-        this.pendingTrustedKey = {
-          key: res.key,
-          fingerprint: res.fingerprint,
-          label: res.defaultLabel,
-          vouchedBy: res.vouchedBy ?? null
-        }
-      } else if (res.error === 'own-key') {
-        this.showNotice("That's your own public key — you don't need to trust yourself.")
-      } else if (res.error) {
-        this.showNotice('That file is not a valid public key.')
-      }
-    },
-    // A dropped .diffbrokey: validate, then open the naming dialog before adding.
-    async receiveDroppedKey(path) {
-      const res = await window.api.readKeyFile(path)
-      if (res.ok) {
-        this.pendingTrustedKey = {
-          key: res.key,
-          fingerprint: res.fingerprint,
-          label: res.defaultLabel,
-          vouchedBy: res.vouchedBy ?? null
-        }
-      } else if (res.error === 'own-key') {
-        this.showNotice("That's your own public key — you don't need to trust yourself.")
-      } else {
-        this.showNotice('That file is not a valid Diff Bro public key.')
-      }
-    },
-    async confirmTrustedKey(label) {
-      const pending = this.pendingTrustedKey
-      if (!pending) return
-      // toRaw: the pending key lives in reactive state, and a Proxy can't cross
-      // the structured-clone boundary — sending one rejects the IPC call.
-      let res
-      try {
-        res = await window.api.addTrustedKeyNamed(toRaw(pending.key), label)
-      } catch {
-        res = { error: 'ipc' }
-      }
-      // Cleared only after the write, or the manager re-reads before the key lands.
-      this.pendingTrustedKey = null
-      if (res.ok) {
-        this.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
-        // Flag the new key so the manager highlights it.
-        this.lastAddedTrustedFp = res.fingerprint
-        this.showTrustedKeysDialog = true
-      } else this.showNotice('Could not add that key.')
-    },
-    cancelTrustedKey() {
-      this.pendingTrustedKey = null
-    },
-    // --- configuration backup / restore ---
-    // Decrypted here and re-sealed under the passphrase in main: the vault key
-    // never travels, which is what makes the archive open on another machine.
-    async _backupBundle() {
-      return {
-        snippets: await useSnippetStore().fullBundle(),
-        vault: await useVaultStore().fullBundle(),
-        settings: { theme: this.userTheme },
-        session: loadPersisted('session')
-      }
-    },
-    async runConfigBackup(passphrase) {
-      const res = await window.api.backupConfig(await this._backupBundle(), passphrase)
-      if (res.ok) this.showNotice(`Configuration backed up to ${res.path}`)
-      else if (!res.canceled) this.showNotice('Backup failed.')
-    },
-    // `diffbro backup <path>`: same seal, written where the terminal said.
-    async runBackupTo(target, passphrase) {
-      const res = await window.api.backupConfigTo(await this._backupBundle(), passphrase, target)
-      if (res.ok) this.showNotice(`Backed up to ${res.path}`)
-      else this.showNotice(res.error ?? 'Backup failed.')
-      return res
-    },
-    async runConfigRestore(passphrase) {
-      const res = await window.api.restoreConfig(passphrase)
-      if (res.ok) {
-        if (res.snippets) await useSnippetStore().restoreBundle(res.snippets)
-        if (res.vault) await useVaultStore().restoreBundle(res.vault)
-        // Persisted, not applied live: replacing the comparisons on screen
-        // mid-restore is not what "restore my backup" asked for.
-        if (res.session) savePersisted('session', res.session)
-        if (res.settings?.theme) this.setTheme(res.settings.theme)
-        this.showNotice('Configuration restored — identity keys and trusted hosts are updated.')
-      } else if (res.error === 'wrong-passphrase') {
-        this.showNotice('Wrong passphrase, or the file is corrupted.')
-      } else if (res.error) {
-        this.showNotice('That file is not a Diff Bro configuration backup.')
-      }
     }
   }
 })

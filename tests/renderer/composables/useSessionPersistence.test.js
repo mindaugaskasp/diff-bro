@@ -7,6 +7,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
 import { useSessionPersistence } from '../../../src/renderer/src/composables/useSessionPersistence'
+import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
 
 const DELAY = 10
 let seals = 0
@@ -72,7 +73,7 @@ describe('useSessionPersistence', () => {
   it('ignores state that is not part of the comparison', async () => {
     const diff = useDiffStore()
     start()
-    diff.showSettingsDialog = true
+    useUiStore().showSettingsDialog = true
     diff.showNotice('saved')
     diff.stats = { additions: 1, deletions: 0 }
     await settle()

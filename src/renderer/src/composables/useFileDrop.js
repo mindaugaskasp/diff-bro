@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { dragIdsFrom } from '../utils/snippetSource'
 import { isSnippetDragType } from './useSnippetDrag'
+import { useShareStore } from '../features/share'
 
 // Load a dropped file's text into a tool input. getPathForFile registers the
 // path with main's read allowlist (src/main/files.js).
@@ -64,9 +65,9 @@ export function useWindowFileDrop(store, suppressed) {
   // A dropped key or sealed diff is not a comparison: each opens its own flow.
   async function dropPaths(paths, targetSide) {
     const keyPath = paths.find((p) => p.toLowerCase().endsWith('.diffbrokey'))
-    if (keyPath) return store.receiveDroppedKey(keyPath)
+    if (keyPath) return useShareStore().receiveDroppedKey(keyPath)
     const sharedPath = paths.find((p) => p.toLowerCase().endsWith('.diffbro'))
-    if (sharedPath) return store.receiveDroppedSharedDiff(sharedPath)
+    if (sharedPath) return useShareStore().receiveDroppedSharedDiff(sharedPath)
     return store.dropFiles(paths, targetSide)
   }
 

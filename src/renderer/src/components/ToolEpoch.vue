@@ -5,17 +5,17 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { nowEpoch, epochRows, pickToEpoch, nowLocalInput } from '../utils/epoch'
 import { isDarkTheme } from '../utils/themes'
-import { useDiffStore } from '../stores/diffStore'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
+import { useSettingsStore } from '../stores/settingsStore'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
-const diff = useDiffStore()
+const settings = useSettingsStore()
 // Theme the native date-picker dropdown (calendar + the HH:MM spinners); without
 // color-scheme it renders as a light widget on a dark surface.
 const colorScheme = computed(() =>
-  isDarkTheme(document.documentElement.dataset.theme || diff.theme) ? 'dark' : 'light'
+  isDarkTheme(document.documentElement.dataset.theme || settings.theme) ? 'dark' : 'light'
 )
 
 const UNITS = [

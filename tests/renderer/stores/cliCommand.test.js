@@ -8,6 +8,20 @@ import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
 import { MAX_TABS } from '../../../src/renderer/src/utils/tabs'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
+import { useConfigBackupStore } from '../../../src/renderer/src/features/configBackup'
+import { runCliCommand } from '../../../src/renderer/src/utils/commands'
+
+// Dispatch left the store for the command registry; what these assert is still
+// the effect a `diffbro …` launch has on real stores.
+const cli = (command) =>
+  runCliCommand(command, {
+    diff: useDiffStore(),
+    tabs: useTabsStore(),
+    settings: useSettingsStore(),
+    snippets: useSnippetStore(),
+    configBackup: useConfigBackupStore()
+  })
 
 const KEY = randomBytes(32)
 const FILE = (name) => ({ path: `/work/${name}`, name, content: `{"of":"${name}"}` })
@@ -34,7 +48,7 @@ describe('runCliCommand — compare', () => {
   it('loads one file into the left side of the empty tab it starts in', async () => {
     const store = useDiffStore()
     withTabs()
-    await store.runCliCommand({ name: 'compare', files: ['/work/a.json'] })
+    await cli({ name: 'compare', files: ['/work/a.json'] })
     expect(store.left?.name).toBe('a.json')
     expect(store.right).toBeNull()
   })
@@ -42,7 +56,7 @@ describe('runCliCommand — compare', () => {
   it('loads two files as the two sides', async () => {
     const store = useDiffStore()
     withTabs()
-    await store.runCliCommand({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
+    await cli({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
     expect([store.left?.name, store.right?.name]).toEqual(['a.json', 'b.json'])
     expect(store.ready).toBe(true)
   })
@@ -51,10 +65,10 @@ describe('runCliCommand — compare', () => {
   it('opens a new tab rather than replacing the comparison in the current one', async () => {
     const store = useDiffStore()
     const tabs = withTabs()
-    await store.runCliCommand({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
+    await cli({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
     expect(tabs.tabs).toHaveLength(1)
 
-    await store.runCliCommand({ name: 'compare', files: ['/work/c.json'] })
+    await cli({ name: 'compare', files: ['/work/c.json'] })
     expect(tabs.tabs).toHaveLength(2)
     expect(store.left?.name).toBe('c.json')
   })
@@ -65,12 +79,12 @@ describe('runCliCommand — compare', () => {
     // Fill every tab, so none of them is blank and no more can be added.
     for (let i = 0; i < MAX_TABS; i++) {
       if (i) tabs.newTab({ paste: false })
-      await store.runCliCommand({ name: 'compare', files: [`/work/f${i}.json`] })
+      await cli({ name: 'compare', files: [`/work/f${i}.json`] })
     }
     expect(tabs.tabs).toHaveLength(MAX_TABS)
     expect(tabs.canAdd).toBe(false)
 
-    await store.runCliCommand({ name: 'compare', files: ['/work/x.json', '/work/y.json'] })
+    await cli({ name: 'compare', files: ['/work/x.json', '/work/y.json'] })
     expect(tabs.tabs).toHaveLength(MAX_TABS)
     expect(store.cliBlocked).toContain('x.json and y.json')
     expect(store.cliBlocked).toContain(String(MAX_TABS))
@@ -88,7 +102,7 @@ describe('runCliCommand — a git merge with more conflicts than tabs', () => {
     `/tmp/diffbro-git-aB3/after/${name}`
   ]
   const openConflict = (store, name) =>
-    store.runCliCommand({ name: 'compare', files: conflict(name), transient: true })
+    cli({ name: 'compare', files: conflict(name), transient: true })
 
   // Read from the snapshots, not the titles: the ACTIVE tab's snapshot is stale
   // by design, so its title still says "Untitled" while it holds a comparison.
@@ -105,7 +119,7 @@ describe('runCliCommand — a git merge with more conflicts than tabs', () => {
     const store = useDiffStore()
     const tabs = withTabs()
     // Six tabs of the reader's OWN work — nothing here is safe to recycle.
-    await fillWith(store, (s, n) => s.runCliCommand({ name: 'compare', files: [`/work/${n}`] }))
+    await fillWith(store, (s, n) => cli({ name: 'compare', files: [`/work/${n}`] }))
     expect(tabs.canAdd).toBe(false)
 
     for (const name of ['f7.txt', 'f8.txt', 'f9.txt']) await openConflict(store, name)
@@ -140,7 +154,7 @@ describe('runCliCommand — a git merge with more conflicts than tabs', () => {
   it('never recycles a tab the reader opened themselves', async () => {
     const store = useDiffStore()
     const tabs = withTabs()
-    await fillWith(store, (s, n) => s.runCliCommand({ name: 'compare', files: [`/work/${n}`] }))
+    await fillWith(store, (s, n) => cli({ name: 'compare', files: [`/work/${n}`] }))
 
     await openConflict(store, 'f7.txt')
 
@@ -160,7 +174,7 @@ describe('runCliCommand — hostile paths', () => {
     const store = useDiffStore()
     withTabs()
     await expect(
-      store.runCliCommand({ name: 'compare', files: ['/work/dir'] })
+      cli({ name: 'compare', files: ['/work/dir'] })
     ).resolves.toBeUndefined()
     expect(store.left).toBeNull()
     expect(store.notice).toBeTruthy()
@@ -170,7 +184,7 @@ describe('runCliCommand — hostile paths', () => {
     window.api.readFile = async (p) => ({ error: 'binary', name: String(p).split('/').pop() })
     const store = useDiffStore()
     withTabs()
-    await store.runCliCommand({ name: 'compare', files: ['/work/logo.png'] })
+    await cli({ name: 'compare', files: ['/work/logo.png'] })
     expect(store.left).toBeNull()
     expect(store.notice).toMatch(/binary/i)
   })
@@ -184,7 +198,7 @@ describe('runCliCommand — hostile paths', () => {
         : { path: p, name: 'a.json', content: '{}' }
     const store = useDiffStore()
     withTabs()
-    await store.runCliCommand({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
+    await cli({ name: 'compare', files: ['/work/a.json', '/work/b.json'] })
     expect(store.left?.name).toBe('a.json')
     expect(store.right).toBeNull()
     expect(store.ready).toBe(false)
@@ -193,16 +207,14 @@ describe('runCliCommand — hostile paths', () => {
 
 describe('runCliCommand — snippets', () => {
   it('create snippet opens an empty editor', async () => {
-    const store = useDiffStore()
     withTabs()
-    await store.runCliCommand({ name: 'create-snippet' })
+    await cli({ name: 'create-snippet' })
     expect(useSnippetStore().editingSnippet).toMatchObject({ id: null, initialContent: '' })
   })
 
   it('cb save stores the clipboard under a timestamped name and opens it', async () => {
-    const store = useDiffStore()
     const snippets = useSnippetStore()
-    await store.runCliCommand({ name: 'clipboard-save', text: '{"a":1}' })
+    await cli({ name: 'clipboard-save', text: '{"a":1}' })
 
     const entry = snippets.entries.at(0)
     expect(entry.name).toMatch(/^Clipboard - \d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
@@ -213,7 +225,7 @@ describe('runCliCommand — snippets', () => {
   // Saving an empty snippet would be a silent no-op the user cannot explain.
   it('cb save says so rather than saving nothing', async () => {
     const store = useDiffStore()
-    await store.runCliCommand({ name: 'clipboard-save', text: '   ' })
+    await cli({ name: 'clipboard-save', text: '   ' })
     expect(useSnippetStore().entries).toHaveLength(0)
     expect(store.notice).toMatch(/clipboard is empty/i)
   })

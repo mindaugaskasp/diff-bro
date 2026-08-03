@@ -1,15 +1,36 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
+import { runCommand } from '../../../src/renderer/src/utils/commands'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
+import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
+import { useShareStore } from '../../../src/renderer/src/features/share'
+import { useConfigBackupStore } from '../../../src/renderer/src/features/configBackup'
+import { useImageExportStore } from '../../../src/renderer/src/features/imageExport'
 
 beforeEach(() => {
   setActivePinia(createPinia())
   localStorage.clear()
   window.api = {}
 })
+
+// Menu actions dispatch through the command registry now, not the store. These
+// stay here because what they assert is the real store effect, end to end.
+
+const menu = (action) =>
+  runCommand(action, {
+    diff: useDiffStore(),
+    tabs: useTabsStore(),
+    settings: useSettingsStore(),
+    ui: useUiStore(),
+    share: useShareStore(),
+    configBackup: useConfigBackupStore(),
+    imageExport: useImageExportStore(),
+    snippets: useSnippetStore()
+  })
 
 const FILE = (name) => ({ path: `/tmp/${name}`, name, content: `content of ${name}` })
 
@@ -125,90 +146,6 @@ describe('diffStore', () => {
     store.receivePasteFile('left', { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] })
     expect(store.pasteLeftFile).toBeNull()
     expect(store.notice).toContain('book.xlsx')
-  })
-
-  it('paste-to-compare: confirming reads the clipboard into the first empty side', async () => {
-    window.api = { readText: () => Promise.resolve('pasted body') }
-    const store = useDiffStore()
-    await store.requestPasteFromClipboard()
-    expect(store.pastePrompt).toBe('enter')
-    await store.confirmPasteEnter()
-    expect(store.mode).toBe('paste')
-    expect(store.pasteLeft).toBe('pasted body')
-    expect(store.pastePrompt).toBeNull()
-  })
-
-  it('paste-to-compare: fills the right side when the left already has content', async () => {
-    window.api = { readText: () => Promise.resolve('second') }
-    const store = useDiffStore()
-    store.pasteLeft = 'first'
-    await store.confirmPasteEnter()
-    expect(store.pasteRight).toBe('second')
-    expect(store.pastePrompt).toBeNull()
-  })
-
-  it('paste-to-compare: both sides full escalates to the overwrite confirm', async () => {
-    window.api = { readText: () => Promise.resolve('third') }
-    const store = useDiffStore()
-    store.pasteLeft = 'first'
-    store.pasteRight = 'second'
-    await store.confirmPasteEnter()
-    expect(store.pastePrompt).toBe('overwrite')
-    expect(store.pasteLeft).toBe('first') // nothing clobbered yet
-    store.confirmPasteOverwrite()
-    expect(store.pasteLeft).toBe('third') // left replaced, right kept
-    expect(store.pasteRight).toBe('second')
-    expect(store.pastePrompt).toBeNull()
-  })
-
-  it('paste-to-compare: an empty clipboard notices and does not enter a prompt', async () => {
-    window.api = { readText: () => Promise.resolve('   ') }
-    const store = useDiffStore()
-    await store.confirmPasteEnter()
-    expect(store.pastePrompt).toBeNull()
-    expect(store.notice).toContain('clipboard is empty')
-  })
-
-  it('paste-to-compare: with one file loaded, fills the EMPTY side and keeps the file', async () => {
-    window.api = { readText: () => Promise.resolve('pasted body') }
-    const store = useDiffStore()
-    store.left = FILE('a.txt') // files mode, only the left loaded
-    await store.confirmPasteEnter()
-    expect(store.mode).toBe('files') // stays in files mode, no paste-mode detour
-    expect(store.left.name).toBe('a.txt') // loaded file untouched
-    expect(store.right).toEqual({ path: null, name: 'Right (pasted)', content: 'pasted body' })
-    expect(store.ready).toBe(true) // immediate comparison
-    expect(store.pastePrompt).toBeNull()
-  })
-
-  it('paste-to-compare: mirrors for a right-only file (pastes into left)', async () => {
-    window.api = { readText: () => Promise.resolve('L') }
-    const store = useDiffStore()
-    store.right = FILE('b.txt')
-    await store.confirmPasteEnter()
-    expect(store.left).toEqual({ path: null, name: 'Left (pasted)', content: 'L' })
-    expect(store.right.name).toBe('b.txt')
-  })
-
-  it('paste-to-compare: both files loaded confirms, then overwrite replaces the left file', async () => {
-    window.api = { readText: () => Promise.resolve('new left') }
-    const store = useDiffStore()
-    store.left = FILE('a.txt')
-    store.right = FILE('b.txt')
-    await store.confirmPasteEnter()
-    expect(store.pastePrompt).toBe('overwrite')
-    expect(store.left.name).toBe('a.txt') // nothing clobbered yet
-    store.confirmPasteOverwrite()
-    expect(store.left).toEqual({ path: null, name: 'Left (pasted)', content: 'new left' })
-    expect(store.right.name).toBe('b.txt') // right kept
-  })
-
-  it('paste-to-compare: refuses (no prompt) when a spreadsheet is loaded', () => {
-    const store = useDiffStore()
-    store.left = { name: 'book.xlsx', kind: 'spreadsheet', sheets: [] }
-    store.requestPasteFromClipboard()
-    expect(store.pastePrompt).toBeNull()
-    expect(store.notice).toMatch(/spreadsheet/i)
   })
 
   it('swap exchanges the two sides', () => {
@@ -395,57 +332,40 @@ describe('diffStore', () => {
     store.left = FILE('a.txt')
     store.right = FILE('b.txt')
     store.diffSaved = true
-    store.handleMenuAction('clear')
+    menu('clear')
     expect(store.left).not.toBeNull()
     store.diffSaved = false
-    store.handleMenuAction('clear')
+    menu('clear')
     expect(store.left).toBeNull()
   })
 
   it('routes menu actions: toggle-split flips the view option', () => {
     const store = useDiffStore()
     const before = store.renderSideBySide
-    store.handleMenuAction('toggle-split')
+    menu('toggle-split')
     expect(store.renderSideBySide).toBe(!before)
   })
 
   it('only opens the save dialog when there is something to save', () => {
     const store = useDiffStore()
-    store.handleMenuAction('save')
+    menu('save')
     expect(store.showSaveDialog).toBe(false)
     store.mode = 'paste'
     store.pasteLeft = 'x'
-    store.handleMenuAction('save')
+    menu('save')
     expect(store.showSaveDialog).toBe(true)
-  })
-
-  it('shareCurrent explains itself instead of opening dialogs on an empty app', () => {
-    const store = useDiffStore()
-    store.shareCurrent()
-    expect(store.showSaveDialog).toBe(false)
-    expect(store.saveThenShare).toBe(false)
-    expect(store.notice).toContain('Nothing to share')
-  })
-
-  it('shareCurrent chains save → share when a diff is present', () => {
-    const store = useDiffStore()
-    store.mode = 'paste'
-    store.pasteLeft = 'x'
-    store.shareCurrent()
-    expect(store.showSaveDialog).toBe(true)
-    expect(store.saveThenShare).toBe(true)
   })
 
   it('routes menu actions: tools-base64/json/xml/sql/find-replace/crypt open their dialogs', () => {
-    const store = useDiffStore()
-    store.handleMenuAction('tools-base64')
-    expect(store.textTool).toBe('base64')
-    store.handleMenuAction('tools-json')
-    expect(store.textTool).toBe('json')
-    store.handleMenuAction('tools-xml')
-    expect(store.textTool).toBe('xml')
-    store.handleMenuAction('tools-crypt')
-    expect(store.showCryptDialog).toBe(true)
+    const ui = useUiStore()
+    menu('tools-base64')
+    expect(ui.textTool).toBe('base64')
+    menu('tools-json')
+    expect(ui.textTool).toBe('json')
+    menu('tools-xml')
+    expect(ui.textTool).toBe('xml')
+    menu('tools-crypt')
+    expect(ui.showCryptDialog).toBe(true)
   })
 
   it('surfaces a format hint for JSON/XML-shaped content and none for plain text', () => {
@@ -543,106 +463,13 @@ describe('diffStore', () => {
     expect(store.formatBanner).toBeNull()
   })
 
-  it('defaults to Light and toggleTheme flips the ground, persisting + stamping', () => {
-    const store = useDiffStore()
-    expect(store.theme).toBe('light') // Light is the default
-    store.toggleTheme()
-    expect(store.theme).toBe('dark')
-    expect(localStorage.getItem('diffbro.theme')).toBe('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    store.toggleTheme()
-    expect(store.theme).toBe('light')
-  })
-
-  it('setTheme applies any named theme and normalizes an unknown one to Light', () => {
-    const store = useDiffStore()
-    store.setTheme('neon')
-    expect(store.theme).toBe('neon')
-    expect(document.documentElement.dataset.theme).toBe('neon')
-    expect(localStorage.getItem('diffbro.theme')).toBe('neon')
-    // Ctrl+D from a dark-ground theme flips to Light.
-    store.toggleTheme()
-    expect(store.theme).toBe('light')
-    store.setTheme('bogus')
-    expect(store.theme).toBe('light')
-  })
-
-  it('daily rotation overrides the active theme but keeps the saved choice, reverting when off', async () => {
-    const { useSettingsStore } = await import('../../../src/renderer/src/stores/settingsStore')
-    const settings = useSettingsStore()
-    const store = useDiffStore()
-    store.setTheme('neon') // the user's saved pick
-
-    settings.setRotateThemeDaily(true)
-    store.resolveActiveTheme()
-    const { themeForDay } = await import('../../../src/renderer/src/utils/themes')
-    expect(store.theme).toBe(themeForDay()) // active is the day's theme
-    expect(store.userTheme).toBe('neon') // saved choice untouched
-
-    // Picking a theme while rotating saves it but doesn't override today's theme.
-    store.setTheme('solar')
-    expect(store.userTheme).toBe('solar')
-    expect(store.theme).toBe(themeForDay())
-
-    // Turning rotation off reverts to the saved choice.
-    settings.setRotateThemeDaily(false)
-    store.resolveActiveTheme()
-    expect(store.theme).toBe('solar')
-  })
-
-  it('adds a trusted key before clearing the pending state, then opens the manager', async () => {
-    const store = useDiffStore()
-    const seen = []
-    window.api = {
-      addTrustedKeyNamed: async (key, label) => {
-        // The naming dialog must still be up while the key is being stored —
-        // TrustedKeysDialog re-reads its list the moment this clears.
-        seen.push(store.pendingTrustedKey?.fingerprint ?? null)
-        return { ok: true, label, fingerprint: 'AB:CD', key }
-      }
-    }
-    store.pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
-    await store.confirmTrustedKey('Alice — laptop')
-    expect(seen).toEqual(['AB:CD'])
-    expect(store.pendingTrustedKey).toBeNull()
-    expect(store.showTrustedKeysDialog).toBe(true)
-    expect(store.notice).toContain('Alice — laptop')
-  })
-
-  it('leaves the manager closed when the key could not be added', async () => {
-    const store = useDiffStore()
-    window.api = { addTrustedKeyNamed: async () => ({ error: 'bad-key' }) }
-    store.pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
-    await store.confirmTrustedKey('Alice')
-    expect(store.pendingTrustedKey).toBeNull()
-    expect(store.showTrustedKeysDialog).toBe(false)
-  })
-  it('every menu action in the table runs without touching an unmapped one', () => {
-    const store = useDiffStore()
-    // An unknown action must be a no-op, not a throw: menu strings come from
-    // two places (main's menu and MenuBar.vue) and drift is survivable.
-    expect(() => store.handleMenuAction('no-such-action')).not.toThrow()
-    store.handleMenuAction('settings')
-    expect(store.showSettingsDialog).toBe(true)
-    store.handleMenuAction('manage-keys')
-    expect(store.showTrustedKeysDialog).toBe(true)
-    store.handleMenuAction('export-pubkey')
-    expect(store.showShareKeyDialog).toBe(true)
-    store.handleMenuAction('config-backup')
-    expect(store.configMode).toBe('backup')
-    store.handleMenuAction('config-restore')
-    expect(store.configMode).toBe('restore')
-    store.handleMenuAction('toggle-split')
-    expect(store.renderSideBySide).toBe(false)
-  })
-
   it('save from the menu only opens the dialog when there is something to save', () => {
     const store = useDiffStore()
-    store.handleMenuAction('save')
+    menu('save')
     expect(store.showSaveDialog).toBe(false)
     store.left = FILE('a.txt')
     store.right = FILE('b.txt')
-    store.handleMenuAction('save')
+    menu('save')
     expect(store.showSaveDialog).toBe(true)
   })
 
@@ -729,29 +556,6 @@ describe('diffStore', () => {
     expect(store.pasteRight).toBe('')
   })
 
-  it('a dropped public key opens the naming dialog instead of loading a diff', async () => {
-    const store = useDiffStore()
-    window.api = {
-      readKeyFile: async () => ({
-        ok: true,
-        key: { format: 'k', sign: 's', box: 'b' },
-        fingerprint: 'AB:CD',
-        defaultLabel: 'Alice'
-      })
-    }
-    await store.receiveDroppedKey('/tmp/alice.diffbrokey')
-    expect(store.pendingTrustedKey).toMatchObject({ fingerprint: 'AB:CD', label: 'Alice' })
-    expect(store.left).toBeNull()
-  })
-
-  it('refuses your own key with an explanation rather than adding it', async () => {
-    const store = useDiffStore()
-    window.api = { readKeyFile: async () => ({ error: 'own-key' }) }
-    await store.receiveDroppedKey('/tmp/mine.diffbrokey')
-    expect(store.pendingTrustedKey).toBeNull()
-    expect(store.notice).toContain('your own public key')
-  })
-
   it('dropping two files fills both sides in drop order', async () => {
     const store = useDiffStore()
     window.api = {
@@ -794,94 +598,6 @@ describe('diffStore', () => {
     store.showNotice('first')
     store.showNotice('second')
     expect(store.notice).toBe('second')
-  })
-  it('key export/copy close the dialog and explain the next step', async () => {
-    const store = useDiffStore()
-    store.showShareKeyDialog = true
-    window.api = { exportPublicKey: async () => ({ ok: true }) }
-    await store.runExportKey('Alice — laptop')
-    expect(store.showShareKeyDialog).toBe(false)
-    expect(store.notice).toContain('Add Trusted Key')
-
-    store.showShareKeyDialog = true
-    window.api = { copyPublicKey: async () => ({ ok: true }) }
-    await store.runCopyKey('Alice — laptop')
-    expect(store.showShareKeyDialog).toBe(false)
-    expect(store.notice).toContain('copied')
-  })
-
-  it('a cancelled key export leaves the dialog open', async () => {
-    const store = useDiffStore()
-    store.showShareKeyDialog = true
-    window.api = { exportPublicKey: async () => ({ canceled: true }) }
-    await store.runExportKey('x')
-    expect(store.showShareKeyDialog).toBe(true)
-  })
-
-  it('addTrustedKey turns each failure into its own message', async () => {
-    const store = useDiffStore()
-    window.api = { addTrustedKey: async () => ({ error: 'own-key' }) }
-    await store.addTrustedKey()
-    expect(store.notice).toContain('your own public key')
-    expect(store.pendingTrustedKey).toBeNull()
-
-    window.api = { addTrustedKey: async () => ({ error: 'not-a-key' }) }
-    await store.addTrustedKey()
-    expect(store.notice).toContain('not a valid public key')
-
-    window.api = { addTrustedKey: async () => ({ canceled: true }) }
-    store.notice = null
-    await store.addTrustedKey()
-    expect(store.notice).toBeNull() // cancelling says nothing
-  })
-
-  it('cancelTrustedKey drops the pending key without adding it', () => {
-    const store = useDiffStore()
-    store.pendingTrustedKey = { key: 'k', fingerprint: 'AB', label: 'Alice' }
-    store.cancelTrustedKey()
-    expect(store.pendingTrustedKey).toBeNull()
-  })
-
-  it('config backup reports where the file went, and names the failure otherwise', async () => {
-    const store = useDiffStore()
-    window.api = { backupConfig: async () => ({ ok: true, path: '/tmp/cfg.diffbroconf' }) }
-    await store.runConfigBackup('passphrase')
-    expect(store.notice).toContain('/tmp/cfg.diffbroconf')
-
-    window.api = { backupConfig: async () => ({ error: 'nope' }) }
-    await store.runConfigBackup('passphrase')
-    expect(store.notice).toBe('Backup failed.')
-
-    window.api = { backupConfig: async () => ({ canceled: true }) }
-    store.notice = null
-    await store.runConfigBackup('passphrase')
-    expect(store.notice).toBeNull()
-  })
-
-  it('config restore applies the backed-up theme and distinguishes a wrong passphrase', async () => {
-    const store = useDiffStore()
-    expect(store.theme).toBe('light')
-    window.api = {
-      restoreConfig: async () => ({ ok: true, snippets: null, settings: { theme: 'neon' } })
-    }
-    await store.runConfigRestore('passphrase')
-    expect(store.theme).toBe('neon')
-    expect(store.notice).toContain('Configuration restored')
-
-    window.api = { restoreConfig: async () => ({ error: 'wrong-passphrase' }) }
-    await store.runConfigRestore('nope')
-    expect(store.notice).toContain('Wrong passphrase')
-
-    window.api = { restoreConfig: async () => ({ error: 'not-a-config-file' }) }
-    await store.runConfigRestore('nope')
-    expect(store.notice).toContain('not a Diff Bro configuration backup')
-  })
-
-  it('shareCurrent refuses when there is nothing loaded', () => {
-    const store = useDiffStore()
-    store.shareCurrent()
-    expect(store.showSaveDialog).toBe(false)
-    expect(store.notice).toContain('Nothing to share yet')
   })
 
   it('identical is true only for two loaded sides whose diff has no changes', () => {
@@ -929,84 +645,6 @@ describe('diffStore', () => {
     store.left = FILE('a.txt')
     await store.copyDiff()
     expect(store.notice).toContain('before copying')
-  })
-
-  it('receiveDroppedSharedDiff imports a dropped .diffbro and opens it', async () => {
-    const store = useDiffStore()
-    const createdAt = Date.now() - 5000
-    const expiresAt = Date.now() + 5000
-    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
-    window.api.shareImportPath = async () => ({
-      ok: true,
-      from: 'alice',
-      entry: { name: 'from-drop', snapshot, createdAt, expiresAt }
-    })
-    // Minimal vault crypto round-trip so the just-imported entry re-opens.
-    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
-    window.api.vaultDecrypt = async (box) => box.data
-    await store.receiveDroppedSharedDiff('/tmp/x.diffbro')
-    expect(store.left).toMatchObject({ name: 'l.txt' })
-    expect(store.right).toMatchObject({ name: 'r.txt' })
-    expect(store.diffSaved).toBe(true) // opened from the vault — no unsaved prompt
-    expect(store.notice).toContain('from-drop')
-  })
-
-  it('receiveDroppedSharedDiff surfaces an import error and opens nothing', async () => {
-    const store = useDiffStore()
-    window.api.shareImportPath = async () => ({ error: 'not-for-you' })
-    await store.receiveDroppedSharedDiff('/tmp/x.diffbro')
-    expect(store.left).toBeNull()
-    expect(store.notice).toContain('different machine')
-  })
-
-  it('importShared opens the imported diff when nothing is on screen', async () => {
-    const store = useDiffStore()
-    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
-    window.api.shareImport = async () => ({
-      ok: true,
-      from: 'alice',
-      entry: { name: 'menu-import', snapshot, createdAt: Date.now(), expiresAt: Date.now() + 5000 }
-    })
-    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
-    window.api.vaultDecrypt = async (box) => box.data
-    await store.importShared()
-    expect(store.left).toMatchObject({ name: 'l.txt' })
-    expect(store.right).toMatchObject({ name: 'r.txt' })
-    expect(store.diffSaved).toBe(true) // opened from the vault
-    expect(store.notice).toContain('Opened')
-  })
-
-  it('importShared keeps the current diff and only files the import when one is active', async () => {
-    const store = useDiffStore()
-    store.left = FILE('mine-a.txt')
-    store.right = FILE('mine-b.txt')
-    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
-    window.api.shareImport = async () => ({
-      ok: true,
-      from: 'alice',
-      entry: { name: 'menu-import', snapshot, createdAt: Date.now(), expiresAt: Date.now() + 5000 }
-    })
-    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
-    let decrypted = false
-    window.api.vaultDecrypt = async (box) => ((decrypted = true), box.data)
-    await store.importShared()
-    // The view is untouched and the imported diff was never decrypted/opened.
-    expect(store.left).toMatchObject({ name: 'mine-a.txt' })
-    expect(decrypted).toBe(false)
-    expect(store.notice).toContain('External diffs')
-  })
-
-  it('confirmTrustedKey flags the freshly added key so the manager can highlight it', async () => {
-    const store = useDiffStore()
-    window.api.addTrustedKeyNamed = async (key, label) => ({
-      ok: true,
-      label,
-      fingerprint: 'AB:CD',
-      key
-    })
-    store.pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
-    await store.confirmTrustedKey('Alice')
-    expect(store.lastAddedTrustedFp).toBe('AB:CD')
   })
 
   it('copyDiff refuses a spreadsheet comparison instead of crashing', async () => {
@@ -1163,9 +801,9 @@ describe('diffStore', () => {
   })
 
   it('openFromQuickLook loads and restores a saved diff', async () => {
+    const store = useDiffStore()
     const payload = { mode: 'paste', pasteLeft: 'L', pasteRight: 'R', left: null, right: null }
     window.api.vaultDecrypt = async () => JSON.stringify(payload)
-    const store = useDiffStore()
     useVaultStore().entries.push({
       id: 'd1',
       name: 'diff',
@@ -1208,45 +846,62 @@ describe('closing the active comparison from the menu', () => {
     load(store)
     tabs.syncActiveTitle()
 
-    store.handleMenuAction('tab-close')
-    expect(store.pendingTabClose).toEqual([tabs.activeId])
+    menu('tab-close')
+    expect(tabs.pendingClose).toEqual([tabs.activeId])
     expect(tabs.tabs).toHaveLength(1)
 
-    store.confirmTabClose()
-    expect(store.pendingTabClose).toBeNull()
+    tabs.confirmClose()
+    expect(tabs.pendingClose).toBeNull()
     expect(store.left).toBeNull()
   })
 
   it('closes a saved or empty comparison without asking', () => {
-    const store = useDiffStore()
     const tabs = useTabsStore()
     tabs.init()
     tabs.open({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') }, { diffSaved: true })
     tabs.open({ mode: 'files', left: FILE('c.txt'), right: FILE('d.txt') }, { diffSaved: true })
 
-    store.handleMenuAction('tab-close')
-    expect(store.pendingTabClose).toBeNull()
+    menu('tab-close')
+    expect(tabs.pendingClose).toBeNull()
     expect(tabs.tabs).toHaveLength(1)
 
     // A blank tab holds nothing to lose either.
-    store.handleMenuAction('tab-close')
-    expect(store.pendingTabClose).toBeNull()
+    menu('tab-close')
+    expect(tabs.pendingClose).toBeNull()
   })
 
   it('opens and steps between comparisons from the menu', () => {
-    const store = useDiffStore()
     const tabs = useTabsStore()
     tabs.init()
-    load(store)
+    load(useDiffStore())
 
-    store.handleMenuAction('tab-new')
+    menu('tab-new')
     expect(tabs.tabs).toHaveLength(2)
     const [first, second] = tabs.tabs.map((t) => t.id)
     expect(tabs.activeId).toBe(second)
 
-    store.handleMenuAction('tab-next')
+    menu('tab-next')
     expect(tabs.activeId).toBe(first)
-    store.handleMenuAction('tab-prev')
+    menu('tab-prev')
     expect(tabs.activeId).toBe(second)
+  })
+  it('every menu action in the table runs without touching an unmapped one', () => {
+    const ui = useUiStore()
+    const store = useDiffStore()
+    // An unknown action must be a no-op, not a throw: menu strings come from
+    // two places (main's menu and MenuBar.vue) and drift is survivable.
+    expect(() => menu('no-such-action')).not.toThrow()
+    menu('settings')
+    expect(ui.showSettingsDialog).toBe(true)
+    menu('manage-keys')
+    expect(useShareStore().showTrustedKeysDialog).toBe(true)
+    menu('export-pubkey')
+    expect(useShareStore().showShareKeyDialog).toBe(true)
+    menu('config-backup')
+    expect(useConfigBackupStore().mode).toBe('backup')
+    menu('config-restore')
+    expect(useConfigBackupStore().mode).toBe('restore')
+    menu('toggle-split')
+    expect(store.renderSideBySide).toBe(false)
   })
 })

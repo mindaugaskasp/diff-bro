@@ -3,10 +3,14 @@
 // has a menu twin (menu.js / MenuBar.vue).
 import { computed } from 'vue'
 import { STREAMED_LIMITS, useDiffStore } from '../stores/diffStore'
+import { useImageExportStore } from '../features/imageExport'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
+import { useShareStore } from '../features/share'
 
 const store = useDiffStore()
+const share = useShareStore()
+const imageExport = useImageExportStore()
 
 // A disabled control has to say WHY, and a streamed comparison disables three of
 // them for the same underlying reason with three different consequences.
@@ -49,7 +53,7 @@ const pasteToggleTitle = computed(() =>
 // A grid has no line selection to narrow the picture to, so the tip drops that
 // half rather than promising something the viewer cannot do.
 const imageTitle = computed(() => {
-  if (!store.canExportImage) return 'Load two files to export an image'
+  if (!imageExport.canExportImage) return 'Load two files to export an image'
   if (store.isSpreadsheet) return 'Export this comparison as an image'
   return 'Export this diff as an image — select lines first to capture just those'
 })
@@ -120,7 +124,7 @@ const clearTitle = computed(() =>
           class="btn"
           :data-tip="shareTip"
           :disabled="!store.canSave"
-          @click="store.shareCurrent()"
+          @click="share.shareCurrent()"
         >
           Share
         </button>
@@ -135,8 +139,8 @@ const clearTitle = computed(() =>
         <button
           class="btn"
           :data-tip="imageTitle"
-          :disabled="!store.canExportImage"
-          @click="store.exportCurrentImage()"
+          :disabled="!imageExport.canExportImage"
+          @click="imageExport.exportCurrentImage()"
         >
           <AppIcon name="image" /> Capture
         </button>

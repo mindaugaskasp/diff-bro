@@ -11,8 +11,11 @@ import { diffEditorOptions } from '../utils/diffEditorOptions'
 import { diffLineStats } from '../utils/diffStats'
 import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
 import AppIcon from './AppIcon.vue'
+import { useSettingsStore } from '../stores/settingsStore'
 
 const store = useDiffStore()
+
+const settings = useSettingsStore()
 const container = ref(null)
 
 let editor = null
@@ -38,7 +41,7 @@ onMounted(() => {
   editor = monaco.editor.createDiffEditor(
     container.value,
     diffEditorOptions({
-      dark: isDarkTheme(store.theme),
+      dark: isDarkTheme(settings.theme),
       renderSideBySide: store.renderSideBySide,
       ignoreTrimWhitespace: store.ignoreTrimWhitespace
     })
@@ -62,7 +65,7 @@ watch(
   }
 )
 watch(
-  () => store.theme,
+  () => settings.theme,
   (theme) => monaco.editor.setTheme(isDarkTheme(theme) ? 'vs-dark' : 'vs')
 )
 

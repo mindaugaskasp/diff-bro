@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitest/config'
+// A feature slice's index.js is its whole surface, components included, so a
+// test importing the slice pulls a .vue in. Renderer .vue files stay outside
+// the coverage set — this only lets them parse.
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: { 'monaco-editor': new URL('tests/stubs/monaco-editor.js', import.meta.url).pathname }
+  },
   test: {
     // jsdom gives the store tests localStorage/document; the crypto tests
     // only need Node and run fine under it too.
@@ -48,6 +56,9 @@ export default defineConfig({
         'src/main/streamWindow.js',
         'src/main/xlsx/**',
         'src/renderer/src/stores/**',
+        // A slice's store is shipped logic like any other; without this line
+        // moving one out of stores/ would raise coverage by measuring less.
+        'src/renderer/src/features/**/*.js',
         'src/renderer/src/utils/**',
         'src/renderer/src/adapters/**'
       ]

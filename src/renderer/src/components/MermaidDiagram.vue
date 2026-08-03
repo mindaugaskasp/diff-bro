@@ -2,7 +2,6 @@
 // The SVG is inserted with DOMParser + replaceChildren, never innerHTML/v-html
 // (rule 7); Mermaid already sanitized it at securityLevel 'strict'.
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { diagramPaperFor, effectiveDiagramMode } from '../utils/mermaid'
 import { renderMermaid } from '../composables/useMermaid'
@@ -13,20 +12,18 @@ const props = defineProps({
   debounce: { type: Number, default: 250 }
 })
 const emit = defineEmits(['rendered', 'error'])
-
-const diff = useDiffStore()
 const settings = useSettingsStore()
 const host = ref(null)
 const error = ref('')
 const loading = ref(false)
-const mode = computed(() => effectiveDiagramMode(diff.theme, settings.diagramTheme))
+const mode = computed(() => effectiveDiagramMode(settings.theme, settings.diagramTheme))
 // The mode the SVG ON SCREEN was drawn for, which lags `mode` by one async
 // render. The paper is computed from THAT, not from the preference: flipping the
 // ground the moment the button is pressed leaves the old diagram — drawn for the
 // opposite ground — sitting on the new sheet for a few hundred ms. Deriving it
 // from the painted mode also keeps an app-theme flip correct with no re-render.
 const painted = ref(mode.value)
-const paper = computed(() => diagramPaperFor(diff.theme, painted.value))
+const paper = computed(() => diagramPaperFor(settings.theme, painted.value))
 let timer = null
 // Only the newest render may touch the DOM (a fast edit can outrace an old one).
 let renderSeq = 0

@@ -5,6 +5,7 @@
 // against a trusted key at import (openSealed rejects any other), so it's honest.
 import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
+import { useImageExportStore } from '../features/imageExport'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useTabsStore } from '../stores/tabsStore'
@@ -13,6 +14,7 @@ import { languageMonogram } from '../utils/languageMonogram'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
+import { useShareStore } from '../features/share'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').VaultEntry>} */
@@ -20,6 +22,8 @@ const props = defineProps({
 })
 
 const vault = useVaultStore()
+const share = useShareStore()
+const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const snippets = useSnippetStore()
 const tabs = useTabsStore()
@@ -109,7 +113,7 @@ async function open() {
         class="row-btn"
         data-tip="Export this diff as a picture (PNG)"
         aria-label="Export as image"
-        @click="diff.exportImage(entry.id)"
+        @click="imageExport.exportImage(entry.id)"
       >
         <AppIcon name="image" />
       </button>
@@ -126,7 +130,7 @@ async function open() {
         class="row-btn"
         data-tip="Seal this diff for one trusted recipient"
         aria-label="Share as sealed file"
-        @click="diff.shareEntry(entry.id)"
+        @click="share.shareEntry(entry.id)"
       >
         <AppIcon name="share" />
       </button>

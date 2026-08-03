@@ -610,32 +610,30 @@ describe('requestClose', () => {
     diff.right = FILE('precious2.txt')
 
     tabs.requestClose(tabs.activeId)
-    expect(diff.pendingTabClose).toEqual([tabs.activeId])
+    expect(tabs.pendingClose).toEqual([tabs.activeId])
     expect(tabs.tabs).toHaveLength(2)
   })
 
   it('closes a saved or empty tab without asking', () => {
-    const diff = useDiffStore()
     const tabs = withTabs(comparison('a.txt', 'a2.txt'))
     tabs.newTab()
 
     tabs.requestClose(tabs.activeId)
-    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.pendingClose).toBeNull()
     expect(tabs.tabs).toHaveLength(1)
   })
 
   it('asks about a background tab from its snapshot, and ignores one that is gone', () => {
-    const diff = useDiffStore()
     const tabs = withTabs(comparison('a.txt', 'a2.txt'))
     const first = tabs.activeId
     tabs.open(comparison('b.txt', 'b2.txt'), { diffSaved: true })
 
     tabs.requestClose(first)
-    expect(diff.pendingTabClose).toEqual([first])
+    expect(tabs.pendingClose).toEqual([first])
 
-    diff.pendingTabClose = null
+    tabs.pendingClose = null
     tabs.requestClose('tab-gone')
-    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.pendingClose).toBeNull()
     expect(tabs.tabs).toHaveLength(2)
   })
 })
@@ -696,38 +694,35 @@ describe('closing several tabs at once', () => {
   })
 
   it('asks ONCE for a bulk close, listing every unsaved tab it would take', () => {
-    const diff = useDiffStore()
     const tabs = withTabs(comparison('a.txt', 'a2.txt'))
     saved(tabs, 'saved.txt', 'saved2.txt')
     tabs.open(comparison('dirty1.txt', 'x.txt'))
     tabs.open(comparison('dirty2.txt', 'y.txt'))
 
     tabs.requestMenuAction(tabs.tabs[1].id, 'close-right')
-    expect(diff.pendingTabClose).toHaveLength(2)
+    expect(tabs.pendingClose).toHaveLength(2)
     expect(tabs.tabs).toHaveLength(4)
 
-    diff.confirmTabClose()
-    expect(diff.pendingTabClose).toBeNull()
+    tabs.confirmClose()
+    expect(tabs.pendingClose).toBeNull()
     expect(tabs.tabs).toHaveLength(2)
   })
 
   it('closes without asking when nothing in the set is unsaved', () => {
-    const diff = useDiffStore()
     const tabs = fourSaved()
     tabs.requestMenuAction(tabs.tabs[0].id, 'close-right')
-    expect(diff.pendingTabClose).toBeNull()
+    expect(tabs.pendingClose).toBeNull()
     expect(tabs.tabs).toHaveLength(1)
   })
 
   it('keeps every tab when the prompt is declined', () => {
-    const diff = useDiffStore()
     const tabs = withTabs(comparison('a.txt', 'a2.txt'))
     tabs.open(comparison('dirty.txt', 'x.txt'))
     tabs.requestMenuAction(tabs.tabs[0].id, 'close-all')
-    expect(diff.pendingTabClose).toBeTruthy()
+    expect(tabs.pendingClose).toBeTruthy()
 
-    diff.cancelTabClose()
-    expect(diff.pendingTabClose).toBeNull()
+    tabs.cancelClose()
+    expect(tabs.pendingClose).toBeNull()
     expect(tabs.tabs).toHaveLength(2)
   })
 
@@ -735,7 +730,7 @@ describe('closing several tabs at once', () => {
     const tabs = fourSaved()
     tabs.requestMenuAction(tabs.tabs[0].id, 'close-left')
     expect(tabs.tabs).toHaveLength(4)
-    expect(useDiffStore().pendingTabClose).toBeNull()
+    expect(tabs.pendingClose).toBeNull()
   })
 })
 
@@ -859,7 +854,9 @@ describe('comparisons too large to reopen', () => {
 
 // Clearing empties the comparison, but the tab went on claiming to BE the saved
 // diff it no longer held — and open() focuses a tab already showing an entry
-// rather than loading it, so the saved diff could not be opened again.
+// rather than loading it, so the saved diff could not be opened again. Clearing
+// spans both stores, so it lives on the tab store — the one allowed to read the
+// core.
 describe('clearing a tab opened from the vault', () => {
   it('lets the saved diff be opened again afterwards', () => {
     const diff = useDiffStore()
@@ -867,7 +864,7 @@ describe('clearing a tab opened from the vault', () => {
     tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
     expect(tabs.active.entryId).toBe('vault-1')
 
-    diff.clear()
+    tabs.clearActive()
     expect(tabs.active.entryId).toBe(null)
 
     tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
@@ -876,17 +873,16 @@ describe('clearing a tab opened from the vault', () => {
   })
 
   it('does not leave a hollow tab standing in for the entry', () => {
-    const diff = useDiffStore()
     const tabs = withTabs()
     tabs.open(comparison('a.json', 'b.json'), { diffSaved: true, entryId: 'vault-7' })
-    diff.clear()
+    tabs.clearActive()
     expect(tabs.tabs.filter((t) => t.entryId === 'vault-7')).toHaveLength(0)
   })
 
   it('leaves an unlinked tab alone', () => {
     const diff = useDiffStore()
     const tabs = withTabs(comparison('scratch.txt', 'scratch2.txt'))
-    diff.clear()
+    tabs.clearActive()
     expect(tabs.active.entryId ?? null).toBe(null)
     expect(diff.left).toBeNull()
   })

@@ -3,11 +3,11 @@
 import { computed, ref } from 'vue'
 import { matchesTags } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
-import { useDiffStore } from '../stores/diffStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
+import { useShareStore } from '../features/share'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -19,7 +19,7 @@ const props = defineProps({
 })
 
 const vault = useVaultStore()
-const diff = useDiffStore()
+const share = useShareStore()
 
 const open = ref(true)
 const q = computed(() => props.search.trim().toLowerCase())
@@ -41,7 +41,7 @@ const hasImported = computed(() => vault.importedActive.length > 0)
 // Expand the section, then run the import flow.
 function startImport() {
   open.value = true
-  diff.importShared()
+  share.importShared()
 }
 </script>
 

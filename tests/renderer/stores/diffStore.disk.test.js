@@ -2,12 +2,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { DISK_NOTICE_MS, useDiffStore } from '../../../src/renderer/src/stores/diffStore'
+import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
+import { runCommand } from '../../../src/renderer/src/utils/commands'
 
 beforeEach(() => {
   setActivePinia(createPinia())
   localStorage.clear()
   window.api = {}
 })
+
+// Menu actions dispatch through the command registry now, not the store. These
+// stay here because what they assert is the real store effect, end to end.
+const menu = (action) =>
+  runCommand(action, {
+    diff: useDiffStore(),
+    tabs: useTabsStore(),
+    settings: useSettingsStore()
+  })
 
 const FILE = (name) => ({ path: `/tmp/${name}`, name, content: `content of ${name}` })
 
@@ -90,7 +102,7 @@ describe('saving the same comparison twice', () => {
     expect(store.canSave).toBe(true) // there is still a comparison to share
     expect(store.hasUnsavedWork).toBe(false)
 
-    store.handleMenuAction('save')
+    menu('save')
     expect(store.showSaveDialog).toBe(false)
   })
 

@@ -7,8 +7,10 @@ import { useTabsStore } from '../stores/tabsStore'
 import { useSaveDiffTarget } from '../composables/useSaveDiffTarget'
 import BaseDialog from './BaseDialog.vue'
 import TagChipsField from './TagChipsField.vue'
+import { useShareStore } from '../features/share'
 
 const diff = useDiffStore()
+const share = useShareStore()
 const snippets = useSnippetStore()
 const tabs = useTabsStore()
 // A comparison already in the vault is rewritten, not saved a second time.
@@ -42,10 +44,10 @@ async function save() {
   // "Share" flow: don't persist yet — capture the draft and go to the recipient
   // picker. The local copy + sealed file are written together only when the share
   // completes (diffStore.shareTo), so cancelling anywhere leaves nothing behind.
-  if (diff.saveThenShare) {
-    diff.saveThenShare = false
+  if (share.saveThenShare) {
+    share.saveThenShare = false
     diff.showSaveDialog = false
-    diff.beginShareDraft({
+    share.beginShareDraft({
       name: name.value.trim(),
       ttlHours: secure.value ? ttl.value : null,
       snapshot: diff.snapshot(),
@@ -81,17 +83,17 @@ async function save() {
 
 // An update rewrites the diff this tab already is; a save makes a new one.
 const dialogTitle = computed(() => {
-  if (diff.saveThenShare) return 'Share diff — step 1 of 2: save it'
+  if (share.saveThenShare) return 'Share diff — step 1 of 2: save it'
   return isUpdate.value ? 'Update diff' : 'Save diff'
 })
 const submitLabel = computed(() => {
-  if (diff.saveThenShare) return 'Next: choose recipient'
+  if (share.saveThenShare) return 'Next: choose recipient'
   return isUpdate.value ? 'Update' : 'Save'
 })
 
 function cancel() {
   diff.showSaveDialog = false
-  diff.saveThenShare = false
+  share.saveThenShare = false
   // Cancelling the save abandons a pending "save-then-replace/pick" too.
   diff.replaceAfterSave = null
   diff.pickAfterSave = null

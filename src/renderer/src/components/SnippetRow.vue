@@ -3,6 +3,7 @@
 // with a language monogram so the row is recognizable before the name is read.
 import { computed } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
+import { useImageExportStore } from '../features/imageExport'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { languageMonogram } from '../utils/languageMonogram'
@@ -13,6 +14,7 @@ import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 import { useSnippetDrag } from '../composables/useSnippetDrag'
+import { useUiStore } from '../stores/uiStore'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
@@ -21,6 +23,9 @@ const props = defineProps({
 })
 
 const store = useSnippetStore()
+
+const ui = useUiStore()
+const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 const { startDrag } = useSnippetDrag()
@@ -47,7 +52,7 @@ async function copySnippet(id) {
 }
 async function viewDiagram(entry) {
   const code = await store.load(entry.id)
-  if (code != null) diff.openMermaid(entry.name, code)
+  if (code != null) ui.openMermaid(entry.name, code)
 }
 // Opening is gated by the main-process claude.ai allowlist; this only offers a
 // candidate URL from the snippet.
@@ -155,7 +160,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
         class="row-btn"
         :data-tip="isDiagram ? 'Capture the diagram' : 'Capture'"
         aria-label="Export as image"
-        @click="diff.exportSnippetImage(entry.id)"
+        @click="imageExport.exportSnippetImage(entry.id)"
       >
         <AppIcon name="image" />
       </button>

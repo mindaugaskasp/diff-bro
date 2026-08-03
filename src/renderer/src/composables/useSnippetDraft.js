@@ -2,10 +2,12 @@ import { computed, ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useImageExportStore } from '../features/imageExport'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { formatJson, formatXml } from '../utils/textFormats'
 import { formatSql } from '../utils/sqlFormat'
 import { repairMermaid } from '../utils/mermaid'
+import { useUiStore } from '../stores/uiStore'
 
 // Mermaid's entry repairs rather than pretty-prints — see repairMermaid.
 const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql, mermaid: repairMermaid }
@@ -174,13 +176,13 @@ export function useSnippetDraft() {
     if (!editing.id) return
     const id = editing.id
     close()
-    diff.exportSnippetImage(id)
+    useImageExportStore().exportSnippetImage(id)
   }
 
   function expandDiagram() {
     if (!content.value.trim()) return
     // Close the editor first, or it would stack over the viewer.
-    diff.openMermaid(name.value.trim() || 'Diagram', content.value)
+    useUiStore().openMermaid(name.value.trim() || 'Diagram', content.value)
     close()
   }
 

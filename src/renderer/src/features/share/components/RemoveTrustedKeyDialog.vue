@@ -2,37 +2,37 @@
 // Confirms removing a trusted key. Opens on top of the trusted-keys manager
 // (like AddTrustedKeyDialog); the manager re-fetches when this closes.
 import { computed } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import { useVaultStore } from '../stores/vaultStore'
-import { ago } from '../utils/relativeTime'
-import BaseDialog from './BaseDialog.vue'
+import { useShareStore } from '../shareStore'
+import { useVaultStore } from '../../../stores/vaultStore'
+import { ago } from '../../../utils/relativeTime'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
-const diff = useDiffStore()
+const share = useShareStore()
 const vault = useVaultStore()
 
 // What this key has actually been sent. Removing it does nothing to those —
 // they are already on someone else's machine — so the point of showing them is
 // that the reader knows their exposure while they decide.
-const sent = computed(() => vault.sharedWith(diff.pendingUntrust?.fingerprint ?? ''))
+const sent = computed(() => vault.sharedWith(share.pendingUntrust?.fingerprint ?? ''))
 
 async function confirm() {
-  const k = diff.pendingUntrust
+  const k = share.pendingUntrust
   if (k) {
-    if (diff.lastAddedTrustedFp === k.fingerprint) diff.lastAddedTrustedFp = null
+    if (share.lastAddedTrustedFp === k.fingerprint) share.lastAddedTrustedFp = null
     await window.api.removeTrusted(k.fingerprint)
   }
-  diff.pendingUntrust = null
+  share.pendingUntrust = null
 }
 function cancel() {
-  diff.pendingUntrust = null
+  share.pendingUntrust = null
 }
 </script>
 
 <template>
   <BaseDialog width="420px" title="Remove trusted key?" :closable="false" @close="cancel">
     <p class="dialog-note">
-      Remove <strong>“{{ diff.pendingUntrust.label }}”</strong> from your trusted keys? You won't be
-      able to open sealed diffs signed by it, or share to it, until you re-add its
+      Remove <strong>“{{ share.pendingUntrust.label }}”</strong> from your trusted keys? You won't
+      be able to open sealed diffs signed by it, or share to it, until you re-add its
       <code>.diffbrokey</code>.
     </p>
 

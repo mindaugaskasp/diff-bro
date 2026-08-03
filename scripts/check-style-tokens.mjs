@@ -11,11 +11,14 @@
 //   * a `/* token-exempt: why */` comment on the line before the declaration
 //   * files listed in EXEMPT_FILES below
 import { readFileSync, readdirSync } from 'fs'
+import { featureStyleDirs } from './lib/featureDirs.mjs'
 import { dirname, join, relative } from 'path'
 import { fileURLToPath } from 'url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const STYLE_DIRS = ['src/renderer/src/components/styles']
+// A slice keeps its CSS beside its components; without this line that CSS
+// leaves the guard silently.
+const STYLE_DIRS = ['src/renderer/src/components/styles', ...featureStyleDirs()]
 // tokens.css defines the palette, so it is the one place literals belong.
 // base.css and ui.css are the system itself.
 const EXEMPT_FILES = new Set(['DiffViewer.global.css'])

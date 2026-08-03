@@ -157,3 +157,8 @@ export function readEnvelope(raw) {
 // What "no session" looks like on disk: written when the last comparison is
 // closed, so the next launch opens clean instead of on a stale one.
 export const EMPTY_ENVELOPE = JSON.stringify({ version: SESSION_VERSION })
+
+// The session file is sealed with the vault key, like a saved diff — it holds
+// the same thing (whole file contents), so it is stored the same way. The AAD
+// binds it to this store and shape, so a box lifted from anywhere else fails.
+export const SESSION_AAD = 'session|v1'

@@ -361,3 +361,48 @@ describe('the collapsed sidebar', () => {
     expect(useSettingsStore().sidebarCollapsed).toBe(false)
   })
 })
+
+describe('theme', () => {
+  it('defaults to Light and toggleTheme flips the ground, persisting + stamping', () => {
+    const s = useSettingsStore()
+    expect(s.theme).toBe('light') // Light is the default
+    s.toggleTheme()
+    expect(s.theme).toBe('dark')
+    expect(localStorage.getItem('diffbro.theme')).toBe('dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    s.toggleTheme()
+    expect(s.theme).toBe('light')
+  })
+  it('setTheme applies any named theme and normalizes an unknown one to Light', () => {
+    const s = useSettingsStore()
+    s.setTheme('neon')
+    expect(s.theme).toBe('neon')
+    expect(document.documentElement.dataset.theme).toBe('neon')
+    expect(localStorage.getItem('diffbro.theme')).toBe('neon')
+    // Ctrl+D from a dark-ground theme flips to Light.
+    s.toggleTheme()
+    expect(s.theme).toBe('light')
+    s.setTheme('bogus')
+    expect(s.theme).toBe('light')
+  })
+  it('daily rotation overrides the active theme but keeps the saved choice, reverting when off', async () => {
+    const s = useSettingsStore()
+    s.setTheme('neon') // the user's saved pick
+
+    s.setRotateThemeDaily(true)
+    s.resolveActiveTheme()
+    const { themeForDay } = await import('../../../src/renderer/src/utils/themes')
+    expect(s.theme).toBe(themeForDay()) // active is the day's theme
+    expect(s.userTheme).toBe('neon') // saved choice untouched
+
+    // Picking a theme while rotating saves it but doesn't override today's theme.
+    s.setTheme('solar')
+    expect(s.userTheme).toBe('solar')
+    expect(s.theme).toBe(themeForDay())
+
+    // Turning rotation off reverts to the saved choice.
+    s.setRotateThemeDaily(false)
+    s.resolveActiveTheme()
+    expect(s.theme).toBe('solar')
+  })
+})

@@ -1,18 +1,20 @@
 // Image export: the screenshot pipeline, its failure paths and the grid it
-// photographs. Split out of diffStore.test.js — every feature was appending to
-// the end of one 2700-line file, which made three merge conflicts that carried
-// no information.
+// photographs. Moved here with the slice it covers; the notices it asserts land
+// on the core store, which is the one thing this slice reaches for.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
-import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
-import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
-import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { useDiffStore } from '../../../../src/renderer/src/stores/diffStore'
+import { useImageExportStore } from '../../../../src/renderer/src/features/imageExport'
+import { useVaultStore } from '../../../../src/renderer/src/stores/vaultStore'
+import { useSettingsStore } from '../../../../src/renderer/src/stores/settingsStore'
+import { useSnippetStore } from '../../../../src/renderer/src/stores/snippetStore'
 import {
   elementScroller,
   getDiffScroller,
   setDiffScroller
-} from '../../../src/renderer/src/utils/diffScroller'
+} from '../../../../src/renderer/src/utils/diffScroller'
+
+const imageExport = () => useImageExportStore()
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -56,35 +58,33 @@ describe('exportImage (saved diffs only)', () => {
       return CAPTURE
     }
 
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
 
     expect(shot).toEqual(['a.txt', 'b.txt'])
     expect(rect).toEqual({ x: 260, y: 88, width: 900, height: 640 })
-    expect(store.imageEntry).toMatchObject({ id, name: 'Nightly config', ...CAPTURE })
-    expect(store.imageCapturing).toBe(false)
+    expect(imageExport().imageEntry).toMatchObject({ id, name: 'Nightly config', ...CAPTURE })
+    expect(imageExport().imageCapturing).toBe(false)
     cleanup()
   })
 
   it('keeps the app out of its own screenshot while the shutter is open', async () => {
     const cleanup = stageViewer()
-    const store = useDiffStore()
     const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
     let capturingDuringShot = null
     window.api.captureDiffImage = async () => {
-      capturingDuringShot = store.imageCapturing
+      capturingDuringShot = imageExport().imageCapturing
       return CAPTURE
     }
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
     // App.vue hides the toast and the shortcut bar off this flag — they float
     // inside the captured region, so they must be gone when the shot is taken.
     expect(capturingDuringShot).toBe(true)
-    expect(store.imageCapturing).toBe(false)
+    expect(imageExport().imageCapturing).toBe(false)
     cleanup()
   })
 
   it('waits for frames to pass before capturing, so Monaco has repainted', async () => {
     const cleanup = stageViewer()
-    const store = useDiffStore()
     const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
     let framesBeforeShot = 0
     let frames = 0
@@ -93,7 +93,7 @@ describe('exportImage (saved diffs only)', () => {
       setTimeout(cb, 0)
     }
     window.api.captureDiffImage = async () => ((framesBeforeShot = frames), CAPTURE)
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
     expect(framesBeforeShot).toBeGreaterThan(1)
     cleanup()
   })
@@ -116,7 +116,7 @@ describe('exportImage (saved diffs only)', () => {
     let revisionAtShot = null
     window.api.captureDiffImage = async () => ((revisionAtShot = store.diffRevision), CAPTURE)
 
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
 
     expect(revisionAtShot).toBe(1)
     cleanup()
@@ -153,7 +153,6 @@ describe('exportImage (saved diffs only)', () => {
 
     it('scrolls through the diff and stitches the strips into one picture', async () => {
       const cleanup = stageTallViewer({ contentHeight: 1400 })
-      const store = useDiffStore()
       const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
       const appended = []
       window.api.captureDiffImage = async () => {
@@ -165,7 +164,7 @@ describe('exportImage (saved diffs only)', () => {
       }
       window.api.stitchDiffImage = async () => CAPTURE
 
-      await store.exportImage(id)
+      await imageExport().exportImage(id)
 
       // 1400px of diff over a 588px pane: two full viewports, then a 224px tail
       // shot at the scroll clamp (1400 - 588 = 812) and cropped to its bottom.
@@ -175,25 +174,23 @@ describe('exportImage (saved diffs only)', () => {
       expect(appended[0].rect).toEqual({ x: 260, y: 88, width: 900, height: 52 + 588 })
       expect(appended[1].rect).toEqual({ x: 260, y: 140, width: 900, height: 588 })
       expect(appended[2].rect).toEqual({ x: 260, y: 140 + 364, width: 900, height: 224 })
-      expect(store.imageEntry).toMatchObject({ id, ...CAPTURE, truncated: false })
+      expect(imageExport().imageEntry).toMatchObject({ id, ...CAPTURE, truncated: false })
       cleanup()
     })
 
     it('puts the reader back where they were when the shutter closes', async () => {
       const cleanup = stageTallViewer({ contentHeight: 1400 })
-      const store = useDiffStore()
       const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
       getDiffScroller().scrollTo(300)
       window.api.appendDiffImageSlice = async () => ({ ok: true })
       window.api.stitchDiffImage = async () => CAPTURE
-      await store.exportImage(id)
+      await imageExport().exportImage(id)
       expect(getDiffScroller().scrollTop()).toBe(300)
       cleanup()
     })
 
     it('stops slicing at the configured ceiling and admits the picture is cut short', async () => {
       const cleanup = stageTallViewer({ contentHeight: 200_000 })
-      const store = useDiffStore()
       const settings = useSettingsStore()
       settings.setMaxExportHeightPx(2940) // five 588px viewports
       const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
@@ -203,9 +200,9 @@ describe('exportImage (saved diffs only)', () => {
         return { ok: true }
       }
       window.api.stitchDiffImage = async () => CAPTURE
-      await store.exportImage(id)
+      await imageExport().exportImage(id)
       expect(covered).toBe(2940)
-      expect(store.imageEntry.truncated).toBe(true)
+      expect(imageExport().imageEntry.truncated).toBe(true)
       cleanup()
     })
 
@@ -217,7 +214,6 @@ describe('exportImage (saved diffs only)', () => {
         setActivePinia(createPinia())
         const cleanup = stageTallViewer({ contentHeight: 200_000 })
         window.devicePixelRatio = dpr
-        const store = useDiffStore()
         useSettingsStore().setMaxExportHeightPx(2940)
         window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
         window.api.vaultDecrypt = async (box) => box.data
@@ -232,7 +228,7 @@ describe('exportImage (saved diffs only)', () => {
           return { ok: true }
         }
         window.api.stitchDiffImage = async () => CAPTURE
-        await store.exportImage(id)
+        await imageExport().exportImage(id)
         cleanup()
         return total
       }
@@ -247,9 +243,9 @@ describe('exportImage (saved diffs only)', () => {
       window.api.appendDiffImageSlice = async (_r, reset) =>
         reset ? { ok: true } : { error: 'bad-rect' }
       window.api.stitchDiffImage = async () => ((stitched = true), CAPTURE)
-      await store.exportImage(id)
+      await imageExport().exportImage(id)
       expect(stitched).toBe(false)
-      expect(store.imageEntry).toBeNull()
+      expect(imageExport().imageEntry).toBeNull()
       expect(store.notice).toContain('Could not take a picture')
       cleanup()
     })
@@ -305,7 +301,7 @@ describe('exportImage (saved diffs only)', () => {
         throw new Error('a selection must not fall back to the whole-column shot')
       }
 
-      await store.exportCurrentImage()
+      await imageExport().exportCurrentImage()
 
       expect(rects).toHaveLength(1)
       // Scrolled to the top of the selection; the header rides above it.
@@ -313,7 +309,7 @@ describe('exportImage (saved diffs only)', () => {
         rect: { x: 260, y: 88, width: 900, height: 52 + 300 },
         reset: true
       })
-      expect(store.imageEntry).toMatchObject({ id: null, name: 'a.txt ↔ b.txt' })
+      expect(imageExport().imageEntry).toMatchObject({ id: null, name: 'a.txt ↔ b.txt' })
       cleanup()
     })
 
@@ -327,7 +323,7 @@ describe('exportImage (saved diffs only)', () => {
       const rects = []
       window.api.appendDiffImageSlice = async (rect) => (rects.push(rect), { ok: true })
       window.api.stitchDiffImage = async () => CAPTURE
-      await store.exportCurrentImage()
+      await imageExport().exportCurrentImage()
       // 4000 - 588 = 3412 is as far as it scrolls, so the band sits 388px down.
       expect(getDiffScroller().scrollTop()).toBe(0) // and it is put back after
       expect(rects[0].height).toBe(52 + 200)
@@ -340,9 +336,9 @@ describe('exportImage (saved diffs only)', () => {
       loaded(store)
       let rect = null
       window.api.captureDiffImage = async (r) => ((rect = r), CAPTURE)
-      await store.exportCurrentImage()
+      await imageExport().exportCurrentImage()
       expect(rect).toEqual({ x: 260, y: 88, width: 900, height: 640 })
-      expect(store.imageEntry).toMatchObject({ id: null })
+      expect(imageExport().imageEntry).toMatchObject({ id: null })
       cleanup()
     })
 
@@ -352,9 +348,9 @@ describe('exportImage (saved diffs only)', () => {
       store.mode = 'paste'
       let called = false
       window.api.captureDiffImage = async () => ((called = true), CAPTURE)
-      await store.exportCurrentImage()
+      await imageExport().exportCurrentImage()
       expect(called).toBe(false)
-      expect(store.imageEntry).toBeNull()
+      expect(imageExport().imageEntry).toBeNull()
       expect(store.notice).toContain('Nothing to export')
       cleanup()
     })
@@ -368,8 +364,8 @@ describe('exportImage (saved diffs only)', () => {
     store.right = FILE('other.txt')
     let called = false
     window.api.captureDiffImage = async () => ((called = true), CAPTURE)
-    await store.exportImage('no-such-id')
-    expect(store.imageEntry).toBeNull()
+    await imageExport().exportImage('no-such-id')
+    expect(imageExport().imageEntry).toBeNull()
     expect(called).toBe(false)
     cleanup()
   })
@@ -390,7 +386,7 @@ describe('exportImage (saved diffs only)', () => {
       shot = [store.left?.name, store.right?.name]
       return CAPTURE
     }
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
     expect(shot).toEqual(['saved-l.txt', 'saved-r.txt'])
     // ...and the comparison the user was working on is handed straight back.
     expect(store.left).toMatchObject({ name: 'onscreen-l.txt' })
@@ -406,9 +402,9 @@ describe('exportImage (saved diffs only)', () => {
     window.api.vaultDecrypt = async () => null
     let called = false
     window.api.captureDiffImage = async () => ((called = true), CAPTURE)
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
     expect(called).toBe(false)
-    expect(store.imageEntry).toBeNull()
+    expect(imageExport().imageEntry).toBeNull()
     expect(store.notice).toContain('expired or could not be decrypted')
     cleanup()
   })
@@ -418,9 +414,9 @@ describe('exportImage (saved diffs only)', () => {
     const store = useDiffStore()
     const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
     window.api.captureDiffImage = async () => ({ error: 'bad-rect' })
-    await store.exportImage(id)
-    expect(store.imageEntry).toBeNull()
-    expect(store.imageCapturing).toBe(false)
+    await imageExport().exportImage(id)
+    expect(imageExport().imageEntry).toBeNull()
+    expect(imageExport().imageCapturing).toBe(false)
     expect(store.notice).toContain('Could not take a picture')
     cleanup()
   })
@@ -431,9 +427,9 @@ describe('exportImage (saved diffs only)', () => {
     const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
     let called = false
     window.api.captureDiffImage = async () => ((called = true), CAPTURE)
-    await store.exportImage(id) // no .content element staged
+    await imageExport().exportImage(id) // no .content element staged
     expect(called).toBe(false)
-    expect(store.imageEntry).toBeNull()
+    expect(imageExport().imageEntry).toBeNull()
     expect(store.notice).toContain('Could not take a picture')
   })
 
@@ -446,7 +442,7 @@ describe('exportImage (saved diffs only)', () => {
       expect(args).toHaveLength(0)
       return { ok: true }
     }
-    expect(await store.copyImage()).toBe(true)
+    expect(await imageExport().copyImage()).toBe(true)
     expect(called).toBe(1)
     expect(store.notice).toContain('copied to clipboard')
   })
@@ -454,19 +450,19 @@ describe('exportImage (saved diffs only)', () => {
   it('copyImage reports a refusal rather than claiming success', async () => {
     const store = useDiffStore()
     window.api.copyDiffImage = async () => ({ ok: false, error: 'nothing-captured' })
-    expect(await store.copyImage()).toBe(false)
+    expect(await imageExport().copyImage()).toBe(false)
     expect(store.notice).toContain('Could not copy')
   })
 
   it('saveImage names the file after the saved diff and says where it landed', async () => {
     const store = useDiffStore()
-    store.imageEntry = { id: 'x', name: 'Nightly config' }
+    imageExport().imageEntry = { id: 'x', name: 'Nightly config' }
     let sentName = null
     window.api.saveDiffImage = async (name) => {
       sentName = name
       return { ok: true, path: '/tmp/Nightly config.png' }
     }
-    await store.saveImage()
+    await imageExport().saveImage()
     expect(sentName).toBe('Nightly config')
     expect(store.notice).toContain('/tmp/Nightly config.png')
   })
@@ -474,24 +470,23 @@ describe('exportImage (saved diffs only)', () => {
   it('saveImage stays quiet when the save dialog was cancelled', async () => {
     const store = useDiffStore()
     window.api.saveDiffImage = async () => ({ canceled: true })
-    await store.saveImage()
+    await imageExport().saveImage()
     expect(store.notice).toBeNull()
   })
 
   it('saveImage surfaces a failed write', async () => {
     const store = useDiffStore()
     window.api.saveDiffImage = async () => ({ ok: false, error: 'nothing-captured' })
-    await store.saveImage()
+    await imageExport().saveImage()
     expect(store.notice).toContain('Could not save')
   })
 
   it('closing the preview tells main to drop the bitmap it was holding', async () => {
-    const store = useDiffStore()
     let forgotten = false
     window.api.forgetDiffImage = async () => ((forgotten = true), { ok: true })
-    store.imageEntry = { id: 'x', name: 'n', dataUrl: 'data:image/png;base64,SHOT' }
-    store.closeImageExport()
-    expect(store.imageEntry).toBeNull()
+    imageExport().imageEntry = { id: 'x', name: 'n', dataUrl: 'data:image/png;base64,SHOT' }
+    imageExport().closeImageExport()
+    expect(imageExport().imageEntry).toBeNull()
     expect(forgotten).toBe(true)
   })
 })
@@ -516,11 +511,11 @@ describe('exportImage failure handling', () => {
       throw new Error('IPC exploded')
     }
 
-    await store.exportImage(id)
+    await imageExport().exportImage(id)
 
     // A stuck flag would hide the shortcut bar for the rest of the session.
-    expect(store.imageCapturing).toBe(false)
-    expect(store.imageEntry).toBeNull()
+    expect(imageExport().imageCapturing).toBe(false)
+    expect(imageExport().imageEntry).toBeNull()
     expect(store.notice).toContain('Could not take a picture')
     el.remove()
   })
@@ -547,7 +542,7 @@ describe('exportSnippetImage', () => {
     let seen = 0
     window.requestAnimationFrame = (cb) => {
       seen++
-      if (seen === frames && store.snippetShot) store.snippetShot[mark] = true
+      if (seen === frames && imageExport().snippetShot) imageExport().snippetShot[mark] = true
       setTimeout(cb, 0)
     }
     return () => seen
@@ -572,18 +567,18 @@ describe('exportSnippetImage', () => {
     paintAfter(store, 2)
     let staged = null
     window.api.captureDiffImage = async () => {
-      staged = store.snippetShot && { ...store.snippetShot }
+      staged = imageExport().snippetShot && { ...imageExport().snippetShot }
       return CAPTURE
     }
 
-    await store.exportSnippetImage(id)
+    await imageExport().exportSnippetImage(id)
 
     // The snippet really was on screen when the shutter opened...
     expect(staged).toMatchObject({ name: 'Deploy steps', lang: 'json', code: '{ "a": 1 }' })
-    expect(store.imageEntry).toMatchObject({ id, name: 'Deploy steps', subject: 'snippet' })
+    expect(imageExport().imageEntry).toMatchObject({ id, name: 'Deploy steps', subject: 'snippet' })
     // ...and the column is the user's again afterwards.
-    expect(store.snippetShot).toBeNull()
-    expect(store.imageCapturing).toBe(false)
+    expect(imageExport().snippetShot).toBeNull()
+    expect(imageExport().imageCapturing).toBe(false)
     cleanup()
   })
 
@@ -598,9 +593,9 @@ describe('exportSnippetImage', () => {
     paintAfter(store, 2)
     window.api.captureDiffImage = async () => CAPTURE
 
-    await store.exportSnippetImage(id)
+    await imageExport().exportSnippetImage(id)
 
-    expect(store.imageEntry).toMatchObject({ name: 'Flow', subject: 'diagram' })
+    expect(imageExport().imageEntry).toMatchObject({ name: 'Flow', subject: 'diagram' })
     cleanup()
   })
 
@@ -615,10 +610,10 @@ describe('exportSnippetImage', () => {
     let framesAtShot = null
     window.api.captureDiffImage = async () => ((framesAtShot = frames()), CAPTURE)
 
-    await store.exportSnippetImage(id)
+    await imageExport().exportSnippetImage(id)
 
     expect(framesAtShot).toBeGreaterThanOrEqual(30)
-    expect(store.imageEntry).toMatchObject({ subject: 'snippet' })
+    expect(imageExport().imageEntry).toMatchObject({ subject: 'snippet' })
     cleanup()
   })
 
@@ -630,12 +625,12 @@ describe('exportSnippetImage', () => {
     let shots = 0
     window.api.captureDiffImage = async () => (shots++, CAPTURE)
 
-    await store.exportSnippetImage(id)
+    await imageExport().exportSnippetImage(id)
 
     expect(shots).toBe(0)
-    expect(store.imageEntry).toBeNull()
+    expect(imageExport().imageEntry).toBeNull()
     expect(store.notice).toContain('could not be rendered')
-    expect(store.snippetShot).toBeNull()
+    expect(imageExport().snippetShot).toBeNull()
     cleanup()
   })
 
@@ -651,12 +646,12 @@ describe('exportSnippetImage', () => {
     let shots = 0
     window.api.captureDiffImage = async () => (shots++, CAPTURE)
 
-    await store.exportSnippetImage(id)
+    await imageExport().exportSnippetImage(id)
 
     expect(decrypts).toBe(0)
     expect(shots).toBe(0)
-    expect(store.imageEntry).toBeNull()
-    expect(store.snippetShot).toBeNull()
+    expect(imageExport().imageEntry).toBeNull()
+    expect(imageExport().snippetShot).toBeNull()
     expect(store.notice).toContain('Hidden')
     cleanup()
   })
@@ -670,11 +665,11 @@ describe('exportSnippetImage', () => {
       throw new Error('IPC exploded')
     }
 
-    await store.exportSnippetImage(id)
+    await imageExport().exportSnippetImage(id)
 
-    expect(store.snippetShot).toBeNull()
-    expect(store.imageCapturing).toBe(false)
-    expect(store.imageEntry).toBeNull()
+    expect(imageExport().snippetShot).toBeNull()
+    expect(imageExport().imageCapturing).toBe(false)
+    expect(imageExport().imageEntry).toBeNull()
     expect(store.notice).toContain('Could not take a picture')
     cleanup()
   })
@@ -703,7 +698,7 @@ describe('image export and the spreadsheet grid', () => {
     store.left = grid('a.xlsx')
     store.right = grid('b.xlsx')
     expect(store.isSpreadsheet).toBe(true)
-    expect(store.canExportImage).toBe(true)
+    expect(imageExport().canExportImage).toBe(true)
   })
 
   it('is still offered for a text comparison', () => {
@@ -711,7 +706,7 @@ describe('image export and the spreadsheet grid', () => {
     store.left = FILE('a.txt')
     store.right = FILE('b.txt')
     expect(store.isSpreadsheet).toBe(false)
-    expect(store.canExportImage).toBe(true)
+    expect(imageExport().canExportImage).toBe(true)
   })
 
   it('scrolls and stitches the grid the way it does a tall diff', async () => {
@@ -737,10 +732,10 @@ describe('image export and the spreadsheet grid', () => {
     }
     window.api.stitchDiffImage = async () => SHOT
 
-    await store.exportCurrentImage()
+    await imageExport().exportCurrentImage()
 
     expect(tops).toHaveLength(3)
-    expect(store.imageEntry).toMatchObject({ ...SHOT, hiddenColumns: 0 })
+    expect(imageExport().imageEntry).toMatchObject({ ...SHOT, hiddenColumns: 0 })
     column.remove()
     setDiffScroller(null)
   })
@@ -765,9 +760,9 @@ describe('image export and the spreadsheet grid', () => {
     setDiffScroller(elementScroller(() => grids))
     window.api.captureDiffImage = async () => SHOT
 
-    await store.exportCurrentImage()
+    await imageExport().exportCurrentImage()
 
-    expect(store.imageEntry?.hiddenColumns).toBe(2)
+    expect(imageExport().imageEntry?.hiddenColumns).toBe(2)
     column.remove()
     setDiffScroller(null)
   })
@@ -777,7 +772,7 @@ describe('image export and the spreadsheet grid', () => {
 // it used to replace it, mark it saved (so no discard prompt could fire), and
 // leave the tab claiming to hold a comparison it no longer had.
 describe('exportImage', () => {
-  const seedEntry = async (store) => {
+  const seedEntry = async () => {
     const vault = useVaultStore()
     vault.entries = [{ id: 'e1', name: 'saved one' }]
     vault.load = async () => ({
@@ -785,35 +780,35 @@ describe('exportImage', () => {
       left: FILE('old-left.txt'),
       right: FILE('old-right.txt')
     })
-    store._shoot = async () => ({ dataUrl: 'data:image/png;base64,zzz' })
+    imageExport()._shoot = async () => ({ dataUrl: 'data:image/png;base64,zzz' })
     return vault
   }
 
   it('leaves unsaved work on screen exactly as it was', async () => {
     const store = useDiffStore()
-    await seedEntry(store)
+    await seedEntry()
     store.mode = 'paste'
     store.pasteLeft = 'work in progress'
     store.pasteRight = 'other side'
     store.diffSaved = false
 
-    await store.exportImage('e1')
+    await imageExport().exportImage('e1')
 
     expect(store.mode).toBe('paste')
     expect(store.pasteLeft).toBe('work in progress')
     expect(store.pasteRight).toBe('other side')
     expect(store.diffSaved).toBe(false)
-    expect(store.imageEntry).toMatchObject({ id: 'e1', name: 'saved one' })
+    expect(imageExport().imageEntry).toMatchObject({ id: 'e1', name: 'saved one' })
   })
 
   it('restores a loaded file comparison, not just paste text', async () => {
     const store = useDiffStore()
-    await seedEntry(store)
+    await seedEntry()
     store.left = FILE('live-left.txt')
     store.right = FILE('live-right.txt')
     store.diffSaved = false
 
-    await store.exportImage('e1')
+    await imageExport().exportImage('e1')
 
     expect(store.left.name).toBe('live-left.txt')
     expect(store.right.name).toBe('live-right.txt')
@@ -822,17 +817,17 @@ describe('exportImage', () => {
 
   it('puts the live document back even when the shot fails', async () => {
     const store = useDiffStore()
-    await seedEntry(store)
-    store._shoot = async () => ({ error: 'capture-failed' })
+    await seedEntry()
+    imageExport()._shoot = async () => ({ error: 'capture-failed' })
     store.mode = 'paste'
     store.pasteLeft = 'work in progress'
     store.diffSaved = false
 
-    await store.exportImage('e1')
+    await imageExport().exportImage('e1')
 
     expect(store.pasteLeft).toBe('work in progress')
     expect(store.diffSaved).toBe(false)
-    expect(store.imageEntry).toBeNull()
+    expect(imageExport().imageEntry).toBeNull()
     expect(store.notice).toBeTruthy()
   })
 })

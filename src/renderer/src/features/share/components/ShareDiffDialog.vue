@@ -1,11 +1,11 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import BaseDialog from './BaseDialog.vue'
+import { useShareStore } from '../shareStore'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
 // Recipient picker with built-in first-time key-exchange setup (reusing the
 // Security-menu flows). Keys are generated automatically on first use.
-const diff = useDiffStore()
+const share = useShareStore()
 
 const recipients = ref([])
 // A set, not a single pick: one file can be sealed for a whole team.
@@ -38,22 +38,22 @@ async function refresh(preferFp) {
 
 // Refresh the recipient list once the "Add trusted key" dialog closes.
 watch(
-  () => diff.pendingTrustedKey,
+  () => share.pendingTrustedKey,
   (val, old) => {
-    if (old && !val) refresh(diff.lastAddedTrustedFp)
+    if (old && !val) refresh(share.lastAddedTrustedFp)
   }
 )
 
 function close() {
-  diff.shareEntryId = null
-  diff.shareDraft = null
+  share.shareEntryId = null
+  share.shareDraft = null
 }
 </script>
 
 <template>
   <!-- Normal case: at least one trusted recipient exists. -->
   <BaseDialog v-if="recipients.length" width="400px" title="Share diff" @close="close">
-    <form class="dialog-form" @submit.prevent="diff.shareTo(selected)">
+    <form class="dialog-form" @submit.prevent="share.shareTo(selected)">
       <div class="field-label">Seal for</div>
       <ul class="recipients">
         <li v-for="r in recipients" :key="r.fingerprint">
@@ -77,7 +77,7 @@ function close() {
         It expires at the same moment as your local copy.
       </p>
       <div class="dialog-actions">
-        <button type="button" class="btn btn-sm" @click="diff.addTrustedKey()">
+        <button type="button" class="btn btn-sm" @click="share.addTrustedKey()">
           Add recipient…
         </button>
         <span class="spacer" />
@@ -104,7 +104,7 @@ function close() {
         <strong>Give them your key</strong>
         <span class="step-hint">Name it and send it — they import it to receive your diffs.</span>
       </div>
-      <button type="button" class="btn btn-sm" @click="diff.showShareKeyDialog = true">
+      <button type="button" class="btn btn-sm" @click="share.showShareKeyDialog = true">
         Share my key…
       </button>
     </div>
@@ -115,7 +115,7 @@ function close() {
         <strong>Add their key</strong>
         <span class="step-hint">Open the <code>.diffbrokey</code> file they sent you.</span>
       </div>
-      <button type="button" class="btn btn-sm btn-primary" @click="diff.addTrustedKey()">
+      <button type="button" class="btn btn-sm btn-primary" @click="share.addTrustedKey()">
         Add their key…
       </button>
     </div>

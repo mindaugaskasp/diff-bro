@@ -1,7 +1,7 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
-import { useDiffStore } from '../stores/diffStore'
+import { useUiStore } from '../stores/uiStore'
 
 // Hover preview: decrypt on demand, debounced (only the row the pointer settles
 // on costs a vault:decrypt), briefly cached. Renders via interpolation, never v-html.
@@ -16,7 +16,7 @@ const CARD_WIDTH = 640
  */
 export function useSnippetPreview() {
   const store = useSnippetStore()
-  const diff = useDiffStore()
+  const ui = useUiStore()
   const preview = ref(null) // { id, name, tags, lang, text, style }
   const cache = new Map()
   let hoverTimer = null
@@ -90,7 +90,7 @@ export function useSnippetPreview() {
     const { id, name } = preview.value
     preview.value = null
     const code = await store.load(id)
-    if (code != null) diff.openMermaid(name, code)
+    if (code != null) ui.openMermaid(name, code)
   }
 
   // The editor is the only path that mutates content, so dropping the cache when

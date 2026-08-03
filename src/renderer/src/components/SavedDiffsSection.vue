@@ -6,8 +6,8 @@ import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { tabsFullNotice } from '../utils/tabs'
 import AppIcon from './AppIcon.vue'
+import { tabsFullNotice } from '../utils/tabNotices'
 
 const props = defineProps({
   first: { type: Boolean, default: false },

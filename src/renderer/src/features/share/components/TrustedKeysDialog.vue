@@ -1,10 +1,10 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import BaseDialog from './BaseDialog.vue'
-import AppIcon from './AppIcon.vue'
+import { useShareStore } from '../shareStore'
+import BaseDialog from '../../../components/BaseDialog.vue'
+import AppIcon from '../../../components/AppIcon.vue'
 
-const diff = useDiffStore()
+const share = useShareStore()
 const keys = ref([])
 const editingFp = ref(null)
 const editLabel = ref('')
@@ -15,7 +15,7 @@ async function refresh() {
 onMounted(refresh)
 
 // Re-fetch after the "name this key" or "remove key?" dialog closes.
-watch([() => diff.pendingTrustedKey, () => diff.pendingUntrust], ([a, b]) => {
+watch([() => share.pendingTrustedKey, () => share.pendingUntrust], ([a, b]) => {
   if (!a && !b) refresh()
 })
 
@@ -33,12 +33,12 @@ async function commitRename() {
 }
 function addKey() {
   // Opens the OS file picker, then the naming dialog on top of this one.
-  diff.addTrustedKey()
+  share.addTrustedKey()
 }
 function close() {
   // Drop the "just added" highlight so re-opening the manager later starts clean.
-  diff.lastAddedTrustedFp = null
-  diff.showTrustedKeysDialog = false
+  share.lastAddedTrustedFp = null
+  share.showTrustedKeysDialog = false
 }
 </script>
 
@@ -63,7 +63,7 @@ function close() {
           v-for="k in keys"
           :key="k.fingerprint"
           class="key"
-          :class="{ added: diff.lastAddedTrustedFp === k.fingerprint }"
+          :class="{ added: share.lastAddedTrustedFp === k.fingerprint }"
         >
           <div class="key-body">
             <input
@@ -80,7 +80,7 @@ function close() {
             <span v-else class="label">{{ k.label }}</span>
             <span class="fp">{{ k.fingerprint }}</span>
           </div>
-          <span v-if="diff.lastAddedTrustedFp === k.fingerprint" class="added-badge">Added</span>
+          <span v-if="share.lastAddedTrustedFp === k.fingerprint" class="added-badge">Added</span>
           <button
             class="icon"
             data-tip="Rename this key"
@@ -93,7 +93,7 @@ function close() {
             class="icon delete"
             data-tip="Stop trusting this key"
             aria-label="Remove"
-            @click="diff.pendingUntrust = k"
+            @click="share.pendingUntrust = k"
           >
             <AppIcon name="x" />
           </button>

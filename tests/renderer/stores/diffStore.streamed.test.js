@@ -1,6 +1,8 @@
 // Comparisons too large to hold in memory.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { useImageExportStore } from '../../../src/renderer/src/features/imageExport'
+import { useShareStore } from '../../../src/renderer/src/features/share'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 
 beforeEach(() => {
@@ -68,7 +70,7 @@ describe('diffStore — streamed comparisons', () => {
 
   it('refuses to share, since sharing goes through saving', () => {
     const store = loadStreamed(useDiffStore())
-    store.shareCurrent()
+    useShareStore().shareCurrent()
     expect(store.showSaveDialog).toBe(false)
     expect(store.notice).toBeTruthy()
   })
@@ -98,9 +100,11 @@ describe('diffStore — streamed comparisons', () => {
   })
 
   // Deliberately still allowed: the streamed viewer registers a scroller, so a
-  // picture of what is on screen is a real picture.
+  // picture of what is on screen is a real picture. The question is the image
+  // slice's, asked of core state.
   it('still allows an image export', () => {
-    expect(loadStreamed(useDiffStore()).canExportImage).toBe(true)
+    loadStreamed(useDiffStore())
+    expect(useImageExportStore().canExportImage).toBe(true)
   })
 
   it('refuses a streamed file dropped into a paste side', () => {

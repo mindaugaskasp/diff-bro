@@ -1,14 +1,14 @@
 <script setup>
 import { computed } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import BaseDialog from './BaseDialog.vue'
+import { usePasteToCompareStore } from '../pasteToCompareStore'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
-const store = useDiffStore()
-const overwrite = computed(() => store.pastePrompt === 'overwrite')
+const paste = usePasteToCompareStore()
+const overwrite = computed(() => paste.prompt === 'overwrite')
 
 function confirm() {
-  if (overwrite.value) store.confirmPasteOverwrite()
-  else store.confirmPasteEnter()
+  if (overwrite.value) paste.confirmOverwrite()
+  else paste.confirmEnter()
 }
 </script>
 
@@ -16,7 +16,7 @@ function confirm() {
   <BaseDialog
     width="420px"
     :title="overwrite ? 'Overwrite pasted text?' : 'Paste detected'"
-    @close="store.cancelPaste()"
+    @close="paste.cancel()"
   >
     <p v-if="overwrite" class="dialog-note">
       Both sides already have content. Paste your clipboard into the left side, replacing it? What's
@@ -27,7 +27,7 @@ function confirm() {
       paste comparison), and is only read after you confirm.
     </p>
     <template #actions>
-      <button class="btn btn-ghost" @click="store.cancelPaste()">Cancel</button>
+      <button class="btn btn-ghost" @click="paste.cancel()">Cancel</button>
       <button class="btn btn-primary" @click="confirm">
         {{ overwrite ? 'Overwrite' : 'Paste' }}
       </button>
