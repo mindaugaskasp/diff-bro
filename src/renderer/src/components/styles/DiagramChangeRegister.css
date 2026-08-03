@@ -24,6 +24,7 @@
      it read as a band rather than a slightly different stripe. */
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
   font-size: var(--font-2xs);
   font-weight: 600;
   letter-spacing: 0.09em;

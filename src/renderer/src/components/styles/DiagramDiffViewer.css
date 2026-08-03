@@ -11,6 +11,7 @@
   overflow: hidden;
 }
 .dg-legend {
+  background: var(--bg-panel);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -64,6 +65,7 @@
   min-height: 0;
 }
 .dg-stage {
+  background: var(--bg);
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -181,6 +183,7 @@
   gap: var(--space-2);
   margin: 0;
   padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   border-left: 3px solid var(--dg-chg);
   background: var(--bg-elevated);
