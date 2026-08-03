@@ -81,7 +81,7 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     await expect(page.locator('.dg-register')).toContainText('Enrich')
     await expect(page.locator('.dg-register')).toContainText('Reject')
     // The rail groups nodes from edges, as the design proposal specifies.
-    await expect(page.locator('.dg-register .reghead').first()).toContainText('Changes')
+    await expect(page.locator('.dg-register .reghead').first()).toContainText('Nodes')
     // The legend carries a glyph per status, not colour alone.
     await expect(page.locator('.dg-legend .lgchip')).toHaveCount(4)
   } finally {

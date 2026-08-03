@@ -173,14 +173,18 @@
 /* Side by side, driven by the app's own Split view toggle. The drift note is
    the honest caveat: two dagre layouts place unchanged nodes independently, so
    a node that did not move can still appear to. */
+/* The amber is a RULE, not the text. --dg-chg is floored at 3:1 as a stroke;
+   used as body text it scores 2.14 on light and fails on ten of the fourteen
+   themes — the same trap the standards record for accent-coloured labels. */
 .dg-drift {
   display: flex;
   gap: var(--space-2);
   margin: 0;
   padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--dg-chg);
   background: var(--bg-elevated);
-  color: var(--dg-chg);
+  color: var(--text);
   font-size: var(--font-xs);
 }
 .dg-stage.split .dg-zoom {

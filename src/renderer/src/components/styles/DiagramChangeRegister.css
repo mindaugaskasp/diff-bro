@@ -1,5 +1,6 @@
-/* A right-hand rail, not a footer: the register is read ALONGSIDE the picture —
-   a row names a change you then look for in the diagram. */
+/* A reading rail beside the picture, not a control strip: a row names a change
+   you then look for in the diagram. Nothing here is clickable, so nothing here
+   pretends to be — the earlier buttons offered a press that did nothing. */
 .dg-register {
   width: 232px;
   flex: none;
@@ -8,69 +9,79 @@
   background: var(--bg-panel);
 }
 .reghead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
-  height: var(--band-row);
+  gap: var(--space-2);
+  height: var(--control-h);
+  margin: 0;
   padding: 0 var(--space-3);
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
-  font-size: var(--font-xs);
+  font-size: var(--font-2xs);
+  font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
-.reghead ~ .reghead {
-  border-top: 1px solid var(--border);
+.count {
+  margin-left: auto;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
+.reglist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* One line per change. The mark carries the status in colour AND glyph, so the
+   name itself stays plain text — bolding every row made none of them stand out. */
 .regrow {
   display: flex;
-  width: 100%;
-  gap: var(--space-2);
   align-items: baseline;
-  text-align: left;
-  padding: 8px var(--space-3);
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  /* The status stripe, so the rail scans by colour before it is read. */
-  border-left: 3px solid transparent;
+  gap: var(--space-2);
+  padding: 5px var(--space-3);
   color: var(--text);
-  font-family: inherit;
   font-size: var(--font-sm);
-  cursor: pointer;
+  line-height: 1.35;
 }
-.regrow:hover {
-  background: var(--bg-hover);
-}
-.regrow b {
-  font-weight: 600;
-}
-.regrow em {
-  display: block;
-  font-style: normal;
-  color: var(--text-dim);
-  font-size: var(--font-xs);
+.regrow + .regrow {
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
 }
 .rmark {
   flex: none;
+  width: 0.75em;
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
   font-weight: 700;
+  text-align: center;
 }
-.regrow.add {
-  border-left-color: var(--dg-add);
+.rname {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
-.regrow.add .rmark {
+.arrow {
+  color: var(--text-dim);
+}
+/* The only thing that earns emphasis: what a changed node used to say. */
+.rwas {
+  margin-left: auto;
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-2xs);
+}
+.add .rmark {
   color: var(--dg-add);
 }
-.regrow.del {
-  border-left-color: var(--dg-del);
-}
-.regrow.del .rmark {
+.del .rmark {
   color: var(--dg-del);
 }
-.regrow.chg {
-  border-left-color: var(--dg-chg);
-}
-.regrow.chg .rmark {
+.chg .rmark {
   color: var(--dg-chg);
+}
+/* A removed row is quieter than the rest — it is history, not the new state. */
+.del .rname {
+  color: var(--text-dim);
 }

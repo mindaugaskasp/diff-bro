@@ -5,6 +5,7 @@ import { modelFrom } from '../utils/diagramModel'
 import { diffDiagrams } from '../utils/diagramDiff'
 import { unionSource } from '../utils/diagramUnion'
 import { focusDiff } from '../utils/diagramFocus'
+import { naturalWidthOf } from '../utils/svgNaturalWidth'
 import { useZoomPan } from '../composables/useZoomPan'
 import AppIcon from './AppIcon.vue'
 import MermaidDiagram from './MermaidDiagram.vue'
@@ -25,9 +26,22 @@ let buildSeq = 0
 // The same pan/zoom the Mermaid viewer dialog uses — a 35-node service map is
 // unreadable at fit-width, and a second gesture implementation would drift.
 const { scale, tx, ty, pct, zoom, fit, onWheel, onDown, onMove, onUp } = useZoomPan()
+const stage = ref(null)
 
 const changed = (list) => (list ?? []).filter((x) => x.status !== 'same')
 const tally = (list, status) => (list ?? []).filter((x) => x.status === status).length
+
+// Give the rendered svg the width its layout asked for, so the diagram is read
+// at its own size and the stage scrolls — rather than shrunk to fit a pane.
+function sizeToNatural() {
+  for (const svg of stage.value?.querySelectorAll('svg') ?? []) {
+    const width = naturalWidthOf(svg.getAttribute('viewBox'))
+    if (!width) continue
+    svg.style.width = `${width}px`
+    svg.style.maxWidth = 'none'
+    svg.style.height = 'auto'
+  }
+}
 
 const zoomStyle = computed(() => ({
   transform: `translate(${tx.value}px, ${ty.value}px) scale(${scale.value})`,
@@ -103,6 +117,7 @@ watch(
 
     <div class="dg-body">
       <div
+        ref="stage"
         class="dg-stage"
         :class="{ split: store.renderSideBySide }"
         @wheel="onWheel"
@@ -116,14 +131,14 @@ watch(
           <template v-if="store.renderSideBySide">
             <div class="dg-pane">
               <span class="dg-ttl">before</span>
-              <MermaidDiagram :code="beforeSrc" :debounce="0" />
+              <MermaidDiagram :code="beforeSrc" :debounce="0" @rendered="sizeToNatural" />
             </div>
             <div class="dg-pane">
               <span class="dg-ttl">after</span>
-              <MermaidDiagram :code="afterSrc" :debounce="0" />
+              <MermaidDiagram :code="afterSrc" :debounce="0" @rendered="sizeToNatural" />
             </div>
           </template>
-          <MermaidDiagram v-else :code="source" :debounce="0" />
+          <MermaidDiagram v-else :code="source" :debounce="0" @rendered="sizeToNatural" />
         </div>
       </div>
       <DiagramChangeRegister
