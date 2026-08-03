@@ -12,7 +12,8 @@ const FORMATS = [
   { label: 'XML', icon: 'code', format: 'xml' },
   { label: 'YAML', icon: 'code', format: 'yaml' },
   { label: 'CSV', icon: 'table', format: 'csv' },
-  { label: 'Markdown', icon: 'file', format: 'markdown' }
+  { label: 'Markdown', icon: 'file', format: 'markdown' },
+  { label: 'Mermaid', icon: 'diagram', format: 'mermaid' }
 ]
 
 const store = useDiffStore()

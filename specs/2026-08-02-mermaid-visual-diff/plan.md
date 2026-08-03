@@ -7,9 +7,9 @@
 | **Branch**                              | `feat/mermaid-visual-diff` |
 | **Started**                             | 2026-08-02                 |
 | **Finished**                            | —                          |
-| **Bugs found and fixed this iteration** | 3 / 3                      |
+| **Bugs found and fixed this iteration** | 8 / 8                      |
 | **Token baseline**                      | —                          |
-| **Claude tokens used**                  | not measured               |
+| **Claude tokens used**                  | not measured — no baseline |
 
 **Design proposal:** <https://claude.ai/code/artifact/d4e05948-9880-4c66-9fa2-c47ad47823af>
 — interactive mockup in the real app chrome, switchable across all 14 themes,
@@ -273,13 +273,27 @@ on top of that is a change worth making deliberately, not incidentally.
 
 Recorded as fact, not intention.
 
-- [ ] `/validate` — summary below, full report in `quality-audit.md`
-- [ ] `npm run check` — paste the real result
-- [ ] UI seen running (Docker / `make e2e`)
-- [ ] every Docs-impact "yes" done, or which is deferred and why
-- [ ] `make local-seed` opens the `.mmd` pair on the host; `local-seed-clean`
-      removes it
-- [ ] token usage measured, header row filled
+- [x] `/validate` — ran; full report in `quality-audit.md`. Three colour bugs,
+      all the same mistake (a token used outside the job it is floored for), and
+      a guard that could not see its own subject because it never stripped
+      comments. Two findings left open and both are on the roadmap now.
+- [x] `npm run check` — exit 0, **1914 passed**, 2 skipped. `check:themes`:
+      status worst contrast 3.05 (nord), closest pair ΔE 0.102 (sepia);
+      component pairs 201 audited, 87 skipped, 168 held at baseline.
+- [x] UI seen running — Docker (Linux/Xvfb): `diagram-diff` + `snippet-highlight`,
+      **10 passed**. Also inspected by screenshot in light and dark, union and
+      split, five nodes and thirty-five.
+- [x] every Docs-impact "yes" done — README + `SupportedFormats.vue` (and a
+      `mermaid` key in `fileFilters.js`, since the renderer only names formats),
+      glossary, roadmap.md's Diagrams track, and roadmap.svg re-laid to four
+      cards. **Except the screenshot** — step 16, deferred to a human eye.
+- [x] `make local-seed` round trip — verified against a sandbox `SEED_USER_DATA`
+      rather than the real library, which has live data in it: both `.mmd` pairs
+      seeded and readable, `--clean` removed 46 entries leaving 0 and deleted
+      `seed-files/`.
+- [ ] token usage — **cannot be measured**: no `Token baseline` was recorded when
+      this branch started, and `token-usage.mjs` needs one. Invented over
+      estimated.
 
 ### Token usage
 
@@ -295,4 +309,13 @@ node .claude/skills/implement/token-usage.mjs --since <token baseline>
 | cache read  |        |
 | **total**   |        |
 
-**Outcome:**
+**Outcome:** the feature is built, reviewed and approved on PR #20. Status stays
+`in-progress` until it merges — under the _Landing it_ convention, landing on
+`main` is what finishes a spec — and one build step is deliberately left for a
+human: the committed screenshot, which is the single artifact no assertion can
+validate.
+
+Two items are open by choice rather than oversight, and both are recorded on the
+roadmap's new Diagrams track rather than as TODOs in code: a sensible resting
+scale (mermaid's svg has no intrinsic width, so a large map fits the pane and is
+unreadable until zoomed), and click-a-change-to-pan.
