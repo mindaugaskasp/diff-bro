@@ -1,3 +1,15 @@
+// securityLevel MUST stay 'strict' — DOMPurify at that level stops a diagram
+// from smuggling script into the SVG. Shared by the renderer and the model
+// extractor so the two can never disagree about how source is parsed.
+export const MERMAID_BASE_CONFIG = {
+  startOnLoad: false,
+  securityLevel: 'strict',
+  // Errors surface as a thrown error, not Mermaid's own bomb SVG in the document.
+  suppressErrorRendering: true,
+  // Pure-SVG labels — safe to insert without innerHTML.
+  flowchart: { htmlLabels: false }
+}
+
 // Pure Mermaid helpers (no `mermaid` import; the library loads lazily in
 // composables/useMermaid.js).
 import { isDarkTheme } from './themes'

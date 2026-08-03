@@ -1,16 +1,12 @@
 // Mermaid (~2.8 MB) is dynamically imported on first render, never in the main
 // chunk. securityLevel MUST stay 'strict' — DOMPurify at that level stops a
 // diagram from smuggling script into the SVG. Never lower it.
-import { mermaidThemeFor, nextDiagramId, stripMermaidFence } from '../utils/mermaid'
-
-const BASE_CONFIG = {
-  startOnLoad: false,
-  securityLevel: 'strict',
-  // Errors surface as a thrown error, not Mermaid's own bomb SVG in the document.
-  suppressErrorRendering: true,
-  // Pure-SVG labels — safe to insert without innerHTML.
-  flowchart: { htmlLabels: false }
-}
+import {
+  MERMAID_BASE_CONFIG as BASE_CONFIG,
+  mermaidThemeFor,
+  nextDiagramId,
+  stripMermaidFence
+} from '../utils/mermaid'
 
 let mermaidPromise = null
 function loadMermaid() {

@@ -55,6 +55,7 @@ Builds are **unsigned**, so SmartScreen and Gatekeeper warn on first launch (the
 | **Export as image**      | A real screenshot of the diff view — your theme, panes and highlighting — cropped to the change and stitched if it's taller than the window. Snippets go the same way, and a Mermaid snippet leaves as its rendered diagram.                                                                                                                                                                                                                                                                                       |
 | **Snippets**             | An encrypted, tagged text library with per-language highlighting, live Mermaid (readable light or dark whatever the app is wearing), Markdown/Jira preview, and secret snippets that render as `****`.                                                                                                                                                                                                                                                                                                             |
 | **Quick look-up**        | A global shortcut searches your snippets and diffs without raising the app; copy one straight to the clipboard.                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Diagrams**             | Two Mermaid files compare as a picture, not as text — one diagram carrying both revisions, so an inserted node reads as one change instead of a rewrite.                                                                                                                                                                                                                                                                                                                                                           |
 | **Tools**                | JSON, Base64, UUID, JWT, Epoch, URL, Lines, XML, checksums, a regex tester, find & replace, text encryption — rich panels, not blank text boxes.                                                                                                                                                                                                                                                                                                                                                                   |
 | **Terminal**             | `diffbro compare a.json b.json` opens a comparison in the running app, `diffbro open` raises it, `diffbro backup <path>` writes an encrypted archive. No port, no daemon.                                                                                                                                                                                                                                                                                                                                          |
 | **Yours to arrange**     | Fourteen themes (Nord, Sepia, Solar, Nyan, Matrix, plus accessibility-grade Contrast and Beacon), shared tags, adjustable limits.                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -114,9 +115,16 @@ flowchart LR
       <p align="center"><em>Saved diffs are encrypted and auto-expire.</em></p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types (Excel, JSON, XML, YAML, CSV, Markdown, and any text or code file) beside a sidebar of saved diffs, shared diffs, snippets, and tags">
+      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types (Excel, JSON, XML, YAML, CSV, Markdown, Mermaid, and any text or code file) beside a sidebar of saved diffs, shared diffs, snippets, and tags">
       <p align="center"><em>Drop or choose two files of any text format.</em></p>
     </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/diagram-diff.png" alt="Two Mermaid files compared as one diagram carrying both revisions: added nodes and edges in solid green, a removed node and its edges dashed in red, unchanged nodes as plain hairlines, and a rail listing every changed node and edge beside the picture">
+      <p align="center"><em>Mermaid files compare as a picture, not as text.</em></p>
+    </td>
+    <td width="50%" valign="top"></td>
   </tr>
 </table>
 

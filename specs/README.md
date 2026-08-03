@@ -28,8 +28,24 @@ closes with `/validate`. Template: `.claude/skills/implement/plan-template.md`.
   without the other's unmerged work — and the reason goes in Decisions.
 - **Description is kebab-case** and identical in the directory and the branch,
   so `ls -d specs/*-<description>` finds the spec without knowing its date.
-- **Status is the truth:** `draft` → `approved` → `in-progress` → `shipped`.
-  Never shipped with steps outstanding.
+- **Status is the truth**, and each value means one specific thing:
+
+  | status        | what it asserts                                                                                                                                                               |
+  | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `draft`       | Written, not agreed. No branch, no code. A draft presented and not answered stays a draft.                                                                                    |
+  | `approved`    | The plan is agreed and the branch may be cut. Nothing is built yet.                                                                                                           |
+  | `in-progress` | Work has started. Any step unticked, any Docs-impact "yes" undone, or any Validation line unchecked means it is still this.                                                   |
+  | `shipped`     | **Ready for a human to review**: every step ticked, every Docs-impact "yes" done, every Validation line answered with a fact, and the PR open with the agent review resolved. |
+
+  `shipped` is about the work being _finished and reviewable_ — not about the PR
+  being merged. Merging is the human's decision, and a spec that waits for it
+  would sit in `in-progress` describing work that is actually complete.
+
+  Nothing may be marked `shipped` with a step outstanding. If one point genuinely
+  cannot be done, it is not a footnote: say so on the line itself, in the plan,
+  with the reason — an unmeasurable token figure and a deferred capture are both
+  legitimate, silence about them is not.
+
 - **Decisions is append-only** — it stops settled questions being re-litigated.
 - **A plan that diverged from the code is a bug in the plan.** Amend it; a stale
   spec is worse than none.

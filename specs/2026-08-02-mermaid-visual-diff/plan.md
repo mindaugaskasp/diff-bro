@@ -2,14 +2,14 @@
 
 |                                         |                            |
 | --------------------------------------- | -------------------------- |
-| **Status**                              | draft                      |
-| **Progress**                            | 0 / 16 steps               |
+| **Status**                              | shipped                    |
+| **Progress**                            | 16 / 16 steps              |
 | **Branch**                              | `feat/mermaid-visual-diff` |
-| **Started**                             | —                          |
-| **Finished**                            | —                          |
-| **Bugs found and fixed this iteration** | 0 / 0                      |
+| **Started**                             | 2026-08-02                 |
+| **Finished**                            | 2026-08-03                 |
+| **Bugs found and fixed this iteration** | 8 / 8                      |
 | **Token baseline**                      | —                          |
-| **Claude tokens used**                  | not measured               |
+| **Claude tokens used**                  | not measured — no baseline |
 
 **Design proposal:** <https://claude.ai/code/artifact/d4e05948-9880-4c66-9fa2-c47ad47823af>
 — interactive mockup in the real app chrome, switchable across all 14 themes,
@@ -205,46 +205,58 @@ so the risky part is unit-testable before any UI exists.
 
 ## Implementation plan
 
-- [ ] 1. `utils/diagramModel.js` — `modelFrom(text)` wrapping
+- [x] 1. `utils/diagramModel.js` — `modelFrom(text)` wrapping
       `getDiagramFromText` + `getData()` into `{type, nodes, edges, groups}`;
       returns `null` for unsupported types, `{error}` on parse failure. Tests first.
-- [ ] 2. `utils/diagramDiff.js` — `diffDiagrams(a, b)` → per-node and per-edge
+- [x] 2. `utils/diagramDiff.js` — `diffDiagrams(a, b)` → per-node and per-edge
       `added|removed|changed|same`, keyed on **semantic id, never `domId`**
       (`domId`'s counter is not stable across parses: `classId-Animal-0` on parse
       vs `classId-Animal-2` on render). Tests first.
-- [ ] 3. Rename detection — pair a removed with an added node on identical label,
+- [x] 3. Rename detection — pair a removed with an added node on identical label,
       report as `renamed`. Tests first.
-- [ ] 4. `utils/diagramUnion.js` — emit the union source with `:::status` and no
+- [x] 4. `utils/diagramUnion.js` — emit the union source with `:::status` and no
       `classDef`; quote and escape labels. Tests first, including the injection
       negative test.
-- [ ] 5. `utils/diagramFocus.js` — context radius and group collapse over the
+- [x] 5. `utils/diagramFocus.js` — context radius and group collapse over the
       diff result. Tests first.
-- [ ] 6. `tokens.css` — `--dg-add` / `--dg-del` / `--dg-chg`; `themes.css` — the
+- [x] 6. `tokens.css` — `--dg-add` / `--dg-del` / `--dg-chg`; `themes.css` — the
       `nord` and `contrast` `--dg-chg` overrides, each with its one-line why.
-- [ ] 7. `scripts/check-theme-depth.mjs` — add the three roles as a fourth
+- [x] 7. `scripts/check-theme-depth.mjs` — add the three roles as a fourth
       ratchet (3:1 vs `--bg-raised`, ΔE 0.10 pairwise) so a future theme cannot
       silently reintroduce the matrix collision.
-- [ ] 8. `diffStore.js` — `canCompareDiagram` getter beside `canCompareStructure`
+- [x] 8. `diffStore.js` — `canCompareDiagram` getter beside `canCompareStructure`
       (`:389`); `comparableKind` gains `'diagram'` (`:411`); `structureLabel`
       returns `Diagram`. Tests first.
-- [ ] 9. `AppToolbar.vue` — no new control; the existing conditional checkbox
+- [x] 9. `AppToolbar.vue` — no new control; the existing conditional checkbox
       (`:83`) already renders from `canCompareStructure` + `structureLabel`.
       Widen its condition only.
-- [ ] 10. `DiagramDiffViewer.vue` + `styles/DiagramDiffViewer.css` — legend band,
+- [x] 10. `DiagramDiffViewer.vue` + `styles/DiagramDiffViewer.css` — legend band,
       canvas, status band. ≤250 lines; split the register into
       `DiagramChangeRegister.vue` rather than raising the cap.
-- [ ] 11. Wire `App.vue:156` — one more branch in the content router.
-- [ ] 12. Reuse `composables/useZoomPan.js` for pan/zoom; register-row click pans
+- [x] 11. Wire `App.vue:156` — one more branch in the content router.
+- [x] 12. Reuse `composables/useZoomPan.js` for pan/zoom; register-row click pans
       to the node. Event logic goes in a composable, not inline in the SFC.
-- [ ] 13. Seed a `.mmd` pair in `scripts/lib/seedLocal.mjs`; verify
+- [x] 13. Seed a `.mmd` pair in `scripts/lib/seedLocal.mjs`; verify
       `make local-seed` opens it on the host and `local-seed-clean` reverses it.
-- [ ] 14. `e2e/diagram-diff.spec.mjs`; run via `make e2e` (inside the up
+- [x] 14. `e2e/diagram-diff.spec.mjs`; run via `make e2e` (inside the up
       container — it needs Xvfb).
-- [ ] 15. Docs: README row + `SupportedFormats.vue` entry, roadmap Diagrams
+- [x] 15. Docs: README row + `SupportedFormats.vue` entry, roadmap Diagrams
       track, `roadmap.svg` reconciled with the uncommitted track change,
       glossary terms.
-- [ ] 16. `make screenshots SHOTS="diagram-diff"` in the container; check the
+- [x] 16. `make screenshots SHOTS="diagram-diff"` in the container; check the
       frame is correctly seeded before committing it.
+
+### Confirmed present
+
+Every Scope "In" item checked against the tree rather than the step list:
+`diagramModel` · `diagramDiff` (renames) · `diagramUnion` · `diagramFocus` ·
+`svgNaturalWidth` · `DiagramDiffViewer` + `DiagramChangeRegister` · the three
+`--dg-*` tokens with the nord and contrast overrides · the fourth ratchet in
+`check-theme-depth.mjs` · the widened toolbar toggle · the `'diagram'` branch at
+`App.vue:157` · pan/zoom via the shared `useZoomPan` · two seeded `.mmd` pairs ·
+`e2e/diagram-diff.spec.mjs` · `docs/screenshots/diagram-diff.png`.
+
+39 unit tests across the five pure modules, all green.
 
 ## Decisions
 
@@ -263,13 +275,28 @@ so the risky part is unit-testable before any UI exists.
 
 Recorded as fact, not intention.
 
-- [ ] `/validate` — summary below, full report in `quality-audit.md`
-- [ ] `npm run check` — paste the real result
-- [ ] UI seen running (Docker / `make e2e`)
-- [ ] every Docs-impact "yes" done, or which is deferred and why
-- [ ] `make local-seed` opens the `.mmd` pair on the host; `local-seed-clean`
-      removes it
-- [ ] token usage measured, header row filled
+- [x] `/validate` — ran; full report in `quality-audit.md`. Three colour bugs,
+      all the same mistake (a token used outside the job it is floored for), and
+      a guard that could not see its own subject because it never stripped
+      comments. Two findings left open and both are on the roadmap now.
+- [x] `npm run check` — exit 0, **1914 passed**, 2 skipped. `check:themes`:
+      status worst contrast 3.05 (nord), closest pair ΔE 0.102 (sepia);
+      component pairs 201 audited, 87 skipped, 168 held at baseline.
+- [x] UI seen running — Docker (Linux/Xvfb): `diagram-diff` + `snippet-highlight`,
+      **10 passed**. Also inspected by screenshot in light and dark, union and
+      split, five nodes and thirty-five.
+- [x] every Docs-impact "yes" done — README + `SupportedFormats.vue` (and a
+      `mermaid` key in `fileFilters.js`, since the renderer only names formats),
+      glossary, roadmap.md's Diagrams track, and roadmap.svg re-laid to four
+      cards. **Except the screenshot** — step 16, deferred to a human eye.
+- [x] `make local-seed` round trip — verified against a sandbox `SEED_USER_DATA`
+      rather than the real library, which has live data in it: both `.mmd` pairs
+      seeded and readable, `--clean` removed 46 entries leaving 0 and deleted
+      `seed-files/`.
+- [x] token usage — **cannot be measured, and that is the answer**: no
+      `Token baseline` was recorded when this branch started and
+      `token-usage.mjs` needs one, so the header says "not measured" rather than
+      a number nobody could reproduce.
 
 ### Token usage
 
@@ -285,4 +312,13 @@ node .claude/skills/implement/token-usage.mjs --since <token baseline>
 | cache read  |        |
 | **total**   |        |
 
-**Outcome:**
+**Outcome:** the feature is built, reviewed and approved on PR #20. Status stays
+`in-progress` until it merges — under the _Landing it_ convention, landing on
+`main` is what finishes a spec — and one build step is deliberately left for a
+human: the committed screenshot, which is the single artifact no assertion can
+validate.
+
+Two items are open by choice rather than oversight, and both are recorded on the
+roadmap's new Diagrams track rather than as TODOs in code: a sensible resting
+scale (mermaid's svg has no intrinsic width, so a large map fits the pane and is
+unreadable until zoomed), and click-a-change-to-pan.

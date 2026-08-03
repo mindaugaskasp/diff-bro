@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — three tracks. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding: sample comparison, coach marks, what's new on upgrade. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — four tracks. Diagrams: readable at rest, the other diagram types, click a change to pan to it. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding: sample comparison, coach marks, what's new on upgrade. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -117,6 +117,57 @@ Off the board, unsequenced:
   outside structured formats. Specced, semantics undecided:
   `specs/2026-08-02-unordered-text-compare/`
 - Still out of scope: pivot tables, charts
+
+---
+
+## Diagrams
+
+**Built** — `.mmd` pairs compare as pictures: both sides parse through mermaid's
+own `getData()` (`diagramModel.js`), the graphs diff (`diagramDiff.js`, renames
+paired on label), and one union source carrying both revisions renders once
+(`diagramUnion.js`) so a single layout means an unchanged node cannot drift.
+Focus keeps the changes plus a ring of context and says what it hid
+(`diagramFocus.js`). Split view lays the two revisions side by side instead.
+
+```mermaid
+flowchart LR
+  a[".mmd × 2"] --> m["diagramModel.js<br>mermaid getData()"]
+  m --> d["diagramDiff.js<br>added · removed · changed · renamed"]
+  d --> f["diagramFocus.js<br>context radius"]
+  f --> u["diagramUnion.js<br>one source, both revisions"]
+  u --> v["DiagramDiffViewer.vue<br>+ change rail"]
+```
+
+- Status is encoded twice — colour AND stroke pattern — and the three tokens are
+  held to a contrast floor and a pairwise ΔE floor on all 14 by
+  `check-theme-depth.mjs`
+- Labels come from the compared files, so the union emitter strips the
+  characters that would open a directive or a statement (rule 6)
+
+**Open.**
+
+```mermaid
+flowchart LR
+  subgraph now["now"]
+    r["readable at rest<br>fit-width shrinks a large map"]
+  end
+  subgraph next["next"]
+    s["sequence · gantt · pie<br>each needs its own extractor"]
+    c["click a change to pan to it"]
+  end
+  now --> next
+```
+
+- **readable at rest** — mermaid gives its svg no intrinsic width, so a 35-node
+  map fits the pane and nothing is legible without zooming. Pan and zoom exist;
+  a sensible resting scale does not
+- **the other diagram types** — `sequence`, `gantt`, `pie`, `journey`,
+  `gitGraph`, `mindmap` and the rest expose a bespoke db (`getActors`,
+  `getSections`, `getCommits`) with no shared shape, so each is its own
+  extractor. They keep the text diff and the toggle stays hidden
+- **the register is read-only** — a row names a change you then hunt for by eye;
+  clicking one should pan the diagram to it
+- Still out of scope: editing a diagram from the diff view, three-way merge
 
 ---
 

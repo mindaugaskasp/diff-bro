@@ -8,7 +8,8 @@ const FILTERS = {
   xml: [{ name: 'XML', extensions: ['xml', 'xsd', 'xsl', 'svg', 'plist'] }],
   yaml: [{ name: 'YAML', extensions: ['yaml', 'yml'] }],
   csv: [{ name: 'CSV', extensions: ['csv', 'tsv'] }],
-  markdown: [{ name: 'Markdown', extensions: ['md', 'markdown', 'mdx'] }]
+  markdown: [{ name: 'Markdown', extensions: ['md', 'markdown', 'mdx'] }],
+  mermaid: [{ name: 'Mermaid diagram', extensions: ['mmd', 'mermaid'] }]
 }
 
 const ALL = { name: 'All files', extensions: ['*'] }

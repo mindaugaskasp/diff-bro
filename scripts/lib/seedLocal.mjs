@@ -190,6 +190,49 @@ const YAML_AFTER = `service:
  */
 // A quoted comma in the region column, so the grid has to keep a field whole
 // rather than splitting on every comma it sees.
+
+// A .mmd pair, so the Diagram comparison can be opened by hand on the host.
+// The change is deliberately the kind a text diff reads badly: one inserted
+// stage re-indents nothing but shifts the topology, and one edge is re-pointed.
+const MMD_BEFORE = `flowchart TD
+  Ingest[Ingest] --> Validate{Valid?}
+  Validate -- yes --> Transform[Transform]
+  Validate -- no --> Reject[Reject]
+  Transform --> Publish[Publish]`
+
+const MMD_AFTER = `flowchart TD
+  Ingest[Ingest] --> Validate{Valid?}
+  Validate -- yes --> Enrich[Enrich]
+  Enrich --> Transform[Transform]
+  Validate -- no --> Quarantine[Quarantine]
+  Transform --> Publish[Publish]`
+
+// A service map at the size the Diagram view is actually for: ~35 nodes where
+// four changes drown in everything that stayed put, so "Focus on changes" and
+// the hidden count have something to do. The tail is generated because thirty
+// untouched services are the POINT — they are what focus has to hide.
+const svcTail = (extra = '') =>
+  lines(24, (i) => `  core --> svc${String(i).padStart(2, '0')}[service ${i}]`) + extra
+
+const BIG_MMD_BEFORE = `flowchart LR
+  edge[edge proxy] --> gateway[gateway]
+  gateway --> orders[orders]
+  gateway --> catalog[catalog]
+  orders --> billing_legacy[billing-legacy]
+  orders --> core[core bus]
+  catalog --> core
+${svcTail()}`
+
+const BIG_MMD_AFTER = `flowchart LR
+  edge[edge proxy] --> authz[authz]
+  authz --> api_gateway[api-gateway]
+  api_gateway --> orders[orders]
+  api_gateway --> catalog[catalog]
+  orders --> ledger[ledger]
+  orders --> core[core bus]
+  catalog --> core
+${svcTail()}`
+
 const CSV_BEFORE = `region,q2,q3
 "Nordics, EMEA",9200,74000
 APAC,6100,48000
@@ -278,6 +321,28 @@ export function sizeRangeDiffs(now) {
       payload: pair(
         { name: 'service-before.yaml', content: YAML_BEFORE },
         { name: 'service-after.yaml', content: YAML_AFTER }
+      )
+    },
+    {
+      name: 'Pipeline diagram — diagram view',
+      tags: ['mermaid', 'diagram'],
+      createdAt: now - 4 * HOUR,
+      expiresAt: null,
+      from: null,
+      payload: pair(
+        { name: 'pipeline-v1.mmd', content: MMD_BEFORE },
+        { name: 'pipeline-v2.mmd', content: MMD_AFTER }
+      )
+    },
+    {
+      name: 'Service map — diagram at scale',
+      tags: ['mermaid', 'diagram'],
+      createdAt: now - 3 * HOUR,
+      expiresAt: null,
+      from: null,
+      payload: pair(
+        { name: 'service-map-v1.mmd', content: BIG_MMD_BEFORE },
+        { name: 'service-map-v2.mmd', content: BIG_MMD_AFTER }
       )
     },
     {

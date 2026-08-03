@@ -7,7 +7,9 @@ test('the supported-format tiles are real buttons that open a filtered picker', 
   page
 }) => {
   const tiles = page.locator('.chips button.chip')
-  await expect(tiles).toHaveCount(6)
+  // Named rather than counted: a bare number says nothing about which tile went
+  // missing, and adding Mermaid broke it with a diff that read "6 became 7".
+  await expect(tiles).toHaveText([/Excel/, /JSON/, /XML/, /YAML/, /CSV/, /Markdown/, /Mermaid/])
 
   // Every tile is reachable and says what it opens. The tip is the app's own
   // (data-tip), not native `title`, which Electron often never draws.

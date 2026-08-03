@@ -27,6 +27,7 @@ import { getDiffScroller } from '../utils/diffScroller'
 import { playShutter } from '../utils/shutter'
 import { loadPersisted, savePersisted } from '../persist'
 import { isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
+import { looksLikeMermaid } from '../utils/mermaid'
 import { useSettingsStore } from './settingsStore'
 import { useTabsStore } from './tabsStore'
 import { TOOLS } from '../utils/tools'
@@ -230,6 +231,8 @@ export const useDiffStore = defineStore('diff', {
     left: null, // { path, name, content, encoding, size }
     right: null,
     renderSideBySide: true,
+    // Diagram view: show only what changed plus a ring of context.
+    diagramFocus: true,
     // Compare the two sides as data rather than as lines, when both parse.
     semanticView: false,
     // Unchanged rows are most of a config file; off, the tree shows only what moved.
@@ -392,9 +395,21 @@ export const useDiffStore = defineStore('diff', {
     canCompareStructure() {
       return !!this.structuredFormat || !!this.delimitedFormat
     },
+    // Both sides are diagrams, so they can be compared as pictures rather than
+    // as text — where an inserted stage re-indents every following line and a
+    // one-node change reads as a rewrite. Streamed is out: its content is never
+    // in memory whole.
+    canCompareDiagram() {
+      if (this.isStreamed) return false
+      const [l, r] = [this.left?.content, this.right?.content]
+      return (
+        typeof l === 'string' && typeof r === 'string' && looksLikeMermaid(l) && looksLikeMermaid(r)
+      )
+    },
     // What the toggle calls itself: delimited text becomes a grid, everything
     // else a tree.
     structureLabel() {
+      if (this.canCompareDiagram) return 'Diagram'
       return this.delimitedFormat ? 'Grid' : 'Structure'
     },
     structureDiff() {
@@ -411,9 +426,17 @@ export const useDiffStore = defineStore('diff', {
     // other side's kind: one file too large to hold makes the whole comparison
     // streamed — and a streamed side has no content in memory, so the structure
     // toggle above it can never be on.
+    // Which viewer the semantic toggle asks for, or null when it is off. Split
+    // out so comparableKind stays one question: semantic, or the file's own kind.
+    semanticKind() {
+      if (!this.semanticView) return null
+      if (this.canCompareDiagram) return 'diagram'
+      if (this.delimitedFormat) return 'spreadsheet'
+      return this.canCompareStructure ? 'tree' : null
+    },
     comparableKind() {
-      if (this.semanticView && this.delimitedFormat) return 'spreadsheet'
-      if (this.semanticView && this.canCompareStructure) return 'tree'
+      const semantic = this.semanticKind
+      if (semantic) return semantic
       const kinds = [this.leftComparable?.kind, this.rightComparable?.kind]
       if (kinds.includes('streamed')) return 'streamed'
       return kinds.find(Boolean) ?? 'text'
