@@ -12,7 +12,7 @@
 //   * BORDER delineation — the divider is visible against the chrome it edges.
 // Thresholds are floors calibrated to the shipping themes; raise them as the
 // palettes improve, never lower them to make a flat theme pass.
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -389,6 +389,150 @@ if (Number.isFinite(dgWorst.ratio)) {
   console.log(
     `diagram status: closest pair ΔE ${dgWorstPair.de.toFixed(3)} — ${dgWorstPair.theme} ` +
       `${dgWorstPair.pair}, floor ${DG_DELTA_E}\n`
+  )
+}
+
+// --- component colour/ground pairs -----------------------------------------
+// The gap this closes: the checks above audit the tokens against the surface
+// ROLES, which says nothing about a component that pairs a token with a ground
+// of its own choosing. Three real bugs shipped through that hole — a status
+// stroke used as body text (2.14 on light), --text-dim on an elevated band
+// (2.82 on sepia), and a chrome role behind a semantic notice.
+//
+// Only same-rule pairs are checked, because that is the subset CSS can answer
+// on its own: when one rule sets BOTH color and background, the ground is not a
+// guess. A `color` whose ground comes from an ancestor is skipped and counted,
+// so the limit of this check is visible rather than implied.
+const TEXT_MIN = 4.5
+// WCAG large text: >= 24px, or >= 18.66px when bold.
+const LARGE_MIN = 3.0
+const BG_PROPS = ['background-color', 'background']
+const SKIP_VALUE = /^(inherit|currentcolor|initial|unset|revert|none|transparent)$/i
+
+// Comments are stripped first: prose contains colons, and "does not measure:
+// even at 40% …" parses as a declaration whose value swallows the real one after
+// it — that silently skipped the very rule this check was written for.
+function rulesIn(name, css) {
+  const out = []
+  for (const m of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const decls = Object.fromEntries(
+      [...m[2].matchAll(/([a-z-]+)\s*:\s*([^;]+);/gi)].map((d) => [d[1].toLowerCase(), d[2].trim()])
+    )
+    const bg = BG_PROPS.map((k) => decls[k]).find(Boolean)
+    if (!decls.color || !bg) continue
+    out.push({
+      where: `${name} ${m[1].trim().split('\n').pop().trim()}`,
+      color: decls.color,
+      bg,
+      fontSize: decls['font-size'],
+      weight: decls['font-weight']
+    })
+  }
+  return out
+}
+
+// tokens/themes DEFINE the palette; the passes above audit those.
+const isAudited = (name) => name.endsWith('.css') && name !== 'tokens.css' && name !== 'themes.css'
+
+function componentRules() {
+  const dirs = ['src/renderer/src/components/styles', 'src/renderer/src/styles']
+  const out = []
+  for (const dir of dirs) {
+    let names
+    try {
+      names = readdirSync(join(root, dir))
+    } catch {
+      continue
+    }
+    for (const name of names.filter(isAudited)) {
+      out.push(...rulesIn(name, readFileSync(join(root, dir, name), 'utf8')))
+    }
+  }
+  return out
+}
+
+// A token font-size resolves through tokens.css, so the ramp is read rather
+// than assumed; anything unreadable is treated as body text, the stricter floor.
+function pxOf(value, map) {
+  if (!value) return null
+  const varM = value.match(/^var\((--[a-z0-9-]+)\)$/i)
+  const raw = varM ? map[varM[1]] : value
+  const px = String(raw ?? '').match(/^([\d.]+)px$/)
+  return px ? Number(px[1]) : null
+}
+
+// Pairs already below the floor when this check was introduced. A ratchet, not
+// an amnesty: a pair may only get BETTER, a new one must clear the floor
+// outright, and removing a line here is the only way an entry leaves. The
+// alternative was 168 failures on day one, which would have meant either a
+// cleanup nobody asked for or a floor quietly set to whatever passed.
+const BASELINE = new Map(
+  JSON.parse(readFileSync(join(root, 'scripts/theme-pair-baseline.json'), 'utf8')).map((e) => [
+    `${e.theme}|${e.where}`,
+    e.ratio
+  ])
+)
+
+const pairs = componentRules()
+let pairWorst = { ratio: Infinity }
+let skipped = 0
+let baselined = 0
+
+// One pair, one theme: the verdict, so the loop below stays a loop.
+function judgePair(rule, theme) {
+  const map = mapFor(theme)
+  let fg, bg
+  try {
+    fg = evalColor(rule.color, map, new Set())
+    bg = evalColor(rule.bg, map, new Set())
+  } catch {
+    return { skip: true }
+  }
+  // A translucent ground is painted over something this check cannot see.
+  if (alphaOf(bg) !== 1) return { skip: true }
+  const size = pxOf(rule.fontSize, map)
+  const bold = Number(rule.weight) >= 700
+  const min = size && (size >= 24 || (size >= 18.66 && bold)) ? LARGE_MIN : TEXT_MIN
+  return { ratio: contrast(over(fg, bg), bg), min }
+}
+
+for (const rule of pairs) {
+  if (SKIP_VALUE.test(rule.color) || SKIP_VALUE.test(rule.bg)) {
+    skipped++
+    continue
+  }
+  for (const theme of THEMES) {
+    const { skip, ratio, min } = judgePair(rule, theme)
+    if (skip) {
+      skipped++
+      break
+    }
+    if (ratio < pairWorst.ratio) pairWorst = { ratio, theme, where: rule.where, min }
+    if (ratio >= min) continue
+    const known = BASELINE.get(`${theme}|${rule.where}`)
+    if (known === undefined) {
+      failures.push(
+        `${theme}: ${rule.where} — text ${ratio.toFixed(2)} < ${min} on its own background`
+      )
+    } else if (ratio < known - 0.01) {
+      failures.push(
+        `${theme}: ${rule.where} — text ${ratio.toFixed(2)} is WORSE than its baseline ` +
+          `${known.toFixed(2)}; the ratchet only turns one way`
+      )
+    } else {
+      baselined++
+    }
+  }
+}
+if (Number.isFinite(pairWorst.ratio)) {
+  console.log(
+    `component pairs: ${pairs.length} rules set colour AND background; worst ` +
+      `${pairWorst.ratio.toFixed(2)} — ${pairWorst.theme} ${pairWorst.where}, ` +
+      `floor ${pairWorst.min}`
+  )
+  console.log(
+    `component pairs: ${skipped} skipped (ground not decidable from the rule), ` +
+      `${baselined} known-below-floor held at their baseline\n`
   )
 }
 

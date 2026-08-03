@@ -65,7 +65,10 @@
   min-height: 0;
 }
 .dg-stage {
-  background: var(--bg);
+  /* Paper, not paper-white: --bg alone is #ffffff on light and contrast, which
+     is a lot of glare behind a diagram. A touch of the chrome tone warms it and
+     still leaves it lighter than the bands around it. */
+  background: color-mix(in srgb, var(--bg-panel) 40%, var(--bg));
   flex: 1;
   min-width: 0;
   min-height: 0;
