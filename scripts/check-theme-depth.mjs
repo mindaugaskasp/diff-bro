@@ -310,6 +310,84 @@ if (inkL && palette.length >= 5) {
   )
 }
 
+// --- diagram-diff status colours -------------------------------------------
+// Two floors, because the statuses have two jobs: each must be legible on the
+// viewer's card (3:1, the non-text floor — these are strokes and badges, not
+// body text), and each must be TELLABLE APART from the other two. Contrast
+// alone does not give the second: on matrix --accent and --success-text are the
+// same colour, so an accent-tinted "changed" would score fine and still be
+// indistinguishable from "added".
+const DG_MIN = 3.0
+const DG_DELTA_E = 0.1
+const DG_KEYS = ['--dg-add', '--dg-del', '--dg-chg']
+
+const srgbToLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+function oklab([r, g, b]) {
+  const [R, G, B] = [r, g, b].map((x) => srgbToLinear(x / 255))
+  const l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B)
+  const m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B)
+  const s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B)
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  ]
+}
+const deltaE = (a, b) => {
+  const [A, B] = [oklab(a), oklab(b)]
+  return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2])
+}
+
+let dgWorst = { ratio: Infinity }
+let dgWorstPair = { de: Infinity }
+for (const theme of THEMES) {
+  const map = mapFor(theme)
+  let card
+  try {
+    card = resolve('--bg-raised', map)
+  } catch {
+    continue
+  }
+  const got = {}
+  for (const key of DG_KEYS) {
+    try {
+      got[key] = resolve(key, map)
+    } catch (e) {
+      failures.push(`${theme}: ${key} — ${e.message}`)
+    }
+  }
+  for (const [key, rgb] of Object.entries(got)) {
+    const ratio = contrast(rgb, card)
+    if (ratio < dgWorst.ratio) dgWorst = { ratio, theme, key }
+    if (ratio < DG_MIN) {
+      failures.push(`${theme}: ${key} ${ratio.toFixed(2)} < ${DG_MIN} on --bg-raised`)
+    }
+  }
+  const keys = Object.keys(got)
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = i + 1; j < keys.length; j++) {
+      const de = deltaE(got[keys[i]], got[keys[j]])
+      if (de < dgWorstPair.de) dgWorstPair = { de, theme, pair: `${keys[i]}/${keys[j]}` }
+      if (de < DG_DELTA_E) {
+        failures.push(
+          `${theme}: ${keys[i]} and ${keys[j]} are OKLab ${de.toFixed(3)} apart ` +
+            `(< ${DG_DELTA_E}) — two statuses would read as one`
+        )
+      }
+    }
+  }
+}
+if (Number.isFinite(dgWorst.ratio)) {
+  console.log(
+    `diagram status: worst contrast ${dgWorst.ratio.toFixed(2)} — ${dgWorst.theme} ` +
+      `${dgWorst.key}, floor ${DG_MIN}`
+  )
+  console.log(
+    `diagram status: closest pair ΔE ${dgWorstPair.de.toFixed(3)} — ${dgWorstPair.theme} ` +
+      `${dgWorstPair.pair}, floor ${DG_DELTA_E}\n`
+  )
+}
+
 if (failures.length) {
   console.error(
     `\n✗ theme depth: ${failures.length} violation(s) — a theme must keep its layers legible and distinct:\n`
