@@ -17,10 +17,16 @@ const error = ref('')
 const counts = ref(null)
 const hidden = ref(0)
 const rows = ref([])
+// Only the newest build may write: two model parses are awaited, so a slower
+// earlier run can resolve after a newer one and leave the picture showing one
+// revision while the register shows another. Same guard MermaidDiagram carries.
+let buildSeq = 0
 
 async function build() {
+  const mine = ++buildSeq
   error.value = ''
   const [a, b] = [await modelFrom(store.left?.content), await modelFrom(store.right?.content)]
+  if (mine !== buildSeq) return
   if (!a || !b) {
     error.value = 'This diagram type can’t be compared as a picture yet.'
     return

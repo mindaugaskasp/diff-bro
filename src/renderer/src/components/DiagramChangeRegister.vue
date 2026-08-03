@@ -6,6 +6,9 @@ defineProps({
   rows: { type: Array, required: true, validator: (v) => v.every(shaped('status')) }
 })
 
+// Stable across re-renders: an index key makes Vue reuse the wrong row when a
+// status changes and the list reorders.
+const keyOf = (r) => `${r.status}:${r.start ? `${r.start}->${r.end}` : r.id}`
 const label = (r) => (r.start ? `${r.start} → ${r.end}` : (r.label ?? r.id))
 const detail = (r) => {
   if (r.status === 'renamed') return `was ${r.wasId}`
@@ -16,7 +19,7 @@ const detail = (r) => {
 
 <template>
   <ul class="dg-register">
-    <li v-for="(r, i) in rows" :key="i" :class="r.status">
+    <li v-for="r in rows" :key="keyOf(r)" :class="r.status">
       <span class="dg-mark">{{
         r.status === 'added' ? '+' : r.status === 'removed' ? '−' : '±'
       }}</span>
