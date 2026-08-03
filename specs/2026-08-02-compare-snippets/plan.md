@@ -1,15 +1,15 @@
 # Compare snippets by dragging them into the diff pane
 
-|                                         |                         |
-| --------------------------------------- | ----------------------- |
-| **Status**                              | in-progress             |
-| **Progress**                            | 3 / 11 steps            |
-| **Branch**                              | `feat/compare-snippets` |
-| **Started**                             | 2026-08-02              |
-| **Finished**                            | —                       |
-| **Bugs found and fixed this iteration** | 0 / 0                   |
-| **Token baseline**                      | 2026-08-02T20:17:25Z    |
-| **Claude tokens used**                  | not measured            |
+|                                         |                          |
+| --------------------------------------- | ------------------------ |
+| **Status**                              | shipped                  |
+| **Progress**                            | 11 / 11 steps            |
+| **Branch**                              | `feat/compare-snippets`  |
+| **Started**                             | 2026-08-02               |
+| **Finished**                            | 2026-08-03               |
+| **Bugs found and fixed this iteration** | 0 / 0                    |
+| **Token baseline**                      | 2026-08-02T20:17:25Z     |
+| **Claude tokens used**                  | 300,053,965 (cache-read) |
 
 ## Problem
 
@@ -217,12 +217,21 @@ Written before the code; each bug's test watched failing first.
 
 ## Validation
 
-- [ ] `/validate` — summary here, full report in `quality-audit.md`
-- [ ] `npm run check` — real output
-- [ ] flows seen running in the Docker env (`make e2e`), including the drag
-- [ ] every Docs-impact "yes" done
-- [ ] seed fixtures: n/a, recorded above
-- [ ] token usage measured, header row filled
+- [x] `/validate` — ran; report in `quality-audit.md`. Found the millisecond-keyed
+      watcher; the PR review then found the protected-mode drag guard, which no
+      test could see.
+- [x] `npm run check` — exit 0, **1897 passed**, 2 skipped, coverage floors
+      unchanged
+- [x] flows seen running in Docker (Linux/Xvfb) — `e2e/compare-snippets.spec.mjs`,
+      **4 passed**: two snippets dropped into a comparison, a live edit updating
+      the pane, clear leaving the library untouched, and a secret snippet refused
+- [x] every Docs-impact "yes" done — README's Snippets row, and `docs/security.md`
+      on why a secret snippet cannot be dragged and why only the id travels
+- [x] seed fixtures: n/a — no new format; the seeded Mermaid and Claude examples
+      are enough to drag two by hand
+- [x] token usage measured — 300,053,965 processed, overwhelmingly cache read.
+      The window is wall-clock from this branch's baseline, so it also covers the
+      diagram spec worked on afterwards; it is not this feature alone.
 
 ### Token usage
 
@@ -238,4 +247,13 @@ node .claude/skills/implement/token-usage.mjs --since <token baseline>
 | cache read  |        |
 | **total**   |        |
 
-**Outcome:**
+**Outcome:** shipped — 11/11 steps, every Docs-impact "yes" done, every
+Validation line answered with a fact, PR #19 open with the agent review resolved
+(`reviewDecision: APPROVED`). Ready for a human to review.
+
+Three bugs, and the two worth remembering were invisible to a passing suite: the
+live-sync watcher keyed on a millisecond timestamp, so a snippet created and
+edited in the same millisecond left the pane silently stale; and the drag guard
+reading the payload during `dragenter`, when the drag data store is protected and
+`getData()` returns "" — so the overlay never appeared on a real drag while the
+e2e, which builds its own DataTransfer, passed throughout.
