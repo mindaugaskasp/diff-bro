@@ -12,6 +12,7 @@ import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
+import { useSnippetDrag } from '../composables/useSnippetDrag'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
@@ -22,6 +23,7 @@ const props = defineProps({
 const store = useSnippetStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
+const { startDrag } = useSnippetDrag()
 
 const lang = computed(() => languageOf(props.entry))
 const mono = computed(() => languageMonogram(lang.value))
@@ -70,12 +72,18 @@ defineEmits(['hoverTitle', 'leaveTitle'])
 </script>
 
 <template>
-  <li class="row" data-preview-anchor>
+  <li
+    class="row"
+    data-preview-anchor
+    :draggable="!isSecret(entry)"
+    @dragstart="startDrag($event, entry)"
+  >
     <Transition name="flash">
       <span v-if="copied" class="copied-flash" aria-live="polite">Copied</span>
     </Transition>
     <button
       class="star"
+      draggable="false"
       :class="{ on: favorite }"
       :data-tip="favorite ? 'Unfavorite' : 'Favorite'"
       :aria-label="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
@@ -85,6 +93,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     </button>
     <button
       class="entry"
+      draggable="false"
       @click="store.editingSnippet = { id: entry.id }"
       @mouseenter="$emit('hoverTitle', $event)"
       @mouseleave="$emit('leaveTitle')"
@@ -112,7 +121,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       </span>
     </button>
     <span class="when">{{ ago(entry.createdAt) }}</span>
-    <span class="rowacts">
+    <span class="rowacts" draggable="false">
       <button
         v-if="isDiagram"
         class="row-btn"

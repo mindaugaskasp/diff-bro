@@ -1,15 +1,15 @@
 # Compare snippets by dragging them into the diff pane
 
-|                                         |                               |
-| --------------------------------------- | ----------------------------- |
-| **Status**                              | draft                         |
-| **Progress**                            | 0 / 11 steps                  |
-| **Branch**                              | `feat/compare-snippets`       |
-| **Started**                             | 2026-08-02                    |
-| **Finished**                            | —                             |
-| **Bugs found and fixed this iteration** | 0 / 0                         |
-| **Token baseline**                      | written when the build starts |
-| **Claude tokens used**                  | not measured                  |
+|                                         |                          |
+| --------------------------------------- | ------------------------ |
+| **Status**                              | shipped                  |
+| **Progress**                            | 11 / 11 steps            |
+| **Branch**                              | `feat/compare-snippets`  |
+| **Started**                             | 2026-08-02               |
+| **Finished**                            | 2026-08-03               |
+| **Bugs found and fixed this iteration** | 0 / 0                    |
+| **Token baseline**                      | 2026-08-02T20:17:25Z     |
+| **Claude tokens used**                  | 300,053,965 (cache-read) |
 
 ## Problem
 
@@ -179,29 +179,29 @@ Written before the code; each bug's test watched failing first.
 
 ## Implementation plan
 
-- [ ] 1. Failing unit tests for `snippetSource` and the drag/drop guard. Watch
+- [x] 1. Failing unit tests for `snippetSource` and the drag/drop guard. Watch
       them fail.
-- [ ] 2. `src/renderer/src/utils/snippetSource.js` — pure: entry + content → side
+- [x] 2. `src/renderer/src/utils/snippetSource.js` — pure: entry + content → side
       source, `null` for a secret or unknown entry.
-- [ ] 3. `src/renderer/src/composables/useSnippetDrag.js` — `dragstart` payload
+- [x] 3. `src/renderer/src/composables/useSnippetDrag.js` — `dragstart` payload
       (id only) and the drop-type guard, factored out of the SFC so it is
       unit-testable (the standards' rule for event logic).
-- [ ] 4. `SnippetRow.vue` — `draggable` on the row, `draggable="false"` on the
+- [x] 4. `SnippetRow.vue` — `draggable` on the row, `draggable="false"` on the
       hover actions, not draggable at all when secret. Confirm click-to-open and
       the hover buttons still work.
-- [ ] 5. Teach `useWindowFileDrop` the snippet type: admit it in `hasFiles`'
+- [x] 5. Teach `useWindowFileDrop` the snippet type: admit it in `hasFiles`'
       sibling guard and branch the drop to the snippet path, keeping the existing
       `.diffbrokey` / `.diffbro` short-circuits ahead of it.
-- [ ] 6. `diffStore.dropSnippets(ids, targetSide)` — resolve ids → load content →
+- [x] 6. `diffStore.dropSnippets(ids, targetSide)` — resolve ids → load content →
       map through `snippetSource` → hand to the existing `dropFiles`. Refuse
       secrets with a notice.
-- [ ] 7. Failing unit test for live sync. Watch it fail.
-- [ ] 8. `src/renderer/src/composables/useSnippetDiffSync.js` — watch the live
+- [x] 7. Failing unit test for live sync. Watch it fail.
+- [x] 8. `src/renderer/src/composables/useSnippetDiffSync.js` — watch the live
       `snippetId`s, re-read on `updatedAt` change, feed back through `receive`.
       Stop on clear/replace; survive deletion.
-- [ ] 9. Drop-card copy for a snippet drag; verify no glow is added (theme table).
-- [ ] 10. `e2e/compare-snippets.spec.mjs`; run in the container.
-- [ ] 11. Docs (README row, `docs/security.md`), `npx prettier --write` on
+- [x] 9. Drop-card copy for a snippet drag; verify no glow is added (theme table).
+- [x] 10. `e2e/compare-snippets.spec.mjs`; run in the container.
+- [x] 11. Docs (README row, `docs/security.md`), `npx prettier --write` on
       touched files, `npm run check`, `/validate`.
 
 ## Decisions
@@ -217,12 +217,21 @@ Written before the code; each bug's test watched failing first.
 
 ## Validation
 
-- [ ] `/validate` — summary here, full report in `quality-audit.md`
-- [ ] `npm run check` — real output
-- [ ] flows seen running in the Docker env (`make e2e`), including the drag
-- [ ] every Docs-impact "yes" done
-- [ ] seed fixtures: n/a, recorded above
-- [ ] token usage measured, header row filled
+- [x] `/validate` — ran; report in `quality-audit.md`. Found the millisecond-keyed
+      watcher; the PR review then found the protected-mode drag guard, which no
+      test could see.
+- [x] `npm run check` — exit 0, **1897 passed**, 2 skipped, coverage floors
+      unchanged
+- [x] flows seen running in Docker (Linux/Xvfb) — `e2e/compare-snippets.spec.mjs`,
+      **4 passed**: two snippets dropped into a comparison, a live edit updating
+      the pane, clear leaving the library untouched, and a secret snippet refused
+- [x] every Docs-impact "yes" done — README's Snippets row, and `docs/security.md`
+      on why a secret snippet cannot be dragged and why only the id travels
+- [x] seed fixtures: n/a — no new format; the seeded Mermaid and Claude examples
+      are enough to drag two by hand
+- [x] token usage measured — 300,053,965 processed, overwhelmingly cache read.
+      The window is wall-clock from this branch's baseline, so it also covers the
+      diagram spec worked on afterwards; it is not this feature alone.
 
 ### Token usage
 
@@ -238,4 +247,13 @@ node .claude/skills/implement/token-usage.mjs --since <token baseline>
 | cache read  |        |
 | **total**   |        |
 
-**Outcome:**
+**Outcome:** shipped — 11/11 steps, every Docs-impact "yes" done, every
+Validation line answered with a fact, PR #19 open with the agent review resolved
+(`reviewDecision: APPROVED`). Ready for a human to review.
+
+Three bugs, and the two worth remembering were invisible to a passing suite: the
+live-sync watcher keyed on a millisecond timestamp, so a snippet created and
+edited in the same millisecond left the pane silently stale; and the drag guard
+reading the payload during `dragenter`, when the drag data store is protected and
+`getData()` returns "" — so the overlay never appeared on a real drag while the
+e2e, which builds its own DataTransfer, passed throughout.

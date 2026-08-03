@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
+import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
 import { usePasteShortcut } from './composables/usePasteShortcut'
 import { useSessionPersistence } from './composables/useSessionPersistence'
 import FileSlot from './components/FileSlot.vue'
@@ -81,10 +82,12 @@ const dropSuppressed = computed(
 )
 const {
   active: dragActive,
+  snippetDrag,
   onDragEnter,
   onDragLeave,
   onDrop
 } = useWindowFileDrop(store, dropSuppressed)
+useSnippetDiffSync()
 </script>
 
 <template>
@@ -194,7 +197,9 @@ const {
 
     <transition name="fade">
       <div v-if="dragActive" class="drop-overlay">
-        <div class="drop-card">Drop up to two files to compare</div>
+        <div class="drop-card">
+          {{ snippetDrag ? 'Drop a snippet to compare' : 'Drop up to two files to compare' }}
+        </div>
       </div>
     </transition>
   </div>
