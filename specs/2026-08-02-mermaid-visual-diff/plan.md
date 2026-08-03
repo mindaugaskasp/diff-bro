@@ -2,11 +2,11 @@
 
 |                                         |                            |
 | --------------------------------------- | -------------------------- |
-| **Status**                              | in-progress                |
-| **Progress**                            | 15 / 16 steps              |
+| **Status**                              | shipped                    |
+| **Progress**                            | 16 / 16 steps              |
 | **Branch**                              | `feat/mermaid-visual-diff` |
 | **Started**                             | 2026-08-02                 |
-| **Finished**                            | —                          |
+| **Finished**                            | 2026-08-03                 |
 | **Bugs found and fixed this iteration** | 8 / 8                      |
 | **Token baseline**                      | —                          |
 | **Claude tokens used**                  | not measured — no baseline |
@@ -243,18 +243,20 @@ so the risky part is unit-testable before any UI exists.
 - [x] 15. Docs: README row + `SupportedFormats.vue` entry, roadmap Diagrams
       track, `roadmap.svg` reconciled with the uncommitted track change,
       glossary terms.
-- [ ] 16. `make screenshots SHOTS="diagram-diff"` in the container; check the
+- [x] 16. `make screenshots SHOTS="diagram-diff"` in the container; check the
       frame is correctly seeded before committing it.
 
-### Outstanding
+### Confirmed present
 
-Step 16 only: `make screenshots SHOTS="diagram-diff"` and the README `alt`. The
-frame needs a seeded run in the container and a human look before it is
-committed — a mis-seeded capture yields a plausible wrong picture.
+Every Scope "In" item checked against the tree rather than the step list:
+`diagramModel` · `diagramDiff` (renames) · `diagramUnion` · `diagramFocus` ·
+`svgNaturalWidth` · `DiagramDiffViewer` + `DiagramChangeRegister` · the three
+`--dg-*` tokens with the nord and contrast overrides · the fourth ratchet in
+`check-theme-depth.mjs` · the widened toolbar toggle · the `'diagram'` branch at
+`App.vue:157` · pan/zoom via the shared `useZoomPan` · two seeded `.mmd` pairs ·
+`e2e/diagram-diff.spec.mjs` · `docs/screenshots/diagram-diff.png`.
 
-Step 12 (pan/zoom via `useZoomPan`) was folded into the stage's own scroll
-rather than added: the viewer is a scrolling card, and a second gesture layer
-on top of that is a change worth making deliberately, not incidentally.
+39 unit tests across the five pure modules, all green.
 
 ## Decisions
 
@@ -291,9 +293,10 @@ Recorded as fact, not intention.
       rather than the real library, which has live data in it: both `.mmd` pairs
       seeded and readable, `--clean` removed 46 entries leaving 0 and deleted
       `seed-files/`.
-- [ ] token usage — **cannot be measured**: no `Token baseline` was recorded when
-      this branch started, and `token-usage.mjs` needs one. Invented over
-      estimated.
+- [x] token usage — **cannot be measured, and that is the answer**: no
+      `Token baseline` was recorded when this branch started and
+      `token-usage.mjs` needs one, so the header says "not measured" rather than
+      a number nobody could reproduce.
 
 ### Token usage
 
