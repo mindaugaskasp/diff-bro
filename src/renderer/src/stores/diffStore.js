@@ -260,6 +260,9 @@ export const useDiffStore = defineStore('diff', {
     diskNotice: null,
     // The `diffbro compare` refusal when every tab is in use (utils/cli message).
     cliBlocked: null,
+    // Set by `diffbro backup <path>`: the destination the terminal named, which
+    // the passphrase dialog writes to instead of asking for one.
+    pendingBackupPath: null,
     // Everything that refusal has covered since it was last dismissed.
     blockedFiles: [],
     // save-diff dialog visibility
@@ -1190,6 +1193,11 @@ export const useDiffStore = defineStore('diff', {
       else if (command?.name === 'clipboard-save') await this.saveClipboardSnippet(command.text)
       else if (command?.name === 'compare') {
         await this.compareFromCli(command.files, command.transient === true)
+      } else if (command?.name === 'backup') {
+        // The passphrase is asked for here, not in the terminal: the bundle is
+        // assembled in the renderer, so this is where the flow already lives.
+        this.pendingBackupPath = command.path
+        this.configMode = 'backup'
       }
     },
     async saveClipboardSnippet(text) {
@@ -1435,17 +1443,36 @@ export const useDiffStore = defineStore('diff', {
       this.pendingTrustedKey = null
     },
     // --- configuration backup / restore ---
+    // Decrypted here and re-sealed under the passphrase in main: the vault key
+    // never travels, which is what makes the archive open on another machine.
+    async _backupBundle() {
+      return {
+        snippets: await useSnippetStore().fullBundle(),
+        vault: await useVaultStore().fullBundle(),
+        settings: { theme: this.userTheme },
+        session: loadPersisted('session')
+      }
+    },
     async runConfigBackup(passphrase) {
-      const snippets = await useSnippetStore().fullBundle()
-      const settings = { theme: this.userTheme }
-      const res = await window.api.backupConfig(snippets, settings, passphrase)
+      const res = await window.api.backupConfig(await this._backupBundle(), passphrase)
       if (res.ok) this.showNotice(`Configuration backed up to ${res.path}`)
       else if (!res.canceled) this.showNotice('Backup failed.')
+    },
+    // `diffbro backup <path>`: same seal, written where the terminal said.
+    async runBackupTo(target, passphrase) {
+      const res = await window.api.backupConfigTo(await this._backupBundle(), passphrase, target)
+      if (res.ok) this.showNotice(`Backed up to ${res.path}`)
+      else this.showNotice(res.error ?? 'Backup failed.')
+      return res
     },
     async runConfigRestore(passphrase) {
       const res = await window.api.restoreConfig(passphrase)
       if (res.ok) {
         if (res.snippets) await useSnippetStore().restoreBundle(res.snippets)
+        if (res.vault) await useVaultStore().restoreBundle(res.vault)
+        // Persisted, not applied live: replacing the comparisons on screen
+        // mid-restore is not what "restore my backup" asked for.
+        if (res.session) savePersisted('session', res.session)
         if (res.settings?.theme) this.setTheme(res.settings.theme)
         this.showNotice('Configuration restored — identity keys and trusted hosts are updated.')
       } else if (res.error === 'wrong-passphrase') {

@@ -69,8 +69,9 @@ contextBridge.exposeInMainWorld('api', {
   destroyRetiredKeys: () => ipcRenderer.invoke('share:destroyRetired'),
   // Configuration backup/restore (passphrase-encrypted; identity keys stay
   // in the main process, only travelling inside the encrypted blob).
-  backupConfig: (snippets, settings, passphrase) =>
-    ipcRenderer.invoke('config:backup', snippets, settings, passphrase),
+  backupConfig: (bundle, passphrase) => ipcRenderer.invoke('config:backup', bundle, passphrase),
+  backupConfigTo: (bundle, passphrase, target) =>
+    ipcRenderer.invoke('config:backupTo', bundle, passphrase, target),
   restoreConfig: (passphrase) => ipcRenderer.invoke('config:restore', passphrase),
   // Snippets export/import: passphrase-protected + signed, no recipient
   // setup needed (see snippetSealing.js).

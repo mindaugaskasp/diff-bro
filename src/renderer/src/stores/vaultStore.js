@@ -365,6 +365,44 @@ export const useVaultStore = defineStore('vault', {
       }
     },
     /**
+     * Every kept diff, decrypted, for a passphrase-sealed backup. The vault key
+     * never travels — the caller re-seals this under the user's passphrase,
+     * which is what makes the archive openable on another machine.
+     *
+     * Expiring diffs are left out for the reason autoBackup already leaves them
+     * out: the reader asked them to die, and restoring one later undoes that.
+     * @returns {Promise<{ diffs: Array<{name: string, payload: object, tags: string[]}> }>}
+     */
+    async fullBundle() {
+      const diffs = []
+      for (const entry of this.entries) {
+        if (entry.expiresAt !== null) continue
+        const payload = await this.load(entry.id)
+        if (payload == null) continue
+        diffs.push({ name: entry.name, payload, tags: entry.tags ?? [] })
+      }
+      return { diffs }
+    },
+    /**
+     * Merge a backup's diffs back in, re-encrypting each under THIS vault's key.
+     * The bundle came off disk, so an entry that is not the shape it claims is
+     * skipped rather than trusted.
+     * @param {{ diffs?: unknown[] }} bundle
+     */
+    async restoreBundle(bundle) {
+      for (const d of bundle?.diffs ?? []) {
+        if (!d || typeof d !== 'object' || !d.payload || typeof d.payload !== 'object') continue
+        await this._add({
+          name: typeof d.name === 'string' ? d.name : '',
+          payload: d.payload,
+          createdAt: Date.now(),
+          expiresAt: null,
+          from: null,
+          tags: Array.isArray(d.tags) ? d.tags.filter((t) => typeof t === 'string') : []
+        })
+      }
+    },
+    /**
      * Note that this diff was sealed for these recipients. Re-sharing to the
      * same key updates when, rather than stacking duplicates.
      * @param {string} id

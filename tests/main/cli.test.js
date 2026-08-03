@@ -87,6 +87,56 @@ describe('parseCli — compare', () => {
   })
 })
 
+// `open` is the documented spelling of "put the app in front of me", and with a
+// path it is `compare`'s one-file behaviour under a name that reads like opening.
+describe('parseCli — open', () => {
+  it('raises the app with no path', () => {
+    expect(parseCli([...PACKAGED, 'open'])).toEqual({
+      command: { name: 'raise' },
+      error: null
+    })
+  })
+
+  it('opens one file as a comparison waiting for its second side', () => {
+    const { command, error } = parseCli([...PACKAGED, 'open', 'a.json'], (p) => `/cwd/${p}`)
+    expect(error).toBe(null)
+    expect(command).toEqual({ name: 'compare', files: ['/cwd/a.json'], transient: false })
+  })
+
+  // Two paths is `compare`. Accepting them here would make the verbs synonyms.
+  it('refuses a second path rather than becoming compare', () => {
+    const { command, error } = parseCli([...PACKAGED, 'open', 'a.json', 'b.json'])
+    expect(command).toBe(null)
+    expect(error).toMatch(/one file/i)
+  })
+
+  it('rejects an empty path instead of resolving it to the cwd', () => {
+    expect(parseCli([...PACKAGED, 'open', '   ']).command).toEqual({ name: 'raise' })
+  })
+})
+
+describe('parseCli — backup', () => {
+  it('takes the destination, resolved against the caller cwd', () => {
+    const { command, error } = parseCli([...PACKAGED, 'backup', 'out.zip'], (p) => `/cwd/${p}`)
+    expect(error).toBe(null)
+    expect(command).toEqual({ name: 'backup', path: '/cwd/out.zip' })
+  })
+
+  it('refuses with no destination — a backup nowhere is not a default', () => {
+    const { command, error } = parseCli([...PACKAGED, 'backup'])
+    expect(command).toBe(null)
+    expect(error).toMatch(/path/i)
+  })
+
+  it('refuses a second destination', () => {
+    expect(parseCli([...PACKAGED, 'backup', 'a.zip', 'b.zip']).command).toBe(null)
+  })
+
+  it('rejects an empty destination', () => {
+    expect(parseCli([...PACKAGED, 'backup', '  ']).command).toBe(null)
+  })
+})
+
 describe('parseCli — the other verbs', () => {
   it('reads `create snippet`', () => {
     expect(parseCli([...PACKAGED, 'create', 'snippet']).command).toEqual({
