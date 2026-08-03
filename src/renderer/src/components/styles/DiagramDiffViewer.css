@@ -1,0 +1,277 @@
+/* Same card idiom as StructureDiffViewer: a raised surface floating on the
+   canvas, so the diagram reads as a document rather than a panel. */
+.dgv {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+.dg-legend {
+  background: var(--bg-panel);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: 9px var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* The glyph is the point: status is encoded twice so the legend survives
+   greyscale and a colour-blind reader, with colour as the faster of the two. */
+.lgchip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+}
+.lg.add .lgchip {
+  border: 2px solid var(--dg-add);
+}
+.lg.del .lgchip {
+  border: 2px dashed var(--dg-del);
+}
+.lg.chg .lgchip {
+  border: 2px solid var(--dg-chg);
+}
+.lg.same .lgchip {
+  border: 1px solid var(--border);
+}
+.lg-right {
+  margin-left: auto;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+}
+.dg-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.dg-stage {
+  /* Paper, not paper-white: --bg alone is #ffffff on light and contrast, which
+     is a lot of glare behind a diagram. A touch of the chrome tone warms it and
+     still leaves it lighter than the bands around it. */
+  background: color-mix(in srgb, var(--bg-panel) 40%, var(--bg));
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.dg-error {
+  color: var(--danger-text);
+  font-size: var(--font-sm);
+}
+.dg-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--band-row);
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.dg-status .add {
+  color: var(--dg-add);
+  font-weight: 600;
+}
+.dg-status .del {
+  color: var(--dg-del);
+  font-weight: 600;
+}
+.dg-status .chg {
+  color: var(--dg-chg);
+  font-weight: 600;
+}
+.dg-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.dg-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+/* The union source carries :::added / :::removed / :::changed and NO classDef,
+   so every stroke and fill here is ours to theme. A tinted fill does the work
+   colour-blind readers cannot get from a stroke alone.
+   !important is load-bearing, not laziness: mermaid injects its own
+   `#<svgId> .node rect { fill; stroke }` into the SVG, and an id selector beats
+   any class chain we can write from outside. */
+.dg-stage :deep(.added > rect),
+.dg-stage :deep(.added > polygon),
+.dg-stage :deep(.added > circle) {
+  stroke: var(--dg-add) !important;
+  stroke-width: 2px !important;
+  fill: color-mix(in srgb, var(--dg-add) 16%, var(--bg)) !important;
+}
+.dg-stage :deep(.removed > rect),
+.dg-stage :deep(.removed > polygon),
+.dg-stage :deep(.removed > circle) {
+  stroke: var(--dg-del) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 5 3 !important;
+  fill: color-mix(in srgb, var(--dg-del) 16%, var(--bg)) !important;
+}
+.dg-stage :deep(.changed > rect),
+.dg-stage :deep(.changed > polygon),
+.dg-stage :deep(.changed > circle),
+.dg-stage :deep(.renamed > rect),
+.dg-stage :deep(.renamed > polygon) {
+  stroke: var(--dg-chg) !important;
+  stroke-width: 2px !important;
+  fill: var(--bg-elevated) !important;
+}
+/* A removed node is still legible, but it is not the thing to read first. */
+.dg-stage :deep(.removed .nodeLabel) {
+  color: var(--text-dim);
+}
+
+/* Unchanged is the hairline the legend shows — mermaid's default fill would
+   otherwise make every untouched node compete with the changed ones. */
+.dg-stage :deep(.same > rect),
+.dg-stage :deep(.same > polygon) {
+  stroke: var(--border) !important;
+  stroke-width: 1px !important;
+  fill: var(--bg) !important;
+}
+
+/* Edges speak the same language as nodes. The union emitter writes a DOTTED
+   link for removed and a THICK one for added, so mermaid's own
+   edge-pattern-dotted / edge-thickness-thick classes are a reliable stand-in for
+   status — reliable because this view generates every edge in the source. */
+.dg-stage :deep(.edge-pattern-dotted) {
+  stroke: var(--dg-del) !important;
+  stroke-width: 2px !important;
+}
+.dg-stage :deep(.edge-thickness-thick) {
+  stroke: var(--dg-add) !important;
+  stroke-width: 2px !important;
+}
+
+/* Side by side, driven by the app's own Split view toggle. The drift note is
+   the honest caveat: two dagre layouts place unchanged nodes independently, so
+   a node that did not move can still appear to. */
+/* The amber is a RULE, not the text. --dg-chg is floored at 3:1 as a stroke;
+   used as body text it scores 2.14 on light and fails on ten of the fourteen
+   themes — the same trap the standards record for accent-coloured labels. */
+.dg-drift {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--dg-chg);
+  /* Tinted by its OWN status colour, not a neutral surface role. The surface
+     roles all sit within ~1.3:1 of each other, so a notice wearing one is just
+     another chrome band — it vanished into the legend above it. 30% because the
+     separation here is HUE, which luminance contrast does not measure: even at
+     40% the worst luminance ratio is 1.47, while the amber wash is obvious. Text
+     stays at 5.49 on the worst theme. */
+  background: color-mix(in srgb, var(--dg-chg) 30%, var(--bg-panel));
+  color: var(--text);
+  font-size: var(--font-xs);
+}
+.dg-stage.split .dg-zoom {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-evenly;
+  gap: var(--space-4);
+  width: 100%;
+}
+/* Panes start at the top, so the first rank lands at the same height on each
+   side rather than each diagram being centred in its own box. */
+.dg-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+.dg-ttl {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Zoom controls sit with the diagram type, at the quiet end of the legend. */
+.lg-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.dg-zbtn,
+.dg-pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius);
+  background: var(--btn-face);
+  color: var(--text);
+  font-size: var(--font-xs);
+  cursor: pointer;
+}
+.dg-pct {
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+}
+.dg-type {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+/* Panning is a drag, so the cursor says so before it is tried. */
+.dg-stage {
+  cursor: grab;
+}
+.dg-stage:active {
+  cursor: grabbing;
+}
+/* MermaidDiagram is height:100%; inside an auto-height transformed wrapper that
+   resolves to zero and the diagram vanishes. Shrink-wrap it instead. */
+/* A flex child shrinks to content, so a MermaidDiagram inside it resolves its
+   width:100% against zero and the diagram disappears. */
+.dg-zoom {
+  width: 100%;
+  min-width: 0;
+}
+.dg-zoom :deep(.mermaid-diagram),
+.dg-zoom :deep(.host),
+.dg-pane :deep(.mermaid-diagram),
+.dg-pane :deep(.host) {
+  height: auto;
+  align-items: flex-start;
+}

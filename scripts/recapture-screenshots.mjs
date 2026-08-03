@@ -54,6 +54,22 @@ const TAG_PALETTE = [
   '#e1699f'
 ]
 
+// A .mmd pair for the Diagram view. Written to the temp fixture dir rather than
+// committed: the frame is the artifact, the source is two lines of throwaway.
+const MMD_A = join(DATA, 'pipeline-v1.mmd')
+const MMD_B = join(DATA, 'pipeline-v2.mmd')
+const MMD_BEFORE = `flowchart TD
+  Ingest[Ingest] --> Validate{Valid?}
+  Validate -- yes --> Transform[Transform]
+  Validate -- no --> Reject[Reject]
+  Transform --> Publish[Publish]`
+const MMD_AFTER = `flowchart TD
+  Ingest[Ingest] --> Validate{Valid?}
+  Validate -- yes --> Enrich[Enrich]
+  Enrich --> Transform[Transform]
+  Validate -- no --> Quarantine[Quarantine]
+  Transform --> Publish[Publish]`
+
 const XLSX_A = join(DATA, 'budget-2024.xlsx')
 const XLSX_B = join(DATA, 'budget-2025.xlsx')
 const JSON_A = join(DATA, 'config-v1.json')
@@ -255,9 +271,21 @@ async function main() {
     await loadPair(app, page, XLSX_A, XLSX_B)
     await page.locator('.sheet-tabs').waitFor({ state: 'visible' })
     await shoot(page, 'spreadsheet-diff', want)
+
+    console.log('Loading diagram diff…')
+    await page.getByRole('button', { name: 'Clear', exact: true }).click()
+    writeFileSync(MMD_A, MMD_BEFORE)
+    writeFileSync(MMD_B, MMD_AFTER)
+    await loadPair(app, page, MMD_A, MMD_B)
+    await page.getByRole('checkbox', { name: /Diagram/i }).check()
+    // Union view: one layout carrying both revisions is the thing worth showing.
+    await page.getByRole('checkbox', { name: 'Split view' }).uncheck()
+    await page.locator('.dg-stage svg').first().waitFor({ state: 'visible' })
+    await page.waitForTimeout(1200)
+    await shoot(page, 'diagram-diff', want)
   } finally {
     await app.close()
-    for (const f of [XLSX_A, XLSX_B]) if (existsSync(f)) rmSync(f)
+    for (const f of [XLSX_A, XLSX_B, MMD_A, MMD_B]) if (existsSync(f)) rmSync(f)
     rmSync(userDataDir, { recursive: true, force: true })
     console.log('Cleaned up fixtures and temp profile.')
   }

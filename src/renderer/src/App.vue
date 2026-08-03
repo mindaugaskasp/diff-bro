@@ -9,6 +9,7 @@ import { useSessionPersistence } from './composables/useSessionPersistence'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
+import DiagramDiffViewer from './components/DiagramDiffViewer.vue'
 import StructureDiffViewer from './components/StructureDiffViewer.vue'
 import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
@@ -156,6 +157,7 @@ useSnippetDiffSync()
               <FormatHintBanner />
               <DiffViewer />
             </template>
+            <DiagramDiffViewer v-else-if="store.comparableKind === 'diagram'" />
             <StructureDiffViewer v-else-if="store.comparableKind === 'tree'" />
             <StreamedDiffViewer v-else-if="store.comparableKind === 'streamed'" />
             <SpreadsheetDiffViewer v-else />

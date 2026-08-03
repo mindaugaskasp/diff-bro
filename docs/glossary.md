@@ -11,9 +11,9 @@ where the concept lives in this repo.
 - **Renderer process** — the sandboxed UI process (Chromium + Vue). No Node, no
   `fs`, no network. Treated as untrusted (`src/renderer/`).
 - **Preload** — a small script that runs in the renderer with limited bridge
-  access and exposes `window.api`, the *only* channel to main
+  access and exposes `window.api`, the _only_ channel to main
   (`src/preload/index.js`).
-- **IPC** — *Inter-Process Communication.* Named message channels the two
+- **IPC** — _Inter-Process Communication._ Named message channels the two
   processes talk over: `ipcMain.handle('channel', …)` in main,
   `ipcRenderer.invoke('channel', …)` from preload. See
   [ipc-security.md](ipc-security.md).
@@ -26,19 +26,19 @@ where the concept lives in this repo.
 
 ## Security
 
-- **CSP** — *Content Security Policy.* A page-level allowlist (`connect-src
-  'self'`, `object-src 'none'`) that blocks outbound requests and plugins — the
+- **CSP** — _Content Security Policy._ A page-level allowlist (`connect-src
+'self'`, `object-src 'none'`) that blocks outbound requests and plugins — the
   second layer behind the network kill switch.
 - **Kill switch** — `webRequest.onBeforeRequest` handler that cancels every
   network request that isn't `file:`/`blob:`/`data:` (`src/main/security.js`).
 - **safeStorage** — Electron's OS-backed secret store (Keychain on macOS, DPAPI
   on Windows, libsecret on Linux). Encrypts keys at rest.
-- **DPAPI** — *Data Protection API*, the Windows secret-encryption service
+- **DPAPI** — _Data Protection API_, the Windows secret-encryption service
   `safeStorage` uses.
-- **XXE** — *XML External Entity* attack: a crafted XML `DOCTYPE` that reads
+- **XXE** — _XML External Entity_ attack: a crafted XML `DOCTYPE` that reads
   local files or expands recursively ("billion laughs"). Rejected outright by
   the `.xlsx` reader.
-- **ReDoS** — *Regular-expression Denial of Service*: a pattern that takes
+- **ReDoS** — _Regular-expression Denial of Service_: a pattern that takes
   exponential time on crafted input. Why the diff-search regex is length- and
   complexity-limited, and one of the SheetJS CVEs we avoided.
 - **Prototype pollution** — an attack that writes to `Object.prototype` via
@@ -53,15 +53,15 @@ where the concept lives in this repo.
 ## Cryptography (sharing & vault)
 
 - **AES-256-GCM** — the symmetric cipher used for saved diffs and shared files.
-  *GCM* (Galois/Counter Mode) is authenticated: tampering fails the tag.
-- **AAD** — *Additional Authenticated Data.* Bytes covered by the GCM tag but
+  _GCM_ (Galois/Counter Mode) is authenticated: tampering fails the tag.
+- **AAD** — _Additional Authenticated Data._ Bytes covered by the GCM tag but
   not encrypted (e.g. an entry's metadata), so editing them voids the entry.
-- **Ed25519** — the elliptic-curve signature scheme; a shared file is *signed*
+- **Ed25519** — the elliptic-curve signature scheme; a shared file is _signed_
   by the sender.
 - **X25519** — the elliptic-curve key-agreement scheme; used for **ECDH**.
-- **ECDH** — *Elliptic-Curve Diffie–Hellman*, deriving a shared secret between
+- **ECDH** — _Elliptic-Curve Diffie–Hellman_, deriving a shared secret between
   sender and recipient without transmitting a key.
-- **HKDF** — *HMAC-based Key Derivation Function*, turns the ECDH secret (plus a
+- **HKDF** — _HMAC-based Key Derivation Function_, turns the ECDH secret (plus a
   random salt) into the actual AES key.
 - **Sign-then-encrypt** — the sealing order: sign the payload, then encrypt, so
   the ciphertext reveals nothing and only the addressed recipient can open it
@@ -75,21 +75,21 @@ where the concept lives in this repo.
   **comparable** the viewer understands (`src/renderer/src/adapters/`).
 - **Comparable** — the normalized shape a viewer renders: `{ kind:'text', … }`
   or `{ kind:'spreadsheet', … }`.
-- **OOXML** — *Office Open XML*, the `.xlsx`/`.docx` format: a ZIP archive of
+- **OOXML** — _Office Open XML_, the `.xlsx`/`.docx` format: a ZIP archive of
   XML parts.
-- **SAX** — *Simple API for XML*, a streaming parser that fires events per tag
+- **SAX** — _Simple API for XML_, a streaming parser that fires events per tag
   instead of building a whole DOM tree (the `saxen` library).
 - **DEFLATE** — the compression algorithm inside ZIP (the `fflate` library).
 - **Shared strings** — an `.xlsx` de-duplicated text table (`sharedStrings.xml`)
   that cells reference by index.
-- **LCS** — *Longest Common Subsequence*, the classic diff algorithm; used to
+- **LCS** — _Longest Common Subsequence_, the classic diff algorithm; used to
   align spreadsheet rows and to build the copy-as-patch output.
 - **Monaco** — the VS Code editor component, used for the text diff view.
 - **Mermaid** — the text-to-diagram library used to render `mermaid` snippets.
 
 ## Packaging & distribution
 
-- **NSIS** — *Nullsoft Scriptable Install System*, the Windows `.exe` installer
+- **NSIS** — _Nullsoft Scriptable Install System_, the Windows `.exe` installer
   electron-builder produces.
 - **DMG** — the macOS disk-image install format.
 - **AppImage / .deb** — the two Linux distribution formats built.
@@ -111,3 +111,16 @@ where the concept lives in this repo.
 - **Sealing** — producing a shareable, signed-and-encrypted `.diffbro` file.
 - **Comparable kind** — `text` vs `spreadsheet`; the content router picks the
   viewer from it.
+
+## Union view
+
+The Mermaid comparison renders **one** diagram carrying both revisions rather
+than two side by side. Two independent renders lay out separately, so an
+inserted node moves everything below it and the reader cannot tell drift from
+change; a single layout removes that question.
+
+## Context radius
+
+How many hops out from a change the focused diagram keeps. 0 shows only what
+changed, 1 its immediate neighbours. What it hides is counted on screen, never
+silently dropped.

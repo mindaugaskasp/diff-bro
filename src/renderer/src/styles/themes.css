@@ -179,6 +179,9 @@
 /* Nord — the low-saturation arctic palette; calm frost-blue accent on slate,
    soft green/red for add/remove. Easy on the eyes for long sessions. */
 :root[data-theme='nord'] {
+  /* Sage --success-text and gold --warning-border are OKLab 0.081 apart on this
+     card — under the 0.10 floor, so added and changed read alike. Warmer. */
+  --dg-chg: #e09a6b;
   --tag-l: 0.8;
   --bg: #2e3440;
   --bg-panel: #3b4252;
@@ -447,6 +450,9 @@
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {
+  /* --warning-border scores 2.74:1 on this card, under the 3:1 non-text floor.
+     Darkened to clear it without moving the hue. */
+  --dg-chg: #8a6d00;
   --bg: #ffffff;
   --bg-panel: #f2f2f2;
   --bg-hover: #e2e2e2;

@@ -86,4 +86,14 @@
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
   --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+
+  /* Diagram-diff status. Encoded twice — colour AND stroke/badge — so the
+     comparison survives greyscale and colour-blind readers.
+     --dg-del mixes toward --text because nord's own --danger-border scores
+     2.24:1 on its card, under the 3:1 non-text floor; the same trick --btn-edge
+     already uses. NOT --accent for changed: on matrix --accent IS
+     --success-text (#00ff41), so added and changed would be one colour. */
+  --dg-add: var(--success-text);
+  --dg-del: color-mix(in srgb, var(--danger-border) 70%, var(--text));
+  --dg-chg: var(--warning-border);
 }

@@ -30,3 +30,13 @@ describe('filtersFor', () => {
     }
   })
 })
+
+// The empty state offers a Mermaid tile, so main has to know the key — the
+// renderer names a format and never supplies extensions of its own (rule 6).
+describe('mermaid', () => {
+  it('filters to diagram sources and still offers All files', () => {
+    const filters = filtersFor('mermaid')
+    expect(filters[0].extensions).toEqual(expect.arrayContaining(['mmd', 'mermaid']))
+    expect(filters.at(-1).extensions).toEqual(['*'])
+  })
+})

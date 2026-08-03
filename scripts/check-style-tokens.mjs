@@ -54,8 +54,18 @@ function filesToCheck() {
   return out
 }
 
+// Comment bodies are blanked, not removed, so reported line numbers still point
+// at the real line. A comment explaining WHY a colour was chosen would otherwise
+// be reported as the hardcoded colour it is describing.
+// token-exempt comments survive: they are the mechanism this file reads, and
+// blanking one silently withdraws an exemption someone deliberately wrote.
+const blankComments = (css) =>
+  css.replace(/\/\*[\s\S]*?\*\//g, (m) =>
+    m.includes('token-exempt') ? m : m.replace(/[^\n]/g, ' ')
+  )
+
 function violations(file) {
-  const lines = readFileSync(join(root, file), 'utf8').split('\n')
+  const lines = blankComments(readFileSync(join(root, file), 'utf8')).split('\n')
   const found = []
   // Prettier wraps a long allowed declaration (e.g. a multi-stop
   // linear-gradient) across several lines, leaving the colour stops on their own
