@@ -2,11 +2,11 @@
 
 |                                         |                                |
 | --------------------------------------- | ------------------------------ |
-| **Status**                              | in-progress                    |
+| **Status**                              | shipped                        |
 | **Progress**                            | 12 / 12 steps                  |
 | **Branch**                              | `feat/cli-open-and-backup`     |
 | **Started**                             | 2026-08-02                     |
-| **Finished**                            | —                              |
+| **Finished**                            | 2026-08-03                     |
 | **Bugs found and fixed this iteration** | 0 / 0                          |
 | **Token baseline**                      | 2026-08-02T20:11:28Z           |
 | **Claude tokens used**                  | 77,035,828 (mostly cache read) |
