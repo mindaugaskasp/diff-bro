@@ -1,100 +1,212 @@
+/* Same card idiom as StructureDiffViewer: a raised surface floating on the
+   canvas, so the diagram reads as a document rather than a panel. */
 .dgv {
   display: flex;
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1);
+  background: var(--bg-raised);
   overflow: hidden;
 }
-.dg-legend,
-.dg-status {
-  gap: var(--space-3);
-  padding: 0 var(--space-3);
-  background: var(--bg-panel);
-  color: var(--text-dim);
-  font-size: var(--font-xs);
-}
 .dg-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: 9px var(--space-4);
   border-bottom: 1px solid var(--border);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
 }
-.dg-status {
-  border-top: 1px solid var(--border);
-}
-.dg-spacer {
-  flex: 1;
-}
-.dg-key {
+.lg {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
-/* Status is carried by colour AND by the stroke pattern, so the legend survives
-   greyscale and a colour-blind reader. */
-.sw {
-  width: 14px;
-  height: 0;
-  border-top-width: 2px;
-  border-top-style: solid;
+/* The glyph is the point: status is encoded twice so the legend survives
+   greyscale and a colour-blind reader, with colour as the faster of the two. */
+.lgchip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-2xs);
+  font-weight: 700;
 }
-.sw.add {
-  border-top-color: var(--dg-add);
+.lg.add .lgchip {
+  border: 2px solid var(--dg-add);
 }
-.sw.del {
-  border-top-color: var(--dg-del);
-  border-top-style: dashed;
+.lg.del .lgchip {
+  border: 2px dashed var(--dg-del);
 }
-.sw.chg {
-  border-top-color: var(--dg-chg);
+.lg.chg .lgchip {
+  border: 2px solid var(--dg-chg);
+}
+.lg.same .lgchip {
+  border: 1px solid var(--border);
+}
+.lg-right {
+  margin-left: auto;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+}
+.dg-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 .dg-stage {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   padding: var(--space-4);
 }
 .dg-error {
   color: var(--danger-text);
   font-size: var(--font-sm);
 }
-.dg-counts {
-  display: inline-flex;
-  gap: var(--space-2);
-  font-variant-numeric: tabular-nums;
+.dg-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--band-row);
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
 }
-.dg-counts .add {
+.dg-status .add {
   color: var(--dg-add);
+  font-weight: 600;
 }
-.dg-counts .del {
+.dg-status .del {
   color: var(--dg-del);
+  font-weight: 600;
 }
-.dg-counts .chg {
+.dg-status .chg {
   color: var(--dg-chg);
+  font-weight: 600;
 }
-.dg-radius select {
-  height: var(--control-h-sm);
+.dg-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
 }
+.dg-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
 /* The union source carries :::added / :::removed / :::changed and NO classDef,
-   so the colour is ours to theme rather than an inline fill mermaid baked in. */
+   so every stroke and fill here is ours to theme. A tinted fill does the work
+   colour-blind readers cannot get from a stroke alone.
+   !important is load-bearing, not laziness: mermaid injects its own
+   `#<svgId> .node rect { fill; stroke }` into the SVG, and an id selector beats
+   any class chain we can write from outside. */
 .dg-stage :deep(.added > rect),
 .dg-stage :deep(.added > polygon),
 .dg-stage :deep(.added > circle) {
-  stroke: var(--dg-add);
-  stroke-width: 2px;
+  stroke: var(--dg-add) !important;
+  stroke-width: 2px !important;
+  fill: color-mix(in srgb, var(--dg-add) 16%, var(--bg)) !important;
 }
 .dg-stage :deep(.removed > rect),
 .dg-stage :deep(.removed > polygon),
 .dg-stage :deep(.removed > circle) {
-  stroke: var(--dg-del);
-  stroke-width: 2px;
-  stroke-dasharray: 4 3;
+  stroke: var(--dg-del) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 5 3 !important;
+  fill: color-mix(in srgb, var(--dg-del) 16%, var(--bg)) !important;
 }
 .dg-stage :deep(.changed > rect),
 .dg-stage :deep(.changed > polygon),
 .dg-stage :deep(.changed > circle),
-.dg-stage :deep(.renamed > rect) {
-  stroke: var(--dg-chg);
-  stroke-width: 2px;
+.dg-stage :deep(.renamed > rect),
+.dg-stage :deep(.renamed > polygon) {
+  stroke: var(--dg-chg) !important;
+  stroke-width: 2px !important;
+  fill: var(--bg-elevated) !important;
+}
+/* A removed node is still legible, but it is not the thing to read first. */
+.dg-stage :deep(.removed .nodeLabel) {
+  color: var(--text-dim);
+}
+
+/* Unchanged is the hairline the legend shows — mermaid's default fill would
+   otherwise make every untouched node compete with the changed ones. */
+.dg-stage :deep(.same > rect),
+.dg-stage :deep(.same > polygon) {
+  stroke: var(--border) !important;
+  stroke-width: 1px !important;
+  fill: var(--bg) !important;
+}
+
+/* Edges carry the same status language as nodes: solid accent for added, dashed
+   for removed. Mermaid draws a link as a <path>, and its own id-scoped rule sets
+   the stroke — hence !important here too. */
+.dg-stage :deep(path.added),
+.dg-stage :deep(.added > path) {
+  stroke: var(--dg-add) !important;
+  stroke-width: 2px !important;
+}
+.dg-stage :deep(path.removed),
+.dg-stage :deep(.removed > path) {
+  stroke: var(--dg-del) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 6 4 !important;
+}
+.dg-stage :deep(path.changed),
+.dg-stage :deep(.changed > path) {
+  stroke: var(--dg-chg) !important;
+  stroke-width: 2px !important;
+}
+
+/* Side by side, driven by the app's own Split view toggle. The drift note is
+   the honest caveat: two dagre layouts place unchanged nodes independently, so
+   a node that did not move can still appear to. */
+.dg-drift {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--dg-chg);
+  font-size: var(--font-xs);
+}
+.dg-stage.split {
+  align-items: stretch;
+  justify-content: space-evenly;
+  gap: var(--space-4);
+}
+.dg-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+.dg-ttl {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }

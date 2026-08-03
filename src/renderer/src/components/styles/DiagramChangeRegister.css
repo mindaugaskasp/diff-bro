@@ -1,36 +1,76 @@
+/* A right-hand rail, not a footer: the register is read ALONGSIDE the picture —
+   a row names a change you then look for in the diagram. */
 .dg-register {
+  width: 232px;
   flex: none;
-  max-height: 30%;
   overflow: auto;
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  list-style: none;
-  border-top: 1px solid var(--border);
-  background: var(--bg-elevated);
-  font-size: var(--font-xs);
+  border-left: 1px solid var(--border);
+  background: var(--bg-panel);
 }
-.dg-register li {
+.reghead {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: var(--chip-h);
-  color: var(--text);
+  height: var(--band-row);
+  padding: 0 var(--space-3);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-xs);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
-.dg-mark {
-  width: 1em;
-  text-align: center;
+.reghead ~ .reghead {
+  border-top: 1px solid var(--border);
+}
+.regrow {
+  display: flex;
+  width: 100%;
+  gap: var(--space-2);
+  align-items: baseline;
+  text-align: left;
+  padding: 8px var(--space-3);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  /* The status stripe, so the rail scans by colour before it is read. */
+  border-left: 3px solid transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+.regrow:hover {
+  background: var(--bg-hover);
+}
+.regrow b {
+  font-weight: 600;
+}
+.regrow em {
+  display: block;
+  font-style: normal;
+  color: var(--text-dim);
+  font-size: var(--font-xs);
+}
+.rmark {
+  flex: none;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
   font-weight: 700;
 }
-.added .dg-mark {
+.regrow.add {
+  border-left-color: var(--dg-add);
+}
+.regrow.add .rmark {
   color: var(--dg-add);
 }
-.removed .dg-mark {
+.regrow.del {
+  border-left-color: var(--dg-del);
+}
+.regrow.del .rmark {
   color: var(--dg-del);
 }
-.changed .dg-mark,
-.renamed .dg-mark {
-  color: var(--dg-chg);
+.regrow.chg {
+  border-left-color: var(--dg-chg);
 }
-.dg-was {
-  color: var(--text-dim);
+.regrow.chg .rmark {
+  color: var(--dg-chg);
 }

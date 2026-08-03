@@ -62,13 +62,28 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     await expect(toggle).toBeVisible({ timeout: 15000 })
     await toggle.check()
 
-    // One SVG, not two: a single layout is what stops unchanged nodes drifting.
+    // Split view is on by default, so the two revisions render side by side —
+    // the same toggle that splits a text diff into two panes.
+    await expect(page.locator('.dg-stage svg')).toHaveCount(2, { timeout: 20000 })
+    await expect(page.locator('.dg-pane .dg-ttl').first()).toContainText('before')
+    await expect(page.locator('.dg-drift')).toBeVisible()
+
+    // Turning it off gives ONE layout carrying both revisions, which is what
+    // stops an unchanged node drifting between two independent renders.
+    await page.getByRole('checkbox', { name: 'Split view' }).uncheck()
     await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
+    await expect(page.locator('.dg-drift')).toHaveCount(0)
+    // The status band counts in words, as the proposal specifies.
     const status = page.locator('.dg-status')
-    await expect(status).toContainText('+')
+    await expect(status).toContainText('Nodes')
+    await expect(status).toContainText('added')
     // Enrich and Quarantine arrived; Reject went.
     await expect(page.locator('.dg-register')).toContainText('Enrich')
     await expect(page.locator('.dg-register')).toContainText('Reject')
+    // The rail groups nodes from edges, as the design proposal specifies.
+    await expect(page.locator('.dg-register .reghead').first()).toContainText('Changes')
+    // The legend carries a glyph per status, not colour alone.
+    await expect(page.locator('.dg-legend .lgchip')).toHaveCount(4)
   } finally {
     await app.close()
     rmSync(work, { recursive: true, force: true })
@@ -86,10 +101,13 @@ test('focus hides the untouched part and says how much', async () => {
       timeout: 15000
     })
     await page.getByRole('checkbox', { name: /Diagram/i }).check()
+    await page.getByRole('checkbox', { name: 'Split view' }).uncheck()
     await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
 
-    await page.getByRole('button', { name: /Focus changes/i }).click()
+    // Focus is on by default; the count of what it hid is stated, never silent.
     await expect(page.locator('.dg-hidden')).toContainText('unchanged hidden', { timeout: 20000 })
+    await page.getByRole('checkbox', { name: 'Focus on changes' }).uncheck()
+    await expect(page.locator('.dg-hidden')).toHaveCount(0)
     // Still one picture, still a real diagram.
     await expect(page.locator('.dg-stage svg')).toHaveCount(1)
   } finally {
@@ -110,7 +128,7 @@ test('turning the toggle off returns to the text diff', async () => {
     })
     const toggle = page.getByRole('checkbox', { name: /Diagram/i })
     await toggle.check()
-    await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
+    await expect(page.locator('.dg-stage svg')).not.toHaveCount(0, { timeout: 20000 })
     await toggle.uncheck()
     await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.dgv')).toHaveCount(0)

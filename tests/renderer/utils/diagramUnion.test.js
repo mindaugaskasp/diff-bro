@@ -31,6 +31,20 @@ describe('unionSource', () => {
     expect(src).not.toMatch(/style\s+\w+\s+fill:/i)
   })
 
+  // An edge carries status too, or a re-pointed arrow — the one-character change
+  // a text diff reads worst — arrives as a grey line like any other.
+  it('classes each edge by its status', async () => {
+    const src = await union(
+      'flowchart TD\n  A[A] --> B[B]\n',
+      'flowchart TD\n  A[A] --> C[C]\n'
+    )
+    expect(src).toMatch(/e\d+@-->/)
+    expect(src).toMatch(/^\s*class e\d+ added$/m)
+    expect(src).toMatch(/^\s*class e\d+ removed$/m)
+    // `class` is a statement, not a classDef — no inline style is emitted.
+    expect(src).not.toMatch(/classDef/i)
+  })
+
   it('marks an unchanged node as same rather than leaving it bare', async () => {
     const src = await union('flowchart TD\n  A[Keep] --> B\n', 'flowchart TD\n  A[Keep] --> B\n')
     expect(src).toMatch(/:::same/)

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { modelFrom } from '../utils/diagramModel'
 import { diffDiagrams } from '../utils/diagramDiff'
@@ -7,20 +7,25 @@ import { unionSource } from '../utils/diagramUnion'
 import { focusDiff } from '../utils/diagramFocus'
 import MermaidDiagram from './MermaidDiagram.vue'
 import DiagramChangeRegister from './DiagramChangeRegister.vue'
-import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
-const focused = ref(false)
-const radius = ref(1)
 const source = ref('')
+const beforeSrc = ref('')
+const afterSrc = ref('')
 const error = ref('')
-const counts = ref(null)
+const full = ref(null)
 const hidden = ref(0)
-const rows = ref([])
+const type = ref('')
 // Only the newest build may write: two model parses are awaited, so a slower
 // earlier run can resolve after a newer one and leave the picture showing one
 // revision while the register shows another. Same guard MermaidDiagram carries.
 let buildSeq = 0
+
+const changed = (list) => (list ?? []).filter((x) => x.status !== 'same')
+const tally = (list, status) => (list ?? []).filter((x) => x.status === status).length
+
+const nodeRows = computed(() => changed(full.value?.nodes))
+const edgeRows = computed(() => changed(full.value?.edges))
 
 async function build() {
   const mine = ++buildSeq
@@ -35,64 +40,87 @@ async function build() {
     error.value = a.error || b.error
     return
   }
-  const full = diffDiagrams(a, b)
-  const shown = focused.value ? focusDiff(full, radius.value) : { ...full, hidden: 0 }
-  counts.value = full.counts
+  const result = diffDiagrams(a, b)
+  const shown = store.diagramFocus ? focusDiff(result, 1) : { ...result, hidden: 0 }
+  full.value = result
   hidden.value = shown.hidden
-  rows.value = [...full.nodes, ...full.edges].filter((x) => x.status !== 'same')
+  type.value = b.type
   source.value = unionSource(shown, b.type)
+  // Side by side is each revision on its own, still status-coloured: the left
+  // cannot know about what arrived, the right cannot know about what left.
+  beforeSrc.value = unionSource(onlySide(shown, BEFORE), b.type)
+  afterSrc.value = unionSource(onlySide(shown, AFTER), b.type)
 }
 
+const BEFORE = new Set(['same', 'removed', 'changed'])
+const AFTER = new Set(['same', 'added', 'changed', 'renamed'])
+const onlySide = (d, keep) => ({
+  nodes: d.nodes.filter((n) => keep.has(n.status)),
+  edges: d.edges.filter((e) => keep.has(e.status))
+})
+
 watch(
-  () => [
-    store.left?.content,
-    store.right?.content,
-    focused.value,
-    radius.value,
-    store.diffRevision
-  ],
+  () => [store.left?.content, store.right?.content, store.diagramFocus, store.diffRevision],
   build,
-  { immediate: true }
+  {
+    immediate: true
+  }
 )
 </script>
 
 <template>
   <div class="dgv">
-    <div class="dg-legend band band-row">
-      <span class="dg-key"><i class="sw add"></i>added</span>
-      <span class="dg-key"><i class="sw del"></i>removed</span>
-      <span class="dg-key"><i class="sw chg"></i>changed</span>
-      <span class="dg-spacer"></span>
-      <button class="btn btn-sm" :aria-pressed="focused" @click="focused = !focused">
-        <AppIcon name="diagram" />{{ focused ? 'Whole diagram' : 'Focus changes' }}
-      </button>
-      <label v-if="focused" class="dg-radius">
-        context
-        <select v-model.number="radius">
-          <option :value="0">0</option>
-          <option :value="1">1</option>
-          <option :value="2">2</option>
-        </select>
-      </label>
+    <div class="dg-legend">
+      <span class="lg add"><span class="lgchip">+</span>added</span>
+      <span class="lg del"><span class="lgchip">−</span>removed</span>
+      <span class="lg chg"><span class="lgchip">±</span>changed</span>
+      <span class="lg same"><span class="lgchip">·</span>unchanged</span>
+      <span class="lg-right">{{ type }}</span>
     </div>
 
-    <div class="dg-stage">
-      <p v-if="error" class="dg-error">{{ error }}</p>
-      <MermaidDiagram v-else :code="source" :debounce="0" />
+    <p v-if="store.renderSideBySide && !error" class="dg-drift">
+      Unchanged nodes sit at different heights on each side — each revision was laid out on its own.
+    </p>
+
+    <div class="dg-body">
+      <div class="dg-stage" :class="{ split: store.renderSideBySide }">
+        <p v-if="error" class="dg-error">{{ error }}</p>
+        <template v-else-if="store.renderSideBySide">
+          <div class="dg-pane">
+            <span class="dg-ttl">before</span>
+            <MermaidDiagram :code="beforeSrc" :debounce="0" />
+          </div>
+          <div class="dg-pane">
+            <span class="dg-ttl">after</span>
+            <MermaidDiagram :code="afterSrc" :debounce="0" />
+          </div>
+        </template>
+        <MermaidDiagram v-else :code="source" :debounce="0" />
+      </div>
+      <DiagramChangeRegister
+        v-if="nodeRows.length || edgeRows.length"
+        :nodes="nodeRows"
+        :edges="edgeRows"
+      />
     </div>
 
-    <div class="dg-status band band-row">
-      <span v-if="counts" class="dg-counts">
-        <b class="add">+{{ counts.added }}</b>
-        <b class="del">−{{ counts.removed }}</b>
-        <b class="chg">±{{ counts.changed + counts.renamed }}</b>
+    <div class="dg-status">
+      <span v-if="full">
+        Nodes <span class="add">{{ tally(full.nodes, 'added') }} added</span> ·
+        <span class="chg"
+          >{{ tally(full.nodes, 'changed') + tally(full.nodes, 'renamed') }} changed</span
+        >
+        ·
+        <span class="del">{{ tally(full.nodes, 'removed') }} removed</span>
       </span>
-      <span v-if="hidden" class="dg-hidden">{{ hidden }} unchanged hidden</span>
-      <span class="dg-spacer"></span>
-      <span class="dg-type">{{ rows.length }} change{{ rows.length === 1 ? '' : 's' }}</span>
+      <span v-if="full">
+        Edges <span class="add">{{ tally(full.edges, 'added') }} added</span> ·
+        <span class="del">{{ tally(full.edges, 'removed') }} removed</span>
+      </span>
+      <span class="dg-right">
+        <span v-if="hidden" class="dg-hidden">{{ hidden }} unchanged hidden</span>
+      </span>
     </div>
-
-    <DiagramChangeRegister v-if="rows.length" :rows="rows" />
   </div>
 </template>
 

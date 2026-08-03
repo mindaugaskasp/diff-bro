@@ -231,6 +231,8 @@ export const useDiffStore = defineStore('diff', {
     left: null, // { path, name, content, encoding, size }
     right: null,
     renderSideBySide: true,
+    // Diagram view: show only what changed plus a ring of context.
+    diagramFocus: true,
     // Compare the two sides as data rather than as lines, when both parse.
     semanticView: false,
     // Unchanged rows are most of a config file; off, the tree shows only what moved.

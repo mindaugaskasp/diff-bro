@@ -36,10 +36,13 @@ const nodeLine = (n) => {
   return `  ${safeId(n.id)}["${label}"]:::${n.status}`
 }
 
-const edgeLine = (e) => {
+// An edge id (mermaid >= 11.3) lets `class` carry its status. `class` is a
+// STATEMENT, unlike classDef — it names a class without emitting an inline
+// style, so the colour stays ours to theme.
+const edgeLine = (e, i) => {
   const label = safeLabel(e.label)
   const arrow = label ? `-- ${label} -->` : '-->'
-  return `  ${safeId(e.start)} ${arrow} ${safeId(e.end)}`
+  return `  ${safeId(e.start)} e${i}@${arrow} ${safeId(e.end)}`
 }
 
 /**
@@ -51,6 +54,8 @@ export function unionSource(diff, type) {
   const header = HEADERS[type] ?? 'flowchart TD'
   const lines = [header]
   for (const n of diff?.nodes ?? []) lines.push(nodeLine(n))
-  for (const e of diff?.edges ?? []) lines.push(edgeLine(e))
+  const edges = diff?.edges ?? []
+  edges.forEach((e, i) => lines.push(edgeLine(e, i)))
+  edges.forEach((e, i) => lines.push(`  class e${i} ${e.status}`))
   return `${lines.join('\n')}\n`
 }

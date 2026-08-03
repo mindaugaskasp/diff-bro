@@ -87,6 +87,13 @@ const clearTitle = computed(() =>
           <input v-model="store.semanticView" type="checkbox" />
           {{ store.structureLabel }}
         </label>
+        <label
+          v-if="store.comparableKind === 'diagram'"
+          data-tip="Show only what changed plus one hop of context — the rest is hidden and counted"
+        >
+          <input v-model="store.diagramFocus" type="checkbox" />
+          Focus on changes
+        </label>
       </div>
 
       <span class="divider" />
