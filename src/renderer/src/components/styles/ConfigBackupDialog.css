@@ -1,0 +1,6 @@
+/* The CLI-named destination. A long path wraps rather than ellipsising — the
+   tail of a path is the part that identifies it. */
+.dest {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}

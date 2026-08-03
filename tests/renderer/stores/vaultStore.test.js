@@ -715,3 +715,73 @@ describe('shareDraft when the local copy cannot be saved', () => {
     expect(vault.entries).toHaveLength(1)
   })
 })
+
+// The diffs travel decrypted, to be re-sealed under the user's passphrase: the
+// vault key never leaves the machine, which is what makes the archive portable.
+describe('vaultStore — backup bundle', () => {
+  it('carries every kept diff with its payload, name and tags', async () => {
+    const vault = useVaultStore()
+    await vault.save('kept one', null, PAYLOAD, ['infra'])
+    await vault.save('kept two', null, { mode: 'files', left: 'a' })
+
+    const bundle = await vault.fullBundle()
+    expect(bundle.diffs).toHaveLength(2)
+    expect(bundle.diffs.map((d) => d.name).sort()).toEqual(['kept one', 'kept two'])
+    const kept = bundle.diffs.find((d) => d.name === 'kept one')
+    expect(kept.payload).toEqual(PAYLOAD)
+    expect(kept.tags).toContain('infra')
+  })
+
+  // The same rule autoBackup already follows: the reader asked them to die, and
+  // restoring one months later would quietly undo that.
+  it('leaves expiring diffs out', async () => {
+    const vault = useVaultStore()
+    await vault.save('permanent', null, PAYLOAD)
+    await vault.save('temporary', 1, PAYLOAD)
+
+    const bundle = await vault.fullBundle()
+    expect(bundle.diffs.map((d) => d.name)).toEqual(['permanent'])
+  })
+
+  it('is empty rather than broken with nothing saved', async () => {
+    await expect(useVaultStore().fullBundle()).resolves.toEqual({ diffs: [] })
+  })
+
+  it('restores a bundle by re-encrypting each diff under this vault', async () => {
+    const vault = useVaultStore()
+    await vault.restoreBundle({
+      diffs: [{ name: 'from backup', payload: PAYLOAD, tags: ['restored'] }]
+    })
+    expect(vault.active).toHaveLength(1)
+    const [entry] = vault.active
+    expect(entry.name).toBe('from backup')
+    expect(entry.expiresAt).toBeNull()
+    await expect(vault.load(entry.id)).resolves.toEqual(PAYLOAD)
+  })
+
+  // A restored bundle is a file off disk — it is not trusted to be well formed.
+  it('skips malformed entries instead of throwing', async () => {
+    const vault = useVaultStore()
+    await vault.restoreBundle({
+      diffs: [null, { name: 'no payload' }, { payload: PAYLOAD, name: 'good' }, 'nonsense']
+    })
+    expect(vault.active.map((e) => e.name)).toEqual(['good'])
+  })
+
+  it('treats a bundle with no diffs as a no-op', async () => {
+    const vault = useVaultStore()
+    await vault.restoreBundle({})
+    await vault.restoreBundle(null)
+    expect(vault.active).toHaveLength(0)
+  })
+
+  it('round-trips a saved diff through bundle and restore', async () => {
+    const vault = useVaultStore()
+    await vault.save('original', null, PAYLOAD, ['infra'])
+    const bundle = await vault.fullBundle()
+    vault.entries = []
+    await vault.restoreBundle(bundle)
+    expect(vault.active).toHaveLength(1)
+    await expect(vault.load(vault.active[0].id)).resolves.toEqual(PAYLOAD)
+  })
+})

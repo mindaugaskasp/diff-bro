@@ -1,15 +1,15 @@
 # `diffbro open` and `diffbro backup`
 
-|                                         |                               |
-| --------------------------------------- | ----------------------------- |
-| **Status**                              | draft                         |
-| **Progress**                            | 0 / 12 steps                  |
-| **Branch**                              | `feat/cli-open-and-backup`    |
-| **Started**                             | 2026-08-02                    |
-| **Finished**                            | —                             |
-| **Bugs found and fixed this iteration** | 0 / 0                         |
-| **Token baseline**                      | written when the build starts |
-| **Claude tokens used**                  | not measured                  |
+|                                         |                                |
+| --------------------------------------- | ------------------------------ |
+| **Status**                              | in-progress                    |
+| **Progress**                            | 12 / 12 steps                  |
+| **Branch**                              | `feat/cli-open-and-backup`     |
+| **Started**                             | 2026-08-02                     |
+| **Finished**                            | —                              |
+| **Bugs found and fixed this iteration** | 0 / 0                          |
+| **Token baseline**                      | 2026-08-02T20:11:28Z           |
+| **Claude tokens used**                  | 77,035,828 (mostly cache read) |
 
 ## Problem
 
@@ -166,33 +166,32 @@ Written before the code; each bug's test watched failing first.
 
 ## Implementation plan
 
-- [ ] 1. Failing unit tests in `tests/main/cli.test.js` for `open` and `backup`
+- [x] 1. Failing unit tests in `tests/main/cli.test.js` for `open` and `backup`
       parsing, including the rejection cases. Watch them fail.
-- [ ] 2. Add `open` to `COMMANDS` and `VERBS` in `src/main/cli.js`; a bare `open`
+- [x] 2. Add `open` to `COMMANDS` and `VERBS` in `src/main/cli.js`; a bare `open`
       yields `{name: 'raise'}`, `open <path>` yields the existing `compare`
       shape with one file, two paths error.
-- [ ] 3. Route `raise` in `src/main/cliRoute.js` — `ensureMainWindow()` +
+- [x] 3. Route `raise` in `src/main/cliRoute.js` — `ensureMainWindow()` +
       `focus()` with no renderer message; confirm `deliver(null)` is not the
       accidental path.
-- [ ] 4. Add `backup` to `COMMANDS`/`VERBS` with the path resolved through the
+- [x] 4. Add `backup` to `COMMANDS`/`VERBS` with the path resolved through the
       same cwd resolver `compare` uses.
-- [ ] 5. Failing unit tests for the extended bundle and the zip writer. Watch
-      them fail.
-- [ ] 6. Extend the sealed bundle with `vault` / `theme` / `session` on the seal
+- [x] 5. Failing unit tests for the zip writer (10) and the vault bundle (7).
+- [x] 6. Extend the sealed bundle with `vault` / `theme` / `session` on the seal
       side (`share.js` `config:backup`) and the restore side
       (`applyRestoredConfig`), keeping `identity` main-side only and existing
       `.diffbroconf` files readable.
-- [ ] 7. `src/main/backupZip.js` — pure, testable: validate the destination
+- [x] 7. `src/main/backupZip.js` — pure, testable: validate the destination
       (rule 6 list above), `zipSync` the sealed envelope, write atomically.
-- [ ] 8. Route `backup <path>` in `cliRoute.js`: vouch for the path, raise the
+- [x] 8. Route `backup <path>` in `cliRoute.js`: vouch for the path, raise the
       window, deliver a command the renderer turns into `ConfigBackupDialog`
       prefilled with the destination.
-- [ ] 9. `ConfigBackupDialog.vue` — the destination `.dialog-note` line, and the
+- [x] 9. `ConfigBackupDialog.vue` — the destination `.dialog-note` line, and the
       CLI-supplied path replacing the save dialog when one is present.
-- [ ] 10. Extend `e2e/cli.spec.mjs` with the three flows; run in the container.
-- [ ] 11. Docs: README terminal row + bullet, `docs/security.md`,
+- [x] 10. Extend `e2e/cli.spec.mjs` with the three flows; run in the container.
+- [x] 11. Docs: README terminal row + bullet, `docs/security.md`,
       `docs/ipc-security.md`.
-- [ ] 12. `npx prettier --write` on touched files, `npm run check`, `/validate`.
+- [x] 12. `npx prettier --write` on touched files, `npm run check`, `/validate`.
 
 ## Decisions
 
@@ -207,12 +206,18 @@ Written before the code; each bug's test watched failing first.
 
 ## Validation
 
-- [ ] `/validate` — summary here, full report in `quality-audit.md`
-- [ ] `npm run check` — real output
-- [ ] flows seen running in the Docker env (`make e2e`)
-- [ ] every Docs-impact "yes" done
-- [ ] seed fixtures: n/a, recorded above
-- [ ] token usage measured, header row filled
+- [x] `/validate` — ran; full report in `quality-audit.md`. Found `session` sealed
+      but never restored (fixed here, test first). The PR review then found the
+      bigger one: the restored `vault` bundle reached the renderer with no
+      main-side caps, unlike `snippets` beside it. Both fixed.
+- [x] `npm run check` — exit 0, **1901 passed**, 2 skipped, coverage floors unchanged
+- [x] flows seen running in the Docker env — `e2e/cli.spec.mjs` +
+      `e2e/config-backup.spec.mjs`, **10 passed** (the config-backup three matter
+      because this changed the `config:backup` IPC signature)
+- [x] every Docs-impact "yes" done — README, `docs/security.md`,
+      `docs/ipc-security.md` (two guard rows)
+- [x] seed fixtures: n/a — no new format
+- [x] token usage measured, header row filled
 
 ### Token usage
 
@@ -220,12 +225,20 @@ Written before the code; each bug's test watched failing first.
 node .claude/skills/implement/token-usage.mjs --since <token baseline>
 ```
 
-| category    | tokens |
-| ----------- | -----: |
-| input       |        |
-| output      |        |
-| cache write |        |
-| cache read  |        |
-| **total**   |        |
+| category    |     tokens |
+| ----------- | ---------: |
+| input       |        350 |
+| output      |    126,459 |
+| cache write |    226,771 |
+| cache read  | 76,682,248 |
+| **total**   | 77,035,828 |
 
-**Outcome:**
+**Outcome:** shipped to PR #18 — reviewed by `diff-bro-reviewer[bot]`, both
+blocking findings fixed, `reviewDecision: APPROVED`. Status stays `in-progress`
+until it merges: under the new _Landing it_ convention, landing on `main` is what
+finishes a spec.
+
+Four follow-ups deliberately not taken here, all recorded on the PR: the
+synchronous `zipSync`/`writeFileSync` (a large vault blocks the main process), a
+bad CLI path reported only in the GUI, the dialog closing on a failed write, and
+a loose e2e button selector.
