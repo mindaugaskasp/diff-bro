@@ -1,0 +1,100 @@
+.dgv {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.dg-legend,
+.dg-status {
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  font-size: var(--font-xs);
+}
+.dg-legend {
+  border-bottom: 1px solid var(--border);
+}
+.dg-status {
+  border-top: 1px solid var(--border);
+}
+.dg-spacer {
+  flex: 1;
+}
+.dg-key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+/* Status is carried by colour AND by the stroke pattern, so the legend survives
+   greyscale and a colour-blind reader. */
+.sw {
+  width: 14px;
+  height: 0;
+  border-top-width: 2px;
+  border-top-style: solid;
+}
+.sw.add {
+  border-top-color: var(--dg-add);
+}
+.sw.del {
+  border-top-color: var(--dg-del);
+  border-top-style: dashed;
+}
+.sw.chg {
+  border-top-color: var(--dg-chg);
+}
+.dg-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+}
+.dg-error {
+  color: var(--danger-text);
+  font-size: var(--font-sm);
+}
+.dg-counts {
+  display: inline-flex;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+.dg-counts .add {
+  color: var(--dg-add);
+}
+.dg-counts .del {
+  color: var(--dg-del);
+}
+.dg-counts .chg {
+  color: var(--dg-chg);
+}
+.dg-radius select {
+  height: var(--control-h-sm);
+}
+/* The union source carries :::added / :::removed / :::changed and NO classDef,
+   so the colour is ours to theme rather than an inline fill mermaid baked in. */
+.dg-stage :deep(.added > rect),
+.dg-stage :deep(.added > polygon),
+.dg-stage :deep(.added > circle) {
+  stroke: var(--dg-add);
+  stroke-width: 2px;
+}
+.dg-stage :deep(.removed > rect),
+.dg-stage :deep(.removed > polygon),
+.dg-stage :deep(.removed > circle) {
+  stroke: var(--dg-del);
+  stroke-width: 2px;
+  stroke-dasharray: 4 3;
+}
+.dg-stage :deep(.changed > rect),
+.dg-stage :deep(.changed > polygon),
+.dg-stage :deep(.changed > circle),
+.dg-stage :deep(.renamed > rect) {
+  stroke: var(--dg-chg);
+  stroke-width: 2px;
+}

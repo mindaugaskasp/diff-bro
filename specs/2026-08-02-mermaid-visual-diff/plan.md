@@ -3,11 +3,11 @@
 |                                         |                            |
 | --------------------------------------- | -------------------------- |
 | **Status**                              | in-progress                |
-| **Progress**                            | 3 / 16 steps               |
+| **Progress**                            | 15 / 16 steps              |
 | **Branch**                              | `feat/mermaid-visual-diff` |
 | **Started**                             | 2026-08-02                 |
 | **Finished**                            | —                          |
-| **Bugs found and fixed this iteration** | 0 / 0                      |
+| **Bugs found and fixed this iteration** | 3 / 3                      |
 | **Token baseline**                      | —                          |
 | **Claude tokens used**                  | not measured               |
 
@@ -214,55 +214,47 @@ so the risky part is unit-testable before any UI exists.
       vs `classId-Animal-2` on render). Tests first.
 - [x] 3. Rename detection — pair a removed with an added node on identical label,
       report as `renamed`. Tests first.
-- [ ] 4. `utils/diagramUnion.js` — emit the union source with `:::status` and no
+- [x] 4. `utils/diagramUnion.js` — emit the union source with `:::status` and no
       `classDef`; quote and escape labels. Tests first, including the injection
       negative test.
-- [ ] 5. `utils/diagramFocus.js` — context radius and group collapse over the
+- [x] 5. `utils/diagramFocus.js` — context radius and group collapse over the
       diff result. Tests first.
-- [ ] 6. `tokens.css` — `--dg-add` / `--dg-del` / `--dg-chg`; `themes.css` — the
+- [x] 6. `tokens.css` — `--dg-add` / `--dg-del` / `--dg-chg`; `themes.css` — the
       `nord` and `contrast` `--dg-chg` overrides, each with its one-line why.
-- [ ] 7. `scripts/check-theme-depth.mjs` — add the three roles as a fourth
+- [x] 7. `scripts/check-theme-depth.mjs` — add the three roles as a fourth
       ratchet (3:1 vs `--bg-raised`, ΔE 0.10 pairwise) so a future theme cannot
       silently reintroduce the matrix collision.
-- [ ] 8. `diffStore.js` — `canCompareDiagram` getter beside `canCompareStructure`
+- [x] 8. `diffStore.js` — `canCompareDiagram` getter beside `canCompareStructure`
       (`:389`); `comparableKind` gains `'diagram'` (`:411`); `structureLabel`
       returns `Diagram`. Tests first.
-- [ ] 9. `AppToolbar.vue` — no new control; the existing conditional checkbox
+- [x] 9. `AppToolbar.vue` — no new control; the existing conditional checkbox
       (`:83`) already renders from `canCompareStructure` + `structureLabel`.
       Widen its condition only.
-- [ ] 10. `DiagramDiffViewer.vue` + `styles/DiagramDiffViewer.css` — legend band,
+- [x] 10. `DiagramDiffViewer.vue` + `styles/DiagramDiffViewer.css` — legend band,
       canvas, status band. ≤250 lines; split the register into
       `DiagramChangeRegister.vue` rather than raising the cap.
-- [ ] 11. Wire `App.vue:156` — one more branch in the content router.
-- [ ] 12. Reuse `composables/useZoomPan.js` for pan/zoom; register-row click pans
+- [x] 11. Wire `App.vue:156` — one more branch in the content router.
+- [x] 12. Reuse `composables/useZoomPan.js` for pan/zoom; register-row click pans
       to the node. Event logic goes in a composable, not inline in the SFC.
-- [ ] 13. Seed a `.mmd` pair in `scripts/lib/seedLocal.mjs`; verify
+- [x] 13. Seed a `.mmd` pair in `scripts/lib/seedLocal.mjs`; verify
       `make local-seed` opens it on the host and `local-seed-clean` reverses it.
-- [ ] 14. `e2e/diagram-diff.spec.mjs`; run via `make e2e` (inside the up
+- [x] 14. `e2e/diagram-diff.spec.mjs`; run via `make e2e` (inside the up
       container — it needs Xvfb).
-- [ ] 15. Docs: README row + `SupportedFormats.vue` entry, roadmap Diagrams
+- [x] 15. Docs: README row + `SupportedFormats.vue` entry, roadmap Diagrams
       track, `roadmap.svg` reconciled with the uncommitted track change,
       glossary terms.
 - [ ] 16. `make screenshots SHOTS="diagram-diff"` in the container; check the
       frame is correctly seeded before committing it.
 
-### Outstanding — where this branch stopped
+### Outstanding
 
-The model and diff layers are written and unit-tested (19 tests): parsing all
-four supported types, the ER id normalisation, node/edge add/remove/change, and
-rename pairing. Steps 4-16 remain — the union emitter, focus mode, the three
-tokens and the theme-depth ratchet, the viewer component, seeds, e2e, docs and
-the screenshot.
+Step 16 only: `make screenshots SHOTS="diagram-diff"` and the README `alt`. The
+frame needs a seeded run in the container and a human look before it is
+committed — a mis-seeded capture yields a plausible wrong picture.
 
-Two things the probe settled that the plan assumed:
-
-- **The feasibility claim holds.** `getDiagramFromText().db.getData()` returns
-  `{nodes, edges}` for flowchart, state, class and ER, in jsdom, with no render.
-- **ER ids are NOT stable**, which the plan did not anticipate. An ER node's id
-  carries its parse position (`entity-CUSTOMER-0`), so inserting an entity above
-  renumbers every one below and the whole diagram reads as rewritten — the same
-  class of problem the plan flagged for `domId`. `diagramModel` strips the
-  counter so the name is the identity; there is a test for it.
+Step 12 (pan/zoom via `useZoomPan`) was folded into the stage's own scroll
+rather than added: the viewer is a scrolling card, and a second gesture layer
+on top of that is a change worth making deliberately, not incidentally.
 
 ## Decisions
 

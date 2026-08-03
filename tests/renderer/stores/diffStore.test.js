@@ -2572,3 +2572,45 @@ describe('exportImage', () => {
     expect(store.notice).toBeTruthy()
   })
 })
+
+// The Diagram toggle reuses the Structure checkbox — a second control would be
+// the repo's recurring "second bespoke copy". So the getters have to agree.
+describe('diagram comparison', () => {
+  const mmd = (body) => `flowchart TD\n${body}\n`
+  const load = (diff, l, r) => {
+    diff.left = { path: '/a.mmd', name: 'a.mmd', content: l }
+    diff.right = { path: '/b.mmd', name: 'b.mmd', content: r }
+    diff.mode = 'files'
+  }
+
+  it('offers the toggle only when both sides look like Mermaid', () => {
+    const diff = useDiffStore()
+    load(diff, mmd('  A --> B'), mmd('  A --> C'))
+    expect(diff.canCompareDiagram).toBe(true)
+
+    load(diff, mmd('  A --> B'), 'just some text')
+    expect(diff.canCompareDiagram).toBe(false)
+  })
+
+  it('calls itself Diagram, not Structure', () => {
+    const diff = useDiffStore()
+    load(diff, mmd('  A --> B'), mmd('  A --> C'))
+    expect(diff.structureLabel).toBe('Diagram')
+  })
+
+  it('routes to the diagram viewer only with the toggle on', () => {
+    const diff = useDiffStore()
+    load(diff, mmd('  A --> B'), mmd('  A --> C'))
+    diff.semanticView = false
+    expect(diff.comparableKind).toBe('text')
+    diff.semanticView = true
+    expect(diff.comparableKind).toBe('diagram')
+  })
+
+  it('never offers it for a streamed comparison', () => {
+    const diff = useDiffStore()
+    load(diff, mmd('  A --> B'), mmd('  A --> C'))
+    diff.left = { ...diff.left, kind: 'streamed' }
+    expect(diff.canCompareDiagram).toBe(false)
+  })
+})
