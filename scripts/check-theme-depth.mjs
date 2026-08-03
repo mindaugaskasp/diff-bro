@@ -338,6 +338,13 @@ const deltaE = (a, b) => {
   return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2])
 }
 
+function pairsOf(keys) {
+  const out = []
+  for (let i = 0; i < keys.length; i++)
+    for (let j = i + 1; j < keys.length; j++) out.push([keys[i], keys[j]])
+  return out
+}
+
 let dgWorst = { ratio: Infinity }
 let dgWorstPair = { de: Infinity }
 for (const theme of THEMES) {
@@ -363,17 +370,14 @@ for (const theme of THEMES) {
       failures.push(`${theme}: ${key} ${ratio.toFixed(2)} < ${DG_MIN} on --bg-raised`)
     }
   }
-  const keys = Object.keys(got)
-  for (let i = 0; i < keys.length; i++) {
-    for (let j = i + 1; j < keys.length; j++) {
-      const de = deltaE(got[keys[i]], got[keys[j]])
-      if (de < dgWorstPair.de) dgWorstPair = { de, theme, pair: `${keys[i]}/${keys[j]}` }
-      if (de < DG_DELTA_E) {
-        failures.push(
-          `${theme}: ${keys[i]} and ${keys[j]} are OKLab ${de.toFixed(3)} apart ` +
-            `(< ${DG_DELTA_E}) — two statuses would read as one`
-        )
-      }
+  for (const [x, y] of pairsOf(Object.keys(got))) {
+    const de = deltaE(got[x], got[y])
+    if (de < dgWorstPair.de) dgWorstPair = { de, theme, pair: `${x}/${y}` }
+    if (de < DG_DELTA_E) {
+      failures.push(
+        `${theme}: ${x} and ${y} are OKLab ${de.toFixed(3)} apart ` +
+          `(< ${DG_DELTA_E}) — two statuses would read as one`
+      )
     }
   }
 }

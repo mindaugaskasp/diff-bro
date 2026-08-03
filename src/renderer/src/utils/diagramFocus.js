@@ -4,6 +4,21 @@
 
 const CHANGED = new Set(['added', 'removed', 'changed', 'renamed'])
 
+// Each hop expands from the set as it stood at the START of that hop. Adding to
+// `keep` mid-pass lets one hop cascade the length of a chain, which is "radius"
+// meaning nothing.
+function grow(keep, edges, radius) {
+  for (let hop = 0; hop < Math.max(0, radius); hop++) {
+    const frontier = new Set()
+    for (const e of edges) {
+      if (keep.has(e.start)) frontier.add(e.end)
+      if (keep.has(e.end)) frontier.add(e.start)
+    }
+    for (const id of frontier) keep.add(id)
+  }
+  return keep
+}
+
 /**
  * @param {{nodes: object[], edges: object[]}} diff
  * @param {number} [radius] hops of context to keep around each change
@@ -17,18 +32,7 @@ export function focusDiff(diff, radius = 1) {
   // asked. Show it as it is.
   if (!changed.length) return { nodes, edges, hidden: 0 }
 
-  const keep = new Set(changed)
-  // Each hop expands from the set as it stood at the START of that hop. Adding
-  // to `keep` mid-pass would let one hop cascade the length of a chain, which is
-  // "radius" meaning nothing.
-  for (let hop = 0; hop < Math.max(0, radius); hop++) {
-    const frontier = new Set()
-    for (const e of edges) {
-      if (keep.has(e.start)) frontier.add(e.end)
-      if (keep.has(e.end)) frontier.add(e.start)
-    }
-    for (const id of frontier) keep.add(id)
-  }
+  const keep = grow(new Set(changed), edges, radius)
   const kept = nodes.filter((n) => keep.has(n.id))
   return {
     nodes: kept,
