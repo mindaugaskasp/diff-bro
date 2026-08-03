@@ -112,7 +112,8 @@ watch(
     </div>
 
     <p v-if="store.renderSideBySide && !error" class="dg-drift">
-      Unchanged nodes sit at different heights on each side — each revision was laid out on its own.
+      Aligned at the first node — below it each revision was laid out on its own, so an unchanged
+      node can still sit at a different height.
     </p>
 
     <div class="dg-body">

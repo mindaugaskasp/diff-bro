@@ -186,7 +186,13 @@
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   border-left: 3px solid var(--dg-chg);
-  background: var(--bg-elevated);
+  /* Tinted by its OWN status colour, not a neutral surface role. The surface
+     roles all sit within ~1.3:1 of each other, so a notice wearing one is just
+     another chrome band — it vanished into the legend above it. 30% because the
+     separation here is HUE, which luminance contrast does not measure: even at
+     40% the worst luminance ratio is 1.47, while the amber wash is obvious. Text
+     stays at 5.49 on the worst theme. */
+  background: color-mix(in srgb, var(--dg-chg) 30%, var(--bg-panel));
   color: var(--text);
   font-size: var(--font-xs);
 }
