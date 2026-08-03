@@ -42,9 +42,6 @@ export {
   SECTIONS
 }
 
-// Default quick look-up shortcut: Cmd/Ctrl+Shift+Space on every platform. Two
-// modifiers so it can't fire while typing capitals (the old macOS Shift+Space
-// did). Mirrored in src/main/quickLook.js — keep the two in step.
 function readState() {
   let parsed
   try {

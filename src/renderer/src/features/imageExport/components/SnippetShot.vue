@@ -1,6 +1,6 @@
 <script setup>
 // The photo studio: a snippet claims the diff column for one shot
-// (diffStore.snippetShot), so the picture is the app's own rendering.
+// (imageExportStore.snippetShot), so the picture is the app's own rendering.
 import { computed, ref } from 'vue'
 import { useImageExportStore } from '../imageExportStore'
 import { useCaptureRegion } from '../../../composables/useCaptureRegion'
@@ -9,7 +9,7 @@ import MermaidDiagram from '../../../components/MermaidDiagram.vue'
 import SnippetCode from '../../../components/SnippetCode.vue'
 
 const props = defineProps({
-  /** @type {import('vue').PropType<import('../types').SnippetShot>} */
+  /** @type {import('vue').PropType<import('../../../types').SnippetShot>} */
   shot: { type: Object, required: true, validator: shaped('name', 'lang', 'code') }
 })
 

@@ -51,7 +51,11 @@ function cycleFindings(cycles, baseline) {
 async function measure(files) {
   const measured = {}
   for (const file of files) {
-    measured[file] = { fn: 0, file: readFileSync(join(root, file), 'utf8').split('\n').length }
+    // trimEnd: a newline-terminated file splits into a phantom empty last
+    // element, and counting it writes caps one line looser than the rule they
+    // guard — so "not one line more" would have been "not two".
+    const text = readFileSync(join(root, file), 'utf8').trimEnd()
+    measured[file] = { fn: 0, file: text ? text.split('\n').length : 0 }
   }
   if (!files.length) return measured
 

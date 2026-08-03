@@ -4,6 +4,7 @@ import prettier from 'eslint-config-prettier'
 import sonarjs from 'eslint-plugin-sonarjs'
 import globals from 'globals'
 import { SIZE_EXEMPT, legacyConfigBlocks } from './scripts/lib/legacySize.mjs'
+import { featureNames } from './scripts/lib/featureDirs.mjs'
 
 // The renderer/main fence (hard rule 3). Shared rather than repeated because
 // no-restricted-imports is REPLACED, not merged, by a later block — a config
@@ -244,6 +245,35 @@ export default [
   // and a slice's own files use bare relative paths, so nothing special is
   // needed here. The core is different: it may not import a slice AT ALL, which
   // is the direction check-structure.mjs catches as a cycle.
+  // From OUTSIDE a slice the pattern above is enough, because the specifier
+  // carries `features/`. From INSIDE one it does not: a sibling is reached as
+  // `../imageExport/imageExportStore`, which has no `features/` segment and so
+  // matched nothing — and `../*/*` cannot be used instead, since `*` also
+  // matches `..` and would ban the core. Naming the siblings is the only form
+  // that separates them; the names are read from disk, so a new slice is
+  // covered the moment it exists.
+  ...featureNames().map((self) => ({
+    files: [`src/renderer/src/features/${self}/**`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: NO_NODE_IN_RENDERER.paths,
+          patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
+            {
+              group: featureNames()
+                .filter((other) => other !== self)
+                .flatMap((other) => [`**/${other}/*`, `**/${other}/*/**`]),
+              message:
+                "Another slice's internals are private. Import the slice itself (…/features/<name>), or lift the shared part into utils/ or components/."
+            }
+          ]
+        }
+      ]
+    }
+  })),
+
   {
     files: ['src/renderer/src/stores/**'],
     rules: {

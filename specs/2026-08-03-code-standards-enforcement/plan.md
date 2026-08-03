@@ -7,7 +7,7 @@
 | **Branch**                              | `improvement/code-standards-enforcement` |
 | **Started**                             | 2026-08-03                               |
 | **Finished**                            | 2026-08-03                               |
-| **Bugs found and fixed this iteration** | 8 / 8                                    |
+| **Bugs found and fixed this iteration** | 12 / 12                                  |
 | **Token baseline**                      | 2026-08-03T17:28:35Z                     |
 | **Claude tokens used**                  | 122,728,701 (measured)                   |
 
@@ -647,26 +647,81 @@ Each was caught by a guard or a plant, not by reading:
 | 2026-08-03 | Smallest cluster extracted first                                                                          | proves the store shape, test relocation and call-site rename on 2 files before the pattern is repeated on 14                                                                                                                                                                                                                                                                                                                                 | starting with `shareStore` because it is the largest win                                                                         |
 | 2026-08-03 | Theme verdict table dropped                                                                               | no visual surface — lint config, a docs section, a script, and a behaviour-preserving refactor                                                                                                                                                                                                                                                                                                                                               | leaving the table blank                                                                                                          |
 
+## Review round (PR #23)
+
+An agent review and an agent QA pass ran against the pushed branch. **QA found
+nothing**: 309/309 e2e green (307 in Docker + the two macOS-gated specs natively),
+all 42 registry actions, all 48 native menu items and all 48 in-app menu items
+driven with zero renderer errors, every moved dialog opening and rendering with
+its moved CSS. The review found four real defects that 2025 unit tests and 309
+e2e tests all passed over:
+
+9. **The unlink fix was applied to one of two `clear()` call sites.**
+   `_loadReplacement` ([diffStore.js:445](src/renderer/src/stores/diffStore.js#L445))
+   also clears, and `dropFiles` routes to it **precisely when `diffSaved` is
+   true** — no prompt, because it is saved. So dropping files onto a saved diff
+   left the tab claiming an entry it no longer held, and that saved diff could
+   not be reopened. The commonest path, not the rarest. Fixed by subscribing the
+   unlink to the action itself (`diff.$onAction` in `tabsStore.init`), so every
+   caller gets it and no future one can forget; `clearActive()` is gone. Proven
+   red→green.
+10. **The slice-privacy fence matched nothing between slices.** From outside a
+    slice the specifier carries `features/`; from **inside** one a sibling is
+    `../imageExport/imageExportStore`, which does not — and `../*/*` cannot
+    stand in, because `*` also matches `..` and would ban the core. Fixed by
+    naming the siblings, read from disk via `featureNames()` so a new slice is
+    covered the moment it exists. 11 cases pinned in `eslintFence.test.js`.
+11. **`measure()` counted one line too many.** A newline-terminated file splits
+    into a phantom empty last element, so the four entries `--retighten` wrote
+    carried a free line — "not one line more" was really "not two". Fixed with
+    `trimEnd()`, and every file cap now matches ESLint's own count exactly.
+12. **`commands.test.js` faked a pre-split bundle** — no `share`/`imageExport`/
+    `configBackup` at all, seven dead `diff.*` fakes, only 5 of 42 handlers ever
+    invoked, and its guard assertion vacuously true. The test cited as catching
+    the nine mis-pointed handlers would not have caught them again. Rebuilt to
+    run **every** action and every CLI command against a bundle shaped like the
+    live one; verified by re-pointing `share-current` at the core and watching it
+    fail.
+
+Also swept: five orphaned comments in `diffStore.js` and one in `settingsStore.js`
+left sitting above unrelated declarations, `SnippetShot.vue`'s typedef path
+(one level short after the move), two doc comments naming pre-split stores, the
+`commands.js` line in the slice contract (no slice has one), and an empty
+leftover `pasteToCompare/components/styles/` directory.
+
+**One behaviour change left in place and recorded rather than reverted:** the
+in-app **Edit → Clear** is now guarded by `canClear`, where it previously called
+`clear()` unguarded. `main` was inconsistent — the ⌘K route was already guarded,
+so the same labelled action behaved differently by route. The PR makes them
+agree. Whether a _saved_ diff should be clearable at all is a product question
+this refactor should not answer silently.
+
 ## Validation
 
 Recorded as fact, not intention.
 
-- [x] `npm run check` — **exit 0**:
+- [x] `npm run check` — **exit 0** (after the review round):
 
 ```
 style tokens ok (93 stylesheets)
 ✓ theme depth ok (14 themes)
 structure: 309 files, 4 baselined cycles, 28 legacy size entries — clean
-Tests  2013 passed | 2 skipped (2015)
-All files          |   95.51 |    88.18 |   95.44 |   96.56 |
-✓ built in 19.29s
+Tests  2025 passed | 2 skipped (2027)
+All files          |   95.85 |    88.17 |   96.76 |   96.96 |
+✓ built in 15.66s
 ```
 
-- [x] test count **1976 → 2015**, both from real runs. Not one test deleted:
+- [x] **`make e2e` — 309/309 pass**, run by the QA agent: 307 in the Docker
+      container plus the two macOS-gated `quick-look-window-recovery` specs
+      natively on the Mac. No `e2e-failures/` produced. Every registry action,
+      every native and in-app menu item, and every moved dialog driven by hand
+      with zero renderer errors
+
+- [x] test count **1976 → 2027**, both from real runs. Not one test deleted:
       the eight `diffStore*` files' 196 followed their subjects into
       `tests/renderer/features/…`, and 39 were added (structure guard 17,
       command registry 10, ESLint fence 7, slice tests 5)
-- [x] `diffStore.js` **1509 → 796** lines, **54 → 27** state keys, **93 → 44**
+- [x] `diffStore.js` **1509 → 787** lines, **54 → 27** state keys, **93 → 44**
       actions. Every new store under the 250 cap: `configBackup` 64,
       `pasteToCompare` 115, `share` 212, `imageExport` 236, `uiStore` 37
 - [x] `diffStore → tabsStore` absent from `structure-baseline.json` (5 → 4
@@ -680,10 +735,6 @@ All files          |   95.51 |    88.18 |   95.44 |   96.56 |
       import, coverage) · **6** the ESLint fence guard · **7** the build gate
 - [x] coverage floors held at the real 93/86/92/95 **without lowering one**,
       with `features/**/*.js` in `include`
-- [x] `make e2e` — **not run** (needs the Docker container). Standing evidence
-      instead: **no e2e spec was edited**, and none references a moved member —
-      they drive the app through its UI, which is what makes them the right
-      check here. Worth a run before merge
 - [x] both Docs-impact "yes" rows done — `docs/standards.md` (cited guides, the
       enforced/written table, the ratchet rules, the four-rule slice contract,
       corrected coverage floors) and `docs/architecture.md` (directory map,

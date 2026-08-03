@@ -864,7 +864,7 @@ describe('clearing a tab opened from the vault', () => {
     tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
     expect(tabs.active.entryId).toBe('vault-1')
 
-    tabs.clearActive()
+    diff.clear()
     expect(tabs.active.entryId).toBe(null)
 
     tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
@@ -872,17 +872,35 @@ describe('clearing a tab opened from the vault', () => {
     expect(diff.right.name).toBe('saved2.json')
   })
 
+  // Dropping files onto a SAVED comparison replaces it with no prompt — which
+  // makes it the commonest way the link is orphaned, not the rarest. The unlink
+  // has to ride with the clear itself, not with the one caller that remembers.
+  it('unlinks when a replacement is dropped in, not just on an explicit clear', async () => {
+    const diff = useDiffStore()
+    const tabs = withTabs()
+    tabs.open(comparison('saved.json', 'saved2.json'), { diffSaved: true, entryId: 'vault-1' })
+    expect(tabs.active.entryId).toBe('vault-1')
+
+    window.api = { readFile: async (path) => FILE(String(path).split('/').pop()) }
+    diff.pendingReplace = ['/tmp/new-a.txt', '/tmp/new-b.txt']
+    await diff.confirmReplace()
+
+    expect(diff.left.name).toBe('new-a.txt')
+    expect(tabs.active.entryId).toBe(null)
+  })
+
   it('does not leave a hollow tab standing in for the entry', () => {
+    const diff = useDiffStore()
     const tabs = withTabs()
     tabs.open(comparison('a.json', 'b.json'), { diffSaved: true, entryId: 'vault-7' })
-    tabs.clearActive()
+    diff.clear()
     expect(tabs.tabs.filter((t) => t.entryId === 'vault-7')).toHaveLength(0)
   })
 
   it('leaves an unlinked tab alone', () => {
     const diff = useDiffStore()
     const tabs = withTabs(comparison('scratch.txt', 'scratch2.txt'))
-    tabs.clearActive()
+    diff.clear()
     expect(tabs.active.entryId ?? null).toBe(null)
     expect(diff.left).toBeNull()
   })

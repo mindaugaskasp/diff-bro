@@ -4,11 +4,20 @@
 // action name that resolved to nothing was invisible — a menu item that looks
 // live and does nothing.
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { COMMANDS, commandActions, runCommand } from '../../../src/renderer/src/utils/commands'
+import {
+  COMMANDS,
+  commandActions,
+  runCliCommand,
+  runCommand
+} from '../../../src/renderer/src/utils/commands'
 import { buildMenus } from '../../../src/renderer/src/menus'
 import { flattenCommands } from '../../../src/renderer/src/utils/commandPalette'
 import { TOOLS } from '../../../src/renderer/src/utils/tools'
 
+const spy = () => vi.fn()
+
+// Shaped like the real bundle useCommands supplies, since a handler that
+// destructures the wrong store throws only when it runs. Nine of them did.
 const stores = () => ({
   diff: {
     hasUnsavedWork: true,
@@ -16,24 +25,38 @@ const stores = () => ({
     canCompareStructure: true,
     renderSideBySide: true,
     semanticView: false,
-    pick: vi.fn(),
-    swap: vi.fn(),
-    clear: vi.fn(),
-    copyDiff: vi.fn(),
-    applyPatch: vi.fn(),
-    exportDiff: vi.fn(),
-    exportCurrentImage: vi.fn(),
-    shareCurrent: vi.fn(),
-    importShared: vi.fn(),
-    importSnippets: vi.fn(),
-    addTrustedKey: vi.fn(),
-    togglePasteMode: vi.fn(),
-    toggleTheme: vi.fn(),
-    requestActiveTabClose: vi.fn()
+    showSaveDialog: false,
+    pick: spy(),
+    swap: spy(),
+    clear: spy(),
+    copyDiff: spy(),
+    applyPatch: spy(),
+    exportDiff: spy(),
+    importSnippets: spy(),
+    togglePasteMode: spy(),
+    saveClipboardSnippet: spy(),
+    receive: spy(),
+    showNotice: spy(),
+    blockedFiles: []
   },
-  tabs: { newTab: vi.fn(), step: vi.fn() },
-  settings: { sidebarCollapsed: false, setSidebarCollapsed: vi.fn(), noteToolUsed: vi.fn() },
-  ui: {}
+  tabs: {
+    newTab: spy(),
+    step: spy(),
+    requestActiveClose: spy(),
+    canHost: () => true,
+    markActiveTransient: spy()
+  },
+  settings: {
+    sidebarCollapsed: false,
+    setSidebarCollapsed: spy(),
+    noteToolUsed: spy(),
+    toggleTheme: spy()
+  },
+  ui: {},
+  snippets: { startNewSnippetFrom: spy() },
+  share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy() },
+  imageExport: { exportCurrentImage: spy() },
+  configBackup: { open: spy(), pendingPath: null }
 })
 
 describe('the registry covers every surface that dispatches into it', () => {
@@ -94,9 +117,34 @@ describe('runCommand', () => {
 
   it('honours a guard rather than acting unconditionally', () => {
     const s = stores()
-    s.diff.canClear = false
     runCommand('clear', s)
-    expect(s.diff.clear).not.toHaveBeenCalled()
+    expect(s.diff.clear).toHaveBeenCalled()
+
+    const guarded = stores()
+    guarded.diff.canClear = false
+    runCommand('clear', guarded)
+    expect(guarded.diff.clear).not.toHaveBeenCalled()
+  })
+
+  // The real defence: a handler destructuring the wrong store throws only when
+  // it runs, and nine of them were wrong at one point. Running every action
+  // against a bundle shaped like the live one is what catches that.
+  it('runs every registered action without reaching for a store it was not given', () => {
+    for (const action of commandActions()) {
+      expect(() => runCommand(action, stores()), action).not.toThrow()
+    }
+  })
+
+  it('runs every CLI command the same way', async () => {
+    const commands = [
+      { name: 'create-snippet' },
+      { name: 'clipboard-save', text: '{}' },
+      { name: 'compare', files: ['/tmp/a.txt'] },
+      { name: 'backup', path: '/tmp/out' }
+    ]
+    for (const command of commands) {
+      await expect(Promise.resolve(runCliCommand(command, stores()))).resolves.not.toThrow()
+    }
   })
 
   it('reads the settings store for a toggle that lives there', () => {

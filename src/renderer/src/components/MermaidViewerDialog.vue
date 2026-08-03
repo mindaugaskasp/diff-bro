@@ -1,5 +1,5 @@
 <script setup>
-// Movable Mermaid viewer (diffStore.mermaidView): zoom, drag-pan, corner-resize,
+// Movable Mermaid viewer (uiStore.mermaidView): zoom, drag-pan, corner-resize,
 // maximize; follows OS fullscreen.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useBackdropClose } from '../composables/useBackdropClose'

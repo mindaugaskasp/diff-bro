@@ -84,6 +84,42 @@ describe('the import bans actually match', () => {
     expect(hits).toEqual([])
   })
 
+  // From outside a slice the specifier carries `features/`; from INSIDE one a
+  // sibling is `../imageExport/…`, which does not — and `../*/*` cannot stand in
+  // because `*` matches `..` and would ban the core. These pin both directions.
+  it.each([
+    ['src/renderer/src/features/share/probe.js', "'../imageExport/imageExportStore'"],
+    [
+      'src/renderer/src/features/share/components/Probe.vue',
+      "'../../imageExport/imageExportStore'"
+    ],
+    [
+      'src/renderer/src/features/share/components/Probe.vue',
+      "'../../imageExport/components/SnippetShot.vue'"
+    ]
+  ])('bans a sibling slice reached from %s', async (file, spec) => {
+    const body = `import x from ${spec}`
+    const src = file.endsWith('.vue')
+      ? `<script setup>\n${body}\nconsole.log(x)\n</script>\n`
+      : `${body}\nexport default x\n`
+    expect(await lintAs(file, src)).toHaveLength(1)
+  })
+
+  it.each([
+    ['src/renderer/src/features/share/probe.js', "'../imageExport'"],
+    ['src/renderer/src/features/share/probe.js', "'./shareStore'"],
+    ['src/renderer/src/features/share/probe.js', "'../../stores/diffStore'"],
+    ['src/renderer/src/features/share/components/Probe.vue', "'../../../stores/diffStore'"],
+    ['src/renderer/src/features/share/components/Probe.vue', "'../shareStore'"],
+    ['src/renderer/src/features/share/components/Probe.vue', "'../../../components/BaseDialog.vue'"]
+  ])('allows %s to import %s', async (file, spec) => {
+    const body = `import x from ${spec}`
+    const src = file.endsWith('.vue')
+      ? `<script setup>\n${body}\nconsole.log(x)\n</script>\n`
+      : `${body}\nexport default x\n`
+    expect(await lintAs(file, src)).toEqual([])
+  })
+
   it('bans a Node built-in in the renderer', async () => {
     const hits = await lintAs(
       'src/renderer/src/utils/probe.js',

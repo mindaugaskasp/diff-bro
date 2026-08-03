@@ -10,11 +10,14 @@ import { fileURLToPath } from 'url'
 const root = fileURLToPath(new URL('../..', import.meta.url))
 export const FEATURES_DIR = 'src/renderer/src/features'
 
-export function featureStyleDirs() {
+export function featureNames() {
   const base = join(root, FEATURES_DIR)
   if (!existsSync(base)) return []
-  return readdirSync(base)
-    .filter((name) => statSync(join(base, name)).isDirectory())
+  return readdirSync(base).filter((name) => statSync(join(base, name)).isDirectory())
+}
+
+export function featureStyleDirs() {
+  return featureNames()
     .map((name) => `${FEATURES_DIR}/${name}/components/styles`)
     .filter((dir) => existsSync(join(root, dir)))
 }

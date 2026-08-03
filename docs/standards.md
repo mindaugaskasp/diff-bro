@@ -144,8 +144,8 @@ Four rules, and they are what stops the grab bag re-forming. `diffStore` reached
 anything:
 
 1. Everything a feature owns lives in `src/renderer/src/features/<name>/` —
-   `<name>Store.js`, `commands.js`, `components/`, `components/styles/` — and
-   nothing of it lives anywhere else. The store is capped at 250 lines like any
+   `<name>Store.js`, `index.js` (its only importable surface), `components/`,
+   `components/styles/` — and nothing of it lives anywhere else. The store is capped at 250 lines like any
    other file.
 2. A slice may import the core (`stores/`), `utils/`, `composables/` and shared
    `components/`. It may **not** reach into another slice's internals — only its

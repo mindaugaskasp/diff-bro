@@ -68,14 +68,6 @@ export const useTabsStore = defineStore('tabs', {
     }
   },
   actions: {
-    // Clearing spans both stores: the comparison empties, and the tab stops
-    // BEING the saved diff it was opened from. Leaving the link behind left a
-    // hollow tab claiming that entry, and open() focuses a tab already showing
-    // one rather than loading it — so the saved diff could not be opened again.
-    clearActive() {
-      useDiffStore().clear()
-      this.unlinkActiveEntry()
-    },
     requestActiveClose() {
       if (this.activeId) this.requestClose(this.activeId)
     },
@@ -92,6 +84,14 @@ export const useTabsStore = defineStore('tabs', {
     init() {
       if (this.tabs.length) return
       const diff = useDiffStore()
+      // Subscribed rather than called: a cleared comparison must drop its tab's
+      // entry link on EVERY path, and there are three (the Clear command, a
+      // replacement dropped in, a replacement after saving). Requiring each
+      // caller to remember is what orphaned the link the first two times — and
+      // the core cannot call back into this store without re-forming the cycle.
+      diff.$onAction(({ name, after }) => {
+        if (name === 'clear') after(() => this.unlinkActiveEntry())
+      })
       const tab = createTab(diff.snapshot(), { diffSaved: diff.diffSaved })
       this.tabs = [tab]
       this.activeId = tab.id

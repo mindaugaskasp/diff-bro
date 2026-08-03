@@ -132,13 +132,10 @@ export const useDiffStore = defineStore('diff', {
     diskNotice: null,
     // The `diffbro compare` refusal when every tab is in use (utils/cli message).
     cliBlocked: null,
-    // Set by `diffbro backup <path>`: the destination the terminal named, which
-    // the passphrase dialog writes to instead of asking for one.
     // Everything that refusal has covered since it was last dismissed.
     blockedFiles: [],
     // save-diff dialog visibility
     showSaveDialog: false,
-    // when true, the save dialog flows straight into the share dialog
     // Dropped paths / picked file awaiting the "replace current diff?" confirm;
     // the *AfterSave twins carry them through the save dialog on "Save first".
     pendingReplace: null,
@@ -164,8 +161,6 @@ export const useDiffStore = defineStore('diff', {
         : !!(s.left || s.right),
     // Two sides that diff to nothing — an affirmative "identical" state.
     identical: (s) => !!s.left && !!s.right && s.stats?.additions === 0 && s.stats?.deletions === 0,
-    // A comparison is actually on screen to photograph. Paste mode shows two
-    // textareas, not a diff, so there is nothing to take a picture of there.
     isSpreadsheet() {
       return (
         this.leftComparable?.kind === 'spreadsheet' || this.rightComparable?.kind === 'spreadsheet'
@@ -573,7 +568,6 @@ export const useDiffStore = defineStore('diff', {
     clearPasteFile(side) {
       this[side === 'left' ? 'pasteLeftFile' : 'pasteRightFile'] = null
     },
-    // Open the Mermaid viewer for a diagram's decrypted source.
     /**
      * Re-read one slot quietly.
      * @param {string} slot
@@ -721,8 +715,6 @@ export const useDiffStore = defineStore('diff', {
       // it later needs no "you'll lose it" prompt.
       this.diffSaved = true
     },
-    // A `diffbro …` launch, forwarded by main. Files are read through the same
-    // readFile IPC as a drop, so the CLI opens nothing the app could not.
     /**
      * Compare snippets dropped from the sidebar. Ids only — the content is read
      * here, so a drag can never carry a decrypted body. Routed through the same

@@ -30,8 +30,8 @@ export const COMMANDS = {
   },
   'share-current': ({ share }) => share.shareCurrent(),
   swap: ({ diff }) => diff.swap(),
-  clear: ({ diff, tabs }) => {
-    if (diff.canClear) tabs.clearActive()
+  clear: ({ diff }) => {
+    if (diff.canClear) diff.clear()
   },
   'copy-diff': ({ diff }) => diff.copyDiff(),
   'apply-patch': ({ diff }) => diff.applyPatch(),
