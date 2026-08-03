@@ -1,9 +1,10 @@
 import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 import { spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
+import { unzipSync } from 'fflate'
 import { fileURLToPath } from 'node:url'
 
 // The `diffbro` command is a SECOND launch: Electron's single-instance lock
@@ -155,5 +156,88 @@ test('`diffbro help` prints without opening a window', async () => {
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// `open` with no file has nothing to send the renderer — the raised window is
+// the whole answer, so this proves it does NOT leave a half-loaded comparison
+// or a pending command behind.
+test('`diffbro open` raises the app without touching the comparison', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+
+    await runCli(userDataDir, ['open'])
+
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
+    await expect(page.locator('.slot[data-side="left"]')).toContainText('left file…')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+test('`diffbro open <file>` fills the left side and waits for the right', async () => {
+  const userDataDir = freshUserDataDir()
+  const work = mkdtempSync(join(tmpdir(), 'diffbro-cli-'))
+  const only = join(work, 'only.json')
+  writeFileSync(only, '{"a":1}')
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+
+    await runCli(userDataDir, ['open', only])
+
+    await expect(page.locator('.slot[data-side="left"]')).toContainText('only.json', {
+      timeout: 15000
+    })
+    await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+    rmSync(work, { recursive: true, force: true })
+  }
+})
+
+// The whole round trip only exists in a launched app: a second process forwards
+// the path, the running window asks for the passphrase (the bundle is assembled
+// in the renderer, so the terminal cannot), main seals it and writes the zip.
+test('`diffbro backup <path>` seals to the path the terminal named', async () => {
+  const userDataDir = freshUserDataDir()
+  const work = mkdtempSync(join(tmpdir(), 'diffbro-cli-'))
+  const target = join(work, 'state.zip')
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+
+    await runCli(userDataDir, ['backup', target])
+
+    const dialog = page.getByRole('dialog', { name: 'Back up configuration' })
+    await expect(dialog).toBeVisible({ timeout: 15000 })
+    // Nobody should type a passphrase for a path they cannot see.
+    await expect(dialog.locator('.dest')).toContainText(target)
+
+    await dialog.locator('input[type="password"]').fill('a-long-enough-passphrase')
+    await dialog
+      .getByRole('button', { name: /Back up|Save|Confirm/ })
+      .first()
+      .click()
+    await expect(dialog).toHaveCount(0, { timeout: 15000 })
+
+    await expect.poll(() => existsSync(target), { timeout: 15000 }).toBe(true)
+    const files = unzipSync(new Uint8Array(readFileSync(target)))
+    expect(Object.keys(files)).toEqual(['diffbro-backup.diffbroconf'])
+    // A sealed envelope, not the plaintext bundle.
+    const blob = Buffer.from(files['diffbro-backup.diffbroconf']).toString('utf8')
+    expect(JSON.parse(Buffer.from(blob, 'base64').toString('utf8')).format).toBe('diffbro-config/1')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+    rmSync(work, { recursive: true, force: true })
   }
 })

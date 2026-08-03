@@ -160,11 +160,22 @@ import dialog names which key vouched and still says to verify.
 
 ## Configuration backup
 
-**Security → Back Up / Restore Configuration** writes a single
-passphrase-encrypted (`scrypt` + AES-256-GCM) file containing your identity
-keypair, trusted hosts, snippet library, and settings. Saved diffs are
-deliberately excluded (they're ephemeral). The private identity key is read and
-written only in the main process and only leaves it inside the encrypted blob.
+**Security → Back Up / Restore Configuration**, and `diffbro backup <path>`,
+write a single passphrase-encrypted (`scrypt` + AES-256-GCM) file containing your
+identity keypair, trusted hosts, snippet library, kept saved diffs, and settings.
+The private identity key is read and written only in the main process and only
+leaves it inside the encrypted blob.
+
+Contents are decrypted and re-sealed under your passphrase rather than copied as
+ciphertext, which is what makes the archive restorable on another machine — the
+vault key never travels, and the passphrase is the only thing that opens the
+file. **Expiring diffs are left out**: the reader asked them to die, and
+restoring one months later would quietly undo that.
+
+`diffbro backup` writes the same envelope inside a zip. The destination is a
+path typed into a shell, so it is refused rather than trusted — a directory, a
+missing parent, an existing file, or anywhere inside the app's own data
+directory (`backupZip.checkDestination`).
 
 ## Snippets
 

@@ -32,6 +32,28 @@ export const COMMANDS = [
   walks the whole conflict list without waiting for anyone.`
   },
   {
+    topic: 'open',
+    usage: 'diffbro open [<file>]',
+    summary: 'raise the app, optionally on a file',
+    detail: `Brings Diff Bro to the front, starting it if it is not running.
+
+  With a file, that file fills the left side and waits for the right — the
+  same as \`compare\` with one path, under a name that reads like opening.
+  For two files at once, use \`compare\`.`
+  },
+  {
+    topic: 'backup',
+    usage: 'diffbro backup <path>',
+    summary: 'write a passphrase-protected backup',
+    detail: `Backs up your snippets, saved diffs, settings and sharing
+  identity to a zip file at the path you name.
+
+  Diff Bro asks for a passphrase first — the archive is encrypted with it,
+  which is what makes the backup restorable on another machine. Lose the
+  passphrase and the archive cannot be opened. Restore it from
+  Security → Configuration → Restore.`
+  },
+  {
     topic: 'create',
     usage: 'diffbro create snippet',
     summary: 'open a new snippet in the editor',
@@ -104,8 +126,9 @@ export function cliWords(argv) {
 
 /**
  * @typedef {object} CliCommand
- * @property {'compare'|'create-snippet'|'clipboard-save'} name
+ * @property {'compare'|'create-snippet'|'clipboard-save'|'raise'|'backup'} name
  * @property {string[]} [files]  absolute paths, for `compare`
+ * @property {string} [path]     absolute destination, for `backup`
  */
 
 // A verb returns null when its own arguments are wrong, so the caller reports
@@ -113,10 +136,28 @@ export function cliWords(argv) {
 const VERBS = {
   compare: (rest, resolve) => parseCompare(rest, resolve),
   difftool: (rest, resolve) => parseCompare(rest, resolve, true),
+  open: (rest, resolve) => parseOpen(rest, resolve),
+  backup: (rest, resolve) => parseBackup(rest, resolve),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
   cb: (rest) => (rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null),
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
+}
+
+// No path is the whole point of `open`: raise what is already there. One path is
+// `compare`'s single-file behaviour, reused rather than re-implemented.
+function parseOpen(rest, resolve) {
+  const paths = rest.filter((p) => p.trim())
+  if (!paths.length) return { command: { name: 'raise' }, error: null }
+  if (paths.length > 1) return { command: null, error: 'open takes one file — try compare.' }
+  return parseCompare(paths, resolve)
+}
+
+function parseBackup(rest, resolve) {
+  const paths = rest.filter((p) => p.trim())
+  if (!paths.length) return { command: null, error: 'backup needs a path to write to.' }
+  if (paths.length > 1) return { command: null, error: 'backup takes one path.' }
+  return { command: { name: 'backup', path: resolve(paths[0]) }, error: null }
 }
 
 function parseCompare(rest, resolve, transient = false) {
