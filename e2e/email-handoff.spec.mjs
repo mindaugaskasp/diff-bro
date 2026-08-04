@@ -248,6 +248,14 @@ test('the dialog does not resize while picking or filtering', async () => {
     await share.getByRole('checkbox').first().check()
     expect(Math.abs((await height()) - opened)).toBeLessThanOrEqual(1)
 
+    // And several more, which used to wrap the chips onto a second row and grow
+    // the dialog anyway — the same jump, just later.
+    for (const i of [1, 2, 3, 4]) {
+      await share.getByRole('checkbox').nth(i).check()
+    }
+    await expect(share.locator('.picked .chip')).toHaveCount(5)
+    expect(Math.abs((await height()) - opened)).toBeLessThanOrEqual(1)
+
     // Filtering twenty keys down to one empties most of the list.
     const box = share.getByRole('searchbox', { name: 'Search recipients' })
     await box.fill('Teammate 07')

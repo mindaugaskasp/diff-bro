@@ -13,15 +13,23 @@
    these must stay on screen whatever the query excludes. Always rendered and
    height-reserved, so ticking the first one does not grow the dialog under the
    pointer. */
+/* ONE line, always. Reserving a single row was not enough: three or four long
+   labels wrapped to a second row and the dialog grew anyway — the same jump,
+   just later. Chips scroll sideways instead, so the height is fixed whatever is
+   picked, and the footer's "Sealed for N" carries the count. */
 .picked {
   list-style: none;
   margin: 0;
   padding: 0 0 var(--space-2);
   display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: var(--space-1);
-  min-height: calc(var(--chip-h) + var(--space-2));
+  height: calc(var(--chip-h) + var(--space-2));
+  scrollbar-width: thin;
+}
+.picked > li {
+  flex: none;
 }
 .chip {
   display: inline-flex;

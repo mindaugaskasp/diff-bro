@@ -21,26 +21,6 @@
   },
   {
     "theme": "bloom",
-    "where": "DiagramDiffViewer.css .dg-status",
-    "ratio": 4.31
-  },
-  {
-    "theme": "nord",
-    "where": "DiagramDiffViewer.css .dg-status",
-    "ratio": 4.05
-  },
-  {
-    "theme": "sepia",
-    "where": "DiagramDiffViewer.css .dg-status",
-    "ratio": 3.44
-  },
-  {
-    "theme": "solar",
-    "where": "DiagramDiffViewer.css .dg-status",
-    "ratio": 3.99
-  },
-  {
-    "theme": "bloom",
     "where": "DiffViewer.css .identical-row",
     "ratio": 4.19
   },
@@ -472,26 +452,6 @@
   {
     "theme": "solar",
     "where": "StreamedDiffViewer.css .status",
-    "ratio": 3.99
-  },
-  {
-    "theme": "bloom",
-    "where": "StructureDiffViewer.css .sd-status",
-    "ratio": 4.31
-  },
-  {
-    "theme": "nord",
-    "where": "StructureDiffViewer.css .sd-status",
-    "ratio": 4.05
-  },
-  {
-    "theme": "sepia",
-    "where": "StructureDiffViewer.css .sd-status",
-    "ratio": 3.44
-  },
-  {
-    "theme": "solar",
-    "where": "StructureDiffViewer.css .sd-status",
     "ratio": 3.99
   },
   {

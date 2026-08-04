@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { test, expect, openMenu } from './fixtures.mjs'
+import { test, expect, openMenu, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 
 // The clipboard is the one thing only a real launch exercises — it is why
 // window.api.copyText exists at all (a trusted-click navigator.clipboard write
@@ -108,7 +108,16 @@ test('copying the diff as a file writes a patch, not the diff text', async ({ ap
 
 // Staged copies are plaintext outside the vault, so they must not outlive the
 // session. The sweep runs on will-quit and again on next launch.
-test('staged files do not survive a relaunch', async ({ app, page }) => {
+const isGone = (path) => {
+  try {
+    readFileSync(path, 'utf-8')
+    return 'present'
+  } catch {
+    return 'gone'
+  }
+}
+
+test('the quit sweep removes staged plaintext', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   const view = await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
@@ -117,14 +126,37 @@ test('staged files do not survive a relaunch', async ({ app, page }) => {
   expect(readFileSync(staged, 'utf-8')).toBe('transient')
 
   await app.evaluate(({ app: electronApp }) => electronApp.emit('will-quit'))
-  await expect
-    .poll(() => {
-      try {
-        readFileSync(staged, 'utf-8')
-        return 'present'
-      } catch {
-        return 'gone'
-      }
-    })
-    .toBe('gone')
+  await expect.poll(() => isGone(staged)).toBe('gone')
+})
+
+// The LAUNCH sweep is the half that exists because a crash SKIPS will-quit, so
+// it can only be proven by an actual relaunch — which this test's predecessor
+// claimed in its name and did not do.
+test('staged plaintext does not survive a relaunch that skipped the quit sweep', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  let app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+  test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
+
+  let staged
+  try {
+    const view = await addSnippet(page, { name: 'E2E crash victim', body: 'plaintext' })
+    await view.getByRole('button', { name: 'Copy as file' }).click()
+    await expect.poll(async () => (await readBackPaths(app)).length).toBeGreaterThan(0)
+    ;[staged] = await readBackPaths(app)
+    expect(readFileSync(staged, 'utf-8')).toBe('plaintext')
+  } finally {
+    // Closed without will-quit: this IS the crash the launch sweep is for.
+    await app.close()
+  }
+  expect(isGone(staged)).toBe('present')
+
+  app = await launchApp(dir)
+  try {
+    await firstReadyPage(app)
+    await expect.poll(() => isGone(staged)).toBe('gone')
+  } finally {
+    await app.close()
+  }
 })
