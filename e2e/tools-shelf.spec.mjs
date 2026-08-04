@@ -8,11 +8,12 @@ import { test, expect, openMenu } from './fixtures.mjs'
 test('starts with no recents, opens the tools palette, and runs a tool from it', async ({
   page
 }) => {
-  const shelf = page.locator('.usb-tools')
-  await expect(shelf).toContainText('Browse all tools')
-  await expect(shelf.locator('.usb-tool')).toHaveCount(1) // just the search control
-  // The heading names the chips, so with none used yet it is not shown at all.
-  await expect(shelf).not.toContainText('Recent tools')
+  await expect(page.locator('.usb-tools-search')).toContainText('Browse all tools')
+  // A chip IS a recent — the way into the full list is a plain .btn, not one of
+  // them — so with nothing used yet there are none, and the strip whose label
+  // names them is absent rather than an empty row under a heading.
+  await expect(page.locator('.usb-tool')).toHaveCount(0)
+  await expect(page.locator('.usb-recent-strip')).toHaveCount(0)
 
   await page.locator('.usb-tool-all').click()
   const palette = page.locator('.cp')
@@ -41,8 +42,8 @@ test('records recents from the menu and surfaces them in the shelf and palette',
   }
 
   // Most-recent-first, each with its own icon, ahead of the search control.
-  await expect(page.locator('.usb-tools')).toContainText('Recent tools')
-  const chips = page.locator('.usb-tool:not(.usb-tool-all)')
+  await expect(page.locator('.usb-recent-strip')).toContainText('Recent tools')
+  const chips = page.locator('.usb-tool')
   await expect(chips).toHaveCount(2)
   await expect(chips.nth(0)).toContainText('Base64')
   await expect(chips.nth(1)).toContainText('JSON')
@@ -63,6 +64,6 @@ test('a recent chip opens its tool', async ({ page }) => {
   await page.getByRole('dialog', { name: 'Lines' }).waitFor()
   await page.keyboard.press('Escape')
 
-  await page.locator('.usb-tool:not(.usb-tool-all)').first().click()
+  await page.locator('.usb-tool').first().click()
   await expect(page.getByRole('dialog', { name: 'Lines' })).toBeVisible()
 })
