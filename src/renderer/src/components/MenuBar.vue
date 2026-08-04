@@ -6,7 +6,7 @@ import AppIcon from './AppIcon.vue'
 
 // Themed menu bar for Windows/Linux (macOS keeps the native one); mirrors the
 // hidden app menu, which still binds the accelerators.
-const { run } = useCommands()
+const { runFromMenu: run } = useCommands()
 const menus = buildMenus(run)
 const open = ref(null)
 // DevTools is dev-only; hidden in packaged builds.

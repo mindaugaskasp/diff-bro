@@ -49,10 +49,10 @@ const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
 const showStatusBand = computed(() => hasStatusBand(store))
-const { run, runCli } = useCommands()
+const { runFromMenu, runCli } = useCommands()
 
 settings.initTheme()
-window.api.onMenuAction((action) => run(action))
+window.api.onMenuAction((action) => runFromMenu(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
 // Main holds a `diffbro` command until the restored session is in place (below).
 window.api.onCliCommand((command) => runCli(command))
