@@ -228,6 +228,11 @@ directory move passes CI while silently removing enforcement.
   rather than a literal, or `/* token-exempt: reason */` when a literal is
   genuinely right. New UI must be checked in EVERY theme — see the
   design-proposal rule below, not just the two you happen to have open.
+  `make theme-sweep` (scripts/theme-sweep.mjs) is how a NEW surface is checked:
+  it drives the app through all 14, reads the COMPUTED colours off the live DOM
+  and holds each pair to a floor declared per probe. `check:themes` holds the
+  tokens; this holds what they compose into — a label on a `color-mix` chip, a
+  control in its unset state. Add a surface to `SURFACES` when you build one.
 - **A control must read as a control BEFORE it is touched, and `.btn-ghost` is
   only ever the dismissive twin.** Quiet is right for a Cancel or Close standing
   next to a primary that means the opposite; a lone ghost in a row reads as

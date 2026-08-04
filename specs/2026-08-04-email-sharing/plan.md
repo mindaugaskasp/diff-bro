@@ -3,7 +3,7 @@
 |                                         |                      |
 | --------------------------------------- | -------------------- |
 | **Status**                              | in-progress          |
-| **Progress**                            | 18 / 19 steps        |
+| **Progress**                            | 19 / 19 steps        |
 | **Branch**                              | `feat/email-sharing` |
 | **Started**                             | 2026-08-04           |
 | **Finished**                            | —                    |
@@ -698,9 +698,9 @@ including the picker with 30 keys and a scrolled list.
 - [x] 14 · `EmailHandoffDialog.vue` + styles
 - [x] 15 · `TrustedKeysDialog.vue` — address line, inline edit, search, scroll cap
 - [x] 16 · `ShareDiffDialog.vue` — the picker at scale + the delivery footer
-- [ ] 17 · Seed fixture: 30 trusted keys behind a flag — **not done**. The
-      30-key case is covered by `e2e/email-handoff.spec.mjs`, which seeds its own;
-      `make local-seed` still cannot show it by hand
+- [x] 17 · Seed fixture: 30 trusted keys behind a flag (`make local-seed-many`),
+      two of them deliberately WITHOUT an address so the Create-file fallback and
+      the "Add an address…" secondary are reachable without editing anything
 - [x] 18 · `e2e/email-handoff.spec.mjs` + `e2e/copy-as-file.spec.mjs`
 - [x] 19 · Docs, then `npm run check` + 14-theme sweep in Docker + `/validate`
 
@@ -816,6 +816,27 @@ as finished. The ones worth carrying forward as lessons:
 | Non-Latin snippet titles became `diffbro.txt`                                                               | An ASCII-only `\w` slug                                                                                                                                                                        |
 | Both new e2e specs could not pass                                                                           | Wrong dialog title, wrong row class, placeholder key material that cannot seal, and a module import that does not exist in a bundled build                                                     |
 
+## The theme sweep, and what it caught
+
+`npm run check:themes` holds the TOKENS. It cannot see what a specific surface
+renders once they are composed — a label on a chip whose background is a
+`color-mix`, or a control in its unset state. So `make theme-sweep` walks each
+new surface through all 14 themes, reads the **computed** colours off the live
+DOM, and holds every pair that carries meaning to a floor declared per probe.
+
+It found one real defect: the **unset "Add email" state** used `--text-dim` and
+scored **3.44 on sepia**, 3.99 on solar, 4.05 on nord, 4.31 on bloom. That state
+is a call to action, not de-emphasised metadata, so it moved to `--text-hint` —
+the token `themes.css` describes as "for hint text that must stay readable".
+Worst score is now 7.74.
+
+The floors are declared per probe rather than inferred from the probe's name: a
+regex over the name matched `field label` to the non-text floor by accident,
+which is exactly how a real failure goes quiet. `--text-dim` micro-labels are
+held at **3.0**, because `check-theme-depth.mjs:134` pins `dim/panel` there as a
+deliberate ratchet and a stricter floor here would contradict the repo's own
+gate.
+
 ## Validation
 
 - [x] `npm run check` clean — 2189 tests, coverage 95.37 / 87.64 / 96.32 / 96.45
@@ -840,7 +861,10 @@ as finished. The ones worth carrying forward as lessons:
       `e2e/copy-as-file.spec.mjs`
 - [x] Picker verified with 30 seeded keys in `e2e/email-handoff.spec.mjs`:
       dialog measured against the window, selection survives a filter
-- [ ] 14 themes screenshotted, including a scrolled picker — **outstanding**
+- [x] 14 themes swept — and MEASURED, not eyeballed: `make theme-sweep` reads the
+      computed colours off the live DOM in every theme and holds each pair to a
+      declared floor (`scripts/theme-sweep.mjs`). **126 measurements, all clear.**
+      Images in `docs/screenshots/themes/`
 - [x] `docs/standards.md` rule 7 matches the code's `openExternal` call sites
       exactly (three). It now also names `logger.js`, which reaches
       `showItemInFolder` and `shell.openPath` and was never covered by the rule

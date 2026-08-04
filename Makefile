@@ -18,7 +18,7 @@ RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
 .PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
         clean dev check test e2e lint build package-win package-linux package-mac audit-fix \
-        brew-cask screenshots local-seed local-seed-clean
+        brew-cask screenshots theme-sweep local-seed local-seed-many local-seed-clean
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -159,6 +159,10 @@ brew-cask: ## Regenerate the Homebrew cask for the current (or VERSION=x.y.z) re
 # --remote-debugging-port=0 flag Playwright passes; Linux Electron accepts it).
 # Builds first, seeds a demo library, walks each state — no manual interaction.
 # Images land on the host via the bind mount. SHOTS="name ..." for a subset.
+theme-sweep: up ## Measure a new surface across all 14 themes (contrast + screenshots)
+	docker compose exec -T $(SERVICE) npm run build
+	docker compose exec -T $(SERVICE) node scripts/theme-sweep.mjs
+
 screenshots: up ## Refresh README screenshots (auto-drives the app in the container). SHOTS="name ..." for a subset
 	docker compose exec -T $(SERVICE) npm run build
 	docker compose exec -T $(SERVICE) node scripts/recapture-screenshots.mjs $(SHOTS)
@@ -179,6 +183,13 @@ local-seed: ## Fill your local install with test data (host-only; quit the app f
 		exit 1; }
 	npm run build
 	env -u ELECTRON_RUN_AS_NODE node $(SEED_NODE_FLAGS) scripts/seed-local.mjs
+
+local-seed-many: ## Same, but with 30 trusted keys — the scale the picker is built for
+	@[ -x node_modules/.bin/electron-vite ] || { \
+		echo "error: host dependencies are not installed — run 'npm install' here first."; \
+		exit 1; }
+	npm run build
+	env -u ELECTRON_RUN_AS_NODE node $(SEED_NODE_FLAGS) scripts/seed-local.mjs --many-keys
 
 local-seed-clean: ## Remove everything local-seed added (host-only; quit the app first)
 	env -u ELECTRON_RUN_AS_NODE node $(SEED_NODE_FLAGS) scripts/seed-local.mjs --clean

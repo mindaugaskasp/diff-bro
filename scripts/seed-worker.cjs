@@ -168,7 +168,10 @@ function storeRecipients(dataFile, recipients, keyPrefix, fingerprint) {
     fingerprint: fingerprint(r.pub.sign, r.pub.box),
     label: r.label,
     sign: r.pub.sign,
-    box: r.pub.box
+    box: r.pub.box,
+    // Omitted rather than set null when there is none, so a seeded key looks
+    // exactly like one the app wrote (share:setTrustedEmail deletes the key).
+    ...(r.email ? { email: r.email } : {})
   }))
   writeFileSync(dataFile('trusted-keys.json'), JSON.stringify([...kept, ...added], null, 2))
   return { added, removed: existing.length - kept.length }
