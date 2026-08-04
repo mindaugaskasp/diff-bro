@@ -9,9 +9,7 @@ test('starts with no recents, opens the tools palette, and runs a tool from it',
   page
 }) => {
   await expect(page.locator('.usb-tools-search')).toContainText('Browse all tools')
-  // A chip IS a recent — the way into the full list is a plain .btn, not one of
-  // them — so with nothing used yet there are none, and the strip whose label
-  // names them is absent rather than an empty row under a heading.
+  // A chip is a recent; the way into the full list is a plain .btn, not one.
   await expect(page.locator('.usb-tool')).toHaveCount(0)
   await expect(page.locator('.usb-recent-strip')).toHaveCount(0)
 

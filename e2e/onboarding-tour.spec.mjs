@@ -53,10 +53,8 @@ test('the demo pair loads on Next, and is shown before the tour moves on', async
   await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
   await expect(next(page)).toHaveText('Load a demo pair')
 
-  // The reveal beat is transient, so it is WATCHED from before the click rather
-  // than asserted after: by the time the load below has settled the callout is
-  // legitimately back, and polling for "hidden" then races the beat instead of
-  // observing it — it only ever passed while the load outran the reveal.
+  // Watched from before the click, not asserted after: the load below outlasts
+  // the beat, so polling for "hidden" once it settles races it.
   await page.evaluate(() => {
     window.calloutLeft = !document.querySelector('.tour-callout')
     new MutationObserver(() => {

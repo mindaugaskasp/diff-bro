@@ -147,11 +147,8 @@ test('the width is animated rather than cut', async ({ page }) => {
   expect(transition.prop).toContain('width')
   expect(parseFloat(transition.ms)).toBeGreaterThan(0)
 
-  // The width TRANSITIONS rather than jumping. Recorded from the element's own
-  // transition events, armed before the click: sampling a wall-clock instant
-  // mid-flight instead reports "already at the end" whenever the machine is
-  // busy enough to overrun the animation, which is a load measurement, not a
-  // width one.
+  // From the element's own events, not a wall-clock sample mid-flight: a busy
+  // machine overruns the animation, and "already at the end" measures the load.
   await aside(page).evaluate((el) => {
     window.widthTransition = []
     const note = (event) => {

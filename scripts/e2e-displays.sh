@@ -1,13 +1,9 @@
 #!/bin/bash
-# Start one Xvfb display per E2E worker, :100 upward.
+# One Xvfb display per E2E worker, :100 upward — the X11 clipboard is
+# per-display, so sharing one has workers reading each other's copies. :99 stays
+# the interactive session (noVNC, screenshots, theme-sweep).
 #
-# The X11 clipboard is per-display and 22 specs read it back, so workers sharing
-# a display would read each other's copies. :99 is left to the interactive
-# session (noVNC, screenshots, theme-sweep); workers never touch it.
-#
-# Sourced by docker/entrypoint.sh and run directly in CI. Idempotent: a display
-# that is already up is left alone.
-#
+# Run by docker/entrypoint.sh, `make e2e` and CI. Idempotent.
 # Usage: e2e-displays.sh [worker-count]   (default $E2E_WORKERS, else 4)
 set -e
 
@@ -29,8 +25,7 @@ start_display() {
     sleep 0.2
   done
   [ -n "$ready" ] || { echo "Xvfb :${num} did not come up" >&2; return 1; }
-  # Minimal window manager: without one, X assigns no keyboard focus and
-  # typing / menu accelerators never reach the app. Optional — CI runs without.
+  # Without a WM, X assigns no keyboard focus. Optional — CI has no openbox.
   command -v openbox >/dev/null 2>&1 && DISPLAY=":${num}" openbox &
   return 0
 }

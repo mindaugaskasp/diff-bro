@@ -144,10 +144,8 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
   await dialog.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
   await expect(dialog).toHaveCount(0)
 
-  // Same comparison, same place in it. Identity is read off the stats rather
-  // than off a changed LINE: Monaco renders only the rows in view (~36 of the
-  // 200 here), so asserting the changed one is on screen measures the window
-  // height, and the change deliberately sits below the fold this test scrolls.
+  // Same comparison, same place in it. Identity off the stats, not a changed
+  // LINE: Monaco renders only the rows in view, and this change is below them.
   await expect(page.locator('.status-band .add')).toHaveText('1 added')
   await expect(page.locator('.status-band .del')).toContainText('1 removed')
   const after = await page.evaluate(

@@ -18,12 +18,9 @@ export const BASE_DISPLAY = 100
 const socketFor = (display) => `/tmp/.X11-unix/X${display.slice(1)}`
 
 /**
- * This worker's display. Falls back to the ambient one ONLY single-worker, for
- * an environment that provides its own (`xvfb-run`, a developer's desktop).
- *
- * Otherwise a missing display throws rather than falling back: falling back puts
- * two workers on one clipboard, and that reads as a spec asserting against a
- * neighbour's copy, somewhere else, intermittently.
+ * This worker's display, falling back to the ambient one only single-worker
+ * (`xvfb-run`, a developer's desktop). Missing otherwise it THROWS — falling
+ * back puts two workers on one clipboard, which fails silently and elsewhere.
  * @param {number} [index]
  * @returns {string}
  */
@@ -44,6 +41,8 @@ const workerDir = (kind, index) => {
   return dir
 }
 
+export const isX11 = process.platform === 'linux'
+
 /**
  * The environment a worker's Electron processes run in. Spreads the ambient env
  * so Playwright's own plumbing (PATH, NODE_*) survives.
@@ -51,10 +50,17 @@ const workerDir = (kind, index) => {
  */
 export function workerEnv() {
   const index = workerIndex()
-  return {
+  const env = {
     ...process.env,
-    DISPLAY: displayFor(index),
     TMPDIR: workerDir('tmp', index),
     HOME: workerDir('home', index)
   }
+  // DISPLAY is X11's. The macOS-only specs run natively (see docs/standards.md)
+  // where there is no socket to point at — and no way to give a worker its own
+  // clipboard either, so a second one there would collide in silence.
+  if (!isX11) {
+    if (index > 0) throw new Error('parallel E2E needs X11; run this platform with E2E_WORKERS=1')
+    return env
+  }
+  return { ...env, DISPLAY: displayFor(index) }
 }

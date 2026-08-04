@@ -26,8 +26,7 @@ done
 # typing / menu accelerators never reach the app.
 openbox &
 
-# One more display per E2E worker, :100 up, so parallel workers never share the
-# (per-display) X11 clipboard. :99 above stays the interactive one.
+# One more per E2E worker, :100 up — the X11 clipboard is per-display.
 bash /app/scripts/e2e-displays.sh
 
 # Chromium probes both dbus buses on startup and, finding neither, logs a wall
