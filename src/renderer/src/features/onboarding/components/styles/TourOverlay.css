@@ -75,9 +75,7 @@
 
 /* The hole stays cut, so the target is sharp and unblurred — but the pointer
    stops here unless the step is `live`. A step SHOWS a control; only the one
-   that asks you to press it lets the press through. The cursor says so rather
-   than a tip: the card sits beside the control it rings, so a bubble under that
-   control landed on top of the step's own words. */
+   that asks you to press it lets the press through. */
 .tour-block {
   position: absolute;
   pointer-events: auto;
@@ -86,4 +84,23 @@
 
 .tour :deep(.tour-callout) {
   pointer-events: auto;
+}
+
+/* Says why, on the edge of the blocked box the card is NOT on — the shared
+   tooltip anchors under its control, which here is the control the card sits
+   beside, so it landed on top of the step's own words. */
+.tour-note {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-hint);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tour-note.below {
+  transform: translate(-50%, 0);
 }

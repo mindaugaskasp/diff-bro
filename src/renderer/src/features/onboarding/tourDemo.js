@@ -80,10 +80,11 @@ export function clearFilters() {
 }
 
 /**
- * The demo pair, in a scratch tab of its own.
+ * A demo pair, in a scratch tab of its own.
+ * @param {'config'|'diagram'} [kind]
  * @returns {Promise<string|null>} the tab holding it, null when there is no room
  */
-export async function openPair() {
+export async function openPair(kind) {
   const tabs = useTabsStore()
   if (!tabs.canHost(true)) return null
   const id = tabs.newTab({ transient: true })
@@ -97,9 +98,12 @@ export async function openPair() {
     // which is what stands between a compromised renderer and the vault key.
     const diff = useDiffStore()
     const sides = ['left', 'right']
-    for (const [i, file] of ((await window.api.demoFiles()) ?? []).entries()) {
+    for (const [i, file] of ((await window.api.demoFiles(kind)) ?? []).entries()) {
       diff.receive(sides[i], file)
     }
+    // Two Mermaid files still open as text: the diagram is behind the semantic
+    // toggle, and the step is about what that toggle shows.
+    if (kind === 'diagram' && diff.canCompareDiagram) diff.semanticView = true
   } catch {
     // No demo pair on disk is not worth a notice mid-tour.
   }

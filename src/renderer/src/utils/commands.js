@@ -90,6 +90,7 @@ export const COMMANDS = {
   // The tour's own props. Each one is fired by a step's Next, never by arriving
   // at a step, and every one of them is put back when the tour ends.
   'tour-demo-diff': ({ onboarding }) => onboarding.openDemo(),
+  'tour-demo-diagram': ({ onboarding }) => onboarding.openDemo('diagram'),
   'tour-demo-snippet': ({ onboarding }) => onboarding.openSnippet(),
   'tour-close-settings': ({ ui }) => (ui.showSettingsDialog = false),
   'tour-close-snippet': ({ onboarding }) => onboarding.closeSnippet(),

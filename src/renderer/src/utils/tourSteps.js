@@ -130,19 +130,25 @@ const STEPS = [
     zone: true
   },
   {
-    id: 'diagram',
+    id: 'diagram-open',
     run: 2,
     since: '0.5.0',
-    // The ring goes on the Mermaid snippet itself — the one the copy is about.
-    // A full library makes the section taller than the window, and a callout
-    // centred on THAT lands nowhere near anything it names.
     target: '[data-tour="snippets"]',
     context: '[data-tour="sidebar"]',
     point: '[data-tour="snippet-diagram"]',
     side: 'right',
-    // A tag filter or a leftover search hides the row this step is about, and
-    // the ring then falls back to the whole section — pointing at everything.
-    enter: 'tour-clear-filters'
+    // A tag filter or a leftover search hides the row this step is about.
+    enter: 'tour-clear-filters',
+    advance: 'tour-demo-diagram',
+    reveal: true
+  },
+  {
+    id: 'diagram',
+    run: 2,
+    since: '0.5.0',
+    target: '[data-tour="pane"]',
+    side: 'left',
+    zone: true
   }
 ]
 

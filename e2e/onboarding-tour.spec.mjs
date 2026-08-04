@@ -27,9 +27,10 @@ const advance = async (page, times = 1) => {
 }
 const stepCount = async (page) =>
   Number((await callout(page).locator('.tour-step-n').textContent()).split(' ').pop())
-// Walks to the end of whatever run is open, so a step added to one does not
-// have to be counted into every spec by hand.
-const finishRun = async (page) => advance(page, await stepCount(page))
+// Walks to the end of whatever run is open FROM WHEREVER IT IS, so a step added
+// to one does not have to be counted into every spec by hand.
+const finishRun = async (page) =>
+  advance(page, (await stepCount(page)) - (await stepNumber(page)) + 1)
 // Reaching a step by ID rather than by index, for the same reason.
 const stepNumber = async (page) =>
   Number((await callout(page).locator('.tour-step-n').textContent()).split(' ')[1])
@@ -176,7 +177,7 @@ test('Show me runs the rest straight away rather than waiting for a relaunch', a
   await finishRun(page)
   await page.getByRole('button', { name: 'Show me' }).click()
   await expect(callout(page)).toBeVisible()
-  await expect(callout(page).locator('.tour-step-n')).toHaveText('Step 1 of 4')
+  await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 1 of \d+$/)
 })
 
 test('Skip tips ends it, and Help ▸ Show Tour brings it back', async ({ app, page }) => {
@@ -270,8 +271,8 @@ test('the last step rings the Mermaid snippet, even behind a tag filter', async 
   await expect(page.locator('[data-tour="snippet-diagram"]')).toHaveCount(0)
 
   await clickAppMenuItem(app, 'Show Tour')
-  await advance(page, (await stepCount(page)) - 1)
-  await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
+  await advance(page, (await stepCount(page)) - 2)
+  await expect(callout(page).locator('h6')).toHaveText('A Mermaid snippet draws itself')
 
   const ringBox = await ring(page).boundingBox()
   const row = await page.locator('[data-tour="snippet-diagram"]').first().boundingBox()
@@ -279,8 +280,38 @@ test('the last step rings the Mermaid snippet, even behind a tag filter', async 
   expect(Math.abs(ringBox.height - row.height)).toBeLessThanOrEqual(2)
 
   // And the filter it cleared to get there is the user's, so it comes back.
-  await next(page).click()
+  await advance(page, 2)
   await expect(page.locator('.usb-tag.on', { hasText: 'prompt' })).toBeVisible()
+})
+
+// A blocked control has to say why. The shared tooltip could not: it anchors
+// under its control, which is exactly where the card sits.
+test('a blocked control explains itself without covering the card', async ({ page }) => {
+  await expect(callout(page)).toBeVisible()
+  // The block is what the pointer actually meets; the control is behind it.
+  await page.locator('.tour-block').hover()
+
+  const note = page.locator('.tour-note')
+  await expect(note).toBeVisible()
+  const [noteBox, cardBox] = await Promise.all([note.boundingBox(), callout(page).boundingBox()])
+  const overlaps =
+    noteBox.x < cardBox.x + cardBox.width &&
+    noteBox.x + noteBox.width > cardBox.x &&
+    noteBox.y < cardBox.y + cardBox.height &&
+    noteBox.y + noteBox.height > cardBox.y
+  expect(overlaps).toBe(false)
+})
+
+// The last step shows a diagram CHANGE rather than describing one: the step
+// before it loads two revisions of the same flow and turns the diagram view on.
+test('the tour ends on a real diagram comparison', async ({ page }) => {
+  await finishRun(page)
+  await page.getByRole('button', { name: 'Show me' }).click()
+  await advance(page, (await stepCount(page)) - 1)
+
+  await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
+  await expect(page.locator('[data-tour="slots"]')).toContainText('demo-flow-v1.mmd')
+  await expect(page.locator('.diagram-diff, .dg-stage, [class*="diagram"]').first()).toBeVisible()
 })
 
 // The whole stage is the tour's own: the comparison it loaded and the snippet it
@@ -298,7 +329,7 @@ test('the demo comparison and the demo snippet leave with the tour', async ({ pa
   await page.locator('[data-tour="snippet-save"]').click()
   await expect(rows).toHaveCount(seeded + 1)
 
-  await advance(page, 3)
+  await finishRun(page)
   await expect(page.locator('.tour-callout')).toBeHidden()
   await expect(rows).toHaveCount(seeded)
   await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')

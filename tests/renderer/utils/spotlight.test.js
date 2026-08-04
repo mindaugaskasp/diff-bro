@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CALLOUT_W,
   holePath,
+  placeBlockedNote,
   placeCallout,
   spotlightFor
 } from '../../../src/renderer/src/utils/spotlight'
@@ -179,5 +180,44 @@ describe('holePath', () => {
   it('survives a zero-sized target without emitting NaN', () => {
     const d = holePath({ box: { x: 0, y: 0, w: 0, h: 0 }, stage, radius: 6 })
     expect(d).not.toContain('NaN')
+  })
+})
+
+// The card sits beside the control it rings, so a note under that control lands
+// on the card. It goes on whichever edge the card is not on.
+describe('placeBlockedNote', () => {
+  const blocked = { x: 400, y: 300, w: 120, h: 30 }
+
+  it('sits below the box when the card is above it', () => {
+    const note = placeBlockedNote({
+      box: blocked,
+      callout: { x: 400, y: 120 },
+      stage,
+      calloutH: 150
+    })
+    expect(note.below).toBe(true)
+    expect(note.y).toBeGreaterThan(blocked.y + blocked.h)
+  })
+
+  it('sits above the box when the card is below it', () => {
+    const note = placeBlockedNote({
+      box: blocked,
+      callout: { x: 400, y: 380 },
+      stage,
+      calloutH: 150
+    })
+    expect(note.below).toBe(false)
+    expect(note.y).toBeLessThan(blocked.y)
+  })
+
+  it('stays on stage for a box against an edge', () => {
+    const note = placeBlockedNote({
+      box: { x: 0, y: 0, w: 40, h: 20 },
+      callout: { x: 300, y: 300 },
+      stage,
+      calloutH: 150
+    })
+    expect(note.x).toBeGreaterThan(0)
+    expect(note.y).toBeGreaterThan(0)
   })
 })

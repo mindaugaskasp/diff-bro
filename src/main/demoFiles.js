@@ -3,6 +3,9 @@ import { getDataDir } from './appData'
 import { demoPayloads } from './demoContent'
 
 export function registerDemoIpc() {
-  // No argument: the renderer asks for the demo pair, it never names a file.
-  ipcMain.handle('demo:files', () => demoPayloads(getDataDir()))
+  // The renderer names a KIND, never a file, and main decides what that means —
+  // anything but 'diagram' is the config pair.
+  ipcMain.handle('demo:files', (_e, kind) =>
+    demoPayloads(getDataDir(), kind === 'diagram' ? 'diagram' : 'config')
+  )
 }

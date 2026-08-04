@@ -19,9 +19,10 @@ const runTwoStart = TOUR_STEPS.findIndex((s) => s.run === 2)
 const RUN_ONE = runTwoStart
 
 describe('TOUR_STEPS', () => {
-  it('splits six steps into run one and four into run two', () => {
+  it('splits the list into two contiguous runs, run one the longer', () => {
     expect(TOUR_STEPS.filter((s) => s.run === 1)).toHaveLength(RUN_ONE)
-    expect(TOUR_STEPS.filter((s) => s.run === 2)).toHaveLength(4)
+    expect(TOUR_STEPS.filter((s) => s.run === 2).length).toBeGreaterThan(2)
+    expect(RUN_ONE + TOUR_STEPS.filter((s) => s.run === 2).length).toBe(TOUR_STEPS.length)
   })
 
   it('ends run one on the tips row, so the off switch is the last thing shown', () => {

@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useOnboardingStore } from '../onboardingStore'
 import { useSettingsStore } from '../../../stores/settingsStore'
 import { useSpotlight } from '../../../composables/useSpotlight'
+import { placeBlockedNote } from '../../../utils/spotlight'
 import { acceleratorLabel } from '../../../utils/accelerator'
 import { isMac } from '../../../keys'
 import TourCallout from './TourCallout.vue'
@@ -24,6 +25,18 @@ const spot = useSpotlight({
   calloutEl,
   onEscape: () => tour.active && tour.skip()
 })
+
+const blocked = ref(false)
+// Ours rather than the shared tooltip: that one is anchored under its control,
+// which here is the control the card is sitting beside.
+const notePos = computed(() =>
+  placeBlockedNote({
+    box: spot.value.hole,
+    callout: spot.value.callout,
+    stage: { w: window.innerWidth, h: window.innerHeight },
+    calloutH: calloutEl.value?.$el?.offsetHeight ?? 0
+  })
+)
 
 const px = (n) => `${Math.round(n)}px`
 const boxStyle = (b) => ({ left: px(b.x), top: px(b.y), width: px(b.w), height: px(b.h) })
@@ -56,7 +69,22 @@ const onFilled = computed(() => {
          straight through its own hole. -->
     <div v-for="(p, i) in spot.panels" :key="i" class="tour-blur" :style="panelStyle(p)"></div>
     <div class="tour-tint" :style="{ clipPath: spot.clip }"></div>
-    <div v-if="!step.live && spot.found" class="tour-block" :style="holeStyle"></div>
+    <div
+      v-if="!step.live && spot.found"
+      class="tour-block"
+      :style="holeStyle"
+      @pointerenter="blocked = true"
+      @pointerleave="blocked = false"
+    ></div>
+    <div
+      v-if="blocked"
+      class="tour-note"
+      :class="{ below: notePos.below }"
+      :style="{ left: px(notePos.x), top: px(notePos.y) }"
+      role="status"
+    >
+      Not while the tour is running
+    </div>
     <div
       v-if="spot.context"
       class="tour-context"

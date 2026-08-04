@@ -37,19 +37,50 @@ export const DEMO_FILES = [
   }
 ]
 
+// A second pair, so the tour's diagram step can show a diagram CHANGE rather
+// than describe one. Small on purpose: it has to render inside the beat the
+// step holds the veil down for.
+export const DIAGRAM_FILES = [
+  {
+    name: 'demo-flow-v1.mmd',
+    body: `flowchart TD
+  A[Request] --> B{Cached?}
+  B -- yes --> C[Serve from cache]
+  B -- no --> D[Query database]
+  D --> E[Return response]
+  C --> E
+`
+  },
+  {
+    name: 'demo-flow-v2.mmd',
+    body: `flowchart TD
+  A[Request] --> B{Cached?}
+  B -- yes --> C[Serve from cache]
+  B -- no --> D[Query database]
+  D --> F[Write to cache]
+  F --> E[Return response]
+  C --> E
+`
+  }
+]
+
+/** Named sets, so the renderer asks for a KIND and never for a file. */
+const setFor = (kind) => (kind === 'diagram' ? DIAGRAM_FILES : DEMO_FILES)
+
 /**
- * Writes the demo pair under the data directory if it is not already there and
+ * Writes a demo pair under the data directory if it is not already there and
  * returns both absolute paths. Never overwrites: once written, an edited demo
  * file is the user's own.
  *
  * @param {string} root data directory — passed in, so this file stays free of
  *   Electron and can be tested against a temp folder
+ * @param {'config'|'diagram'} [kind]
  * @returns {string[]} the two absolute paths
  */
-export function ensureDemoFiles(root) {
+export function ensureDemoFiles(root, kind) {
   const dir = join(root, 'demo')
   mkdirSync(dir, { recursive: true })
-  return DEMO_FILES.map(({ name, body }) => {
+  return setFor(kind).map(({ name, body }) => {
     const path = join(dir, name)
     if (!existsSync(path)) writeFileSync(path, body, 'utf8')
     return path
@@ -65,10 +96,11 @@ export function ensureDemoFiles(root) {
  *
  * @returns {{ name: string, path: string, content: string }[]}
  */
-export function demoPayloads(root) {
-  return ensureDemoFiles(root).map((path, i) => ({
-    name: DEMO_FILES[i].name,
+export function demoPayloads(root, kind) {
+  const files = setFor(kind)
+  return ensureDemoFiles(root, kind).map((path, i) => ({
+    name: files[i].name,
     path,
-    content: DEMO_FILES[i].body
+    content: files[i].body
   }))
 }

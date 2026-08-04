@@ -93,7 +93,10 @@ describe('advancing', () => {
     tour.begin()
     runOut(tour)
     tour.acceptPrompt()
-    for (let i = 0; i < TOUR_STEPS.length - RUN_ONE; i++) tour.next()
+    for (let i = 0; i < TOUR_STEPS.length - RUN_ONE; i++) {
+      tour.next()
+      if (tour.revealing) vi.runAllTimers()
+    }
     expect(tour.tourStep).toBe(TOUR_STEPS.length)
     expect(tour.seenVersion).toBe(TOUR_VERSION)
     expect(tour.promptOpen).toBe(false)

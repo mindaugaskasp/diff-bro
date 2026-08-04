@@ -291,12 +291,12 @@ Written before the code.
 Recorded rather than applied silently — each changed a step the plan had
 already specified.
 
-| step | planned                                              | what shipped                                                    | why                                                                                                                                                                                                 |
-| ---- | ---------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 5    | four keys on `settingsStore`                         | the slice persists its own `onboarding` blob                    | `settingsStore.js` is pinned at exactly 308 lines by `legacySize.mjs`; one more line fails the build. Tour state is one slice's anyway.                                                             |
-| 11   | quick look-up step summons the launcher and rings it | it anchors to the sidebar search and names the chord            | The launcher is a separate `BrowserWindow` that opens ON TOP of the main one — the main window's overlay cannot ring it, or even be seen behind it. Ringing "the whole panel" was still impossible. |
-| 12   | diagram step rings the change register               | it anchors to the Snippets section and describes preview + diff | Reaching the register means loading a diagram comparison during the tour. Deferred with the demo fixtures (step 9).                                                                                 |
-| —    | overlay dispatches its own step commands             | `composables/useTourCommands.js` does                           | `TourOverlay` is exported from the slice index, so importing the registry there closed a cycle `index → TourOverlay → useCommands → index`. `check-structure.mjs` caught it.                        |
+| step | planned                                              | what shipped                                                | why                                                                                                                                                                                                 |
+| ---- | ---------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5    | four keys on `settingsStore`                         | the slice persists its own `onboarding` blob                | `settingsStore.js` is pinned at exactly 308 lines by `legacySize.mjs`; one more line fails the build. Tour state is one slice's anyway.                                                             |
+| 11   | quick look-up step summons the launcher and rings it | it anchors to the sidebar search and names the chord        | The launcher is a separate `BrowserWindow` that opens ON TOP of the main one — the main window's overlay cannot ring it, or even be seen behind it. Ringing "the whole panel" was still impossible. |
+| 12   | diagram step rings the change register               | it loads two Mermaid revisions and points at the comparison | Deferred at first because reaching the register meant loading a diagram diff mid-tour; the second demo pair does exactly that, on step one's machinery. Closed by the /validate finding.            |
+| —    | overlay dispatches its own step commands             | `composables/useTourCommands.js` does                       | `TourOverlay` is exported from the slice index, so importing the registry there closed a cycle `index → TourOverlay → useCommands → index`. `check-structure.mjs` caught it.                        |
 
 ### Second pass — the inversion
 
@@ -368,9 +368,9 @@ is the only reason any of it was found.
 
 ## Validation
 
-- [x] `/validate` — clean; two OPEN findings, both non-blocking (the diagram
-      step points at a snippet rather than a diagram comparison; a blocked
-      control explains itself by cursor only). Full report in `quality-audit.md`
+- [x] `/validate` — clean, and both findings it raised are now closed: the
+      diagram step shows a real comparison, and a blocked control says why on
+      the edge the card is not on. Full report in `quality-audit.md`
 - [x] `npm run check` — clean: lint, style tokens, 14 themes, structure
       (345 files, no new cycles), **2341 tests**, coverage 95.4 / 87.7 / 96.4 / 96.6
 - [x] e2e seen passing against the built app on macOS — 13/13,

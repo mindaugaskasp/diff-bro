@@ -84,9 +84,6 @@ answer to "random windows opening up out of the blue". Four bookends:
 
 ## Still open
 
-- The diagram step (10) points at the Snippets section rather than a loaded
-  diagram comparison — reaching the change register means loading a diagram diff
-  mid-tour.
 - `make e2e` has not been run in the container this session (the specs were run
   natively on macOS, 13/13).
 - Screenshots not regenerated. `recapture-screenshots.mjs` disables tips and

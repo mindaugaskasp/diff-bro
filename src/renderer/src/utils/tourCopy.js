@@ -50,8 +50,13 @@ export const TOUR_COPY = {
     title: 'Drag it anywhere in here',
     body: 'The whole comparison area takes a drop — you don’t have to land on a file box. A snippet can face a file, or another snippet.'
   },
+  'diagram-open': {
+    title: 'A Mermaid snippet draws itself',
+    body: 'This one is a diagram — it previews live as you type it. Two versions of one compare as a picture rather than as text.',
+    nextLabel: 'Compare two versions'
+  },
   diagram: {
     title: 'A diagram change, as a diagram',
-    body: 'This one is a Mermaid diagram — open it and it draws itself as you type. Compare two versions and every added, removed or changed node is marked on the picture rather than in the text.'
+    body: 'Here it is: the same flow, one revision apart. Every added, removed or changed node is marked on the picture, so you read the change instead of hunting for it in the text.'
   }
 }

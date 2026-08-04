@@ -11,6 +11,9 @@ const ZONE_INSET = 14
  *  it doubles up with whatever that area sits against — the comparison pane
  *  butts straight onto the tab strip's own bottom border. */
 const AREA_INSET = 4
+/** Clear of the box it explains, and clear of the window's own edges. */
+const NOTE_GAP = 8
+const NOTE_EDGE = 12
 
 // A context that CONTAINS the target is the surface the step is working inside,
 // so the veil is cut around the whole of it: a hole over one row of a dialog
@@ -157,6 +160,23 @@ const unanchored = (stage, calloutH) => ({
     y: clamp((stage.h - calloutH) / 2, 0, stage.h - calloutH)
   }
 })
+
+/**
+ * Where the "not while the tour is running" label sits: on whichever edge of the
+ * blocked box the card is NOT on. A bubble under the control landed straight on
+ * top of the step's own words, which is why the shared tooltip was no good here.
+ *
+ * @returns {{ x: number, y: number, below: boolean }}
+ */
+export function placeBlockedNote({ box, callout, stage, calloutH }) {
+  const below = callout.y + calloutH / 2 < box.y + box.h / 2
+  const y = below ? box.y + box.h + NOTE_GAP : box.y - NOTE_GAP
+  return {
+    x: clamp(box.x + box.w / 2, NOTE_EDGE, stage.w - NOTE_EDGE),
+    y: clamp(y, NOTE_EDGE, stage.h - NOTE_EDGE),
+    below
+  }
+}
 
 // What the veil cuts, what the ring marks, and whether the veil is softened
 // rather than opened.

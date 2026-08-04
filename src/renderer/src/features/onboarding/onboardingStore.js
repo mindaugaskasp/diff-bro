@@ -196,10 +196,11 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.sidebarWasCollapsed = false
       this.filters = null
     },
-    // Something to point AT: the file slots teach nothing while they are empty.
-    async openDemo() {
+    // Something to point AT: the file slots teach nothing while they are empty,
+    // and the diagram step cannot show a diagram CHANGE by describing one.
+    async openDemo(kind) {
       if (this.demoTabId) return
-      this.demoTabId = await demo.openPair()
+      this.demoTabId = await demo.openPair(kind)
     },
     openSnippet() {
       // Keeps the FIRST ownership record across a back-and-forward: it is the
