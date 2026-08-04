@@ -23,11 +23,26 @@
   padding: var(--space-3);
   border-radius: var(--radius);
 }
+/* A pinned diagram brings its whole ground with it, not just a backdrop: every
+   fill drawn INSIDE it — the diff's node rects most of all — resolves against
+   these rather than the app's, so the surface and the labels mermaid drew for
+   it agree. Overriding --bg-panel and --text is also what re-derives
+   --bg-elevated, which is defined in terms of both. */
 .host[data-paper='light'] {
   background: var(--diagram-paper-light);
+  --bg: var(--diagram-paper-light);
+  --bg-panel: var(--diagram-paper-light);
+  --text: var(--diagram-ink-light);
+  --text-dim: var(--diagram-dim-light);
+  --border: var(--diagram-edge-light);
 }
 .host[data-paper='dark'] {
   background: var(--diagram-paper-dark);
+  --bg: var(--diagram-paper-dark);
+  --bg-panel: var(--diagram-paper-dark);
+  --text: var(--diagram-ink-dark);
+  --text-dim: var(--diagram-dim-dark);
+  --border: var(--diagram-edge-dark);
 }
 .host :deep(svg) {
   max-width: 100%;

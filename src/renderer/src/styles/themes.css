@@ -64,6 +64,17 @@
      Mermaid's two themes are drawn for these two grounds. */
   --diagram-paper-light: #ffffff;
   --diagram-paper-dark: #161b22;
+  /* The rest of that paper's ground. A pinned diagram brings its own surface,
+     and the node fills the DIFF computes (fill: var(--bg), and --dg-* mixed
+     into it) have to resolve against THAT surface — resolved against the app's
+     instead, a light diagram on a dark app drew #333 labels on a #0d1117 fill.
+     Shared by all 14: the paper is the paper whatever the app is wearing. */
+  --diagram-ink-light: #141414;
+  --diagram-dim-light: #565a5a;
+  --diagram-edge-light: #bcc0c0;
+  --diagram-ink-dark: #e6edf3;
+  --diagram-dim-dark: #8b949e;
+  --diagram-edge-dark: #30363d;
   /* Syntax colours for the snippet preview. Solved per theme against that
      theme's own --bg and --bg-hover: every one clears 4.5:1, and the five are
      kept apart in Lab so they read as different colours rather than five

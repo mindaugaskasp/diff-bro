@@ -1,4 +1,5 @@
-import { rmSync } from 'node:fs'
+import { rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   test,
   expect,
@@ -216,3 +217,72 @@ test('the diagram renderer is ready before anything needs it', async ({ page }) 
   // Still nothing rendered — the warm is what loaded it, not a render.
   expect(await page.locator('.mermaid-diagram').count()).toBe(0)
 })
+
+// The DIFF view draws its own node fills, and it computed them from the APP's
+// ground while the labels came from mermaid's, drawn for the paper. Under `auto`
+// the two grounds are the same and nothing showed; pin the diagram against the
+// app and a light diagram on a dark app got #333 labels on a #0d1117 fill —
+// 1.3:1, invisible. Contrast is the measurable form of "readable".
+const contrast = (a, b) => {
+  const lum = (rgb) => {
+    const [r, g, bl] = rgb.map((v) => {
+      const c = v / 255
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+  }
+  const [x, y] = [lum(a), lum(b)]
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+
+// Seeded rather than clicked: the pin lives in the Mermaid viewer's own control,
+// and what this measures is the painted result, not the route to it.
+const pinnedProfile = (appTheme, diagramTheme) => {
+  const dir = freshUserDataDir()
+  writeFileSync(join(dir, 'theme.json'), appTheme)
+  writeFileSync(join(dir, 'settings.json'), JSON.stringify({ diagramTheme }))
+  return dir
+}
+
+for (const [appTheme, diagramTheme] of [
+  ['dark', 'light'],
+  ['light', 'dark']
+]) {
+  test(`a ${diagramTheme} diagram pinned against the ${appTheme} app stays readable`, async () => {
+    const dir = pinnedProfile(appTheme, diagramTheme)
+    const instance = await launchApp(dir)
+    try {
+      const page = await firstReadyPage(instance)
+      const [a, b] = await page.evaluate(async () =>
+        (await window.api.demoFiles('diagram')).map((f) => f.content)
+      )
+      await page.getByRole('button', { name: 'Paste text' }).click()
+      await page.getByPlaceholder('Paste original text here').fill(a)
+      await page.getByPlaceholder('Paste changed text here').fill(b)
+      await page.getByRole('button', { name: 'Compare', exact: true }).click()
+      await page.getByText('Diagram', { exact: true }).click()
+      await expect(page.locator('.dg-stage .nodeLabel').first()).toBeVisible()
+
+      await expect
+        .poll(async () => {
+          const { label, same } = await page.evaluate(() => {
+            const stage = document.querySelector('.dg-stage')
+            const nums = (v) =>
+              (v ?? '')
+                .match(/[\d.]+/g)
+                ?.slice(0, 3)
+                .map(Number) ?? null
+            return {
+              label: nums(getComputedStyle(stage.querySelector('.nodeLabel')).color),
+              same: nums(getComputedStyle(stage.querySelector('.same > rect')).fill)
+            }
+          })
+          return label && same ? contrast(label, same) : 0
+        })
+        .toBeGreaterThanOrEqual(4.5)
+    } finally {
+      await instance.close()
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+}
