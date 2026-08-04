@@ -6,11 +6,7 @@ import {
   hdrop,
   uriList
 } from '../../src/main/clipboardWrite'
-import {
-  pathsFromHdrop,
-  pathsFromPlist,
-  pathsFromUriList
-} from '../../src/main/clipboardFiles'
+import { pathsFromHdrop, pathsFromPlist, pathsFromUriList } from '../../src/main/clipboardFiles'
 
 // The readers are already trusted and tested, which makes them the right oracle:
 // a flavour we build must decode back to the path we put in.

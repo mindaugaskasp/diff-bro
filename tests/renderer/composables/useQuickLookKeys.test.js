@@ -171,7 +171,10 @@ describe('useQuickLookKeys — preview zone', () => {
     const h = previewHarness({ zoneStart: 'preview' })
     h.press('ArrowDown')
     h.press('ArrowUp')
-    expect(h.movePreview.mock.calls).toEqual([[1], [-1]])
+    expect(h.movePreview.mock.calls).toEqual([
+      [1, false],
+      [-1, false]
+    ])
     expect(h.selected.value).toBe(0)
   })
 
@@ -304,5 +307,27 @@ describe('useQuickLookKeys — onCollapse (← / Escape in the list)', () => {
     const h = collapseHarness(false)
     h.press('Escape')
     expect(h.onDismiss).toHaveBeenCalledTimes(1)
+  })
+})
+
+// Shift+Arrow in the preview extends a line range, as an editor does. In the
+// LIST there is one selection, so Shift must not change what an arrow means.
+describe('useQuickLookKeys — Shift+Arrow', () => {
+  it('passes the extend flag through in the preview zone', () => {
+    const h = previewHarness({ zoneStart: 'preview' })
+    h.press('ArrowDown', { shiftKey: true })
+    h.press('ArrowUp', { shiftKey: true })
+    expect(h.movePreview.mock.calls).toEqual([
+      [1, true],
+      [-1, true]
+    ])
+  })
+
+  it('leaves list navigation alone', () => {
+    const h = previewHarness({ zoneStart: 'list' })
+    const before = h.selected.value
+    h.press('ArrowDown', { shiftKey: true })
+    expect(h.selected.value).toBe(before + 1)
+    expect(h.movePreview).not.toHaveBeenCalled()
   })
 })

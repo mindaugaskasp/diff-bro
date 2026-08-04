@@ -68,7 +68,10 @@ describe('sealableFromDraft', () => {
   })
 
   it('strips "imported" here too', () => {
-    const out = sealableFromDraft({ name: 'x', ttlHours: 1, snapshot: {}, tags: ['imported', 'a'] }, NOW)
+    const out = sealableFromDraft(
+      { name: 'x', ttlHours: 1, snapshot: {}, tags: ['imported', 'a'] },
+      NOW
+    )
     expect(out.tags).toEqual(['a'])
   })
 })

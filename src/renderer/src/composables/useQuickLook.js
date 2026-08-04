@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
-import { rank } from '../utils/quickLook'
+import { previewHints, rank } from '../utils/quickLook'
 import { convertItems } from '../utils/quickLookCommands'
 import { isMac } from '../keys'
 import { useQuickLookKeys } from './useQuickLookKeys'
@@ -216,15 +216,7 @@ export function useQuickLook() {
         ['←/Esc', 'cancel']
       ]
     }
-    if (zone.value === 'preview') {
-      return [
-        ['↑↓', 'line'],
-        [copyLineKey, 'copy line'],
-        ['←', 'back to list'],
-        ['↵', 'open'],
-        ['Esc', 'back']
-      ]
-    }
+    if (zone.value === 'preview') return previewHints(copyLineKey)
     const hints = [['↑↓', 'navigate']]
     const kind = current.value?.kind
     if (kind === 'snippet') hints.push(['→', 'scroll preview'])
@@ -247,8 +239,7 @@ export function useQuickLook() {
     onCopy: copy,
     onCopyLine: preview.copyLine,
     onCollapse: collapseTools,
-    // → drills in: a command opens its convert panel, the Tools row expands and
-    // moves onto the first tool — mirroring → into a snippet preview.
+    // → drills in, mirroring → into a snippet preview.
     onExpand: () => {
       const it = current.value
       if (it?.kind === 'tools') {

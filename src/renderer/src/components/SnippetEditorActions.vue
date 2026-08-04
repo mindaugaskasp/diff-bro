@@ -21,16 +21,7 @@ const props = defineProps({
   secret: { type: Boolean, default: false },
   masked: { type: Boolean, default: false }
 })
-const emit = defineEmits([
-  'format',
-  'copy',
-  'capture',
-  'clear',
-  'reveal',
-  'edit',
-  'save',
-  'close'
-])
+const emit = defineEmits(['format', 'copy', 'capture', 'clear', 'reveal', 'edit', 'save', 'close'])
 
 const { copied, flash } = useCopyFeedback()
 // The twin of Copy, and adjacent to it: that adjacency is what makes them read

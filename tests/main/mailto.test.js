@@ -68,8 +68,9 @@ describe('buildMailto', () => {
 
 describe('fillTemplate', () => {
   it('resolves both placeholders', () => {
-    expect(fillTemplate({ template: 'Sealed diff: {name} ({expires})', name: 'x', expires: 'Wed' }))
-      .toBe('Sealed diff: x (Wed)')
+    expect(
+      fillTemplate({ template: 'Sealed diff: {name} ({expires})', name: 'x', expires: 'Wed' })
+    ).toBe('Sealed diff: x (Wed)')
   })
 
   it('replaces every occurrence, not just the first', () => {

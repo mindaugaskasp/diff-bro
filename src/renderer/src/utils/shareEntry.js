@@ -37,7 +37,13 @@ const sendableTags = (tags) => (tags ?? []).filter((t) => t !== 'imported')
  */
 export function sealableFromEntry(entry, payload, now = Date.now()) {
   const { createdAt, expiresAt } = sealedWindow(entry, now)
-  return { name: entry.name, createdAt, expiresAt, snapshot: payload, tags: sendableTags(entry.tags) }
+  return {
+    name: entry.name,
+    createdAt,
+    expiresAt,
+    snapshot: payload,
+    tags: sendableTags(entry.tags)
+  }
 }
 
 /** The current diff, which has no saved entry yet. */

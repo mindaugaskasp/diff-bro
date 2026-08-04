@@ -9,8 +9,15 @@
  * @param {object} store the diff store
  * @returns {boolean}
  */
-export const hasStatusBand = (store) =>
-  !!store?.ready && (store.comparableKind !== 'text' || (!!store.stats && !store.identical))
+export const hasStatusBand = (store) => {
+  // Paste mode replaces the whole viewer chain (App.vue), so nothing is drawn
+  // under it whatever `ready` says.
+  if (!store?.ready || store.mode === 'paste') return false
+  // A streamed pair still indexing, or paired with pasted text, renders a
+  // message where its band would be — and the second case never resolves.
+  if (store.comparableKind === 'streamed') return !!store.streamedPairReady
+  return store.comparableKind !== 'text' || (!!store.stats && !store.identical)
+}
 
 /**
  * Split view is NOT a Monaco-only option: the diagram viewer reads the same flag
@@ -21,7 +28,9 @@ export const hasStatusBand = (store) =>
  * @returns {boolean}
  */
 export const showsSplitView = (store) =>
-  !!store?.ready && (store.comparableKind === 'text' || store.comparableKind === 'diagram')
+  !!store?.ready &&
+  store.mode !== 'paste' &&
+  (store.comparableKind === 'text' || store.comparableKind === 'diagram')
 
 /**
  * Ignore-whitespace really is Monaco's alone (diffEditorOptions.js) — no other
@@ -29,4 +38,5 @@ export const showsSplitView = (store) =>
  * @param {object} store
  * @returns {boolean}
  */
-export const showsWhitespaceToggle = (store) => !!store?.ready && store.comparableKind === 'text'
+export const showsWhitespaceToggle = (store) =>
+  !!store?.ready && store.mode !== 'paste' && store.comparableKind === 'text'

@@ -290,10 +290,12 @@ test('the picker holds thirty keys and a filter cannot hide a selection', async 
 
     // The dialog fits the window: jsdom cannot assert this, a real launch can.
     const box = await share.boundingBox()
-    const viewport = page.viewportSize() ?? (await page.evaluate(() => ({
-      width: window.innerWidth,
-      height: window.innerHeight
-    })))
+    const viewport =
+      page.viewportSize() ??
+      (await page.evaluate(() => ({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })))
     expect(box.height).toBeLessThan(viewport.height)
     await expect(share.getByRole('button', { name: 'Create file' })).toBeVisible()
 

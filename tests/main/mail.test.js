@@ -197,7 +197,8 @@ describe('mail:handoff', () => {
   it('opens no socket anywhere in its import graph', async () => {
     const { readFileSync } = await import('node:fs')
     const { dirname, join } = await import('node:path')
-    const NETWORK = /from\s+['"](node:)?(net|tls|https?|dgram|dns|http2)['"]|require\(['"](node:)?(net|tls|https?|dgram|dns|http2)['"]\)|\bfetch\(|XMLHttpRequest|WebSocket/
+    const NETWORK =
+      /from\s+['"](node:)?(net|tls|https?|dgram|dns|http2)['"]|require\(['"](node:)?(net|tls|https?|dgram|dns|http2)['"]\)|\bfetch\(|XMLHttpRequest|WebSocket/
     const seen = new Set()
     const walk = (file) => {
       if (seen.has(file)) return

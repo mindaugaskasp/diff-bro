@@ -114,7 +114,10 @@ test('compares two files too large to hold, streamed', async ({ app, page }) => 
     // generous on an idle box and tight at the end of a long suite, which is the
     // shape of a flake rather than of a bug.
     const DIFFED = { timeout: 60_000 }
-    await expect(page.locator('.status-band .band-end')).toContainText(lines.toLocaleString(), DIFFED)
+    await expect(page.locator('.status-band .band-end')).toContainText(
+      lines.toLocaleString(),
+      DIFFED
+    )
     // One line differs on each side.
     await expect(page.locator('.status-band .add')).toHaveText('1 added', DIFFED)
     await expect(page.locator('.status-band .del')).toContainText('1 removed', DIFFED)

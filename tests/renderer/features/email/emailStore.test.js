@@ -6,9 +6,8 @@ vi.mock('../../../../src/renderer/src/stores/diffStore', () => ({
   useDiffStore: () => ({ showNotice: (m) => notices.push(m) })
 }))
 
-const { DEFAULT_SUBJECT, useEmailStore } = await import(
-  '../../../../src/renderer/src/features/email/emailStore'
-)
+const { DEFAULT_SUBJECT, useEmailStore } =
+  await import('../../../../src/renderer/src/features/email/emailStore')
 
 const draft = () => ({
   entry: { name: 'a ↔ b' },
@@ -20,7 +19,9 @@ beforeEach(() => {
   setActivePinia(createPinia())
   localStorage.clear()
   notices.length = 0
-  window.api = { mailHandoff: vi.fn().mockResolvedValue({ ok: true, name: 'x.diffbro', copied: true }) }
+  window.api = {
+    mailHandoff: vi.fn().mockResolvedValue({ ok: true, name: 'x.diffbro', copied: true })
+  }
 })
 
 describe('message defaults', () => {

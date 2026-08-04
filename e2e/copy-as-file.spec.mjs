@@ -117,12 +117,14 @@ test('staged files do not survive a relaunch', async ({ app, page }) => {
   expect(readFileSync(staged, 'utf-8')).toBe('transient')
 
   await app.evaluate(({ app: electronApp }) => electronApp.emit('will-quit'))
-  await expect.poll(() => {
-    try {
-      readFileSync(staged, 'utf-8')
-      return 'present'
-    } catch {
-      return 'gone'
-    }
-  }).toBe('gone')
+  await expect
+    .poll(() => {
+      try {
+        readFileSync(staged, 'utf-8')
+        return 'present'
+      } catch {
+        return 'gone'
+      }
+    })
+    .toBe('gone')
 })

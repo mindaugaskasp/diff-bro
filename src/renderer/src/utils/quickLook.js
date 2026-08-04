@@ -40,3 +40,18 @@ export function rank(query, items) {
   scored.sort((a, b) => a.s - b.s || a.i - b.i)
   return scored.map((x) => x.item)
 }
+
+/**
+ * The preview zone's footer hints — a table, not logic, so adding a row never
+ * pushes the composable that renders it over its size cap.
+ * @param {string} copyLineKey the platform's Shift+Cmd/Ctrl+C label
+ * @returns {Array<[string, string]>}
+ */
+export const previewHints = (copyLineKey) => [
+  ['↑↓', 'line'],
+  ['⇧↑↓', 'select lines'],
+  [copyLineKey, 'copy lines'],
+  ['←', 'back to list'],
+  ['↵', 'open'],
+  ['Esc', 'back']
+]

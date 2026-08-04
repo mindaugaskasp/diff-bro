@@ -16,7 +16,7 @@
  * @param {() => void} [o.onCopyLine]              Shift+Cmd/Ctrl+C: copy the active preview line
  * @param {{ value: 'list' | 'preview' }} [o.zone]  focus zone (a Vue ref, or any {value})
  * @param {() => boolean} [o.canEnterPreview]       true when the active row has a scrollable preview
- * @param {(dir: 1 | -1) => void} [o.movePreview]  step the active preview line one row
+ * @param {(dir: 1|-1, extend?: boolean) => void} [o.movePreview]  step the preview line
  * @param {() => boolean} [o.onExpand]  → on a non-preview row (e.g. a command): returns true if it handled it
  * @param {() => boolean} [o.onCollapse]  ← / Escape in the list (e.g. close an expanded section): true if it handled it
  * @returns {{ onKeydown: (e: KeyboardEvent) => void }}
@@ -38,8 +38,7 @@ export function useQuickLookKeys({
   const inPreview = () => zone.value === 'preview'
 
   // A live text selection in the search box copies natively; otherwise Cmd/Ctrl+C
-  // copies the highlighted result, and Shift+Cmd/Ctrl+C copies just the active
-  // preview line. Returns true when it's a copy combo.
+  // copies the highlighted result, and Shift+Cmd/Ctrl+C the selected line range.
   function tryCopy(e) {
     if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return false
     const t = e.target
@@ -62,7 +61,8 @@ export function useQuickLookKeys({
   // list-navigation or a preview line-step depending on the zone).
   function moveOrScroll(e, dir) {
     e.preventDefault()
-    if (inPreview()) movePreview(dir)
+    // Shift extends the preview's range, as an editor does.
+    if (inPreview()) movePreview(dir, e.shiftKey === true)
     else selected.value = clamp(selected.value + dir)
   }
   // → enters the snippet preview, OR hands off to onExpand (a command opens its

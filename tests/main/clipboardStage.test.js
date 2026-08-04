@@ -9,7 +9,8 @@ vi.mock('electron', () => ({
   app: { getPath: () => tempRoot, on: vi.fn() }
 }))
 
-const { STAGE_TTL_MS, safeName, stageFile, sweepStage } = await import('../../src/main/clipboardStage')
+const { STAGE_TTL_MS, safeName, stageFile, sweepStage } =
+  await import('../../src/main/clipboardStage')
 
 const stageDir = () => join(tempRoot, 'diffbro-clipboard')
 

@@ -41,7 +41,7 @@
     "vue": "^3.5.13",
     "yaml": "^2.9.0"
   },
-  "//overrides": "brace-expansion <=5.0.7 has an OOM-DoS advisory (GHSA-mh99-v99m-4gvg), fixed only in 5.0.8. It reaches us solely through electron-builder's build-time glob chain (a devDependency; not in the shipped app), and npm's only offered fix is a breaking electron-builder downgrade. 5.0.8 keeps the same expand() API, so pinning it clears the whole minimatch/glob chain without touching electron-builder.",
+  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows.",
   "overrides": {
     "brace-expansion": "^5.0.9"
   },

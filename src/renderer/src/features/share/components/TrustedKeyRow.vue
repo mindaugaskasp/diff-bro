@@ -63,7 +63,13 @@ function commit() {
         @keyup.escape="editing = null"
         @blur="commit"
       />
-      <button v-else type="button" class="mail" :class="{ set: !!entry.email }" @click="start('email')">
+      <button
+        v-else
+        type="button"
+        class="mail"
+        :class="{ set: !!entry.email }"
+        @click="start('email')"
+      >
         <AppIcon name="mail" />
         <span>{{ entry.email || 'Add email' }}</span>
       </button>

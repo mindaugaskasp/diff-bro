@@ -83,7 +83,10 @@ export function fileFlavours(paths, platform) {
   if (FREEDESKTOP.has(platform)) {
     return [
       { format: 'text/uri-list', buffer: Buffer.from(uriList(list), 'utf8') },
-      { format: 'x-special/gnome-copied-files', buffer: Buffer.from(gnomeCopiedFiles(list), 'utf8') }
+      {
+        format: 'x-special/gnome-copied-files',
+        buffer: Buffer.from(gnomeCopiedFiles(list), 'utf8')
+      }
     ]
   }
   return []

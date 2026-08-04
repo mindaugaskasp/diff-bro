@@ -13,7 +13,9 @@ vi.mock('electron', () => ({
     showSaveDialog: (opts) => {
       saveDialogs.push(opts)
       return Promise.resolve(
-        state.canceled ? { canceled: true } : { canceled: false, filePath: join(dir, 'picked.diffbro') }
+        state.canceled
+          ? { canceled: true }
+          : { canceled: false, filePath: join(dir, 'picked.diffbro') }
       )
     }
   }
