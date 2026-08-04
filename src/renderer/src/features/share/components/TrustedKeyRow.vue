@@ -11,7 +11,7 @@ const props = defineProps({
   entry: { type: Object, required: true, validator: shaped('fingerprint', 'label') },
   justAdded: { type: Boolean, default: false }
 })
-const emit = defineEmits(['rename', 'email', 'remove'])
+const emit = defineEmits(['rename', 'email', 'remove', 'editing'])
 
 const editing = ref(null)
 const draft = ref('')
@@ -19,12 +19,18 @@ const draft = ref('')
 function start(field) {
   editing.value = field
   draft.value = (field === 'label' ? props.entry.label : props.entry.email) ?? ''
+  emit('editing', true)
 }
 function commit() {
   const field = editing.value
   if (!field) return
   editing.value = null
+  emit('editing', false)
   emit(field === 'label' ? 'rename' : 'email', draft.value.trim())
+}
+function cancel() {
+  editing.value = null
+  emit('editing', false)
 }
 </script>
 
@@ -40,7 +46,7 @@ function commit() {
         autofocus
         aria-label="Name for this key"
         @keyup.enter="commit"
-        @keyup.escape="editing = null"
+        @keyup.escape="cancel"
         @blur="commit"
       />
       <button v-else type="button" class="label" @click="start('label')">
@@ -60,7 +66,7 @@ function commit() {
         placeholder="name@example.com"
         aria-label="Email address for this key"
         @keyup.enter="commit"
-        @keyup.escape="editing = null"
+        @keyup.escape="cancel"
         @blur="commit"
       />
       <button

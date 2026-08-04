@@ -61,7 +61,15 @@ const DIM = 3
 // dialog is three layers deep and only the composite is what the eye sees.
 // Passed as a function, never eval'd — rule 8.
 function measureProbes(selectors) {
-  const parse = (s) => (s.match(/[\d.]+/g) ?? []).map(Number)
+  // Chromium resolves color-mix() to `color(srgb 0.2 0.7 0.3)` — 0-1 floats —
+  // rather than rgb() with 0-255 ints, by version. Reading those as 0-255 makes
+  // every mixed colour look near-black, which is exactly the false failure this
+  // sweep is meant not to produce. check-theme-depth.mjs handles both too.
+  const parse = (s) => {
+    const nums = (String(s).match(/[\d.]+/g) ?? []).map(Number)
+    if (!/^color\(/.test(String(s).trim())) return nums
+    return nums.map((n, i) => (i < 3 ? n * 255 : n))
+  }
   const lum = ([r, g, b]) => {
     const f = (v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4)
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
@@ -122,8 +130,37 @@ async function setTheme(page, label) {
   await dlg.waitFor({ state: 'hidden' })
 }
 
+// Leaves a structure diff on screen: its status band is the only one carrying
+// all three counts (added / changed / removed) at once.
+async function loadStructureDiff(page) {
+  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page
+    .getByPlaceholder('Paste original text here')
+    .fill('{\n  "a": 1,\n  "b": 2,\n  "gone": 3\n}')
+  await page
+    .getByPlaceholder('Paste changed text here')
+    .fill('{\n  "a": 9,\n  "b": 2,\n  "added": 4\n}')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await page.getByText('Structure', { exact: true }).click()
+  await page.locator('.status-band').waitFor()
+}
+
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const SURFACES = [
+  {
+    name: 'status-band',
+    // Already on screen — the sweep leaves a structure diff loaded.
+    open: async (page) => page.locator('.status-band').waitFor(),
+    close: async () => {},
+    probes: {
+      // These carry the numbers a reader reads, so they take the reading floor —
+      // which is what caught --dg-chg at 2.73 on light when they did not.
+      'count, added': ['.status-band .add', TEXT],
+      'count, changed': ['.status-band .chg', TEXT],
+      'count, removed': ['.status-band .del', TEXT],
+      'band label': ['.status-band', TEXT]
+    }
+  },
   {
     name: 'trusted-keys',
     open: async (page) => {
@@ -209,6 +246,7 @@ async function main() {
     const page = await app.firstWindow()
     await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(600)
+    await loadStructureDiff(page)
 
     for (const theme of THEMES) {
       await setTheme(page, theme)

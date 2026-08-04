@@ -254,6 +254,20 @@ Three more came out of running the suite rather than reading it:
   looked like a CSS regression and bisected as one — they were a stale volume.
   `npm ls` shows the truth where `npm audit` (which reads the lockfile) does not.
 
+## What the PR review found
+
+A third pass over the finished branch found two HIGH defects and four worth
+taking, all fixed:
+
+| finding                                                                   | why it mattered                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hasStatusBand` was true for any non-text kind as soon as `ready`         | A streamed pair still indexing — or paired with pasted text, which never resolves — draws a message where its band would be, and paste mode replaces the viewer chain. The shortcut bar hovered 64px up with nothing under it                    |
+| Hiding a control did nothing for its shortcut, menu item or palette entry | `Cmd+T` on a saved diff still replaced what the reader opened — the exact outcome the commit claimed to prevent. Guards now live in `commands.js`, where every surface meets                                                                     |
+| The `0o700` staging promise did not hold                                  | `mkdir(…, { mode })` does not chmod an existing directory, and `prune` read and deleted THROUGH a symlink. It is `mkdtemp` now, so nothing can be adopted; the sweep `lstat`s and unlinks rather than following                                  |
+| `--dg-*` as count text was below the reading floor                        | Those tokens are designed for the 3:1 non-text floor — `--dg-chg` scored **2.73 on light** while carrying numbers a reader reads. Mixed 55% toward `--text` (the trick `--dg-del` already uses); worst is now **4.91**                           |
+| The status band was never added to `theme-sweep`'s `SURFACES`             | This PR is what added the standards line telling you to. Adding it is what measured the fix — and exposed a bug in the sweep itself: Chromium resolves `color-mix()` to `color(srgb 0.2 0.7 0.3)` with 0-1 floats, which the probe read as 0-255 |
+| `TrustedKeysDialog` had no `:escape-closes="false"`                       | `BaseDialog` stops Escape on window in capture, so the row's own cancel never ran: Escape closed the manager and discarded a half-typed label or address                                                                                         |
+
 ## Dependency audit
 
 `npm audit` reported **2 high**, `--omit=dev` **0**. Both are `brace-expansion`

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdtempSync, rmSync } from 'fs'
+import { mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'fs'
 import { readdir, stat, utimes, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -12,10 +12,14 @@ vi.mock('electron', () => ({
 const { STAGE_TTL_MS, safeName, stageFile, sweepStage } =
   await import('../../src/main/clipboardStage')
 
-const stageDir = () => join(tempRoot, 'diffbro-clipboard')
+// mkdtemp names the directory, so find it by prefix rather than by path.
+const stageDirs = () => readdirSync(tempRoot).filter((n) => n.startsWith('diffbro-clipboard-'))
+const stageDir = () => join(tempRoot, stageDirs()[0])
 
-beforeEach(() => {
+beforeEach(async () => {
   tempRoot = mkdtempSync(join(tmpdir(), 'diffbro-stage-test-'))
+  // The staging dir is cached per process; each test gets a fresh temp root.
+  await sweepStage()
 })
 afterEach(() => {
   rmSync(tempRoot, { force: true, recursive: true })
@@ -98,11 +102,33 @@ describe('stageFile', () => {
     expect((await stat(stageDir())).mode & 0o777).toBe(0o700)
   })
 
+  // The OS temp dir is shared on Linux. A fixed name is one another local user
+  // can pre-create, and mkdir(..., { mode }) does NOT chmod an existing
+  // directory — so the 0o700 promise would silently not hold. mkdtemp cannot
+  // adopt anything, whatever is sitting at the old path.
+  it('never adopts a directory it did not create', async () => {
+    const squatted = join(tempRoot, 'diffbro-clipboard')
+    const victim = mkdtempSync(join(tempRoot, 'victim-'))
+    symlinkSync(victim, squatted)
+
+    const res = await stageFile({ name: 'a.json', bytes: 'x' })
+    expect(res.ok).toBe(true)
+    expect(res.path.startsWith(squatted + '/')).toBe(false)
+    expect(res.path.startsWith(victim + '/')).toBe(false)
+    expect(readdirSync(victim)).toEqual([])
+  })
+
   it('gives each copy its own slot, so equal names never collide', async () => {
     const a = await stageFile({ name: 'same.json', bytes: 'one' })
     const b = await stageFile({ name: 'same.json', bytes: 'two' })
     expect(a.path).not.toBe(b.path)
     expect(await readdir(stageDir())).toHaveLength(2)
+  })
+
+  it('keeps every copy in ONE staging directory per process', async () => {
+    await stageFile({ name: 'a.json', bytes: 'x' })
+    await stageFile({ name: 'b.json', bytes: 'y' })
+    expect(stageDirs()).toHaveLength(1)
   })
 
   it('refuses empty content rather than staging a zero-byte file', async () => {
@@ -139,7 +165,27 @@ describe('sweepStage', () => {
     const staged = await stageFile({ name: 'secret.txt', bytes: 'an api key' })
     await sweepStage()
     await expect(stat(staged.path)).rejects.toThrow()
-    await expect(stat(stageDir())).rejects.toThrow()
+    expect(stageDirs()).toEqual([])
+  })
+
+  // The launch sweep exists because a crash skips will-quit, so it has to reach
+  // a directory this process did not create.
+  it('removes a staging directory left behind by a previous run', async () => {
+    const orphan = mkdtempSync(join(tempRoot, 'diffbro-clipboard-'))
+    writeFileSync(join(orphan, 'leftover.txt'), 'plaintext')
+    await sweepStage()
+    await expect(stat(orphan)).rejects.toThrow()
+  })
+
+  // Unlink it, never read or delete THROUGH it.
+  it('unlinks a symlink at a staging path without touching its target', async () => {
+    const victim = mkdtempSync(join(tempRoot, 'victim-'))
+    writeFileSync(join(victim, 'keep.txt'), 'not ours')
+    symlinkSync(victim, join(tempRoot, 'diffbro-clipboard-planted'))
+
+    await sweepStage()
+    expect(readdirSync(victim)).toEqual(['keep.txt'])
+    expect(stageDirs()).toEqual([])
   })
 
   it('is idempotent, so a sweep on launch after a clean quit is harmless', async () => {

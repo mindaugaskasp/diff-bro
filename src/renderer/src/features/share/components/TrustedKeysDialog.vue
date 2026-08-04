@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useShareStore } from '../shareStore'
 import { filterRecipients } from '../../../utils/recipientSearch'
 import BaseDialog from '../../../components/BaseDialog.vue'
@@ -9,13 +9,29 @@ import TrustedKeyRow from './TrustedKeyRow.vue'
 const share = useShareStore()
 const keys = ref([])
 const query = ref('')
+const editingCount = ref(0)
 
 const shown = computed(() => filterRecipients(keys.value, { query: query.value }))
 
 async function refresh() {
   keys.value = await window.api.listTrustedKeys()
 }
-onMounted(refresh)
+// BaseDialog stops Escape on WINDOW in capture, which killed the row's own
+// cancel handler and closed the manager mid-edit — discarding the label or
+// address being typed. This dialog owns Escape instead: cancel the edit first,
+// close only when nothing is being edited.
+function onEscape(e) {
+  if (e.key !== 'Escape') return
+  if (editingCount.value > 0) return // the row's own handler cancels it
+  e.stopPropagation()
+  close()
+}
+
+onMounted(() => {
+  refresh()
+  window.addEventListener('keydown', onEscape, true)
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', onEscape, true))
 
 // Re-fetch after the "name this key" or "remove key?" dialog closes.
 watch([() => share.pendingTrustedKey, () => share.pendingUntrust], ([a, b]) => {
@@ -42,7 +58,7 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="480px" title="Trusted keys" @close="close">
+  <BaseDialog width="480px" title="Trusted keys" :escape-closes="false" @close="close">
     <p class="dialog-note">
       Public keys of people you can share sealed diffs with. Give a key an email address to email
       its diffs from here.
@@ -79,6 +95,7 @@ function close() {
           :key="k.fingerprint"
           :entry="k"
           :just-added="share.lastAddedTrustedFp === k.fingerprint"
+          @editing="editingCount += $event ? 1 : -1"
           @rename="commitRename(k.fingerprint, $event)"
           @email="commitEmail(k.fingerprint, $event)"
           @remove="share.pendingUntrust = k"

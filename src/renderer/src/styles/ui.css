@@ -649,9 +649,11 @@ button.tag-chip:hover .usb-tct {
    this class exists to end. A band (see .band), so its content is flex-centred
    rather than fake-aligned with padding.
 
-   Counts use --dg-add / --dg-del / --dg-chg, not --success-text / --danger-bg:
-   those are the pair already reasoned about for colour-blind readers, and
-   --dg-del mixes toward --text because --danger-border scores 2.24:1 on nord. */
+   Counts are the --dg-* hues MIXED TOWARD --text. Those tokens are designed for
+   the 3:1 NON-text floor (a node stroke, a badge) — as plain text on the panel
+   --dg-chg scores 2.73 on light, below even that. Here they carry the numbers a
+   reader actually reads, so they take the same mix --dg-del already uses for
+   nord, at a ratio measured by `make theme-sweep` across all 14. */
 .status-band {
   display: flex;
   align-items: center;
@@ -669,15 +671,15 @@ button.tag-chip:hover .usb-tct {
   font-variant-numeric: tabular-nums;
 }
 .status-band .add {
-  color: var(--dg-add);
+  color: color-mix(in srgb, var(--dg-add) 55%, var(--text));
   font-weight: 600;
 }
 .status-band .del {
-  color: var(--dg-del);
+  color: color-mix(in srgb, var(--dg-del) 55%, var(--text));
   font-weight: 600;
 }
 .status-band .chg {
-  color: var(--dg-chg);
+  color: color-mix(in srgb, var(--dg-chg) 55%, var(--text));
   font-weight: 600;
 }
 /* A qualifier on the band — "first N rows shown", "only in the left file",

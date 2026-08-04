@@ -3,18 +3,37 @@
 // plaintext outside the vault for as long as the staged copy lives.
 //
 // That is the whole reason this module exists separately: the window is real, so
-// it is bounded in one place. 0o700, pruned by age, and swept on quit AND on
-// launch (a crash skips the first, and a snippet surviving a reboot in the temp
-// directory is the failure that actually matters).
+// it is bounded in one place. Pruned by age, and swept on quit AND on launch (a
+// crash skips the first, and a snippet surviving a reboot in the temp directory
+// is the failure that actually matters).
+//
+// The directory is made with mkdtemp, NOT a fixed name. On Linux the OS temp dir
+// is shared, so a fixed name is one another local user can pre-create — and
+// `mkdir(..., { mode })` does not chmod a directory that already exists, so the
+// 0o700 this file promises would silently not hold. mkdtemp fails rather than
+// adopting anything, and a symlink planted at the old fixed path can no longer
+// be read or deleted through.
 import { app } from 'electron'
-import { mkdir, readdir, rm, stat, writeFile } from 'fs/promises'
+import { lstat, mkdtemp, readdir, rm, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 
 export const STAGE_TTL_MS = 30 * 60 * 1000
 const MAX_STAGED_BYTES = 64 * 1024 * 1024
 const MAX_NAME_LENGTH = 120
 
-const stageDir = () => join(app.getPath('temp'), 'diffbro-clipboard')
+const STAGE_PREFIX = 'diffbro-clipboard-'
+
+// One per process, created lazily. Kept in memory rather than recomputed so a
+// second copy lands beside the first.
+let staged = null
+// Re-made if it has gone: a temp cleaner (or another sweep) can remove it while
+// the app is running, and a cached path to a deleted directory would fail every
+// later copy.
+const makeStageDir = async () => {
+  if (staged && (await stat(staged).catch(() => null))?.isDirectory()) return staged
+  staged = await mkdtemp(join(app.getPath('temp'), STAGE_PREFIX))
+  return staged
+}
 
 // Only what is genuinely unusable in a filename. Letters and marks in ANY
 // script are kept: an ASCII-only slug turned "файл.txt" into "diffbro.txt" and
@@ -82,18 +101,41 @@ export async function stageFile({ name, bytes } = {}) {
   if (!buffer.length) return { error: 'empty' }
   if (buffer.length > MAX_STAGED_BYTES) return { error: 'too-large' }
 
-  const dir = stageDir()
-  await mkdir(dir, { recursive: true, mode: 0o700 })
+  const dir = await makeStageDir()
   await prune(dir)
 
-  const slot = join(dir, `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`)
-  await mkdir(slot, { mode: 0o700 })
+  // One slot per copy, so two files with the same title cannot collide.
+  const slot = await mkdtemp(join(dir, 'c-'))
   const path = join(slot, safeName(name))
   await writeFile(path, buffer, { mode: 0o600 })
   return { ok: true, path }
 }
 
-/** Empty the staging directory. Called on launch and again on quit. */
+/**
+ * Remove this process's staging directory AND any left by a previous run that
+ * crashed before `will-quit`. Only real directories with our prefix are touched:
+ * lstat, so a symlink someone else planted is unlinked rather than followed.
+ */
 export async function sweepStage() {
-  await rm(stageDir(), { force: true, recursive: true }).catch(() => {})
+  const root = app.getPath('temp')
+  let names
+  try {
+    names = await readdir(root)
+  } catch {
+    return
+  }
+  await Promise.all(
+    names
+      .filter((n) => n.startsWith(STAGE_PREFIX))
+      .map(async (n) => {
+        const path = join(root, n)
+        try {
+          const info = await lstat(path)
+          await rm(path, { force: true, recursive: info.isDirectory() })
+        } catch {
+          /* vanished under us, or not ours to remove */
+        }
+      })
+  )
+  staged = null
 }
