@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 import { shaped } from '../../../utils/props'
 import { CALLOUT_W } from '../../../utils/spotlight'
+import { MOD } from '../../../keys'
 
 const props = defineProps({
   step: { type: Object, required: true, validator: shaped('id', 'target', 'body') },
@@ -22,7 +23,9 @@ const BEAK = 9
 const EDGE = 14
 const isLast = computed(() => props.index === props.count - 1)
 const calloutH = computed(() => root.value?.offsetHeight ?? 0)
-const body = computed(() => props.step.body.replace('{shortcut}', props.shortcut))
+const body = computed(() =>
+  props.step.body.replace('{shortcut}', props.shortcut).replace('{settingsKey}', `${MOD}+,`)
+)
 
 const root = ref(null)
 const style = computed(() => ({

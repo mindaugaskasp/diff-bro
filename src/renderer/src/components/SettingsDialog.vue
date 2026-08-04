@@ -93,7 +93,14 @@ function close() {
             <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
               Show tips after an update
             </SettingToggle>
-            <button class="btn btn-sm" @click="tour.replay()">Show tour</button>
+            <button
+              class="btn btn-sm"
+              :disabled="tour.active"
+              :data-tip="tour.active ? 'The tour is running' : 'Run the tour again from the start'"
+              @click="tour.replay()"
+            >
+              Show tour
+            </button>
           </div>
         </section>
 

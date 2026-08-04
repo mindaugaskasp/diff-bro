@@ -46,7 +46,7 @@ export const TOUR_STEPS = [
     side: 'top',
     command: 'settings',
     title: 'Make it yours — and switch this off',
-    body: 'Fourteen themes, size limits, where your data is kept, and the shortcut above. Tips have an off switch right here, and a Show tour button whenever you want them back.'
+    body: 'Reopen this any time with {settingsKey}. Fourteen themes live here, plus size limits, where your data is kept, and the shortcut above — and tips have an off switch, with a button to run this again.'
   },
   {
     id: 'snippet',
