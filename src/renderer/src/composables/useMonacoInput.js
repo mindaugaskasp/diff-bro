@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
-import { useDiffStore } from '../stores/diffStore'
 import { isDarkTheme } from '../utils/themes'
+import { useSettingsStore } from '../stores/settingsStore'
 
 // A Monaco editor bound to a `content` ref: two-way sync, live language switching,
 // theme mirrored in.
@@ -14,11 +14,11 @@ import { isDarkTheme } from '../utils/themes'
  * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void }}
  */
 export function useMonacoInput({ container, content, language, readOnly, options = {} }) {
-  const diff = useDiffStore()
+  const settings = useSettingsStore()
   const ready = ref(false)
   let editor = null
 
-  const monacoTheme = () => (isDarkTheme(diff.theme) ? 'vs-dark' : 'vs')
+  const monacoTheme = () => (isDarkTheme(settings.theme) ? 'vs-dark' : 'vs')
   // `readOnly` may be a ref (view/edit mode) or absent; read it either way.
   const isReadOnly = () => (readOnly ? !!readOnly.value : false)
 
@@ -68,7 +68,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
   })
   if (readOnly) watch(readOnly, (ro) => editor?.updateOptions({ readOnly: !!ro }))
   watch(
-    () => diff.theme,
+    () => settings.theme,
     () => monaco.editor.setTheme(monacoTheme())
   )
   onBeforeUnmount(destroyEditor)

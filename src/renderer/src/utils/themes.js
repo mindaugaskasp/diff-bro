@@ -105,3 +105,8 @@ export function themeForDay(date = new Date()) {
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0
   return THEMES[hash % THEMES.length].id
 }
+
+// The one place the active theme is stamped onto the document.
+export const applyTheme = (theme) => {
+  document.documentElement.dataset.theme = theme
+}

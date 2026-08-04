@@ -5,7 +5,6 @@ import {
   MAX_LIVE_CHARS,
   tabCost,
   tabsCost,
-  tabsFullNotice,
   MAX_TAB_NAME,
   cleanTabName,
   tabLabel,
@@ -16,6 +15,7 @@ import {
   tabForEntry,
   tabTitle
 } from '../../../src/renderer/src/utils/tabs'
+import { tabsFullNotice } from '../../../src/renderer/src/utils/tabNotices'
 
 const file = (name) => ({ path: `/tmp/${name}`, name, content: 'x' })
 

@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
@@ -11,8 +10,9 @@ import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
+import { useUiStore } from '../stores/uiStore'
 
-const diff = useDiffStore()
+const ui = useUiStore()
 const settings = useSettingsStore()
 
 // One pane shows at a time behind the left rail.
@@ -29,12 +29,12 @@ const TABS = [
 // Re-resolve the active theme so the rotation toggle applies immediately.
 function toggleDailyTheme(on) {
   settings.setRotateThemeDaily(on)
-  diff.resolveActiveTheme()
+  settings.resolveActiveTheme()
 }
 const tab = ref('appearance')
 
 function close() {
-  diff.showSettingsDialog = false
+  ui.showSettingsDialog = false
 }
 </script>
 
@@ -63,10 +63,10 @@ function close() {
               :key="t.id"
               type="button"
               class="theme-opt"
-              :class="{ active: diff.theme === t.id }"
+              :class="{ active: settings.theme === t.id }"
               :data-tip="`Use the ${t.label} theme`"
               :aria-label="`Use the ${t.label} theme`"
-              @click="diff.setTheme(t.id)"
+              @click="settings.setTheme(t.id)"
             >
               <span class="swatch" :style="{ background: t.swatch.bg }">
                 <span class="dot" :style="{ background: t.swatch.accent }"></span>

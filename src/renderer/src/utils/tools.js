@@ -80,10 +80,10 @@ export function noteRecent(ids, id) {
 export function toolSections(ids) {
   const recent = recentTools(ids)
   if (!recent.length) return [{ label: 'All tools', items: TOOLS }]
-  const ids_ = new Set(recent.map((t) => t.id))
+  const recentIds = new Set(recent.map((t) => t.id))
   return [
     { label: 'Recent', items: recent },
-    { label: 'Other tools', items: TOOLS.filter((t) => !ids_.has(t.id)) }
+    { label: 'Other tools', items: TOOLS.filter((t) => !recentIds.has(t.id)) }
   ]
 }
 

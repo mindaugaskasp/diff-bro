@@ -7,16 +7,18 @@ import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import { useDiffStore } from '../stores/diffStore'
+import { useCommands } from '../composables/useCommands'
 import { MAX_RECENT_TOOLS, recentTools } from '../utils/tools'
 import { useFittingCount } from '../composables/useFittingCount'
 import AppIcon from './AppIcon.vue'
+import { useUiStore } from '../stores/uiStore'
 
 const emit = defineEmits(['expand'])
 const vault = useVaultStore()
+const ui = useUiStore()
 const snippets = useSnippetStore()
 const settings = useSettingsStore()
-const diff = useDiffStore()
+const { run } = useCommands()
 
 // As many as the leftover column holds, so the rail neither wastes the space nor
 // clips an icon in half. A button occupies its own height plus the gap above it.
@@ -89,7 +91,7 @@ const groups = computed(() => [
         class="rail-btn"
         :data-tip="`${tool.kind} — ${tool.name}`"
         :aria-label="`${tool.kind} ${tool.name}`"
-        @click="diff.handleMenuAction(tool.action)"
+        @click="run(tool.action)"
       >
         <AppIcon :name="tool.icon" />
       </button>
@@ -100,7 +102,7 @@ const groups = computed(() => [
       class="rail-btn"
       data-tip="Search every tool"
       aria-label="Tools"
-      @click="diff.openToolsPalette()"
+      @click="ui.openToolsPalette()"
     >
       <AppIcon name="wrench" />
     </button>

@@ -102,6 +102,71 @@ regression test from decoration.
    are banned (ESLint-enforced). User-influenced strings render only
    through Vue text interpolation.
 
+## The guides this repo follows
+
+Four references, cited rather than installed — the rules below are the
+enforceable subset, and these are where the reasoning behind them lives:
+
+| guide                                                                                                  | what it is cited for                                                                                                  |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| [clean-code-javascript](https://github.com/ryanmcdermott/clean-code-javascript)                        | the primary reference. Variables → naming, Functions → size and argument count, Classes/SOLID → single responsibility |
+| [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)                            | the module-level SRP argument (structure by component, not by layer)                                                  |
+| [javascript-testing-best-practices](https://github.com/goldbergyoni/javascript-testing-best-practices) | this repo has shipped a test that never failed and an assertion that guarded nothing                                  |
+| [Airbnb §23 Naming Conventions](https://github.com/airbnb/javascript#naming-conventions)               | the **naming section only** — never the config. Prettier owns formatting here                                         |
+
+**What the build enforces, and what it cannot.** A standards doc that implies
+lint carries the design rules is worse than one that admits which line the
+reviewer holds:
+
+|                | enforced by `npm run check`                                                                                                                                                                  | written convention, checked in review                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **naming**     | `camelcase` · `new-cap` · `no-underscore-dangle` (src only) · the `vue/*-casing` rules, which now FAIL rather than warn (`--max-warnings 0`)                                                 | intent-revealing names: a boolean reads `is`/`has`/`can`/`should`, a function starts with a verb, a name is pronounceable and searchable |
+| **size**       | `max-lines-per-function` 60 and `max-lines` 250 on `src/**/*.js`, matching the cap `.vue` already had · `complexity` 10 · `max-depth` 3 · `max-params` 4 · `sonarjs/cognitive-complexity` 15 | — length is the one thing lint expresses completely                                                                                      |
+| **separation** | `check-structure.mjs` (import cycles) · `no-restricted-imports` layering · the size caps as the proxy                                                                                        | which pattern applies: adapter, `BaseDialog`, tools registry, composable                                                                 |
+
+**Two rules for the ratchets, and they are the whole point.**
+
+- `scripts/lib/legacySize.mjs` holds one **exact** measurement per file that was
+  already over a cap. The entry permits what exists and **not one line more** —
+  add a line to `registerShareIpc` and the build fails. **Beat a cap and delete
+  your entry**; `check-structure.mjs` fails on a stale one, so the map cannot rot
+  into permanent permission. **Never raise a number.**
+  `node scripts/check-structure.mjs --retighten` lowers them for you and refuses
+  to raise one.
+- `scripts/structure-baseline.json` holds the known import cycles. A new cycle
+  fails; a baselined cycle that **disappears** also fails, so removing one is
+  proven rather than claimed.
+
+## How a feature is put together
+
+Four rules, and they are what stops the grab bag re-forming. `diffStore` reached
+1509 lines, 54 state keys and 93 actions because there was nowhere else to put
+anything:
+
+1. Everything a feature owns lives in `src/renderer/src/features/<name>/` —
+   `<name>Store.js`, `index.js` (its only importable surface), `components/`,
+   `components/styles/` — and nothing of it lives anywhere else. The store is capped at 250 lines like any
+   other file.
+2. A slice may import the core (`stores/`), `utils/`, `composables/` and shared
+   `components/`. It may **not** reach into another slice's internals — only its
+   `index.js` — and **the core may not import a slice at all**. Both are lint
+   failures; the second is also what `check-structure.mjs` catches as a cycle.
+3. Anything a menu, shortcut, palette entry, shelf chip or rail button can
+   trigger is a row in `utils/commands.js`, **not** a new action on the core.
+   Handlers receive the stores they need, so the registry stays pure and the core
+   never reaches sideways. `commands.test.js` fails if an action named by
+   `menus.js`, `TOOLS` or the palette resolves to nothing.
+4. Its tests mirror its path under `tests/renderer/features/<name>/`.
+
+State that many features raise and none owns — dialog visibility, the palette,
+the theme — is **core** (`stores/uiStore.js`, `stores/settingsStore.js`), not a
+slice.
+
+Adding a slice needs no build wiring: the style and theme guards discover
+`features/*/components/styles` themselves, and the coverage set includes
+`features/**/*.js`. That discovery is deliberate — a hardcoded list is how a
+directory move passes CI while silently removing enforcement.
+
 ## Coding standards
 
 - Prettier (`.prettierrc.json`: no semicolons, single quotes, width 100)
@@ -247,9 +312,9 @@ regression test from decoration.
 
 ## Testing rules
 
-- Coverage has a floor (`vitest.config.mjs`: 88% statements / 78% branches /
-  85% functions / 90% lines over the main-process cores, stores, utils and
-  adapters) and `npm run check` enforces it. It is a ratchet: raise it as
+- Coverage has a floor (`vitest.config.mjs`: 93% statements / 86% branches /
+  92% functions / 95% lines over the main-process cores, stores, feature slices,
+  utils and adapters) and `npm run check` enforces it. It is a ratchet: raise it as
   coverage rises, never lower it to make a red run green. Electron glue and
   `.vue` files are deliberately outside the measured set — they are verified
   in the Docker env.

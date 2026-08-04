@@ -6,44 +6,48 @@ import { MOD } from './keys'
 //
 // Every accelerator here must have a twin in the hidden application menu
 // (src/main/menu.js) — that is what actually binds the shortcut.
-export function buildMenus(store) {
+//
+// Declarative: an item names an action, it never calls a store. `run` comes
+// from useCommands, and commands.test.js fails if a name here resolves to
+// nothing.
+export function buildMenus(run) {
   return [
     {
       id: 'file',
       label: 'File',
       items: [
-        { label: 'Open Left', keys: `${MOD}+1`, run: () => store.handleMenuAction('open-left') },
-        { label: 'Open Right', keys: `${MOD}+2`, run: () => store.handleMenuAction('open-right') },
+        { label: 'Open Left', keys: `${MOD}+1`, run: () => run('open-left') },
+        { label: 'Open Right', keys: `${MOD}+2`, run: () => run('open-right') },
         { sep: true },
-        { label: 'Save', keys: `${MOD}+S`, run: () => store.handleMenuAction('save') },
-        { label: 'Share', keys: `${MOD}+E`, run: () => store.shareCurrent() },
-        { label: 'Import', keys: `${MOD}+I`, run: () => store.importShared() },
-        { label: 'Export Diff as HTML…', run: () => store.handleMenuAction('export-html') },
-        { label: 'Export Diff as Image…', run: () => store.handleMenuAction('export-image') },
+        { label: 'Save', keys: `${MOD}+S`, run: () => run('save') },
+        { label: 'Share', keys: `${MOD}+E`, run: () => run('share-current') },
+        { label: 'Import', keys: `${MOD}+I`, run: () => run('import-shared') },
+        { label: 'Export Diff as HTML…', run: () => run('export-html') },
+        { label: 'Export Diff as Image…', run: () => run('export-image') },
         { sep: true },
         {
           label: 'New Comparison',
           keys: `${MOD}+Shift+T`,
-          run: () => store.handleMenuAction('tab-new')
+          run: () => run('tab-new')
         },
         {
           label: 'Close Comparison',
           keys: `${MOD}+Shift+W`,
-          run: () => store.handleMenuAction('tab-close')
+          run: () => run('tab-close')
         },
         {
           label: 'Next Comparison',
           keys: 'Ctrl+Tab',
-          run: () => store.handleMenuAction('tab-next')
+          run: () => run('tab-next')
         },
         {
           label: 'Previous Comparison',
           keys: 'Ctrl+Shift+Tab',
-          run: () => store.handleMenuAction('tab-prev')
+          run: () => run('tab-prev')
         },
-        { label: 'Import Snippets…', run: () => store.handleMenuAction('import-snippets') },
+        { label: 'Import Snippets…', run: () => run('import-snippets') },
         { sep: true },
-        { label: 'Settings', keys: `${MOD}+,`, run: () => store.handleMenuAction('settings') },
+        { label: 'Settings', keys: `${MOD}+,`, run: () => run('settings') },
         { sep: true },
         { label: 'Quit', paletteHidden: true, run: () => window.api.quit() }
       ]
@@ -52,16 +56,16 @@ export function buildMenus(store) {
       id: 'edit',
       label: 'Edit',
       items: [
-        { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => store.swap() },
-        { label: 'Clear', keys: `${MOD}+K`, run: () => store.clear() },
+        { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => run('swap') },
+        { label: 'Clear', keys: `${MOD}+K`, run: () => run('clear') },
         {
           label: 'Copy Diff as Patch',
           keys: `${MOD}+Shift+C`,
-          run: () => store.handleMenuAction('copy-diff')
+          run: () => run('copy-diff')
         },
-        { label: 'Apply Patch…', run: () => store.handleMenuAction('apply-patch') },
+        { label: 'Apply Patch…', run: () => run('apply-patch') },
         { sep: true },
-        { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => store.togglePasteMode() }
+        { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => run('toggle-paste') }
       ]
     },
     {
@@ -72,25 +76,25 @@ export function buildMenus(store) {
           label: 'Command Palette…',
           keys: `${MOD}+Shift+P`,
           paletteHidden: true,
-          run: () => store.handleMenuAction('command-palette')
+          run: () => run('command-palette')
         },
         { sep: true },
         {
           label: 'Toggle Structure View',
           keys: `${MOD}+Shift+D`,
-          run: () => store.handleMenuAction('toggle-structure')
+          run: () => run('toggle-structure')
         },
         {
           label: 'Toggle Split View',
           keys: `${MOD}+\\`,
-          run: () => store.handleMenuAction('toggle-split')
+          run: () => run('toggle-split')
         },
         {
           label: 'Toggle Sidebar',
           keys: `${MOD}+B`,
-          run: () => store.handleMenuAction('toggle-sidebar')
+          run: () => run('toggle-sidebar')
         },
-        { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => store.toggleTheme() },
+        { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => run('toggle-theme') },
         { sep: true },
         {
           // No key hint: the binding is user-configurable (Settings →
@@ -125,17 +129,17 @@ export function buildMenus(store) {
       id: 'security',
       label: 'Security',
       items: [
-        { label: 'Share My Public Key', run: () => (store.showShareKeyDialog = true) },
+        { label: 'Share My Public Key', run: () => run('export-pubkey') },
         { sep: true },
-        { label: 'Add Trusted Key', run: () => store.addTrustedKey() },
-        { label: 'Manage Trusted Keys', run: () => store.handleMenuAction('manage-keys') },
-        { label: 'Replace My Key…', run: () => store.handleMenuAction('rotate-key') },
+        { label: 'Add Trusted Key', run: () => run('add-trusted-key') },
+        { label: 'Manage Trusted Keys', run: () => run('manage-keys') },
+        { label: 'Replace My Key…', run: () => run('rotate-key') },
         { sep: true },
         {
           label: 'Configuration',
           items: [
-            { label: 'Back Up', run: () => store.handleMenuAction('config-backup') },
-            { label: 'Restore', run: () => store.handleMenuAction('config-restore') }
+            { label: 'Back Up', run: () => run('config-backup') },
+            { label: 'Restore', run: () => run('config-restore') }
           ]
         }
       ]
@@ -148,26 +152,26 @@ export function buildMenus(store) {
         {
           label: 'Base64',
           keys: `${MOD}+Shift+B`,
-          run: () => store.handleMenuAction('tools-base64')
+          run: () => run('tools-base64')
         },
-        { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => store.handleMenuAction('tools-json') },
-        { label: 'XML', keys: `${MOD}+Shift+M`, run: () => store.handleMenuAction('tools-xml') },
-        { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => store.handleMenuAction('tools-uuid') },
-        { label: 'JWT Decode', run: () => store.handleMenuAction('tools-jwt') },
-        { label: 'Epoch / Date', run: () => store.handleMenuAction('tools-epoch') },
-        { label: 'URL Encode / Decode', run: () => store.handleMenuAction('tools-url') },
+        { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => run('tools-json') },
+        { label: 'XML', keys: `${MOD}+Shift+M`, run: () => run('tools-xml') },
+        { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => run('tools-uuid') },
+        { label: 'JWT Decode', run: () => run('tools-jwt') },
+        { label: 'Epoch / Date', run: () => run('tools-epoch') },
+        { label: 'URL Encode / Decode', run: () => run('tools-url') },
         {
           label: 'Checksum / Hash',
-          run: () => store.handleMenuAction('tools-hash')
+          run: () => run('tools-hash')
         },
         {
           label: 'Regex Tester',
-          run: () => store.handleMenuAction('tools-regex')
+          run: () => run('tools-regex')
         },
         {
           label: 'Lines',
           keys: `${MOD}+Shift+R`,
-          run: () => store.handleMenuAction('tools-lines')
+          run: () => run('tools-lines')
         },
         {
           label: 'Text Encryption',
@@ -175,7 +179,7 @@ export function buildMenus(store) {
             {
               label: 'Encrypt / Decrypt',
               keys: `${MOD}+Shift+X`,
-              run: () => store.handleMenuAction('tools-crypt')
+              run: () => run('tools-crypt')
             }
           ]
         }
@@ -189,7 +193,7 @@ export function buildMenus(store) {
         // that opens this tag's release page. Mirrors the native menu.
         { label: `Diff Bro v${window.api.appVersion}`, info: true },
         { sep: true },
-        { label: 'Keyboard Shortcuts', run: () => store.handleMenuAction('shortcuts') },
+        { label: 'Keyboard Shortcuts', run: () => run('shortcuts') },
         { sep: true },
         { label: 'Report an Issue', run: () => window.api.reportIssue() }
       ]

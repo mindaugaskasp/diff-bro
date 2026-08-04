@@ -3,7 +3,7 @@
 // `title` is drawn by the OS — the app cannot see, style or time it, and in a
 // frameless Electron window it often never appears at all.
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
+import { useImageExportStore } from '../features/imageExport'
 
 const DELAY_MS = 300
 // Kept clear of the window edge. The OS drew its own tips inside the screen;
@@ -19,9 +19,9 @@ let timer = null
 // over the diff lands in the picture — and this bubble is teleported to <body>,
 // where the region's `.capturing` class cannot reach it. A click dismisses its
 // own tip, but a menu or palette export never touches the pointer.
-const store = useDiffStore()
+const imageExport = useImageExportStore()
 watch(
-  () => store.imageCapturing,
+  () => imageExport.imageCapturing,
   (capturing) => capturing && hide()
 )
 
@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
        had a box and passed a visibility check while never being painted. -->
   <Teleport to="body">
     <div
-      v-if="text && !store.imageCapturing"
+      v-if="text && !imageExport.imageCapturing"
       ref="bubble"
       class="tip-bubble"
       :style="style"

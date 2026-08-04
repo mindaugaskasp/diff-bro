@@ -1,8 +1,7 @@
 <script setup>
-// Movable Mermaid viewer (diffStore.mermaidView): zoom, drag-pan, corner-resize,
+// Movable Mermaid viewer (uiStore.mermaidView): zoom, drag-pan, corner-resize,
 // maximize; follows OS fullscreen.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useBackdropClose } from '../composables/useBackdropClose'
 import { useResizable } from '../composables/useResizable'
 import { useFullScreen } from '../composables/useFullScreen'
@@ -12,10 +11,11 @@ import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { DIAGRAM_THEME_OPTIONS } from '../utils/mermaid'
+import { useUiStore } from '../stores/uiStore'
 
-const diff = useDiffStore()
+const ui = useUiStore()
 const settings = useSettingsStore()
-const view = computed(() => diff.mermaidView) // { name, code }
+const view = computed(() => ui.mermaidView) // { name, code }
 const isFullScreen = useFullScreen()
 
 const DEFAULT_W = 880
@@ -51,7 +51,7 @@ function startResize(corner, e) {
 }
 
 function close() {
-  diff.closeMermaid()
+  ui.closeMermaid()
 }
 
 // Close on a backdrop click, but not when a resize drag merely releases there.

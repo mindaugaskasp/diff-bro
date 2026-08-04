@@ -1,6 +1,9 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
+import { SnippetShot, useImageExportStore } from './features/imageExport'
+import { usePasteToCompareStore } from './features/pasteToCompare'
+import { useCommands } from './composables/useCommands'
 import { useSettingsStore } from './stores/settingsStore'
 import { useWindowFileDrop } from './composables/useFileDrop'
 import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
@@ -17,7 +20,7 @@ import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
-import SnippetShot from './components/SnippetShot.vue'
+
 import MenuBar from './components/MenuBar.vue'
 import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
@@ -31,21 +34,26 @@ import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
+import { useUiStore } from './stores/uiStore'
 
 const store = useDiffStore()
+
+const ui = useUiStore()
+const imageExport = useImageExportStore()
 const tabs = useTabsStore()
 tabs.init()
 const snippets = useSnippetStore()
 const settings = useSettingsStore()
+const { run, runCli } = useCommands()
 
-store.initTheme()
-window.api.onMenuAction((action) => store.handleMenuAction(action))
+settings.initTheme()
+window.api.onMenuAction((action) => run(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
 // The `diffbro` command: main holds anything that arrived before this window
 // existed, and releases it only once the restored session is in place (below),
 // so a comparison the user asked for is never overwritten by an old one.
-window.api.onCliCommand((command) => store.runCliCommand(command))
-usePasteShortcut(() => store.requestPasteFromClipboard())
+window.api.onCliCommand((command) => runCli(command))
+usePasteShortcut(() => usePasteToCompareStore().request())
 // Nothing is written until the stored session has been read back (or found
 // absent), so a blank startup window can never overwrite it.
 useSessionPersistence()
@@ -54,7 +62,7 @@ useDiagramWarmup()
 // Re-diff loaded files + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {
   store.refreshFromDisk()
-  store.resolveActiveTheme()
+  settings.resolveActiveTheme()
 })
 
 // Reopen last session's comparisons, then let main release any `diffbro`
@@ -77,8 +85,7 @@ onMounted(async () => {
 
 // Window-level file drops stand down while a dialog/paste pane handles its own.
 const dropSuppressed = computed(
-  () =>
-    !!snippets.editingSnippet || !!store.textTool || store.showCryptDialog || store.mode === 'paste'
+  () => !!snippets.editingSnippet || !!ui.textTool || ui.showCryptDialog || store.mode === 'paste'
 )
 const {
   active: dragActive,
@@ -102,7 +109,7 @@ useSnippetDiffSync()
 
     <AppToolbar />
     <!-- Nyan theme only. -->
-    <NyanLane v-if="store.theme === 'nyan'" />
+    <NyanLane v-if="settings.theme === 'nyan'" />
 
     <div class="body">
       <SavedDiffs />
@@ -115,11 +122,11 @@ useSnippetDiffSync()
            image export photographs. It is a class, not a v-if: removing the
            toast would start its fade-leave transition and the shutter would
            catch it mid-fade. -->
-        <main class="content" :class="{ capturing: store.imageCapturing }">
+        <main class="content" :class="{ capturing: imageExport.imageCapturing }">
           <!-- Matrix theme: code rain behind the empty state / diff area, only
              while no diff is loaded (it never sits behind a comparison). -->
           <MatrixRain
-            v-if="store.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
+            v-if="settings.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
             fill
           />
           <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row">
@@ -187,7 +194,7 @@ useSnippetDiffSync()
           <ShortcutBar />
 
           <!-- The photo studio: covers this column while a snippet is shot. -->
-          <SnippetShot v-if="store.snippetShot" :shot="store.snippetShot" />
+          <SnippetShot v-if="imageExport.snippetShot" :shot="imageExport.snippetShot" />
         </main>
       </div>
     </div>

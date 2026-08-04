@@ -1,14 +1,16 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
-import BaseDialog from './BaseDialog.vue'
+import { useDiffStore } from '../../../stores/diffStore'
+import { useConfigBackupStore } from '../configBackupStore'
+import { PASSPHRASE_HINT, passphraseTooShort } from '../../../passphrase'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
 const diff = useDiffStore()
+const backup = useConfigBackupStore()
 const passphrase = ref('')
 const busy = ref(false)
-const isBackup = computed(() => diff.configMode === 'backup')
-const destination = computed(() => diff.pendingBackupPath)
+const isBackup = computed(() => backup.mode === 'backup')
+const destination = computed(() => backup.pendingPath)
 
 async function submit() {
   if (!passphrase.value || busy.value) return
@@ -20,9 +22,9 @@ async function submit() {
   }
   busy.value = true
   try {
-    if (!isBackup.value) await diff.runConfigRestore(passphrase.value)
-    else if (destination.value) await diff.runBackupTo(destination.value, passphrase.value)
-    else await diff.runConfigBackup(passphrase.value)
+    if (!isBackup.value) await backup.restore(passphrase.value)
+    else if (destination.value) await backup.runTo(destination.value, passphrase.value)
+    else await backup.run(passphrase.value)
     close()
   } finally {
     busy.value = false
@@ -30,8 +32,7 @@ async function submit() {
 }
 
 function close() {
-  diff.configMode = null
-  diff.pendingBackupPath = null
+  backup.close()
   passphrase.value = ''
 }
 </script>

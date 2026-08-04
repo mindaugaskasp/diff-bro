@@ -7,13 +7,14 @@
 // and assistive tech, which is how it was first written.
 import { nextTick, ref, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { MAX_TAB_NAME, adjacentTabId, tabLabel, tabsFullNotice } from '../utils/tabs'
+import { MAX_TAB_NAME, adjacentTabId, tabLabel } from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
 import TabContextMenu from './TabContextMenu.vue'
 import { useTabContextMenu } from '../composables/useTabContextMenu'
 import { useTabOverflow } from '../composables/useTabOverflow'
 import { MOD } from '../keys'
+import { tabsFullNotice } from '../utils/tabNotices'
 
 const tabs = useTabsStore()
 const diff = useDiffStore()

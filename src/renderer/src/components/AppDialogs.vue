@@ -1,15 +1,15 @@
 <script setup>
 // Every modal, mounted in one place; each is driven by its own store state.
 import { useDiffStore } from '../stores/diffStore'
+import { DiffImageDialog, useImageExportStore } from '../features/imageExport'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useVaultStore } from '../stores/vaultStore'
+import { useTabsStore } from '../stores/tabsStore'
 import { useErrorStore } from '../stores/errorStore'
 import ErrorReportDialog from './ErrorReportDialog.vue'
-import PasteConfirmDialog from './PasteConfirmDialog.vue'
+import { PasteConfirmDialog, usePasteToCompareStore } from '../features/pasteToCompare'
 import CliBlockedDialog from './CliBlockedDialog.vue'
 import SaveDiffDialog from './SaveDiffDialog.vue'
-import ShareDiffDialog from './ShareDiffDialog.vue'
-import DiffImageDialog from './DiffImageDialog.vue'
 import ReplaceDiffDialog from './ReplaceDiffDialog.vue'
 import TextToolDialog from './TextToolDialog.vue'
 import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
@@ -20,18 +20,30 @@ import SnippetFillDialog from './SnippetFillDialog.vue'
 import VaultCategoryDeleteDialog from './VaultCategoryDeleteDialog.vue'
 import RetagDiffDialog from './RetagDiffDialog.vue'
 import TabCloseDialog from './TabCloseDialog.vue'
-import AddTrustedKeyDialog from './AddTrustedKeyDialog.vue'
-import TrustedKeysDialog from './TrustedKeysDialog.vue'
-import RemoveTrustedKeyDialog from './RemoveTrustedKeyDialog.vue'
-import ShareKeyDialog from './ShareKeyDialog.vue'
-import RotateKeyDialog from './RotateKeyDialog.vue'
-import ConfigBackupDialog from './ConfigBackupDialog.vue'
+import { ConfigBackupDialog, useConfigBackupStore } from '../features/configBackup'
 import SettingsDialog from './SettingsDialog.vue'
 import KeyboardShortcutsDialog from './KeyboardShortcutsDialog.vue'
 import MermaidViewerDialog from './MermaidViewerDialog.vue'
 import CommandPalette from './CommandPalette.vue'
+import {
+  AddTrustedKeyDialog,
+  RemoveTrustedKeyDialog,
+  RotateKeyDialog,
+  ShareDiffDialog,
+  ShareKeyDialog,
+  TrustedKeysDialog,
+  useShareStore
+} from '../features/share'
+import { useUiStore } from '../stores/uiStore'
 
 const store = useDiffStore()
+
+const ui = useUiStore()
+const share = useShareStore()
+const imageExport = useImageExportStore()
+const configBackup = useConfigBackupStore()
+const tabs = useTabsStore()
+const paste = usePasteToCompareStore()
 const snippets = useSnippetStore()
 const vault = useVaultStore()
 const errors = useErrorStore()
@@ -40,28 +52,28 @@ const errors = useErrorStore()
 <template>
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
-  <ShareDiffDialog v-if="store.shareEntryId || store.shareDraft" />
-  <DiffImageDialog v-if="store.imageEntry" />
-  <TrustedKeysDialog v-if="store.showTrustedKeysDialog" />
-  <RemoveTrustedKeyDialog v-if="store.pendingUntrust" />
-  <ShareKeyDialog v-if="store.showShareKeyDialog" />
-  <RotateKeyDialog v-if="store.showRotateKeyDialog" />
-  <ConfigBackupDialog v-if="store.configMode" />
-  <SettingsDialog v-if="store.showSettingsDialog" />
-  <KeyboardShortcutsDialog v-if="store.showShortcutsDialog" />
-  <CommandPalette v-if="store.showCommandPalette" />
-  <MermaidViewerDialog v-if="store.mermaidView" />
-  <AddTrustedKeyDialog v-if="store.pendingTrustedKey" />
-  <TextToolDialog v-if="store.textTool" :key="store.textTool" :tool="store.textTool" />
-  <EncryptDecryptDialog v-if="store.showCryptDialog" />
+  <ShareDiffDialog v-if="share.shareEntryId || share.shareDraft" />
+  <DiffImageDialog v-if="imageExport.imageEntry" />
+  <TrustedKeysDialog v-if="share.showTrustedKeysDialog" />
+  <RemoveTrustedKeyDialog v-if="share.pendingUntrust" />
+  <ShareKeyDialog v-if="share.showShareKeyDialog" />
+  <RotateKeyDialog v-if="share.showRotateKeyDialog" />
+  <ConfigBackupDialog v-if="configBackup.mode" />
+  <SettingsDialog v-if="ui.showSettingsDialog" />
+  <KeyboardShortcutsDialog v-if="ui.showShortcutsDialog" />
+  <CommandPalette v-if="ui.showCommandPalette" />
+  <MermaidViewerDialog v-if="ui.mermaidView" />
+  <AddTrustedKeyDialog v-if="share.pendingTrustedKey" />
+  <TextToolDialog v-if="ui.textTool" :key="ui.textTool" :tool="ui.textTool" />
+  <EncryptDecryptDialog v-if="ui.showCryptDialog" />
   <SnippetEditorDialog v-if="snippets.editingSnippet" />
   <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />
   <SnippetDeleteDialog v-if="snippets.pendingDelete" />
   <SnippetFillDialog v-if="snippets.pendingFill" />
   <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
   <RetagDiffDialog v-if="vault.pendingRetag" />
-  <TabCloseDialog v-if="store.pendingTabClose" />
+  <TabCloseDialog v-if="tabs.pendingClose" />
   <ErrorReportDialog v-if="errors.visible" />
-  <PasteConfirmDialog v-if="store.pastePrompt" />
+  <PasteConfirmDialog v-if="paste.prompt" />
   <CliBlockedDialog v-if="store.cliBlocked" />
 </template>

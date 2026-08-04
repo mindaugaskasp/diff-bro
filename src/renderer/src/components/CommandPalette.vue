@@ -4,25 +4,27 @@
 // the shared rank(), and the keyboard driver is useQuickLookKeys with its
 // list-only defaults — so all the event logic stays in tested composables.
 import { computed, onMounted, ref, watch } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { buildMenus } from '../menus'
+import { useCommands } from '../composables/useCommands'
 import { flattenCommands } from '../utils/commandPalette'
 import { TOOLS, toolPaletteItems } from '../utils/tools'
 import { rank } from '../utils/quickLook'
 import { useQuickLookKeys } from '../composables/useQuickLookKeys'
 import { useBackdropClose } from '../composables/useBackdropClose'
 import AppIcon from './AppIcon.vue'
+import { useUiStore } from '../stores/uiStore'
 
-const store = useDiffStore()
+const ui = useUiStore()
 const settings = useSettingsStore()
-const commands = flattenCommands(buildMenus(store))
+const { run } = useCommands()
+const commands = flattenCommands(buildMenus(run))
 const query = ref('')
 const selected = ref(0)
 const input = ref(null)
 const listEl = ref(null)
 
-const isTools = computed(() => store.paletteScope === 'tools')
+const isTools = computed(() => ui.paletteScope === 'tools')
 // Unfiltered, the tools scope shows Recent above All tools; once you type it
 // ranks the plain registry so a recent tool can't match twice.
 const results = computed(() => {
@@ -33,13 +35,13 @@ watch(results, () => (selected.value = 0))
 watch(selected, (i) => listEl.value?.children?.[i]?.scrollIntoView({ block: 'nearest' }))
 
 function close() {
-  store.showCommandPalette = false
+  ui.showCommandPalette = false
 }
 function choose(i) {
   const cmd = results.value[i]
   if (!cmd) return
   close()
-  if (cmd.action) store.handleMenuAction(cmd.action)
+  if (cmd.action) run(cmd.action)
   else cmd.run()
 }
 

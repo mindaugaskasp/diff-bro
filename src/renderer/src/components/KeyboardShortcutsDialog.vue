@@ -1,14 +1,14 @@
 <script setup>
 // Help → Keyboard Shortcuts: the grouped list (labels from utils/shortcuts.js).
 import { computed } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { SHORTCUT_GROUPS } from '../utils/shortcuts'
 import { acceleratorLabel } from '../utils/accelerator'
 import { isMac } from '../keys'
 import BaseDialog from './BaseDialog.vue'
+import { useUiStore } from '../stores/uiStore'
 
-const store = useDiffStore()
+const ui = useUiStore()
 const settings = useSettingsStore()
 const platform = isMac ? 'macOS' : 'this system'
 
@@ -32,7 +32,7 @@ const groups = computed(() =>
 )
 
 function close() {
-  store.showShortcutsDialog = false
+  ui.showShortcutsDialog = false
 }
 </script>
 

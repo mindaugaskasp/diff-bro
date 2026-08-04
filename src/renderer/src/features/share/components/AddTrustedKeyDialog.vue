@@ -1,31 +1,31 @@
 <script setup>
 import { ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import BaseDialog from './BaseDialog.vue'
+import { useShareStore } from '../shareStore'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
-const diff = useDiffStore()
-const label = ref(diff.pendingTrustedKey?.label ?? '')
+const share = useShareStore()
+const label = ref(share.pendingTrustedKey?.label ?? '')
 // Guard against a second submit while the key is still being stored.
 const adding = ref(false)
 
 async function add() {
   if (adding.value) return
   adding.value = true
-  await diff.confirmTrustedKey(label.value)
+  await share.confirmTrustedKey(label.value)
 }
 </script>
 
 <template>
-  <BaseDialog width="360px" title="Add trusted key" @close="diff.cancelTrustedKey()">
+  <BaseDialog width="360px" title="Add trusted key" @close="share.cancelTrustedKey()">
     <form class="dialog-form" @submit.prevent="add">
       <p class="dialog-note">
         Adding <strong>someone else's</strong> public key so you can receive diffs they share. The
         name is prefilled from what they called their key — keep it or rename it. Fingerprint
-        <code>{{ diff.pendingTrustedKey?.fingerprint }}</code
+        <code>{{ share.pendingTrustedKey?.fingerprint }}</code
         >.
       </p>
-      <p v-if="diff.pendingTrustedKey?.vouchedBy" class="dialog-note vouch">
-        This key says it replaces <strong>{{ diff.pendingTrustedKey.vouchedBy }}</strong
+      <p v-if="share.pendingTrustedKey?.vouchedBy" class="dialog-note vouch">
+        This key says it replaces <strong>{{ share.pendingTrustedKey.vouchedBy }}</strong
         >, and that key signed the claim. Check the fingerprint with them anyway — anyone holding
         their old key could have signed it.
       </p>
@@ -43,7 +43,9 @@ async function add() {
         <button type="submit" class="btn btn-primary" :disabled="!label.trim() || adding">
           {{ adding ? 'Adding…' : 'Add' }}
         </button>
-        <button type="button" class="btn btn-ghost" @click="diff.cancelTrustedKey()">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="share.cancelTrustedKey()">
+          Cancel
+        </button>
       </div>
     </form>
   </BaseDialog>

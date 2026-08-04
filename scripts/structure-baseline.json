@@ -1,0 +1,35 @@
+{
+  "cycles": [
+    {
+      "key": "src/renderer/src/stores/snippetStore.js | src/renderer/src/stores/vaultStore.js",
+      "members": [
+        "src/renderer/src/stores/vaultStore.js",
+        "src/renderer/src/stores/snippetStore.js"
+      ]
+    },
+    {
+      "key": "src/renderer/src/stores/diffStore.js | src/renderer/src/stores/tabsStore.js | src/renderer/src/stores/vaultStore.js",
+      "members": [
+        "src/renderer/src/stores/diffStore.js",
+        "src/renderer/src/stores/vaultStore.js",
+        "src/renderer/src/stores/tabsStore.js"
+      ]
+    },
+    {
+      "key": "src/renderer/src/stores/tabsStore.js | src/renderer/src/stores/vaultStore.js",
+      "members": [
+        "src/renderer/src/stores/vaultStore.js",
+        "src/renderer/src/stores/tabsStore.js"
+      ]
+    },
+    {
+      "key": "src/renderer/src/stores/diffStore.js | src/renderer/src/stores/snippetStore.js | src/renderer/src/stores/tabsStore.js | src/renderer/src/stores/vaultStore.js",
+      "members": [
+        "src/renderer/src/stores/diffStore.js",
+        "src/renderer/src/stores/snippetStore.js",
+        "src/renderer/src/stores/vaultStore.js",
+        "src/renderer/src/stores/tabsStore.js"
+      ]
+    }
+  ]
+}

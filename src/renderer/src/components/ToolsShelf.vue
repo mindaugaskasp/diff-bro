@@ -2,12 +2,14 @@
 // Only the recents live here; the full list is the palette's tools scope, so
 // there is no second searchable tool UI to keep in step.
 import { computed } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
+import { useCommands } from '../composables/useCommands'
 import { useSettingsStore } from '../stores/settingsStore'
 import { SHELF_RECENT_TOOLS, recentTools } from '../utils/tools'
 import AppIcon from './AppIcon.vue'
+import { useUiStore } from '../stores/uiStore'
 
-const diff = useDiffStore()
+const ui = useUiStore()
+const { run } = useCommands()
 const settings = useSettingsStore()
 
 const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOOLS))
@@ -25,7 +27,7 @@ const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOO
           :key="tool.id"
           class="usb-tool"
           :data-tip="`${tool.kind} — ${tool.name}`"
-          @click="diff.handleMenuAction(tool.action)"
+          @click="run(tool.action)"
         >
           <AppIcon :name="tool.icon" />{{ tool.name }}
         </button>
@@ -36,7 +38,7 @@ const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOO
     <button
       class="usb-tool usb-tool-all"
       data-tip="Search every tool"
-      @click="diff.openToolsPalette()"
+      @click="ui.openToolsPalette()"
     >
       <AppIcon name="search" />Search tools…
     </button>

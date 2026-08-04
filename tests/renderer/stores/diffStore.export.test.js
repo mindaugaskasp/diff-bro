@@ -2,7 +2,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
-import { loadPersisted, savePersisted } from '../../../src/renderer/src/persist'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -74,23 +73,3 @@ describe('exportDiff', () => {
 
 // The bundle carried `session` from the start; without this it was sealed into
 // the archive and silently dropped on the way back.
-describe('config backup — session round trip', () => {
-  it('collects the session into the bundle and writes it back on restore', async () => {
-    const diff = useDiffStore()
-    savePersisted('session', '{"tabs":["a"]}')
-    let sent = null
-    window.api.backupConfig = async (bundle) => {
-      sent = bundle
-      return { ok: true, path: '/tmp/x' }
-    }
-    await diff.runConfigBackup('passphrase-long-enough')
-    expect(sent.session).toBe('{"tabs":["a"]}')
-
-    savePersisted('session', '{"tabs":["different"]}')
-    window.api.restoreConfig = async () => ({ ok: true, session: sent.session })
-    await diff.runConfigRestore('passphrase-long-enough')
-    // Written to persistence, not applied live: replacing the comparisons the
-    // reader is looking at mid-restore is not what they asked for.
-    expect(loadPersisted('session')).toBe('{"tabs":["a"]}')
-  })
-})

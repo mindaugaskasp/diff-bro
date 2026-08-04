@@ -1,13 +1,13 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { buildMenus } from '../menus'
+import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
 
 // Themed menu bar for Windows/Linux (macOS keeps the native one); mirrors the
 // hidden app menu, which still binds the accelerators.
-const store = useDiffStore()
-const menus = buildMenus(store)
+const { run } = useCommands()
+const menus = buildMenus(run)
 const open = ref(null)
 // DevTools is dev-only; hidden in packaged builds.
 const isPackaged = ref(true)

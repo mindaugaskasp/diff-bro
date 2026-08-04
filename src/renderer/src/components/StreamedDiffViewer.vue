@@ -12,15 +12,7 @@ import StreamedMarker from './StreamedMarker.vue'
 
 const store = useDiffStore()
 const box = ref(null)
-const {
-  rows,
-  window: view,
-  rowHeight,
-  total,
-  summary,
-  error,
-  loading
-} = useStreamedDiff(box)
+const { rows, window: view, rowHeight, total, summary, error, loading } = useStreamedDiff(box)
 
 useCaptureRegion(box)
 

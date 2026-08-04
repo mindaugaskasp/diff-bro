@@ -9,9 +9,12 @@ crypto, keys) lives in **main**; the **preload** exposes only a small, validated
 flowchart TB
     subgraph R["Renderer — Vue 3 (sandboxed: no Node, no Electron)"]
         ui["UI<br/>DiffViewer · Saved diffs · Snippets · Tools dialogs"]
-        stores["Pinia stores<br/>diff · vault · snippets · settings"]
+        cmds["Command registry<br/>action → (stores) ⇒ effect"]
+        slices["Feature slices<br/>share · paste · imageExport · configBackup"]
+        stores["Core stores<br/>diff · vault · snippets · settings · tabs · ui"]
         adapters["Adapter registry<br/>text → { kind, … } comparable"]
-        ui --> stores --> adapters
+        ui --> cmds --> slices --> stores --> adapters
+        cmds --> stores
     end
 
     subgraph PR["Preload — contextBridge"]
@@ -73,9 +76,16 @@ flowchart TB
   (alignment over digests) and `streamWindow.js` (range policy) are pure and
   unit-tested; `streamedDiff.js` is the IPC glue.
 - `src/preload` — the `contextBridge` `window.api`.
-- `src/renderer` — the Vue app: `adapters/`, `stores/` (Pinia), and
-  `components/` (viewer, sidebar, dialogs), plus pure `utils/`
+- `src/renderer` — the Vue app. `stores/` is the CORE (the live comparison, the
+  vault, snippets, settings, tabs, and `uiStore` for dialog chrome);
+  `features/<name>/` are vertical slices that own their state, components and
+  commands together and are reachable only through their `index.js`;
+  `utils/commands.js` is the one registry every menu, shortcut and palette entry
+  dispatches through. Plus `adapters/`, shared `components/`, and pure `utils/`
   (`textFormats`, `sqlFormat`, `base64`, `detectLanguage`).
+  A slice may read the core; **the core may not import a slice** — see the four
+  rules in [standards.md](standards.md#how-a-feature-is-put-together), which
+  `scripts/check-structure.mjs` and the ESLint layering rules enforce.
 - `docs/` — this file, plus [security.md](security.md) and
   [packaging.md](packaging.md).
-- `tests/` — mirrors `src/` (`tests/main`, `tests/renderer/{stores,utils,adapters}`).
+- `tests/` — mirrors `src/` (`tests/main`, `tests/renderer/{stores,features,utils,adapters,composables}`, `tests/scripts`).

@@ -13,6 +13,7 @@
 // Thresholds are floors calibrated to the shipping themes; raise them as the
 // palettes improve, never lower them to make a flat theme pass.
 import { readFileSync, readdirSync } from 'fs'
+import { featureStyleDirs } from './lib/featureDirs.mjs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -435,7 +436,7 @@ function rulesIn(name, css) {
 const isAudited = (name) => name.endsWith('.css') && name !== 'tokens.css' && name !== 'themes.css'
 
 function componentRules() {
-  const dirs = ['src/renderer/src/components/styles', 'src/renderer/src/styles']
+  const dirs = ['src/renderer/src/components/styles', 'src/renderer/src/styles', ...featureStyleDirs()]
   const out = []
   for (const dir of dirs) {
     let names

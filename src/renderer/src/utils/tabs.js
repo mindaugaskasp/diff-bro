@@ -249,13 +249,12 @@ export function isBlank(tab) {
   )
 }
 
-/**
- * Why no more comparisons may be opened, in terms of what the reader can see
- * rather than which limit was hit.
- * @param {DiffTab[]} tabs
- * @returns {string}
- */
-export const tabsFullNotice = (tabs) =>
-  (tabs?.length ?? 0) >= MAX_TABS
-    ? `That is the most comparisons at once (${MAX_TABS})`
-    : 'These comparisons already hold about as much text as one window can'
+// Defaults as an object rather than destructuring defaults: tabsStore.open()
+// sits right on the complexity limit and every `=` in a signature counts.
+export const OPEN_DEFAULTS = {
+  diffSaved: false,
+  entryId: null,
+  reuseBlank: true,
+  name: '',
+  transient: false
+}

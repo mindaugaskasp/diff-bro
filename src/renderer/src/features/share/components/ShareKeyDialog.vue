@@ -1,9 +1,9 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import BaseDialog from './BaseDialog.vue'
+import { useShareStore } from '../shareStore'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
-const diff = useDiffStore()
+const share = useShareStore()
 const label = ref('')
 const fingerprint = ref('')
 const busy = ref(false)
@@ -18,7 +18,7 @@ async function save() {
   if (busy.value) return
   busy.value = true
   try {
-    await diff.runExportKey(label.value)
+    await share.runExportKey(label.value)
   } finally {
     busy.value = false
   }
@@ -27,13 +27,13 @@ async function copy() {
   if (busy.value) return
   busy.value = true
   try {
-    await diff.runCopyKey(label.value)
+    await share.runCopyKey(label.value)
   } finally {
     busy.value = false
   }
 }
 function close() {
-  diff.showShareKeyDialog = false
+  share.showShareKeyDialog = false
 }
 </script>
 

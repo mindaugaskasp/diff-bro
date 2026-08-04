@@ -4,7 +4,6 @@
 // text-buffer branch — a new tool is a registry entry (utils/tools.js) plus a
 // case below, never another dialog component.
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { toolOutput } from '../composables/useToolOutput'
 import { toolById } from '../utils/tools'
@@ -19,13 +18,14 @@ import ToolBase64 from './ToolBase64.vue'
 import ToolXml from './ToolXml.vue'
 import ToolHash from './ToolHash.vue'
 import ToolRegex from './ToolRegex.vue'
+import { useUiStore } from '../stores/uiStore'
 
 const props = defineProps({
   // A tool id from the registry — which panel this dialog is showing.
   tool: { type: String, required: true }
 })
 
-const store = useDiffStore()
+const ui = useUiStore()
 const snippets = useSnippetStore()
 const title = computed(() => toolById(props.tool)?.name ?? 'Tools')
 
@@ -48,7 +48,7 @@ const body = ref(null)
 onMounted(() => nextTick(() => body.value?.querySelector('input, textarea')?.focus()))
 
 function close() {
-  store.textTool = null
+  ui.textTool = null
 }
 </script>
 

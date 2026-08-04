@@ -1,19 +1,19 @@
 <script setup>
 // The photo studio: a snippet claims the diff column for one shot
-// (diffStore.snippetShot), so the picture is the app's own rendering.
+// (imageExportStore.snippetShot), so the picture is the app's own rendering.
 import { computed, ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import { useCaptureRegion } from '../composables/useCaptureRegion'
-import { shaped } from '../utils/props'
-import MermaidDiagram from './MermaidDiagram.vue'
-import SnippetCode from './SnippetCode.vue'
+import { useImageExportStore } from '../imageExportStore'
+import { useCaptureRegion } from '../../../composables/useCaptureRegion'
+import { shaped } from '../../../utils/props'
+import MermaidDiagram from '../../../components/MermaidDiagram.vue'
+import SnippetCode from '../../../components/SnippetCode.vue'
 
 const props = defineProps({
-  /** @type {import('vue').PropType<import('../types').SnippetShot>} */
+  /** @type {import('vue').PropType<import('../../../types').SnippetShot>} */
   shot: { type: Object, required: true, validator: shaped('name', 'lang', 'code') }
 })
 
-const store = useDiffStore()
+const imageExport = useImageExportStore()
 const body = ref(null)
 useCaptureRegion(body)
 
@@ -31,15 +31,15 @@ const isDiagram = computed(() => props.shot.lang === 'mermaid')
         <MermaidDiagram
           :code="shot.code"
           :debounce="0"
-          @rendered="store.snippetShotPainted()"
-          @error="store.snippetShotFailed()"
+          @rendered="imageExport.snippetShotPainted()"
+          @error="imageExport.snippetShotFailed()"
         />
       </div>
       <SnippetCode
         v-else
         :code="shot.code"
         :language="shot.lang"
-        @settled="store.snippetShotPainted()"
+        @settled="imageExport.snippetShotPainted()"
       />
     </div>
   </div>

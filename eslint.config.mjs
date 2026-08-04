@@ -3,6 +3,47 @@ import pluginVue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
 import sonarjs from 'eslint-plugin-sonarjs'
 import globals from 'globals'
+import { SIZE_EXEMPT, legacyConfigBlocks } from './scripts/lib/legacySize.mjs'
+import { featureNames } from './scripts/lib/featureDirs.mjs'
+
+// The renderer/main fence (hard rule 3). Shared rather than repeated because
+// no-restricted-imports is REPLACED, not merged, by a later block — a config
+// that re-sets it for a subdirectory silently drops this ban for those files.
+const NO_NODE_IN_RENDERER = {
+  paths: [
+    {
+      name: 'electron',
+      message: 'Renderer code must use window.api (preload), never electron directly.'
+    }
+  ],
+  patterns: [
+    {
+      // A slice is reachable only through its index.js, from anywhere outside
+      // it. No extglob: ESLint matches these gitignore-style, where `!(index)*`
+      // is not syntax and silently matches NOTHING — which is how the first
+      // version of this rule passed a planted violation. Negation is the
+      // supported way to carve out the index.
+      group: ['**/features/*/**', '!**/features/*/index.js'],
+      message:
+        "A slice's internals are private. Import the slice (…/features/<name>), or lift the shared part into utils/ or components/."
+    },
+    {
+      group: [
+        'node:*',
+        'fs',
+        'fs/*',
+        'path',
+        'crypto',
+        'child_process',
+        'os',
+        'net',
+        'http',
+        'https'
+      ],
+      message: 'Node built-ins are main-process only. Add an IPC handler instead.'
+    }
+  ]
+}
 
 export default [
   // `.claude/` holds agent worktrees — whole checkouts of this repo, nested
@@ -55,6 +96,20 @@ export default [
             'A template cannot reach browser globals — Vue resolves identifiers against the component. Expose it from <script setup> instead.'
         }
       ],
+      // Naming. All three already hold by hand across the tree; they are set so
+      // the first slip fails a build instead of waiting for review.
+      camelcase: ['error', { properties: 'never' }],
+      // Only the `new lowercase()` half: capIsNew would fail 194 SCREAMING_CASE
+      // test factories (FILE(), SURFACE()), which are not constructors and not
+      // wrong. The exceptions are Vite `?worker` default imports — constructors
+      // that arrive lowercase from the module, not names we choose.
+      'new-cap': [
+        'error',
+        {
+          capIsNew: false,
+          newIsCapExceptions: ['jsonWorker', 'cssWorker', 'htmlWorker', 'tsWorker', 'editorWorker']
+        }
+      ],
       // Function shape. A function that trips these is usually two functions,
       // and a call with five positional arguments wants an options object.
       complexity: ['error', 10],
@@ -64,6 +119,34 @@ export default [
       'vue/max-attributes-per-line': 'off',
       'vue/singleline-html-element-content-newline': 'off',
       'vue/html-self-closing': 'off'
+    }
+  },
+
+  // Size caps for shipped .js, matching the 250 components already live under.
+  // Files over them today carry an exact entry in LEGACY_SIZE — permission for
+  // what exists, not one line more. Beat a cap and delete the entry;
+  // check-structure.mjs fails on one left behind.
+  {
+    files: ['src/**/*.js'],
+    rules: {
+      'max-lines-per-function': ['error', { max: 60, skipBlankLines: false, skipComments: false }],
+      'max-lines': ['error', { max: 250, skipBlankLines: false, skipComments: false }]
+    }
+  },
+  ...legacyConfigBlocks(),
+  // A cap on a declaration list fires when you add an icon or a typedef, and
+  // neither file has logic to separate.
+  { files: SIZE_EXEMPT, rules: { 'max-lines': 'off' } },
+
+  // Shipped code only. Tests reach into store internals (`store._shoot`) and
+  // e2e namespaces its page-evaluated probes on `window.__…`; both are correct
+  // where they are, and neither is naming this app's own surface. A Pinia
+  // action prefixed `_` survives the rule anyway — it is an object property,
+  // which no-underscore-dangle does not check.
+  {
+    files: ['src/**'],
+    rules: {
+      'no-underscore-dangle': ['error', { allowAfterThis: true, allowFunctionParams: true }]
     }
   },
 
@@ -104,34 +187,7 @@ export default [
     files: ['src/renderer/**'],
     languageOptions: { globals: { ...globals.browser } },
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: 'electron',
-              message: 'Renderer code must use window.api (preload), never electron directly.'
-            }
-          ],
-          patterns: [
-            {
-              group: [
-                'node:*',
-                'fs',
-                'fs/*',
-                'path',
-                'crypto',
-                'child_process',
-                'os',
-                'net',
-                'http',
-                'https'
-              ],
-              message: 'Node built-ins are main-process only. Add an IPC handler instead.'
-            }
-          ]
-        }
-      ]
+      'no-restricted-imports': ['error', NO_NODE_IN_RENDERER]
     }
   },
 
@@ -145,11 +201,20 @@ export default [
       'no-restricted-imports': [
         'error',
         {
+          paths: NO_NODE_IN_RENDERER.paths,
           patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
             {
-              group: ['vue', '*/stores/*', '../stores/*', '*/components/*', '../components/*'],
+              group: [
+                'vue',
+                '*/stores/*',
+                '../stores/*',
+                '*/components/*',
+                '../components/*',
+                '**/features/**'
+              ],
               message:
-                'utils/ must stay pure: no Vue, stores or components. Put stateful logic in composables/.'
+                'utils/ must stay pure: no Vue, stores, components or feature slices. Put stateful logic in composables/.'
             }
           ]
         }
@@ -162,10 +227,66 @@ export default [
       'no-restricted-imports': [
         'error',
         {
+          paths: NO_NODE_IN_RENDERER.paths,
           patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
             {
               group: ['*.vue', '*/components/*', '../components/*'],
               message: 'Composables are used BY components, never the other way around.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  // A vertical slice owns its state, its UI and its commands, and is reachable
+  // only through its index.js — the renderer-wide rule above carries that ban,
+  // and a slice's own files use bare relative paths, so nothing special is
+  // needed here. The core is different: it may not import a slice AT ALL, which
+  // is the direction check-structure.mjs catches as a cycle.
+  // From OUTSIDE a slice the pattern above is enough, because the specifier
+  // carries `features/`. From INSIDE one it does not: a sibling is reached as
+  // `../imageExport/imageExportStore`, which has no `features/` segment and so
+  // matched nothing — and `../*/*` cannot be used instead, since `*` also
+  // matches `..` and would ban the core. Naming the siblings is the only form
+  // that separates them; the names are read from disk, so a new slice is
+  // covered the moment it exists.
+  ...featureNames().map((self) => ({
+    files: [`src/renderer/src/features/${self}/**`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: NO_NODE_IN_RENDERER.paths,
+          patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
+            {
+              group: featureNames()
+                .filter((other) => other !== self)
+                .flatMap((other) => [`**/${other}/*`, `**/${other}/*/**`]),
+              message:
+                "Another slice's internals are private. Import the slice itself (…/features/<name>), or lift the shared part into utils/ or components/."
+            }
+          ]
+        }
+      ]
+    }
+  })),
+
+  {
+    files: ['src/renderer/src/stores/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: NO_NODE_IN_RENDERER.paths,
+          patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
+            {
+              group: ['**/features/**'],
+              message:
+                'The core cannot depend on a feature. Invert it: the slice reads the core, and anything cross-cutting is a command in utils/commands.js.'
             }
           ]
         }

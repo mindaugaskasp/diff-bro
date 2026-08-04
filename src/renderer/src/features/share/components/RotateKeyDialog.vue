@@ -3,10 +3,10 @@
 // believed to un-send things, and it does not. What it buys is that a leaked
 // key stops being able to sign in your name.
 import { onMounted, ref } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
-import BaseDialog from './BaseDialog.vue'
+import { useShareStore } from '../shareStore'
+import BaseDialog from '../../../components/BaseDialog.vue'
 
-const diff = useDiffStore()
+const share = useShareStore()
 const busy = ref(false)
 const retired = ref(0)
 const done = ref(null)
@@ -31,7 +31,7 @@ async function destroy() {
   await refresh()
 }
 
-const close = () => (diff.showRotateKeyDialog = false)
+const close = () => (share.showRotateKeyDialog = false)
 </script>
 
 <template>

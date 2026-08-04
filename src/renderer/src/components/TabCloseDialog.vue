@@ -3,16 +3,14 @@
 // comparison confirms before it goes. A bulk close asks once and counts, rather
 // than stacking one dialog per tab.
 import { computed } from 'vue'
-import { useDiffStore } from '../stores/diffStore'
 import { useTabsStore } from '../stores/tabsStore'
 import { tabLabel } from '../utils/tabs'
 import BaseDialog from './BaseDialog.vue'
 
-const diff = useDiffStore()
 const tabs = useTabsStore()
 
 const pending = computed(() =>
-  (diff.pendingTabClose ?? []).map((id) => tabs.tabs.find((t) => t.id === id)).filter(Boolean)
+  (tabs.pendingClose ?? []).map((id) => tabs.tabs.find((t) => t.id === id)).filter(Boolean)
 )
 // Only the unsaved ones are at risk — the rest close either way, so naming them
 // would overstate what is being decided.
@@ -27,7 +25,7 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
     :width="many ? '400px' : '340px'"
     :title="many ? 'Close comparisons?' : 'Close comparison?'"
     :closable="false"
-    @close="diff.cancelTabClose()"
+    @close="tabs.cancelClose()"
   >
     <p v-if="many" class="dialog-note">
       Closing {{ pending.length }} comparisons. <strong>{{ risky.length }}</strong> of them haven’t
@@ -40,10 +38,10 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
       <li v-for="tab in risky" :key="tab.id">{{ tabLabel(tab) }}</li>
     </ul>
     <template #actions>
-      <button class="btn btn-destructive" @click="diff.confirmTabClose()">
+      <button class="btn btn-destructive" @click="tabs.confirmClose()">
         {{ many ? 'Close them' : 'Close it' }}
       </button>
-      <button class="btn btn-ghost" @click="diff.cancelTabClose()">
+      <button class="btn btn-ghost" @click="tabs.cancelClose()">
         {{ many ? 'Keep them open' : 'Keep it open' }}
       </button>
     </template>
