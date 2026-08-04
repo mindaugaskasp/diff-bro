@@ -3,7 +3,7 @@
 |                                         |                        |
 | --------------------------------------- | ---------------------- |
 | **Status**                              | in-progress            |
-| **Progress**                            | 11 / 20 steps          |
+| **Progress**                            | 19 / 20 steps          |
 | **Branch**                              | `feat/onboarding-tour` |
 | **Started**                             | 2026-08-04             |
 | **Finished**                            |                        |
@@ -253,7 +253,7 @@ Written before the code.
 - [x] 2. `utils/spotlight.js` — pure geometry: `placeCallout` (side → opposite →
       other axis) and `veilPath` (the evenodd clip path). Test first, including
       the `x = -17` regression.
-- [ ] 3. `composables/useSpotlight.js` — measure the target, re-measure on
+- [x] 3. `composables/useSpotlight.js` — measure the target, re-measure on
       resize, Escape to close. Test first.
 - [x] 4. `features/onboarding/onboardingStore.js` — run state, persistence,
       `start` / `next` / `skip` / `finish` / `defer` / `replay`. Test first.
@@ -265,25 +265,25 @@ Written before the code.
       "Three more tips?" `BaseDialog`.
 - [x] 8. `features/onboarding/index.js` — the slice's only importable surface.
       Mount in `App.vue`.
-- [ ] 9. Demo fixtures: the two JSON files as bundled resources, written once by
+- [x] 9. Demo fixtures: the two JSON files as bundled resources, written once by
       main during first-run init, paths returned to the renderer.
-- [ ] 10. Step 1 wiring — open the fixtures by path into a scratch tab; close it
+- [x] 10. Step 1 wiring — open the fixtures by path into a scratch tab; close it
       when the tour ends.
 - [x] 11. Steps 2–4 wiring — Share dialog, Quick look-up summon, Settings on
       Appearance.
-- [ ] 12. Steps 5–7 wiring — snippet editor prefilled from the demo payload,
+- [x] 12. Steps 5–7 wiring — snippet editor prefilled from the demo payload,
       drop-zone step, diagram register.
 - [x] 13. `utils/commands.js` — `show-tour` row; Help item in **both**
       `src/main/index.js` and `MenuBar.vue`; palette entry.
 - [x] 14. `SettingsDialog` — the tips toggle and the Show tour button on the
       Appearance pane.
-- [ ] 15. `scripts/theme-sweep.mjs` — add the `tour-callout` surface with probes
+- [x] 15. `scripts/theme-sweep.mjs` — add the `tour-callout` surface with probes
       for title, body, keyline and ring.
-- [ ] 16. `scripts/seed-local.mjs` — the two demo files.
-- [ ] 17. e2e specs.
-- [ ] 18. `recapture-screenshots.mjs` — disable tips before capture; re-run and
+- [x] 16. `scripts/seed-local.mjs` — the two demo files.
+- [x] 17. e2e specs.
+- [x] 18. `recapture-screenshots.mjs` — disable tips before capture; re-run and
       check every frame for a stray veil.
-- [ ] 19. Docs: README, roadmap.md + roadmap.svg, glossary, architecture.
+- [x] 19. Docs: README, roadmap.md + roadmap.svg, glossary, architecture.
 - [ ] 20. `npm run check`, `make e2e`, `/validate`.
 
 ## Amendments during the build
@@ -322,7 +322,12 @@ already specified.
 ## Validation
 
 - [ ] `/validate` — summary below, full report in `quality-audit.md`
-- [ ] `npm run check`
+- [x] `npm run check` — clean: lint, style tokens, 14 themes, structure
+      (342 files, no new cycles), **2308 tests**, build
+- [x] e2e seen passing against the built app on macOS — 6/6,
+      `env -u ELECTRON_RUN_AS_NODE npx playwright test e2e/onboarding-tour.spec.mjs`
+- [x] veil guard verified red → green: reverted `pointer-events`, watched it
+      fail, restored
 - [ ] UI seen running (Docker / `make e2e`)
 - [ ] every Docs-impact "yes" done
 - [ ] `make local-seed` opens the demo files on the host; `local-seed-clean` removes them

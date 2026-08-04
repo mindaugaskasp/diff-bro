@@ -99,10 +99,33 @@ export const COMMANDS = {
   'tour-demo-snippet': ({ snippets }) => snippets.startNewSnippetFrom(DEMO_SNIPPET, 'json'),
   // Shows the launcher briefly, so it is something the user has seen rather
   // than only read about.
-  'tour-quicklook-peek': ({ onboarding }) => onboarding.peekQuickLook()
+  'tour-quicklook-peek': ({ onboarding }) => onboarding.peekQuickLook(),
+  // Something to point AT: step 1 is about the file slots, and empty boxes
+  // teach nothing.
+  'tour-demo-diff': (stores) => openDemoDiff(stores)
 }
 
 export const commandActions = () => Object.keys(COMMANDS)
+
+// Never displaces what the user already has open: a comparison in progress gets
+// its own tab, and a failure here is silent — the step still teaches the route.
+async function openDemoDiff({ diff, tabs }) {
+  if (diff.left || diff.right) {
+    if (!tabs.canHost?.(true)) return
+    tabs.newTab({ transient: true })
+  }
+  try {
+    // Contents, not paths: main refuses to read back anything under the data
+    // directory, which is the guard standing between a compromised renderer and
+    // vault.key. It hands over the payload directly instead.
+    const sides = ['left', 'right']
+    for (const [i, file] of ((await window.api.demoFiles()) ?? []).entries()) {
+      diff.receive(sides[i], file)
+    }
+  } catch {
+    // No demo pair on disk is not worth a notice mid-tour.
+  }
+}
 
 /**
  * @param {string} action

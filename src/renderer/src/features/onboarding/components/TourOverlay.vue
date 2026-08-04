@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useOnboardingStore } from '../onboardingStore'
 import { useSettingsStore } from '../../../stores/settingsStore'
 import { useSpotlight } from '../../../composables/useSpotlight'
@@ -7,17 +7,16 @@ import { acceleratorLabel } from '../../../utils/accelerator'
 import { isMac } from '../../../keys'
 import TourCallout from './TourCallout.vue'
 
+// Mounted always; only its contents are conditional. Starting the tour and
+// dispatching a step's command both live in composables/useTourCommands.js —
+// reaching the registry from in here would close a cycle back through this
+// slice's own index.
 const tour = useOnboardingStore()
 const settings = useSettingsStore()
 const calloutEl = ref(null)
 
 const step = computed(() => tour.currentStep)
 
-// Mounted always; only its contents are conditional. A step that must open a
-// dialog first names a command id, dispatched in App.vue where the registry
-// already lives — importing useCommands here would close a cycle back through
-// this slice's own index.
-onMounted(() => tour.begin())
 const shortcut = computed(() => acceleratorLabel(settings.quickLookShortcut, isMac))
 
 const { box, callout, panels, clip, found } = useSpotlight({

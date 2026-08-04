@@ -15,6 +15,7 @@ export const TOUR_STEPS = [
     since: '0.5.0',
     target: '[data-tour="slots"]',
     side: 'bottom',
+    command: 'tour-demo-diff',
     title: 'Two files, any way you like',
     body: 'Drop them anywhere on this window, or click a slot to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.'
   },
