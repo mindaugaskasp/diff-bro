@@ -24,6 +24,37 @@ async function loadPair(app, page, { left, right, ext = 'csv' }) {
   return dir
 }
 
+// A control that cannot act must not be offered: Split view and Ignore
+// whitespace are Monaco options, so beside a grid they read as broken, not N/A.
+test('the Monaco-only toggles disappear once the grid is showing', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-csv-toggles-'))
+  const left = join(dir, 'a.csv')
+  const right = join(dir, 'b.csv')
+  writeFileSync(left, 'id,name\n1,alpha\n2,beta\n')
+  writeFileSync(right, 'id,name\n1,alpha\n2,BETA\n')
+
+  try {
+    await stubOpenDialog(app, [left])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [right])
+    await page.locator('.slot[data-side="right"]').click()
+
+    const split = page.getByText('Split view', { exact: true })
+    await expect(split).toBeVisible()
+
+    await page.getByText('Grid', { exact: true }).click()
+    await expect(page.locator('.grid').first()).toBeVisible()
+    await expect(split).toHaveCount(0)
+    await expect(page.getByText('Ignore whitespace', { exact: true })).toHaveCount(0)
+
+    // And they come back with the text view.
+    await page.getByText('Grid', { exact: true }).click()
+    await expect(split).toBeVisible()
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
 test('a CSV pair compares as text until the Grid toggle turns it into a grid', async ({
   app,
   page
@@ -48,7 +79,7 @@ test('a CSV pair compares as text until the Grid toggle turns it into a grid', a
     // Rows are aligned by their key column: West left, Central added.
     await expect(page.locator('.grid tr.removed', { hasText: 'West' })).toBeVisible()
     await expect(page.locator('.grid tr.added', { hasText: 'Central' })).toBeVisible()
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
 
     // Turning it off hands the comparison back to the text viewer.
     await toggle.locator('input').uncheck()

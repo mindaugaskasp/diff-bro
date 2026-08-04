@@ -73,13 +73,15 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
       <div class="sd-pad" :style="{ height: `${win.padBottom}px` }"></div>
     </div>
 
-    <div class="sd-status band">
-      <span class="chg">{{ result?.stats.changed ?? 0 }} changed</span>
-      <span class="add">+{{ result?.stats.added ?? 0 }}</span>
-      <span class="del">−{{ result?.stats.removed ?? 0 }}</span>
+    <div class="status-band">
+      <span>
+        Keys <span class="add">{{ result?.stats.added ?? 0 }} added</span> ·
+        <span class="chg">{{ result?.stats.changed ?? 0 }} changed</span> ·
+        <span class="del">{{ result?.stats.removed ?? 0 }} removed</span>
+      </span>
       <span v-if="result?.hidden" class="capped">first {{ result.rows.length }} rows shown</span>
-      <span class="count">{{ shown.length }} rows</span>
-      <span class="right">
+      <span>{{ shown.length }} rows</span>
+      <span class="band-end">
         <label class="sd-all">
           <input v-model="store.structureShowAll" type="checkbox" />
           Show unchanged

@@ -74,7 +74,7 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
     await expect(page.locator('.dg-drift')).toHaveCount(0)
     // The status band counts in words, as the proposal specifies.
-    const status = page.locator('.dg-status')
+    const status = page.locator('.status-band')
     await expect(status).toContainText('Nodes')
     await expect(status).toContainText('added')
     // Enrich and Quarantine arrived; Reject went.

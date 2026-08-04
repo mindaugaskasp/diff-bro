@@ -642,3 +642,56 @@ button.tag-chip:hover .usb-tct {
   border-block: 1px solid var(--border);
   padding-block: var(--space-1);
 }
+
+/* The status band under a diff: what changed, in words. Shared because the text
+   diff and the diagram diff must read alike — the diagram had it first and the
+   text diff carried a terse `+5 −4` in the toolbar instead, which is the drift
+   this class exists to end. A band (see .band), so its content is flex-centred
+   rather than fake-aligned with padding.
+
+   Counts use --dg-add / --dg-del / --dg-chg, not --success-text / --danger-bg:
+   those are the pair already reasoned about for colour-blind readers, and
+   --dg-del mixes toward --text because --danger-border scores 2.24:1 on nord. */
+.status-band {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--band-row);
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: var(--font-sm);
+  /* --text-hint, not --text-dim: these are words a reader reads ("Lines",
+     "6 rows"), and dim sits at the repo's 3.0 dim/panel floor — under the 4.5
+     text floor on solar, nord, sepia and bloom. */
+  color: var(--text-hint);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.status-band .add {
+  color: var(--dg-add);
+  font-weight: 600;
+}
+.status-band .del {
+  color: var(--dg-del);
+  font-weight: 600;
+}
+.status-band .chg {
+  color: var(--dg-chg);
+  font-weight: 600;
+}
+/* A qualifier on the band — "first N rows shown", "only in the left file",
+   "alignment is a best fit". Set apart by STYLE rather than a dimmer colour,
+   which would drop under the text floor. */
+.status-band .capped,
+.status-band .only {
+  font-style: italic;
+}
+
+/* Pushes trailing content (a hidden-count, a hint) to the right edge. */
+.status-band .band-end {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}

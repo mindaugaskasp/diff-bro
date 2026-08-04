@@ -56,7 +56,7 @@ test('a four-thousand-row sheet renders a screenful, not the sheet', async ({ ap
   try {
     // Every row is a real difference, so the status strip proves all of them
     // were compared even though only a few are drawn.
-    await expect(page.locator('.status .chg')).toContainText(`${ROWS} changed`)
+    await expect(page.locator('.status-band .cells')).toContainText(`${ROWS} changed`)
 
     const drawn = await page.locator('.grid').first().locator('tbody tr:not(.pad)').count()
     expect(drawn).toBeGreaterThan(0)

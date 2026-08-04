@@ -34,12 +34,12 @@ test('the Paste text button names its destination so the toggle is explicit', as
 
 test('Swap flips additions and deletions', async ({ page }) => {
   await pasteCompare(page, 'a', 'a\nb') // right has an extra line → +1 / −0
-  await expect(page.locator('.stats .add')).toHaveText('+1')
-  await expect(page.locator('.stats .del')).toContainText('0')
+  await expect(page.locator('.status-band .add')).toHaveText('1 added')
+  await expect(page.locator('.status-band .del')).toContainText('0 removed')
 
   await page.getByRole('button', { name: 'Swap sides' }).click()
-  await expect(page.locator('.stats .add')).toHaveText('+0')
-  await expect(page.locator('.stats .del')).toContainText('1')
+  await expect(page.locator('.status-band .add')).toHaveText('0 added')
+  await expect(page.locator('.status-band .del')).toContainText('1 removed')
 })
 
 test('Split view toggles between side-by-side and inline', async ({ page }) => {

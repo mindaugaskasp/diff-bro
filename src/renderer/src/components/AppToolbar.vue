@@ -66,27 +66,25 @@ const clearTitle = computed(() =>
 
 <template>
   <header class="toolbar band">
-    <!-- Change counts only; the "no differences" state reads as a row label over
-         the diff panes (DiffViewer), not as an empty +0/−0 here. -->
-    <span
-      v-if="store.ready && store.stats && !store.identical && store.comparableKind === 'text'"
-      class="stats"
-    >
-      <span class="add">+{{ store.stats.additions }}</span>
-      <span class="del">−{{ store.stats.deletions }}</span>
-    </span>
-
+    <!-- Change counts live in the status band under the panes (DiffViewer), in
+         the same words the diagram diff uses. -->
     <div class="options">
       <!-- Diff display toggles -->
       <div class="group">
-        <label>
-          <input v-model="store.renderSideBySide" type="checkbox" />
-          Split view
-        </label>
-        <label>
-          <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
-          Ignore whitespace
-        </label>
+        <!-- Both are Monaco diff-editor options (diffEditorOptions.js), so they
+             do nothing once Grid, Structure, Diagram or a streamed comparison is
+             what's on screen. A control that cannot act should not be offered:
+             a visible Split view beside a grid reads as broken, not as N/A. -->
+        <template v-if="store.comparableKind === 'text'">
+          <label>
+            <input v-model="store.renderSideBySide" type="checkbox" />
+            Split view
+          </label>
+          <label>
+            <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
+            Ignore whitespace
+          </label>
+        </template>
         <label v-if="store.canCompareStructure || store.canCompareDiagram" :data-tip="structureTip">
           <input v-model="store.semanticView" type="checkbox" />
           {{ store.structureLabel }}
@@ -104,7 +102,12 @@ const clearTitle = computed(() =>
 
       <!-- Document actions -->
       <div class="group actions">
+        <!-- Setting up a comparison, not viewing one: a vault-backed tab has
+             nothing to switch the input mode OF, and offering it there invites a
+             click that would replace what the reader opened. Reserved for a new
+             or empty tab (isSavedDiff is the same test Clear already uses). -->
         <button
+          v-if="!store.isSavedDiff"
           class="btn"
           :class="{ active: inPaste }"
           :data-tip="pasteToggleTitle"

@@ -63,6 +63,49 @@ const RIGHT = buildXlsx(
     `<row r="3">${inlineStr('A3', 'Central')}${num('B3', 40)}${num('C3', 55)}</row>`
 )
 
+// The status bar under a diff must be the SAME bar whichever kind of comparison
+// is on screen. It was not: spreadsheet and streamed sat at --control-h (30px)
+// while structure and diagram sat at --band-row (52px), with three different
+// colour sets and three wordings. Height is the measurable part.
+test('the status bar is the same height for a grid diff as for a text diff', async ({
+  app,
+  page
+}) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-band-'))
+  const leftPath = join(dir, 'a.xlsx')
+  const rightPath = join(dir, 'b.xlsx')
+  writeFileSync(leftPath, LEFT)
+  writeFileSync(rightPath, RIGHT)
+
+  try {
+    // A text diff first, to measure the reference band.
+    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
+    await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
+    await page.getByRole('button', { name: 'Compare', exact: true }).click()
+    const textBand = page.locator('.diff-viewer .status-band')
+    await expect(textBand).toBeVisible()
+    await expect(textBand).toContainText('added')
+    const textHeight = (await textBand.boundingBox()).height
+
+    // Same window, now a grid diff.
+    await page.getByRole('button', { name: 'Clear', exact: true }).click()
+    await stubOpenDialog(app, [leftPath])
+    await page.locator('.slot[data-side="left"]').click()
+    await stubOpenDialog(app, [rightPath])
+    await page.locator('.slot[data-side="right"]').click()
+
+    const gridBand = page.locator('.status-band')
+    await expect(gridBand).toBeVisible()
+    // Same words, not "+3 rows / −0 rows".
+    await expect(gridBand).toContainText('added')
+    await expect(gridBand).toContainText('removed')
+    expect((await gridBand.boundingBox()).height).toBe(textHeight)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
 test('opens two .xlsx files and renders the aligned grid diff', async ({ app, page }) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-'))
   const leftPath = join(dir, 'budget-left.xlsx')
@@ -94,9 +137,9 @@ test('opens two .xlsx files and renders the aligned grid diff', async ({ app, pa
     await expect(page.locator('.grid tr.added', { hasText: 'Central' })).toBeVisible()
 
     // The status strip summarises the same counts the tab badge implies.
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
-    await expect(page.locator('.status .add')).toHaveText('+1 rows')
-    await expect(page.locator('.status .del')).toHaveText('−1 rows')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
+    await expect(page.locator('.status-band .add')).toHaveText('1 added')
+    await expect(page.locator('.status-band .del')).toHaveText('1 removed')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -129,7 +172,7 @@ test('catches a formula overwritten by its own value, and dates as dates', async
     // even though both sides still read 150.
     await expect(page.locator('.grid td.has-f')).toHaveCount(1)
     await expect(page.locator('.grid td.cell-fchg').first()).toHaveText('150')
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
 
     // Hidden row 2 is compared, and its gutter says where it came from.
     await expect(page.locator('.grid tr.row-hidden')).toHaveCount(2)
@@ -172,16 +215,16 @@ test('aligns columns across an insert and forgives sub-material noise', async ({
 
     // The inserted column is reported once, and Q2 still lines up with Q2 —
     // only the 90 -> 90.004 cell reads as changed, not every cell after B.
-    await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.status-band .cols')).toHaveText('1 moved')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
     await expect(page.locator('.grid thead th.col-added')).toHaveCount(1)
     // The left grid has no such column, so it shows a striped gap.
     await expect(page.locator('.grid thead th.ghost-col')).toHaveCount(1)
 
     // A 0.004 difference is below a 0.01 tolerance: nothing material is left.
     await page.locator('.seg-opt', { hasText: '±0.01' }).click()
-    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
-    await expect(page.locator('.status .cols')).toHaveText('⇄ 1 column')
+    await expect(page.locator('.status-band .cells')).toHaveText('0 changed')
+    await expect(page.locator('.status-band .cols')).toHaveText('1 moved')
 
     // A threshold of your own — the field only exists once Custom is picked, and
     // an empty one compares exactly rather than forgiving everything.
@@ -189,21 +232,21 @@ test('aligns columns across an insert and forgives sub-material noise', async ({
     const value = page.getByLabel('Custom tolerance')
     const unit = (name) => page.getByRole('group', { name: 'Unit' }).getByRole('button', { name })
     await expect(value).toBeVisible()
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
 
     // 0.004 of 90 is ~0.0044%, so a raw 0.001 leaves it changed and 0.01 does not.
     await unit('abs').click()
     await value.fill('0.001')
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
     await value.fill('0.01')
-    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('0 changed')
 
     // ...and as a percentage, which is what materiality actually means.
     await unit('%').click()
     await value.fill('0.001')
-    await expect(page.locator('.status .chg')).toHaveText('◆ 1 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
     await value.fill('0.01')
-    await expect(page.locator('.status .chg')).toHaveText('◆ 0 changed')
+    await expect(page.locator('.status-band .cells')).toHaveText('0 changed')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

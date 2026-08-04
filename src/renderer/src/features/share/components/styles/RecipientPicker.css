@@ -10,14 +10,18 @@
 }
 
 /* Selected recipients. Above the divider and outside the scroller on purpose:
-   these must stay on screen whatever the query excludes. */
+   these must stay on screen whatever the query excludes. Always rendered and
+   height-reserved, so ticking the first one does not grow the dialog under the
+   pointer. */
 .picked {
   list-style: none;
   margin: 0;
   padding: 0 0 var(--space-2);
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: var(--space-1);
+  min-height: calc(var(--chip-h) + var(--space-2));
 }
 .chip {
   display: inline-flex;
@@ -48,10 +52,12 @@
   font-size: var(--font-sm);
 }
 
-/* A fixed height whether there are three trusted keys or thirty, so the dialog's
-   actions never leave the screen. Eight rows at --control-h-sm. */
+/* Height is RESERVED from the unfiltered count (--reserved-rows, bound in the
+   component and capped at eight), so typing a query never resizes the dialog —
+   and thirty keys still cannot push the actions off screen. */
 .rows {
-  max-height: 208px;
+  min-height: calc(var(--reserved-rows) * var(--control-h-sm));
+  max-height: calc(8 * var(--control-h-sm));
   background: var(--bg);
 }
 .recipients {
@@ -59,26 +65,36 @@
   margin: 0;
   padding: 0 var(--space-1);
 }
+/* flex-direction is NOT inherited-safe here: ui.css `.dialog label` sets
+   `flex-direction: column` globally, so a row that only says `display: flex`
+   stacks its checkbox above the name and centres both. */
 .recipient {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control-h-sm);
   padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  color: var(--text);
+}
+.recipient input[type='checkbox'] {
+  flex: none;
+  margin: 0;
 }
 .recipient:hover {
   background: var(--bg-hover);
 }
-/* Keyboard focus follows an active row while the caret stays in the field. */
+/* Keyboard focus follows an active row while the caret stays in the field. A
+   tinted ground, matching .cp-row.sel and .ql-res.sel — a hard accent outline
+   read as a selection or an error, which is what the checkbox is already for. */
 .recipient.active {
   background: var(--bg-hover);
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
 }
 .rc-name {
   flex: 1;
+  color: var(--text);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

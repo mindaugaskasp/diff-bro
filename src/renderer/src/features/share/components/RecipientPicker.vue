@@ -4,10 +4,11 @@
 // someone and then searching seals for a person no longer on screen.
 // The state and the keyboard guards live in useRecipientPicker so they are
 // unit-tested rather than inline here.
+import { computed } from 'vue'
 import AppIcon from '../../../components/AppIcon.vue'
 import { shaped } from '../../../utils/props'
 
-defineProps({
+const props = defineProps({
   // The useRecipientPicker() return: refs and computeds, not plain data, so the
   // validator names the members this template actually reads.
   picker: {
@@ -18,6 +19,12 @@ defineProps({
   showEmail: { type: Boolean, default: false }
 })
 defineEmits(['submit', 'close', 'add'])
+
+// The list keeps the height it had BEFORE any query, capped at what fits, so
+// filtering never resizes the dialog under the pointer — the same reservation
+// SettingsDialog makes for its panes.
+const MAX_VISIBLE_ROWS = 8
+const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIBLE_ROWS))
 </script>
 
 <template>
@@ -61,7 +68,7 @@ defineEmits(['submit', 'close', 'add'])
       </button>
     </div>
 
-    <ul v-if="picker.picked.value.length" class="picked">
+    <ul class="picked">
       <li v-for="r in picker.picked.value" :key="r.fingerprint">
         <button
           type="button"
@@ -75,7 +82,7 @@ defineEmits(['submit', 'close', 'add'])
       </li>
     </ul>
 
-    <div class="dialog-scroller rows">
+    <div class="dialog-scroller rows" :style="{ '--reserved-rows': reservedRows }">
       <p v-if="!picker.visible.value.length" class="empty">
         {{
           picker.query.value

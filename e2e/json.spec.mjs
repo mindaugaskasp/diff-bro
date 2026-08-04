@@ -122,16 +122,16 @@ test('the line counts do not linger over the structural view', async ({ app, pag
   try {
     await loadPair(app, page, left, right)
     // The text diff reports its line counts.
-    await expect(page.locator('.toolbar .stats')).toBeVisible()
+    await expect(page.locator('.diff-viewer .status-band')).toBeVisible()
 
     await page.getByRole('checkbox', { name: 'Structure' }).check()
     await expect(page.locator('.structure-diff')).toBeVisible()
     // Only the structural totals remain — one comparison, one set of numbers.
-    await expect(page.locator('.toolbar .stats')).toHaveCount(0)
-    await expect(page.locator('.sd-status')).toContainText('1 changed')
+    await expect(page.locator('.diff-viewer .status-band')).toHaveCount(0)
+    await expect(page.locator('.status-band')).toContainText('1 changed')
 
     await page.getByRole('checkbox', { name: 'Structure' }).uncheck()
-    await expect(page.locator('.toolbar .stats')).toBeVisible()
+    await expect(page.locator('.diff-viewer .status-band')).toBeVisible()
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -195,7 +195,7 @@ test('two YAML files compare as data, not as re-indented lines', async ({ app, p
     const changed = page.locator('.sd-row.changed', { hasText: 'tag' })
     await expect(changed).toContainText('v1')
     await expect(changed).toContainText('v2')
-    await expect(page.locator('.sd-status')).toContainText('1 changed')
+    await expect(page.locator('.status-band')).toContainText('1 changed')
     await expect(page.locator('.sd-row', { hasText: 'replicas' })).toHaveCount(0)
   } finally {
     rmSync(dir, { recursive: true, force: true })

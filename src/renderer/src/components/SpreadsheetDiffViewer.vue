@@ -125,20 +125,26 @@ onMounted(() => {
       />
     </div>
 
-    <div class="status band">
+    <div class="status-band">
       <span v-if="activeSheet && activeSheet.present !== 'both'" class="only">
         “{{ activeSheet.name }}” is only in the {{ activeSheet.present }} file
       </span>
       <template v-else>
-        <span class="chg">◆ {{ totals.changed }} changed</span>
-        <span class="add">+{{ totals.added }} rows</span>
-        <span class="del">−{{ totals.removed }} rows</span>
-        <span v-if="totals.columns" class="cols">
-          ⇄ {{ totals.columns }} column{{ totals.columns === 1 ? '' : 's' }}
+        <span>
+          Cells <span class="chg cells">{{ totals.changed }} changed</span>
+        </span>
+        <span>
+          Rows <span class="add">{{ totals.added }} added</span> ·
+          <span class="del">{{ totals.removed }} removed</span>
+        </span>
+        <span v-if="totals.columns">
+          Columns <span class="chg cols">{{ totals.columns }} moved</span>
         </span>
       </template>
-      <span class="capped">{{ allRows.length }} rows</span>
-      <span class="right">{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
+      <span class="band-end">
+        <span>{{ allRows.length }} rows</span>
+        <span>{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
+      </span>
     </div>
   </div>
 </template>

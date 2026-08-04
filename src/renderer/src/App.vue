@@ -35,6 +35,7 @@ import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
+import { hasStatusBand } from './utils/statusBand'
 
 const store = useDiffStore()
 
@@ -44,6 +45,8 @@ const tabs = useTabsStore()
 tabs.init()
 const snippets = useSnippetStore()
 const settings = useSettingsStore()
+
+const showStatusBand = computed(() => hasStatusBand(store))
 const { run, runCli } = useCommands()
 
 settings.initTheme()
@@ -122,7 +125,10 @@ useSnippetDiffSync()
            image export photographs. It is a class, not a v-if: removing the
            toast would start its fade-leave transition and the shutter would
            catch it mid-fade. -->
-        <main class="content" :class="{ capturing: imageExport.imageCapturing }">
+        <main
+          class="content"
+          :class="{ capturing: imageExport.imageCapturing, 'with-status-band': showStatusBand }"
+        >
           <!-- Matrix theme: code rain behind the empty state / diff area, only
              while no diff is loaded (it never sits behind a comparison). -->
           <MatrixRain

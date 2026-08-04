@@ -211,6 +211,37 @@ that it should not have been called finished. The ones worth carrying forward:
 | Non-Latin titles became `diffbro.txt`; any extension could be staged                      | An ASCII-only `\w` slug, and no extension allowlist                                                                                              |
 | Both new e2e specs could not pass                                                         | Wrong dialog title, wrong row class, placeholder keys that cannot seal, an import that does not exist in a bundled build                         |
 
+Five more came from a human looking at the running app — neither test nor agent
+caught them, and both are now measured invariants in
+`e2e/email-handoff.spec.mjs`:
+
+- **Every recipient row stacked and centred.** `ui.css` sets
+  `.dialog label { flex-direction: column }` for every label in a dialog, so a
+  row declaring only `display: flex` inherits `column` — the checkbox landed
+  above the name and `align-items: center` centred both. The row is now explicit
+  about its direction, and the test asserts the checkbox and the name share a
+  vertical centre.
+- **The dialog resized while picking.** The chips row appeared on the first tick
+  (+20px) and the list shrank as a query narrowed it. Both regions reserve their
+  height now — the list from its UNFILTERED count, capped at eight rows — the
+  same reservation `SettingsDialog` already makes for its panes.
+- **Five diff types, five different status bars.** Spreadsheet and streamed sat
+  at `--control-h` (30px), structure and diagram at `--band-row` (52px); three
+  colour sets and three wordings (`+3 rows`, `◆ 4 changed`, `+5 −4`). They are
+  one `.status-band` in `ui.css` now, reading `<Thing> N added · N changed ·
+N removed` everywhere, on the `--dg-*` pair that is already reasoned about for
+  colour-blind readers. The text diff's counts moved out of the toolbar into it.
+  The floating shortcut bar was covering those bars — it clears them now, which
+  it had never done for the three that already existed.
+- **Split view and Ignore whitespace stayed visible beside a grid.** Both are
+  Monaco diff-editor options, so they do nothing once Grid, Structure, Diagram or
+  a streamed comparison is showing — a control that cannot act reads as broken,
+  not as N/A.
+- **The paste/file mode toggle stayed on a saved diff.** It sets a comparison
+  UP; a vault-backed tab has nothing to switch the mode of, and the click would
+  replace what the reader opened. Gated on the `isSavedDiff` getter `Clear`
+  already uses.
+
 Three more came out of running the suite rather than reading it:
 
 - **A sixth hover action covered the snippet row's own click target**, so

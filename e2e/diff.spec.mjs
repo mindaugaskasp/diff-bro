@@ -22,8 +22,8 @@ test('paste-compare diffs two texts and reports the change stats', async ({ page
 
   // One inserted line → one addition, no deletions, surfaced in the toolbar
   // stats (which only render once Monaco has finished a diff pass).
-  await expect(page.locator('.stats .add')).toHaveText('+1')
-  await expect(page.locator('.stats .del')).toContainText('0')
+  await expect(page.locator('.status-band .add')).toHaveText('1 added')
+  await expect(page.locator('.status-band .del')).toContainText('0 removed')
 
   // The inserted token exists only on the changed side, so seeing it confirms
   // Monaco painted the right model, not just that stats were computed.

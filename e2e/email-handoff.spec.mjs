@@ -173,6 +173,99 @@ test('a recipient with no address is not offered the email route', async () => {
   }
 })
 
+// ui.css `.dialog label` sets `flex-direction: column` for every label in a
+// dialog, so a recipient row that only declares `display: flex` stacks its
+// checkbox above the name and centres both — which is what shipped. The
+// invariant is a MEASUREMENT: the checkbox and the name share a line.
+test('a recipient row lays out as a row, not a column', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  seedKeys(dir, [
+    { label: 'Ana — work laptop', email: 'ana@example.com' },
+    { label: 'Tomas — build box' }
+  ])
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+
+  try {
+    await captureOsCalls(app)
+    await stubSaveDialog(app, join(dir, 'layout.diffbro'))
+    const share = await compareAndShare(page)
+    await expect(share).toBeVisible()
+
+    const row = share.locator('.recipient').first()
+    const box = await row.boundingBox()
+    const check = await row.locator('input[type="checkbox"]').boundingBox()
+    const name = await row.locator('.rc-name').boundingBox()
+
+    // Same line: their vertical centres agree.
+    const centre = (b) => b.y + b.height / 2
+    expect(Math.abs(centre(check) - centre(name))).toBeLessThanOrEqual(3)
+    // The checkbox leads; the name does not sit under it.
+    expect(check.x + check.width).toBeLessThanOrEqual(name.x + 1)
+    // One line tall, not three (--control-h-sm is 26px).
+    expect(box.height).toBeLessThan(44)
+
+    // The address sits at the end of the same line, not beneath the name.
+    const mail = await row.locator('.rc-mail').boundingBox()
+    expect(Math.abs(centre(mail) - centre(name))).toBeLessThanOrEqual(3)
+    expect(mail.x).toBeGreaterThan(name.x)
+
+    // Eight rows fit the capped region, so a 30-key list cannot push the
+    // actions off screen.
+    await expect(share.getByRole('button', { name: 'Create file' })).toBeVisible()
+  } finally {
+    await app.close()
+  }
+})
+
+// Filtering and ticking both changed the dialog's height, which is jarring
+// under the pointer. Both regions are height-reserved now; the invariant is a
+// measurement, not a screenshot.
+test('the dialog does not resize while picking or filtering', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  seedKeys(
+    dir,
+    Array.from({ length: 20 }, (_, i) => ({
+      label: `Teammate ${String(i + 1).padStart(2, '0')}`,
+      email: `teammate${i + 1}@example.com`
+    }))
+  )
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+
+  try {
+    await captureOsCalls(app)
+    await stubSaveDialog(app, join(dir, 'steady.diffbro'))
+    const share = await compareAndShare(page)
+    await expect(share).toBeVisible()
+
+    const height = async () => (await share.boundingBox()).height
+    const opened = await height()
+
+    // Ticking the first recipient adds the chips row.
+    await share.getByRole('checkbox').first().check()
+    expect(Math.abs((await height()) - opened)).toBeLessThanOrEqual(1)
+
+    // Filtering twenty keys down to one empties most of the list.
+    const box = share.getByRole('searchbox', { name: 'Search recipients' })
+    await box.fill('Teammate 07')
+    await expect(share.locator('.recipients li')).toHaveCount(1)
+    expect(Math.abs((await height()) - opened)).toBeLessThanOrEqual(1)
+
+    // And a query that matches nothing at all.
+    await box.fill('zzzz')
+    await expect(share.locator('.recipients li')).toHaveCount(0)
+    expect(Math.abs((await height()) - opened)).toBeLessThanOrEqual(1)
+
+    await box.fill('')
+    expect(Math.abs((await height()) - opened)).toBeLessThanOrEqual(1)
+  } finally {
+    await app.close()
+  }
+})
+
 // The scale case: thirty keys must not push the dialog's actions off the screen,
 // and — the regression the picker's whole two-region design exists to prevent —
 // a filter must never drop a recipient you already ticked.

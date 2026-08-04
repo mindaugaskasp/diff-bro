@@ -82,35 +82,8 @@
   color: var(--danger-text);
   font-size: var(--font-sm);
 }
-.dg-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  min-height: var(--band-row);
-  padding: 0 var(--space-4);
-  border-top: 1px solid var(--border);
-  background: var(--bg-panel);
-  font-size: var(--font-sm);
-  color: var(--text-dim);
-}
-.dg-status .add {
-  color: var(--dg-add);
-  font-weight: 600;
-}
-.dg-status .del {
-  color: var(--dg-del);
-  font-weight: 600;
-}
-.dg-status .chg {
-  color: var(--dg-chg);
-  font-weight: 600;
-}
-.dg-right {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-}
+/* The band itself is .status-band in ui.css — the text diff renders the same
+   one, and a scoped copy here would drift from it. */
 .dg-toggle {
   display: inline-flex;
   align-items: center;
