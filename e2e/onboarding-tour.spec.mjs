@@ -52,13 +52,25 @@ test('a cold launch opens run one on the file slots', async ({ page }) => {
 test('the demo pair loads on Next, and is shown before the tour moves on', async ({ page }) => {
   await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
   await expect(next(page)).toHaveText('Load a demo pair')
+
+  // The reveal beat is transient, so it is WATCHED from before the click rather
+  // than asserted after: by the time the load below has settled the callout is
+  // legitimately back, and polling for "hidden" then races the beat instead of
+  // observing it — it only ever passed while the load outran the reveal.
+  await page.evaluate(() => {
+    window.calloutLeft = !document.querySelector('.tour-callout')
+    new MutationObserver(() => {
+      if (!document.querySelector('.tour-callout')) window.calloutLeft = true
+    }).observe(document.body, { childList: true, subtree: true })
+  })
+
   await next(page).click()
 
   // The veil is down for the reveal beat: the comparison it just loaded is on
   // screen, unblurred, before the next step covers it again.
   await expect(page.locator('[data-tour="slots"]')).toContainText('demo-config-v1.json')
   await expect(page.locator('[data-tour="slots"]')).toContainText('demo-config-v2.json')
-  await expect(callout(page)).toBeHidden()
+  await expect.poll(() => page.evaluate(() => window.calloutLeft)).toBe(true)
   await expect(callout(page)).toBeVisible()
   await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 2 of \d+$/)
 })

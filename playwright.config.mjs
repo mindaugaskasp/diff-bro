@@ -12,10 +12,18 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   testMatch: /.*\.spec\.mjs$/,
-  // Every test spawns a full Electron process; serial keeps the container calm
-  // and the assertions deterministic.
+  // Parallel by FILE, not by test: each worker takes whole spec files and runs
+  // their tests in order. Every test already gets its own Electron + throwaway
+  // profile, and e2e/workerEnv.mjs isolates the three globals --user-data-dir
+  // does not cover (X11 clipboard, staging temp dir, HOME), so workers do not
+  // observe each other. Within a file the order is kept, which is what the
+  // relaunch/persistence specs assume.
+  //
+  // E2E_WORKERS also decides how many displays scripts/e2e-displays.sh starts,
+  // so the two cannot drift; a worker without one throws rather than quietly
+  // sharing a clipboard.
   fullyParallel: false,
-  workers: 1,
+  workers: Number(process.env.E2E_WORKERS || 4),
   forbidOnly: !!process.env.CI,
   timeout: 30_000,
   expect: { timeout: 8_000 },

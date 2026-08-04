@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { workerEnv } from './workerEnv.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
@@ -25,8 +26,12 @@ export const freshUserDataDir = ({ tips = false } = {}) => {
 // Chromium switch Electron honours for app.getPath('userData'), which is what
 // makes each run's data (and its lock) isolated. Reused by the `app` fixture
 // and by tests that need to relaunch the same profile (persistence).
+//
+// The env is the OTHER half of that isolation, and it belongs here rather than
+// in the fixture precisely because the persistence specs call this directly —
+// see workerEnv.mjs for what each variable stops leaking between workers.
 export const launchApp = (userDataDir) =>
-  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`] })
+  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`], env: workerEnv() })
 
 // The first window, loaded and ready to assert against.
 export async function firstReadyPage(app) {

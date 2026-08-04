@@ -98,14 +98,19 @@ check: ## Lint + tests in the container (run before declaring a task done)
 test: ## Run the test suite in the container
 	$(RUN_NPM) -- test
 
-# Unlike `check`/`test`, E2E needs the virtual display, so it runs INSIDE the
-# up container (which owns Xvfb :99) rather than a one-off `run` container.
-# `up` is a dependency so the display is guaranteed to be there first.
+# Unlike `check`/`test`, E2E needs the virtual displays, so it runs INSIDE the
+# up container (which owns them) rather than a one-off `run` container.
+# `up` is a dependency so they are guaranteed to be there first.
+# The displays are re-ensured here as well as in the entrypoint: `up` will not
+# restart an ALREADY-running container, so a container started before the
+# per-worker displays existed would otherwise have only :99. The script is
+# idempotent.
 # Playwright clears test-results/ at the START of a run, so a failure's trace is
 # destroyed by the NEXT run — which is how three sightings of the streamed-diff
 # flake were lost. On failure the artifacts are copied to a timestamped folder
 # first; the exit status is preserved so the target still fails.
 e2e: up ## Build + drive the app end-to-end with Playwright in the running container
+	@docker compose exec -T $(SERVICE) bash scripts/e2e-displays.sh
 	@docker compose exec -T $(SERVICE) npm run test:e2e; \
 	status=$$?; \
 	if [ $$status -ne 0 ]; then \

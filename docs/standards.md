@@ -385,15 +385,30 @@ directory move passes CI while silently removing enforcement.
   noVNC page — see `docker/README.md`).
 - **End-to-end** tests live in `e2e/` (Playwright driving the app's OWN
   Electron via `_electron` — no bundled browser, no network). `make e2e`
-  builds then runs them INSIDE the up container (they need Xvfb :99, so they
-  can't use the one-off `make check`/`test` container). Each test launches its
-  own Electron against a throwaway `--user-data-dir`, so runs never touch the
+  builds then runs them INSIDE the up container (they need a virtual display, so
+  they can't use the one-off `make check`/`test` container). Each test launches
+  its own Electron against a throwaway `--user-data-dir`, so runs never touch the
   developer's real data and never fight the single-instance lock. Reach for E2E
   for a flow only a real launch exercises (preload/IPC round-trips, persistence
   across relaunch, OS-clipboard writes) — the kind of bug jsdom can't see. E2E
   is trusted-click, so `navigator.clipboard` writes there hit the deny-all
   permission handler and fail: clipboard writes go through `window.api.copyText`
   (main process, `src/main/clipboard.js`), never `navigator.clipboard`.
+- **E2E runs in parallel, and `--user-data-dir` is only half of what isolates a
+  worker.** Files are distributed across `E2E_WORKERS` workers (default 4;
+  parallel by FILE, so the order inside a spec is kept — the relaunch specs
+  depend on it). Three globals a launched app reaches sit OUTSIDE userData, and
+  each is per-worker in `e2e/workerEnv.mjs`: `DISPLAY` (the X11 clipboard is one
+  per display and 22 specs read it back), `TMPDIR` (`sweepStage()` deletes every
+  `diffbro-clipboard-*` dir in the temp dir on launch — by design, so a shared
+  one has workers deleting each other's staged files) and `HOME` (the CLI shim
+  installs to `~/.local/bin`). They are set in `launchApp`, NOT in the `app`
+  fixture, because the persistence specs call `launchApp` directly. A worker
+  whose display is missing THROWS rather than falling back to the ambient one:
+  falling back is silent, and a spec that reads a neighbour's clipboard asserts
+  against it. `scripts/e2e-displays.sh` starts them (the entrypoint, `make e2e`
+  and CI all call it). **Anything new that reaches a shared OS resource — a
+  fixed temp path, a lock, a well-known port — has to be added to that list.**
 - **A failing E2E keeps its trace.** Playwright clears `test-results/` at the
   START of a run, so a failure's trace is destroyed by the next run — which is
   how three sightings of the same intermittent were lost with nothing to show

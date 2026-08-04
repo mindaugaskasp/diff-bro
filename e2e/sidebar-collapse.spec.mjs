@@ -147,13 +147,25 @@ test('the width is animated rather than cut', async ({ page }) => {
   expect(transition.prop).toContain('width')
   expect(parseFloat(transition.ms)).toBeGreaterThan(0)
 
-  // Mid-flight it is between the two widths, not already at the end.
+  // The width TRANSITIONS rather than jumping. Recorded from the element's own
+  // transition events, armed before the click: sampling a wall-clock instant
+  // mid-flight instead reports "already at the end" whenever the machine is
+  // busy enough to overrun the animation, which is a load measurement, not a
+  // width one.
+  await aside(page).evaluate((el) => {
+    window.widthTransition = []
+    const note = (event) => {
+      if (event.propertyName === 'width') window.widthTransition.push(event.type)
+    }
+    el.addEventListener('transitionstart', note)
+    el.addEventListener('transitionend', note)
+  })
+
   await collapse(page).click()
-  await page.waitForTimeout(60)
-  const mid = await widthOf(page)
-  expect(mid).toBeGreaterThan(48)
-  expect(mid).toBeLessThan(256)
-  await expect.poll(() => widthOf(page)).toBeLessThan(60)
+  await expect
+    .poll(() => page.evaluate(() => window.widthTransition))
+    .toEqual(['transitionstart', 'transitionend'])
+  expect(await widthOf(page)).toBeLessThan(60)
 })
 
 // A preference, so it has to outlive the window that set it. Manages its own

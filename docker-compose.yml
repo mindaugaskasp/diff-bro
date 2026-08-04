@@ -24,6 +24,11 @@ services:
     environment:
       - DIFFBRO_DOCKER=1
       - ELECTRON_DISABLE_SANDBOX=1
+      # E2E parallelism. Read by BOTH the entrypoint (how many Xvfb displays to
+      # start, :100 up) and playwright.config.mjs (how many workers to run), so
+      # the two cannot drift — a worker with no display of its own throws.
+      # Raise for more cores; each worker holds a full Electron (~400 MB).
+      - E2E_WORKERS=${E2E_WORKERS:-4}
       # Set here, not just in the entrypoint: `docker compose exec` sessions
       # do not inherit the entrypoint's exports, so xdotool/scrot and any
       # manually started Electron would otherwise find no X server.
