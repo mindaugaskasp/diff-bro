@@ -48,7 +48,7 @@ const onFilled = computed(() => {
 </script>
 
 <template>
-  <div v-if="tour.active && step && found" class="tour" role="presentation">
+  <div v-if="tour.active && !tour.revealing && step && found" class="tour" role="presentation">
     <!-- Blur and tint are separate layers on purpose: Chromium resolves
          backdrop-filter BEFORE clip-path, so a clipped blur layer blurs
          straight through its own hole. -->

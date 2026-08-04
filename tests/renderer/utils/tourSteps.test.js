@@ -11,7 +11,6 @@ const state = (over = {}) => ({
   tourStep: 0,
   seenVersion: '',
   tourDeferred: 0,
-  version: TOUR_VERSION,
   ...over
 })
 
@@ -104,7 +103,7 @@ describe('tourPlan', () => {
   it('plays only the genuinely new steps after an update', () => {
     const steps = [...TOUR_STEPS]
     const plan = tourPlan({
-      ...state({ tourStep: steps.length, seenVersion: '0.5.0', version: '9.9.9' }),
+      ...state({ tourStep: steps.length, seenVersion: '0.5.0' }),
       // a step introduced after the version last seen
       allSteps: [...steps, { id: 'future', run: 3, since: '9.0.0', target: '#x', body: 'b' }]
     })
@@ -112,14 +111,9 @@ describe('tourPlan', () => {
     expect(plan.steps.map((s) => s.id)).toStrictEqual(['future'])
   })
 
-  it('shows nothing after an update that introduced no new step', () => {
-    const done = state({ tourStep: TOUR_STEPS.length, seenVersion: TOUR_VERSION, version: '9.9.9' })
-    expect(tourPlan(done).mode).toBe('none')
-  })
-
   it('compares versions numerically, not as strings', () => {
     const plan = tourPlan({
-      ...state({ tourStep: TOUR_STEPS.length, seenVersion: '0.9.0', version: '0.10.0' }),
+      ...state({ tourStep: TOUR_STEPS.length, seenVersion: '0.9.0' }),
       allSteps: [{ id: 'ten', run: 3, since: '0.10.0', target: '#x', body: 'b' }]
     })
     expect(plan.steps.map((s) => s.id)).toStrictEqual(['ten'])

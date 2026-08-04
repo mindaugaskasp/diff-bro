@@ -16,6 +16,7 @@ export const TOUR_STEPS = [
     target: '[data-tour="slots"]',
     side: 'bottom',
     command: 'tour-demo-diff',
+    reveal: true,
     title: 'Two files, any way you like',
     body: 'Drop them anywhere on this window, or click a slot to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.'
   },
@@ -67,7 +68,7 @@ export const TOUR_STEPS = [
     zone: true,
     from: '[data-tour="snippets"]',
     title: 'Drag it anywhere in here',
-    body: 'The whole comparison area takes a drop — you don’t have to land on a file box. A snippet can face a file, or another snippet, and nothing is written to disk first.'
+    body: 'The whole comparison area takes a drop — you don’t have to land on a file box. A snippet can face a file, or another snippet.'
   },
   {
     id: 'diagram',

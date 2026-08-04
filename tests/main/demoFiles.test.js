@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { DEMO_FILES, demoPayloads, ensureDemoFiles } from '../../src/main/demoFiles'
+import { basename, join, sep } from 'node:path'
+import { demoPayloads, ensureDemoFiles } from '../../src/main/demoFiles'
 
 let root
 
@@ -33,23 +33,29 @@ describe('the tour demo pair', () => {
     expect(JSON.parse(readFileSync(left, 'utf8'))).toStrictEqual({ mine: true })
   })
 
-  it('is safe to call repeatedly', () => {
-    expect(ensureDemoFiles(root)).toStrictEqual(ensureDemoFiles(root))
+  it('is safe to call repeatedly — and leaves the bytes on disk alone', () => {
+    const first = ensureDemoFiles(root)
+    const before = first.map((p) => statSync(p).mtimeMs)
+    expect(ensureDemoFiles(root)).toStrictEqual(first)
+    // Comparing the returned paths alone passed with every fs call deleted.
+    expect(first.map((p) => statSync(p).mtimeMs)).toStrictEqual(before)
+    for (const p of first) expect(readFileSync(p, 'utf8')).toBeTruthy()
   })
 
-  it('hands the renderer contents, never a path to read back', () => {
+  it('hands the renderer the contents, so nothing has to be read back', () => {
     const payloads = demoPayloads(root)
     expect(payloads).toHaveLength(2)
     for (const p of payloads) {
       expect(p.content).toBeTruthy()
       expect(() => JSON.parse(p.content)).not.toThrow()
     }
-    // file:read refuses anything under userData; the renderer must never need
-    // to ask for one of these by path.
     expect(payloads[0].name).toBe('demo-config-v1.json')
   })
 
-  it('names files that cannot be mistaken for the user’s own', () => {
-    for (const { name } of DEMO_FILES) expect(name.startsWith('demo-')).toBe(true)
+  it('writes under a demo/ subdirectory, never beside the real data files', () => {
+    for (const path of ensureDemoFiles(root)) {
+      expect(path.startsWith(join(root, 'demo') + sep)).toBe(true)
+      expect(basename(path).startsWith('demo-')).toBe(true)
+    }
   })
 })

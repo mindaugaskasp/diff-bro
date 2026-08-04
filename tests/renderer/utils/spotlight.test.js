@@ -15,8 +15,11 @@ describe('placeCallout', () => {
   })
 
   it('flips to the opposite side when the requested one does not fit', () => {
-    const pos = placeCallout({ box: box({ y: 540 }), side: 'bottom', stage, calloutH: 150 })
-    expect(pos.y).toBeLessThan(540)
+    const target = box({ y: 540 })
+    const pos = placeCallout({ box: target, side: 'bottom', stage, calloutH: 150 })
+    // ABOVE the target, not merely shoved back on-stage: the clamp alone
+    // satisfies "inside the stage", so that assertion proves nothing.
+    expect(pos.y + 150).toBeLessThanOrEqual(target.y)
     expect(inside(pos, 150)).toBe(true)
   })
 
@@ -24,13 +27,11 @@ describe('placeCallout', () => {
     // The quick look-up regression: a 540-wide panel centred in a 1000-wide
     // stage leaves 230 either side — less than the callout's own width — so
     // both horizontal candidates are off-stage.
-    const pos = placeCallout({
-      box: { x: 230, y: 60, w: 540, h: 300 },
-      side: 'left',
-      stage,
-      calloutH: 150
-    })
-    expect(pos.x).toBeGreaterThanOrEqual(0)
+    const target = { x: 230, y: 60, w: 540, h: 300 }
+    const pos = placeCallout({ box: target, side: 'left', stage, calloutH: 150 })
+    // On the other axis and clear of the target — a clamped x would still be
+    // >= 0 while sitting straight on top of what it points at.
+    expect(pos.y).toBeGreaterThanOrEqual(target.y + target.h)
     expect(inside(pos, 150)).toBe(true)
   })
 

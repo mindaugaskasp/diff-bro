@@ -9,6 +9,9 @@ const KEY = 'onboarding'
 const MAX_DEFER = 2
 // Long enough to register as a window, short enough not to interrupt.
 const PEEK_MS = 2200
+// The beat after step one: the veil lifts so the comparison it just loaded is
+// actually SEEN, rather than described through a blur and then replaced.
+const REVEAL_MS = 1800
 
 const clampInt = (value, lo, hi) => {
   const n = Number.parseInt(value, 10)
@@ -40,6 +43,9 @@ function readState() {
     // "Not now" also silences the prompt for the rest of this session.
     asked: false,
     peekTimer: null,
+    revealTimer: null,
+    // Veil down, tour still running: a pause to look at what step one loaded.
+    revealing: false,
     // A replay does not advance the recorded progress.
     replaying: false
   }
@@ -71,8 +77,7 @@ export const useOnboardingStore = defineStore('onboarding', {
         showTips: this.showTips,
         tourStep: this.tourStep,
         seenVersion: this.seenVersion,
-        tourDeferred: this.deferred,
-        version: TOUR_VERSION
+        tourDeferred: this.deferred
       })
       if (plan.mode === 'steps') this._open(plan.steps)
       else if (plan.mode === 'prompt') this.promptOpen = true
@@ -85,7 +90,18 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.promptOpen = false
     },
     next() {
-      if (!this.active) return
+      if (!this.active || this.revealing) return
+      if (this.currentStep?.reveal) {
+        this.revealing = true
+        this.revealTimer = setTimeout(() => {
+          this.revealing = false
+          this._step()
+        }, REVEAL_MS)
+        return
+      }
+      this._step()
+    },
+    _step() {
       if (this.index < this.steps.length - 1) {
         this.index += 1
         if (!this.replaying) this._advanceTo(this.tourStep + 1)
@@ -119,6 +135,8 @@ export const useOnboardingStore = defineStore('onboarding', {
     // tour: without it, every Escape in the app turned tips off and wrote.
     skip() {
       if (!this.active) return
+      clearTimeout(this.revealTimer)
+      this.revealing = false
       this.active = false
       this.promptOpen = false
       this.steps = []

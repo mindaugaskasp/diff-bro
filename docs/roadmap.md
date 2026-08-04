@@ -198,8 +198,8 @@ Done. Anchored coach marks over the real controls, split 4 + 3.
 - Callout is `--bg-elevated` + `--btn-edge`; the pair swaps roles by ground
 - Run two is offered by a dialog immediately, never deferred to a launch that
   may be a month away
-- Open: demo fixtures for step 1 · the diagram step still points at the Snippets
-  section rather than a loaded diagram diff
+- Open: the diagram step still points at the Snippets section rather than a
+  loaded diagram diff
 
 ---
 

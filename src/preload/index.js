@@ -130,9 +130,9 @@ contextBridge.exposeInMainWorld('api', {
   openClaudeLink: (url) => ipcRenderer.invoke('link:openClaude', url),
   readText: () => ipcRenderer.invoke('clipboard:read'),
   // Data-location settings.
-  // The tour's demo pair. Main computes the paths; nothing is passed in.
-  demoFiles: () => ipcRenderer.invoke('demo:files'),
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),
+  // The tour's demo pair, contents and all. Nothing is passed in.
+  demoFiles: () => ipcRenderer.invoke('demo:files'),
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),
   dataDirReset: () => ipcRenderer.invoke('datadir:reset'),
   dataDirReveal: () => ipcRenderer.invoke('datadir:reveal'),

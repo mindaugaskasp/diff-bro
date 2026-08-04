@@ -1,7 +1,7 @@
 // The tour's schedule and its exits. Every path a user can take OUT of the
 // tour matters as much as the happy one: a tour that cannot be refused, or that
 // re-opens after being refused, is worse than no tour.
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useOnboardingStore } from '../../../../src/renderer/src/features/onboarding'
 import { useUiStore } from '../../../../src/renderer/src/stores/uiStore'
@@ -10,15 +10,22 @@ import { TOUR_STEPS, TOUR_VERSION } from '../../../../src/renderer/src/utils/tou
 const RUN_ONE = TOUR_STEPS.filter((s) => s.run === 1).length
 const stored = () => JSON.parse(localStorage.getItem('diffbro.onboarding') ?? '{}')
 
+// Step one holds the veil down for a beat before advancing, so walking the run
+// means flushing that timer each time.
 const runOut = (tour) => {
-  for (let i = 0; i < RUN_ONE; i++) tour.next()
+  for (let i = 0; i < RUN_ONE; i++) {
+    tour.next()
+    if (tour.revealing) vi.runAllTimers()
+  }
 }
 
 beforeEach(() => {
+  vi.useFakeTimers()
   setActivePinia(createPinia())
   localStorage.clear()
   window.api = { appVersion: TOUR_VERSION }
 })
+afterEach(() => vi.useRealTimers())
 
 describe('starting', () => {
   it('opens run one on a cold first launch', () => {
@@ -41,6 +48,7 @@ describe('starting', () => {
     const tour = useOnboardingStore()
     tour.begin()
     tour.next()
+    vi.runAllTimers()
     expect(tour.tourStep).toBe(1)
 
     setActivePinia(createPinia())
@@ -193,8 +201,12 @@ describe('replay', () => {
     const tour = useOnboardingStore()
     tour.begin()
     tour.next()
+    vi.runAllTimers()
     const before = tour.tourStep
     tour.replay()
+    // Stepping is what advances progress, so the guard is only observable
+    // after a next(): asserting straight after replay() proved nothing.
+    tour.next()
     expect(tour.tourStep).toBe(before)
   })
 })
@@ -204,6 +216,7 @@ describe('persistence', () => {
     const tour = useOnboardingStore()
     tour.begin()
     tour.next()
+    vi.runAllTimers()
     expect(stored().tourStep).toBe(1)
     expect(stored().showTips).toBe(true)
   })
@@ -227,9 +240,44 @@ describe('persistence', () => {
   })
 })
 
+describe('the reveal after step one', () => {
+  it('drops the veil for a beat before moving on, then advances', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    expect(tour.currentStep.id).toBe('compare')
+
+    tour.next()
+    // Still on step one, but unveiled: the comparison it loaded is on screen.
+    expect(tour.revealing).toBe(true)
+    expect(tour.currentStep.id).toBe('compare')
+
+    vi.runAllTimers()
+    expect(tour.revealing).toBe(false)
+    expect(tour.currentStep.id).toBe(TOUR_STEPS[1].id)
+  })
+
+  it('ignores a second Next while the veil is down', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.next()
+    tour.next()
+    vi.runAllTimers()
+    expect(tour.currentStep.id).toBe(TOUR_STEPS[1].id)
+  })
+
+  it('a skip during the reveal ends the tour rather than advancing into it', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.next()
+    tour.skip()
+    vi.runAllTimers()
+    expect(tour.active).toBe(false)
+    expect(tour.revealing).toBe(false)
+  })
+})
+
 describe('the quick look-up peek', () => {
   it('opens the launcher and takes it away again — it is a demo, not a task', () => {
-    vi.useFakeTimers()
     const toggle = vi.fn()
     const hide = vi.fn()
     window.api = { appVersion: TOUR_VERSION, quickLookToggle: toggle, quickLookHide: hide }
@@ -240,7 +288,6 @@ describe('the quick look-up peek', () => {
 
     vi.runAllTimers()
     expect(hide).toHaveBeenCalledOnce()
-    vi.useRealTimers()
   })
 
   it('survives a build where the launcher IPC is absent', () => {
