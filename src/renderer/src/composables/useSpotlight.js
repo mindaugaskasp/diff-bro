@@ -53,8 +53,10 @@ export function useSpotlight({ step, calloutEl, onEscape }) {
     const el = targetEl()
     found.value = !!el
     if (!el) return
-    // The callout's height is only known once it has rendered this step's text.
-    const next = spotlightFor(step.value, el, calloutEl.value?.offsetHeight ?? 160)
+    // `calloutEl` is a COMPONENT ref, so its height is on $el — reading
+    // offsetHeight off the instance is undefined and silently falls back.
+    const node = calloutEl.value?.$el ?? calloutEl.value
+    const next = spotlightFor(step.value, el, node?.offsetHeight || 160)
     ;[box.value, panels.value, clip.value, callout.value] = [
       next.box,
       next.panels,

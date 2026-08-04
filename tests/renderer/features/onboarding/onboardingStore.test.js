@@ -4,6 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useOnboardingStore } from '../../../../src/renderer/src/features/onboarding'
+import { useUiStore } from '../../../../src/renderer/src/stores/uiStore'
 import { TOUR_STEPS, TOUR_VERSION } from '../../../../src/renderer/src/utils/tourSteps'
 
 const RUN_ONE = TOUR_STEPS.filter((s) => s.run === 1).length
@@ -171,6 +172,13 @@ describe('replay', () => {
     tour.replay()
     expect(tour.active).toBe(true)
     expect(tour.showTips).toBe(false)
+  })
+
+  it('gets the Settings dialog out of the way — step one sits behind it', () => {
+    const ui = useUiStore()
+    ui.showSettingsDialog = true
+    useOnboardingStore().replay()
+    expect(ui.showSettingsDialog).toBe(false)
   })
 
   it('leaves the recorded progress alone until it finishes', () => {

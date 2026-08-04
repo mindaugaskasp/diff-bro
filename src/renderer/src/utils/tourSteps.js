@@ -43,7 +43,7 @@ export const TOUR_STEPS = [
     run: 1,
     since: '0.5.0',
     target: '[data-tour="tips"]',
-    side: 'left',
+    side: 'top',
     command: 'settings',
     title: 'Make it yours — and switch this off',
     body: 'Fourteen themes, size limits, where your data is kept, and the shortcut above. Tips have an off switch right here, and a Show tour button whenever you want them back.'
@@ -53,7 +53,7 @@ export const TOUR_STEPS = [
     run: 2,
     since: '0.5.0',
     target: '[data-tour="snippet-save"]',
-    side: 'left',
+    side: 'top',
     command: 'tour-demo-snippet',
     title: 'Park this where you can find it',
     body: 'Anything you retype belongs here — a deploy payload, a prompt, a config block. Name it, tag it, and the search finds it next week.'

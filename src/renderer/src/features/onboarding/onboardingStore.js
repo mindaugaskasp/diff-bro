@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../../persist'
+import { useUiStore } from '../../stores/uiStore'
 import { TOUR_STEPS, TOUR_VERSION, runBlockAt, tourPlan } from '../../utils/tourSteps'
 
 // Its own persisted key rather than a corner of settingsStore: the tour is one
@@ -138,6 +139,9 @@ export const useOnboardingStore = defineStore('onboarding', {
     // Summoned deliberately: plays everything, ignores every flag, and does not
     // read a request to see it once as consent to automatic tips.
     replay() {
+      // Both ways in are inside Settings — its own button, and the shortcut the
+      // tour then points at — so leaving it open puts step one behind it.
+      useUiStore().showSettingsDialog = false
       this.replaying = true
       this._open([...TOUR_STEPS])
     },

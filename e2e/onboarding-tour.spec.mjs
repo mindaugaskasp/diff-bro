@@ -110,3 +110,23 @@ test('Skip tips ends it, and Help ▸ Show Tour brings it back', async ({ app, p
   await expect(callout(page)).toBeVisible()
   await expect(callout(page).locator('.tour-step-n')).toHaveText('Step 1 of 7')
 })
+
+// A step whose target sits INSIDE a dialog must keep its callout inside that
+// dialog too. Placed beside, it straddled the dialog's edge and spilled onto
+// the blurred app behind, reading as unrelated to the row it points at.
+test('a callout pointing into a dialog stays within it', async ({ page }) => {
+  await expect(callout(page)).toBeVisible()
+  for (let i = 0; i < 3; i++) {
+    await callout(page)
+      .getByRole('button', { name: /Next|Done/ })
+      .click()
+  }
+  await expect(page.locator('.dialog')).toBeVisible()
+  const fits = await page.evaluate(() => {
+    const rect = (s) => document.querySelector(s).getBoundingClientRect()
+    const c = rect('.tour-callout')
+    const d = rect('.dialog')
+    return c.left >= d.left - 1 && c.right <= d.right + 1
+  })
+  expect(fits).toBe(true)
+})
