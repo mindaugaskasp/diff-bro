@@ -3,21 +3,40 @@
 // three files were missing from it, and a missing name is silent data loss.
 
 /**
+ * The renderer's key/value stores, each backed by `<name>.json`, and the
+ * allowlist store:load / store:save validate against. A closed list rather than
+ * a character class, because the name becomes a path and a legal-looking one is
+ * still not a store: `trusted-keys` would rewrite the trust store.
+ */
+export const STORE_NAMES = [
+  'vault', // saved diffs (encrypted at rest) — stores/vaultStore.js
+  'snippets', // snippet library (encrypted at rest) — stores/snippetStore.js
+  'session', // the comparisons left open (encrypted at rest) — stores/tabsStore.js
+  'settings', // preferences — stores/settingsStore.js, and readSettings in main
+  'theme', // chosen theme — stores/settingsStore.js, renderer/quicklook.js
+  'email', // mail hand-off defaults — features/email/emailStore.js
+  'onboarding', // tour progress — features/onboarding/onboardingStore.js
+  'sidebar' // sidebar width — composables/useSidebarResize.js
+]
+
+const ALLOWED_STORES = new Set(STORE_NAMES)
+
+/** @param {unknown} name */
+export const isStoreName = (name) => typeof name === 'string' && ALLOWED_STORES.has(name)
+
+/**
  * Every file that makes up this install's data — moved together when the
- * location changes, so the folder is self-contained and portable.
+ * location changes, so the folder is self-contained and portable. The stores
+ * are derived, so a new one cannot reach the data directory without also
+ * travelling with it.
  */
 export const DATA_FILES = [
-  'vault.json', // saved diffs (encrypted at rest)
-  'snippets.json', // snippet library (encrypted at rest)
-  'session.json', // the comparisons left open (encrypted at rest)
+  ...STORE_NAMES.map((name) => `${name}.json`),
   'identity.key', // private identity key (OS-keychain wrapped)
   'identity.pub', // public identity key
   'trusted-keys.json', // trusted peers
   'vault.key', // vault encryption key (OS-keychain wrapped)
-  'retired-keys.key', // decrypt-only keys rotated away from
-  'settings.json', // preferences
-  'email.json', // mail hand-off message defaults
-  'theme.json' // chosen theme
+  'retired-keys.key' // decrypt-only keys rotated away from
 ]
 
 /**
