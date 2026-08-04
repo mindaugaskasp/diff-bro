@@ -85,7 +85,7 @@ test('the toggle keeps its position when the sidebar collapses', async ({ page }
 // field read as dropped in rather than placed.
 test('the collapse control matches the search box it sits beside', async ({ page }) => {
   const row = await page.evaluate(() => {
-    const box = document.querySelector('.usb-search').getBoundingClientRect()
+    const box = document.querySelector('.field-search').getBoundingClientRect()
     const btn = document.querySelector('.sidebar-toggle').getBoundingClientRect()
     return { gap: btn.left - box.right, boxH: box.height, btnH: btn.height }
   })

@@ -11,7 +11,7 @@ test('copying a snippet writes its content to the OS clipboard', async ({ app, p
   await expect(row).toBeVisible() // the seeded first-run example
 
   await row.hover()
-  await page.getByRole('button', { name: 'Copy content to clipboard' }).click()
+  await page.getByRole('button', { name: 'Copy to clipboard' }).click()
   await expect(page.getByText('Copied', { exact: true })).toBeVisible()
 
   // Read the real OS clipboard from the main process (the renderer can't — the

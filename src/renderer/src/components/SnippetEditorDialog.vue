@@ -179,6 +179,8 @@ function saveSnippet() {
         ref="actions"
         :edit-mode="editMode"
         :can-format="canFormat"
+        :name="name"
+        :content="content"
         :language="language"
         :has-content="!!content"
         :can-save="!!name.trim() && !!content.trim() && !saving"

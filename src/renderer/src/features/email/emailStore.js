@@ -32,6 +32,16 @@ function handoffNotice(res, localCopy) {
     : `Your message is open in your mail app. ${res.name} is saved — attach it from there.`
 }
 
+// The decrypted snapshot and the callback are held OUTSIDE Pinia state, keyed
+// to the open draft. Two reasons, and both are load-bearing:
+//   1. Reactive state deep-proxies what you put in it, and structured clone
+//      REFUSES a Proxy at the IPC boundary — `toRaw` is shallow, so a nested
+//      `snapshot` read off a reactive draft still crossed as one and the whole
+//      hand-off rejected. Only a real launch can catch that.
+//   2. It is plaintext. It has no business being reactive, observable, or
+//      living any longer than the dialog it belongs to.
+let pending = null
+
 const HANDOFF_ERRORS = {
   'unknown-recipient': 'One of those recipients is no longer a trusted key.',
   'bad-address': 'That address could not be used — check it under Security → Trusted keys.',
@@ -105,17 +115,20 @@ export const useEmailStore = defineStore('email', {
         )
         return false
       }
-      this.draft = { entry, recipientFps: [...recipientFps], to: [...(to ?? [])], onSealed }
+      pending = { entry, onSealed }
+      // State holds only what the dialog DRAWS.
+      this.draft = { recipientFps: [...recipientFps], to: [...(to ?? [])] }
       return true
     },
     cancel() {
+      pending = null
       this.draft = null
     },
     async invokeHandoff(draft, note) {
       try {
         return (
           (await window.api.mailHandoff({
-            entry: draft.entry,
+            entry: pending?.entry,
             recipientFps: [...draft.recipientFps],
             subjectTemplate: this.subjectTemplate,
             reveal: this.revealAfterCreate,
@@ -138,8 +151,11 @@ export const useEmailStore = defineStore('email', {
       // the second carries a path. Treating them alike saved a local twin and
       // recorded a share for a file that never existed.
       const written = res.ok === true || !!res.path
-      const localCopy = written ? await draft.onSealed?.() : undefined
-      if (written) this.draft = null
+      const localCopy = written ? await pending?.onSealed?.() : undefined
+      if (written) {
+        pending = null
+        this.draft = null
+      }
       useDiffStore().showNotice(handoffNotice(res, localCopy))
     }
   }

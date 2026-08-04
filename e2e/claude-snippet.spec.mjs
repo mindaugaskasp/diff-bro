@@ -7,7 +7,7 @@ const CLAUDE_EXAMPLE = 'Example — Claude review prompt'
 
 test('copying a Claude prompt fills its {{variables}} before copying', async ({ app, page }) => {
   await page.getByText(CLAUDE_EXAMPLE).hover()
-  await page.getByRole('button', { name: 'Copy content to clipboard' }).click()
+  await page.getByRole('button', { name: 'Copy to clipboard' }).click()
 
   // Copy is intercepted by the fill dialog because the prompt has placeholders.
   await expect(page.getByRole('button', { name: 'Copy filled' })).toBeVisible()

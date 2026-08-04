@@ -11,7 +11,7 @@ test('copying a snippet flashes "Copied" and then clears', async ({ page }) => {
 
   // Row actions only reveal on hover; hover the name, then hit Copy.
   await row.hover()
-  await page.getByRole('button', { name: 'Copy content to clipboard' }).click()
+  await page.getByRole('button', { name: 'Copy to clipboard' }).click()
 
   const flash = page.getByText('Copied', { exact: true })
   await expect(flash).toBeVisible()

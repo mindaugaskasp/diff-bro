@@ -6,8 +6,6 @@ import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useImageExportStore } from '../features/imageExport'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
-import { useCopyAsFile } from '../composables/useCopyAsFile'
-import { snippetFile } from '../utils/copyAsFile'
 import { languageMonogram } from '../utils/languageMonogram'
 import { firstClaudeUrl } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
@@ -30,12 +28,6 @@ const ui = useUiStore()
 const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
-const { supported, copyFile } = useCopyAsFile()
-const copyAsFileTip = computed(() =>
-  isSecret(props.entry)
-    ? "Secret snippets can't be copied as a file — use Copy content"
-    : 'Copy as file'
-)
 const { startDrag } = useSnippetDrag()
 
 const lang = computed(() => languageOf(props.entry))
@@ -57,13 +49,6 @@ async function copySnippet(id) {
   }
   await window.api.copyText(content)
   flash()
-}
-// The twin of Copy. A secret snippet refuses: a staged file is plaintext on
-// disk, which is exactly what "secret" promises not to do (utils/copyAsFile.js).
-async function copySnippetAsFile(entry) {
-  const content = await store.load(entry.id)
-  if (content == null) return
-  if (await copyFile(snippetFile({ ...entry, content, lang: lang.value }))) flash()
 }
 async function viewDiagram(entry) {
   const code = await store.load(entry.id)
@@ -181,23 +166,11 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       </button>
       <button
         class="row-btn"
-        data-tip="Copy content"
-        aria-label="Copy content to clipboard"
+        data-tip="Copy"
+        aria-label="Copy to clipboard"
         @click="copySnippet(entry.id)"
       >
         <AppIcon name="copy" />
-      </button>
-      <!-- Disabled rather than hidden for a secret: an absent control is a
-           mystery, and this is the one place a reader would hunt for it. -->
-      <button
-        v-if="supported"
-        class="row-btn"
-        :disabled="isSecret(entry)"
-        :data-tip="copyAsFileTip"
-        aria-label="Copy as a file"
-        @click="copySnippetAsFile(entry)"
-      >
-        <AppIcon name="clipboard" />
       </button>
       <button
         class="row-btn delete"

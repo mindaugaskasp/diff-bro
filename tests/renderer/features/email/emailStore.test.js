@@ -69,6 +69,27 @@ describe('compose', () => {
     expect(notices[0]).toContain('Tomas')
   })
 
+  // The entry is held in a module-level holder rather than Pinia state (a
+  // reactive Proxy cannot cross IPC, and plaintext has no business being
+  // observable). That makes staleness the risk worth guarding.
+  it('sends the newest entry, never one left over from an earlier compose', async () => {
+    const s = useEmailStore()
+    s.compose({ ...draft(), entry: { name: 'first' } })
+    s.cancel()
+    s.compose({ ...draft(), entry: { name: 'second' } })
+    await s.send('')
+    expect(window.api.mailHandoff.mock.calls[0][0].entry).toEqual({ name: 'second' })
+  })
+
+  it('retains nothing when the compose was refused', async () => {
+    const s = useEmailStore()
+    const d = draft()
+    d.to = [{ fingerprint: 'fp-t', label: 'Tomas', email: null }]
+    expect(s.compose(d)).toBe(false)
+    await s.send('')
+    expect(window.api.mailHandoff).not.toHaveBeenCalled()
+  })
+
   it('copies the arrays, so later edits cannot mutate the draft', () => {
     const s = useEmailStore()
     const d = draft()

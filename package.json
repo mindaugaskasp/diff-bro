@@ -43,7 +43,7 @@
   },
   "//overrides": "brace-expansion <=5.0.7 has an OOM-DoS advisory (GHSA-mh99-v99m-4gvg), fixed only in 5.0.8. It reaches us solely through electron-builder's build-time glob chain (a devDependency; not in the shipped app), and npm's only offered fix is a breaking electron-builder downgrade. 5.0.8 keeps the same expand() API, so pinning it clears the whole minimatch/glob chain without touching electron-builder.",
   "overrides": {
-    "brace-expansion": "5.0.8"
+    "brace-expansion": "^5.0.9"
   },
   "devDependencies": {
     "@emnapi/core": "^1.11.2",

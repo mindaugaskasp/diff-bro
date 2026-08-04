@@ -5,10 +5,14 @@
 import { computed } from 'vue'
 import { useArmedAction } from '../composables/useArmedAction'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
+import { useCopyAsFile } from '../composables/useCopyAsFile'
+import { snippetFile } from '../utils/copyAsFile'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   editMode: { type: Boolean, required: true },
+  name: { type: String, default: '' },
+  content: { type: String, default: '' },
   canFormat: { type: Boolean, required: true },
   language: { type: String, required: true },
   hasContent: { type: Boolean, required: true },
@@ -17,9 +21,30 @@ const props = defineProps({
   secret: { type: Boolean, default: false },
   masked: { type: Boolean, default: false }
 })
-const emit = defineEmits(['format', 'copy', 'capture', 'clear', 'reveal', 'edit', 'save', 'close'])
+const emit = defineEmits([
+  'format',
+  'copy',
+  'capture',
+  'clear',
+  'reveal',
+  'edit',
+  'save',
+  'close'
+])
 
 const { copied, flash } = useCopyFeedback()
+// The twin of Copy, and adjacent to it: that adjacency is what makes them read
+// as a choice between two things rather than two unrelated actions.
+const { supported: canCopyFile, copyFile } = useCopyAsFile()
+async function copyAsFile() {
+  const draft = { name: props.name, content: props.content, secret: props.secret }
+  if (await copyFile(snippetFile({ ...draft, lang: props.language }))) flash()
+}
+const copyFileTip = computed(() =>
+  props.secret
+    ? "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk"
+    : 'Put the snippet on the clipboard AS A FILE, to paste into a message or a folder'
+)
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
 // Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
@@ -73,6 +98,15 @@ defineExpose({ flash })
     @click="emit('copy')"
   >
     {{ copied ? 'Copied' : 'Copy' }}
+  </button>
+  <button
+    v-if="canCopyFile && !editMode"
+    class="btn btn-sm"
+    :disabled="!hasContent || secret"
+    :data-tip="copyFileTip"
+    @click="copyAsFile"
+  >
+    <AppIcon name="clipboard" /> Copy as file
   </button>
   <button
     v-if="editMode"

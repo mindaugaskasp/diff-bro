@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { test, expect } from './fixtures.mjs'
+import { test, expect, openMenu } from './fixtures.mjs'
 
 // The clipboard is the one thing only a real launch exercises — it is why
 // window.api.copyText exists at all (a trusted-click navigator.clipboard write
@@ -35,6 +35,7 @@ const readBackPaths = async (app) => {
 const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
 
 // Mirrors e2e/secret-snippet.spec.mjs — Monaco needs typed input, not fill().
+// Saving lands on the read-only VIEW, which is where the copy pair lives.
 async function addSnippet(page, { name, body, secret = false }) {
   await page.getByRole('button', { name: 'New snippet' }).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
@@ -44,19 +45,15 @@ async function addSnippet(page, { name, body, secret = false }) {
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
-  if (await view.isVisible().catch(() => false)) {
-    await view.locator('.dialog-close').click()
-  }
-  await expect(page.locator('li.row', { hasText: name })).toBeVisible()
+  await expect(view).toBeVisible()
+  return view
 }
 
 test('copying a snippet as a file puts a real file on the clipboard', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
-  const row = page.locator('li.row', { hasText: 'E2E copy target' })
-  await row.hover()
-  await row.getByRole('button', { name: 'Copy as a file' }).click()
+  const view = await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
+  await view.getByRole('button', { name: 'Copy as file' }).click()
 
   const paths = await readBackPaths(app)
   expect(paths).toHaveLength(1)
@@ -66,10 +63,8 @@ test('copying a snippet as a file puts a real file on the clipboard', async ({ a
 })
 
 test('copy content puts text, and no file, on the clipboard', async ({ app, page }) => {
-  await addSnippet(page, { name: 'E2E text only', body: 'just text' })
-  const row = page.locator('li.row', { hasText: 'E2E text only' })
-  await row.hover()
-  await row.getByRole('button', { name: 'Copy content to clipboard' }).click()
+  const view = await addSnippet(page, { name: 'E2E text only', body: 'just text' })
+  await view.getByRole('button', { name: 'Copy', exact: true }).click()
 
   const text = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(text).toBe('just text')
@@ -81,11 +76,9 @@ test('copy content puts text, and no file, on the clipboard', async ({ app, page
 test('a secret snippet offers Copy content but never Copy as file', async ({ page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  await addSnippet(page, { name: 'E2E secret', body: 'sk-live-xxxx', secret: true })
-  const row = page.locator('li.row', { hasText: 'E2E secret' })
-  await row.hover()
-  await expect(row.getByRole('button', { name: 'Copy content to clipboard' })).toBeVisible()
-  await expect(row.getByRole('button', { name: 'Copy as a file' })).toBeDisabled()
+  const view = await addSnippet(page, { name: 'E2E secret', body: 'sk-live-xxxx', secret: true })
+  await expect(view.getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
+  await expect(view.getByRole('button', { name: 'Copy as file' })).toBeDisabled()
 })
 
 test('copying the diff as a file writes a patch, not the diff text', async ({ app, page }) => {
@@ -99,7 +92,9 @@ test('copying the diff as a file writes a patch, not the diff text', async ({ ap
   await page.getByPlaceholder('Paste changed text here').fill('one\nTWO\n')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
-  await page.keyboard.press('ControlOrMeta+Shift+F')
+  // Through the menu, which is what a reader actually reaches for and what
+  // menu-actions.spec.mjs already proves is wired.
+  await openMenu(page, 'Edit', 'Copy Diff as File')
 
   await expect
     .poll(async () => (await readBackPaths(app)).length, { timeout: 10_000 })
@@ -116,10 +111,8 @@ test('copying the diff as a file writes a patch, not the diff text', async ({ ap
 test('staged files do not survive a relaunch', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
-  const row = page.locator('li.row', { hasText: 'E2E ephemeral' })
-  await row.hover()
-  await row.getByRole('button', { name: 'Copy as a file' }).click()
+  const view = await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
+  await view.getByRole('button', { name: 'Copy as file' }).click()
   const [staged] = await readBackPaths(app)
   expect(readFileSync(staged, 'utf-8')).toBe('transient')
 

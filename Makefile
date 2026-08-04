@@ -18,6 +18,7 @@ RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
 .PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
         clean dev check test e2e lint build package-win package-linux package-mac audit-fix \
+        audit-fix-force \
         brew-cask screenshots theme-sweep local-seed local-seed-many local-seed-clean
 
 help: ## List available targets
@@ -65,7 +66,16 @@ clean: ## Remove containers, volumes, and the built images (incl. the packaging 
 	docker compose --profile packaging down -v --rmi local
 	rm -rf dist
 
-audit-fix: ## Run `npm audit fix` inside the container
+# In-range only. The lockfile is written by the CONTAINER's npm so `npm ci`
+# keeps working (see docs/standards.md: host and container npm majors must
+# agree, and a lock written by one fails under the other).
+audit-fix: ## Run `npm audit fix` inside the container (semver-compatible only)
+	$(RUN_NPM) -- audit fix
+
+# --force installs semver-MAJOR upgrades. On this tree that reaches electron and
+# electron-builder, so it can break the app or the installer builds without
+# saying so — which is why it is not what `audit-fix` does. Read the diff.
+audit-fix-force: ## Same, but allowing BREAKING major upgrades (review the lockfile diff)
 	$(RUN_NPM) -- audit fix --force
 
 # The entrypoint already runs `electron-vite dev` with HMR, so this starts the

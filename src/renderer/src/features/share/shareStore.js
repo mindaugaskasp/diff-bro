@@ -65,7 +65,13 @@ export const useShareStore = defineStore('share', {
       if (!to.length) return
       const draft = this.shareDraft
       const id = this.shareEntryId
-      const entry = draft ? vault.draftEntry(draft) : id ? await vault.entryForShare(id) : null
+      // A DRAFT is live Pinia state, so its snapshot is a deep reactive Proxy —
+      // and structured clone refuses one at the IPC boundary. `toRaw` is shallow,
+      // so it does not reach `snapshot.left`; the entry is JSON-safe (main
+      // re-serialises it anyway), which makes a round trip the honest unwrap.
+      // The saved-diff path is already raw: `load()` returns a fresh decrypt.
+      const built = draft ? vault.draftEntry(draft) : id ? await vault.entryForShare(id) : null
+      const entry = draft && built ? JSON.parse(JSON.stringify(built)) : built
       if (!entry) {
         diff.showNotice('That diff could not be read — nothing was sealed.')
         return

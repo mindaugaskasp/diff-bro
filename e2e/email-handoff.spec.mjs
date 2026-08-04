@@ -1,4 +1,5 @@
 import { generateKeyPairSync } from 'node:crypto'
+import { fingerprint } from '../src/main/sealing.js'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -47,15 +48,19 @@ const realKey = () => {
   return { sign, box }
 }
 
-const seedKeys = async (app, dir, entries) => {
-  const keys = entries.map((e) => ({ ...realKey(), ...e }))
-  // The fingerprint must be the one sealing recomputes, so ask the app for it.
-  const withFps = await app.evaluate(async (_e, list) => {
-    const { fingerprint } = await import('../main/sealing.js')
-    return list.map((k) => ({ ...k, fingerprint: fingerprint(k.sign, k.box) }))
-  }, keys)
-  writeFileSync(join(dir, 'trusted-keys.json'), JSON.stringify(withFps))
-}
+// The fingerprint has to be the one sealing recomputes. The spec runs in Node,
+// so it imports sealing.js directly — `await import()` inside app.evaluate
+// throws, because the bundled main has no module registry to resolve against.
+const seedKeys = (dir, entries) =>
+  writeFileSync(
+    join(dir, 'trusted-keys.json'),
+    JSON.stringify(
+      entries.map((e) => {
+        const { sign, box } = realKey()
+        return { sign, box, fingerprint: fingerprint(sign, box), ...e }
+      })
+    )
+  )
 
 async function compareAndShare(page) {
   const left = page.getByPlaceholder('Paste original text here')
@@ -77,9 +82,9 @@ async function compareAndShare(page) {
 test('email hand-off opens an addressed mailto: and reveals the file it sealed', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
+  seedKeys(dir, [{ label: 'Ana', email: 'ana@example.com' }])
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
-  await seedKeys(app, dir, [{ label: 'Ana', email: 'ana@example.com' }])
 
   try {
     await captureOsCalls(app)
@@ -88,7 +93,7 @@ test('email hand-off opens an addressed mailto: and reveals the file it sealed',
 
     const share = await compareAndShare(page)
     await expect(share).toBeVisible()
-    await share.getByText('Ana', { exact: false }).first().click()
+    await share.getByRole('checkbox').first().check()
 
     await share.getByRole('button', { name: 'Email this diff' }).click()
     const compose = page.getByRole('dialog', { name: 'Email this diff' })
@@ -120,9 +125,9 @@ test('email hand-off opens an addressed mailto: and reveals the file it sealed',
 test('cancelling the confirm opens nothing but keeps the sealed file', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
+  seedKeys(dir, [{ label: 'Ana', email: 'ana@example.com' }])
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
-  await seedKeys(app, dir, [{ label: 'Ana', email: 'ana@example.com' }])
 
   try {
     await captureOsCalls(app)
@@ -132,7 +137,7 @@ test('cancelling the confirm opens nothing but keeps the sealed file', async () 
     await stubSaveDialog(app, join(dir, 'cancelled.diffbro'))
 
     const share = await compareAndShare(page)
-    await share.getByText('Ana', { exact: false }).first().click()
+    await share.getByRole('checkbox').first().check()
     await share.getByRole('button', { name: 'Email this diff' }).click()
     await page
       .getByRole('dialog', { name: 'Email this diff' })
@@ -150,15 +155,15 @@ test('cancelling the confirm opens nothing but keeps the sealed file', async () 
 test('a recipient with no address is not offered the email route', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
+  seedKeys(dir, [{ label: 'Tomas' }]) // no email
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
-  await seedKeys(app, dir, [{ label: 'Tomas' }]) // no email
 
   try {
     await captureOsCalls(app)
     await stubSaveDialog(app, join(dir, 'nomail.diffbro'))
     const share = await compareAndShare(page)
-    await share.getByText('Tomas', { exact: false }).first().click()
+    await share.getByRole('checkbox').first().check()
 
     await expect(share.getByRole('button', { name: 'Email this diff' })).toHaveCount(0)
     await expect(share.getByRole('button', { name: 'Create file' })).toBeVisible()
@@ -174,16 +179,15 @@ test('a recipient with no address is not offered the email route', async () => {
 test('the picker holds thirty keys and a filter cannot hide a selection', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
-  const app = await launchApp(dir)
-  const page = await firstReadyPage(app)
-  await seedKeys(
-    app,
+  seedKeys(
     dir,
     Array.from({ length: 30 }, (_, i) => ({
       label: `Teammate ${String(i + 1).padStart(2, '0')}`,
       email: `teammate${i + 1}@example.com`
     }))
   )
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
 
   try {
     await captureOsCalls(app)
