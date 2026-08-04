@@ -59,10 +59,9 @@
   background: var(--accent);
 }
 
-/* The beak is the card's own face and keyline, rotated — so it re-tints with
-   every theme instead of needing a colour of its own. */
-.tour-callout::after {
-  content: '';
+/* The beak is the card's own face and keyline, rotated, so it re-tints with
+   every theme instead of carrying a colour of its own. */
+.tour-beak {
   position: absolute;
   width: 9px;
   height: 9px;
@@ -70,27 +69,30 @@
   background: var(--bg-elevated);
   border: 1px solid var(--btn-edge);
 }
-.beak-top::after {
+.beak-top .tour-beak {
   top: -5px;
-  left: 24px;
   border-right: none;
   border-bottom: none;
 }
-.beak-bottom::after {
+.beak-bottom .tour-beak {
   bottom: -5px;
-  left: 24px;
   border-left: none;
   border-top: none;
 }
-.beak-left::after {
+/* Placement centres the card on the target vertically, so the card's own middle
+   already IS the target's middle. */
+.beak-left .tour-beak,
+.beak-right .tour-beak {
+  top: 50%;
+  margin-top: -5px;
+}
+.beak-left .tour-beak {
   left: -5px;
-  top: 22px;
   border-right: none;
   border-top: none;
 }
-.beak-right::after {
+.beak-right .tour-beak {
   right: -5px;
-  top: 22px;
   border-left: none;
   border-bottom: none;
 }
