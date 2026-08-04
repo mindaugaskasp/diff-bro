@@ -35,7 +35,7 @@ import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
-import { hasStatusBand } from './utils/statusBand'
+import { hasStatusBand } from './utils/viewChrome'
 
 const store = useDiffStore()
 

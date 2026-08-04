@@ -7,6 +7,7 @@ import { useImageExportStore } from '../features/imageExport'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 import { useShareStore } from '../features/share'
+import { showsSplitView, showsWhitespaceToggle } from '../utils/viewChrome'
 
 const store = useDiffStore()
 const share = useShareStore()
@@ -45,6 +46,8 @@ const structureTip = computed(() => {
 })
 
 // The button names its destination (files ⇄ paste).
+const splitAvailable = computed(() => showsSplitView(store))
+const whitespaceAvailable = computed(() => showsWhitespaceToggle(store))
 const inPaste = computed(() => store.mode === 'paste')
 const pasteToggleLabel = computed(() => (inPaste.value ? 'File mode' : 'Paste text'))
 const pasteToggleTitle = computed(() =>
@@ -71,20 +74,18 @@ const clearTitle = computed(() =>
     <div class="options">
       <!-- Diff display toggles -->
       <div class="group">
-        <!-- Both are Monaco diff-editor options (diffEditorOptions.js), so they
-             do nothing once Grid, Structure, Diagram or a streamed comparison is
-             what's on screen. A control that cannot act should not be offered:
-             a visible Split view beside a grid reads as broken, not as N/A. -->
-        <template v-if="store.comparableKind === 'text'">
-          <label>
-            <input v-model="store.renderSideBySide" type="checkbox" />
-            Split view
-          </label>
-          <label>
-            <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
-            Ignore whitespace
-          </label>
-        </template>
+        <!-- A control that cannot act should not be offered: Split view beside
+             a grid reads as broken, not as N/A. The two do NOT have the same
+             reach — the diagram viewer splits on the same flag (see
+             utils/viewChrome.js), which is why they are gated separately. -->
+        <label v-if="splitAvailable">
+          <input v-model="store.renderSideBySide" type="checkbox" />
+          Split view
+        </label>
+        <label v-if="whitespaceAvailable">
+          <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
+          Ignore whitespace
+        </label>
         <label v-if="store.canCompareStructure || store.canCompareDiagram" :data-tip="structureTip">
           <input v-model="store.semanticView" type="checkbox" />
           {{ store.structureLabel }}

@@ -24,8 +24,9 @@ async function loadPair(app, page, { left, right, ext = 'csv' }) {
   return dir
 }
 
-// A control that cannot act must not be offered: Split view and Ignore
-// whitespace are Monaco options, so beside a grid they read as broken, not N/A.
+// A control that cannot act must not be offered. Nothing in the grid viewer
+// reads either flag, so both go — but they are gated separately, because the
+// DIAGRAM viewer does split on renderSideBySide (utils/viewChrome.js).
 test('the Monaco-only toggles disappear once the grid is showing', async ({ app, page }) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-csv-toggles-'))
   const left = join(dir, 'a.csv')
