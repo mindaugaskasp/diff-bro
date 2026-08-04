@@ -43,9 +43,9 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="580px" title="Settings" @close="close">
+  <BaseDialog width="580px" tour="settings" title="Settings" @close="close">
     <div class="settings-body">
-      <nav class="settings-nav" aria-label="Settings sections">
+      <nav class="settings-nav" aria-label="Settings sections" data-tour="settings-nav">
         <button
           v-for="t in TABS"
           :key="t.id"

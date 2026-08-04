@@ -1,15 +1,18 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../../persist'
+import { useSettingsStore } from '../../stores/settingsStore'
 import { useUiStore } from '../../stores/uiStore'
 import { TOUR_STEPS, TOUR_VERSION, runBlockAt, tourPlan } from '../../utils/tourSteps'
+import * as demo from './tourDemo'
 
 // Its own persisted key rather than a corner of settingsStore: the tour is one
 // slice's state, and the core store is already at its size cap.
 const KEY = 'onboarding'
 const MAX_DEFER = 2
 // The beat after step one: the veil lifts so the comparison it just loaded is
-// actually SEEN, rather than described through a blur and then replaced.
-const REVEAL_MS = 1800
+// actually SEEN rather than described through a blur. Just long enough to
+// register — past about half a second the next card reads as late.
+const REVEAL_MS = 450
 
 const clampInt = (value, lo, hi) => {
   const n = Number.parseInt(value, 10)
@@ -43,6 +46,14 @@ function readState() {
     revealTimer: null,
     // Veil down, tour still running: a pause to look at what step one loaded.
     revealing: false,
+    // A step's command, waiting for useTourCommands to run it.
+    pendingCommand: null,
+    // What the tour opened and therefore has to put back. `editorOwned` holds
+    // the demo-named snippets that predate it, so cleanup spares only those.
+    demoTabId: null,
+    editorOwned: null,
+    sidebarWasCollapsed: false,
+    filters: null,
     // A replay does not advance the recorded progress.
     replaying: false
   }
@@ -81,14 +92,35 @@ export const useOnboardingStore = defineStore('onboarding', {
     },
     _open(steps) {
       if (!steps.length) return
+      // A run summoned during step one's reveal beat would otherwise inherit
+      // both the raised veil and the timer that is about to advance it.
+      clearTimeout(this.revealTimer)
+      this.revealing = false
+      const settings = useSettingsStore()
+      // Half the run points into the sidebar; collapsed, it teaches nothing.
+      this.sidebarWasCollapsed = settings.sidebarCollapsed
+      settings.setSidebarCollapsed(false)
+      this.filters = demo.takeFilters()
       this.steps = steps
       this.index = 0
       this.active = true
       this.promptOpen = false
+      this._dispatch(this.currentStep?.enter)
     },
+    // Reaching the registry from here would close a cycle through this slice's
+    // index, so useTourCommands watches and dispatches. A fresh object each
+    // time, or the same command twice would look like no change.
+    _dispatch(action) {
+      if (action) this.pendingCommand = { action }
+    },
+    // Next PERFORMS the step's action, rather than the next step arriving to
+    // find a window already open.
     next() {
       if (!this.active || this.revealing) return
-      if (this.currentStep?.reveal) {
+      const step = this.currentStep
+      this._dispatch(step?.advance)
+      this._dispatch(step?.leave)
+      if (step?.reveal) {
         this.revealing = true
         this.revealTimer = setTimeout(() => {
           this.revealing = false
@@ -98,9 +130,22 @@ export const useOnboardingStore = defineStore('onboarding', {
       }
       this._step()
     },
+    // A step whose Next opened something carries the `undo` that closes it
+    // again: without it, Back left Settings over the control it returns to.
+    back() {
+      if (!this.active || this.revealing || this.index === 0) return
+      // A step is left the same way in both directions: what it did on arrival
+      // is undone whether you move on or step back off it.
+      this._dispatch(this.currentStep?.leave)
+      this.index -= 1
+      this._dispatch(this.currentStep?.undo)
+      this._dispatch(this.currentStep?.enter)
+      if (!this.replaying) this._advanceTo(this.tourStep - 1)
+    },
     _step() {
       if (this.index < this.steps.length - 1) {
         this.index += 1
+        this._dispatch(this.currentStep?.enter)
         if (!this.replaying) this._advanceTo(this.tourStep + 1)
         return
       }
@@ -108,12 +153,13 @@ export const useOnboardingStore = defineStore('onboarding', {
     },
     // Record progress as the user moves, so quitting mid-run resumes there.
     _advanceTo(step) {
-      this.tourStep = Math.min(step, TOUR_STEPS.length)
+      this.tourStep = clampInt(step, 0, TOUR_STEPS.length)
       this.persist()
     },
     // End of a run: close, then ask about the next one if there is one.
     finish() {
       const wasReplaying = this.replaying
+      this._tidy()
       this.active = false
       this.steps = []
       this.index = 0
@@ -132,6 +178,7 @@ export const useOnboardingStore = defineStore('onboarding', {
     // tour: without it, every Escape in the app turned tips off and wrote.
     skip() {
       if (!this.active) return
+      this._tidy()
       clearTimeout(this.revealTimer)
       this.revealing = false
       this.active = false
@@ -142,6 +189,32 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.showTips = false
       this.persist()
     },
+    _tidy() {
+      demo.clearStage(this)
+      this.demoTabId = null
+      this.editorOwned = null
+      this.sidebarWasCollapsed = false
+      this.filters = null
+    },
+    // Something to point AT: the file slots teach nothing while they are empty.
+    async openDemo() {
+      if (this.demoTabId) return
+      this.demoTabId = await demo.openPair()
+    },
+    openSnippet() {
+      // Keeps the FIRST ownership record across a back-and-forward: it is the
+      // list cleanup spares, and re-taking it after a save would spare that too.
+      const owned = demo.openSnippet()
+      if (owned && !this.editorOwned) this.editorOwned = owned
+    },
+    closeSnippet() {
+      demo.closeSnippet()
+    },
+    typeSearch: () => demo.typeSearch(),
+    clearSearch: () => demo.clearSearch(),
+    clearFilters: () => demo.clearFilters(),
+    armChord: () => demo.allowChord(true),
+    disarmChord: () => demo.allowChord(false),
     acceptPrompt() {
       this.promptOpen = false
       this._open(runBlockAt(this.tourStep))

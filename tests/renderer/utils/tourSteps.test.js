@@ -5,6 +5,7 @@ import {
   runBlockAt,
   tourPlan
 } from '../../../src/renderer/src/utils/tourSteps'
+import { COMMANDS } from '../../../src/renderer/src/utils/commands'
 
 const state = (over = {}) => ({
   showTips: true,
@@ -15,16 +16,37 @@ const state = (over = {}) => ({
 })
 
 const runTwoStart = TOUR_STEPS.findIndex((s) => s.run === 2)
+const RUN_ONE = runTwoStart
 
 describe('TOUR_STEPS', () => {
-  it('splits four steps into run one and three into run two', () => {
-    expect(TOUR_STEPS.filter((s) => s.run === 1)).toHaveLength(4)
-    expect(TOUR_STEPS.filter((s) => s.run === 2)).toHaveLength(3)
+  it('splits six steps into run one and four into run two', () => {
+    expect(TOUR_STEPS.filter((s) => s.run === 1)).toHaveLength(RUN_ONE)
+    expect(TOUR_STEPS.filter((s) => s.run === 2)).toHaveLength(4)
   })
 
-  it('ends run one on settings, so the off switch is the last thing shown', () => {
+  it('ends run one on the tips row, so the off switch is the last thing shown', () => {
     const runOne = TOUR_STEPS.filter((s) => s.run === 1)
-    expect(runOne.at(-1).id).toBe('settings')
+    expect(runOne.at(-1).id).toBe('settings-tips')
+  })
+
+  // A step names its command as a string, so a rename or a typo is invisible
+  // until someone presses Next and nothing happens.
+  it('names only commands the registry actually has', () => {
+    const named = TOUR_STEPS.flatMap((s) => [s.advance, s.enter, s.leave, s.undo]).filter(Boolean)
+    expect(named.filter((a) => !COMMANDS[a])).toEqual([])
+    expect(named.length).toBeGreaterThan(0)
+  })
+
+  // The inversion: a command fires on Next, never on arrival. `command` was the
+  // field that fired on entry, and it is what made windows appear unannounced.
+  it('has no step left firing on entry', () => {
+    expect(TOUR_STEPS.filter((s) => s.command)).toEqual([])
+  })
+
+  // Blocked is the DEFAULT, not something each step opts into one at a time —
+  // that is how a file slot stayed clickable under the card pointing at it.
+  it('leaves its hole live only where the step asks for the press', () => {
+    expect(TOUR_STEPS.filter((s) => s.live).map((s) => s.id)).toStrictEqual(['snippet-save'])
   })
 
   it('keeps the runs contiguous — run two never interleaves with run one', () => {
@@ -43,15 +65,17 @@ describe('TOUR_STEPS', () => {
 
 describe('runBlockAt', () => {
   it('returns the whole of run one from the start', () => {
-    expect(runBlockAt(0).map((s) => s.run)).toStrictEqual([1, 1, 1, 1])
+    expect(runBlockAt(0).map((s) => s.run)).toStrictEqual(Array(RUN_ONE).fill(1))
   })
 
   it('returns the remainder of a run when resuming mid-way', () => {
-    expect(runBlockAt(2).map((s) => s.id)).toStrictEqual(TOUR_STEPS.slice(2, 4).map((s) => s.id))
+    expect(runBlockAt(2).map((s) => s.id)).toStrictEqual(
+      TOUR_STEPS.slice(2, RUN_ONE).map((s) => s.id)
+    )
   })
 
   it('stops at the run boundary rather than running on into run two', () => {
-    expect(runBlockAt(3).every((s) => s.run === 1)).toBe(true)
+    expect(runBlockAt(RUN_ONE - 1).every((s) => s.run === 1)).toBe(true)
   })
 
   it('is empty past the end', () => {
@@ -63,7 +87,7 @@ describe('tourPlan', () => {
   it('plays run one on a cold first launch', () => {
     const plan = tourPlan(state())
     expect(plan.mode).toBe('steps')
-    expect(plan.steps).toHaveLength(4)
+    expect(plan.steps).toHaveLength(RUN_ONE)
   })
 
   it('shows nothing at all when tips are off', () => {
@@ -77,7 +101,7 @@ describe('tourPlan', () => {
   it('resumes mid-run-one where it left off', () => {
     const plan = tourPlan(state({ tourStep: 2 }))
     expect(plan.mode).toBe('steps')
-    expect(plan.steps.map((s) => s.id)).toStrictEqual(TOUR_STEPS.slice(2, 4).map((s) => s.id))
+    expect(plan.steps.map((s) => s.id)).toStrictEqual(TOUR_STEPS.slice(2, RUN_ONE).map((s) => s.id))
   })
 
   it('asks before run two rather than starting it unannounced', () => {

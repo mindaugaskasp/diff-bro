@@ -69,6 +69,7 @@ function newSnippet() {
           class="btn btn-icon"
           data-tip="New"
           aria-label="New snippet"
+          data-tour="snippet-new"
           @click.stop="newSnippet"
         >
           <AppIcon name="plus" />

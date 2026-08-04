@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join, sep } from 'node:path'
-import { demoPayloads, ensureDemoFiles } from '../../src/main/demoFiles'
+import { demoPayloads, ensureDemoFiles } from '../../src/main/demoContent'
 
 let root
 

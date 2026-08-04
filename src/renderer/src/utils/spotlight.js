@@ -7,6 +7,40 @@ export const CALLOUT_W = 296
 export const CALLOUT_GAP = 13
 /** Inset for a callout placed INSIDE a zone target. */
 const ZONE_INSET = 14
+/** How far an AREA stroke is pulled off the edges of what it outlines. Flush,
+ *  it doubles up with whatever that area sits against — the comparison pane
+ *  butts straight onto the tab strip's own bottom border. */
+const AREA_INSET = 4
+
+// A context that CONTAINS the target is the surface the step is working inside,
+// so the veil is cut around the whole of it: a hole over one row of a dialog
+// reads as a lighter band pasted across it. A context BESIDE the target — the
+// comparison the Share button seals — is stroked instead, and the veil over it
+// softened so it stays readable.
+const within = (outer, inner) =>
+  !!outer &&
+  inner.x >= outer.x &&
+  inner.y >= outer.y &&
+  inner.x + inner.w <= outer.x + outer.w &&
+  inner.y + inner.h <= outer.y + outer.h
+
+// Whole pixels before the panels are cut from it. Each panel is rounded again
+// on its way into a style, and rounding two shared edges independently is what
+// left a hairline of un-blurred app between two backdrop-filter rectangles —
+// visible the moment a hover repaint went through it.
+const snap = (box) => ({
+  x: Math.round(box.x),
+  y: Math.round(box.y),
+  w: Math.round(box.w),
+  h: Math.round(box.h)
+})
+
+const shrink = (box, by) => ({
+  x: box.x + by,
+  y: box.y + by,
+  w: Math.max(0, box.w - by * 2),
+  h: Math.max(0, box.h - by * 2)
+})
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(Math.max(lo, hi), v))
 
@@ -103,4 +137,67 @@ export function blurPanels({ box, stage }) {
     { left: 0, top: box.y, width: size(box.x), height: size(box.h) },
     { left: right, top: box.y, width: size(stage.w - right), height: size(box.h) }
   ]
+}
+
+const NOWHERE = { x: 0, y: 0, w: 0, h: 0 }
+
+// Nothing to point at: the card is centred, ringless, and the whole stage
+// veiled. Rendering nothing at all left the tour active with no way out.
+const unanchored = (stage, calloutH) => ({
+  found: false,
+  soft: false,
+  context: null,
+  box: NOWHERE,
+  hole: NOWHERE,
+  ring: NOWHERE,
+  panels: [{ left: 0, top: 0, width: stage.w, height: stage.h }],
+  clip: 'none',
+  callout: {
+    x: clamp((stage.w - CALLOUT_W) / 2, 0, stage.w - CALLOUT_W),
+    y: clamp((stage.h - calloutH) / 2, 0, stage.h - calloutH)
+  }
+})
+
+// What the veil cuts, what the ring marks, and whether the veil is softened
+// rather than opened.
+function anchors({ box, context, point, zone }) {
+  const inside = within(context, box)
+  return {
+    ring: point ?? (zone ? shrink(box, AREA_INSET) : box),
+    hole: inside ? context : box,
+    soft: !!context && !inside
+  }
+}
+
+/**
+ * Everything the overlay draws for one step, from one measurement.
+ *
+ * `context` is the REGION a step is about when that is not the control it
+ * points at; `point` is the control inside a target too large to ring.
+ *
+ * @param {{ box: object|null, context?: object|null, point?: object|null, side: string, stage: object, calloutH: number, zone?: boolean }} args
+ */
+export function spotlightFor({
+  box,
+  context = null,
+  point = null,
+  side,
+  stage,
+  calloutH,
+  zone = false
+}) {
+  if (!box) return unanchored(stage, calloutH)
+  const { ring, hole, soft } = anchors({ box, context, point, zone })
+  const cut = snap(hole)
+  return {
+    found: true,
+    context: context && shrink(context, AREA_INSET),
+    soft,
+    box,
+    hole: cut,
+    ring,
+    panels: blurPanels({ box: cut, stage }),
+    clip: `path(evenodd, "${holePath({ box: cut, stage })}")`,
+    callout: placeCallout({ box: ring, side: side ?? 'bottom', stage, calloutH, zone })
+  }
 }

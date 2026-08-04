@@ -1,4 +1,5 @@
 .saved {
+  position: relative; /* the resize grip pins to its right edge */
   width: 256px;
   /* Animated so the comparison widening does not read as a jump cut. Monaco
      carries automaticLayout, so the editor follows the width on its own. */
@@ -18,6 +19,27 @@
    the lift and the surface role are the sidebar's either way. */
 .saved.collapsed {
   width: 48px;
+}
+/* The 160ms ease is for the collapse toggle, where the width jumps 200px at
+   once. Under a drag it lags the pointer, so the grip turns it off. */
+.saved.resizing {
+  transition: none;
+}
+/* Drag-to-widen: hit area on the seam, unmarked until pointed at. A visible
+   handle on a border the eye already reads as a divider is just noise. */
+.usb-grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+.usb-grip:hover,
+.saved.resizing .usb-grip {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   .saved {

@@ -25,7 +25,7 @@ const saveTip = computed(() => {
 const shareTip = computed(() =>
   store.isStreamed
     ? STREAMED_LIMITS.share
-    : 'Share this diff as a sealed file for one trusted recipient'
+    : 'Share this diff as a sealed file, for the trusted people you pick'
 )
 const copyTip = computed(() => {
   if (store.isStreamed) return STREAMED_LIMITS.copy

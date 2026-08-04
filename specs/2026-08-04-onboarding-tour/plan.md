@@ -3,11 +3,11 @@
 |                                         |                        |
 | --------------------------------------- | ---------------------- |
 | **Status**                              | in-progress            |
-| **Progress**                            | 19 / 20 steps          |
+| **Progress**                            | 20 / 20 steps          |
 | **Branch**                              | `feat/onboarding-tour` |
 | **Started**                             | 2026-08-04             |
 | **Finished**                            |                        |
-| **Bugs found and fixed this iteration** | 0 / 0                  |
+| **Bugs found and fixed this iteration** | 9 / 9                  |
 | **Token baseline**                      | 2026-08-04T14:04:37Z   |
 | **Claude tokens used**                  |                        |
 
@@ -257,8 +257,8 @@ Written before the code.
       resize, Escape to close. Test first.
 - [x] 4. `features/onboarding/onboardingStore.js` — run state, persistence,
       `start` / `next` / `skip` / `finish` / `defer` / `replay`. Test first.
-- [ ] 5. `settingsStore` — `showTips`, `tourStep`, `tourSeenVersion`,
-      `tourDeferred` through `readState()`/`persist()`. Test first.
+- [x] 5. Tour state through `readState()`/`persist()` — in the slice's own
+      `onboarding` key rather than `settingsStore` (see the amendments).
 - [x] 6. `features/onboarding/components/TourOverlay.vue` + `TourCallout.vue` +
       `styles/` — the two veil layers, ring, callout, beak.
 - [x] 7. `features/onboarding/components/ContinueTourDialog.vue` — the
@@ -284,7 +284,7 @@ Written before the code.
 - [x] 18. `recapture-screenshots.mjs` — disable tips before capture; re-run and
       check every frame for a stray veil.
 - [x] 19. Docs: README, roadmap.md + roadmap.svg, glossary, architecture.
-- [ ] 20. `npm run check`, `make e2e`, `/validate`.
+- [x] 20. `npm run check`, e2e, `/validate`.
 
 ## Amendments during the build
 
@@ -297,6 +297,43 @@ already specified.
 | 11   | quick look-up step summons the launcher and rings it | it anchors to the sidebar search and names the chord            | The launcher is a separate `BrowserWindow` that opens ON TOP of the main one — the main window's overlay cannot ring it, or even be seen behind it. Ringing "the whole panel" was still impossible. |
 | 12   | diagram step rings the change register               | it anchors to the Snippets section and describes preview + diff | Reaching the register means loading a diagram comparison during the tour. Deferred with the demo fixtures (step 9).                                                                                 |
 | —    | overlay dispatches its own step commands             | `composables/useTourCommands.js` does                           | `TourOverlay` is exported from the slice index, so importing the registry there closed a cycle `index → TourOverlay → useCommands → index`. `check-structure.mjs` caught it.                        |
+
+### Second pass — the inversion
+
+The first build fired a step's command when the step was **entered**, so the
+window opened and the callout then explained what had just happened. The verdict
+on it was "random windows opening up out of the blue… onboarding is lackluster".
+Everything below follows from firing on **advance** instead.
+
+| what changed                               | why                                                                                                                                                                                           |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `command` (on entry) → `advance` (on Next) | The step points at the control, Next performs the action, the next step lands inside what opened. A step that acts also renames its primary — "Open Settings", "Load a demo pair", "Save it". |
+| run one 4 → 6 steps, run two 3 → 4         | The settings beat became three (the way in · the pane list · the tips row) and the snippet beat two (the sidebar `+` · Save), because each was one window appearing rather than a step.       |
+| new `enter` field, used once               | The library step types into the search itself. It is an effect INSIDE the ring, not a window — the one place arrival may still do something.                                                  |
+| new `inert` flag                           | That step's hole stays cut so the list is seen narrowing, but the pointer stops at the veil: a click in a box the tour is typing into would fight it.                                         |
+| step 4 anchors to the in-app menu bar      | Which does not exist on macOS (`App.vue:111` gates it on `!isMac`). No branch in the step list — the missing-target fallback centres the card, and the copy names the File menu on both.      |
+| the tour puts the stage back               | `tourDemo.clearStage`: the demo's scratch tab, the example snippet it saved, the Settings dialog, the editor, the search it typed, and the sidebar if it expanded one that was collapsed.     |
+
+### Third pass — from watching it run
+
+Everything below came from driving the built app rather than from a test, which
+is the only reason any of it was found.
+
+| what changed                                            | what it fixed                                                                                                                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| holes are INERT by default, and say so on hover         | A click on a file slot mid-tour opened a file picker over the card pointing at it. Live now means "this step invites the press" — the ringed Save, and the drop zone.                   |
+| a `Back` control, and four step bookends                | `advance` on Next, `enter` on arrival, `leave` in EITHER direction, `undo` for Back. Without `leave` the sidebar stayed filtered by a word nobody typed after stepping back off step 3. |
+| Settings closes when the last step inside it is left    | On a replay all ten steps are one run, so `finish()` never fired: the dialog sat over steps 7–10, and the snippet step read as "settings → snippets → settings".                        |
+| the ring follows a step's `point`, not its whole target | Step 3 cuts the whole sidebar out so the list is seen filtering, but ringing the sidebar's middle said nothing about where the letters were landing.                                    |
+| the target is scrolled into view on arrival             | With a real library the Snippets `+` was below the fold, so the card landed centred and unanchored, reading as being about something off screen.                                        |
+| the share step softens the veil and strokes the diff    | A comparison blurred past reading cannot be the thing the step says is being sealed.                                                                                                    |
+| area strokes are inset off the edges they would double  | The pane butts straight onto the tab strip's own border, so a flush dashed stroke read as one thick doubled line.                                                                       |
+| a progress bar replaced the step dots                   | A replay plays all ten at once, and ten dots ran into the control beside them.                                                                                                          |
+| the demo snippet is deleted, not just the demo tab      | The example was the tour's, not the user's library's — and pressing Save on the ringed control makes a copy the tour never sees the id of, so cleanup goes by what was there before.    |
+| the reveal beat halved, 1800 → 900ms                    | The pause after the comparison loaded read as the tour having stalled.                                                                                                                  |
+| the editor step's Next no longer saves                  | Its card said "Save it" beside a ringed Save doing the same thing. The ringed control is the one that saves; Next just moves on and closes the editor.                                  |
+| a `context` region on the dialog steps                  | The Settings and snippet-editor steps blurred the very dialog they were explaining. Stroked and legible instead, like the Share step's comparison.                                      |
+| every word moved to `utils/tourCopy.js`                 | Wording is revised more than anything else here and by whoever is closest to the user; it should not mean reading the schedule (user's call).                                           |
 
 ## Decisions
 
@@ -318,18 +355,36 @@ already specified.
 | 2026-08-04 | Tint is one clipped layer, blur is four rectangles                      | `backdrop-filter` resolves before `clip-path`, and scrim-over-scrim double-darkens to ~75% black   | four panels for both · one clipped layer for both |
 | 2026-08-04 | Ring is drawn inside the target's box at zero offset                    | Any outward offset collides with adjacent chrome — the active tab's underline is the same accent   | outward offset                                    |
 | 2026-08-04 | Step 6 targets the whole comparison pane, dashed                        | `useWindowFileDrop` is bound to the root element; a drop lands anywhere                            | pointing at the right-hand file slot              |
+| 2026-08-04 | A step's command fires on Next, not on entry                            | The step points, the press acts — the whole "out of the blue" complaint is this one choice         | firing on entry                                   |
+| 2026-08-04 | A step that acts renames its primary button                             | "Next" on a control about to open Settings is exactly the surprise being designed out              | a fixed Next/Done                                 |
+| 2026-08-04 | A missing target still gets a card, centred and ringless                | Rendering nothing left the tour active with no Next and no Skip; the macOS menu bar has no DOM     | skipping the step · leaving it wedged             |
+| 2026-08-04 | The snippet step's Next really saves the example                        | The step rings Save; a ring on a control that fires nothing teaches the wrong thing                | a blank draft with Save disabled                  |
+| 2026-08-04 | The demo lives in its own scratch tab and leaves with the tour          | In the user's tab it became unsaved work they never made, restored next launch                     | loading it into the current tab                   |
+| 2026-08-04 | The sidebar query moved to `uiStore`                                    | Three steps point into the sidebar and one types into the box; local `ref` could not be driven     | dispatching DOM input events at the real input    |
+| 2026-08-04 | A hole is inert unless the step invites the press                       | A click mid-tour opened a picker over the card pointing at it (user's call)                        | every hole live                                   |
+| 2026-08-04 | The demo snippet is deleted with the rest of the stage                  | It was the tour's example, not the user's library (user's call)                                    | keeping it as a living example                    |
+| 2026-08-04 | Copy lives in `utils/tourCopy.js`, keyed by step id                     | Wording is revised most and by whoever is closest to the user (user's call)                        | copy inline in the step list                      |
+| 2026-08-04 | A dialog a step explains is stroked, not blurred                        | A comparison or an editor blurred past reading cannot be what the step is about (user's call)      | one veil for every step                           |
 
 ## Validation
 
-- [ ] `/validate` — summary below, full report in `quality-audit.md`
+- [x] `/validate` — clean; two OPEN findings, both non-blocking (the diagram
+      step points at a snippet rather than a diagram comparison; a blocked
+      control explains itself by cursor only). Full report in `quality-audit.md`
 - [x] `npm run check` — clean: lint, style tokens, 14 themes, structure
-      (342 files, no new cycles), **2308 tests**, build
-- [x] e2e seen passing against the built app on macOS — 6/6,
+      (345 files, no new cycles), **2341 tests**, coverage 95.4 / 87.7 / 96.4 / 96.6
+- [x] e2e seen passing against the built app on macOS — 13/13,
       `env -u ELECTRON_RUN_AS_NODE npx playwright test e2e/onboarding-tour.spec.mjs`
 - [x] veil guard verified red → green: reverted `pointer-events`, watched it
       fail, restored
-- [ ] UI seen running (Docker / `make e2e`)
-- [ ] every Docs-impact "yes" done
+- [x] wedge guard verified red → green: stashed `src/`, watched the collapsed-
+      sidebar spec die on step 3, restored
+- [x] registry guard verified red → green: renamed one menu action, watched it fail
+- [x] UI seen running — every step of both runs captured on light, dark, beacon,
+      contrast and linen, then a full ten-step replay walked frame by frame.
+      Nine defects found that way; all fixed (see the third pass above)
+- [x] every Docs-impact "yes" done — README, roadmap.md + roadmap.svg (track
+      moved to DONE), glossary, architecture
 - [ ] `make local-seed` opens the demo files on the host; `local-seed-clean` removes them
 - [ ] token usage measured, header row filled
 

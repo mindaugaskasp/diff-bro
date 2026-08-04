@@ -16,10 +16,10 @@ const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOO
 </script>
 
 <template>
-  <div class="usb-tools">
-    <!-- The label names what the chips ARE. With nothing used yet it would be a
-         heading over an empty row, so it appears with the first chip. -->
-    <div v-if="recent.length" class="usb-recent">
+  <!-- The label names what the chips ARE. With nothing used yet it would be a
+       heading over an empty row, so it appears with the first chip. -->
+  <div v-if="recent.length" class="usb-tools usb-recent-strip">
+    <div class="usb-recent">
       <span class="usb-tools-label"><AppIcon name="wrench" /> Recent tools</span>
       <div class="usb-recent-row">
         <button
@@ -33,8 +33,11 @@ const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOO
         </button>
       </div>
     </div>
-    <!-- The way into everything, always on its own line so it never wraps away
-         from the pointer as recents accumulate. -->
+  </div>
+  <!-- Its own band, the same height as the status band across the divider, so
+       the two bottom strips line up by construction however many chips the
+       recents row grows. -->
+  <div class="usb-tools usb-tools-search band band-row">
     <button
       class="usb-tool usb-tool-all"
       data-tip="Search every tool"

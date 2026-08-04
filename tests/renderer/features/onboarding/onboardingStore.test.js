@@ -4,6 +4,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useOnboardingStore } from '../../../../src/renderer/src/features/onboarding'
+import { useDiffStore } from '../../../../src/renderer/src/stores/diffStore'
+import { useSettingsStore } from '../../../../src/renderer/src/stores/settingsStore'
+import { useSnippetStore } from '../../../../src/renderer/src/stores/snippetStore'
+import { useTabsStore } from '../../../../src/renderer/src/stores/tabsStore'
 import { useUiStore } from '../../../../src/renderer/src/stores/uiStore'
 import { TOUR_STEPS, TOUR_VERSION } from '../../../../src/renderer/src/utils/tourSteps'
 
@@ -19,11 +23,21 @@ const runOut = (tour) => {
   }
 }
 
+const DEMO_NAME = 'Checkout API — staging'
+const DEMO = [
+  { path: null, name: 'demo-config-v1.json', content: '{"replicas":2}' },
+  { path: null, name: 'demo-config-v2.json', content: '{"replicas":3}' }
+]
+
 beforeEach(() => {
   vi.useFakeTimers()
   setActivePinia(createPinia())
   localStorage.clear()
-  window.api = { appVersion: TOUR_VERSION }
+  window.api = {
+    appVersion: TOUR_VERSION,
+    demoFiles: async () => DEMO,
+    vaultEncrypt: async (plaintext) => ({ iv: 'iv', data: plaintext })
+  }
 })
 afterEach(() => vi.useRealTimers())
 
@@ -237,6 +251,294 @@ describe('persistence', () => {
     const tour = useOnboardingStore()
     expect(tour.tourStep).toBeLessThanOrEqual(TOUR_STEPS.length)
     expect(tour.deferred).toBe(0)
+  })
+})
+
+// The inversion. A step's command used to fire when the step was ENTERED, so
+// the window opened and the callout then explained what had just happened to
+// you. Now the step points at the control and Next performs the action.
+describe("when a step's command fires", () => {
+  it('runs nothing on arrival, however much the step has to say', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    expect(tour.currentStep.advance).toBe('tour-demo-diff')
+    expect(tour.pendingCommand).toBe(null)
+  })
+
+  it("runs the step's own command when Next is pressed", () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.next()
+    expect(tour.pendingCommand).toStrictEqual({ action: 'tour-demo-diff' })
+  })
+
+  // A watcher on a bare action name would see no change the second time and
+  // silently drop it, which a replay hits immediately.
+  it('hands over a fresh request each time, so the same command twice both run', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.next()
+    const first = tour.pendingCommand
+    tour.replay()
+    tour.next()
+    expect(tour.pendingCommand).toStrictEqual(first)
+    expect(tour.pendingCommand).not.toBe(first)
+  })
+
+  // The one effect that belongs on arrival: the library step types into the
+  // search so the list is seen narrowing while the card explains it. Nothing
+  // opens — it happens inside the ring.
+  it('runs an entry effect as its step arrives', () => {
+    const tour = useOnboardingStore()
+    tour.replay()
+    const library = TOUR_STEPS.findIndex((s) => s.id === 'library')
+    for (let i = 0; i < library; i++) {
+      tour.next()
+      if (tour.revealing) vi.runAllTimers()
+    }
+    expect(tour.currentStep.id).toBe('library')
+    expect(tour.pendingCommand).toStrictEqual({ action: 'tour-demo-search' })
+  })
+})
+
+// Revisiting a step has to put the world back too, or the step it returns to
+// points at a control the last step's window is now covering.
+describe('going back', () => {
+  it('returns to the step before, and records the move', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.next()
+    vi.runAllTimers()
+    expect(tour.currentStep.id).toBe('share')
+
+    tour.back()
+    expect(tour.currentStep.id).toBe('compare')
+    expect(tour.tourStep).toBe(0)
+    expect(stored().tourStep).toBe(0)
+  })
+
+  it('does nothing on the first step — there is nowhere behind it', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.back()
+    expect(tour.index).toBe(0)
+    expect(tour.tourStep).toBe(0)
+  })
+
+  it('undoes what the step it returns to had opened', () => {
+    const ui = useUiStore()
+    const tour = useOnboardingStore()
+    tour.replay()
+    const at = TOUR_STEPS.findIndex((s) => s.id === 'settings-panes')
+    for (let i = 0; i < at; i++) {
+      tour.next()
+      if (tour.revealing) vi.runAllTimers()
+    }
+    ui.showSettingsDialog = true
+
+    tour.back()
+    expect(tour.currentStep.id).toBe('settings-open')
+    expect(tour.pendingCommand).toStrictEqual({ action: 'tour-close-settings' })
+  })
+
+  // Leaving forwards already cleared the search it typed; leaving backwards has
+  // to as well, or step two is read over a sidebar filtered by a word the user
+  // never typed.
+  it('undoes an entry effect on the way back OFF its step', () => {
+    const tour = useOnboardingStore()
+    tour.replay()
+    const at = TOUR_STEPS.findIndex((s) => s.id === 'library')
+    for (let i = 0; i < at; i++) {
+      tour.next()
+      if (tour.revealing) vi.runAllTimers()
+    }
+    expect(tour.currentStep.id).toBe('library')
+
+    tour.back()
+    expect(tour.currentStep.id).toBe('share')
+    expect(tour.pendingCommand).toStrictEqual({ action: 'tour-clear-search' })
+  })
+
+  it('re-runs an entry effect on the way back into its step', () => {
+    const tour = useOnboardingStore()
+    tour.replay()
+    const at = TOUR_STEPS.findIndex((s) => s.id === 'library')
+    for (let i = 0; i <= at; i++) {
+      tour.next()
+      if (tour.revealing) vi.runAllTimers()
+    }
+    tour.back()
+    expect(tour.currentStep.id).toBe('library')
+    expect(tour.pendingCommand).toStrictEqual({ action: 'tour-demo-search' })
+  })
+})
+
+// The demo pair belongs to the tour. Left behind it became the user's only tab,
+// marked unsaved, restored on the next launch, and prompting about work they
+// never did.
+describe('the demo comparison', () => {
+  const opened = async () => {
+    const tabs = useTabsStore()
+    tabs.init()
+    const tour = useOnboardingStore()
+    tour.begin()
+    await tour.openDemo()
+    return { tabs, tour, diff: useDiffStore() }
+  }
+
+  it('opens in a scratch tab of its own, never in the one the user has', async () => {
+    const { tabs, diff } = await opened()
+    expect(tabs.tabs).toHaveLength(2)
+    expect(diff.left.name).toBe('demo-config-v1.json')
+    expect(diff.right.name).toBe('demo-config-v2.json')
+  })
+
+  it('goes when the tour is skipped', async () => {
+    const { tabs, tour, diff } = await opened()
+    tour.skip()
+    expect(tabs.tabs).toHaveLength(1)
+    expect(diff.left).toBe(null)
+    expect(tour.demoTabId).toBe(null)
+  })
+
+  it('goes when the run finishes', async () => {
+    const { tabs, tour } = await opened()
+    runOut(tour)
+    expect(tabs.tabs).toHaveLength(1)
+  })
+
+  it('opens once, however many times the step is re-entered', async () => {
+    const { tabs, tour } = await opened()
+    await tour.openDemo()
+    expect(tabs.tabs).toHaveLength(2)
+  })
+})
+
+// The rest of the stage, cleared the same way. Run one walks THROUGH Settings,
+// so without this the "Three more tips?" dialog opened on top of it.
+describe('putting the stage back', () => {
+  it('closes the Settings dialog the tour opened', () => {
+    const ui = useUiStore()
+    const tour = useOnboardingStore()
+    tour.begin()
+    ui.showSettingsDialog = true
+    runOut(tour)
+    expect(ui.showSettingsDialog).toBe(false)
+  })
+
+  it('clears the search it typed into the sidebar', () => {
+    const ui = useUiStore()
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.typeSearch()
+    vi.runAllTimers()
+    expect(ui.sidebarQuery).toBeTruthy()
+    tour.skip()
+    expect(ui.sidebarQuery).toBe('')
+  })
+
+  // A tag filter of the user's hid the very snippet the last step points at,
+  // which left the ring on the whole section talking about a row not in it.
+  it('clears a filter that would hide what a step points at, then hands it back', () => {
+    const ui = useUiStore()
+    ui.sidebarTags = ['config']
+    ui.sidebarQuery = 'flags'
+    const tour = useOnboardingStore()
+    tour.begin()
+
+    tour.clearFilters()
+    expect(ui.sidebarTags).toStrictEqual([])
+    expect(ui.sidebarQuery).toBe('')
+
+    tour.skip()
+    expect(ui.sidebarTags).toStrictEqual(['config'])
+    expect(ui.sidebarQuery).toBe('flags')
+  })
+
+  // The step asks the user to press a GLOBAL shortcut that main ignores while
+  // this window is in front. Lifted for the step, put back when it is left —
+  // otherwise the guard that keeps it off the Settings capture field is gone.
+  it('puts the shortcut guard back when the tour ends', () => {
+    const allowed = []
+    window.api.quickLookAllowWhileFocused = (on) => allowed.push(on)
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.armChord()
+    expect(allowed).toStrictEqual([true])
+
+    tour.skip()
+    expect(allowed.at(-1)).toBe(false)
+  })
+
+  it('gives the sidebar back to whoever had collapsed it', () => {
+    const settings = useSettingsStore()
+    settings.setSidebarCollapsed(true)
+    const tour = useOnboardingStore()
+    tour.begin()
+    expect(settings.sidebarCollapsed).toBe(false)
+    tour.skip()
+    expect(settings.sidebarCollapsed).toBe(true)
+  })
+
+  it('leaves an editor the tour never opened alone', () => {
+    const snippets = useSnippetStore()
+    snippets.editingSnippet = { id: null }
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.openSnippet()
+    tour.skip()
+    expect(snippets.editingSnippet).toStrictEqual({ id: null })
+  })
+
+  // Only the ringed Save creates it — the card's own button moves on and does
+  // NOT save, since two controls doing one thing teaches neither. Which means
+  // the tour never learns the id, and cleanup goes by what was there BEFORE.
+  const pressSave = async (snippets) => {
+    await snippets.add({ name: DEMO_NAME, content: '{}', language: 'json' })
+    snippets.editingSnippet = null
+  }
+
+  it('deletes the example the user saved when the run finishes', async () => {
+    const snippets = useSnippetStore()
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.openSnippet()
+    await pressSave(snippets)
+    expect(snippets.entries).toHaveLength(1)
+
+    runOut(tour)
+    expect(snippets.entries).toStrictEqual([])
+  })
+
+  it('deletes it just the same when the tour is walked out of', async () => {
+    const snippets = useSnippetStore()
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.openSnippet()
+    await pressSave(snippets)
+    tour.skip()
+    expect(snippets.entries).toStrictEqual([])
+  })
+
+  it('spares a snippet of the same name the user already had', async () => {
+    const snippets = useSnippetStore()
+    await snippets.add({ name: DEMO_NAME, content: 'mine', language: 'json' })
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.openSnippet()
+    await pressSave(snippets)
+    tour.skip()
+    expect(snippets.entries).toHaveLength(1)
+  })
+
+  it('closes the editor it filled in itself', () => {
+    const snippets = useSnippetStore()
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.openSnippet()
+    expect(snippets.editingSnippet.initialName).toBeTruthy()
+    tour.skip()
+    expect(snippets.editingSnippet).toBe(null)
   })
 })
 

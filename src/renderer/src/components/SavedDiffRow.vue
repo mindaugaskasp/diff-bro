@@ -128,7 +128,7 @@ async function open() {
       <button
         v-if="!entry.from"
         class="row-btn"
-        data-tip="Seal this diff for one trusted recipient"
+        data-tip="Seal this diff for the trusted people you pick"
         aria-label="Share as sealed file"
         @click="share.shareEntry(entry.id)"
       >

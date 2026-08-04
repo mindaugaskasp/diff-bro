@@ -116,12 +116,32 @@ where the concept lives in this repo.
   after an update, and `showTips` turns them off for good. The **tour** is the
   same steps summoned deliberately (Help ▸ Show Tour, Settings, the palette); it
   ignores every flag and never switches tips back on.
-- **Run** — one block of tour steps shown together. Run one is the four a first
-  launch needs; run two is the three offered afterwards by the "Three more
-  tips?" dialog.
+- **Run** — one block of tour steps shown together. Run one is the six a first
+  launch needs; run two is the four offered afterwards by the "Three more tips?"
+  dialog.
 - **Zone step** — a step whose target is an area rather than a control (the
   comparison pane, which takes a drop anywhere). Ringed dashed, and its callout
   sits inside it.
+- **Live step** — the exception. A step's hole is cut so its target stays sharp,
+  but the pointer stops at the veil unless the step says `live`: a click on a
+  file slot mid-tour opens a picker over the card pointing at it. Exactly one
+  step asks for the press it rings, and that is the one ringing Save.
+- **Context region** — what a step is ABOUT when that is not the control it
+  points at. The Share step rings a button but is about the whole comparison, so
+  that is stroked and the veil softened over it — a diff blurred past reading
+  cannot be the thing being sealed.
+- **Point** — the one control inside a large target that the ring and the beak
+  belong on. The library step cuts the whole sidebar out so the list is seen
+  filtering, and points at the search box being typed into.
+- **Advance command** — what a step's Next runs before moving on. The step
+  points at the control, the press performs the action, and the following step
+  lands inside whatever opened. Firing on ENTRY instead is what made windows
+  appear out of the blue. Its twin is the **undo**, which Back runs so a step
+  returned to is not looking at a control the next step's window is covering.
+- **The stage** — everything the tour puts on screen for itself: the demo
+  comparison in its own scratch tab, the example snippet, the search it types.
+  All of it is removed when the tour ends, finished or walked out of — it was
+  the tour's, never the user's library.
 
 ## Union view
 

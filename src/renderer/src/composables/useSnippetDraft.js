@@ -17,7 +17,7 @@ const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql, mermaid: 
 function initialFields(editing, existing) {
   if (!existing) {
     return {
-      name: '',
+      name: editing.initialName ?? '',
       content: editing.initialContent ?? '',
       tags: editing.initialTags ?? [],
       language: editing.initialLanguage ?? 'auto',

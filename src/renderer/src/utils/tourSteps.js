@@ -1,62 +1,125 @@
-// The onboarding tour's step list and the pure rules that decide what plays
-// now. No Vue, no stores — the store owns transitions, this owns the schedule.
+// The onboarding tour's schedule: which step plays when, and what each one
+// points at. Its WORDS live in tourCopy.js — edit wording there. No Vue, no
+// stores; the store owns transitions, this owns the schedule.
 //
 // Targets are `data-tour` attributes rather than styling classes: a class moves
 // when a component is restyled and the tour would then point at nothing.
+//
+// A step's `advance` runs on NEXT, never on entry: the step points, the press
+// acts, and the step after lands inside what opened. Its bookends are `enter`
+// (arrival), `leave` (left in EITHER direction) and `undo` (Back, reversing an
+// advance).
+
+import { TOUR_COPY } from './tourCopy'
 
 /** Version whose steps the current list represents. Bump with a NEW step. */
 export const TOUR_VERSION = '0.5.0'
 
-/** @type {import('../types').TourStep[]} */
-export const TOUR_STEPS = [
+// Behaviour only. The hole a step cuts is BLOCKED unless it says `live`: a click
+// on a file slot mid-tour opens a picker over the card that is pointing at it,
+// and every step but one is showing a control rather than asking for it.
+const STEPS = [
   {
     id: 'compare',
     run: 1,
     since: '0.5.0',
     target: '[data-tour="slots"]',
     side: 'bottom',
-    command: 'tour-demo-diff',
-    reveal: true,
-    title: 'Two files, any way you like',
-    body: 'Drop them anywhere on this window, or click a slot to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.'
+    advance: 'tour-demo-diff',
+    reveal: true
   },
   {
     id: 'share',
     run: 1,
     since: '0.5.0',
     target: '[data-tour="share"]',
-    side: 'bottom',
-    title: 'Send it sealed, not screenshotted',
-    body: 'Share seals this comparison for the people you pick. You each import the other’s public key once; after that it takes two clicks, and it stops opening on a clock you set.'
+    // The button is what you press; the comparison is what gets sealed.
+    context: '[data-tour="pane"]',
+    side: 'bottom'
+  },
+  {
+    id: 'library',
+    run: 1,
+    since: '0.5.0',
+    // The sidebar is the surface all three of these steps work inside: cut out
+    // of the veil and stroked, with the ring on the one control that matters.
+    target: '[data-tour="sidebar"]',
+    context: '[data-tour="sidebar"]',
+    point: '[data-tour="search"]',
+    side: 'right',
+    enter: 'tour-demo-search',
+    leave: 'tour-clear-search'
   },
   {
     id: 'quick-look',
     run: 1,
     since: '0.5.0',
+    // The chord is a GLOBAL shortcut that main ignores while this window is in
+    // front; the step asks for the press anyway, so it lifts that while it is up.
+    enter: 'tour-arm-chord',
+    leave: 'tour-disarm-chord',
+    // No anchor for the launcher itself: it is a separate window that opens ON
+    // TOP of this one. The step names the key and leaves the press to the user
+    // — summoning it here stole focus and put its own explanation behind it.
     target: '[data-tour="search"]',
-    side: 'right',
-    title: 'Find anything without coming back here',
-    body: 'This box searches your library. The same search opens over every other app on {shortcut} — snippets and tools alike — and works while Diff Bro is minimised.'
+    side: 'right'
   },
   {
-    id: 'settings',
+    id: 'settings-open',
+    run: 1,
+    since: '0.5.0',
+    // Absent on macOS, where the menu bar is the OS's — the missing-target
+    // fallback centres the card, and the copy names the File menu on both.
+    target: '[data-tour="menubar"]',
+    side: 'bottom',
+    advance: 'settings',
+    undo: 'tour-close-settings'
+  },
+  {
+    id: 'settings-panes',
+    run: 1,
+    since: '0.5.0',
+    target: '[data-tour="settings-nav"]',
+    context: '[data-tour="settings"]',
+    side: 'right',
+    // Idempotent going forwards, where Settings is already open; what reopens
+    // it when Back returns here from a step that closed it.
+    enter: 'settings'
+  },
+  {
+    id: 'settings-tips',
     run: 1,
     since: '0.5.0',
     target: '[data-tour="tips"]',
+    context: '[data-tour="settings"]',
     side: 'top',
-    command: 'settings',
-    title: 'Make it yours — and switch this off',
-    body: 'Reopen this any time with {settingsKey}. Fourteen themes live here, plus size limits, where your data is kept, and the shortcut above — and tips have an off switch, with a button to run this again.'
+    enter: 'settings',
+    // The last step inside Settings: leaving it either way puts the dialog
+    // away, so the steps that follow are not read through it.
+    leave: 'tour-close-settings'
   },
   {
-    id: 'snippet',
+    id: 'snippet-new',
     run: 2,
     since: '0.5.0',
+    target: '[data-tour="snippet-new"]',
+    context: '[data-tour="sidebar"]',
+    side: 'right',
+    advance: 'tour-demo-snippet',
+    undo: 'tour-close-snippet'
+  },
+  {
+    id: 'snippet-save',
+    run: 2,
+    since: '0.5.0',
+    // The one step that asks for the press it rings. Its Next does NOT save —
+    // a card button doing exactly what the ringed control does reads as two
+    // ways to do one thing, and teaches neither.
+    live: true,
     target: '[data-tour="snippet-save"]',
+    context: '[data-tour="snippet-editor"]',
     side: 'top',
-    command: 'tour-demo-snippet',
-    title: 'Park this where you can find it',
-    body: 'Anything you retype belongs here — a deploy payload, a prompt, a config block. Name it, tag it, and the search finds it next week.'
+    leave: 'tour-close-snippet'
   },
   {
     id: 'snippet-drag',
@@ -64,21 +127,27 @@ export const TOUR_STEPS = [
     since: '0.5.0',
     target: '[data-tour="pane"]',
     side: 'left',
-    zone: true,
-    from: '[data-tour="snippets"]',
-    title: 'Drag it anywhere in here',
-    body: 'The whole comparison area takes a drop — you don’t have to land on a file box. A snippet can face a file, or another snippet.'
+    zone: true
   },
   {
     id: 'diagram',
     run: 2,
     since: '0.5.0',
+    // The ring goes on the Mermaid snippet itself — the one the copy is about.
+    // A full library makes the section taller than the window, and a callout
+    // centred on THAT lands nowhere near anything it names.
     target: '[data-tour="snippets"]',
+    context: '[data-tour="sidebar"]',
+    point: '[data-tour="snippet-diagram"]',
     side: 'right',
-    title: 'A diagram change, as a diagram',
-    body: 'A Mermaid snippet previews live as you type it — there is one in here already. Compare two versions and every added, removed or changed node is marked on the picture rather than the text.'
+    // A tag filter or a leftover search hides the row this step is about, and
+    // the ring then falls back to the whole section — pointing at everything.
+    enter: 'tour-clear-filters'
   }
 ]
+
+/** @type {import('../types').TourStep[]} */
+export const TOUR_STEPS = STEPS.map((step) => ({ ...step, ...TOUR_COPY[step.id] }))
 
 const parts = (v) =>
   String(v || '0')

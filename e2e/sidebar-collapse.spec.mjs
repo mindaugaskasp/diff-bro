@@ -178,6 +178,9 @@ test('the collapsed sidebar survives a relaunch', async () => {
 })
 
 // Open a tool from the menu and close it again, so it lands in the recents.
+// Through the in-app bar, whose Tools dropdown labels them the way the rail
+// does — the OS menu spells several out ("JWT Decode"), so its labels and the
+// rail's would have to be kept in step by hand.
 async function useTool(page, name) {
   await openMenu(page, 'Tools', name)
   const dialog = page.getByRole('dialog', { name })
@@ -186,9 +189,15 @@ async function useTool(page, name) {
   await expect(dialog).toHaveCount(0)
 }
 
+// Driving the in-app menu bar, which exists on Windows and Linux only (App.vue
+// gates it on !isMac) — on a Mac there is nothing there to click. `make e2e`
+// runs in the Linux container, which is where these belong.
+const NEEDS_MENU_BAR = [process.platform === 'darwin', 'the in-app menu bar is Windows/Linux only']
+
 // Collapsing used to cost you the tools: the rail's only tools control expands
 // the sidebar again. Recents now open where they stand.
 test('the rail runs a recent tool without expanding the sidebar', async ({ page }) => {
+  test.skip(...NEEDS_MENU_BAR)
   // Use two tools so there is a recents list at all.
   await useTool(page, 'Base64')
   await useTool(page, 'UUID')
@@ -210,6 +219,7 @@ test('the rail runs a recent tool without expanding the sidebar', async ({ page 
 
 // Nine is what the rail has room for; the shelf keeps its measured three.
 test('the rail remembers as many tools as it has room for', async ({ page }) => {
+  test.skip(...NEEDS_MENU_BAR)
   const used = [
     'Base64',
     'UUID',
@@ -236,6 +246,7 @@ test('the rail fits its tools to the window, and re-fits when it changes', async
   app,
   page
 }) => {
+  test.skip(...NEEDS_MENU_BAR)
   const used = ['Base64', 'UUID', 'JWT', 'Epoch', 'URL', 'Lines', 'XML', 'JSON', 'Checksum']
   for (const name of used) await useTool(page, name)
   await collapse(page).click()
@@ -274,4 +285,75 @@ test('the rail wrench opens the tools palette, sidebar still collapsed', async (
   await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()
   await expect(rail(page)).toBeVisible()
   await expect(page.locator('.usb-top')).toHaveCount(0)
+})
+
+// Widen only, and it survives a relaunch. The sidebar collapses to a rail for
+// the other direction; a half-narrow list truncates every name without freeing
+// space worth having.
+test('the sidebar drags wider, stops at the cap, and comes back that way', async () => {
+  const dir = freshUserDataDir()
+  const drag = async (page, dx) => {
+    const grip = await page.locator('.usb-grip').boundingBox()
+    const y = grip.y + grip.height / 2
+    await page.mouse.move(grip.x + 3, y)
+    await page.mouse.down()
+    await page.mouse.move(grip.x + 3 + dx, y, { steps: 8 })
+    await page.mouse.up()
+    return (await page.locator('.saved').boundingBox()).width
+  }
+
+  try {
+    const first = await launchApp(dir)
+    const page = await firstReadyPage(first)
+    const start = (await page.locator('.saved').boundingBox()).width
+
+    expect(await drag(page, 30)).toBeGreaterThan(start)
+    // Dragged back the other way it stops where it began, rather than shrinking
+    // into a column too narrow to read a name in.
+    expect(await drag(page, -400)).toBe(start)
+    // And past the cap the pointer keeps going while the sidebar does not.
+    const capped = await drag(page, 900)
+    expect(capped).toBe(Math.round(start * 1.5))
+    await first.close()
+
+    const second = await launchApp(dir)
+    const back = await firstReadyPage(second)
+    await expect(back.locator('.saved')).toBeVisible()
+    expect((await back.locator('.saved').boundingBox()).width).toBe(capped)
+    await second.close()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The order is the store's, and the headers are the handles. Dragging one past
+// another has to survive a relaunch, or it is a preference the app forgets.
+test('a sidebar section drags to a new place and stays there', async () => {
+  const dir = freshUserDataDir()
+  const order = (page) =>
+    page
+      .locator('.usb-scroll .section-head')
+      .evaluateAll((els) => els.map((e) => e.dataset.section))
+
+  try {
+    const first = await launchApp(dir)
+    const page = await firstReadyPage(first)
+    expect(await order(page)).toStrictEqual(['saved', 'external', 'snippets'])
+
+    // HTML5 drag-and-drop is not driven by mouse events, so the handlers are
+    // called the way the browser would call them.
+    await page.locator('[data-section="snippets"]').dispatchEvent('dragstart')
+    await page.locator('[data-section="saved"]').dispatchEvent('dragover')
+    await page.locator('[data-section="saved"]').dispatchEvent('drop')
+    expect(await order(page)).toStrictEqual(['snippets', 'saved', 'external'])
+    await first.close()
+
+    const second = await launchApp(dir)
+    const back = await firstReadyPage(second)
+    await expect(back.locator('.usb-scroll .section-head').first()).toBeVisible()
+    expect(await order(back)).toStrictEqual(['snippets', 'saved', 'external'])
+    await second.close()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

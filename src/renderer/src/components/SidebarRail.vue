@@ -38,7 +38,7 @@ const groups = computed(() => [
     label: 'Saved diffs',
     count: vault.active.filter((e) => !e.from).length
   },
-  { id: 'shared', icon: 'share', label: 'External diffs', count: vault.importedActive.length },
+  { id: 'external', icon: 'share', label: 'External diffs', count: vault.importedActive.length },
   { id: 'snippets', icon: 'code', label: 'Snippets', count: snippets.entries.length }
 ])
 </script>

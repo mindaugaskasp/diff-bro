@@ -40,7 +40,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <nav class="menubar">
+  <nav class="menubar" data-tour="menubar">
     <div v-for="menu in menus" :key="menu.id" class="menu">
       <button
         class="top"

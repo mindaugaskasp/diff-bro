@@ -19,19 +19,16 @@ const step = computed(() => tour.currentStep)
 
 const shortcut = computed(() => acceleratorLabel(settings.quickLookShortcut, isMac))
 
-const { box, callout, panels, clip, found } = useSpotlight({
+const spot = useSpotlight({
   step,
   calloutEl,
   onEscape: () => tour.active && tour.skip()
 })
 
 const px = (n) => `${Math.round(n)}px`
-const ringStyle = computed(() => ({
-  left: px(box.value.x),
-  top: px(box.value.y),
-  width: px(box.value.w),
-  height: px(box.value.h)
-}))
+const boxStyle = (b) => ({ left: px(b.x), top: px(b.y), width: px(b.w), height: px(b.h) })
+const ringStyle = computed(() => boxStyle(spot.value.ring))
+const holeStyle = computed(() => boxStyle(spot.value.hole))
 const panelStyle = (p) => ({
   left: px(p.left),
   top: px(p.top),
@@ -42,19 +39,34 @@ const panelStyle = (p) => ({
 // An accent ring vanishes on an accent-filled control, so it borrows the ink
 // that is already legible on that fill.
 const onFilled = computed(() => {
-  const el = step.value && document.querySelector(step.value.target)
+  const el = step.value && document.querySelector(step.value.point ?? step.value.target)
   return !!el?.classList.contains('btn-primary')
 })
 </script>
 
 <template>
-  <div v-if="tour.active && !tour.revealing && step && found" class="tour" role="presentation">
+  <div
+    v-if="tour.active && !tour.revealing && step"
+    class="tour"
+    :class="{ soft: spot.soft }"
+    role="presentation"
+  >
     <!-- Blur and tint are separate layers on purpose: Chromium resolves
          backdrop-filter BEFORE clip-path, so a clipped blur layer blurs
          straight through its own hole. -->
-    <div v-for="(p, i) in panels" :key="i" class="tour-blur" :style="panelStyle(p)"></div>
-    <div class="tour-tint" :style="{ clipPath: clip }"></div>
+    <div v-for="(p, i) in spot.panels" :key="i" class="tour-blur" :style="panelStyle(p)"></div>
+    <div class="tour-tint" :style="{ clipPath: spot.clip }"></div>
+    <div v-if="!step.live && spot.found" class="tour-block" :style="holeStyle"></div>
     <div
+      v-if="spot.context"
+      class="tour-context"
+      :style="boxStyle(spot.context)"
+      aria-hidden="true"
+    ></div>
+    <!-- No ring when the step's control is not on screen: the card still
+         explains itself, and Next and Skip stay reachable. -->
+    <div
+      v-if="spot.found"
       class="tour-ring"
       :class="{ zone: step.zone, filled: onFilled }"
       :style="ringStyle"
@@ -65,10 +77,12 @@ const onFilled = computed(() => {
       :step="step"
       :index="tour.index"
       :count="tour.stepCount"
-      :position="callout"
-      :box="box"
+      :position="spot.callout"
+      :box="spot.ring"
       :shortcut="shortcut"
+      :anchored="spot.found"
       @next="tour.next()"
+      @back="tour.back()"
       @skip="tour.skip()"
     />
   </div>

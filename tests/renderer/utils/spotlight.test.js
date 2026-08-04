@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { CALLOUT_W, holePath, placeCallout } from '../../../src/renderer/src/utils/spotlight'
+import {
+  CALLOUT_W,
+  holePath,
+  placeCallout,
+  spotlightFor
+} from '../../../src/renderer/src/utils/spotlight'
 
 const stage = { w: 1000, h: 600 }
 const box = (over = {}) => ({ x: 400, y: 300, w: 120, h: 30, ...over })
@@ -61,6 +66,89 @@ describe('placeCallout', () => {
   it('keeps a side callout clear of the target it points at', () => {
     const pos = placeCallout({ box: box(), side: 'right', stage, calloutH: 150 })
     expect(pos.x).toBeGreaterThanOrEqual(520)
+  })
+})
+
+describe('spotlightFor', () => {
+  it('anchors on the target when it is on screen', () => {
+    const s = spotlightFor({ box: box(), side: 'bottom', stage, calloutH: 150 })
+    expect(s.found).toBe(true)
+    expect(s.clip).toContain('evenodd')
+    expect(s.panels).toHaveLength(4)
+  })
+
+  // Flush against the pane it outlines, a dashed area stroke doubles up with
+  // the border that pane already sits on — the tab strip's.
+  it('pulls an area stroke off the edges it would otherwise double', () => {
+    const pane = { x: 260, y: 40, w: 700, h: 500 }
+    const s = spotlightFor({ box: box(), context: pane, side: 'bottom', stage, calloutH: 150 })
+    expect(s.context.x).toBeGreaterThan(pane.x)
+    expect(s.context.y).toBeGreaterThan(pane.y)
+    expect(s.context.x + s.context.w).toBeLessThan(pane.x + pane.w)
+    // A control's ring still hugs its own box — an offset there collides with
+    // the accent underline the active tab already draws.
+    expect(s.ring).toStrictEqual(box())
+  })
+
+  it('insets a zone ring the same way, while the hole stays on the target', () => {
+    const pane = { x: 260, y: 40, w: 700, h: 500 }
+    const s = spotlightFor({ box: pane, side: 'left', stage, calloutH: 150, zone: true })
+    expect(s.ring.x).toBeGreaterThan(pane.x)
+    expect(s.box).toStrictEqual(pane)
+  })
+
+  // A hole cut over one row of a dialog reads as a lighter band pasted across
+  // it, so a context that CONTAINS the target opens the whole surface instead.
+  it('opens the veil around a context the target sits inside', () => {
+    const dialog = { x: 300, y: 100, w: 400, h: 400 }
+    const row = { x: 320, y: 420, w: 360, h: 30 }
+    const s = spotlightFor({ box: row, context: dialog, side: 'top', stage, calloutH: 150 })
+    expect(s.hole).toStrictEqual(dialog)
+    expect(s.ring).toStrictEqual(row)
+    // Nothing to soften: the surface is open rather than veiled through.
+    expect(s.soft).toBe(false)
+  })
+
+  it('softens the veil instead when the context sits BESIDE the target', () => {
+    const pane = { x: 260, y: 200, w: 700, h: 300 }
+    const button = { x: 800, y: 20, w: 80, h: 26 }
+    const s = spotlightFor({ box: button, context: pane, side: 'bottom', stage, calloutH: 150 })
+    expect(s.hole).toStrictEqual(button)
+    expect(s.soft).toBe(true)
+  })
+
+  // The four blur rectangles share edges. Rounded independently on their way
+  // into a style, two of those edges disagreed by a pixel and left a hairline of
+  // un-blurred app between them — which a hover repaint made visible.
+  it('cuts the veil on whole pixels so the blur panels leave no seam', () => {
+    const s = spotlightFor({
+      box: { x: 400.4, y: 300.6, w: 120.3, h: 30.7 },
+      side: 'bottom',
+      stage,
+      calloutH: 150
+    })
+    const whole = (n) => Number.isInteger(n)
+    for (const p of s.panels) {
+      expect([p.left, p.top, p.width, p.height].every(whole), JSON.stringify(p)).toBe(true)
+    }
+    const [top, bottom, left, right] = s.panels
+    expect(top.height).toBe(s.hole.y)
+    expect(bottom.top).toBe(s.hole.y + s.hole.h)
+    expect(left.top).toBe(s.hole.y)
+    expect(right.top).toBe(s.hole.y)
+    expect(left.height).toBe(s.hole.h)
+  })
+
+  // A step whose target is not on screen — a collapsed sidebar, a dialog that
+  // did not open — used to render NOTHING while the tour stayed active: no
+  // callout, no Next, no Skip, and no way out but Escape.
+  it('still yields a readable overlay when the target is missing', () => {
+    const s = spotlightFor({ box: null, side: 'bottom', stage, calloutH: 150 })
+    expect(s.found).toBe(false)
+    expect(s.clip).toBe('none')
+    expect(s.panels).toEqual([{ left: 0, top: 0, width: stage.w, height: stage.h }])
+    expect(inside(s.callout, 150)).toBe(true)
+    expect(s.callout.x).toBeCloseTo((stage.w - CALLOUT_W) / 2, 0)
   })
 })
 

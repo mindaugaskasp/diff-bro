@@ -283,4 +283,38 @@
  * @property {string|null} [email]   null when none is set
  */
 
+/**
+ * One beat of the onboarding tour. `advance` runs when NEXT is pressed, so the
+ * step points at a control and the press performs the action; `enter` is the
+ * rare effect that belongs on arrival, and only ever happens INSIDE the ring.
+ * @typedef {object} TourStep
+ * @property {string} id
+ * @property {1|2} run              which launch's block this belongs to
+ * @property {string} since         app version that introduced it
+ * @property {string} target        a `[data-tour="…"]` selector
+ * @property {'top'|'bottom'|'left'|'right'} [side]  preferred callout side
+ * @property {string} title
+ * @property {string} body          `{shortcut}` / `{settingsKey}` are filled in
+ * @property {string} [advance]     command the step's Next runs
+ * @property {string} [enter]       command run as the step arrives
+ * @property {string} [leave]       command run when the step is left, either way
+ * @property {string} [undo]        command Back runs to reverse this step's advance
+ * @property {string} [context]     a region the step is ABOUT: stroked, veil softened
+ * @property {string} [point]       the control inside a large target the ring belongs on
+ * @property {string} [nextLabel]   what the primary says when it does something
+ * @property {boolean} [zone]       an area, not a control: dashed, callout inside
+ * @property {boolean} [live]       the hole accepts the pointer; blocked by default
+ * @property {boolean} [reveal]     drop the veil for a beat before advancing
+ */
+
+/**
+ * What `tourPlan` needs to decide what plays now.
+ * @typedef {object} TourState
+ * @property {boolean} showTips
+ * @property {number} tourStep      index of the next unseen step
+ * @property {string} seenVersion   '' until every run has been walked
+ * @property {number} [tourDeferred] how many times "Not now" was chosen
+ * @property {TourStep[]} [allSteps] the list to plan over; defaults to TOUR_STEPS
+ */
+
 export {}

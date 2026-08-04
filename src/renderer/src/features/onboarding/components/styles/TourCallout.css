@@ -40,22 +40,40 @@
 }
 .tour-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
   padding-top: 2px;
 }
-.tour-dots {
-  display: flex;
-  gap: var(--space-1);
+.tour-foot .btn {
+  flex: 0 0 auto;
+}
+/* Neutral navigation, so a plain .btn — .btn-ghost is the dismissive twin
+   standing next to the primary, and Skip tips already holds that role. */
+.tour-back {
   margin-right: auto;
 }
-.tour-dot {
-  width: 5px;
-  height: 5px;
+/* Beside the counter rather than in the footer, and a bar rather than one dot
+   per step: a replay plays all ten at once, and ten dots ran straight into the
+   control beside them. This never grows with the count. */
+.tour-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tour-progress {
+  flex: 1;
+  min-width: 24px;
+  height: 3px;
   border-radius: var(--radius-pill);
   background: var(--btn-edge);
+  overflow: hidden;
 }
-.tour-dot.on {
+.tour-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
   background: var(--accent);
 }
 
@@ -78,13 +96,6 @@
   bottom: -5px;
   border-left: none;
   border-top: none;
-}
-/* Placement centres the card on the target vertically, so the card's own middle
-   already IS the target's middle. */
-.beak-left .tour-beak,
-.beak-right .tour-beak {
-  top: 50%;
-  margin-top: -5px;
 }
 .beak-left .tour-beak {
   left: -5px;

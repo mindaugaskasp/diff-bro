@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Diagrams: readable at rest, the other diagram types, click a change to pan to it. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding: sample comparison, coach marks, what's new on upgrade. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — four tracks. Diagrams: readable at rest, the other diagram types, click a change to pan to it. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding (done): sample comparison, coach marks, what's new on upgrade. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -179,18 +179,21 @@ stateDiagram-v2
   launch --> runOne: no stored step
   launch --> app: both runs done
   launch --> prompt: run one done, deferred once
-  runOne --> prompt: four steps, ends on the tips row
+  runOne --> prompt: six steps, ends on the tips row
   prompt --> runTwo: Show me
   prompt --> app: Not now (re-asks once, then stops)
-  runTwo --> app: three steps
+  runTwo --> app: four steps
   runOne --> app: Escape or Skip tips, tips off for good
   app --> runOne: Help ▸ Show Tour, ignores every flag
 ```
 
-Done. Anchored coach marks over the real controls, split 4 + 3.
+Done. Anchored coach marks over the real controls, split 6 + 4.
 
-- Steps name a `data-tour` attribute; the overlay measures it at run time and
-  hides itself if the element goes
+- A step's command fires on NEXT, never on entry: the step points at the
+  control, Next performs the action, the step after it lands inside what opened
+- Steps name a `data-tour` attribute; the overlay measures it at run time. A
+  target that is not on screen still gets its card, centred and ringless — the
+  tour must not wedge on a collapsed sidebar or a platform without a menu bar
 - Veil is TWO layers: tint is one clipped element, blur is four rectangles —
   `backdrop-filter` resolves before `clip-path`
 - Blur, not just scrim: a black scrim moves a dark ground 1.00–1.17× (beacon is
@@ -198,6 +201,14 @@ Done. Anchored coach marks over the real controls, split 4 + 3.
 - Callout is `--bg-elevated` + `--btn-edge`; the pair swaps roles by ground
 - Run two is offered by a dialog immediately, never deferred to a launch that
   may be a month away
+- Everything the tour opens leaves with it: the demo's scratch tab, the example
+  snippet it saved, the Settings dialog, the editor, the search it typed —
+  whether the run finished or was walked out of
+- Back steps one at a time. A step has four bookends — `advance` on Next,
+  `enter` on arrival, `leave` in either direction, `undo` for Back — so Settings
+  closes again rather than covering the control the step returns to
+- A step's hole is blocked unless it declares `live`: a click on a file slot
+  mid-tour opened a picker over the card that was pointing at it
 - Open: the diagram step still points at the Snippets section rather than a
   loaded diagram diff
 

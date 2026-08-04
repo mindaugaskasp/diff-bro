@@ -1,6 +1,6 @@
-/* The colours come from --syn-*, solved per theme in themes.css against that
-   theme's own ground — so this re-tints on all 14 rather than carrying a
-   palette of its own. */
+/* Layout only. The .syn-* ROLE colours live in styles/ui.css: the launcher
+   renders the same classes in its own window, and a scoped copy here reaches
+   nothing of its. */
 .syn {
   display: block;
   font: inherit;
@@ -11,23 +11,4 @@
 .syn-line {
   display: block;
   min-height: 1em;
-}
-.syn-keyword {
-  color: var(--syn-keyword);
-}
-.syn-string {
-  color: var(--syn-string);
-}
-.syn-number {
-  color: var(--syn-number);
-}
-.syn-property {
-  color: var(--syn-property);
-}
-/* Comments recede by chroma rather than by going faint — dimming them far
-   enough to read as an aside would have taken them under the contrast floor on
-   the light grounds. */
-.syn-comment {
-  color: var(--syn-comment);
-  font-style: italic;
 }

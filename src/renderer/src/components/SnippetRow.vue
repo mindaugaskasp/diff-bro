@@ -79,6 +79,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
 <template>
   <li
     class="row"
+    :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"
     @dragstart="startDrag($event, entry)"

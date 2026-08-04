@@ -697,3 +697,28 @@ button.tag-chip:hover .usb-tct {
   align-items: center;
   gap: var(--space-3);
 }
+
+/* Syntax roles, shared: the snippet preview card paints them with Monaco's
+   tokens and the Quick Look-up launcher with Prism's, in two different windows.
+   Scoped to either component the other renders spans that match nothing — which
+   is exactly how the launcher's preview stayed monochrome. Colours come from
+   --syn-*, solved per theme against that theme's own ground. */
+.syn-keyword {
+  color: var(--syn-keyword);
+}
+.syn-string {
+  color: var(--syn-string);
+}
+.syn-number {
+  color: var(--syn-number);
+}
+.syn-property {
+  color: var(--syn-property);
+}
+/* Comments recede by chroma rather than by going faint — dimming them far
+   enough to read as an aside would have taken them under the contrast floor on
+   the light grounds. */
+.syn-comment {
+  color: var(--syn-comment);
+  font-style: italic;
+}

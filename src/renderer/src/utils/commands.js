@@ -22,13 +22,6 @@ import { tabsFullMessage } from './cliCommand'
 
 const openTool = (tool) => (s) => (s.ui.textTool = tool)
 
-const DEMO_SNIPPET = `{
-  "service": "checkout-api",
-  "replicas": 3,
-  "env": "staging",
-  "featureFlags": { "newCart": true, "fastCheckout": false }
-}`
-
 /** @type {Record<string, (stores: CommandStores) => void>} */
 export const COMMANDS = {
   'open-left': ({ diff }) => diff.pick('left'),
@@ -94,39 +87,20 @@ export const COMMANDS = {
   // Summoned deliberately, so it ignores the tips setting rather than reading a
   // request to see it once as consent to automatic tips.
   'show-tour': ({ onboarding }) => onboarding.replay(),
-  // The tour's snippet step opens the editor on a worked example rather than a
-  // blank draft — the point of the step is what a kept snippet looks like.
-  'tour-demo-snippet': ({ snippets }) => {
-    // Replaying with an editor open would throw away an unsaved draft — the
-    // same courtesy openDemoDiff already shows an in-progress comparison.
-    if (!snippets.editingSnippet) snippets.startNewSnippetFrom(DEMO_SNIPPET, 'json')
-  },
-  // Something to point AT: step 1 is about the file slots, and empty boxes
-  // teach nothing.
-  'tour-demo-diff': (stores) => openDemoDiff(stores)
+  // The tour's own props. Each one is fired by a step's Next, never by arriving
+  // at a step, and every one of them is put back when the tour ends.
+  'tour-demo-diff': ({ onboarding }) => onboarding.openDemo(),
+  'tour-demo-snippet': ({ onboarding }) => onboarding.openSnippet(),
+  'tour-close-settings': ({ ui }) => (ui.showSettingsDialog = false),
+  'tour-close-snippet': ({ onboarding }) => onboarding.closeSnippet(),
+  'tour-demo-search': ({ onboarding }) => onboarding.typeSearch(),
+  'tour-clear-search': ({ onboarding }) => onboarding.clearSearch(),
+  'tour-clear-filters': ({ onboarding }) => onboarding.clearFilters(),
+  'tour-arm-chord': ({ onboarding }) => onboarding.armChord(),
+  'tour-disarm-chord': ({ onboarding }) => onboarding.disarmChord()
 }
 
 export const commandActions = () => Object.keys(COMMANDS)
-
-// Never displaces what the user already has open: a comparison in progress gets
-// its own tab, and a failure here is silent — the step still teaches the route.
-async function openDemoDiff({ diff, tabs }) {
-  if (diff.left || diff.right) {
-    if (!tabs.canHost?.(true)) return
-    tabs.newTab({ transient: true })
-  }
-  try {
-    // Contents, not paths: main refuses to read back anything under
-    // userData, which is the guard standing between a compromised renderer and
-    // vault.key. It hands over the payload directly instead.
-    const sides = ['left', 'right']
-    for (const [i, file] of ((await window.api.demoFiles()) ?? []).entries()) {
-      diff.receive(sides[i], file)
-    }
-  } catch {
-    // No demo pair on disk is not worth a notice mid-tour.
-  }
-}
 
 /**
  * @param {string} action

@@ -17,7 +17,7 @@
   background: var(--scrim);
   /* The tint SWALLOWS clicks, and the clipped-out hole does not — so the spotlit
      control stays live (the "press Save" step depends on it) while everything
-     else is inert. Without this the veil was decoration: you could click through
+     else is blocked. Without this the veil was decoration: you could click through
      it and navigate the dialog the tour was pointing into, leaving the ring on a
      control that was no longer there. */
   pointer-events: auto;
@@ -52,6 +52,36 @@
 }
 .tour-ring.filled {
   border-color: var(--text-on-accent);
+}
+
+/* The REGION a step is about, when that is not the control it points at: the
+   Share button is what you press, the comparison is what gets sealed. Stroked
+   rather than cut out — a second hole would need a second subpath in the tint
+   and a fifth blur rectangle — and the veil is softened for the same step, since
+   a diff blurred past reading cannot be what the step says is being shared. */
+.tour-context {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+}
+.tour.soft .tour-tint {
+  opacity: 0.45;
+}
+.tour.soft .tour-blur {
+  backdrop-filter: blur(1px) saturate(0.92);
+  -webkit-backdrop-filter: blur(1px) saturate(0.92);
+}
+
+/* The hole stays cut, so the target is sharp and unblurred — but the pointer
+   stops here unless the step is `live`. A step SHOWS a control; only the one
+   that asks you to press it lets the press through. The cursor says so rather
+   than a tip: the card sits beside the control it rings, so a bubble under that
+   control landed on top of the step's own words. */
+.tour-block {
+  position: absolute;
+  pointer-events: auto;
+  cursor: not-allowed;
 }
 
 .tour :deep(.tour-callout) {

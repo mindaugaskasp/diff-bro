@@ -3,6 +3,7 @@ import { applyHeadlessSwitches, installNetworkKillSwitch } from './security'
 import { createWindow } from './window'
 import { registerAppDataIpc } from './appData'
 import { registerDemoIpc } from './demoFiles'
+import { registerQuickLookFocusIpc } from './quickLookFocus'
 import { installMenu, registerMenuIpc } from './menu'
 import { registerVaultIpc } from './vault'
 import { registerClipboardIpc } from './clipboard'
@@ -62,6 +63,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     installNetworkKillSwitch()
     registerAppDataIpc()
     registerDemoIpc()
+    registerQuickLookFocusIpc()
     installMenu()
     registerMenuIpc()
     registerVaultIpc()
