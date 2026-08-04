@@ -9,6 +9,11 @@ vi.mock('electron', () => ({
   app: { getPath: () => tempRoot, on: vi.fn() }
 }))
 
+// Windows has no POSIX mode bits to assert, and planting a directory symlink
+// there needs a privilege the runner is not guaranteed. The behaviour these
+// three cover is Linux/macOS-shaped; the rest of the file runs everywhere.
+const posixOnly = it.skipIf(process.platform === 'win32')
+
 const { STAGE_TTL_MS, safeName, stageFile, sweepStage } =
   await import('../../src/main/clipboardStage')
 
@@ -97,7 +102,7 @@ describe('stageFile', () => {
     expect((await stat(res.path)).size).toBe(7)
   })
 
-  it('creates the staging directory 0o700', async () => {
+  posixOnly('creates the staging directory 0o700', async () => {
     await stageFile({ name: 'a.json', bytes: 'x' })
     expect((await stat(stageDir())).mode & 0o777).toBe(0o700)
   })
@@ -106,7 +111,7 @@ describe('stageFile', () => {
   // can pre-create, and mkdir(..., { mode }) does NOT chmod an existing
   // directory — so the 0o700 promise would silently not hold. mkdtemp cannot
   // adopt anything, whatever is sitting at the old path.
-  it('never adopts a directory it did not create', async () => {
+  posixOnly('never adopts a directory it did not create', async () => {
     const squatted = join(tempRoot, 'diffbro-clipboard')
     const victim = mkdtempSync(join(tempRoot, 'victim-'))
     symlinkSync(victim, squatted)
@@ -178,7 +183,7 @@ describe('sweepStage', () => {
   })
 
   // Unlink it, never read or delete THROUGH it.
-  it('unlinks a symlink at a staging path without touching its target', async () => {
+  posixOnly('unlinks a symlink at a staging path without touching its target', async () => {
     const victim = mkdtempSync(join(tempRoot, 'victim-'))
     writeFileSync(join(victim, 'keep.txt'), 'not ours')
     symlinkSync(victim, join(tempRoot, 'diffbro-clipboard-planted'))

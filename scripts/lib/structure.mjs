@@ -61,6 +61,20 @@ export function findCycles(graph) {
   return cycles
 }
 
+/**
+ * ESLint reports host-native absolute paths; every key in this guard is a
+ * forward-slash repo path, so on Windows the two never meet.
+ * @param {string} root      repo root, with or without a trailing separator
+ * @param {string} absolute
+ * @returns {string}
+ */
+export function repoRelative(root, absolute) {
+  const slashed = (p) => p.replace(/\\/g, '/')
+  const base = slashed(root).replace(/\/?$/, '/')
+  const full = slashed(absolute)
+  return full.startsWith(base) ? full.slice(base.length) : full
+}
+
 const beaten = (file, kind, cap, actual) =>
   typeof cap === 'number' && actual < cap ? [{ file, kind, cap, actual }] : []
 

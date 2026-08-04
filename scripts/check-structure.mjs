@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 import { loadESLint } from 'eslint'
-import { buildGraph, cycleKey, findCycles, staleEntries } from './lib/structure.mjs'
+import { buildGraph, cycleKey, findCycles, repoRelative, staleEntries } from './lib/structure.mjs'
 import { LEGACY_SIZE } from './lib/legacySize.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -68,7 +68,8 @@ async function measure(files) {
   }).lintFiles(files)
 
   for (const result of results) {
-    const rel = result.filePath.replace(root, '')
+    const rel = repoRelative(root, result.filePath)
+    if (!measured[rel]) throw new Error(`lint result outside the measured set: ${result.filePath}`)
     for (const m of result.messages) {
       if (m.ruleId !== 'max-lines-per-function') continue
       const lines = Number(m.message.match(/\((\d+)\)/)?.[1] ?? 0)

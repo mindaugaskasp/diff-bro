@@ -3,7 +3,13 @@
 // than by walking the real tree — a guard tested against the source it guards
 // passes for as long as the source happens to be clean.
 import { describe, expect, it } from 'vitest'
-import { buildGraph, cycleKey, findCycles, staleEntries } from '../../scripts/lib/structure.mjs'
+import {
+  buildGraph,
+  cycleKey,
+  findCycles,
+  repoRelative,
+  staleEntries
+} from '../../scripts/lib/structure.mjs'
 
 const graphOf = (edges) => new Map(Object.entries(edges))
 
@@ -88,6 +94,35 @@ describe('buildGraph', () => {
   // walk into node_modules.
   it('ignores a bare package specifier', () => {
     expect(buildGraph(files, read).get('src/b.js')).toEqual([])
+  })
+})
+
+// The key ESLint's absolute path has to become. A backslash key matches nothing
+// in LEGACY_SIZE, which is how the Windows release build crashed on an
+// undefined lookup while macOS stayed green.
+describe('repoRelative', () => {
+  it('keys a Windows lint result the way LEGACY_SIZE is written', () => {
+    expect(
+      repoRelative('D:\\a\\diff-bro\\diff-bro\\', 'D:\\a\\diff-bro\\diff-bro\\src\\main\\share.js')
+    ).toBe('src/main/share.js')
+  })
+
+  it('keys a POSIX lint result the same way', () => {
+    expect(repoRelative('/home/x/diff-bro/', '/home/x/diff-bro/src/main/share.js')).toBe(
+      'src/main/share.js'
+    )
+  })
+
+  it('accepts a root with no trailing separator', () => {
+    expect(repoRelative('D:\\a\\diff-bro\\diff-bro', 'D:\\a\\diff-bro\\diff-bro\\src\\a.js')).toBe(
+      'src/a.js'
+    )
+  })
+
+  // A repo checked out at a path that repeats — replace() would cut the FIRST
+  // occurrence and key the file 'diff-bro/src/a.js'.
+  it('strips the root prefix, not a later repeat of it', () => {
+    expect(repoRelative('/w/diff-bro/', '/w/diff-bro/src/diff-bro/a.js')).toBe('src/diff-bro/a.js')
   })
 })
 
