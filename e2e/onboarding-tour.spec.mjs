@@ -19,9 +19,8 @@ test('a cold launch opens run one on the file slots', async ({ page }) => {
   await expect(callout(page)).toBeVisible()
   await expect(callout(page).locator('.tour-step-n')).toHaveText('Step 1 of 4')
 
-  // Step 1 points at the slots, so it loads the shipped demo pair BY PATH —
-  // written by main into the data directory, opened through the same read the
-  // user's own files take. There is nothing to point at otherwise.
+  // Step 1 points at the slots, and empty boxes teach nothing — main hands over
+  // the shipped demo pair's CONTENTS (never a path the renderer reads back).
   await expect(page.locator('[data-tour="slots"]')).toContainText('demo-config-v1.json')
   await expect(page.locator('[data-tour="slots"]')).toContainText('demo-config-v2.json')
 

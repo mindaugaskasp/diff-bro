@@ -22,7 +22,7 @@ const shortcut = computed(() => acceleratorLabel(settings.quickLookShortcut, isM
 const { box, callout, panels, clip, found } = useSpotlight({
   step,
   calloutEl,
-  onEscape: () => tour.skip()
+  onEscape: () => tour.active && tour.skip()
 })
 
 const px = (n) => `${Math.round(n)}px`

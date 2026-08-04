@@ -44,8 +44,8 @@ describe('the tour demo pair', () => {
       expect(p.content).toBeTruthy()
       expect(() => JSON.parse(p.content)).not.toThrow()
     }
-    // file:read refuses anything under the data dir; the renderer must never
-    // need to ask for one of these by path.
+    // file:read refuses anything under userData; the renderer must never need
+    // to ask for one of these by path.
     expect(payloads[0].name).toBe('demo-config-v1.json')
   })
 

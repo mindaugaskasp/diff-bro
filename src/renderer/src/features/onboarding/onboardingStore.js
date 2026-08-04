@@ -115,7 +115,10 @@ export const useOnboardingStore = defineStore('onboarding', {
       if (runBlockAt(this.tourStep).length) this.promptOpen = true
     },
     // Leaving early is an answer, not a pause — including for every later run.
+    // Guarded because Escape reaches here from a listener that outlives the
+    // tour: without it, every Escape in the app turned tips off and wrote.
     skip() {
+      if (!this.active) return
       this.active = false
       this.promptOpen = false
       this.steps = []

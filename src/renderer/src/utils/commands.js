@@ -96,7 +96,11 @@ export const COMMANDS = {
   'show-tour': ({ onboarding }) => onboarding.replay(),
   // The tour's snippet step opens the editor on a worked example rather than a
   // blank draft — the point of the step is what a kept snippet looks like.
-  'tour-demo-snippet': ({ snippets }) => snippets.startNewSnippetFrom(DEMO_SNIPPET, 'json'),
+  'tour-demo-snippet': ({ snippets }) => {
+    // Replaying with an editor open would throw away an unsaved draft — the
+    // same courtesy openDemoDiff already shows an in-progress comparison.
+    if (!snippets.editingSnippet) snippets.startNewSnippetFrom(DEMO_SNIPPET, 'json')
+  },
   // Shows the launcher briefly, so it is something the user has seen rather
   // than only read about.
   'tour-quicklook-peek': ({ onboarding }) => onboarding.peekQuickLook(),
@@ -115,8 +119,8 @@ async function openDemoDiff({ diff, tabs }) {
     tabs.newTab({ transient: true })
   }
   try {
-    // Contents, not paths: main refuses to read back anything under the data
-    // directory, which is the guard standing between a compromised renderer and
+    // Contents, not paths: main refuses to read back anything under
+    // userData, which is the guard standing between a compromised renderer and
     // vault.key. It hands over the payload directly instead.
     const sides = ['left', 'right']
     for (const [i, file] of ((await window.api.demoFiles()) ?? []).entries()) {

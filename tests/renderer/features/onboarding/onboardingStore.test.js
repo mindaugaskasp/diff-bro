@@ -148,6 +148,14 @@ describe('opting out', () => {
     expect(relaunched.active).toBe(false)
   })
 
+  it('ignores a skip when no tour is running — Escape closes dialogs all day', () => {
+    const tour = useOnboardingStore()
+    expect(tour.active).toBe(false)
+    tour.skip()
+    expect(tour.showTips).toBe(true)
+    expect(localStorage.getItem('diffbro.onboarding')).toBeNull()
+  })
+
   it('can be skipped from the very first step', () => {
     const tour = useOnboardingStore()
     tour.begin()

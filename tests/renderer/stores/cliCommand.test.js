@@ -173,9 +173,7 @@ describe('runCliCommand — hostile paths', () => {
     }
     const store = useDiffStore()
     withTabs()
-    await expect(
-      cli({ name: 'compare', files: ['/work/dir'] })
-    ).resolves.toBeUndefined()
+    await expect(cli({ name: 'compare', files: ['/work/dir'] })).resolves.toBeUndefined()
     expect(store.left).toBeNull()
     expect(store.notice).toBeTruthy()
   })

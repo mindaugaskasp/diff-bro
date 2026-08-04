@@ -59,7 +59,7 @@ export function ensureDemoFiles(root = getDataDir()) {
 
 /**
  * The pair as the renderer consumes it — CONTENTS, not paths. `file:read`
- * refuses anything under the data directory on purpose (a raw path arg would be
+ * refuses anything under userData on purpose (a raw path arg would be
  * an arbitrary-file-read primitive in a compromised renderer), and that guard is
  * not one to weaken for a demo. Main owns these files, so main hands over what
  * it already knows.

@@ -7,6 +7,9 @@ const rectOf = (el) => {
   return { x: r.left, y: r.top, w: r.width, h: r.height }
 }
 const same = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
+// A template ref on a COMPONENT holds the instance, whose offsetHeight is
+// undefined — read the root node or every placement silently uses the fallback.
+const heightOf = (ref) => (ref?.$el ?? ref)?.offsetHeight || 160
 
 // Everything the overlay needs for one target, measured against the window.
 function spotlightFor(step, el, calloutH) {
@@ -53,10 +56,7 @@ export function useSpotlight({ step, calloutEl, onEscape }) {
     const el = targetEl()
     found.value = !!el
     if (!el) return
-    // `calloutEl` is a COMPONENT ref, so its height is on $el — reading
-    // offsetHeight off the instance is undefined and silently falls back.
-    const node = calloutEl.value?.$el ?? calloutEl.value
-    const next = spotlightFor(step.value, el, node?.offsetHeight || 160)
+    const next = spotlightFor(step.value, el, heightOf(calloutEl.value))
     ;[box.value, panels.value, clip.value, callout.value] = [
       next.box,
       next.panels,
