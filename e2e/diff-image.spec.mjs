@@ -74,7 +74,13 @@ test('a saved diff exports a real screenshot of the diff view', async ({ page })
 test('the screenshot is of the saved diff, and excludes the app chrome', async ({ page }) => {
   await saveDiff(page, 'First diff')
 
-  // A second, different comparison is left on screen unsaved.
+  // A second, different comparison is left on screen unsaved — in a NEW tab,
+  // because the saved one no longer offers the paste/file toggle: that control
+  // sets a comparison up, and a vault-backed tab has nothing to set up.
+  await page
+    .locator('.diff-tabs')
+    .getByRole('button', { name: 'New comparison', exact: true })
+    .click()
   await page.getByRole('button', { name: 'Paste text' }).click()
   await page.getByPlaceholder('Paste original text here').fill('zulu')
   await page.getByPlaceholder('Paste changed text here').fill('zulu\nyankee')
