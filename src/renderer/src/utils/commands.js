@@ -101,9 +101,6 @@ export const COMMANDS = {
     // same courtesy openDemoDiff already shows an in-progress comparison.
     if (!snippets.editingSnippet) snippets.startNewSnippetFrom(DEMO_SNIPPET, 'json')
   },
-  // Shows the launcher briefly, so it is something the user has seen rather
-  // than only read about.
-  'tour-quicklook-peek': ({ onboarding }) => onboarding.peekQuickLook(),
   // Something to point AT: step 1 is about the file slots, and empty boxes
   // teach nothing.
   'tour-demo-diff': (stores) => openDemoDiff(stores)

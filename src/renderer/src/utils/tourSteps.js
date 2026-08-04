@@ -35,9 +35,8 @@ export const TOUR_STEPS = [
     since: '0.5.0',
     target: '[data-tour="search"]',
     side: 'right',
-    command: 'tour-quicklook-peek',
     title: 'Find anything without coming back here',
-    body: 'That floating panel is the same search — it opens over every other app on {shortcut}, finds snippets and tools alike, and works while Diff Bro is minimised. This box is its in-window twin.'
+    body: 'This box searches your library. The same search opens over every other app on {shortcut} — snippets and tools alike — and works while Diff Bro is minimised.'
   },
   {
     id: 'settings',

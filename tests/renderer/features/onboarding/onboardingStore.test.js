@@ -275,23 +275,3 @@ describe('the reveal after step one', () => {
     expect(tour.revealing).toBe(false)
   })
 })
-
-describe('the quick look-up peek', () => {
-  it('opens the launcher and takes it away again — it is a demo, not a task', () => {
-    const toggle = vi.fn()
-    const hide = vi.fn()
-    window.api = { appVersion: TOUR_VERSION, quickLookToggle: toggle, quickLookHide: hide }
-
-    useOnboardingStore().peekQuickLook()
-    expect(toggle).toHaveBeenCalledOnce()
-    expect(hide).not.toHaveBeenCalled()
-
-    vi.runAllTimers()
-    expect(hide).toHaveBeenCalledOnce()
-  })
-
-  it('survives a build where the launcher IPC is absent', () => {
-    window.api = { appVersion: TOUR_VERSION }
-    expect(() => useOnboardingStore().peekQuickLook()).not.toThrow()
-  })
-})

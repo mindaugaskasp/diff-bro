@@ -7,8 +7,6 @@ import { TOUR_STEPS, TOUR_VERSION, runBlockAt, tourPlan } from '../../utils/tour
 // slice's state, and the core store is already at its size cap.
 const KEY = 'onboarding'
 const MAX_DEFER = 2
-// Long enough to register as a window, short enough not to interrupt.
-const PEEK_MS = 2200
 // The beat after step one: the veil lifts so the comparison it just loaded is
 // actually SEEN, rather than described through a blur and then replaced.
 const REVEAL_MS = 1800
@@ -42,7 +40,6 @@ function readState() {
     promptOpen: false,
     // "Not now" also silences the prompt for the rest of this session.
     asked: false,
-    peekTimer: null,
     revealTimer: null,
     // Veil down, tour still running: a pause to look at what step one loaded.
     revealing: false,
@@ -169,15 +166,6 @@ export const useOnboardingStore = defineStore('onboarding', {
     setShowTips(value) {
       this.showTips = value !== false
       this.persist()
-    },
-    // Shows the launcher for a moment so it is a thing the user has SEEN, then
-    // takes it away again. Deliberately not a "now you try it" gate: the whole
-    // point is a fast orientation, and the global chord can be taken by another
-    // app, which would turn one step into a dead end.
-    peekQuickLook() {
-      clearTimeout(this.peekTimer)
-      window.api?.quickLookToggle?.()
-      this.peekTimer = setTimeout(() => window.api?.quickLookHide?.(), PEEK_MS)
     }
   }
 })
