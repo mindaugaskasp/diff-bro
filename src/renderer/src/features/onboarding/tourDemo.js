@@ -80,19 +80,13 @@ export function clearFilters() {
 }
 
 /**
- * A demo pair, in a scratch tab of its own.
+ * Loads a demo pair into whatever tab is live. Split from `openPair` because a
+ * REPLAY plays every step as one run: the scratch tab from step one is still
+ * open when the diagram step wants its own pair, and stacking a second tab for
+ * it would leave two behind.
  * @param {'config'|'diagram'} [kind]
- * @returns {Promise<string|null>} the tab holding it, null when there is no room
  */
-export async function openPair(kind) {
-  const tabs = useTabsStore()
-  if (!tabs.canHost(true)) return null
-  const id = tabs.newTab({ transient: true })
-  if (!id) return null
-  // Kept out of the saved session as well as closed at the end: quitting
-  // mid-tour is the one exit that never reaches `clearStage`.
-  const tab = tabs.tabs.find((t) => t.id === id)
-  if (tab) tab.ephemeral = true
+async function loadPair(kind) {
   try {
     // Contents, not paths: main refuses to read anything back out of userData,
     // which is what stands between a compromised renderer and the vault key.
@@ -103,11 +97,43 @@ export async function openPair(kind) {
     }
     // Two Mermaid files still open as text: the diagram is behind the semantic
     // toggle, and the step is about what that toggle shows.
-    if (kind === 'diagram' && diff.canCompareDiagram) diff.semanticView = true
+    diff.semanticView = kind === 'diagram' && diff.canCompareDiagram
   } catch {
     // No demo pair on disk is not worth a notice mid-tour.
   }
+}
+
+/**
+ * A demo pair, in a scratch tab of its own.
+ * @param {'config'|'diagram'} [kind]
+ * @returns {Promise<string|null>} the tab holding it, null when there is no room
+ */
+async function openPair(kind) {
+  const tabs = useTabsStore()
+  if (!tabs.canHost(true)) return null
+  const id = tabs.newTab({ transient: true })
+  if (!id) return null
+  // Kept out of the saved session as well as closed at the end: quitting
+  // mid-tour is the one exit that never reaches `clearStage`.
+  const tab = tabs.tabs.find((t) => t.id === id)
+  if (tab) tab.ephemeral = true
+  await loadPair(kind)
   return id
+}
+
+/**
+ * The pair on stage: opened in a scratch tab, or swapped into the one already
+ * there. A replay plays both demo steps in one run, and a second tab would be a
+ * second thing to put back.
+ * @param {string|null} tabId  the scratch tab, when one is already open
+ * @param {'config'|'diagram'} [kind]
+ * @returns {Promise<string|null>} the tab now holding it
+ */
+export async function showPair(tabId, kind) {
+  if (!tabId) return openPair(kind)
+  useTabsStore().activate(tabId)
+  await loadPair(kind)
+  return tabId
 }
 
 const named = () => useSnippetStore().entries.filter((e) => e.name === SNIPPET.name)

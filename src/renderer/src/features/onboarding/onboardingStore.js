@@ -51,6 +51,7 @@ function readState() {
     // What the tour opened and therefore has to put back. `editorOwned` holds
     // the demo-named snippets that predate it, so cleanup spares only those.
     demoTabId: null,
+    demoKind: '',
     editorOwned: null,
     sidebarWasCollapsed: false,
     filters: null,
@@ -192,15 +193,19 @@ export const useOnboardingStore = defineStore('onboarding', {
     _tidy() {
       demo.clearStage(this)
       this.demoTabId = null
+      this.demoKind = ''
       this.editorOwned = null
       this.sidebarWasCollapsed = false
       this.filters = null
     },
     // Something to point AT: the file slots teach nothing while they are empty,
-    // and the diagram step cannot show a diagram CHANGE by describing one.
-    async openDemo(kind) {
-      if (this.demoTabId) return
-      this.demoTabId = await demo.openPair(kind)
+    // and the diagram step cannot show a diagram CHANGE by describing one. The
+    // scratch tab is REUSED for a second pair — a replay plays both steps in
+    // one run, and two tabs would be two things to put back.
+    async openDemo(kind = 'config') {
+      if (this.demoTabId && this.demoKind === kind) return
+      this.demoKind = kind
+      this.demoTabId = await demo.showPair(this.demoTabId, kind)
     },
     openSnippet() {
       // Keeps the FIRST ownership record across a back-and-forward: it is the

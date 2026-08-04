@@ -24,10 +24,16 @@ const runOut = (tour) => {
 }
 
 const DEMO_NAME = 'Checkout API — staging'
-const DEMO = [
-  { path: null, name: 'demo-config-v1.json', content: '{"replicas":2}' },
-  { path: null, name: 'demo-config-v2.json', content: '{"replicas":3}' }
-]
+const DEMO = {
+  config: [
+    { path: null, name: 'demo-config-v1.json', content: '{"replicas":2}' },
+    { path: null, name: 'demo-config-v2.json', content: '{"replicas":3}' }
+  ],
+  diagram: [
+    { path: null, name: 'demo-flow-v1.mmd', content: 'flowchart TD\n  A --> B' },
+    { path: null, name: 'demo-flow-v2.mmd', content: 'flowchart TD\n  A --> C' }
+  ]
+}
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -35,7 +41,7 @@ beforeEach(() => {
   localStorage.clear()
   window.api = {
     appVersion: TOUR_VERSION,
-    demoFiles: async () => DEMO,
+    demoFiles: async (kind) => DEMO[kind === 'diagram' ? 'diagram' : 'config'],
     vaultEncrypt: async (plaintext) => ({ iv: 'iv', data: plaintext })
   }
 })
@@ -408,6 +414,19 @@ describe('the demo comparison', () => {
     const { tabs, tour } = await opened()
     runOut(tour)
     expect(tabs.tabs).toHaveLength(1)
+  })
+
+  // A REPLAY plays every step as one run, so the tab from step one is still
+  // open when the diagram step asks for its own pair. It used to bail on
+  // `demoTabId` already being set and leave the JSON diff on screen.
+  it('replaces the comparison when a later step asks for a different one', async () => {
+    const { tabs, tour, diff } = await opened()
+    expect(diff.left.name).toBe('demo-config-v1.json')
+
+    await tour.openDemo('diagram')
+    expect(diff.left.name).toBe('demo-flow-v1.mmd')
+    // Replaced in the same scratch tab, not stacked into a second one.
+    expect(tabs.tabs).toHaveLength(2)
   })
 
   it('opens once, however many times the step is re-entered', async () => {

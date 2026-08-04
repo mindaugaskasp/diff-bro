@@ -314,6 +314,22 @@ test('the tour ends on a real diagram comparison', async ({ page }) => {
   await expect(page.locator('.diagram-diff, .dg-stage, [class*="diagram"]').first()).toBeVisible()
 })
 
+// A REPLAY plays every step as one run, so the scratch tab from step one is
+// still open when the diagram step asks for its own pair. It bailed on the tab
+// already existing and left the JSON diff on screen under a card describing a
+// diagram change.
+test('a replay swaps the demo pair rather than keeping the first one', async ({ app, page }) => {
+  await callout(page).getByRole('button', { name: 'Skip tips' }).click()
+  await clickAppMenuItem(app, 'Show Tour')
+
+  await advance(page, (await stepCount(page)) - 1)
+  await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
+  await expect(page.locator('[data-tour="slots"]')).toContainText('demo-flow-v1.mmd')
+  await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
+  // One scratch tab, not two: the second pair replaced the first in place.
+  await expect(page.locator('.tab')).toHaveCount(2)
+})
+
 // The whole stage is the tour's own: the comparison it loaded and the snippet it
 // saved both go when it ends, rather than becoming a library the user has to
 // tidy up after something they were only shown.
