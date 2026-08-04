@@ -7,27 +7,8 @@ import { toRaw } from 'vue'
 import { defineStore } from 'pinia'
 import { useDiffStore } from '../../stores/diffStore'
 import { useVaultStore } from '../../stores/vaultStore'
-
-const SHARE_ERRORS = {
-  'not-a-share-file': 'That file is not a Diff Bro shared diff.',
-  'not-for-you':
-    'This shared diff is sealed for a different machine — it can only be opened by its addressed recipient.',
-  tampered: 'Rejected: the file was modified in transit (or is corrupted) — decryption failed.',
-  'unknown-signer':
-    'Sealed correctly, but signed by an unknown sender — add their public key first (File → Add Trusted Key).',
-  'bad-signature': 'Signature check failed — the file was modified or corrupted.',
-  'bad-trusted-key':
-    'The stored public key for this sender is unreadable — remove it and add their key file again.',
-  expired: 'This shared diff has already expired.',
-  'invalid-ttl': 'Rejected: shared diffs cannot live longer than a week.',
-  'unknown-recipient': 'Recipient not found among trusted keys.',
-  renamed:
-    'This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.',
-  'identity-unavailable':
-    'Your identity key couldn’t be unlocked (the OS keychain may be locked). Nothing was changed — unlock it and try again.',
-  'vault-key-unavailable':
-    'The saved-diff key couldn’t be unlocked (the OS keychain may be locked). Your saved diffs and snippets are intact — unlock it and try again.'
-}
+import { useEmailStore } from '../email'
+import { SHARE_ERRORS } from '../../utils/shareErrors'
 
 export const useShareStore = defineStore('share', {
   state: () => ({
@@ -64,6 +45,54 @@ export const useShareStore = defineStore('share', {
     // persisting — opening the recipient picker with it pending (see SaveDiffDialog).
     beginShareDraft(draft) {
       this.shareDraft = draft
+    },
+    noticeBadEmail() {
+      useDiffStore().showNotice(
+        'That is not a usable email address — it was not saved. Check for a stray space or comma.'
+      )
+    },
+    // Close the share dialog without sharing (both entry points).
+    dismissShare() {
+      this.shareEntryId = null
+      this.shareDraft = null
+    },
+    // Direction is share → email and never back. Fingerprints go over IPC; main
+    // resolves the real addresses from the trust store, so `picked` is display-only.
+    async emailTo(recipientFps, picked) {
+      const diff = useDiffStore()
+      const vault = useVaultStore()
+      const to = (Array.isArray(recipientFps) ? [...recipientFps] : [recipientFps]).filter(Boolean)
+      if (!to.length) return
+      const draft = this.shareDraft
+      const id = this.shareEntryId
+      // A DRAFT is live Pinia state, so its snapshot is a deep reactive Proxy —
+      // and structured clone refuses one at the IPC boundary. `toRaw` is shallow,
+      // so it does not reach `snapshot.left`; the entry is JSON-safe (main
+      // re-serialises it anyway), which makes a round trip the honest unwrap.
+      // The saved-diff path is already raw: `load()` returns a fresh decrypt.
+      const built = draft ? vault.draftEntry(draft) : id ? await vault.entryForShare(id) : null
+      const entry = draft && built ? JSON.parse(JSON.stringify(built)) : built
+      if (!entry) {
+        diff.showNotice('That diff could not be read — nothing was sealed.')
+        return
+      }
+      // Runs only once main has written the file.
+      const onSealed = async () => {
+        if (draft) {
+          const saved = await vault.saveShareTwin(draft, to)
+          if (saved) diff.markSaved()
+          return saved
+        }
+        vault.recordShare(id, to)
+        return true
+      }
+      const opened = useEmailStore().compose({
+        entry,
+        recipientFps: to,
+        to: (picked ?? []).map(({ fingerprint, label, email }) => ({ fingerprint, label, email })),
+        onSealed
+      })
+      if (opened) this.dismissShare()
     },
     async shareTo(recipientFps) {
       const diff = useDiffStore()

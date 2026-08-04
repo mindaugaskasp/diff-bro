@@ -1,0 +1,139 @@
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Selected recipients. Above the divider and outside the scroller on purpose:
+   these must stay on screen whatever the query excludes. Always rendered and
+   height-reserved, so ticking the first one does not grow the dialog under the
+   pointer. */
+/* ONE line, always. Reserving a single row was not enough: three or four long
+   labels wrapped to a second row and the dialog grew anyway — the same jump,
+   just later. Chips scroll sideways instead, so the height is fixed whatever is
+   picked, and the footer's "Sealed for N" carries the count. */
+.picked {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: var(--space-1);
+  height: calc(var(--chip-h) + var(--space-2));
+  scrollbar-width: thin;
+}
+.picked > li {
+  flex: none;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--chip-h);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  border: 1px solid var(--btn-edge);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  max-width: 100%;
+}
+.chip:hover {
+  border-color: var(--danger-border);
+}
+.chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip svg {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+}
+
+/* Height is RESERVED from the unfiltered count (--reserved-rows, bound in the
+   component and capped at eight), so typing a query never resizes the dialog —
+   and thirty keys still cannot push the actions off screen. */
+.rows {
+  min-height: calc(var(--reserved-rows) * var(--control-h-sm));
+  max-height: calc(8 * var(--control-h-sm));
+  background: var(--bg);
+}
+.recipients {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-1);
+}
+/* flex-direction is NOT inherited-safe here: ui.css `.dialog label` sets
+   `flex-direction: column` globally, so a row that only says `display: flex`
+   stacks its checkbox above the name and centres both. */
+.recipient {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text);
+}
+.recipient input[type='checkbox'] {
+  flex: none;
+  margin: 0;
+}
+.recipient:hover {
+  background: var(--bg-hover);
+}
+/* Keyboard focus follows an active row while the caret stays in the field. A
+   tinted ground, matching .cp-row.sel and .ql-res.sel — a hard accent outline
+   read as a selection or an error, which is what the checkbox is already for. */
+.recipient.active {
+  background: var(--bg-hover);
+}
+.rc-name {
+  flex: 1;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rc-mail {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.rc-mail.none {
+  font-style: italic;
+}
+.empty {
+  margin: 0;
+  padding: var(--space-3);
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.listfoot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.spacer {
+  flex: 1;
+}

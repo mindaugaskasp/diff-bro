@@ -149,7 +149,7 @@ watch(
       />
     </div>
 
-    <div class="dg-status">
+    <div class="status-band">
       <span v-if="full">
         Nodes <span class="add">{{ tally(full.nodes, 'added') }} added</span> ·
         <span class="chg"
@@ -162,7 +162,7 @@ watch(
         Edges <span class="add">{{ tally(full.edges, 'added') }} added</span> ·
         <span class="del">{{ tally(full.edges, 'removed') }} removed</span>
       </span>
-      <span class="dg-right">
+      <span class="band-end">
         <span v-if="hidden" class="dg-hidden">{{ hidden }} unchanged hidden</span>
       </span>
     </div>

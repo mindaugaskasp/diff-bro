@@ -10,47 +10,5 @@
   gap: var(--space-2);
   min-height: var(--band-row);
 }
-.usb-search {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0 6px 0 8px;
-}
-.usb-search:focus-within {
-  border-color: var(--accent);
-}
-.usb-search input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  color: var(--text);
-  padding: 5px 0;
-  font-size: var(--font-md);
-}
-.usb-search input:focus {
-  outline: none;
-}
-.usb-glyph {
-  flex: none;
-  color: var(--text-dim);
-  font-size: var(--font-md);
-}
-.usb-x {
-  flex: none;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--font-xl);
-  line-height: 1;
-  padding: 0 2px;
-}
-.usb-x:hover {
-  color: var(--text);
-}
+/* The box itself is .field-search in ui.css — three components need it now,
+   and a scoped copy in the second one drifts. Only the ROW layout is local. */

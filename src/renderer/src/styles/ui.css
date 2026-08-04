@@ -578,3 +578,122 @@ button.tag-chip:hover .usb-tct {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+
+/* A search field. Lifted out of SidebarSearch.css when a third component needed
+   it (the recipient picker and the trusted-key manager): a scoped copy in the
+   second one drifts, which is what the shared-class rule in docs/standards.md
+   is for. SidebarSearch keeps its own row layout and uses this for the box. */
+.field-search {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-h-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 var(--space-2) 0 8px;
+}
+.field-search:focus-within {
+  border-color: var(--accent);
+}
+.field-search > svg {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.field-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-md);
+}
+.field-search input:focus {
+  outline: none;
+}
+.field-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.field-search button {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  padding: 0 2px;
+}
+.field-search button:hover {
+  color: var(--text);
+}
+
+/* A bounded scroll region inside a dialog. Bounded by --border rules rather
+   than a gradient fade: the rows are --bg-raised cards on a --bg-panel dialog,
+   so a fade would have to pick one and smear over the other — and `contrast`
+   and `beacon` carry a hard-keyline contract a soft edge would break. */
+.dialog-scroller {
+  overflow-y: auto;
+  border-block: 1px solid var(--border);
+  padding-block: var(--space-1);
+}
+
+/* The status band under a diff: what changed, in words. Shared because the text
+   diff and the diagram diff must read alike — the diagram had it first and the
+   text diff carried a terse `+5 −4` in the toolbar instead, which is the drift
+   this class exists to end. A band (see .band), so its content is flex-centred
+   rather than fake-aligned with padding.
+
+   Counts are the --dg-* hues MIXED TOWARD --text. Those tokens are designed for
+   the 3:1 NON-text floor (a node stroke, a badge) — as plain text on the panel
+   --dg-chg scores 2.73 on light, below even that. Here they carry the numbers a
+   reader actually reads, so they take the same mix --dg-del already uses for
+   nord, at a ratio measured by `make theme-sweep` across all 14. */
+.status-band {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--band-row);
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: var(--font-sm);
+  /* --text-hint, not --text-dim: these are words a reader reads ("Lines",
+     "6 rows"), and dim sits at the repo's 3.0 dim/panel floor — under the 4.5
+     text floor on solar, nord, sepia and bloom. */
+  color: var(--text-hint);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.status-band .add {
+  color: color-mix(in srgb, var(--dg-add) 55%, var(--text));
+  font-weight: 600;
+}
+.status-band .del {
+  color: color-mix(in srgb, var(--dg-del) 55%, var(--text));
+  font-weight: 600;
+}
+.status-band .chg {
+  color: color-mix(in srgb, var(--dg-chg) 55%, var(--text));
+  font-weight: 600;
+}
+/* A qualifier on the band — "first N rows shown", "only in the left file",
+   "alignment is a best fit". Set apart by STYLE rather than a dimmer colour,
+   which would drop under the text floor. */
+.status-band .capped,
+.status-band .only {
+  font-style: italic;
+}
+
+/* Pushes trailing content (a hidden-count, a hint) to the right edge. */
+.status-band .band-end {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}

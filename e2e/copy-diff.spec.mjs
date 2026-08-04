@@ -42,7 +42,7 @@ test('identical sides show a No differences state and copy nothing', async ({ pa
   // The "no differences" note is a row label over the diff panes, not a toolbar
   // stat — and the toolbar shows no empty +0/−0 counts in that state.
   await expect(page.locator('.diff-viewer .identical-row')).toContainText('No differences')
-  await expect(page.locator('.stats')).toBeHidden()
+  await expect(page.locator('.diff-viewer .status-band')).toBeHidden()
 
   // Copy diff on an identical comparison explains itself rather than copying an
   // empty patch.

@@ -7,6 +7,7 @@ import { useImageExportStore } from '../features/imageExport'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 import { useShareStore } from '../features/share'
+import { showsSplitView, showsWhitespaceToggle } from '../utils/viewChrome'
 
 const store = useDiffStore()
 const share = useShareStore()
@@ -45,6 +46,8 @@ const structureTip = computed(() => {
 })
 
 // The button names its destination (files ⇄ paste).
+const splitAvailable = computed(() => showsSplitView(store))
+const whitespaceAvailable = computed(() => showsWhitespaceToggle(store))
 const inPaste = computed(() => store.mode === 'paste')
 const pasteToggleLabel = computed(() => (inPaste.value ? 'File mode' : 'Paste text'))
 const pasteToggleTitle = computed(() =>
@@ -66,24 +69,20 @@ const clearTitle = computed(() =>
 
 <template>
   <header class="toolbar band">
-    <!-- Change counts only; the "no differences" state reads as a row label over
-         the diff panes (DiffViewer), not as an empty +0/−0 here. -->
-    <span
-      v-if="store.ready && store.stats && !store.identical && store.comparableKind === 'text'"
-      class="stats"
-    >
-      <span class="add">+{{ store.stats.additions }}</span>
-      <span class="del">−{{ store.stats.deletions }}</span>
-    </span>
-
+    <!-- Change counts live in the status band under the panes (DiffViewer), in
+         the same words the diagram diff uses. -->
     <div class="options">
       <!-- Diff display toggles -->
       <div class="group">
-        <label>
+        <!-- A control that cannot act should not be offered: Split view beside
+             a grid reads as broken, not as N/A. The two do NOT have the same
+             reach — the diagram viewer splits on the same flag (see
+             utils/viewChrome.js), which is why they are gated separately. -->
+        <label v-if="splitAvailable">
           <input v-model="store.renderSideBySide" type="checkbox" />
           Split view
         </label>
-        <label>
+        <label v-if="whitespaceAvailable">
           <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
           Ignore whitespace
         </label>
@@ -104,7 +103,12 @@ const clearTitle = computed(() =>
 
       <!-- Document actions -->
       <div class="group actions">
+        <!-- Setting up a comparison, not viewing one: a vault-backed tab has
+             nothing to switch the input mode OF, and offering it there invites a
+             click that would replace what the reader opened. Reserved for a new
+             or empty tab (isSavedDiff is the same test Clear already uses). -->
         <button
+          v-if="!store.isSavedDiff"
           class="btn"
           :class="{ active: inPaste }"
           :data-tip="pasteToggleTitle"

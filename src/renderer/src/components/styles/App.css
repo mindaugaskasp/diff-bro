@@ -124,3 +124,11 @@
   padding: 28px 44px;
   box-shadow: var(--shadow-3);
 }
+
+/* The shortcut bar floats over the diff, anchored to .content — so when a
+   status band is showing it has to clear it, or it covers the change counts.
+   It already covered the spreadsheet/structure/streamed bars before the text
+   diff grew one. */
+.content.with-status-band .shortcut-bar {
+  bottom: calc(var(--band-row) + var(--space-3));
+}

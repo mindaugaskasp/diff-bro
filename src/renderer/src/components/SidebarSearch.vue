@@ -13,8 +13,8 @@ defineExpose({ focus: () => box.value?.focus() })
 
 <template>
   <div class="usb-top">
-    <div class="usb-search">
-      <AppIcon class="usb-glyph" name="search" />
+    <div class="field-search">
+      <AppIcon name="search" />
       <input
         ref="box"
         :value="modelValue"
@@ -25,7 +25,6 @@ defineExpose({ focus: () => box.value?.focus() })
       />
       <button
         v-if="modelValue"
-        class="usb-x"
         data-tip="Clear the search box"
         aria-label="Clear search"
         @click="emit('update:modelValue', '')"

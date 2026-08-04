@@ -7,26 +7,12 @@
   /* Distinct separator so the stacked bars don't blend into one dark mass. */
   border-bottom: 1px solid var(--border);
 }
-.stats {
-  display: flex;
-  gap: 8px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.stats .add {
-  color: var(--success-text);
-}
-.stats .del {
-  color: var(--danger-bg);
-}
 .options {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--text-dim);
   white-space: nowrap;
-  /* With the app title removed, the option clusters hold the right edge; stats
-     (when a diff is loaded) stay on the left. */
   margin-left: auto;
 }
 /* Logical clusters (display toggles · actions · appearance), each separated by

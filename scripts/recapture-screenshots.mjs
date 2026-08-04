@@ -254,7 +254,7 @@ async function main() {
 
     console.log('Loading JSON diff…')
     await loadPair(app, page, JSON_A, JSON_B)
-    await page.locator('.stats .add').waitFor({ state: 'visible' })
+    await page.locator('.status-band .add').waitFor({ state: 'visible' })
     await shoot(page, 'diff-dark', want)
 
     await setTheme(page, 'Light')

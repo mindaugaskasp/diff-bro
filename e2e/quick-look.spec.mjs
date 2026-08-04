@@ -308,15 +308,51 @@ test('an unnamed snippet can be created and then edited in place', async ({ app,
 })
 
 // Selecting a tool swaps in its panel; that swap is animated too.
+//
+// Sampled AT THE MOMENT Vue applies its enter class, for two reasons that both
+// made the older assertion intermittent:
+//   - Vue removes .ql-panel-enter-active on transitionend, and getComputedStyle
+//     then reports the initial `all` — so reading it afterwards raced a 180ms
+//     window and lost whenever the assertion arrived late.
+//   - Vue swaps enter-from → enter-to on a requestAnimationFrame, and the
+//     launcher is a separate always-on-top window: under Xvfb it can go
+//     uncomposited, rAF never fires, and the transition does not RUN at all.
+//     (Observed directly: the class is applied, then no enter-to and no
+//     transition events.) So waiting on a transition event is not reliable
+//     either — the class and what it declares are.
 test('choosing a tool eases its panel in rather than cutting to it', async ({ app, page }) => {
   const ql = await summon(app, page)
   await ql.locator('.ql-input').fill('epoch')
-  await ql.keyboard.press('Enter')
 
-  const panel = ql.locator('.qc')
-  await expect(panel).toBeVisible()
-  const eased = await panel.evaluate((el) => getComputedStyle(el).transitionProperty)
-  expect(eased).toMatch(/opacity|transform/)
+  await ql.evaluate(() => {
+    window.__eased = null
+    const sample = (el) => {
+      if (
+        !window.__eased &&
+        el instanceof Element &&
+        el.classList.contains('qc') &&
+        el.classList.contains('ql-panel-enter-active')
+      ) {
+        window.__eased = getComputedStyle(el).transitionProperty
+      }
+    }
+    new MutationObserver((records) => {
+      for (const r of records) {
+        r.addedNodes.forEach(sample)
+        if (r.type === 'attributes') sample(r.target)
+      }
+    }).observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    })
+  })
+
+  await ql.keyboard.press('Enter')
+  await expect(ql.locator('.qc')).toBeVisible()
+
+  await expect.poll(() => ql.evaluate(() => window.__eased)).toMatch(/opacity|transform/)
 })
 
 // Arrowing past the visible rows must scroll the list; before this it stopped at

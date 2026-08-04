@@ -124,3 +124,25 @@ change; a single layout removes that question.
 How many hops out from a change the focused diagram keeps. 0 shows only what
 changed, 1 its immediate neighbours. What it hides is counted on screen, never
 silently dropped.
+
+## Hand-off
+
+Diff Bro opening your own mail client on a pre-addressed message rather than
+sending anything itself. It seals the diff, hands a `mailto:` to the OS, copies
+the sealed file to the clipboard, and stops — you press Send. This is why adding
+email did not cost the offline guarantee: no socket is opened by the app.
+
+## Copy content vs Copy as file
+
+Two different intents, deliberately two commands. **Copy content** puts
+characters on the clipboard — right when you are pasting into an editor.
+**Copy as file** puts a real file there, for a destination that wants one: a
+mail draft, a chat window, a folder. A secret snippet offers only the first, because
+the second would write its plaintext to disk.
+
+## Staged file
+
+The temporary copy Copy as file puts on the clipboard. A file on the clipboard is
+a _path_, so the bytes must exist until the paste happens. Staged files live in a
+`0o700` directory under the OS temp dir, are pruned after 30 minutes, and are
+swept on quit and again on next launch.

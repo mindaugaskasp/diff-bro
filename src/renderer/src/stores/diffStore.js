@@ -9,7 +9,8 @@ import { useSnippetStore } from './snippetStore'
 import { isSecret } from '../utils/secretSnippet'
 import { snippetSource } from '../utils/snippetSource'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
-import { applyUnifiedDiff, toUnifiedDiff } from '../utils/unifiedDiff'
+import { applyUnifiedDiff } from '../utils/unifiedDiff'
+import { diffPatchFile } from '../utils/copyAsFile'
 import { diffToHtml } from '../utils/diffHtml'
 import { changeRegister, toCsv } from '../utils/changeRegister'
 import { clipboardSnippetName } from '../utils/cliCommand'
@@ -20,6 +21,12 @@ import { sideName } from '../utils/pasteNames'
 // What a streamed comparison cannot do, and why — in terms of the consequence
 // the user can see, not the mechanism. One source for the disabled tooltips and
 // the notices, so a control and its refusal never say different things.
+const COPY_FILE_FAILED = 'Could not copy that as a file.'
+
+// The builder returns a sentinel for the streamed case so it need not carry the
+// store's own wording for a limit the store already owns.
+const patchError = (reason) => (reason === 'streamed' ? STREAMED_LIMITS.copy : reason)
+
 export const STREAMED_LIMITS = {
   save: 'Too large to save — a saved diff keeps its own copy of both files.',
   share: 'Too large to share — a shared diff carries its own copy of both files.',
@@ -625,31 +632,20 @@ export const useDiffStore = defineStore('diff', {
     // Recompute a clean git-style patch (Monaco's on-screen diff isn't one).
     // Clipboard goes through main — navigator.clipboard is denied here.
     async copyDiff() {
-      if (!this.ready) {
-        this.showNotice('Load two files (or compare pasted text) before copying a diff.')
-        return
-      }
-      if (this.isStreamed) {
-        this.showNotice(STREAMED_LIMITS.copy)
-        return
-      }
-      // A unified text patch can't represent a spreadsheet grid — its comparable
-      // carries `sheets`, not `text`, so bail with a notice instead of feeding
-      // `undefined` into the differ.
-      if (this.comparableKind !== 'text') {
-        this.showNotice('Copy diff is only available for text comparisons.')
-        return
-      }
-      // ready guarantees both sides are loaded file objects with names.
-      const res = toUnifiedDiff(this.leftComparable.text, this.rightComparable.text, {
-        leftLabel: this.left.name,
-        rightLabel: this.right.name
-      })
-      if (res.error === 'too-large')
-        return this.showNotice('This diff is too large to copy as a patch.')
-      if (!res.patch) return this.showNotice('The two sides are identical — nothing to copy.')
-      const out = await window.api.copyText(res.patch)
+      const file = diffPatchFile(this)
+      if (file.error) return this.showNotice(patchError(file.error))
+      const out = await window.api.copyText(file.content)
       this.showNotice(out?.ok ? 'Unified diff copied to clipboard.' : 'Could not copy the diff.')
+    },
+    // The twin: a real .patch file on the clipboard, for a destination that
+    // wants a file rather than characters.
+    async copyDiffAsFile() {
+      const file = diffPatchFile(this)
+      if (file.error) return this.showNotice(patchError(file.error))
+      const out = await window.api.copyAsFile(file.name, file.content)
+      this.showNotice(
+        out?.ok ? `${out.name} copied as a file — paste it where you need it.` : COPY_FILE_FAILED
+      )
     },
     swap() {
       ;[this.left, this.right] = [this.right, this.left]

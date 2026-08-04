@@ -1,0 +1,138 @@
+.key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.key:last-child {
+  border-bottom: none;
+}
+/* The row for the key that was just added: a persistent accent tint (so it's
+   obvious which one is new after the dialog opens) plus a one-shot wash that
+   fades in, drawing the eye there the moment the manager appears. */
+.key.added {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: key-added-flash 1s ease;
+}
+@keyframes key-added-flash {
+  0% {
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  100% {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .key.added {
+    animation: none;
+  }
+}
+/* A keyline chip, not an accent fill: --text-on-accent scores 3.58 on solar and
+   3.75 on dark, under the 4.5 text floor. The accent carries the badge on the
+   edge, where the floor is 3, and the label stays --text. */
+.added-badge {
+  flex: none;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0 5px;
+}
+.key-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.label {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-md);
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.label:hover {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+/* Unset reads as an invitation, set reads as a fact — same control either way.
+   --text-hint, not --text-dim: this is a call to action the reader must be able
+   to read, and dim scores 3.44 on sepia and 3.99 on solar (theme-sweep.mjs). */
+.mail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-hint);
+  font: inherit;
+  font-size: var(--font-sm);
+  cursor: text;
+  max-width: 100%;
+}
+.mail.set {
+  color: var(--text);
+}
+.mail svg {
+  flex: none;
+  font-size: var(--font-sm);
+}
+.mail span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mail:not(.set) span {
+  font-style: italic;
+}
+.mail:hover {
+  color: var(--text);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.fp {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+}
+.inline-edit {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 3px 6px;
+  font: inherit;
+  font-size: var(--font-md);
+}
+.inline-edit:focus {
+  outline: none;
+}
+.icon {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-lg);
+  padding: 2px 6px;
+}
+.icon:hover {
+  color: var(--text);
+}
+.icon.delete:hover {
+  color: var(--danger-bg);
+}

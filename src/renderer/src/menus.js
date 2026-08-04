@@ -1,4 +1,5 @@
 import { MOD } from './keys'
+import { securityItems } from './menuSecurity'
 
 // The in-app menu bar's contents (Windows/Linux). Kept out of MenuBar.vue so
 // the component stays presentation: this is the list, that file is the
@@ -62,6 +63,11 @@ export function buildMenus(run) {
           label: 'Copy Diff as Patch',
           keys: `${MOD}+Shift+C`,
           run: () => run('copy-diff')
+        },
+        {
+          label: 'Copy Diff as File',
+          keys: `${MOD}+Shift+F`,
+          run: () => run('copy-diff-file')
         },
         { label: 'Apply Patch…', run: () => run('apply-patch') },
         { sep: true },
@@ -128,21 +134,7 @@ export function buildMenus(run) {
     {
       id: 'security',
       label: 'Security',
-      items: [
-        { label: 'Share My Public Key', run: () => run('export-pubkey') },
-        { sep: true },
-        { label: 'Add Trusted Key', run: () => run('add-trusted-key') },
-        { label: 'Manage Trusted Keys', run: () => run('manage-keys') },
-        { label: 'Replace My Key…', run: () => run('rotate-key') },
-        { sep: true },
-        {
-          label: 'Configuration',
-          items: [
-            { label: 'Back Up', run: () => run('config-backup') },
-            { label: 'Restore', run: () => run('config-restore') }
-          ]
-        }
-      ]
+      items: securityItems(run)
     },
     {
       id: 'tools',

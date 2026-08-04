@@ -54,6 +54,12 @@ export default defineConfig({
         'src/main/lineIndex.js',
         'src/main/hashDiff.js',
         'src/main/streamWindow.js',
+        'src/main/linkPolicy.js',
+        'src/main/mailAddress.js',
+        'src/main/mailto.js',
+        'src/main/clipboardWrite.js',
+        'src/main/clipboardStage.js',
+        'src/main/clipboardFiles.js',
         'src/main/xlsx/**',
         'src/renderer/src/stores/**',
         // A slice's store is shipped logic like any other; without this line

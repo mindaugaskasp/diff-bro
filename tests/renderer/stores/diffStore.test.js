@@ -339,11 +339,22 @@ describe('diffStore', () => {
     expect(store.left).toBeNull()
   })
 
+  // Guarded now: the flag is only flipped where a viewer reads it, so the
+  // comparison has to be a real one (utils/viewChrome.js).
   it('routes menu actions: toggle-split flips the view option', () => {
     const store = useDiffStore()
+    store.left = { name: 'a', content: 'x' }
+    store.right = { name: 'b', content: 'y' }
     const before = store.renderSideBySide
     menu('toggle-split')
     expect(store.renderSideBySide).toBe(!before)
+  })
+
+  it('routes menu actions: toggle-split does nothing where no viewer reads it', () => {
+    const store = useDiffStore()
+    const before = store.renderSideBySide
+    menu('toggle-split') // nothing loaded, so nothing to split
+    expect(store.renderSideBySide).toBe(before)
   })
 
   it('only opens the save dialog when there is something to save', () => {
@@ -901,6 +912,8 @@ describe('closing the active comparison from the menu', () => {
     expect(useConfigBackupStore().mode).toBe('backup')
     menu('config-restore')
     expect(useConfigBackupStore().mode).toBe('restore')
+    store.left = { name: 'a', content: 'x' }
+    store.right = { name: 'b', content: 'y' }
     menu('toggle-split')
     expect(store.renderSideBySide).toBe(false)
   })

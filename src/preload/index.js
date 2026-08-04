@@ -62,6 +62,8 @@ contextBridge.exposeInMainWorld('api', {
   addTrustedKeyNamed: (key, label) => ipcRenderer.invoke('share:addTrustedKeyNamed', key, label),
   renameTrusted: (fp, label) => ipcRenderer.invoke('share:renameTrusted', fp, label),
   removeTrusted: (fp) => ipcRenderer.invoke('share:removeTrusted', fp),
+  // A local delivery hint on a trusted key; '' clears it. Validated in main.
+  setTrustedEmail: (fp, email) => ipcRenderer.invoke('share:setTrustedEmail', fp, email),
   // Key rotation. Retired keys stay on this machine as decrypt-only; no key
   // material crosses this boundary in either direction (rule 4).
   rotateKey: () => ipcRenderer.invoke('share:rotate'),
@@ -116,6 +118,12 @@ contextBridge.exposeInMainWorld('api', {
   // Write/read the OS clipboard from the main process (navigator.clipboard is
   // blocked by the deny-all permission handler; see src/main/clipboard.js).
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
+  // Copy as file: BYTES and a display name, never a path — the renderer cannot
+  // name a file for main to stage (src/main/clipboardCopy.js).
+  copyAsFile: (name, content) => ipcRenderer.invoke('clipboard:writeFile', name, content),
+  canCopyAsFile: () => ipcRenderer.invoke('clipboard:canWriteFile'),
+  // Seal, then hand off to the OS mail client. No path and no URL crosses here.
+  mailHandoff: (args) => ipcRenderer.invoke('mail:handoff', args),
   // Opens a stored link ONLY if main validates it as a claude.ai URL, after a
   // confirm dialog; any other URL is refused (see src/main/links.js).
   openLink: (url) => ipcRenderer.invoke('link:open', url),

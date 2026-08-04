@@ -1,3 +1,6 @@
+/* The band itself is .status-band in ui.css — every diff type renders the same
+   one. Local copies are what made this bar 30px here and 52px elsewhere, with
+   three different colour sets. Only what is specific to this view stays. */
 /* The structural comparison. Colour comes from the add/del/accent roles the diff
    panes already use, so it reads the same on all fourteen themes and keeps the
    hard keyline the contrast/beacon palettes rely on. */
@@ -99,35 +102,6 @@
 .sd-type {
   font-size: var(--font-xs);
   color: var(--text-hint);
-}
-.sd-status {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: 0 var(--space-4);
-  min-height: var(--band-row);
-  border-top: 1px solid var(--border);
-  background: var(--bg-panel);
-  font-size: var(--font-sm);
-  color: var(--text-dim);
-}
-.sd-status .chg {
-  color: var(--warning-border);
-  font-weight: 600;
-}
-.sd-status .add {
-  color: var(--success-text);
-  font-weight: 600;
-}
-.sd-status .del {
-  color: var(--danger-border);
-  font-weight: 600;
-}
-.sd-status .capped {
-  color: var(--text-hint);
-}
-.sd-status .right {
-  margin-left: auto;
 }
 .sd-all {
   display: inline-flex;

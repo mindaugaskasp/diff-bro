@@ -12,6 +12,14 @@ allows the local Vite server), backed by a strict CSP, `sandbox: true`,
 `contextIsolation`, a deny-all permission handler, and a `will-navigate` block.
 No telemetry, no auto-update, no CDN assets.
 
+**Emailing a diff does not change this.** Diff Bro never sends: it seals the
+file, hands a `mailto:` to your OS, copies the sealed file to the clipboard, and
+stops. Your own mail client does the sending, and it is outside this fence — the
+guarantee is about what this process does. An in-app SMTP client was specced and
+rejected rather than shipped, because the kill switch would not have caught it:
+it filters `session.defaultSession.webRequest`, which is Chromium traffic only,
+so a main-process `tls.connect` would have been invisible to it.
+
 ## File access (compromised-renderer threat model)
 
 All filesystem access lives in the main process; the renderer only asks. Because
@@ -116,6 +124,41 @@ enforceable it actually is:
 - **Removing a trusted key** — real, and local: no _future_ share can be
   addressed to them. It does nothing to what has already been sent.
 - **Replacing your key** — see below. It is about impersonation, not recall.
+
+## Emailing a sealed diff
+
+A trusted key can carry an email address, typed by you. It is a delivery hint
+attached to an identity, never a substitute for one:
+
+- **The address never travels in a `.diffbrokey`.** It lives only in your own
+  `trusted-keys.json`, so it can never be attacker-supplied on import, and a
+  peer's key file cannot make you mail a third party.
+- **Validated before it is stored**, not on the way out. Anything carrying CR/LF,
+  a comma, a semicolon, angle brackets or whitespace is refused, so a stored
+  address cannot inject a second header into the URL.
+- **What you attach is the same sealed file** — sign-then-encrypt, bound to the
+  audience, filename forced to a hash of its own ciphertext. Your mail provider
+  holds ciphertext addressed to a key it does not have.
+- **The recipient must still be a trusted key.** There is no route that mails a
+  diff to an address you have not tied to one.
+
+## Copy as file, and the plaintext window it opens
+
+**Copy as file** puts a real file on the clipboard. A file on the clipboard is a
+_path_, so the bytes must exist on disk until you paste — which for a snippet
+means its plaintext lives briefly outside the vault. That is a real trade, so it
+is bounded rather than assumed away:
+
+- a `0o700` staging directory under the OS temp dir;
+- pruned 30 minutes after staging, and swept on quit **and** again on next
+  launch (a crash skips the first, and plaintext surviving a reboot is the
+  failure that matters);
+- names slugged flat, so a snippet titled `../../.ssh/config` cannot escape;
+- **a secret snippet refuses Copy as file** — its whole guarantee is that the
+  contents never land somewhere readable, which a volatile text clipboard
+  honours and a file does not. Copy content still works;
+- a sealed `.diffbro` is unaffected: it is ciphertext, so staging it exposes
+  nothing.
 
 ## Replacing your key (rotation)
 

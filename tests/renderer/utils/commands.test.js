@@ -29,7 +29,12 @@ const stores = () => ({
     pick: spy(),
     swap: spy(),
     clear: spy(),
+    ready: true,
+    mode: 'files',
+    comparableKind: 'text',
+    isSavedDiff: false,
     copyDiff: spy(),
+    copyDiffAsFile: spy(),
     applyPatch: spy(),
     exportDiff: spy(),
     importSnippets: spy(),
@@ -151,5 +156,40 @@ describe('runCommand', () => {
     const s = stores()
     runCommand('toggle-sidebar', s)
     expect(s.settings.setSidebarCollapsed).toHaveBeenCalledWith(true)
+  })
+})
+
+// Hiding a toolbar control does nothing for the shortcut, the menu item or the
+// palette — they all land here, which is why the guard lives here.
+describe('guards that a hidden control would otherwise not enforce', () => {
+  it('refuses to switch input mode on a saved diff', () => {
+    const s = stores()
+    s.diff.isSavedDiff = true
+    runCommand('toggle-paste', s)
+    expect(s.diff.togglePasteMode).not.toHaveBeenCalled()
+
+    const scratch = stores()
+    runCommand('toggle-paste', scratch)
+    expect(scratch.diff.togglePasteMode).toHaveBeenCalled()
+  })
+
+  it('refuses to flip split view where nothing reads it', () => {
+    for (const kind of ['spreadsheet', 'tree', 'streamed']) {
+      const s = stores()
+      s.diff.comparableKind = kind
+      s.diff.renderSideBySide = true
+      runCommand('toggle-split', s)
+      expect(s.diff.renderSideBySide, kind).toBe(true)
+    }
+  })
+
+  it('still flips it for a text diff and a diagram', () => {
+    for (const kind of ['text', 'diagram']) {
+      const s = stores()
+      s.diff.comparableKind = kind
+      s.diff.renderSideBySide = true
+      runCommand('toggle-split', s)
+      expect(s.diff.renderSideBySide, kind).toBe(false)
+    }
   })
 })

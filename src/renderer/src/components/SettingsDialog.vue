@@ -10,6 +10,7 @@ import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
+import { EmailSettings } from '../features/email'
 import { useUiStore } from '../stores/uiStore'
 
 const ui = useUiStore()
@@ -22,6 +23,7 @@ const TABS = [
   { id: 'storage', label: 'Storage' },
   { id: 'limits', label: 'Limits' },
   { id: 'logs', label: 'Logs' },
+  { id: 'email', label: 'Email' },
   { id: 'cli', label: 'Terminal' },
   { id: 'fun', label: 'Fun' }
 ]
@@ -100,6 +102,8 @@ function close() {
         <StorageSettings v-else-if="tab === 'storage'" />
 
         <LogSettings v-else-if="tab === 'logs'" />
+
+        <EmailSettings v-else-if="tab === 'email'" />
 
         <template v-else-if="tab === 'cli'">
           <CliSettings />

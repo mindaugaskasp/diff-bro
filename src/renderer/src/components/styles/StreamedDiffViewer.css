@@ -1,3 +1,6 @@
+/* The band itself is .status-band in ui.css — every diff type renders the same
+   one. Local copies are what made this bar 30px here and 52px elsewhere, with
+   three different colour sets. Only what is specific to this view stays. */
 .stream-viewer {
   flex: 1;
   min-height: 0;
@@ -97,29 +100,4 @@
 }
 .identical-row .ok {
   flex: none;
-}
-
-.status {
-  gap: var(--space-4);
-  padding: 0 var(--space-3);
-  min-height: var(--control-h);
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border);
-  color: var(--text-dim);
-  font-size: var(--font-sm);
-}
-.status .add {
-  color: var(--success-text);
-  font-weight: 600;
-}
-.status .del {
-  color: var(--danger-border);
-  font-weight: 600;
-}
-.status .capped {
-  color: var(--text-hint);
-  font-style: italic;
-}
-.status .right {
-  margin-left: auto;
 }

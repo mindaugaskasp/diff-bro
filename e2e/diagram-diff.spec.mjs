@@ -63,7 +63,10 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     await toggle.check()
 
     // Split view is on by default, so the two revisions render side by side —
-    // the same toggle that splits a text diff into two panes.
+    // the same toggle that splits a text diff into two panes. It must still be
+    // OFFERED here: it is not a Monaco-only option, and hiding it beside a
+    // diagram removed the only way back to the stitched layout.
+    await expect(page.getByRole('checkbox', { name: 'Split view' })).toBeVisible()
     await expect(page.locator('.dg-stage svg')).toHaveCount(2, { timeout: 20000 })
     await expect(page.locator('.dg-pane .dg-ttl').first()).toContainText('before')
     await expect(page.locator('.dg-drift')).toBeVisible()
@@ -74,7 +77,7 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
     await expect(page.locator('.dg-drift')).toHaveCount(0)
     // The status band counts in words, as the proposal specifies.
-    const status = page.locator('.dg-status')
+    const status = page.locator('.status-band')
     await expect(status).toContainText('Nodes')
     await expect(status).toContainText('added')
     // Enrich and Quarantine arrived; Reject went.

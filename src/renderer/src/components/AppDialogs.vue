@@ -34,12 +34,14 @@ import {
   TrustedKeysDialog,
   useShareStore
 } from '../features/share'
+import { EmailHandoffDialog, useEmailStore } from '../features/email'
 import { useUiStore } from '../stores/uiStore'
 
 const store = useDiffStore()
 
 const ui = useUiStore()
 const share = useShareStore()
+const email = useEmailStore()
 const imageExport = useImageExportStore()
 const configBackup = useConfigBackupStore()
 const tabs = useTabsStore()
@@ -53,6 +55,7 @@ const errors = useErrorStore()
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
   <ShareDiffDialog v-if="share.shareEntryId || share.shareDraft" />
+  <EmailHandoffDialog v-if="email.draft" />
   <DiffImageDialog v-if="imageExport.imageEntry" />
   <TrustedKeysDialog v-if="share.showTrustedKeysDialog" />
   <RemoveTrustedKeyDialog v-if="share.pendingUntrust" />

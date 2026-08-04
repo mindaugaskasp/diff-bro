@@ -4,6 +4,7 @@
 // into a feature to satisfy a menu item.
 
 import { TOOLS } from './tools'
+import { showsSplitView } from './viewChrome'
 import { MAX_TABS } from './tabs'
 import { tabsFullMessage } from './cliCommand'
 
@@ -34,6 +35,7 @@ export const COMMANDS = {
     if (diff.canClear) diff.clear()
   },
   'copy-diff': ({ diff }) => diff.copyDiff(),
+  'copy-diff-file': ({ diff }) => diff.copyDiffAsFile(),
   'apply-patch': ({ diff }) => diff.applyPatch(),
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),
@@ -42,9 +44,17 @@ export const COMMANDS = {
   'tab-prev': ({ tabs }) => tabs.step(-1),
   'tab-close': ({ tabs }) => tabs.requestActiveClose(),
   'import-snippets': ({ diff }) => diff.importSnippets(),
-  'toggle-paste': ({ diff }) => diff.togglePasteMode(),
+  // Hiding the toolbar button was not enough: the shortcut, the menu item and
+  // the palette all reach the same action, and on a saved diff it would replace
+  // what the reader opened. The guard belongs HERE, where every surface meets.
+  'toggle-paste': ({ diff }) => {
+    if (!diff.isSavedDiff) diff.togglePasteMode()
+  },
   'toggle-sidebar': ({ settings }) => settings.setSidebarCollapsed(!settings.sidebarCollapsed),
-  'toggle-split': ({ diff }) => (diff.renderSideBySide = !diff.renderSideBySide),
+  'toggle-split': ({ diff }) => {
+    // Silently flipping a flag nothing reads leaves invisible state behind.
+    if (showsSplitView(diff)) diff.renderSideBySide = !diff.renderSideBySide
+  },
   'toggle-structure': ({ diff }) => {
     if (diff.canCompareStructure) diff.semanticView = !diff.semanticView
   },

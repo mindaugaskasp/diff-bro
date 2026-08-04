@@ -7,6 +7,30 @@ import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fix
 // to reappear in the sidebar and reopen. None of that is reachable in jsdom —
 // the key never enters the renderer. Manages its own launch/relaunch on one
 // profile, like the theme-persistence test.
+// Setting up a comparison, not viewing one. A vault-backed tab has nothing to
+// switch the input mode OF, and the click would replace what the reader opened.
+test('a saved diff does not offer the paste/file mode toggle', async ({ page }) => {
+  const paste = page.getByRole('button', { name: 'Paste text' })
+  await expect(paste).toBeVisible()
+
+  await paste.click()
+  await page.getByPlaceholder('Paste original text here').fill('before')
+  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  // Still a scratch comparison, so the toggle stays — whichever way it reads.
+  const toggle = page.getByRole('button', { name: /^(Paste text|File mode)$/ })
+  await expect(toggle).toBeVisible()
+
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill('E2E mode toggle')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.locator('li.diff', { hasText: 'E2E mode toggle' })).toBeVisible()
+
+  // Now it is vault-backed: the toggle is gone, in either wording.
+  await expect(toggle).toHaveCount(0)
+})
+
 test('a saved diff persists across a relaunch and reopens', async () => {
   const userDataDir = freshUserDataDir()
   const NAME = 'E2E round-trip diff'

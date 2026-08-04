@@ -2,12 +2,13 @@ import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
 import { useSnippetStore } from './snippetStore'
 import { useTabsStore } from './tabsStore'
+import { sealableFromDraft, sealableFromEntry, ttlSpan } from '../utils/shareEntry'
 
 // Content crypto runs in main (vault:encrypt/decrypt); this store never sees the
 // key. Only name/tags/timestamps are plaintext.
-export const DEFAULT_TTL_HOURS = 1
-// Keep in step with sealing.js MAX_TTL_MS: one ceiling for kept and sealed both.
-export const MAX_KEEP_HOURS = 168
+// Re-exported: many modules import these from here, and the definitions live in
+// utils/shareEntry.js so the expiry arithmetic stays unit-testable.
+export { DEFAULT_TTL_HOURS, MAX_KEEP_HOURS } from '../utils/shareEntry'
 export const TTL_OPTIONS = [
   { label: '1 hour', hours: 1 },
   { label: '8 hours', hours: 8 },
@@ -16,29 +17,12 @@ export const TTL_OPTIONS = [
   { label: '3 days', hours: 72 },
   { label: '1 week', hours: 168 }
 ]
-const MAX_KEEP_MS = MAX_KEEP_HOURS * 3600_000
 
 // Timestamps bind the ciphertext as AES-GCM AAD (tampering expiresAt makes the
 // entry undecryptable); name/tags/favorite are deliberately excluded so they
 // stay editable free metadata.
 const entryAad = (id, createdAt, expiresAt, from) =>
   [id, createdAt, expiresAt, from ?? ''].join('|')
-
-// Clamped on the way in, so no caller can exceed the ceiling.
-const ttlSpan = (hours) =>
-  Math.min(Math.max(hours || DEFAULT_TTL_HOURS, 0.1), MAX_KEEP_HOURS) * 3600_000
-
-/**
- * The sender's own window, so both copies die together. A kept diff has none to
- * send and sealing demands a finite one, so it goes with a fresh full window.
- * @param {{ createdAt: number, expiresAt: number|null }} entry
- * @param {number} now
- * @returns {{ createdAt: number, expiresAt: number }}
- */
-function sealedWindow(entry, now) {
-  if (entry.expiresAt === null) return { createdAt: now, expiresAt: now + MAX_KEEP_MS }
-  return { createdAt: entry.createdAt, expiresAt: entry.expiresAt }
-}
 
 const EXT_TAG = { yml: 'yaml', htm: 'html', md: 'markdown', xlsx: 'excel', txt: null, text: null }
 export function diffFormatTag(payload) {
@@ -271,22 +255,18 @@ export const useVaultStore = defineStore('vault', {
     cancelDelete() {
       this.pendingDelete = null
     },
-    // Decrypt an entry and hand it to the main process, which signs it and
-    // seals it for the chosen recipient.
-    async share(id, recipientFps) {
+    // Null when the entry cannot be read (missing, or the vault key is locked).
+    async entryForShare(id) {
       const entry = this.entries.find((e) => e.id === id)
-      if (!entry) return { error: 'missing' }
+      if (!entry) return null
       const payload = await this.load(id)
-      if (!payload) return { error: 'missing' }
-      const { createdAt, expiresAt } = sealedWindow(entry, Date.now())
-      // Tags travel with the diff (inside the signed+encrypted payload), so the
-      // recipient sees them. The auto "imported" tag is local-only — never send
-      // it, or a re-shared diff would accumulate "imported" tags.
-      const tags = entry.tags.filter((t) => t !== 'imported')
-      const res = await window.api.shareExport(
-        { name: entry.name, createdAt, expiresAt, snapshot: payload, tags },
-        recipientFps
-      )
+      return payload ? sealableFromEntry(entry, payload) : null
+    },
+    draftEntry: (draft) => sealableFromDraft(draft),
+    async share(id, recipientFps) {
+      const sealable = await this.entryForShare(id)
+      if (!sealable) return { error: 'missing' }
+      const res = await window.api.shareExport(sealable, recipientFps)
       // Only a WRITTEN file is a share. Cancelling the save dialog must not
       // leave a record of something that was never sent.
       if (res?.ok) this.recordShare(id, recipientFps)
@@ -296,22 +276,17 @@ export const useVaultStore = defineStore('vault', {
     // in-memory snapshot, and only once the sealed file is actually written do we
     // save the local twin. So cancelling the recipient picker OR the file dialog
     // leaves nothing behind (see diffStore.shareCurrent) — a share is all-or-nothing.
-    async shareDraft({ name, ttlHours, snapshot, tags = [] }, recipientFps) {
-      const now = Date.now()
-      const localExpiresAt = ttlHours === null ? null : now + ttlSpan(ttlHours)
-      const { expiresAt } = sealedWindow({ createdAt: now, expiresAt: localExpiresAt }, now)
-      const cleanTags = tags.filter((t) => t !== 'imported')
-      const res = await window.api.shareExport(
-        { name, createdAt: now, expiresAt, snapshot, tags: cleanTags },
-        recipientFps
-      )
-      // Only a written file persists the local twin — a cancel writes nothing.
+    async shareDraft(draft, recipientFps) {
+      const res = await window.api.shareExport(this.draftEntry(draft), recipientFps)
       if (!res.ok) return res
-      // The sealed file is already sent; a local copy that could not be saved
-      // (locked vault key) is reported rather than passed off as a full share.
+      return { ...res, localCopy: await this.saveShareTwin(draft, recipientFps) }
+    },
+    // The local twin of a draft that WAS sealed. A copy that could not be saved
+    // (locked vault key) is reported rather than passed off as a full share.
+    async saveShareTwin({ name, ttlHours, snapshot, tags = [] }, recipientFps) {
       const id = await this.save(name, ttlHours, snapshot, tags)
       if (id) this.recordShare(id, recipientFps)
-      return { ...res, localCopy: !!id }
+      return !!id
     },
     async importShared() {
       return this._ingestShared(await window.api.shareImport())

@@ -2,6 +2,7 @@
 // validation a restored config must pass. Kept here so they are unit-testable —
 // share.js itself is glue, and logic hidden inside it goes unmeasured.
 import { fingerprint } from './sealing'
+import { isValidEmail } from './mailAddress'
 
 export class IdentityUnavailable extends Error {
   constructor() {
@@ -45,6 +46,19 @@ const isTrustedEntry = (entry) =>
   typeof entry.sign === 'string' &&
   typeof entry.box === 'string' &&
   matchesOwnKeys(entry)
+
+// A restored entry's email is a convenience, not a credential, so a bad one
+// drops the field rather than failing the whole restore — losing an address is
+// recoverable by typing it again; losing the trust list is not. Dropping it is
+// still mandatory: an unvalidated address would reach a mailto: header.
+const withVettedEmail = (entry) => {
+  if (isValidEmail(entry.email)) return entry
+  // Omit the key rather than setting it undefined: `share:setTrustedEmail`
+  // deletes, and the two must agree on what "no address" looks like on disk.
+  const rest = { ...entry }
+  delete rest.email
+  return rest
+}
 
 const isRestorableIdentity = (identity) =>
   !!identity?.priv?.sign && !!identity?.priv?.box && isTrustedEntry(identity.pub)
@@ -108,5 +122,5 @@ const snippetVerdict = (snippets, check) => (snippets == null ? null : check?.(s
 // The vetted list, null when the backup carried none, false when it is unusable.
 function listVerdict(trusted) {
   if (!Array.isArray(trusted)) return null
-  return trusted.every(isTrustedEntry) && trusted
+  return trusted.every(isTrustedEntry) && trusted.map(withVettedEmail)
 }

@@ -16,6 +16,19 @@ export const ICONS = {
     { t: 'rect', x: 9, y: 9, width: 13, height: 13, rx: 2 },
     { t: 'path', d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }
   ],
+  // An envelope — the mail hand-off (Email this diff, Settings → Email).
+  mail: [
+    { t: 'rect', x: 2, y: 4, width: 20, height: 16, rx: 2 },
+    { t: 'path', d: 'm2 7 10 6 10-6' }
+  ],
+  // A clipboard with a sheet on it — "Copy as file", the twin of `copy`.
+  clipboard: [
+    { t: 'path', d: 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2' },
+    { t: 'rect', x: 8, y: 2, width: 8, height: 4, rx: 1 },
+    { t: 'path', d: 'M9 13h6M9 17h4' }
+  ],
+  // A crest — marks a recipient resolved from a trusted key rather than typed.
+  shield: [{ t: 'path', d: 'M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z' }],
   x: [{ t: 'path', d: 'M18 6 6 18M6 6l12 12' }],
   // A framed band between two out-of-frame lines: the window a streamed
   // comparison holds onto a file far longer than it.

@@ -58,10 +58,50 @@ const TAG_PALETTE = [
 // has nothing else to recognise them by — and it must never take out a key you
 // actually trust.
 const SEED_KEY_PREFIX = 'Seed — '
-const RECIPIENTS = ['Alice (MacBook)', 'Bob (workstation)', 'Carol (laptop)'].map((who) => ({
-  label: `${SEED_KEY_PREFIX}${who}`,
-  ...createIdentityKeys()
-}))
+// `--many-keys` seeds a realistic org instead of three colleagues. The recipient
+// picker and the trusted-key manager both change shape past a handful — search,
+// alphabetical order, a bounded scroll — and `make local-seed` is the only way
+// that is opened by hand on the host. Two of them deliberately have NO address,
+// so the "Create file" fallback and the "Add an address…" secondary are
+// reachable without editing anything first.
+const MANY_KEYS = 30
+const ADDRESSED = (who) => `${who.split(' ')[0].toLowerCase()}@example.com`
+
+const smallTeam = () =>
+  ['Alice (MacBook)', 'Bob (workstation)', 'Carol (laptop)'].map((who) => ({
+    who,
+    email: ADDRESSED(who)
+  }))
+
+const wholeOrg = () =>
+  Array.from({ length: MANY_KEYS }, (_, i) => {
+    const who = `${TEAM_NAMES[i % TEAM_NAMES.length]} ${String(i + 1).padStart(2, '0')}`
+    // Two without an address, on purpose.
+    return { who, email: i < MANY_KEYS - 2 ? ADDRESSED(who) : null }
+  })
+
+const TEAM_NAMES = [
+  'Alice',
+  'Bob',
+  'Carol',
+  'Dovydas',
+  'Eglė',
+  'Frank',
+  'Greta',
+  'Henrikas',
+  'Ingrid',
+  'Jonas',
+  'Rūta',
+  'Tomas'
+]
+
+const RECIPIENTS = (process.argv.includes('--many-keys') ? wholeOrg() : smallTeam()).map(
+  ({ who, email }) => ({
+    label: `${SEED_KEY_PREFIX}${who}`,
+    email,
+    ...createIdentityKeys()
+  })
+)
 
 const FILES = {
   'budget-2024.xlsx': makeXlsx([
@@ -263,13 +303,19 @@ function main() {
     seedDir: SEED_DIR,
     snippets: localSnippets(),
     diffs: localDiffs(Date.now()),
-    recipients: RECIPIENTS.map((r) => ({ label: r.label, pub: r.pub })),
+    recipients: RECIPIENTS.map((r) => ({ label: r.label, email: r.email, pub: r.pub })),
     sealed: SEALED
   })
 
   console.log(`Seeded ${res.snippets} snippets and ${res.diffs} diffs (tagged "${SEED_TAG}").`)
   console.log(`Kept ${res.kept} entries that were already there.`)
-  console.log(`Added ${res.keys} trusted keys: ${RECIPIENTS.map((r) => r.label).join(', ')}.`)
+  const withMail = RECIPIENTS.filter((r) => r.email).length
+  console.log(
+    `Added ${res.keys} trusted keys (${withMail} with an email address)` +
+      (RECIPIENTS.length > 5
+        ? '. Pass --many-keys off to go back to three.'
+        : `: ${RECIPIENTS.map((r) => r.label).join(', ')}. Pass --many-keys for ${MANY_KEYS}.`)
+  )
   console.log(`Data directory: ${res.dataDir}`)
   console.log(`Files to open: ${SEED_DIR}`)
   const mb = (f) => (statSync(f).size / 1024 / 1024).toFixed(1)

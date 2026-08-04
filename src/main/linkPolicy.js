@@ -37,3 +37,51 @@ export function isSafeExternalUrl(raw) {
     return false
   }
 }
+
+// The mail hand-off. `attach` is refused rather than ignored: it was never
+// standardised, no mainstream client honours it, and the clients that once did
+// turned a mailto: into "read this local file and send it". A URL carrying one
+// did not come from buildMailto, so it is treated as hostile, not tidied up.
+const MAX_MAILTO_URL_LENGTH = 4000
+const BANNED_MAILTO_PARAMS = ['attach', 'attachment']
+
+// eslint-disable-next-line no-control-regex
+const HAS_CONTROL = /[\u0000-\u001f\u007f]/
+
+// mailto: is a non-special scheme, so the addressee sits in `pathname` exactly
+// as written — `a%40b.co` is as valid as `a@b.co`, and it must decode before the
+// check or a legitimate percent-encoded URL reads as address-less. A malformed
+// escape is not something we hand to the OS.
+const hasAddressee = (url) => {
+  try {
+    return decodeURIComponent(url.pathname).includes('@')
+  } catch {
+    return false
+  }
+}
+
+// The fragment is checked too: it carries no meaning for mailto:, so anything
+// naming `attach` there is a probe, not a mistake.
+const carriesBannedParam = (url) => {
+  if ([...url.searchParams.keys()].some((k) => BANNED_MAILTO_PARAMS.includes(k.toLowerCase()))) {
+    return true
+  }
+  const hash = decodeURIComponent(url.hash || '').toLowerCase()
+  return BANNED_MAILTO_PARAMS.some((p) => hash.includes(p))
+}
+
+export function isSafeMailtoUrl(raw) {
+  if (typeof raw !== 'string') return false
+  // Tested BEFORE the trim: the caller holds the untrimmed string, so a verdict
+  // about a trimmed one is a verdict about a different value.
+  if (HAS_CONTROL.test(raw)) return false
+  const text = raw.trim()
+  if (!text || text.length > MAX_MAILTO_URL_LENGTH) return false
+  let url
+  try {
+    url = new URL(text)
+  } catch {
+    return false
+  }
+  return url.protocol === 'mailto:' && hasAddressee(url) && !carriesBannedParam(url)
+}

@@ -1,0 +1,92 @@
+import { describe, expect, it } from 'vitest'
+import { bodyText, headerText, isValidEmail, normalizeEmail } from '../../src/main/mailAddress'
+
+describe('isValidEmail', () => {
+  it('accepts ordinary addresses', () => {
+    for (const ok of [
+      'ana@example.com',
+      'ana.petrauskas@example.co.uk',
+      'ci-bot+diffs@sub.example.org',
+      'a@b.co'
+    ]) {
+      expect(isValidEmail(ok), ok).toBe(true)
+    }
+  })
+
+  // The rule this module exists for: a stored address must never be able to
+  // become a second header in the mailto: URL.
+  it('rejects header injection through CR/LF', () => {
+    expect(isValidEmail('a@b.co\r\nBcc: evil@x.com')).toBe(false)
+    expect(isValidEmail('a@b.co\nBcc: evil@x.com')).toBe(false)
+    expect(isValidEmail('a@b.co\rBcc: evil@x.com')).toBe(false)
+    expect(isValidEmail('a@b.co\0')).toBe(false)
+  })
+
+  it('rejects anything that could split one field into two recipients', () => {
+    expect(isValidEmail('a@b.co,evil@x.com')).toBe(false)
+    expect(isValidEmail('a@b.co;evil@x.com')).toBe(false)
+    expect(isValidEmail('Ana <ana@b.co>')).toBe(false)
+    expect(isValidEmail('a@b.co evil@x.com')).toBe(false)
+  })
+
+  it('rejects malformed shapes', () => {
+    for (const bad of [
+      '',
+      '   ',
+      'nope',
+      '@example.com',
+      'a@',
+      'a@@b.co',
+      'a@b',
+      'a@b..co',
+      '.a@b.co',
+      'a.@b.co',
+      'a..b@c.co',
+      'a@-b.co',
+      'a@b-.co',
+      null,
+      undefined,
+      42,
+      {}
+    ]) {
+      expect(isValidEmail(bad), String(bad)).toBe(false)
+    }
+  })
+
+  it('caps the total length and the local part', () => {
+    expect(isValidEmail(`${'a'.repeat(65)}@b.co`)).toBe(false)
+    expect(isValidEmail(`${'a'.repeat(60)}@${'b'.repeat(200)}.co`)).toBe(false)
+  })
+
+  it('tolerates surrounding whitespace, since a paste usually carries it', () => {
+    expect(isValidEmail('  ana@example.com  ')).toBe(true)
+    expect(normalizeEmail('  ana@example.com  ')).toBe('ana@example.com')
+  })
+})
+
+describe('headerText', () => {
+  it('collapses control characters rather than carrying them into a header', () => {
+    expect(headerText('Sealed diff\r\nBcc: evil@x.com')).toBe('Sealed diff Bcc: evil@x.com')
+  })
+
+  it('trims and caps', () => {
+    expect(headerText('  hi  ')).toBe('hi')
+    expect(headerText('x'.repeat(500))).toHaveLength(200)
+  })
+
+  it('returns an empty string for nothing', () => {
+    expect(headerText(null)).toBe('')
+    expect(headerText(undefined)).toBe('')
+  })
+})
+
+describe('bodyText', () => {
+  it('keeps newlines — a body is allowed to have them', () => {
+    expect(bodyText('one\ntwo')).toBe('one\ntwo')
+  })
+
+  it('normalises CRLF to LF and drops other controls', () => {
+    expect(bodyText('one\r\ntwo')).toBe('one\ntwo')
+    expect(bodyText('one\0two')).toBe('one two')
+  })
+})

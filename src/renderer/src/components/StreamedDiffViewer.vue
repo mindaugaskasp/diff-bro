@@ -58,14 +58,16 @@ const rightClass = (row) => (row.rightLine === null ? 'ghost' : row.status === '
         <div class="stream-spacer" :style="{ height: `${view.padBottom}px` }"></div>
       </div>
 
-      <div class="status band">
-        <span class="add">+{{ summary?.additions ?? 0 }}</span>
-        <span class="del">−{{ summary?.deletions ?? 0 }}</span>
-        <span class="rows">{{ total.toLocaleString() }} rows</span>
+      <div class="status-band">
+        <span>
+          Lines <span class="add">{{ summary?.additions ?? 0 }} added</span> ·
+          <span class="del">{{ summary?.deletions ?? 0 }} removed</span>
+        </span>
+        <span>{{ total.toLocaleString() }} rows</span>
         <span v-if="summary?.approximate" class="capped">
           alignment is a best fit — the files differ too widely to match line for line
         </span>
-        <span class="right">
+        <span class="band-end">
           {{ (summary?.leftLines ?? 0).toLocaleString() }} ↔
           {{ (summary?.rightLines ?? 0).toLocaleString() }} lines
         </span>

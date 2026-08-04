@@ -214,6 +214,17 @@
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   box-shadow: inset 2px 0 0 0 var(--accent);
 }
+/* A Shift+Arrow range paints every line `hot`; the one the arrows are actually
+   moving keeps a slightly stronger ground so the head of the block is findable
+   without a second colour. */
+.ql-pv-line.hot.cursor {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* The selected line numbers stop being a faint aside once they mark a range. */
+.ql-pv-line.hot::before {
+  opacity: 1;
+  color: var(--text);
+}
 .ql-pv-msg {
   flex: 1;
   padding: var(--space-4);
