@@ -29,7 +29,7 @@ export const freshUserDataDir = ({ tips = false } = {}) => {
 // Not in the `app` fixture: the persistence specs call this directly, and would
 // launch unisolated. workerEnv.mjs says what each variable stops leaking.
 export const launchApp = (userDataDir) =>
-  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`], env: workerEnv() })
+  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`], env: workerEnv(userDataDir) })
 
 // The first window, loaded and ready to assert against.
 export async function firstReadyPage(app) {

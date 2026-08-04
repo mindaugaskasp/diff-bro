@@ -20,7 +20,7 @@ and `make shell` for a shell (its `DISPLAY` is preset to `:99`, so `xdotool`
 and `scrot` work straight away).
 
 `:99` is the display you see over noVNC. The entrypoint also starts one more per
-E2E worker from `:100` up (`scripts/e2e-displays.sh`, `E2E_WORKERS`, default 4),
+E2E worker from `:100` up (`scripts/e2e-displays.sh`, `E2E_WORKERS`),
 because the X11 clipboard is per-display and parallel workers sharing one would
 read each other's copies. Nothing interactive uses those — a `make e2e` run is
 invisible in the VNC view, which is the point.

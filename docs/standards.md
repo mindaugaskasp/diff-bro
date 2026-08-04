@@ -395,20 +395,30 @@ directory move passes CI while silently removing enforcement.
   permission handler and fail: clipboard writes go through `window.api.copyText`
   (main process, `src/main/clipboard.js`), never `navigator.clipboard`.
 - **E2E runs in parallel, and `--user-data-dir` is only half of what isolates a
-  worker.** Files are distributed across `E2E_WORKERS` workers (default 4;
-  parallel by FILE, so the order inside a spec is kept — the relaunch specs
-  depend on it). Three globals a launched app reaches sit OUTSIDE userData, and
-  each is per-worker in `e2e/workerEnv.mjs`: `DISPLAY` (the X11 clipboard is one
-  per display and 22 specs read it back), `TMPDIR` (`sweepStage()` deletes every
-  `diffbro-clipboard-*` dir in the temp dir on launch — by design, so a shared
-  one has workers deleting each other's staged files) and `HOME` (the CLI shim
-  installs to `~/.local/bin`). They are set in `launchApp`, NOT in the `app`
-  fixture, because the persistence specs call `launchApp` directly. A worker
-  whose display is missing THROWS rather than falling back to the ambient one:
-  falling back is silent, and a spec that reads a neighbour's clipboard asserts
-  against it. `scripts/e2e-displays.sh` starts them (the entrypoint, `make e2e`
-  and CI all call it). **Anything new that reaches a shared OS resource — a
-  fixed temp path, a lock, a well-known port — has to be added to that list.**
+  run.** Files are distributed across `E2E_WORKERS` workers (`DEFAULT_WORKERS`
+  in `e2e/workerEnv.mjs` is the only place the number is written — the display
+  pool reads the same constant). Parallel by FILE, so the order inside a spec is
+  kept: the relaunch specs depend on it. Three globals a launched app reaches sit
+  OUTSIDE userData, and `e2e/workerEnv.mjs` scopes each to what it belongs to:
+  - `TMPDIR` and `HOME` are per **profile**, created inside the userData dir.
+    `sweepStage()` deletes every `diffbro-clipboard-*` dir in the temp dir on
+    launch — by design — so a shared one has tests deleting each other's staged
+    files. Per-profile rather than per-worker for two reasons: a relaunch of the
+    same profile must still find what it staged (`copy-as-file` proves the
+    launch sweep exactly that way), and the fixture's `rmSync` then takes the
+    scratch with it instead of leaving dirs to accumulate and leak between the
+    tests a worker goes on to run.
+  - `DISPLAY` is per **worker**, because the X11 clipboard is one per display
+    and 22 specs read it back. X11 only: on macOS/Windows it is not set, and a
+    second worker there THROWS rather than quietly sharing the system clipboard.
+
+  They are set in `launchApp`, NOT in the `app` fixture, because the persistence
+  specs call `launchApp` directly. A worker whose display is missing THROWS
+  rather than falling back to the ambient one: falling back is silent, and a
+  spec that reads a neighbour's clipboard asserts against it.
+  `scripts/e2e-displays.sh` starts them (the entrypoint, `make e2e` and CI all
+  call it). **Anything new that reaches a shared OS resource — a fixed temp
+  path, a lock, a well-known port — has to be added to that list.**
 - **A failing E2E keeps its trace.** Playwright clears `test-results/` at the
   START of a run, so a failure's trace is destroyed by the next run — which is
   how three sightings of the same intermittent were lost with nothing to show

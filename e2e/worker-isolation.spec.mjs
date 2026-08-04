@@ -1,7 +1,9 @@
 // Dropping the env from `launchApp` fails nowhere near itself: the clipboard
 // specs start reading each other's copies, intermittently and elsewhere.
-import { test, expect } from './fixtures.mjs'
-import { displayFor, isX11, workerIndex } from './workerEnv.mjs'
+import { rmSync } from 'node:fs'
+import { join } from 'node:path'
+import { test, expect, launchApp, freshUserDataDir } from './fixtures.mjs'
+import { displayFor, isX11 } from './workerEnv.mjs'
 
 const launchedEnv = (app) =>
   app.evaluate(({ app: electronApp }) => ({
@@ -10,10 +12,18 @@ const launchedEnv = (app) =>
     home: process.env.HOME
   }))
 
-test('the app runs against this worker own temp dir and home', async ({ app }) => {
-  const seen = await launchedEnv(app)
-  expect(seen.temp).toContain(`diffbro-w${workerIndex()}-tmp`)
-  expect(seen.home).toContain(`diffbro-w${workerIndex()}-home`)
+// Its own profile, so the paths can be asserted exactly rather than by shape.
+test('the app scratch dirs are its own profile, not the worker', async () => {
+  const dir = freshUserDataDir()
+  const app = await launchApp(dir)
+  try {
+    const seen = await launchedEnv(app)
+    expect(seen.temp).toBe(join(dir, 'tmp'))
+    expect(seen.home).toBe(join(dir, 'home'))
+  } finally {
+    await app.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 // X11 only: macOS and Windows have one system clipboard and no per-worker

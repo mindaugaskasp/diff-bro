@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test'
+import { DEFAULT_WORKERS } from './e2e/workerEnv.mjs'
 
 // End-to-end tests drive the app's OWN Electron build through Playwright's
 // `_electron` (see e2e/fixtures.mjs) — there is no web server and no bundled
@@ -15,7 +16,7 @@ export default defineConfig({
   // By FILE, not by test: order within a spec is what the relaunch specs assume.
   // Isolation is e2e/workerEnv.mjs; E2E_WORKERS also sizes the display pool.
   fullyParallel: false,
-  workers: Number(process.env.E2E_WORKERS || 4),
+  workers: Number(process.env.E2E_WORKERS) || DEFAULT_WORKERS,
   forbidOnly: !!process.env.CI,
   timeout: 30_000,
   expect: { timeout: 8_000 },

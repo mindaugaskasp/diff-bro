@@ -4,10 +4,18 @@
 # the interactive session (noVNC, screenshots, theme-sweep).
 #
 # Run by docker/entrypoint.sh, `make e2e` and CI. Idempotent.
-# Usage: e2e-displays.sh [worker-count]   (default $E2E_WORKERS, else 4)
+# Usage: e2e-displays.sh [worker-count]   (default $E2E_WORKERS, else DEFAULT_WORKERS)
 set -e
 
-E2E_WORKERS="${1:-${E2E_WORKERS:-4}}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Read from the module Playwright reads, so the pool cannot be sized differently
+# from the workers that need it.
+default_workers() {
+  node --input-type=module -e \
+    "import('file://$HERE/../e2e/workerEnv.mjs').then((m) => process.stdout.write(String(m.DEFAULT_WORKERS)))"
+}
+
+E2E_WORKERS="${1:-${E2E_WORKERS:-$(default_workers)}}"
 SCREEN_SIZE="${SCREEN_SIZE:-1400x900x24}"
 
 start_display() {
