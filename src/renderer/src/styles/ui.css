@@ -578,3 +578,67 @@ button.tag-chip:hover .usb-tct {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+
+/* A search field. Lifted out of SidebarSearch.css when a third component needed
+   it (the recipient picker and the trusted-key manager): a scoped copy in the
+   second one drifts, which is what the shared-class rule in docs/standards.md
+   is for. SidebarSearch keeps its own row layout and uses this for the box. */
+.field-search {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-h-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 var(--space-2) 0 8px;
+}
+.field-search:focus-within {
+  border-color: var(--accent);
+}
+.field-search > svg {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.field-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-md);
+}
+.field-search input:focus {
+  outline: none;
+}
+.field-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.field-search button {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  padding: 0 2px;
+}
+.field-search button:hover {
+  color: var(--text);
+}
+
+/* A bounded scroll region inside a dialog. Bounded by --border rules rather
+   than a gradient fade: the rows are --bg-raised cards on a --bg-panel dialog,
+   so a fade would have to pick one and smear over the other — and `contrast`
+   and `beacon` carry a hard-keyline contract a soft edge would break. */
+.dialog-scroller {
+  overflow-y: auto;
+  border-block: 1px solid var(--border);
+  padding-block: var(--space-1);
+}

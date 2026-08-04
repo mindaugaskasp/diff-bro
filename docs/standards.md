@@ -49,6 +49,17 @@ regression test from decoration.
    `contextIsolation`, the deny-all permission handler, or the
    `will-navigate` block in `src/main/index.js`. No telemetry, no
    auto-update, no CDN assets — ever.
+
+   **Emailing a diff does not break this, because the app does not send.** It
+   seals the file, hands a `mailto:` to the OS, and stops; the user's own mail
+   client does the sending. An SMTP client was specced and rejected for exactly
+   this reason — see `specs/2026-08-04-email-sharing/plan.md`. Note the trap it
+   would have sprung: `installNetworkKillSwitch` filters
+   `session.defaultSession.webRequest`, which is **Chromium traffic only**, so a
+   main-process `tls.connect` would be invisible to it. The guarantee holds
+   because nothing in main opens a socket, not because anything stops it. Any
+   future proposal to add one starts from there.
+
 2. **New dependencies need a network audit.** Before adding any package:
    confirm it makes no runtime network calls, then run `npm audit`. Prefer
    zero new production dependencies. `yaml` (structure-aware comparison) passed
@@ -85,7 +96,7 @@ regression test from decoration.
    `.diffbrokey`) get size caps, shape validation, and recomputed
    fingerprints before use. Keep it that way for any new import surface.
 7. **Leaving the sandbox is fenced in main.** `shell.openExternal` has exactly
-   two call sites, both of which confirm with the user first: `src/main/menu.js`
+   three call sites, all of which confirm with the user first: `src/main/menu.js`
    (Report an Issue — `issueUrl.js` owns the origin and path; the renderer may
    pass an error message for the prefilled title, never a URL, and that message
    is anonymised, capped and `URLSearchParams`-encoded so it cannot add a
@@ -94,10 +105,33 @@ regression test from decoration.
    process — Claude links against the strict claude.ai allowlist, a URL
    snippet's link against an http(s)-only scheme check (`linkPolicy.js`). The
    scheme check is the fence: openExternal will otherwise open a local file, run
-   a script handler, or launch another application. Adding a third call site
-   needs the same treatment. **URL snippets are local-only**: `_bundle` and
+   a script handler, or launch another application. Adding a fourth call site
+   needs the same treatment. The third is `src/main/mail.js`, the mail hand-off:
+   the `mailto:` is BUILT in main from validated parts (`mailto.js`, addresses
+   resolved from the trust store, never from the renderer) and checked on the way
+   out by `linkPolicy.isSafeMailtoUrl` — `mailto:` scheme only, and an
+   `attach`/`attachment` parameter is REFUSED rather than ignored, because some
+   clients once honoured it and it turns a mailto: into "read this local file and
+   send it". The renderer supplies fingerprints and text; it never supplies a URL.
+   **URL snippets are local-only**: `_bundle` and
    `restoreBundle` drop them, so a link can never arrive in a shared bundle and
    be opened with one click.
+
+   Two sibling surfaces hand a PATH to the OS rather than a URL, and are fenced
+   the same way. `shell.showItemInFolder` (mail.js) reveals the sealed file it
+   just wrote — the path is the one main computed, never round-tripped through
+   the renderer, and there is no handler that reveals an arbitrary one.
+   **Copy as file** (`clipboardCopy.js`) stages bytes and puts the staged path on
+   the clipboard; `clipboard:writeFile` takes **bytes and a display name, never a
+   path**, so the renderer cannot name a file to stage, read one back, or learn
+   the staging directory. Staged copies live in a `0o700` directory under the OS
+   temp dir, are pruned after 30 minutes, and are swept both on `will-quit` and
+   on next launch — the second sweep because a crash skips the first, and a
+   snippet's plaintext surviving a reboot in `/tmp` is the failure that matters.
+   A **secret snippet refuses Copy as file** for the same reason: its guarantee is
+   that the contents never land somewhere readable, which a volatile text
+   clipboard honours and a file on disk does not.
+
 8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only
    through Vue text interpolation.

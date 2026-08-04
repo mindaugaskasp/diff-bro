@@ -3,7 +3,7 @@
 // public .diffbrokey files both ways before a (single-recipient) share works.
 import { clipboard, dialog, ipcMain, safeStorage } from 'electron'
 import { readFile, rm, stat, writeFile } from 'fs/promises'
-import { basename, dirname, join } from 'path'
+import { basename } from 'path'
 import { dataFile, getDataDir } from './appData'
 import {
   KEY_FORMAT,
@@ -15,16 +15,16 @@ import {
   isAcceptedKeyFormat,
   rebuiltPublicKey,
   openSealedWith,
-  sealEntry,
   shareFilename,
   signRotation,
-  verifyRotation,
-  ttlError
+  verifyRotation
 } from './sealing'
 import { openConfig, sealConfig } from './configBackup'
 import { checkDestination, writeBackupZip } from './backupZip'
 import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
 import { validateSnippetBundle } from './snippetSealing'
+import { readTrusted, registerTrustedKeyIpc, replaceTrusted, storeTrusted } from './trustedKeys'
+import { sealAndWrite } from './shareExport'
 
 const PLAIN_PREFIX = 'plain:'
 
@@ -34,7 +34,6 @@ const MAX_KEY_FILE_BYTES = 64 * 1024
 
 const privPath = () => dataFile('identity.key')
 const pubPath = () => dataFile('identity.pub')
-const trustPath = () => dataFile('trusted-keys.json')
 // Keys this machine has rotated away from. They DECRYPT and nothing else — a
 // diff sealed to the old key before it was replaced is still addressed to a key
 // we hold, and rotating must not destroy mail already in flight.
@@ -171,15 +170,6 @@ async function persistIdentity(priv, pub) {
   await writeFile(pubPath(), JSON.stringify(pub, null, 2))
 }
 
-async function readTrusted() {
-  try {
-    const list = JSON.parse(await readFile(trustPath(), 'utf-8'))
-    return Array.isArray(list) ? list : []
-  } catch {
-    return []
-  }
-}
-
 // Set/refresh the cosmetic display label (never part of the fingerprint or any
 // trust check) and return the pub with it embedded.
 async function pubWithLabel(rawLabel) {
@@ -216,12 +206,6 @@ async function parseKeyFileAt(path) {
   }
 }
 
-async function storeTrusted(key, fp, label) {
-  const trusted = (await readTrusted()).filter((t) => t.fingerprint !== fp)
-  trusted.push({ fingerprint: fp, label: (label || fp).trim() || fp, sign: key.sign, box: key.box })
-  await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
-}
-
 // Size + filename-integrity guards on the untrusted file before openSealed does
 // the crypto vetting. Shared by the dialog and drag-drop importers.
 async function openSharedFileAt(path) {
@@ -241,9 +225,7 @@ async function openSharedFileAt(path) {
 }
 
 export function registerShareIpc() {
-  ipcMain.handle('share:listTrusted', async () => {
-    return (await readTrusted()).map(({ fingerprint: fp, label }) => ({ fingerprint: fp, label }))
-  })
+  registerTrustedKeyIpc()
 
   // Creates the keypairs on first use (no manual "generate keys" step); null if
   // the identity can't be loaded.
@@ -271,32 +253,10 @@ export function registerShareIpc() {
   ipcMain.handle(
     'share:export',
     guardIdentity(async (e, entry, recipientFps) => {
-      const wanted = [...new Set(Array.isArray(recipientFps) ? recipientFps : [recipientFps])]
-      const trusted = await readTrusted()
-      const recipients = wanted.map((fp) => trusted.find((t) => t.fingerprint === fp))
-      if (!recipients.length || recipients.some((r) => !r)) return { error: 'unknown-recipient' }
-
-      // Enforce the TTL at signing too — never sign timestamps a receiver rejects.
-      const invalid = ttlError(entry)
-      if (invalid) return { error: invalid }
-
-      const { priv, pub } = await getIdentity()
-      const file = sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipients)
-      // Filename is forced (a ciphertext hash); the user only picks WHERE.
-      const forcedName = shareFilename(file)
-      const { canceled, filePath } = await dialog.showSaveDialog({
-        title:
-          recipients.length > 1
-            ? `Share diff (sealed for ${recipients.length} recipients)`
-            : 'Share diff (sealed for one recipient)',
-        defaultPath: forcedName,
-        filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
-      })
-      if (canceled || !filePath) return { canceled: true }
-
-      const outPath = join(dirname(filePath), forcedName)
-      await writeFile(outPath, JSON.stringify(file, null, 2))
-      return { ok: true, path: outPath, to: recipients.map((r) => r.label).join(', ') }
+      const identity = await getIdentity()
+      const res = await sealAndWrite({ entry, recipientFps, identity })
+      if (!res.ok) return res
+      return { ok: true, path: res.path, to: res.recipients.map((r) => r.label).join(', ') }
     })
   )
 
@@ -385,24 +345,6 @@ export function registerShareIpc() {
       }
     })
   )
-
-  // List, rename and remove trusted keys for the management UI.
-  ipcMain.handle('share:renameTrusted', async (e, fp, label) => {
-    const trusted = await readTrusted()
-    const entry = trusted.find((t) => t.fingerprint === fp)
-    if (!entry) return { error: 'unknown' }
-    entry.label = (label || fp).trim() || fp
-    await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
-    return { ok: true, label: entry.label, fingerprint: fp }
-  })
-
-  ipcMain.handle('share:removeTrusted', async (e, fp) => {
-    const before = await readTrusted()
-    const trusted = before.filter((t) => t.fingerprint !== fp)
-    if (trusted.length === before.length) return { ok: false, error: 'unknown-recipient' }
-    await writeFile(trustPath(), JSON.stringify(trusted, null, 2))
-    return { ok: true }
-  })
 
   // Read + validate a dragged-in .diffbrokey by path WITHOUT storing it, so
   // the renderer can prompt for a name first. Public key material only.
@@ -555,7 +497,7 @@ async function applyRestoredConfig({ identity, trusted, snippets, settings, vaul
     await retireCurrentIdentity(vetted.identity.pub.fingerprint)
     await persistIdentity(vetted.identity.priv, vetted.identity.pub)
   }
-  if (vetted.trusted) await writeFile(trustPath(), JSON.stringify(vetted.trusted, null, 2))
+  if (vetted.trusted) await replaceTrusted(vetted.trusted)
   // Vetted here, re-encrypted there: main caps the shape and the count before
   // the renderer is handed anything to loop over.
   return {

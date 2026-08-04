@@ -2,6 +2,7 @@ import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } f
 import { homedir } from 'os'
 import { ISSUE_BASE, buildIssueUrl } from './issueUrl'
 import { isLauncher, toggleQuickLook } from './quickLook'
+import { securityMenu } from './menuSections'
 
 // Leaves the offline sandbox, so confirm first — showing the prefill, since
 // this is the moment that text stops being local.
@@ -158,9 +159,14 @@ export function installMenu() {
         },
         { label: 'Clear', accelerator: 'CmdOrCtrl+K', click: () => sendToFocused('clear') },
         {
-          label: 'Copy Diff as Patch',
+          label: 'Copy Diff as Text',
           accelerator: 'CmdOrCtrl+Shift+C',
           click: () => sendToFocused('copy-diff')
+        },
+        {
+          label: 'Copy Diff as File',
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: () => sendToFocused('copy-diff-file')
         },
         { label: 'Apply Patch…', click: () => sendToFocused('apply-patch') },
         { type: 'separator' },
@@ -213,24 +219,7 @@ export function installMenu() {
         ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : [])
       ]
     },
-    {
-      label: 'Security',
-      submenu: [
-        { label: 'Share My Public Key', click: () => sendToFocused('export-pubkey') },
-        { type: 'separator' },
-        { label: 'Add Trusted Key', click: () => sendToFocused('add-trusted-key') },
-        { label: 'Manage Trusted Keys', click: () => sendToFocused('manage-keys') },
-        { label: 'Replace My Key…', click: () => sendToFocused('rotate-key') },
-        { type: 'separator' },
-        {
-          label: 'Configuration',
-          submenu: [
-            { label: 'Back Up', click: () => sendToFocused('config-backup') },
-            { label: 'Restore', click: () => sendToFocused('config-restore') }
-          ]
-        }
-      ]
-    },
+    securityMenu(sendToFocused),
     {
       label: 'Tools',
       submenu: [

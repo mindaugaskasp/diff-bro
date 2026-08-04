@@ -13,6 +13,8 @@ import { registerHashIpc } from './hashTools'
 import { backupIfDue, registerBackupIpc } from './backupRoute'
 import { setBackupHook } from './appData'
 import { registerShareIpc } from './share'
+import { registerMailIpc } from './mail'
+import { registerClipboardCopyIpc } from './clipboardCopy'
 import { registerSnippetIpc } from './snippets'
 import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLook'
 import { registerLinkIpc } from './links'
@@ -70,6 +72,8 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerBackupIpc()
     setBackupHook(backupIfDue)
     registerShareIpc()
+    registerMailIpc()
+    registerClipboardCopyIpc()
     registerSnippetIpc()
     registerLoggerIpc()
     registerLinkIpc()

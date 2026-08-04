@@ -1,23 +1,18 @@
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useShareStore } from '../shareStore'
+import { useRecipientPicker } from '../../../composables/useRecipientPicker'
 import BaseDialog from '../../../components/BaseDialog.vue'
+import AppIcon from '../../../components/AppIcon.vue'
+import RecipientPicker from './RecipientPicker.vue'
 
 // Recipient picker with built-in first-time key-exchange setup (reusing the
 // Security-menu flows). Keys are generated automatically on first use.
 const share = useShareStore()
 
 const recipients = ref([])
-// A set, not a single pick: one file can be sealed for a whole team.
-const selected = ref([])
 const myFingerprint = ref('')
-const chosen = computed(() =>
-  recipients.value.filter((r) => selected.value.includes(r.fingerprint))
-)
-const toggle = (fp) =>
-  (selected.value = selected.value.includes(fp)
-    ? selected.value.filter((f) => f !== fp)
-    : [...selected.value, fp])
+const picker = useRecipientPicker(recipients)
 
 onMounted(async () => {
   // Asking for the fingerprint creates this install's keypairs on first use.
@@ -27,13 +22,7 @@ onMounted(async () => {
 
 async function refresh(preferFp) {
   recipients.value = await window.api.listTrustedKeys()
-  const known = recipients.value.map((r) => r.fingerprint)
-  selected.value = selected.value.filter((fp) => known.includes(fp))
-  // A key added from here is the one you just went to fetch, so it starts ticked.
-  if (preferFp && known.includes(preferFp) && !selected.value.includes(preferFp)) {
-    selected.value = [...selected.value, preferFp]
-  }
-  if (!selected.value.length && known.length === 1) selected.value = [known[0]]
+  picker.reconcile(preferFp)
 }
 
 // Refresh the recipient list once the "Add trusted key" dialog closes.
@@ -44,46 +33,59 @@ watch(
   }
 )
 
-function close() {
-  share.shareEntryId = null
-  share.shareDraft = null
+const close = () => share.dismissShare()
+const saveFile = () => share.shareTo(picker.selected.value)
+const emailIt = () => share.emailTo(picker.selected.value, picker.picked.value)
+// Enter in the search field reaches here when nothing is ticked; without the
+// guard it called shareTo([]).
+function submit() {
+  if (!picker.canSubmit.value) return
+  if (picker.everyPickedHasEmail.value) emailIt()
+  else saveFile()
 }
 </script>
 
 <template>
   <!-- Normal case: at least one trusted recipient exists. -->
-  <BaseDialog v-if="recipients.length" width="400px" title="Share diff" @close="close">
-    <form class="dialog-form" @submit.prevent="share.shareTo(selected)">
+  <BaseDialog v-if="recipients.length" width="440px" title="Share diff" @close="close">
+    <form class="dialog-form" @submit.prevent="submit">
       <div class="field-label">Seal for</div>
-      <ul class="recipients">
-        <li v-for="r in recipients" :key="r.fingerprint">
-          <label class="recipient">
-            <input
-              type="checkbox"
-              :checked="selected.includes(r.fingerprint)"
-              @change="toggle(r.fingerprint)"
-            />
-            <span class="rc-name">{{ r.label }}</span>
-            <code class="rc-fp">{{ r.fingerprint.slice(0, 8) }}…</code>
-          </label>
-        </li>
-      </ul>
+      <RecipientPicker
+        :picker="picker"
+        show-email
+        @submit="submit"
+        @close="close"
+        @add="share.addTrustedKey()"
+      />
       <p class="dialog-note">
         {{
-          chosen.length > 1
-            ? `One file only these ${chosen.length} can open, signed so any modification — including its expiry time — is rejected.`
+          picker.picked.value.length > 1
+            ? `One file only these ${picker.picked.value.length} can open, signed so any modification — including its expiry time — is rejected.`
             : 'The file is encrypted so only the chosen recipient can open it, and signed so any modification — including its expiry time — is rejected.'
         }}
         It expires at the same moment as your local copy.
       </p>
       <div class="dialog-actions">
-        <button type="button" class="btn btn-sm" @click="share.addTrustedKey()">
-          Add recipient…
+        <!-- The primary is what the user can actually do now: a disabled primary
+             that never explains itself is how a toolbar comes to look switched off. -->
+        <button
+          v-if="picker.everyPickedHasEmail.value"
+          type="button"
+          class="btn btn-primary"
+          @click="emailIt"
+        >
+          <AppIcon name="mail" />
+          Email this diff
+        </button>
+        <button
+          type="button"
+          :class="picker.everyPickedHasEmail.value ? 'btn btn-sm' : 'btn btn-primary'"
+          :disabled="!picker.canSubmit.value"
+          @click="saveFile"
+        >
+          Save file
         </button>
         <span class="spacer" />
-        <button type="submit" class="btn btn-primary" :disabled="!selected.length">
-          Create file
-        </button>
         <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
       </div>
     </form>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isClaudeUrl } from '../../src/main/linkPolicy'
+import { isClaudeUrl, isSafeMailtoUrl } from '../../src/main/linkPolicy'
 
 describe('isClaudeUrl — the claude.ai open allowlist', () => {
   it('accepts claude.ai and its subdomains over https', () => {
@@ -41,5 +41,57 @@ describe('isClaudeUrl — the claude.ai open allowlist', () => {
     ]) {
       expect(isClaudeUrl(url)).toBe(false)
     }
+  })
+})
+
+describe('isSafeMailtoUrl — the mail hand-off fence', () => {
+  it('accepts a mailto: with recipients, subject and body', () => {
+    expect(isSafeMailtoUrl('mailto:a@b.co')).toBe(true)
+    expect(isSafeMailtoUrl('mailto:a@b.co,c@d.co?subject=Hi&body=There')).toBe(true)
+    // Percent-encoded is still legal, and a hand-edited URL may arrive that way.
+    expect(isSafeMailtoUrl('mailto:a%40b.co')).toBe(true)
+  })
+
+  // `attach` is refused, not ignored: some clients once honoured it, which
+  // turns a mailto: into "read this local file and send it".
+  it('rejects an attach parameter in any casing', () => {
+    expect(isSafeMailtoUrl('mailto:a@b.co?attach=/etc/passwd')).toBe(false)
+    expect(isSafeMailtoUrl('mailto:a@b.co?ATTACH=/etc/passwd')).toBe(false)
+    expect(isSafeMailtoUrl('mailto:a@b.co?attachment=/etc/passwd')).toBe(false)
+    expect(isSafeMailtoUrl('mailto:a@b.co?subject=Hi&attach=~/.ssh/id_rsa')).toBe(false)
+  })
+
+  it('rejects every scheme but mailto:', () => {
+    for (const url of [
+      'https://example.com',
+      'http://example.com',
+      'file:///etc/passwd',
+      'javascript:alert(1)',
+      'mailto',
+      'a@b.co',
+      '',
+      null,
+      undefined,
+      42
+    ]) {
+      expect(isSafeMailtoUrl(url), String(url)).toBe(false)
+    }
+  })
+
+  it('rejects a malformed percent-escape rather than handing it to the OS', () => {
+    expect(isSafeMailtoUrl('mailto:a%ZZb.co')).toBe(false)
+  })
+
+  it('rejects a mailto: with no addressee', () => {
+    expect(isSafeMailtoUrl('mailto:')).toBe(false)
+    expect(isSafeMailtoUrl('mailto:?subject=Hi')).toBe(false)
+  })
+
+  it('rejects embedded control characters', () => {
+    expect(isSafeMailtoUrl('mailto:a@b.co?subject=Hi\r\nBcc: x')).toBe(false)
+  })
+
+  it('rejects an over-long URL', () => {
+    expect(isSafeMailtoUrl(`mailto:a@b.co?body=${'x'.repeat(5000)}`)).toBe(false)
   })
 })

@@ -1,0 +1,115 @@
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Selected recipients. Above the divider and outside the scroller on purpose:
+   these must stay on screen whatever the query excludes. */
+.picked {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--chip-h);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  border: 1px solid var(--btn-edge);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  max-width: 100%;
+}
+.chip:hover {
+  border-color: var(--danger-border);
+}
+.chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chip svg {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+}
+
+/* A fixed height whether there are three trusted keys or thirty, so the dialog's
+   actions never leave the screen. Eight rows at --control-h-sm. */
+.rows {
+  max-height: 208px;
+  background: var(--bg);
+}
+.recipients {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-1);
+}
+.recipient {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.recipient:hover {
+  background: var(--bg-hover);
+}
+/* Keyboard focus follows an active row while the caret stays in the field. */
+.recipient.active {
+  background: var(--bg-hover);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+.rc-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rc-mail {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.rc-mail.none {
+  font-style: italic;
+}
+.empty {
+  margin: 0;
+  padding: var(--space-3);
+  text-align: center;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.listfoot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.spacer {
+  flex: 1;
+}

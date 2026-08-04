@@ -1,0 +1,74 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.field-label {
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.to {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--chip-h);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  font-size: var(--font-sm);
+  max-width: 100%;
+}
+.chip svg {
+  flex: none;
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+}
+.who {
+  color: var(--text);
+  white-space: nowrap;
+}
+.addr {
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+/* --warning-bg as a fill bar, never --warning-border as a hairline: that token
+   scores 2.74 on contrast, under the 3:1 non-text floor. */
+.strip {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--warning-bg);
+  background: var(--bg);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: var(--font-sm);
+  color: var(--text);
+  line-height: 1.5;
+}
+.strip svg {
+  flex: none;
+  color: var(--warning-bg);
+  margin-top: 2px;
+}
+.spacer {
+  flex: 1;
+}

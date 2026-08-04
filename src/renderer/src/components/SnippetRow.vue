@@ -6,6 +6,8 @@ import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useImageExportStore } from '../features/imageExport'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
+import { useCopyAsFile } from '../composables/useCopyAsFile'
+import { snippetFile } from '../utils/copyAsFile'
 import { languageMonogram } from '../utils/languageMonogram'
 import { firstClaudeUrl } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
@@ -28,6 +30,7 @@ const ui = useUiStore()
 const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
+const { supported, copyFile } = useCopyAsFile()
 const { startDrag } = useSnippetDrag()
 
 const lang = computed(() => languageOf(props.entry))
@@ -49,6 +52,13 @@ async function copySnippet(id) {
   }
   await window.api.copyText(content)
   flash()
+}
+// The twin of Copy. A secret snippet refuses: a staged file is plaintext on
+// disk, which is exactly what "secret" promises not to do (utils/copyAsFile.js).
+async function copySnippetAsFile(entry) {
+  const content = await store.load(entry.id)
+  if (content == null) return
+  if (await copyFile(snippetFile({ ...entry, content, lang: lang.value }))) flash()
 }
 async function viewDiagram(entry) {
   const code = await store.load(entry.id)
@@ -166,11 +176,20 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       </button>
       <button
         class="row-btn"
-        data-tip="Copy"
-        aria-label="Copy to clipboard"
+        data-tip="Copy content"
+        aria-label="Copy content to clipboard"
         @click="copySnippet(entry.id)"
       >
         <AppIcon name="copy" />
+      </button>
+      <button
+        v-if="supported && !isSecret(entry)"
+        class="row-btn"
+        data-tip="Copy as file"
+        aria-label="Copy as a file"
+        @click="copySnippetAsFile(entry)"
+      >
+        <AppIcon name="clipboard" />
       </button>
       <button
         class="row-btn delete"

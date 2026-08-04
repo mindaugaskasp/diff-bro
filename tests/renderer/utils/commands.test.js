@@ -30,6 +30,7 @@ const stores = () => ({
     swap: spy(),
     clear: spy(),
     copyDiff: spy(),
+    copyDiffAsFile: spy(),
     applyPatch: spy(),
     exportDiff: spy(),
     importSnippets: spy(),

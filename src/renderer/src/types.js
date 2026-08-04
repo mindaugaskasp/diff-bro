@@ -272,4 +272,15 @@
  * @property {true} [sep]
  */
 
+/**
+ * A peer we can seal a diff for, as `share:listTrusted` projects it. Key
+ * MATERIAL never crosses the boundary — only the fingerprint that identifies it.
+ * The email is a local delivery hint typed by the owner of this machine; it
+ * never travels in a `.diffbrokey`, so it is never attacker-supplied on import.
+ * @typedef {object} TrustedKey
+ * @property {string} fingerprint
+ * @property {string} label          the display name the user gave this key
+ * @property {string|null} [email]   null when none is set
+ */
+
 export {}

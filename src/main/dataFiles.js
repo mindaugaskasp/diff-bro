@@ -16,6 +16,7 @@ export const DATA_FILES = [
   'vault.key', // vault encryption key (OS-keychain wrapped)
   'retired-keys.key', // decrypt-only keys rotated away from
   'settings.json', // preferences
+  'email.json', // mail hand-off message defaults
   'theme.json' // chosen theme
 ]
 

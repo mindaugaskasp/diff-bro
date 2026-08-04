@@ -34,6 +34,7 @@ export const COMMANDS = {
     if (diff.canClear) diff.clear()
   },
   'copy-diff': ({ diff }) => diff.copyDiff(),
+  'copy-diff-file': ({ diff }) => diff.copyDiffAsFile(),
   'apply-patch': ({ diff }) => diff.applyPatch(),
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),
