@@ -198,11 +198,19 @@ async function seed(page) {
       await window.api.storeSave('snippets', JSON.stringify({ tags, entries: snippetEntries }))
       await window.api.storeSave('vault', JSON.stringify({ entries: vaultEntries }))
       await window.api.storeSave('theme', 'dark')
+      // This runs on a throwaway profile, which is exactly what the onboarding
+      // tour fires on — without this, every captured frame wears a scrim.
+      await window.api.storeSave('onboarding', JSON.stringify({ showTips: false }))
     },
     { snippets: SNIPPETS, diffs: [...savedDiffs(now), ...externalDiffs(now)], palette: TAG_PALETTE }
   )
   await page.reload()
   await page.locator('.snippets-section .row').first().waitFor({ state: 'visible' })
+  // Fail loudly rather than shipping a set of veiled frames that look plausible
+  // in the terminal and wrong in the README.
+  if (await page.locator('.tour').count()) {
+    throw new Error('onboarding tour is showing — screenshots would be captured through its scrim')
+  }
 }
 
 async function stubOpen(app, filePath) {

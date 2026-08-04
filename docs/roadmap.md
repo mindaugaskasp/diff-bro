@@ -176,24 +176,30 @@ flowchart LR
 ```mermaid
 stateDiagram-v2
   [*] --> launch
-  launch --> tour: no stored version
-  launch --> app: stored is current
-  launch --> whatsNew: stored is older
-  tour --> app: finish or skip, persist
-  whatsNew --> app: dismiss, persist
-  app --> tour: re-run from Help menu
+  launch --> runOne: no stored step
+  launch --> app: both runs done
+  launch --> prompt: run one done, deferred once
+  runOne --> prompt: four steps, ends on the tips row
+  prompt --> runTwo: Show me
+  prompt --> app: Not now (re-asks once, then stops)
+  runTwo --> app: three steps
+  runOne --> app: Escape or Skip tips, tips off for good
+  app --> runOne: Help ▸ Show Tour, ignores every flag
 ```
 
-- No first-run flag exists in `stores/` or `src/main/`; empty state is inline at
-  `App.vue:170`
-- Store a **version integer**, not a boolean — carries "what's new" with no
-  auto-update
-- Undiscoverable today: Quick look-up shortcut · Structure toggle · sealed share
-- Order: sample comparison first, coach marks for the three above, carousel only
-  as fallback
-- Scrim from `--shadow-rgb`, never a hardcoded `rgba()` — seven themes are
-  light-ground
-- E2E: throwaway `--user-data-dir`, assert shown once
+Done. Anchored coach marks over the real controls, split 4 + 3.
+
+- Steps name a `data-tour` attribute; the overlay measures it at run time and
+  hides itself if the element goes
+- Veil is TWO layers: tint is one clipped element, blur is four rectangles —
+  `backdrop-filter` resolves before `clip-path`
+- Blur, not just scrim: a black scrim moves a dark ground 1.00–1.17× (beacon is
+  `#000000`)
+- Callout is `--bg-elevated` + `--btn-edge`; the pair swaps roles by ground
+- Run two is offered by a dialog immediately, never deferred to a launch that
+  may be a month away
+- Open: demo fixtures for step 1 · the diagram step still points at the Snippets
+  section rather than a loaded diagram diff
 
 ---
 

@@ -85,7 +85,12 @@ flowchart TB
   (`textFormats`, `sqlFormat`, `base64`, `detectLanguage`).
   A slice may read the core; **the core may not import a slice** — see the four
   rules in [standards.md](standards.md#how-a-feature-is-put-together), which
-  `scripts/check-structure.mjs` and the ESLint layering rules enforce.
+  `scripts/check-structure.mjs` and the ESLint layering rules enforce. The
+  slices are `share`, `email`, `imageExport`, `configBackup`, `pasteToCompare`
+  and `onboarding` (the first-run tour: its overlay measures a `data-tour`
+  target at run time, and its step commands dispatch from
+  `composables/useTourCommands.js` — reaching the registry from inside the slice
+  would close a cycle back through its own `index.js`).
 - `docs/` — this file, plus [security.md](security.md) and
   [packaging.md](packaging.md).
 - `tests/` — mirrors `src/` (`tests/main`, `tests/renderer/{stores,features,utils,adapters,composables}`, `tests/scripts`).

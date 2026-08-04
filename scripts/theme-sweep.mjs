@@ -148,6 +148,27 @@ async function loadStructureDiff(page) {
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const SURFACES = [
   {
+    name: 'tour-callout',
+    // Summoned rather than waited for: the tour has usually been seen and
+    // recorded by the time the sweep runs.
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Help', exact: true }).click()
+      await page.getByText('Show Tour', { exact: true }).click()
+      await page.locator('.tour-callout').waitFor()
+    },
+    close: (page) => page.keyboard.press('Escape'),
+    probes: {
+      // The step counter reads as words, so it takes the reading floor — which
+      // is what moved it off --text-dim (2.92 nord / 2.82 sepia on this face).
+      'step counter': ['.tour-callout .tour-step-n', TEXT],
+      'callout title': ['.tour-callout h6', TEXT],
+      'callout body': ['.tour-callout .tour-body', TEXT],
+      // The ring is the load-bearing cue on the seven dark themes, where the
+      // scrim moves the ground by as little as 1.00 (beacon).
+      'spotlight ring': ['.tour-ring', DIM]
+    }
+  },
+  {
     name: 'status-band',
     // Already on screen — the sweep leaves a structure diff loaded.
     open: async (page) => page.locator('.status-band').waitFor(),

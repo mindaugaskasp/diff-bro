@@ -111,6 +111,17 @@ where the concept lives in this repo.
 - **Sealing** — producing a shareable, signed-and-encrypted `.diffbro` file.
 - **Comparable kind** — `text` vs `spreadsheet`; the content router picks the
   viewer from it.
+- **Tips vs tour** — two different things, and the copy leans on the
+  difference. **Tips** are the automatic ones: they appear on a first launch and
+  after an update, and `showTips` turns them off for good. The **tour** is the
+  same steps summoned deliberately (Help ▸ Show Tour, Settings, the palette); it
+  ignores every flag and never switches tips back on.
+- **Run** — one block of tour steps shown together. Run one is the four a first
+  launch needs; run two is the three offered afterwards by the "Three more
+  tips?" dialog.
+- **Zone step** — a step whose target is an area rather than a control (the
+  comparison pane, which takes a drop anywhere). Ringed dashed, and its callout
+  sits inside it.
 
 ## Union view
 
