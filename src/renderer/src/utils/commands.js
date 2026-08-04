@@ -22,6 +22,13 @@ import { tabsFullMessage } from './cliCommand'
 
 const openTool = (tool) => (s) => (s.ui.textTool = tool)
 
+const DEMO_SNIPPET = `{
+  "service": "checkout-api",
+  "replicas": 3,
+  "env": "staging",
+  "featureFlags": { "newCart": true, "fastCheckout": false }
+}`
+
 /** @type {Record<string, (stores: CommandStores) => void>} */
 export const COMMANDS = {
   'open-left': ({ diff }) => diff.pick('left'),
@@ -83,7 +90,16 @@ export const COMMANDS = {
   'tools-url': openTool('url'),
   'tools-lines': openTool('lines'),
   'tools-crypt': ({ ui }) => (ui.showCryptDialog = true),
-  shortcuts: ({ ui }) => (ui.showShortcutsDialog = true)
+  shortcuts: ({ ui }) => (ui.showShortcutsDialog = true),
+  // Summoned deliberately, so it ignores the tips setting rather than reading a
+  // request to see it once as consent to automatic tips.
+  'show-tour': ({ onboarding }) => onboarding.replay(),
+  // The tour's snippet step opens the editor on a worked example rather than a
+  // blank draft — the point of the step is what a kept snippet looks like.
+  'tour-demo-snippet': ({ snippets }) => snippets.startNewSnippetFrom(DEMO_SNIPPET, 'json'),
+  // Shows the launcher briefly, so it is something the user has seen rather
+  // than only read about.
+  'tour-quicklook-peek': ({ onboarding }) => onboarding.peekQuickLook()
 }
 
 export const commandActions = () => Object.keys(COMMANDS)

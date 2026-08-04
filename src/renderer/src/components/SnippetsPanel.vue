@@ -52,7 +52,7 @@ function newSnippet() {
 </script>
 
 <template>
-  <section class="snippets-section sidebar-section">
+  <section class="snippets-section sidebar-section" data-tour="snippets">
     <SectionHeader
       section-id="snippets"
       title="Snippets"

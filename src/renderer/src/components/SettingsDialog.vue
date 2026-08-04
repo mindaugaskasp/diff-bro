@@ -11,10 +11,12 @@ import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
 import { EmailSettings } from '../features/email'
+import { useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
 
 const ui = useUiStore()
 const settings = useSettingsStore()
+const tour = useOnboardingStore()
 
 // One pane shows at a time behind the left rail.
 const TABS = [
@@ -87,6 +89,12 @@ function close() {
           <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
             Maximize tool &amp; snippet windows (turn off to restore each one's size)
           </SettingToggle>
+          <div class="tips-row" data-tour="tips">
+            <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
+              Show tips after an update
+            </SettingToggle>
+            <button class="btn btn-sm" @click="tour.replay()">Show tour</button>
+          </div>
         </section>
 
         <section v-else-if="tab === 'shortcuts'">

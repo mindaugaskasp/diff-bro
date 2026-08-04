@@ -152,3 +152,16 @@ h4:not(:first-child) {
   height: 7px;
   border-radius: 50%;
 }
+
+/* The tips toggle and its replay button share a row, so the way out and the way
+   back in sit together — the tour's last step rings this row. */
+.tips-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.tips-row .btn {
+  margin-left: auto;
+  flex: none;
+}

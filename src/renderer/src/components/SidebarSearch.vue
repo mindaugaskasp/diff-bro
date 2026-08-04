@@ -13,7 +13,7 @@ defineExpose({ focus: () => box.value?.focus() })
 
 <template>
   <div class="usb-top">
-    <div class="field-search">
+    <div class="field-search" data-tour="search">
       <AppIcon name="search" />
       <input
         ref="box"

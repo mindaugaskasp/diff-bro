@@ -126,6 +126,7 @@ const clearTitle = computed(() =>
         </button>
         <button
           class="btn"
+          data-tour="share"
           :data-tip="shareTip"
           :disabled="!store.canSave"
           @click="share.shareCurrent()"

@@ -1,0 +1,2096 @@
+<title>DiffBro — onboarding tour proposal</title>
+
+<style>
+  /* ── Document chrome ───────────────────────────────────────────────────
+     Palette follows DiffBro's own "Signal" reasoning: achromatic neutrals
+     carry every surface, one saturated colour is spent on the accent. */
+  :root {
+    --doc-canvas: #f2f3f3;
+    --doc-surface: #ffffff;
+    --doc-sunken: #e8eaea;
+    --doc-ink: #141414;
+    --doc-muted: #565a5a;
+    --doc-hint: #363939;
+    --doc-rule: #d3d7d7;
+    --doc-rule-hard: #b3b8b8;
+    --doc-accent: #c2410c;
+    --doc-accent-ink: #ffffff;
+    --doc-good: #1a7f37;
+    --doc-warn: #9a6700;
+    --doc-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.18);
+    --mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --doc-canvas: #0e1013; --doc-surface: #16191d; --doc-sunken: #1d2126;
+      --doc-ink: #e6edf3; --doc-muted: #8b949e; --doc-hint: #c3cdd7;
+      --doc-rule: #272c33; --doc-rule-hard: #3b424a;
+      --doc-accent: #f2703a; --doc-accent-ink: #1a0d06;
+      --doc-good: #3fb950; --doc-warn: #d29922;
+      --doc-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -14px rgb(0 0 0 / 0.7);
+    }
+  }
+  :root[data-theme='dark'] {
+    --doc-canvas: #0e1013; --doc-surface: #16191d; --doc-sunken: #1d2126;
+    --doc-ink: #e6edf3; --doc-muted: #8b949e; --doc-hint: #c3cdd7;
+    --doc-rule: #272c33; --doc-rule-hard: #3b424a;
+    --doc-accent: #f2703a; --doc-accent-ink: #1a0d06;
+    --doc-good: #3fb950; --doc-warn: #d29922;
+    --doc-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px -14px rgb(0 0 0 / 0.7);
+  }
+  :root[data-theme='light'] {
+    --doc-canvas: #f2f3f3; --doc-surface: #ffffff; --doc-sunken: #e8eaea;
+    --doc-ink: #141414; --doc-muted: #565a5a; --doc-hint: #363939;
+    --doc-rule: #d3d7d7; --doc-rule-hard: #b3b8b8;
+    --doc-accent: #c2410c; --doc-accent-ink: #ffffff;
+    --doc-good: #1a7f37; --doc-warn: #9a6700;
+    --doc-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--doc-canvas); color: var(--doc-ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
+  .prose { max-width: 68ch; }
+  h1, h2, h3 { letter-spacing: -0.021em; text-wrap: balance; margin: 0; font-weight: 660; }
+  h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.06; }
+  h2 { font-size: clamp(21px, 3vw, 27px); line-height: 1.2; }
+  h3 { font-size: 17px; line-height: 1.3; }
+  p { margin: 0; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--doc-muted); margin: 0;
+  }
+  code, .mono { font-family: var(--mono); font-size: 0.88em; }
+  code {
+    background: var(--doc-sunken); border: 1px solid var(--doc-rule);
+    border-radius: 4px; padding: 0.08em 0.34em;
+  }
+  header.masthead {
+    border-bottom: 1px solid var(--doc-rule); padding: 56px 0 34px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .masthead .lede {
+    font-size: clamp(16px, 2vw, 19px); color: var(--doc-hint);
+    max-width: 62ch; line-height: 1.5;
+  }
+  .meta-strip {
+    display: flex; flex-wrap: wrap; gap: 8px 26px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--doc-muted); padding-top: 6px;
+  }
+  .meta-strip b { color: var(--doc-ink); font-weight: 600; }
+  section { padding-top: 56px; display: flex; flex-direction: column; gap: 20px; }
+  .sec-head { display: flex; flex-direction: column; gap: 7px; }
+
+  /* ── Prototype shell ──────────────────────────────────────────────── */
+  .proto {
+    background: var(--doc-surface); border: 1px solid var(--doc-rule);
+    border-radius: 12px; box-shadow: var(--doc-shadow); overflow: hidden;
+  }
+  .proto-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 9px 16px;
+    padding: 12px 16px; border-bottom: 1px solid var(--doc-rule); background: var(--doc-sunken);
+  }
+  .proto-bar + .proto-bar { border-top: none; }
+  .grp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .grp-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--doc-muted); margin-right: 2px;
+  }
+  .chip {
+    font-family: var(--mono); font-size: 11px; padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--doc-rule-hard); background: var(--doc-surface);
+    color: var(--doc-hint); cursor: pointer; line-height: 1.4;
+  }
+  .chip:hover { border-color: var(--doc-accent); color: var(--doc-ink); }
+  .chip[aria-pressed='true'] {
+    background: var(--doc-accent); border-color: var(--doc-accent); color: var(--doc-accent-ink);
+  }
+  .chip:focus-visible, .stepbtn:focus-visible {
+    outline: 2px solid var(--doc-accent); outline-offset: 2px;
+  }
+  .stepbtn {
+    display: flex; align-items: baseline; gap: 7px; font-family: var(--sans); font-size: 12.5px;
+    padding: 5px 11px 5px 8px; border-radius: 7px; border: 1px solid transparent;
+    background: none; color: var(--doc-muted); cursor: pointer; text-align: left;
+  }
+  .stepbtn .num { font-family: var(--mono); font-size: 10.5px; opacity: 0.75; }
+  .runtag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--doc-muted); padding: 0 8px 0 4px; border-left: 1px solid var(--doc-rule-hard);
+    margin-left: 4px; align-self: stretch; display: flex; align-items: center;
+  }
+  .runtag:first-child { border-left: none; margin-left: 0; padding-left: 0; }
+  .stepbtn:hover { color: var(--doc-ink); background: var(--doc-surface); }
+  .stepbtn[aria-pressed='true'] {
+    color: var(--doc-ink); background: var(--doc-surface);
+    border-color: var(--doc-rule-hard); font-weight: 600;
+  }
+  .stage-scroll { overflow-x: auto; }
+  .caption {
+    font-size: 12.5px; color: var(--doc-muted); padding: 12px 16px;
+    border-top: 1px solid var(--doc-rule); background: var(--doc-sunken);
+  }
+  .caption b { color: var(--doc-ink); font-weight: 600; }
+
+  /* ══ The DiffBro window ════════════════════════════════════════════════
+     Structure mirrors App.vue; every colour resolves through the app's own
+     tokens, redefined per theme below straight from styles/themes.css. */
+  .mock {
+    --radius-sm: 4px; --radius: 6px; --radius-lg: 8px; --radius-pill: 999px;
+    --bg-canvas: var(--bg);
+    --bg-raised: var(--bg-panel);
+    --bg-elevated: color-mix(in srgb, var(--bg-panel) 88%, var(--text));
+    --btn-face: color-mix(in srgb, var(--text) 14%, transparent);
+    --btn-face-hover: color-mix(in srgb, var(--text) 22%, transparent);
+    --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+    --dg-add: var(--success-text);
+    --dg-del: color-mix(in srgb, var(--danger-border) 70%, var(--text));
+    --dg-chg: var(--warning-border);
+    --shadow-1: 0 1px 2px rgb(var(--shadow-rgb) / 0.1), 0 1px 3px -1px rgb(var(--shadow-rgb) / 0.08);
+    --shadow-2: 0 2px 6px -1px rgb(var(--shadow-rgb) / 0.12), 0 8px 20px -6px rgb(var(--shadow-rgb) / 0.16);
+    --shadow-3: 0 6px 16px -4px rgb(var(--shadow-rgb) / 0.18), 0 18px 44px -8px rgb(var(--shadow-rgb) / 0.3);
+    position: relative; min-width: 1000px; height: 604px;
+    display: flex; flex-direction: column;
+    background: var(--bg-canvas); color: var(--text);
+    font-size: 11px; font-family: var(--sans); isolation: isolate; user-select: none;
+  }
+
+  .mock[data-mock-theme='light'] {
+    --bg: #ffffff; --bg-panel: #eeefef; --bg-hover: #e2e4e4; --border: #bcc0c0;
+    --text: #141414; --text-dim: #565a5a; --text-hint: #363939; --accent: #c2410c;
+    --warning-bg: #f0b429; --warning-border: #bf8700; --warning-text: #3b2900;
+    --danger-bg: #f85149; --danger-border: #cf222e; --success-text: #1a7f37;
+    --scrim: rgba(0,0,0,0.5); --favorite: #bf8700; --text-on-accent: #ffffff; --shadow-rgb: 0 0 0;
+    --bg-canvas: var(--bg-panel); --bg-raised: var(--bg);
+  }
+  .mock[data-mock-theme='dark'] {
+    --bg: #0d1117; --bg-panel: #161b22; --bg-hover: #21262d; --border: #30363d;
+    --text: #e6edf3; --text-dim: #8b949e; --text-hint: #c3cdd7; --accent: #2f81f7;
+    --warning-bg: #d29922; --warning-border: #9a6700; --warning-text: #1a1300;
+    --danger-bg: #f85149; --danger-border: #da3633; --success-text: #3fb950;
+    --scrim: rgba(0,0,0,0.5); --favorite: #d29922; --text-on-accent: #ffffff; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='solar'] {
+    --bg: #fffdf6; --bg-panel: #fbf2dd; --bg-hover: #f3e6c4; --border: #e7d6ac;
+    --text: #3a2c0f; --text-dim: #8a7638; --text-hint: #6b5620; --accent: #e8590c;
+    --warning-bg: #f59f00; --warning-border: #c77800; --warning-text: #3a2400;
+    --danger-bg: #e03131; --danger-border: #c92a2a; --success-text: #2f9e44;
+    --scrim: rgba(58,40,12,0.42); --favorite: #f08c00; --text-on-accent: #ffffff; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='neon'] {
+    --bg: #090d18; --bg-panel: #111829; --bg-hover: #1b2540; --border: #26344f;
+    --text: #e9f2ff; --text-dim: #8098c0; --text-hint: #b9c9e6; --accent: #22d3ee;
+    --warning-bg: #fbbf24; --warning-border: #d99e00; --warning-text: #1a1400;
+    --danger-bg: #fb7185; --danger-border: #f43f5e; --success-text: #4ade80;
+    --scrim: rgba(0,0,0,0.6); --favorite: #fde047; --text-on-accent: #04121a; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='nord'] {
+    --bg: #2e3440; --bg-panel: #3b4252; --bg-hover: #434c5e; --border: #4c566a;
+    --text: #eceff4; --text-dim: #9aa5b8; --text-hint: #d8dee9; --accent: #88c0d0;
+    --warning-bg: #ebcb8b; --warning-border: #d0a85f; --warning-text: #2e3440;
+    --danger-bg: #bf616a; --danger-border: #a54c55; --success-text: #a3be8c;
+    --scrim: rgba(0,0,0,0.5); --favorite: #ebcb8b; --text-on-accent: #2e3440; --shadow-rgb: 0 0 0;
+    --dg-chg: #e09a6b;
+  }
+  .mock[data-mock-theme='sepia'] {
+    --bg: #e9dcbe; --bg-panel: #dfcea6; --bg-hover: #d3bf90; --border: #c3ad7e;
+    --text: #3a2e15; --text-dim: #7d6840; --text-hint: #574524; --accent: #9c4f1f;
+    --warning-bg: #cc9324; --warning-border: #9a6712; --warning-text: #33260a;
+    --danger-bg: #ab4429; --danger-border: #933a22; --success-text: #5a6f28;
+    --scrim: rgba(42,32,14,0.44); --favorite: #a3760a; --text-on-accent: #ffffff; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='dim'] {
+    --bg: #1b1917; --bg-panel: #232019; --bg-hover: #2c2820; --border: #3a352b;
+    --text: #ece5da; --text-dim: #9a8f7f; --text-hint: #cdbfab; --accent: #d9a441;
+    --warning-bg: #e0a52e; --warning-border: #b07d18; --warning-text: #201700;
+    --danger-bg: #e0705f; --danger-border: #c25445; --success-text: #9ccd78;
+    --scrim: rgba(10,8,4,0.55); --favorite: #e6b34d; --text-on-accent: #201a10; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='beacon'] {
+    --bg: #000000; --bg-panel: #0b0b0b; --bg-hover: #1a1a1a; --border: #e0e0e0;
+    --text: #ffffff; --text-dim: #cccccc; --text-hint: #e6e6e6; --accent: #4cc2ff;
+    --warning-bg: #ffd23f; --warning-border: #b38f00; --warning-text: #000000;
+    --danger-bg: #ff5b57; --danger-border: #d63a36; --success-text: #3fe07a;
+    --scrim: rgba(0,0,0,0.6); --favorite: #ffd23f; --text-on-accent: #000000; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='meridian'] {
+    --bg: #f5f7f4; --bg-panel: #eef2ee; --bg-hover: #e2e8e2; --border: #c7d0c8;
+    --text: #263238; --text-dim: #5c6b70; --text-hint: #3d4a4f; --accent: #0e8a8a;
+    --warning-bg: #e8a317; --warning-border: #b3790a; --warning-text: #2a1c00;
+    --danger-bg: #c0392b; --danger-border: #9e2f24; --success-text: #217a38;
+    --scrim: rgba(20,30,30,0.42); --favorite: #b3780a; --text-on-accent: #ffffff; --shadow-rgb: 20 40 45;
+  }
+  .mock[data-mock-theme='linen'] {
+    --bg: #faf7f0; --bg-panel: #efe9dc; --bg-hover: #e6dfce; --border: #d8cfba;
+    --text: #221f1a; --text-dim: #6f685b; --text-hint: #4a4638; --accent: #3f5b8a;
+    --warning-bg: #d99a1f; --warning-border: #a86f10; --warning-text: #2a1c00;
+    --danger-bg: #a8432f; --danger-border: #8a3626; --success-text: #3d6b2f;
+    --scrim: rgba(40,34,20,0.42); --favorite: #a3760a; --text-on-accent: #ffffff; --shadow-rgb: 40 34 20;
+  }
+  .mock[data-mock-theme='bloom'] {
+    --bg: #f9f4f5; --bg-panel: #efe4e7; --bg-hover: #e7d8dd; --border: #ddccd2;
+    --text: #2a1f26; --text-dim: #7a6570; --text-hint: #4f414a; --accent: #b0446e;
+    --warning-bg: #d99a1f; --warning-border: #a86f10; --warning-text: #2a1c00;
+    --danger-bg: #c33a54; --danger-border: #9e2f44; --success-text: #357a4c;
+    --scrim: rgba(50,30,40,0.42); --favorite: #b07a1a; --text-on-accent: #ffffff; --shadow-rgb: 50 30 40;
+  }
+  .mock[data-mock-theme='nyan'] {
+    --bg: #160a20; --bg-panel: #231033; --bg-hover: #2e1642; --border: #7a3fa6;
+    --text: #f4e9ff; --text-dim: #b79fcf; --text-hint: #dcc9f0; --accent: #ff2ecb;
+    --warning-bg: #ffd23f; --warning-border: #d9a400; --warning-text: #2a1400;
+    --danger-bg: #ff5470; --danger-border: #e03a58; --success-text: #63ff4d;
+    --scrim: rgba(10,2,16,0.55); --favorite: #ffd23f; --text-on-accent: #1a0410; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='matrix'] {
+    --bg: #020a04; --bg-panel: #061309; --bg-hover: #0c2312; --border: #1f7a3a;
+    --text: #c6ffd2; --text-dim: #4fae6a; --text-hint: #8fe8a3; --accent: #00ff41;
+    --warning-bg: #ffd23f; --warning-border: #d9a400; --warning-text: #201700;
+    --danger-bg: #ff5470; --danger-border: #e03a58; --success-text: #00ff41;
+    --scrim: rgba(0,8,2,0.6); --favorite: #7cfc00; --text-on-accent: #012009; --shadow-rgb: 0 0 0;
+  }
+  .mock[data-mock-theme='contrast'] {
+    --bg: #ffffff; --bg-panel: #f2f2f2; --bg-hover: #e2e2e2; --border: #111111;
+    --text: #000000; --text-dim: #333333; --text-hint: #1a1a1a; --accent: #1633d4;
+    --warning-bg: #ffcc00; --warning-border: #b38f00; --warning-text: #000000;
+    --danger-bg: #cc0000; --danger-border: #990000; --success-text: #05702f;
+    --scrim: rgba(0,0,0,0.55); --favorite: #a35c00; --text-on-accent: #ffffff; --shadow-rgb: 0 0 0;
+    --dg-chg: #8a6d00;
+  }
+
+  /* window chrome */
+  .m-menubar {
+    display: flex; align-items: center; gap: 17px; height: 25px; padding: 0 13px;
+    background: var(--bg-panel); color: var(--text-dim); font-size: 10.5px; flex: none;
+  }
+  .m-toolbar {
+    display: flex; align-items: center; gap: 9px; height: 41px; padding: 0 12px;
+    background: var(--bg-panel); flex: none; position: relative; z-index: 2;
+  }
+  .m-stats { font-family: var(--mono); font-size: 11px; display: flex; gap: 8px; }
+  .m-stats .a { color: color-mix(in srgb, var(--dg-add) 55%, var(--text)); font-weight: 600; }
+  .m-stats .d { color: color-mix(in srgb, var(--dg-del) 55%, var(--text)); font-weight: 600; }
+  .m-tb-right { margin-left: auto; display: flex; align-items: center; gap: 9px; }
+  .m-check { display: flex; align-items: center; gap: 5px; color: var(--text-hint); font-size: 10.5px; }
+  .m-check.off { color: var(--text-dim); }
+  .m-box {
+    width: 11px; height: 11px; border-radius: 2px; flex: none;
+    border: 1px solid var(--btn-edge); background: var(--bg);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-on-accent); font-size: 8px; line-height: 1;
+  }
+  .m-box.on { background: var(--accent); border-color: var(--accent); }
+  .m-divider { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+  .m-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    height: 23px; padding: 0 11px; border: 1px solid var(--btn-edge);
+    border-radius: var(--radius); background: var(--btn-face); color: var(--text);
+    font-size: 10.5px; font-weight: 500; white-space: nowrap; box-shadow: var(--shadow-1);
+  }
+  .m-btn.primary {
+    background: var(--accent); border-color: var(--accent);
+    color: var(--text-on-accent); font-weight: 600;
+  }
+  .m-btn.ghost { background: none; color: var(--text-dim); box-shadow: none; }
+  .m-btn.off {
+    background: none; border-color: var(--border); color: var(--text-dim);
+    box-shadow: none; opacity: 0.7;
+  }
+  .m-btn.sm { height: 20px; padding: 0 9px; font-size: 10px; }
+  .m-ico { width: 10px; height: 10px; flex: none; }
+
+  .m-body { flex: 1; display: flex; min-height: 0; }
+
+  /* sidebar */
+  .m-sidebar {
+    width: 214px; flex: none; display: flex; flex-direction: column;
+    background: var(--bg-panel); border-right: 1px solid var(--border);
+    min-height: 0; overflow: hidden;
+  }
+  .m-sbtop { display: flex; align-items: center; gap: 6px; padding: 9px 10px 8px; }
+  .m-search {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; height: 23px;
+    padding: 0 7px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); color: var(--text-dim); font-size: 10px;
+  }
+  .m-collapse {
+    flex: none; width: 21px; height: 21px; display: inline-flex; align-items: center;
+    justify-content: center; border: 1px solid var(--btn-edge); border-radius: var(--radius);
+    background: var(--bg); color: var(--text-dim); font-size: 10px;
+  }
+  .m-filters { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 10px 8px; }
+  .m-fchip {
+    font-size: 9.5px; font-weight: 600; padding: 2px 8px; line-height: 1.5;
+    border-radius: var(--radius-pill); border: 1px solid var(--border); color: var(--text);
+  }
+  .m-fchip.on { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); }
+  .m-tagcloud {
+    display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 8px 10px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    font-size: 9.5px; color: var(--text-dim);
+  }
+  .m-tw { display: inline-flex; align-items: center; gap: 4px; }
+  .m-tw::before {
+    content: ''; width: 6px; height: 6px; border-radius: 999px;
+    background: var(--tc, var(--text-dim)); flex: none;
+  }
+  .m-tw b { color: var(--text); font-weight: 600; }
+  .m-tw .ct { color: var(--text-hint); }
+  .m-more { color: var(--text-hint); font-size: 9.5px; }
+  .m-sechead {
+    display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; flex: none;
+    background: var(--bg-elevated); border-block: 1px solid var(--border);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.09em; color: var(--text-hint);
+  }
+  .m-sechead .sh-end { margin-left: auto; display: inline-flex; gap: 7px; color: var(--text-dim); font-size: 12px; line-height: 1; }
+  .m-row {
+    display: flex; align-items: flex-start; gap: 7px; padding: 5px 10px 6px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  }
+  .m-row.sel { background: var(--bg-hover); box-shadow: inset 2px 0 0 var(--favorite); }
+  .m-star { flex: none; width: 11px; color: var(--text-dim); font-size: 10px; line-height: 1.5; }
+  .m-star.on { color: var(--favorite); }
+  .m-mono {
+    flex: none; width: 26px; height: 16px; margin-top: 1px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-hint);
+    border-bottom: 2px solid var(--fam, var(--border));
+    font-family: var(--mono); font-size: 7.5px; font-weight: 700;
+  }
+  .m-rowmain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .m-rowline { display: flex; align-items: baseline; gap: 6px; }
+  .m-rowline .nm {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: 10.5px; color: var(--text);
+  }
+  .m-left {
+    flex: none; font-family: var(--mono); font-size: 8px; color: var(--text-hint);
+    font-variant-numeric: tabular-nums;
+  }
+  .m-sub { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-dim); }
+  .m-sub .tw { display: inline-flex; align-items: center; gap: 3px; }
+  .m-sub .tw::before {
+    content: ''; width: 5px; height: 5px; border-radius: 999px; background: var(--tc, var(--text-dim));
+  }
+  .m-trust { color: var(--success-text); font-size: 8px; }
+  .m-toolsearch {
+    margin-top: auto; flex: none; display: flex; align-items: center; gap: 6px; height: 24px;
+    margin: auto 10px 10px; padding: 0 8px; border: 1px solid var(--border);
+    border-radius: var(--radius); background: var(--bg); color: var(--text-dim); font-size: 10px;
+  }
+
+  /* pane */
+  .m-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .m-tabs {
+    display: flex; align-items: stretch; gap: 2px; height: 27px; padding: 0 8px;
+    background: var(--bg-panel); border-bottom: 1px solid var(--border); flex: none;
+  }
+  .m-tab {
+    display: flex; align-items: center; gap: 5px; padding: 0 11px; font-size: 10px;
+    color: var(--text-dim); border-bottom: 2px solid transparent;
+  }
+  .m-tab.on { color: var(--text); border-bottom-color: var(--accent); background: var(--bg); }
+  .m-tab .dot { width: 5px; height: 5px; border-radius: 999px; background: var(--accent); flex: none; }
+  .m-content {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    position: relative; background: var(--bg);
+  }
+  .m-slots {
+    display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 0 12px;
+    background: var(--bg-panel); border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-1); position: relative; z-index: 1; flex: none;
+  }
+  .m-slot {
+    flex: 1; min-width: 0; height: 25px; display: flex; align-items: center; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font-size: 10.5px;
+  }
+  .m-slot.empty { color: var(--text-dim); }
+  .m-swap {
+    flex: none; width: 25px; height: 25px; display: inline-flex; align-items: center;
+    justify-content: center; border: 1px solid var(--btn-edge); border-radius: var(--radius);
+    background: var(--btn-face); color: var(--text); box-shadow: var(--shadow-1);
+  }
+
+  /* text diff */
+  .m-diff { flex: 1; display: flex; min-height: 0; font-family: var(--mono); font-size: 10px; overflow: hidden; }
+  .m-side { flex: 1; min-width: 0; padding: 7px 0; }
+  .m-side + .m-side { border-left: 1px solid var(--border); }
+  .m-line { display: flex; gap: 8px; padding: 0 9px; line-height: 1.62; white-space: pre; }
+  .m-line .ln { width: 14px; text-align: right; color: var(--text-dim); flex: none; }
+  .m-line .sg { width: 6px; flex: none; color: var(--text-dim); }
+  .m-line.add { background: color-mix(in srgb, var(--success-text) 16%, transparent); }
+  .m-line.del { background: color-mix(in srgb, var(--danger-bg) 16%, transparent); }
+  .m-line.gap { background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--text) 7%, transparent) 4px 5px); height: 16.2px; }
+  .m-k { color: var(--accent); }
+  .m-s { color: var(--success-text); }
+  .m-n { color: var(--warning-border); }
+  .m-statusband {
+    display: flex; align-items: center; gap: 15px; min-height: 30px; padding: 0 14px;
+    border-top: 1px solid var(--border); background: var(--bg-panel);
+    font-size: 10px; color: var(--text-hint); flex: none; font-variant-numeric: tabular-nums;
+  }
+  .m-statusband .add { color: color-mix(in srgb, var(--dg-add) 55%, var(--text)); font-weight: 600; }
+  .m-statusband .del { color: color-mix(in srgb, var(--dg-del) 55%, var(--text)); font-weight: 600; }
+  .m-statusband .chg { color: color-mix(in srgb, var(--dg-chg) 55%, var(--text)); font-weight: 600; }
+  .m-statusband .end { margin-left: auto; font-style: italic; }
+
+  /* empty state */
+  .m-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 11px; color: var(--text-dim);
+  }
+  .m-empty .t { font-size: 15px; color: var(--text); }
+  .m-empty .lbl {
+    font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .m-formats { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; max-width: 420px; }
+  .m-fmt {
+    display: inline-flex; align-items: center; gap: 5px; height: 23px; padding: 0 11px;
+    border: 1px solid var(--btn-edge); border-radius: var(--radius); background: var(--btn-face);
+    font-size: 10px; color: var(--text); box-shadow: var(--shadow-1);
+  }
+  .m-fmt.hl { border-color: var(--success-text); color: var(--success-text); }
+  .m-empty .fine { font-size: 9.5px; font-style: italic; }
+
+  /* diagram diff */
+  .m-dglegend {
+    display: flex; align-items: center; gap: 14px; min-height: 30px; padding: 0 12px;
+    border-bottom: 1px solid var(--border); background: var(--bg); font-size: 10px;
+    color: var(--text-hint); flex: none;
+  }
+  .m-dgl { display: inline-flex; align-items: center; gap: 5px; }
+  .m-badge {
+    width: 13px; height: 13px; border-radius: 3px; display: inline-flex;
+    align-items: center; justify-content: center; font-family: var(--mono);
+    font-size: 8px; font-weight: 700; border: 1px solid currentColor;
+  }
+  .m-dgl.add { color: var(--dg-add); } .m-dgl.del { color: var(--dg-del); }
+  .m-dgl.chg { color: var(--dg-chg); } .m-dgl.unc { color: var(--text-dim); }
+  .m-dgzoom { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; }
+  .m-dgbody { flex: 1; display: flex; min-height: 0; }
+  .m-dgcanvas { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
+  .m-register {
+    width: 178px; flex: none; border-left: 1px solid var(--border);
+    background: var(--bg); display: flex; flex-direction: column; overflow: hidden;
+  }
+  .m-reghead {
+    display: flex; align-items: center; height: 24px; padding: 0 10px; flex: none;
+    background: var(--bg-elevated); border-block: 1px solid var(--border);
+    font-size: 9px; font-weight: 700; letter-spacing: 0.09em; color: var(--text-hint);
+  }
+  .m-reghead .n { margin-left: auto; font-family: var(--mono); }
+  .m-regrow {
+    display: flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  }
+  .m-regrow .mk { font-family: var(--mono); font-weight: 700; flex: none; }
+  .m-regrow.add .mk { color: var(--dg-add); }
+  .m-regrow.del .mk { color: var(--dg-del); }
+  .m-regrow.del span:last-child { color: var(--text-dim); text-decoration: line-through; }
+
+  .m-shortcutbar {
+    position: absolute; left: 0; right: 0; bottom: 10px; width: fit-content; max-width: 92%;
+    margin: 0 auto; display: flex; align-items: center; gap: 5px 12px; flex-wrap: wrap;
+    padding: 4px 12px; font-size: 9.5px; color: var(--text-hint);
+    background: color-mix(in srgb, var(--bg-panel) 82%, transparent);
+    border: 1px solid var(--border); border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-2); z-index: 4;
+  }
+  .m-kbd {
+    display: inline-flex; align-items: center; height: 15px; padding: 0 4px;
+    font-family: var(--mono); font-size: 8.5px; color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-hover);
+  }
+
+  /* dialogs */
+  .m-dialoglayer {
+    position: absolute; inset: 0; z-index: 6; display: flex;
+    align-items: center; justify-content: center; background: var(--scrim);
+  }
+  .m-dialog {
+    display: flex; flex-direction: column; gap: 10px; padding: 16px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-3); max-height: 92%;
+  }
+  .m-dhead { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .m-dhead h5 { margin: 0; font-size: 13px; font-weight: 650; }
+  .m-dclose { color: var(--text-dim); font-size: 15px; line-height: 1; }
+  .m-note { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
+  .m-note b { color: var(--text); }
+  .m-note code {
+    font-family: var(--mono); font-size: 9px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 3px; padding: 0 3px; color: var(--text);
+  }
+  .m-flabel { font-size: 10px; color: var(--text-dim); }
+  .m-field {
+    display: flex; align-items: center; height: 24px; padding: 0 9px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); font-size: 10.5px; color: var(--text);
+  }
+  .m-field.focused { border-color: var(--accent); }
+  .m-select {
+    display: flex; align-items: center; justify-content: space-between; height: 24px;
+    padding: 0 9px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); font-size: 10.5px; color: var(--text);
+  }
+  .m-tagfield {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-height: 26px;
+    padding: 4px 7px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+  }
+  .m-tagchip {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 600;
+    line-height: 1.5; padding: 1px 8px; border-radius: var(--radius-pill);
+    border: 1px solid var(--tag-ink, var(--border)); background: var(--tag-ink, transparent);
+    color: var(--bg);
+  }
+  .m-tagchip.out { background: none; border-color: var(--border); color: var(--text); }
+  .m-taginput { font-size: 10px; color: var(--text-dim); }
+  .m-checkrow { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--text); }
+  .m-code {
+    font-family: var(--mono); font-size: 9.5px; line-height: 1.7; white-space: pre;
+    padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); overflow: hidden; flex: 1; min-height: 0;
+  }
+  .m-code .ln { color: var(--text-dim); }
+  .m-editorhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--text-dim); }
+  .m-dactions { display: flex; align-items: center; gap: 6px; }
+  .m-dactions .spacer { margin-left: auto; }
+  .m-step {
+    display: flex; align-items: center; gap: 9px; padding: 8px 9px;
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+  }
+  .m-step .badge {
+    flex: none; width: 17px; height: 17px; border-radius: 999px;
+    background: var(--btn-face); border: 1px solid var(--btn-edge); color: var(--text);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+  }
+  .m-step .sbody { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .m-step strong { font-size: 10.5px; font-weight: 650; }
+  .m-step .shint { font-size: 9.5px; color: var(--text-dim); }
+
+  /* settings */
+  .m-settings { display: flex; gap: 16px; align-items: stretch; }
+  .m-snav {
+    display: flex; flex-direction: column; gap: 2px; flex: none; width: 108px;
+    border-right: 1px solid var(--border); padding-right: 10px;
+  }
+  .m-snav .item {
+    text-align: left; padding: 5px 8px; border-radius: var(--radius);
+    color: var(--text-dim); font-size: 10.5px; border: 1px solid transparent;
+  }
+  .m-snav .item.active { background: var(--bg-hover); color: var(--text); font-weight: 600; }
+  .m-spane { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  .m-spane h6 { margin: 0; font-size: 10.5px; font-weight: 650; }
+  .m-themegrid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .m-themeopt {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-size: 10px;
+  }
+  .m-themeopt.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .m-themeopt .sw {
+    display: inline-flex; align-items: center; justify-content: center; gap: 2px;
+    width: 34px; height: 17px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .m-themeopt .sw i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+  .m-setrow { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--text); }
+  .m-setrow.new { color: var(--text); }
+
+  /* quick look-up — its own floating window, drawn centred over the app */
+  .m-qllayer {
+    position: absolute; inset: 0; z-index: 6;
+    display: flex; align-items: flex-start; justify-content: center; padding-top: 52px;
+    background: color-mix(in srgb, var(--scrim) 55%, transparent);
+  }
+  .m-ql {
+    width: 540px; height: 300px; display: flex; flex-direction: column;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-3); overflow: hidden;
+  }
+  .m-qlsearch {
+    display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 11px; flex: none;
+    border-bottom: 1px solid var(--border); color: var(--text-dim); font-size: 11.5px;
+  }
+  .m-qlsearch .fld { flex: 1; min-width: 0; color: var(--text-dim); }
+  .m-qlbody { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  .m-qlres { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; }
+  .m-qlrow {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 7px;
+    padding: 5px 10px; font-size: 10.5px;
+  }
+  .m-qlrow.sel { background: var(--bg-hover); box-shadow: inset 2px 0 0 var(--accent); }
+  .m-qlrow .kind { font-size: 9px; color: var(--text-dim); }
+  .m-qlrow .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .m-qlgroup {
+    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    margin-top: 2px; padding-top: 4px;
+  }
+  .m-qlpv { display: flex; flex-direction: column; min-height: 0; }
+  .m-qlpvhead {
+    display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; flex: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); font-size: 10.5px;
+  }
+  .m-qlpvbody {
+    flex: 1; min-height: 0; overflow: hidden; padding: 7px 10px;
+    font-family: var(--mono); font-size: 9.5px; line-height: 1.65; white-space: pre;
+  }
+  .m-qlpvfoot {
+    display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+    height: 34px; padding: 0 10px; flex: none;
+    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  }
+  .m-qlfoot {
+    display: flex; align-items: center; gap: 12px; height: 26px; padding: 0 11px; flex: none;
+    border-top: 1px solid var(--border); background: var(--bg-elevated);
+    font-size: 9.5px; color: var(--text-dim);
+  }
+  .m-qlfoot span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ── Tour overlay ──────────────────────────────────────────────────── */
+  .m-tour { position: absolute; inset: 0; z-index: 20; }
+  /* The veil is two layers doing two jobs, because neither alone works:
+     TINT is one element with a rounded hole clipped out (evenodd). One layer
+     means the scrim never overlaps itself — patching corners with a second
+     scrim-coloured element double-darkens to 75% black where they meet.
+     BLUR is four rectangles around the target, because Chromium resolves
+     backdrop-filter BEFORE clip-path, so a clipped blur layer blurs straight
+     through its own hole. Rectangles leave unblurred corner slivers, which no
+     one can see; an unblurred hole with a dark rim, everyone can. */
+  .m-veil {
+    position: absolute; inset: 0; background: var(--scrim);
+  }
+  .m-blur {
+    position: absolute;
+    backdrop-filter: blur(2.5px) saturate(0.7);
+    -webkit-backdrop-filter: blur(2.5px) saturate(0.7);
+  }
+  /* Drawn INSIDE the target's own box. An outward offset collides with whatever
+     the target is flush against — and adjacent chrome is often already accent
+     (the active tab's 2px underline is the same --accent), which reads as one
+     thick edge rather than two elements. */
+  .m-ring {
+    position: absolute; box-sizing: border-box;
+    border: 2px solid var(--accent);
+    border-radius: var(--radius); pointer-events: none;
+  }
+  /* An accent ring vanishes on an accent-filled target. The ring flips to the
+     ink that is already legible on that fill. */
+  .m-ring.on-filled { border-color: var(--text-on-accent); }
+  .m-callout {
+    position: absolute; width: 296px; display: flex; flex-direction: column; gap: 8px;
+    padding: 12px 13px; background: var(--bg-elevated); border: 1px solid var(--btn-edge);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-3);
+  }
+  .m-callout .step-n {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--text-hint);
+  }
+  .m-callout h6 { margin: 0; font-size: 12px; font-weight: 650; color: var(--text); line-height: 1.3; }
+  .m-callout .cbody { font-size: 10.5px; line-height: 1.5; color: var(--text-hint); }
+  .m-cfoot { display: flex; align-items: center; gap: 7px; padding-top: 2px; }
+  .m-dots { display: flex; gap: 4px; margin-right: auto; }
+  .m-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--btn-edge); }
+  .m-dot.on { background: var(--accent); }
+  .m-beak {
+    position: absolute; width: 9px; height: 9px; transform: rotate(45deg);
+    background: var(--bg-elevated); border: 1px solid var(--btn-edge);
+  }
+  .m-dragpath { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  /* The snippet under the pointer, mid-drag — what the gesture actually looks
+     like. Tilted a few degrees so it reads as carried, not as another row. */
+  .m-ghost {
+    position: absolute; display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 9px; transform: rotate(-3deg); transform-origin: left center;
+    background: var(--bg-raised); border: 1px solid var(--accent);
+    border-radius: var(--radius); box-shadow: var(--shadow-2);
+    font-size: 10.5px; color: var(--text); white-space: nowrap; pointer-events: none;
+  }
+  /* A drop ZONE, not a control: the app already uses a dashed accent outline for
+     "this area accepts a drop" (see .drop-card in App.css). */
+  .m-zonelabel {
+    position: absolute; display: inline-flex; align-items: center;
+    padding: 5px 12px; border: 2px dashed var(--accent); border-radius: var(--radius-xl);
+    background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+    color: var(--text); font-size: 11.5px; font-weight: 600;
+    box-shadow: var(--shadow-2); pointer-events: none;
+  }
+
+  /* ── Doc components ────────────────────────────────────────────────── */
+  .stories { display: flex; flex-direction: column; }
+  .runhead {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 26px 0 10px; border-top: 2px solid var(--doc-ink);
+  }
+  .runhead:first-child { padding-top: 8px; }
+  .rh-tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--doc-accent); font-weight: 600;
+  }
+  .runhead p { font-size: 13.5px; color: var(--doc-muted); max-width: 62ch; }
+  .runhead + .story { border-top: none; }
+  .story {
+    display: grid; grid-template-columns: 46px 1fr; gap: 0 18px;
+    padding: 22px 0; border-top: 1px solid var(--doc-rule);
+  }
+  .story:last-child { border-bottom: 1px solid var(--doc-rule); }
+  .story .idx {
+    font-family: var(--mono); font-size: 12px; color: var(--doc-accent);
+    font-weight: 600; padding-top: 2px; font-variant-numeric: tabular-nums;
+  }
+  .story .sbody { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+  .story .quote { font-size: 15.5px; line-height: 1.5; max-width: 62ch; }
+  .story .quote em { font-style: normal; color: var(--doc-muted); }
+  .ac { display: flex; flex-direction: column; gap: 5px; margin: 2px 0 0; padding: 0; list-style: none; }
+  .ac li {
+    display: grid; grid-template-columns: 15px 1fr; gap: 8px;
+    font-size: 13px; color: var(--doc-hint); line-height: 1.5;
+  }
+  .ac li::before { content: '✓'; color: var(--doc-good); font-size: 11px; line-height: 1.55; }
+  .ac li.warn::before { content: '!'; color: var(--doc-warn); font-weight: 700; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-family: var(--mono); font-size: 10.5px; padding: 2px 7px; border-radius: 4px;
+    background: var(--doc-sunken); border: 1px solid var(--doc-rule); color: var(--doc-muted);
+  }
+  .table-scroll {
+    overflow-x: auto; border: 1px solid var(--doc-rule);
+    border-radius: 10px; background: var(--doc-surface);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; min-width: 700px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--doc-rule); }
+  thead th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--doc-muted); font-weight: 600; background: var(--doc-sunken); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  td.theme { font-family: var(--mono); font-size: 11.5px; white-space: nowrap; }
+  .swatch {
+    display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+    border: 1px solid var(--doc-rule-hard); margin-right: 7px; vertical-align: -1px;
+  }
+  .ok { color: var(--doc-good); }
+  .low { color: var(--doc-warn); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--doc-surface); border: 1px solid var(--doc-rule); border-radius: 10px;
+    padding: 15px 16px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .card p { font-size: 13px; color: var(--doc-hint); }
+  .card .k {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--doc-muted);
+  }
+  .note-box {
+    border-left: 2px solid var(--doc-accent); background: var(--doc-surface);
+    border-radius: 0 8px 8px 0; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .note-box p { font-size: 13.5px; color: var(--doc-hint); max-width: 68ch; }
+  .note-box .k {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--doc-accent);
+  }
+  .decided { display: flex; flex-direction: column; gap: 14px; }
+  .dec { display: grid; grid-template-columns: 78px 1fr; gap: 14px; align-items: baseline; }
+  .dec .badge {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--doc-good); border: 1px solid currentColor; border-radius: 4px;
+    padding: 1px 6px; text-align: center;
+  }
+  .dec.open .badge { color: var(--doc-warn); }
+  .dec p { font-size: 13.5px; color: var(--doc-hint); max-width: 66ch; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  @media (max-width: 640px) {
+    .story, .dec { grid-template-columns: 1fr; gap: 8px; }
+    .wrap { padding: 0 16px 72px; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">Design proposal · specs/2026-08-04-onboarding-tour</p>
+    <h1>Seven things a new DiffBro user never finds on their own</h1>
+    <p class="lede">
+      Four steps on first launch, three on the next. It points at the real controls, runs on
+      shipped demo files, and can be switched off — or summoned back — at any point. Every view
+      below is built from the app's own components and tokens; pick a theme and a step to see the
+      actual surface.
+    </p>
+    <div class="meta-strip">
+      <span>status <b>draft — awaiting approval</b></span>
+      <span>app version <b>0.4.4</b></span>
+      <span>themes checked <b>14 / 14</b></span>
+      <span>new dependencies <b>none</b></span>
+    </div>
+  </header>
+
+  <section id="prototype">
+    <div class="sec-head">
+      <p class="eyebrow">All seven views</p>
+      <h2>The tour, in every theme it has to survive</h2>
+      <p class="prose" style="color: var(--doc-hint)">
+        Each view reproduces the real surface the step lands on — the file-slots band, the
+        one-time key-swap dialog, the snippet editor, the diagram change register, the quick
+        look-up launcher, the settings rail. Colours resolve through the same tokens
+        <code>styles/themes.css</code> ships, so a step that breaks on
+        <span class="mono">beacon</span> or <span class="mono">solar</span> breaks here too.
+      </p>
+    </div>
+
+    <div class="proto">
+      <div class="proto-bar">
+        <div class="grp"><span class="grp-label">Theme</span><span class="grp" id="themeChips"></span></div>
+      </div>
+      <div class="proto-bar">
+        <div class="grp"><span class="grp-label">Step</span><span class="grp" id="stepBtns"></span></div>
+      </div>
+      <div class="stage-scroll">
+        <div class="mock" id="mock" data-mock-theme="light"></div>
+      </div>
+      <div class="caption" id="caption"></div>
+    </div>
+  </section>
+
+  <section id="mechanism">
+    <div class="sec-head">
+      <p class="eyebrow">How the overlay works</p>
+      <h2>What it is made of</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="k">The veil is two layers, not one</span>
+        <p>
+          <strong>Tint</strong> is a single element with a rounded hole clipped out
+          (<code>clip-path: path(evenodd, …)</code>) — one layer, so the scrim can never overlap
+          itself. <strong>Blur</strong> is four rectangles around the target, because Chromium
+          resolves <code>backdrop-filter</code> before <code>clip-path</code>, so a clipped blur
+          layer blurs straight through its own hole. Either job done the other's way produces a
+          visible defect.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">The hole stays live</span>
+        <p>
+          Nothing covers the target, so it stays clickable and sharp — verified by capturing the
+          spotlit region with the overlay on and off and comparing: identical to within 0.5%,
+          against 25% when the blur leaks in.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">The ring carries the meaning</span>
+        <p>
+          A 2px <code>--accent</code> keyline. Never an accent <em>glow</em> — on matrix, nyan and
+          neon a tinted shadow blooms into a halo. Worst case 3.21 : 1 (solar), clearing the
+          3 : 1 non-text floor on all 14.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">The ring hugs, it does not hover</span>
+        <p>
+          Drawn <strong>inside</strong> the target's own box, at zero offset. An outward offset
+          collides with whatever the target sits flush against, and adjacent chrome is often
+          already accent-coloured — the active tab's underline is the same 2px
+          <code>--accent</code>, so a 5px offset over the file-slots band read as one thick edge
+          instead of two elements.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Two cases the ring has to special-case</span>
+        <p>
+          On an <strong>accent-filled</strong> target the ring flips to
+          <code>--text-on-accent</code>, because accent-on-accent is invisible. And the hole's
+          corners follow the target's <strong>radius</strong> — a square hole around a rounded
+          control leaves un-veiled slivers that are harmless on a dark ground and read as a white
+          halo on a light one.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">A zone is dashed, not solid</span>
+        <p>
+          The snippet-drag step targets the whole comparison pane, because
+          <code>useWindowFileDrop</code> is bound to the root element and a drop lands anywhere.
+          A dashed ring says "area", a solid one says "control" — and the callout moves inside the
+          zone, since there is no "beside" for something that fills its pane.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Blur, because dimming is not enough</span>
+        <p>
+          The veil blurs and desaturates as well. On the seven dark themes a black scrim changes
+          almost nothing — beacon measures 1.00 — so defocus, not darkness, pushes the rest of
+          the app back there.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Anchored by measurement</span>
+        <p>
+          A step names a CSS selector; the overlay reads that element's box at run time. Nothing
+          is placed by hardcoded coordinates, so the tour survives a collapsed sidebar, a resized
+          window and a reordered section.
+        </p>
+      </div>
+    </div>
+
+    <div class="note-box">
+      <span class="k">The finding that changed the design</span>
+      <p>
+        The obvious build — a <code>--bg-raised</code> card with a <code>--border</code> keyline
+        over a dimmed app — fails on 11 of 14 themes. Against a scrimmed ground that border drops
+        to 1.23 : 1 on light, and the card stops lifting at all on the dark themes (matrix 1.06).
+        The fix is that <strong>the two cues swap roles by ground</strong>: on light themes the
+        callout's own face separates it (up to 3.23 : 1), on dark themes the
+        <code>--btn-edge</code> keyline does (up to 18.4 : 1). Every theme gets one strong cue
+        from the pair — the table below proves which.
+      </p>
+    </div>
+  </section>
+
+  <section id="stories">
+    <div class="sec-head">
+      <p class="eyebrow">User stories</p>
+      <h2>Four steps, then three — not seven in a row</h2>
+      <p class="prose" style="color: var(--doc-hint)">
+        Someone who came to look at one file gets the survival set and is left alone. The depth
+        waits for the next launch, by which point they have chosen to come back. Numbered because
+        it is a real sequence: step 1 opens the demo files, step 2 seals them, and in run two
+        step 5 saves a snippet that step 6 then compares.
+      </p>
+    </div>
+
+    <div class="stories">
+      <div class="runhead">
+        <span class="rh-tag">Run one · first launch</span>
+        <p>The survival set. Four steps, ending on the switch that turns the rest off.</p>
+      </div>
+      <article class="story">
+        <div class="idx">01</div>
+        <div class="sbody">
+          <h3>Load two files</h3>
+          <p class="quote">
+            As someone opening DiffBro for the first time, I want to know I can just
+            <strong>drop two files on the window</strong>, <em>so that I don't hunt for an import
+            menu that doesn't exist.</em>
+          </p>
+          <ul class="ac">
+            <li>Ships with <code>demo-config-v1.json</code> and <code>demo-config-v2.json</code>, written into the data directory on first run and opened as real files — so the step teaches the real path, not a simulation.</li>
+            <li>They open in a <strong>new tab</strong>, so a restored session is never displaced. Closing the tab is the only cleanup.</li>
+            <li>The ring sits on the file-slots band; copy names both routes — drop anywhere, or click a slot to browse.</li>
+            <li>Copy names the payoff: DiffBro picks the viewer — text, JSON tree, spreadsheet grid or diagram.</li>
+          </ul>
+          <div class="tags"><span class="tag">.file-slots-row</span><span class="tag">Ctrl+1 / Ctrl+2</span><span class="tag">tabsStore.newTab()</span><span class="tag">demo fixtures</span></div>
+        </div>
+      </article>
+      <article class="story">
+        <div class="idx">02</div>
+        <div class="sbody">
+          <h3>Seal it for a colleague</h3>
+          <p class="quote">
+            As someone who has just found a difference worth escalating, I want to
+            <strong>hand it to a named colleague</strong>, <em>so that I stop pasting screenshots
+            into chat.</em>
+          </p>
+          <ul class="ac">
+            <li>Share is pressed on the demo diff, so the step shows what a first-time user genuinely gets: the <strong>one-time setup</strong> dialog, because there are no trusted keys yet.</li>
+            <li>The ring lands on <strong>Add their key…</strong> — the actual blocker, named rather than glossed over.</li>
+            <li>Expiry is stated as the user-visible fact: it stops opening on a clock you set, and one week is the ceiling.</li>
+            <li class="warn">Nothing is sealed and no key material is generated. A throwaway demo identity would outlive the tour.</li>
+          </ul>
+          <div class="tags"><span class="tag">share-current</span><span class="tag">ShareDiffDialog</span><span class="tag">read-only step</span></div>
+        </div>
+      </article>
+      <article class="story">
+        <div class="idx">03</div>
+        <div class="sbody">
+          <h3>Reach it all without switching windows</h3>
+          <p class="quote">
+            As someone deep in another app, I want to <strong>pull up a snippet or a tool with one
+            chord</strong>, <em>so that I don't alt-tab, hunt a window and lose my place.</em>
+          </p>
+          <ul class="ac">
+            <li>Shows the real launcher summoned over the app: snippets and the 10 tools in one search, preview on the right, Enter to open and Ctrl+C to copy.</li>
+            <li>The callout names the payoff a new user would never guess — <strong>it works with DiffBro minimised</strong>, so it is a system-wide launcher, not a window feature.</li>
+            <li>Names the chord and where to rebind it, which is the Shortcuts pane the next step opens.</li>
+            <li>Previews the two examples first run already seeds, so the launcher has real results on day one — no empty-state lesson.</li>
+          </ul>
+          <ul class="ac">
+            <li class="warn"><strong>Constraint worth knowing before build:</strong> the launcher is a separate <code>BrowserWindow</code> (<code>src/main/quickLook.js</code>), so the main window's overlay cannot ring a control <em>inside</em> it. This step rings the whole panel and stops there — anything finer means shipping the tour into the launcher's renderer too, which I'd rather not do for one step.</li>
+          </ul>
+          <div class="tags"><span class="tag">Ctrl+Shift+Space</span><span class="tag">useQuickLook</span><span class="tag">separate window</span></div>
+        </div>
+      </article>
+      <article class="story">
+        <div class="idx">04</div>
+        <div class="sbody">
+          <h3>Make it yours — and turn this off</h3>
+          <p class="quote">
+            As someone who has now seen enough, I want to <strong>find the settings and stop the
+            tips</strong>, <em>so that the app gets out of my way.</em>
+          </p>
+          <ul class="ac">
+            <li>Opens the real Settings dialog on Appearance. The theme grid is the most under-discovered thing in the app.</li>
+            <li>The last ring lands on the new <strong>Show tips after an update</strong> row, with <strong>Show tour</strong> beside it — run one's final act is showing both the off switch and the way back.</li>
+            <li>Names what else lives there: size limits, where your data is kept, the Quick look-up shortcut.</li>
+            <li>Finishing run one asks <strong>"Three more tips?"</strong> there and then. Skipping it instead turns tips off entirely — a skip is an answer, not a pause.</li>
+          </ul>
+          <div class="tags"><span class="tag">SettingsDialog</span><span class="tag">settings.showTips</span><span class="tag">tourSeenVersion</span></div>
+        </div>
+      </article>
+      <div class="runhead">
+        <span class="rh-tag">Run two · offered the moment run one ends</span>
+        <p>
+          The depth. Three steps, offered by a plain "Three more tips?" dialog as soon as run one
+          finishes — <strong>not</strong> deferred to a future launch, because this app stays open
+          for weeks and that launch might be a month away. Only offered if run one was finished
+          rather than skipped.
+        </p>
+      </div>
+      <article class="story">
+        <div class="idx">05</div>
+        <div class="sbody">
+          <h3>Keep something worth keeping</h3>
+          <p class="quote">
+            As someone who retypes the same staging payload every week, I want to
+            <strong>park a piece of JSON where I can find it again</strong>, <em>so that next week
+            it is two keystrokes away.</em>
+          </p>
+          <ul class="ac">
+            <li>The live step: the real editor, prefilled from the shipped demo payload, named and tagged.</li>
+            <li>The ring moves to Save. <strong>The user presses it</strong> and the snippet is genuinely theirs afterwards — which is the whole point of the step.</li>
+            <li>Closing instead also advances. A tour that cannot be refused is a modal wearing a costume.</li>
+            <li>It joins the two examples first run already seeds, so the library is never empty behind the tour.</li>
+          </ul>
+          <div class="tags"><span class="tag">snippets.startNewSnippetFrom()</span><span class="tag">SnippetEditorDialog</span><span class="tag">writes user data</span></div>
+        </div>
+      </article>
+      <article class="story">
+        <div class="idx">06</div>
+        <div class="sbody">
+          <h3>Compare the snippets themselves</h3>
+          <p class="quote">
+            As someone with two versions of a config in my library, I want to
+            <strong>diff them against each other</strong>, <em>so that I don't have to write them
+            out to files first.</em>
+          </p>
+          <ul class="ac">
+            <li>The destination is the <strong>whole comparison pane</strong>, not the file box. <code>useWindowFileDrop</code> is bound to the root element, so a drop lands anywhere — teaching the narrow target would teach the wrong thing.</li>
+            <li>Dashed on both ends, because both are areas rather than controls, joined by the drag path with the snippet riding it as a ghost.</li>
+            <li>Copy states the full rule: a snippet can face a file, or another snippet.</li>
+            <li>Advancing never requires the drag. A mandatory drag is the one gesture a trackpad user can fail at.</li>
+          </ul>
+          <div class="tags"><span class="tag">useSnippetDrag</span><span class="tag">useWindowFileDrop</span><span class="tag">animated arrow</span></div>
+        </div>
+      </article>
+      <article class="story">
+        <div class="idx">07</div>
+        <div class="sbody">
+          <h3>See a diagram change as a diagram</h3>
+          <p class="quote">
+            As someone reviewing an architecture change, I want to see
+            <strong>which nodes moved</strong>, <em>so that I am not reading Mermaid source line
+            by line.</em>
+          </p>
+          <ul class="ac">
+            <li>Covers both halves: a Mermaid snippet previews live in the editor, and two versions compared mark the changes on the picture.</li>
+            <li>The ring sits on the change register — the panel that turns a picture back into a reviewable list.</li>
+            <li>Marks are encoded twice, colour <strong>and</strong> stroke or badge, so the read survives greyscale and colour-blindness.</li>
+            <li class="warn">Waits on <code>useDiagramWarmup</code> rather than showing an empty frame while Mermaid loads.</li>
+          </ul>
+          <div class="tags"><span class="tag">DiagramChangeRegister</span><span class="tag">MermaidPreview</span><span class="tag">--dg-add / --dg-del / --dg-chg</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="optout">
+    <div class="sec-head">
+      <p class="eyebrow">Opting out, and back in</p>
+      <h2>Four ways out, three ways back</h2>
+      <p class="prose" style="color: var(--doc-hint)">
+        The tour can be left at any point, from any step, and leaving is never punished by having
+        to sit through it again. It can also be summoned at any point, from three places, whether
+        it was finished, skipped or switched off years ago.
+      </p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="k">Escape</span>
+        <p>Closes the tour from any step — the same key that closes every dialog in the app.</p>
+      </div>
+      <div class="card">
+        <span class="k">Skip tour</span>
+        <p>
+          A <code>.btn-ghost</code> in every callout footer, legitimately the dismissive twin of
+          the Next primary beside it. Present on step 1, not held back for the end.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">The toast that follows</span>
+        <p>
+          Leaving early shows one line: <em>"Tips off. Turn them back on in Settings ▸
+          Appearance."</em> An opt-out the user cannot reverse is a trap.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Settings ▸ Appearance</span>
+        <p>
+          <strong>Show tips after an update</strong> — off means off for good, including future
+          versions. It is the row run one ends on, so it is found on day one rather than
+          stumbled on later.
+        </p>
+      </div>
+    </div>
+
+    <h3 style="padding-top: 8px">Three ways back in, always available</h3>
+    <div class="cards">
+      <div class="card">
+        <span class="k">Help ▸ Show tour</span>
+        <p>
+          In the menu bar for good, next to Keyboard Shortcuts. Replays all seven steps from the
+          start, ignoring every flag — including <code>showTips = false</code>. Asking for it is
+          not the same as consenting to automatic tips, so it never silently switches them back on.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Settings ▸ Appearance ▸ Show tour</span>
+        <p>
+          A button beside the tips toggle, so the place you turn it off is the place you turn it
+          back on. Same behaviour: all seven, from step one.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Command palette</span>
+        <p>
+          <em>Show onboarding tour</em>, reachable from the palette and therefore searchable —
+          which is how anyone who half-remembers a feature actually looks for it.
+        </p>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Situation</th><th>What the user sees</th><th>State that decides it</th></tr></thead>
+        <tbody>
+          <tr><td>First install</td><td><strong>Run one</strong> — 4 steps, after the first-run examples are seeded</td><td class="mono">tourStep = 0</td></tr>
+          <tr><td>Run one ends</td><td><strong>"Three more tips?"</strong> — asked immediately, not on a future launch</td><td class="mono">tourStep = 4</td></tr>
+          <tr><td>…they say Show me</td><td><strong>Run two</strong> — the remaining 3, straight away</td><td class="mono">tourStep = 4, resumed</td></tr>
+          <tr><td>…they say Not now</td><td>Nothing more this session; asked once more on the next launch, then never again</td><td class="mono">tourDeferred = 1</td></tr>
+          <tr><td>Both runs done</td><td>Nothing further, ever, unless asked</td><td class="mono">tourStep = 7</td></tr>
+          <tr><td>Quit mid-run</td><td>Resumes at the step it was on, in that run</td><td class="mono">tourStep persisted</td></tr>
+          <tr><td>Skipped or Escaped</td><td>Nothing — including run two, which never arrives</td><td class="mono">showTips = false</td></tr>
+          <tr><td>Update with new steps</td><td>Only steps newer than the version last seen, as their own run</td><td class="mono">step.since &gt; tourSeenVersion</td></tr>
+          <tr><td>Update with no new steps</td><td>Nothing at all</td><td class="mono">no step qualifies</td></tr>
+          <tr><td>Asked for it</td><td>All seven, from the start, regardless of every row above</td><td class="mono">Help ▸ Show tour</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="themes">
+    <div class="sec-head">
+      <p class="eyebrow">Per-theme verdict</p>
+      <h2>Measured, not eyeballed</h2>
+      <p class="prose" style="color: var(--doc-hint)">
+        Parsed from <code>styles/themes.css</code> with the resolver
+        <code>check-theme-depth.mjs</code> uses — <code>color-mix</code> included, and the scrim
+        composited over each ground. Floors are the repo's own: 4.5 text, 3.0 non-text, 1.11
+        border, 1.04 surface.
+      </p>
+    </div>
+    <div class="table-scroll">
+      <table id="themeTable">
+        <thead>
+          <tr>
+            <th>Theme</th><th>Ground</th><th class="num">Title</th><th class="num">Body</th>
+            <th class="num">Keyline</th><th class="num">Card lift</th><th class="num">Ring</th>
+            <th class="num">Dim</th><th>What carries the focus</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="prose" style="font-size: 13px; color: var(--doc-muted)">
+      <strong>Dim</strong> is how much the scrim actually changes the app behind it. Below about
+      1.25 it is not a visible cue — which is every dark theme, and beacon at 1.00 is a pure-black
+      ground that cannot be darkened. That column is why the veil blurs.
+      <strong>Keyline</strong> and <strong>Card lift</strong> are the complementary pair: read them
+      together, never alone.
+    </p>
+  </section>
+
+  <section id="build">
+    <div class="sec-head">
+      <p class="eyebrow">Shape of the change</p>
+      <h2>What lands in the tree</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="k">New slice</span>
+        <p>
+          <code>features/onboarding/</code> — <code>onboardingStore.js</code>,
+          <code>index.js</code>, <code>components/TourOverlay.vue</code> +
+          <code>TourCallout.vue</code> and their <code>styles/</code>. Tests mirror to
+          <code>tests/renderer/features/onboarding/</code>.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Pulled out to pure units</span>
+        <p>
+          <code>useSpotlight.js</code> owns measuring and placement;
+          <code>utils/tourSteps.js</code> the step list and the <code>since</code>-versus-seen
+          filter. Both unit-testable without mounting anything — the lesson from the Mermaid
+          resize bug.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Shipped demo files</span>
+        <p>
+          Two JSON fixtures bundled with the app and written once into the data directory, so
+          step 1 opens real files by real path and step 2 has something real to seal. They stay
+          for the user to reopen.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Touched, not rewritten</span>
+        <p>
+          Two persisted keys in <code>settingsStore</code>, one row in
+          <code>utils/commands.js</code>, one Help item in both <code>src/main/index.js</code> and
+          <code>MenuBar.vue</code>, one toggle in <code>SettingsDialog</code>.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Guards to extend</span>
+        <p>
+          A <span class="mono">tour-callout</span> surface added to <code>SURFACES</code> in
+          <code>theme-sweep.mjs</code> so the numbers above are re-proved against the live DOM,
+          plus an e2e that runs the tour to the end and one that leaves it at step 1.
+        </p>
+      </div>
+      <div class="card">
+        <span class="k">Docs that go stale</span>
+        <p>
+          <code>README.md</code> (feature status), <code>docs/roadmap.md</code>, and the
+          first-run screenshot set — <code>empty-state.png</code> now has a tour over it on a
+          fresh profile.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="decisions">
+    <div class="sec-head">
+      <p class="eyebrow">Decisions</p>
+      <h2>Settled, and the one still open</h2>
+    </div>
+    <div class="decided">
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>Step 3 writes.</strong> It saves a real snippet into the real library — that is what makes it a living example rather than a slideshow.</p>
+      </div>
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>Step 1 opens a demo tab.</strong> A scratch tab, closed when the tour ends, so a restored session is never displaced.</p>
+      </div>
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>Demo JSON files ship with the app.</strong> Written into the data directory on first run and opened by path, so the comparison and the seal-and-share step both run on something real. Falls back to an in-memory comparison if the write fails.</p>
+      </div>
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>Quick look-up is a step.</strong> Placed sixth, after a snippet exists to find, so the search demonstrates itself on the user's own data. It rings the whole launcher panel — see the constraint under story 06.</p>
+      </div>
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>Four, then three.</strong> Run one is comparing, sealing, quick look-up and settings; run two is keeping a snippet, diffing snippets and diagrams, offered on the next launch. Settings moves to the end of run one so the off switch and the replay button are found on day one rather than six steps deep.</p>
+      </div>
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>Run two is offered immediately, by a dialog.</strong> A diff viewer stays open for weeks, so "next launch" is not a schedule — it could be a month away, landing run two on someone who has forgotten there was a tour. Run one now ends with a plain <code>BaseDialog</code>: <em>Three more tips?</em> · Not now · Show me. "Not now" asks once more on the next launch and then stops; it never nags in-session.</p>
+      </div>
+      <div class="dec">
+        <span class="badge">Decided</span>
+        <p><strong>The tour is replayable for good.</strong> Help ▸ Show tour, a button in Settings, and a command-palette entry — all three replay all seven steps and ignore every flag, including a tips opt-out. Asking to see it once is not consent to automatic tips, so replaying never re-enables them.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const THEMES = [
+    ['light', 'Light'], ['dark', 'Dark'], ['solar', 'Solar'], ['neon', 'Neon'],
+    ['nord', 'Nord'], ['sepia', 'Sepia'], ['dim', 'Dim'], ['beacon', 'Beacon'],
+    ['meridian', 'Meridian'], ['linen', 'Linen'], ['bloom', 'Bloom'], ['nyan', 'Nyan'],
+    ['matrix', 'Matrix'], ['contrast', 'Contrast']
+  ]
+  const GROUNDS = {
+    light: '#ffffff', dark: '#0d1117', solar: '#fffdf6', neon: '#090d18', nord: '#2e3440',
+    sepia: '#e9dcbe', dim: '#1b1917', beacon: '#000000', meridian: '#f5f7f4', linen: '#faf7f0',
+    bloom: '#f9f4f5', nyan: '#160a20', matrix: '#020a04', contrast: '#ffffff'
+  }
+  // Settings theme-grid swatches, verbatim from utils/themes.js (that order too).
+  const SWATCHES = [
+    ['light', 'Light', '#ffffff', '#0969da', '#1a7f37', '#cf222e'],
+    ['dark', 'Dark', '#161b22', '#2f81f7', '#3fb950', '#f85149'],
+    ['solar', 'Solar', '#fbf2dd', '#e8590c', '#2f9e44', '#e03131'],
+    ['neon', 'Neon', '#111829', '#22d3ee', '#4ade80', '#fb7185'],
+    ['contrast', 'Contrast', '#ffffff', '#1633d4', '#05702f', '#c20000'],
+    ['nord', 'Nord', '#3b4252', '#88c0d0', '#a3be8c', '#bf616a'],
+    ['sepia', 'Sepia', '#dfcea6', '#9c4f1f', '#5a6f28', '#933a22'],
+    ['dim', 'Dim', '#232019', '#d9a441', '#8fbf6b', '#e0705f'],
+    ['beacon', 'Beacon', '#0b0b0b', '#4cc2ff', '#3fe07a', '#ff5b57'],
+    ['meridian', 'Meridian', '#eef2ee', '#0e8a8a', '#2f9e44', '#c0392b'],
+    ['linen', 'Linen', '#efe9dc', '#3f5b8a', '#4a7c3a', '#a8432f'],
+    ['bloom', 'Bloom', '#efe4e7', '#b0446e', '#3f9160', '#c33a54'],
+    ['nyan', 'Nyan', '#231033', '#ff2ecb', '#63ff4d', '#ff5470'],
+    ['matrix', 'Matrix', '#020a04', '#00ff41', '#00ff41', '#ff5470']
+  ]
+  const MEASURED = {
+    light:    { ground: 'light', title: 12.53, body: 7.93, edge: 1.23, lift: 3.01, ring: 4.49, dim: 3.84 },
+    dark:     { ground: 'dark',  title: 10.61, body: 7.78, edge: 6.32, lift: 1.59, ring: 4.62, dim: 1.05 },
+    solar:    { ground: 'light', title: 9.78,  body: 5.08, edge: 1.54, lift: 1.78, ring: 3.21, dim: 2.43 },
+    neon:     { ground: 'dark',  title: 11.35, body: 7.66, edge: 6.57, lift: 1.59, ring: 9.79, dim: 1.05 },
+    nord:     { ground: 'dark',  title: 6.30,  body: 5.37, edge: 6.86, lift: 2.40, ring: 5.03, dim: 1.40 },
+    sepia:    { ground: 'light', title: 7.01,  body: 4.86, edge: 1.44, lift: 1.82, ring: 3.81, dim: 2.53 },
+    dim:      { ground: 'dark',  title: 9.36,  body: 6.49, edge: 5.77, lift: 1.62, ring: 7.23, dim: 1.08 },
+    beacon:   { ground: 'dark',  title: 14.74, body: 11.81, edge: 18.43, lift: 1.42, ring: 9.81, dim: 1.00 },
+    meridian: { ground: 'light', title: 9.39,  body: 6.54, edge: 1.44, lift: 1.99, ring: 3.70, dim: 2.59 },
+    linen:    { ground: 'light', title: 10.78, body: 6.20, edge: 1.66, lift: 1.76, ring: 5.65, dim: 2.50 },
+    bloom:    { ground: 'light', title: 10.16, body: 6.14, edge: 1.59, lift: 1.74, ring: 4.34, dim: 2.50 },
+    nyan:     { ground: 'dark',  title: 11.04, body: 8.40, edge: 7.74, lift: 1.53, ring: 5.45, dim: 1.04 },
+    matrix:   { ground: 'dark',  title: 12.58, body: 9.62, edge: 8.98, lift: 1.42, ring: 13.92, dim: 1.01 },
+    contrast: { ground: 'light', title: 14.31, body: 11.86, edge: 4.20, lift: 3.23, ring: 7.63, dim: 4.74 }
+  }
+
+  const STEPS = [
+    {
+      run: 1, n: 1, label: 'Compare', view: 'diff', title: 'Two files, any way you like',
+      body: 'Drop them anywhere on this window, or click a slot to browse. DiffBro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.',
+      target: '#t-slots', side: 'bottom',
+      caption: 'Anchored to <b>.file-slots-row</b>. The comparison behind the veil is the shipped demo pair, opened by path into a scratch tab.'
+    },
+    {
+      run: 1, n: 2, label: 'Seal & share', view: 'share', title: 'Swap keys once, then seal',
+      body: 'Share seals a diff for named people. You each import the other’s public key once — after that, sealing takes two clicks and expires on a clock you set.',
+      target: '#t-addkey', side: 'left',
+      caption: 'The real <b>one-time setup</b> dialog — what a first-time user actually gets, because no trusted keys exist yet. Nothing is sealed and no demo identity is generated.'
+    },
+    {
+      run: 1, n: 3, label: 'Quick look-up', view: 'quicklook', title: 'Find anything without leaving what you’re doing',
+      body: 'Ctrl+Shift+Space summons this from any app — every snippet and every tool, searchable. Enter opens, Ctrl+C copies. It works even when DiffBro is minimised.',
+      target: '#t-quicklook', side: 'bottom',
+      caption: 'Previews the two examples first run seeds, so the launcher has real results on day one. It is its <b>own window</b> — the main window’s overlay cannot ring a control inside it, so the step rings the whole panel.'
+    },
+    {
+      run: 1, n: 4, label: 'Settings', view: 'settings', title: 'Make it yours — and switch this off',
+      body: 'Fourteen themes, size limits, where your data is kept, and the Quick look-up shortcut. Tips have an off switch right here — and a Show tour button whenever you want them back.',
+      target: '#t-tips', side: 'left',
+      caption: 'Run one ends on the tips row: the off switch and the replay button are the last thing a first-time user is shown, not something they have to go hunting for.'
+    },
+    {
+      run: 1.5, label: 'Continue?', view: 'continue', interstitial: true,
+      caption: 'Fires the moment run one ends, <b>not on a future launch</b> — this app stays open for weeks, so "next launch" could be a month away and run two would land on someone who has forgotten there was a tour.'
+    },
+    {
+      run: 2, n: 5, label: 'Keep a snippet', view: 'snippet', title: 'Park this where you can find it',
+      body: 'Anything you retype belongs here — a deploy payload, a prompt, a config block. Name it, tag it, and quick look-up finds it next week.',
+      target: '#t-snipsave', side: 'left',
+      caption: 'Run two opens here, on the next launch. The live step: the real editor, prefilled from the shipped demo payload. <b>The user presses Save</b> — closing instead also advances.'
+    },
+    {
+      run: 2, n: 6, label: 'Diff snippets', view: 'drag', title: 'Drag it anywhere in here',
+      body: 'The whole comparison area is a drop target — you don’t have to land on a file box. A snippet can face a file, or another snippet, and nothing is written to disk first.',
+      target: '#t-droppane', side: 'left', from: '#t-sniprow', zone: true,
+      caption: 'The destination is the <b>whole pane</b>, dashed because it is a zone rather than a control — <code>useWindowFileDrop</code> is bound to the root element, so a drop lands anywhere. Advancing never requires the drag to be performed.'
+    },
+    {
+      run: 2, n: 7, label: 'Diagrams', view: 'diagram', title: 'A diagram change, as a diagram',
+      body: 'Mermaid snippets preview live while you type. Compare two versions and every added, removed or changed node is marked on the picture — and listed here.',
+      target: '#t-register', side: 'left',
+      caption: 'The change register beside the drawn diff. Marks resolve through <b>--dg-add / --dg-del / --dg-chg</b> and are encoded in stroke as well as colour.'
+    }
+  ]
+  const RUN_LEN = { 1: STEPS.filter((s) => s.run === 1).length, 2: STEPS.filter((s) => s.run === 2).length }
+  const indexInRun = (step) => STEPS.filter((s) => s.run === step.run).indexOf(step) + 1
+  const stepNo = (s) => (s.interstitial ? '—' : (s.n < 10 ? '0' : '') + s.n)
+
+  // ── App chrome ─────────────────────────────────────────────────────────
+  const MENU = ['File', 'Edit', 'View', 'Security', 'Tools', 'Help']
+
+  const toolbar = (opts) => {
+    const live = opts.loaded
+    const off = live ? '' : ' off'
+    return `<div class="m-toolbar">
+      ${live ? '<span class="m-stats"><span class="a">+7</span><span class="d">−5</span></span>' : ''}
+      <div class="m-tb-right">
+        ${opts.diagram
+          ? `<span class="m-check"><span class="m-box"></span>Split view</span>
+             <span class="m-check"><span class="m-box"></span>Ignore whitespace</span>
+             <span class="m-check"><span class="m-box on">✓</span>Diagram</span>
+             <span class="m-check"><span class="m-box on">✓</span>Focus on changes</span>`
+          : `<span class="m-check"><span class="m-box on">✓</span>Split view</span>
+             <span class="m-check${live ? '' : ' off'}"><span class="m-box"></span>Ignore whitespace</span>
+             <span class="m-check${live ? '' : ' off'}"><span class="m-box"></span>Structure</span>`}
+        <span class="m-divider"></span>
+        <span class="m-btn${off}">Paste text</span>
+        <span class="m-btn${live ? ' primary' : ' off'}">Save</span>
+        <span class="m-btn${off}" id="t-share">Share</span>
+        <span class="m-btn${off}">Copy diff</span>
+        <span class="m-btn${off}">Capture</span>
+        <span class="m-btn${off}">Clear</span>
+      </div>
+    </div>`
+  }
+
+  const TAGCLOUD = [
+    ['backend', 6, '#39c5cf'], ['json', 5, '#63d471'], ['infra', 4, '#ff6b9d'],
+    ['release', 3, '#ffd23f'], ['imported', 3, '#4ade80'], ['frontend', 3, '#b07ad0'],
+    ['config', 2, '#39c5cf'], ['xml', 2, '#ff6b9d']
+  ]
+
+  const row = (r) => `
+    <div class="m-row${r.sel ? ' sel' : ''}"${r.id ? ` id="${r.id}"` : ''}>
+      <span class="m-star${r.fav ? ' on' : ''}">${r.fav ? '★' : '☆'}</span>
+      <span class="m-mono" style="--fam:${r.fam}">${r.mono}</span>
+      <span class="m-rowmain">
+        <span class="m-rowline">
+          <span class="nm">${r.name}</span>
+          ${r.left ? `<span class="m-left">${r.left}</span>` : ''}
+        </span>
+        <span class="m-sub">
+          ${r.from ? `<span>${r.from}</span>` : ''}
+          ${r.trust ? '<span class="m-trust">◈</span>' : ''}
+          ${r.tag ? `<span class="tw" style="--tc:${r.tc}">${r.tag}</span>` : ''}
+          ${r.age ? `<span>${r.age}</span>` : ''}
+        </span>
+      </span>
+    </div>`
+
+  const sidebar = () => `
+    <div class="m-sidebar">
+      <div class="m-sbtop">
+        <span class="m-search">⌕ Search diffs &amp; snippets…</span>
+        <span class="m-collapse">‹</span>
+      </div>
+      <div class="m-filters">
+        <span class="m-fchip on">All</span><span class="m-fchip">★</span>
+        <span class="m-fchip">Saved</span><span class="m-fchip">Shared</span>
+        <span class="m-fchip">Snippets</span>
+      </div>
+      <div class="m-tagcloud">
+        ${TAGCLOUD.map(([n, c, col]) => `<span class="m-tw" style="--tc:${col}"><b>${n}</b><span class="ct">${c}</span></span>`).join('')}
+        <span class="m-more">+21 more</span>
+      </div>
+      <div class="m-sechead"><span>⌄</span><span>SAVED DIFFS</span><span class="sh-end">+</span></div>
+      ${row({ fav: true, mono: 'JSON', fam: '#e0b341', name: 'Staging vs prod config', tag: 'config', tc: '#39c5cf', sel: true })}
+      ${row({ mono: 'XML', fam: '#7a5fd0', name: 'pom.xml — 3.4 vs 3.5', left: '19h 59m left', tag: 'backend', tc: '#39c5cf' })}
+      <div class="m-sechead"><span>⌄</span><span>EXTERNAL DIFFS</span><span class="sh-end">+</span></div>
+      ${row({ fav: true, mono: 'JSON', fam: '#e0b341', name: 'Feature flags — prod', left: '21h 59m left', from: 'from Bob — workstation', trust: true })}
+      <div class="m-sechead"><span>⌄</span><span>SNIPPETS</span><span class="sh-end">+ ↑ ↓</span></div>
+      ${row({ fav: true, mono: 'MMD', fam: '#d95555', name: 'Example — Mermaid diagram', tag: 'example', tc: '#b07ad0', age: 'now' })}
+      ${row({ mono: 'JSON', fam: '#e0b341', name: 'deploy-staging.json', tag: 'example', tc: '#39c5cf', age: '2m', id: 't-sniprow' })}
+      ${row({ mono: 'SQL', fam: '#3b9dce', name: 'Active users by plan', tag: 'db', tc: '#63d471', age: '12h' })}
+      <div class="m-toolsearch">⌕ Search tools…</div>
+    </div>`
+
+  const shortcutBar = () => `
+    <div class="m-shortcutbar">
+      <span><span class="m-kbd">Ctrl+1</span> open left</span>
+      <span><span class="m-kbd">Ctrl+2</span> open right</span>
+      <span><span class="m-kbd">Ctrl+S</span> save diff</span>
+      <span><span class="m-kbd">Ctrl+T</span> paste text</span>
+      <span><span class="m-kbd">Ctrl+\\</span> split view</span>
+    </div>`
+
+  const slots = (loaded, names) => `
+    <div class="m-slots" id="t-slots">
+      <span class="m-slot${loaded ? '' : ' empty'}" id="t-slotleft">${loaded ? names[0] : 'Left file…'}</span>
+      <span class="m-swap">⇄</span>
+      <span class="m-slot${loaded ? '' : ' empty'}" id="t-slotright">${loaded ? names[1] : 'Right file…'}</span>
+    </div>`
+
+  // ── View bodies ────────────────────────────────────────────────────────
+  const hl = (s) => s
+    .replace(/<k>/g, '<span class="m-k">').replace(/<\/k>/g, '</span>')
+    .replace(/<s>/g, '<span class="m-s">').replace(/<\/s>/g, '</span>')
+    .replace(/<n>/g, '<span class="m-n">').replace(/<\/n>/g, '</span>')
+
+  const L = [
+    [1, '', '{'], [2, '', '  <k>"name"</k>: <s>"diffbro-demo"</s>,'],
+    [3, '−', '  <k>"version"</k>: <s>"1.0.0"</s>,', 'del'],
+    [4, '', '  <k>"settings"</k>: {'],
+    [5, '−', '    <k>"fontSize"</k>: <n>13</n>,', 'del'],
+    [6, '−', '    <k>"autoSave"</k>: <n>false</n>,', 'del'],
+    [7, '−', '    <k>"telemetry"</k>: <n>true</n>', 'del'],
+    [8, '', '  },'],
+    [9, '−', '  <k>"plugins"</k>: [<s>"linter"</s>]', 'del'],
+    [null, '', '', 'gap'], [null, '', '', 'gap'],
+    [10, '', '}']
+  ]
+  const R = [
+    [1, '', '{'], [2, '', '  <k>"name"</k>: <s>"diffbro-demo"</s>,'],
+    [3, '+', '  <k>"version"</k>: <s>"2.0.0"</s>,', 'add'],
+    [4, '', '  <k>"settings"</k>: {'],
+    [5, '+', '    <k>"fontSize"</k>: <n>14</n>,', 'add'],
+    [6, '+', '    <k>"autoSave"</k>: <n>true</n>', 'add'],
+    [7, '', '  },'],
+    [8, '+', '  <k>"plugins"</k>: [<s>"linter"</s>, <s>"spellcheck"</s>],', 'add'],
+    [9, '+', '  <k>"experimental"</k>: {', 'add'],
+    [10, '+', '    <k>"fastDiff"</k>: <n>true</n>', 'add'],
+    [11, '+', '  }', 'add'],
+    [12, '', '}']
+  ]
+  const lines = (rows) => rows.map(([n, sg, code, cls]) =>
+    cls === 'gap'
+      ? '<div class="m-line gap"></div>'
+      : `<div class="m-line ${cls || ''}"><span class="ln">${n}</span><span class="sg">${sg}</span><span>${hl(code)}</span></div>`
+  ).join('')
+
+  const diffBody = () => `
+    <div class="m-diff"><div class="m-side">${lines(L)}</div><div class="m-side">${lines(R)}</div></div>
+    <div class="m-statusband">
+      <span>Lines</span><span class="add">+7</span><span class="del">−5</span>
+      <span>· 4 hunks · JSON</span><span class="end">both sides parsed</span>
+    </div>`
+
+  const emptyBody = () => `
+    <div class="m-empty">
+      <div class="t">Choose or drop two files to compare.</div>
+      <div class="lbl">Supported files</div>
+      <div class="m-formats">
+        <span class="m-fmt hl">▦ Excel .xlsx</span><span class="m-fmt">&lt;&gt; JSON</span>
+        <span class="m-fmt">&lt;&gt; XML</span><span class="m-fmt">&lt;&gt; YAML</span>
+        <span class="m-fmt">▦ CSV</span><span class="m-fmt">▤ Markdown</span>
+      </div>
+      <div class="fine">…and any text or code file — binary files aren't supported</div>
+    </div>`
+
+  const diagramSvg = `
+    <svg viewBox="0 0 430 250" width="430" height="250" role="img"
+         aria-label="Diagram diff: two nodes added, one removed">
+      <defs>
+        <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L8 4 L0 8 z" fill="context-stroke"/>
+        </marker>
+      </defs>
+      <g font-family="ui-monospace, monospace" font-size="11" text-anchor="middle">
+        <rect x="168" y="14" width="94" height="30" rx="4" fill="none" stroke="currentColor" opacity="0.75"/>
+        <text x="215" y="33" fill="currentColor">Valid?</text>
+        <path d="M200 46 C150 70, 110 78, 88 96" fill="none" stroke="var(--dg-add)" stroke-width="1.6" marker-end="url(#ah)"/>
+        <path d="M215 46 L215 96" fill="none" stroke="var(--dg-add)" stroke-width="1.6" marker-end="url(#ah)"/>
+        <path d="M232 46 C282 70, 320 78, 342 96" fill="none" stroke="var(--dg-del)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ah)"/>
+        <text x="118" y="76" fill="currentColor" font-size="10">yes</text>
+        <text x="222" y="76" fill="currentColor" font-size="10">no</text>
+        <text x="312" y="76" fill="currentColor" font-size="10">no</text>
+        <rect x="34" y="98" width="106" height="34" rx="4" fill="color-mix(in srgb, var(--dg-add) 13%, transparent)" stroke="var(--dg-add)" stroke-width="1.8"/>
+        <text x="87" y="120" fill="currentColor">Enrich</text>
+        <rect x="160" y="98" width="112" height="34" rx="4" fill="color-mix(in srgb, var(--dg-add) 13%, transparent)" stroke="var(--dg-add)" stroke-width="1.8"/>
+        <text x="216" y="120" fill="currentColor">Quarantine</text>
+        <rect x="292" y="98" width="104" height="34" rx="4" fill="color-mix(in srgb, var(--dg-del) 11%, transparent)" stroke="var(--dg-del)" stroke-width="1.8" stroke-dasharray="5 3"/>
+        <text x="344" y="120" fill="currentColor" opacity="0.75">Reject</text>
+        <path d="M96 134 C120 170, 170 184, 196 190" fill="none" stroke="var(--dg-add)" stroke-width="1.6" marker-end="url(#ah)"/>
+        <path d="M336 134 C312 170, 268 184, 246 190" fill="none" stroke="var(--dg-del)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ah)"/>
+        <rect x="166" y="190" width="112" height="34" rx="4" fill="none" stroke="currentColor" opacity="0.75"/>
+        <text x="222" y="212" fill="currentColor">Transform</text>
+      </g>
+    </svg>`
+
+  const diagramBody = () => `
+    <div class="m-dglegend">
+      <span class="m-dgl add"><span class="m-badge">+</span>added</span>
+      <span class="m-dgl del"><span class="m-badge">−</span>removed</span>
+      <span class="m-dgl chg"><span class="m-badge">~</span>changed</span>
+      <span class="m-dgl unc"><span class="m-badge"></span>unchanged</span>
+      <span class="m-dgzoom">
+        <span class="m-btn sm">−</span><span class="m-btn sm">100%</span><span class="m-btn sm">+</span>
+        <span style="font-family: var(--mono); font-size: 9px; color: var(--text-dim)">flowchart-v2</span>
+      </span>
+    </div>
+    <div class="m-dgbody">
+      <div class="m-dgcanvas">${diagramSvg}</div>
+      <div class="m-register" id="t-register">
+        <div class="m-reghead"><span>NODES</span><span class="n">3</span></div>
+        <div class="m-regrow add"><span class="mk">+</span><span>Enrich</span></div>
+        <div class="m-regrow add"><span class="mk">+</span><span>Quarantine</span></div>
+        <div class="m-regrow del"><span class="mk">−</span><span>Reject</span></div>
+        <div class="m-reghead"><span>EDGES</span><span class="n">5</span></div>
+        <div class="m-regrow add"><span class="mk">+</span><span>Valid → Enrich</span></div>
+        <div class="m-regrow add"><span class="mk">+</span><span>Enrich → Transform</span></div>
+        <div class="m-regrow add"><span class="mk">+</span><span>Valid → Quarantine</span></div>
+        <div class="m-regrow del"><span class="mk">−</span><span>Valid → Transform</span></div>
+        <div class="m-regrow del"><span class="mk">−</span><span>Valid → Reject</span></div>
+      </div>
+    </div>
+    <div class="m-statusband">
+      <span>Nodes</span><span class="add">2 added</span><span class="chg">0 changed</span>
+      <span class="del">1 removed</span><span class="end">2 unchanged hidden</span>
+    </div>`
+
+  // ── Dialogs ────────────────────────────────────────────────────────────
+  const shareDialog = () => `
+    <div class="m-dialoglayer">
+      <div class="m-dialog" style="width: 400px">
+        <div class="m-dhead"><h5>Share diff — one-time setup</h5><span class="m-dclose">✕</span></div>
+        <p class="m-note">
+          Shared diffs are sealed for named people, so you and your bro first swap public keys —
+          once, in both directions. Your keys already exist (created automatically, fingerprint
+          <code>7F2A 91C4 D08B 5E63</code>); the private half never leaves this machine.
+        </p>
+        <div class="m-step">
+          <span class="badge">1</span>
+          <span class="sbody">
+            <strong>Give them your key</strong>
+            <span class="shint">Name it and send it — they import it to receive your diffs.</span>
+          </span>
+          <span class="m-btn sm">Share my key…</span>
+        </div>
+        <div class="m-step">
+          <span class="badge">2</span>
+          <span class="sbody">
+            <strong>Add their key</strong>
+            <span class="shint">Open the .diffbrokey file they sent you.</span>
+          </span>
+          <span class="m-btn sm primary" id="t-addkey">Add their key…</span>
+        </div>
+        <p class="m-note">
+          As soon as their key is added you can pick them as a recipient — this dialog updates
+          automatically.
+        </p>
+        <div class="m-dactions"><span class="spacer"></span><span class="m-btn ghost">Cancel</span></div>
+      </div>
+    </div>`
+
+  const snippetDialog = () => `
+    <div class="m-dialoglayer">
+      <div class="m-dialog" style="width: 460px; height: 442px">
+        <div class="m-dhead"><h5>New Snippet</h5><span class="m-dclose">✕</span></div>
+        <span class="m-flabel">Name</span>
+        <div class="m-field focused">deploy-staging.json</div>
+        <div class="m-tagfield">
+          <span class="m-tagchip" style="--tag-ink:#b07ad0">◈ example</span>
+          <span class="m-tagchip" style="--tag-ink:#39c5cf">◈ json</span>
+          <span class="m-taginput">add a tag…</span>
+        </div>
+        <label class="m-checkrow"><span class="m-box"></span><span><b>Secret</b> — hide the contents behind ****</span></label>
+        <div class="m-editorhead">
+          <span>Content <span style="opacity:.75">— or drop a file here</span></span>
+          <span style="display:inline-flex;align-items:center;gap:6px">Syntax
+            <span class="m-select" style="width:96px">JSON <span style="opacity:.6">▾</span></span>
+          </span>
+        </div>
+        <div class="m-code"><span class="ln"> 1</span>  {
+<span class="ln"> 2</span>    <span class="m-k">"service"</span>: <span class="m-s">"checkout-api"</span>,
+<span class="ln"> 3</span>    <span class="m-k">"replicas"</span>: <span class="m-n">3</span>,
+<span class="ln"> 4</span>    <span class="m-k">"env"</span>: <span class="m-s">"staging"</span>,
+<span class="ln"> 5</span>    <span class="m-k">"featureFlags"</span>: {
+<span class="ln"> 6</span>      <span class="m-k">"newCart"</span>: <span class="m-n">true</span>,
+<span class="ln"> 7</span>      <span class="m-k">"fastCheckout"</span>: <span class="m-n">false</span>
+<span class="ln"> 8</span>    }
+<span class="ln"> 9</span>  }</div>
+        <div class="m-dactions">
+          <span class="m-btn sm">Format</span><span class="m-btn sm">Copy</span><span class="m-btn sm">Clear</span>
+          <span class="spacer"></span>
+          <span class="m-btn primary" id="t-snipsave">Save</span>
+          <span class="m-btn ghost">Cancel</span>
+        </div>
+      </div>
+    </div>`
+
+  const quickLookPanel = () => `
+    <div class="m-qllayer">
+      <div class="m-ql" id="t-quicklook">
+        <div class="m-qlsearch">
+          <span>⌕</span><span class="fld">Search snippets &amp; tools…</span>
+          <span class="m-btn sm">+</span><span class="m-kbd">Esc</span>
+        </div>
+        <div class="m-qlbody">
+          <div class="m-qlres">
+            <div class="m-qlrow sel">
+              <span class="m-mono" style="--fam:#c07ad0">CLD</span>
+              <span class="nm">Example — Claude review prompt</span><span class="kind">Snippet</span>
+            </div>
+            <div class="m-qlrow">
+              <span class="m-mono" style="--fam:#d95555">MMD</span>
+              <span class="nm">Example — Mermaid diagram</span><span class="kind">Snippet</span>
+            </div>
+            <div class="m-qlrow m-qlgroup">
+              <span class="m-mono" style="--fam:var(--accent)">⚙</span>
+              <span class="nm">Tools</span><span class="kind">10 tools ›</span>
+            </div>
+            <div class="m-qlrow">
+              <span class="m-mono" style="--fam:var(--accent)">#</span>
+              <span class="nm">Hash text</span><span class="kind">Tool</span>
+            </div>
+            <div class="m-qlrow">
+              <span class="m-mono" style="--fam:var(--accent)">{}</span>
+              <span class="nm">JSON format &amp; validate</span><span class="kind">Tool</span>
+            </div>
+            <div class="m-qlrow">
+              <span class="m-mono" style="--fam:var(--accent)">JWT</span>
+              <span class="nm">JWT decode</span><span class="kind">Tool</span>
+            </div>
+          </div>
+          <div class="m-qlpv">
+            <div class="m-qlpvhead">
+              <span style="flex:1;min-width:0">Example — Claude review prompt</span>
+              <span class="m-btn sm">Copy</span>
+            </div>
+            <div class="m-qlpvbody" style="white-space: pre-wrap">Review the <span class="m-k">{{language}}</span> changes in <span class="m-k">{{file}}</span> for
+correctness, edge cases, and <span class="m-k">{{concern}}</span>.
+
+Reply with a prioritized list — most critical
+first — and suggest a fix for each.</div>
+            <div class="m-qlpvfoot"><span class="m-btn sm primary">Open in editor</span></div>
+          </div>
+        </div>
+        <div class="m-qlfoot">
+          <span><span class="m-kbd">↑↓</span> navigate</span>
+          <span><span class="m-kbd">Enter</span> open</span>
+          <span><span class="m-kbd">Ctrl+C</span> copy</span>
+          <span><span class="m-kbd">→</span> browse tools</span>
+          <span><span class="m-kbd">Esc</span> close</span>
+        </div>
+      </div>
+    </div>`
+
+  const continueDialog = () => `
+    <div class="m-dialoglayer">
+      <div class="m-dialog" style="width: 380px">
+        <div class="m-dhead"><h5>Three more tips?</h5><span class="m-dclose">✕</span></div>
+        <p class="m-note">
+          That is the everyday route covered. The rest is about keeping your own material in
+          here — saving a snippet, comparing two of them, and previewing a diagram. About a
+          minute.
+        </p>
+        <div class="m-dactions">
+          <span class="spacer"></span>
+          <span class="m-btn ghost">Not now</span>
+          <span class="m-btn primary" id="t-continue">Show me</span>
+        </div>
+      </div>
+    </div>`
+
+  const settingsDialog = (active) => `
+    <div class="m-dialoglayer">
+      <div class="m-dialog" style="width: 520px">
+        <div class="m-dhead"><h5>Settings</h5><span class="m-dclose">✕</span></div>
+        <div class="m-settings">
+          <nav class="m-snav">
+            ${['Appearance', 'Shortcuts', 'Storage', 'Limits', 'Logs', 'Email', 'Terminal', 'Fun']
+              .map((t, i) => `<span class="item${i === 0 ? ' active' : ''}">${t}</span>`).join('')}
+          </nav>
+          <div class="m-spane">
+            <h6>Theme</h6>
+            <div class="m-themegrid">
+              ${SWATCHES.map(([id, label, bg, ac, add, del]) => `
+                <span class="m-themeopt${id === active ? ' active' : ''}">
+                  <span class="sw" style="background:${bg}">
+                    <i style="background:${ac}"></i><i style="background:${add}"></i><i style="background:${del}"></i>
+                  </span>${label}
+                </span>`).join('')}
+            </div>
+            <label class="m-setrow"><span class="m-box on">✓</span>Show the keyboard-shortcut bar over diffs</label>
+            <label class="m-setrow"><span class="m-box on">✓</span>Play a shutter sound when a diff image is captured</label>
+            <label class="m-setrow"><span class="m-box"></span>Maximize tool &amp; snippet windows</label>
+            <label class="m-setrow new" id="t-tips">
+              <span class="m-box on">✓</span>Show tips after an update
+              <span class="m-btn sm" style="margin-left:auto">Show tour</span>
+            </label>
+          </div>
+        </div>
+        <div class="m-dactions"><span class="spacer"></span><span class="m-btn ghost">Close</span></div>
+      </div>
+    </div>`
+
+  // ── Compose a whole window per step ────────────────────────────────────
+  function mockHtml(step, theme) {
+    const isDiff = step.view === 'diff'
+    const isDiagram = step.view === 'diagram'
+    const loaded = isDiff || isDiagram || step.view === 'share' || step.view === 'continue'
+    const names = isDiagram
+      ? ['pipeline-v1.mmd', 'pipeline-v2.mmd']
+      : ['demo-config-v1.json', 'demo-config-v2.json']
+    const tabName = loaded ? `${names[0]} ↔ ${names[1]}` : 'Untitled'
+    let body
+    if (isDiff || step.view === 'share' || step.view === 'continue') body = diffBody()
+    else if (isDiagram) body = diagramBody()
+    else body = emptyBody()
+
+    return `
+      <div class="m-menubar">${MENU.map((m) => `<span>${m}</span>`).join('')}</div>
+      ${toolbar({ loaded, diagram: isDiagram })}
+      <div class="m-body">
+        ${sidebar()}
+        <div class="m-pane">
+          <div class="m-tabs">
+            <span class="m-tab on">${loaded ? '<span class="dot"></span>' : ''}${tabName}</span>
+            <span class="m-tab">+</span>
+          </div>
+          <div class="m-content" id="t-droppane">
+            ${slots(loaded, names)}
+            ${body}
+            ${isDiagram ? '' : shortcutBar()}
+          </div>
+        </div>
+      </div>
+      ${step.view === 'share' ? shareDialog() : ''}
+      ${step.view === 'snippet' ? snippetDialog() : ''}
+      ${step.view === 'quicklook' ? quickLookPanel() : ''}
+      ${step.view === 'continue' ? continueDialog() : ''}
+      ${step.view === 'settings' ? settingsDialog(theme) : ''}
+      <div class="m-tour" id="tour"></div>`
+  }
+
+  // ── Overlay placement ──────────────────────────────────────────────────
+  const PAD = 0, GAP = 13, CW = 296
+
+  const boxOf = (el, stageRect) => {
+    const r = el.getBoundingClientRect()
+    return {
+      x: r.left - stageRect.left - PAD, y: r.top - stageRect.top - PAD,
+      w: r.width + PAD * 2, h: r.height + PAD * 2
+    }
+  }
+
+  // Placement tries the requested side, then its opposite, then falls back to the
+  // other axis. Without that last fallback a target too wide for a side callout
+  // (the quick look-up panel) pushes the card off-stage instead of moving it.
+  function placeCallout(box, side, stage, ch) {
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+    const fitsX = (x) => x >= 10 && x + CW <= stage.w - 10
+    const fitsY = (y) => y >= 10 && y + ch <= stage.h - 10
+    const centreX = clamp(box.x + box.w / 2 - CW / 2, 10, Math.max(10, stage.w - CW - 10))
+    const centreY = clamp(box.y + box.h / 2 - ch / 2, 10, Math.max(10, stage.h - ch - 10))
+    const below = box.y + box.h + GAP
+    const above = box.y - ch - GAP
+    const right = box.x + box.w + GAP
+    const left = box.x - CW - GAP
+
+    if (side === 'bottom' || side === 'top') {
+      const first = side === 'bottom' ? below : above
+      const second = side === 'bottom' ? above : below
+      if (fitsY(first)) return { x: centreX, y: first }
+      if (fitsY(second)) return { x: centreX, y: second }
+      if (fitsX(right)) return { x: right, y: centreY }
+      if (fitsX(left)) return { x: left, y: centreY }
+      return { x: centreX, y: clamp(first, 10, Math.max(10, stage.h - ch - 10)) }
+    }
+    const first = side === 'left' ? left : right
+    const second = side === 'left' ? right : left
+    if (fitsX(first)) return { x: first, y: centreY }
+    if (fitsX(second)) return { x: second, y: centreY }
+    if (fitsY(below)) return { x: centreX, y: below }
+    if (fitsY(above)) return { x: centreX, y: above }
+    return { x: clamp(first, 10, Math.max(10, stage.w - CW - 10)), y: centreY }
+  }
+
+  function drawTour(step) {
+    const mock = document.getElementById('mock')
+    const tour = document.getElementById('tour')
+    // The continuation prompt is an ordinary modal, not a coachmark — no veil,
+    // no ring, no callout. BaseDialog already dims what is behind it.
+    if (step.interstitial) {
+      if (tour) tour.innerHTML = ''
+      return
+    }
+    const target = mock.querySelector(step.target)
+    if (!tour || !target) return
+    const stageRect = mock.getBoundingClientRect()
+    const stage = { w: mock.clientWidth, h: mock.clientHeight }
+    const box = boxOf(target, stageRect)
+
+    tour.innerHTML = `
+      <div class="m-blur" data-v="t"></div><div class="m-blur" data-v="b"></div>
+      <div class="m-blur" data-v="l"></div><div class="m-blur" data-v="r"></div>
+      <div class="m-veil" id="veil"></div>
+      ${step.from ? '<svg class="m-dragpath" id="dragpath"></svg>' : ''}
+      <div class="m-ring" id="ring"${step.zone ? ' style="border-style: dashed"' : ''}></div>
+      ${step.from ? '<div class="m-ring" id="ring2"></div>' : ''}
+      ${step.zone ? '<div class="m-zonelabel" id="zonelabel">Drop a snippet to compare</div>' : ''}
+      ${step.from ? '<div class="m-ghost" id="ghost"><span class="m-mono" style="--fam:#e0b341">JSON</span>deploy-staging.json</div>' : ''}
+      <div class="m-callout" id="callout">
+        <span class="step-n">Step ${indexInRun(step)} of ${RUN_LEN[step.run]}</span>
+        <h6>${step.title}</h6>
+        <p class="cbody">${step.body}</p>
+        <div class="m-cfoot">
+          <span class="m-dots">${STEPS.filter((s) => s.run === step.run)
+            .map((s) => `<span class="m-dot${s.n === step.n ? ' on' : ''}"></span>`).join('')}</span>
+          <span class="m-btn ghost sm">Skip tips</span>
+          <span class="m-btn primary sm">${indexInRun(step) === RUN_LEN[step.run] ? 'Done' : 'Next'}</span>
+        </div>
+      </div>
+      <div class="m-beak" id="beak"></div>`
+
+    const px = (n) => `${Math.round(n)}px`
+    const blur = (k, s) => Object.assign(tour.querySelector(`[data-v="${k}"]`).style, s)
+    blur('t', { left: 0, top: 0, width: px(stage.w), height: px(Math.max(0, box.y)) })
+    blur('b', { left: 0, top: px(box.y + box.h), width: px(stage.w), height: px(Math.max(0, stage.h - box.y - box.h)) })
+    blur('l', { left: 0, top: px(box.y), width: px(Math.max(0, box.x)), height: px(box.h) })
+    blur('r', { left: px(box.x + box.w), top: px(box.y), width: px(Math.max(0, stage.w - box.x - box.w)), height: px(box.h) })
+
+    // Outer rect + a rounded inner subpath, evenodd — the inner one becomes a
+    // hole in a single layer, so the scrim never overlaps itself and the hole's
+    // corners follow the target's radius instead of squaring it off.
+    const R = 6
+    const { x, y, w, h } = box
+    const hole =
+      `M${x + R},${y} H${x + w - R} A${R},${R} 0 0 1 ${x + w},${y + R}` +
+      ` V${y + h - R} A${R},${R} 0 0 1 ${x + w - R},${y + h}` +
+      ` H${x + R} A${R},${R} 0 0 1 ${x},${y + h - R}` +
+      ` V${y + R} A${R},${R} 0 0 1 ${x + R},${y} Z`
+    document.getElementById('veil').style.clipPath =
+      `path(evenodd, "M0,0 H${stage.w} V${stage.h} H0 Z ${hole}")`
+
+    const ringEl = document.getElementById('ring')
+    Object.assign(ringEl.style, { left: px(box.x), top: px(box.y), width: px(box.w), height: px(box.h) })
+    // An accent-filled target (the primary button) would swallow an accent ring.
+    ringEl.classList.toggle('on-filled', target.classList.contains('primary'))
+
+    const callout = document.getElementById('callout')
+    const ch = callout.getBoundingClientRect().height
+    // A zone target fills its pane, so there is no "beside" — the callout sits
+    // INSIDE it, in the corner furthest from the incoming drag path, and drops
+    // its beak (there is nothing to point at that it is not already on top of).
+    const pos = step.zone
+      ? { x: box.x + box.w - CW - 14, y: box.y + 14 }
+      : placeCallout(box, step.side, stage, ch)
+    Object.assign(callout.style, { left: px(pos.x), top: px(pos.y) })
+
+    const beak = document.getElementById('beak')
+    if (step.zone) beak.style.display = 'none'
+    const cx = pos.x + CW / 2, cy = pos.y + ch / 2
+    const tx = box.x + box.w / 2, ty = box.y + box.h / 2
+    if (Math.abs(tx - cx) > Math.abs(ty - cy)) {
+      const onLeft = tx < cx
+      Object.assign(beak.style, {
+        left: px(onLeft ? pos.x - 5 : pos.x + CW - 5),
+        top: px(Math.max(pos.y + 10, Math.min(pos.y + ch - 18, ty - 4))),
+        borderRight: onLeft ? 'none' : '', borderTop: onLeft ? 'none' : '',
+        borderLeft: onLeft ? '' : 'none', borderBottom: onLeft ? '' : 'none'
+      })
+    } else {
+      const above = ty < cy
+      Object.assign(beak.style, {
+        left: px(Math.max(pos.x + 10, Math.min(pos.x + CW - 18, tx - 4))),
+        top: px(above ? pos.y - 5 : pos.y + ch - 5),
+        borderRight: above ? '' : 'none', borderBottom: above ? 'none' : '',
+        borderLeft: above ? 'none' : '', borderTop: above ? '' : 'none'
+      })
+    }
+
+    if (step.from) {
+      const sbox = boxOf(mock.querySelector(step.from), stageRect)
+      Object.assign(document.getElementById('ring2').style, {
+        left: px(sbox.x), top: px(sbox.y), width: px(sbox.w), height: px(sbox.h),
+        borderStyle: 'dashed'
+      })
+      // A zone's arrow aims at the middle of the area, not at its edge — the
+      // point being that anywhere inside it accepts the drop.
+      let x2 = box.x + 6
+      let y2 = box.y + box.h / 2
+      const label = document.getElementById('zonelabel')
+      if (label) {
+        const lw = label.offsetWidth
+        const lh = label.offsetHeight
+        const lx = box.x + box.w / 2 - lw / 2
+        const ly = box.y + box.h / 2 - lh / 2
+        Object.assign(label.style, { left: px(lx), top: px(ly) })
+        x2 = lx - 10
+        y2 = ly + lh / 2
+      }
+      const x1 = sbox.x + sbox.w, y1 = sbox.y + sbox.h / 2
+      const ghost = document.getElementById('ghost')
+      if (ghost) {
+        Object.assign(ghost.style, {
+          left: px(x1 + (x2 - x1) * 0.42),
+          top: px(y1 + (y2 - y1) * 0.30 - ghost.offsetHeight / 2)
+        })
+      }
+      const svg = document.getElementById('dragpath')
+      svg.setAttribute('viewBox', `0 0 ${stage.w} ${stage.h}`)
+      svg.setAttribute('width', stage.w)
+      svg.setAttribute('height', stage.h)
+      svg.innerHTML = `
+        <defs>
+          <marker id="dragarrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+        <path d="M${x1} ${y1} C ${x1 + 90} ${y1 - 30}, ${x2 - 110} ${y2 + 60}, ${x2} ${y2}"
+              fill="none" stroke="var(--accent)" stroke-width="1.7" stroke-dasharray="5 4"
+              marker-end="url(#dragarrow)"/>`
+    }
+  }
+
+  // ── Wiring ─────────────────────────────────────────────────────────────
+  let theme = 'light', stepIndex = 0
+
+  function render() {
+    const mock = document.getElementById('mock')
+    const step = STEPS[stepIndex]
+    mock.dataset.mockTheme = theme
+    mock.innerHTML = mockHtml(step, theme)
+    requestAnimationFrame(() => drawTour(step))
+    document.getElementById('caption').innerHTML = step.interstitial
+      ? `<b>Between the runs — ${step.label}.</b> ${step.caption}`
+      : `<b>Step ${step.n} — ${step.label}.</b> ${step.caption}`
+    document.querySelectorAll('#themeChips .chip').forEach((c) =>
+      c.setAttribute('aria-pressed', String(c.dataset.theme === theme)))
+    document.querySelectorAll('#stepBtns .stepbtn').forEach((b) =>
+      b.setAttribute('aria-pressed', String(Number(b.dataset.step) === stepIndex)))
+  }
+
+  const themeChips = document.getElementById('themeChips')
+  THEMES.forEach(([id, label]) => {
+    const b = document.createElement('button')
+    b.className = 'chip'; b.type = 'button'; b.dataset.theme = id; b.textContent = label
+    b.setAttribute('aria-pressed', String(id === theme))
+    b.addEventListener('click', () => { theme = id; render() })
+    themeChips.appendChild(b)
+  })
+
+  const stepBtns = document.getElementById('stepBtns')
+  let lastRun = null
+  STEPS.forEach((s, i) => {
+    if (s.run !== lastRun) {
+      lastRun = s.run
+      const tag = document.createElement('span')
+      tag.className = 'runtag'
+      tag.textContent = s.run === 1 ? 'Run one' : s.run === 2 ? 'Run two' : 'Then'
+      stepBtns.appendChild(tag)
+    }
+    const b = document.createElement('button')
+    b.className = 'stepbtn'; b.type = 'button'; b.dataset.step = String(i)
+    b.innerHTML = `<span class="num">${stepNo(s)}</span><span>${s.label}</span>`
+    b.addEventListener('click', () => { stepIndex = i; render() })
+    stepBtns.appendChild(b)
+  })
+
+  const tbody = document.querySelector('#themeTable tbody')
+  THEMES.forEach(([id, label]) => {
+    const m = MEASURED[id]
+    const verdict = m.ground === 'dark'
+      ? `keyline <span class="ok">${m.edge.toFixed(1)}</span> + blur`
+      : `card face <span class="ok">${m.lift.toFixed(2)}</span> + dim`
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td class="theme"><span class="swatch" style="background:${GROUNDS[id]}"></span>${label}</td>
+      <td style="color: var(--doc-muted); font-size: 11.5px">${m.ground}</td>
+      <td class="num ok">${m.title.toFixed(2)}</td>
+      <td class="num ok">${m.body.toFixed(2)}</td>
+      <td class="num ${m.edge < 3 ? 'low' : 'ok'}">${m.edge.toFixed(2)}</td>
+      <td class="num ${m.lift < 1.3 ? 'low' : 'ok'}">${m.lift.toFixed(2)}</td>
+      <td class="num ok">${m.ring.toFixed(2)}</td>
+      <td class="num ${m.dim < 1.25 ? 'low' : 'ok'}">${m.dim.toFixed(2)}</td>
+      <td style="font-size:12px">${verdict}</td>`
+    tbody.appendChild(tr)
+  })
+
+  render()
+  window.addEventListener('resize', () => drawTour(STEPS[stepIndex]))
+</script>

@@ -11,6 +11,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useConfigBackupStore } from '../features/configBackup'
 import { useImageExportStore } from '../features/imageExport'
 import { useShareStore } from '../features/share'
+import { useOnboardingStore } from '../features/onboarding'
 
 const bundle = () => ({
   diff: useDiffStore(),
@@ -20,7 +21,8 @@ const bundle = () => ({
   snippets: useSnippetStore(),
   configBackup: useConfigBackupStore(),
   imageExport: useImageExportStore(),
-  share: useShareStore()
+  share: useShareStore(),
+  onboarding: useOnboardingStore()
 })
 
 export function useCommands() {
