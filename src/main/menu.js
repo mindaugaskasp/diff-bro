@@ -159,7 +159,7 @@ export function installMenu() {
         },
         { label: 'Clear', accelerator: 'CmdOrCtrl+K', click: () => sendToFocused('clear') },
         {
-          label: 'Copy Diff as Text',
+          label: 'Copy Diff as Patch',
           accelerator: 'CmdOrCtrl+Shift+C',
           click: () => sendToFocused('copy-diff')
         },

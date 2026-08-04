@@ -3,6 +3,10 @@
 // and never touches electron, so every layout is unit-tested by round-tripping
 // it back through the readers that already exist.
 
+// The desktops whose file flavours we know. Anything else gets nothing, and
+// the UI hides Copy as file rather than offering one that does nothing.
+const FREEDESKTOP = new Set(['linux', 'freebsd', 'openbsd', 'netbsd', 'sunos'])
+
 const XML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }
 const escapeXml = (s) => String(s).replace(/[&<>"']/g, (c) => XML_ESCAPES[c])
 
@@ -72,8 +76,15 @@ export function fileFlavours(paths, platform) {
   if (platform === 'win32') {
     return [{ format: 'CF_HDROP', buffer: hdrop(list) }]
   }
-  return [
-    { format: 'text/uri-list', buffer: Buffer.from(uriList(list), 'utf8') },
-    { format: 'x-special/gnome-copied-files', buffer: Buffer.from(gnomeCopiedFiles(list), 'utf8') }
-  ]
+  // Named rather than defaulted: the freedesktop flavours are what X11/Wayland
+  // read, and returning them for an unknown platform made canWriteFile
+  // unconditionally true — so "an unsupported platform hides the command"
+  // silently became "every platform claims support".
+  if (FREEDESKTOP.has(platform)) {
+    return [
+      { format: 'text/uri-list', buffer: Buffer.from(uriList(list), 'utf8') },
+      { format: 'x-special/gnome-copied-files', buffer: Buffer.from(gnomeCopiedFiles(list), 'utf8') }
+    ]
+  }
+  return []
 }

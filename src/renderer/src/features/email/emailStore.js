@@ -10,10 +10,20 @@ import { useDiffStore } from '../../stores/diffStore'
 export const DEFAULT_SUBJECT = 'Sealed diff: {name}'
 export const DEFAULT_NOTE = ''
 
-function handoffNotice(res, localCopy) {
-  if (res.canceled) return 'Nothing was opened. The sealed file is saved.'
+// The file exists whenever a path came back; not saying so orphans it.
+function failureNotice(res) {
   if (res.error === 'no-address') return `No email address for ${(res.who || []).join(', ')}.`
-  if (!res.ok) return HANDOFF_ERRORS[res.error] || 'Could not open your mail app.'
+  const why = HANDOFF_ERRORS[res.error] || 'Could not open your mail app.'
+  return res.path ? `${why} The sealed file is saved as ${res.name || res.path}.` : why
+}
+
+function handoffNotice(res, localCopy) {
+  if (res.canceled) {
+    return res.path
+      ? 'Nothing was opened. The sealed file is saved.'
+      : 'Cancelled — nothing was sealed or saved.'
+  }
+  if (!res.ok) return failureNotice(res)
   if (localCopy === false) {
     return `${res.name} is on the clipboard and your message is open — but your own copy could not be saved, so this diff is not in your saved list.`
   }
@@ -25,6 +35,8 @@ function handoffNotice(res, localCopy) {
 const HANDOFF_ERRORS = {
   'unknown-recipient': 'One of those recipients is no longer a trusted key.',
   'bad-address': 'That address could not be used — check it under Security → Trusted keys.',
+  'note-too-long': 'That note is too long for a mail link — shorten it and try again.',
+  'no-mail-app': 'No mail app is set up to handle links on this machine.',
   'invalid-ttl': 'Rejected: shared diffs cannot live longer than a week.',
   expired: 'This diff has already expired.',
   'identity-unavailable':
@@ -106,6 +118,7 @@ export const useEmailStore = defineStore('email', {
             entry: draft.entry,
             recipientFps: [...draft.recipientFps],
             subjectTemplate: this.subjectTemplate,
+            reveal: this.revealAfterCreate,
             note
           })) || {}
         )
@@ -119,10 +132,12 @@ export const useEmailStore = defineStore('email', {
       this.sending = true
       const res = await this.invokeHandoff(draft, note)
       this.sending = false
-      // The file is written before the confirm, so a cancel still has a local
-      // twin to save. Only that twin can fail, and saying so is the difference
-      // between "sent" and "sent, and you have no copy of what you sent".
-      const written = res.ok === true || res.canceled === true
+      // Only a WRITTEN file is a share (the invariant vaultStore.share holds).
+      // Two different cancels reach here: the OS save dialog, which wrote
+      // nothing, and the hand-off confirm, which is after the write — and only
+      // the second carries a path. Treating them alike saved a local twin and
+      // recorded a share for a file that never existed.
+      const written = res.ok === true || !!res.path
       const localCopy = written ? await draft.onSealed?.() : undefined
       if (written) this.draft = null
       useDiffStore().showNotice(handoffNotice(res, localCopy))

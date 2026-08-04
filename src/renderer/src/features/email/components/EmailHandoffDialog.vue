@@ -9,7 +9,13 @@ const note = ref(email.noteTemplate)
 </script>
 
 <template>
-  <BaseDialog v-if="email.draft" width="440px" title="Email this diff" @close="email.cancel()">
+  <BaseDialog
+    v-if="email.draft"
+    width="440px"
+    title="Email this diff"
+    :escape-closes="false"
+    @close="email.cancel()"
+  >
     <form class="dialog-form" @submit.prevent="email.send(note)">
       <div class="field">
         <span class="field-label">To — from their trusted keys, not typed here</span>

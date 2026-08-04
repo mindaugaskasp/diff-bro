@@ -164,10 +164,52 @@ describe('mail:handoff', () => {
     expect(res.to).toBe('Ana, Rūta')
   })
 
-  it('opens no socket — there is no network module in reach', async () => {
-    const source = await import('node:fs').then((fs) =>
-      fs.readFileSync('src/main/mail.js', 'utf-8')
-    )
-    expect(source).not.toMatch(/require\(['"]?(net|tls|https?)|from '(node:)?(net|tls|https?)'/)
+  // The file is written before the URL is built, so every failure past that
+  // point must hand the path back or the user has an orphan they never hear of.
+  it('reports a too-long note as its own error, and names the written file', async () => {
+    // Multibyte: bodyText caps at 2000 CHARACTERS, and each of these becomes six
+    // in the percent-encoded query, so the cap is reached well inside that.
+    const res = await handoff({ note: 'ą'.repeat(1500) })
+    expect(res.error).toBe('note-too-long')
+    expect(res.path).toBe(state.sealed.path)
+    expect(opened).toEqual([])
+  })
+
+  it('reports a machine with no mail app, reveals the file, and keeps the path', async () => {
+    setOsHooksForTests({
+      openExternal: () => Promise.reject(new Error('no handler')),
+      showItemInFolder: (path) => revealed.push(path)
+    })
+    const res = await handoff()
+    expect(res.error).toBe('no-mail-app')
+    expect(res.path).toBe(state.sealed.path)
+    expect(revealed).toEqual([state.sealed.path])
+  })
+
+  it('honours the reveal preference', async () => {
+    await handoff({ reveal: false })
+    expect(opened).toHaveLength(1)
+    expect(revealed).toEqual([])
+  })
+
+  // Rule 1. A grep over mail.js alone would miss a socket in anything it
+  // imports, so this walks the whole local import graph.
+  it('opens no socket anywhere in its import graph', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { dirname, join } = await import('node:path')
+    const NETWORK = /from\s+['"](node:)?(net|tls|https?|dgram|dns|http2)['"]|require\(['"](node:)?(net|tls|https?|dgram|dns|http2)['"]\)|\bfetch\(|XMLHttpRequest|WebSocket/
+    const seen = new Set()
+    const walk = (file) => {
+      if (seen.has(file)) return
+      seen.add(file)
+      const src = readFileSync(file, 'utf-8')
+      expect(src, file).not.toMatch(NETWORK)
+      for (const [, spec] of src.matchAll(/from\s+'(\.[^']+)'/g)) {
+        walk(join(dirname(file), spec.endsWith('.js') ? spec : `${spec}.js`))
+      }
+    }
+    walk('src/main/mail.js')
+    // Proof the walk actually reached past the entry file.
+    expect(seen.size).toBeGreaterThan(5)
   })
 })

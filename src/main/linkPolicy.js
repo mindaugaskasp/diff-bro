@@ -60,13 +60,23 @@ const hasAddressee = (url) => {
   }
 }
 
-const carriesBannedParam = (url) =>
-  [...url.searchParams.keys()].some((k) => BANNED_MAILTO_PARAMS.includes(k.toLowerCase()))
+// The fragment is checked too: it carries no meaning for mailto:, so anything
+// naming `attach` there is a probe, not a mistake.
+const carriesBannedParam = (url) => {
+  if ([...url.searchParams.keys()].some((k) => BANNED_MAILTO_PARAMS.includes(k.toLowerCase()))) {
+    return true
+  }
+  const hash = decodeURIComponent(url.hash || '').toLowerCase()
+  return BANNED_MAILTO_PARAMS.some((p) => hash.includes(p))
+}
 
 export function isSafeMailtoUrl(raw) {
   if (typeof raw !== 'string') return false
+  // Tested BEFORE the trim: the caller holds the untrimmed string, so a verdict
+  // about a trimmed one is a verdict about a different value.
+  if (HAS_CONTROL.test(raw)) return false
   const text = raw.trim()
-  if (!text || text.length > MAX_MAILTO_URL_LENGTH || HAS_CONTROL.test(text)) return false
+  if (!text || text.length > MAX_MAILTO_URL_LENGTH) return false
   let url
   try {
     url = new URL(text)

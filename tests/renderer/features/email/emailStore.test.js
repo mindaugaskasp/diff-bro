@@ -87,6 +87,7 @@ describe('send', () => {
       entry: { name: 'a ↔ b' },
       recipientFps: ['fp-ana'],
       subjectTemplate: DEFAULT_SUBJECT,
+      reveal: true,
       note: 'hi'
     })
     expect(JSON.stringify(window.api.mailHandoff.mock.calls[0][0])).not.toContain('@example.com')
@@ -108,18 +109,29 @@ describe('send', () => {
     expect(notices[0]).toContain('attach it')
   })
 
-  // The file is written before the confirm, so a cancel still has a twin to save.
-  it('runs onSealed on success AND on cancel', async () => {
+  // The file is written BEFORE the hand-off confirm, so cancelling there still
+  // has a local twin to save — and that reply carries a path.
+  it('runs onSealed when the confirm was cancelled after the write', async () => {
     const onSealed = vi.fn().mockResolvedValue(true)
+    window.api.mailHandoff.mockResolvedValue({ canceled: true, path: '/tmp/x.diffbro' })
     const s = useEmailStore()
     s.compose({ ...draft(), onSealed })
     await s.send('')
     expect(onSealed).toHaveBeenCalledTimes(1)
+    expect(s.draft).toBeNull()
+  })
 
+  // The regression this pair exists to catch: cancelling the OS SAVE dialog
+  // wrote no file, so it must not save a twin or record a share. That reply has
+  // no path, which is the only thing distinguishing it from the confirm-cancel.
+  it('does NOT run onSealed when the save dialog was cancelled', async () => {
+    const onSealed = vi.fn()
     window.api.mailHandoff.mockResolvedValue({ canceled: true })
+    const s = useEmailStore()
     s.compose({ ...draft(), onSealed })
     await s.send('')
-    expect(onSealed).toHaveBeenCalledTimes(2)
+    expect(onSealed).not.toHaveBeenCalled()
+    expect(notices[0]).toContain('nothing was sealed')
   })
 
   it('does not run onSealed when nothing was written', async () => {

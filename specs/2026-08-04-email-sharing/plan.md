@@ -3,11 +3,11 @@
 |                                         |                      |
 | --------------------------------------- | -------------------- |
 | **Status**                              | in-progress          |
-| **Progress**                            | 19 / 19 steps        |
+| **Progress**                            | 18 / 19 steps        |
 | **Branch**                              | `feat/email-sharing` |
 | **Started**                             | 2026-08-04           |
 | **Finished**                            | —                    |
-| **Bugs found and fixed this iteration** | 6 / 6                |
+| **Bugs found and fixed this iteration** | 24 / 24              |
 | **Token baseline**                      | 2026-08-04T07:28:45Z |
 | **Claude tokens used**                  | —                    |
 
@@ -698,7 +698,9 @@ including the picker with 30 keys and a scrolled list.
 - [x] 14 · `EmailHandoffDialog.vue` + styles
 - [x] 15 · `TrustedKeysDialog.vue` — address line, inline edit, search, scroll cap
 - [x] 16 · `ShareDiffDialog.vue` — the picker at scale + the delivery footer
-- [x] 17 · Seed fixture: 30 trusted keys behind a flag
+- [ ] 17 · Seed fixture: 30 trusted keys behind a flag — **not done**. The
+      30-key case is covered by `e2e/email-handoff.spec.mjs`, which seeds its own;
+      `make local-seed` still cannot show it by hand
 - [x] 18 · `e2e/email-handoff.spec.mjs` + `e2e/copy-as-file.spec.mjs`
 - [x] 19 · Docs, then `npm run check` + 14-theme sweep in Docker + `/validate`
 
@@ -797,6 +799,23 @@ available, so `CF_HDROP` has only its round-trip against `pathsFromHdrop`
 command; the Windows leg of the spike is outstanding and is listed below rather
 than quietly assumed.
 
+## What the review and QA passes found
+
+Two agents reviewed this after it was first pushed, and between them found **18
+further defects** — enough that the first commit should not have been described
+as finished. The ones worth carrying forward as lessons:
+
+| finding                                                                                                     | why it got through                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cancelling the OS **save dialog** saved a local twin and recorded a share for a file that was never written | Two different cancels reach the renderer and only one carries a `path`. **My own test asserted the bug as the contract**                                                                       |
+| The two-stage Escape never ran in the real dialog                                                           | `BaseDialog` listens on WINDOW in the capture phase and calls `stopPropagation`. The unit test called `handleKey` directly — the exact "test that never failed" shape the standards warn about |
+| Space in the search field silently ticked a recipient and could not be typed                                | The key table consumed `' '` unconditionally; the e2e used `fill()`, which dispatches no keydown                                                                                               |
+| `revealAfterCreate` was a dead setting                                                                      | Persisted, rendered and reset — never sent over IPC                                                                                                                                            |
+| A long note orphaned a sealed file and blamed the address                                                   | `too-long` was remapped to `bad-address`, and the path was dropped                                                                                                                             |
+| `canWriteFile` could never return false                                                                     | The freedesktop flavours were the fallback for every unknown platform                                                                                                                          |
+| Non-Latin snippet titles became `diffbro.txt`                                                               | An ASCII-only `\w` slug                                                                                                                                                                        |
+| Both new e2e specs could not pass                                                                           | Wrong dialog title, wrong row class, placeholder key material that cannot seal, and a module import that does not exist in a bundled build                                                     |
+
 ## Validation
 
 - [x] `npm run check` clean — 2189 tests, coverage 95.37 / 87.64 / 96.32 / 96.45
@@ -812,10 +831,16 @@ than quietly assumed.
 - [x] The picker's revert-and-watch check seen red (3 failures for the right
       reason), then green. The two mailto/address ones were proven differently:
       both invariants FAILED on first run before the code was corrected
-- [x] Spike outcome recorded per platform (above). **Windows leg outstanding**
+- [x] Spike outcome recorded per platform (above). **Windows leg outstanding** —
+      and `fileFlavours` now returns `[]` for an unknown platform, so
+      `canWriteFile` can actually be false. It could not before: the freedesktop
+      pair was the unconditional fallback, which made the whole "an unsupported
+      platform hides the command" story a no-op
 - [x] Staging sweep covered by `tests/main/clipboardStage.test.js` and
       `e2e/copy-as-file.spec.mjs`
 - [x] Picker verified with 30 seeded keys in `e2e/email-handoff.spec.mjs`:
       dialog measured against the window, selection survives a filter
 - [ ] 14 themes screenshotted, including a scrolled picker — **outstanding**
-- [x] `docs/standards.md` rule 7 matches the code's call sites exactly
+- [x] `docs/standards.md` rule 7 matches the code's `openExternal` call sites
+      exactly (three). It now also names `logger.js`, which reaches
+      `showItemInFolder` and `shell.openPath` and was never covered by the rule

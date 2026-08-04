@@ -20,7 +20,11 @@ const KEY_ACTIONS = {
     p.move(-1)
     return true
   },
+  // Only when the field is empty. Otherwise a space in "Teammate 01" both
+  // failed to type AND silently ticked whatever row was active — in a picker
+  // whose whole job is sealing for the right people.
   ' ': (p) => {
+    if (p.query.value) return false
     const row = p.visible.value[p.activeIndex.value]
     if (!row) return false
     p.toggle(row.fingerprint)

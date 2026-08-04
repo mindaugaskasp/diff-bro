@@ -112,11 +112,20 @@ describe('keyboard', () => {
     expect(p.activeIndex.value).toBe(1) // wrapped back
   })
 
-  it('Space toggles the active row and reports the key consumed', () => {
+  it('Space toggles the active row when the field is empty', () => {
+    const p = setup()
+    expect(p.handleKey(key(' '))).toBe(true)
+    expect(p.selected.value).toEqual([p.visible.value[0].fingerprint])
+  })
+
+  // The regression: Space was consumed whenever any row was visible, so a label
+  // with a space could not be searched AND the keypress silently ticked whoever
+  // was active — in the one control whose job is choosing who gets the file.
+  it('leaves Space to the field while a query is being typed', () => {
     const p = setup()
     p.setQuery('Ana')
-    expect(p.handleKey(key(' '))).toBe(true)
-    expect(p.selected.value).toEqual(['fp-ana'])
+    expect(p.handleKey(key(' '))).toBe(false)
+    expect(p.selected.value).toEqual([])
   })
 
   it('Space does nothing when the filter matched nothing', () => {

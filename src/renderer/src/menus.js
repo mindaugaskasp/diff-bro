@@ -60,7 +60,7 @@ export function buildMenus(run) {
         { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => run('swap') },
         { label: 'Clear', keys: `${MOD}+K`, run: () => run('clear') },
         {
-          label: 'Copy Diff as Text',
+          label: 'Copy Diff as Patch',
           keys: `${MOD}+Shift+C`,
           run: () => run('copy-diff')
         },

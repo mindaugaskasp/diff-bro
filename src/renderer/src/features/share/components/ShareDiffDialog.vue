@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useShareStore } from '../shareStore'
 import { useRecipientPicker } from '../../../composables/useRecipientPicker'
 import BaseDialog from '../../../components/BaseDialog.vue'
@@ -14,11 +14,23 @@ const recipients = ref([])
 const myFingerprint = ref('')
 const picker = useRecipientPicker(recipients)
 
+// BaseDialog listens for Escape on WINDOW in the capture phase and stops the
+// event, so a handler on the search input never sees it — which is why this
+// dialog opts out of that and owns the two-stage Escape itself. Registered in
+// capture too, so it runs wherever focus happens to be inside the dialog.
+function onEscape(e) {
+  if (e.key !== 'Escape' || !recipients.value.length) return
+  e.stopPropagation()
+  picker.handleKey(e, { onClose: close })
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', onEscape, true)
   // Asking for the fingerprint creates this install's keypairs on first use.
   myFingerprint.value = await window.api.myFingerprint()
   await refresh()
 })
+onBeforeUnmount(() => window.removeEventListener('keydown', onEscape, true))
 
 async function refresh(preferFp) {
   recipients.value = await window.api.listTrustedKeys()
@@ -47,7 +59,13 @@ function submit() {
 
 <template>
   <!-- Normal case: at least one trusted recipient exists. -->
-  <BaseDialog v-if="recipients.length" width="440px" title="Share diff" @close="close">
+  <BaseDialog
+    v-if="recipients.length"
+    width="440px"
+    title="Share diff"
+    :escape-closes="false"
+    @close="close"
+  >
     <form class="dialog-form" @submit.prevent="submit">
       <div class="field-label">Seal for</div>
       <RecipientPicker
@@ -83,7 +101,15 @@ function submit() {
           :disabled="!picker.canSubmit.value"
           @click="saveFile"
         >
-          Save file
+          Create file
+        </button>
+        <button
+          v-if="picker.canSubmit.value && !picker.everyPickedHasEmail.value"
+          type="button"
+          class="btn btn-sm"
+          @click="share.showTrustedKeysDialog = true"
+        >
+          Add an address…
         </button>
         <span class="spacer" />
         <button type="button" class="btn btn-ghost" @click="close">Cancel</button>

@@ -31,6 +31,11 @@ const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 const { supported, copyFile } = useCopyAsFile()
+const copyAsFileTip = computed(() =>
+  isSecret(props.entry)
+    ? "Secret snippets can't be copied as a file — use Copy content"
+    : 'Copy as file'
+)
 const { startDrag } = useSnippetDrag()
 
 const lang = computed(() => languageOf(props.entry))
@@ -182,10 +187,13 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       >
         <AppIcon name="copy" />
       </button>
+      <!-- Disabled rather than hidden for a secret: an absent control is a
+           mystery, and this is the one place a reader would hunt for it. -->
       <button
-        v-if="supported && !isSecret(entry)"
+        v-if="supported"
         class="row-btn"
-        data-tip="Copy as file"
+        :disabled="isSecret(entry)"
+        :data-tip="copyAsFileTip"
         aria-label="Copy as a file"
         @click="copySnippetAsFile(entry)"
       >

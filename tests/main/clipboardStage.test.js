@@ -34,8 +34,34 @@ describe('safeName', () => {
     expect(safeName('3f9c1ab27de40852.diffbro')).toBe('3f9c1ab27de40852.diffbro')
   })
 
-  it('replaces characters a shell or a pasteboard would mangle', () => {
-    expect(safeName('why not? #1 (final).txt')).toBe('why-not-1-final.txt')
+  it('replaces only what a filesystem genuinely refuses', () => {
+    expect(safeName('why not? #1 (final).txt')).toBe('why not- #1 (final).txt')
+  })
+
+  // An ASCII-only slug turned every non-Latin title into "diffbro" — the
+  // opposite of "the name you gave it".
+  it('keeps letters in any script', () => {
+    expect(safeName('файл.txt')).toBe('файл.txt')
+    expect(safeName('Rūta ir Ąžuolas.md')).toBe('Rūta ir Ąžuolas.md')
+    expect(safeName('日本語.json')).toBe('日本語.json')
+  })
+
+  // The renderer supplies the name, and an extension tells the OS what to DO
+  // with the file. A staged .command in a folder is one double-click from
+  // running, so the set is closed rather than sanitised.
+  // The user's text is kept — silently deleting it is its own surprise — but
+  // the EFFECTIVE extension is always a safe one.
+  it('never leaves an executable extension last', () => {
+    for (const bad of ['payload.command', 'payload.exe', 'setup.bat', 'x.dylib', 'a.scpt']) {
+      expect(safeName(bad).endsWith('.txt'), bad).toBe(true)
+    }
+    expect(safeName('payload.command')).toBe('payload.command.txt')
+  })
+
+  it('refuses a Windows reserved device name', () => {
+    expect(safeName('NUL')).toBe('diffbro.txt')
+    expect(safeName('con.txt')).toBe('diffbro.txt')
+    expect(safeName('LPT1')).toBe('diffbro.txt')
   })
 
   it('falls back rather than returning an empty name', () => {
@@ -50,8 +76,9 @@ describe('safeName', () => {
   })
 
   it('leaves interior dots alone — they are part of the name, not separators', () => {
+    // The trailing word is not a known extension, so .txt is appended.
     expect(safeName('release.notes.for.the.whole.quarter')).toBe(
-      'release.notes.for.the.whole.quarter'
+      'release.notes.for.the.whole.quarter.txt'
     )
     expect(safeName('config.v2.json')).toBe('config.v2.json')
   })

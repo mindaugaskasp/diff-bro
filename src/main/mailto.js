@@ -29,7 +29,9 @@ export function buildMailto({ to, subject, body } = {}) {
   if (cleanSubject) params.set('subject', cleanSubject)
   if (cleanBody) params.set('body', cleanBody)
 
-  const query = params.toString()
+  // URLSearchParams encodes a space as `+`, which RFC 6068 reads as a LITERAL
+  // plus — strict clients render "Sealed+diff". %20 is unambiguous in both.
+  const query = params.toString().replaceAll('+', '%20')
   const url = `mailto:${path}${query ? `?${query}` : ''}`
   if (url.length > MAX_MAILTO_LENGTH) return { error: 'too-long' }
   return { ok: true, url }

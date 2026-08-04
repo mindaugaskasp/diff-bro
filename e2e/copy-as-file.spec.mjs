@@ -6,11 +6,31 @@ import { test, expect } from './fixtures.mjs'
 // hits the deny-all permission handler). Copy as file adds the WRITE side of the
 // file flavours; the read side already ships, which makes it the right oracle:
 // what we put on the clipboard must decode back through clipboardFilePaths.
-const readBackPaths = (app) =>
-  app.evaluate(async ({ clipboard }) => {
-    const { clipboardFilePaths } = await import('../main/clipboardFiles.js')
-    return clipboardFilePaths(clipboard)
+// main is bundled to a single file, so the app cannot import a module by path.
+// Read the raw flavours out and decode them here — still the real OS clipboard,
+// still the write side under test.
+const readBackPaths = async (app) => {
+  const raw = await app.evaluate(({ clipboard }) => {
+    const read = (f) => {
+      try {
+        return clipboard.readBuffer(f)?.toString('utf8') ?? ''
+      } catch {
+        return ''
+      }
+    }
+    return {
+      plist: read('NSFilenamesPboardType'),
+      uris: read('text/uri-list'),
+      gnome: read('x-special/gnome-copied-files')
+    }
   })
+  const fromPlist = [...raw.plist.matchAll(/<string>([\s\S]*?)<\/string>/g)].map((m) => m[1])
+  const fromUris = `${raw.uris}\n${raw.gnome}`
+    .split(/\r?\n/)
+    .filter((l) => l.startsWith('file://'))
+    .map((l) => decodeURIComponent(l.slice('file://'.length)))
+  return [...new Set([...fromPlist, ...fromUris])].filter(Boolean)
+}
 
 const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
 
@@ -25,16 +45,16 @@ async function addSnippet(page, { name, body, secret = false }) {
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
   if (await view.isVisible().catch(() => false)) {
-    await view.getByRole('button', { name: /Close/ }).click()
+    await view.locator('.dialog-close').click()
   }
-  await expect(page.locator('li.snippet', { hasText: name })).toBeVisible()
+  await expect(page.locator('li.row', { hasText: name })).toBeVisible()
 }
 
 test('copying a snippet as a file puts a real file on the clipboard', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
-  const row = page.locator('li.snippet', { hasText: 'E2E copy target' })
+  const row = page.locator('li.row', { hasText: 'E2E copy target' })
   await row.hover()
   await row.getByRole('button', { name: 'Copy as a file' }).click()
 
@@ -47,7 +67,7 @@ test('copying a snippet as a file puts a real file on the clipboard', async ({ a
 
 test('copy content puts text, and no file, on the clipboard', async ({ app, page }) => {
   await addSnippet(page, { name: 'E2E text only', body: 'just text' })
-  const row = page.locator('li.snippet', { hasText: 'E2E text only' })
+  const row = page.locator('li.row', { hasText: 'E2E text only' })
   await row.hover()
   await row.getByRole('button', { name: 'Copy content to clipboard' }).click()
 
@@ -62,10 +82,10 @@ test('a secret snippet offers Copy content but never Copy as file', async ({ pag
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   await addSnippet(page, { name: 'E2E secret', body: 'sk-live-xxxx', secret: true })
-  const row = page.locator('li.snippet', { hasText: 'E2E secret' })
+  const row = page.locator('li.row', { hasText: 'E2E secret' })
   await row.hover()
   await expect(row.getByRole('button', { name: 'Copy content to clipboard' })).toBeVisible()
-  await expect(row.getByRole('button', { name: 'Copy as a file' })).toHaveCount(0)
+  await expect(row.getByRole('button', { name: 'Copy as a file' })).toBeDisabled()
 })
 
 test('copying the diff as a file writes a patch, not the diff text', async ({ app, page }) => {
@@ -97,7 +117,7 @@ test('staged files do not survive a relaunch', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
-  const row = page.locator('li.snippet', { hasText: 'E2E ephemeral' })
+  const row = page.locator('li.row', { hasText: 'E2E ephemeral' })
   await row.hover()
   await row.getByRole('button', { name: 'Copy as a file' }).click()
   const [staged] = await readBackPaths(app)

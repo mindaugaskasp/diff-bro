@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { generateKeyPairSync } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -7,7 +7,6 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openMenu,
   stubSaveDialog
 } from './fixtures.mjs'
 
@@ -39,18 +38,24 @@ const osCalls = (app) =>
     revealed: globalThis.__revealed ?? []
   }))
 
-const seedKeys = (dir, entries) =>
-  writeFileSync(
-    join(dir, 'trusted-keys.json'),
-    JSON.stringify(
-      entries.map((e) => ({
-        fingerprint: randomBytes(16).toString('hex'),
-        sign: 'c2lnbg==',
-        box: 'Ym94',
-        ...e
-      }))
-    )
-  )
+// REAL key material. The hand-off seals for these fingerprints, so placeholder
+// sign/box makes createPublicKey throw and every later assertion vacuous — the
+// trusted-key MANAGER never seals, which is why its spec can get away with it.
+const realKey = () => {
+  const sign = generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' })
+  const box = generateKeyPairSync('x25519').publicKey.export({ type: 'spki', format: 'pem' })
+  return { sign, box }
+}
+
+const seedKeys = async (app, dir, entries) => {
+  const keys = entries.map((e) => ({ ...realKey(), ...e }))
+  // The fingerprint must be the one sealing recomputes, so ask the app for it.
+  const withFps = await app.evaluate(async (_e, list) => {
+    const { fingerprint } = await import('../main/sealing.js')
+    return list.map((k) => ({ ...k, fingerprint: fingerprint(k.sign, k.box) }))
+  }, keys)
+  writeFileSync(join(dir, 'trusted-keys.json'), JSON.stringify(withFps))
+}
 
 async function compareAndShare(page) {
   const left = page.getByPlaceholder('Paste original text here')
@@ -61,18 +66,20 @@ async function compareAndShare(page) {
   await page.getByPlaceholder('Paste changed text here').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Share', exact: true }).click()
-  const save = page.getByRole('dialog', { name: 'Save diff' })
-  await save.getByLabel('Name', { exact: true }).fill('E2E email diff')
-  await save.getByRole('button', { name: /Save|Share/ }).first().click()
-  return page.getByRole('dialog', { name: 'Share diff' })
+  // The toolbar Share saves FIRST — SaveDiffDialog retitles itself for the
+  // two-step flow (SaveDiffDialog.vue:86,90).
+  const save = page.getByRole('dialog', { name: 'Share diff — step 1 of 2: save it' })
+  await save.getByLabel('Name').fill('E2E email diff')
+  await save.getByRole('button', { name: 'Next: choose recipient' }).click()
+  return page.getByRole('dialog', { name: 'Share diff', exact: true })
 }
 
 test('email hand-off opens an addressed mailto: and reveals the file it sealed', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
-  seedKeys(dir, [{ label: 'Ana', email: 'ana@example.com' }])
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
+  await seedKeys(app, dir, [{ label: 'Ana', email: 'ana@example.com' }])
 
   try {
     await captureOsCalls(app)
@@ -113,9 +120,9 @@ test('email hand-off opens an addressed mailto: and reveals the file it sealed',
 test('cancelling the confirm opens nothing but keeps the sealed file', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
-  seedKeys(dir, [{ label: 'Ana', email: 'ana@example.com' }])
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
+  await seedKeys(app, dir, [{ label: 'Ana', email: 'ana@example.com' }])
 
   try {
     await captureOsCalls(app)
@@ -143,9 +150,9 @@ test('cancelling the confirm opens nothing but keeps the sealed file', async () 
 test('a recipient with no address is not offered the email route', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
-  seedKeys(dir, [{ label: 'Tomas' }]) // no email
   const app = await launchApp(dir)
   const page = await firstReadyPage(app)
+  await seedKeys(app, dir, [{ label: 'Tomas' }]) // no email
 
   try {
     await captureOsCalls(app)
@@ -154,7 +161,7 @@ test('a recipient with no address is not offered the email route', async () => {
     await share.getByText('Tomas', { exact: false }).first().click()
 
     await expect(share.getByRole('button', { name: 'Email this diff' })).toHaveCount(0)
-    await expect(share.getByRole('button', { name: 'Save file' })).toBeVisible()
+    await expect(share.getByRole('button', { name: 'Create file' })).toBeVisible()
     await expect(share.getByText('no address')).toBeVisible()
   } finally {
     await app.close()
@@ -167,15 +174,16 @@ test('a recipient with no address is not offered the email route', async () => {
 test('the picker holds thirty keys and a filter cannot hide a selection', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
-  seedKeys(
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+  await seedKeys(
+    app,
     dir,
     Array.from({ length: 30 }, (_, i) => ({
       label: `Teammate ${String(i + 1).padStart(2, '0')}`,
       email: `teammate${i + 1}@example.com`
     }))
   )
-  const app = await launchApp(dir)
-  const page = await firstReadyPage(app)
 
   try {
     await captureOsCalls(app)
@@ -190,7 +198,7 @@ test('the picker holds thirty keys and a filter cannot hide a selection', async 
       height: window.innerHeight
     })))
     expect(box.height).toBeLessThan(viewport.height)
-    await expect(share.getByRole('button', { name: 'Save file' })).toBeVisible()
+    await expect(share.getByRole('button', { name: 'Create file' })).toBeVisible()
 
     await share.getByRole('checkbox').first().check()
     await expect(share.locator('.picked .chip')).toHaveCount(1)

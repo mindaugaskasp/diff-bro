@@ -29,6 +29,13 @@ export function setOsHooksForTests(hooks) {
 
 const DEFAULT_SUBJECT = 'Sealed diff: {name}'
 
+// Built here from validated parts, and checked again on the way out: the value
+// handed to the OS is the one the policy passed, never a near-miss.
+const mailtoError = (built) => {
+  if (built.error === 'too-long') return 'note-too-long'
+  return built.ok && isSafeMailtoUrl(built.url) ? null : 'bad-address'
+}
+
 async function confirmHandoff(sender, { to, path }) {
   const parent = BrowserWindow.fromWebContents(sender) ?? undefined
   const { response } = await dialog.showMessageBox(parent, {
@@ -49,7 +56,7 @@ async function confirmHandoff(sender, { to, path }) {
  * Seal, then hand off. Returns what actually happened so the renderer can say
  * "on the clipboard" or "in Finder" rather than guessing.
  */
-async function handoff(sender, { entry, recipientFps, subjectTemplate, note }) {
+async function handoff(sender, { entry, recipientFps, subjectTemplate, note, reveal }) {
   const resolved = await addressesFor(recipientFps)
   if (!resolved.ok) return resolved
 
@@ -62,25 +69,41 @@ async function handoff(sender, { entry, recipientFps, subjectTemplate, note }) {
     name: entry?.name,
     expires: entry?.expiresAt ? new Date(entry.expiresAt).toLocaleString() : ''
   })
+  // `path` rides along on every failure past this point: the file EXISTS, and a
+  // caller that cannot tell "nothing happened" from "a sealed file is sitting on
+  // your disk" will orphan it.
   const built = buildMailto({ to: resolved.to.map((r) => r.email), subject, body: note })
-  // Built here from validated parts, and checked again on the way out: the value
-  // handed to the OS is the one the policy passed, never a near-miss.
-  if (!built.ok || !isSafeMailtoUrl(built.url)) return { error: 'bad-address', path: sealed.path }
+  const urlError = mailtoError(built)
+  if (urlError) return { error: urlError, path: sealed.path }
 
   if (!(await confirmHandoff(sender, { to: resolved.to, path: sealed.path }))) {
     return { canceled: true, path: sealed.path }
   }
 
-  const copied = copyPathToClipboard(sealed.path)
-  await os.openExternal(built.url)
-  os.showItemInFolder(sealed.path)
+  return deliver(sealed.path, { url: built.url, reveal, to: resolved.to })
+}
 
+// The OS half, split out so `handoff` stays inside the complexity cap.
+async function deliver(path, { url, reveal, to }) {
+  const copied = copyPathToClipboard(path)
+  // A machine with no registered mailto: handler rejects here. The file is
+  // already written, so this reports rather than throws — an unhandled
+  // rejection would tell the user nothing and orphan the file.
+  try {
+    await os.openExternal(url)
+  } catch {
+    if (reveal !== false) os.showItemInFolder(path)
+    return { error: 'no-mail-app', path, name: basename(path), copied: copied.ok === true }
+  }
+  // The fallback, and the user can turn it off (Settings → Email) once the
+  // clipboard route is doing the job on their desktop.
+  if (reveal !== false) os.showItemInFolder(path)
   return {
     ok: true,
-    path: sealed.path,
-    name: basename(sealed.path),
+    path,
+    name: basename(path),
     copied: copied.ok === true,
-    to: resolved.to.map((r) => r.label).join(', ')
+    to: to.map((r) => r.label).join(', ')
   }
 }
 

@@ -48,8 +48,8 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
     // Rename a mid-list key: only that row changes, the count holds.
     const target = mgr.locator('li.key', { hasText: 'Teammate 08' })
     await target.getByRole('button', { name: 'Rename' }).click()
-    await mgr.locator('input.rename').fill('Teammate 08 — laptop')
-    await mgr.locator('input.rename').press('Enter')
+    await mgr.locator('input.inline-edit').fill('Teammate 08 — laptop')
+    await mgr.locator('input.inline-edit').press('Enter')
     await expect(mgr.getByText('Teammate 08 — laptop')).toBeVisible()
     await expect(mgr.locator('li.key')).toHaveCount(N)
 

@@ -51,8 +51,14 @@ const isTrustedEntry = (entry) =>
 // drops the field rather than failing the whole restore — losing an address is
 // recoverable by typing it again; losing the trust list is not. Dropping it is
 // still mandatory: an unvalidated address would reach a mailto: header.
-const withVettedEmail = (entry) =>
-  isValidEmail(entry.email) ? entry : { ...entry, email: undefined }
+const withVettedEmail = (entry) => {
+  if (isValidEmail(entry.email)) return entry
+  // Omit the key rather than setting it undefined: `share:setTrustedEmail`
+  // deletes, and the two must agree on what "no address" looks like on disk.
+  const rest = { ...entry }
+  delete rest.email
+  return rest
+}
 
 const isRestorableIdentity = (identity) =>
   !!identity?.priv?.sign && !!identity?.priv?.box && isTrustedEntry(identity.pub)

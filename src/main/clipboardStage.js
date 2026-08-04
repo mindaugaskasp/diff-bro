@@ -16,21 +16,38 @@ const MAX_NAME_LENGTH = 120
 
 const stageDir = () => join(app.getPath('temp'), 'diffbro-clipboard')
 
+// Only what is genuinely unusable in a filename. Letters and marks in ANY
+// script are kept: an ASCII-only slug turned "файл.txt" into "diffbro.txt" and
+// mangled every accented name, which is the opposite of "the name you gave it".
+// eslint-disable-next-line no-control-regex
+const UNSAFE = /[\u0000-\u001f\u007f<>:"/\\|?*]+/g
+// Windows refuses these whatever the extension, and writing to one silently
+// succeeds while the clipboard gets a path to a device.
+const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i
+// An extension is a hint to the OS about what to DO with a file. The renderer
+// supplies the name, so the set is closed rather than sanitised — a staged
+// `.command` pasted into a folder is one double-click from running.
+const SAFE_EXT =
+  /^(txt|md|json|yml|yaml|xml|csv|tsv|html|css|js|ts|jsx|tsx|py|rb|go|rs|java|kt|c|h|cpp|cs|php|sql|sh|toml|ini|conf|log|patch|diff|diffbro|mmd|svg|env|gitignore|properties|gradle|lock)$/i
+
 /**
- * A flat, safe basename. The same slug rule keyFileBasename uses: a title of
- * `../../.ssh/config` has to become a filename, not a traversal.
+ * A flat, safe basename. A title is user text, so this makes a filename out of
+ * it rather than trusting it as one.
  * @param {string} raw
  * @returns {string}
  */
 export function safeName(raw) {
-  const text = String(raw ?? '').trim()
+  const text = String(raw ?? '')
+    .trim()
+    .replace(UNSAFE, '-')
   const dot = text.lastIndexOf('.')
-  const hasExt = dot > 0 && dot < text.length - 1 && dot > text.length - 12
-  const slug = (s) => s.replace(/[^\w.-]+/g, '-').replace(/^[-.]+|[-.]+$/g, '')
-  const stem = slug(hasExt ? text.slice(0, dot) : text).slice(0, MAX_NAME_LENGTH)
-  const ext = hasExt ? slug(text.slice(dot + 1)).slice(0, 12) : ''
-  if (!stem) return ext ? `diffbro.${ext}` : 'diffbro.txt'
-  return ext ? `${stem}.${ext}` : stem
+  const rawExt = dot > 0 && dot < text.length - 1 ? text.slice(dot + 1) : ''
+  const ext = SAFE_EXT.test(rawExt) ? rawExt.toLowerCase() : ''
+  const stem = (ext ? text.slice(0, dot) : text)
+    .replace(/^[-.\s]+|[-.\s]+$/g, '')
+    .slice(0, MAX_NAME_LENGTH)
+  if (!stem || RESERVED.test(stem)) return `diffbro.${ext || 'txt'}`
+  return `${stem}.${ext || 'txt'}`
 }
 
 async function prune(dir) {

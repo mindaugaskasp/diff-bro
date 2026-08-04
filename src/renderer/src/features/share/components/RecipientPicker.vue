@@ -77,7 +77,11 @@ defineEmits(['submit', 'close', 'add'])
 
     <div class="dialog-scroller rows">
       <p v-if="!picker.visible.value.length" class="empty">
-        No one matches “{{ picker.query.value }}”.
+        {{
+          picker.query.value
+            ? `No one matches “${picker.query.value}”.`
+            : 'No trusted key has an email address yet.'
+        }}
       </p>
       <ul v-else class="recipients">
         <li v-for="(r, i) in picker.visible.value" :key="r.fingerprint">

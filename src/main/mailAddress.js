@@ -17,6 +17,11 @@ export const normalizeEmail = (raw) => (typeof raw === 'string' ? raw.trim() : '
 
 // eslint-disable-next-line no-control-regex
 const HAS_CONTROL = /[\u0000-\u001f\u007f]/
+// Bidi overrides and invisible separators are not control characters and not
+// whitespace, so they passed every other check — and then rendered the address
+// REVERSED in the hand-off confirm box, which is the fence the user reads.
+const HAS_DECEPTIVE = /[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/
+const HAS_DECEPTIVE_G = /[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g
 // Whitespace, angle brackets, comma, semicolon: each one could turn a single
 // stored field into two recipients or a second header.
 const HAS_SEPARATOR = /[\s<>,;"\\]/
@@ -35,6 +40,7 @@ export function isValidEmail(raw) {
   const value = normalizeEmail(raw)
   if (!value || value.length > MAX_EMAIL_LENGTH) return false
   if (HAS_CONTROL.test(value) || HAS_SEPARATOR.test(value)) return false
+  if (HAS_DECEPTIVE.test(value)) return false
   const at = value.indexOf('@')
   if (at < 1 || at !== value.lastIndexOf('@')) return false
   return okLocal(value.slice(0, at)) && OK_DOMAIN.test(value.slice(at + 1))
@@ -50,6 +56,7 @@ export function isValidEmail(raw) {
 export function headerText(raw, max = 200) {
   return String(raw ?? '')
     .replace(/[\u0000-\u001f\u007f]+/g, ' ') // eslint-disable-line no-control-regex
+    .replace(HAS_DECEPTIVE_G, '')
     .trim()
     .slice(0, max)
 }

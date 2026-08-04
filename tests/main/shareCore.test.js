@@ -147,3 +147,42 @@ describe('validateRestoredConfig — the vault bundle', () => {
     ).toBe('malformed')
   })
 })
+
+// The email on a restored trusted key reaches a mailto: header, so it is vetted
+// like any other untrusted input — but losing an address is recoverable by
+// typing it again, and losing the trust list is not, so a bad one DROPS the
+// field rather than failing the whole restore.
+describe('a restored trusted key carries a vetted email, or none', () => {
+  const withEmail = (email) => {
+    const { pub } = createIdentityKeys()
+    return { fingerprint: pub.fingerprint, sign: pub.sign, box: pub.box, email }
+  }
+
+  it('keeps a valid address', () => {
+    const out = validateRestoredConfig({ trusted: [withEmail('ana@example.com')] })
+    expect(out.trusted[0].email).toBe('ana@example.com')
+  })
+
+  it('drops an address that could inject a header, and KEEPS the key', () => {
+    const out = validateRestoredConfig({ trusted: [withEmail('a@b.co\r\nBcc: evil@x.com')] })
+    expect(out.error).toBeUndefined()
+    expect(out.trusted).toHaveLength(1)
+    expect(out.trusted[0].email).toBeUndefined()
+    expect(out.trusted[0].sign).toBeTruthy()
+  })
+
+  it('drops other malformed addresses', () => {
+    for (const bad of ['nope', 'a@b', 'a@b.co,c@d.co', 42, {}, '']) {
+      const out = validateRestoredConfig({ trusted: [withEmail(bad)] })
+      expect(out.trusted[0].email, String(bad)).toBeUndefined()
+    }
+  })
+
+  it('leaves a key with no email alone', () => {
+    const { pub } = createIdentityKeys()
+    const out = validateRestoredConfig({
+      trusted: [{ fingerprint: pub.fingerprint, sign: pub.sign, box: pub.box }]
+    })
+    expect(out.trusted[0]).not.toHaveProperty('email')
+  })
+})
