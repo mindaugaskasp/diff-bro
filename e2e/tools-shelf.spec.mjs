@@ -9,7 +9,7 @@ test('starts with no recents, opens the tools palette, and runs a tool from it',
   page
 }) => {
   const shelf = page.locator('.usb-tools')
-  await expect(shelf).toContainText('Search tools…')
+  await expect(shelf).toContainText('Browse all tools')
   await expect(shelf.locator('.usb-tool')).toHaveCount(1) // just the search control
   // The heading names the chips, so with none used yet it is not shown at all.
   await expect(shelf).not.toContainText('Recent tools')

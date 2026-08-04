@@ -95,24 +95,9 @@
   transform: translateY(0);
   box-shadow: none;
 }
-/* The way into the full list. It opens a search, so it is shaped like the
-   sidebar's own search field rather than a pill: same radius, same surface,
-   same left-aligned glyph-then-label. A full-width lozenge read as a big
-   button and sat oddly in the strip. */
+/* The way into the full list, and a .btn like any other: shaped like the
+   sidebar's search field it read as a box you could type into, which it never
+   was — clicking it opens the palette. */
 .usb-tool-all {
-  border-radius: var(--radius);
-  color: var(--text-dim);
-  font-weight: 500;
-}
-.usb-tool-all {
-  justify-content: flex-start;
-  padding: 4px 8px;
-}
-/* A search entry point should not light up like a tool it is about to run. */
-.usb-tool-all:hover {
-  color: var(--text);
-  background: var(--bg-hover);
-  border-color: var(--accent);
-  transform: none;
-  box-shadow: none;
+  gap: 5px;
 }

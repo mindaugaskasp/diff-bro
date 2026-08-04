@@ -1,0 +1,18 @@
+/* Centred on the sidebar's column, which --sidebar-w tracks through a drag, a
+   collapse and the transition between them (SavedDiffs publishes it). The
+   negative margin cancels the toolbar's own inset, so the block starts where
+   the sidebar does. Never narrower than the pair itself, so the collapsed rail
+   does not clip them. */
+.key-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-left: calc(-1 * var(--bar-pad, 0px));
+  width: var(--sidebar-w, 256px);
+  min-width: max-content;
+}
+.key-actions .btn {
+  gap: 5px;
+}

@@ -39,11 +39,11 @@ const recent = computed(() => recentTools(settings.recentTools, SHELF_RECENT_TOO
        recents row grows. -->
   <div class="usb-tools usb-tools-search band band-row">
     <button
-      class="usb-tool usb-tool-all"
+      class="btn btn-sm usb-tool-all"
       data-tip="Search every tool"
       @click="ui.openToolsPalette()"
     >
-      <AppIcon name="search" />Search tools…
+      <AppIcon name="search" />Browse all tools
     </button>
   </div>
 </template>

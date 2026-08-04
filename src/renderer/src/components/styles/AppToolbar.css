@@ -1,8 +1,11 @@
 /* Top bar (AppToolbar.vue). */
 /* A band (.band gives display/align — see ui.css); this adds only its skin. */
 .toolbar {
+  /* Its own inset, named so the key buttons can cancel it and line their block
+     up with the window edge — and so the two cannot drift apart. */
+  --bar-pad: 12px;
   gap: 16px;
-  padding: 8px 12px;
+  padding: 8px var(--bar-pad);
   background: var(--bg-panel);
   /* Distinct separator so the stacked bars don't blend into one dark mass. */
   border-bottom: 1px solid var(--border);

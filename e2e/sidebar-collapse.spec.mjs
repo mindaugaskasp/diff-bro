@@ -307,7 +307,19 @@ test('the sidebar drags wider, stops at the cap, and comes back that way', async
     const page = await firstReadyPage(first)
     const start = (await page.locator('.saved').boundingBox()).width
 
+    // The toolbar's key pair is centred on this column, so it has to follow the
+    // drag — it cancels the toolbar's own inset to do it.
+    const offset = async () => {
+      const [k, side] = await Promise.all([
+        page.locator('.key-actions').boundingBox(),
+        page.locator('.saved').boundingBox()
+      ])
+      return Math.abs(k.x + k.width / 2 - (side.x + side.width / 2))
+    }
+    expect(await offset()).toBeLessThanOrEqual(1)
+
     expect(await drag(page, 30)).toBeGreaterThan(start)
+    expect(await offset()).toBeLessThanOrEqual(1)
     // Dragged back the other way it stops where it began, rather than shrinking
     // into a column too narrow to read a name in.
     expect(await drag(page, -400)).toBe(start)

@@ -24,6 +24,18 @@ const tags = useSidebarTags()
 const size = useSidebarResize()
 
 const searchBox = ref(null)
+const aside = ref(null)
+// Published so the toolbar's key buttons can centre on this column whatever it
+// is doing — dragged wider, collapsed to the rail, mid-transition. Measured
+// rather than recomputed from the same numbers in two places.
+let observer = null
+onMounted(() => {
+  observer = new ResizeObserver(([entry]) =>
+    document.documentElement.style.setProperty('--sidebar-w', `${entry.contentRect.width}px`)
+  )
+  if (aside.value) observer.observe(aside.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
 // Opening from a rail icon lands on what was asked for: the search box focused,
 // or that section shown on its own.
 function expandTo(what) {
@@ -81,6 +93,7 @@ const showAllTags = ref(false)
 
 <template>
   <aside
+    ref="aside"
     class="saved"
     :class="{ collapsed: settings.sidebarCollapsed, resizing: size.resizing.value }"
     :style="settings.sidebarCollapsed ? null : { width: `${size.width.value}px` }"
