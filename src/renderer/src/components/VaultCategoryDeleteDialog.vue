@@ -16,8 +16,11 @@ const pending = computed(() => vault.pendingDelete)
     @close="vault.cancelDelete()"
   >
     <p class="dialog-note">
-      {{ $t('vaultCategoryDeleteDialog.delete') }} <strong>“{{ pending.name }}”</strong>? This can’t
-      be undone.
+      <i18n-t keypath="vaultCategoryDeleteDialog.confirm" tag="span">
+        <template #name
+          ><strong>“{{ pending.name }}”</strong></template
+        >
+      </i18n-t>
     </p>
     <template #actions>
       <button class="btn btn-destructive" @click="vault.confirmDelete()">

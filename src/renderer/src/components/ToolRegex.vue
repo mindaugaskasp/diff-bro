@@ -74,9 +74,9 @@ async function copyOutput() {
     <p v-if="result.error" class="tre-err">{{ result.error }}</p>
     <template v-else>
       <div class="tre-bh">
-        <span>{{ result.matches.length }} match{{ result.matches.length === 1 ? '' : 'es' }}</span>
+        <span>{{ $t('count.matches', result.matches.length) }}</span>
         <span v-if="result.truncated" class="tre-warn">
-          this pattern is too slow on this input — stopped early
+          {{ $t('toolRegex.tooSlow') }}
         </span>
         <span v-else-if="result.capped" class="tre-warn">{{
           $t('toolRegex.firstMatchesOnly')

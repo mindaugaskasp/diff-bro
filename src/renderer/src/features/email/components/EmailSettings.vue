@@ -35,8 +35,10 @@ const email = useEmailStore()
     <p class="hint">
       <AppIcon name="mail" />
       <span>
-        <code>{name}</code> and <code>{expires}</code> are filled in from the diff. Your mail app
-        sends the message — Diff Bro opens it and copies the sealed file so you can paste it in.
+        <i18n-t keypath="email.settings.templateHint" tag="span">
+          <template #name><code>{name}</code></template>
+          <template #expires><code>{expires}</code></template>
+        </i18n-t>
       </span>
     </p>
 

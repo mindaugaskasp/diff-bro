@@ -87,7 +87,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
         {{
           picker.query.value
             ? `No one matches “${picker.query.value}”.`
-            : 'No trusted key has an email address yet.'
+            : $t('share.recipientPicker.noneHaveEmail')
         }}
       </p>
       <ul v-else class="recipients">

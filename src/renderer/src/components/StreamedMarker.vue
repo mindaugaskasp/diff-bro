@@ -29,7 +29,7 @@ const cappedAt = computed(() => (props.summary?.maxLines ?? 0).toLocaleString())
       <template v-else>{{ $t('streamedMarker.readFromDiskAsYou') }}</template>
     </span>
     <span v-if="capped" class="mark-capped">
-      Only the first {{ cappedAt }} lines of each file are compared.
+      {{ $t('streamedMarker.onlyFirstLines', { n: cappedAt }) }}
     </span>
     <span class="mark-limits">{{ $t('streamedMarker.savingSharingAndPatchExport') }}</span>
   </div>

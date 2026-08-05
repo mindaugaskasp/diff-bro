@@ -129,7 +129,7 @@ async function copy(text) {
             </button>
           </div>
         </div>
-        <p v-else-if="epochIn" class="te-hint">Enter Unix {{ unit }} to see the date.</p>
+        <p v-else-if="epochIn" class="te-hint">{{ $t('toolEpoch.enterUnix') }} {{ unit }}</p>
       </section>
     </div>
   </div>

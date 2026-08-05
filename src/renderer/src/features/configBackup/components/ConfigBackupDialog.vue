@@ -56,7 +56,9 @@ function close() {
           {{ $t('configBackup.dialog.restoresIdentityKeysTrustedHosts') }}
         </template>
       </p>
-      <p v-if="destination" class="dialog-note dest">Writing to {{ destination }}</p>
+      <p v-if="destination" class="dialog-note dest">
+        {{ $t('configBackup.dialog.writingTo') }} {{ destination }}
+      </p>
       <label>
         {{ $t('configBackup.dialog.passphrase') }}
         <input

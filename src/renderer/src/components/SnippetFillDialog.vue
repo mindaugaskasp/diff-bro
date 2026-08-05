@@ -32,7 +32,7 @@ function close() {
     <form class="dialog-form" @submit.prevent="copyFilled">
       <p class="dialog-note">
         {{ $t('snippetFillDialog.thisPromptHasPlaceholdersFill') }}
-        <code>{{ marker }}</code> marker.
+        <code>{{ marker }}</code> {{ $t('snippetFillDialog.marker') }}
       </p>
       <label v-for="(v, i) in vars" :key="v" class="fill-row">
         <span class="fill-name">{{ v }}</span>

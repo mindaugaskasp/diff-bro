@@ -84,7 +84,9 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
         <span class="chg">{{ $t('count.changed', result?.stats.changed ?? 0) }}</span> ·
         <span class="del">{{ $t('count.removed', result?.stats.removed ?? 0) }}</span>
       </span>
-      <span v-if="result?.hidden" class="capped">first {{ result.rows.length }} rows shown</span>
+      <span v-if="result?.hidden" class="capped">{{
+        $t('structureDiffViewer.firstRowsShown', { n: result.rows.length })
+      }}</span>
       <span>{{ $t('count.rows', shown.length) }}</span>
       <span class="band-end">
         <label class="sd-all">

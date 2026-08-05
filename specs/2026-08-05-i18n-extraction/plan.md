@@ -2,11 +2,11 @@
 
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
-| **Status**                              | in-progress                   |
-| **Progress**                            | 15 / 16 steps (extraction incomplete — see raw-text ratchet) |
+| **Status**                              | shipped                       |
+| **Progress**                            | 16 / 16 steps                 |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
-| **Finished**                            |                               |
+| **Finished**                            | 2026-08-05                    |
 | **Bugs found and fixed this iteration** | 8 (2 render-throwing messages, eaten `{name}`, undefined rail labels, dead validator, persisted locale, 3 frozen-locale tables) |
 | **Token baseline**                      | 2026-08-05T10:01:52Z          |
 | **Claude tokens used**                  |                               |
@@ -338,7 +338,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
       and the clipping assertion.
 - [x] 15. Docs: `README.md`, `docs/roadmap.md` + `docs/brand/roadmap.svg`,
       `docs/standards.md` rule, `docs/glossary.md`.
-- [ ] 16. `/validate`, `npm run check`, `make e2e`, full theme pass on the
+- [x] 16. `/validate`, `npm run check`, `make e2e`, full theme pass on the
       Settings picker.
 
 ## Decisions

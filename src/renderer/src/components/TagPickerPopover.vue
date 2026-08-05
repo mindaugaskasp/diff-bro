@@ -56,7 +56,7 @@ const shown = computed(() => {
           <TagGlyph :color="t.color || 'var(--text-dim)'" />{{ t.name }}
           <span class="usb-tct">{{ t.count }}</span>
         </button>
-        <p v-if="!shown.length" class="picker-none">No tag matches “{{ query }}”.</p>
+        <p v-if="!shown.length" class="picker-none">{{ $t('tagPickerPopover.noTagMatches', { q: query }) }}<template v-if="false">“{{ query }}”.</p>
       </div>
     </div>
   </div>

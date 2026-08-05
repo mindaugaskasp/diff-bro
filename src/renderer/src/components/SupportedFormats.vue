@@ -36,7 +36,7 @@ const store = useDiffStore()
         </button>
       </li>
     </ul>
-    <p class="tail">…and any text or code file — binary files aren’t supported</p>
+    <p class="tail">{{ $t('supportedFormats.andAnyText') }}</p>
   </div>
 </template>
 

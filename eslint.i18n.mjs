@@ -1,10 +1,9 @@
-// The no-raw-text ratchet, kept OUT of eslint.config.mjs on purpose.
+// no-raw-text, in its own config so it can run over .vue with the i18n plugin
+// without that plugin's parser settings reaching the rest of the lint run.
 //
-// 193 raw strings still sit in templates — mostly `cond ? 'A' : 'B'` ternaries,
-// which the extraction pass missed systematically. Wiring this into the main
-// config would fail the build; leaving it out entirely would let the number grow
-// back. So it runs as its own check against a committed count, exactly like
-// scripts/lib/legacySize.mjs: the number may fall and never rise.
+// It started as a ratchet at 193 while the extraction finished. It is now a
+// GATE: scripts/check-raw-text.mjs holds the count at 0, so a hardcoded string
+// in a template fails the build outright.
 import pluginVue from 'eslint-plugin-vue'
 import vueI18n from '@intlify/eslint-plugin-vue-i18n'
 

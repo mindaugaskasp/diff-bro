@@ -45,7 +45,9 @@ const rightDrop = useFileTextDrop((content, name, path) =>
               :data-tip="`What to call this side — defaults to &quot;Left (pasted)&quot;`"
               :aria-label="`Name for the left side`"
             />
-            <button class="link" @click="store.pastePickFile('left')">load file…</button>
+            <button class="link" @click="store.pastePickFile('left')">
+              {{ $t('pasteInput.loadFile') }}
+            </button>
           </template>
         </div>
         <textarea
@@ -84,7 +86,9 @@ const rightDrop = useFileTextDrop((content, name, path) =>
               :data-tip="`What to call this side — defaults to &quot;Right (pasted)&quot;`"
               :aria-label="`Name for the right side`"
             />
-            <button class="link" @click="store.pastePickFile('right')">load file…</button>
+            <button class="link" @click="store.pastePickFile('right')">
+              {{ $t('pasteInput.loadFile') }}
+            </button>
           </template>
         </div>
         <textarea

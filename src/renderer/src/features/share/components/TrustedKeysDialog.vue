@@ -69,8 +69,9 @@ function close() {
     </p>
 
     <p v-if="!keys.length" class="empty">
-      {{ $t('share.trustedKeysDialog.noTrustedKeysYetAdd') }} <code>.diffbrokey</code> (or drop it
-      onto the window).
+      <i18n-t keypath="share.trustedKeysDialog.noKeysYet" tag="span">
+        <template #ext><code>.diffbrokey</code></template>
+      </i18n-t>
     </p>
 
     <template v-else>
@@ -98,7 +99,9 @@ function close() {
         </span>
       </div>
 
-      <p v-if="!shown.length" class="empty">No key matches “{{ query }}”.</p>
+      <p v-if="!shown.length" class="empty">
+        {{ $t('share.trustedKeysDialog.noKeyMatches', { q: query }) }}
+      </p>
       <ul v-else class="dialog-scroller keys">
         <TrustedKeyRow
           v-for="k in shown"

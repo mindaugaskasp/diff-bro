@@ -62,8 +62,8 @@ function close() {
       <p class="dialog-note">
         {{
           mode === 'import'
-            ? 'Enter the passphrase this file was exported with.'
-            : "Choose a passphrase. You'll need it again to reimport this file."
+            ? $t('snippetPassphraseDialog.enterExisting')
+            : $t('snippetPassphraseDialog.chooseNew')
         }}
       </p>
       <label>

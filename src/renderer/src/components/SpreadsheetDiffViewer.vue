@@ -148,12 +148,12 @@ onMounted(() => {
         </span>
         <span v-if="totals.columns">
           {{ $t('spreadsheetDiffViewer.columns') }}
-          <span class="chg cols">{{ totals.columns }} moved</span>
+          <span class="chg cols">{{ $t('count.moved', totals.columns) }}</span>
         </span>
       </template>
       <span class="band-end">
         <span>{{ $t('count.rows', allRows.length) }}</span>
-        <span>{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
+        <span>{{ $t('count.sheets', sheets.length) }}</span>
       </span>
     </div>
   </div>

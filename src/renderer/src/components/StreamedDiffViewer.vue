@@ -66,11 +66,15 @@ const rightClass = (row) => (row.rightLine === null ? 'ghost' : row.status === '
         </span>
         <span>{{ $t('count.rows', total.toLocaleString()) }}</span>
         <span v-if="summary?.approximate" class="capped">
-          alignment is a best fit — the files differ too widely to match line for line
+          {{ $t('streamedDiffViewer.bestFit') }}
         </span>
         <span class="band-end">
-          {{ (summary?.leftLines ?? 0).toLocaleString() }} ↔
-          {{ (summary?.rightLines ?? 0).toLocaleString() }} lines
+          {{
+            $t('streamedDiffViewer.lineCounts', {
+              left: (summary?.leftLines ?? 0).toLocaleString(),
+              right: (summary?.rightLines ?? 0).toLocaleString()
+            })
+          }}
         </span>
       </div>
     </template>

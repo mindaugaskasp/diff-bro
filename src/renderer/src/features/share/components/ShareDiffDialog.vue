@@ -76,12 +76,8 @@ function submit() {
         @add="share.addTrustedKey()"
       />
       <p class="dialog-note">
-        {{
-          picker.picked.value.length > 1
-            ? `One file only these ${picker.picked.value.length} can open, signed so any modification — including its expiry time — is rejected.`
-            : 'The file is encrypted so only the chosen recipient can open it, and signed so any modification — including its expiry time — is rejected.'
-        }}
-        It expires at the same moment as your local copy.
+        {{ $t('share.diffDialog.sealedFor', picker.picked.value.length) }}
+        {{ $t('share.diffDialog.sameExpiry') }}
       </p>
       <div class="dialog-actions">
         <!-- The primary is what the user can actually do now: a disabled primary
@@ -131,9 +127,11 @@ function submit() {
     @close="close"
   >
     <p class="dialog-note">
-      {{ $t('share.diffDialog.sharedDiffsAreSealedFor') }}
-      <code>{{ myFingerprint }}</code
-      >); the private half never leaves this machine.
+      <i18n-t keypath="share.diffDialog.sealedIntro" tag="span">
+        <template #fp
+          ><code>{{ myFingerprint }}</code></template
+        >
+      </i18n-t>
     </p>
 
     <div class="step">
@@ -151,9 +149,11 @@ function submit() {
       <span class="badge">2</span>
       <div class="step-body">
         <strong>{{ $t('share.diffDialog.addTheirKey') }}</strong>
-        <span class="step-hint"
-          >{{ $t('share.diffDialog.openThe') }} <code>.diffbrokey</code> file they sent you.</span
-        >
+        <span class="step-hint">
+          <i18n-t keypath="share.diffDialog.openTheirKey" tag="span">
+            <template #ext><code>.diffbrokey</code></template>
+          </i18n-t>
+        </span>
       </div>
       <button type="button" class="btn btn-sm btn-primary" @click="share.addTrustedKey()">
         {{ $t('share.diffDialog.addTheirKey2') }}

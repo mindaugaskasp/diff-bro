@@ -87,7 +87,11 @@ const hidden = computed(() => matches.value.length - shown.value.length)
               <AppIcon :name="expanded ? 'chevron-up' : 'chevron-down'" />
             </span>
             <span class="nm">
-              {{ expanded ? 'Show fewer' : `${hidden} more tool${hidden === 1 ? '' : 's'}` }}
+              {{
+                expanded
+                  ? $t('tools.section.showFewer')
+                  : `${hidden} more tool${hidden === 1 ? '' : 's'}`
+              }}
             </span>
           </button>
         </li>

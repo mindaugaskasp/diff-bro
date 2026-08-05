@@ -199,7 +199,7 @@ watch(
         <span class="del">{{ $t('count.removed', tally(full.edges, 'removed')) }}</span>
       </span>
       <span class="band-end">
-        <span v-if="hidden" class="dg-hidden">{{ hidden }} unchanged hidden</span>
+        <span v-if="hidden" class="dg-hidden">{{ $t('count.unchangedHidden', hidden) }}</span>
       </span>
     </div>
   </div>

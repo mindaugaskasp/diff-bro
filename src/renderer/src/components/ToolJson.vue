@@ -91,7 +91,7 @@ offerToolOutput(
             <span>
               {{ $t('toolJson.result') }}
               <span v-if="filtered.count != null" class="tjs-count">
-                · {{ filtered.count }} match{{ filtered.count === 1 ? '' : 'es' }}
+                · {{ $t('count.matches', filtered.count) }}
               </span>
             </span>
             <button

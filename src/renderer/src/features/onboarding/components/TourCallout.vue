@@ -75,7 +75,7 @@ const beakStyle = computed(() => {
   >
     <span v-if="beak" class="tour-beak" :style="beakStyle" aria-hidden="true"></span>
     <div class="tour-head">
-      <span class="tour-step-n">Step {{ index + 1 }} of {{ count }}</span>
+      <span class="tour-step-n">{{ $t('tour.stepOf', { step: index + 1, count }) }}</span>
       <span class="tour-progress" aria-hidden="true">
         <span :style="{ width: progress }"></span>
       </span>

@@ -93,7 +93,7 @@ async function open() {
         </span>
         <span class="l2">
           <template v-if="entry.from">
-            <span class="from">from {{ entry.from }}</span>
+            <span class="from">{{ $t('savedDiffRow.from', { who: entry.from }) }}</span>
             <span class="trust-mark" :data-tip="$t('savedDiffRow.verifiedTheSignatureMatchedA')">
               <AppIcon name="shield-check" />
             </span>

@@ -41,7 +41,7 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
       <span class="ql-compose-title">{{
         editing ? $t('quickLookCompose.editSnippet') : $t('quickLookCompose.newSnippet')
       }}</span>
-      <span class="ql-compose-lang">plaintext</span>
+      <span class="ql-compose-lang">{{ $t('language.plaintext') }}</span>
     </div>
 
     <div class="ql-compose-body">

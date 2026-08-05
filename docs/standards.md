@@ -402,8 +402,10 @@ directory move passes CI while silently removing enforcement.
     two-form PLURAL in vue-i18n and `{code}` as interpolation, so grammar must
     never enter the catalogue.
 
-  `npm run check:i18n` fails the build on a key with no catalogue entry and on a
-  stale `en-XA.json`. `en-XA` is the generated pseudolocale — accented, bracketed
+  `npm run check:i18n` fails the build on a key with no catalogue entry, on a
+  catalogue entry with no call site, and on a stale `en-XA.json`.
+  `npm run check:rawtext` fails it on a hardcoded string in a template — the
+  count is held at **0**. `en-XA` is the generated pseudolocale — accented, bracketed
   and ~40% longer — and it is what makes an un-extracted string and a clipping
   container visible in `e2e/locale.spec.mjs`. Regenerate with
   `node scripts/pseudolocale.mjs` after editing `en.json`.

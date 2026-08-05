@@ -254,7 +254,8 @@
       "recent": "Recent",
       "other": "Other tools",
       "searchEveryTool": "Search every tool",
-      "noToolsMatchTryRemoving": "No tools match — try removing a filter."
+      "noToolsMatchTryRemoving": "No tools match — try removing a filter.",
+      "showFewer": "Show fewer"
     },
     "fallbackTitle": "Tools",
     "openAction": "Open",
@@ -387,7 +388,8 @@
       "body": "Here it is: the same flow, one revision apart. Every added, removed or changed node is marked on the picture, so you read the change instead of hunting for it in the text."
     },
     "next": "Next",
-    "done": "Done"
+    "done": "Done",
+    "stepOf": "Step {step} of {count}"
   },
   "language": {
     "auto": "Auto-detect",
@@ -554,7 +556,8 @@
     "deleteAllLocalLog": "Delete all local log files"
   },
   "mermaidDiagram": {
-    "diagramError": "Diagram error"
+    "diagramError": "Diagram error",
+    "rendering": "rendering…"
   },
   "mermaidPreview": {
     "openTheFullResizableDiagram": "Open the full, resizable diagram viewer",
@@ -583,7 +586,8 @@
     "original": "Original",
     "changed": "Changed",
     "compare": "Compare",
-    "useText": "use text"
+    "useText": "use text",
+    "loadFile": "load file…"
   },
   "quickLookCompose": {
     "nameOptional": "Name (optional)",
@@ -613,7 +617,8 @@
   "replaceDiffDialog": {
     "replaceCurrentComparison": "Replace current comparison?",
     "saveFirst": "Save first",
-    "replaceAnyway": "Replace anyway"
+    "replaceAnyway": "Replace anyway",
+    "willDiscard": "Loading {incoming} will discard the comparison you have open ({current}). Save it first if you want to keep it."
   },
   "retagDiffDialog": {
     "editTags": "Edit tags",
@@ -642,7 +647,8 @@
     "removeFromFavorites": "Remove from favorites",
     "pinToTheTop": "Pin to the top of the list",
     "unfavorite": "Unfavorite",
-    "favoritePinToTop": "Favorite (pin to top)"
+    "favoritePinToTop": "Favorite (pin to top)",
+    "from": "from {who}"
   },
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
@@ -654,7 +660,7 @@
     "all": "All",
     "clear": "Clear",
     "plusMore": "+{n} more",
-    "tagCount": "{n} tag | {n} tags"
+    "tagsSelected": "{n} tag selected | {n} tags selected"
   },
   "savedDiffsSection": {
     "savedDiffs": "Saved diffs",
@@ -684,7 +690,8 @@
     "limits": "Limits",
     "maxSnippetSizeKB": "Max snippet size (KB)",
     "maxDiffImageHeightPx": "Max diff image height (px)",
-    "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if you need to. The image height is how much of a long diff one exported picture covers, measured on screen, so it captures the same amount whatever your display's scaling; a longer diff is cut short and says so."
+    "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if you need to. The image height is how much of a long diff one exported picture covers, measured on screen, so it captures the same amount whatever your display's scaling; a longer diff is cut short and says so.",
+    "maxFileMb": "Max {kind} file (MB)"
   },
   "shortcutCapture": {
     "pressAKeyCombination": "Press a key combination…",
@@ -711,7 +718,9 @@
     "thatCanTBeUndone": "That can’t be undone. A record carrying this tag among others still goes.",
     "deleteThe": "Delete the {kind} {name}?",
     "itsOn": "It’s on {carrying}.",
-    "deleteCarryingToo": "Delete the {carrying} too"
+    "deleteCarryingToo": "Delete the {carrying} too",
+    "deleteTagAnd": "Delete tag and {total}",
+    "delete": "Delete"
   },
   "snippetEditorActions": {
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
@@ -747,12 +756,15 @@
   },
   "snippetFillDialog": {
     "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
-    "copyFilled": "Copy filled"
+    "copyFilled": "Copy filled",
+    "marker": "marker."
   },
   "snippetPassphraseDialog": {
     "passphrase": "Passphrase",
     "import": "Import",
-    "export": "Export"
+    "export": "Export",
+    "enterExisting": "Enter the passphrase this file was exported with.",
+    "chooseNew": "Choose a passphrase. You'll need it again to reimport this file."
   },
   "snippetPreviewCard": {
     "viewThisDiagramFullScreen": "View this diagram full screen",
@@ -819,13 +831,16 @@
   "streamedDiffViewer": {
     "indexing": "Indexing…",
     "noDifferencesBothSidesAre": "No differences — both sides are identical",
-    "lines": "Lines"
+    "lines": "Lines",
+    "bestFit": "alignment is a best fit — the files differ too widely to match line for line",
+    "lineCounts": "{left} ↔ {right} lines"
   },
   "streamedMarker": {
     "streamed": "Streamed",
     "indexingBothFilesByLine": "Indexing both files by line…",
     "readFromDiskAsYou": "Read from disk as you scroll — too large to load in full.",
-    "savingSharingAndPatchExport": "Saving, sharing and patch export are unavailable."
+    "savingSharingAndPatchExport": "Saving, sharing and patch export are unavailable.",
+    "onlyFirstLines": "Only the first {n} lines of each file are compared."
   },
   "structureDiffViewer": {
     "structuralDifferences": "Structural differences",
@@ -833,10 +848,12 @@
     "keys": "Keys",
     "showUnchanged": "Show unchanged",
     "noLongerReadable": "This comparison can no longer be read as {format}.",
-    "structuredData": "structured data"
+    "structuredData": "structured data",
+    "firstRowsShown": "first {n} rows shown"
   },
   "supportedFormats": {
-    "supportedFiles": "Supported files"
+    "supportedFiles": "Supported files",
+    "andAnyText": "…and any text or code file — binary files aren’t supported"
   },
   "tabContextMenu": {
     "tabActions": "Tab actions"
@@ -858,7 +875,8 @@
   "tagPickerPopover": {
     "findATag": "Find a tag…",
     "allTags": "All tags",
-    "findATag2": "Find a tag"
+    "findATag2": "Find a tag",
+    "noTagMatches": "No tag matches “{q}”"
   },
   "textToolDialog": {
     "keepThisInYourSnippet": "Keep this in your snippet library — you name it",
@@ -882,7 +900,8 @@
     "pickedTime": "Picked time",
     "now": "Now",
     "dateEpoch": "Date → epoch",
-    "epochDate": "Epoch → date"
+    "epochDate": "Epoch → date",
+    "enterUnix": "Enter Unix"
   },
   "toolHash": {
     "pasteText": "Paste text…",
@@ -940,7 +959,8 @@
     "regularExpression": "Regular expression",
     "subjectText": "Subject text",
     "replacement": "Replacement",
-    "firstMatchesOnly": "first matches only"
+    "firstMatchesOnly": "first matches only",
+    "tooSlow": "this pattern is too slow on this input — stopped early"
   },
   "toolUrl": {
     "uRLOrTextToEncode": "URL or text to encode / decode…",
@@ -964,7 +984,10 @@
     "version": "Version",
     "case": "Case",
     "form": "Form",
-    "new": "New"
+    "new": "New",
+    "match": "match",
+    "noMatch": "no match",
+    "versionVariant": "v{version} · {variant}"
   },
   "toolXml": {
     "pasteXML": "Paste XML…",
@@ -975,13 +998,15 @@
   },
   "vaultCategoryDeleteDialog": {
     "deleteSavedDiff": "Delete saved diff?",
-    "delete": "Delete"
+    "delete": "Delete",
+    "confirm": "Delete {name}? This can’t be undone."
   },
   "configBackup": {
     "dialog": {
       "encryptsYourIdentityKeysTrusted": "Encrypts your identity keys, trusted hosts, snippets, saved diffs and settings into one passphrase-protected file. Diffs that expire are left out. Keep the passphrase safe — it's the only way to restore.",
       "restoresIdentityKeysTrustedHosts": "Restores identity keys, trusted hosts, snippets, saved diffs and settings from a backup file. Enter the passphrase it was created with. This overwrites your current identity keys.",
-      "passphrase": "Passphrase"
+      "passphrase": "Passphrase",
+      "writingTo": "Writing to"
     }
   },
   "email": {
@@ -999,7 +1024,8 @@
       "notePrefilledIntoTheMessage": "Note — prefilled into the message body",
       "afterCreatingTheFile": "After creating the file",
       "alsoShowTheSealedFile": "Also show the sealed file in your file manager",
-      "resetToDefaults": "Reset to defaults"
+      "resetToDefaults": "Reset to defaults",
+      "templateHint": "{name} and {expires} are filled in from the diff. Your mail app sends the message — Diff Bro opens it and copies the sealed file so you can paste it in."
     }
   },
   "imageExport": {
@@ -1051,7 +1077,8 @@
       "addRecipient": "Add recipient…",
       "noAddress": "no address",
       "visibleOfTotal": "{shown} of {total}",
-      "keyCount": "{n} key | {n} keys"
+      "keyCount": "{n} key | {n} keys",
+      "noneHaveEmail": "No trusted key has an email address yet."
     },
     "removeTrustedKeyDialog": {
       "removeTrustedKey": "Remove trusted key?",
@@ -1077,14 +1104,16 @@
       "emailThisDiff": "Email this diff",
       "createFile": "Create file",
       "addAnAddress": "Add an address…",
-      "sharedDiffsAreSealedFor": "Shared diffs are sealed for named people, so you and your bro first swap public keys — once, in both directions. Your keys already exist (created automatically, fingerprint",
       "giveThemYourKey": "Give them your key",
       "nameItAndSendIt": "Name it and send it — they import it to receive your diffs.",
       "shareMyKey": "Share my key…",
       "addTheirKey": "Add their key",
-      "openThe": "Open the",
       "addTheirKey2": "Add their key…",
-      "asSoonAsTheirKey": "As soon as their key is added you can pick them as a recipient — this dialog updates automatically."
+      "asSoonAsTheirKey": "As soon as their key is added you can pick them as a recipient — this dialog updates automatically.",
+      "sealedIntro": "Shared diffs are sealed for one recipient, using your public key ({fp}); the private half never leaves this machine.",
+      "sealedFor": "The file is encrypted so only the chosen recipient can open it, and signed so any modification — including its expiry time — is rejected. | One file only these {n} can open, signed so any modification — including its expiry time — is rejected.",
+      "sameExpiry": "It expires at the same moment as your local copy.",
+      "openTheirKey": "Open the {ext} file they sent you."
     },
     "keyDialog": {
       "eGAliceLaptop": "e.g. Alice — laptop",
@@ -1114,8 +1143,9 @@
       "searchTrustedKeys": "Search trusted keys",
       "clearSearch": "Clear search",
       "publicKeysOfPeopleYou": "Public keys of people you can share sealed diffs with. Give a key an email address to email its diffs from here.",
-      "noTrustedKeysYetAdd": "No trusted keys yet. Add someone's",
-      "addKey": "Add key…"
+      "addKey": "Add key…",
+      "noKeysYet": "No trusted keys yet. Add someone’s {ext} (or drop it onto the window).",
+      "noKeyMatches": "No key matches “{q}”."
     }
   },
   "diffNotices": {
@@ -1252,6 +1282,13 @@
     "added": "{n} added",
     "removed": "{n} removed",
     "changed": "{n} changed",
-    "rows": "{n} rows"
+    "rows": "{n} rows",
+    "moved": "{n} moved",
+    "sheets": "{n} sheet | {n} sheets",
+    "matches": "{n} match | {n} matches",
+    "unchangedHidden": "{n} unchanged hidden"
+  },
+  "sheetTabBar": {
+    "onlyIn": "only {side}"
   }
 }

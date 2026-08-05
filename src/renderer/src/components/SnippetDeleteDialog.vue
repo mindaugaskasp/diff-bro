@@ -60,7 +60,11 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
 
     <template #actions>
       <button class="btn btn-destructive" @click="store.confirmDelete({ withEntries })">
-        {{ destructive && isTag && withEntries ? `Delete tag and ${total}` : 'Delete' }}
+        {{
+          destructive && isTag && withEntries
+            ? $t('snippetDeleteDialog.deleteTagAnd', { total })
+            : $t('snippetDeleteDialog.delete')
+        }}
       </button>
       <button class="btn btn-ghost" @click="store.cancelDelete()">
         {{ $t('common.cancel') }}

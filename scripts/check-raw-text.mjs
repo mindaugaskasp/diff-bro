@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 // Counts the raw strings still hardcoded in templates and holds the number to a
-// committed baseline. A ratchet, not a gate: it may fall, never rise.
+// committed baseline, which is now 0 — every string is in the catalogue.
+//
+// It stays a baseline rather than a bare `=== 0` because that is what carried
+// the migration from 193 down, and because a future surface that genuinely
+// cannot be extracted gets one reviewed line rather than a disabled rule.
 //
 //   node scripts/check-raw-text.mjs             fail if the count rose
 //   node scripts/check-raw-text.mjs --retighten lower the baseline to today's

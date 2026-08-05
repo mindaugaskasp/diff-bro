@@ -98,7 +98,7 @@ async function copy(row) {
       />
       <span v-if="check.checked" class="th-verdict" :class="{ ok: check.algorithm }">
         <AppIcon :name="check.algorithm ? 'check' : 'x'" />
-        {{ check.algorithm ? `matches ${HASH_LABELS[check.algorithm]}` : 'no match' }}
+        {{ check.algorithm ? `matches ${HASH_LABELS[check.algorithm]}` : $t('toolUuid.noMatch') }}
       </span>
     </div>
 

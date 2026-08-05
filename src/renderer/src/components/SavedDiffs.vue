@@ -161,8 +161,7 @@ const showAllTags = ref(false)
         </div>
         <div v-if="tags.active.value.length" class="usb-filtering">
           <span>
-            {{ $t('savedDiffs.tagCount', tags.active.value.length) }}
-            selected
+            {{ $t('savedDiffs.tagsSelected', tags.active.value.length) }}
           </span>
           <button
             class="usb-clear"

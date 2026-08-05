@@ -130,7 +130,8 @@ offerToolOutput(
           :aria-label="$t('toolUuid.verifyUUID')"
         />
         <span v-if="verifyMatch !== null" class="tu-match" :class="{ ok: verifyMatch }">
-          <AppIcon :name="verifyMatch ? 'check' : 'x'" /> {{ verifyMatch ? 'match' : 'no match' }}
+          <AppIcon :name="verifyMatch ? 'check' : 'x'" />
+          {{ verifyMatch ? $t('toolUuid.match') : $t('toolUuid.noMatch') }}
         </span>
       </div>
     </div>
@@ -138,7 +139,9 @@ offerToolOutput(
     <div class="tu-lane">
       <span class="tu-k">
         {{ $t('toolUuid.uUID') }}
-        <span v-if="info" class="tu-badge">v{{ info.version }} · {{ info.variant }}</span>
+        <span v-if="info" class="tu-badge">{{
+          $t('toolUuid.versionVariant', { version: info.version, variant: info.variant })
+        }}</span>
       </span>
       <input
         v-model="uuid"

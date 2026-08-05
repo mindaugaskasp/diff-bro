@@ -25,8 +25,12 @@ const onConfirm = () => (isPick.value ? diff.confirmPick() : diff.confirmReplace
     @close="onCancel"
   >
     <p class="dialog-note">
-      Loading {{ incoming }} will discard the comparison you have open (<code>{{ current }}</code
-      >). Save it first if you want to keep it.
+      <i18n-t keypath="replaceDiffDialog.willDiscard" tag="span">
+        <template #incoming>{{ incoming }}</template>
+        <template #current
+          ><code>{{ current }}</code></template
+        >
+      </i18n-t>
     </p>
     <template #actions>
       <button class="btn" @click="onCancel">{{ $t('common.cancel') }}</button>

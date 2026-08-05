@@ -16,7 +16,7 @@ const settings = useSettingsStore()
   <section>
     <h4>{{ $t('settingsLimits.limits') }}</h4>
     <label v-for="(spec, type) in FILE_TYPE_LIMITS" :key="type" class="row">
-      <span>Max {{ spec.label }} file (MB)</span>
+      <span>{{ $t('settingsLimits.maxFileMb', { kind: spec.label }) }}</span>
       <input
         type="number"
         min="1"

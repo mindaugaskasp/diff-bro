@@ -84,7 +84,7 @@ offerToolOutput(
             <span>
               {{ $t('toolXml.result') }}
               <span v-if="filtered.count != null" class="txm-count">
-                · {{ filtered.count }} match{{ filtered.count === 1 ? '' : 'es' }}
+                · {{ $t('count.matches', filtered.count) }}
               </span>
             </span>
             <button
