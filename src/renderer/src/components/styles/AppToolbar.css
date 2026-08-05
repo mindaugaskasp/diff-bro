@@ -14,21 +14,15 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  /* Reading ink, not dim: these are words, and --text-dim put them under 4.5:1
-     on solar (3.99), nord (4.05), sepia (3.44) and bloom (4.31). It also made
-     the .off rule below a no-op — an unavailable toggle was being "greyed out"
-     to the colour it already was. */
+  /* Reading ink: --text-dim put these words under 4.5:1 on four themes, and made
+     the .off rule below a no-op — it greyed a toggle to the colour it already had. */
   color: var(--text);
   white-space: nowrap;
   margin-left: auto;
-  /* The toolbar absorbs its own overflow. The window minimum is tuned to fit
-     this row in English; a longer locale (en-XA runs ~40% over) would otherwise
-     make the DOCUMENT wider than the viewport and scroll the sidebar and panes
-     sideways along with it. */
+  /* The bar absorbs its own overflow, so a longer locale scrolls THIS and not
+     the document. Both axes named: overflow-x alone computes overflow-y to
+     `auto` and puts a stepper scrollbar on the band's right edge. */
   min-width: 0;
-  /* Both axes named. Setting overflow-x alone computes overflow-y from
-     `visible` to `auto`, which put a stepper-arrow scrollbar on the right edge
-     of the band on every theme. */
   overflow: auto hidden;
   scrollbar-width: thin;
 }
@@ -43,10 +37,8 @@
 .group.actions {
   gap: 6px;
 }
-/* Spans the control row, not the whole band. It used to bleed into the bar's
-   padding with a negative margin, which cannot work now that `.options` is a
-   scroll container: the bleed was the only thing overflowing it, and it bought a
-   stepper-arrow scrollbar on the right edge in exchange for 8px of line. */
+/* Spans the control row, not the band: the negative margin it used to bleed with
+   is the only thing that overflowed `.options`, now a scroll container. */
 .divider {
   width: 1px;
   flex: none;

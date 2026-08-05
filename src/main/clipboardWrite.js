@@ -69,13 +69,10 @@ const FILE_ATTRIBUTE_NORMAL = 0x80
 // FILETIME counts 100ns ticks from 1601-01-01; Date counts ms from 1970-01-01.
 const FILETIME_EPOCH_OFFSET_MS = 11_644_473_600_000
 
-// Why not CF_HDROP: Electron writes a buffer under a name, and on Windows a name
-// becomes a format through RegisterClipboardFormat — which mints a NEW custom
-// format when the name is not already registered. The predefined CF_HDROP (id
-// 15) has no registerable name, so writing "CF_HDROP" produced a private format
-// only this app could see, and every paste outside DiffBro did nothing. The
-// descriptor pair below IS name-registered, which is the same reason the macOS
-// and freedesktop flavours have always worked. Do not "simplify" this back.
+// Descriptor-based, not CF_HDROP: a format NAME becomes a format through
+// RegisterClipboardFormat, and the predefined CF_HDROP has no name to register —
+// writing under it minted a private format only this app could paste. See
+// docs/standards.md rule 7 before simplifying this back.
 function windowsFlavours(paths, bytes) {
   const content = Buffer.isBuffer(bytes) ? bytes : Buffer.alloc(0)
   const name = paths[0].split(/[\\/]/).pop()

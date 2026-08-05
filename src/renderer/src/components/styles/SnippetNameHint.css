@@ -1,7 +1,5 @@
-/* The templated-name preview (SnippetNameHint.vue). Appears under the name field
-   only while a placeholder is in it, so it never competes with the field at
-   rest. Every colour and size is a token — the panel re-tints on all 14 themes
-   with nothing to review per theme. */
+/* The templated-name preview (SnippetNameHint.vue), shown under the name field
+   only while a placeholder is in it. */
 .name-hint {
   display: flex;
   flex-direction: column;

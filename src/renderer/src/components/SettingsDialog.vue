@@ -20,10 +20,8 @@ const ui = useUiStore()
 const settings = useSettingsStore()
 const tour = useOnboardingStore()
 
-// One pane shows at a time behind the left rail. Desktop is Windows-only — there
-// is no tray to keep the app in anywhere else, so elsewhere it would be a pane
-// of two settings that do nothing. Filtered once, not computed: the platform
-// does not change while the app is open.
+// One pane at a time behind the left rail. Desktop needs a tray, so elsewhere it
+// would be two settings that do nothing. Filtered once — the platform is fixed.
 const TABS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'shortcuts', label: 'Shortcuts' },

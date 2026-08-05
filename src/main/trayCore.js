@@ -1,9 +1,6 @@
-// The tray's decisions, with no Electron in them, so the interesting part is
-// unit-testable — the same split sealing.js/share.js uses.
-//
-// Windows only. The tray is where a closed window has to be recoverable FROM,
-// and a platform whose tray support is uneven (a GNOME session with no
-// extension shows nothing) would strand the window instead of storing it.
+// The tray's decisions with no Electron in them, so they unit-test — the same
+// split sealing.js/share.js uses. Windows only: a desktop whose tray support is
+// uneven (GNOME without an extension) would strand the window, not store it.
 
 /** @param {NodeJS.Platform|string} platform */
 export const hasTray = (platform) => platform === 'win32'

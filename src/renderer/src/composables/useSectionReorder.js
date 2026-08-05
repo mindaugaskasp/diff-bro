@@ -1,19 +1,13 @@
 import { ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 
-// Drag-reorder of sidebar sections, on POINTER events rather than HTML5
-// drag-and-drop.
-//
-// HTML5 dnd exists to carry a payload between documents; a section never leaves
-// the sidebar, so all it bought was a dependence on native drag — which Chromium
-// declines to start on Windows for an element with `user-select: none`, and this
-// header is the only draggable surface in the app that has it. Pointer events
-// have no such rule, and `setPointerCapture` keeps the whole gesture on the
-// element that began it, so there are no window listeners to leak.
+// Drag-reorder of sidebar sections, on pointer events: HTML5 dnd carries a
+// payload between documents, and a section never leaves the sidebar — all it
+// bought was Chromium's refusal to start a native drag on Windows for an element
+// with `user-select: none`, which this header is the app's only one to have.
 //
 // Source and target are different SectionHeaders, so the gesture's ids are
-// module-level refs shared across them; the reorder maths is the store's
-// reorderSections.
+// module-level refs shared across them.
 const dragId = ref(null)
 const hoverId = ref(null)
 // The section that just moved (drag or arrow), so its header pulses briefly.

@@ -43,18 +43,17 @@ function trackWindowState(win) {
   win.on('close', save)
 }
 
+// The TOOLBAR sets the width floor, not the panes — below it the whole document
+// scrolled sideways. e2e/toolbar-width.spec.mjs asserts against
+// getMinimumSize(), so the number and the layout cannot drift apart.
+const MIN_WIDTH = 1120
+const MIN_HEIGHT = 640
+
 /**
  * @param {{ show?: boolean }} [opts] `show: false` is the login-item launch —
  *   the window is built so the shortcut and the CLI have something to raise, but
  *   signing in does not throw it on screen.
  */
-// The TOOLBAR sets the width floor, not the panes: its intrinsic width is the
-// widest thing in the window, and below it the whole document scrolled sideways
-// rather than the bar alone. e2e/toolbar-width.spec.mjs measures against
-// getMinimumSize(), so the number and the layout cannot drift apart.
-const MIN_WIDTH = 1120
-const MIN_HEIGHT = 640
-
 export function createWindow({ show = true } = {}) {
   const state = loadWindowState()
   const win = new BrowserWindow({

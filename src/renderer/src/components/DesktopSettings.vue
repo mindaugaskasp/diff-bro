@@ -1,7 +1,5 @@
 <script setup>
-// Windows-only window behaviour. Closing the window stores it in the
-// notification area rather than ending the app, which is what keeps the global
-// quick look-up shortcut alive; the login item is opt-in because it is a
+// Windows-only window behaviour. The login item is opt-in because it is a
 // machine-level change.
 import { onMounted, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'

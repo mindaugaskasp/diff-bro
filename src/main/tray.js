@@ -1,14 +1,9 @@
-// The Windows notification-area icon: the Electron glue over trayCore.js.
+// The Windows notification-area icon: Electron glue over trayCore.js. Closing
+// stores the window so the global shortcut survives it, which is why the tray
+// has to offer both a way back and a way out.
 //
-// Pressing X on Windows stores the window rather than ending the app, so the
-// global quick look-up shortcut survives it — which is the whole point, and also
-// why there has to be a visible way back and a visible way out. The tray is
-// both.
-//
-// SECURITY: the two settings here reach outside the app (a registry Run entry),
-// so both are booleans and nothing more. The executable registered at login is
-// main's own process.execPath, chosen here — the renderer never names a path,
-// and there is no handler that would let it (rule 7).
+// SECURITY: the login item writes a registry Run entry for main's OWN
+// process.execPath. The renderer supplies booleans and never a path (rule 7).
 import { Menu, Tray, app, ipcMain } from 'electron'
 import trayIcon from '../../resources/tray.png?asset'
 import { readSettings } from './appData'

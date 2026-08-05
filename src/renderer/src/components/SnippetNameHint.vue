@@ -1,8 +1,6 @@
 <script setup>
-// What a templated name will actually be saved as. Shown only once the field
-// holds a placeholder, so an ordinary name never sees it — and the preview is
-// the documentation: the token list appears in the same moment it becomes
-// relevant, rather than sitting under every name field forever.
+// What a templated name will be saved as. Shown only once the field holds a
+// placeholder, so the token list documents itself exactly when it is relevant.
 import { computed } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { TEMPLATE_TOKENS, expandTemplates, hasTemplate } from '../utils/snippetTemplates'
