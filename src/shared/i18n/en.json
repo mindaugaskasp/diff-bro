@@ -282,5 +282,27 @@
     "unpin": "Unpin {name}",
     "pin": "Pin {name} to the top",
     "tip": "{kind} — {name}"
+  },
+  "shareErrors": {
+    "notAShareFile": "That file is not a Diff Bro shared diff.",
+    "notForYou": "This shared diff is sealed for a different machine — it can only be opened by its addressed recipient.",
+    "tampered": "Rejected: the file was modified in transit (or is corrupted) — decryption failed.",
+    "unknownSigner": "Sealed correctly, but signed by an unknown sender — add their public key first (File → Add Trusted Key).",
+    "badSignature": "Signature check failed — the file was modified or corrupted.",
+    "badTrustedKey": "The stored public key for this sender is unreadable — remove it and add their key file again.",
+    "expired": "This shared diff has already expired.",
+    "invalidTtl": "Rejected: shared diffs cannot live longer than a week.",
+    "unknownRecipient": "Recipient not found among trusted keys.",
+    "renamed": "This shared diff was renamed — its integrity is tied to its original hashed filename, so it was refused. Ask the sender to re-send it unchanged.",
+    "identityUnavailable": "Your identity key couldn’t be unlocked (the OS keychain may be locked). Nothing was changed — unlock it and try again.",
+    "vaultKeyUnavailable": "The saved-diff key couldn’t be unlocked (the OS keychain may be locked). Your saved diffs and snippets are intact — unlock it and try again.",
+    "notASnippetFile": "That file is not a Diff Bro snippets export.",
+    "wrongPassphrase": "Wrong passphrase, or the file is corrupted.",
+    "corrupted": "The file could not be read after decryption.",
+    "malformed": "That snippets file is not shaped like a valid export and was rejected.",
+    "tooLarge": "That snippets file exceeds the allowed size limits and was rejected.",
+    "fallback": "That failed.",
+    "sharingFailed": "Sharing failed.",
+    "importFailed": "Import failed."
   }
 }

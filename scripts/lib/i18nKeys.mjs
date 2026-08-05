@@ -45,6 +45,24 @@ export function dynamicKeyLines(source) {
     .filter(({ text }) => !COMMENT.test(text) && DYNAMIC_KEY.test(text))
 }
 
+// Any quoted string with a dot in it. Deliberately generous: the caller
+// intersects the result with the real catalogue, so a file path or a package
+// name can never mark a key used that does not exist.
+const DOTTED_LITERAL = /(['"])([^'"\s]*\.[^'"\s]*)\1/gu
+
+/**
+ * Catalogue keys reached indirectly — as a plain value rather than a t()
+ * argument. shareErrors.js maps an error CODE to a key, which is neither.
+ *
+ * @param {string} source
+ * @returns {string[]} candidate dotted literals, de-duplicated
+ */
+export function dottedLiteralsIn(source) {
+  const found = new Set()
+  for (const [, , value] of source.matchAll(DOTTED_LITERAL)) found.add(value)
+  return [...found]
+}
+
 /**
  * @param {object} tree a message catalogue
  * @returns {string[]} every leaf as a dotted path, sorted

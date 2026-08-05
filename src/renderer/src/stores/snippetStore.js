@@ -5,6 +5,8 @@ import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
 import { parseSnippetImport } from '../utils/snippetImport'
 import { sentenceCaseName, untitledName } from '../utils/snippetName'
+import { errorMessage } from '../utils/shareErrors'
+import { t } from '../i18n'
 
 // Snippets of this language hold a link and are deliberately never shared.
 export const URL_LANGUAGE = 'url'
@@ -191,17 +193,6 @@ const promptVars = (effectiveLang, content) =>
 export function formatTagFor(language, content) {
   const lang = language && language !== 'auto' ? language : detectSnippetLanguage(content)
   return lang && lang !== 'plaintext' ? lang : null
-}
-
-const IMPORT_ERRORS = {
-  'not-a-snippet-file': 'That file is not a Diff Bro snippets export.',
-  'wrong-passphrase': 'Wrong passphrase, or the file is corrupted.',
-  'bad-signature': 'Signature check failed — the file was modified or corrupted.',
-  'bad-trusted-key':
-    'The stored public key for this sender is unreadable — remove it and add their key file again.',
-  corrupted: 'The file could not be read after decryption.',
-  malformed: 'That snippets file is not shaped like a valid export and was rejected.',
-  'too-large': 'That snippets file exceeds the allowed size limits and was rejected.'
 }
 
 export const useSnippetStore = defineStore('snippets', {
@@ -566,7 +557,7 @@ export const useSnippetStore = defineStore('snippets', {
     async importSnippets(passphrase) {
       const res = await window.api.importSnippets(passphrase)
       if (!res.ok) {
-        if (!res.canceled) res.message = IMPORT_ERRORS[res.error] ?? 'Import failed.'
+        if (!res.canceled) res.message = errorMessage(res.error, t, 'shareErrors.importFailed')
         return res
       }
       // `res.signer` is resolved in MAIN from the trust store by matching the key

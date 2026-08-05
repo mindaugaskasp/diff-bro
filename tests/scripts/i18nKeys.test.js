@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { catalogueKeys, dynamicKeyLines, keysUsedIn } from '../../scripts/lib/i18nKeys.mjs'
+import {
+  catalogueKeys,
+  dottedLiteralsIn,
+  dynamicKeyLines,
+  keysUsedIn
+} from '../../scripts/lib/i18nKeys.mjs'
 
 describe('keysUsedIn', () => {
   it('finds t() in script and $t() in a template', () => {
@@ -82,6 +87,28 @@ describe('dynamicKeyLines', () => {
     expect(dynamicKeyLines(' * A bare `t(key, args)` over the catalogue')).toEqual([])
     expect(dynamicKeyLines('// t(whatever) explained here')).toEqual([])
     expect(dynamicKeyLines('/* t(x) */')).toEqual([])
+  })
+})
+
+// The last indirection the guard has to see: shareErrors.js maps an error CODE
+// to a key, so the key is a plain value in an object literal — neither a t()
+// argument nor a *Key property. Cross-checking against the real catalogue is
+// what keeps those 20 entries from reading as dead copy.
+describe('dottedLiteralsIn', () => {
+  it('finds a dotted string literal used as a value', () => {
+    expect(dottedLiteralsIn(`{ 'not-for-you': 'shareErrors.notForYou' }`)).toContain(
+      'shareErrors.notForYou'
+    )
+  })
+
+  it('ignores a single-segment string', () => {
+    expect(dottedLiteralsIn(`const a = 'plain'`)).toEqual([])
+  })
+
+  // Deliberately generous — the caller intersects with the real catalogue, so a
+  // file path or a package name here can never mark a key used that isn't.
+  it('returns candidates, leaving the catalogue to decide', () => {
+    expect(dottedLiteralsIn(`import x from './a.json'`)).toContain('./a.json')
   })
 })
 

@@ -8,7 +8,8 @@ import { defineStore } from 'pinia'
 import { useDiffStore } from '../../stores/diffStore'
 import { useVaultStore } from '../../stores/vaultStore'
 import { useEmailStore } from '../email'
-import { SHARE_ERRORS } from '../../utils/shareErrors'
+import { errorMessage } from '../../utils/shareErrors'
+import { t } from '../../i18n'
 
 export const useShareStore = defineStore('share', {
   state: () => ({
@@ -117,7 +118,7 @@ export const useShareStore = defineStore('share', {
             : `Sealed shared diff for "${res.to}" written to ${res.path}`
         )
       } else if (res.error) {
-        diff.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
+        diff.showNotice(errorMessage(res.error, t, 'shareErrors.sharingFailed'))
       }
     },
     // Import a sealed diff and open it — but only when nothing is on screen; with
@@ -126,7 +127,7 @@ export const useShareStore = defineStore('share', {
       const diff = useDiffStore()
       const res = await useVaultStore().importShared()
       if (!res.ok) {
-        if (res.error) diff.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+        if (res.error) diff.showNotice(errorMessage(res.error, t, 'shareErrors.importFailed'))
         return
       }
       if (diff.hasActive) {
@@ -144,7 +145,7 @@ export const useShareStore = defineStore('share', {
       const diff = useDiffStore()
       const res = await useVaultStore().importSharedFromPath(path)
       if (!res.ok) {
-        if (res.error) diff.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+        if (res.error) diff.showNotice(errorMessage(res.error, t, 'shareErrors.importFailed'))
         return
       }
       await this._openImported(res)

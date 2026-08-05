@@ -3,11 +3,11 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 8 / 16 steps                  |
+| **Progress**                            | 9 / 16 steps                  |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
-| **Bugs found and fixed this iteration** | 0 / N                         |
+| **Bugs found and fixed this iteration** | 1 (duplicated `bad-signature` copy) |
 | **Token baseline**                      | 2026-08-05T10:01:52Z          |
 | **Claude tokens used**                  |                               |
 
@@ -304,7 +304,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
       nine consumers. `commands.js` and `commandPalette.js` held no copy. — `renderer/src/menus.js`,
       `utils/shortcuts.js`, `utils/commands.js`, `utils/tools.js`,
       `utils/commandPalette.js`. `--retighten` `menus.js`.
-- [ ] 9. Error and message catalogues — `utils/shareErrors.js`,
+- [x] 9. Error and message catalogues — `utils/shareErrors.js`,
       `stores/snippetStore.js`, `stores/diffStore.js`, `stores/*`. **De-duplicate
       the `bad-signature` sentence here**, with the assertion written first.
 - [ ] 10. `utils/` copy — `tourCopy.js`, `detectLanguage.js`, `jiraMarkup.js`,

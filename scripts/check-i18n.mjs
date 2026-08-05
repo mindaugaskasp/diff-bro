@@ -12,7 +12,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { catalogueKeys, dynamicKeyLines, keysUsedIn } from './lib/i18nKeys.mjs'
+import { catalogueKeys, dottedLiteralsIn, dynamicKeyLines, keysUsedIn } from './lib/i18nKeys.mjs'
 import { pseudoTree } from './lib/pseudo.mjs'
 
 const UNUSED_IS_ERROR = false
@@ -43,6 +43,9 @@ for (const file of walk(join(root, 'src'))) {
     used.add(key)
     if (!known.has(key)) problems.push(`${where}: unknown key ${JSON.stringify(key)}`)
   }
+  // A key can also arrive as a plain value (shareErrors.js maps code -> key).
+  // Only ones the catalogue actually has count, so this cannot invent a use.
+  for (const value of dottedLiteralsIn(source)) if (known.has(value)) used.add(value)
   for (const { line, text } of dynamicKeyLines(source)) dynamic.push(`${where}:${line}  ${text}`)
 }
 
