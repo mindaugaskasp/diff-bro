@@ -124,7 +124,7 @@ export function looksLikeMermaid(text) {
   return false
 }
 
-// The one-of-N choice behind settings.diagramTheme, shared by both controls.
+// The one-of-N ground choice, shared by the viewer and the editor preview.
 export const DIAGRAM_THEME_OPTIONS = [
   { value: 'auto', label: 'Auto' },
   { value: 'light', label: 'Light' },

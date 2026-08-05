@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   MAX_RECENT_TOOLS,
-  SHELF_RECENT_TOOLS,
   TOOLS,
   noteRecent,
   recentTools,
   toolById,
   toolPaletteItems,
+  toolRows,
   toolSections
 } from '../../../src/renderer/src/utils/tools'
 import { ICONS } from '../../../src/renderer/src/icons'
@@ -67,14 +67,6 @@ describe('recentTools', () => {
     expect(recentTools([])).toEqual([])
   })
 
-  // Surfaces disagree about how many fit: the collapsed rail shows every one it
-  // remembers, the expanded shelf fewer, because its chips carry labels and wrap.
-  it('takes a smaller limit from a surface that has less room', () => {
-    const ids = TOOLS.map((t) => t.id)
-    expect(recentTools(ids, SHELF_RECENT_TOOLS)).toHaveLength(SHELF_RECENT_TOOLS)
-    expect(SHELF_RECENT_TOOLS).toBeLessThan(MAX_RECENT_TOOLS)
-  })
-
   // The number REMEMBERED has to be at least the largest surface, or the rail
   // could never fill up whatever its own limit said.
   it('remembers as many as the rail has room for', () => {
@@ -111,6 +103,72 @@ describe('noteRecent', () => {
   it('ignores an unknown tool but still returns a capped list', () => {
     expect(noteRecent(['json'], 'nope')).toEqual(['json'])
     expect(noteRecent(undefined, 'nope')).toEqual([])
+  })
+})
+
+// The sidebar section and the rail both order by PINS, never by recency. The
+// shelf they replace moved the tool you had just used to the front, so the row
+// under the cursor changed as a side effect of using it.
+describe('toolRows', () => {
+  const ids = (rows) => rows.map((t) => t.id)
+  const registryOrder = TOOLS.map((t) => t.id)
+
+  it('puts pinned tools first, both groups in registry order', () => {
+    // 'uuid' is registry index 3, 'json' index 1 — pinned in the wrong order on
+    // purpose, so "registry order" is what is being asserted, not input order.
+    expect(ids(toolRows(['uuid', 'json']))).toEqual([
+      'json',
+      'uuid',
+      ...registryOrder.filter((id) => id !== 'json' && id !== 'uuid')
+    ])
+  })
+
+  // The load-bearing assertion. A naive implementation that concatenates the
+  // pinned ids as given passes every other test in this block and fails this one.
+  it('is unchanged by the order the pins were added', () => {
+    const base = ids(toolRows(['uuid', 'json', 'regex']))
+    for (const perm of [
+      ['json', 'regex', 'uuid'],
+      ['regex', 'uuid', 'json'],
+      ['json', 'uuid', 'regex']
+    ]) {
+      expect(ids(toolRows(perm))).toEqual(base)
+    }
+  })
+
+  it('lists every tool exactly once', () => {
+    const out = ids(toolRows(['json']))
+    expect(out).toHaveLength(TOOLS.length)
+    expect(new Set(out).size).toBe(TOOLS.length)
+  })
+
+  it('is plain registry order with nothing pinned', () => {
+    expect(ids(toolRows([]))).toEqual(registryOrder)
+    expect(ids(toolRows(undefined))).toEqual(registryOrder)
+  })
+
+  // Stored pins outlive the registry: a hand-edited settings file or a tool
+  // removed in a later version must not render a blank row.
+  it('ignores a pinned id that is no longer a tool', () => {
+    expect(ids(toolRows(['gone', 'json']))).toEqual([
+      'json',
+      ...registryOrder.filter((id) => id !== 'json')
+    ])
+  })
+
+  it('takes a limit from a surface with less room, pins first', () => {
+    expect(ids(toolRows(['regex'], 3))).toEqual(['regex', 'base64', 'json'])
+  })
+
+  it('marks which rows are pinned so the row can draw its own state', () => {
+    const rows = toolRows(['json'])
+    expect(rows[0]).toMatchObject({ id: 'json', pinned: true })
+    expect(rows[1].pinned).toBe(false)
+  })
+
+  it('does not mutate the registry entries it copies', () => {
+    toolRows(['json'])
+    expect(TOOLS.every((t) => !('pinned' in t))).toBe(true)
   })
 })
 

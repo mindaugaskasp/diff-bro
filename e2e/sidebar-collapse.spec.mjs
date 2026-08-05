@@ -1,5 +1,5 @@
 import { rmSync } from 'node:fs'
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage, openMenu } from './fixtures.mjs'
+import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 
 // Collapsing is layout and persistence, so it only answers in a real window:
 // jsdom has no widths to animate and no relaunch to survive.
@@ -186,38 +186,16 @@ test('the collapsed sidebar survives a relaunch', async () => {
   }
 })
 
-// Open a tool from the menu and close it again, so it lands in the recents.
-// Through the in-app bar, whose Tools dropdown labels them the way the rail
-// does — the OS menu spells several out ("JWT Decode"), so its labels and the
-// rail's would have to be kept in step by hand.
-async function useTool(page, name) {
-  await openMenu(page, 'Tools', name)
-  const dialog = page.getByRole('dialog', { name })
-  await expect(dialog).toBeVisible()
-  await dialog.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
-  await expect(dialog).toHaveCount(0)
-}
-
-// Driving the in-app menu bar, which exists on Windows and Linux only (App.vue
-// gates it on !isMac) — on a Mac there is nothing there to click. `make e2e`
-// runs in the Linux container, which is where these belong.
-const NEEDS_MENU_BAR = [process.platform === 'darwin', 'the in-app menu bar is Windows/Linux only']
-
 // Collapsing used to cost you the tools: the rail's only tools control expands
-// the sidebar again. Recents now open where they stand.
-test('the rail runs a recent tool without expanding the sidebar', async ({ page }) => {
-  test.skip(...NEEDS_MENU_BAR)
-  // Use two tools so there is a recents list at all.
-  await useTool(page, 'Base64')
-  await useTool(page, 'UUID')
-
+// the sidebar again. A tool now opens where it stands.
+test('the rail runs a tool without expanding the sidebar', async ({ page }) => {
   await collapse(page).click()
   await expect(rail(page)).toBeVisible()
 
-  // Most-recent-first, under the rule that groups the tools corner.
+  // Every tool is here, under the rule that groups the tools corner — the rail
+  // no longer waits for a recents list before it has anything to show.
   await expect(rail(page).locator('.rail-rule')).toBeVisible()
-  const tools = rail(page).locator('.rail-recent .rail-btn')
-  await expect(tools).toHaveCount(2)
+  await expect(rail(page).locator('.rail-recent .rail-btn').first()).toBeVisible()
 
   await rail(page).getByRole('button', { name: 'Generate UUID' }).click()
   await expect(page.getByRole('dialog', { name: 'UUID' })).toBeVisible()
@@ -226,27 +204,19 @@ test('the rail runs a recent tool without expanding the sidebar', async ({ page 
   await expect(page.locator('.usb-top')).toHaveCount(0)
 })
 
-// Nine is what the rail has room for; the shelf keeps its measured three.
-test('the rail remembers as many tools as it has room for', async ({ page }) => {
-  test.skip(...NEEDS_MENU_BAR)
-  const used = [
-    'Base64',
-    'UUID',
-    'JWT',
-    'Epoch',
-    'URL',
-    'Lines',
-    'XML',
-    'JSON',
-    'Checksum',
-    'Regex'
-  ]
-  for (const name of used) await useTool(page, name)
+// The rail and the expanded section order by the same rule, so collapsing the
+// sidebar never rearranges the list. Before pins they disagreed: the rail showed
+// nine by recency, the shelf three, and using a tool reordered both.
+test('the rail leads with pinned tools, in the section order', async ({ page }) => {
+  const section = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
+  await section.locator('.disclosure .entry').click() // Regex is past the resting six
+  await section.locator('.row').filter({ hasText: 'Regex' }).locator('.star').click()
+
   await collapse(page).click()
-  await expect(rail(page).locator('.rail-recent .rail-btn')).toHaveCount(9)
-  // The oldest fell off rather than the newest never arriving.
-  await expect(rail(page).getByRole('button', { name: 'Test Regex' })).toBeVisible()
-  await expect(rail(page).getByRole('button', { name: 'Encode Base64' })).toHaveCount(0)
+  await expect(rail(page)).toBeVisible()
+  const first = rail(page).locator('.rail-recent .rail-btn').first()
+  await expect(first).toHaveAttribute('aria-label', 'Test Regex')
+  await expect(first).toHaveClass(/pinned/)
 })
 
 // Asked for explicitly: the tools take the leftover column. A fixed count either
@@ -255,9 +225,6 @@ test('the rail fits its tools to the window, and re-fits when it changes', async
   app,
   page
 }) => {
-  test.skip(...NEEDS_MENU_BAR)
-  const used = ['Base64', 'UUID', 'JWT', 'Epoch', 'URL', 'Lines', 'XML', 'JSON', 'Checksum']
-  for (const name of used) await useTool(page, name)
   await collapse(page).click()
   await expect(rail(page)).toBeVisible()
 
@@ -270,11 +237,14 @@ test('the rail fits its tools to the window, and re-fits when it changes', async
     }, h)
 
   await setHeight(900)
-  await expect.poll(shown).toBe(9) // everything remembered fits
+  // Measured, not a magic number: the point is that the count FOLLOWS the
+  // window, and pinning a literal here just re-breaks on the next tool added.
+  const tall = await shown()
+  expect(tall).toBeGreaterThan(0)
 
   await setHeight(420)
   // Fewer, and never a clipped one: what is drawn still ends inside the box.
-  await expect.poll(shown).toBeLessThan(9)
+  await expect.poll(shown).toBeLessThan(tall)
   const fits = await page.evaluate(() => {
     const box = document.querySelector('.rail-recent').getBoundingClientRect()
     const last = [...document.querySelectorAll('.rail-recent .rail-btn')].at(-1)
@@ -283,7 +253,7 @@ test('the rail fits its tools to the window, and re-fits when it changes', async
   expect(fits).toBe(true)
 
   await setHeight(900)
-  await expect.poll(shown).toBe(9) // ...and back
+  await expect.poll(shown).toBe(tall) // ...and back
 })
 
 // The wrench used to expand the sidebar, which is the one thing a collapsed
@@ -359,20 +329,20 @@ test('a sidebar section drags to a new place and stays there', async () => {
   try {
     const first = await launchApp(dir)
     const page = await firstReadyPage(first)
-    expect(await order(page)).toStrictEqual(['saved', 'external', 'snippets'])
+    expect(await order(page)).toStrictEqual(['saved', 'external', 'snippets', 'tools'])
 
     // HTML5 drag-and-drop is not driven by mouse events, so the handlers are
     // called the way the browser would call them.
     await page.locator('[data-section="snippets"]').dispatchEvent('dragstart')
     await page.locator('[data-section="saved"]').dispatchEvent('dragover')
     await page.locator('[data-section="saved"]').dispatchEvent('drop')
-    expect(await order(page)).toStrictEqual(['snippets', 'saved', 'external'])
+    expect(await order(page)).toStrictEqual(['snippets', 'saved', 'external', 'tools'])
     await first.close()
 
     const second = await launchApp(dir)
     const back = await firstReadyPage(second)
     await expect(back.locator('.usb-scroll .section-head').first()).toBeVisible()
-    expect(await order(back)).toStrictEqual(['snippets', 'saved', 'external'])
+    expect(await order(back)).toStrictEqual(['snippets', 'saved', 'external', 'tools'])
     await second.close()
   } finally {
     rmSync(dir, { recursive: true, force: true })

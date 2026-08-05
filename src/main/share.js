@@ -19,6 +19,7 @@ import {
   signRotation,
   verifyRotation
 } from './sealing'
+import { mayReadPath } from './files'
 import { openConfig, sealConfig } from './configBackup'
 import { checkDestination, writeBackupZip } from './backupZip'
 import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
@@ -273,11 +274,9 @@ export function registerShareIpc() {
     })
   )
 
-  // Drag-drop variant — same untrusted-file guards as the dialog path.
-  ipcMain.handle(
-    'share:importPath',
-    guardIdentity((e, path) => openSharedFileAt(path))
-  )
+  // Drop variant, plus the read gate: an invented path is refused as elsewhere.
+  const importAt = (e, p) => (mayReadPath(p) ? openSharedFileAt(p) : { error: 'not-permitted' })
+  ipcMain.handle('share:importPath', guardIdentity(importAt))
 
   // This install's current key display label (what recipients see on import).
   ipcMain.handle('share:myLabel', async () => {
@@ -351,6 +350,7 @@ export function registerShareIpc() {
   ipcMain.handle(
     'share:readKeyFile',
     guardIdentity(async (e, path) => {
+      if (!mayReadPath(path)) return { error: 'not-permitted' }
       let parsed
       try {
         parsed = await parseKeyFileAt(path)

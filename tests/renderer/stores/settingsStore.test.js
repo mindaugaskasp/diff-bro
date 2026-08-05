@@ -29,20 +29,23 @@ describe('settingsStore', () => {
     expect(s.maxSnippetSizeKb).toBeGreaterThan(0)
   })
 
+  // Asserted on the moved window rather than the whole array, so adding a
+  // section does not mean rewriting what "move up" means.
   it('moves a section up and down, clamping at the ends', () => {
     const s = useSettingsStore()
     s.moveSection('snippets', -1)
-    expect(s.sectionOrder).toEqual(['saved', 'snippets', 'external'])
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
     s.moveSection('saved', -1) // already first — no-op
-    expect(s.sectionOrder).toEqual(['saved', 'snippets', 'external'])
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
     s.moveSection('saved', 1)
-    expect(s.sectionOrder).toEqual(['snippets', 'saved', 'external'])
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
+    expect([...s.sectionOrder].sort()).toEqual([...SECTIONS].sort())
   })
 
   it('persists section order across store re-creation', () => {
     useSettingsStore().moveSection('snippets', -2)
     setActivePinia(createPinia())
-    expect(useSettingsStore().sectionOrder).toEqual(['snippets', 'saved', 'external'])
+    expect(useSettingsStore().sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
   })
 
   it('records the one-time example-seed decision and persists it', () => {
@@ -154,9 +157,9 @@ describe('settingsStore', () => {
   it('drag-reorders a section to land just before its drop target', () => {
     const s = useSettingsStore()
     s.reorderSections('snippets', 'saved') // drop snippets before saved
-    expect(s.sectionOrder).toEqual(['snippets', 'saved', 'external'])
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
     s.reorderSections('external', 'snippets') // external before snippets
-    expect(s.sectionOrder).toEqual(['external', 'snippets', 'saved'])
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['external', 'snippets', 'saved'])
   })
 
   it('ignores a reorder onto itself or an unknown id', () => {
@@ -181,7 +184,7 @@ describe('settingsStore', () => {
     expect(reloaded.sectionsLocked).toBe(true)
     reloaded.toggleSectionsLock()
     reloaded.moveSection('snippets', -1)
-    expect(reloaded.sectionOrder).toEqual(['saved', 'snippets', 'external'])
+    expect(reloaded.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
   })
 
   it('remembers a keyed dialog size across reloads', () => {
@@ -205,20 +208,6 @@ describe('settingsStore', () => {
     localStorage.setItem('diffbro.settings', JSON.stringify({ restoreSession: 'sure' }))
     setActivePinia(createPinia())
     expect(useSettingsStore().restoreSession).toBe(true)
-  })
-
-  // Diagrams follow the app theme until told otherwise; the override has to
-  // survive a reload, or it is a preference only until the next launch.
-  it('persists the diagram theme, defaulting to auto', () => {
-    const s = useSettingsStore()
-    expect(s.diagramTheme).toBe('auto')
-    s.setDiagramTheme('light')
-    setActivePinia(createPinia())
-    expect(useSettingsStore().diagramTheme).toBe('light')
-
-    localStorage.setItem('diffbro.settings', JSON.stringify({ diagramTheme: 'sepia' }))
-    setActivePinia(createPinia())
-    expect(useSettingsStore().diagramTheme).toBe('auto')
   })
 
   it('persists the maximize-dialogs toggle', () => {

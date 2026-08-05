@@ -569,14 +569,14 @@ export const useSnippetStore = defineStore('snippets', {
         if (!res.canceled) res.message = IMPORT_ERRORS[res.error] ?? 'Import failed.'
         return res
       }
-      // The embedded signature proves integrity, NOT that the signer is trusted
-      // (the verifying key is in the file) — cross-check trusted keys, else label
-      // it unverified.
+      // `res.signer` is resolved in MAIN from the trust store by matching the key
+      // that actually signed — never the fingerprint the file claims, which the
+      // sender writes. Null means signed by a key you do not trust.
       const trusted = (await window.api.listTrustedKeys?.()) ?? []
       const match = trusted.find((t) => t.fingerprint === res.signer)
       res.signerNote = match
         ? `Signed by trusted key "${match.label}".`
-        : `Signed by ${res.signer ?? 'an unknown key'} — unverified (not in your trusted keys).`
+        : 'Signed, but not by any of your trusted keys — treat these snippets as untrusted.'
       await this.restoreBundle(res.bundle)
       return res
     }

@@ -143,7 +143,12 @@ const RULES = [
   // nothing measured the affordance.
   { key: 'btn-face/panel', a: 'btn-face', b: 'bg-panel', min: 1.25, kind: 'control' },
   { key: 'btn-label/face', a: 'text', b: 'btn-face', min: 4.5, kind: 'text' },
-  { key: 'btn-edge/panel', a: 'btn-edge', b: 'bg-panel', min: 3.0, kind: 'control' }
+  { key: 'btn-edge/panel', a: 'btn-edge', b: 'bg-panel', min: 3.0, kind: 'control' },
+  // A pinned row marks itself with a bar and a filled star, both non-text marks
+  // on the chrome. Raw --favorite is a gold tuned to read on the dark grounds
+  // and scores 2.23–3.00 on light/solar/sepia/bloom, so this shipped below the
+  // non-text floor in four themes with nothing measuring it.
+  { key: 'pin-ink/panel', a: 'pin-ink', b: 'bg-panel', min: 3.0, kind: 'control' }
 ]
 const tok = (n) => `--${n}`
 
@@ -436,7 +441,11 @@ function rulesIn(name, css) {
 const isAudited = (name) => name.endsWith('.css') && name !== 'tokens.css' && name !== 'themes.css'
 
 function componentRules() {
-  const dirs = ['src/renderer/src/components/styles', 'src/renderer/src/styles', ...featureStyleDirs()]
+  const dirs = [
+    'src/renderer/src/components/styles',
+    'src/renderer/src/styles',
+    ...featureStyleDirs()
+  ]
   const out = []
   for (const dir of dirs) {
     let names

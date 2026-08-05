@@ -6,7 +6,7 @@
 }
 .diff.favorite {
   background: color-mix(in srgb, var(--favorite) 12%, transparent);
-  box-shadow: inset 3px 0 0 var(--favorite);
+  box-shadow: inset 3px 0 0 var(--pin-ink);
 }
 /* Whole-row hover highlight — a distinct background so pointing at a row reads
    at a glance, not just a faint text-colour shift. Favorited rows deepen their
@@ -93,10 +93,10 @@
   line-height: 1;
 }
 .star:hover {
-  color: var(--favorite);
+  color: var(--pin-ink);
 }
 .star.on {
-  color: var(--favorite);
+  color: var(--pin-ink);
 }
 .row-btn {
   display: flex;

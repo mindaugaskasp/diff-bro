@@ -181,10 +181,3 @@
   margin: 0;
   padding: 0;
 }
-.shelf.fav .row {
-  background: color-mix(in srgb, var(--favorite) 9%, transparent);
-  box-shadow: inset 3px 0 0 var(--favorite);
-}
-.shelf.fav .row:hover {
-  background: color-mix(in srgb, var(--favorite) 15%, transparent);
-}

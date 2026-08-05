@@ -27,7 +27,10 @@ async function loadPair(app, page, { left, right, ext = 'csv' }) {
 // A control that cannot act must not be offered. Nothing in the grid viewer
 // reads either flag, so both go — but they are gated separately, because the
 // DIAGRAM viewer does split on renderSideBySide (utils/viewChrome.js).
-test('the Monaco-only toggles disappear once the grid is showing', async ({ app, page }) => {
+// These used to be REMOVED when the grid showed, which re-flowed the row and
+// slid the control you had just pressed sideways. They now keep their slots and
+// grey out, so the toggle you clicked is still under the cursor afterwards.
+test('the Monaco-only toggles grey out once the grid is showing', async ({ app, page }) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-csv-toggles-'))
   const left = join(dir, 'a.csv')
   const right = join(dir, 'b.csv')
@@ -40,33 +43,45 @@ test('the Monaco-only toggles disappear once the grid is showing', async ({ app,
     await stubOpenDialog(app, [right])
     await page.locator('.slot[data-side="right"]').click()
 
-    const split = page.getByText('Split view', { exact: true })
-    await expect(split).toBeVisible()
+    const splitBox = page.getByRole('checkbox', { name: 'Split view' })
+    const wsBox = page.getByRole('checkbox', { name: 'Ignore whitespace' })
+    const gridBox = page.getByRole('checkbox', { name: 'Grid' })
 
-    await page.getByText('Grid', { exact: true }).click()
+    // A CSV pair opens on the grid, so both Monaco-only toggles start disabled.
     await expect(page.locator('.grid').first()).toBeVisible()
-    await expect(split).toHaveCount(0)
-    await expect(page.getByText('Ignore whitespace', { exact: true })).toHaveCount(0)
+    await expect(splitBox).toBeDisabled()
+    await expect(wsBox).toBeDisabled()
+    // Still on screen, and still where they were.
+    const splitX = Math.round((await splitBox.boundingBox()).x)
 
-    // And they come back with the text view.
-    await page.getByText('Grid', { exact: true }).click()
-    await expect(split).toBeVisible()
+    // Back to text: they come alive without anything moving.
+    await gridBox.uncheck()
+    await expect(splitBox).toBeEnabled()
+    await expect(wsBox).toBeEnabled()
+    expect(Math.round((await splitBox.boundingBox()).x)).toBe(splitX)
+
+    await gridBox.check()
+    await expect(splitBox).toBeDisabled()
+    expect(Math.round((await splitBox.boundingBox()).x)).toBe(splitX)
   } finally {
     rmSync(dir, { force: true, recursive: true })
   }
 })
 
-test('a CSV pair compares as text until the Grid toggle turns it into a grid', async ({
-  app,
-  page
-}) => {
+// A spreadsheet read as lines is not readable at all, so the grid is where a
+// delimited pair opens — the toggle is how you get BACK to text, not how you
+// reach the view the files are for.
+test('a CSV pair opens as a grid, and the toggle returns it to text', async ({ app, page }) => {
   const dir = await loadPair(app, page, { left: LEFT, right: RIGHT })
   try {
-    // The toggle names the view it gives, and the comparison is still text.
+    // The toggle names the view it gives, and it is already on.
     const toggle = page.locator('.options label', { hasText: 'Grid' })
     await expect(toggle).toBeVisible()
-    await expect(page.locator('.grids')).toHaveCount(0)
+    await expect(toggle.locator('input')).toBeChecked()
 
+    // Unticking returns the text diff...
+    await toggle.locator('input').uncheck()
+    await expect(page.locator('.grids')).toHaveCount(0)
     await toggle.locator('input').check()
 
     // Both grids painted, as one paired sheet rather than two one-sided ones.

@@ -9,6 +9,16 @@
 SERVICE := node
 VNC_URL := http://localhost:6080/vnc.html
 
+# Local e2e parallelism. CI is deliberately NOT this: it reads DEFAULT_WORKERS in
+# e2e/workerEnv.mjs, and docker-compose.yml passes E2E_WORKERS through only when
+# the host sets one — which is what this does, for `make e2e` alone. Each worker
+# holds a full Electron (~400 MB) and its own Xvfb, so raise it against cores AND
+# the memory Docker Desktop is given: over-subscribing shows up as 30s timeouts
+# in unrelated specs, not as an obvious resource error.
+# Override per run: `make e2e E2E_WORKERS=4`.
+E2E_WORKERS ?= 6
+export E2E_WORKERS
+
 # seed-local imports src/main/sealing.js so the demo keys are in the app's own
 # format; package.json has no "type", so Node warns about re-parsing it as ESM.
 SEED_NODE_FLAGS := --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
@@ -110,8 +120,8 @@ test: ## Run the test suite in the container
 # flake were lost. On failure the artifacts are copied to a timestamped folder
 # first; the exit status is preserved so the target still fails.
 e2e: up ## Build + drive the app end-to-end with Playwright in the running container
-	@docker compose exec -T $(SERVICE) bash scripts/e2e-displays.sh
-	@docker compose exec -T $(SERVICE) npm run test:e2e; \
+	@docker compose exec -T $(SERVICE) bash scripts/e2e-displays.sh $(E2E_WORKERS)
+	@docker compose exec -T -e E2E_WORKERS=$(E2E_WORKERS) $(SERVICE) npm run test:e2e; \
 	status=$$?; \
 	if [ $$status -ne 0 ]; then \
 		stamp=$$(date -u +%Y%m%dT%H%M%SZ); \

@@ -317,4 +317,16 @@
  * @property {TourStep[]} [allSteps] the list to plan over; defaults to TOUR_STEPS
  */
 
+/**
+ * A registry tool as the sidebar section draws it — `utils/tools.js` `Tool`
+ * plus the pin state `toolRows` resolves for that row.
+ * @typedef {object} ToolRow
+ * @property {string} id
+ * @property {string} name
+ * @property {string} icon      an ICONS key (src/renderer/src/icons.js)
+ * @property {string} kind      one-word action, shown as the row's trailing meta
+ * @property {string} action    menu action that opens it
+ * @property {boolean} pinned   heads the list, and marks itself
+ */
+
 export {}

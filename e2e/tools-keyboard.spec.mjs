@@ -18,7 +18,7 @@ const TOOLS = [
 
 test('every tool opens from the palette by typing, and Escape closes it', async ({ page }) => {
   for (const [query, name] of TOOLS) {
-    await page.locator('.usb-tool-all').click()
+    await page.getByRole('button', { name: 'Search every tool' }).click()
     await expect(page.locator('.cp')).toBeVisible()
     await expect(page.locator('.cp-input')).toBeFocused()
 
@@ -32,7 +32,7 @@ test('every tool opens from the palette by typing, and Escape closes it', async 
 })
 
 test('a tool panel opens with the caret in its first field', async ({ page }) => {
-  await page.locator('.usb-tool-all').click()
+  await page.getByRole('button', { name: 'Search every tool' }).click()
   await page.keyboard.type('json')
   await page.keyboard.press('Enter')
   const dlg = page.getByRole('dialog', { name: 'JSON' })
@@ -45,7 +45,7 @@ test('a tool panel opens with the caret in its first field', async ({ page }) =>
 })
 
 test('Tab cycles inside the dialog and never escapes it', async ({ page }) => {
-  await page.locator('.usb-tool-all').click()
+  await page.getByRole('button', { name: 'Search every tool' }).click()
   await page.keyboard.type('uuid')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog', { name: 'UUID' })).toBeVisible()

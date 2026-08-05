@@ -80,6 +80,10 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     const status = page.locator('.status-band')
     await expect(status).toContainText('Nodes')
     await expect(status).toContainText('added')
+    // The change list starts collapsed so the picture gets the width; it is one
+    // press away.
+    await expect(page.locator('.dg-register')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Show the change list' }).click()
     // Enrich and Quarantine arrived; Reject went.
     await expect(page.locator('.dg-register')).toContainText('Enrich')
     await expect(page.locator('.dg-register')).toContainText('Reject')
@@ -135,6 +139,76 @@ test('turning the toggle off returns to the text diff', async () => {
     await toggle.uncheck()
     await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.dgv')).toHaveCount(0)
+  } finally {
+    await app.close()
+    rmSync(work, { recursive: true, force: true })
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// The change list is a 232px reading rail beside the picture. On a wide diagram
+// that is width the diff itself wants, so it collapses — and the point is that
+// the stage actually GAINS the room, not merely that the rail disappears.
+test('the change list collapses and hands its width to the diagram', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  const work = await openPair(userDataDir)
+  try {
+    const toggle = page.getByRole('checkbox', { name: /Diagram/i })
+    await expect(toggle).toBeVisible({ timeout: 15000 })
+    await toggle.check()
+    await expect(page.locator('.dg-stage svg').first()).toBeVisible({ timeout: 20000 })
+
+    const stageWidth = async () => (await page.locator('.dg-stage').boundingBox()).width
+    // Collapsed by default, so the picture starts with the whole width.
+    await expect(page.locator('.dg-register')).toHaveCount(0)
+    const full = await stageWidth()
+
+    await page.getByRole('button', { name: 'Show the change list' }).click()
+    await expect(page.locator('.dg-register')).toContainText('Enrich')
+    const railWidth = (await page.locator('.dg-register').boundingBox()).width
+    expect(railWidth).toBeGreaterThan(0)
+    // Opening it costs the stage exactly the rail's width — the room is handed
+    // over, not overlaid.
+    expect(await stageWidth()).toBeLessThan(full - railWidth + 2)
+
+    await page.getByRole('button', { name: 'Hide the change list' }).click()
+    await expect(page.locator('.dg-register')).toHaveCount(0)
+    expect(Math.abs((await stageWidth()) - full)).toBeLessThanOrEqual(2)
+  } finally {
+    await app.close()
+    rmSync(work, { recursive: true, force: true })
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// Toggling a view must not move the control you just pressed. The Diagram
+// checkbox sat BETWEEN two conditional ones — "Ignore whitespace" (text only)
+// and "Focus on changes" (diagram only) — so every press swapped a neighbour on
+// its left for one on its right and slid it sideways under the cursor.
+test('the Diagram toggle keeps its position when pressed', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  const work = await openPair(userDataDir)
+  try {
+    const toggle = page.getByRole('checkbox', { name: /Diagram/i })
+    await expect(toggle).toBeVisible({ timeout: 15000 })
+
+    // Its own box, not the label's: the label text is the same either way.
+    const x = async () => Math.round((await toggle.boundingBox()).x)
+    const on = await x()
+
+    await toggle.uncheck()
+    await expect(page.getByRole('checkbox', { name: 'Ignore whitespace' })).toBeVisible()
+    expect(Math.abs((await x()) - on), 'unchecking must not slide the control').toBeLessThanOrEqual(
+      1
+    )
+
+    await toggle.check()
+    await expect(page.getByRole('checkbox', { name: 'Focus on changes' })).toBeVisible()
+    expect(Math.abs((await x()) - on)).toBeLessThanOrEqual(1)
   } finally {
     await app.close()
     rmSync(work, { recursive: true, force: true })

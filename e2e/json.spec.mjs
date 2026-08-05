@@ -104,14 +104,24 @@ test('a structural change is reported on its own key, with both values', async (
   }
 })
 
-test('the structure toggle is not offered when the two sides are not both structured', async ({
+// It used to be REMOVED here, which re-flowed the toggle row whenever a
+// comparison changed shape. It now keeps its slot and greys out, so nothing
+// moves and the tip says why it cannot act.
+test('the structure toggle is disabled when the two sides are not both structured', async ({
   page
 }) => {
   await page.getByRole('button', { name: 'Paste text' }).click()
   await page.getByPlaceholder('Paste original text here').fill('just some prose')
   await page.getByPlaceholder('Paste changed text here').fill('some other prose')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await expect(page.getByRole('checkbox', { name: 'Structure' })).toHaveCount(0)
+
+  const toggle = page.getByRole('checkbox', { name: 'Structure' })
+  await expect(toggle).toBeVisible()
+  await expect(toggle).toBeDisabled()
+  await expect(page.locator('.options label', { hasText: 'Structure' })).toHaveAttribute(
+    'data-tip',
+    /no structured view/
+  )
 })
 
 // The toolbar's +/− are Monaco's line counts. Switching to the structural view

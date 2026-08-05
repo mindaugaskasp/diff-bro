@@ -1,0 +1,75 @@
+/* Tool row presentation (ToolRow.vue). Deliberately the same geometry as
+   SnippetRow.css: the star's 26px box, .entry's 6px inset and the 27px badge are
+   what put every name in the sidebar on one vertical line. Changing any of the
+   three here bends that rail for this section only. */
+.row {
+  display: flex;
+  align-items: center;
+}
+.row:hover {
+  background: var(--bg-hover);
+}
+/* A pinned row marks itself twice — the bar and a filled star — so the state
+   survives greyscale. --pin-ink, not raw --favorite, which reads under the 3:1
+   non-text floor on the light grounds. */
+.row.pinned {
+  background: color-mix(in srgb, var(--favorite) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--pin-ink);
+}
+.row.pinned:hover {
+  background: color-mix(in srgb, var(--favorite) 22%, transparent);
+}
+.star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--font-lg);
+  line-height: 1;
+  padding: 0 4px 0 8px;
+}
+.star:hover,
+.star.on {
+  color: var(--pin-ink);
+}
+.entry {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 5px 4px 5px 6px;
+  cursor: pointer;
+}
+/* The badge box a monogram would occupy, holding the tool's icon instead. The
+   font-size override is what sizes the glyph: .monogram sets --font-2xs for
+   letters, which would draw a 9px icon. */
+.entry .glyph {
+  color: var(--text-dim);
+  font-size: var(--font-md);
+}
+.nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: var(--font-md);
+  font-weight: 500;
+}
+/* The trailing meta, where a snippet row carries its age. It stays on hover:
+   running the tool IS the row, so there are no row actions to swap it for. */
+.kind {
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+  padding: 0 8px;
+  flex-shrink: 0;
+}

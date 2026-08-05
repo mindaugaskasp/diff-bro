@@ -115,8 +115,12 @@ export async function openSettings(page) {
 // leaf item under a top menu, or a submenu + leaf for the nested Tools/Security
 // groups. Targets by structural class + text so kbd hints in the label don't
 // interfere. Only the open dropdown/flyout is in the DOM, so text is unambiguous.
+//
+// Scoped to the menu bar, NOT the page: the sidebar's section filter carries a
+// pill for every section, so a page-wide "Tools" (or "Snippets") matches two
+// buttons and every one of these calls dies on a strict-mode violation.
 export async function openMenu(page, top, sub, leaf) {
-  await page.getByRole('button', { name: top, exact: true }).click()
+  await page.locator('.menubar').getByRole('button', { name: top, exact: true }).click()
   if (leaf) {
     // The submenu opens its flyout on hover; clicking the toggle would fire
     // mouseenter (opens) then the click handler (toggles shut), so hover only.

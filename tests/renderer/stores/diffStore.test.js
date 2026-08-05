@@ -103,11 +103,15 @@ describe('diffStore', () => {
       expect(store.structureLabel).toBe('Grid')
     })
 
-    it('stays a text comparison until the toggle is on', () => {
+    // This asserted the opposite — text until you found the toggle — which meant
+    // a spreadsheet opened in the one view it is not readable in. A delimited
+    // pair now lands on the grid, and unticking is what returns it to lines.
+    it('opens as a grid, and the toggle returns it to text', () => {
       const store = loadCsv(useDiffStore())
-      expect(store.comparableKind).toBe('text')
-      store.semanticView = true
+      expect(store.semanticView).toBe(true)
       expect(store.comparableKind).toBe('spreadsheet')
+      store.semanticView = false
+      expect(store.comparableKind).toBe('text')
     })
 
     it('parses both sides into grids for the viewer', () => {

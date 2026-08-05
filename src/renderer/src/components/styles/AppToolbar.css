@@ -40,6 +40,17 @@
   gap: 4px;
   cursor: pointer;
 }
+/* A toggle this comparison cannot use keeps its slot and greys out, so the row
+   never re-flows under the cursor. Dimmed ink plus the browser's own disabled
+   box — not a lower opacity on the same colours, which reads as "loading". The
+   tip says why it is off. */
+.options label.off {
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+.options label.off input {
+  cursor: not-allowed;
+}
 /* Theme toggle: a quiet icon button, set apart from the action buttons. */
 .icon-btn {
   background: none;

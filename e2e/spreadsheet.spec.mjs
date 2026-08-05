@@ -67,22 +67,6 @@ const RIGHT = buildXlsx(
 // a reader sees them as one line. They did not share a height: the tools shelf
 // was one strip whose height moved with the number of recent chips, leaving its
 // seam a few pixels off the status band's whenever they differed.
-test('the sidebar footer and the status band share a top edge', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
-  await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
-  await page.getByRole('button', { name: 'Compare', exact: true }).click()
-
-  const band = page.locator('.diff-viewer .status-band')
-  await expect(band).toBeVisible()
-  const [bandBox, shelfBox] = await Promise.all([
-    band.boundingBox(),
-    page.locator('.usb-tools-search').boundingBox()
-  ])
-  expect(Math.abs(bandBox.y - shelfBox.y)).toBeLessThanOrEqual(1)
-  expect(Math.abs(bandBox.height - shelfBox.height)).toBeLessThanOrEqual(1)
-})
-
 // The status bar under a diff must be the SAME bar whichever kind of comparison
 // is on screen. It was not: spreadsheet and streamed sat at --control-h (30px)
 // while structure and diagram sat at --band-row (52px), with three different
