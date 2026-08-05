@@ -8,7 +8,7 @@ import { useSidebarTags } from '../composables/useSidebarTags'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
-import ToolsShelf from './ToolsShelf.vue'
+import { ToolsSection } from '../features/tools'
 import TagManagePopover from './TagManagePopover.vue'
 import TagPickerPopover from './TagPickerPopover.vue'
 import AppIcon from './AppIcon.vue'
@@ -54,18 +54,20 @@ onBeforeUnmount(() => clearInterval(timer))
 
 // Section toggles are multi-select; "All" shows all, "★" narrows to favorites.
 // The ids are settingsDefaults' SECTIONS, so the filter, the rail and the stored
-// drag order all name the same three things.
+// drag order all name the same four things.
 const SECTIONS = [
   { id: 'saved', label: 'Saved' },
   { id: 'external', label: 'External' },
-  { id: 'snippets', label: 'Snippets' }
+  { id: 'snippets', label: 'Snippets' },
+  { id: 'tools', label: 'Tools' }
 ]
 // Which component renders each, so the scroll can follow the stored order
 // rather than the order they happen to be written in.
 const SECTION_VIEW = {
   saved: SavedDiffsSection,
   external: ExternalDiffsSection,
-  snippets: SnippetsPanel
+  snippets: SnippetsPanel,
+  tools: ToolsSection
 }
 const visible = ref(new Set(SECTIONS.map((s) => s.id)))
 const favOnly = ref(false)
@@ -184,7 +186,6 @@ const showAllTags = ref(false)
           :fav-only="favOnly"
         />
       </div>
-      <ToolsShelf />
       <!-- Widen only: the sidebar collapses to a rail for the other direction,
            and a half-narrow list truncates every name without freeing space. -->
       <div

@@ -1,5 +1,4 @@
-import { rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { rmSync } from 'node:fs'
 import {
   test,
   expect,
@@ -109,10 +108,15 @@ test('a diagram pins light while the app stays dark, and brings its own paper', 
   await inkSettles(viewer, (ink) => ink > darkInk / 2)
 })
 
-// A viewing preference that resets every launch is not a preference. This also
-// drives the OTHER control — the editor's preview head — to prove both write the
-// same setting.
-test('the diagram theme survives a relaunch, set from the editor preview', async () => {
+// This test used to assert the opposite — that the choice survived a relaunch —
+// on the reasoning that "a viewing preference that resets every launch is not a
+// preference". That reasoning was wrong about what the control IS: it answers
+// "show me THIS diagram on the other ground", and persisting it meant one look
+// at one diagram re-themed every diagram afterwards, on every future launch.
+// The stored setting remains the DEFAULT each viewing starts from (see the
+// pinned-profile cases below, which pre-write settings.json); the control is now
+// an override that dies with its dialog.
+test('the editor preview theme does not outlive the editor', async () => {
   const userDataDir = freshUserDataDir()
   try {
     let app = await launchApp(userDataDir)
@@ -133,10 +137,13 @@ test('the diagram theme survives a relaunch, set from the editor preview', async
     page = await firstReadyPage(app)
     await page.getByText('Example — Mermaid diagram').click()
     const reopened = page.getByRole('dialog', { name: 'Snippet', exact: true })
-    await expect(reopened.locator('.mmd-preview .mermaid-diagram .host')).toHaveAttribute(
-      'data-paper',
-      'dark'
-    )
+    await expect(reopened.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
+    // Back to Auto, which on a light app means no paper of its own.
+    await expect
+      .poll(() =>
+        reopened.locator('.mmd-preview .mermaid-diagram .host').getAttribute('data-paper')
+      )
+      .toBeNull()
     await app.close()
   } finally {
     rmSync(userDataDir, { recursive: true, force: true })
@@ -218,71 +225,79 @@ test('the diagram renderer is ready before anything needs it', async ({ page }) 
   expect(await page.locator('.mermaid-diagram').count()).toBe(0)
 })
 
-// The DIFF view draws its own node fills, and it computed them from the APP's
-// ground while the labels came from mermaid's, drawn for the paper. Under `auto`
-// the two grounds are the same and nothing showed; pin the diagram against the
-// app and a light diagram on a dark app got #333 labels on a #0d1117 fill —
-// 1.3:1, invisible. Contrast is the measurable form of "readable".
-const contrast = (a, b) => {
-  const lum = (rgb) => {
-    const [r, g, bl] = rgb.map((v) => {
-      const c = v / 255
-      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-    })
-    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+// The two "pinned profile" cases that stood here drove the diagram DIFF with a
+// pre-written settings.json. That pin no longer exists: the ground is a
+// per-viewing control on the viewer and the editor preview, and a diagram diff
+// always follows the app. What they guarded — a pinned diagram staying readable
+// on its own paper — is asserted by the first test in this file, which pins
+// through the control a user actually has.
+
+// The theme control is a per-VIEWING choice — "show me this one on light paper"
+// — not a preference. It wrote straight to settings.setDiagramTheme, so pinning
+// one diagram light re-themed every diagram you opened afterwards, and survived
+// a relaunch. Closing the viewer must put it back.
+test('a diagram theme lasts for that viewer only, and does not persist', async ({ page }) => {
+  const openViewer = async () => {
+    await page.getByText('Example — Mermaid diagram').hover()
+    await page.getByRole('button', { name: 'View diagram' }).click()
+    const viewer = page.locator('.viewer-backdrop')
+    await expect(viewer.locator('.mermaid-diagram svg').first()).toBeVisible()
+    return viewer
   }
-  const [x, y] = [lum(a), lum(b)]
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
-}
+  const pressed = (viewer, label) =>
+    themeButton(viewer, label).evaluate((el) => el.getAttribute('aria-pressed') === 'true')
 
-// Seeded rather than clicked: the pin lives in the Mermaid viewer's own control,
-// and what this measures is the painted result, not the route to it.
-const pinnedProfile = (appTheme, diagramTheme) => {
-  const dir = freshUserDataDir()
-  writeFileSync(join(dir, 'theme.json'), appTheme)
-  writeFileSync(join(dir, 'settings.json'), JSON.stringify({ diagramTheme }))
-  return dir
-}
+  let viewer = await openViewer()
+  expect(await pressed(viewer, 'Auto'), 'a viewer opens on the default').toBe(true)
 
-for (const [appTheme, diagramTheme] of [
-  ['dark', 'light'],
-  ['light', 'dark']
-]) {
-  test(`a ${diagramTheme} diagram pinned against the ${appTheme} app stays readable`, async () => {
-    const dir = pinnedProfile(appTheme, diagramTheme)
-    const instance = await launchApp(dir)
-    try {
-      const page = await firstReadyPage(instance)
-      const [a, b] = await page.evaluate(async () =>
-        (await window.api.demoFiles('diagram')).map((f) => f.content)
-      )
-      await page.getByRole('button', { name: 'Paste text' }).click()
-      await page.getByPlaceholder('Paste original text here').fill(a)
-      await page.getByPlaceholder('Paste changed text here').fill(b)
-      await page.getByRole('button', { name: 'Compare', exact: true }).click()
-      await page.getByText('Diagram', { exact: true }).click()
-      await expect(page.locator('.dg-stage .nodeLabel').first()).toBeVisible()
+  // Dark, not Light: the app's own ground is light here, so a diagram pinned
+  // light agrees with it and asks for no paper — nothing to observe.
+  await themeButton(viewer, 'Dark').click()
+  await expect(viewer.locator('.mermaid-diagram .host')).toHaveAttribute('data-paper', 'dark')
+  await page.keyboard.press('Escape')
+  await expect(viewer).toBeHidden()
 
-      await expect
-        .poll(async () => {
-          const { label, same } = await page.evaluate(() => {
-            const stage = document.querySelector('.dg-stage')
-            const nums = (v) =>
-              (v ?? '')
-                .match(/[\d.]+/g)
-                ?.slice(0, 3)
-                .map(Number) ?? null
-            return {
-              label: nums(getComputedStyle(stage.querySelector('.nodeLabel')).color),
-              same: nums(getComputedStyle(stage.querySelector('.same > rect')).fill)
-            }
-          })
-          return label && same ? contrast(label, same) : 0
-        })
-        .toBeGreaterThanOrEqual(4.5)
-    } finally {
-      await instance.close()
-      rmSync(dir, { recursive: true, force: true })
-    }
-  })
-}
+  // The next viewing starts from the default again.
+  viewer = await openViewer()
+  expect(await pressed(viewer, 'Auto'), 'the pin must not outlive its viewer').toBe(true)
+  expect(await viewer.locator('.mermaid-diagram .host').getAttribute('data-paper')).toBeNull()
+
+  // ...and nothing was written to the stored preference.
+  const stored = await page.evaluate(() => JSON.parse(window.api.storeLoad('settings') ?? '{}'))
+  expect(stored.diagramTheme ?? 'auto').toBe('auto')
+})
+
+// Auto means "follow the app". Flipping the app's ground has to REDRAW the
+// diagram, not just re-tint around it: Mermaid bakes its palette into the SVG at
+// render time, so a diagram drawn for the dark theme keeps its light-on-dark ink
+// until it is rendered again.
+test('an Auto diagram redraws when the app theme flips', async ({ app, page }) => {
+  await clickAppMenuItem(app, 'Settings')
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+  await page.getByRole('button', { name: 'Use the Dark theme' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.keyboard.press('Escape')
+
+  await page.getByText('Example — Mermaid diagram').hover()
+  await page.getByRole('button', { name: 'View diagram' }).click()
+  const viewer = page.locator('.viewer-backdrop')
+  await expect(viewer.locator('.mermaid-diagram svg').first()).toBeVisible()
+
+  // Drawn for the dark ground: light ink.
+  let darkInk = null
+  await expect.poll(async () => (darkInk = await inkLightness(viewer))).not.toBeNull()
+  expect(darkInk).toBeGreaterThan(128)
+
+  // Flip the app to Light with the viewer still open. Through the application
+  // menu, because CmdOrCtrl+D is a MAIN-process accelerator — a DOM key press
+  // never reaches it.
+  await clickAppMenuItem(app, 'Toggle Light/Dark Theme')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+
+  // The diagram must follow — dark ink now, and still no paper of its own,
+  // because Auto agrees with the ground either way.
+  await inkSettles(viewer, (ink) => ink < 128)
+  await expect
+    .poll(() => viewer.locator('.mermaid-diagram .host').getAttribute('data-paper'))
+    .toBeNull()
+})

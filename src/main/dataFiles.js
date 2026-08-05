@@ -16,7 +16,8 @@ export const STORE_NAMES = [
   'theme', // chosen theme — stores/settingsStore.js, renderer/quicklook.js
   'email', // mail hand-off defaults — features/email/emailStore.js
   'onboarding', // tour progress — features/onboarding/onboardingStore.js
-  'sidebar' // sidebar width — composables/useSidebarResize.js
+  'sidebar', // sidebar width — composables/useSidebarResize.js
+  'tools' // pinned tools — features/tools/toolsStore.js
 ]
 
 const ALLOWED_STORES = new Set(STORE_NAMES)

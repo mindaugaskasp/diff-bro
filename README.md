@@ -22,7 +22,7 @@
 
 <p align="center">
   <img src="docs/screenshots/diff-dark.png" width="880"
-       alt="Diff Bro comparing two JSON files side by side — word-level highlights and add/remove counts, with a sidebar of saved diffs, shared diffs, snippets, and colored tags">
+       alt="Diff Bro comparing two files side by side — word-level highlights and add/remove counts, with a sidebar of saved diffs, shared diffs, snippets, tools, and colored tags">
 </p>
 
 ## Install
@@ -57,7 +57,7 @@ Builds are **unsigned**, so SmartScreen and Gatekeeper warn on first launch (the
 | **Quick look-up**        | A global shortcut searches your snippets and diffs without raising the app; copy one straight to the clipboard.                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **Guided first run**     | Six coach marks over the real controls on a first launch — comparing, sealing, the library, then the way into Settings and around it — with four more if you want them. Each step points at a control and its button performs the action, so nothing opens unannounced. Back revisits a step, and everything it put on screen — the demo files, the example snippet — leaves when it does. Escape or Skip ends it for good; Help ▸ Show Tour brings it back.                                                       |
 | **Diagrams**             | Two Mermaid files compare as a picture, not as text — one diagram carrying both revisions, so an inserted node reads as one change instead of a rewrite.                                                                                                                                                                                                                                                                                                                                                           |
-| **Tools**                | JSON, Base64, UUID, JWT, Epoch, URL, Lines, XML, checksums, a regex tester, find & replace, text encryption — rich panels, not blank text boxes.                                                                                                                                                                                                                                                                                                                                                                   |
+| **Tools**                | JSON, Base64, UUID, JWT, Epoch, URL, Lines, XML, checksums, a regex tester, find & replace, text encryption — rich panels, not blank text boxes. All of them live in their own sidebar section; star the ones you reach for and they stay at the top.                                                                                                                                                                                                                                                              |
 | **Terminal**             | `diffbro compare a.json b.json` opens a comparison in the running app, `diffbro open` raises it, `diffbro backup <path>` writes an encrypted archive. No port, no daemon.                                                                                                                                                                                                                                                                                                                                          |
 | **Yours to arrange**     | Fourteen themes (Nord, Sepia, Solar, Nyan, Matrix, plus accessibility-grade Contrast and Beacon), shared tags, adjustable limits.                                                                                                                                                                                                                                                                                                                                                                                  |
 
@@ -116,7 +116,7 @@ flowchart LR
       <p align="center"><em>Saved diffs are encrypted and auto-expire.</em></p>
     </td>
     <td width="50%" valign="top">
-      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types (Excel, JSON, XML, YAML, CSV, Markdown, Mermaid, and any text or code file) beside a sidebar of saved diffs, shared diffs, snippets, and tags">
+      <img src="docs/screenshots/empty-state.png" alt="The start screen listing supported file types (Excel, JSON, XML, YAML, CSV, Markdown, Mermaid, and any text or code file) beside a sidebar of saved diffs, shared diffs, snippets, tools, and tags">
       <p align="center"><em>Drop or choose two files of any text format.</em></p>
     </td>
   </tr>
@@ -148,15 +148,16 @@ registry rather than into the viewer.
 
 ## Docs
 
-| Doc                                    | What's in it                                        |
-| -------------------------------------- | --------------------------------------------------- |
-| [Architecture](docs/architecture.md)   | Processes, trust boundary, directory map            |
-| [IPC & security](docs/ipc-security.md) | How renderer↔main talk, and what the sandbox blocks |
-| [Security model](docs/security.md)     | Offline guarantee, sharing, keys, backup            |
-| [Packaging](docs/packaging.md)         | Installers, signing notes, CI                       |
-| [Chocolatey](docs/chocolatey.md)       | Plan + package skeleton for `choco install diffbro` |
-| [Glossary](docs/glossary.md)           | Every term and abbreviation (IPC, CSP, GCM, …)      |
-| [Standards](docs/standards.md)         | Coding standards and the rules the build enforces   |
+| Doc                                                | What's in it                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------- |
+| [Architecture](docs/architecture.md)               | Processes, trust boundary, directory map                      |
+| [IPC & security](docs/ipc-security.md)             | How renderer↔main talk, and what the sandbox blocks           |
+| [Security model](docs/security.md)                 | Offline guarantee, sharing, keys, backup                      |
+| [Sealed diff journey](docs/sealed-diff-journey.md) | Diagrams: how a shared diff is signed, encrypted and verified |
+| [Packaging](docs/packaging.md)                     | Installers, signing notes, CI                                 |
+| [Chocolatey](docs/chocolatey.md)                   | Plan + package skeleton for `choco install diffbro`           |
+| [Glossary](docs/glossary.md)                       | Every term and abbreviation (IPC, CSP, GCM, …)                |
+| [Standards](docs/standards.md)                     | Coding standards and the rules the build enforces             |
 
 ## License
 

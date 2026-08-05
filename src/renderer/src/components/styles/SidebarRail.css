@@ -45,6 +45,11 @@
   color: var(--text);
   background: var(--bg-hover);
 }
+/* A pinned tool carries the same left bar it wears in the expanded section, so
+   the two surfaces mark the state identically. */
+.rail-btn.pinned {
+  box-shadow: inset 2px 0 0 var(--pin-ink);
+}
 .rail-btn:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);

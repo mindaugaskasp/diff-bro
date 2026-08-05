@@ -1,10 +1,12 @@
-import { test, expect, openSettings } from './fixtures.mjs'
+import { test, expect, openSettings, stubMessageBox } from './fixtures.mjs'
 
 // Installing the `diffbro` shim from Settings. The buttons reach window.api,
 // which only exists on the real preload — and a Vue TEMPLATE does not resolve
 // `window` at all (it is not in Vue's allowed globals), so this path can only
 // be proven by clicking it in a launched app.
-test('the terminal-command buttons actually reach the installer', async ({ page }) => {
+test('the terminal-command buttons actually reach the installer', async ({ app, page }) => {
+  // Installing writes an executable onto PATH, so main confirms first.
+  await stubMessageBox(app)
   await openSettings(page)
   await page.getByRole('button', { name: 'Terminal' }).click()
 

@@ -179,10 +179,10 @@ export function useSnippetDraft() {
     useImageExportStore().exportSnippetImage(id)
   }
 
-  function expandDiagram() {
+  function expandDiagram(theme = '') {
     if (!content.value.trim()) return
-    // Close the editor first, or it would stack over the viewer.
-    useUiStore().openMermaid(name.value.trim() || 'Diagram', content.value)
+    // Close first or it stacks over the viewer; the preview's ground travels.
+    useUiStore().openMermaid(name.value.trim() || 'Diagram', content.value, theme)
     close()
   }
 

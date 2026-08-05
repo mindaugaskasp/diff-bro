@@ -5,6 +5,7 @@ import { readFile, stat, writeFile } from 'fs/promises'
 import { getIdentity } from './share'
 import { guardIdentity } from './shareCore'
 import { openSnippets, sealSnippets } from './snippetSealing'
+import { readTrusted } from './trustedKeys'
 
 // Reject absurdly large attacker-supplied files before JSON.parse.
 const MAX_SNIPPET_FILE_BYTES = 64 * 1024 * 1024
@@ -53,6 +54,6 @@ export function registerSnippetIpc() {
       return { error: 'not-a-snippet-file' }
     }
 
-    return await openSnippets(file, passphrase)
+    return await openSnippets(file, passphrase, await readTrusted())
   })
 }

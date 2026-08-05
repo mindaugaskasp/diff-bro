@@ -18,7 +18,7 @@ describe('useSectionReorder', () => {
     r.onDragStart('snippets', e)
     expect(e.dataTransfer.setData).toHaveBeenCalledWith('text/plain', 'snippets')
     r.onDrop('saved') // dropped before "saved"
-    expect(useSettingsStore().sectionOrder).toEqual(['snippets', 'saved', 'external'])
+    expect(useSettingsStore().sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
   })
 
   it('marks only the hovered header as the drop target, following the cursor', () => {

@@ -32,6 +32,7 @@ export const SHORTCUT_GROUPS = [
       { keys: `${MOD}+Shift+S`, label: 'Swap sides' },
       { keys: `${MOD}+K`, label: 'Clear' },
       { keys: `${MOD}+Shift+C`, label: 'Copy diff as patch' },
+      { keys: `${MOD}+Shift+F`, label: 'Copy diff as file' },
       { keys: `${MOD}+T`, label: 'Paste text mode' },
       { keys: `${MOD}+V`, label: 'Paste to compare' }
     ]
@@ -41,6 +42,7 @@ export const SHORTCUT_GROUPS = [
     items: [
       { keys: `${MOD}+Shift+P`, label: 'Command palette' },
       { keys: `${MOD}+\\`, label: 'Toggle split view' },
+      { keys: `${MOD}+B`, label: 'Toggle sidebar' },
       { keys: `${MOD}+Shift+D`, label: 'Toggle structure view' },
       { keys: `${MOD}+D`, label: 'Toggle light/dark theme' },
       { keys: `${MOD}++`, label: 'Zoom in' },

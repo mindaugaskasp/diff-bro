@@ -5,6 +5,7 @@
 import { computed, ref } from 'vue'
 import { FLAGS, replaceAll, runRegex } from '../utils/regex'
 import AppIcon from './AppIcon.vue'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -25,14 +26,13 @@ const replaced = computed(() =>
     : null
 )
 
-const copied = ref(false)
+const { copied, flash } = useCopyFeedback()
 async function copyOutput() {
   const text = replaced.value?.output
   if (!text) return
   const res = await window.api.copyText(text)
   if (!res?.ok) return
-  copied.value = true
-  setTimeout(() => (copied.value = false), 900)
+  flash()
 }
 </script>
 

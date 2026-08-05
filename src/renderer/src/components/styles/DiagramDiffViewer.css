@@ -82,20 +82,12 @@
   color: var(--danger-text);
   font-size: var(--font-sm);
 }
-/* The band itself is .status-band in ui.css — the text diff renders the same
-   one, and a scoped copy here would drift from it. */
-.dg-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  cursor: pointer;
-}
-
 /* The union source carries :::added / :::removed / :::changed and NO classDef,
    so every stroke and fill here is ours to theme. A tinted fill does the work
    colour-blind readers cannot get from a stroke alone.
    !important is load-bearing, not laziness: mermaid injects its own
-   `#<svgId> .node rect { fill; stroke }` into the SVG, and an id selector beats
+   `#<svgId> .node rect { fill; stroke }
+` into the SVG, and an id selector beats
    any class chain we can write from outside. */
 .dg-stage :deep(.added > rect),
 .dg-stage :deep(.added > polygon),
@@ -125,7 +117,6 @@
 .dg-stage :deep(.removed .nodeLabel) {
   color: var(--text-dim);
 }
-
 /* Unchanged is the hairline the legend shows — mermaid's default fill would
    otherwise make every untouched node compete with the changed ones. */
 .dg-stage :deep(.same > rect),
@@ -134,7 +125,6 @@
   stroke-width: 1px !important;
   fill: var(--bg) !important;
 }
-
 /* Edges speak the same language as nodes. The union emitter writes a DOTTED
    link for removed and a THICK one for added, so mermaid's own
    edge-pattern-dotted / edge-thickness-thick classes are a reliable stand-in for
@@ -147,7 +137,6 @@
   stroke: var(--dg-add) !important;
   stroke-width: 2px !important;
 }
-
 /* Side by side, driven by the app's own Split view toggle. The drift note is
    the honest caveat: two dagre layouts place unchanged nodes independently, so
    a node that did not move can still appear to. */
@@ -196,7 +185,6 @@
   text-transform: uppercase;
   color: var(--text-dim);
 }
-
 /* Zoom controls sit with the diagram type, at the quiet end of the legend. */
 .lg-right {
   display: inline-flex;

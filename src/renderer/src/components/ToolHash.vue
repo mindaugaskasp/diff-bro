@@ -7,6 +7,7 @@ import { computed, ref, watch } from 'vue'
 import { HASH_LABELS, fileSize, matchingAlgorithm } from '../utils/hash'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -52,12 +53,11 @@ const rows = computed(() =>
 )
 const check = computed(() => matchingAlgorithm(expected.value, digests.value))
 
-const copiedAlgo = ref('')
+const { copied: copiedAlgo, flash } = useCopyFeedback()
 async function copy(row) {
   const res = await window.api.copyText(row.digest)
   if (!res?.ok) return
-  copiedAlgo.value = row.algo
-  setTimeout(() => (copiedAlgo.value = ''), 900)
+  flash(row.algo)
 }
 </script>
 

@@ -40,3 +40,13 @@ export const showsSplitView = (store) =>
  */
 export const showsWhitespaceToggle = (store) =>
   !!store?.ready && store.mode !== 'paste' && store.comparableKind === 'text'
+
+/**
+ * Which view a freshly loaded pair opens in. Diagrams and grids open in the view
+ * they are FOR: a Mermaid pair read as lines re-indents everything below an
+ * inserted node, and a spreadsheet read as lines is not readable at all. Applied
+ * per comparison, so an explicit untick stands until the next pair arrives.
+ * @param {object} store
+ * @returns {boolean}
+ */
+export const shouldOpenSemantic = (store) => !!store?.canCompareDiagram || !!store?.delimitedFormat

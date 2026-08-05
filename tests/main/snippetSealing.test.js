@@ -22,7 +22,10 @@ describe('sealSnippets / openSnippets', () => {
   it('round-trips a bundle with the correct passphrase', async () => {
     const sender = createIdentityKeys()
     const file = await sealSnippets(BUNDLE, 'correct horse battery staple', sender)
-    const result = await openSnippets(file, 'correct horse battery staple')
+    const trusted = [
+      { fingerprint: sender.pub.fingerprint, label: 'Sender', sign: sender.pub.sign }
+    ]
+    const result = await openSnippets(file, 'correct horse battery staple', trusted)
     expect(result).toEqual({ ok: true, bundle: BUNDLE, signer: sender.pub.fingerprint })
   })
 
@@ -97,7 +100,7 @@ describe('sealSnippets / openSnippets', () => {
   it('rejects malformed input without throwing', async () => {
     expect(await openSnippets(null, 'pw')).toEqual({ error: 'not-a-snippet-file' })
     expect(await openSnippets({}, 'pw')).toEqual({ error: 'not-a-snippet-file' })
-    await expect(openSnippets('not an object', 'pw')).resolves.toBeTruthy()
+    expect(await openSnippets('not an object', 'pw')).toEqual({ error: 'not-a-snippet-file' })
   })
 
   it('rejects a decryptable-but-malformed bundle (hostile sender, right passphrase)', async () => {
@@ -169,5 +172,75 @@ describe('validateSnippetBundle', () => {
     const one = { name: 'n', content: chunk }
     const count = Math.ceil(SNIPPET_LIMITS.totalContentBytes / SNIPPET_LIMITS.contentBytes) + 1
     bad({ snippets: Array(count).fill(one) }, 'too-large')
+  })
+})
+
+// The forgery the test above LOOKS like it covers but does not. That one swaps
+// `signerKey` while keeping Alice's signature, so verification fails for the
+// wrong reason. This keeps the key and the signature consistent — Mallory signs
+// with her own key — and rewrites only the `signer` CLAIM to Alice's
+// fingerprint, which is public (it is printed on every .diffbrokey). The
+// renderer matches that claim against the trust store to print "Signed by
+// trusted key Alice", so an unbound claim is an impersonation of a trusted
+// sender, and snippets are code the user pastes and runs.
+//
+// sealing.js gets this right for sealed diffs: it resolves the verifying key
+// FROM the local trust store by inner.signer and only then verifies.
+describe('openSnippets signer attribution', () => {
+  const reseal = async (file, passphrase, mutate) => {
+    const salt = Buffer.from(file.salt, 'base64')
+    const key = await deriveKey(passphrase, salt)
+    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(file.iv, 'base64'))
+    decipher.setAuthTag(Buffer.from(file.tag, 'base64'))
+    const inner = JSON.parse(
+      Buffer.concat([
+        decipher.update(Buffer.from(file.ciphertext, 'base64')),
+        decipher.final()
+      ]).toString()
+    )
+    mutate(inner)
+    const cipher = createCipheriv('aes-256-gcm', key, Buffer.from(file.iv, 'base64'))
+    const ciphertext = Buffer.concat([
+      cipher.update(Buffer.from(JSON.stringify(inner))),
+      cipher.final()
+    ])
+    return {
+      ...file,
+      tag: cipher.getAuthTag().toString('base64'),
+      ciphertext: ciphertext.toString('base64')
+    }
+  }
+
+  it('refuses a bundle whose signer claim does not match the key that signed it', async () => {
+    const alice = createIdentityKeys()
+    const mallory = createIdentityKeys()
+
+    // Mallory seals with her own key, then claims to be Alice.
+    const file = await sealSnippets(BUNDLE, 'pw', mallory)
+    const forged = await reseal(file, 'pw', (inner) => {
+      inner.signer = alice.pub.fingerprint
+    })
+
+    // Alice IS trusted here — that is what makes the claim worth forging.
+    const trusted = [{ fingerprint: alice.pub.fingerprint, label: 'Alice', sign: alice.pub.sign }]
+    const result = await openSnippets(forged, 'pw', trusted)
+    // It still opens (the passphrase is right and it really is signed), but it
+    // must NOT be attributed to Alice.
+    expect(result.signer).not.toBe(alice.pub.fingerprint)
+    expect(result.signer).toBeNull()
+  })
+
+  // The honest case still works: an unmodified bundle reports the real signer.
+  it('reports the true signer for an untampered bundle', async () => {
+    const sender = createIdentityKeys()
+    const file = await sealSnippets(BUNDLE, 'pw', sender)
+    const trusted = [
+      { fingerprint: sender.pub.fingerprint, label: 'Sender', sign: sender.pub.sign }
+    ]
+    expect(await openSnippets(file, 'pw', trusted)).toEqual({
+      ok: true,
+      bundle: BUNDLE,
+      signer: sender.pub.fingerprint
+    })
   })
 })

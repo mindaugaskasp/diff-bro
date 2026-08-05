@@ -47,7 +47,8 @@ async function copySnippet(id) {
     store.pendingFill = { name: props.entry.name, content }
     return
   }
-  await window.api.copyText(content)
+  const res = await window.api.copyText(content)
+  if (!res?.ok) return diff.showNotice('Could not copy that snippet to the clipboard.')
   flash()
 }
 async function viewDiagram(entry) {
@@ -79,6 +80,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
 <template>
   <li
     class="row"
+    :class="{ favorite }"
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"

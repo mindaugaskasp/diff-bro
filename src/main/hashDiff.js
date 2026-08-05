@@ -18,10 +18,10 @@ const DEFAULT_LCS_BUDGET = 4_000_000
 // subdivided, so a pathological file cannot grow the plan without bound.
 const DEFAULT_MAX_RUNS = 200_000
 
-const sameAt = (a, i, b, j) => a.hi[i] === b.hi[j] && a.lo[i] === b.lo[j]
+const isSameAt = (a, i, b, j) => a.hi[i] === b.hi[j] && a.lo[i] === b.lo[j]
 
 // A Number is exact to 53 bits, so this addresses a BUCKET, not a digest. Every
-// candidate it produces is confirmed with the full-width sameAt above; a bucket
+// candidate it produces is confirmed with the full-width isSameAt above; a bucket
 // collision therefore costs an anchor, never a wrong match.
 const bucketAt = (side, i) => side.hi[i] * 4294967296 + side.lo[i]
 
@@ -46,7 +46,7 @@ function anchorPairs(a, b, r) {
     const key = bucketAt(a, i)
     if (onLeft.get(key) !== i) continue
     const j = onRight.get(key)
-    if (j === undefined || j < 0 || !sameAt(a, i, b, j)) continue
+    if (j === undefined || j < 0 || !isSameAt(a, i, b, j)) continue
     pairs.push(i, j)
   }
   return pairs
@@ -82,13 +82,13 @@ function longestIncreasing(pairs) {
 function trimEnds(a, b, r) {
   let { ls, le, rs, re } = r
   let pre = 0
-  while (ls < le && rs < re && sameAt(a, ls, b, rs)) {
+  while (ls < le && rs < re && isSameAt(a, ls, b, rs)) {
     ls++
     rs++
     pre++
   }
   let post = 0
-  while (le > ls && re > rs && sameAt(a, le - 1, b, re - 1)) {
+  while (le > ls && re > rs && isSameAt(a, le - 1, b, re - 1)) {
     le--
     re--
     post++
@@ -133,7 +133,7 @@ function buildLcsTable(a, b, r) {
   const dp = new Uint32Array((n + 1) * w)
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      dp[i * w + j] = sameAt(a, r.ls + i, b, r.rs + j)
+      dp[i * w + j] = isSameAt(a, r.ls + i, b, r.rs + j)
         ? dp[(i + 1) * w + j + 1] + 1
         : Math.max(dp[(i + 1) * w + j], dp[i * w + j + 1])
     }
@@ -212,7 +212,7 @@ function lcsParts(a, b, r) {
   let i = 0
   let j = 0
   while (i < n && j < m) {
-    if (sameAt(a, r.ls + i, b, r.rs + j)) build.same(i++, j++)
+    if (isSameAt(a, r.ls + i, b, r.rs + j)) build.same(i++, j++)
     else if (dp[(i + 1) * w + j] >= dp[i * w + j + 1]) build.del(i++, j)
     else build.ins(i, j++)
   }

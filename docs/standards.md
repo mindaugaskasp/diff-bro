@@ -117,11 +117,12 @@ regression test from decoration.
    `restoreBundle` drop them, so a link can never arrive in a shared bundle and
    be opened with one click.
 
-   Three sibling surfaces hand a PATH to the OS rather than a URL, and are
+   Four sibling surfaces hand a PATH to the OS rather than a URL, and are
    fenced the same way. `shell.showItemInFolder` has two call sites — `mail.js`,
    which reveals the sealed file it just wrote, and `logger.js` (`log:reveal`,
-   which also uses `shell.openPath`); in both the path is COMPUTED IN MAIN and
-   the renderer names no file. `mail.js` reveals the sealed file it just wrote — the path is the one main computed, never round-tripped through
+   which also uses `shell.openPath`); `shell.openPath` has a third at
+   `appData.js` (`datadir:reveal`). In all of them the path is COMPUTED IN MAIN
+   from a pointer file and the renderer names no file. `mail.js` reveals the sealed file it just wrote — the path is the one main computed, never round-tripped through
    the renderer, and there is no handler that reveals an arbitrary one.
    **Copy as file** (`clipboardCopy.js`) stages bytes and puts the staged path on
    the clipboard; `clipboard:writeFile` takes **bytes and a display name, never a
@@ -154,11 +155,63 @@ enforceable subset, and these are where the reasoning behind them lives:
 lint carries the design rules is worse than one that admits which line the
 reviewer holds:
 
-|                | enforced by `npm run check`                                                                                                                                                                  | written convention, checked in review                                                                                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **naming**     | `camelcase` · `new-cap` · `no-underscore-dangle` (src only) · the `vue/*-casing` rules, which now FAIL rather than warn (`--max-warnings 0`)                                                 | intent-revealing names: a boolean reads `is`/`has`/`can`/`should`, a function starts with a verb, a name is pronounceable and searchable |
-| **size**       | `max-lines-per-function` 60 and `max-lines` 250 on `src/**/*.js`, matching the cap `.vue` already had · `complexity` 10 · `max-depth` 3 · `max-params` 4 · `sonarjs/cognitive-complexity` 15 | — length is the one thing lint expresses completely                                                                                      |
-| **separation** | `check-structure.mjs` (import cycles) · `no-restricted-imports` layering · the size caps as the proxy                                                                                        | which pattern applies: adapter, `BaseDialog`, tools registry, composable                                                                 |
+|                | enforced by `npm run check`                                                                                                                                                                  | written convention, checked in review                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **naming**     | `camelcase` · `new-cap` · `no-underscore-dangle` (src only) · the `vue/*-casing` rules, which now FAIL rather than warn (`--max-warnings 0`)                                                 | intent-revealing names — see **Naming a function by what it gives back** below |
+| **size**       | `max-lines-per-function` 60 and `max-lines` 250 on `src/**/*.js`, matching the cap `.vue` already had · `complexity` 10 · `max-depth` 3 · `max-params` 4 · `sonarjs/cognitive-complexity` 15 | — length is the one thing lint expresses completely                            |
+| **separation** | `check-structure.mjs` (import cycles) · `no-restricted-imports` layering · the size caps as the proxy                                                                                        | which pattern applies: adapter, `BaseDialog`, tools registry, composable       |
+
+### Do not reinvent what a package already does
+
+**If a well-maintained package already solves it, use the package** — hand-rolled
+date maths, parsers, diff algorithms and schedulers are where the subtle bugs
+live. The only grounds for writing it yourself are the security rules below, and
+they are grounds often enough that this is a judgement, not a rubber stamp:
+
+- **Rule 1 and 2 come first.** A dependency that makes a runtime network call,
+  ships an install script, or drags a transitive tree you cannot audit is
+  refused however good it is. Run the network audit and `npm audit` BEFORE
+  writing any integration code, not after.
+- **Weigh it against what it replaces.** Nine production dependencies is the
+  current count; a package that saves twenty lines is rarely worth an audit
+  surface. A package that saves a _class of bug_ — timezone arithmetic, zip
+  inflation bounds, YAML anchors — usually is.
+- **Say which one you rejected and why.** `yaml` was taken (zero runtime deps,
+  no network/`eval`/`child_process`, clean audit); an SMTP client was rejected
+  because sending breaks the offline guarantee. Both decisions are written down,
+  and a future proposal starts from them rather than re-deriving.
+
+When the answer is "write it ourselves", the reason belongs in a comment at the
+implementation, so the next person does not redo the evaluation.
+
+### Naming a function by what it gives back
+
+A call site should say whether it is asking a question, fetching a value, or
+changing something — without opening the function. Three rules, checked in
+review:
+
+1. **A function that RETURNS a value says so in its name.** Either a verb phrase
+   for the work it does (`readTrusted`, `parseStructured`, `buildMenus`,
+   `resolveAdapter`, `encodePublicKey`) or a noun phrase naming the result
+   (`toolRows`, `visibleStructureRows`, `decryptionIdentities`, `sectionOrder`).
+   Never a bare adjective or past participle — `finite`, `same`, `skipped`,
+   `changed` read as variables already holding a value, so `if (skipped(tab))`
+   scans as a comparison against a flag rather than as a call.
+   **`get` is not a required prefix** and is usually noise: `getToolRows()` says
+   nothing `toolRows()` does not. Reserve `get*` for a genuine accessor that
+   hides work behind a property-like read (`getIdentity`), and `fetch*`/`read*`
+   /`load*` for something that goes to disk, IPC or the OS.
+
+2. **A boolean reads as a question**: `is`/`has`/`can`/`should`/`will`/`may`.
+   `isSameRect(a, b)`, `hasStatusBand(store)`, `canCompareDiagram`,
+   `shouldOpenSemantic(store)`. A predicate named as a statement is the most
+   common miss — it is why `same`, `finite` and `skipped` were renamed.
+
+3. **A function that MUTATES is an imperative verb and does not double as a
+   getter**: `setTheme`, `markSaved`, `togglePin`, `dismissFormatHint`. A `set*`
+   that also returns a computed value is doing two jobs; return `void` (or a
+   plain ok/error result) and expose the value as its own reader. Pinia actions
+   follow the same rule — the store's getters are the readers.
 
 **Two rules for the ratchets, and they are the whole point.**
 
@@ -419,6 +472,7 @@ directory move passes CI while silently removing enforcement.
   `scripts/e2e-displays.sh` starts them (the entrypoint, `make e2e` and CI all
   call it). **Anything new that reaches a shared OS resource — a fixed temp
   path, a lock, a well-known port — has to be added to that list.**
+
 - **A failing E2E keeps its trace.** Playwright clears `test-results/` at the
   START of a run, so a failure's trace is destroyed by the next run — which is
   how three sightings of the same intermittent were lost with nothing to show

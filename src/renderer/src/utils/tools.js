@@ -26,12 +26,11 @@ export const TOOLS = [
   { id: 'patch', name: 'Patch', icon: 'file', kind: 'Apply', action: 'apply-patch' }
 ]
 
-// How many are remembered — at least as many as the largest surface draws, or
-// that surface could never fill up. The list is most-recent-first, so it rotates
-// with what you actually reach for rather than accumulating.
+// How many the palette's "Recent" section remembers. Most-recent-first, so it
+// rotates with what you actually reach for rather than accumulating. Recency
+// decides MEMBERSHIP of that section only — never the position of a row in the
+// sidebar or the rail, which order by pins (see toolRows).
 export const MAX_RECENT_TOOLS = 9
-// The expanded shelf draws fewer: its chips carry a label and wrap past three.
-export const SHELF_RECENT_TOOLS = 3
 
 const BY_ID = new Map(TOOLS.map((t) => [t.id, t]))
 
@@ -58,6 +57,21 @@ export function recentTools(ids, limit = MAX_RECENT_TOOLS) {
     if (out.length === limit) break
   }
   return out
+}
+
+/**
+ * Row order for the sidebar section and the rail: pinned first, then the rest,
+ * BOTH in registry order. Recency decides membership in the palette; it never
+ * decides position here, so a row cannot move as a side effect of being used —
+ * which is what the recents shelf did on every click.
+ * @param {string[]} pinnedIds  ids the user pinned, in any order
+ * @param {number} [limit]      how many the surface has room for
+ * @returns {(Tool & { pinned: boolean })[]}
+ */
+export function toolRows(pinnedIds, limit = TOOLS.length) {
+  const pinned = new Set((pinnedIds || []).filter((id) => BY_ID.has(id)))
+  const rows = TOOLS.map((tool) => ({ ...tool, pinned: pinned.has(tool.id) }))
+  return [...rows.filter((t) => t.pinned), ...rows.filter((t) => !t.pinned)].slice(0, limit)
 }
 
 /**

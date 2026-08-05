@@ -42,7 +42,7 @@
   /* Named application rhythm, composed from the scale above. One place controls
      the inset every sidebar section, its action row, and its body use, so a new
      section (or a new button in one) can never end up glued to its neighbour —
-     the class is .section-actions / .section-inset in ui.css. */
+     the class is .section-actions in ui.css. */
   --pad-inset-x: var(--space-3);
   --pad-section-top: var(--space-3);
   --pad-section-bottom: var(--space-2);
@@ -86,6 +86,12 @@
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
   --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+  /* Pinned-row ink — the star and the 3px bar on a favourited diff, snippet or
+     tool. Raw --favorite is a gold tuned for the dark grounds and scores
+     2.23–3.00 against the panel on light/solar/sepia/bloom, under the 3:1
+     non-text floor; mixing toward the text clears all 14 (weakest solar 3.52),
+     the same trick --btn-edge and --dg-del use. */
+  --pin-ink: color-mix(in srgb, var(--favorite) 70%, var(--text));
 
   /* Diagram-diff status. Encoded twice — colour AND stroke/badge — so the
      comparison survives greyscale and colour-blind readers.

@@ -36,7 +36,12 @@ const copyTip = computed(() => {
 
 // Each view explains what it gives rather than naming a format it may not have:
 // a diagram and delimited text both reach this toggle with structuredFormat null.
+// A greyed-out toggle says why instead — it keeps its slot, so it has to.
+const structureAvailable = computed(() => store.canCompareStructure || store.canCompareDiagram)
+const focusAvailable = computed(() => store.comparableKind === 'diagram')
+
 const structureTip = computed(() => {
+  if (!structureAvailable.value) return 'These two files have no structured view — only a text diff'
   if (store.canCompareDiagram) {
     return `Compare as diagrams — one picture carrying both revisions, so an inserted node cannot read as a rewrite (${MOD}+Shift+D)`
   }
@@ -45,6 +50,21 @@ const structureTip = computed(() => {
   }
   return `Compare as ${String(store.structuredFormat ?? '').toUpperCase()} data — key order and formatting stop counting (${MOD}+Shift+D)`
 })
+const splitTip = computed(() =>
+  splitAvailable.value
+    ? 'Show the two revisions side by side'
+    : 'Side by side applies to text and diagram comparisons'
+)
+const whitespaceTip = computed(() =>
+  whitespaceAvailable.value
+    ? 'Treat lines that differ only in leading or trailing spaces as unchanged'
+    : 'Whitespace only means something in a text comparison'
+)
+const focusTip = computed(() =>
+  focusAvailable.value
+    ? 'Show only what changed plus one hop of context — the rest is hidden and counted'
+    : 'Focus applies to a diagram comparison'
+)
 
 // The button names its destination (files ⇄ paste).
 const splitAvailable = computed(() => showsSplitView(store))
@@ -78,27 +98,30 @@ const clearTitle = computed(() =>
     <div class="options">
       <!-- Diff display toggles -->
       <div class="group">
-        <!-- A control that cannot act should not be offered: Split view beside
-             a grid reads as broken, not as N/A. The two do NOT have the same
-             reach — the diagram viewer splits on the same flag (see
-             utils/viewChrome.js), which is why they are gated separately. -->
-        <label v-if="splitAvailable">
-          <input v-model="store.renderSideBySide" type="checkbox" />
+        <!-- Every toggle keeps its slot and greys out when it cannot act, rather
+             than being removed. Hiding them made the row re-flow on each press:
+             turning Diagram off swapped "Focus on changes" for "Ignore
+             whitespace" and slid the control you had just clicked 150px sideways
+             under the cursor. A disabled control with a reason reads as N/A; a
+             row that jumps reads as a misclick. -->
+        <label :class="{ off: !splitAvailable }" :data-tip="splitTip">
+          <input v-model="store.renderSideBySide" type="checkbox" :disabled="!splitAvailable" />
           Split view
         </label>
-        <label v-if="whitespaceAvailable">
-          <input v-model="store.ignoreTrimWhitespace" type="checkbox" />
-          Ignore whitespace
-        </label>
-        <label v-if="store.canCompareStructure || store.canCompareDiagram" :data-tip="structureTip">
-          <input v-model="store.semanticView" type="checkbox" />
+        <label :class="{ off: !structureAvailable }" :data-tip="structureTip">
+          <input v-model="store.semanticView" type="checkbox" :disabled="!structureAvailable" />
           {{ store.structureLabel }}
         </label>
-        <label
-          v-if="store.comparableKind === 'diagram'"
-          data-tip="Show only what changed plus one hop of context — the rest is hidden and counted"
-        >
-          <input v-model="store.diagramFocus" type="checkbox" />
+        <label :class="{ off: !whitespaceAvailable }" :data-tip="whitespaceTip">
+          <input
+            v-model="store.ignoreTrimWhitespace"
+            type="checkbox"
+            :disabled="!whitespaceAvailable"
+          />
+          Ignore whitespace
+        </label>
+        <label :class="{ off: !focusAvailable }" :data-tip="focusTip">
+          <input v-model="store.diagramFocus" type="checkbox" :disabled="!focusAvailable" />
           Focus on changes
         </label>
       </div>

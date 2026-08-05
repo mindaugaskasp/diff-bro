@@ -2,7 +2,7 @@
 // for the renderer, and exposes the shim installer to Settings. Kept thin — the
 // parsing and the shim content are the tested cores.
 
-import { app, clipboard, ipcMain } from 'electron'
+import { app, clipboard, dialog, ipcMain } from 'electron'
 import { homedir, tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { parseCli } from './cli'
@@ -60,13 +60,47 @@ export function registerCliIpc() {
     }
   })
   const where = () => ({ exePath: app.getPath('exe'), home: homedir() })
+
+  // Both of these put something OUTSIDE the app: a 0755 shim on PATH, and five
+  // git config --global mutations. Rule 7 fences shell.openExternal behind a
+  // confirm for the smaller act of opening a URL, so these ask too — a
+  // compromised renderer must not be able to install persistence silently.
+  const confirmed = async (message, detail) =>
+    (
+      await dialog.showMessageBox({
+        type: 'question',
+        buttons: ['Cancel', 'Continue'],
+        defaultId: 1,
+        cancelId: 0,
+        message,
+        detail
+      })
+    ).response === 1
+
   ipcMain.handle('cli:status', () => shimStatus(where()))
-  ipcMain.handle('cli:install', () => installShim(where()))
+  ipcMain.handle('cli:install', async () =>
+    (await confirmed(
+      'Add the diffbro command to your terminal?',
+      'This writes a small launcher script into ~/.local/bin.'
+    ))
+      ? installShim(where())
+      : { canceled: true }
+  )
   ipcMain.handle('cli:remove', () => removeShim(where()))
 
   ipcMain.handle('git:toolStatus', () => gitToolStatus(where()))
-  ipcMain.handle('git:register', () => registerGitTool(where()))
+  ipcMain.handle('git:register', async () =>
+    (await confirmed(
+      'Register Diff Bro as your git difftool?',
+      'This changes your global git configuration (~/.gitconfig).'
+    ))
+      ? registerGitTool(where())
+      : { canceled: true }
+  )
   ipcMain.handle('git:unregister', () => unregisterGitTool(where()))
-  // The launcher's copies of git's temp files have no other owner.
+
+  // The launcher's copies of git's temp files have no other owner. Swept on quit
+  // as well as launch: a crash skips will-quit, and these are repo file contents.
   sweepGitTemp(tmpdir())
+  app.on('will-quit', () => sweepGitTemp(tmpdir()))
 }

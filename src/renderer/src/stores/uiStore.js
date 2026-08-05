@@ -28,9 +28,11 @@ export const useUiStore = defineStore('ui', {
     sidebarTags: []
   }),
   actions: {
-    // Open the Mermaid viewer for a diagram's decrypted source.
-    openMermaid(name, code) {
-      this.mermaidView = { name, code }
+    // Open the Mermaid viewer for a diagram's decrypted source. `theme` carries
+    // a per-viewing ground over from the editor preview; the viewer falls back
+    // to the stored default without one.
+    openMermaid(name, code, theme = '') {
+      this.mermaidView = { name, code, theme }
     },
     closeMermaid() {
       this.mermaidView = null

@@ -38,7 +38,7 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
 })
 
 test('a tool panel copy button has a hover tooltip, not just an aria-label', async ({ page }) => {
-  await page.locator('.usb-tool-all').click()
+  await page.getByRole('button', { name: 'Search every tool' }).click()
   await page.keyboard.type('json')
   await page.keyboard.press('Enter')
   const dlg = page.getByRole('dialog', { name: 'JSON' })
@@ -100,7 +100,7 @@ test('the preview target is the full height of the row', async ({ page }) => {
 // The first section label is a pseudo-element above its row; too small a margin
 // clipped "Recent" against the search bar.
 test('the palette section label has room above its first row', async ({ page }) => {
-  await page.locator('.usb-tool-all').click()
+  await page.getByRole('button', { name: 'Search every tool' }).click()
   await expect(page.locator('.cp')).toBeVisible()
 
   const room = await page
@@ -132,16 +132,6 @@ test('hovering an icon button shows a visible tooltip', async ({ page }) => {
   // child of body, above everything.
   const escaped = await tip.evaluate((el) => el.parentElement === document.body)
   expect(escaped, 'the tooltip must be teleported out of the app tree').toBe(true)
-})
-
-// The shelf sat closer to the seam above it than to the window edge below,
-// which reads as a misaligned band once the chips wrap to a second row.
-test('the tools shelf has equal space above and below its chips', async ({ page }) => {
-  const pad = await page.locator('.usb-tools').evaluate((el) => {
-    const s = getComputedStyle(el)
-    return { top: parseFloat(s.paddingTop), bottom: parseFloat(s.paddingBottom) }
-  })
-  expect(pad.top, `top ${pad.top} vs bottom ${pad.bottom}`).toBe(pad.bottom)
 })
 
 // Saved-diff rows: the actions crowded the name at rest, the delete glyph was a

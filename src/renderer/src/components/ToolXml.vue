@@ -5,6 +5,7 @@ import SegmentedControl from './SegmentedControl.vue'
 import XmlTree from './XmlTree.vue'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -37,13 +38,12 @@ const matchValues = computed(() =>
   (filtered.value.matches ?? []).filter((m) => typeof m === 'string')
 )
 
-const copied = ref(false)
+const { copied, flash } = useCopyFeedback()
 async function copy() {
   if (!shaped.value) return
   const res = await window.api.copyText(shaped.value)
   if (!res?.ok) return
-  copied.value = true
-  setTimeout(() => (copied.value = false), 900)
+  flash()
 }
 
 // Offer this panel's result to the dialog's Save-as-snippet action.

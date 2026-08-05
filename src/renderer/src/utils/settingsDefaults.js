@@ -16,7 +16,7 @@ export const clampBackupHours = (h) => {
 // Organizational, non-secret preferences, persisted as PLAINTEXT settings.json
 // (nothing sensitive; encrypted data stays in the vault/snippet stores).
 
-export const SECTIONS = ['saved', 'external', 'snippets']
+export const SECTIONS = ['saved', 'external', 'snippets', 'tools']
 
 // Per-type soft "load anyway?" thresholds (`cap` is the enforced ceiling + slider
 // max). Mirrored in src/main/files.js — keep in sync.
@@ -60,8 +60,6 @@ export const DEFAULT_SETTINGS = {
   dialogSizes: {}, // { [key]: { width, height } } from user drag-resizes
   maximizeDialogs: false,
   shutterSound: true,
-  // 'auto' pairs diagrams to the app's ground; 'light'/'dark' pin them.
-  diagramTheme: 'auto',
   restoreSession: true,
   // On by default: the point is protection from corruption nobody sees coming.
   autoBackup: true,
@@ -77,8 +75,10 @@ export const clampNumber = (value, fallback, min, max) => {
   return Math.min(Math.max(n, min), max)
 }
 
-// A section order is only valid if it is exactly the known sections, once each
-// — otherwise a stale or corrupt file could hide a section entirely.
+// Normalises to exactly the known sections, once each: unknown and repeated ids
+// are dropped, and any section MISSING from a stored order is appended — which
+// is what carries a settings file written before a new section existed, keeping
+// the order the user dragged instead of resetting it.
 export function sanitizeSectionOrder(order) {
   if (!Array.isArray(order)) return [...SECTIONS]
   const kept = order.filter((id, i) => SECTIONS.includes(id) && order.indexOf(id) === i)

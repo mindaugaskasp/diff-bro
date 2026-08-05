@@ -59,7 +59,8 @@
      below tints it cool. A theme may override it for a coloured shadow. */
   --shadow-rgb: 0 0 0;
   /* The ground a diagram brings with it when its theme is pinned away from the
-     app's (settings.diagramTheme). The one pair no theme block may re-tint:
+     app's (the viewer's per-viewing Theme control). The one pair no theme block
+     may re-tint:
      pinning a diagram light is precisely the request not to follow the palette.
      Mermaid's two themes are drawn for these two grounds. */
   --diagram-paper-light: #ffffff;

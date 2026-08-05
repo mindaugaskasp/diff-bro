@@ -29,19 +29,10 @@
   border-radius: var(--radius-sm);
   padding: 0 var(--space-1);
 }
-
 /* Scrolls within the fixed launcher window when the panel is tall. */
 .qc-panel {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-3) var(--space-4);
-}
-
-.qc-foot {
-  gap: var(--space-3);
-  padding: 0 var(--space-4);
-  height: var(--band-row);
-  border-top: 1px solid var(--border);
-  justify-content: space-between;
 }

@@ -1,15 +1,17 @@
 <script setup>
 // The snippet editor's live Mermaid preview + an "expand to full viewer" button.
-import { useSettingsStore } from '../stores/settingsStore'
+import { ref } from 'vue'
 import { DIAGRAM_THEME_OPTIONS } from '../utils/mermaid'
 import MermaidDiagram from './MermaidDiagram.vue'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 
 defineProps({ code: { type: String, default: '' } })
-defineEmits(['expand'])
+const emit = defineEmits(['expand'])
 
-const settings = useSettingsStore()
+// Scoped to this editor session, never persisted: picking a ground to read one
+// diagram on is not a preference about every future diagram.
+const diagramTheme = ref('auto')
 </script>
 
 <template>
@@ -18,21 +20,21 @@ const settings = useSettingsStore()
       <span>Diagram preview</span>
       <SegmentedControl
         label="Theme"
-        :value="settings.diagramTheme"
+        :value="diagramTheme"
         :options="DIAGRAM_THEME_OPTIONS"
-        @update:value="settings.setDiagramTheme($event)"
+        @update:value="diagramTheme = $event"
       />
       <button
         type="button"
         class="btn btn-sm"
         :disabled="!code.trim()"
         data-tip="Open the full, resizable diagram viewer"
-        @click="$emit('expand')"
+        @click="emit('expand', diagramTheme)"
       >
         <AppIcon name="expand" /> Expand
       </button>
     </div>
-    <div class="mmd-preview-body"><MermaidDiagram :code="code" /></div>
+    <div class="mmd-preview-body"><MermaidDiagram :code="code" :theme="diagramTheme" /></div>
   </div>
 </template>
 

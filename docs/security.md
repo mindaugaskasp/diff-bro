@@ -78,6 +78,10 @@ new identity (which would silently break every peer's trust).
 
 ## Sharing diffs (sealed `.diffbro` files)
 
+> Diagrams of the whole journey — the key exchange, what sealing builds, and the
+> gates an import passes through — are in
+> [How a sealed diff travels](sealed-diff-journey.md).
+
 A shared diff is **sign-then-encrypt**, sealed for an **audience** — one
 recipient or a whole team, in one file:
 

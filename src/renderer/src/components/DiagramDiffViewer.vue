@@ -50,6 +50,11 @@ const zoomStyle = computed(() => ({
 
 const nodeRows = computed(() => changed(full.value?.nodes))
 const edgeRows = computed(() => changed(full.value?.edges))
+const hasRegister = computed(() => nodeRows.value.length > 0 || edgeRows.value.length > 0)
+// Collapsed by default: the picture is what a diagram diff is for, and the
+// reading rail costs it 232px. The status band already says what changed in
+// words, so the list is the detail you open when you want it.
+const showRegister = ref(false)
 
 async function build() {
   const mine = ++buildSeq
@@ -107,6 +112,16 @@ watch(
         <button class="dg-zbtn" data-tip="Zoom in" aria-label="Zoom in" @click="zoom(1.2)">
           <AppIcon name="plus" />
         </button>
+        <button
+          v-if="hasRegister"
+          class="dg-zbtn"
+          :data-tip="showRegister ? 'Hide the change list' : 'Show the change list'"
+          :aria-label="showRegister ? 'Hide the change list' : 'Show the change list'"
+          :aria-pressed="showRegister"
+          @click="showRegister = !showRegister"
+        >
+          <AppIcon name="list" />
+        </button>
         <span class="dg-type">{{ type }}</span>
       </span>
     </div>
@@ -143,7 +158,7 @@ watch(
         </div>
       </div>
       <DiagramChangeRegister
-        v-if="nodeRows.length || edgeRows.length"
+        v-if="hasRegister && showRegister"
         :nodes="nodeRows"
         :edges="edgeRows"
       />

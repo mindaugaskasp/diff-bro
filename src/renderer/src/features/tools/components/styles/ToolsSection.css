@@ -1,0 +1,64 @@
+/* Tools section shell (ToolsSection.vue). Row presentation lives in
+   ToolRow.css; these are the section's own body, empty state and disclosure. */
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* Indent the section's contents past the header's chevron, so rows read as
+   children nested under the title rather than sitting on its vertical line. */
+.section-body {
+  padding-left: var(--space-4);
+}
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.empty.small {
+  list-style: none;
+}
+/* The disclosure sits on the same rail as a row: an empty box the width of the
+   star, then the badge slot. --control-h-sm IS the star's 26px box, so the two
+   cannot drift apart on a size change. */
+.disclosure {
+  display: flex;
+  align-items: center;
+}
+.disclosure:hover {
+  background: var(--bg-hover);
+}
+.star-space {
+  flex: none;
+  width: var(--control-h-sm);
+}
+.disclosure .entry {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 5px 4px 5px 6px;
+  cursor: pointer;
+}
+.disclosure .glyph {
+  color: var(--text-hint);
+  font-size: var(--font-md);
+}
+.disclosure .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-hint);
+  font-size: var(--font-md);
+  font-weight: 500;
+}

@@ -9,13 +9,17 @@ import { useZoomPan } from '../composables/useZoomPan'
 import MermaidDiagram from './MermaidDiagram.vue'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
-import { useSettingsStore } from '../stores/settingsStore'
 import { DIAGRAM_THEME_OPTIONS } from '../utils/mermaid'
 import { useUiStore } from '../stores/uiStore'
 
 const ui = useUiStore()
-const settings = useSettingsStore()
-const view = computed(() => ui.mermaidView) // { name, code }
+const view = computed(() => ui.mermaidView) // { name, code, theme? }
+
+// The theme control is a choice about the diagram in front of you, not a
+// preference: it lives here and dies with the viewer. Auto unless the editor
+// preview carried a ground over through Expand.
+const diagramTheme = ref(view.value?.theme || 'auto')
+watch(view, (v) => v && (diagramTheme.value = v.theme || 'auto'))
 const isFullScreen = useFullScreen()
 
 const DEFAULT_W = 880
@@ -104,9 +108,9 @@ onBeforeUnmount(() => {
           <SegmentedControl
             compact
             label="Theme"
-            :value="settings.diagramTheme"
+            :value="diagramTheme"
             :options="DIAGRAM_THEME_OPTIONS"
-            @update:value="settings.setDiagramTheme($event)"
+            @update:value="diagramTheme = $event"
           />
           <button
             class="tbtn"
@@ -138,7 +142,7 @@ onBeforeUnmount(() => {
           class="transform"
           :style="{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }"
         >
-          <MermaidDiagram :code="view.code" :debounce="0" />
+          <MermaidDiagram :code="view.code" :debounce="0" :theme="diagramTheme" />
         </div>
       </div>
       <div class="foot">

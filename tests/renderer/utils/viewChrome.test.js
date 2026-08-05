@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  shouldOpenSemantic,
   hasStatusBand,
   showsSplitView,
   showsWhitespaceToggle
@@ -93,5 +94,33 @@ describe('showsWhitespaceToggle', () => {
   it('is not offered before a comparison exists', () => {
     expect(showsWhitespaceToggle(store({ ready: false }))).toBe(false)
     expect(showsWhitespaceToggle(undefined)).toBe(false)
+  })
+})
+
+// Diagrams and grids open in the view they are FOR. Compared as lines, a Mermaid
+// pair re-indents everything below an inserted node and a spreadsheet is not
+// readable at all, so the toggle was something you had to know to go and find.
+describe('shouldOpenSemantic', () => {
+  it('opens a diagram pair as a diagram', () => {
+    expect(shouldOpenSemantic({ canCompareDiagram: true })).toBe(true)
+  })
+
+  it('opens a delimited pair as a grid', () => {
+    expect(shouldOpenSemantic({ delimitedFormat: 'csv' })).toBe(true)
+  })
+
+  // Structured text (JSON/YAML) keeps the text diff as its default: line order
+  // and formatting are usually what you are reviewing there.
+  it('leaves structured text on the text diff', () => {
+    expect(shouldOpenSemantic({ structuredFormat: 'json' })).toBe(false)
+  })
+
+  it('leaves plain text on the text diff', () => {
+    expect(shouldOpenSemantic({})).toBe(false)
+  })
+
+  it('is safe on a missing store', () => {
+    expect(shouldOpenSemantic(null)).toBe(false)
+    expect(shouldOpenSemantic(undefined)).toBe(false)
   })
 })

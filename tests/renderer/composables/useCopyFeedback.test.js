@@ -49,3 +49,35 @@ describe('useCopyFeedback', () => {
     expect(api.copied.value).toBe(true) // left as-is; timer was cleared, not fired
   })
 })
+
+// Ten tool panels used to inline this with a bare boolean, a 900ms timer, no
+// clear on repeat and no dispose on unmount — the two bugs this composable
+// exists to prevent. Four of them needed to record WHICH button was pressed,
+// which is why flash takes a mark.
+describe('flash(mark)', () => {
+  it('records which value was copied, and clears to false', () => {
+    vi.useFakeTimers()
+    const { copied, flash } = useCopyFeedback(1000)
+    flash('sha256')
+    expect(copied.value).toBe('sha256')
+    // A different row must not read as copied while this one is marked.
+    expect(copied.value === 'md5').toBe(false)
+    vi.advanceTimersByTime(1000)
+    expect(copied.value).toBe(false)
+    vi.useRealTimers()
+  })
+
+  it('restarts the timer on a second copy rather than letting the first clear it', () => {
+    vi.useFakeTimers()
+    const { copied, flash } = useCopyFeedback(1000)
+    flash('a')
+    vi.advanceTimersByTime(800)
+    flash('b')
+    // The first timer would have fired at 1000 and blanked the second mark.
+    vi.advanceTimersByTime(400)
+    expect(copied.value).toBe('b')
+    vi.advanceTimersByTime(700)
+    expect(copied.value).toBe(false)
+    vi.useRealTimers()
+  })
+})

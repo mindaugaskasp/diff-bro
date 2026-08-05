@@ -6,18 +6,18 @@
 import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
-import { useSettingsStore } from '../stores/settingsStore'
 import { useCommands } from '../composables/useCommands'
-import { MAX_RECENT_TOOLS, recentTools } from '../utils/tools'
+import { TOOLS } from '../utils/tools'
 import { useFittingCount } from '../composables/useFittingCount'
 import AppIcon from './AppIcon.vue'
 import { useUiStore } from '../stores/uiStore'
+import { useToolsStore } from '../features/tools'
 
 const emit = defineEmits(['expand'])
 const vault = useVaultStore()
 const ui = useUiStore()
 const snippets = useSnippetStore()
-const settings = useSettingsStore()
+const toolsStore = useToolsStore()
 const { run } = useCommands()
 
 // As many as the leftover column holds, so the rail neither wastes the space nor
@@ -26,10 +26,12 @@ const tools = ref(null)
 const px = (name) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name))
 const fits = useFittingCount(tools, {
   item: () => px('--control-h') + px('--space-2'),
-  max: () => MAX_RECENT_TOOLS
+  max: () => TOOLS.length
 })
-// Opened straight from the rail: reaching a tool must not cost the collapse.
-const recent = computed(() => recentTools(settings.recentTools, fits.value))
+// The same ordering the expanded section uses — pinned first, then registry
+// order — so collapsing the sidebar never rearranges the list. Opened straight
+// from the rail: reaching a tool must not cost the collapse.
+const railTools = computed(() => toolsStore.railRows(fits.value))
 
 const groups = computed(() => [
   {
@@ -79,16 +81,16 @@ const groups = computed(() => [
       <span v-if="g.count" class="rail-count">{{ g.count > 99 ? '99+' : g.count }}</span>
     </button>
 
-    <!-- Recent tools, under the same rule the search band carries. Each opens
-         where it stands, so reaching one never costs the collapse. The rule is
-         keyed on what is REMEMBERED, not on what fits, so the box below it is
-         always in the layout and always measurable. -->
-    <div v-if="settings.recentTools.length" class="rail-rule"></div>
+    <!-- Tools, under the same rule the search band carries. Each opens where it
+         stands, so reaching one never costs the collapse. The box below the rule
+         is always in the layout and always measurable. -->
+    <div class="rail-rule"></div>
     <div ref="tools" class="rail-recent">
       <button
-        v-for="tool in recent"
+        v-for="tool in railTools"
         :key="tool.id"
         class="rail-btn"
+        :class="{ pinned: tool.pinned }"
         :data-tip="`${tool.kind} — ${tool.name}`"
         :aria-label="`${tool.kind} ${tool.name}`"
         @click="run(tool.action)"

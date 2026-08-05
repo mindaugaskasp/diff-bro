@@ -52,3 +52,31 @@ test('the Terminal pane is styled like every other Settings pane', async ({ page
   })
   expect(cliBox).toEqual(storageBox)
 })
+
+// The dialog resized under the pointer as you moved down the rail: 364px on
+// Fun, 720px on Storage. The rail is a fixed target, so the window jumping
+// 356px between two clicks moves the next item out from under the cursor.
+// `.settings-pane` already carried a min-height meant to prevent exactly this;
+// it was 232px, shorter than every pane that shipped after it was written.
+test('the dialog keeps one height across every pane', async ({ page }) => {
+  await openSettings(page)
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  const tabs = ['Appearance', 'Shortcuts', 'Storage', 'Limits', 'Logs', 'Email', 'Terminal', 'Fun']
+
+  const heights = {}
+  for (const name of tabs) {
+    await dialog.getByRole('button', { name, exact: true }).click()
+    await expect(dialog).toBeVisible()
+    heights[name] = Math.round((await dialog.boundingBox()).height)
+  }
+
+  const seen = [...new Set(Object.values(heights))]
+  expect(seen, `pane heights differ: ${JSON.stringify(heights)}`).toHaveLength(1)
+
+  // A pane taller than the box scrolls inside it rather than growing the dialog.
+  await dialog.getByRole('button', { name: 'Storage', exact: true }).click()
+  const scrolls = await dialog
+    .locator('.settings-pane')
+    .evaluate((el) => el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'auto')
+  expect(scrolls).toBe(true)
+})

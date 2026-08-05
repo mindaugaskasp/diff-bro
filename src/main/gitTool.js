@@ -9,11 +9,11 @@
 import {
   chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync
 } from 'node:fs'
 import { dirname, join, posix, win32 } from 'node:path'
@@ -206,7 +206,11 @@ export function sweepGitTemp(dir, now = Date.now()) {
     if (!name.startsWith(TEMP_PREFIX)) continue
     const path = join(dir, name)
     try {
-      if (now - statSync(path).mtimeMs < TEMP_TTL_MS) continue
+      // lstat, not stat: a planted symlink would otherwise be aged by its
+      // TARGET's mtime (clipboardStage.js does the same).
+      const info = lstatSync(path)
+      if (!info.isDirectory()) continue
+      if (now - info.mtimeMs < TEMP_TTL_MS) continue
       rmSync(path, { recursive: true, force: true })
       removed += 1
     } catch {

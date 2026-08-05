@@ -11,7 +11,7 @@ export const LEGACY_SIZE = {
   'src/main/menu.js': { fn: 204, file: 302 },
   'src/main/quickLook.js': { file: 254 },
   'src/main/sealing.js': { file: 388 },
-  'src/main/share.js': { fn: 225, file: 510 },
+  'src/main/share.js': { fn: 224, file: 510 },
   'src/main/window.js': { fn: 74 },
   'src/renderer/src/composables/useMatrixRain.js': { fn: 96 },
   'src/renderer/src/composables/useMonacoInput.js': { fn: 96 },
@@ -27,11 +27,11 @@ export const LEGACY_SIZE = {
   'src/renderer/src/menus.js': { fn: 181 },
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 783 },
-  'src/renderer/src/stores/settingsStore.js': { file: 308 },
+  'src/renderer/src/stores/settingsStore.js': { file: 301 },
   'src/renderer/src/stores/snippetStore.js': { file: 584 },
   'src/renderer/src/stores/tabsStore.js': { file: 398 },
   'src/renderer/src/stores/vaultStore.js': { file: 408 },
-  'src/renderer/src/utils/structuralDiff.js': { file: 300 },
+  'src/renderer/src/utils/structuralDiff.js': { file: 279 },
   'src/renderer/src/utils/tabs.js': { file: 260 }
 }
 

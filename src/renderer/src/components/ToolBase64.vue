@@ -4,6 +4,7 @@ import { base64Decode, base64Encode, byteLength } from '../utils/base64'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -35,13 +36,12 @@ const summary = computed(() => {
     : `${t.length} chars → ${byteLength(out)} B`
 })
 
-const copied = ref(false)
+const { copied, flash } = useCopyFeedback()
 async function copy() {
   if (!result.value.output) return
   const res = await window.api.copyText(result.value.output)
   if (!res?.ok) return
-  copied.value = true
-  setTimeout(() => (copied.value = false), 900)
+  flash()
 }
 
 // Offer this panel's result to the dialog's Save-as-snippet action.

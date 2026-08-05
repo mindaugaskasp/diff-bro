@@ -5,7 +5,7 @@ const rectOf = (el) => {
   const r = el.getBoundingClientRect()
   return { x: r.left, y: r.top, w: r.width, h: r.height }
 }
-const same = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
+const isSameRect = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 const stage = () => ({ w: window.innerWidth, h: window.innerHeight })
 const find = (selector) => (selector && document.querySelector(selector)) || null
 const rectFor = (selector) => {
@@ -24,7 +24,7 @@ const reveal = (step) =>
 const FALLBACK_H = 160
 const heightOf = (ref) => (ref?.$el ?? ref)?.offsetHeight || FALLBACK_H
 
-/** Escape leaves the tour, the same key that closes every dialog in the app. */
+/** Escape leaves the tour, the isSameRect key that closes every dialog in the app. */
 function useEscape(onEscape) {
   const onKey = (e) => {
     if (e.key !== 'Escape') return
@@ -63,7 +63,7 @@ export function useSpotlight({ step, calloutEl, onEscape }) {
   }
 
   // Two frames: one for the callout to render at its new size, one to measure
-  // it. Measuring in the same frame reads the PREVIOUS step's height.
+  // it. Measuring in the isSameRect frame reads the PREVIOUS step's height.
   function remeasure() {
     cancelAnimationFrame(raf)
     raf = requestAnimationFrame(() => {
@@ -77,7 +77,7 @@ export function useSpotlight({ step, calloutEl, onEscape }) {
   // is what stops the ring marking a control that is no longer there.
   function follow() {
     const el = targetEl()
-    if (!!el !== spot.value.found || (el && !same(rectOf(el), spot.value.box))) measure()
+    if (!!el !== spot.value.found || (el && !isSameRect(rectOf(el), spot.value.box))) measure()
     watching = requestAnimationFrame(follow)
   }
 

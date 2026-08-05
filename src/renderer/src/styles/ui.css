@@ -26,7 +26,6 @@
 .band-row {
   min-height: var(--band-row);
 }
-
 /* The neutral workhorse — every action that is not its group's one affirmative
    choice. It must read as pressable AT REST, on three axes: face, keyline, lift.
    Flat + dim is the language :disabled speaks, which is why the toolbar looked
@@ -83,7 +82,6 @@
   opacity: 0.7;
   cursor: default;
 }
-
 /* The one affirmative action of a dialog or panel — at most one per group. */
 .btn-primary {
   background: var(--accent);
@@ -118,7 +116,6 @@
   color: var(--text-on-accent);
   opacity: 0.5;
 }
-
 /* The DISMISSIVE TWIN of a primary — Cancel, Close, Dismiss — and nothing else.
    A lone ghost reads as unavailable; a neutral action with no primary beside it
    is a plain `.btn`. See docs/standards.md. */
@@ -132,19 +129,16 @@
 .btn-ghost:hover:not(:disabled) {
   color: var(--text);
 }
-
 .btn-danger:hover:not(:disabled) {
   border-color: var(--danger-border);
   color: var(--danger-bg);
 }
-
 /* Sidebar / toolbar scale. */
 .btn-sm {
   height: var(--control-h-sm);
   padding: 0 10px;
   font-size: var(--font-sm);
 }
-
 /* Square, borderless glyph button (header affordances, row actions). Flat by
    design — a plate on every row action would make the sidebar heavy. */
 .btn-icon {
@@ -157,12 +151,6 @@
   font-size: var(--font-lg);
   box-shadow: none;
 }
-
-/* Fills its slot — the default for the stacked sidebar actions. */
-.btn-block {
-  width: 100%;
-}
-
 /* The sidebar's collapse/expand control: ONE button in two states, so both
    sides use this and it never changes size or position between them. */
 .sidebar-toggle {
@@ -170,24 +158,6 @@
   background: var(--bg);
   color: var(--text-dim);
 }
-
-/* --- Sidebar section rhythm ---------------------------------------------
-   App-wide left/right inset for a section's own controls, so they line up
-   across sections from one place instead of restating pixel padding. Values
-   come from the rhythm tokens in tokens.css. (Section actions now live as a
-   single "+" glyph in each SectionHeader, not a body button row.) */
-.section-inset {
-  padding-left: var(--pad-inset-x);
-  padding-right: var(--pad-inset-x);
-}
-/* One spacing rule for every stacked sidebar input (snippet filter, add-category
-   name…), so a field is never glued to the header or the row above/below it —
-   set here once instead of per-component margins. Each field keeps its own
-   border/padding; only the outer spacing is shared. */
-.sidebar-field {
-  margin: var(--space-3) var(--pad-inset-x) var(--space-2);
-}
-
 /* Solid destructive action — confirmation dialogs only, never a first resort. */
 .btn-destructive {
   background: var(--danger-bg);
@@ -201,7 +171,6 @@
   color: var(--danger-text);
   filter: brightness(1.08);
 }
-
 /* --- Dialog layer -------------------------------------------------------
    Every modal is the same box: a dimmed backdrop, a panel with a header row,
    optional note, body, and a right-aligned action row. A dialog's own stylesheet
@@ -391,7 +360,6 @@
   outline: none;
   border-color: var(--accent);
 }
-
 /* Sidebar row recognition system — the type monogram, one-word tag, lifetime
    state chip and trusted-sender mark shared by SnippetRow and SavedDiffRow.
    The monogram's family tint (--fam) is bound inline per language family, the
@@ -413,16 +381,6 @@
   font-size: var(--font-2xs);
   font-weight: 700;
   line-height: 1;
-}
-.monogram-sm {
-  flex: none;
-  color: var(--fam, var(--text-dim));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0 4px;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: var(--font-2xs);
-  font-weight: 700;
 }
 /* Tag ink. A tag colour is picked by the user, so only its LIGHTNESS can be
    wrong for the ground — and only lightness is changed, to --tag-l, leaving hue
@@ -563,7 +521,6 @@ button.tag-chip:hover .usb-tct {
   width: 12px;
   height: 12px;
 }
-
 /* Keyboard chip. Shared: the launcher's search band and its footer hints are
    separate components, so a scoped copy in either would drift. */
 .ql-kbd {
@@ -578,7 +535,6 @@ button.tag-chip:hover .usb-tct {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
-
 /* A search field. Lifted out of SidebarSearch.css when a third component needed
    it (the recipient picker and the trusted-key manager): a scoped copy in the
    second one drifts, which is what the shared-class rule in docs/standards.md
@@ -632,7 +588,6 @@ button.tag-chip:hover .usb-tct {
 .field-search button:hover {
   color: var(--text);
 }
-
 /* A bounded scroll region inside a dialog. Bounded by --border rules rather
    than a gradient fade: the rows are --bg-raised cards on a --bg-panel dialog,
    so a fade would have to pick one and smear over the other — and `contrast`
@@ -642,7 +597,6 @@ button.tag-chip:hover .usb-tct {
   border-block: 1px solid var(--border);
   padding-block: var(--space-1);
 }
-
 /* The status band under a diff: what changed, in words. Shared because the text
    diff and the diagram diff must read alike — the diagram had it first and the
    text diff carried a terse `+5 −4` in the toolbar instead, which is the drift
@@ -689,7 +643,6 @@ button.tag-chip:hover .usb-tct {
 .status-band .only {
   font-style: italic;
 }
-
 /* Pushes trailing content (a hidden-count, a hint) to the right edge. */
 .status-band .band-end {
   margin-left: auto;
@@ -697,7 +650,6 @@ button.tag-chip:hover .usb-tct {
   align-items: center;
   gap: var(--space-3);
 }
-
 /* Syntax roles, shared: the snippet preview card paints them with Monaco's
    tokens and the Quick Look-up launcher with Prism's, in two different windows.
    Scoped to either component the other renders spans that match nothing — which

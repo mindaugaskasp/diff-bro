@@ -27,10 +27,17 @@ export default defineConfig({
       // The bar, set just under what the suite currently reaches. It is a
       // ratchet, not a target: raise it when coverage rises, never lower it to
       // make a red run green.
+      //
+      // NOT yet widened to the nine tested main modules outside this set
+      // (shareExport, trustedKeys, quickLookCore, cliShim, backupZip,
+      // fileFilters, appData, files, cli): adding them drops the aggregate to
+      // 93.6/86.6/94.4/94.5, and buying that would mean LOWERING the lines
+      // floor, which this ratchet forbids. They need tests of their own first —
+      // then they join the set and the floors go up again.
       thresholds: {
-        statements: 93,
-        branches: 86,
-        functions: 92,
+        statements: 94,
+        branches: 87,
+        functions: 95,
         lines: 95
       },
       include: [

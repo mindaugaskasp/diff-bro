@@ -169,6 +169,34 @@ const SURFACES = [
     }
   },
   {
+    name: 'tools-section',
+    // Already on screen — Tools is a sidebar section, open by default. The third
+    // row is hovered because the icon's --bg-hover state is the one that has no
+    // resting equivalent to fall back on, and it is where sepia is tightest.
+    open: async (page) => {
+      const section = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
+      await section.locator('.row').first().waitFor()
+      await section.locator('.row').first().locator('.star').click()
+      await section.locator('.row').nth(2).hover()
+    },
+    close: async (page) => {
+      const section = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
+      await section.locator('.row.pinned').first().locator('.star').click()
+    },
+    probes: {
+      'tool name': ['.sidebar-section .row .nm', TEXT],
+      // The trailing meta is read as a word, so it takes the reading floor.
+      'tool kind': ['.sidebar-section .row .kind', TEXT],
+      // Marks, not text: the star at rest and the pinned star both have to
+      // register as a control against the panel.
+      'star, resting': ['.sidebar-section .row:not(.pinned) .star', DIM],
+      'star, pinned': ['.sidebar-section .row.pinned .star', DIM],
+      'type badge': ['.sidebar-section .row .monogram', DIM],
+      'row, hovered': ['.sidebar-section .row:hover .nm', TEXT],
+      'disclosure': ['.sidebar-section .disclosure .nm', TEXT]
+    }
+  },
+  {
     name: 'status-band',
     // Already on screen — the sweep leaves a structure diff loaded.
     open: async (page) => page.locator('.status-band').waitFor(),

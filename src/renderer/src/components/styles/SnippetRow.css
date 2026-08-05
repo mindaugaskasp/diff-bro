@@ -12,6 +12,17 @@
 .row:hover {
   background: var(--bg-hover);
 }
+/* Same mark a favourited saved diff and a pinned tool carry — the state is one
+   state, so it reads one way across the sidebar. --pin-ink rather than raw
+   --favorite: the gold is tuned for the dark grounds and falls under the 3:1
+   non-text floor on light, solar, sepia and bloom. */
+.row.favorite {
+  background: color-mix(in srgb, var(--favorite) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--pin-ink);
+}
+.row.favorite:hover {
+  background: color-mix(in srgb, var(--favorite) 22%, transparent);
+}
 /* "Copied" acknowledgement over the action buttons. Anchored to the row, not
    .rowacts, so it survives the pointer leaving (which hides .rowacts). */
 .copied-flash {
@@ -52,10 +63,10 @@
   padding: 0 4px 0 8px;
 }
 .star:hover {
-  color: var(--favorite);
+  color: var(--pin-ink);
 }
 .star.on {
-  color: var(--favorite);
+  color: var(--pin-ink);
 }
 .entry {
   flex: 1;

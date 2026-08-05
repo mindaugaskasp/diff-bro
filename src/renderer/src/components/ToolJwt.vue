@@ -7,6 +7,7 @@ import { computed, ref } from 'vue'
 import { parseJwt, jwtClaims } from '../utils/jwt'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -21,13 +22,12 @@ const hasExp = computed(() => typeof parsed.value.payload?.exp === 'number')
 const headerJson = computed(() => (ok.value ? JSON.stringify(parsed.value.header, null, 2) : ''))
 const payloadJson = computed(() => (ok.value ? JSON.stringify(parsed.value.payload, null, 2) : ''))
 
-const copied = ref('')
+const { copied: copied, flash } = useCopyFeedback()
 async function copy(text) {
   if (!text) return
   const res = await window.api.copyText(text)
   if (!res?.ok) return
-  copied.value = text
-  setTimeout(() => (copied.value = ''), 900)
+  flash(text)
 }
 
 // Offer this panel's result to the dialog's Save-as-snippet action.

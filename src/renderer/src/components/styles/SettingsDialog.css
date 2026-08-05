@@ -41,12 +41,25 @@
   color: var(--text);
   font-weight: 600;
 }
-/* Reserve the tallest pane's height so switching domains doesn't resize the
-   dialog under the pointer. */
+/* ONE height for every domain, so moving down the rail never resizes the window
+   under the pointer — the rail is a fixed target, and the dialog used to swing
+   364px (Fun) to 720px (Storage) between two clicks, moving the next item out
+   from under the cursor.
+
+   A fixed height that SCROLLS, not a min-height sized to the tallest pane: a
+   min-height is only correct until a pane outgrows it, which is exactly how the
+   previous 232px stopped working (every pane shipping today is taller). 380
+   clears the second-tallest pane (Email, 365) so seven of the eight never
+   scroll, and is as short as that allows — the sparse panes (Fun, Logs) pay for
+   this in whitespace, so the box is sized to the runner-up rather than to
+   Storage's 610. Storage scrolls, and so does any pane that grows past it,
+   instead of silently re-breaking the invariant.
+   Guarded by e2e/settings.spec.mjs. */
 .settings-pane {
   flex: 1;
   min-width: 0;
-  min-height: 232px;
+  height: 380px;
+  overflow-y: auto;
 }
 h4 {
   margin: 0 0 8px;

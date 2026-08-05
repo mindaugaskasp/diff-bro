@@ -24,54 +24,6 @@ ul {
 .empty.small {
   list-style: none;
 }
-/* A group header (Favorites) — chevron + icon + name + count. */
-.grp-head {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: 100%;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px 10px 4px;
-  font-family: inherit;
-}
-.chev {
-  display: inline-block;
-  font-size: var(--font-2xs);
-  color: var(--text-dim);
-  transition: transform 0.1s;
-}
-.chev.open {
-  transform: rotate(90deg);
-}
-.grp-icon {
-  font-size: var(--font-md);
-}
-.grp-icon.gold {
-  color: var(--favorite);
-}
-.grp-name {
-  flex: 1;
-  text-align: left;
-  font-size: var(--font-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-hint);
-}
-.grp-name.gold {
-  color: var(--favorite);
-}
-.grp-count {
-  font-size: var(--font-xs);
-  color: var(--text-hint);
-  font-weight: 600;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  padding: 0 6px;
-}
 .rows {
   list-style: none;
   margin: 0 0 var(--space-2);

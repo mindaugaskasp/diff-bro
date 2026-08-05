@@ -199,7 +199,20 @@ function payloadSignatureOk(inner) {
   }
 }
 
-export async function openSnippets(file, passphrase) {
+// Who actually signed this, resolved from the LOCAL trust store by matching the
+// signing key the file carries — never `inner.signer`, which is an unbound claim
+// the sender writes. A fingerprint is public (it is printed on every
+// .diffbrokey), so a bundle signed with Mallory's key could name Alice's and the
+// renderer would print "Signed by trusted key Alice"; snippets are code the user
+// pastes and runs. Null means "signed, but not by a key you trust" — which is
+// the honest answer for a bundle from a stranger, and the same shape the caller
+// already handles. sealing.js resolves its verifying key the same way.
+function signerFrom(trustedList, signerKey) {
+  const match = (Array.isArray(trustedList) ? trustedList : []).find((t) => t.sign === signerKey)
+  return match ? match.fingerprint : null
+}
+
+export async function openSnippets(file, passphrase, trustedList = []) {
   const params = scryptParamsFor(file)
   if (!hasEnvelopeShape(file, params)) return { error: 'not-a-snippet-file' }
 
@@ -230,5 +243,5 @@ export async function openSnippets(file, passphrase) {
   // Decryptable + signed still isn't trusted-shaped — validate before returning.
   const invalid = validateSnippetBundle(bundle)
   if (invalid) return { error: invalid }
-  return { ok: true, bundle, signer: inner.signer }
+  return { ok: true, bundle, signer: signerFrom(trustedList, inner.signerKey) }
 }
