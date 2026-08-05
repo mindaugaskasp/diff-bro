@@ -1,4 +1,12 @@
 // Compact "3d / 2w / 5h" age from a timestamp (recomputed on render, not live).
+//
+// Deliberately not date-fns/dayjs/luxon: this is elapsed-millisecond division
+// with no calendar, timezone or DST arithmetic in it, and the two places that DO
+// format a real date (epoch.js, autoBackup.js) already delegate to the
+// platform's Intl/toLocaleString/UTC getters. A library would replace the
+// fifteen lines below and add an audit surface for nothing — see "Do not
+// reinvent what a package already does" in docs/standards.md, which is the same
+// rule that says to TAKE the package when it saves a class of bug.
 /**
  * @param {number} ts epoch ms
  * @returns {string} compact age, e.g. "now", "5m", "3d"

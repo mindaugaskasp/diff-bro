@@ -42,7 +42,7 @@
   /* Named application rhythm, composed from the scale above. One place controls
      the inset every sidebar section, its action row, and its body use, so a new
      section (or a new button in one) can never end up glued to its neighbour —
-     the class is .section-actions / .section-inset in ui.css. */
+     the class is .section-actions in ui.css. */
   --pad-inset-x: var(--space-3);
   --pad-section-top: var(--space-3);
   --pad-section-bottom: var(--space-2);

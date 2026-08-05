@@ -8,7 +8,7 @@ export const MIN_CAPTURE_SIDE = 32
 export const MAX_CAPTURE_SIDE = 8192
 
 const int = (n) => Math.round(n)
-const finite = (n) => typeof n === 'number' && Number.isFinite(n)
+const isFiniteNumber = (n) => typeof n === 'number' && Number.isFinite(n)
 
 /**
  * Clamp a renderer-supplied rect into the window's content area.
@@ -19,8 +19,8 @@ const finite = (n) => typeof n === 'number' && Number.isFinite(n)
 export function normalizeCaptureRect(rect, bounds) {
   if (!rect || typeof rect !== 'object') return null
   const { x, y, width, height } = rect
-  if (![x, y, width, height].every(finite)) return null
-  if (!finite(bounds?.width) || !finite(bounds?.height)) return null
+  if (![x, y, width, height].every(isFiniteNumber)) return null
+  if (!isFiniteNumber(bounds?.width) || !isFiniteNumber(bounds?.height)) return null
 
   const left = Math.min(Math.max(int(x), 0), int(bounds.width))
   const top = Math.min(Math.max(int(y), 0), int(bounds.height))

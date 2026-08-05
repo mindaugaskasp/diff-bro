@@ -49,4 +49,4 @@ export const showsWhitespaceToggle = (store) =>
  * @param {object} store
  * @returns {boolean}
  */
-export const defaultSemanticView = (store) => !!store?.canCompareDiagram || !!store?.delimitedFormat
+export const shouldOpenSemantic = (store) => !!store?.canCompareDiagram || !!store?.delimitedFormat

@@ -19,6 +19,12 @@ beforeEach(() => {
   setActivePinia(createPinia())
   localStorage.clear()
   notices.length = 0
+  // emailStore keeps `pending` at MODULE scope, so a compose() that is never
+  // cancelled outlives the Pinia reset and leaks a plaintext draft into every
+  // later test in this file. Nothing exploits it today; it becomes an
+  // order-dependent false pass the first time a test calls send() without
+  // composing.
+  useEmailStore().cancel()
   window.api = {
     mailHandoff: vi.fn().mockResolvedValue({ ok: true, name: 'x.diffbro', copied: true })
   }

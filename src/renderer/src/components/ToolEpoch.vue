@@ -8,6 +8,7 @@ import { isDarkTheme } from '../utils/themes'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -47,13 +48,12 @@ const fromPicker = (e) => {
   if (e.target.value) picked.value = e.target.value.replace('T', ' ')
 }
 
-const copied = ref('')
+const { copied: copied, flash } = useCopyFeedback()
 async function copy(text) {
   if (!text) return
   const res = await window.api.copyText(text)
   if (!res?.ok) return
-  copied.value = text
-  setTimeout(() => (copied.value = ''), 900)
+  flash(text)
 }
 </script>
 

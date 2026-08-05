@@ -9,7 +9,7 @@ import {
   stripMermaidFence
 } from '../../../src/renderer/src/utils/mermaid'
 import { detectSnippetLanguage } from '../../../src/renderer/src/utils/detectLanguage'
-import { THEMES, isDarkTheme } from '../../../src/renderer/src/utils/themes'
+import { THEMES } from '../../../src/renderer/src/utils/themes'
 
 describe('looksLikeMermaid', () => {
   it('recognizes common diagram openings', () => {
@@ -66,10 +66,34 @@ describe('mermaidThemeFor', () => {
 })
 
 describe('effectiveDiagramMode', () => {
+  // A literal table, not `isDarkTheme(t.id) ? 'dark' : 'light'` — that IS the
+  // implementation, so the old loop could never fail for any theme. A
+  // mis-classified theme has to fail here, where the rendering consequence is.
+  const GROUNDS = [
+    ['light', 'light'],
+    ['dark', 'dark'],
+    ['solar', 'light'],
+    ['neon', 'dark'],
+    ['nord', 'dark'],
+    ['sepia', 'light'],
+    ['dim', 'dark'],
+    ['beacon', 'dark'],
+    ['meridian', 'light'],
+    ['linen', 'light'],
+    ['bloom', 'light'],
+    ['nyan', 'dark'],
+    ['matrix', 'dark'],
+    ['contrast', 'light']
+  ]
+
   it('follows the app theme on auto, for every theme', () => {
-    for (const t of THEMES) {
-      expect(effectiveDiagramMode(t.id, 'auto')).toBe(isDarkTheme(t.id) ? 'dark' : 'light')
+    for (const [theme, mode] of GROUNDS) {
+      expect(effectiveDiagramMode(theme, 'auto'), theme).toBe(mode)
     }
+  })
+
+  it('covers every theme that ships', () => {
+    expect(GROUNDS.map(([t]) => t).sort()).toEqual(THEMES.map((t) => t.id).sort())
   })
 
   it('lets an explicit choice win over the app theme', () => {

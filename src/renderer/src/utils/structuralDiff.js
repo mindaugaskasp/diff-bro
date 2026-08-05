@@ -23,6 +23,8 @@ import { parseXml } from './xml'
 // is a MEMORY one: every row is an object held for the whole comparison. Counts
 // still cover the whole document; only the list stops.
 export const MAX_TREE_ROWS = 200_000
+// Recursion ceiling — past it a branch is a leaf, so deep input cannot overflow.
+export const MAX_TREE_DEPTH = 200
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const isBranch = (v) => Array.isArray(v) || isObject(v)
@@ -30,12 +32,13 @@ const typeOf = (v) => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof
 const render = (v) => (isBranch(v) ? '' : (JSON.stringify(v) ?? String(v)))
 // Canonical form, used to tell array items apart. Keys are sorted, so two items
 // that differ only in key order are the same item.
-function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`
+function canonical(value, depth = 0) {
+  if (depth >= MAX_TREE_DEPTH) return '"…"'
+  if (Array.isArray(value)) return `[${value.map((v) => canonical(v, depth + 1)).join(',')}]`
   if (isObject(value)) {
     return `{${Object.keys(value)
       .sort()
-      .map((k) => `${JSON.stringify(k)}:${canonical(value[k])}`)
+      .map((k) => `${JSON.stringify(k)}:${canonical(value[k], depth + 1)}`)
       .join(',')}}`
   }
   return JSON.stringify(value) ?? 'undefined'
@@ -46,7 +49,8 @@ function canonical(value) {
 // text IS its text, which keeps <name>bro</name> from nesting pointlessly.
 function xmlValue(node) {
   if (!node.attrs.length && !node.children.length) return node.text
-  const out = {}
+  // Null prototype: an element named __proto__ is a KEY, not a prototype swap.
+  const out = Object.create(null)
   for (const [k, v] of [...node.attrs].sort((a, b) => (a[0] < b[0] ? -1 : 1))) out[`@${k}`] = v
   const byName = new Map()
   for (const child of node.children) {
@@ -173,7 +177,7 @@ function walk(ctx, value, forced) {
           right: forced === 'removed' ? undefined : render(value)
         })
   })
-  if (!isBranch(value)) return
+  if (!isBranch(value) || depth >= MAX_TREE_DEPTH) return
   const entries = Array.isArray(value)
     ? value.map((v, i) => [String(i), v])
     : Object.keys(value)
@@ -231,7 +235,7 @@ function compare(ctx, left, right) {
   const { rows, label, path, parent, depth } = ctx
   const sameShape =
     isBranch(left) && isBranch(right) && Array.isArray(left) === Array.isArray(right)
-  if (sameShape) {
+  if (sameShape && depth < MAX_TREE_DEPTH) {
     rows.push({ depth, label, path, parent, status: 'same', container: true })
     compareBranch(ctx, left, right)
     return
@@ -272,29 +276,4 @@ export function diffStructures(left, right) {
     hidden: Math.max(0, body.length - MAX_TREE_ROWS),
     stats
   }
-}
-
-/**
- * The rows worth showing: everything, or just what changed plus the ancestors
- * that give it context. Ancestors are followed through `parent` rather than by
- * splitting the path, so a key containing the separator cannot pull an unrelated
- * row into view.
- * @param {TreeRow[]} rows
- * @param {boolean} showAll
- * @returns {TreeRow[]}
- */
-export function visibleStructureRows(rows, showAll) {
-  if (showAll) return rows
-  const parentOf = new Map(rows.map((r) => [r.path, r.parent]))
-  const keep = new Set()
-  for (const row of rows) {
-    if (row.status === 'same') continue
-    keep.add(row.path)
-    let path = row.parent
-    while (path != null && !keep.has(path)) {
-      keep.add(path)
-      path = parentOf.get(path) ?? null
-    }
-  }
-  return rows.filter((r) => keep.has(r.path))
 }

@@ -51,23 +51,3 @@
 .options label.off input {
   cursor: not-allowed;
 }
-/* Theme toggle: a quiet icon button, set apart from the action buttons. */
-.icon-btn {
-  background: none;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  color: var(--text);
-  font-size: var(--font-xl);
-  line-height: 1;
-  padding: 3px 8px;
-  cursor: pointer;
-}
-.icon-btn:hover {
-  border-color: var(--border);
-  background: var(--bg-hover);
-}
-/* Locked state: the padlock reads as "on" in the accent colour. */
-.icon-btn.active {
-  color: var(--accent);
-  border-color: var(--accent);
-}

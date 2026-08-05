@@ -31,7 +31,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/stores/snippetStore.js': { file: 584 },
   'src/renderer/src/stores/tabsStore.js': { file: 398 },
   'src/renderer/src/stores/vaultStore.js': { file: 408 },
-  'src/renderer/src/utils/structuralDiff.js': { file: 300 },
+  'src/renderer/src/utils/structuralDiff.js': { file: 279 },
   'src/renderer/src/utils/tabs.js': { file: 260 }
 }
 

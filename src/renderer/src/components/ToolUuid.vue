@@ -17,6 +17,7 @@ import {
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
+import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -67,13 +68,12 @@ const verifyMatch = computed(() => {
   return v ? v === canonical.value : null
 })
 
-const copied = ref(false)
+const { copied, flash } = useCopyFeedback()
 async function copy() {
   if (!display.value) return
   const res = await window.api.copyText(display.value)
   if (!res?.ok) return
-  copied.value = true
-  setTimeout(() => (copied.value = false), 900)
+  flash()
 }
 
 // Offer this panel's result to the dialog's Save-as-snippet action.

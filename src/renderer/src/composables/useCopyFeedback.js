@@ -15,8 +15,12 @@ export function useCopyFeedback(duration = 1200) {
       timer = null
     }
   }
-  function flash() {
-    copied.value = true
+  // `mark` lets a panel with several copy buttons record WHICH one was pressed
+  // (the value, the algorithm) instead of a bare boolean, so only that row shows
+  // the tick. It always clears back to false, which compares false against any
+  // such marker.
+  function flash(mark = true) {
+    copied.value = mark
     clear()
     timer = setTimeout(() => {
       copied.value = false

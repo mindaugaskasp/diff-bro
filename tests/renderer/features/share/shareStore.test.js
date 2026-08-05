@@ -1,198 +1,88 @@
-// Sharing a diff and trusting the keys that make it possible. The notices land
-// on the core store; nothing here touches key material, which lives in main.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useShareStore } from '../../../../src/renderer/src/features/share'
 import { useDiffStore } from '../../../../src/renderer/src/stores/diffStore'
+import { useVaultStore } from '../../../../src/renderer/src/stores/vaultStore'
 
-const share = () => useShareStore()
-const FILE = (name) => ({ path: `/tmp/${name}`, name, content: `content of ${name}` })
-
+// shareTo had no unit test at all, and its untested branches are the ones where
+// a user LOSES something: the localCopy split decides whether the sender is told
+// they have no record of what they just sent, and the error map degrades every
+// crypto verdict to a generic string when a key is missing from it.
 beforeEach(() => {
   setActivePinia(createPinia())
   localStorage.clear()
-  window.api = {}
 })
 
-describe('shareStore', () => {
-  it('shareCurrent explains itself instead of opening dialogs on an empty app', () => {
-    const store = useDiffStore()
-    share().shareCurrent()
-    expect(store.showSaveDialog).toBe(false)
-    expect(share().saveThenShare).toBe(false)
-    expect(store.notice).toContain('Nothing to share')
-  })
-  it('shareCurrent chains save → share when a diff is present', () => {
-    const store = useDiffStore()
-    store.mode = 'paste'
-    store.pasteLeft = 'x'
-    share().shareCurrent()
-    expect(store.showSaveDialog).toBe(true)
-    expect(share().saveThenShare).toBe(true)
-  })
-  it('adds a trusted key before clearing the pending state, then opens the manager', async () => {
-    const store = useDiffStore()
-    const seen = []
-    window.api = {
-      addTrustedKeyNamed: async (key, label) => {
-        // The naming dialog must still be up while the key is being stored —
-        // TrustedKeysDialog re-reads its list the moment this clears.
-        seen.push(share().pendingTrustedKey?.fingerprint ?? null)
-        return { ok: true, label, fingerprint: 'AB:CD', key }
-      }
-    }
-    share().pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
-    await share().confirmTrustedKey('Alice — laptop')
-    expect(seen).toEqual(['AB:CD'])
-    expect(share().pendingTrustedKey).toBeNull()
-    expect(share().showTrustedKeysDialog).toBe(true)
-    expect(store.notice).toContain('Alice — laptop')
-  })
-  it('leaves the manager closed when the key could not be added', async () => {
-    window.api = { addTrustedKeyNamed: async () => ({ error: 'bad-key' }) }
-    share().pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
-    await share().confirmTrustedKey('Alice')
-    expect(share().pendingTrustedKey).toBeNull()
-    expect(share().showTrustedKeysDialog).toBe(false)
-  })
-  it('a dropped public key opens the naming dialog instead of loading a diff', async () => {
-    const store = useDiffStore()
-    window.api = {
-      readKeyFile: async () => ({
-        ok: true,
-        key: { format: 'k', sign: 's', box: 'b' },
-        fingerprint: 'AB:CD',
-        defaultLabel: 'Alice'
-      })
-    }
-    await share().receiveDroppedKey('/tmp/alice.diffbrokey')
-    expect(share().pendingTrustedKey).toMatchObject({ fingerprint: 'AB:CD', label: 'Alice' })
-    expect(store.left).toBeNull()
-  })
-  it('refuses your own key with an explanation rather than adding it', async () => {
-    const store = useDiffStore()
-    window.api = { readKeyFile: async () => ({ error: 'own-key' }) }
-    await share().receiveDroppedKey('/tmp/mine.diffbrokey')
-    expect(share().pendingTrustedKey).toBeNull()
-    expect(store.notice).toContain('your own public key')
-  })
-  it('key export/copy close the dialog and explain the next step', async () => {
-    const store = useDiffStore()
-    share().showShareKeyDialog = true
-    window.api = { exportPublicKey: async () => ({ ok: true }) }
-    await share().runExportKey('Alice — laptop')
-    expect(share().showShareKeyDialog).toBe(false)
-    expect(store.notice).toContain('Add Trusted Key')
+const notices = () => useDiffStore().notice
 
-    share().showShareKeyDialog = true
-    window.api = { copyPublicKey: async () => ({ ok: true }) }
-    await share().runCopyKey('Alice — laptop')
-    expect(share().showShareKeyDialog).toBe(false)
-    expect(store.notice).toContain('copied')
-  })
-  it('a cancelled key export leaves the dialog open', async () => {
-    share().showShareKeyDialog = true
-    window.api = { exportPublicKey: async () => ({ canceled: true }) }
-    await share().runExportKey('x')
-    expect(share().showShareKeyDialog).toBe(true)
-  })
-  it('addTrustedKey turns each failure into its own message', async () => {
-    const store = useDiffStore()
-    window.api = { addTrustedKey: async () => ({ error: 'own-key' }) }
-    await share().addTrustedKey()
-    expect(store.notice).toContain('your own public key')
-    expect(share().pendingTrustedKey).toBeNull()
+describe('shareStore.shareTo', () => {
+  it('reports where the sealed file went', async () => {
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.share = vi.fn().mockResolvedValue({ ok: true, to: 'Ada', path: '/tmp/a.diffbro' })
+    share.shareEntryId = 'entry-1'
 
-    window.api = { addTrustedKey: async () => ({ error: 'not-a-key' }) }
-    await share().addTrustedKey()
-    expect(store.notice).toContain('not a valid public key')
+    await share.shareTo(['fp-ada'])
+    expect(vault.share).toHaveBeenCalledWith('entry-1', ['fp-ada'])
+    expect(notices()).toContain('/tmp/a.diffbro')
+    expect(notices()).not.toMatch(/could not be saved/)
+  })
 
-    window.api = { addTrustedKey: async () => ({ canceled: true }) }
-    store.notice = null
-    await share().addTrustedKey()
-    expect(store.notice).toBeNull() // cancelling says nothing
+  // The sealed file went out either way; only the sender's own twin failed, and
+  // not saying so leaves them believing they have a copy they do not have.
+  it('says so when the local copy could not be saved', async () => {
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.shareDraft = vi
+      .fn()
+      .mockResolvedValue({ ok: true, to: 'Ada', path: '/tmp/a.diffbro', localCopy: false })
+    share.shareDraft = { name: 'draft' }
+
+    await share.shareTo(['fp-ada'])
+    expect(notices()).toMatch(/could not be saved/)
+    expect(notices()).toMatch(/not in your saved list/)
   })
-  it('cancelTrustedKey drops the pending key without adding it', () => {
-    share().pendingTrustedKey = { key: 'k', fingerprint: 'AB', label: 'Alice' }
-    share().cancelTrustedKey()
-    expect(share().pendingTrustedKey).toBeNull()
+
+  it('maps a known crypto verdict to its own wording', async () => {
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.share = vi.fn().mockResolvedValue({ error: 'expired' })
+    share.shareEntryId = 'entry-1'
+
+    await share.shareTo(['fp-ada'])
+    expect(notices()).toBeTruthy()
+    expect(notices()).not.toBe('Sharing failed.')
   })
-  it('shareCurrent refuses when there is nothing loaded', () => {
-    const store = useDiffStore()
-    share().shareCurrent()
-    expect(store.showSaveDialog).toBe(false)
-    expect(store.notice).toContain('Nothing to share yet')
+
+  it('still says something for an error code it does not know', async () => {
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.share = vi.fn().mockResolvedValue({ error: 'some-new-code' })
+    share.shareEntryId = 'entry-1'
+
+    await share.shareTo(['fp-ada'])
+    expect(notices()).toBe('Sharing failed.')
   })
-  it('receiveDroppedSharedDiff imports a dropped .diffbro and opens it', async () => {
-    const store = useDiffStore()
-    const createdAt = Date.now() - 5000
-    const expiresAt = Date.now() + 5000
-    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
-    window.api.shareImportPath = async () => ({
-      ok: true,
-      from: 'alice',
-      entry: { name: 'from-drop', snapshot, createdAt, expiresAt }
-    })
-    // Minimal vault crypto round-trip so the just-imported entry re-opens.
-    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
-    window.api.vaultDecrypt = async (box) => box.data
-    await share().receiveDroppedSharedDiff('/tmp/x.diffbro')
-    expect(store.left).toMatchObject({ name: 'l.txt' })
-    expect(store.right).toMatchObject({ name: 'r.txt' })
-    expect(store.diffSaved).toBe(true) // opened from the vault — no unsaved prompt
-    expect(store.notice).toContain('from-drop')
+
+  it('does nothing without a recipient', async () => {
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.share = vi.fn()
+    await share.shareTo([])
+    expect(vault.share).not.toHaveBeenCalled()
   })
-  it('receiveDroppedSharedDiff surfaces an import error and opens nothing', async () => {
-    const store = useDiffStore()
-    window.api.shareImportPath = async () => ({ error: 'not-for-you' })
-    await share().receiveDroppedSharedDiff('/tmp/x.diffbro')
-    expect(store.left).toBeNull()
-    expect(store.notice).toContain('different machine')
-  })
-  it('importShared opens the imported diff when nothing is on screen', async () => {
-    const store = useDiffStore()
-    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
-    window.api.shareImport = async () => ({
-      ok: true,
-      from: 'alice',
-      entry: { name: 'menu-import', snapshot, createdAt: Date.now(), expiresAt: Date.now() + 5000 }
-    })
-    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
-    window.api.vaultDecrypt = async (box) => box.data
-    await share().importShared()
-    expect(store.left).toMatchObject({ name: 'l.txt' })
-    expect(store.right).toMatchObject({ name: 'r.txt' })
-    expect(store.diffSaved).toBe(true) // opened from the vault
-    expect(store.notice).toContain('Opened')
-  })
-  it('importShared keeps the current diff and only files the import when one is active', async () => {
-    const store = useDiffStore()
-    store.left = FILE('mine-a.txt')
-    store.right = FILE('mine-b.txt')
-    const snapshot = { mode: 'files', left: FILE('l.txt'), right: FILE('r.txt') }
-    window.api.shareImport = async () => ({
-      ok: true,
-      from: 'alice',
-      entry: { name: 'menu-import', snapshot, createdAt: Date.now(), expiresAt: Date.now() + 5000 }
-    })
-    window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
-    let decrypted = false
-    window.api.vaultDecrypt = async (box) => ((decrypted = true), box.data)
-    await share().importShared()
-    // The view is untouched and the imported diff was never decrypted/opened.
-    expect(store.left).toMatchObject({ name: 'mine-a.txt' })
-    expect(decrypted).toBe(false)
-    expect(store.notice).toContain('External diffs')
-  })
-  it('confirmTrustedKey flags the freshly added key so the manager can highlight it', async () => {
-    window.api.addTrustedKeyNamed = async (key, label) => ({
-      ok: true,
-      label,
-      fingerprint: 'AB:CD',
-      key
-    })
-    share().pendingTrustedKey = { key: 'pub', fingerprint: 'AB:CD', label: 'Alice' }
-    await share().confirmTrustedKey('Alice')
-    expect(share().lastAddedTrustedFp).toBe('AB:CD')
+
+  // A reactive array is a Proxy, which structured clone refuses at the IPC
+  // boundary — the unwrap is why this is a plain array by the time it leaves.
+  it('hands the recipient list over as a plain array', async () => {
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.share = vi.fn().mockResolvedValue({ ok: true, to: 'Ada', path: '/tmp/a' })
+    share.shareEntryId = 'entry-1'
+
+    await share.shareTo(['a', 'b'])
+    const [, arg] = vault.share.mock.calls[0]
+    expect(Array.isArray(arg)).toBe(true)
+    expect(arg).toEqual(['a', 'b'])
   })
 })

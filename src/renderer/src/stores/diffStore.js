@@ -4,7 +4,7 @@ import { structureAdapter } from '../adapters/structureAdapter'
 import { csvAdapter } from '../adapters/csvAdapter'
 import { diffStructures, structuredKind } from '../utils/structuralDiff'
 import { delimitedKind } from '../utils/csv'
-import { defaultSemanticView } from '../utils/viewChrome'
+import { shouldOpenSemantic } from '../utils/viewChrome'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { isSecret } from '../utils/secretSnippet'
@@ -516,7 +516,7 @@ export const useDiffStore = defineStore('diff', {
       this[side] = file
       this.mode = 'files'
       this.diffSaved = false
-      this.semanticView = defaultSemanticView(this)
+      this.semanticView = shouldOpenSemantic(this)
     },
     comparePasted() {
       // Each side is a loaded file, else the textarea's pasted text — a dropped
@@ -533,7 +533,7 @@ export const useDiffStore = defineStore('diff', {
       this.right = { path: null, name: r.name, content: r.content }
       this.mode = 'files'
       this.diffSaved = false
-      this.semanticView = defaultSemanticView(this)
+      this.semanticView = shouldOpenSemantic(this)
     },
     togglePasteMode() {
       this.mode = this.mode === 'paste' ? 'files' : 'paste'

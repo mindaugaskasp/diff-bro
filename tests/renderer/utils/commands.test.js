@@ -13,6 +13,8 @@ import {
 import { buildMenus } from '../../../src/renderer/src/menus'
 import { flattenCommands } from '../../../src/renderer/src/utils/commandPalette'
 import { TOOLS } from '../../../src/renderer/src/utils/tools'
+import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
+import { createPinia, setActivePinia } from 'pinia'
 
 const spy = () => vi.fn()
 
@@ -212,5 +214,18 @@ describe('guards that a hidden control would otherwise not enforce', () => {
       runCommand('toggle-split', s)
       expect(s.diff.renderSideBySide, kind).toBe(false)
     }
+  })
+
+  // openToolsPalette narrows the scope; only this command widens it again. The
+  // pairing was unasserted, so a palette stuck in tools-only after one "Search
+  // every tool" press would have shipped silently.
+  it('reopens the palette at full scope after a tools-scoped one', () => {
+    setActivePinia(createPinia())
+    const ui = useUiStore()
+    ui.openToolsPalette()
+    expect(ui.paletteScope).toBe('tools')
+    COMMANDS['command-palette']({ ui })
+    expect(ui.paletteScope).toBe('all')
+    expect(ui.showCommandPalette).toBe(true)
   })
 })

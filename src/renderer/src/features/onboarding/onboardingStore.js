@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { loadPersisted, savePersisted } from '../../persist'
+import { loadPersistedJson, savePersisted } from '../../persist'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useUiStore } from '../../stores/uiStore'
 import { TOUR_STEPS, TOUR_VERSION, runBlockAt, tourPlan } from '../../utils/tourSteps'
@@ -21,12 +21,7 @@ const clampInt = (value, lo, hi) => {
 }
 
 function readState() {
-  let saved
-  try {
-    saved = JSON.parse(loadPersisted(KEY) ?? '{}') || {}
-  } catch {
-    saved = {}
-  }
+  const saved = loadPersistedJson(KEY)
   return {
     // Master switch. Off means off for every future version too.
     showTips: saved.showTips !== false,

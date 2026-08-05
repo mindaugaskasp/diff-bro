@@ -85,7 +85,7 @@ const packTab = (tab, snapshot, diffSaved) => ({
  */
 // `ephemeral` is the onboarding tour's scratch tab: a tour interrupted by a quit
 // would otherwise leave its demo comparison behind on the next launch.
-const skipped = (tab, snapshot) => !!tab.ephemeral || isBlank({ snapshot })
+const isSkipped = (tab, snapshot) => !!tab.ephemeral || isBlank({ snapshot })
 
 export function packSession(tabs, activeId, live) {
   const kept = []
@@ -97,7 +97,7 @@ export function packSession(tabs, activeId, live) {
   for (const tab of tabs ?? []) {
     const isLive = live && tab.id === activeId
     const snapshot = isLive ? live.snapshot : tab.snapshot
-    if (skipped(tab, snapshot)) continue
+    if (isSkipped(tab, snapshot)) continue
     const packed = packTab(tab, snapshot, isLive ? live.diffSaved : tab.diffSaved)
     const size = JSON.stringify(packed).length
     if (size > MAX_TAB_BYTES || size > budget) {

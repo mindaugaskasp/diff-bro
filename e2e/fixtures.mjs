@@ -131,6 +131,15 @@ export async function openMenu(page, top, sub, leaf) {
   }
 }
 
+// Answer a confirm dialog in MAIN. Some handlers ask before doing something
+// outside the app (installing a PATH shim, rewriting ~/.gitconfig); a spec that
+// drives them has to say which button the user pressed.
+export async function stubMessageBox(app, response = 1) {
+  await app.evaluate(({ dialog }, r) => {
+    dialog.showMessageBox = async () => ({ response: r })
+  }, response)
+}
+
 // Replace the native save/open dialogs in the MAIN process so file flows are
 // deterministic (no un-driveable OS dialog). The handlers call dialog.show*Dialog
 // at invoke time, so reassigning the property takes effect immediately.

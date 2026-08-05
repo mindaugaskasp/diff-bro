@@ -32,3 +32,18 @@ export function savePersisted(name, contents) {
   if (typeof window.api?.storeSave === 'function') window.api.storeSave(name, contents)
   else localStorage.setItem(legacyKey(name), contents)
 }
+
+// The parse every caller was hand-rolling around loadPersisted, with the same
+// try/catch each time. Storage is this module's boundary, so the JSON is too.
+/**
+ * @param {string} name
+ * @param {object} [fallback] returned for a missing, empty or corrupt value
+ * @returns {object}
+ */
+export function loadPersistedJson(name, fallback = {}) {
+  try {
+    return JSON.parse(loadPersisted(name) ?? 'null') ?? fallback
+  } catch {
+    return fallback
+  }
+}

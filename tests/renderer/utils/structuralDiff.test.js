@@ -3,12 +3,13 @@
 // rather than as a run of rewritten lines.
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_TREE_DEPTH,
   MAX_TREE_ROWS,
   diffStructures,
   parseStructured,
-  structuredKind,
-  visibleStructureRows
+  structuredKind
 } from '../../../src/renderer/src/utils/structuralDiff'
+import { visibleStructureRows } from '../../../src/renderer/src/utils/structureRows'
 
 const rowsOf = (a, b) => diffStructures(a, b).rows
 const at = (rows, path) => rows.find((r) => r.path === path)
@@ -310,5 +311,46 @@ describe('visibleStructureRows', () => {
   it('returns everything when the reader asks for the whole document', () => {
     const { rows } = diffStructures({ a: { b: 1 } }, { a: { b: 2 } })
     expect(visibleStructureRows(rows, true)).toBe(rows)
+  })
+})
+
+// canonical(), walk() and compare() each recurse per nesting level, so a deep
+// enough document overflowed the stack — a blank pane and a log line rather than
+// a comparison. XML element names are attacker-controlled too, and a plain
+// object turns one named __proto__ into a prototype re-point that silently drops
+// the row instead of comparing it.
+describe('hostile shapes', () => {
+  const nest = (n, leaf = 1) => {
+    let v = leaf
+    for (let i = 0; i < n; i++) v = { a: v }
+    return v
+  }
+
+  it('compares a document nested far past the ceiling without overflowing', () => {
+    const left = nest(MAX_TREE_DEPTH * 5)
+    const right = nest(MAX_TREE_DEPTH * 5, 2)
+    const out = diffStructures(left, right)
+    expect(out.rows.length).toBeGreaterThan(0)
+    expect(out.rows.length).toBeLessThan(MAX_TREE_DEPTH * 5)
+  })
+
+  it('does not overflow on a deeply nested array either', () => {
+    let deep = ['leaf']
+    for (let i = 0; i < MAX_TREE_DEPTH * 5; i++) deep = [deep]
+    expect(() => diffStructures(deep, deep)).not.toThrow()
+  })
+
+  // XML element names come straight from the file. Built into a plain object,
+  // one named __proto__ re-points that object's prototype instead of becoming a
+  // key, so the element vanishes from the comparison rather than being diffed.
+  it('compares an XML element named __proto__ instead of dropping it', () => {
+    const xml = (v) => `<r><__proto__>${v}</__proto__></r>`
+    const left = parseStructured(xml('a'), 'xml')
+    const right = parseStructured(xml('b'), 'xml')
+    expect(left.error ?? right.error).toBeUndefined()
+    const rows = diffStructures(left.value, right.value).rows
+    const element = rows.find((r) => r.label === '__proto__')
+    expect(element, 'the element must appear in the comparison at all').toBeTruthy()
+    expect(element.status).toBe('changed')
   })
 })

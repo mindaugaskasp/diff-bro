@@ -7,7 +7,7 @@ import { useDiffStore } from '../stores/diffStore'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { SD_ROW_H } from '../utils/virtualRows'
-import { visibleStructureRows } from '../utils/structuralDiff'
+import { visibleStructureRows } from '../utils/structureRows'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
