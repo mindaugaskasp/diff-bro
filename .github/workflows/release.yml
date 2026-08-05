@@ -47,13 +47,16 @@ jobs:
           cache: npm
       - run: npm install -g npm@11
       - run: npm ci
-      # Electron's runtime libraries + Xvfb (the same set the Docker test env installs).
+      # Electron's runtime libraries + Xvfb + a window manager — the same set the
+      # Docker test env installs. openbox is NOT optional: unmanaged, the window
+      # takes a different width and the diff panes split 571/572 instead of evenly.
       - name: Install Electron runtime libraries
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 \
-            libdrm2 libgbm1 libasound2 libx11-xcb1 libxcb-dri3-0 libsecret-1-0 xvfb
+            libdrm2 libgbm1 libasound2 libx11-xcb1 libxcb-dri3-0 libsecret-1-0 xvfb \
+            openbox
       # One Xvfb per worker (:100 up) — the X11 clipboard is per-display, so
       # workers sharing one would read each other's copies. Not `xvfb-run`,
       # which starts a single display and owns DISPLAY itself.
