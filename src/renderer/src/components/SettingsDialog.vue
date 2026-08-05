@@ -1,12 +1,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
-import { THEMES } from '../utils/themes'
-import { LOCALES } from '../../../shared/i18n'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
 import CliSettings from './CliSettings.vue'
 import GitToolSettings from './GitToolSettings.vue'
+import SettingsAppearance from './SettingsAppearance.vue'
 import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
@@ -64,61 +63,27 @@ function close() {
       </nav>
 
       <div class="settings-pane">
-        <section v-if="tab === 'appearance'">
-          <h4>{{ $t('settingsDialog.theme') }}</h4>
-          <div class="theme-grid">
-            <button
-              v-for="t in THEMES"
-              :key="t.id"
-              type="button"
-              class="theme-opt"
-              :class="{ active: settings.theme === t.id }"
-              :data-tip="`Use the ${t.label} theme`"
-              :aria-label="`Use the ${t.label} theme`"
-              @click="settings.setTheme(t.id)"
-            >
-              <span class="swatch" :style="{ background: t.swatch.bg }">
-                <span class="dot" :style="{ background: t.swatch.accent }"></span>
-                <span class="dot" :style="{ background: t.swatch.add }"></span>
-                <span class="dot" :style="{ background: t.swatch.del }"></span>
-              </span>
-              <span>{{ t.label }}</span>
-            </button>
-          </div>
-          <label class="language-row">
-            <span>{{ $t('settings.language.label') }}</span>
-            <select
-              :value="settings.activeLocale"
-              :aria-label="$t('settings.language.label')"
-              @change="settings.setLocale($event.target.value)"
-            >
-              <option v-for="l in LOCALES" :key="l.id" :value="l.id">{{ l.name }}</option>
-            </select>
-          </label>
-          <p class="dialog-note">{{ $t('settings.language.hint') }}</p>
-          <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
-            {{ $t('settingsDialog.showTheKeyboardShortcutBar') }}
-          </SettingToggle>
-          <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
-            {{ $t('settingsDialog.playAShutterSoundWhen') }}
-          </SettingToggle>
-          <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
-            Maximize tool &amp; snippet windows (turn off to restore each one's size)
-          </SettingToggle>
-          <div class="tips-row" data-tour="tips">
-            <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
-              {{ $t('settingsDialog.showTipsAfterAnUpdate') }}
-            </SettingToggle>
-            <button
-              class="btn btn-sm"
-              :disabled="tour.active"
-              :data-tip="tour.active ? 'The tour is running' : 'Run the tour again from the start'"
-              @click="tour.replay()"
-            >
-              {{ $t('settingsDialog.showTour') }}
-            </button>
-          </div>
-        </section>
+        <SettingsAppearance v-if="tab === 'appearance'">
+          <template #tips>
+            <div class="tips-row" data-tour="tips">
+              <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
+                {{ $t('settingsDialog.showTipsAfterAnUpdate') }}
+              </SettingToggle>
+              <button
+                class="btn btn-sm"
+                :disabled="tour.active"
+                :data-tip="
+                  tour.active
+                    ? $t('settingsDialog.theTourIsRunning')
+                    : $t('settingsDialog.runTheTourAgain')
+                "
+                @click="tour.replay()"
+              >
+                {{ $t('settingsDialog.showTour') }}
+              </button>
+            </div>
+          </template>
+        </SettingsAppearance>
 
         <section v-else-if="tab === 'shortcuts'">
           <h4>{{ $t('settingsDialog.quickLookUp') }}</h4>

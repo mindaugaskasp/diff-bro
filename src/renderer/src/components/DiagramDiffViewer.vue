@@ -100,10 +100,10 @@ watch(
 <template>
   <div class="dgv">
     <div class="dg-legend">
-      <span class="lg add"><span class="lgchip">+</span>added</span>
-      <span class="lg del"><span class="lgchip">−</span>removed</span>
-      <span class="lg chg"><span class="lgchip">±</span>changed</span>
-      <span class="lg same"><span class="lgchip">·</span>unchanged</span>
+      <span class="lg add"><span class="lgchip">+</span>{{ $t('legend.added') }}</span>
+      <span class="lg del"><span class="lgchip">−</span>{{ $t('legend.removed') }}</span>
+      <span class="lg chg"><span class="lgchip">±</span>{{ $t('legend.changed') }}</span>
+      <span class="lg same"><span class="lgchip">·</span>{{ $t('legend.unchanged') }}</span>
       <span class="lg-right">
         <button
           class="dg-zbtn"
@@ -127,8 +127,16 @@ watch(
         <button
           v-if="hasRegister"
           class="dg-zbtn"
-          :data-tip="showRegister ? 'Hide the change list' : 'Show the change list'"
-          :aria-label="showRegister ? 'Hide the change list' : 'Show the change list'"
+          :data-tip="
+            showRegister
+              ? $t('diagramDiffViewer.hideTheChangeList')
+              : $t('diagramDiffViewer.showTheChangeList')
+          "
+          :aria-label="
+            showRegister
+              ? $t('diagramDiffViewer.hideTheChangeList')
+              : $t('diagramDiffViewer.showTheChangeList')
+          "
           :aria-pressed="showRegister"
           @click="showRegister = !showRegister"
         >
@@ -157,11 +165,11 @@ watch(
         <div v-else class="dg-zoom" :style="zoomStyle">
           <template v-if="store.renderSideBySide">
             <div class="dg-pane">
-              <span class="dg-ttl">before</span>
+              <span class="dg-ttl">{{ $t('legend.before') }}</span>
               <MermaidDiagram :code="beforeSrc" :debounce="0" @rendered="sizeToNatural" />
             </div>
             <div class="dg-pane">
-              <span class="dg-ttl">after</span>
+              <span class="dg-ttl">{{ $t('legend.after') }}</span>
               <MermaidDiagram :code="afterSrc" :debounce="0" @rendered="sizeToNatural" />
             </div>
           </template>

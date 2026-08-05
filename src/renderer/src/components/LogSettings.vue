@@ -68,8 +68,8 @@ const clearLabel = computed(() =>
         :class="{ armed: clearArmed }"
         :data-tip="
           clearArmed
-            ? 'Click again to permanently delete every log file'
-            : 'Delete all local log files'
+            ? $t('logSettings.clickAgainToPermanently')
+            : $t('logSettings.deleteAllLocalLog')
         "
         @click="requestClear"
       >

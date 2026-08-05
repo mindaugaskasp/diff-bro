@@ -38,7 +38,9 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
 <template>
   <div class="ql-compose" @keydown="onKeydown">
     <div class="ql-compose-head band">
-      <span class="ql-compose-title">{{ editing ? 'Edit snippet' : 'New snippet' }}</span>
+      <span class="ql-compose-title">{{
+        editing ? $t('quickLookCompose.editSnippet') : $t('quickLookCompose.newSnippet')
+      }}</span>
       <span class="ql-compose-lang">plaintext</span>
     </div>
 
@@ -67,7 +69,7 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
           {{ $t('common.cancel') }}
         </button>
         <button class="btn btn-primary btn-sm" :disabled="!canSave" @click="emit('save')">
-          <AppIcon name="check" /> {{ saving ? 'Saving…' : 'Save' }}
+          <AppIcon name="check" /> {{ saving ? $t('quickLookCompose.saving') : $t('common.save') }}
         </button>
       </span>
     </div>

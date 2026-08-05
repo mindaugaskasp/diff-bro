@@ -81,7 +81,7 @@ async function copy(row) {
 
     <div v-else class="th-file">
       <button class="btn btn-sm" :disabled="busy" @click="pickFile">
-        <AppIcon name="file" /> {{ busy ? 'Reading…' : 'Choose a file…' }}
+        <AppIcon name="file" /> {{ busy ? $t('toolHash.reading') : $t('toolHash.chooseAFile') }}
       </button>
       <span v-if="file" class="th-fname" :class="{ bad: file.failed }">
         {{ file.name }}<span v-if="file.size !== null"> · {{ fileSize(file.size) }}</span>

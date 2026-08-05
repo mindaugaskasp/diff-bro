@@ -21,7 +21,7 @@ const { run } = useCommands()
     <button
       class="star"
       :class="{ on: tool.pinned }"
-      :data-tip="tool.pinned ? 'Unpin' : 'Pin to the top of the list'"
+      :data-tip="tool.pinned ? $t('toolRow.unpin') : $t('toolRow.pinToTheTop')"
       :aria-label="
         tool.pinned
           ? $t('toolRow.unpin', { name: tool.name })

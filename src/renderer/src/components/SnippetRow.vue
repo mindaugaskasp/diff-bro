@@ -93,8 +93,8 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       class="star"
       draggable="false"
       :class="{ on: favorite }"
-      :data-tip="favorite ? 'Unfavorite' : 'Favorite'"
-      :aria-label="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="favorite ? $t('snippetRow.unfavorite') : $t('snippetRow.favorite')"
+      :aria-label="favorite ? $t('snippetRow.unfavorite') : $t('snippetRow.favoritePinToTop')"
       @click="store.toggleFavorite(entry.id)"
     >
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
@@ -161,7 +161,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <button
         v-if="!isSecret(entry)"
         class="row-btn"
-        :data-tip="isDiagram ? 'Capture the diagram' : 'Capture'"
+        :data-tip="isDiagram ? $t('snippetRow.captureTheDiagram') : $t('snippetRow.capture')"
         :aria-label="$t('snippetRow.exportAsImage')"
         @click="imageExport.exportSnippetImage(entry.id)"
       >

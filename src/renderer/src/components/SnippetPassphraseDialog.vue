@@ -78,7 +78,11 @@ function close() {
       </label>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="!passphrase || busy">
-          {{ mode === 'import' ? 'Import' : 'Export' }}
+          {{
+            mode === 'import'
+              ? $t('snippetPassphraseDialog.import')
+              : $t('snippetPassphraseDialog.export')
+          }}
         </button>
         <button type="button" class="btn btn-ghost" @click="close">
           {{ $t('common.cancel') }}

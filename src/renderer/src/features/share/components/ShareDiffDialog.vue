@@ -97,7 +97,11 @@ function submit() {
         </button>
         <button
           type="button"
-          :class="picker.everyPickedHasEmail.value ? 'btn btn-sm' : 'btn btn-primary'"
+          :class="
+            picker.everyPickedHasEmail.value
+              ? $t('shareDiffDialog.btnBtnSm')
+              : $t('shareDiffDialog.btnBtnPrimary')
+          "
           :disabled="!picker.canSubmit.value"
           @click="saveFile"
         >

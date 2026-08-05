@@ -127,8 +127,8 @@ function cancel() {
       <p class="dialog-note">
         {{
           secure
-            ? 'Deletes itself automatically — a week is the longest it can live.'
-            : 'Kept until you delete it.'
+            ? $t('saveDiffDialog.deletesItselfAutomaticallyA')
+            : $t('saveDiffDialog.keptUntilYouDelete')
         }}
       </p>
       <div class="dialog-actions">

@@ -15,7 +15,11 @@ function confirm() {
 <template>
   <BaseDialog
     width="420px"
-    :title="overwrite ? 'Overwrite pasted text?' : 'Paste detected'"
+    :title="
+      overwrite
+        ? $t('pasteConfirmDialog.overwritePastedText')
+        : $t('pasteConfirmDialog.pasteDetected')
+    "
     @close="paste.cancel()"
   >
     <p v-if="overwrite" class="dialog-note">
@@ -27,7 +31,7 @@ function confirm() {
     <template #actions>
       <button class="btn btn-ghost" @click="paste.cancel()">{{ $t('common.cancel') }}</button>
       <button class="btn btn-primary" @click="confirm">
-        {{ overwrite ? 'Overwrite' : 'Paste' }}
+        {{ overwrite ? $t('pasteConfirmDialog.overwrite') : $t('pasteConfirmDialog.paste') }}
       </button>
     </template>
   </BaseDialog>

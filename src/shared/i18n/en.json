@@ -7,7 +7,8 @@
     "copied": "Copied",
     "remove": "Remove",
     "left": "Left",
-    "right": "Right"
+    "right": "Right",
+    "done": "Done"
   },
   "settings": {
     "language": {
@@ -285,9 +286,10 @@
     "openTool": "Press {key} to open this tool."
   },
   "toolRow": {
-    "unpin": "Unpin {name}",
+    "unpin": "Unpin",
     "pin": "Pin {name} to the top",
-    "tip": "{kind} — {name}"
+    "tip": "{kind} — {name}",
+    "pinToTheTop": "Pin to the top of the list"
   },
   "shareErrors": {
     "notAShareFile": "That file is not a Diff Bro shared diff.",
@@ -457,7 +459,9 @@
     "resetToFit": "Reset to fit",
     "alignedAtTheFirstNode": "Aligned at the first node — below it each revision was laid out on its own, so an unchanged node can still sit at a different height.",
     "nodes": "Nodes",
-    "edges": "Edges"
+    "edges": "Edges",
+    "hideTheChangeList": "Hide the change list",
+    "showTheChangeList": "Show the change list"
   },
   "diffTabBar": {
     "previousComparison": "Previous comparison",
@@ -540,7 +544,9 @@
     "changeFolder": "Change folder…",
     "intro": "Diff Bro writes unexpected errors to a local log — {never}. Choose where the log files are stored.",
     "neverSent": "nothing is ever sent anywhere",
-    "default": "default"
+    "default": "default",
+    "clickAgainToPermanently": "Click again to permanently delete every log file",
+    "deleteAllLocalLog": "Delete all local log files"
   },
   "mermaidDiagram": {
     "diagramError": "Diagram error"
@@ -559,7 +565,11 @@
     "theme": "Theme",
     "fit": "Fit",
     "dragToPanCtrlScroll": "Drag to pan · Ctrl/⌘ + scroll to zoom · click % to fit",
-    "dragAnyCornerToResize": "drag any corner to resize"
+    "dragAnyCornerToResize": "drag any corner to resize",
+    "restoreThePreviousSize": "Restore the previous size",
+    "fillTheWindow": "Fill the window",
+    "restoreSize": "Restore size",
+    "maximize": "Maximize"
   },
   "pasteInput": {
     "nameThisSide": "Name this side…",
@@ -572,7 +582,10 @@
   },
   "quickLookCompose": {
     "nameOptional": "Name (optional)",
-    "pasteOrTypeTheSnippet": "Paste or type the snippet…"
+    "pasteOrTypeTheSnippet": "Paste or type the snippet…",
+    "editSnippet": "Edit snippet",
+    "newSnippet": "New snippet",
+    "saving": "Saving…"
   },
   "quickLookConvert": {
     "esc": "Esc"
@@ -606,7 +619,9 @@
     "name": "Name",
     "secure": "Secure",
     "expiresAfter": "Expires after",
-    "secureHint": "{label} — auto-expiring (deletes itself)"
+    "secureHint": "{label} — auto-expiring (deletes itself)",
+    "deletesItselfAutomaticallyA": "Deletes itself automatically — a week is the longest it can live.",
+    "keptUntilYouDelete": "Kept until you delete it."
   },
   "savedDiffRow": {
     "exportAsImage": "Export as image",
@@ -618,7 +633,11 @@
     "editThisDiffSTags": "Edit this diff's tags",
     "sealThisDiffForThe": "Seal this diff for the trusted people you pick",
     "deleteThisSavedDiffNow": "Delete this saved diff now",
-    "untagged": "Untagged"
+    "untagged": "Untagged",
+    "removeFromFavorites": "Remove from favorites",
+    "pinToTheTop": "Pin to the top of the list",
+    "unfavorite": "Unfavorite",
+    "favoritePinToTop": "Favorite (pin to top)"
   },
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
@@ -648,7 +667,11 @@
     "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window — it works even when Diff Bro is minimized. Click the field, then press the key combination you want.",
     "fun": "Fun",
     "rotateTheAppThemeDaily": "Rotate the app theme daily — a new random theme each day",
-    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily theme is the same all day and changes at midnight."
+    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily theme is the same all day and changes at midnight.",
+    "theTourIsRunning": "The tour is running",
+    "runTheTourAgain": "Run the tour again from the start",
+    "useTheme": "Use the {name} theme",
+    "maximizeToolSnippet": "Maximize tool & snippet windows (turn off to restore each one's size)"
   },
   "settingsLimits": {
     "limits": "Limits",
@@ -684,7 +707,13 @@
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
     "copyAsFile": "Copy as file",
     "capture": "Capture",
-    "edit": "Edit"
+    "edit": "Edit",
+    "showTheContents": "Show the contents",
+    "hideTheContentsAgain": "Hide the contents again",
+    "show": "Show",
+    "hide": "Hide",
+    "confirmClear": "Confirm clear",
+    "clear": "Clear"
   },
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",
@@ -702,14 +731,18 @@
     "keepEditing": "Keep editing",
     "discard": "Discard",
     "secretHint": "{label} — hide the contents behind ****",
-    "orDropAFile": "— or drop a file here"
+    "orDropAFile": "— or drop a file here",
+    "editSnippet": "Edit Snippet",
+    "snippet": "Snippet"
   },
   "snippetFillDialog": {
     "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
     "copyFilled": "Copy filled"
   },
   "snippetPassphraseDialog": {
-    "passphrase": "Passphrase"
+    "passphrase": "Passphrase",
+    "import": "Import",
+    "export": "Export"
   },
   "snippetPreviewCard": {
     "viewThisDiagramFullScreen": "View this diagram full screen",
@@ -726,7 +759,12 @@
     "copyToClipboard": "Copy to clipboard",
     "delete": "Delete",
     "diagram": "Diagram",
-    "open": "Open"
+    "open": "Open",
+    "unfavorite": "Unfavorite",
+    "favorite": "Favorite",
+    "favoritePinToTop": "Favorite (pin to top)",
+    "captureTheDiagram": "Capture the diagram",
+    "capture": "Capture"
   },
   "snippetsPanel": {
     "snippets": "Snippets",
@@ -751,7 +789,9 @@
     "noDifferencesEverySheetMatches": "No differences — every sheet matches",
     "cells": "Cells",
     "rows": "Rows",
-    "columns": "Columns"
+    "columns": "Columns",
+    "backToTheValues": "Back to the values each formula produced",
+    "showFormulasNotResults": "Show formulas, not results"
   },
   "storageSettings": {
     "dataFolder": "Data folder",
@@ -812,7 +852,9 @@
     "base64Input": "Base64 input",
     "uRLSafe": "URL-safe",
     "wrap76Cols": "Wrap 76 cols",
-    "result": "Result"
+    "result": "Result",
+    "textToEncode": "Text to encode…",
+    "base64ToDecode": "Base64 to decode…"
   },
   "toolEpoch": {
     "yYYYMMDDHHMM": "YYYY-MM-DD HH:MM",
@@ -832,7 +874,9 @@
     "textToHash": "Text to hash",
     "expectedDigest": "Expected digest",
     "of": "Of",
-    "uPPER": "UPPER"
+    "uPPER": "UPPER",
+    "reading": "Reading…",
+    "chooseAFile": "Choose a file…"
   },
   "toolJson": {
     "pasteJSON": "Paste JSON…",
@@ -849,7 +893,9 @@
     "notYetValid": "Not yet valid",
     "header": "Header",
     "payload": "Payload",
-    "theSignatureIsnTVerified": "The signature isn't verified — don't trust the contents."
+    "theSignatureIsnTVerified": "The signature isn't verified — don't trust the contents.",
+    "expired": "Expired",
+    "notExpired": "Not expired"
   },
   "toolLines": {
     "pasteLines": "Paste lines…",
@@ -992,9 +1038,14 @@
     "rotateKeyDialog": {
       "replaceMyKey": "Replace my key",
       "aNewKeyTakesOver": "A new key takes over from here. Your old one is kept so that diffs already sealed to it still open — it is only ever used to read, never to send.",
-      "diffsYouHave": "Diffs you have",
       "doThisIfYourMachine": "Do this if your machine or your key may have been exposed.",
-      "doneNote": "Your new fingerprint is {fp}. Send your public key again — until each person imports it, anything you seal will reach them as an unknown sender."
+      "doneNote": "Your new fingerprint is {fp}. Send your public key again — until each person imports it, anything you seal will reach them as an unknown sender.",
+      "alreadyShared": "Diffs you have {shared} stay readable by the people you sent them to. They were sealed with {their} keys; yours only signed them. Replacing a key cannot take anything back.",
+      "alreadySharedEm": "already shared",
+      "their": "their",
+      "retiredKept": "{n} earlier key is kept for reading. Destroying it gives up any diff still sealed to it that you have not opened. | {n} earlier keys are kept for reading. Destroying them gives up any diff still sealed to them that you have not opened.",
+      "understandDestroy": "I understand, and want the old key destroyed | I understand, and want the old keys destroyed",
+      "destroyOld": "Destroy old key | Destroy old keys"
     },
     "diffDialog": {
       "shareDiff": "Share diff",
@@ -1121,5 +1172,52 @@
     "atLine": " at line {line}, column {col}",
     "format": "Format",
     "formatSide": "Format {side}"
+  },
+  "legend": {
+    "added": "added",
+    "removed": "removed",
+    "changed": "changed",
+    "unchanged": "unchanged",
+    "before": "before",
+    "after": "after"
+  },
+  "app": {
+    "dropASnippetTo": "Drop a snippet to compare",
+    "dropUpToTwo": "Drop up to two files to compare"
+  },
+  "tabCloseDialog": {
+    "closeComparisons": "Close comparisons?",
+    "closeComparison": "Close comparison?",
+    "closeThem": "Close them",
+    "closeIt": "Close it",
+    "keepThemOpen": "Keep them open",
+    "keepItOpen": "Keep it open"
+  },
+  "pasteConfirmDialog": {
+    "overwritePastedText": "Overwrite pasted text?",
+    "pasteDetected": "Paste detected",
+    "overwrite": "Overwrite",
+    "paste": "Paste"
+  },
+  "configBackupDialog": {
+    "backUpConfiguration": "Back up configuration",
+    "restoreConfiguration": "Restore configuration",
+    "backUp": "Back up",
+    "restore": "Restore"
+  },
+  "diffImageDialog": {
+    "copyImage": "Copy image"
+  },
+  "emailHandoffDialog": {
+    "creating": "Creating…",
+    "createOpenMail": "Create & open mail"
+  },
+  "shareDiffDialog": {
+    "btnBtnSm": "btn btn-sm",
+    "btnBtnPrimary": "btn btn-primary"
+  },
+  "addTrustedKeyDialog": {
+    "adding": "Adding…",
+    "add": "Add"
   }
 }

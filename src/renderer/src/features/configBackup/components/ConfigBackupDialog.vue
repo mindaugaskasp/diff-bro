@@ -40,7 +40,11 @@ function close() {
 <template>
   <BaseDialog
     width="380px"
-    :title="isBackup ? 'Back up configuration' : 'Restore configuration'"
+    :title="
+      isBackup
+        ? $t('configBackupDialog.backUpConfiguration')
+        : $t('configBackupDialog.restoreConfiguration')
+    "
     @close="close"
   >
     <form class="dialog-form" @submit.prevent="submit">
@@ -65,7 +69,7 @@ function close() {
       </label>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="!passphrase || busy">
-          {{ isBackup ? 'Back up' : 'Restore' }}
+          {{ isBackup ? $t('configBackupDialog.backUp') : $t('configBackupDialog.restore') }}
         </button>
         <button type="button" class="btn btn-ghost" @click="close">
           {{ $t('common.cancel') }}

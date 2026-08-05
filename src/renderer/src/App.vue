@@ -215,7 +215,7 @@ useSnippetDiffSync()
     <transition name="fade">
       <div v-if="dragActive" class="drop-overlay">
         <div class="drop-card">
-          {{ snippetDrag ? 'Drop a snippet to compare' : 'Drop up to two files to compare' }}
+          {{ snippetDrag ? $t('app.dropASnippetTo') : $t('app.dropUpToTwo') }}
         </div>
       </div>
     </transition>

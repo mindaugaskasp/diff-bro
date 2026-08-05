@@ -54,7 +54,7 @@ offerToolOutput(
         <span class="tj-badge">{{ claims.alg }}</span>
         <span v-if="hasExp" class="tj-pill" :class="{ bad: claims.expired }">
           <AppIcon :name="claims.expired ? 'x' : 'check'" />
-          {{ claims.expired ? 'Expired' : 'Not expired' }}
+          {{ claims.expired ? $t('toolJwt.expired') : $t('toolJwt.notExpired') }}
         </span>
         <span v-if="claims.notYetValid" class="tj-pill bad">{{ $t('toolJwt.notYetValid') }}</span>
       </div>

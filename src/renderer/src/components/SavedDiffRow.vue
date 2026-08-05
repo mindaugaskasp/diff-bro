@@ -68,8 +68,12 @@ async function open() {
     <button
       class="star"
       :class="{ on: entry.favorite }"
-      :data-tip="entry.favorite ? 'Remove from favorites' : 'Pin to the top of the list'"
-      :aria-label="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="
+        entry.favorite ? $t('savedDiffRow.removeFromFavorites') : $t('savedDiffRow.pinToTheTop')
+      "
+      :aria-label="
+        entry.favorite ? $t('savedDiffRow.unfavorite') : $t('savedDiffRow.favoritePinToTop')
+      "
       @click="vault.toggleFavorite(entry.id)"
     >
       <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />

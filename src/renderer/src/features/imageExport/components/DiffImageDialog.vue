@@ -65,7 +65,7 @@ async function save() {
     <template #actions>
       <button type="button" class="btn btn-primary" :disabled="busy" @click="copy">
         <AppIcon :name="copied ? 'check' : 'copy'" />
-        {{ copied ? 'Copied' : 'Copy image' }}
+        {{ copied ? $t('common.copied') : $t('diffImageDialog.copyImage') }}
       </button>
       <button type="button" class="btn" :disabled="busy" @click="save">
         {{ $t('imageExport.diffImageDialog.savePNG') }}

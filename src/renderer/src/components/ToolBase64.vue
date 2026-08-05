@@ -57,7 +57,9 @@ offerToolOutput(
     <textarea
       v-model="input"
       class="tb-in"
-      :placeholder="mode === 'encode' ? 'Text to encode…' : 'Base64 to decode…'"
+      :placeholder="
+        mode === 'encode' ? $t('toolBase64.textToEncode') : $t('toolBase64.base64ToDecode')
+      "
       spellcheck="false"
       :aria-label="$t('toolBase64.base64Input')"
     ></textarea>

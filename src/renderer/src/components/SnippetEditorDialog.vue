@@ -2,7 +2,6 @@
 // Create/edit a snippet. The draft (fields, syntax, save, format) lives in
 // useSnippetDraft; this is the Monaco + tag-field wiring.
 import { computed, nextTick, ref, watch } from 'vue'
-import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 import { JIRA_ACTIONS, applyJiraAction } from '../utils/jiraMarkup'
 import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../utils/markdownMarkup'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -10,6 +9,7 @@ import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import TagChipsField from './TagChipsField.vue'
+import SnippetEditorHeader from './SnippetEditorHeader.vue'
 import SnippetSecretToggle from './SnippetSecretToggle.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
@@ -19,7 +19,6 @@ import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
 import BaseDialog from './BaseDialog.vue'
 
-const languages = SNIPPET_LANGUAGES
 const settings = useSettingsStore()
 const container = ref(null)
 // The tag field owns the tags; this ref is how save() reads them back.
@@ -108,7 +107,13 @@ function saveSnippet() {
     resizable
     :min-size="{ width: 420, height: 460 }"
     :initial-size="settings.dialogSize('snippet')"
-    :title="isNew ? 'New Snippet' : editMode ? 'Edit Snippet' : 'Snippet'"
+    :title="
+      isNew
+        ? 'New Snippet'
+        : editMode
+          ? $t('snippetEditorDialog.editSnippet')
+          : $t('snippetEditorDialog.snippet')
+    "
     :escape-closes="!editMode"
     :close-on-backdrop="!editMode"
     @close="requestClose"
@@ -131,36 +136,14 @@ function saveSnippet() {
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />
     <SnippetSecretToggle v-model="secret" :readonly="readOnly" />
-    <div class="editor-header">
-      <span
-        >{{ $t('snippetEditorDialog.content') }}
-        <span v-if="editMode" class="drop-hint">{{
-          $t('snippetEditorDialog.orDropAFile')
-        }}</span></span
-      >
-      <div class="editor-controls">
-        <div
-          v-if="hasPreview"
-          class="view-toggle"
-          role="group"
-          :aria-label="$t('snippetEditorDialog.viewMode')"
-        >
-          <button type="button" :class="{ active: !plain }" @click="plain = false">
-            {{ $t('snippetEditorDialog.rendered') }}
-          </button>
-          <button type="button" :class="{ active: plain }" @click="plain = true">
-            {{ $t('snippetEditorDialog.plain') }}
-          </button>
-        </div>
-        <label class="lang-picker">
-          {{ $t('snippetEditorDialog.syntax') }}
-          <select v-model="chosenLanguage" :disabled="readOnly">
-            <option v-for="l in languages" :key="l.id" :value="l.id">{{ $t(l.labelKey) }}</option>
-          </select>
-          <span v-if="chosenLanguage === 'auto'" class="lang-detected">→ {{ language }}</span>
-        </label>
-      </div>
-    </div>
+    <SnippetEditorHeader
+      v-model:plain="plain"
+      v-model:chosen-language="chosenLanguage"
+      :edit-mode="editMode"
+      :has-preview="hasPreview"
+      :language="language"
+      :read-only="readOnly"
+    />
     <FormatToolbar
       v-if="hasPreview && plain && editMode"
       :actions="toolbarActions"

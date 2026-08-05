@@ -128,8 +128,14 @@ onBeforeUnmount(() => {
           />
           <button
             class="tbtn"
-            :data-tip="maxed ? 'Restore the previous size' : 'Fill the window'"
-            :aria-label="maxed ? 'Restore size' : 'Maximize'"
+            :data-tip="
+              maxed
+                ? $t('mermaidViewerDialog.restoreThePreviousSize')
+                : $t('mermaidViewerDialog.fillTheWindow')
+            "
+            :aria-label="
+              maxed ? $t('mermaidViewerDialog.restoreSize') : $t('mermaidViewerDialog.maximize')
+            "
             @click="toggleMaxed"
           >
             <AppIcon :name="maxed ? 'restore' : 'maximize'" />

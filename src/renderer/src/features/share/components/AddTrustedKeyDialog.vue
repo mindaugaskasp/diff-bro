@@ -52,7 +52,7 @@ async function add() {
       </label>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="!label.trim() || adding">
-          {{ adding ? 'Adding…' : 'Add' }}
+          {{ adding ? $t('addTrustedKeyDialog.adding') : $t('addTrustedKeyDialog.add') }}
         </button>
         <button type="button" class="btn btn-ghost" @click="share.cancelTrustedKey()">
           {{ $t('common.cancel') }}

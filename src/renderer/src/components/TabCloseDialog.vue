@@ -23,7 +23,7 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
 <template>
   <BaseDialog
     :width="many ? '400px' : '340px'"
-    :title="many ? 'Close comparisons?' : 'Close comparison?'"
+    :title="many ? $t('tabCloseDialog.closeComparisons') : $t('tabCloseDialog.closeComparison')"
     :closable="false"
     @close="tabs.cancelClose()"
   >
@@ -39,10 +39,10 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
     </ul>
     <template #actions>
       <button class="btn btn-destructive" @click="tabs.confirmClose()">
-        {{ many ? 'Close them' : 'Close it' }}
+        {{ many ? $t('tabCloseDialog.closeThem') : $t('tabCloseDialog.closeIt') }}
       </button>
       <button class="btn btn-ghost" @click="tabs.cancelClose()">
-        {{ many ? 'Keep them open' : 'Keep it open' }}
+        {{ many ? $t('tabCloseDialog.keepThemOpen') : $t('tabCloseDialog.keepItOpen') }}
       </button>
     </template>
   </BaseDialog>

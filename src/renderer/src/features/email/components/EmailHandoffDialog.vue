@@ -48,7 +48,11 @@ const note = ref(email.noteTemplate)
 
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="email.sending">
-          {{ email.sending ? 'Creating…' : 'Create & open mail' }}
+          {{
+            email.sending
+              ? $t('emailHandoffDialog.creating')
+              : $t('emailHandoffDialog.createOpenMail')
+          }}
         </button>
         <span class="spacer" />
         <button type="button" class="btn btn-ghost" @click="email.cancel()">

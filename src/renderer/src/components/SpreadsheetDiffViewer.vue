@@ -81,7 +81,9 @@ onMounted(() => {
           class="btn btn-sm"
           :class="{ active: showFormulas }"
           :data-tip="
-            showFormulas ? 'Back to the values each formula produced' : 'Show formulas, not results'
+            showFormulas
+              ? $t('spreadsheetDiffViewer.backToTheValues')
+              : $t('spreadsheetDiffViewer.showFormulasNotResults')
           "
           @click="showFormulas = !showFormulas"
         >

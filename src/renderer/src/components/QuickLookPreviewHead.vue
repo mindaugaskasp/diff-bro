@@ -41,7 +41,8 @@ defineEmits(['copy', 'edit'])
       :data-tip="`Copy the contents to the clipboard (${copyKey})`"
       @click="$emit('copy')"
     >
-      <AppIcon :name="copied ? 'check' : 'copy'" /> {{ copied ? 'Copied' : 'Copy' }}
+      <AppIcon :name="copied ? 'check' : 'copy'" />
+      {{ copied ? $t('common.copied') : $t('common.copy') }}
     </button>
   </div>
 </template>
