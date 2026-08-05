@@ -61,10 +61,10 @@ const rightClass = (row) => (row.rightLine === null ? 'ghost' : row.status === '
       <div class="status-band">
         <span>
           {{ $t('streamedDiffViewer.lines') }}
-          <span class="add">{{ summary?.additions ?? 0 }} added</span> ·
-          <span class="del">{{ summary?.deletions ?? 0 }} removed</span>
+          <span class="add">{{ $t('count.added', summary?.additions ?? 0) }}</span> ·
+          <span class="del">{{ $t('count.removed', summary?.deletions ?? 0) }}</span>
         </span>
-        <span>{{ total.toLocaleString() }} rows</span>
+        <span>{{ $t('count.rows', total.toLocaleString()) }}</span>
         <span v-if="summary?.approximate" class="capped">
           alignment is a best fit — the files differ too widely to match line for line
         </span>

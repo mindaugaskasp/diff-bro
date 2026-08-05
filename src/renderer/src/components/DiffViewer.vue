@@ -90,8 +90,9 @@ onBeforeUnmount(() => {
          reads alike whichever kind of comparison you are looking at. -->
     <div v-if="store.stats && !store.identical" class="status-band">
       <span>
-        {{ $t('diffViewer.lines') }} <span class="add">{{ store.stats.additions }} added</span> ·
-        <span class="del">{{ store.stats.deletions }} removed</span>
+        {{ $t('diffViewer.lines') }}
+        <span class="add">{{ $t('count.added', store.stats.additions) }}</span> ·
+        <span class="del">{{ $t('count.removed', store.stats.deletions) }}</span>
       </span>
     </div>
   </div>

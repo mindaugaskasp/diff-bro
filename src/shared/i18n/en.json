@@ -706,7 +706,10 @@
     "theyKeepTheRestOf": "They keep the rest of their tags.",
     "nothingIsUsingIt": "Nothing is using it.",
     "thisCanTBeUndone": "This can’t be undone.",
-    "thatCanTBeUndone": "That can’t be undone. A record carrying this tag among others still goes."
+    "thatCanTBeUndone": "That can’t be undone. A record carrying this tag among others still goes.",
+    "deleteThe": "Delete the {kind} {name}?",
+    "itsOn": "It’s on {carrying}.",
+    "deleteCarryingToo": "Delete the {carrying} too"
   },
   "snippetEditorActions": {
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
@@ -998,7 +1001,10 @@
     "diffImageDialog": {
       "exportAsImage": "Export as image",
       "maxDiffImageHeight": "Max diff image height",
-      "savePNG": "Save PNG…"
+      "savePNG": "Save PNG…",
+      "shotOf": "A {w} × {h} screenshot of {of}.",
+      "hiddenColumns": "About {n} more screen of columns sits off the right edge and isn’t in the picture. Widen the window to take it in. | About {n} more screens of columns sit off the right edge and aren’t in the picture. Widen the window to take them in.",
+      "truncated": "This {noun} was longer than the export height — the picture stops partway down. Raise {setting} in Settings → Limits to capture more."
     }
   },
   "onboarding": {
@@ -1202,7 +1208,9 @@
     "closeThem": "Close them",
     "closeIt": "Close it",
     "keepThemOpen": "Keep them open",
-    "keepItOpen": "Keep it open"
+    "keepItOpen": "Keep it open",
+    "closingMany": "Closing {count} comparisons. {risky} of them haven’t been saved, and closing discards them.",
+    "closingOne": "{name} hasn’t been saved. Closing it discards the comparison."
   },
   "pasteConfirmDialog": {
     "overwritePastedText": "Overwrite pasted text?",
@@ -1230,5 +1238,11 @@
   "addTrustedKeyDialog": {
     "adding": "Adding…",
     "add": "Add"
+  },
+  "count": {
+    "added": "{n} added",
+    "removed": "{n} removed",
+    "changed": "{n} changed",
+    "rows": "{n} rows"
   }
 }

@@ -28,11 +28,19 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
     @close="tabs.cancelClose()"
   >
     <p v-if="many" class="dialog-note">
-      Closing {{ pending.length }} comparisons. <strong>{{ risky.length }}</strong> of them haven’t
-      been saved, and closing discards them.
+      <i18n-t keypath="tabCloseDialog.closingMany" tag="span">
+        <template #count>{{ pending.length }}</template>
+        <template #risky
+          ><strong>{{ risky.length }}</strong></template
+        >
+      </i18n-t>
     </p>
     <p v-else class="dialog-note">
-      <strong>“{{ only }}”</strong> hasn’t been saved. Closing it discards the comparison.
+      <i18n-t keypath="tabCloseDialog.closingOne" tag="span">
+        <template #name
+          ><strong>“{{ only }}”</strong></template
+        >
+      </i18n-t>
     </p>
     <ul v-if="many" class="risk-list">
       <li v-for="tab in risky" :key="tab.id">{{ tabLabel(tab) }}</li>

@@ -48,18 +48,24 @@ async function save() {
       <img :src="imageExport.imageEntry.dataUrl" :alt="alt" />
     </div>
     <p class="dialog-note">
-      A {{ imageExport.imageEntry.width }} × {{ imageExport.imageEntry.height }} screenshot of
-      {{ of }}.
+      {{
+        $t('imageExport.diffImageDialog.shotOf', {
+          w: imageExport.imageEntry.width,
+          h: imageExport.imageEntry.height,
+          of
+        })
+      }}
     </p>
     <p v-if="imageExport.imageEntry.hiddenColumns" class="dialog-note warn">
-      About {{ imageExport.imageEntry.hiddenColumns }} more
-      {{ imageExport.imageEntry.hiddenColumns === 1 ? 'screen' : 'screens' }} of columns sit off the
-      right edge and aren’t in the picture. Widen the window to take them in.
+      {{ $t('imageExport.diffImageDialog.hiddenColumns', imageExport.imageEntry.hiddenColumns) }}
     </p>
     <p v-if="imageExport.imageEntry.truncated" class="dialog-note warn">
-      This {{ noun }} was longer than the export height — the picture stops partway down. Raise
-      <strong>{{ $t('imageExport.diffImageDialog.maxDiffImageHeight') }}</strong> in Settings →
-      Limits to capture more.
+      <i18n-t keypath="imageExport.diffImageDialog.truncated" tag="span" :plural="1">
+        <template #noun>{{ noun }}</template>
+        <template #setting>
+          <strong>{{ $t('imageExport.diffImageDialog.maxDiffImageHeight') }}</strong>
+        </template>
+      </i18n-t>
     </p>
 
     <template #actions>

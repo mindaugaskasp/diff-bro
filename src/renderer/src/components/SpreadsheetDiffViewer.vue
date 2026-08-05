@@ -139,11 +139,12 @@ onMounted(() => {
       <template v-else>
         <span>
           {{ $t('spreadsheetDiffViewer.cells') }}
-          <span class="chg cells">{{ totals.changed }} changed</span>
+          <span class="chg cells">{{ $t('count.changed', totals.changed) }}</span>
         </span>
         <span>
-          {{ $t('spreadsheetDiffViewer.rows') }} <span class="add">{{ totals.added }} added</span> ·
-          <span class="del">{{ totals.removed }} removed</span>
+          {{ $t('spreadsheetDiffViewer.rows') }}
+          <span class="add">{{ $t('count.added', totals.added) }}</span> ·
+          <span class="del">{{ $t('count.removed', totals.removed) }}</span>
         </span>
         <span v-if="totals.columns">
           {{ $t('spreadsheetDiffViewer.columns') }}
@@ -151,7 +152,7 @@ onMounted(() => {
         </span>
       </template>
       <span class="band-end">
-        <span>{{ allRows.length }} rows</span>
+        <span>{{ $t('count.rows', allRows.length) }}</span>
         <span>{{ sheets.length }} sheet{{ sheets.length === 1 ? '' : 's' }}</span>
       </span>
     </div>

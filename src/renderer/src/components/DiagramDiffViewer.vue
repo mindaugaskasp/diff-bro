@@ -186,17 +186,17 @@ watch(
     <div class="status-band">
       <span v-if="full">
         {{ $t('diagramDiffViewer.nodes') }}
-        <span class="add">{{ tally(full.nodes, 'added') }} added</span> ·
-        <span class="chg"
-          >{{ tally(full.nodes, 'changed') + tally(full.nodes, 'renamed') }} changed</span
-        >
+        <span class="add">{{ $t('count.added', tally(full.nodes, 'added')) }}</span> ·
+        <span class="chg">{{
+          $t('count.changed', tally(full.nodes, 'changed') + tally(full.nodes, 'renamed'))
+        }}</span>
         ·
-        <span class="del">{{ tally(full.nodes, 'removed') }} removed</span>
+        <span class="del">{{ $t('count.removed', tally(full.nodes, 'removed')) }}</span>
       </span>
       <span v-if="full">
         {{ $t('diagramDiffViewer.edges') }}
-        <span class="add">{{ tally(full.edges, 'added') }} added</span> ·
-        <span class="del">{{ tally(full.edges, 'removed') }} removed</span>
+        <span class="add">{{ $t('count.added', tally(full.edges, 'added')) }}</span> ·
+        <span class="del">{{ $t('count.removed', tally(full.edges, 'removed')) }}</span>
       </span>
       <span class="band-end">
         <span v-if="hidden" class="dg-hidden">{{ hidden }} unchanged hidden</span>

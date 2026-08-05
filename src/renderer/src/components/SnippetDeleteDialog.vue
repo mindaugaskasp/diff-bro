@@ -36,9 +36,14 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
     @close="store.cancelDelete()"
   >
     <p class="dialog-note">
-      Delete the {{ label }} <strong>“{{ pending.name }}”</strong>?
+      <i18n-t keypath="snippetDeleteDialog.deleteThe" tag="span">
+        <template #kind>{{ label }}</template>
+        <template #name
+          ><strong>“{{ pending.name }}”</strong></template
+        >
+      </i18n-t>
       <template v-if="isTag && total">
-        It’s on {{ carrying }}.
+        {{ $t('snippetDeleteDialog.itsOn', { carrying }) }}
         <template v-if="!withEntries">{{ $t('snippetDeleteDialog.theyKeepTheRestOf') }}</template>
       </template>
       <template v-else-if="isTag">{{ $t('snippetDeleteDialog.nothingIsUsingIt') }}</template>
@@ -47,7 +52,7 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
 
     <label v-if="isTag && total" class="also">
       <input v-model="withEntries" type="checkbox" />
-      <span>Delete the {{ carrying }} too</span>
+      <span>{{ $t('snippetDeleteDialog.deleteCarryingToo', { carrying }) }}</span>
     </label>
     <p v-if="withEntries && total" class="dialog-note warn">
       {{ $t('snippetDeleteDialog.thatCanTBeUndone') }}
