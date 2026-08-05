@@ -83,14 +83,14 @@ onBeforeUnmount(() => {
     <!-- Identical sides: a label over the panes says so. -->
     <div v-if="store.identical" class="identical-row">
       <AppIcon name="check" class="ok" />
-      <span>No differences — both sides are identical</span>
+      <span>{{ $t('diffViewer.noDifferencesBothSidesAre') }}</span>
     </div>
     <div ref="container" class="diff-container"></div>
     <!-- The same band the diagram diff carries, in the same words: what changed
          reads alike whichever kind of comparison you are looking at. -->
     <div v-if="store.stats && !store.identical" class="status-band">
       <span>
-        Lines <span class="add">{{ store.stats.additions }} added</span> ·
+        {{ $t('diffViewer.lines') }} <span class="add">{{ store.stats.additions }} added</span> ·
         <span class="del">{{ store.stats.deletions }} removed</span>
       </span>
     </div>

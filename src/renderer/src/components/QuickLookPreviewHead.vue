@@ -19,8 +19,8 @@ defineEmits(['copy', 'edit'])
     <button
       v-if="zone === 'preview'"
       class="btn btn-icon ql-pv-back"
-      data-tip="Back to the results list (←)"
-      aria-label="Back to list"
+      :data-tip="$t('quickLookPreviewHead.backToTheResultsList')"
+      :aria-label="$t('quickLookPreviewHead.backToList')"
       @click="zone = 'list'"
     >
       <AppIcon name="chevron-left" />
@@ -30,10 +30,10 @@ defineEmits(['copy', 'edit'])
     <button
       v-if="canEdit"
       class="btn btn-sm ql-pv-copy"
-      data-tip="Edit this snippet without leaving the launcher"
+      :data-tip="$t('quickLookPreviewHead.editThisSnippetWithoutLeaving')"
       @click="$emit('edit')"
     >
-      <AppIcon name="edit" /> Edit
+      <AppIcon name="edit" /> {{ $t('quickLookPreviewHead.edit') }}
     </button>
     <button
       v-if="current.kind === 'snippet'"

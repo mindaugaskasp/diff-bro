@@ -51,18 +51,17 @@ const clearLabel = computed(() =>
 
 <template>
   <section>
-    <h4>Logs</h4>
+    <h4>{{ $t('logSettings.logs') }}</h4>
     <p class="dialog-note">
-      Diff Bro writes unexpected errors to a local log so you can paste it into a bug report. One
-      file per day is kept for a week, and <strong>nothing is ever sent anywhere</strong>. Choose
-      where the log files are stored.
+      {{ $t('logSettings.diffBroWritesUnexpectedErrors') }}
+      <strong>nothing is ever sent anywhere</strong>. Choose where the log files are stored.
     </p>
     <div class="path">
       <code :title="dir">{{ dir }}</code>
       <span v-if="isDefault" class="badge">default</span>
     </div>
     <div class="dialog-actions">
-      <button class="btn" :disabled="busy" @click="reveal">Reveal</button>
+      <button class="btn" :disabled="busy" @click="reveal">{{ $t('logSettings.reveal') }}</button>
       <button
         class="btn"
         :class="{ armed: clearArmed }"
@@ -75,8 +74,12 @@ const clearLabel = computed(() =>
       >
         {{ clearLabel }}
       </button>
-      <button class="btn" :disabled="busy || isDefault" @click="reset">Use default</button>
-      <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
+      <button class="btn" :disabled="busy || isDefault" @click="reset">
+        {{ $t('logSettings.useDefault') }}
+      </button>
+      <button class="btn btn-primary" :disabled="busy" @click="choose">
+        {{ $t('logSettings.changeFolder') }}
+      </button>
     </div>
   </section>
 </template>

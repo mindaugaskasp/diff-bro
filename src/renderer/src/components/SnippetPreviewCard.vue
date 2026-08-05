@@ -23,7 +23,7 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
   <div class="preview interactive" :class="{ fit: !isMermaid }" :style="preview.style">
     <div class="pv-head">
       <span class="pv-titlewrap">
-        <span class="pv-label">Title</span>
+        <span class="pv-label">{{ $t('snippetPreviewCard.title') }}</span>
         <span class="pv-name">{{ preview.name }}</span>
       </span>
       <span v-if="preview.lang" class="pv-lang">{{ preview.lang }}</span>
@@ -33,14 +33,19 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
     <button
       v-if="isMermaid"
       class="pv-diagram"
-      data-tip="View full screen"
-      aria-label="View this diagram full screen"
+      :data-tip="$t('snippetPreviewCard.viewFullScreen')"
+      :aria-label="$t('snippetPreviewCard.viewThisDiagramFullScreen')"
       @click="$emit('view')"
     >
       <MermaidDiagram :code="preview.text" :debounce="0" />
     </button>
     <SnippetSecretMask v-else-if="preview.secret" compact />
-    <button v-else class="pv-body" data-tip="Open in editor" @click="$emit('edit')">
+    <button
+      v-else
+      class="pv-body"
+      :data-tip="$t('snippetPreviewCard.openInEditor')"
+      @click="$emit('edit')"
+    >
       <SnippetCode :code="preview.text" :language="preview.lang" />
     </button>
     <div class="pv-foot">
@@ -48,13 +53,15 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
         <span v-for="t in preview.tags" :key="t" class="pv-tag">
           <span class="dot" :style="{ background: store.colorOf(t) }"></span>{{ t }}
         </span>
-        <span v-if="!preview.tags.length" class="pv-untagged">Untagged</span>
+        <span v-if="!preview.tags.length" class="pv-untagged">{{
+          $t('snippetPreviewCard.untagged')
+        }}</span>
       </span>
       <button v-if="isMermaid" class="pv-open" @click="$emit('view')">
-        <AppIcon name="diagram" /> View full screen
+        <AppIcon name="diagram" /> {{ $t('snippetPreviewCard.viewFullScreen') }}
       </button>
       <button v-else class="pv-open" @click="$emit('edit')">
-        <AppIcon name="expand" /> Open in editor
+        <AppIcon name="expand" /> {{ $t('snippetPreviewCard.openInEditor') }}
       </button>
     </div>
   </div>

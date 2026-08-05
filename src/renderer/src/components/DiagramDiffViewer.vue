@@ -105,11 +105,23 @@ watch(
       <span class="lg chg"><span class="lgchip">±</span>changed</span>
       <span class="lg same"><span class="lgchip">·</span>unchanged</span>
       <span class="lg-right">
-        <button class="dg-zbtn" data-tip="Zoom out" aria-label="Zoom out" @click="zoom(1 / 1.2)">
+        <button
+          class="dg-zbtn"
+          :data-tip="$t('diagramDiffViewer.zoomOut')"
+          :aria-label="$t('diagramDiffViewer.zoomOut')"
+          @click="zoom(1 / 1.2)"
+        >
           <AppIcon name="minus" />
         </button>
-        <button class="dg-pct" data-tip="Reset to fit" @click="fit">{{ pct }}%</button>
-        <button class="dg-zbtn" data-tip="Zoom in" aria-label="Zoom in" @click="zoom(1.2)">
+        <button class="dg-pct" :data-tip="$t('diagramDiffViewer.resetToFit')" @click="fit">
+          {{ pct }}%
+        </button>
+        <button
+          class="dg-zbtn"
+          :data-tip="$t('diagramDiffViewer.zoomIn')"
+          :aria-label="$t('diagramDiffViewer.zoomIn')"
+          @click="zoom(1.2)"
+        >
           <AppIcon name="plus" />
         </button>
         <button
@@ -127,8 +139,7 @@ watch(
     </div>
 
     <p v-if="store.renderSideBySide && !error" class="dg-drift">
-      Aligned at the first node — below it each revision was laid out on its own, so an unchanged
-      node can still sit at a different height.
+      {{ $t('diagramDiffViewer.alignedAtTheFirstNode') }}
     </p>
 
     <div class="dg-body">
@@ -166,7 +177,8 @@ watch(
 
     <div class="status-band">
       <span v-if="full">
-        Nodes <span class="add">{{ tally(full.nodes, 'added') }} added</span> ·
+        {{ $t('diagramDiffViewer.nodes') }}
+        <span class="add">{{ tally(full.nodes, 'added') }} added</span> ·
         <span class="chg"
           >{{ tally(full.nodes, 'changed') + tally(full.nodes, 'renamed') }} changed</span
         >
@@ -174,7 +186,8 @@ watch(
         <span class="del">{{ tally(full.nodes, 'removed') }} removed</span>
       </span>
       <span v-if="full">
-        Edges <span class="add">{{ tally(full.edges, 'added') }} added</span> ·
+        {{ $t('diagramDiffViewer.edges') }}
+        <span class="add">{{ tally(full.edges, 'added') }} added</span> ·
         <span class="del">{{ tally(full.edges, 'removed') }} removed</span>
       </span>
       <span class="band-end">

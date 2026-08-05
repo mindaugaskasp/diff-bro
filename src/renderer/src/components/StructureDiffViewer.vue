@@ -35,7 +35,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
   <div class="structure-diff">
     <div v-if="identical" class="identical-row">
       <AppIcon name="check" class="ok" />
-      <span>No differences — the two documents hold the same data</span>
+      <span>{{ $t('structureDiffViewer.noDifferencesTheTwoDocuments') }}</span>
     </div>
 
     <div v-else-if="!result" class="sd-empty">
@@ -47,7 +47,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
       ref="rows"
       class="sd-rows"
       role="list"
-      aria-label="Structural differences"
+      :aria-label="$t('structureDiffViewer.structuralDifferences')"
       :style="{ '--sd-row-h': `${SD_ROW_H}px` }"
     >
       <div class="sd-pad" :style="{ height: `${win.padTop}px` }"></div>
@@ -75,7 +75,8 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
 
     <div class="status-band">
       <span>
-        Keys <span class="add">{{ result?.stats.added ?? 0 }} added</span> ·
+        {{ $t('structureDiffViewer.keys') }}
+        <span class="add">{{ result?.stats.added ?? 0 }} added</span> ·
         <span class="chg">{{ result?.stats.changed ?? 0 }} changed</span> ·
         <span class="del">{{ result?.stats.removed ?? 0 }} removed</span>
       </span>
@@ -84,7 +85,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
       <span class="band-end">
         <label class="sd-all">
           <input v-model="store.structureShowAll" type="checkbox" />
-          Show unchanged
+          {{ $t('structureDiffViewer.showUnchanged') }}
         </label>
       </span>
     </div>

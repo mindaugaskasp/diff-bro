@@ -106,7 +106,7 @@ const clearTitle = computed(() =>
              row that jumps reads as a misclick. -->
         <label :class="{ off: !splitAvailable }" :data-tip="splitTip">
           <input v-model="store.renderSideBySide" type="checkbox" :disabled="!splitAvailable" />
-          Split view
+          {{ $t('appToolbar.splitView') }}
         </label>
         <label :class="{ off: !structureAvailable }" :data-tip="structureTip">
           <input v-model="store.semanticView" type="checkbox" :disabled="!structureAvailable" />
@@ -118,11 +118,11 @@ const clearTitle = computed(() =>
             type="checkbox"
             :disabled="!whitespaceAvailable"
           />
-          Ignore whitespace
+          {{ $t('appToolbar.ignoreWhitespace') }}
         </label>
         <label :class="{ off: !focusAvailable }" :data-tip="focusTip">
           <input v-model="store.diagramFocus" type="checkbox" :disabled="!focusAvailable" />
-          Focus on changes
+          {{ $t('appToolbar.focusOnChanges') }}
         </label>
       </div>
 
@@ -149,7 +149,7 @@ const clearTitle = computed(() =>
           :disabled="!store.hasUnsavedWork"
           @click="store.showSaveDialog = true"
         >
-          Save
+          {{ $t('common.save') }}
         </button>
         <button
           class="btn"
@@ -158,7 +158,7 @@ const clearTitle = computed(() =>
           :disabled="!store.canSave"
           @click="share.shareCurrent()"
         >
-          Share
+          {{ $t('appToolbar.share') }}
         </button>
         <button
           class="btn"
@@ -166,7 +166,7 @@ const clearTitle = computed(() =>
           :disabled="!store.ready || store.comparableKind !== 'text'"
           @click="store.copyDiff()"
         >
-          <AppIcon name="copy" /> Copy diff
+          <AppIcon name="copy" /> {{ $t('appToolbar.copyDiff') }}
         </button>
         <button
           class="btn"
@@ -174,7 +174,7 @@ const clearTitle = computed(() =>
           :disabled="!imageExport.canExportImage"
           @click="imageExport.exportCurrentImage()"
         >
-          <AppIcon name="image" /> Capture
+          <AppIcon name="image" /> {{ $t('appToolbar.capture') }}
         </button>
         <button
           v-if="!store.isSavedDiff"
@@ -183,7 +183,7 @@ const clearTitle = computed(() =>
           :disabled="!store.canClear"
           @click="store.clear"
         >
-          Clear
+          {{ $t('appToolbar.clear') }}
         </button>
       </div>
     </div>

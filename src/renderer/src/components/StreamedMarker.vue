@@ -23,15 +23,15 @@ const cappedAt = computed(() => (props.summary?.maxLines ?? 0).toLocaleString())
 <template>
   <div class="stream-mark band">
     <AppIcon name="stream" class="mark-icon" />
-    <span class="mark-title">Streamed</span>
+    <span class="mark-title">{{ $t('streamedMarker.streamed') }}</span>
     <span class="mark-why">
-      <template v-if="loading">Indexing both files by line…</template>
-      <template v-else>Read from disk as you scroll — too large to load in full.</template>
+      <template v-if="loading">{{ $t('streamedMarker.indexingBothFilesByLine') }}</template>
+      <template v-else>{{ $t('streamedMarker.readFromDiskAsYou') }}</template>
     </span>
     <span v-if="capped" class="mark-capped">
       Only the first {{ cappedAt }} lines of each file are compared.
     </span>
-    <span class="mark-limits">Saving, sharing and patch export are unavailable.</span>
+    <span class="mark-limits">{{ $t('streamedMarker.savingSharingAndPatchExport') }}</span>
   </div>
 </template>
 

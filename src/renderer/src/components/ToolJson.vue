@@ -65,9 +65,9 @@ offerToolOutput(
     <textarea
       v-model="input"
       class="tjs-in"
-      placeholder="Paste JSON…"
+      :placeholder="$t('toolJson.pasteJSON')"
       spellcheck="false"
-      aria-label="JSON"
+      :aria-label="$t('toolJson.jSON')"
     ></textarea>
 
     <p v-if="parsed.error" class="tjs-err">{{ parsed.error }}</p>
@@ -78,9 +78,9 @@ offerToolOutput(
         <input
           v-model="filter"
           class="tjs-filter"
-          placeholder="$.path[*] — JSONPath"
+          :placeholder="$t('toolJson.pathJSONPath')"
           spellcheck="false"
-          aria-label="JSONPath filter"
+          :aria-label="$t('toolJson.jSONPathFilter')"
         />
       </div>
 
@@ -89,12 +89,17 @@ offerToolOutput(
         <div class="tjs-block">
           <div class="tjs-bh">
             <span>
-              Result
+              {{ $t('toolJson.result') }}
               <span v-if="filtered.count != null" class="tjs-count">
                 · {{ filtered.count }} match{{ filtered.count === 1 ? '' : 'es' }}
               </span>
             </span>
-            <button class="tjs-copy" aria-label="Copy" data-tip="Copy" @click="copy(shaped)">
+            <button
+              class="tjs-copy"
+              :aria-label="$t('common.copy')"
+              :data-tip="$t('common.copy')"
+              @click="copy(shaped)"
+            >
               <AppIcon :name="copied ? 'check' : 'copy'" />
             </button>
           </div>

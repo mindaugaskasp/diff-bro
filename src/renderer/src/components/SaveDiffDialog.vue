@@ -104,16 +104,20 @@ function cancel() {
   <BaseDialog width="340px" :title="dialogTitle" @close="cancel">
     <form class="dialog-form" @submit.prevent="save">
       <label>
-        Name
+        {{ $t('saveDiffDialog.name') }}
         <input ref="nameInput" v-model="name" type="text" spellcheck="false" />
       </label>
       <TagChipsField ref="tagField" :initial="startTags" />
       <label class="toggle">
         <input v-model="secure" type="checkbox" />
-        <span><strong>Secure</strong> — auto-expiring (deletes itself)</span>
+        <i18n-t keypath="saveDiffDialog.secureHint" tag="span">
+          <template #label
+            ><strong>{{ $t('saveDiffDialog.secure') }}</strong></template
+          >
+        </i18n-t>
       </label>
       <label v-if="secure">
-        Expires after
+        {{ $t('saveDiffDialog.expiresAfter') }}
         <select v-model.number="ttl">
           <option v-for="opt in TTL_OPTIONS" :key="opt.hours" :value="opt.hours">
             {{ opt.label }}
@@ -131,7 +135,9 @@ function cancel() {
         <button type="submit" class="btn btn-primary">
           {{ submitLabel }}
         </button>
-        <button type="button" class="btn btn-ghost" @click="cancel">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="cancel">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>

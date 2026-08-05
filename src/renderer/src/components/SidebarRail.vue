@@ -52,8 +52,8 @@ const groups = computed(() => [
     <div class="rail-band band">
       <button
         class="btn btn-icon sidebar-toggle"
-        data-tip="Expand the sidebar"
-        aria-label="Expand the sidebar"
+        :data-tip="$t('sidebarRail.expandTheSidebar')"
+        :aria-label="$t('sidebarRail.expandTheSidebar')"
         @click="emit('expand', null)"
       >
         <AppIcon name="chevron-right" />
@@ -62,8 +62,8 @@ const groups = computed(() => [
 
     <button
       class="rail-btn"
-      data-tip="Search diffs & snippets"
-      aria-label="Search diffs and snippets"
+      :data-tip="$t('sidebarRail.searchDiffsSnippets')"
+      :aria-label="$t('sidebarRail.searchDiffsAndSnippets')"
       @click="emit('expand', 'search')"
     >
       <AppIcon name="search" />
@@ -102,8 +102,8 @@ const groups = computed(() => [
     <!-- The full list, searchable, without giving up the collapse. -->
     <button
       class="rail-btn"
-      data-tip="Search every tool"
-      aria-label="Tools"
+      :data-tip="$t('sidebarRail.searchEveryTool')"
+      :aria-label="$t('sidebarRail.tools')"
       @click="ui.openToolsPalette()"
     >
       <AppIcon name="wrench" />

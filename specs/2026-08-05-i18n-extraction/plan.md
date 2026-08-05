@@ -3,7 +3,7 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 10 / 16 steps                 |
+| **Progress**                            | 11 / 16 steps                 |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
@@ -309,7 +309,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
       the `bad-signature` sentence here**, with the assertion written first.
 - [x] 10. `utils/` copy — `tourCopy.js`, `detectLanguage.js`, `jiraMarkup.js`,
       `markdownMarkup.js`, and the rest.
-- [ ] 11. `components/` — 93 files, 438 strings. Batched by dialog family, not
+- [x] 11. `components/` — 93 files, 438 strings. Batched by dialog family, not
       alphabetically, so a reviewer sees one screen's copy at a time.
 - [ ] 12. `features/` slices — each slice's copy lives under its own key
       namespace, mirroring the slice boundary.
@@ -347,6 +347,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
 | 2026-08-05 | The guard counts a `*Key: 'a.b'` property as a use                                        | The utils-export-IDs rule made every shortcut label look like an unused catalogue entry, which would have made step 13's flip to error impossible. A dotted value is required, so `sortKey: 'name'` is not a reference.        | listing exceptions; giving up on the unused check |
 | 2026-08-05 | `SHORTCUT_BAR` became objects rather than `[keys, label]` tuples                          | A key inside a tuple is invisible to the guard. Matching `SHORTCUT_GROUPS`' shape closes the gap instead of special-casing it.                                                                                                | a `shortcuts.bar.*` exception in the guard |
 | 2026-08-05 | Key IDs are resolved ONCE at the boundary (`namedTools`), not per call site | `rank()` searches `.name`. Leaving `nameKey` on the rows meant the launcher ranked against catalogue ids — `rank('date')` stopped finding Epoch while `rank('base64')` still passed by coincidence, which is exactly the failure that hides. utils/ stays pure by taking the translator as an argument. | translating in each of the nine consumers |
+| 2026-08-05 | A sentence with inline markup uses `<i18n-t>`, never split fragments        | A mechanical pass turned `Press <strong>→</strong> to browse the {n} tools.` into a translated "Press" plus untranslated trailing prose — worse than leaving it English, because word order round the markup differs by language. `<i18n-t>` keeps the sentence whole with the markup as a named slot. | extracting each fragment as its own key |
 | 2026-08-05 | RTL is out of scope                                                | A logical-property sweep across every stylesheet is a comparable amount of work again, and is untestable without a real RTL locale.                                                                                                                          | `dir="rtl"` support now                                                                                          |
 
 ### Measurement method

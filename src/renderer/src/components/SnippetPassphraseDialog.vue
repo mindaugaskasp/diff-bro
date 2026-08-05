@@ -67,7 +67,7 @@ function close() {
         }}
       </p>
       <label>
-        Passphrase
+        {{ $t('snippetPassphraseDialog.passphrase') }}
         <input
           v-model="passphrase"
           type="password"
@@ -80,7 +80,9 @@ function close() {
         <button type="submit" class="btn btn-primary" :disabled="!passphrase || busy">
           {{ mode === 'import' ? 'Import' : 'Export' }}
         </button>
-        <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="close">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>

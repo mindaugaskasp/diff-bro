@@ -30,7 +30,7 @@ defineExpose({
       v-model="query"
       class="ql-input"
       type="text"
-      placeholder="Search snippets & tools…"
+      :placeholder="$t('quickLookSearch.searchSnippetsTools')"
       autocomplete="off"
       spellcheck="false"
       :readonly="readonly"
@@ -38,13 +38,13 @@ defineExpose({
     />
     <button
       class="btn btn-icon ql-add"
-      data-tip="Capture a new plaintext snippet"
-      aria-label="New plaintext snippet"
+      :data-tip="$t('quickLookSearch.captureANewPlaintextSnippet')"
+      :aria-label="$t('quickLookSearch.newPlaintextSnippet')"
       @click="$emit('add')"
     >
       <AppIcon name="plus" />
     </button>
-    <span class="ql-kbd">Esc</span>
+    <span class="ql-kbd">{{ $t('quickLookSearch.esc') }}</span>
   </div>
 </template>
 

@@ -72,12 +72,12 @@ function close() {
       <button
         v-if="keepable()"
         class="btn"
-        data-tip="Keep this in your snippet library — you name it"
+        :data-tip="$t('textToolDialog.keepThisInYourSnippet')"
         @click="saveAsSnippet"
       >
-        Save as snippet
+        {{ $t('textToolDialog.saveAsSnippet') }}
       </button>
-      <button class="btn btn-ghost" @click="close">Close</button>
+      <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
     </template>
   </BaseDialog>
 </template>

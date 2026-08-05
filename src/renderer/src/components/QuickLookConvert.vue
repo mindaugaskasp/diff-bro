@@ -67,7 +67,7 @@ watch(
       </button>
       <AppIcon :name="headIcon" class="qc-ico" />
       <span class="qc-name">{{ tool.name }}</span>
-      <span class="qc-kbd">Esc</span>
+      <span class="qc-kbd">{{ $t('quickLookConvert.esc') }}</span>
     </div>
 
     <div ref="panelEl" class="qc-panel" tabindex="-1" @keydown="onPanelKeys">

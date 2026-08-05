@@ -115,8 +115,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
           v-if="closable"
           type="button"
           class="dialog-close"
-          aria-label="Close"
-          data-tip="Close"
+          :aria-label="$t('common.close')"
+          :data-tip="$t('common.close')"
           @click="emit('close')"
         >
           <AppIcon name="x" />

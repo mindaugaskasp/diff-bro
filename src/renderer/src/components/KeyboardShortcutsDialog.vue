@@ -39,7 +39,7 @@ function close() {
 <template>
   <BaseDialog width="500px" :title="$t('shortcutsDialog.title')" @close="close">
     <p class="dialog-note">
-      Shortcuts for <strong>{{ platform }}</strong
+      {{ $t('keyboardShortcutsDialog.shortcutsFor') }} <strong>{{ platform }}</strong
       >.
     </p>
     <div class="groups">

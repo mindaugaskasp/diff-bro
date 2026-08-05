@@ -58,9 +58,9 @@ offerToolOutput(
     <textarea
       v-model="input"
       class="txm-in"
-      placeholder="Paste XML…"
+      :placeholder="$t('toolXml.pasteXML')"
       spellcheck="false"
-      aria-label="XML"
+      :aria-label="$t('toolXml.xML')"
     ></textarea>
 
     <p v-if="errorText" class="txm-err">{{ errorText }}</p>
@@ -71,9 +71,9 @@ offerToolOutput(
         <input
           v-model="filter"
           class="txm-filter"
-          placeholder="//tag/@attr — XPath"
+          :placeholder="$t('toolXml.tagAttrXPath')"
           spellcheck="false"
-          aria-label="XPath filter"
+          :aria-label="$t('toolXml.xPathFilter')"
         />
       </div>
 
@@ -82,12 +82,17 @@ offerToolOutput(
         <div class="txm-block">
           <div class="txm-bh">
             <span>
-              Result
+              {{ $t('toolXml.result') }}
               <span v-if="filtered.count != null" class="txm-count">
                 · {{ filtered.count }} match{{ filtered.count === 1 ? '' : 'es' }}
               </span>
             </span>
-            <button class="txm-copy" aria-label="Copy" data-tip="Copy" @click="copy">
+            <button
+              class="txm-copy"
+              :aria-label="$t('common.copy')"
+              :data-tip="$t('common.copy')"
+              @click="copy"
+            >
               <AppIcon :name="copied ? 'check' : 'copy'" />
             </button>
           </div>

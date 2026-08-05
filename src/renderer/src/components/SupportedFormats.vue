@@ -21,7 +21,7 @@ const store = useDiffStore()
 
 <template>
   <div class="formats">
-    <span class="eyebrow">Supported files</span>
+    <span class="eyebrow">{{ $t('supportedFormats.supportedFiles') }}</span>
     <ul class="chips">
       <li v-for="f in FORMATS" :key="f.label">
         <button

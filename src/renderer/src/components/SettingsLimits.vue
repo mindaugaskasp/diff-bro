@@ -14,7 +14,7 @@ const settings = useSettingsStore()
 
 <template>
   <section>
-    <h4>Limits</h4>
+    <h4>{{ $t('settingsLimits.limits') }}</h4>
     <label v-for="(spec, type) in FILE_TYPE_LIMITS" :key="type" class="row">
       <span>Max {{ spec.label }} file (MB)</span>
       <input
@@ -26,7 +26,7 @@ const settings = useSettingsStore()
       />
     </label>
     <label class="row">
-      <span>Max snippet size (KB)</span>
+      <span>{{ $t('settingsLimits.maxSnippetSizeKB') }}</span>
       <input
         type="number"
         min="16"
@@ -36,7 +36,7 @@ const settings = useSettingsStore()
       />
     </label>
     <label class="row">
-      <span>Max diff image height (px)</span>
+      <span>{{ $t('settingsLimits.maxDiffImageHeightPx') }}</span>
       <input
         type="number"
         :min="MIN_EXPORT_HEIGHT_PX"
@@ -47,10 +47,7 @@ const settings = useSettingsStore()
       />
     </label>
     <p class="hint">
-      Higher limits let you diff or store bigger content, at the cost of speed — raise them only if
-      you need to. The image height is how much of a long diff one exported picture covers, measured
-      on screen, so it captures the same amount whatever your display's scaling; a longer diff is
-      cut short and says so.
+      {{ $t('settingsLimits.higherLimitsLetYouDiff') }}
     </p>
   </section>
 </template>

@@ -27,7 +27,7 @@ onMounted(() => panel.value?.focus())
       class="ctx"
       role="menu"
       tabindex="-1"
-      aria-label="Tab actions"
+      :aria-label="$t('tabContextMenu.tabActions')"
       :style="{ left: `${at.x}px`, top: `${at.y}px` }"
       @pointerdown.stop
       @contextmenu.stop.prevent

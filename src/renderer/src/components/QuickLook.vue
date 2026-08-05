@@ -1,11 +1,11 @@
 <script setup>
 // Root of the floating quick look-up window (see src/main/quickLook.js); logic
-// lives in useQuickLook. The snippet preview renders through text interpolation
-// only, never v-html (CLAUDE.md #7).
+// lives in useQuickLook. Preview renders via interpolation, never v-html (#7).
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
 import AppIcon from './AppIcon.vue'
+import QuickLookToolHint from './QuickLookToolHint.vue'
 import QuickLookCompose from './QuickLookCompose.vue'
 import QuickLookConvert from './QuickLookConvert.vue'
 import QuickLookPreviewHead from './QuickLookPreviewHead.vue'
@@ -186,12 +186,7 @@ watch(composing, (on) => {
                 >
               </div>
             </div>
-            <div v-else class="ql-pv-msg">
-              <p v-if="current.kind === 'tools'">
-                Press <strong>→</strong> to browse the {{ current.count }} tools.
-              </p>
-              <p v-else>Press <strong>Enter</strong> to open this tool.</p>
-            </div>
+            <QuickLookToolHint v-else :kind="current.kind" :count="current.count" />
 
             <div class="ql-pv-foot band">
               <span class="ql-pv-actions">
@@ -201,7 +196,7 @@ watch(composing, (on) => {
               </span>
             </div>
           </template>
-          <div v-else class="ql-pv-none">Select a result to preview it.</div>
+          <div v-else class="ql-pv-none">{{ $t('quickLook.selectAResultToPreview') }}</div>
         </div>
       </div>
 
@@ -214,7 +209,8 @@ watch(composing, (on) => {
 
     <transition name="ql-toast">
       <div v-if="copied" class="ql-toast" role="status">
-        <AppIcon name="check" class="ok" /> Copied <strong>{{ copiedName }}</strong>
+        <AppIcon name="check" class="ok" /> {{ $t('common.copied') }}
+        <strong>{{ copiedName }}</strong>
       </div>
     </transition>
   </div>

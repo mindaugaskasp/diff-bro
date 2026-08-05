@@ -110,14 +110,18 @@ const showAllTags = ref(false)
           @collapse="settings.setSidebarCollapsed(true)"
         />
         <div class="usb-seg">
-          <button :class="{ on: allOn }" data-tip="Show every sidebar section" @click="showAll">
-            All
+          <button
+            :class="{ on: allOn }"
+            :data-tip="$t('savedDiffs.showEverySidebarSection')"
+            @click="showAll"
+          >
+            {{ $t('savedDiffs.all') }}
           </button>
           <button
             class="star"
             :class="{ on: favOnly }"
-            data-tip="Show only diffs and snippets you starred"
-            aria-label="Show only starred diffs and snippets"
+            :data-tip="$t('savedDiffs.showOnlyDiffsAndSnippets')"
+            :aria-label="$t('savedDiffs.showOnlyStarredDiffsAnd')"
             :aria-pressed="favOnly"
             @click="favOnly = !favOnly"
           >
@@ -149,7 +153,7 @@ const showAllTags = ref(false)
           <button
             v-if="tags.overflow.value > 0"
             class="tag-chip usb-more"
-            data-tip="Every tag, searchable"
+            :data-tip="$t('savedDiffs.everyTagSearchable')"
             @click="showAllTags = true"
           >
             +{{ tags.overflow.value }} more
@@ -160,8 +164,12 @@ const showAllTags = ref(false)
             {{ tags.active.value.length }} tag{{ tags.active.value.length === 1 ? '' : 's' }}
             selected
           </span>
-          <button class="usb-clear" data-tip="Drop every tag filter" @click="tags.clear()">
-            Clear
+          <button
+            class="usb-clear"
+            :data-tip="$t('savedDiffs.dropEveryTagFilter')"
+            @click="tags.clear()"
+          >
+            {{ $t('savedDiffs.clear') }}
           </button>
         </div>
       </div>
@@ -192,7 +200,7 @@ const showAllTags = ref(false)
         class="usb-grip"
         role="separator"
         aria-orientation="vertical"
-        aria-label="Drag to widen the sidebar"
+        :aria-label="$t('savedDiffs.dragToWidenTheSidebar')"
         @pointerdown="size.start"
       ></div>
     </template>

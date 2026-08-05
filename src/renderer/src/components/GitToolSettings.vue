@@ -23,10 +23,10 @@ async function toggle(on) {
 
 <template>
   <section>
-    <h4>Git</h4>
+    <h4>{{ $t('gitToolSettings.git') }}</h4>
     <p class="dialog-note">
-      Makes <code>git difftool</code> and <code>git mergetool</code> open the comparison here
-      instead of in the terminal.
+      {{ $t('gitToolSettings.makes') }} <code>git difftool</code> and
+      <code>git mergetool</code> open the comparison here instead of in the terminal.
     </p>
 
     <SettingToggle
@@ -35,13 +35,12 @@ async function toggle(on) {
       :disabled="busy"
       @change="toggle"
     >
-      Open git comparisons in Diff Bro
+      {{ $t('gitToolSettings.openGitComparisonsInDiff') }}
     </SettingToggle>
     <p v-else-if="status" class="hint">git isn’t on your PATH, so there is nothing to register.</p>
 
     <p v-if="status?.registered" class="hint">
-      A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the
-      merged file, so git still asks you whether the merge worked.
+      {{ $t('gitToolSettings.aMergeOpensItsTwo') }}
     </p>
     <p v-if="error" class="hint">{{ error }}</p>
   </section>

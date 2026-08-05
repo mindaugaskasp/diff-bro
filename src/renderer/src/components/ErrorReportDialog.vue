@@ -26,19 +26,19 @@ function report() {
 </script>
 
 <template>
-  <BaseDialog width="460px" title="Something went wrong" @close="close">
+  <BaseDialog width="460px" :title="$t('errorReportDialog.somethingWentWrong')" @close="close">
     <p class="dialog-note">
-      Diff Bro hit an unexpected error. It's been written to a log
+      {{ $t('errorReportDialog.diffBroHitAnUnexpected') }}
       <strong>on your machine only</strong> — nothing was sent anywhere. If it keeps happening,
       please report it so it can be fixed: copy the log and paste it into the issue.
     </p>
     <p v-if="store.lastError" class="err-msg">{{ store.lastError.message }}</p>
 
     <template #actions>
-      <button class="btn" @click="reveal">Reveal log</button>
+      <button class="btn" @click="reveal">{{ $t('errorReportDialog.revealLog') }}</button>
       <button class="btn" @click="copyLog">{{ copied ? 'Copied' : 'Copy log' }}</button>
-      <button class="btn" @click="report">Report on GitHub</button>
-      <button class="btn btn-primary" @click="close">Dismiss</button>
+      <button class="btn" @click="report">{{ $t('errorReportDialog.reportOnGitHub') }}</button>
+      <button class="btn btn-primary" @click="close">{{ $t('errorReportDialog.dismiss') }}</button>
     </template>
   </BaseDialog>
 </template>

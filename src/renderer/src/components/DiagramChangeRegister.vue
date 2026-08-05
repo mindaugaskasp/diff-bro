@@ -28,7 +28,7 @@ const nodeWhy = (r) => {
   <aside class="dg-register">
     <template v-if="nodes.length">
       <h3 class="reghead">
-        Nodes<span class="count">{{ nodes.length }}</span>
+        {{ $t('diagramChangeRegister.nodes') }}<span class="count">{{ nodes.length }}</span>
       </h3>
       <ul class="reglist">
         <li v-for="r in nodes" :key="`n${r.id}`" class="regrow" :class="CLASS[r.status]">
@@ -40,7 +40,7 @@ const nodeWhy = (r) => {
     </template>
     <template v-if="edges.length">
       <h3 class="reghead">
-        Edges<span class="count">{{ edges.length }}</span>
+        {{ $t('diagramChangeRegister.edges') }}<span class="count">{{ edges.length }}</span>
       </h3>
       <ul class="reglist">
         <li

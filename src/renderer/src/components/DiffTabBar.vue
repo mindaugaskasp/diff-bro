@@ -92,8 +92,8 @@ function onTabKey(e, tab) {
       v-if="overflow.overflowing.value"
       class="scroll scroll-left"
       :disabled="!canStep(-1)"
-      data-tip="Previous comparison"
-      aria-label="Previous comparison"
+      :data-tip="$t('diffTabBar.previousComparison')"
+      :aria-label="$t('diffTabBar.previousComparison')"
       @click="stepTo(-1)"
     >
       <AppIcon name="chevron-left" />
@@ -103,7 +103,7 @@ function onTabKey(e, tab) {
       ref="track"
       class="track"
       role="tablist"
-      aria-label="Open comparisons"
+      :aria-label="$t('diffTabBar.openComparisons')"
       @scroll="overflow.measure()"
     >
       <div
@@ -156,8 +156,8 @@ function onTabKey(e, tab) {
       v-if="overflow.overflowing.value"
       class="scroll scroll-right"
       :disabled="!canStep(1)"
-      data-tip="Next comparison"
-      aria-label="Next comparison"
+      :data-tip="$t('diffTabBar.nextComparison')"
+      :aria-label="$t('diffTabBar.nextComparison')"
       @click="stepTo(1)"
     >
       <AppIcon name="chevron-right" />
@@ -167,7 +167,7 @@ function onTabKey(e, tab) {
       class="add"
       :disabled="!tabs.canAdd"
       :data-tip="tabs.canAdd ? `New comparison (${MOD}+Shift+T)` : tabsFullNotice(tabs.tabs)"
-      aria-label="New comparison"
+      :aria-label="$t('diffTabBar.newComparison')"
       @click="tabs.newTab()"
     >
       <AppIcon name="plus" />

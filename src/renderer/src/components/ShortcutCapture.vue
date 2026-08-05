@@ -66,7 +66,8 @@ function onKeydown(e) {
       @blur="stop"
     >
       <span v-if="capturing" class="prompt">
-        Press a key combination… <span class="esc">Esc to cancel</span>
+        {{ $t('shortcutCapture.pressAKeyCombination') }}
+        <span class="esc">{{ $t('shortcutCapture.escToCancel') }}</span>
       </span>
       <kbd v-else>{{ label }}</kbd>
     </button>
@@ -76,7 +77,7 @@ function onKeydown(e) {
       class="btn btn-sm"
       @click="apply(DEFAULT_QUICKLOOK_SHORTCUT)"
     >
-      Reset
+      {{ $t('shortcutCapture.reset') }}
     </button>
   </div>
   <p v-if="message" class="capture-msg" :class="message.type">{{ message.text }}</p>

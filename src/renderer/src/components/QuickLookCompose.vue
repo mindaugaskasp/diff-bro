@@ -48,7 +48,7 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
         v-model="name"
         class="ql-compose-name"
         type="text"
-        placeholder="Name (optional)"
+        :placeholder="$t('quickLookCompose.nameOptional')"
         autocomplete="off"
         spellcheck="false"
       />
@@ -56,14 +56,16 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
         ref="bodyEl"
         v-model="body"
         class="ql-compose-text"
-        placeholder="Paste or type the snippet…"
+        :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
         spellcheck="false"
       ></textarea>
     </div>
 
     <div class="ql-compose-foot band">
       <span class="ql-compose-actions">
-        <button class="btn btn-sm" @click="emit('cancel')">Cancel</button>
+        <button class="btn btn-sm" @click="emit('cancel')">
+          {{ $t('common.cancel') }}
+        </button>
         <button class="btn btn-primary btn-sm" :disabled="!canSave" @click="emit('save')">
           <AppIcon name="check" /> {{ saving ? 'Saving…' : 'Save' }}
         </button>

@@ -51,9 +51,9 @@ onMounted(() => {
       <div class="grid-tools">
         <SegmentedControl
           v-model:value="toleranceId"
-          label="Tolerance"
+          :label="$t('spreadsheetDiffViewer.tolerance')"
           :options="TOLERANCES"
-          data-tip="Numbers closer than this count as the same figure"
+          :data-tip="$t('spreadsheetDiffViewer.numbersCloserThanThisCount')"
         />
         <!-- Only when asked for, so the band does not grow for the four presets
              that cover the common thresholds. -->
@@ -66,13 +66,13 @@ onMounted(() => {
             step="any"
             inputmode="decimal"
             placeholder="0"
-            aria-label="Custom tolerance"
-            data-tip="Leave it empty to compare exactly"
+            :aria-label="$t('spreadsheetDiffViewer.customTolerance')"
+            :data-tip="$t('spreadsheetDiffViewer.leaveItEmptyToCompare')"
           />
           <SegmentedControl
             v-model:value="customUnit"
             compact
-            label="Unit"
+            :label="$t('spreadsheetDiffViewer.unit')"
             :options="TOLERANCE_UNITS"
           />
         </template>
@@ -86,23 +86,23 @@ onMounted(() => {
           @click="showFormulas = !showFormulas"
         >
           <AppIcon name="braces" />
-          Formulas
+          {{ $t('spreadsheetDiffViewer.formulas') }}
         </button>
         <button
           class="btn btn-sm"
-          data-tip="Save every change as a CSV table"
+          :data-tip="$t('spreadsheetDiffViewer.saveEveryChangeAsA')"
           :disabled="identical"
           @click="store.exportChangeRegister(sheets)"
         >
           <AppIcon name="table" />
-          Register
+          {{ $t('spreadsheetDiffViewer.register') }}
         </button>
       </div>
     </div>
 
     <div v-if="identical" class="identical-row">
       <AppIcon name="check" class="ok" />
-      <span>No differences — every sheet matches</span>
+      <span>{{ $t('spreadsheetDiffViewer.noDifferencesEverySheetMatches') }}</span>
     </div>
 
     <div
@@ -131,14 +131,16 @@ onMounted(() => {
       </span>
       <template v-else>
         <span>
-          Cells <span class="chg cells">{{ totals.changed }} changed</span>
+          {{ $t('spreadsheetDiffViewer.cells') }}
+          <span class="chg cells">{{ totals.changed }} changed</span>
         </span>
         <span>
-          Rows <span class="add">{{ totals.added }} added</span> ·
+          {{ $t('spreadsheetDiffViewer.rows') }} <span class="add">{{ totals.added }} added</span> ·
           <span class="del">{{ totals.removed }} removed</span>
         </span>
         <span v-if="totals.columns">
-          Columns <span class="chg cols">{{ totals.columns }} moved</span>
+          {{ $t('spreadsheetDiffViewer.columns') }}
+          <span class="chg cols">{{ totals.columns }} moved</span>
         </span>
       </template>
       <span class="band-end">

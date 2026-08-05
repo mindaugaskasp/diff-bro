@@ -97,7 +97,7 @@ defineExpose({ flash })
     :data-tip="copyFileTip"
     @click="copyAsFile"
   >
-    <AppIcon name="clipboard" /> Copy as file
+    <AppIcon name="clipboard" /> {{ $t('snippetEditorActions.copyAsFile') }}
   </button>
   <button
     v-if="editMode"
@@ -115,13 +115,13 @@ defineExpose({ flash })
   <button
     v-if="!editMode && !secret"
     class="btn"
-    data-tip="A picture of this snippet, as the app draws it"
+    :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
     @click="emit('capture')"
   >
-    <AppIcon name="image" /> Capture
+    <AppIcon name="image" /> {{ $t('snippetEditorActions.capture') }}
   </button>
   <button v-if="!editMode" class="btn btn-primary" @click="emit('edit')">
-    <AppIcon name="edit" /> Edit
+    <AppIcon name="edit" /> {{ $t('snippetEditorActions.edit') }}
   </button>
   <button
     v-else
@@ -130,7 +130,7 @@ defineExpose({ flash })
     :disabled="!canSave"
     @click="emit('save')"
   >
-    Save
+    {{ $t('common.save') }}
   </button>
   <button class="btn btn-ghost" @click="emit('close')">{{ editMode ? 'Cancel' : 'Close' }}</button>
 </template>

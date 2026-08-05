@@ -98,65 +98,66 @@ function close() {
     resizable
     close-on-backdrop
     :initial-size="settings.dialogSize('encrypt')"
-    title="Encrypt / Decrypt Text"
+    :title="$t('encryptDecryptDialog.encryptDecryptText')"
     @close="close"
     @resize="(s) => settings.setDialogSize('encrypt', s)"
   >
     <p class="dialog-note">
-      Local only — the passphrase and text never leave this machine and are not saved anywhere.
-      Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.
+      {{ $t('encryptDecryptDialog.localOnlyThePassphraseAnd') }}
     </p>
     <label>
-      Input
+      {{ $t('encryptDecryptDialog.input') }}
       <textarea
         v-model="input"
         spellcheck="false"
-        placeholder="Plain text to encrypt, or an encrypted blob to decrypt… (or drop a file here)"
+        :placeholder="$t('encryptDecryptDialog.plainTextToEncryptOr')"
         @dragover.capture.prevent.stop
         @drop.capture.prevent.stop="onDropFile"
       ></textarea>
     </label>
     <div class="row">
       <label class="grow">
-        Key type
+        {{ $t('encryptDecryptDialog.keyType') }}
         <select v-model="keyMode">
-          <option value="passphrase">Passphrase — AES-256-GCM (authenticated)</option>
-          <option value="rawkey">Raw key — AES-256-CBC (decrypt only, unauthenticated)</option>
+          <option value="passphrase">
+            {{ $t('encryptDecryptDialog.passphraseAES256GCMAuthenticated') }}
+          </option>
+          <option value="rawkey">{{ $t('encryptDecryptDialog.rawKeyAES256CBC') }}</option>
         </select>
       </label>
     </div>
     <div v-if="keyMode === 'passphrase'" class="row">
       <label class="grow">
-        Passphrase
+        {{ $t('encryptDecryptDialog.passphrase') }}
         <input v-model="passphrase" type="password" autocomplete="off" spellcheck="false" />
       </label>
     </div>
     <template v-else>
       <div class="row">
         <label class="grow">
-          Key <span class="hint">(hex or base64)</span>
+          {{ $t('encryptDecryptDialog.key') }} <span class="hint">(hex or base64)</span>
           <input
             v-model="rawKey"
             type="text"
             autocomplete="off"
             spellcheck="false"
-            placeholder="32 bytes — 64 hex or base64"
+            :placeholder="$t('encryptDecryptDialog.32Bytes64HexOr')"
           />
         </label>
         <label class="grow">
-          IV <span class="hint">(hex or base64)</span>
+          {{ $t('encryptDecryptDialog.iV') }} <span class="hint">(hex or base64)</span>
           <input
             v-model="rawIv"
             type="text"
             autocomplete="off"
             spellcheck="false"
-            placeholder="16 bytes — 32 hex or base64"
+            :placeholder="$t('encryptDecryptDialog.16Bytes32HexOr')"
           />
         </label>
       </div>
       <p class="warn">
-        AES-256-CBC is <strong>unauthenticated</strong> — a successful decrypt does not prove the
-        data is untampered. For decrypting external payloads only.
+        {{ $t('encryptDecryptDialog.aES256CBCIs') }} <strong>unauthenticated</strong> — a successful
+        decrypt does not prove the data is untampered. For decrypting external payloads only.
       </p>
     </template>
     <div class="dialog-actions">
@@ -166,19 +167,25 @@ function close() {
         :disabled="busy || !input"
         @click="encrypt"
       >
-        Encrypt →
+        {{ $t('encryptDecryptDialog.encrypt') }}
       </button>
-      <button class="btn btn-primary" :disabled="busy || !input" @click="decrypt">Decrypt →</button>
+      <button class="btn btn-primary" :disabled="busy || !input" @click="decrypt">
+        {{ $t('encryptDecryptDialog.decrypt') }}
+      </button>
     </div>
     <label>
-      Output
+      {{ $t('encryptDecryptDialog.output') }}
       <textarea v-model="output" readonly spellcheck="false"></textarea>
     </label>
     <p v-if="error" class="error">{{ error }}</p>
     <template #actions>
-      <button class="btn" :disabled="!output" @click="useOutputAsInput">Use output as input</button>
-      <button class="btn" :disabled="!output" @click="copyOutput">Copy output</button>
-      <button class="btn btn-ghost" @click="close">Close</button>
+      <button class="btn" :disabled="!output" @click="useOutputAsInput">
+        {{ $t('encryptDecryptDialog.useOutputAsInput') }}
+      </button>
+      <button class="btn" :disabled="!output" @click="copyOutput">
+        {{ $t('encryptDecryptDialog.copyOutput') }}
+      </button>
+      <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
     </template>
   </BaseDialog>
 </template>

@@ -40,11 +40,11 @@ const rightClass = (row) => (row.rightLine === null ? 'ghost' : row.status === '
     <StreamedMarker :summary="summary" :loading="loading" />
 
     <div v-if="message" class="stream-empty">{{ message }}</div>
-    <div v-else-if="loading" class="stream-empty">Indexing…</div>
+    <div v-else-if="loading" class="stream-empty">{{ $t('streamedDiffViewer.indexing') }}</div>
     <template v-else>
       <div v-if="identical" class="identical-row">
         <AppIcon name="check" class="ok" />
-        <span>No differences — both sides are identical</span>
+        <span>{{ $t('streamedDiffViewer.noDifferencesBothSidesAre') }}</span>
       </div>
 
       <div ref="box" class="stream-rows">
@@ -60,7 +60,8 @@ const rightClass = (row) => (row.rightLine === null ? 'ghost' : row.status === '
 
       <div class="status-band">
         <span>
-          Lines <span class="add">{{ summary?.additions ?? 0 }} added</span> ·
+          {{ $t('streamedDiffViewer.lines') }}
+          <span class="add">{{ summary?.additions ?? 0 }} added</span> ·
           <span class="del">{{ summary?.deletions ?? 0 }} removed</span>
         </span>
         <span>{{ total.toLocaleString() }} rows</span>

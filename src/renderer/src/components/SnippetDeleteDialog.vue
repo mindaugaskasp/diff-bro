@@ -39,10 +39,10 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
       Delete the {{ label }} <strong>“{{ pending.name }}”</strong>?
       <template v-if="isTag && total">
         It’s on {{ carrying }}.
-        <template v-if="!withEntries">They keep the rest of their tags.</template>
+        <template v-if="!withEntries">{{ $t('snippetDeleteDialog.theyKeepTheRestOf') }}</template>
       </template>
-      <template v-else-if="isTag">Nothing is using it.</template>
-      <template v-else> This can’t be undone. </template>
+      <template v-else-if="isTag">{{ $t('snippetDeleteDialog.nothingIsUsingIt') }}</template>
+      <template v-else> {{ $t('snippetDeleteDialog.thisCanTBeUndone') }} </template>
     </p>
 
     <label v-if="isTag && total" class="also">
@@ -50,14 +50,16 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
       <span>Delete the {{ carrying }} too</span>
     </label>
     <p v-if="withEntries && total" class="dialog-note warn">
-      That can’t be undone. A record carrying this tag among others still goes.
+      {{ $t('snippetDeleteDialog.thatCanTBeUndone') }}
     </p>
 
     <template #actions>
       <button class="btn btn-destructive" @click="store.confirmDelete({ withEntries })">
         {{ destructive && isTag && withEntries ? `Delete tag and ${total}` : 'Delete' }}
       </button>
-      <button class="btn btn-ghost" @click="store.cancelDelete()">Cancel</button>
+      <button class="btn btn-ghost" @click="store.cancelDelete()">
+        {{ $t('common.cancel') }}
+      </button>
     </template>
   </BaseDialog>
 </template>

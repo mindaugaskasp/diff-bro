@@ -29,10 +29,10 @@ async function run(fn) {
 
 <template>
   <section>
-    <h4>Terminal command</h4>
+    <h4>{{ $t('cliSettings.terminalCommand') }}</h4>
     <p class="dialog-note">
-      Adds a <code>diffbro</code> command so a comparison can start from a terminal:
-      <code>diffbro compare a.json b.json</code>, <code>diffbro create snippet</code>, or
+      {{ $t('cliSettings.addsA') }} <code>diffbro</code> command so a comparison can start from a
+      terminal: <code>diffbro compare a.json b.json</code>, <code>diffbro create snippet</code>, or
       <code>diffbro cb save</code> to keep what you just copied.
     </p>
 
@@ -42,14 +42,14 @@ async function run(fn) {
     </div>
 
     <p v-if="status?.installed && !status.onPath" class="hint">
-      That folder isn’t on your PATH yet — add it to your shell profile to run
+      {{ $t('cliSettings.thatFolderIsnTOn') }}
       <code>diffbro</code> by name.
     </p>
     <p v-if="error" class="hint">{{ error }}</p>
 
     <div class="dialog-actions">
       <button v-if="status?.installed" class="btn" :disabled="busy" @click="uninstall">
-        Remove
+        {{ $t('common.remove') }}
       </button>
       <button class="btn btn-primary" :disabled="busy" @click="install">
         {{ status?.installed ? 'Reinstall' : 'Install' }}

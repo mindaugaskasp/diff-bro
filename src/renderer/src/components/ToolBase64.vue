@@ -59,21 +59,31 @@ offerToolOutput(
       class="tb-in"
       :placeholder="mode === 'encode' ? 'Text to encode…' : 'Base64 to decode…'"
       spellcheck="false"
-      aria-label="Base64 input"
+      :aria-label="$t('toolBase64.base64Input')"
     ></textarea>
 
     <div v-if="mode === 'encode'" class="tb-opts">
-      <label class="tb-chk"><input v-model="urlSafe" type="checkbox" /> URL-safe</label>
-      <label class="tb-chk"><input v-model="wrap" type="checkbox" /> Wrap 76 cols</label>
+      <label class="tb-chk"
+        ><input v-model="urlSafe" type="checkbox" /> {{ $t('toolBase64.uRLSafe') }}</label
+      >
+      <label class="tb-chk"
+        ><input v-model="wrap" type="checkbox" /> {{ $t('toolBase64.wrap76Cols') }}</label
+      >
     </div>
 
     <p v-if="result.error" class="tb-err">{{ result.error }}</p>
     <div v-else class="tb-block">
       <div class="tb-bh">
         <span
-          >Result <span v-if="input" class="tb-count">· {{ summary }}</span></span
+          >{{ $t('toolBase64.result') }}
+          <span v-if="input" class="tb-count">· {{ summary }}</span></span
         >
-        <button class="tb-copy" aria-label="Copy" data-tip="Copy" @click="copy">
+        <button
+          class="tb-copy"
+          :aria-label="$t('common.copy')"
+          :data-tip="$t('common.copy')"
+          @click="copy"
+        >
           <AppIcon :name="copied ? 'check' : 'copy'" />
         </button>
       </div>

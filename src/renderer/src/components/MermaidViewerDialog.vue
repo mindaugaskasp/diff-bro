@@ -95,19 +95,33 @@ onBeforeUnmount(() => {
       <div class="head">
         <span class="title">{{ view.name || 'Diagram' }}</span>
         <div class="tools">
-          <button class="tbtn" data-tip="Zoom out" aria-label="Zoom out" @click="zoom(1 / 1.2)">
+          <button
+            class="tbtn"
+            :data-tip="$t('mermaidViewerDialog.zoomOut')"
+            :aria-label="$t('mermaidViewerDialog.zoomOut')"
+            @click="zoom(1 / 1.2)"
+          >
             <AppIcon name="minus" />
           </button>
           <span class="pct" @click="fit">{{ pct }}%</span>
-          <button class="tbtn" data-tip="Zoom in" aria-label="Zoom in" @click="zoom(1.2)">
+          <button
+            class="tbtn"
+            :data-tip="$t('mermaidViewerDialog.zoomIn')"
+            :aria-label="$t('mermaidViewerDialog.zoomIn')"
+            @click="zoom(1.2)"
+          >
             <AppIcon name="plus" />
           </button>
-          <button class="tbtn wide" data-tip="Scale the diagram to fit the window" @click="fit">
-            Fit
+          <button
+            class="tbtn wide"
+            :data-tip="$t('mermaidViewerDialog.scaleTheDiagramToFit')"
+            @click="fit"
+          >
+            {{ $t('mermaidViewerDialog.fit') }}
           </button>
           <SegmentedControl
             compact
-            label="Theme"
+            :label="$t('mermaidViewerDialog.theme')"
             :value="diagramTheme"
             :options="DIAGRAM_THEME_OPTIONS"
             @update:value="diagramTheme = $event"
@@ -122,8 +136,8 @@ onBeforeUnmount(() => {
           </button>
           <button
             class="tbtn close"
-            data-tip="Close the viewer (Esc)"
-            aria-label="Close"
+            :data-tip="$t('mermaidViewerDialog.closeTheViewerEsc')"
+            :aria-label="$t('common.close')"
             @click="close"
           >
             <AppIcon name="x" />
@@ -146,7 +160,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
       <div class="foot">
-        <span class="hint">Drag to pan · Ctrl/⌘ + scroll to zoom · click % to fit</span>
+        <span class="hint">{{ $t('mermaidViewerDialog.dragToPanCtrlScroll') }}</span>
         <span class="resize-hint">drag any corner to resize</span>
       </div>
       <span

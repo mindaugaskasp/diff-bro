@@ -19,14 +19,14 @@ defineExpose({ focus: () => box.value?.focus() })
         ref="box"
         :value="modelValue"
         type="search"
-        placeholder="Search diffs & snippets…"
+        :placeholder="$t('sidebarSearch.searchDiffsSnippets')"
         spellcheck="false"
         @input="emit('update:modelValue', $event.target.value)"
       />
       <button
         v-if="modelValue"
-        data-tip="Clear the search box"
-        aria-label="Clear search"
+        :data-tip="$t('sidebarSearch.clearTheSearchBox')"
+        :aria-label="$t('sidebarSearch.clearSearch')"
         @click="emit('update:modelValue', '')"
       >
         <AppIcon name="x" />
@@ -34,8 +34,8 @@ defineExpose({ focus: () => box.value?.focus() })
     </div>
     <button
       class="btn btn-icon sidebar-toggle"
-      data-tip="Collapse the sidebar"
-      aria-label="Collapse the sidebar"
+      :data-tip="$t('sidebarSearch.collapseTheSidebar')"
+      :aria-label="$t('sidebarSearch.collapseTheSidebar')"
       @click="emit('collapse')"
     >
       <AppIcon name="chevron-left" />

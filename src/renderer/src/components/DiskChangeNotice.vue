@@ -14,8 +14,8 @@ const store = useDiffStore()
       <span class="dn-text">{{ store.diskNotice }}</span>
       <button
         class="dn-x"
-        data-tip="Dismiss"
-        aria-label="Dismiss the file-changed notice"
+        :data-tip="$t('diskChangeNotice.dismiss')"
+        :aria-label="$t('diskChangeNotice.dismissTheFileChangedNotice')"
         @click="store.dismissDiskNotice()"
       >
         <AppIcon name="x" />

@@ -44,7 +44,9 @@ const resClass = (i) => ({
 
 <template>
   <ul ref="listEl" class="ql-results">
-    <li v-if="!results.length" class="ql-empty">No snippet or tool matches.</li>
+    <li v-if="!results.length" class="ql-empty">
+      {{ $t('quickLookResults.noSnippetOrToolMatches') }}
+    </li>
     <li
       v-for="(it, i) in results"
       :key="it.kind + it.id"
@@ -65,7 +67,7 @@ const resClass = (i) => ({
       <span class="ql-kind">{{ kindLabel(it) }}</span>
       <Transition name="ql-copychip">
         <span v-if="copied && i === copiedIndex" class="ql-res-copied" aria-live="polite">
-          <AppIcon name="check" /> Copied
+          <AppIcon name="check" /> {{ $t('common.copied') }}
         </span>
       </Transition>
     </li>

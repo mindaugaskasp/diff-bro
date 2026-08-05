@@ -80,18 +80,24 @@ offerToolOutput(
     <textarea
       v-model="input"
       class="tln-in"
-      placeholder="Paste lines…"
+      :placeholder="$t('toolLines.pasteLines')"
       spellcheck="false"
-      aria-label="Lines"
+      :aria-label="$t('toolLines.lines')"
     ></textarea>
 
     <div class="tln-row tln-checks">
-      <label class="tln-chk"><input v-model="trim" type="checkbox" /> Trim</label>
-      <label class="tln-chk"><input v-model="dropBlank" type="checkbox" /> Drop blanks</label>
-      <label class="tln-chk"><input v-model="dedupe" type="checkbox" /> Dedupe</label>
+      <label class="tln-chk"
+        ><input v-model="trim" type="checkbox" /> {{ $t('toolLines.trim') }}</label
+      >
+      <label class="tln-chk"
+        ><input v-model="dropBlank" type="checkbox" /> {{ $t('toolLines.dropBlanks') }}</label
+      >
+      <label class="tln-chk"
+        ><input v-model="dedupe" type="checkbox" /> {{ $t('toolLines.dedupe') }}</label
+      >
     </div>
 
-    <SegmentedControl v-model:value="sort" label="Sort" :options="SORT_OPTS" />
+    <SegmentedControl v-model:value="sort" :label="$t('toolLines.sort')" :options="SORT_OPTS" />
 
     <div class="tln-build">
       <div class="tln-row">
@@ -99,36 +105,53 @@ offerToolOutput(
           v-model="splitBy"
           class="tln-field"
           placeholder='Split input by, e.g. ", " (blank = lines)'
-          aria-label="Split by"
+          :aria-label="$t('toolLines.splitBy')"
         />
       </div>
       <div class="tln-row">
-        <input v-model="find" class="tln-field" placeholder="Find…" aria-label="Find" />
-        <input v-model="replace" class="tln-field" placeholder="Replace…" aria-label="Replace" />
+        <input
+          v-model="find"
+          class="tln-field"
+          :placeholder="$t('toolLines.find')"
+          :aria-label="$t('toolLines.find2')"
+        />
+        <input
+          v-model="replace"
+          class="tln-field"
+          :placeholder="$t('toolLines.replace')"
+          :aria-label="$t('toolLines.replace2')"
+        />
       </div>
       <div class="tln-row">
         <SegmentedControl v-model:value="mode" :options="MODES" />
         <label class="tln-chk">
-          <input v-model="caseInsensitive" type="checkbox" /> Ignore case
+          <input v-model="caseInsensitive" type="checkbox" /> {{ $t('toolLines.ignoreCase') }}
         </label>
       </div>
       <div class="tln-row">
         <input
           v-model="prefix"
           class="tln-field"
-          placeholder="Prefix each line…"
-          aria-label="Prefix"
+          :placeholder="$t('toolLines.prefixEachLine')"
+          :aria-label="$t('toolLines.prefix')"
         />
-        <input v-model="suffix" class="tln-field" placeholder="…suffix" aria-label="Suffix" />
+        <input
+          v-model="suffix"
+          class="tln-field"
+          :placeholder="$t('toolLines.suffix')"
+          :aria-label="$t('toolLines.suffix2')"
+        />
       </div>
       <div class="tln-row">
         <input
           v-model="sepRaw"
           class="tln-field"
-          placeholder="Join with, e.g. ,"
-          aria-label="Separator"
+          :placeholder="$t('toolLines.joinWithEG')"
+          :aria-label="$t('toolLines.separator')"
         />
-        <label class="tln-chk"><input v-model="perLine" type="checkbox" /> One per line</label>
+        <label class="tln-chk"
+          ><input v-model="perLine" type="checkbox" /> {{ $t('toolLines.onePerLine') }}</label
+        >
       </div>
     </div>
 
@@ -136,9 +159,14 @@ offerToolOutput(
     <div v-else class="tln-block">
       <div class="tln-bh">
         <span
-          >Result <span class="tln-count">· {{ summary }}</span></span
+          >{{ $t('toolLines.result') }} <span class="tln-count">· {{ summary }}</span></span
         >
-        <button class="tln-copy" aria-label="Copy" data-tip="Copy" @click="copy">
+        <button
+          class="tln-copy"
+          :aria-label="$t('common.copy')"
+          :data-tip="$t('common.copy')"
+          @click="copy"
+        >
           <AppIcon :name="copied ? 'check' : 'copy'" />
         </button>
       </div>

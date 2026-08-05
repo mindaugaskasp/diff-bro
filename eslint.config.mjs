@@ -165,7 +165,10 @@ export default [
       'vue/block-lang': ['error', { style: { allowNoLang: true } }],
       // Templates are stringly-typed: without these, a renamed component or
       // property silently renders nothing instead of failing.
-      'vue/no-undef-components': ['error', { ignorePatterns: ['component'] }],
+      // i18n-t is registered globally by the vue-i18n plugin (src/renderer/src/i18n).
+      // It renders one message with markup as named slots, so a sentence stays a
+      // sentence instead of being split into untranslatable fragments.
+      'vue/no-undef-components': ['error', { ignorePatterns: ['component', 'i18n-t'] }],
       'vue/no-undef-properties': 'error',
       'vue/no-unused-refs': 'error',
       'vue/component-name-in-template-casing': ['error', 'PascalCase'],

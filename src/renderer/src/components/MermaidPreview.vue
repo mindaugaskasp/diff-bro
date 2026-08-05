@@ -17,9 +17,9 @@ const diagramTheme = ref('auto')
 <template>
   <div class="mmd-preview">
     <div class="mmd-preview-head">
-      <span>Diagram preview</span>
+      <span>{{ $t('mermaidPreview.diagramPreview') }}</span>
       <SegmentedControl
-        label="Theme"
+        :label="$t('mermaidPreview.theme')"
         :value="diagramTheme"
         :options="DIAGRAM_THEME_OPTIONS"
         @update:value="diagramTheme = $event"
@@ -28,10 +28,10 @@ const diagramTheme = ref('auto')
         type="button"
         class="btn btn-sm"
         :disabled="!code.trim()"
-        data-tip="Open the full, resizable diagram viewer"
+        :data-tip="$t('mermaidPreview.openTheFullResizableDiagram')"
         @click="emit('expand', diagramTheme)"
       >
-        <AppIcon name="expand" /> Expand
+        <AppIcon name="expand" /> {{ $t('mermaidPreview.expand') }}
       </button>
     </div>
     <div class="mmd-preview-body"><MermaidDiagram :code="code" :theme="diagramTheme" /></div>

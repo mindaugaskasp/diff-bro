@@ -67,7 +67,7 @@ onMounted(() => input.value?.focus())
 
 <template>
   <div class="cp-backdrop" @pointerdown="onPointerDown" @click="onClick">
-    <div class="cp" role="dialog" aria-label="Command palette">
+    <div class="cp" role="dialog" :aria-label="$t('commandPalette.commandPalette')">
       <div class="cp-search">
         <AppIcon name="search" class="cp-ico" />
         <input
@@ -80,7 +80,7 @@ onMounted(() => input.value?.focus())
           spellcheck="false"
           @keydown="onKeydown"
         />
-        <span class="cp-kbd">Esc</span>
+        <span class="cp-kbd">{{ $t('commandPalette.esc') }}</span>
       </div>
       <ul ref="listEl" class="cp-list">
         <li v-if="!results.length" class="cp-empty">

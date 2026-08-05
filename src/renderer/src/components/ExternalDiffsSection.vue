@@ -49,7 +49,7 @@ function startImport() {
   <section class="sidebar-section">
     <SectionHeader
       section-id="external"
-      title="External diffs"
+      :title="$t('externalDiffsSection.externalDiffs')"
       icon="share"
       :open="open"
       :first="first"
@@ -62,7 +62,7 @@ function startImport() {
         <button
           class="btn btn-icon"
           :data-tip="`Import (${MOD}+I)`"
-          aria-label="Import a shared diff"
+          :aria-label="$t('externalDiffsSection.importASharedDiff')"
           @click.stop="startImport"
         >
           <AppIcon name="plus" />
@@ -70,12 +70,14 @@ function startImport() {
       </template>
     </SectionHeader>
     <div v-show="open" class="section-body">
-      <p v-if="!hasImported" class="empty"><AppIcon name="inbox" /> Empty</p>
+      <p v-if="!hasImported" class="empty">
+        <AppIcon name="inbox" /> {{ $t('externalDiffsSection.empty') }}
+      </p>
 
       <ul v-else class="rows">
         <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
         <li v-if="!rows.length" class="empty small">
-          No shared diffs match — try removing a filter.
+          {{ $t('externalDiffsSection.noSharedDiffsMatchTry') }}
         </li>
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>

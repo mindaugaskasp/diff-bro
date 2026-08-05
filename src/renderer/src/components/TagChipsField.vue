@@ -27,7 +27,8 @@ defineExpose(field)
 <template>
   <div class="tag-section">
     <div class="field-label">
-      Tags <span class="hint">— up to {{ MAX_TAGS }}, or leave empty for Default</span>
+      {{ $t('tagChipsField.tags') }}
+      <span class="hint">— up to {{ MAX_TAGS }}, or leave empty for Default</span>
     </div>
     <div class="tagfield" :class="{ ro: readonly }" @click="!readonly && field.inputEl?.focus()">
       <span
@@ -48,7 +49,9 @@ defineExpose(field)
           <AppIcon name="x" />
         </button>
       </span>
-      <span v-if="readonly && !field.tags.length" class="tag-empty">Default</span>
+      <span v-if="readonly && !field.tags.length" class="tag-empty">{{
+        $t('tagChipsField.default')
+      }}</span>
       <input
         v-if="!readonly"
         :ref="(el) => (field.inputEl = el)"

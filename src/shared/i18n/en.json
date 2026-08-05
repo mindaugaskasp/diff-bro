@@ -276,7 +276,11 @@
   },
   "quickLook": {
     "backTip": "Back (Esc)",
-    "backLabel": "Back to the results"
+    "backLabel": "Back to the results",
+    "enter": "Enter",
+    "selectAResultToPreview": "Select a result to preview it.",
+    "browseTools": "Press {key} to browse the tool | Press {key} to browse the {count} tools.",
+    "openTool": "Press {key} to open this tool."
   },
   "toolRow": {
     "unpin": "Unpin {name}",
@@ -404,5 +408,495 @@
     "go": "Go",
     "rust": "Rust",
     "java": "Java"
+  },
+  "appToolbar": {
+    "splitView": "Split view",
+    "ignoreWhitespace": "Ignore whitespace",
+    "focusOnChanges": "Focus on changes",
+    "share": "Share",
+    "copyDiff": "Copy diff",
+    "capture": "Capture",
+    "clear": "Clear"
+  },
+  "backupSettings": {
+    "olderThan": "Older than",
+    "backups": "Backups",
+    "keepsARollingCopyOf": "Keeps a rolling copy of your snippets and the diffs you chose to keep, so a corrupted store\n      isn’t the end of them. Diffs set to expire are left out — they were meant to go.",
+    "backUpAutomatically": "Back up automatically",
+    "atMostOnceEvery": "At most once every",
+    "takenAfterASaveNever": "Taken after a save, never on a timer — an app left open all day writes nothing.",
+    "noBackupsYet": "No backups yet.",
+    "restoringReplacesYourSnippetsAnd": "Restoring replaces your snippets and kept diffs with that copy. Anything saved since is\n        lost.",
+    "replaceThem": "Replace them"
+  },
+  "cliBlockedDialog": {
+    "noFreeTab": "No free tab",
+    "gotIt": "Got it"
+  },
+  "cliSettings": {
+    "terminalCommand": "Terminal command",
+    "addsA": "Adds a",
+    "thatFolderIsnTOn": "That folder isn’t on your PATH yet — add it to your shell profile to run"
+  },
+  "commandPalette": {
+    "commandPalette": "Command palette",
+    "esc": "Esc"
+  },
+  "diagramChangeRegister": {
+    "nodes": "Nodes",
+    "edges": "Edges"
+  },
+  "diagramDiffViewer": {
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "resetToFit": "Reset to fit",
+    "alignedAtTheFirstNode": "Aligned at the first node — below it each revision was laid out on its own, so an unchanged\n      node can still sit at a different height.",
+    "nodes": "Nodes",
+    "edges": "Edges"
+  },
+  "diffTabBar": {
+    "previousComparison": "Previous comparison",
+    "openComparisons": "Open comparisons",
+    "nextComparison": "Next comparison",
+    "newComparison": "New comparison"
+  },
+  "diffViewer": {
+    "noDifferencesBothSidesAre": "No differences — both sides are identical",
+    "lines": "Lines"
+  },
+  "diskChangeNotice": {
+    "dismissTheFileChangedNotice": "Dismiss the file-changed notice",
+    "dismiss": "Dismiss"
+  },
+  "encryptDecryptDialog": {
+    "plainTextToEncryptOr": "Plain text to encrypt, or an encrypted blob to decrypt… (or drop a file here)",
+    "32Bytes64HexOr": "32 bytes — 64 hex or base64",
+    "16Bytes32HexOr": "16 bytes — 32 hex or base64",
+    "encryptDecryptText": "Encrypt / Decrypt Text",
+    "localOnlyThePassphraseAnd": "Local only — the passphrase and text never leave this machine and are not saved anywhere.\n      Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.",
+    "input": "Input",
+    "keyType": "Key type",
+    "passphraseAES256GCMAuthenticated": "Passphrase — AES-256-GCM (authenticated)",
+    "rawKeyAES256CBC": "Raw key — AES-256-CBC (decrypt only, unauthenticated)",
+    "passphrase": "Passphrase",
+    "key": "Key",
+    "iV": "IV",
+    "aES256CBCIs": "AES-256-CBC is",
+    "encrypt": "Encrypt →",
+    "decrypt": "Decrypt →",
+    "output": "Output",
+    "useOutputAsInput": "Use output as input",
+    "copyOutput": "Copy output"
+  },
+  "errorReportDialog": {
+    "somethingWentWrong": "Something went wrong",
+    "diffBroHitAnUnexpected": "Diff Bro hit an unexpected error. It's been written to a log",
+    "revealLog": "Reveal log",
+    "reportOnGitHub": "Report on GitHub",
+    "dismiss": "Dismiss"
+  },
+  "externalDiffsSection": {
+    "externalDiffs": "External diffs",
+    "importASharedDiff": "Import a shared diff",
+    "empty": "Empty",
+    "noSharedDiffsMatchTry": "No shared diffs match — try removing a filter."
+  },
+  "formatHintBanner": {
+    "formatBoth": "Format both",
+    "dismiss": "Dismiss"
+  },
+  "gitToolSettings": {
+    "git": "Git",
+    "makes": "Makes",
+    "openGitComparisonsInDiff": "Open git comparisons in Diff Bro",
+    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the\n      merged file, so git still asks you whether the merge worked."
+  },
+  "jiraRendered": {
+    "nothingToPreviewYetSwitch": "Nothing to preview yet — switch to Plain to write."
+  },
+  "keyActions": {
+    "sendSomeoneYourPublicKey": "Send someone your public key, so they can seal diffs for you",
+    "openADiffbrokeySomeoneSent": "Open a .diffbrokey someone sent you, so you can seal diffs for them",
+    "myKey": "My key",
+    "trustedKey": "Trusted key"
+  },
+  "keyboardShortcutsDialog": {
+    "shortcutsFor": "Shortcuts for"
+  },
+  "logSettings": {
+    "logs": "Logs",
+    "diffBroWritesUnexpectedErrors": "Diff Bro writes unexpected errors to a local log so you can paste it into a bug report. One\n      file per day is kept for a week, and",
+    "reveal": "Reveal",
+    "useDefault": "Use default",
+    "changeFolder": "Change folder…"
+  },
+  "mermaidDiagram": {
+    "diagramError": "Diagram error"
+  },
+  "mermaidPreview": {
+    "openTheFullResizableDiagram": "Open the full, resizable diagram viewer",
+    "theme": "Theme",
+    "diagramPreview": "Diagram preview",
+    "expand": "Expand"
+  },
+  "mermaidViewerDialog": {
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "scaleTheDiagramToFit": "Scale the diagram to fit the window",
+    "closeTheViewerEsc": "Close the viewer (Esc)",
+    "theme": "Theme",
+    "fit": "Fit",
+    "dragToPanCtrlScroll": "Drag to pan · Ctrl/⌘ + scroll to zoom · click % to fit"
+  },
+  "pasteInput": {
+    "nameThisSide": "Name this side…",
+    "pasteOriginalTextHereOr": "Paste original text here… or drop a file",
+    "pasteChangedTextHereOr": "Paste changed text here… or drop a file",
+    "original": "Original",
+    "changed": "Changed",
+    "compare": "Compare"
+  },
+  "quickLookCompose": {
+    "nameOptional": "Name (optional)",
+    "pasteOrTypeTheSnippet": "Paste or type the snippet…"
+  },
+  "quickLookConvert": {
+    "esc": "Esc"
+  },
+  "quickLookPreviewHead": {
+    "backToList": "Back to list",
+    "backToTheResultsList": "Back to the results list (←)",
+    "editThisSnippetWithoutLeaving": "Edit this snippet without leaving the launcher",
+    "edit": "Edit"
+  },
+  "quickLookResults": {
+    "noSnippetOrToolMatches": "No snippet or tool matches."
+  },
+  "quickLookSearch": {
+    "searchSnippetsTools": "Search snippets & tools…",
+    "newPlaintextSnippet": "New plaintext snippet",
+    "captureANewPlaintextSnippet": "Capture a new plaintext snippet",
+    "esc": "Esc"
+  },
+  "replaceDiffDialog": {
+    "replaceCurrentComparison": "Replace current comparison?",
+    "saveFirst": "Save first",
+    "replaceAnyway": "Replace anyway"
+  },
+  "retagDiffDialog": {
+    "editTags": "Edit tags",
+    "tagsFor": "Tags for",
+    "saveTags": "Save tags"
+  },
+  "saveDiffDialog": {
+    "name": "Name",
+    "secure": "Secure",
+    "expiresAfter": "Expires after",
+    "secureHint": "{label} — auto-expiring (deletes itself)"
+  },
+  "savedDiffRow": {
+    "exportAsImage": "Export as image",
+    "editTags": "Edit tags",
+    "shareAsSealedFile": "Share as sealed file",
+    "deleteNow": "Delete now",
+    "verifiedTheSignatureMatchedA": "Verified — the signature matched a key you trust",
+    "exportThisDiffAsA": "Export this diff as a picture (PNG)",
+    "editThisDiffSTags": "Edit this diff's tags",
+    "sealThisDiffForThe": "Seal this diff for the trusted people you pick",
+    "deleteThisSavedDiffNow": "Delete this saved diff now",
+    "untagged": "Untagged"
+  },
+  "savedDiffs": {
+    "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
+    "dragToWidenTheSidebar": "Drag to widen the sidebar",
+    "showEverySidebarSection": "Show every sidebar section",
+    "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
+    "everyTagSearchable": "Every tag, searchable",
+    "dropEveryTagFilter": "Drop every tag filter",
+    "all": "All",
+    "clear": "Clear"
+  },
+  "savedDiffsSection": {
+    "savedDiffs": "Saved diffs",
+    "newComparisonFromPastedText": "New comparison from pasted text",
+    "empty": "Empty",
+    "noSavedDiffsMatchTry": "No saved diffs match — try removing a filter."
+  },
+  "settingsDialog": {
+    "settings": "Settings",
+    "settingsSections": "Settings sections",
+    "theme": "Theme",
+    "showTheKeyboardShortcutBar": "Show the keyboard-shortcut bar over diffs",
+    "playAShutterSoundWhen": "Play a shutter sound when a diff image is captured",
+    "showTipsAfterAnUpdate": "Show tips after an update",
+    "showTour": "Show tour",
+    "quickLookUp": "Quick look-up",
+    "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window —\n            it works even when Diff Bro is minimized. Click the field, then press the key\n            combination you want.",
+    "fun": "Fun",
+    "rotateTheAppThemeDaily": "Rotate the app theme daily — a new random theme each day",
+    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily\n            theme is the same all day and changes at midnight."
+  },
+  "settingsLimits": {
+    "limits": "Limits",
+    "maxSnippetSizeKB": "Max snippet size (KB)",
+    "maxDiffImageHeightPx": "Max diff image height (px)",
+    "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if\n      you need to. The image height is how much of a long diff one exported picture covers, measured\n      on screen, so it captures the same amount whatever your display's scaling; a longer diff is\n      cut short and says so."
+  },
+  "shortcutCapture": {
+    "pressAKeyCombination": "Press a key combination…",
+    "escToCancel": "Esc to cancel",
+    "reset": "Reset"
+  },
+  "sidebarRail": {
+    "expandTheSidebar": "Expand the sidebar",
+    "searchDiffsAndSnippets": "Search diffs and snippets",
+    "tools": "Tools",
+    "searchDiffsSnippets": "Search diffs & snippets",
+    "searchEveryTool": "Search every tool"
+  },
+  "sidebarSearch": {
+    "searchDiffsSnippets": "Search diffs & snippets…",
+    "clearSearch": "Clear search",
+    "collapseTheSidebar": "Collapse the sidebar",
+    "clearTheSearchBox": "Clear the search box"
+  },
+  "snippetDeleteDialog": {
+    "theyKeepTheRestOf": "They keep the rest of their tags.",
+    "nothingIsUsingIt": "Nothing is using it.",
+    "thisCanTBeUndone": "This can’t be undone.",
+    "thatCanTBeUndone": "That can’t be undone. A record carrying this tag among others still goes."
+  },
+  "snippetEditorActions": {
+    "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
+    "copyAsFile": "Copy as file",
+    "capture": "Capture",
+    "edit": "Edit"
+  },
+  "snippetEditorDialog": {
+    "snippetName": "Snippet name…",
+    "viewMode": "View mode",
+    "keepTheContentsMaskedEverywhere": "Keep the contents masked everywhere; copying still works",
+    "name": "Name",
+    "aSnippetNeedsAName": "A snippet needs a name to save.",
+    "secret": "Secret",
+    "content": "Content",
+    "rendered": "Rendered",
+    "plain": "Plain",
+    "syntax": "Syntax",
+    "aSnippetNeedsContentTo": "A snippet needs content to save.",
+    "discardThisSnippetYourUnsaved": "Discard this snippet? Your unsaved content will be lost.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard",
+    "secretHint": "{label} — hide the contents behind ****",
+    "orDropAFile": "— or drop a file here"
+  },
+  "snippetFillDialog": {
+    "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank\n        to keep its",
+    "copyFilled": "Copy filled"
+  },
+  "snippetPassphraseDialog": {
+    "passphrase": "Passphrase"
+  },
+  "snippetPreviewCard": {
+    "viewThisDiagramFullScreen": "View this diagram full screen",
+    "viewFullScreen": "View full screen",
+    "openInEditor": "Open in editor",
+    "title": "Title",
+    "untagged": "Untagged"
+  },
+  "snippetRow": {
+    "viewDiagram": "View diagram",
+    "openLinkInBrowser": "Open link in browser",
+    "openClaudeLink": "Open Claude link",
+    "exportAsImage": "Export as image",
+    "copyToClipboard": "Copy to clipboard",
+    "delete": "Delete",
+    "diagram": "Diagram",
+    "open": "Open"
+  },
+  "snippetsPanel": {
+    "snippets": "Snippets",
+    "newSnippet": "New snippet",
+    "exportAllSnippetsToA": "Export all snippets to a passphrase-protected file",
+    "importSnippetsFromAFile": "Import snippets from a file",
+    "new": "New",
+    "export": "Export",
+    "import": "Import",
+    "empty": "Empty",
+    "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter."
+  },
+  "spreadsheetDiffViewer": {
+    "customTolerance": "Custom tolerance",
+    "numbersCloserThanThisCount": "Numbers closer than this count as the same figure",
+    "leaveItEmptyToCompare": "Leave it empty to compare exactly",
+    "saveEveryChangeAsA": "Save every change as a CSV table",
+    "tolerance": "Tolerance",
+    "unit": "Unit",
+    "formulas": "Formulas",
+    "register": "Register",
+    "noDifferencesEverySheetMatches": "No differences — every sheet matches",
+    "cells": "Cells",
+    "rows": "Rows",
+    "columns": "Columns"
+  },
+  "storageSettings": {
+    "dataFolder": "Data folder",
+    "whereSavedDiffsSnippetsAnd": "Where saved diffs, snippets, and your keys are stored. Put it in a folder you control (e.g.\n      Documents or a synced folder) so your data",
+    "reveal": "Reveal",
+    "useDefault": "Use default",
+    "changeFolder": "Change folder…",
+    "changingTheFolderRestartsDiff": "Changing the folder restarts Diff Bro.",
+    "onLaunch": "On launch",
+    "reopenTheComparisonsThatWere": "Reopen the comparisons that were open when I quit",
+    "onByDefaultTurningIt": "On by default. Turning it off also forgets the ones already stored."
+  },
+  "streamedDiffViewer": {
+    "indexing": "Indexing…",
+    "noDifferencesBothSidesAre": "No differences — both sides are identical",
+    "lines": "Lines"
+  },
+  "streamedMarker": {
+    "streamed": "Streamed",
+    "indexingBothFilesByLine": "Indexing both files by line…",
+    "readFromDiskAsYou": "Read from disk as you scroll — too large to load in full.",
+    "savingSharingAndPatchExport": "Saving, sharing and patch export are unavailable."
+  },
+  "structureDiffViewer": {
+    "structuralDifferences": "Structural differences",
+    "noDifferencesTheTwoDocuments": "No differences — the two documents hold the same data",
+    "keys": "Keys",
+    "showUnchanged": "Show unchanged"
+  },
+  "supportedFormats": {
+    "supportedFiles": "Supported files"
+  },
+  "tabContextMenu": {
+    "tabActions": "Tab actions"
+  },
+  "tagChipsField": {
+    "tags": "Tags",
+    "default": "Default"
+  },
+  "tagManagePopover": {
+    "tagName": "Tag name",
+    "manageTag": "Manage tag",
+    "deleteTag": "Delete tag",
+    "export": "Export…",
+    "rename": "Rename"
+  },
+  "tagPickerPopover": {
+    "findATag": "Find a tag…",
+    "allTags": "All tags",
+    "findATag2": "Find a tag"
+  },
+  "textToolDialog": {
+    "keepThisInYourSnippet": "Keep this in your snippet library — you name it",
+    "saveAsSnippet": "Save as snippet"
+  },
+  "toolBase64": {
+    "base64Input": "Base64 input",
+    "uRLSafe": "URL-safe",
+    "wrap76Cols": "Wrap 76 cols",
+    "result": "Result"
+  },
+  "toolEpoch": {
+    "yYYYMMDDHHMM": "YYYY-MM-DD HH:MM",
+    "pickFromACalendar": "Pick from a calendar",
+    "dateAndTimeAsYYYY": "Date and time, as YYYY-MM-DD HH:MM",
+    "copyEpoch": "Copy epoch",
+    "unixTimestamp": "Unix timestamp",
+    "unit": "Unit",
+    "pickedTime": "Picked time",
+    "now": "Now",
+    "dateEpoch": "Date → epoch",
+    "epochDate": "Epoch → date"
+  },
+  "toolHash": {
+    "pasteText": "Paste text…",
+    "pasteTheDigestYouWere": "Paste the digest you were given…",
+    "textToHash": "Text to hash",
+    "expectedDigest": "Expected digest",
+    "of": "Of",
+    "uPPER": "UPPER"
+  },
+  "toolJson": {
+    "pasteJSON": "Paste JSON…",
+    "pathJSONPath": "$.path[*] — JSONPath",
+    "jSON": "JSON",
+    "jSONPathFilter": "JSONPath filter",
+    "result": "Result"
+  },
+  "toolJwt": {
+    "pasteAJWTHeaderPayload": "Paste a JWT — header.payload.signature",
+    "jWT": "JWT",
+    "copyHeader": "Copy header",
+    "copyPayload": "Copy payload",
+    "notYetValid": "Not yet valid",
+    "header": "Header",
+    "payload": "Payload",
+    "theSignatureIsnTVerified": "The signature isn't verified — don't trust the contents."
+  },
+  "toolLines": {
+    "pasteLines": "Paste lines…",
+    "find": "Find…",
+    "replace": "Replace…",
+    "prefixEachLine": "Prefix each line…",
+    "suffix": "…suffix",
+    "joinWithEG": "Join with, e.g. ,",
+    "lines": "Lines",
+    "splitBy": "Split by",
+    "find2": "Find",
+    "replace2": "Replace",
+    "prefix": "Prefix",
+    "suffix2": "Suffix",
+    "separator": "Separator",
+    "sort": "Sort",
+    "trim": "Trim",
+    "dropBlanks": "Drop blanks",
+    "dedupe": "Dedupe",
+    "ignoreCase": "Ignore case",
+    "onePerLine": "One per line",
+    "result": "Result"
+  },
+  "toolRegex": {
+    "pasteTheTextToTest": "Paste the text to test against…",
+    "regularExpression": "Regular expression",
+    "subjectText": "Subject text",
+    "replacement": "Replacement"
+  },
+  "toolUrl": {
+    "uRLOrTextToEncode": "URL or text to encode / decode…",
+    "uRLOrText": "URL or text",
+    "copyResult": "Copy result",
+    "parameterKey": "Parameter key",
+    "parameterValue": "Parameter value",
+    "removeParameter": "Remove parameter",
+    "copyURL": "Copy URL",
+    "queryParameters": "Query parameters",
+    "parameter": "Parameter"
+  },
+  "toolUuid": {
+    "nameEGExampleCom": "name — e.g. example.com",
+    "verifyAUUIDAgainstThis": "verify a UUID against this namespace + name",
+    "pasteOrGenerate": "paste or generate",
+    "namespaceUUID": "Namespace UUID",
+    "name": "Name",
+    "verifyUUID": "Verify UUID",
+    "uUID": "UUID",
+    "version": "Version",
+    "case": "Case",
+    "form": "Form",
+    "new": "New"
+  },
+  "toolXml": {
+    "pasteXML": "Paste XML…",
+    "tagAttrXPath": "//tag/@attr — XPath",
+    "xML": "XML",
+    "xPathFilter": "XPath filter",
+    "result": "Result"
+  },
+  "vaultCategoryDeleteDialog": {
+    "deleteSavedDiff": "Delete saved diff?",
+    "delete": "Delete"
   }
 }

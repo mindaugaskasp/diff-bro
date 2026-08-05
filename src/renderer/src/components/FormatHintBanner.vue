@@ -12,7 +12,7 @@ const banner = computed(() => store.formatBanner)
     <span class="msg">{{ banner.message }}</span>
     <div class="actions">
       <button v-if="banner.formatBoth" class="format" @click="store.formatBoth()">
-        Format both
+        {{ $t('formatHintBanner.formatBoth') }}
       </button>
       <button
         v-else-if="banner.formatSide"
@@ -22,7 +22,7 @@ const banner = computed(() => store.formatBanner)
         {{ banner.formatLabel }}
       </button>
       <button class="dismiss" @click="store.dismissFormatHints(banner.dismissSides)">
-        Dismiss
+        {{ $t('formatHintBanner.dismiss') }}
       </button>
     </div>
   </div>

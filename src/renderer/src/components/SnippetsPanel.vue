@@ -55,7 +55,7 @@ function newSnippet() {
   <section class="snippets-section sidebar-section" data-tour="snippets">
     <SectionHeader
       section-id="snippets"
-      title="Snippets"
+      :title="$t('snippetsPanel.snippets')"
       icon="code"
       :open="sectionOpen"
       :first="first"
@@ -67,8 +67,8 @@ function newSnippet() {
       <template #actions>
         <button
           class="btn btn-icon"
-          data-tip="New"
-          aria-label="New snippet"
+          :data-tip="$t('snippetsPanel.new')"
+          :aria-label="$t('snippetsPanel.newSnippet')"
           data-tour="snippet-new"
           @click.stop="newSnippet"
         >
@@ -76,16 +76,16 @@ function newSnippet() {
         </button>
         <button
           class="btn btn-icon"
-          data-tip="Export"
-          aria-label="Export all snippets to a passphrase-protected file"
+          :data-tip="$t('snippetsPanel.export')"
+          :aria-label="$t('snippetsPanel.exportAllSnippetsToA')"
           @click.stop="store.pendingExport = { all: true }"
         >
           <AppIcon name="arrow-up" />
         </button>
         <button
           class="btn btn-icon"
-          data-tip="Import"
-          aria-label="Import snippets from a file"
+          :data-tip="$t('snippetsPanel.import')"
+          :aria-label="$t('snippetsPanel.importSnippetsFromAFile')"
           @click.stop="store.pendingImport = true"
         >
           <AppIcon name="arrow-down" />
@@ -94,10 +94,14 @@ function newSnippet() {
     </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <p v-if="!store.entries.length" class="empty"><AppIcon name="inbox" /> Empty</p>
+      <p v-if="!store.entries.length" class="empty">
+        <AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}
+      </p>
 
       <ul v-if="store.entries.length" class="rows">
-        <li v-if="!rows.length" class="empty small">No snippets match — try removing a filter.</li>
+        <li v-if="!rows.length" class="empty small">
+          {{ $t('snippetsPanel.noSnippetsMatchTryRemoving') }}
+        </li>
         <SnippetRow
           v-for="entry in rows"
           :key="entry.id"

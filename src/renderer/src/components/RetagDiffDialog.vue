@@ -22,19 +22,21 @@ function save() {
   <BaseDialog
     v-if="pending"
     width="340px"
-    title="Edit tags"
+    :title="$t('retagDiffDialog.editTags')"
     :escape-closes="false"
     @close="vault.cancelRetag()"
   >
     <form class="dialog-form" @submit.prevent="save">
       <p class="dialog-note">
-        Tags for <strong>“{{ pending.name }}”</strong>.
+        {{ $t('retagDiffDialog.tagsFor') }} <strong>“{{ pending.name }}”</strong>.
       </p>
       <TagChipsField ref="tagField" :initial="pending.tags" />
     </form>
     <template #actions>
-      <button class="btn btn-primary" @click="save">Save tags</button>
-      <button class="btn btn-ghost" @click="vault.cancelRetag()">Cancel</button>
+      <button class="btn btn-primary" @click="save">{{ $t('retagDiffDialog.saveTags') }}</button>
+      <button class="btn btn-ghost" @click="vault.cancelRetag()">
+        {{ $t('common.cancel') }}
+      </button>
     </template>
   </BaseDialog>
 </template>
