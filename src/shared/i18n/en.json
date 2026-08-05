@@ -5,7 +5,9 @@
     "save": "Save",
     "copy": "Copy",
     "copied": "Copied",
-    "remove": "Remove"
+    "remove": "Remove",
+    "left": "Left",
+    "right": "Right"
   },
   "settings": {
     "language": {
@@ -904,7 +906,7 @@
   },
   "toolXml": {
     "pasteXML": "Paste XML…",
-    "tagAttrXPath": "//tag/@attr — XPath",
+    "tagAttrXPath": "//tag/{'@'}attr — XPath",
     "xML": "XML",
     "xPathFilter": "XPath filter",
     "result": "Result"
@@ -1025,7 +1027,7 @@
       "they": "they"
     },
     "trustedKeyRow": {
-      "nameExampleCom": "name@example.com",
+      "nameExampleCom": "name{'@'}example.com",
       "nameForThisKey": "Name for this key",
       "emailAddressForThisKey": "Email address for this key",
       "rename": "Rename",
@@ -1063,7 +1065,10 @@
     "couldNotCopyTheDiff": "Could not copy the diff.",
     "hiddenSnippetsCanTBe": "Hidden snippets can’t be compared.",
     "theClipboardIsEmpty": "The clipboard is empty.",
-    "copiedAsFile": "{name} copied as a file — paste it where you need it."
+    "copiedAsFile": "{name} copied as a file — paste it where you need it.",
+    "bothSidesLookLike": "Both sides look like {kind} — pretty-print?",
+    "savedExpiresIn": "Saved — expires in {hours} h.",
+    "importedSnippets": "Imported one snippet. | Imported {n} snippets."
   },
   "errorNotices": {
     "unknownError": "Unknown error"
@@ -1072,13 +1077,13 @@
     "untitledSnippet": "Untitled snippet",
     "exampleMermaidDiagram": "Example — Mermaid diagram",
     "exampleClaudeReviewPrompt": "Example — Claude review prompt",
-    "signedButNotByAny": "Signed, but not by any of your trusted keys — treat these snippets as untrusted."
+    "signedButNotByAny": "Signed, but not by any of your trusted keys — treat these snippets as untrusted.",
+    "signedByTrustedKey": "Signed by trusted key “{label}”."
   },
   "vaultNotices": {
     "untitledDiff": "Untitled diff"
   },
   "emailNotices": {
-    "sealedDiffName": "Sealed diff: {name}",
     "couldNotOpenYourMail": "Could not open your mail app.",
     "nothingWasOpenedTheSealed": "Nothing was opened. The sealed file is saved.",
     "cancelledNothingWasSealedOr": "Cancelled — nothing was sealed or saved.",
@@ -1109,5 +1114,12 @@
     "thatFileIsNotA": "That file is not a valid public key.",
     "thatFileIsNotA2": "That file is not a valid Diff Bro public key.",
     "couldNotAddThatKey": "Could not add that key."
+  },
+  "formatBanner": {
+    "looksLike": "{side} looks like {kind} — pretty-print?",
+    "doesNotParse": "{side} looks like {kind} but doesn't parse{where}{why}",
+    "atLine": " at line {line}, column {col}",
+    "format": "Format",
+    "formatSide": "Format {side}"
   }
 }

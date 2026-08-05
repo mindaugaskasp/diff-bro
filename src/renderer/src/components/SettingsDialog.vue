@@ -88,7 +88,7 @@ function close() {
           <label class="language-row">
             <span>{{ $t('settings.language.label') }}</span>
             <select
-              :value="settings.locale"
+              :value="settings.activeLocale"
               :aria-label="$t('settings.language.label')"
               @change="settings.setLocale($event.target.value)"
             >

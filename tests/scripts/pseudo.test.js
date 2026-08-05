@@ -52,8 +52,12 @@ describe('pseudoTree', () => {
     expect(out.common.save).toBe(pseudoText('Save'))
   })
 
+  // A golden value, not self-comparison: the risk is the /g/ SYNTAX_SPLIT regex
+  // carrying lastIndex between calls, which calling it twice cannot expose.
   it('is deterministic, so a committed en-XA.json has a stable diff', () => {
-    const input = { a: 'Hello {x}', b: { c: 'World' } }
-    expect(pseudoTree(input)).toEqual(pseudoTree(input))
+    expect(pseudoTree({ a: 'Hello {x}', b: { c: 'World' } })).toEqual({
+      a: '[Ĥéłłō {x} ·øé]',
+      b: { c: '[Ŵōřłđ ·ø]' }
+    })
   })
 })

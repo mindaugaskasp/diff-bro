@@ -1,7 +1,7 @@
 // Defaults, limits and the sanitizers that clamp a hand-edited settings file
 // back into range. Pure data and pure functions — no store, so the clamping is
 // testable on its own.
-import { normalizeLocale } from '../../../shared/i18n'
+import { isLocale } from '../../../shared/i18n'
 import { isValidAccelerator } from './accelerator'
 import { MAX_RECENT_TOOLS } from './tools'
 import { normalizeTheme } from './themes'
@@ -157,9 +157,10 @@ export function settingsStateFrom(parsed, outside) {
     ),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
-    // The language the chrome renders in. Unset means "follow the OS", which is
-    // resolved at startup (i18n/index.js) rather than stored.
-    locale: normalizeLocale(parsed.locale),
+    // NULL until the user picks one: persist() writes every key, so defaulting
+    // to 'en' here would bake it in the first time any setting is touched and
+    // "follow the OS" would hold for exactly one session.
+    locale: isLocale(parsed.locale) ? parsed.locale : null,
     // A sound the app makes on its own, so it is escapable; default on.
     shutterSound: parsed.shutterSound !== false,
     // Reopen the comparisons that were open at quit. On by default; turning it

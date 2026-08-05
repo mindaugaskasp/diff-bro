@@ -19,6 +19,7 @@ import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { looksLikeMermaid } from '../utils/mermaid'
 import { sideName } from '../utils/pasteNames'
 import { STREAMED_LIMITS } from '../utils/streamedLimits'
+import { mergeFormatBanner } from '../utils/formatBanner'
 import { t } from '../i18n'
 
 // The builder returns a sentinel for the streamed case so it need not carry the
@@ -37,43 +38,6 @@ function formatHintFor(file, dismissedContent) {
   const pretty = detected.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
   if (pretty.trim() === file.content.trim()) return null // already pretty
   return { kind: detected.kind, valid: true }
-}
-
-// Merge the two per-side format hints into one banner. Pure + unit-tested.
-function mergeFormatBanner(left, right) {
-  const shown = []
-  if (left) shown.push({ side: 'left', label: 'Left', hint: left })
-  if (right) shown.push({ side: 'right', label: 'Right', hint: right })
-  if (!shown.length) return null
-
-  const kindLabel = (h) => (h.kind === 'json' ? 'JSON' : 'XML')
-  const loc = (h) => (h.line ? ` at line ${h.line}, column ${h.column}` : '')
-  const clause = ({ label, hint }) =>
-    hint.valid
-      ? `${label} looks like ${kindLabel(hint)} — pretty-print?`
-      : `${label} looks like ${kindLabel(hint)} but doesn't parse${loc(hint)}${
-          hint.error ? `: ${hint.error}` : ''
-        }`
-
-  const valid = shown.filter((x) => x.hint.valid)
-  let message
-  if (valid.length === 2) {
-    message =
-      left.kind === right.kind
-        ? `Both sides look like ${kindLabel(left)} — pretty-print?`
-        : t('diffNotices.bothSidesLookLikeStructured')
-  } else {
-    message = shown.map(clause).join(' · ')
-  }
-
-  return {
-    message,
-    invalid: valid.length === 0, // red only when nothing here is actionable
-    formatBoth: valid.length === 2,
-    formatSide: valid.length === 1 ? valid[0].side : null,
-    formatLabel: valid.length === 1 && shown.length === 2 ? `Format ${valid[0].label}` : 'Format',
-    dismissSides: shown.map((x) => x.side)
-  }
 }
 
 // The two compared sides as { name, content }, whether in files or paste mode.
@@ -278,7 +242,7 @@ export const useDiffStore = defineStore('diff', {
     // One merged banner for both sides (see mergeFormatBanner) — null when neither
     // side has a pending hint.
     formatBanner() {
-      return mergeFormatBanner(this.leftFormatHint, this.rightFormatHint)
+      return mergeFormatBanner(this.leftFormatHint, this.rightFormatHint, t)
     }
   },
   actions: {
@@ -387,7 +351,9 @@ export const useDiffStore = defineStore('diff', {
         this.markSaved()
       }
       this.showNotice(
-        ttlHours ? `Saved — expires in ${ttlHours} h.` : t('diffNotices.savedKeptUntilYouDelete')
+        ttlHours
+          ? t('diffNotices.savedExpiresIn', { hours: ttlHours })
+          : t('diffNotices.savedKeptUntilYouDelete')
       )
     },
     // Orchestrates the snippet import (the work + validation live in the snippet
@@ -404,7 +370,9 @@ export const useDiffStore = defineStore('diff', {
         return
       }
       this.showNotice(
-        res.count ? `Imported ${res.count} snippet(s).` : t('diffNotices.noSnippetsFoundToImport')
+        res.count
+          ? t('diffNotices.importedSnippets', res.count)
+          : t('diffNotices.noSnippetsFoundToImport')
       )
     },
     // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is

@@ -3,11 +3,11 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 15 / 16 steps                 |
+| **Progress**                            | 15 / 16 steps (extraction incomplete — see raw-text ratchet) |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
-| **Bugs found and fixed this iteration** | 1 (duplicated `bad-signature` copy) |
+| **Bugs found and fixed this iteration** | 8 (2 render-throwing messages, eaten `{name}`, undefined rail labels, dead validator, persisted locale, 3 frozen-locale tables) |
 | **Token baseline**                      | 2026-08-05T10:01:52Z          |
 | **Claude tokens used**                  |                               |
 
@@ -72,16 +72,31 @@ src/renderer/src/i18n/index.js   createI18n over the same JSON (renderer)
 electron-vite needs no configuration for it, and the `@` alias stays
 renderer-only.
 
-**Why a library rather than a `t()` over plain objects.** The interpolation and
-lookup are twenty lines; the plural rules are not. Lithuanian needs four forms
-selected by `n % 10` and `n % 100` — `1 failas` / `3 failai` / `11 failų` /
-`nėra failų`. Hand-rolled CLDR plural selection is precisely the "class of bug"
-`docs/standards.md` says to buy rather than write. Verified working:
+**Why a library rather than a `t()` over plain objects.**
 
-```
-lt plural  1 : 1 failas | 3 : 3 failai | 11 : 11 failų | 0 : nėra failų
-en plural  1 : one file | 3 : 3 files
-```
+> **Corrected 2026-08-05, after review.** This section originally claimed the
+> library buys CLDR plural selection, and quoted correct Lithuanian output as
+> proof. That output came from a smoke test that passed a **hand-written**
+> `pluralRules` function — vue-i18n ships no CLDR data at all. Its default rule
+> is `n ? Math.min(n, 2) : 0`. The claim was wrong and is withdrawn.
+
+What the dependency actually buys, weighed against `docs/standards.md`'s "a
+package that saves twenty lines is rarely worth an audit surface":
+
+- **`<i18n-t>`** — a sentence with inline markup rendered as ONE message with
+  named slots. This is the real justification: fragments cannot be reordered by
+  a translator, and 14 places in this app need it.
+- Interpolation, locale fallback chains, and a reactive locale the templates
+  already follow.
+- Plural SYNTAX (`a | b | c`) and the hook to supply per-locale rules — but the
+  rules themselves are ours to write. The catalogue currently holds exactly one
+  plural message, in English.
+
+Cost: 8 packages in the prod tree, 18 KB gzip. That is a real price for what is
+mostly `<i18n-t>` plus ergonomics; it is defensible, but it is not the
+class-of-bug argument originally made. **Adding a locale with more than two
+plural forms REQUIRES supplying `pluralRules` for it** — that is the trap this
+correction exists to flag.
 
 **The enforcement matters as much as the runtime.**
 `@intlify/eslint-plugin-vue-i18n` ships `no-raw-text`, which fails the build on

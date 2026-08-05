@@ -7,7 +7,8 @@ import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useCommands } from '../composables/useCommands'
-import { TOOLS } from '../utils/tools'
+import { TOOLS, namedTools } from '../utils/tools'
+import { t } from '../i18n'
 import { useFittingCount } from '../composables/useFittingCount'
 import AppIcon from './AppIcon.vue'
 import { useUiStore } from '../stores/uiStore'
@@ -31,7 +32,9 @@ const fits = useFittingCount(tools, {
 // The same ordering the expanded section uses — pinned first, then registry
 // order — so collapsing the sidebar never rearranges the list. Opened straight
 // from the rail: reaching a tool must not cost the collapse.
-const railTools = computed(() => toolsStore.railRows(fits.value))
+// Resolved here, like every other tool surface: raw rows carry nameKey/kindKey
+// and would render "undefined undefined" into the tooltip and the aria-label.
+const railTools = computed(() => namedTools(toolsStore.railRows(fits.value), t))
 
 const groups = computed(() => [
   {

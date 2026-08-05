@@ -25,6 +25,9 @@ export const i18n = createI18n({
   fallbackWarn: false
 })
 
+/** @returns {string} the locale currently rendering, chosen or inherited */
+export const activeLocale = () => i18n.global.locale.value
+
 /** @param {string} key @param {object|number} [args] */
 export const t = (key, args) => i18n.global.t(key, args)
 

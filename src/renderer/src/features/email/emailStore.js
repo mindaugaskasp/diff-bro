@@ -8,7 +8,11 @@ import { loadPersisted, savePersisted } from '../../persist'
 import { useDiffStore } from '../../stores/diffStore'
 import { t } from '../../i18n'
 
-export const DEFAULT_SUBJECT = t('emailNotices.sealedDiffName')
+// NOT translated and NOT compiled: this is a user-editable TEMPLATE whose
+// {name} is filled by fillTemplate in main (src/main/mail.js). Routing it
+// through vue-i18n consumes the placeholder and every subject loses its diff
+// name — and Reset would restore the broken value.
+export const DEFAULT_SUBJECT = 'Sealed diff: {name}'
 export const DEFAULT_NOTE = ''
 
 // The file exists whenever a path came back; not saying so orphans it.

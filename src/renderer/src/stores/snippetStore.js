@@ -566,7 +566,7 @@ export const useSnippetStore = defineStore('snippets', {
       const trusted = (await window.api.listTrustedKeys?.()) ?? []
       const match = trusted.find((t) => t.fingerprint === res.signer)
       res.signerNote = match
-        ? `Signed by trusted key "${match.label}".`
+        ? t('snippetNotices.signedByTrustedKey', { label: match.label })
         : t('snippetNotices.signedButNotByAny')
       await this.restoreBundle(res.bundle)
       return res

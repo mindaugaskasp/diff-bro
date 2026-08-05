@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
-import { setLocale as applyLocale } from '../i18n'
+import { activeLocale, setLocale as applyLocale } from '../i18n'
 import { isValidAccelerator } from '../utils/accelerator'
 import { noteRecent } from '../utils/tools'
 import { applyTheme, isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
@@ -47,7 +47,9 @@ export const useSettingsStore = defineStore('settings', {
       s.fileSizeLimitsMb[type] ?? FILE_TYPE_LIMITS[type]?.default ?? 10,
     fileSizeLimitBytes() {
       return (type) => this.fileSizeLimitMb(type) * 1024 * 1024
-    }
+    },
+    // `locale` is null until the user chooses; this is what is actually rendering.
+    activeLocale: (s) => s.locale ?? activeLocale()
   },
   actions: {
     initTheme() {

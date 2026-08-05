@@ -70,8 +70,9 @@ describe('createTranslator', () => {
     expect(t('nested.deep')).toBe('Found it')
   })
 
-  // The reason a library is here at all: plural form selection is per-locale
-  // and hand-rolling it is where the bugs live.
+  // English only. vue-i18n ships NO CLDR data — its default rule is
+  // `n ? min(n, 2) : 0`, so a locale with more forms must supply its own
+  // `pluralRules`. See LOCALES in src/shared/i18n.
   it('selects the plural form for a count', () => {
     const t = createTranslator('en', FIXTURE)
     expect(t('files', 0)).toBe('no files')
@@ -92,8 +93,10 @@ describe('createTranslator', () => {
     expect(t('no.such.key')).toBe('no.such.key')
   })
 
+  // Discriminating: nested.deep exists in BOTH fixtures, so an unknown locale
+  // left in place and resolved by fallback would give the en-XA string.
   it('normalizes the locale it is handed', () => {
-    expect(createTranslator('fr', FIXTURE)('greeting', { name: 'Ada' })).toBe('Hello Ada')
+    expect(createTranslator('fr', FIXTURE)('nested.deep')).toBe('Found it')
   })
 
   it('reads the shipped catalogue when no messages are supplied', () => {
@@ -122,5 +125,25 @@ describe('en.json', () => {
 
   it('is exposed as the English messages', () => {
     expect(allMessages()[DEFAULT_LOCALE]).toBe(en)
+  })
+
+  // The one that matters. vue-i18n COMPILES each message on first use, and a
+  // message it cannot parse throws during render — the component's subtree
+  // disappears and the crash dialog opens on top of it. Two shipped that way:
+  // "name@example.com" and "//tag/@attr", because `@` is linked-message syntax.
+  // Checking values for emptiness and key-shape did not see either.
+  it('every message in every locale compiles', () => {
+    const failures = []
+    for (const { id } of LOCALES) {
+      const t = createTranslator(id)
+      for (const [key] of leaves(allMessages()[id])) {
+        try {
+          t(key)
+        } catch (err) {
+          failures.push(`${id} · ${key}: ${err.message.split('\n')[0]}`)
+        }
+      }
+    }
+    expect(failures).toEqual([])
   })
 })

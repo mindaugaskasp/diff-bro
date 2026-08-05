@@ -9,10 +9,16 @@ const t = createTranslator('en')
 // The wording lived in two places (utils/shareErrors.js and snippetStore.js)
 // with nothing keeping them equal.
 describe('errorMessage', () => {
+  // The two call sites: a sealed diff (share) and a sealed snippets export
+  // (snippets). They pass DIFFERENT fallbacks, so comparing them proves the
+  // shared table answered rather than either caller's default.
   it('gives one wording for a code both features raise', () => {
     for (const code of ['bad-signature', 'bad-trusted-key']) {
-      expect(errorMessage(code, t)).toBe(errorMessage(code, t))
-      expect(errorMessage(code, t)).not.toContain('shareErrors.')
+      const viaShare = errorMessage(code, t, 'shareErrors.sharingFailed')
+      const viaSnippets = errorMessage(code, t, 'shareErrors.importFailed')
+      expect(viaShare).toBe(viaSnippets)
+      expect(viaShare).not.toBe(t('shareErrors.sharingFailed'))
+      expect(viaShare).not.toMatch(/^shareErrors\./)
     }
   })
 

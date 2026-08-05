@@ -10,7 +10,7 @@ import { CALLOUT_W } from '../../../utils/spotlight'
 import { t } from '../../../i18n'
 
 const props = defineProps({
-  step: { type: Object, required: true, validator: shaped('id', 'target', 'body') },
+  step: { type: Object, required: true, validator: shaped('id', 'target', 'bodyKey') },
   index: { type: Number, required: true },
   count: { type: Number, required: true },
   position: { type: Object, required: true, validator: shaped('x', 'y') },
@@ -30,7 +30,6 @@ const nextLabel = computed(() =>
 )
 const progress = computed(() => `${Math.round(((props.index + 1) / props.count) * 100)}%`)
 const calloutH = computed(() => root.value?.offsetHeight ?? 0)
-// {shortcut} is vue-i18n's own interpolation now, not a manual replace.
 const body = computed(() => t(props.step.bodyKey, { shortcut: props.shortcut }))
 
 const root = ref(null)

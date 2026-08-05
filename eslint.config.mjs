@@ -199,9 +199,23 @@ export default [
           patterns: [
             ...NO_NODE_IN_RENDERER.patterns,
             {
-              group: ['vue', 'pinia', '*/stores/*', '*/components/*', '**/features/**'],
+              // Gitignore-style, so each shape is spelled out: a bare 'vue' matches
+              // neither 'vue-i18n' nor '@vue/*', and nothing here would have caught
+              // a reach into src/main — which imports electron, and so would put
+              // Electron in the renderer bundle (hard rule 3).
+              group: [
+                'vue',
+                'vue-*',
+                '@vue/*',
+                'pinia',
+                '**/main/**',
+                '../main/*',
+                '*/stores/*',
+                '*/components/*',
+                '**/features/**'
+              ],
               message:
-                'src/shared is imported by the main process too — it must stay free of Vue, Pinia and renderer state.'
+                'src/shared is bundled into BOTH processes — it must stay free of Vue, Pinia, renderer state and anything under src/main.'
             }
           ]
         }

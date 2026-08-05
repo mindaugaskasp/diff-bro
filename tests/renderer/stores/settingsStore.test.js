@@ -397,26 +397,40 @@ describe('theme', () => {
 })
 
 describe('locale', () => {
-  it('defaults to English and persists a change', () => {
+  // en-XA is a real second value, so these discriminate. Asserting 'en' against
+  // a default of 'en' passes even if setLocale does nothing at all.
+  it('is unset until the user picks one, so the OS choice still applies', () => {
+    expect(useSettingsStore().locale).toBe(null)
+  })
+
+  it('stores the chosen locale and persists it', () => {
     const s = useSettingsStore()
-    expect(s.locale).toBe('en')
-    s.setLocale('en')
-    expect(JSON.parse(localStorage.getItem('diffbro.settings')).locale).toBe('en')
+    s.setLocale('en-XA')
+    expect(s.locale).toBe('en-XA')
+    expect(JSON.parse(localStorage.getItem('diffbro.settings')).locale).toBe('en-XA')
   })
 
   // The value reaches a message lookup and is handed to main, so an unknown one
   // must never survive the setter.
   it('normalizes a locale it does not ship', () => {
     const s = useSettingsStore()
+    s.setLocale('en-XA')
     s.setLocale('kl')
     expect(s.locale).toBe('en')
+    s.setLocale('en-XA')
     s.setLocale(null)
     expect(s.locale).toBe('en')
   })
 
   it('reads a persisted locale back on init', () => {
-    localStorage.setItem('diffbro.settings', JSON.stringify({ locale: 'en' }))
+    localStorage.setItem('diffbro.settings', JSON.stringify({ locale: 'en-XA' }))
     setActivePinia(createPinia())
-    expect(useSettingsStore().locale).toBe('en')
+    expect(useSettingsStore().locale).toBe('en-XA')
+  })
+
+  it('ignores a persisted locale this build does not ship', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ locale: '../../etc' }))
+    setActivePinia(createPinia())
+    expect(useSettingsStore().locale).toBe(null)
   })
 })
