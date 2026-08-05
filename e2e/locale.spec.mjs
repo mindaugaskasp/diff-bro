@@ -73,16 +73,20 @@ test('no control clips its label in a longer language', async ({ page }) => {
   await chooseLocale(page, 'en-XA')
   await closeDialog(page)
 
-  const clipped = await page.evaluate(() => {
+  const { clipped, examined } = await page.evaluate(() => {
     const out = []
+    let seen = 0
     for (const el of document.querySelectorAll('.btn, .menubar button, .nav-item, .band button')) {
       if (!el.offsetParent) continue
+      seen++
       // 1px of slack: sub-pixel layout rounds either way and would flake.
       if (el.scrollWidth > el.clientWidth + 1) {
         out.push(`${el.className}: ${el.textContent.trim().slice(0, 40)}`)
       }
     }
-    return out
+    return { clipped: out, examined: seen }
   })
+  // Or an empty result would mean "found nothing", not "nothing clips".
+  expect(examined, 'visible controls the check actually measured').toBeGreaterThan(5)
   expect(clipped, 'controls whose label overflows its box').toEqual([])
 })

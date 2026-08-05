@@ -423,12 +423,12 @@
   "backupSettings": {
     "olderThan": "Older than",
     "backups": "Backups",
-    "keepsARollingCopyOf": "Keeps a rolling copy of your snippets and the diffs you chose to keep, so a corrupted store\n      isn’t the end of them. Diffs set to expire are left out — they were meant to go.",
+    "keepsARollingCopyOf": "Keeps a rolling copy of your snippets and the diffs you chose to keep, so a corrupted store isn’t the end of them. Diffs set to expire are left out — they were meant to go.",
     "backUpAutomatically": "Back up automatically",
     "atMostOnceEvery": "At most once every",
     "takenAfterASaveNever": "Taken after a save, never on a timer — an app left open all day writes nothing.",
     "noBackupsYet": "No backups yet.",
-    "restoringReplacesYourSnippetsAnd": "Restoring replaces your snippets and kept diffs with that copy. Anything saved since is\n        lost.",
+    "restoringReplacesYourSnippetsAnd": "Restoring replaces your snippets and kept diffs with that copy. Anything saved since is lost.",
     "replaceThem": "Replace them"
   },
   "cliBlockedDialog": {
@@ -455,7 +455,7 @@
     "zoomOut": "Zoom out",
     "zoomIn": "Zoom in",
     "resetToFit": "Reset to fit",
-    "alignedAtTheFirstNode": "Aligned at the first node — below it each revision was laid out on its own, so an unchanged\n      node can still sit at a different height.",
+    "alignedAtTheFirstNode": "Aligned at the first node — below it each revision was laid out on its own, so an unchanged node can still sit at a different height.",
     "nodes": "Nodes",
     "edges": "Edges"
   },
@@ -478,7 +478,7 @@
     "32Bytes64HexOr": "32 bytes — 64 hex or base64",
     "16Bytes32HexOr": "16 bytes — 32 hex or base64",
     "encryptDecryptText": "Encrypt / Decrypt Text",
-    "localOnlyThePassphraseAnd": "Local only — the passphrase and text never leave this machine and are not saved anywhere.\n      Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.",
+    "localOnlyThePassphraseAnd": "Local only — the passphrase and text never leave this machine and are not saved anywhere. Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.",
     "input": "Input",
     "keyType": "Key type",
     "passphraseAES256GCMAuthenticated": "Passphrase — AES-256-GCM (authenticated)",
@@ -517,7 +517,7 @@
   "gitToolSettings": {
     "git": "Git",
     "openGitComparisonsInDiff": "Open git comparisons in Diff Bro",
-    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the\n      merged file, so git still asks you whether the merge worked.",
+    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the merged file, so git still asks you whether the merge worked.",
     "intro": "Makes {difftool} and {mergetool} open the comparison here instead of in the terminal.",
     "notOnPath": "git isn’t on your PATH, so there is nothing to register."
   },
@@ -645,16 +645,16 @@
     "showTipsAfterAnUpdate": "Show tips after an update",
     "showTour": "Show tour",
     "quickLookUp": "Quick look-up",
-    "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window —\n            it works even when Diff Bro is minimized. Click the field, then press the key\n            combination you want.",
+    "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window — it works even when Diff Bro is minimized. Click the field, then press the key combination you want.",
     "fun": "Fun",
     "rotateTheAppThemeDaily": "Rotate the app theme daily — a new random theme each day",
-    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily\n            theme is the same all day and changes at midnight."
+    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily theme is the same all day and changes at midnight."
   },
   "settingsLimits": {
     "limits": "Limits",
     "maxSnippetSizeKB": "Max snippet size (KB)",
     "maxDiffImageHeightPx": "Max diff image height (px)",
-    "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if\n      you need to. The image height is how much of a long diff one exported picture covers, measured\n      on screen, so it captures the same amount whatever your display's scaling; a longer diff is\n      cut short and says so."
+    "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if you need to. The image height is how much of a long diff one exported picture covers, measured on screen, so it captures the same amount whatever your display's scaling; a longer diff is cut short and says so."
   },
   "shortcutCapture": {
     "pressAKeyCombination": "Press a key combination…",
@@ -705,7 +705,7 @@
     "orDropAFile": "— or drop a file here"
   },
   "snippetFillDialog": {
-    "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank\n        to keep its",
+    "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
     "copyFilled": "Copy filled"
   },
   "snippetPassphraseDialog": {
@@ -917,8 +917,8 @@
   },
   "configBackup": {
     "dialog": {
-      "encryptsYourIdentityKeysTrusted": "Encrypts your identity keys, trusted hosts, snippets, saved diffs and settings into one\n          passphrase-protected file. Diffs that expire are left out. Keep the passphrase safe — it's\n          the only way to restore.",
-      "restoresIdentityKeysTrustedHosts": "Restores identity keys, trusted hosts, snippets, saved diffs and settings from a backup\n          file. Enter the passphrase it was created with. This overwrites your current identity\n          keys.",
+      "encryptsYourIdentityKeysTrusted": "Encrypts your identity keys, trusted hosts, snippets, saved diffs and settings into one passphrase-protected file. Diffs that expire are left out. Keep the passphrase safe — it's the only way to restore.",
+      "restoresIdentityKeysTrustedHosts": "Restores identity keys, trusted hosts, snippets, saved diffs and settings from a backup file. Enter the passphrase it was created with. This overwrites your current identity keys.",
       "passphrase": "Passphrase"
     }
   },
@@ -950,7 +950,7 @@
   "onboarding": {
     "continueTourDialog": {
       "threeMoreTips": "Three more tips?",
-      "thatIsTheEverydayRoute": "That is the everyday route covered. The rest is about keeping your own material in here —\n      saving a snippet, comparing two of them, and previewing a diagram. About a minute.",
+      "thatIsTheEverydayRoute": "That is the everyday route covered. The rest is about keeping your own material in here — saving a snippet, comparing two of them, and previewing a diagram. About a minute.",
       "notNow": "Not now",
       "showMe": "Show me"
     },
@@ -964,8 +964,8 @@
   },
   "pasteToCompare": {
     "pasteConfirmDialog": {
-      "bothSidesAlreadyHaveContent": "Both sides already have content. Paste your clipboard into the left side, replacing it? What's\n      there will be lost.",
-      "pasteYourClipboardIntoThe": "Paste your clipboard into the comparison to diff it? It fills the empty side (or starts a\n      paste comparison), and is only read after you confirm."
+      "bothSidesAlreadyHaveContent": "Both sides already have content. Paste your clipboard into the left side, replacing it? What's there will be lost.",
+      "pasteYourClipboardIntoThe": "Paste your clipboard into the comparison to diff it? It fills the empty side (or starts a paste comparison), and is only read after you confirm."
     }
   },
   "share": {
@@ -991,7 +991,7 @@
     },
     "rotateKeyDialog": {
       "replaceMyKey": "Replace my key",
-      "aNewKeyTakesOver": "A new key takes over from here. Your old one is kept so that diffs already sealed to it\n        still open — it is only ever used to read, never to send.",
+      "aNewKeyTakesOver": "A new key takes over from here. Your old one is kept so that diffs already sealed to it still open — it is only ever used to read, never to send.",
       "diffsYouHave": "Diffs you have",
       "doThisIfYourMachine": "Do this if your machine or your key may have been exposed.",
       "doneNote": "Your new fingerprint is {fp}. Send your public key again — until each person imports it, anything you seal will reach them as an unknown sender."
@@ -1003,21 +1003,21 @@
       "emailThisDiff": "Email this diff",
       "createFile": "Create file",
       "addAnAddress": "Add an address…",
-      "sharedDiffsAreSealedFor": "Shared diffs are sealed for named people, so you and your bro first swap public keys — once,\n      in both directions. Your keys already exist (created automatically, fingerprint",
+      "sharedDiffsAreSealedFor": "Shared diffs are sealed for named people, so you and your bro first swap public keys — once, in both directions. Your keys already exist (created automatically, fingerprint",
       "giveThemYourKey": "Give them your key",
       "nameItAndSendIt": "Name it and send it — they import it to receive your diffs.",
       "shareMyKey": "Share my key…",
       "addTheirKey": "Add their key",
       "openThe": "Open the",
       "addTheirKey2": "Add their key…",
-      "asSoonAsTheirKey": "As soon as their key is added you can pick them as a recipient — this dialog updates\n      automatically."
+      "asSoonAsTheirKey": "As soon as their key is added you can pick them as a recipient — this dialog updates automatically."
     },
     "keyDialog": {
       "eGAliceLaptop": "e.g. Alice — laptop",
       "shareMyPublicKey": "Share my public key",
       "securityAddTrustedKey": "Security → Add Trusted Key",
       "nameOthersWillSee": "Name others will see",
-      "shownToWhoeverImportsThis": "Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part\n      of the key's identity.",
+      "shownToWhoeverImportsThis": "Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part of the key's identity.",
       "fingerprint": "Fingerprint {fp}",
       "saveToFile": "Save to file…",
       "copyToClipboard": "Copy to clipboard",
@@ -1039,7 +1039,7 @@
       "trustedKeys": "Trusted keys",
       "searchTrustedKeys": "Search trusted keys",
       "clearSearch": "Clear search",
-      "publicKeysOfPeopleYou": "Public keys of people you can share sealed diffs with. Give a key an email address to email\n      its diffs from here.",
+      "publicKeysOfPeopleYou": "Public keys of people you can share sealed diffs with. Give a key an email address to email its diffs from here.",
       "noTrustedKeysYetAdd": "No trusted keys yet. Add someone's",
       "addKey": "Add key…"
     }

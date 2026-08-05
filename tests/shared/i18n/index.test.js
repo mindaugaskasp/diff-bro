@@ -118,6 +118,14 @@ describe('en.json', () => {
     expect(empty).toEqual([])
   })
 
+  // The extractor captured template text nodes verbatim, so a wrapped line
+  // arrived as "… is\n        lost." — which renders with the source's own
+  // indentation and breaks every text match against it.
+  it('carries no source indentation', () => {
+    const wrapped = leaves(en).filter(([, v]) => /\n\s{2,}|\s{3,}/.test(v))
+    expect(wrapped.map(([k]) => k)).toEqual([])
+  })
+
   it('has no message left as a bare key id', () => {
     const idish = leaves(en).filter(([k, v]) => v === k)
     expect(idish).toEqual([])
