@@ -3,7 +3,7 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 9 / 16 steps                  |
+| **Progress**                            | 10 / 16 steps                 |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
@@ -307,7 +307,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
 - [x] 9. Error and message catalogues — `utils/shareErrors.js`,
       `stores/snippetStore.js`, `stores/diffStore.js`, `stores/*`. **De-duplicate
       the `bad-signature` sentence here**, with the assertion written first.
-- [ ] 10. `utils/` copy — `tourCopy.js`, `detectLanguage.js`, `jiraMarkup.js`,
+- [x] 10. `utils/` copy — `tourCopy.js`, `detectLanguage.js`, `jiraMarkup.js`,
       `markdownMarkup.js`, and the rest.
 - [ ] 11. `components/` — 93 files, 438 strings. Batched by dialog family, not
       alphabetically, so a reviewer sees one screen's copy at a time.

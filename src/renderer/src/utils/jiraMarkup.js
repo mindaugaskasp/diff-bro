@@ -3,21 +3,23 @@
 // Markdown toolbar); this file is only Jira's markers + dispatch.
 import { blockWrap, linePrefix, listBlock, selected, splice, wrap } from './markupEdit'
 
-// Toolbar buttons in display order.
+// Toolbar buttons in display order. The label is translatable; `syntax` never
+// is — it is the language's own grammar, and vue-i18n would read `[text|url]` as
+// a two-form PLURAL and `{code}` / `{{text}}` as interpolation.
 export const JIRA_ACTIONS = [
-  { id: 'bold', title: 'Bold  *text*', icon: 'bold' },
-  { id: 'italic', title: 'Italic  _text_', icon: 'italic' },
-  { id: 'underline', title: 'Underline  +text+', icon: 'underline' },
-  { id: 'strike', title: 'Strikethrough  -text-', icon: 'strikethrough' },
-  { id: 'code', title: 'Inline monospace  {{text}}', icon: 'code' },
-  { id: 'h1', title: 'Heading 1  h1.', text: 'H1' },
-  { id: 'h2', title: 'Heading 2  h2.', text: 'H2' },
-  { id: 'h3', title: 'Heading 3  h3.', text: 'H3' },
-  { id: 'bullet', title: 'Bullet list  * item', icon: 'list' },
-  { id: 'numbered', title: 'Numbered list  # item', icon: 'list-ordered' },
-  { id: 'quote', title: 'Quote  bq.', icon: 'quote' },
-  { id: 'codeblock', title: 'Code block  {code}', icon: 'braces' },
-  { id: 'link', title: 'Link  [text|url]', icon: 'link' }
+  { id: 'bold', labelKey: 'markup.bold', syntax: '*text*', icon: 'bold' },
+  { id: 'italic', labelKey: 'markup.italic', syntax: '_text_', icon: 'italic' },
+  { id: 'underline', labelKey: 'markup.underline', syntax: '+text+', icon: 'underline' },
+  { id: 'strike', labelKey: 'markup.strikethrough', syntax: '-text-', icon: 'strikethrough' },
+  { id: 'code', labelKey: 'markup.inlineMonospace', syntax: '{{text}}', icon: 'code' },
+  { id: 'h1', labelKey: 'markup.heading1', syntax: 'h1.', text: 'H1' },
+  { id: 'h2', labelKey: 'markup.heading2', syntax: 'h2.', text: 'H2' },
+  { id: 'h3', labelKey: 'markup.heading3', syntax: 'h3.', text: 'H3' },
+  { id: 'bullet', labelKey: 'markup.bulletList', syntax: '* item', icon: 'list' },
+  { id: 'numbered', labelKey: 'markup.numberedList', syntax: '# item', icon: 'list-ordered' },
+  { id: 'quote', labelKey: 'markup.quote', syntax: 'bq.', icon: 'quote' },
+  { id: 'codeblock', labelKey: 'markup.codeBlock', syntax: '{code}', icon: 'braces' },
+  { id: 'link', labelKey: 'markup.link', syntax: '[text|url]', icon: 'link' }
 ]
 
 const WRAPS = {

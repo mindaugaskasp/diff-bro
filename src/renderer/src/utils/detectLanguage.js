@@ -5,29 +5,32 @@ import { validateJson } from './textFormats'
 import { looksLikeMermaid } from './mermaid'
 
 // Syntaxes in the language picker (Monaco ids).
+// Every option carries a key, including the ones whose English is a proper noun
+// ("Python", "Go"). Uniform beats clever: nobody has to decide per row whether a
+// name is translatable, and a locale that DOES localise a format name can.
 export const SNIPPET_LANGUAGES = [
-  { id: 'auto', label: 'Auto-detect' },
-  { id: 'plaintext', label: 'Plain text' },
-  { id: 'claude', label: 'Claude prompt / link' },
-  { id: 'url', label: 'URL' },
-  { id: 'mermaid', label: 'Mermaid diagram' },
-  { id: 'json', label: 'JSON' },
-  { id: 'sql', label: 'SQL' },
-  { id: 'markdown', label: 'Markdown' },
-  { id: 'jira', label: 'Jira / Confluence' },
-  { id: 'yaml', label: 'YAML / Kubernetes' },
-  { id: 'python', label: 'Python' },
-  { id: 'shell', label: 'Bash / Shell' },
-  { id: 'php', label: 'PHP' },
-  { id: 'javascript', label: 'JavaScript' },
-  { id: 'typescript', label: 'TypeScript' },
-  { id: 'xml', label: 'XML' },
-  { id: 'html', label: 'HTML' },
-  { id: 'css', label: 'CSS' },
-  { id: 'dockerfile', label: 'Dockerfile' },
-  { id: 'go', label: 'Go' },
-  { id: 'rust', label: 'Rust' },
-  { id: 'java', label: 'Java' }
+  { id: 'auto', labelKey: 'language.auto' },
+  { id: 'plaintext', labelKey: 'language.plaintext' },
+  { id: 'claude', labelKey: 'language.claude' },
+  { id: 'url', labelKey: 'language.url' },
+  { id: 'mermaid', labelKey: 'language.mermaid' },
+  { id: 'json', labelKey: 'language.json' },
+  { id: 'sql', labelKey: 'language.sql' },
+  { id: 'markdown', labelKey: 'language.markdown' },
+  { id: 'jira', labelKey: 'language.jira' },
+  { id: 'yaml', labelKey: 'language.yaml' },
+  { id: 'python', labelKey: 'language.python' },
+  { id: 'shell', labelKey: 'language.shell' },
+  { id: 'php', labelKey: 'language.php' },
+  { id: 'javascript', labelKey: 'language.javascript' },
+  { id: 'typescript', labelKey: 'language.typescript' },
+  { id: 'xml', labelKey: 'language.xml' },
+  { id: 'html', labelKey: 'language.html' },
+  { id: 'css', labelKey: 'language.css' },
+  { id: 'dockerfile', labelKey: 'language.dockerfile' },
+  { id: 'go', labelKey: 'language.go' },
+  { id: 'rust', labelKey: 'language.rust' },
+  { id: 'java', labelKey: 'language.java' }
 ]
 
 const firstLine = (t) => {

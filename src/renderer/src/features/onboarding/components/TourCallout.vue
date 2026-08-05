@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 import { shaped } from '../../../utils/props'
 import { CALLOUT_W } from '../../../utils/spotlight'
+import { t } from '../../../i18n'
 
 const props = defineProps({
   step: { type: Object, required: true, validator: shaped('id', 'target', 'body') },
@@ -24,10 +25,13 @@ const EDGE = 14
 const isLast = computed(() => props.index === props.count - 1)
 // A step that acts says so on the button that does it. "Next" on a control that
 // is about to open Settings is exactly the surprise this tour is meant to avoid.
-const nextLabel = computed(() => props.step.nextLabel ?? (isLast.value ? 'Done' : 'Next'))
+const nextLabel = computed(() =>
+  props.step.nextLabelKey ? t(props.step.nextLabelKey) : t(isLast.value ? 'tour.done' : 'tour.next')
+)
 const progress = computed(() => `${Math.round(((props.index + 1) / props.count) * 100)}%`)
 const calloutH = computed(() => root.value?.offsetHeight ?? 0)
-const body = computed(() => props.step.body.replace('{shortcut}', props.shortcut))
+// {shortcut} is vue-i18n's own interpolation now, not a manual replace.
+const body = computed(() => t(props.step.bodyKey, { shortcut: props.shortcut }))
 
 const root = ref(null)
 const style = computed(() => ({
@@ -77,7 +81,7 @@ const beakStyle = computed(() => {
         <span :style="{ width: progress }"></span>
       </span>
     </div>
-    <h6>{{ step.title }}</h6>
+    <h6>{{ $t(step.titleKey) }}</h6>
     <p class="tour-body">{{ body }}</p>
     <div class="tour-foot">
       <button v-if="index > 0" class="btn btn-sm tour-back" @click="$emit('back')">Back</button>

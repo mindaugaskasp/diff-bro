@@ -147,7 +147,7 @@ function saveSnippet() {
         <label class="lang-picker">
           Syntax
           <select v-model="chosenLanguage" :disabled="readOnly">
-            <option v-for="l in languages" :key="l.id" :value="l.id">{{ l.label }}</option>
+            <option v-for="l in languages" :key="l.id" :value="l.id">{{ $t(l.labelKey) }}</option>
           </select>
           <span v-if="chosenLanguage === 'auto'" class="lang-detected">→ {{ language }}</span>
         </label>

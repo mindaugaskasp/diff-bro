@@ -1,62 +1,38 @@
-// Every word the onboarding tour says, keyed by step id. Apart from the schedule
-// in tourSteps.js so wording can be revised without reading any of it.
+// Which catalogue entries each tour step renders. The WORDS live in
+// src/shared/i18n/en.json under `tour.<id>` — edit wording there.
 //
-// `nextLabel` replaces the primary's "Next" when that press DOES something —
-// a button about to open a window should say so. `{shortcut}` is filled in at
-// render time with the quick look-up chord as the user has it bound.
+// Explicit keys rather than `tour.${step.id}.title`: a template literal is
+// invisible to scripts/check-i18n.mjs, so a step whose copy was never written
+// would render its own key id instead of failing the build.
 
-/** @type {Record<string, { title: string, body: string, nextLabel?: string }>} */
+/** @type {Record<string, { titleKey: string, bodyKey: string, nextLabelKey?: string }>} */
 export const TOUR_COPY = {
   compare: {
-    title: 'Two files, any way you like',
-    body: 'Drop them anywhere on this window, or click a slot to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.',
-    nextLabel: 'Load a demo pair'
+    titleKey: 'tour.compare.title',
+    bodyKey: 'tour.compare.body',
+    nextLabelKey: 'tour.compare.nextLabel'
   },
-  share: {
-    title: 'Send it sealed, not screenshotted',
-    body: 'Share locks this comparison so only the people you pick can open it, and it stops opening after however long you choose. First time with someone, you swap a small key file: Security ▸ Share My Public Key sends yours, Security ▸ Add Trusted Key takes theirs. After that it is two clicks.'
-  },
-  library: {
-    title: 'Your library, narrowing as you type',
-    body: 'Saved diffs, shared diffs and snippets all live here. Watch the list filter as the search fills in.'
-  },
-  'quick-look': {
-    title: 'The same search, over any app',
-    body: 'Press {shortcut} and this box opens on top of whatever you are working in — even while Diff Bro is minimised. Find a snippet, copy it, press Escape. Try it now.'
-  },
+  share: { titleKey: 'tour.share.title', bodyKey: 'tour.share.body' },
+  library: { titleKey: 'tour.library.title', bodyKey: 'tour.library.body' },
+  'quick-look': { titleKey: 'tour.quick-look.title', bodyKey: 'tour.quick-look.body' },
   'settings-open': {
-    title: 'The rest is in the menus',
-    body: 'Fourteen themes, size limits, where your data is kept, the shortcut above — all of it is in Settings, at the bottom of the File menu.',
-    nextLabel: 'Open Settings'
+    titleKey: 'tour.settings-open.title',
+    bodyKey: 'tour.settings-open.body',
+    nextLabelKey: 'tour.settings-open.nextLabel'
   },
-  'settings-panes': {
-    title: 'One pane at a time',
-    body: 'Everything else is down this list — Shortcuts for the quick look-up chord, Storage for where your data is kept, Limits for how large a file may be.'
-  },
-  'settings-tips': {
-    title: 'And this is the off switch',
-    body: 'Tips appear again after an update. Turn them off here — or press Show tour whenever you want this walk-through back.'
-  },
+  'settings-panes': { titleKey: 'tour.settings-panes.title', bodyKey: 'tour.settings-panes.body' },
+  'settings-tips': { titleKey: 'tour.settings-tips.title', bodyKey: 'tour.settings-tips.body' },
   'snippet-new': {
-    title: 'Save commonly used text or code',
-    body: 'A deploy payload, a prompt, a config block — the + here starts one, and the search finds it again next week.',
-    nextLabel: 'Open the editor'
+    titleKey: 'tour.snippet-new.title',
+    bodyKey: 'tour.snippet-new.body',
+    nextLabelKey: 'tour.snippet-new.nextLabel'
   },
-  'snippet-save': {
-    title: 'Name it, tag it, save it',
-    body: 'This one is filled in already. Press the ringed Save to keep it — the sidebar and the quick look-up both find it afterwards. Next moves on either way.'
-  },
-  'snippet-drag': {
-    title: 'Drag it anywhere in here',
-    body: 'The whole comparison area takes a drop — you don’t have to land on a file box. A snippet can face a file, or another snippet.'
-  },
+  'snippet-save': { titleKey: 'tour.snippet-save.title', bodyKey: 'tour.snippet-save.body' },
+  'snippet-drag': { titleKey: 'tour.snippet-drag.title', bodyKey: 'tour.snippet-drag.body' },
   'diagram-open': {
-    title: 'A Mermaid snippet draws itself',
-    body: 'This one is a diagram — it previews live as you type it. Two versions of one compare as a picture rather than as text.',
-    nextLabel: 'Compare two versions'
+    titleKey: 'tour.diagram-open.title',
+    bodyKey: 'tour.diagram-open.body',
+    nextLabelKey: 'tour.diagram-open.nextLabel'
   },
-  diagram: {
-    title: 'A diagram change, as a diagram',
-    body: 'Here it is: the same flow, one revision apart. Every added, removed or changed node is marked on the picture, so you read the change instead of hunting for it in the text.'
-  }
+  diagram: { titleKey: 'tour.diagram.title', bodyKey: 'tour.diagram.body' }
 }
