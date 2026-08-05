@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
-import { delimiter, dirname, join } from 'node:path'
+import { delimiter, dirname, join, posix } from 'node:path'
 import {
   installShim,
   onPath,
@@ -61,7 +61,9 @@ describe('installShim', () => {
   it('writes an executable shim and reports where', () => {
     const r = installShim({ exePath: APP, home, platform: 'darwin' })
     expect(r.ok).toBe(true)
-    expect(r.target).toBe(join(home, '.local/bin/diffbro'))
+    // The shim is built for the TARGET platform, so the expectation is a posix
+    // path too — host `join` spells it with backslashes and only fails on Windows.
+    expect(r.target).toBe(posix.join(home, '.local/bin/diffbro'))
     expect(readFileSync(r.target, 'utf8')).toContain(APP)
     if (POSIX_HOST) expect(statSync(r.target).mode & 0o111).toBeTruthy()
   })
