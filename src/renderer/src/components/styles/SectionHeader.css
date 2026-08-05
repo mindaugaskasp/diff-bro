@@ -91,6 +91,9 @@
    only affordance needed. A plain click still toggles the section collapsed. */
 .head.draggable {
   cursor: grab;
+  /* The gesture is ours: without this a trackpad or touch drag scrolls the
+     sidebar out from under the header instead of moving it. */
+  touch-action: none;
 }
 .head.draggable:active {
   cursor: grabbing;

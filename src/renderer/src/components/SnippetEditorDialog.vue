@@ -10,6 +10,7 @@ import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import TagChipsField from './TagChipsField.vue'
 import SnippetEditorHeader from './SnippetEditorHeader.vue'
+import SnippetNameHint from './SnippetNameHint.vue'
 import SnippetSecretToggle from './SnippetSecretToggle.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
@@ -132,6 +133,7 @@ function saveSnippet() {
         <span v-if="editMode && !name.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsAName') }}
         </span>
+        <SnippetNameHint v-if="editMode" :name="name" />
       </label>
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />

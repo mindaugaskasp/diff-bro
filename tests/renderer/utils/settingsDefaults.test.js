@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { SECTIONS, sanitizeSectionOrder } from '../../../src/renderer/src/utils/settingsDefaults'
+import {
+  DEFAULT_QUICKLOOK_SHORTCUT,
+  SECTIONS,
+  sanitizeSectionOrder,
+  settingsStateFrom
+} from '../../../src/renderer/src/utils/settingsDefaults'
+import { LEGACY_QUICKLOOK_SHORTCUT } from '../../../src/shared/shortcuts'
 
 // Growing SECTIONS is the one change here that reaches settings files already on
 // disk. A stored order predates every section added after it was written, so
@@ -44,5 +50,37 @@ describe('sanitizeSectionOrder', () => {
     for (const input of [[], ['tools'], ['bogus'], [...SECTIONS].reverse()]) {
       expect([...sanitizeSectionOrder(input)].sort()).toEqual([...SECTIONS].sort())
     }
+  })
+})
+
+// The migration's own logic lives in tests/shared/shortcuts.test.js; this is the
+// wiring — that settingsStateFrom applies it and then records that it has, so a
+// settings file cannot be moved off its binding twice.
+describe('settingsStateFrom, quick look-up shortcut', () => {
+  it('records the migration as done, whatever it read', () => {
+    expect(settingsStateFrom({}, {}).quickLookShortcutMigrated).toBe(true)
+    expect(
+      settingsStateFrom({ quickLookShortcut: 'Alt+Shift+D' }, {}).quickLookShortcutMigrated
+    ).toBe(true)
+  })
+
+  it('keeps a binding the user chose', () => {
+    expect(settingsStateFrom({ quickLookShortcut: 'Alt+Shift+D' }, {}).quickLookShortcut).toBe(
+      'Alt+Shift+D'
+    )
+  })
+
+  it('falls back for a hand-edited value that is not an accelerator', () => {
+    expect(settingsStateFrom({ quickLookShortcut: 'garbage' }, {}).quickLookShortcut).toBe(
+      DEFAULT_QUICKLOOK_SHORTCUT
+    )
+  })
+
+  it('an already-migrated file keeps the legacy binding rather than moving again', () => {
+    const state = settingsStateFrom(
+      { quickLookShortcut: LEGACY_QUICKLOOK_SHORTCUT, quickLookShortcutMigrated: true },
+      {}
+    )
+    expect(state.quickLookShortcut).toBe(LEGACY_QUICKLOOK_SHORTCUT)
   })
 })

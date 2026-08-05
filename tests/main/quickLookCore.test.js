@@ -7,8 +7,8 @@ import {
   launcherSpaceBehavior,
   needsMainWindow,
   isValidAccelerator,
-  swapShortcut,
-  resolveAccelerator
+  storedAccelerator,
+  swapShortcut
 } from '../../src/main/quickLookCore'
 
 describe('placeWindow', () => {
@@ -151,16 +151,34 @@ describe('launcherSpaceBehavior', () => {
   })
 })
 
-describe('resolveAccelerator', () => {
-  const FALLBACK = 'CommandOrControl+Shift+Space'
-  it('keeps a non-empty stored accelerator', () => {
-    expect(resolveAccelerator('Alt+Shift+D', FALLBACK)).toBe('Alt+Shift+D')
+// Main resolves the binding from settings.json BEFORE any window has read that
+// file, so the one-time move off the old default has to happen on this side too
+// — otherwise the first launch after an update still answers to the old one.
+describe('storedAccelerator', () => {
+  const FALLBACK = 'Control+Alt+Space'
+
+  it('keeps a binding the user chose', () => {
+    const settings = { quickLookShortcut: 'Alt+Shift+D', quickLookShortcutMigrated: true }
+    expect(storedAccelerator(settings, FALLBACK)).toBe('Alt+Shift+D')
   })
-  it('falls back for missing, empty, or non-string values', () => {
-    expect(resolveAccelerator(undefined, FALLBACK)).toBe(FALLBACK)
-    expect(resolveAccelerator('', FALLBACK)).toBe(FALLBACK)
-    expect(resolveAccelerator('   ', FALLBACK)).toBe(FALLBACK)
-    expect(resolveAccelerator(42, FALLBACK)).toBe(FALLBACK)
+
+  it('moves an un-migrated install off the superseded default', () => {
+    const settings = { quickLookShortcut: 'CommandOrControl+Shift+Space' }
+    expect(storedAccelerator(settings, FALLBACK)).toBe(FALLBACK)
+  })
+
+  it('leaves a migrated install alone, even on the old combination', () => {
+    const settings = {
+      quickLookShortcut: 'CommandOrControl+Shift+Space',
+      quickLookShortcutMigrated: true
+    }
+    expect(storedAccelerator(settings, FALLBACK)).toBe('CommandOrControl+Shift+Space')
+  })
+
+  it('falls back for a missing, empty or unreadable settings file', () => {
+    for (const settings of [{}, undefined, null, { quickLookShortcut: '   ' }]) {
+      expect(storedAccelerator(settings, FALLBACK)).toBe(FALLBACK)
+    }
   })
 })
 

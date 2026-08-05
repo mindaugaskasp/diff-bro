@@ -1,7 +1,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
+import { isWindows } from '../keys'
 import BaseDialog from './BaseDialog.vue'
+import DesktopSettings from './DesktopSettings.vue'
 import LogSettings from './LogSettings.vue'
 import CliSettings from './CliSettings.vue'
 import GitToolSettings from './GitToolSettings.vue'
@@ -18,17 +20,21 @@ const ui = useUiStore()
 const settings = useSettingsStore()
 const tour = useOnboardingStore()
 
-// One pane shows at a time behind the left rail.
+// One pane shows at a time behind the left rail. Desktop is Windows-only — there
+// is no tray to keep the app in anywhere else, so elsewhere it would be a pane
+// of two settings that do nothing. Filtered once, not computed: the platform
+// does not change while the app is open.
 const TABS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'shortcuts', label: 'Shortcuts' },
+  { id: 'desktop', label: 'Desktop', windowsOnly: true },
   { id: 'storage', label: 'Storage' },
   { id: 'limits', label: 'Limits' },
   { id: 'logs', label: 'Logs' },
   { id: 'email', label: 'Email' },
   { id: 'cli', label: 'Terminal' },
   { id: 'fun', label: 'Fun' }
-]
+].filter((t) => isWindows || !t.windowsOnly)
 
 // Re-resolve the active theme so the rotation toggle applies immediately.
 function toggleDailyTheme(on) {
@@ -92,6 +98,8 @@ function close() {
           </p>
           <ShortcutCapture />
         </section>
+
+        <DesktopSettings v-else-if="tab === 'desktop'" />
 
         <StorageSettings v-else-if="tab === 'storage'" />
 

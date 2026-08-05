@@ -37,7 +37,7 @@ function readState() {
 export const useSettingsStore = defineStore('settings', {
   state: () => readState(),
   getters: {
-    // Sections in the user's chosen order (always all three, sanitized).
+    // Sections in the user's chosen order (always every one, sanitized).
     orderedSections: (s) => s.sectionOrder,
     maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024,
     // The remembered size for a resizable dialog, or null for its default.
@@ -69,9 +69,8 @@ export const useSettingsStore = defineStore('settings', {
       // the day's; otherwise it applies immediately.
       this.resolveActiveTheme()
     },
-    // The language the chrome renders in. Applied to the renderer immediately
-    // and handed to main, which rebuilds the application menu — the menu is
-    // built from a template at startup and does not re-read anything on its own.
+    // Applied to the renderer immediately and handed to main, whose menu is a
+    // template built at startup and re-reads nothing on its own.
     setLocale(id) {
       this.locale = normalizeLocale(id)
       applyLocale(this.locale)
@@ -108,7 +107,9 @@ export const useSettingsStore = defineStore('settings', {
           autoBackupHours: this.autoBackupHours,
           examplesSeeded: this.examplesSeeded,
           recentTools: this.recentTools,
-          quickLookShortcut: this.quickLookShortcut
+          quickLookShortcut: this.quickLookShortcut,
+          quickLookShortcutMigrated: this.quickLookShortcutMigrated,
+          closeToTray: this.closeToTray
         })
       )
     },
@@ -206,9 +207,8 @@ export const useSettingsStore = defineStore('settings', {
       }
       this.persist()
     },
-    // Remember a resizable dialog's size after a user drag-resize, keyed by a
-    // stable dialog id. Bounds are clamped here too, so a bogus value can never
-    // reach persistence.
+    // Keyed by a stable dialog id, and clamped here too so a bogus stored size
+    // can never reach persistence.
     setDialogSize(key, size) {
       const clamped = sanitizeSize(size)
       if (!clamped) return
@@ -233,9 +233,13 @@ export const useSettingsStore = defineStore('settings', {
       )
       this.persist()
     },
-    // Persist the quick look-up accelerator. Rejects anything structurally
-    // invalid so a bad value can't reach settings.json (the main process still
-    // guards its own registration). Returns whether it was accepted.
+    // Read by main at the moment of a close (tray.js) — nothing to push live.
+    setCloseToTray(on) {
+      this.closeToTray = on === true
+      this.persist()
+    },
+    // Rejects anything structurally invalid, so a bad value never reaches
+    // settings.json; main still guards its own registration. Returns accepted.
     setQuickLookShortcut(accel) {
       if (!isValidAccelerator(accel)) return false
       this.quickLookShortcut = accel

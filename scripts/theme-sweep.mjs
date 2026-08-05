@@ -211,6 +211,21 @@ const SURFACES = [
     }
   },
   {
+    name: 'toolbar-actions',
+    // Already on screen. The label is what used to carry these two, so the
+    // glyph now has to do it alone — and a mark, unlike a word, has only the
+    // plate and the keyline behind it.
+    open: (page) => page.locator('.toolbar .btn-square').first().waitFor(),
+    close: async () => {},
+    probes: {
+      // One probe carries both: the glyph inherits `color`, the plate's keyline
+      // is the border, and a square that lost either would read as disabled.
+      'square, resting': ['.toolbar .btn-square:not(:disabled)', DIM],
+      'labelled action': ['.toolbar .group.actions .btn:not(.btn-square)', TEXT],
+      'toggle label': ['.toolbar .options label:not(.off)', TEXT]
+    }
+  },
+  {
     name: 'trusted-keys',
     open: async (page) => {
       await page.getByRole('button', { name: 'Security', exact: true }).click()
@@ -288,6 +303,11 @@ async function main() {
     return { ...k, sign, box, fingerprint: fingerprint(sign, box) }
   })
   writeFileSync(join(userDataDir, 'trusted-keys.json'), JSON.stringify(keys, null, 2))
+  // Every profile here is cold, which is what the onboarding tour fires on, and
+  // its tint takes the pointer for the whole window — the sweep never got past
+  // its first click. The tour-callout surface below summons the tour itself, so
+  // nothing is lost by starting without it. Same reason e2e/fixtures.mjs does it.
+  writeFileSync(join(userDataDir, 'onboarding.json'), JSON.stringify({ showTips: false }))
 
   const app = await electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`] })
   const findings = []

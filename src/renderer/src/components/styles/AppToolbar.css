@@ -4,7 +4,7 @@
   /* Its own inset, named so the key buttons can cancel it and line their block
      up with the window edge — and so the two cannot drift apart. */
   --bar-pad: 12px;
-  gap: 16px;
+  gap: 12px;
   padding: 8px var(--bar-pad);
   background: var(--bg-panel);
   /* Distinct separator so the stacked bars don't blend into one dark mass. */
@@ -13,25 +13,45 @@
 .options {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: var(--text-dim);
+  gap: 10px;
+  /* Reading ink, not dim: these are words, and --text-dim put them under 4.5:1
+     on solar (3.99), nord (4.05), sepia (3.44) and bloom (4.31). It also made
+     the .off rule below a no-op — an unavailable toggle was being "greyed out"
+     to the colour it already was. */
+  color: var(--text);
   white-space: nowrap;
   margin-left: auto;
+  /* The toolbar absorbs its own overflow. The window minimum is tuned to fit
+     this row in English; a longer locale (en-XA runs ~40% over) would otherwise
+     make the DOCUMENT wider than the viewport and scroll the sidebar and panes
+     sideways along with it. */
+  min-width: 0;
+  /* Both axes named. Setting overflow-x alone computes overflow-y from
+     `visible` to `auto`, which put a stepper-arrow scrollbar on the right edge
+     of the band on every theme. */
+  overflow: auto hidden;
+  scrollbar-width: thin;
 }
 /* Logical clusters (display toggles · actions · appearance), each separated by
    a divider, so the toolbar reads as groups rather than one glued-together row. */
 .group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex: none;
 }
 .group.actions {
-  gap: 8px;
+  gap: 6px;
 }
+/* Spans the control row, not the whole band. It used to bleed into the bar's
+   padding with a negative margin, which cannot work now that `.options` is a
+   scroll container: the bleed was the only thing overflowing it, and it bought a
+   stepper-arrow scrollbar on the right edge in exchange for 8px of line. */
 .divider {
   width: 1px;
+  flex: none;
   align-self: stretch;
-  margin: -8px 2px; /* bleed to the toolbar's top/bottom padding for a full line */
+  margin: 0 2px;
   background: var(--border);
 }
 .options label {

@@ -12,9 +12,13 @@ import { sweepStage, stageFile } from './clipboardStage'
 
 const MAX_COPY_BYTES = 64 * 1024 * 1024
 
-/** Put an already-staged path on the clipboard as a file. */
-export function copyPathToClipboard(path) {
-  const flavours = fileFlavours([path], process.platform)
+/**
+ * Put an already-staged path on the clipboard as a file. Windows also carries
+ * the CONTENT, because its file flavour announces a file and then serves its
+ * bytes rather than naming a path (see clipboardWrite.js).
+ */
+export function copyPathToClipboard(path, bytes) {
+  const flavours = fileFlavours({ paths: [path], platform: process.platform, bytes })
   if (!flavours.length) return { error: 'unsupported' }
   clipboard.clear()
   for (const { format, buffer } of flavours) clipboard.writeBuffer(format, buffer)
@@ -28,7 +32,7 @@ export function copyPathToClipboard(path) {
 export async function copyBytesAsFile(name, bytes) {
   const staged = await stageFile({ name, bytes })
   if (!staged.ok) return staged
-  const copied = copyPathToClipboard(staged.path)
+  const copied = copyPathToClipboard(staged.path, bytes)
   return copied.ok ? { ok: true, name: staged.path.split(/[\\/]/).pop() } : copied
 }
 
@@ -51,5 +55,8 @@ export function registerClipboardCopyIpc() {
 
   // Whether this platform can carry a file on the clipboard at all, so the UI
   // hides the command rather than offering one that silently does nothing.
-  ipcMain.handle('clipboard:canWriteFile', () => fileFlavours(['/x'], process.platform).length > 0)
+  ipcMain.handle(
+    'clipboard:canWriteFile',
+    () => fileFlavours({ paths: ['/x'], platform: process.platform }).length > 0
+  )
 }

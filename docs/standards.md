@@ -127,7 +127,13 @@ regression test from decoration.
    **Copy as file** (`clipboardCopy.js`) stages bytes and puts the staged path on
    the clipboard; `clipboard:writeFile` takes **bytes and a display name, never a
    path**, so the renderer cannot name a file to stage, read one back, or learn
-   the staging directory. Staged copies live in a `0o700` directory under the OS
+   the staging directory. Windows is descriptor-based on purpose
+   (`FileGroupDescriptorW` + `FileContents`, not `CF_HDROP`): Electron turns a
+   buffer's format NAME into a format via `RegisterClipboardFormat`, and the
+   predefined `CF_HDROP` has no name to register — writing under that name minted
+   a private format nothing outside the app could paste. Do not "simplify" it
+   back. The macOS and freedesktop flavours work precisely because their names
+   ARE registered. Staged copies live in a `0o700` directory under the OS
    temp dir, are pruned after 30 minutes, and are swept both on `will-quit` and
    on next launch — the second sweep because a crash skips the first, and a
    snippet's plaintext surviving a reboot in `/tmp` is the failure that matters.

@@ -1,0 +1,44 @@
+/* The templated-name preview (SnippetNameHint.vue). Appears under the name field
+   only while a placeholder is in it, so it never competes with the field at
+   rest. Every colour and size is a token — the panel re-tints on all 14 themes
+   with nothing to review per theme. */
+.name-hint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+.preview {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}
+.preview strong {
+  color: var(--text);
+  font-weight: 600;
+}
+/* Wraps rather than scrolls: this sits inside a dialog whose width the user
+   controls, and a hidden token is a token nobody discovers. */
+.tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tokens li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+}
+.tokens code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  color: var(--accent);
+}

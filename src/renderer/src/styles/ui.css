@@ -139,6 +139,17 @@
   padding: 0 10px;
   font-size: var(--font-sm);
 }
+/* Icon-only but still a PLATE, for a glyph standing in a row of labelled
+   actions. `.btn-icon` below is flat by design, and flat beside a labelled
+   sibling reads as unavailable — the failure the resting-affordance work was
+   about. This sheds the label's width and nothing else. */
+.btn-square {
+  width: var(--control-h);
+  padding: 0;
+}
+.btn-sm.btn-square {
+  width: var(--control-h-sm);
+}
 /* Square, borderless glyph button (header affordances, row actions). Flat by
    design — a plate on every row action would make the sidebar heavy. */
 .btn-icon {

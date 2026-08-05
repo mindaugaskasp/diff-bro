@@ -179,6 +179,11 @@ contextBridge.exposeInMainWorld('api', {
   // { ok } or { ok:false, error } ('unavailable' / 'invalid').
   quickLookSetShortcut: (accel) => ipcRenderer.invoke('quicklook:setShortcut', accel),
   quickLookHide: () => ipcRenderer.invoke('quicklook:hide'),
+  // Windows tray + login item. Booleans only — main owns the executable path
+  // that gets registered, and there is no handler that would take one.
+  traySupported: () => ipcRenderer.invoke('tray:supported'),
+  startAtLogin: () => ipcRenderer.invoke('app:startAtLogin'),
+  setStartAtLogin: (on) => ipcRenderer.invoke('app:setStartAtLogin', on === true),
   quickLookOpen: (payload) => ipcRenderer.invoke('quicklook:open', payload),
   // Launcher window: main signals a fresh summon so the list refreshes + the
   // input refocuses.

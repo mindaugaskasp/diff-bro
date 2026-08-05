@@ -62,6 +62,25 @@ Mode**, then re-run. If a build already failed partway, clear the partial cache:
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign"
 ```
 
+## Windows: the login item is set at runtime, not by the installer
+
+Settings ▸ Desktop ▸ *Start Diff Bro when I sign in* calls
+`app.setLoginItemSettings` (`src/main/tray.js`), which writes an
+`HKCU\…\Run` entry pointing at `process.execPath` with a `--hidden` argument.
+The installer does not create one and the setting is **off** by default, so a
+fresh install acquires nothing at sign-in until someone asks for it.
+
+Two consequences worth knowing when packaging:
+
+- The entry holds the path of the executable that registered it. A Squirrel
+  update installs into a NEW versioned directory, so the entry is rewritten the
+  next time the toggle is touched — but an install moved by hand leaves a stale
+  one, which Windows silently ignores.
+- `--hidden` reaches `parseCli`, which strips it as a switch
+  (`cliWords` in `src/main/cli.js`). A flag it did not strip would be read as a
+  malformed command and exit 1 — i.e. the app would die on every sign-in. That
+  path is covered by `e2e/hidden-launch.spec.mjs`.
+
 ## Releasing
 
 Pushing a tag matching `v*.*.*` runs

@@ -22,11 +22,23 @@ const props = defineProps({
   count: { type: Number, default: null },
   filtering: { type: Boolean, default: false }
 })
-defineEmits(['toggle'])
-
 const settings = useSettingsStore()
-const { onDragStart, onDragOver, onDragEnd, onDrop, isDropTarget, isDragging, isSettling } =
-  useSectionReorder()
+const {
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onCancel,
+  consumeClickSuppression,
+  isDropTarget,
+  isDragging,
+  isSettling
+} = useSectionReorder()
+
+const emit = defineEmits(['toggle'])
+// The click that ends a drag is the drag's own, not a request to collapse.
+const onClick = () => {
+  if (!consumeClickSuppression()) emit('toggle')
+}
 
 const locked = computed(() => settings.sectionsLocked)
 const dropTarget = computed(() => isDropTarget(props.sectionId))
@@ -60,13 +72,12 @@ watch(
       'cue-lock': lockCue === 'lock'
     }"
     :data-section="sectionId"
-    :draggable="!locked"
-    :data-tip="locked ? null : 'Drag to reorder — lock in the toolbar to freeze'"
-    @click="$emit('toggle')"
-    @dragstart="onDragStart(sectionId, $event)"
-    @dragend="onDragEnd"
-    @dragover.prevent="onDragOver(sectionId)"
-    @drop.prevent="onDrop(sectionId)"
+    :data-tip="locked ? null : 'Drag to reorder'"
+    @click="onClick"
+    @pointerdown="onPointerDown(sectionId, $event)"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="onCancel"
   >
     <AppIcon class="chev" :class="{ open }" name="chevron-right" />
     <span v-if="icon" class="section-icon"><AppIcon :name="icon" /></span>
