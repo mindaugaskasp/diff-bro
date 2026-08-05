@@ -20,7 +20,6 @@
       "title": "File",
       "openLeft": "Open Left",
       "openRight": "Open Right",
-      "save": "Save",
       "share": "Share",
       "import": "Import",
       "exportHtml": "Export Diff as HTML…",
@@ -31,7 +30,8 @@
       "prevComparison": "Previous Comparison",
       "importSnippets": "Import Snippets…",
       "settings": "Settings",
-      "quit": "Quit"
+      "quit": "Quit",
+      "save": "Save"
     },
     "edit": {
       "title": "Edit",
@@ -251,7 +251,9 @@
     "section": {
       "all": "All tools",
       "recent": "Recent",
-      "other": "Other tools"
+      "other": "Other tools",
+      "searchEveryTool": "Search every tool",
+      "noToolsMatchTryRemoving": "No tools match — try removing a filter."
     },
     "fallbackTitle": "Tools",
     "openAction": "Open",
@@ -898,5 +900,128 @@
   "vaultCategoryDeleteDialog": {
     "deleteSavedDiff": "Delete saved diff?",
     "delete": "Delete"
+  },
+  "configBackup": {
+    "dialog": {
+      "encryptsYourIdentityKeysTrusted": "Encrypts your identity keys, trusted hosts, snippets, saved diffs and settings into one\n          passphrase-protected file. Diffs that expire are left out. Keep the passphrase safe — it's\n          the only way to restore.",
+      "restoresIdentityKeysTrustedHosts": "Restores identity keys, trusted hosts, snippets, saved diffs and settings from a backup\n          file. Enter the passphrase it was created with. This overwrites your current identity\n          keys.",
+      "passphrase": "Passphrase"
+    }
+  },
+  "email": {
+    "handoffDialog": {
+      "optionalGoesInTheMessage": "Optional — goes in the message body",
+      "emailThisDiff": "Email this diff",
+      "toFromTheirTrustedKeys": "To — from their trusted keys, not typed here",
+      "note": "Note",
+      "yourMailAppOpensWith": "Your mail app opens with this message. The sealed file goes on the clipboard —"
+    },
+    "settings": {
+      "newMessage": "New message",
+      "subject": "Subject",
+      "notePrefilledIntoTheMessage": "Note — prefilled into the message body",
+      "afterCreatingTheFile": "After creating the file",
+      "alsoShowTheSealedFile": "Also show the sealed file in your file manager",
+      "resetToDefaults": "Reset to defaults"
+    }
+  },
+  "imageExport": {
+    "diffImageDialog": {
+      "exportAsImage": "Export as image",
+      "maxDiffImageHeight": "Max diff image height",
+      "savePNG": "Save PNG…"
+    }
+  },
+  "onboarding": {
+    "continueTourDialog": {
+      "threeMoreTips": "Three more tips?",
+      "thatIsTheEverydayRoute": "That is the everyday route covered. The rest is about keeping your own material in here —\n      saving a snippet, comparing two of them, and previewing a diagram. About a minute.",
+      "notNow": "Not now",
+      "showMe": "Show me"
+    },
+    "tourCallout": {
+      "back": "Back",
+      "skipTips": "Skip tips"
+    },
+    "tourOverlay": {
+      "notWhileTheTourIs": "Not while the tour is running"
+    }
+  },
+  "pasteToCompare": {
+    "pasteConfirmDialog": {
+      "bothSidesAlreadyHaveContent": "Both sides already have content. Paste your clipboard into the left side, replacing it? What's\n      there will be lost.",
+      "pasteYourClipboardIntoThe": "Paste your clipboard into the comparison to diff it? It fills the empty side (or starts a\n      paste comparison), and is only read after you confirm."
+    }
+  },
+  "share": {
+    "addTrustedKeyDialog": {
+      "eGAliceLaptop": "e.g. Alice — laptop",
+      "addTrustedKey": "Add trusted key",
+      "adding": "Adding",
+      "thisKeySaysItReplaces": "This key says it replaces",
+      "name": "Name"
+    },
+    "recipientPicker": {
+      "searchRecipients": "Search recipients…",
+      "searchRecipients2": "Search recipients",
+      "clearSearch": "Clear search",
+      "showOnlyRecipientsWithAn": "Show only recipients with an email address",
+      "withAnAddress": "With an address",
+      "addRecipient": "Add recipient…"
+    },
+    "removeTrustedKeyDialog": {
+      "removeTrustedKey": "Remove trusted key?"
+    },
+    "rotateKeyDialog": {
+      "replaceMyKey": "Replace my key",
+      "yourNewFingerprintIs": "Your new fingerprint is",
+      "aNewKeyTakesOver": "A new key takes over from here. Your old one is kept so that diffs already sealed to it\n        still open — it is only ever used to read, never to send.",
+      "diffsYouHave": "Diffs you have",
+      "doThisIfYourMachine": "Do this if your machine or your key may have been exposed."
+    },
+    "diffDialog": {
+      "shareDiff": "Share diff",
+      "shareDiffOneTimeSetup": "Share diff — one-time setup",
+      "sealFor": "Seal for",
+      "emailThisDiff": "Email this diff",
+      "createFile": "Create file",
+      "addAnAddress": "Add an address…",
+      "sharedDiffsAreSealedFor": "Shared diffs are sealed for named people, so you and your bro first swap public keys — once,\n      in both directions. Your keys already exist (created automatically, fingerprint",
+      "giveThemYourKey": "Give them your key",
+      "nameItAndSendIt": "Name it and send it — they import it to receive your diffs.",
+      "shareMyKey": "Share my key…",
+      "addTheirKey": "Add their key",
+      "openThe": "Open the",
+      "addTheirKey2": "Add their key…",
+      "asSoonAsTheirKey": "As soon as their key is added you can pick them as a recipient — this dialog updates\n      automatically."
+    },
+    "keyDialog": {
+      "eGAliceLaptop": "e.g. Alice — laptop",
+      "shareMyPublicKey": "Share my public key",
+      "thisIs": "This is",
+      "securityAddTrustedKey": "Security → Add Trusted Key",
+      "nameOthersWillSee": "Name others will see",
+      "shownToWhoeverImportsThis": "Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part\n      of the key's identity.",
+      "fingerprint": "Fingerprint:",
+      "saveToFile": "Save to file…",
+      "copyToClipboard": "Copy to clipboard"
+    },
+    "trustedKeyRow": {
+      "nameExampleCom": "name@example.com",
+      "nameForThisKey": "Name for this key",
+      "emailAddressForThisKey": "Email address for this key",
+      "rename": "Rename",
+      "renameThisKey": "Rename this key",
+      "stopTrustingThisKey": "Stop trusting this key",
+      "added": "Added"
+    },
+    "trustedKeysDialog": {
+      "trustedKeys": "Trusted keys",
+      "searchTrustedKeys": "Search trusted keys",
+      "clearSearch": "Clear search",
+      "publicKeysOfPeopleYou": "Public keys of people you can share sealed diffs with. Give a key an email address to email\n      its diffs from here.",
+      "noTrustedKeysYetAdd": "No trusted keys yet. Add someone's",
+      "addKey": "Add key…"
+    }
   }
 }

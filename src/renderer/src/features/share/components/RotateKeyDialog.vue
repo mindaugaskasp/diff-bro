@@ -35,10 +35,10 @@ const close = () => (share.showRotateKeyDialog = false)
 </script>
 
 <template>
-  <BaseDialog width="460px" title="Replace my key" @close="close">
+  <BaseDialog width="460px" :title="$t('share.rotateKeyDialog.replaceMyKey')" @close="close">
     <template v-if="done">
       <p class="dialog-note">
-        Your new fingerprint is <strong class="fp">{{ done }}</strong
+        {{ $t('share.rotateKeyDialog.yourNewFingerprintIs') }} <strong class="fp">{{ done }}</strong
         >. Send your public key again — until each person imports it, anything you seal will reach
         them as an unknown sender.
       </p>
@@ -46,15 +46,14 @@ const close = () => (share.showRotateKeyDialog = false)
 
     <template v-else>
       <p class="dialog-note">
-        A new key takes over from here. Your old one is kept so that diffs already sealed to it
-        still open — it is only ever used to read, never to send.
+        {{ $t('share.rotateKeyDialog.aNewKeyTakesOver') }}
       </p>
       <p class="dialog-note">
-        Diffs you have <em>already shared</em> stay readable by the people you sent them to. They
-        were sealed with <em>their</em> keys; yours only signed them. Replacing a key cannot take
-        anything back.
+        {{ $t('share.rotateKeyDialog.diffsYouHave') }} <em>already shared</em> stay readable by the
+        people you sent them to. They were sealed with <em>their</em> keys; yours only signed them.
+        Replacing a key cannot take anything back.
       </p>
-      <p class="dialog-note">Do this if your machine or your key may have been exposed.</p>
+      <p class="dialog-note">{{ $t('share.rotateKeyDialog.doThisIfYourMachine') }}</p>
     </template>
 
     <div v-if="retired" class="retired">
@@ -78,7 +77,7 @@ const close = () => (share.showRotateKeyDialog = false)
 
     <template #actions>
       <button v-if="!done" class="btn btn-destructive" :disabled="busy" @click="rotate">
-        Replace my key
+        {{ $t('share.rotateKeyDialog.replaceMyKey') }}
       </button>
       <button class="btn btn-ghost" @click="close">{{ done ? 'Done' : 'Cancel' }}</button>
     </template>

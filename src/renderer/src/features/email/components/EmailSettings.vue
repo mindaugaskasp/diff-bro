@@ -8,9 +8,9 @@ const email = useEmailStore()
 
 <template>
   <section class="email-settings">
-    <h4>New message</h4>
+    <h4>{{ $t('email.settings.newMessage') }}</h4>
     <label class="field">
-      <span class="field-label">Subject</span>
+      <span class="field-label">{{ $t('email.settings.subject') }}</span>
       <input
         :value="email.subjectTemplate"
         type="text"
@@ -19,7 +19,7 @@ const email = useEmailStore()
       />
     </label>
     <label class="field">
-      <span class="field-label">Note — prefilled into the message body</span>
+      <span class="field-label">{{ $t('email.settings.notePrefilledIntoTheMessage') }}</span>
       <textarea
         :value="email.noteTemplate"
         rows="2"
@@ -27,9 +27,9 @@ const email = useEmailStore()
       ></textarea>
     </label>
 
-    <h4>After creating the file</h4>
+    <h4>{{ $t('email.settings.afterCreatingTheFile') }}</h4>
     <SettingToggle :checked="email.revealAfterCreate" @change="email.setRevealAfterCreate">
-      Also show the sealed file in your file manager
+      {{ $t('email.settings.alsoShowTheSealedFile') }}
     </SettingToggle>
 
     <p class="hint">
@@ -42,7 +42,7 @@ const email = useEmailStore()
 
     <div class="actions">
       <button type="button" class="btn btn-sm" @click="email.resetTemplates()">
-        Reset to defaults
+        {{ $t('email.settings.resetToDefaults') }}
       </button>
     </div>
   </section>

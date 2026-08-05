@@ -52,7 +52,7 @@ const hidden = computed(() => matches.value.length - shown.value.length)
   <section class="sidebar-section">
     <SectionHeader
       section-id="tools"
-      title="Tools"
+      :title="$t('menu.tools.title')"
       icon="wrench"
       :open="open"
       :first="first"
@@ -64,8 +64,8 @@ const hidden = computed(() => matches.value.length - shown.value.length)
       <template #actions>
         <button
           class="btn btn-icon"
-          data-tip="Search every tool"
-          aria-label="Search every tool"
+          :data-tip="$t('tools.section.searchEveryTool')"
+          :aria-label="$t('tools.section.searchEveryTool')"
           @click.stop="ui.openToolsPalette()"
         >
           <AppIcon name="search" />
@@ -75,7 +75,9 @@ const hidden = computed(() => matches.value.length - shown.value.length)
 
     <div v-show="open" class="section-body">
       <ul class="rows">
-        <li v-if="!matches.length" class="empty small">No tools match — try removing a filter.</li>
+        <li v-if="!matches.length" class="empty small">
+          {{ $t('tools.section.noToolsMatchTryRemoving') }}
+        </li>
         <ToolRow v-for="tool in shown" :key="tool.id" :tool="tool" />
 
         <li v-if="hidden > 0 || expanded" class="disclosure">

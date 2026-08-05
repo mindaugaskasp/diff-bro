@@ -58,14 +58,19 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="480px" title="Trusted keys" :escape-closes="false" @close="close">
+  <BaseDialog
+    width="480px"
+    :title="$t('share.trustedKeysDialog.trustedKeys')"
+    :escape-closes="false"
+    @close="close"
+  >
     <p class="dialog-note">
-      Public keys of people you can share sealed diffs with. Give a key an email address to email
-      its diffs from here.
+      {{ $t('share.trustedKeysDialog.publicKeysOfPeopleYou') }}
     </p>
 
     <p v-if="!keys.length" class="empty">
-      No trusted keys yet. Add someone's <code>.diffbrokey</code> (or drop it onto the window).
+      {{ $t('share.trustedKeysDialog.noTrustedKeysYetAdd') }} <code>.diffbrokey</code> (or drop it
+      onto the window).
     </p>
 
     <template v-else>
@@ -77,9 +82,14 @@ function close() {
             type="search"
             :placeholder="`Search ${keys.length} keys…`"
             spellcheck="false"
-            aria-label="Search trusted keys"
+            :aria-label="$t('share.trustedKeysDialog.searchTrustedKeys')"
           />
-          <button v-if="query" type="button" aria-label="Clear search" @click="query = ''">
+          <button
+            v-if="query"
+            type="button"
+            :aria-label="$t('share.trustedKeysDialog.clearSearch')"
+            @click="query = ''"
+          >
             <AppIcon name="x" />
           </button>
         </span>
@@ -104,8 +114,10 @@ function close() {
     </template>
 
     <template #actions>
-      <button class="btn btn-primary" @click="share.addTrustedKey()">Add key…</button>
-      <button class="btn btn-ghost" @click="close">Close</button>
+      <button class="btn btn-primary" @click="share.addTrustedKey()">
+        {{ $t('share.trustedKeysDialog.addKey') }}
+      </button>
+      <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
     </template>
   </BaseDialog>
 </template>

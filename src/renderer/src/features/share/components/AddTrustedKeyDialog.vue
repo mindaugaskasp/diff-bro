@@ -16,26 +16,31 @@ async function add() {
 </script>
 
 <template>
-  <BaseDialog width="360px" title="Add trusted key" @close="share.cancelTrustedKey()">
+  <BaseDialog
+    width="360px"
+    :title="$t('share.addTrustedKeyDialog.addTrustedKey')"
+    @close="share.cancelTrustedKey()"
+  >
     <form class="dialog-form" @submit.prevent="add">
       <p class="dialog-note">
-        Adding <strong>someone else's</strong> public key so you can receive diffs they share. The
-        name is prefilled from what they called their key — keep it or rename it. Fingerprint
-        <code>{{ share.pendingTrustedKey?.fingerprint }}</code
+        {{ $t('share.addTrustedKeyDialog.adding') }} <strong>someone else's</strong> public key so
+        you can receive diffs they share. The name is prefilled from what they called their key —
+        keep it or rename it. Fingerprint <code>{{ share.pendingTrustedKey?.fingerprint }}</code
         >.
       </p>
       <p v-if="share.pendingTrustedKey?.vouchedBy" class="dialog-note vouch">
-        This key says it replaces <strong>{{ share.pendingTrustedKey.vouchedBy }}</strong
+        {{ $t('share.addTrustedKeyDialog.thisKeySaysItReplaces') }}
+        <strong>{{ share.pendingTrustedKey.vouchedBy }}</strong
         >, and that key signed the claim. Check the fingerprint with them anyway — anyone holding
         their old key could have signed it.
       </p>
       <label>
-        Name
+        {{ $t('share.addTrustedKeyDialog.name') }}
         <input
           v-model="label"
           type="text"
           spellcheck="false"
-          placeholder="e.g. Alice — laptop"
+          :placeholder="$t('share.addTrustedKeyDialog.eGAliceLaptop')"
           autofocus
         />
       </label>
@@ -44,7 +49,7 @@ async function add() {
           {{ adding ? 'Adding…' : 'Add' }}
         </button>
         <button type="button" class="btn btn-ghost" @click="share.cancelTrustedKey()">
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
       </div>
     </form>

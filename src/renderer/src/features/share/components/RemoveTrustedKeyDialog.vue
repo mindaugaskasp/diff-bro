@@ -29,11 +29,16 @@ function cancel() {
 </script>
 
 <template>
-  <BaseDialog width="420px" title="Remove trusted key?" :closable="false" @close="cancel">
+  <BaseDialog
+    width="420px"
+    :title="$t('share.removeTrustedKeyDialog.removeTrustedKey')"
+    :closable="false"
+    @close="cancel"
+  >
     <p class="dialog-note">
-      Remove <strong>“{{ share.pendingUntrust.label }}”</strong> from your trusted keys? You won't
-      be able to open sealed diffs signed by it, or share to it, until you re-add its
-      <code>.diffbrokey</code>.
+      {{ $t('common.remove') }} <strong>“{{ share.pendingUntrust.label }}”</strong> from your
+      trusted keys? You won't be able to open sealed diffs signed by it, or share to it, until you
+      re-add its <code>.diffbrokey</code>.
     </p>
 
     <div v-if="sent.length" class="sent">
@@ -51,8 +56,8 @@ function cancel() {
     </div>
 
     <template #actions>
-      <button class="btn btn-destructive" @click="confirm">Remove</button>
-      <button class="btn btn-ghost" @click="cancel">Cancel</button>
+      <button class="btn btn-destructive" @click="confirm">{{ $t('common.remove') }}</button>
+      <button class="btn btn-ghost" @click="cancel">{{ $t('common.cancel') }}</button>
     </template>
   </BaseDialog>
 </template>

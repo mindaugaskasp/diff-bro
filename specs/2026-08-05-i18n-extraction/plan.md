@@ -3,7 +3,7 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 11 / 16 steps                 |
+| **Progress**                            | 12 / 16 steps                 |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
@@ -311,7 +311,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
       `markdownMarkup.js`, and the rest.
 - [x] 11. `components/` — 93 files, 438 strings. Batched by dialog family, not
       alphabetically, so a reviewer sees one screen's copy at a time.
-- [ ] 12. `features/` slices — each slice's copy lives under its own key
+- [x] 12. `features/` slices — each slice's copy lives under its own key
       namespace, mirroring the slice boundary.
 - [ ] 13. Flip the unused-key check from warning to error; confirm
       `no-raw-text` now covers every path under `src/renderer/src` and

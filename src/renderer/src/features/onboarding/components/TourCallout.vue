@@ -84,8 +84,12 @@ const beakStyle = computed(() => {
     <h6>{{ $t(step.titleKey) }}</h6>
     <p class="tour-body">{{ body }}</p>
     <div class="tour-foot">
-      <button v-if="index > 0" class="btn btn-sm tour-back" @click="$emit('back')">Back</button>
-      <button class="btn btn-sm btn-ghost" @click="$emit('skip')">Skip tips</button>
+      <button v-if="index > 0" class="btn btn-sm tour-back" @click="$emit('back')">
+        {{ $t('onboarding.tourCallout.back') }}
+      </button>
+      <button class="btn btn-sm btn-ghost" @click="$emit('skip')">
+        {{ $t('onboarding.tourCallout.skipTips') }}
+      </button>
       <button class="btn btn-sm btn-primary" @click="$emit('next')">{{ nextLabel }}</button>
     </div>
   </div>

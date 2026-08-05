@@ -62,12 +62,12 @@ function submit() {
   <BaseDialog
     v-if="recipients.length"
     width="440px"
-    title="Share diff"
+    :title="$t('share.diffDialog.shareDiff')"
     :escape-closes="false"
     @close="close"
   >
     <form class="dialog-form" @submit.prevent="submit">
-      <div class="field-label">Seal for</div>
+      <div class="field-label">{{ $t('share.diffDialog.sealFor') }}</div>
       <RecipientPicker
         :picker="picker"
         show-email
@@ -93,7 +93,7 @@ function submit() {
           @click="emailIt"
         >
           <AppIcon name="mail" />
-          Email this diff
+          {{ $t('share.diffDialog.emailThisDiff') }}
         </button>
         <button
           type="button"
@@ -101,7 +101,7 @@ function submit() {
           :disabled="!picker.canSubmit.value"
           @click="saveFile"
         >
-          Create file
+          {{ $t('share.diffDialog.createFile') }}
         </button>
         <button
           v-if="picker.canSubmit.value && !picker.everyPickedHasEmail.value"
@@ -109,19 +109,25 @@ function submit() {
           class="btn btn-sm"
           @click="share.showTrustedKeysDialog = true"
         >
-          Add an address…
+          {{ $t('share.diffDialog.addAnAddress') }}
         </button>
         <span class="spacer" />
-        <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="close">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>
 
   <!-- First-time setup: no trusted keys yet. -->
-  <BaseDialog v-else width="400px" title="Share diff — one-time setup" @close="close">
+  <BaseDialog
+    v-else
+    width="400px"
+    :title="$t('share.diffDialog.shareDiffOneTimeSetup')"
+    @close="close"
+  >
     <p class="dialog-note">
-      Shared diffs are sealed for named people, so you and your bro first swap public keys — once,
-      in both directions. Your keys already exist (created automatically, fingerprint
+      {{ $t('share.diffDialog.sharedDiffsAreSealedFor') }}
       <code>{{ myFingerprint }}</code
       >); the private half never leaves this machine.
     </p>
@@ -129,31 +135,32 @@ function submit() {
     <div class="step">
       <span class="badge">1</span>
       <div class="step-body">
-        <strong>Give them your key</strong>
-        <span class="step-hint">Name it and send it — they import it to receive your diffs.</span>
+        <strong>{{ $t('share.diffDialog.giveThemYourKey') }}</strong>
+        <span class="step-hint">{{ $t('share.diffDialog.nameItAndSendIt') }}</span>
       </div>
       <button type="button" class="btn btn-sm" @click="share.showShareKeyDialog = true">
-        Share my key…
+        {{ $t('share.diffDialog.shareMyKey') }}
       </button>
     </div>
 
     <div class="step">
       <span class="badge">2</span>
       <div class="step-body">
-        <strong>Add their key</strong>
-        <span class="step-hint">Open the <code>.diffbrokey</code> file they sent you.</span>
+        <strong>{{ $t('share.diffDialog.addTheirKey') }}</strong>
+        <span class="step-hint"
+          >{{ $t('share.diffDialog.openThe') }} <code>.diffbrokey</code> file they sent you.</span
+        >
       </div>
       <button type="button" class="btn btn-sm btn-primary" @click="share.addTrustedKey()">
-        Add their key…
+        {{ $t('share.diffDialog.addTheirKey2') }}
       </button>
     </div>
 
     <p class="dialog-note">
-      As soon as their key is added you can pick them as a recipient — this dialog updates
-      automatically.
+      {{ $t('share.diffDialog.asSoonAsTheirKey') }}
     </p>
     <template #actions>
-      <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+      <button type="button" class="btn btn-ghost" @click="close">{{ $t('common.cancel') }}</button>
     </template>
   </BaseDialog>
 </template>

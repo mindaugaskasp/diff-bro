@@ -44,7 +44,7 @@ function cancel() {
         type="text"
         spellcheck="false"
         autofocus
-        aria-label="Name for this key"
+        :aria-label="$t('share.trustedKeyRow.nameForThisKey')"
         @keyup.enter="commit"
         @keyup.escape="cancel"
         @blur="commit"
@@ -63,8 +63,8 @@ function cancel() {
         inputmode="email"
         spellcheck="false"
         autofocus
-        placeholder="name@example.com"
-        aria-label="Email address for this key"
+        :placeholder="$t('share.trustedKeyRow.nameExampleCom')"
+        :aria-label="$t('share.trustedKeyRow.emailAddressForThisKey')"
         @keyup.enter="commit"
         @keyup.escape="cancel"
         @blur="commit"
@@ -81,14 +81,19 @@ function cancel() {
       </button>
     </div>
 
-    <span v-if="justAdded" class="added-badge">Added</span>
-    <button class="icon" data-tip="Rename this key" aria-label="Rename" @click="start('label')">
+    <span v-if="justAdded" class="added-badge">{{ $t('share.trustedKeyRow.added') }}</span>
+    <button
+      class="icon"
+      :data-tip="$t('share.trustedKeyRow.renameThisKey')"
+      :aria-label="$t('share.trustedKeyRow.rename')"
+      @click="start('label')"
+    >
       <AppIcon name="edit" />
     </button>
     <button
       class="icon delete"
-      data-tip="Stop trusting this key"
-      aria-label="Remove"
+      :data-tip="$t('share.trustedKeyRow.stopTrustingThisKey')"
+      :aria-label="$t('common.remove')"
       @click="emit('remove')"
     >
       <AppIcon name="x" />

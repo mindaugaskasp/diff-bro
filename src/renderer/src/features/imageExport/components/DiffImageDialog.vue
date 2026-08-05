@@ -39,7 +39,11 @@ async function save() {
 </script>
 
 <template>
-  <BaseDialog width="720px" title="Export as image" @close="imageExport.closeImageExport()">
+  <BaseDialog
+    width="720px"
+    :title="$t('imageExport.diffImageDialog.exportAsImage')"
+    @close="imageExport.closeImageExport()"
+  >
     <div class="shot">
       <img :src="imageExport.imageEntry.dataUrl" :alt="alt" />
     </div>
@@ -54,7 +58,8 @@ async function save() {
     </p>
     <p v-if="imageExport.imageEntry.truncated" class="dialog-note warn">
       This {{ noun }} was longer than the export height — the picture stops partway down. Raise
-      <strong>Max diff image height</strong> in Settings → Limits to capture more.
+      <strong>{{ $t('imageExport.diffImageDialog.maxDiffImageHeight') }}</strong> in Settings →
+      Limits to capture more.
     </p>
 
     <template #actions>
@@ -62,9 +67,11 @@ async function save() {
         <AppIcon :name="copied ? 'check' : 'copy'" />
         {{ copied ? 'Copied' : 'Copy image' }}
       </button>
-      <button type="button" class="btn" :disabled="busy" @click="save">Save PNG…</button>
+      <button type="button" class="btn" :disabled="busy" @click="save">
+        {{ $t('imageExport.diffImageDialog.savePNG') }}
+      </button>
       <button type="button" class="btn btn-ghost" @click="imageExport.closeImageExport()">
-        Close
+        {{ $t('common.close') }}
       </button>
     </template>
   </BaseDialog>
