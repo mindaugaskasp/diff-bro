@@ -78,13 +78,17 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
     </p>
 
     <p v-if="latest" class="hint">
-      Last backup {{ ago(latest.at) }} ago · {{ backups.length }} kept · {{ byteSize(used) }} on
-      disk.
+      {{
+        $t('backupSettings.lastBackup', {
+          when: ago(latest.at),
+          kept: backups.length,
+          size: byteSize(used)
+        })
+      }}
     </p>
     <p v-else class="hint">{{ $t('backupSettings.noBackupsYet') }}</p>
 
-    <!-- The button names its consequence: a delete that says "clear old backups"
-         makes the reader guess what goes. -->
+    <!-- The button names its consequence, not just "clear old backups". -->
     <div v-if="backups.length" class="prune">
       <SegmentedControl
         v-model:value="age"
@@ -95,8 +99,8 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
       <button class="btn btn-sm" :disabled="busy || !stale.length" @click="prune">
         {{
           stale.length
-            ? `Delete ${stale.length} backup${stale.length > 1 ? 's' : ''} (${byteSize(staleBytes)})`
-            : 'Nothing that old'
+            ? $t('backupSettings.deleteStale', stale.length, { size: byteSize(staleBytes) })
+            : $t('backupSettings.nothingThatOld')
         }}
       </button>
     </div>
@@ -109,7 +113,7 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
         :disabled="busy"
         @click="confirming = b.name"
       >
-        Restore {{ ago(b.at) }} ago
+        {{ $t('backupSettings.restoreFrom', { when: ago(b.at) }) }}
       </button>
     </div>
 
@@ -128,8 +132,7 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
     </template>
 
     <p v-if="restored" class="hint">
-      Restored {{ restored.diffs }} diffs and {{ restored.snippets }} snippets. Restart Diff Bro to
-      see them.
+      {{ $t('backupSettings.restored', { diffs: restored.diffs, snippets: restored.snippets }) }}
     </p>
   </section>
 </template>

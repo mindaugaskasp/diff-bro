@@ -39,7 +39,11 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
     </div>
 
     <div v-else-if="!result" class="sd-empty">
-      This comparison can no longer be read as {{ store.structuredFormat ?? 'structured data' }}.
+      {{
+        $t('structureDiffViewer.noLongerReadable', {
+          format: store.structuredFormat ?? $t('structureDiffViewer.structuredData')
+        })
+      }}
     </div>
 
     <div

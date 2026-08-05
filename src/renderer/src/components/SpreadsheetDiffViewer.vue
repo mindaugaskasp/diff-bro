@@ -129,7 +129,12 @@ onMounted(() => {
 
     <div class="status-band">
       <span v-if="activeSheet && activeSheet.present !== 'both'" class="only">
-        “{{ activeSheet.name }}” is only in the {{ activeSheet.present }} file
+        {{
+          $t('spreadsheetDiffViewer.sheetOnlyIn', {
+            name: activeSheet.name,
+            side: activeSheet.present
+          })
+        }}
       </span>
       <template v-else>
         <span>

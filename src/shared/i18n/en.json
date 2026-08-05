@@ -431,7 +431,12 @@
     "takenAfterASaveNever": "Taken after a save, never on a timer — an app left open all day writes nothing.",
     "noBackupsYet": "No backups yet.",
     "restoringReplacesYourSnippetsAnd": "Restoring replaces your snippets and kept diffs with that copy. Anything saved since is lost.",
-    "replaceThem": "Replace them"
+    "replaceThem": "Replace them",
+    "lastBackup": "Last backup {when} ago · {kept} kept · {size} on disk.",
+    "deleteStale": "Delete {n} backup ({size}) | Delete {n} backups ({size})",
+    "nothingThatOld": "Nothing that old",
+    "restoreFrom": "Restore {when} ago",
+    "restored": "Restored {diffs} diffs and {snippets} snippets. Restart Diff Bro to see them."
   },
   "cliBlockedDialog": {
     "noFreeTab": "No free tab",
@@ -791,7 +796,8 @@
     "rows": "Rows",
     "columns": "Columns",
     "backToTheValues": "Back to the values each formula produced",
-    "showFormulasNotResults": "Show formulas, not results"
+    "showFormulasNotResults": "Show formulas, not results",
+    "sheetOnlyIn": "“{name}” is only in the {side} file"
   },
   "storageSettings": {
     "dataFolder": "Data folder",
@@ -820,7 +826,9 @@
     "structuralDifferences": "Structural differences",
     "noDifferencesTheTwoDocuments": "No differences — the two documents hold the same data",
     "keys": "Keys",
-    "showUnchanged": "Show unchanged"
+    "showUnchanged": "Show unchanged",
+    "noLongerReadable": "This comparison can no longer be read as {format}.",
+    "structuredData": "structured data"
   },
   "supportedFormats": {
     "supportedFiles": "Supported files"
@@ -1183,7 +1191,10 @@
   },
   "app": {
     "dropASnippetTo": "Drop a snippet to compare",
-    "dropUpToTwo": "Drop up to two files to compare"
+    "dropUpToTwo": "Drop up to two files to compare",
+    "loadedOne": "Loaded {name}",
+    "nowChooseOther": "Now drop or choose the {side} file to compare.",
+    "chooseTwoFiles": "Choose or drop two files to compare."
   },
   "tabCloseDialog": {
     "closeComparisons": "Close comparisons?",
