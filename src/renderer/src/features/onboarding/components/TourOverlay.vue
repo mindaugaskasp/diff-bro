@@ -83,7 +83,7 @@ const onFilled = computed(() => {
       :style="{ left: px(notePos.x), top: px(notePos.y) }"
       role="status"
     >
-      Not while the tour is running
+      {{ $t('onboarding.tourOverlay.notWhileTheTourIs') }}
     </div>
     <div
       v-if="spot.context"

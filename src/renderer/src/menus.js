@@ -1,5 +1,7 @@
 import { MOD } from './keys'
 import { securityItems } from './menuSecurity'
+import { toolsItems } from './menuTools'
+import { t } from './i18n'
 
 // The in-app menu bar's contents (Windows/Linux). Kept out of MenuBar.vue so
 // the component stays presentation: this is the list, that file is the
@@ -15,116 +17,121 @@ export function buildMenus(run) {
   return [
     {
       id: 'file',
-      label: 'File',
+      label: t('menu.file.title'),
       items: [
-        { label: 'Open Left', keys: `${MOD}+1`, run: () => run('open-left') },
-        { label: 'Open Right', keys: `${MOD}+2`, run: () => run('open-right') },
+        { label: t('menu.file.openLeft'), keys: `${MOD}+1`, run: () => run('open-left') },
+        { label: t('menu.file.openRight'), keys: `${MOD}+2`, run: () => run('open-right') },
         { sep: true },
-        { label: 'Save', keys: `${MOD}+S`, run: () => run('save') },
-        { label: 'Share', keys: `${MOD}+E`, run: () => run('share-current') },
-        { label: 'Import', keys: `${MOD}+I`, run: () => run('import-shared') },
-        { label: 'Export Diff as HTML…', run: () => run('export-html') },
-        { label: 'Export Diff as Image…', run: () => run('export-image') },
+        { label: t('menu.file.save'), keys: `${MOD}+S`, run: () => run('save') },
+        { label: t('menu.file.share'), keys: `${MOD}+E`, run: () => run('share-current') },
+        { label: t('menu.file.import'), keys: `${MOD}+I`, run: () => run('import-shared') },
+        { label: t('menu.file.exportHtml'), run: () => run('export-html') },
+        { label: t('menu.file.exportImage'), run: () => run('export-image') },
         { sep: true },
         {
-          label: 'New Comparison',
+          label: t('menu.file.newComparison'),
           keys: `${MOD}+Shift+T`,
           run: () => run('tab-new')
         },
         {
-          label: 'Close Comparison',
+          label: t('menu.file.closeComparison'),
           keys: `${MOD}+Shift+W`,
           run: () => run('tab-close')
         },
         {
-          label: 'Next Comparison',
+          label: t('menu.file.nextComparison'),
           keys: 'Ctrl+Tab',
           run: () => run('tab-next')
         },
         {
-          label: 'Previous Comparison',
+          label: t('menu.file.prevComparison'),
           keys: 'Ctrl+Shift+Tab',
           run: () => run('tab-prev')
         },
-        { label: 'Import Snippets…', run: () => run('import-snippets') },
+        { label: t('menu.file.importSnippets'), run: () => run('import-snippets') },
         { sep: true },
-        { label: 'Settings', keys: `${MOD}+,`, run: () => run('settings') },
+        { label: t('menu.file.settings'), keys: `${MOD}+,`, run: () => run('settings') },
         { sep: true },
-        { label: 'Quit', paletteHidden: true, run: () => window.api.quit() }
+        { label: t('menu.file.quit'), paletteHidden: true, run: () => window.api.quit() }
       ]
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: t('menu.edit.title'),
       items: [
-        { label: 'Swap Sides', keys: `${MOD}+Shift+S`, run: () => run('swap') },
-        { label: 'Clear', keys: `${MOD}+K`, run: () => run('clear') },
+        { label: t('menu.edit.swapSides'), keys: `${MOD}+Shift+S`, run: () => run('swap') },
+        { label: t('menu.edit.clear'), keys: `${MOD}+K`, run: () => run('clear') },
         {
-          label: 'Copy Diff as Patch',
+          label: t('menu.edit.copyPatch'),
           keys: `${MOD}+Shift+C`,
           run: () => run('copy-diff')
         },
         {
-          label: 'Copy Diff as File',
+          label: t('menu.edit.copyFile'),
           keys: `${MOD}+Shift+F`,
           run: () => run('copy-diff-file')
         },
-        { label: 'Apply Patch…', run: () => run('apply-patch') },
+        { label: t('menu.edit.applyPatch'), run: () => run('apply-patch') },
         { sep: true },
-        { label: 'Paste Text Mode', keys: `${MOD}+T`, run: () => run('toggle-paste') }
+        { label: t('menu.edit.pasteTextMode'), keys: `${MOD}+T`, run: () => run('toggle-paste') }
       ]
     },
     {
       id: 'view',
-      label: 'View',
+      label: t('menu.view.title'),
       items: [
         {
-          label: 'Command Palette…',
+          label: t('menu.view.commandPalette'),
           keys: `${MOD}+Shift+P`,
           paletteHidden: true,
           run: () => run('command-palette')
         },
         { sep: true },
         {
-          label: 'Toggle Structure View',
+          label: t('menu.view.toggleStructure'),
           keys: `${MOD}+Shift+D`,
           run: () => run('toggle-structure')
         },
         {
-          label: 'Toggle Split View',
+          label: t('menu.view.toggleSplit'),
           keys: `${MOD}+\\`,
           run: () => run('toggle-split')
         },
         {
-          label: 'Toggle Sidebar',
+          label: t('menu.view.toggleSidebar'),
           keys: `${MOD}+B`,
           run: () => run('toggle-sidebar')
         },
-        { label: 'Toggle Light/Dark Theme', keys: `${MOD}+D`, run: () => run('toggle-theme') },
+        { label: t('menu.view.toggleTheme'), keys: `${MOD}+D`, run: () => run('toggle-theme') },
         { sep: true },
         {
           // No key hint: the binding is user-configurable (Settings →
           // Shortcuts), so a fixed label here would go stale once rebound.
-          label: 'Quick Look-up',
+          label: t('menu.view.quickLook'),
           run: () => window.api.quickLookToggle()
         },
         { sep: true },
-        { label: 'Zoom In', keys: `${MOD}++`, paletteHidden: true, run: () => window.api.zoom(1) },
         {
-          label: 'Zoom Out',
+          label: t('menu.view.zoomIn'),
+          keys: `${MOD}++`,
+          paletteHidden: true,
+          run: () => window.api.zoom(1)
+        },
+        {
+          label: t('menu.view.zoomOut'),
           keys: `${MOD}+-`,
           paletteHidden: true,
           run: () => window.api.zoom(-1)
         },
         {
-          label: 'Reset Zoom',
+          label: t('menu.view.resetZoom'),
           keys: `${MOD}+0`,
           paletteHidden: true,
           run: () => window.api.zoom(0)
         },
         { sep: true, devOnly: true },
         {
-          label: 'Toggle Developer Tools',
+          label: t('menu.view.devTools'),
           devOnly: true,
           paletteHidden: true,
           run: () => window.api.toggleDevTools()
@@ -133,61 +140,26 @@ export function buildMenus(run) {
     },
     {
       id: 'security',
-      label: 'Security',
+      label: t('menu.security.title'),
       items: securityItems(run)
     },
     {
       id: 'tools',
-      label: 'Tools',
+      label: t('menu.tools.title'),
       // Grouped by format (Tools → Base64 → …) to mirror the native menu.
-      items: [
-        {
-          label: 'Base64',
-          keys: `${MOD}+Shift+B`,
-          run: () => run('tools-base64')
-        },
-        { label: 'JSON', keys: `${MOD}+Shift+J`, run: () => run('tools-json') },
-        { label: 'XML', keys: `${MOD}+Shift+M`, run: () => run('tools-xml') },
-        { label: 'UUID', keys: `${MOD}+Shift+U`, run: () => run('tools-uuid') },
-        { label: 'JWT Decode', run: () => run('tools-jwt') },
-        { label: 'Epoch / Date', run: () => run('tools-epoch') },
-        { label: 'URL Encode / Decode', run: () => run('tools-url') },
-        {
-          label: 'Checksum / Hash',
-          run: () => run('tools-hash')
-        },
-        {
-          label: 'Regex Tester',
-          run: () => run('tools-regex')
-        },
-        {
-          label: 'Lines',
-          keys: `${MOD}+Shift+R`,
-          run: () => run('tools-lines')
-        },
-        {
-          label: 'Text Encryption',
-          items: [
-            {
-              label: 'Encrypt / Decrypt',
-              keys: `${MOD}+Shift+X`,
-              run: () => run('tools-crypt')
-            }
-          ]
-        }
-      ]
+      items: toolsItems(run)
     },
     {
       id: 'help',
-      label: 'Help',
+      label: t('menu.help.title'),
       items: [
         // Mirrors the native menu; anchor for a future "Check for Updates…".
         { label: `Diff Bro v${window.api.appVersion}`, info: true },
         { sep: true },
-        { label: 'Keyboard Shortcuts', run: () => run('shortcuts') },
-        { label: 'Show Tour', run: () => run('show-tour') },
+        { label: t('menu.help.shortcuts'), run: () => run('shortcuts') },
+        { label: t('menu.help.showTour'), run: () => run('show-tour') },
         { sep: true },
-        { label: 'Report an Issue', run: () => window.api.reportIssue() }
+        { label: t('menu.help.reportIssue'), run: () => window.api.reportIssue() }
       ]
     }
   ]

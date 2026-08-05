@@ -18,22 +18,13 @@ import { clipboardSnippetName } from '../utils/cliCommand'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { looksLikeMermaid } from '../utils/mermaid'
 import { sideName } from '../utils/pasteNames'
-
-// What a streamed comparison cannot do, and why — in terms of the consequence
-// the user can see, not the mechanism. One source for the disabled tooltips and
-// the notices, so a control and its refusal never say different things.
-const COPY_FILE_FAILED = 'Could not copy that as a file.'
+import { STREAMED_LIMITS } from '../utils/streamedLimits'
+import { mergeFormatBanner } from '../utils/formatBanner'
+import { t } from '../i18n'
 
 // The builder returns a sentinel for the streamed case so it need not carry the
 // store's own wording for a limit the store already owns.
-const patchError = (reason) => (reason === 'streamed' ? STREAMED_LIMITS.copy : reason)
-
-export const STREAMED_LIMITS = {
-  save: 'Too large to save — a saved diff keeps its own copy of both files.',
-  share: 'Too large to share — a shared diff carries its own copy of both files.',
-  copy: 'Too large to copy as a patch — that needs both files in full.',
-  exportHtml: 'Too large to export — an HTML export embeds both files.'
-}
+const patchError = (reason) => (reason === 'streamed' ? t(STREAMED_LIMITS.copy) : reason)
 
 let noticeTimer = null
 let diskNoticeTimer = null
@@ -47,43 +38,6 @@ function formatHintFor(file, dismissedContent) {
   const pretty = detected.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
   if (pretty.trim() === file.content.trim()) return null // already pretty
   return { kind: detected.kind, valid: true }
-}
-
-// Merge the two per-side format hints into one banner. Pure + unit-tested.
-function mergeFormatBanner(left, right) {
-  const shown = []
-  if (left) shown.push({ side: 'left', label: 'Left', hint: left })
-  if (right) shown.push({ side: 'right', label: 'Right', hint: right })
-  if (!shown.length) return null
-
-  const kindLabel = (h) => (h.kind === 'json' ? 'JSON' : 'XML')
-  const loc = (h) => (h.line ? ` at line ${h.line}, column ${h.column}` : '')
-  const clause = ({ label, hint }) =>
-    hint.valid
-      ? `${label} looks like ${kindLabel(hint)} — pretty-print?`
-      : `${label} looks like ${kindLabel(hint)} but doesn't parse${loc(hint)}${
-          hint.error ? `: ${hint.error}` : ''
-        }`
-
-  const valid = shown.filter((x) => x.hint.valid)
-  let message
-  if (valid.length === 2) {
-    message =
-      left.kind === right.kind
-        ? `Both sides look like ${kindLabel(left)} — pretty-print?`
-        : 'Both sides look like structured data — pretty-print?'
-  } else {
-    message = shown.map(clause).join(' · ')
-  }
-
-  return {
-    message,
-    invalid: valid.length === 0, // red only when nothing here is actionable
-    formatBoth: valid.length === 2,
-    formatSide: valid.length === 1 ? valid[0].side : null,
-    formatLabel: valid.length === 1 && shown.length === 2 ? `Format ${valid[0].label}` : 'Format',
-    dismissSides: shown.map((x) => x.side)
-  }
 }
 
 // The two compared sides as { name, content }, whether in files or paste mode.
@@ -288,7 +242,7 @@ export const useDiffStore = defineStore('diff', {
     // One merged banner for both sides (see mergeFormatBanner) — null when neither
     // side has a pending hint.
     formatBanner() {
-      return mergeFormatBanner(this.leftFormatHint, this.rightFormatHint)
+      return mergeFormatBanner(this.leftFormatHint, this.rightFormatHint, t)
     }
   },
   actions: {
@@ -343,14 +297,14 @@ export const useDiffStore = defineStore('diff', {
     // or PR. The document is built in the renderer (diffToHtml); main only saves.
     async exportDiff() {
       if (this.isStreamed) {
-        this.showNotice(STREAMED_LIMITS.exportHtml)
+        this.showNotice(t(STREAMED_LIMITS.exportHtml))
         return
       }
       const [l, r] = comparedSides(this)
       const leftText = l.content ?? ''
       const rightText = r.content ?? ''
       if (!leftText && !rightText) {
-        this.showNotice('Nothing to export yet.')
+        this.showNotice(t('diffNotices.nothingToExportYet'))
         return
       }
       const { html, error } = diffToHtml(leftText, rightText, {
@@ -358,7 +312,7 @@ export const useDiffStore = defineStore('diff', {
         rightName: r.name
       })
       if (error) {
-        this.showNotice('This comparison is too large to export.')
+        this.showNotice(t('diffNotices.thisComparisonIsTooLarge'))
         return
       }
       const res = await window.api.exportDiffFile({
@@ -366,14 +320,14 @@ export const useDiffStore = defineStore('diff', {
         format: 'html',
         name: `${l.name}-vs-${r.name}`
       })
-      if (res?.ok) this.showNotice('Exported diff to HTML.')
+      if (res?.ok) this.showNotice(t('diffNotices.exportedDiffToHTML'))
     },
     // The grid diff as a table a reviewer can take away. The register is built
     // here and only its finished text crosses the boundary.
     async exportChangeRegister(sheets) {
       const rows = changeRegister(sheets)
       if (rows.length < 2) {
-        this.showNotice('No changes to export.')
+        this.showNotice(t('diffNotices.noChangesToExport'))
         return
       }
       const name = `${this.left?.name ?? 'left'}-vs-${this.right?.name ?? 'right'}-changes`
@@ -385,11 +339,11 @@ export const useDiffStore = defineStore('diff', {
     async finishSave(wasPaste, ttlHours) {
       this.markSaved()
       if (this.replaceAfterSave) {
-        this.showNotice('Saved. Loading the dropped file…')
+        this.showNotice(t('diffNotices.savedLoadingTheDroppedFile'))
         return this.finishReplaceAfterSave()
       }
       if (this.pickAfterSave) {
-        this.showNotice('Saved. Loading the file…')
+        this.showNotice(t('diffNotices.savedLoadingTheFile'))
         return this.finishPickAfterSave()
       }
       if (wasPaste) {
@@ -397,7 +351,9 @@ export const useDiffStore = defineStore('diff', {
         this.markSaved()
       }
       this.showNotice(
-        ttlHours ? `Saved — expires in ${ttlHours} h.` : 'Saved — kept until you delete it.'
+        ttlHours
+          ? t('diffNotices.savedExpiresIn', { hours: ttlHours })
+          : t('diffNotices.savedKeptUntilYouDelete')
       )
     },
     // Orchestrates the snippet import (the work + validation live in the snippet
@@ -408,13 +364,15 @@ export const useDiffStore = defineStore('diff', {
       if (res?.error) {
         this.showNotice(
           res.error === 'too-large'
-            ? 'That file is too large to import.'
-            : 'Could not read that file.'
+            ? t('diffNotices.thatFileIsTooLarge')
+            : t('diffNotices.couldNotReadThatFile')
         )
         return
       }
       this.showNotice(
-        res.count ? `Imported ${res.count} snippet(s).` : 'No snippets found to import.'
+        res.count
+          ? t('diffNotices.importedSnippets', res.count)
+          : t('diffNotices.noSnippetsFoundToImport')
       )
     },
     // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
@@ -635,7 +593,11 @@ export const useDiffStore = defineStore('diff', {
       const file = diffPatchFile(this)
       if (file.error) return this.showNotice(patchError(file.error))
       const out = await window.api.copyText(file.content)
-      this.showNotice(out?.ok ? 'Unified diff copied to clipboard.' : 'Could not copy the diff.')
+      this.showNotice(
+        out?.ok
+          ? t('diffNotices.unifiedDiffCopiedToClipboard')
+          : t('diffNotices.couldNotCopyTheDiff')
+      )
     },
     // The twin: a real .patch file on the clipboard, for a destination that
     // wants a file rather than characters.
@@ -644,7 +606,9 @@ export const useDiffStore = defineStore('diff', {
       if (file.error) return this.showNotice(patchError(file.error))
       const out = await window.api.copyAsFile(file.name, file.content)
       this.showNotice(
-        out?.ok ? `${out.name} copied as a file — paste it where you need it.` : COPY_FILE_FAILED
+        out?.ok
+          ? t('diffNotices.copiedAsFile', { name: out.name })
+          : t('diffNotices.couldNotCopyThatAs')
       )
     },
     swap() {
@@ -726,7 +690,7 @@ export const useDiffStore = defineStore('diff', {
         const entry = snippets.entries.find((e) => e.id === id)
         if (!entry) continue
         if (isSecret(entry)) {
-          this.showNotice('Hidden snippets can’t be compared.')
+          this.showNotice(t('diffNotices.hiddenSnippetsCanTBe'))
           return
         }
         const source = snippetSource(entry, await snippets.load(id))
@@ -736,7 +700,7 @@ export const useDiffStore = defineStore('diff', {
     },
     async saveClipboardSnippet(text) {
       if (!String(text ?? '').trim()) {
-        this.showNotice('The clipboard is empty.')
+        this.showNotice(t('diffNotices.theClipboardIsEmpty'))
         return
       }
       const snippets = useSnippetStore()

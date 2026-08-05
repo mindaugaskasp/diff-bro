@@ -59,15 +59,15 @@ watch(
     <div class="qc-head band">
       <button
         class="btn btn-icon qc-back"
-        data-tip="Back (Esc)"
-        aria-label="Back to the results"
+        :data-tip="$t('quickLook.backTip')"
+        :aria-label="$t('quickLook.backLabel')"
         @click="$emit('back')"
       >
         <AppIcon name="chevron-left" />
       </button>
       <AppIcon :name="headIcon" class="qc-ico" />
       <span class="qc-name">{{ tool.name }}</span>
-      <span class="qc-kbd">Esc</span>
+      <span class="qc-kbd">{{ $t('quickLookConvert.esc') }}</span>
     </div>
 
     <div ref="panelEl" class="qc-panel" tabindex="-1" @keydown="onPanelKeys">

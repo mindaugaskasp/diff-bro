@@ -46,30 +46,36 @@ function reveal() {
 
 <template>
   <section>
-    <h4>Data folder</h4>
-    <p class="dialog-note">
-      Where saved diffs, snippets, and your keys are stored. Put it in a folder you control (e.g.
-      Documents or a synced folder) so your data <strong>survives a reinstall</strong>. The folder
-      is self-contained — after reinstalling, point Diff Bro back at it to restore everything.
-    </p>
+    <h4>{{ $t('storageSettings.dataFolder') }}</h4>
+    <i18n-t keypath="storageSettings.intro" tag="p" class="dialog-note">
+      <template #survives
+        ><strong>{{ $t('storageSettings.survivesAReinstall') }}</strong></template
+      >
+    </i18n-t>
     <div class="path">
       <code :title="dir">{{ dir }}</code>
-      <span v-if="isDefault" class="badge">default</span>
+      <span v-if="isDefault" class="badge">{{ $t('logSettings.default') }}</span>
     </div>
     <div class="dialog-actions">
-      <button class="btn" :disabled="busy" @click="reveal">Reveal</button>
-      <button class="btn" :disabled="busy || isDefault" @click="reset">Use default</button>
-      <button class="btn btn-primary" :disabled="busy" @click="choose">Change folder…</button>
+      <button class="btn" :disabled="busy" @click="reveal">
+        {{ $t('storageSettings.reveal') }}
+      </button>
+      <button class="btn" :disabled="busy || isDefault" @click="reset">
+        {{ $t('storageSettings.useDefault') }}
+      </button>
+      <button class="btn btn-primary" :disabled="busy" @click="choose">
+        {{ $t('storageSettings.changeFolder') }}
+      </button>
     </div>
-    <p class="hint">Changing the folder restarts Diff Bro.</p>
+    <p class="hint">{{ $t('storageSettings.changingTheFolderRestartsDiff') }}</p>
 
     <BackupSettings />
 
-    <h4>On launch</h4>
+    <h4>{{ $t('storageSettings.onLaunch') }}</h4>
     <SettingToggle :checked="settings.restoreSession" @change="tabs.setRestoreSession">
-      Reopen the comparisons that were open when I quit
+      {{ $t('storageSettings.reopenTheComparisonsThatWere') }}
     </SettingToggle>
-    <p class="hint">On by default. Turning it off also forgets the ones already stored.</p>
+    <p class="hint">{{ $t('storageSettings.onByDefaultTurningIt') }}</p>
   </section>
 </template>
 

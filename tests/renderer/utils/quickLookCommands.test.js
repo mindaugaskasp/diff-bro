@@ -2,10 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { CONVERT_TOOLS, convertItems } from '../../../src/renderer/src/utils/quickLookCommands'
 import { rank } from '../../../src/renderer/src/utils/quickLook'
 import { toolById } from '../../../src/renderer/src/utils/tools'
+import { createTranslator } from '../../../src/shared/i18n'
+
+// The REAL translator, not a stub: these rows are what the launcher searches,
+// so a key missing from the catalogue must fail here rather than silently rank
+// against an id.
+const t = createTranslator('en')
 
 describe('launcher tools', () => {
   it('exposes each tool as a searchable command item', () => {
-    const items = convertItems()
+    const items = convertItems(t)
     expect(items).toHaveLength(CONVERT_TOOLS.length)
     expect(items.every((i) => i.kind === 'command')).toBe(true)
     // searchable by name through the shared rank()
@@ -19,7 +25,7 @@ describe('launcher tools', () => {
   })
 
   it('takes its icon and action word from the registry, never a blanket label', () => {
-    const items = convertItems()
+    const items = convertItems(t)
     const byId = Object.fromEntries(items.map((i) => [i.id, i]))
     expect(byId.base64).toMatchObject({ icon: 'binary', action: 'Encode' })
     expect(byId.jwt).toMatchObject({ icon: 'shield-check', action: 'Decode' })
@@ -29,10 +35,10 @@ describe('launcher tools', () => {
 
   it('every tool renders a rich panel', () => {
     for (const t of CONVERT_TOOLS) expect(typeof t.panel).toBe('string')
-    expect(convertItems().every((i) => i.panel)).toBe(true)
+    expect(convertItems(t).every((i) => i.panel)).toBe(true)
   })
 
   it('finds a tool by its alias, not just its registry name', () => {
-    expect(rank('date', convertItems()).map((i) => i.id)).toContain('epoch')
+    expect(rank('date', convertItems(t)).map((i) => i.id)).toContain('epoch')
   })
 })

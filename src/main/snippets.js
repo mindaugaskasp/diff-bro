@@ -6,6 +6,7 @@ import { getIdentity } from './share'
 import { guardIdentity } from './shareCore'
 import { openSnippets, sealSnippets } from './snippetSealing'
 import { readTrusted } from './trustedKeys'
+import { t } from './i18n'
 
 // Reject absurdly large attacker-supplied files before JSON.parse.
 const MAX_SNIPPET_FILE_BYTES = 64 * 1024 * 1024
@@ -24,9 +25,9 @@ export function registerSnippetIpc() {
       const safeName =
         typeof defaultName === 'string' && defaultName ? defaultName : 'diffbro-snippets'
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Export snippets',
+        title: t('dialog.exportSnippets'),
         defaultPath: `${safeName.replace(/[^\w.-]+/g, '_')}.diffbrosnip`,
-        filters: [{ name: 'Diff Bro snippets', extensions: ['diffbrosnip'] }]
+        filters: [{ name: t('fileFilter.snippets'), extensions: ['diffbrosnip'] }]
       })
       if (canceled || !filePath) return { canceled: true }
 
@@ -39,9 +40,9 @@ export function registerSnippetIpc() {
   ipcMain.handle('snippets:import', async (e, passphrase) => {
     if (typeof passphrase !== 'string' || !passphrase) return { error: 'wrong-passphrase' }
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Import snippets',
+      title: t('dialog.importSnippets'),
       properties: ['openFile'],
-      filters: [{ name: 'Diff Bro snippets', extensions: ['diffbrosnip'] }]
+      filters: [{ name: t('fileFilter.snippets'), extensions: ['diffbrosnip'] }]
     })
     if (canceled || !filePaths.length) return { canceled: true }
 

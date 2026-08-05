@@ -62,12 +62,12 @@ function close() {
       <p class="dialog-note">
         {{
           mode === 'import'
-            ? 'Enter the passphrase this file was exported with.'
-            : "Choose a passphrase. You'll need it again to reimport this file."
+            ? $t('snippetPassphraseDialog.enterExisting')
+            : $t('snippetPassphraseDialog.chooseNew')
         }}
       </p>
       <label>
-        Passphrase
+        {{ $t('snippetPassphraseDialog.passphrase') }}
         <input
           v-model="passphrase"
           type="password"
@@ -78,9 +78,15 @@ function close() {
       </label>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="!passphrase || busy">
-          {{ mode === 'import' ? 'Import' : 'Export' }}
+          {{
+            mode === 'import'
+              ? $t('snippetPassphraseDialog.import')
+              : $t('snippetPassphraseDialog.export')
+          }}
         </button>
-        <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="close">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>

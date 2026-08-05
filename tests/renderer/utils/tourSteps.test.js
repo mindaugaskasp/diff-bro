@@ -6,6 +6,9 @@ import {
   tourPlan
 } from '../../../src/renderer/src/utils/tourSteps'
 import { COMMANDS } from '../../../src/renderer/src/utils/commands'
+import { createTranslator } from '../../../src/shared/i18n'
+
+const t = createTranslator('en')
 
 const state = (over = {}) => ({
   showTips: true,
@@ -58,7 +61,10 @@ describe('TOUR_STEPS', () => {
   it('gives every step a target and a body', () => {
     for (const step of TOUR_STEPS) {
       expect(step.target, step.id).toBeTruthy()
-      expect(step.body, step.id).toBeTruthy()
+      // The copy is in the catalogue now, so "has a body" means the key
+      // resolves — a step whose wording was never written renders its own id.
+      expect(t(step.bodyKey), step.id).not.toBe(step.bodyKey)
+      expect(t(step.titleKey), step.id).not.toBe(step.titleKey)
       expect(step.since, step.id).toBeTruthy()
     }
   })

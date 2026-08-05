@@ -16,6 +16,9 @@ import {
   languageOf,
   useSnippetStore
 } from '../../../src/renderer/src/stores/snippetStore'
+import { createTranslator } from '../../../src/shared/i18n'
+
+const t = createTranslator('en')
 
 const KEY = randomBytes(32)
 const DIFF = {
@@ -51,7 +54,7 @@ describe('snippetStore — first-run example', () => {
     expect(id).toBeTruthy()
     expect(store.entries).toHaveLength(1)
     const [entry] = store.entries
-    expect(entry.name).toBe(EXAMPLE_SNIPPET.name)
+    expect(entry.name).toBe(t(EXAMPLE_SNIPPET.nameKey))
     expect(languageOf(entry)).toBe('mermaid')
     // stored encrypted, decrypts back to the example content
     const raw = localStorage.getItem('diffbro.snippets')

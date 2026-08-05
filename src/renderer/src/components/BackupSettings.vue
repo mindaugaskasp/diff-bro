@@ -2,7 +2,8 @@
 // Rolling local backups. On by default, because the failure it covers — a store
 // file going bad — gives no warning and takes work you cannot recreate.
 import { computed, onMounted, ref } from 'vue'
-import { BACKUP_HOURS, useSettingsStore } from '../stores/settingsStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { BACKUP_HOURS } from '../utils/settingsDefaults'
 import { ago } from '../utils/relativeTime'
 import { byteSize } from '../utils/byteSize'
 import SettingToggle from './SettingToggle.vue'
@@ -54,18 +55,17 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
 
 <template>
   <section>
-    <h4>Backups</h4>
+    <h4>{{ $t('backupSettings.backups') }}</h4>
     <p class="dialog-note">
-      Keeps a rolling copy of your snippets and the diffs you chose to keep, so a corrupted store
-      isn’t the end of them. Diffs set to expire are left out — they were meant to go.
+      {{ $t('backupSettings.keepsARollingCopyOf') }}
     </p>
 
     <SettingToggle :checked="settings.autoBackup" @change="settings.setAutoBackup">
-      Back up automatically
+      {{ $t('backupSettings.backUpAutomatically') }}
     </SettingToggle>
 
     <label v-if="settings.autoBackup" class="every">
-      <span>At most once every</span>
+      <span>{{ $t('backupSettings.atMostOnceEvery') }}</span>
       <select
         :value="settings.autoBackupHours"
         @change="settings.setAutoBackupHours($event.target.value)"
@@ -74,24 +74,33 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
       </select>
     </label>
     <p v-if="settings.autoBackup" class="hint">
-      Taken after a save, never on a timer — an app left open all day writes nothing.
+      {{ $t('backupSettings.takenAfterASaveNever') }}
     </p>
 
     <p v-if="latest" class="hint">
-      Last backup {{ ago(latest.at) }} ago · {{ backups.length }} kept · {{ byteSize(used) }} on
-      disk.
+      {{
+        $t('backupSettings.lastBackup', {
+          when: ago(latest.at),
+          kept: backups.length,
+          size: byteSize(used)
+        })
+      }}
     </p>
-    <p v-else class="hint">No backups yet.</p>
+    <p v-else class="hint">{{ $t('backupSettings.noBackupsYet') }}</p>
 
-    <!-- The button names its consequence: a delete that says "clear old backups"
-         makes the reader guess what goes. -->
+    <!-- The button names its consequence, not just "clear old backups". -->
     <div v-if="backups.length" class="prune">
-      <SegmentedControl v-model:value="age" compact label="Older than" :options="AGES" />
+      <SegmentedControl
+        v-model:value="age"
+        compact
+        :label="$t('backupSettings.olderThan')"
+        :options="AGES"
+      />
       <button class="btn btn-sm" :disabled="busy || !stale.length" @click="prune">
         {{
           stale.length
-            ? `Delete ${stale.length} backup${stale.length > 1 ? 's' : ''} (${byteSize(staleBytes)})`
-            : 'Nothing that old'
+            ? $t('backupSettings.deleteStale', stale.length, { size: byteSize(staleBytes) })
+            : $t('backupSettings.nothingThatOld')
         }}
       </button>
     </div>
@@ -104,26 +113,26 @@ const hoursLabel = (h) => (h === 1 ? 'hour' : h === 24 ? 'day' : `${h} hours`)
         :disabled="busy"
         @click="confirming = b.name"
       >
-        Restore {{ ago(b.at) }} ago
+        {{ $t('backupSettings.restoreFrom', { when: ago(b.at) }) }}
       </button>
     </div>
 
     <template v-if="confirming">
       <p class="dialog-note warn">
-        Restoring replaces your snippets and kept diffs with that copy. Anything saved since is
-        lost.
+        {{ $t('backupSettings.restoringReplacesYourSnippetsAnd') }}
       </p>
       <div class="dialog-actions">
         <button class="btn btn-destructive btn-sm" :disabled="busy" @click="restore(confirming)">
-          Replace them
+          {{ $t('backupSettings.replaceThem') }}
         </button>
-        <button class="btn btn-ghost btn-sm" @click="confirming = ''">Cancel</button>
+        <button class="btn btn-ghost btn-sm" @click="confirming = ''">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </template>
 
     <p v-if="restored" class="hint">
-      Restored {{ restored.diffs }} diffs and {{ restored.snippets }} snippets. Restart Diff Bro to
-      see them.
+      {{ $t('backupSettings.restored', { diffs: restored.diffs, snippets: restored.snippets }) }}
     </p>
   </section>
 </template>

@@ -16,35 +16,46 @@ async function add() {
 </script>
 
 <template>
-  <BaseDialog width="360px" title="Add trusted key" @close="share.cancelTrustedKey()">
+  <BaseDialog
+    width="360px"
+    :title="$t('share.addTrustedKeyDialog.addTrustedKey')"
+    @close="share.cancelTrustedKey()"
+  >
     <form class="dialog-form" @submit.prevent="add">
-      <p class="dialog-note">
-        Adding <strong>someone else's</strong> public key so you can receive diffs they share. The
-        name is prefilled from what they called their key — keep it or rename it. Fingerprint
-        <code>{{ share.pendingTrustedKey?.fingerprint }}</code
-        >.
-      </p>
-      <p v-if="share.pendingTrustedKey?.vouchedBy" class="dialog-note vouch">
-        This key says it replaces <strong>{{ share.pendingTrustedKey.vouchedBy }}</strong
-        >, and that key signed the claim. Check the fingerprint with them anyway — anyone holding
-        their old key could have signed it.
-      </p>
+      <i18n-t keypath="share.addTrustedKeyDialog.intro" tag="p" class="dialog-note">
+        <template #whose>
+          <strong>{{ $t('share.addTrustedKeyDialog.someoneElses') }}</strong>
+        </template>
+        <template #fp
+          ><code>{{ share.pendingTrustedKey?.fingerprint }}</code></template
+        >
+      </i18n-t>
+      <i18n-t
+        v-if="share.pendingTrustedKey?.vouchedBy"
+        keypath="share.addTrustedKeyDialog.vouch"
+        tag="p"
+        class="dialog-note vouch"
+      >
+        <template #who
+          ><strong>{{ share.pendingTrustedKey.vouchedBy }}</strong></template
+        >
+      </i18n-t>
       <label>
-        Name
+        {{ $t('share.addTrustedKeyDialog.name') }}
         <input
           v-model="label"
           type="text"
           spellcheck="false"
-          placeholder="e.g. Alice — laptop"
+          :placeholder="$t('share.addTrustedKeyDialog.eGAliceLaptop')"
           autofocus
         />
       </label>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="!label.trim() || adding">
-          {{ adding ? 'Adding…' : 'Add' }}
+          {{ adding ? $t('addTrustedKeyDialog.adding') : $t('addTrustedKeyDialog.add') }}
         </button>
         <button type="button" class="btn btn-ghost" @click="share.cancelTrustedKey()">
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
       </div>
     </form>

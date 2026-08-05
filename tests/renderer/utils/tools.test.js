@@ -10,16 +10,21 @@ import {
   toolSections
 } from '../../../src/renderer/src/utils/tools'
 import { ICONS } from '../../../src/renderer/src/icons'
+import { createTranslator } from '../../../src/shared/i18n'
+
+// The real catalogue: a nameKey/kindKey with no entry must fail here, not render
+// as a raw id in the sidebar.
+const t = createTranslator('en')
 
 // Both tool surfaces render straight from this list, so a malformed entry (a
 // missing icon, a stale action) breaks a row with no other signal.
 describe('TOOLS registry', () => {
   it('declares a complete descriptor for every tool', () => {
-    for (const t of TOOLS) {
-      expect(typeof t.id).toBe('string')
-      expect(typeof t.name).toBe('string')
-      expect(typeof t.kind).toBe('string')
-      expect(t.action.length).toBeGreaterThan(0)
+    for (const tool of TOOLS) {
+      expect(typeof tool.id).toBe('string')
+      expect(t(tool.nameKey)).not.toBe(tool.nameKey)
+      expect(t(tool.kindKey)).not.toBe(tool.kindKey)
+      expect(tool.action.length).toBeGreaterThan(0)
     }
   })
 
@@ -33,12 +38,13 @@ describe('TOOLS registry', () => {
   })
 
   it('never labels a tool with the old blanket "Convert" except where it is true', () => {
-    const kinds = TOOLS.filter((t) => t.kind === 'Convert').map((t) => t.id)
+    const kinds = TOOLS.filter((tool) => t(tool.kindKey) === 'Convert').map((tool) => tool.id)
     expect(kinds).toEqual(['epoch'])
   })
 
   it('finds a tool by id and ignores an unknown one', () => {
-    expect(toolById('json')).toMatchObject({ name: 'JSON', icon: 'braces' })
+    expect(toolById('json')).toMatchObject({ nameKey: 'tools.json.name', icon: 'braces' })
+    expect(t(toolById('json').nameKey)).toBe('JSON')
     expect(toolById('nope')).toBeUndefined()
   })
 })
@@ -175,14 +181,14 @@ describe('toolRows', () => {
 describe('toolSections', () => {
   it('omits the Recent section when there are no recents', () => {
     const sections = toolSections([])
-    expect(sections.map((s) => s.label)).toEqual(['All tools'])
+    expect(sections.map((sec) => t(sec.labelKey))).toEqual(['All tools'])
     expect(sections[0].items).toHaveLength(TOOLS.length)
   })
 
   // Listing a recent tool again under "All tools" read as a duplicate row.
   it('puts Recent first and lists each tool exactly once', () => {
     const sections = toolSections(['uuid'])
-    expect(sections.map((s) => s.label)).toEqual(['Recent', 'Other tools'])
+    expect(sections.map((sec) => t(sec.labelKey))).toEqual(['Recent', 'Other tools'])
     expect(sections[0].items.map((t) => t.id)).toEqual(['uuid'])
     expect(sections[1].items.some((t) => t.id === 'uuid')).toBe(false)
     expect(sections[0].items.length + sections[1].items.length).toBe(TOOLS.length)
@@ -192,10 +198,10 @@ describe('toolSections', () => {
 describe('toolPaletteItems', () => {
   it('flattens to one list, labelling only the row that opens each section', () => {
     const items = toolPaletteItems(['uuid', 'json'])
-    expect(items[0]).toMatchObject({ id: 'uuid', section: 'Recent' })
-    expect(items[1]).toMatchObject({ id: 'json', section: '' })
-    expect(items[2].section).toBe('Other tools')
-    expect(items.filter((i) => i.section)).toHaveLength(2)
+    expect(items[0]).toMatchObject({ id: 'uuid', sectionKey: 'tools.section.recent' })
+    expect(items[1]).toMatchObject({ id: 'json', sectionKey: '' })
+    expect(t(items[2].sectionKey)).toBe('Other tools')
+    expect(items.filter((i) => i.sectionKey)).toHaveLength(2)
   })
 
   it('is every tool, once, however many are recent', () => {

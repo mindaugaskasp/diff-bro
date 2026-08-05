@@ -1,8 +1,7 @@
 <script setup>
-// Create/edit a snippet. The draft (fields, syntax, save, format) is in
+// Create/edit a snippet. The draft (fields, syntax, save, format) lives in
 // useSnippetDraft; this is the Monaco + tag-field wiring.
 import { computed, nextTick, ref, watch } from 'vue'
-import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 import { JIRA_ACTIONS, applyJiraAction } from '../utils/jiraMarkup'
 import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../utils/markdownMarkup'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -10,6 +9,8 @@ import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import TagChipsField from './TagChipsField.vue'
+import SnippetEditorHeader from './SnippetEditorHeader.vue'
+import SnippetSecretToggle from './SnippetSecretToggle.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import MermaidPreview from './MermaidPreview.vue'
@@ -18,7 +19,6 @@ import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
 import BaseDialog from './BaseDialog.vue'
 
-const languages = SNIPPET_LANGUAGES
 const settings = useSettingsStore()
 const container = ref(null)
 // The tag field owns the tags; this ref is how save() reads them back.
@@ -62,7 +62,7 @@ const { reset, applySelectionEdit, layout } = useMonacoInput({
 
 // A new Jira/Markdown snippet opens on the raw editor (it starts in edit mode);
 // viewing an existing one opens on the rendered preview. `hasPreview` gates the
-// toggle, toolbar, and rendered view for both.
+// toggle, toolbar and rendered view.
 const plain = ref(editMode.value)
 const hasPreview = computed(() => isJira.value || isMarkdown.value)
 const toolbarActions = computed(() => (isMarkdown.value ? MARKDOWN_ACTIONS : JIRA_ACTIONS))
@@ -71,20 +71,19 @@ watch(plain, (isPlain) => {
   if (isPlain) nextTick(layout)
 })
 
-// A formatting toolbar button: apply its language-specific transform to the selection.
+// A toolbar button: apply its language-specific transform to the selection.
 function applyAction(id) {
   const apply = isMarkdown.value ? applyMarkdownAction : applyJiraAction
   applySelectionEdit((model) => apply(id, model))
 }
 
-// The action row owns its own copy/clear feedback; this is its handle for the
-// "Copied" flash, which only fires once the clipboard write actually succeeded.
+// The action row owns its copy/clear feedback; this is its handle for the
+// "Copied" flash, which fires only once the clipboard write succeeded.
 const actions = ref(null)
 async function copyAndFlash() {
   if (await copyContent()) actions.value?.flash()
 }
-// Revealing has to relayout Monaco: it was hidden behind the mask, so it
-// measured itself at zero and would otherwise come back blank.
+// Revealing relayouts Monaco: masked, it measured zero and comes back blank.
 function revealAndLayout() {
   toggleReveal()
   nextTick(layout)
@@ -108,7 +107,13 @@ function saveSnippet() {
     resizable
     :min-size="{ width: 420, height: 460 }"
     :initial-size="settings.dialogSize('snippet')"
-    :title="isNew ? 'New Snippet' : editMode ? 'Edit Snippet' : 'Snippet'"
+    :title="
+      isNew
+        ? 'New Snippet'
+        : editMode
+          ? $t('snippetEditorDialog.editSnippet')
+          : $t('snippetEditorDialog.snippet')
+    "
     :escape-closes="!editMode"
     :close-on-backdrop="!editMode"
     @close="requestClose"
@@ -116,43 +121,29 @@ function saveSnippet() {
   >
     <div class="fields">
       <label class="grow">
-        Name
+        {{ $t('snippetEditorDialog.name') }}
         <input
           v-model="name"
           type="text"
           spellcheck="false"
-          placeholder="Snippet name…"
+          :placeholder="$t('snippetEditorDialog.snippetName')"
           :readonly="readOnly"
         />
         <span v-if="editMode && !name.trim()" class="required-hint">
-          A snippet needs a name to save.
+          {{ $t('snippetEditorDialog.aSnippetNeedsAName') }}
         </span>
       </label>
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />
-    <label
-      class="secret-toggle"
-      data-tip="Keep the contents masked everywhere; copying still works"
-    >
-      <input v-model="secret" type="checkbox" :disabled="readOnly" />
-      <span><strong>Secret</strong> — hide the contents behind ****</span>
-    </label>
-    <div class="editor-header">
-      <span>Content <span v-if="editMode" class="drop-hint">— or drop a file here</span></span>
-      <div class="editor-controls">
-        <div v-if="hasPreview" class="view-toggle" role="group" aria-label="View mode">
-          <button type="button" :class="{ active: !plain }" @click="plain = false">Rendered</button>
-          <button type="button" :class="{ active: plain }" @click="plain = true">Plain</button>
-        </div>
-        <label class="lang-picker">
-          Syntax
-          <select v-model="chosenLanguage" :disabled="readOnly">
-            <option v-for="l in languages" :key="l.id" :value="l.id">{{ l.label }}</option>
-          </select>
-          <span v-if="chosenLanguage === 'auto'" class="lang-detected">→ {{ language }}</span>
-        </label>
-      </div>
-    </div>
+    <SnippetSecretToggle v-model="secret" :readonly="readOnly" />
+    <SnippetEditorHeader
+      v-model:plain="plain"
+      v-model:chosen-language="chosenLanguage"
+      :edit-mode="editMode"
+      :has-preview="hasPreview"
+      :language="language"
+      :read-only="readOnly"
+    />
     <FormatToolbar
       v-if="hasPreview && plain && editMode"
       :actions="toolbarActions"
@@ -173,7 +164,9 @@ function saveSnippet() {
       />
       <SnippetSecretMask v-if="masked" />
     </div>
-    <p v-if="editMode && !content.trim()" class="required-hint">A snippet needs content to save.</p>
+    <p v-if="editMode && !content.trim()" class="required-hint">
+      {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
+    </p>
     <MermaidPreview v-if="isMermaid && !masked" :code="content" @expand="expandDiagram" />
     <template #actions>
       <SnippetEditorActions
@@ -201,10 +194,14 @@ function saveSnippet() {
     <!-- Unsaved-changes guard: shown over the actions when a dirty draft is
          about to be discarded via Cancel or ×. -->
     <div v-if="confirmingDiscard" class="discard-confirm" role="alertdialog">
-      <span>Discard this snippet? Your unsaved content will be lost.</span>
+      <span>{{ $t('snippetEditorDialog.discardThisSnippetYourUnsaved') }}</span>
       <div class="discard-actions">
-        <button class="btn btn-sm btn-ghost" @click="keepEditing">Keep editing</button>
-        <button class="btn btn-sm btn-danger" @click="discardDraft">Discard</button>
+        <button class="btn btn-sm btn-ghost" @click="keepEditing">
+          {{ $t('snippetEditorDialog.keepEditing') }}
+        </button>
+        <button class="btn btn-sm btn-danger" @click="discardDraft">
+          {{ $t('snippetEditorDialog.discard') }}
+        </button>
       </div>
     </div>
   </BaseDialog>

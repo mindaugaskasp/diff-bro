@@ -177,3 +177,24 @@ The temporary copy Copy as file puts on the clipboard. A file on the clipboard i
 a _path_, so the bytes must exist until the paste happens. Staged files live in a
 `0o700` directory under the OS temp dir, are pruned after 30 minutes, and are
 swept on quit and again on next launch.
+
+## catalogue
+
+`src/shared/i18n/en.json` — every user-facing string in the app, keyed by a
+dotted id. Read by BOTH processes: vue-i18n in the renderer, `@intlify/core` in
+main. Editing wording means editing this file, not a component.
+
+## key (i18n)
+
+The dotted id a piece of UI asks for, e.g. `menu.file.save`. Code holds keys;
+the catalogue holds words. `scripts/check-i18n.mjs` fails the build if a key has
+no entry, or if an entry has no call site.
+
+## pseudolocale
+
+`en-XA` — a GENERATED locale (`node scripts/pseudolocale.mjs`), not a
+translation. It accents every letter, brackets the message and pads it ~40%, so
+one run makes three failures visible that no unit test catches: a string that
+was never extracted (it stays plain ASCII), a container that cannot take a
+longer language (it clips), and a broken interpolation (`{name}` renders
+literally).

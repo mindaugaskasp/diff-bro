@@ -12,16 +12,19 @@ const tour = useOnboardingStore()
   <BaseDialog
     v-if="tour.promptOpen"
     width="380px"
-    title="Three more tips?"
+    :title="$t('onboarding.continueTourDialog.threeMoreTips')"
     @close="tour.deferPrompt()"
   >
     <p class="dialog-note">
-      That is the everyday route covered. The rest is about keeping your own material in here —
-      saving a snippet, comparing two of them, and previewing a diagram. About a minute.
+      {{ $t('onboarding.continueTourDialog.thatIsTheEverydayRoute') }}
     </p>
     <template #actions>
-      <button class="btn btn-ghost" @click="tour.deferPrompt()">Not now</button>
-      <button class="btn btn-primary" @click="tour.acceptPrompt()">Show me</button>
+      <button class="btn btn-ghost" @click="tour.deferPrompt()">
+        {{ $t('onboarding.continueTourDialog.notNow') }}
+      </button>
+      <button class="btn btn-primary" @click="tour.acceptPrompt()">
+        {{ $t('onboarding.continueTourDialog.showMe') }}
+      </button>
     </template>
   </BaseDialog>
 </template>

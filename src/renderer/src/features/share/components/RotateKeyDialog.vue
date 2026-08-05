@@ -35,52 +35,52 @@ const close = () => (share.showRotateKeyDialog = false)
 </script>
 
 <template>
-  <BaseDialog width="460px" title="Replace my key" @close="close">
+  <BaseDialog width="460px" :title="$t('share.rotateKeyDialog.replaceMyKey')" @close="close">
     <template v-if="done">
-      <p class="dialog-note">
-        Your new fingerprint is <strong class="fp">{{ done }}</strong
-        >. Send your public key again — until each person imports it, anything you seal will reach
-        them as an unknown sender.
-      </p>
+      <i18n-t keypath="share.rotateKeyDialog.doneNote" tag="p" class="dialog-note">
+        <template #fp
+          ><strong class="fp">{{ done }}</strong></template
+        >
+      </i18n-t>
     </template>
 
     <template v-else>
       <p class="dialog-note">
-        A new key takes over from here. Your old one is kept so that diffs already sealed to it
-        still open — it is only ever used to read, never to send.
+        {{ $t('share.rotateKeyDialog.aNewKeyTakesOver') }}
       </p>
-      <p class="dialog-note">
-        Diffs you have <em>already shared</em> stay readable by the people you sent them to. They
-        were sealed with <em>their</em> keys; yours only signed them. Replacing a key cannot take
-        anything back.
-      </p>
-      <p class="dialog-note">Do this if your machine or your key may have been exposed.</p>
+      <i18n-t keypath="share.rotateKeyDialog.alreadyShared" tag="p" class="dialog-note">
+        <template #shared
+          ><em>{{ $t('share.rotateKeyDialog.alreadySharedEm') }}</em></template
+        >
+        <template #their
+          ><em>{{ $t('share.rotateKeyDialog.their') }}</em></template
+        >
+      </i18n-t>
+      <p class="dialog-note">{{ $t('share.rotateKeyDialog.doThisIfYourMachine') }}</p>
     </template>
 
     <div v-if="retired" class="retired">
-      <p class="dialog-note">
-        {{ retired }} earlier {{ retired === 1 ? 'key is' : 'keys are' }} kept for reading.
-        Destroying {{ retired === 1 ? 'it' : 'them' }} gives up any diff still sealed to
-        {{ retired === 1 ? 'it' : 'them' }} that you have not opened.
-      </p>
+      <p class="dialog-note">{{ $t('share.rotateKeyDialog.retiredKept', retired) }}</p>
       <label class="also">
         <input v-model="confirmDestroy" type="checkbox" />
-        <span>I understand, and want the old {{ retired === 1 ? 'key' : 'keys' }} destroyed</span>
+        <span>{{ $t('share.rotateKeyDialog.understandDestroy', retired) }}</span>
       </label>
       <button
         class="btn btn-sm btn-destructive"
         :disabled="!confirmDestroy || busy"
         @click="destroy"
       >
-        Destroy old {{ retired === 1 ? 'key' : 'keys' }}
+        {{ $t('share.rotateKeyDialog.destroyOld', retired) }}
       </button>
     </div>
 
     <template #actions>
       <button v-if="!done" class="btn btn-destructive" :disabled="busy" @click="rotate">
-        Replace my key
+        {{ $t('share.rotateKeyDialog.replaceMyKey') }}
       </button>
-      <button class="btn btn-ghost" @click="close">{{ done ? 'Done' : 'Cancel' }}</button>
+      <button class="btn btn-ghost" @click="close">
+        {{ done ? $t('common.done') : $t('common.cancel') }}
+      </button>
     </template>
   </BaseDialog>
 </template>

@@ -26,6 +26,7 @@ import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './sh
 import { validateSnippetBundle } from './snippetSealing'
 import { readTrusted, registerTrustedKeyIpc, replaceTrusted, storeTrusted } from './trustedKeys'
 import { sealAndWrite } from './shareExport'
+import { t } from './i18n'
 
 const PLAIN_PREFIX = 'plain:'
 
@@ -41,8 +42,7 @@ const pubPath = () => dataFile('identity.pub')
 const retiredPath = () => dataFile('retired-keys.key')
 
 // Identity present but unloadable (locked keychain, corruption). Surface it,
-// never regenerate — that would silently rotate the public key and break every
-// peer's trust.
+// never regenerate — that silently rotates the public key and breaks every peer.
 export async function getIdentity() {
   const [privRes, pubRes] = await Promise.allSettled([
     readFile(privPath()),
@@ -265,9 +265,9 @@ export function registerShareIpc() {
     'share:import',
     guardIdentity(async () => {
       const { canceled, filePaths } = await dialog.showOpenDialog({
-        title: 'Import shared diff',
+        title: t('dialog.importSharedDiff'),
         properties: ['openFile'],
-        filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
+        filters: [{ name: t('fileFilter.sharedDiff'), extensions: ['diffbro'] }]
       })
       if (canceled || !filePaths.length) return { canceled: true }
       return openSharedFileAt(filePaths[0])
@@ -295,9 +295,9 @@ export function registerShareIpc() {
     guardIdentity(async (e, label) => {
       const pub = await pubWithLabel(label)
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Export my public key',
+        title: t('dialog.exportPublicKey'),
         defaultPath: keyFileBasename(cleanLabel(pub.label), pub.fingerprint),
-        filters: [{ name: 'Diff Bro public key', extensions: ['diffbrokey'] }]
+        filters: [{ name: t('fileFilter.publicKey'), extensions: ['diffbrokey'] }]
       })
       if (canceled || !filePath) return { canceled: true }
       await writeFile(filePath, encodePublicKey(pub))
@@ -322,9 +322,9 @@ export function registerShareIpc() {
     'share:addTrustedKey',
     guardIdentity(async () => {
       const { canceled, filePaths } = await dialog.showOpenDialog({
-        title: 'Add trusted public key',
+        title: t('dialog.addTrustedKey'),
         properties: ['openFile'],
-        filters: [{ name: 'Diff Bro public key', extensions: ['diffbrokey'] }]
+        filters: [{ name: t('fileFilter.publicKey'), extensions: ['diffbrokey'] }]
       })
       if (canceled || !filePaths.length) return { canceled: true }
 
@@ -409,9 +409,9 @@ export function registerShareIpc() {
     guardIdentity(async (e, bundle, passphrase) => {
       if (typeof passphrase !== 'string' || !passphrase) return { error: 'bad-request' }
       const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Back up configuration',
+        title: t('dialog.backupConfig'),
         defaultPath: 'diffbro-config-backup.diffbroconf',
-        filters: [{ name: 'Diff Bro configuration', extensions: ['diffbroconf'] }]
+        filters: [{ name: t('fileFilter.configuration'), extensions: ['diffbroconf'] }]
       })
       if (canceled || !filePath) return { canceled: true }
 
@@ -435,9 +435,9 @@ export function registerShareIpc() {
 
   ipcMain.handle('config:restore', async (e, passphrase) => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Restore configuration',
+      title: t('dialog.restoreConfig'),
       properties: ['openFile'],
-      filters: [{ name: 'Diff Bro configuration', extensions: ['diffbroconf'] }]
+      filters: [{ name: t('fileFilter.configuration'), extensions: ['diffbroconf'] }]
     })
     if (canceled || !filePaths.length) return { canceled: true }
 

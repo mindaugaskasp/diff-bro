@@ -8,6 +8,7 @@ import { useQuickLookKeys } from './useQuickLookKeys'
 import { useQuickLookCompose } from './useQuickLookCompose'
 import { usePreviewLines } from './usePreviewLines'
 import { useCopyFeedback } from './useCopyFeedback'
+import { t } from '../i18n'
 
 // State for the floating quick look-up. The launcher stays lightweight (no
 // Monaco/Mermaid) so a summon is instant — it lists snippets and the inline
@@ -41,10 +42,9 @@ export function useQuickLook() {
       })
   )
 
-  const toolItems = computed(() => rank(query.value, convertItems()))
-  // Tools lead the list under one collapsed row: a long snippet library would
-  // otherwise bury them, and reaching a tool meant scrolling past everything.
-  // A query that matches a tool opens the section so search still surfaces them.
+  const toolItems = computed(() => rank(query.value, convertItems(t)))
+  // Tools lead the list under one collapsed row, or a long snippet library
+  // buries them. A matching query opens the section so search still finds them.
   const toolsOpen = ref(false)
   const results = computed(() => {
     const snips = rank(query.value, snippetItems.value)

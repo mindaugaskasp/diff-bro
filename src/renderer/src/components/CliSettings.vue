@@ -29,30 +29,35 @@ async function run(fn) {
 
 <template>
   <section>
-    <h4>Terminal command</h4>
-    <p class="dialog-note">
-      Adds a <code>diffbro</code> command so a comparison can start from a terminal:
-      <code>diffbro compare a.json b.json</code>, <code>diffbro create snippet</code>, or
-      <code>diffbro cb save</code> to keep what you just copied.
-    </p>
+    <h4>{{ $t('cliSettings.terminalCommand') }}</h4>
+    <i18n-t keypath="cliSettings.intro" tag="p" class="dialog-note">
+      <template #cmd><code>diffbro</code></template>
+      <template #compare><code>diffbro compare a.json b.json</code></template>
+      <template #create><code>diffbro create snippet</code></template>
+      <template #save><code>diffbro cb save</code></template>
+    </i18n-t>
 
     <div v-if="status" class="path">
       <code :title="status.target">{{ status.target }}</code>
-      <span v-if="status.installed" class="badge">installed</span>
+      <span v-if="status.installed" class="badge">{{ $t('cliSettings.installed') }}</span>
     </div>
 
-    <p v-if="status?.installed && !status.onPath" class="hint">
-      That folder isn’t on your PATH yet — add it to your shell profile to run
-      <code>diffbro</code> by name.
-    </p>
+    <i18n-t
+      v-if="status?.installed && !status.onPath"
+      keypath="cliSettings.notOnPath"
+      tag="p"
+      class="hint"
+    >
+      <template #cmd><code>diffbro</code></template>
+    </i18n-t>
     <p v-if="error" class="hint">{{ error }}</p>
 
     <div class="dialog-actions">
       <button v-if="status?.installed" class="btn" :disabled="busy" @click="uninstall">
-        Remove
+        {{ $t('common.remove') }}
       </button>
       <button class="btn btn-primary" :disabled="busy" @click="install">
-        {{ status?.installed ? 'Reinstall' : 'Install' }}
+        {{ status?.installed ? $t('cliSettings.reinstall') : $t('cliSettings.install') }}
       </button>
     </div>
   </section>

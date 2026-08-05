@@ -21,15 +21,23 @@ const { run } = useCommands()
     <button
       class="star"
       :class="{ on: tool.pinned }"
-      :data-tip="tool.pinned ? 'Unpin' : 'Pin to the top of the list'"
-      :aria-label="tool.pinned ? `Unpin ${tool.name}` : `Pin ${tool.name} to the top`"
+      :data-tip="tool.pinned ? $t('toolRow.unpin') : $t('toolRow.pinToTheTop')"
+      :aria-label="
+        tool.pinned
+          ? $t('toolRow.unpin', { name: tool.name })
+          : $t('toolRow.pin', { name: tool.name })
+      "
       :aria-pressed="tool.pinned"
       @click="store.togglePin(tool.id)"
     >
       <AppIcon :name="tool.pinned ? 'star-filled' : 'star'" />
     </button>
 
-    <button class="entry" :data-tip="`${tool.kind} — ${tool.name}`" @click="run(tool.action)">
+    <button
+      class="entry"
+      :data-tip="$t('toolRow.tip', { kind: tool.kind, name: tool.name })"
+      @click="run(tool.action)"
+    >
       <span class="monogram glyph"><AppIcon :name="tool.icon" /></span>
       <span class="nm">{{ tool.name }}</span>
     </button>

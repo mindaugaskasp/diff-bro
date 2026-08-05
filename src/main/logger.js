@@ -14,6 +14,7 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { capLog, dailyLogName, formatLogEntry, isLogFileName, staleLogFiles } from './logFormat'
 import { redactSensitive } from './logRedact'
+import { t } from './i18n'
 
 const MAX_DAY_BYTES = 512 * 1024 // one day's file
 const KEEP_DAYS = 7
@@ -109,7 +110,7 @@ function clearLogs() {
 
 async function chooseLogDir(win) {
   const { canceled, filePaths } = await dialog.showOpenDialog(win, {
-    title: 'Choose a folder for logs',
+    title: t('dialog.chooseLogFolder'),
     properties: ['openDirectory', 'createDirectory']
   })
   if (canceled || !filePaths.length) return { ok: false }

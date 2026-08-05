@@ -1,45 +1,22 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../persist'
+import { activeLocale, setLocale as applyLocale } from '../i18n'
 import { isValidAccelerator } from '../utils/accelerator'
-import { MAX_RECENT_TOOLS, noteRecent } from '../utils/tools'
+import { noteRecent } from '../utils/tools'
 import { applyTheme, isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
+import { normalizeLocale } from '../../../shared/i18n'
 import {
-  BACKUP_HOURS,
-  DIALOG_SIZE_MAX,
-  DIALOG_SIZE_MIN,
   DEFAULT_MAX_EXPORT_HEIGHT_PX,
   DEFAULT_MAX_SNIPPET_SIZE_KB,
-  DEFAULT_QUICKLOOK_SHORTCUT,
-  DEFAULT_SETTINGS,
   FILE_TYPE_LIMITS,
   MAX_EXPORT_HEIGHT_PX_CAP,
   MAX_SNIPPET_SIZE_KB_CAP,
   MIN_EXPORT_HEIGHT_PX,
-  SECTIONS,
   clampBackupHours,
   clampNumber,
-  readDialogSizes,
-  readFileLimits,
-  sanitizeSectionOrder,
-  sanitizeSize
+  sanitizeSize,
+  settingsStateFrom
 } from '../utils/settingsDefaults'
-
-// Re-exported so the many modules that already import these from the store keep
-// working; the definitions live in utils/settingsDefaults.js.
-export {
-  BACKUP_HOURS,
-  DEFAULT_MAX_EXPORT_HEIGHT_PX,
-  DEFAULT_MAX_SNIPPET_SIZE_KB,
-  DEFAULT_QUICKLOOK_SHORTCUT,
-  DEFAULT_SETTINGS,
-  DIALOG_SIZE_MAX,
-  DIALOG_SIZE_MIN,
-  FILE_TYPE_LIMITS,
-  MAX_EXPORT_HEIGHT_PX_CAP,
-  MAX_SNIPPET_SIZE_KB_CAP,
-  MIN_EXPORT_HEIGHT_PX,
-  SECTIONS
-}
 
 function readState() {
   let parsed
@@ -49,56 +26,12 @@ function readState() {
     parsed = {}
   }
   // One-time migration of the shortcut bar's old localStorage dismissal.
-  let showShortcutBar = parsed.showShortcutBar
-  if (typeof showShortcutBar !== 'boolean') {
-    showShortcutBar = localStorage.getItem('diffbro.shortcutBarDismissed') !== '1'
-  }
-  return {
-    sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
-    sectionsLocked: parsed.sectionsLocked === true,
-    shelfOrder:
-      parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
-    showShortcutBar,
-    rotateThemeDaily: parsed.rotateThemeDaily === true,
-    fileSizeLimitsMb: readFileLimits(parsed),
-    maxSnippetSizeKb: clampNumber(
-      parsed.maxSnippetSizeKb,
-      DEFAULT_MAX_SNIPPET_SIZE_KB,
-      16,
-      MAX_SNIPPET_SIZE_KB_CAP
-    ),
-    maxExportHeightPx: clampNumber(
-      parsed.maxExportHeightPx,
-      DEFAULT_MAX_EXPORT_HEIGHT_PX,
-      MIN_EXPORT_HEIGHT_PX,
-      MAX_EXPORT_HEIGHT_PX_CAP
-    ),
-    dialogSizes: readDialogSizes(parsed),
-    maximizeDialogs: parsed.maximizeDialogs === true,
-    // A sound the app makes on its own, so it is escapable; default on.
-    shutterSound: parsed.shutterSound !== false,
-    // Reopen the comparisons that were open at quit. On by default; turning it
-    // off forgets the stored one too (see tabsStore.setRestoreSession).
-    restoreSession: parsed.restoreSession !== false,
-    autoBackup: parsed.autoBackup !== false,
-    // The sidebar collapsed to its rail. Off by default: the library is how a
-    // comparison is usually reached.
-    sidebarCollapsed: parsed.sidebarCollapsed === true,
-    autoBackupHours: clampBackupHours(parsed.autoBackupHours),
-    examplesSeeded: parsed.examplesSeeded === true,
-    // Most-recent-first tool ids; unknown ids are dropped when rendered.
-    recentTools: Array.isArray(parsed.recentTools)
-      ? parsed.recentTools.filter((id) => typeof id === 'string').slice(0, MAX_RECENT_TOOLS)
-      : [],
-    // A hand-edited/invalid stored accelerator falls back to the default.
-    quickLookShortcut: isValidAccelerator(parsed.quickLookShortcut)
-      ? parsed.quickLookShortcut
-      : DEFAULT_QUICKLOOK_SHORTCUT,
-    // Persisted under its own key since long before the settings blob existed.
-    userTheme: normalizeTheme(loadPersisted('theme')),
-    // The ACTIVE theme components read — userTheme, unless daily rotation is on.
-    theme: normalizeTheme(loadPersisted('theme'))
-  }
+  const showShortcutBar =
+    typeof parsed.showShortcutBar === 'boolean'
+      ? parsed.showShortcutBar
+      : localStorage.getItem('diffbro.shortcutBarDismissed') !== '1'
+  // Theme is persisted under its own key, since long before the settings blob.
+  return settingsStateFrom(parsed, { showShortcutBar, theme: loadPersisted('theme') })
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -114,7 +47,9 @@ export const useSettingsStore = defineStore('settings', {
       s.fileSizeLimitsMb[type] ?? FILE_TYPE_LIMITS[type]?.default ?? 10,
     fileSizeLimitBytes() {
       return (type) => this.fileSizeLimitMb(type) * 1024 * 1024
-    }
+    },
+    // `locale` is null until the user chooses; this is what is actually rendering.
+    activeLocale: (s) => s.locale ?? activeLocale()
   },
   actions: {
     initTheme() {
@@ -133,6 +68,15 @@ export const useSettingsStore = defineStore('settings', {
       // While rotating, the pick is saved for later but the active theme stays
       // the day's; otherwise it applies immediately.
       this.resolveActiveTheme()
+    },
+    // The language the chrome renders in. Applied to the renderer immediately
+    // and handed to main, which rebuilds the application menu — the menu is
+    // built from a template at startup and does not re-read anything on its own.
+    setLocale(id) {
+      this.locale = normalizeLocale(id)
+      applyLocale(this.locale)
+      this.persist()
+      window.api?.setLocale?.(this.locale)
     },
     // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
     // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
@@ -156,6 +100,7 @@ export const useSettingsStore = defineStore('settings', {
           maxExportHeightPx: this.maxExportHeightPx,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
+          locale: this.locale,
           shutterSound: this.shutterSound,
           restoreSession: this.restoreSession,
           autoBackup: this.autoBackup,

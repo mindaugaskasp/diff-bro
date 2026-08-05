@@ -7,7 +7,8 @@ import { computed, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useCommands } from '../composables/useCommands'
-import { TOOLS } from '../utils/tools'
+import { TOOLS, namedTools } from '../utils/tools'
+import { t } from '../i18n'
 import { useFittingCount } from '../composables/useFittingCount'
 import AppIcon from './AppIcon.vue'
 import { useUiStore } from '../stores/uiStore'
@@ -31,7 +32,9 @@ const fits = useFittingCount(tools, {
 // The same ordering the expanded section uses — pinned first, then registry
 // order — so collapsing the sidebar never rearranges the list. Opened straight
 // from the rail: reaching a tool must not cost the collapse.
-const railTools = computed(() => toolsStore.railRows(fits.value))
+// Resolved here, like every other tool surface: raw rows carry nameKey/kindKey
+// and would render "undefined undefined" into the tooltip and the aria-label.
+const railTools = computed(() => namedTools(toolsStore.railRows(fits.value), t))
 
 const groups = computed(() => [
   {
@@ -52,8 +55,8 @@ const groups = computed(() => [
     <div class="rail-band band">
       <button
         class="btn btn-icon sidebar-toggle"
-        data-tip="Expand the sidebar"
-        aria-label="Expand the sidebar"
+        :data-tip="$t('sidebarRail.expandTheSidebar')"
+        :aria-label="$t('sidebarRail.expandTheSidebar')"
         @click="emit('expand', null)"
       >
         <AppIcon name="chevron-right" />
@@ -62,8 +65,8 @@ const groups = computed(() => [
 
     <button
       class="rail-btn"
-      data-tip="Search diffs & snippets"
-      aria-label="Search diffs and snippets"
+      :data-tip="$t('sidebarRail.searchDiffsSnippets')"
+      :aria-label="$t('sidebarRail.searchDiffsAndSnippets')"
       @click="emit('expand', 'search')"
     >
       <AppIcon name="search" />
@@ -91,7 +94,7 @@ const groups = computed(() => [
         :key="tool.id"
         class="rail-btn"
         :class="{ pinned: tool.pinned }"
-        :data-tip="`${tool.kind} — ${tool.name}`"
+        :data-tip="$t('toolRow.tip', { kind: tool.kind, name: tool.name })"
         :aria-label="`${tool.kind} ${tool.name}`"
         @click="run(tool.action)"
       >
@@ -102,8 +105,8 @@ const groups = computed(() => [
     <!-- The full list, searchable, without giving up the collapse. -->
     <button
       class="rail-btn"
-      data-tip="Search every tool"
-      aria-label="Tools"
+      :data-tip="$t('sidebarRail.searchEveryTool')"
+      :aria-label="$t('sidebarRail.tools')"
       @click="ui.openToolsPalette()"
     >
       <AppIcon name="wrench" />

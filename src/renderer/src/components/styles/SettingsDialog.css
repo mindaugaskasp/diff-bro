@@ -178,3 +178,13 @@ h4:not(:first-child) {
   margin-left: auto;
   flex: none;
 }
+
+.language-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-h);
+}
+.language-row > span {
+  flex: 1;
+}

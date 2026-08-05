@@ -64,22 +64,24 @@ async function copy(row) {
 <template>
   <div class="th" :class="{ compact }">
     <div class="th-top">
-      <SegmentedControl v-model:value="source" label="Of" :options="SOURCES" />
-      <label class="th-chk"><input v-model="upper" type="checkbox" /> UPPER</label>
+      <SegmentedControl v-model:value="source" :label="$t('toolHash.of')" :options="SOURCES" />
+      <label class="th-chk"
+        ><input v-model="upper" type="checkbox" /> {{ $t('toolHash.uPPER') }}</label
+      >
     </div>
 
     <textarea
       v-if="source === 'text'"
       v-model="input"
       class="th-in"
-      placeholder="Paste text…"
+      :placeholder="$t('toolHash.pasteText')"
       spellcheck="false"
-      aria-label="Text to hash"
+      :aria-label="$t('toolHash.textToHash')"
     ></textarea>
 
     <div v-else class="th-file">
       <button class="btn btn-sm" :disabled="busy" @click="pickFile">
-        <AppIcon name="file" /> {{ busy ? 'Reading…' : 'Choose a file…' }}
+        <AppIcon name="file" /> {{ busy ? $t('toolHash.reading') : $t('toolHash.chooseAFile') }}
       </button>
       <span v-if="file" class="th-fname" :class="{ bad: file.failed }">
         {{ file.name }}<span v-if="file.size !== null"> · {{ fileSize(file.size) }}</span>
@@ -91,12 +93,12 @@ async function copy(row) {
         v-model="expected"
         class="th-field"
         spellcheck="false"
-        placeholder="Paste the digest you were given…"
-        aria-label="Expected digest"
+        :placeholder="$t('toolHash.pasteTheDigestYouWere')"
+        :aria-label="$t('toolHash.expectedDigest')"
       />
       <span v-if="check.checked" class="th-verdict" :class="{ ok: check.algorithm }">
         <AppIcon :name="check.algorithm ? 'check' : 'x'" />
-        {{ check.algorithm ? `matches ${HASH_LABELS[check.algorithm]}` : 'no match' }}
+        {{ check.algorithm ? `matches ${HASH_LABELS[check.algorithm]}` : $t('toolUuid.noMatch') }}
       </span>
     </div>
 
@@ -112,7 +114,7 @@ async function copy(row) {
         <button
           class="th-copy"
           :aria-label="`Copy ${row.label}`"
-          data-tip="Copy"
+          :data-tip="$t('common.copy')"
           @click="copy(row)"
         >
           <AppIcon :name="copiedAlgo === row.algo ? 'check' : 'copy'" />

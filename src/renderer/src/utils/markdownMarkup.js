@@ -6,17 +6,17 @@ import { blockWrap, linePrefix, listBlock, selected, splice, wrap } from './mark
 
 // Toolbar buttons in display order.
 export const MARKDOWN_ACTIONS = [
-  { id: 'bold', title: 'Bold  **text**', icon: 'bold' },
-  { id: 'italic', title: 'Italic  *text*', icon: 'italic' },
-  { id: 'code', title: 'Inline code  `text`', icon: 'code' },
-  { id: 'h1', title: 'Heading 1  #', text: 'H1' },
-  { id: 'h2', title: 'Heading 2  ##', text: 'H2' },
-  { id: 'h3', title: 'Heading 3  ###', text: 'H3' },
-  { id: 'bullet', title: 'Bullet list  - item', icon: 'list' },
-  { id: 'numbered', title: 'Numbered list  1. item', icon: 'list-ordered' },
-  { id: 'quote', title: 'Quote  > text', icon: 'quote' },
-  { id: 'codeblock', title: 'Code block  ```', icon: 'braces' },
-  { id: 'link', title: 'Link  [text](url)', icon: 'link' }
+  { id: 'bold', labelKey: 'markup.bold', syntax: '**text**', icon: 'bold' },
+  { id: 'italic', labelKey: 'markup.italic', syntax: '*text*', icon: 'italic' },
+  { id: 'code', labelKey: 'markup.inlineCode', syntax: '`text`', icon: 'code' },
+  { id: 'h1', labelKey: 'markup.heading1', syntax: '#', text: 'H1' },
+  { id: 'h2', labelKey: 'markup.heading2', syntax: '##', text: 'H2' },
+  { id: 'h3', labelKey: 'markup.heading3', syntax: '###', text: 'H3' },
+  { id: 'bullet', labelKey: 'markup.bulletList', syntax: '- item', icon: 'list' },
+  { id: 'numbered', labelKey: 'markup.numberedList', syntax: '1. item', icon: 'list-ordered' },
+  { id: 'quote', labelKey: 'markup.quote', syntax: '> text', icon: 'quote' },
+  { id: 'codeblock', labelKey: 'markup.codeBlock', syntax: '```', icon: 'braces' },
+  { id: 'link', labelKey: 'markup.link', syntax: '[text](url)', icon: 'link' }
 ]
 
 const WRAPS = {

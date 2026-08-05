@@ -91,10 +91,10 @@ onBeforeUnmount(() => clearTimeout(timer))
   <div class="mermaid-diagram">
     <div ref="host" class="host" :class="{ hidden: !!error }" :data-paper="paper || null"></div>
     <p v-if="error" class="err">
-      <span class="err-title">Diagram error</span>
+      <span class="err-title">{{ $t('mermaidDiagram.diagramError') }}</span>
       <span class="err-msg">{{ error }}</span>
     </p>
-    <span v-if="loading" class="loading">rendering…</span>
+    <span v-if="loading" class="loading">{{ $t('mermaidDiagram.rendering') }}</span>
   </div>
 </template>
 

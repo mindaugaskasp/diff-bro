@@ -11,16 +11,24 @@ const pending = computed(() => vault.pendingDelete)
   <BaseDialog
     v-if="pending"
     width="320px"
-    title="Delete saved diff?"
+    :title="$t('vaultCategoryDeleteDialog.deleteSavedDiff')"
     :closable="false"
     @close="vault.cancelDelete()"
   >
     <p class="dialog-note">
-      Delete <strong>“{{ pending.name }}”</strong>? This can’t be undone.
+      <i18n-t keypath="vaultCategoryDeleteDialog.confirm" tag="span">
+        <template #name
+          ><strong>“{{ pending.name }}”</strong></template
+        >
+      </i18n-t>
     </p>
     <template #actions>
-      <button class="btn btn-destructive" @click="vault.confirmDelete()">Delete</button>
-      <button class="btn btn-ghost" @click="vault.cancelDelete()">Cancel</button>
+      <button class="btn btn-destructive" @click="vault.confirmDelete()">
+        {{ $t('vaultCategoryDeleteDialog.delete') }}
+      </button>
+      <button class="btn btn-ghost" @click="vault.cancelDelete()">
+        {{ $t('common.cancel') }}
+      </button>
     </template>
   </BaseDialog>
 </template>

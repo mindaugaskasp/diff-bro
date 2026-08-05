@@ -68,8 +68,12 @@ async function open() {
     <button
       class="star"
       :class="{ on: entry.favorite }"
-      :data-tip="entry.favorite ? 'Remove from favorites' : 'Pin to the top of the list'"
-      :aria-label="entry.favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="
+        entry.favorite ? $t('savedDiffRow.removeFromFavorites') : $t('savedDiffRow.pinToTheTop')
+      "
+      :aria-label="
+        entry.favorite ? $t('savedDiffRow.unfavorite') : $t('savedDiffRow.favoritePinToTop')
+      "
       @click="vault.toggleFavorite(entry.id)"
     >
       <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />
@@ -89,8 +93,8 @@ async function open() {
         </span>
         <span class="l2">
           <template v-if="entry.from">
-            <span class="from">from {{ entry.from }}</span>
-            <span class="trust-mark" data-tip="Verified — the signature matched a key you trust">
+            <span class="from">{{ $t('savedDiffRow.from', { who: entry.from }) }}</span>
+            <span class="trust-mark" :data-tip="$t('savedDiffRow.verifiedTheSignatureMatchedA')">
               <AppIcon name="shield-check" />
             </span>
           </template>
@@ -102,7 +106,7 @@ async function open() {
               <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
             </span>
           </template>
-          <span v-else-if="!entry.from" class="untagged">Untagged</span>
+          <span v-else-if="!entry.from" class="untagged">{{ $t('savedDiffRow.untagged') }}</span>
         </span>
       </span>
     </button>
@@ -111,16 +115,16 @@ async function open() {
       <button
         v-if="entry.format !== 'excel'"
         class="row-btn"
-        data-tip="Export this diff as a picture (PNG)"
-        aria-label="Export as image"
+        :data-tip="$t('savedDiffRow.exportThisDiffAsA')"
+        :aria-label="$t('savedDiffRow.exportAsImage')"
         @click="imageExport.exportImage(entry.id)"
       >
         <AppIcon name="image" />
       </button>
       <button
         class="row-btn"
-        data-tip="Edit this diff's tags"
-        aria-label="Edit tags"
+        :data-tip="$t('savedDiffRow.editThisDiffSTags')"
+        :aria-label="$t('savedDiffRow.editTags')"
         @click="vault.requestRetag(entry.id)"
       >
         <AppIcon name="tag" />
@@ -128,16 +132,16 @@ async function open() {
       <button
         v-if="!entry.from"
         class="row-btn"
-        data-tip="Seal this diff for the trusted people you pick"
-        aria-label="Share as sealed file"
+        :data-tip="$t('savedDiffRow.sealThisDiffForThe')"
+        :aria-label="$t('savedDiffRow.shareAsSealedFile')"
         @click="share.shareEntry(entry.id)"
       >
         <AppIcon name="share" />
       </button>
       <button
         class="row-btn delete"
-        data-tip="Delete this saved diff now"
-        aria-label="Delete now"
+        :data-tip="$t('savedDiffRow.deleteThisSavedDiffNow')"
+        :aria-label="$t('savedDiffRow.deleteNow')"
         @click="vault.requestDelete(entry.id, entry.name)"
       >
         <AppIcon name="trash" />

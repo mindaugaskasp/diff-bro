@@ -23,10 +23,15 @@ const shown = computed(() => {
 
 <template>
   <div class="picker-backdrop" @click="emit('close')">
-    <div class="picker" role="dialog" aria-label="All tags" @click.stop>
+    <div class="picker" role="dialog" :aria-label="$t('tagPickerPopover.allTags')" @click.stop>
       <div class="picker-head">
-        <span>All tags</span>
-        <button class="dialog-close" data-tip="Close" aria-label="Close" @click="emit('close')">
+        <span>{{ $t('tagPickerPopover.allTags') }}</span>
+        <button
+          class="dialog-close"
+          :data-tip="$t('common.close')"
+          :aria-label="$t('common.close')"
+          @click="emit('close')"
+        >
           <AppIcon name="x" />
         </button>
       </div>
@@ -35,8 +40,8 @@ const shown = computed(() => {
         class="picker-search"
         type="text"
         spellcheck="false"
-        placeholder="Find a tag…"
-        aria-label="Find a tag"
+        :placeholder="$t('tagPickerPopover.findATag')"
+        :aria-label="$t('tagPickerPopover.findATag2')"
       />
       <div class="picker-chips">
         <button
@@ -51,7 +56,9 @@ const shown = computed(() => {
           <TagGlyph :color="t.color || 'var(--text-dim)'" />{{ t.name }}
           <span class="usb-tct">{{ t.count }}</span>
         </button>
-        <p v-if="!shown.length" class="picker-none">No tag matches “{{ query }}”.</p>
+        <p v-if="!shown.length" class="picker-none">
+          {{ $t('tagPickerPopover.noTagMatches', { q: query }) }}
+        </p>
       </div>
     </div>
   </div>

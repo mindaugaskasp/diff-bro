@@ -86,8 +86,14 @@ offerToolOutput(
 <template>
   <div class="tu" :class="{ compact }">
     <div class="tu-top">
-      <SegmentedControl v-model:value="version" label="Version" :options="VERSIONS" />
-      <button v-if="!isV5" class="btn btn-sm" @click="generate"><AppIcon name="plus" /> New</button>
+      <SegmentedControl
+        v-model:value="version"
+        :label="$t('toolUuid.version')"
+        :options="VERSIONS"
+      />
+      <button v-if="!isV5" class="btn btn-sm" @click="generate">
+        <AppIcon name="plus" /> {{ $t('toolUuid.new') }}
+      </button>
     </div>
 
     <div v-if="isV5" class="tu-v5">
@@ -106,50 +112,60 @@ offerToolOutput(
         v-model="namespace"
         class="tu-in tu-mono"
         spellcheck="false"
-        aria-label="Namespace UUID"
+        :aria-label="$t('toolUuid.namespaceUUID')"
       />
       <input
         v-model="name"
         class="tu-in"
-        placeholder="name — e.g. example.com"
+        :placeholder="$t('toolUuid.nameEGExampleCom')"
         spellcheck="false"
-        aria-label="Name"
+        :aria-label="$t('toolUuid.name')"
       />
       <div class="tu-verify">
         <input
           v-model="verify"
           class="tu-in tu-mono"
           spellcheck="false"
-          placeholder="verify a UUID against this namespace + name"
-          aria-label="Verify UUID"
+          :placeholder="$t('toolUuid.verifyAUUIDAgainstThis')"
+          :aria-label="$t('toolUuid.verifyUUID')"
         />
         <span v-if="verifyMatch !== null" class="tu-match" :class="{ ok: verifyMatch }">
-          <AppIcon :name="verifyMatch ? 'check' : 'x'" /> {{ verifyMatch ? 'match' : 'no match' }}
+          <AppIcon :name="verifyMatch ? 'check' : 'x'" />
+          {{ verifyMatch ? $t('toolUuid.match') : $t('toolUuid.noMatch') }}
         </span>
       </div>
     </div>
 
     <div class="tu-lane">
       <span class="tu-k">
-        UUID <span v-if="info" class="tu-badge">v{{ info.version }} · {{ info.variant }}</span>
+        {{ $t('toolUuid.uUID') }}
+        <span v-if="info" class="tu-badge">{{
+          $t('toolUuid.versionVariant', { version: info.version, variant: info.variant })
+        }}</span>
       </span>
       <input
         v-model="uuid"
         class="tu-in tu-mono"
         spellcheck="false"
-        placeholder="paste or generate"
-        aria-label="UUID"
+        :placeholder="$t('toolUuid.pasteOrGenerate')"
+        :aria-label="$t('toolUuid.uUID')"
       />
     </div>
 
     <div class="tu-opts">
-      <SegmentedControl v-model:value="caseOpt" label="Case" :options="CASES" />
-      <SegmentedControl v-model:value="form" label="Form" :options="FORMS" />
+      <SegmentedControl v-model:value="caseOpt" :label="$t('toolUuid.case')" :options="CASES" />
+      <SegmentedControl v-model:value="form" :label="$t('toolUuid.form')" :options="FORMS" />
     </div>
 
     <div class="tu-out">
       <span class="tu-mono tu-out-v">{{ display || '—' }}</span>
-      <button v-if="display" class="tu-copy" aria-label="Copy" data-tip="Copy" @click="copy">
+      <button
+        v-if="display"
+        class="tu-copy"
+        :aria-label="$t('common.copy')"
+        :data-tip="$t('common.copy')"
+        @click="copy"
+      >
         <AppIcon :name="copied ? 'check' : 'copy'" />
       </button>
     </div>

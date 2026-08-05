@@ -19,16 +19,26 @@ const onConfirm = () => (isPick.value ? diff.confirmPick() : diff.confirmReplace
 </script>
 
 <template>
-  <BaseDialog width="420px" title="Replace current comparison?" @close="onCancel">
+  <BaseDialog
+    width="420px"
+    :title="$t('replaceDiffDialog.replaceCurrentComparison')"
+    @close="onCancel"
+  >
     <p class="dialog-note">
-      Loading {{ incoming }} will discard the comparison you have open (<code>{{ current }}</code
-      >). Save it first if you want to keep it.
+      <i18n-t keypath="replaceDiffDialog.willDiscard" tag="span">
+        <template #incoming>{{ incoming }}</template>
+        <template #current
+          ><code>{{ current }}</code></template
+        >
+      </i18n-t>
     </p>
     <template #actions>
-      <button class="btn" @click="onCancel">Cancel</button>
+      <button class="btn" @click="onCancel">{{ $t('common.cancel') }}</button>
       <span class="spacer" />
-      <button class="btn" @click="onSaveFirst">Save first</button>
-      <button class="btn btn-destructive" @click="onConfirm">Replace anyway</button>
+      <button class="btn" @click="onSaveFirst">{{ $t('replaceDiffDialog.saveFirst') }}</button>
+      <button class="btn btn-destructive" @click="onConfirm">
+        {{ $t('replaceDiffDialog.replaceAnyway') }}
+      </button>
     </template>
   </BaseDialog>
 </template>

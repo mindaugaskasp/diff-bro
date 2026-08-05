@@ -75,11 +75,15 @@ defineExpose({ flash })
   <button
     v-if="secret"
     class="btn btn-sm"
-    :data-tip="masked ? 'Show the contents' : 'Hide the contents again'"
+    :data-tip="
+      masked
+        ? $t('snippetEditorActions.showTheContents')
+        : $t('snippetEditorActions.hideTheContentsAgain')
+    "
     @click="emit('reveal')"
   >
     <AppIcon :name="masked ? 'eye' : 'eye-off'" />
-    {{ masked ? 'Show' : 'Hide' }}
+    {{ masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide') }}
   </button>
   <button
     class="btn btn-sm"
@@ -88,7 +92,7 @@ defineExpose({ flash })
     :data-tip="copyTip"
     @click="emit('copy')"
   >
-    {{ copied ? 'Copied' : 'Copy' }}
+    {{ copied ? $t('common.copied') : $t('common.copy') }}
   </button>
   <button
     v-if="canCopyFile && !editMode"
@@ -97,7 +101,7 @@ defineExpose({ flash })
     :data-tip="copyFileTip"
     @click="copyAsFile"
   >
-    <AppIcon name="clipboard" /> Copy as file
+    <AppIcon name="clipboard" /> {{ $t('snippetEditorActions.copyAsFile') }}
   </button>
   <button
     v-if="editMode"
@@ -107,7 +111,7 @@ defineExpose({ flash })
     :data-tip="clearTip"
     @click="hasContent && clearContent()"
   >
-    {{ clearArmed ? 'Confirm clear' : 'Clear' }}
+    {{ clearArmed ? $t('snippetEditorActions.confirmClear') : $t('snippetEditorActions.clear') }}
   </button>
   <span class="spacer" />
   <!-- Viewing is when you are looking at the thing you want a picture of. Never
@@ -115,13 +119,13 @@ defineExpose({ flash })
   <button
     v-if="!editMode && !secret"
     class="btn"
-    data-tip="A picture of this snippet, as the app draws it"
+    :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
     @click="emit('capture')"
   >
-    <AppIcon name="image" /> Capture
+    <AppIcon name="image" /> {{ $t('snippetEditorActions.capture') }}
   </button>
   <button v-if="!editMode" class="btn btn-primary" @click="emit('edit')">
-    <AppIcon name="edit" /> Edit
+    <AppIcon name="edit" /> {{ $t('snippetEditorActions.edit') }}
   </button>
   <button
     v-else
@@ -130,9 +134,11 @@ defineExpose({ flash })
     :disabled="!canSave"
     @click="emit('save')"
   >
-    Save
+    {{ $t('common.save') }}
   </button>
-  <button class="btn btn-ghost" @click="emit('close')">{{ editMode ? 'Cancel' : 'Close' }}</button>
+  <button class="btn btn-ghost" @click="emit('close')">
+    {{ editMode ? $t('common.cancel') : $t('common.close') }}
+  </button>
 </template>
 
 <style scoped src="./styles/SnippetEditorActions.css"></style>

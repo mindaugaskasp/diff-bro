@@ -172,7 +172,7 @@ they are grounds often enough that this is a judgement, not a rubber stamp:
   ships an install script, or drags a transitive tree you cannot audit is
   refused however good it is. Run the network audit and `npm audit` BEFORE
   writing any integration code, not after.
-- **Weigh it against what it replaces.** Nine production dependencies is the
+- **Weigh it against what it replaces.** Eleven production dependencies is the
   current count; a package that saves twenty lines is rarely worth an audit
   surface. A package that saves a _class of bug_ — timezone arithmetic, zip
   inflation bounds, YAML anchors — usually is.
@@ -383,6 +383,33 @@ directory move passes CI while silently removing enforcement.
   need to know the consequence — a passphrase they must not lose, or
   AES-256-CBC being unauthenticated. Those explain a choice; the rest was
   decoration.
+- **User-facing text lives in the catalogue, never in source.**
+  `src/shared/i18n/en.json` is the single source, read by vue-i18n in the
+  renderer and `@intlify/core` in main — so a menu label and the button that
+  mirrors it cannot drift. Three rules decide where a string goes:
+  - **`utils/` exports key IDs and never calls `t()`.** It is pure (no Vue), and
+    a string resolved at module load would freeze whatever locale the app
+    started in. Components, stores, composables and slices translate; `utils/`
+    hands them a `*Key`. The same trap catches a module-level `const X = t(…)`
+    or a key table with translated values — both bake the startup language in,
+    and both have shipped here already.
+  - **A sentence with inline markup is ONE message, rendered by `<i18n-t>`**
+    with each markup run as a named slot. Splitting it into
+    `t('press') + <strong>→</strong> + " to browse…"` cannot be translated:
+    word order around the markup differs by language.
+  - **Syntax examples are not copy.** The Jira/Markdown toolbars carry a
+    translatable `labelKey` and an untouched `syntax`. `[text|url]` parses as a
+    two-form PLURAL in vue-i18n and `{code}` as interpolation, so grammar must
+    never enter the catalogue.
+
+  `npm run check:i18n` fails the build on a key with no catalogue entry, on a
+  catalogue entry with no call site, and on a stale `en-XA.json`.
+  `npm run check:rawtext` fails it on a hardcoded string in a template — the
+  count is held at **0**. `en-XA` is the generated pseudolocale — accented, bracketed
+  and ~40% longer — and it is what makes an un-extracted string and a clipping
+  container visible in `e2e/locale.spec.mjs`. Regenerate with
+  `node scripts/pseudolocale.mjs` after editing `en.json`.
+
 - **Prose comments are forbidden.** Code must explain itself through names and
   structure. A comment is allowed _only_ when the code's intent is genuinely
   ambiguous and cannot be made clear by better naming or refactoring — e.g. a

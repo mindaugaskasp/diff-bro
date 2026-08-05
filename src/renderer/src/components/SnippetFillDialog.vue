@@ -31,8 +31,8 @@ function close() {
   <BaseDialog width="440px" :title="`Fill in — ${name}`" @close="close">
     <form class="dialog-form" @submit.prevent="copyFilled">
       <p class="dialog-note">
-        This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank
-        to keep its <code>{{ marker }}</code> marker.
+        {{ $t('snippetFillDialog.thisPromptHasPlaceholdersFill') }}
+        <code>{{ marker }}</code> {{ $t('snippetFillDialog.marker') }}
       </p>
       <label v-for="(v, i) in vars" :key="v" class="fill-row">
         <span class="fill-name">{{ v }}</span>
@@ -45,8 +45,12 @@ function close() {
         />
       </label>
       <div class="dialog-actions">
-        <button type="submit" class="btn btn-primary">Copy filled</button>
-        <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          {{ $t('snippetFillDialog.copyFilled') }}
+        </button>
+        <button type="button" class="btn btn-ghost" @click="close">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>

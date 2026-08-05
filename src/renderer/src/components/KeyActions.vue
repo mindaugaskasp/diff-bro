@@ -13,17 +13,17 @@ const { run } = useCommands()
   <div class="key-actions">
     <button
       class="btn"
-      data-tip="Send someone your public key, so they can seal diffs for you"
+      :data-tip="$t('keyActions.sendSomeoneYourPublicKey')"
       @click="run('export-pubkey')"
     >
-      <AppIcon name="fingerprint" />My key
+      <AppIcon name="fingerprint" />{{ $t('keyActions.myKey') }}
     </button>
     <button
       class="btn"
-      data-tip="Open a .diffbrokey someone sent you, so you can seal diffs for them"
+      :data-tip="$t('keyActions.openADiffbrokeySomeoneSent')"
       @click="run('add-trusted-key')"
     >
-      <AppIcon name="plus" />Trusted key
+      <AppIcon name="plus" />{{ $t('keyActions.trustedKey') }}
     </button>
   </div>
 </template>

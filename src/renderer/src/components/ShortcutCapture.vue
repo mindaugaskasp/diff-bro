@@ -2,7 +2,8 @@
 // A new binding goes through main FIRST — it owns the OS registration and
 // reports if the combo is taken — and only a success persists.
 import { computed, ref } from 'vue'
-import { useSettingsStore, DEFAULT_QUICKLOOK_SHORTCUT } from '../stores/settingsStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { DEFAULT_QUICKLOOK_SHORTCUT } from '../utils/settingsDefaults'
 import { acceleratorFromEvent, isValidAccelerator, acceleratorLabel } from '../utils/accelerator'
 import { isMac } from '../keys'
 
@@ -65,7 +66,8 @@ function onKeydown(e) {
       @blur="stop"
     >
       <span v-if="capturing" class="prompt">
-        Press a key combination… <span class="esc">Esc to cancel</span>
+        {{ $t('shortcutCapture.pressAKeyCombination') }}
+        <span class="esc">{{ $t('shortcutCapture.escToCancel') }}</span>
       </span>
       <kbd v-else>{{ label }}</kbd>
     </button>
@@ -75,7 +77,7 @@ function onKeydown(e) {
       class="btn btn-sm"
       @click="apply(DEFAULT_QUICKLOOK_SHORTCUT)"
     >
-      Reset
+      {{ $t('shortcutCapture.reset') }}
     </button>
   </div>
   <p v-if="message" class="capture-msg" :class="message.type">{{ message.text }}</p>

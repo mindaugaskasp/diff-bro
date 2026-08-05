@@ -67,17 +67,17 @@ offerToolOutput(
     <textarea
       v-model="input"
       class="tur-in"
-      placeholder="URL or text to encode / decode…"
+      :placeholder="$t('toolUrl.uRLOrTextToEncode')"
       spellcheck="false"
-      aria-label="URL or text"
+      :aria-label="$t('toolUrl.uRLOrText')"
     ></textarea>
     <div class="tur-out">
       <span class="tur-out-v">{{ output || '—' }}</span>
       <button
         v-if="output"
         class="tur-copy"
-        aria-label="Copy result"
-        data-tip="Copy"
+        :aria-label="$t('toolUrl.copyResult')"
+        :data-tip="$t('common.copy')"
         @click="copy(output)"
       >
         <AppIcon :name="copied === output ? 'check' : 'copy'" />
@@ -85,25 +85,40 @@ offerToolOutput(
     </div>
 
     <div v-if="hasQuery" class="tur-params">
-      <span class="tur-k">Query parameters</span>
+      <span class="tur-k">{{ $t('toolUrl.queryParameters') }}</span>
       <div v-for="(p, i) in params" :key="i" class="tur-row">
-        <input v-model="p.key" class="tur-cell" spellcheck="false" aria-label="Parameter key" />
-        <input v-model="p.value" class="tur-cell" spellcheck="false" aria-label="Parameter value" />
+        <input
+          v-model="p.key"
+          class="tur-cell"
+          spellcheck="false"
+          :aria-label="$t('toolUrl.parameterKey')"
+        />
+        <input
+          v-model="p.value"
+          class="tur-cell"
+          spellcheck="false"
+          :aria-label="$t('toolUrl.parameterValue')"
+        />
         <button
           class="tur-x"
-          aria-label="Remove parameter"
-          data-tip="Remove"
+          :aria-label="$t('toolUrl.removeParameter')"
+          :data-tip="$t('common.remove')"
           @click="params.splice(i, 1)"
         >
           <AppIcon name="x" />
         </button>
       </div>
       <button class="btn btn-sm tur-add" @click="params.push({ key: '', value: '' })">
-        <AppIcon name="plus" /> Parameter
+        <AppIcon name="plus" /> {{ $t('toolUrl.parameter') }}
       </button>
       <div class="tur-out">
         <span class="tur-out-v">{{ rebuilt }}</span>
-        <button class="tur-copy" aria-label="Copy URL" data-tip="Copy" @click="copy(rebuilt)">
+        <button
+          class="tur-copy"
+          :aria-label="$t('toolUrl.copyURL')"
+          :data-tip="$t('common.copy')"
+          @click="copy(rebuilt)"
+        >
           <AppIcon :name="copied === rebuilt ? 'check' : 'copy'" />
         </button>
       </div>

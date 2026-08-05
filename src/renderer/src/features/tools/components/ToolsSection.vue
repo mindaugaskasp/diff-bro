@@ -8,6 +8,8 @@ import AppIcon from '../../../components/AppIcon.vue'
 import { useUiStore } from '../../../stores/uiStore'
 import ToolRow from './ToolRow.vue'
 import { useToolsStore } from '../toolsStore'
+import { t } from '../../../i18n'
+import { namedTools } from '../../../utils/tools'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -32,10 +34,11 @@ const filtering = computed(() => !!q.value || props.tags.length > 0)
 // visible and reports zero — that IS the answer to "why is this empty".
 const matches = computed(() => {
   if (props.tags.length) return []
-  const rows = props.favOnly ? store.rows.filter((t) => t.pinned) : store.rows
+  const all = namedTools(store.rows, t)
+  const rows = props.favOnly ? all.filter((row) => row.pinned) : all
   if (!q.value) return rows
   return rows.filter(
-    (t) => t.name.toLowerCase().includes(q.value) || t.kind.toLowerCase().includes(q.value)
+    (row) => row.name.toLowerCase().includes(q.value) || row.kind.toLowerCase().includes(q.value)
   )
 })
 
@@ -49,7 +52,7 @@ const hidden = computed(() => matches.value.length - shown.value.length)
   <section class="sidebar-section">
     <SectionHeader
       section-id="tools"
-      title="Tools"
+      :title="$t('menu.tools.title')"
       icon="wrench"
       :open="open"
       :first="first"
@@ -61,8 +64,8 @@ const hidden = computed(() => matches.value.length - shown.value.length)
       <template #actions>
         <button
           class="btn btn-icon"
-          data-tip="Search every tool"
-          aria-label="Search every tool"
+          :data-tip="$t('tools.section.searchEveryTool')"
+          :aria-label="$t('tools.section.searchEveryTool')"
           @click.stop="ui.openToolsPalette()"
         >
           <AppIcon name="search" />
@@ -72,7 +75,9 @@ const hidden = computed(() => matches.value.length - shown.value.length)
 
     <div v-show="open" class="section-body">
       <ul class="rows">
-        <li v-if="!matches.length" class="empty small">No tools match — try removing a filter.</li>
+        <li v-if="!matches.length" class="empty small">
+          {{ $t('tools.section.noToolsMatchTryRemoving') }}
+        </li>
         <ToolRow v-for="tool in shown" :key="tool.id" :tool="tool" />
 
         <li v-if="hidden > 0 || expanded" class="disclosure">
@@ -82,7 +87,11 @@ const hidden = computed(() => matches.value.length - shown.value.length)
               <AppIcon :name="expanded ? 'chevron-up' : 'chevron-down'" />
             </span>
             <span class="nm">
-              {{ expanded ? 'Show fewer' : `${hidden} more tool${hidden === 1 ? '' : 's'}` }}
+              {{
+                expanded
+                  ? $t('tools.section.showFewer')
+                  : `${hidden} more tool${hidden === 1 ? '' : 's'}`
+              }}
             </span>
           </button>
         </li>

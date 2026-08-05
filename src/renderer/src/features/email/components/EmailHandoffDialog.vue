@@ -12,13 +12,13 @@ const note = ref(email.noteTemplate)
   <BaseDialog
     v-if="email.draft"
     width="440px"
-    title="Email this diff"
+    :title="$t('email.handoffDialog.emailThisDiff')"
     :escape-closes="false"
     @close="email.cancel()"
   >
     <form class="dialog-form" @submit.prevent="email.send(note)">
       <div class="field">
-        <span class="field-label">To — from their trusted keys, not typed here</span>
+        <span class="field-label">{{ $t('email.handoffDialog.toFromTheirTrustedKeys') }}</span>
         <ul class="to">
           <li v-for="r in email.draft.to" :key="r.fingerprint ?? r.email" class="chip">
             <AppIcon name="shield" />
@@ -29,24 +29,35 @@ const note = ref(email.noteTemplate)
       </div>
 
       <label class="field">
-        <span class="field-label">Note</span>
-        <textarea v-model="note" rows="3" placeholder="Optional — goes in the message body" />
+        <span class="field-label">{{ $t('email.handoffDialog.note') }}</span>
+        <textarea
+          v-model="note"
+          rows="3"
+          :placeholder="$t('email.handoffDialog.optionalGoesInTheMessage')"
+        />
       </label>
 
       <p class="strip">
         <AppIcon name="clipboard" />
-        <span>
-          Your mail app opens with this message. The sealed file goes on the clipboard —
-          <strong>paste it into the draft</strong> and send it yourself.
-        </span>
+        <i18n-t keypath="email.handoffDialog.pasteNote" tag="span">
+          <template #paste
+            ><strong>{{ $t('email.handoffDialog.pasteIt') }}</strong></template
+          >
+        </i18n-t>
       </p>
 
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="email.sending">
-          {{ email.sending ? 'Creating…' : 'Create & open mail' }}
+          {{
+            email.sending
+              ? $t('emailHandoffDialog.creating')
+              : $t('emailHandoffDialog.createOpenMail')
+          }}
         </button>
         <span class="spacer" />
-        <button type="button" class="btn btn-ghost" @click="email.cancel()">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="email.cancel()">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>

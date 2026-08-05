@@ -5,71 +5,82 @@ import { MOD } from '../keys'
 // floating ShortcutBar (a short subset). The real bindings live in the hidden
 // application menu (src/main/menu.js); this is only the labelling, so the labels
 // track the host OS through MOD (Cmd on macOS, Ctrl elsewhere).
+//
+// Labels are catalogue KEYS, not text: utils/ is pure and cannot import Vue, and
+// a string resolved here at module load would never follow a language change.
+// The consumers translate them. `id` is what code compares against — the label
+// is for people and moves with the locale.
 export const SHORTCUT_GROUPS = [
   {
-    group: 'File',
+    id: 'file',
+    labelKey: 'shortcuts.group.file',
     items: [
-      { keys: `${MOD}+1`, label: 'Open left file' },
-      { keys: `${MOD}+2`, label: 'Open right file' },
-      { keys: `${MOD}+S`, label: 'Save diff' },
-      { keys: `${MOD}+E`, label: 'Share diff' },
-      { keys: `${MOD}+I`, label: 'Import shared diff' },
-      { keys: `${MOD}+,`, label: 'Settings' }
+      { keys: `${MOD}+1`, labelKey: 'shortcuts.openLeft' },
+      { keys: `${MOD}+2`, labelKey: 'shortcuts.openRight' },
+      { keys: `${MOD}+S`, labelKey: 'shortcuts.saveDiff' },
+      { keys: `${MOD}+E`, labelKey: 'shortcuts.shareDiff' },
+      { keys: `${MOD}+I`, labelKey: 'shortcuts.importShared' },
+      { keys: `${MOD}+,`, labelKey: 'shortcuts.settings' }
     ]
   },
   {
-    group: 'Comparisons',
+    id: 'comparisons',
+    labelKey: 'shortcuts.group.comparisons',
     items: [
-      { keys: `${MOD}+Shift+T`, label: 'New comparison' },
-      { keys: `${MOD}+Shift+W`, label: 'Close comparison' },
-      { keys: 'Ctrl+Tab', label: 'Next comparison' },
-      { keys: 'Ctrl+Shift+Tab', label: 'Previous comparison' }
+      { keys: `${MOD}+Shift+T`, labelKey: 'shortcuts.newComparison' },
+      { keys: `${MOD}+Shift+W`, labelKey: 'shortcuts.closeComparison' },
+      { keys: 'Ctrl+Tab', labelKey: 'shortcuts.nextComparison' },
+      { keys: 'Ctrl+Shift+Tab', labelKey: 'shortcuts.prevComparison' }
     ]
   },
   {
-    group: 'Edit',
+    id: 'edit',
+    labelKey: 'shortcuts.group.edit',
     items: [
-      { keys: `${MOD}+Shift+S`, label: 'Swap sides' },
-      { keys: `${MOD}+K`, label: 'Clear' },
-      { keys: `${MOD}+Shift+C`, label: 'Copy diff as patch' },
-      { keys: `${MOD}+Shift+F`, label: 'Copy diff as file' },
-      { keys: `${MOD}+T`, label: 'Paste text mode' },
-      { keys: `${MOD}+V`, label: 'Paste to compare' }
+      { keys: `${MOD}+Shift+S`, labelKey: 'shortcuts.swapSides' },
+      { keys: `${MOD}+K`, labelKey: 'shortcuts.clear' },
+      { keys: `${MOD}+Shift+C`, labelKey: 'shortcuts.copyPatch' },
+      { keys: `${MOD}+Shift+F`, labelKey: 'shortcuts.copyFile' },
+      { keys: `${MOD}+T`, labelKey: 'shortcuts.pasteTextMode' },
+      { keys: `${MOD}+V`, labelKey: 'shortcuts.pasteToCompare' }
     ]
   },
   {
-    group: 'View',
+    id: 'view',
+    labelKey: 'shortcuts.group.view',
     items: [
-      { keys: `${MOD}+Shift+P`, label: 'Command palette' },
-      { keys: `${MOD}+\\`, label: 'Toggle split view' },
-      { keys: `${MOD}+B`, label: 'Toggle sidebar' },
-      { keys: `${MOD}+Shift+D`, label: 'Toggle structure view' },
-      { keys: `${MOD}+D`, label: 'Toggle light/dark theme' },
-      { keys: `${MOD}++`, label: 'Zoom in' },
-      { keys: `${MOD}+-`, label: 'Zoom out' },
-      { keys: `${MOD}+0`, label: 'Reset zoom' }
+      { keys: `${MOD}+Shift+P`, labelKey: 'shortcuts.commandPalette' },
+      { keys: `${MOD}+\\`, labelKey: 'shortcuts.toggleSplit' },
+      { keys: `${MOD}+B`, labelKey: 'shortcuts.toggleSidebar' },
+      { keys: `${MOD}+Shift+D`, labelKey: 'shortcuts.toggleStructure' },
+      { keys: `${MOD}+D`, labelKey: 'shortcuts.toggleTheme' },
+      { keys: `${MOD}++`, labelKey: 'shortcuts.zoomIn' },
+      { keys: `${MOD}+-`, labelKey: 'shortcuts.zoomOut' },
+      { keys: `${MOD}+0`, labelKey: 'shortcuts.resetZoom' }
     ]
   },
   {
-    group: 'Tools',
+    id: 'tools',
+    labelKey: 'shortcuts.group.tools',
     items: [
-      { keys: `${MOD}+Shift+B`, label: 'Base64 encode / decode' },
-      { keys: `${MOD}+Shift+J`, label: 'JSON format / validate' },
-      { keys: `${MOD}+Shift+M`, label: 'XML format / validate' },
-      { keys: `${MOD}+Shift+U`, label: 'UUID convert' },
-      { keys: `${MOD}+Shift+R`, label: 'Lines (split, sort, replace)' },
-      { keys: `${MOD}+Shift+X`, label: 'Encrypt / decrypt text' }
+      { keys: `${MOD}+Shift+B`, labelKey: 'shortcuts.base64' },
+      { keys: `${MOD}+Shift+J`, labelKey: 'shortcuts.json' },
+      { keys: `${MOD}+Shift+M`, labelKey: 'shortcuts.xml' },
+      { keys: `${MOD}+Shift+U`, labelKey: 'shortcuts.uuid' },
+      { keys: `${MOD}+Shift+R`, labelKey: 'shortcuts.lines' },
+      { keys: `${MOD}+Shift+X`, labelKey: 'shortcuts.crypt' }
     ]
   }
 ]
 
-// The compact set shown in the floating hint bar over the diff area.
+// The compact set shown in the floating hint bar over the diff area. Objects
+// rather than tuples so scripts/check-i18n.mjs can see the keys are in use.
 export const SHORTCUT_BAR = [
-  [`${MOD}+1`, 'open left'],
-  [`${MOD}+2`, 'open right'],
-  [`${MOD}+S`, 'save diff'],
-  [`${MOD}+Shift+S`, 'swap'],
-  [`${MOD}+T`, 'paste text'],
-  [`${MOD}+\\`, 'split view'],
-  [`${MOD}+K`, 'clear']
+  { keys: `${MOD}+1`, labelKey: 'shortcuts.bar.openLeft' },
+  { keys: `${MOD}+2`, labelKey: 'shortcuts.bar.openRight' },
+  { keys: `${MOD}+S`, labelKey: 'shortcuts.bar.saveDiff' },
+  { keys: `${MOD}+Shift+S`, labelKey: 'shortcuts.bar.swap' },
+  { keys: `${MOD}+T`, labelKey: 'shortcuts.bar.pasteText' },
+  { keys: `${MOD}+\\`, labelKey: 'shortcuts.bar.splitView' },
+  { keys: `${MOD}+K`, labelKey: 'shortcuts.bar.clear' }
 ]

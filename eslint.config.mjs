@@ -165,7 +165,10 @@ export default [
       'vue/block-lang': ['error', { style: { allowNoLang: true } }],
       // Templates are stringly-typed: without these, a renamed component or
       // property silently renders nothing instead of failing.
-      'vue/no-undef-components': ['error', { ignorePatterns: ['component'] }],
+      // i18n-t is registered globally by the vue-i18n plugin (src/renderer/src/i18n).
+      // It renders one message with markup as named slots, so a sentence stays a
+      // sentence instead of being split into untranslatable fragments.
+      'vue/no-undef-components': ['error', { ignorePatterns: ['component', 'i18n-t'] }],
       'vue/no-undef-properties': 'error',
       'vue/no-unused-refs': 'error',
       'vue/component-name-in-template-casing': ['error', 'PascalCase'],
@@ -179,6 +182,45 @@ export default [
   {
     files: ['src/main/**', 'src/preload/**', 'electron.vite.config.mjs', 'scripts/**'],
     languageOptions: { globals: { ...globals.node } }
+  },
+
+  // src/shared is bundled into BOTH processes, so it lives under the renderer's
+  // restrictions rather than main's — a Node import here would reach the
+  // renderer without tripping the rule below, which only looks at src/renderer.
+  // No Vue either: the main process reads this code too.
+  {
+    files: ['src/shared/**'],
+    languageOptions: { globals: {} },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: NO_NODE_IN_RENDERER.paths,
+          patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
+            {
+              // Gitignore-style, so each shape is spelled out: a bare 'vue' matches
+              // neither 'vue-i18n' nor '@vue/*', and nothing here would have caught
+              // a reach into src/main — which imports electron, and so would put
+              // Electron in the renderer bundle (hard rule 3).
+              group: [
+                'vue',
+                'vue-*',
+                '@vue/*',
+                'pinia',
+                '**/main/**',
+                '../main/*',
+                '*/stores/*',
+                '*/components/*',
+                '**/features/**'
+              ],
+              message:
+                'src/shared is bundled into BOTH processes — it must stay free of Vue, Pinia, renderer state and anything under src/main.'
+            }
+          ]
+        }
+      ]
+    }
   },
 
   // Renderer: browser only. It must never touch Node or Electron directly —

@@ -35,10 +35,10 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
         <input
           :value="picker.query.value"
           type="search"
-          placeholder="Search recipients…"
+          :placeholder="$t('share.recipientPicker.searchRecipients')"
           spellcheck="false"
           autofocus
-          aria-label="Search recipients"
+          :aria-label="$t('share.recipientPicker.searchRecipients2')"
           @input="picker.setQuery($event.target.value)"
           @keydown="
             picker.handleKey($event, {
@@ -50,7 +50,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
         <button
           v-if="picker.query.value"
           type="button"
-          aria-label="Clear search"
+          :aria-label="$t('share.recipientPicker.clearSearch')"
           @click="picker.setQuery('')"
         >
           <AppIcon name="x" />
@@ -61,10 +61,10 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
         type="button"
         class="btn btn-sm"
         :class="{ active: picker.emailOnly.value }"
-        data-tip="Show only recipients with an email address"
+        :data-tip="$t('share.recipientPicker.showOnlyRecipientsWithAn')"
         @click="picker.setEmailOnly(!picker.emailOnly.value)"
       >
-        With an address
+        {{ $t('share.recipientPicker.withAnAddress') }}
       </button>
     </div>
 
@@ -87,7 +87,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
         {{
           picker.query.value
             ? `No one matches “${picker.query.value}”.`
-            : 'No trusted key has an email address yet.'
+            : $t('share.recipientPicker.noneHaveEmail')
         }}
       </p>
       <ul v-else class="recipients">
@@ -100,7 +100,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
             />
             <span class="rc-name">{{ r.label }}</span>
             <span v-if="r.email" class="rc-mail">{{ r.email }}</span>
-            <span v-else class="rc-mail none">no address</span>
+            <span v-else class="rc-mail none">{{ $t('share.recipientPicker.noAddress') }}</span>
           </label>
         </li>
       </ul>
@@ -108,11 +108,18 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
 
     <div class="listfoot">
       <span v-if="picker.isFiltered.value">
-        {{ picker.visible.value.length }} of {{ picker.total.value }}
+        {{
+          $t('share.recipientPicker.visibleOfTotal', {
+            shown: picker.visible.value.length,
+            total: picker.total.value
+          })
+        }}
       </span>
-      <span v-else>{{ picker.total.value }} {{ picker.total.value === 1 ? 'key' : 'keys' }}</span>
+      <span v-else>{{ $t('share.recipientPicker.keyCount', picker.total.value) }}</span>
       <span class="spacer" />
-      <button type="button" class="btn btn-sm" @click="$emit('add')">Add recipient…</button>
+      <button type="button" class="btn btn-sm" @click="$emit('add')">
+        {{ $t('share.recipientPicker.addRecipient') }}
+      </button>
     </div>
   </div>
 </template>

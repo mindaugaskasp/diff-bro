@@ -20,7 +20,7 @@ const indent = (depth) => (depth > 1 ? { marginInlineStart: `${(depth - 1) * 16}
 
 <template>
   <div class="jira-rendered">
-    <p v-if="isEmpty" class="ji-empty">Nothing to preview yet — switch to Plain to write.</p>
+    <p v-if="isEmpty" class="ji-empty">{{ $t('jiraRendered.nothingToPreviewYetSwitch') }}</p>
     <template v-for="(b, i) in items" :key="i">
       <component :is="`h${b.level}`" v-if="b.type === 'heading'" class="ji-h">
         <JiraInline :nodes="b.inlines" />

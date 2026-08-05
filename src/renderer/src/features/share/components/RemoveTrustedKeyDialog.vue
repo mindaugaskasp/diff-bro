@@ -29,18 +29,22 @@ function cancel() {
 </script>
 
 <template>
-  <BaseDialog width="420px" title="Remove trusted key?" :closable="false" @close="cancel">
-    <p class="dialog-note">
-      Remove <strong>“{{ share.pendingUntrust.label }}”</strong> from your trusted keys? You won't
-      be able to open sealed diffs signed by it, or share to it, until you re-add its
-      <code>.diffbrokey</code>.
-    </p>
+  <BaseDialog
+    width="420px"
+    :title="$t('share.removeTrustedKeyDialog.removeTrustedKey')"
+    :closable="false"
+    @close="cancel"
+  >
+    <i18n-t keypath="share.removeTrustedKeyDialog.confirm" tag="p" class="dialog-note">
+      <template #name
+        ><strong>“{{ share.pendingUntrust.label }}”</strong></template
+      >
+      <template #ext><code>.diffbrokey</code></template>
+    </i18n-t>
 
     <div v-if="sent.length" class="sent">
       <p class="dialog-note">
-        You have sealed {{ sent.length }} {{ sent.length === 1 ? 'diff' : 'diffs' }} for this key.
-        Removing it doesn't reach them — they're already on the other machine, and stay readable
-        until they expire.
+        {{ $t('share.removeTrustedKeyDialog.alreadySealed', sent.length) }}
       </p>
       <ul class="sent-list">
         <li v-for="s in sent" :key="`${s.id}-${s.at}`">
@@ -51,8 +55,8 @@ function cancel() {
     </div>
 
     <template #actions>
-      <button class="btn btn-destructive" @click="confirm">Remove</button>
-      <button class="btn btn-ghost" @click="cancel">Cancel</button>
+      <button class="btn btn-destructive" @click="confirm">{{ $t('common.remove') }}</button>
+      <button class="btn btn-ghost" @click="cancel">{{ $t('common.cancel') }}</button>
     </template>
   </BaseDialog>
 </template>

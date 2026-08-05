@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { buildMenus } from '../menus'
 import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
@@ -7,7 +7,9 @@ import AppIcon from './AppIcon.vue'
 // Themed menu bar for Windows/Linux (macOS keeps the native one); mirrors the
 // hidden app menu, which still binds the accelerators.
 const { runFromMenu: run } = useCommands()
-const menus = buildMenus(run)
+// Computed, not called once: the labels come from t(), so switching language
+// has to rebuild the list rather than leave the old strings on screen.
+const menus = computed(() => buildMenus(run))
 const open = ref(null)
 // DevTools is dev-only; hidden in packaged builds.
 const isPackaged = ref(true)

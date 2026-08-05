@@ -3,18 +3,31 @@ import {
   MARKDOWN_ACTIONS,
   applyMarkdownAction
 } from '../../../src/renderer/src/utils/markdownMarkup'
+import { createTranslator } from '../../../src/shared/i18n'
 
 // Selection [start,end) over `text`.
 const model = (text, start, end = start) => ({ text, start, end })
 const apply = (id, m) => applyMarkdownAction(id, m)
+const t = createTranslator('en')
 
 describe('MARKDOWN_ACTIONS', () => {
-  it('every action has an id + title and an icon or a text label', () => {
+  it('every action has an id + label key and an icon or a text label', () => {
     for (const a of MARKDOWN_ACTIONS) {
       expect(typeof a.id).toBe('string')
-      expect(typeof a.title).toBe('string')
+      expect(t(a.labelKey), a.id).not.toBe(a.labelKey)
       expect(!!a.icon || !!a.text).toBe(true)
     }
+  })
+
+  // The reason label and syntax are separate fields: vue-i18n reads `|` as a
+  // plural separator and `{…}` as interpolation, so a syntax example that went
+  // through the catalogue would come back mangled or empty.
+  it('keeps the syntax example out of the catalogue, verbatim', () => {
+    const byId = Object.fromEntries(MARKDOWN_ACTIONS.map((a) => [a.id, a]))
+    expect(byId.link.syntax).toBe('[text](url)')
+    expect(byId.bold.syntax).toBe('**text**')
+    expect(byId.codeblock.syntax).toBe('```')
+    for (const a of MARKDOWN_ACTIONS) expect(a.syntax, a.id).toBeTruthy()
   })
 })
 

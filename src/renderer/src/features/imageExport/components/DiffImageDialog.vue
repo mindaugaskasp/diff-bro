@@ -39,32 +39,45 @@ async function save() {
 </script>
 
 <template>
-  <BaseDialog width="720px" title="Export as image" @close="imageExport.closeImageExport()">
+  <BaseDialog
+    width="720px"
+    :title="$t('imageExport.diffImageDialog.exportAsImage')"
+    @close="imageExport.closeImageExport()"
+  >
     <div class="shot">
       <img :src="imageExport.imageEntry.dataUrl" :alt="alt" />
     </div>
     <p class="dialog-note">
-      A {{ imageExport.imageEntry.width }} × {{ imageExport.imageEntry.height }} screenshot of
-      {{ of }}.
+      {{
+        $t('imageExport.diffImageDialog.shotOf', {
+          w: imageExport.imageEntry.width,
+          h: imageExport.imageEntry.height,
+          of
+        })
+      }}
     </p>
     <p v-if="imageExport.imageEntry.hiddenColumns" class="dialog-note warn">
-      About {{ imageExport.imageEntry.hiddenColumns }} more
-      {{ imageExport.imageEntry.hiddenColumns === 1 ? 'screen' : 'screens' }} of columns sit off the
-      right edge and aren’t in the picture. Widen the window to take them in.
+      {{ $t('imageExport.diffImageDialog.hiddenColumns', imageExport.imageEntry.hiddenColumns) }}
     </p>
     <p v-if="imageExport.imageEntry.truncated" class="dialog-note warn">
-      This {{ noun }} was longer than the export height — the picture stops partway down. Raise
-      <strong>Max diff image height</strong> in Settings → Limits to capture more.
+      <i18n-t keypath="imageExport.diffImageDialog.truncated" tag="span" :plural="1">
+        <template #noun>{{ noun }}</template>
+        <template #setting>
+          <strong>{{ $t('imageExport.diffImageDialog.maxDiffImageHeight') }}</strong>
+        </template>
+      </i18n-t>
     </p>
 
     <template #actions>
       <button type="button" class="btn btn-primary" :disabled="busy" @click="copy">
         <AppIcon :name="copied ? 'check' : 'copy'" />
-        {{ copied ? 'Copied' : 'Copy image' }}
+        {{ copied ? $t('common.copied') : $t('diffImageDialog.copyImage') }}
       </button>
-      <button type="button" class="btn" :disabled="busy" @click="save">Save PNG…</button>
+      <button type="button" class="btn" :disabled="busy" @click="save">
+        {{ $t('imageExport.diffImageDialog.savePNG') }}
+      </button>
       <button type="button" class="btn btn-ghost" @click="imageExport.closeImageExport()">
-        Close
+        {{ $t('common.close') }}
       </button>
     </template>
   </BaseDialog>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyJiraAction, JIRA_ACTIONS } from '../../../src/renderer/src/utils/jiraMarkup'
+import { createTranslator } from '../../../src/shared/i18n'
 
 // Drive an action against a text with a [start, end] selection and read back the
 // new text plus the substring the returned selection covers.
@@ -115,5 +116,27 @@ describe('jiraMarkup — registry', () => {
 
   it('returns null for an unknown action id', () => {
     expect(applyJiraAction('nope', { text: 'x', start: 0, end: 1 })).toBeNull()
+  })
+})
+
+describe('JIRA_ACTIONS', () => {
+  const t = createTranslator('en')
+
+  it('every action has an id + label key and an icon or a text label', () => {
+    for (const a of JIRA_ACTIONS) {
+      expect(typeof a.id).toBe('string')
+      expect(t(a.labelKey), a.id).not.toBe(a.labelKey)
+      expect(!!a.icon || !!a.text).toBe(true)
+    }
+  })
+
+  // Jira's markup is where this bites hardest: `[text|url]` would parse as a
+  // TWO-FORM PLURAL and `{code}` / `{{text}}` as interpolation, so these never
+  // go through the catalogue.
+  it('keeps the syntax example out of the catalogue, verbatim', () => {
+    const byId = Object.fromEntries(JIRA_ACTIONS.map((a) => [a.id, a]))
+    expect(byId.link.syntax).toBe('[text|url]')
+    expect(byId.codeblock.syntax).toBe('{code}')
+    expect(byId.code.syntax).toBe('{{text}}')
   })
 })

@@ -1,11 +1,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
-import { THEMES } from '../utils/themes'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
 import CliSettings from './CliSettings.vue'
 import GitToolSettings from './GitToolSettings.vue'
+import SettingsAppearance from './SettingsAppearance.vue'
 import SettingToggle from './SettingToggle.vue'
 import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
@@ -43,9 +43,13 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="580px" tour="settings" title="Settings" @close="close">
+  <BaseDialog width="580px" tour="settings" :title="$t('settingsDialog.settings')" @close="close">
     <div class="settings-body">
-      <nav class="settings-nav" aria-label="Settings sections" data-tour="settings-nav">
+      <nav
+        class="settings-nav"
+        :aria-label="$t('settingsDialog.settingsSections')"
+        data-tour="settings-nav"
+      >
         <button
           v-for="t in TABS"
           :key="t.id"
@@ -59,57 +63,32 @@ function close() {
       </nav>
 
       <div class="settings-pane">
-        <section v-if="tab === 'appearance'">
-          <h4>Theme</h4>
-          <div class="theme-grid">
-            <button
-              v-for="t in THEMES"
-              :key="t.id"
-              type="button"
-              class="theme-opt"
-              :class="{ active: settings.theme === t.id }"
-              :data-tip="`Use the ${t.label} theme`"
-              :aria-label="`Use the ${t.label} theme`"
-              @click="settings.setTheme(t.id)"
-            >
-              <span class="swatch" :style="{ background: t.swatch.bg }">
-                <span class="dot" :style="{ background: t.swatch.accent }"></span>
-                <span class="dot" :style="{ background: t.swatch.add }"></span>
-                <span class="dot" :style="{ background: t.swatch.del }"></span>
-              </span>
-              <span>{{ t.label }}</span>
-            </button>
-          </div>
-          <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
-            Show the keyboard-shortcut bar over diffs
-          </SettingToggle>
-          <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
-            Play a shutter sound when a diff image is captured
-          </SettingToggle>
-          <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
-            Maximize tool &amp; snippet windows (turn off to restore each one's size)
-          </SettingToggle>
-          <div class="tips-row" data-tour="tips">
-            <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
-              Show tips after an update
-            </SettingToggle>
-            <button
-              class="btn btn-sm"
-              :disabled="tour.active"
-              :data-tip="tour.active ? 'The tour is running' : 'Run the tour again from the start'"
-              @click="tour.replay()"
-            >
-              Show tour
-            </button>
-          </div>
-        </section>
+        <SettingsAppearance v-if="tab === 'appearance'">
+          <template #tips>
+            <div class="tips-row" data-tour="tips">
+              <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
+                {{ $t('settingsDialog.showTipsAfterAnUpdate') }}
+              </SettingToggle>
+              <button
+                class="btn btn-sm"
+                :disabled="tour.active"
+                :data-tip="
+                  tour.active
+                    ? $t('settingsDialog.theTourIsRunning')
+                    : $t('settingsDialog.runTheTourAgain')
+                "
+                @click="tour.replay()"
+              >
+                {{ $t('settingsDialog.showTour') }}
+              </button>
+            </div>
+          </template>
+        </SettingsAppearance>
 
         <section v-else-if="tab === 'shortcuts'">
-          <h4>Quick look-up</h4>
+          <h4>{{ $t('settingsDialog.quickLookUp') }}</h4>
           <p class="dialog-note">
-            A floating search that finds any snippet or saved diff without raising the main window —
-            it works even when Diff Bro is minimized. Click the field, then press the key
-            combination you want.
+            {{ $t('settingsDialog.aFloatingSearchThatFinds') }}
           </p>
           <ShortcutCapture />
         </section>
@@ -126,18 +105,17 @@ function close() {
         </template>
 
         <section v-else-if="tab === 'fun'">
-          <h4>Fun</h4>
+          <h4>{{ $t('settingsDialog.fun') }}</h4>
           <label class="row toggle">
             <input
               type="checkbox"
               :checked="settings.rotateThemeDaily"
               @change="toggleDailyTheme($event.target.checked)"
             />
-            <span>Rotate the app theme daily — a new random theme each day</span>
+            <span>{{ $t('settingsDialog.rotateTheAppThemeDaily') }}</span>
           </label>
           <p class="hint">
-            Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily
-            theme is the same all day and changes at midnight.
+            {{ $t('settingsDialog.offByDefaultWhenOff') }}
           </p>
         </section>
 
@@ -146,7 +124,7 @@ function close() {
     </div>
 
     <template #actions>
-      <button class="btn btn-ghost" @click="close">Close</button>
+      <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
     </template>
   </BaseDialog>
 </template>

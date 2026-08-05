@@ -45,7 +45,7 @@ async function copyOutput() {
         class="tre-field mono"
         spellcheck="false"
         placeholder="pattern"
-        aria-label="Regular expression"
+        :aria-label="$t('toolRegex.regularExpression')"
       />
       <span class="tre-slash">/</span>
     </div>
@@ -66,19 +66,21 @@ async function copyOutput() {
     <textarea
       v-model="subject"
       class="tre-in"
-      placeholder="Paste the text to test against…"
+      :placeholder="$t('toolRegex.pasteTheTextToTest')"
       spellcheck="false"
-      aria-label="Subject text"
+      :aria-label="$t('toolRegex.subjectText')"
     ></textarea>
 
     <p v-if="result.error" class="tre-err">{{ result.error }}</p>
     <template v-else>
       <div class="tre-bh">
-        <span>{{ result.matches.length }} match{{ result.matches.length === 1 ? '' : 'es' }}</span>
+        <span>{{ $t('count.matches', result.matches.length) }}</span>
         <span v-if="result.truncated" class="tre-warn">
-          this pattern is too slow on this input — stopped early
+          {{ $t('toolRegex.tooSlow') }}
         </span>
-        <span v-else-if="result.capped" class="tre-warn">first matches only</span>
+        <span v-else-if="result.capped" class="tre-warn">{{
+          $t('toolRegex.firstMatchesOnly')
+        }}</span>
       </div>
 
       <p class="tre-out mono">
@@ -100,13 +102,13 @@ async function copyOutput() {
           class="tre-field"
           spellcheck="false"
           placeholder="Replace with… ($1, $&lt;name&gt;)"
-          aria-label="Replacement"
+          :aria-label="$t('toolRegex.replacement')"
         />
         <button
           v-if="replaced?.output"
           class="tre-copy"
-          aria-label="Copy"
-          data-tip="Copy"
+          :aria-label="$t('common.copy')"
+          :data-tip="$t('common.copy')"
           @click="copyOutput"
         >
           <AppIcon :name="copied ? 'check' : 'copy'" />

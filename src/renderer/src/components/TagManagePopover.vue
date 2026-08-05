@@ -41,10 +41,15 @@ function exportTag() {
 
 <template>
   <div class="manage-backdrop" @click="emit('close')">
-    <div class="manage" role="dialog" aria-label="Manage tag" @click.stop>
+    <div class="manage" role="dialog" :aria-label="$t('tagManagePopover.manageTag')" @click.stop>
       <div class="manage-head">
-        <span>Manage tag</span>
-        <button class="dialog-close" data-tip="Close" aria-label="Close" @click="emit('close')">
+        <span>{{ $t('tagManagePopover.manageTag') }}</span>
+        <button
+          class="dialog-close"
+          :data-tip="$t('common.close')"
+          :aria-label="$t('common.close')"
+          @click="emit('close')"
+        >
           <AppIcon name="x" />
         </button>
       </div>
@@ -53,8 +58,8 @@ function exportTag() {
         class="rename"
         type="text"
         spellcheck="false"
-        placeholder="Tag name"
-        aria-label="Tag name"
+        :placeholder="$t('tagManagePopover.tagName')"
+        :aria-label="$t('tagManagePopover.tagName')"
         @keyup.enter="applyRename"
       />
       <div class="swatches">
@@ -70,10 +75,14 @@ function exportTag() {
         ></button>
       </div>
       <div class="manage-actions">
-        <button class="btn btn-sm btn-danger" @click="remove">Delete tag</button>
+        <button class="btn btn-sm btn-danger" @click="remove">
+          {{ $t('tagManagePopover.deleteTag') }}
+        </button>
         <span class="spacer" />
-        <button class="btn btn-sm" @click="exportTag">Export…</button>
-        <button class="btn btn-sm btn-primary" @click="applyRename">Rename</button>
+        <button class="btn btn-sm" @click="exportTag">{{ $t('tagManagePopover.export') }}</button>
+        <button class="btn btn-sm btn-primary" @click="applyRename">
+          {{ $t('tagManagePopover.rename') }}
+        </button>
       </div>
     </div>
   </div>

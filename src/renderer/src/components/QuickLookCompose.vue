@@ -38,8 +38,10 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
 <template>
   <div class="ql-compose" @keydown="onKeydown">
     <div class="ql-compose-head band">
-      <span class="ql-compose-title">{{ editing ? 'Edit snippet' : 'New snippet' }}</span>
-      <span class="ql-compose-lang">plaintext</span>
+      <span class="ql-compose-title">{{
+        editing ? $t('quickLookCompose.editSnippet') : $t('quickLookCompose.newSnippet')
+      }}</span>
+      <span class="ql-compose-lang">{{ $t('language.plaintext') }}</span>
     </div>
 
     <div class="ql-compose-body">
@@ -48,7 +50,7 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
         v-model="name"
         class="ql-compose-name"
         type="text"
-        placeholder="Name (optional)"
+        :placeholder="$t('quickLookCompose.nameOptional')"
         autocomplete="off"
         spellcheck="false"
       />
@@ -56,16 +58,18 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
         ref="bodyEl"
         v-model="body"
         class="ql-compose-text"
-        placeholder="Paste or type the snippet…"
+        :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
         spellcheck="false"
       ></textarea>
     </div>
 
     <div class="ql-compose-foot band">
       <span class="ql-compose-actions">
-        <button class="btn btn-sm" @click="emit('cancel')">Cancel</button>
+        <button class="btn btn-sm" @click="emit('cancel')">
+          {{ $t('common.cancel') }}
+        </button>
         <button class="btn btn-primary btn-sm" :disabled="!canSave" @click="emit('save')">
-          <AppIcon name="check" /> {{ saving ? 'Saving…' : 'Save' }}
+          <AppIcon name="check" /> {{ saving ? $t('quickLookCompose.saving') : $t('common.save') }}
         </button>
       </span>
     </div>

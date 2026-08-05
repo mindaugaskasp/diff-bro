@@ -60,47 +60,49 @@ async function copy(text) {
 <template>
   <div class="te" :class="{ compact }">
     <div class="te-now">
-      <span class="te-now-l"><AppIcon name="clock" class="te-tick" /> Now</span>
+      <span class="te-now-l"
+        ><AppIcon name="clock" class="te-tick" /> {{ $t('toolEpoch.now') }}</span
+      >
       <button class="te-now-v" :data-tip="`Copy ${live}`" @click="copy(live)">{{ live }}</button>
     </div>
 
     <div class="te-controls">
-      <SegmentedControl v-model:value="unit" label="Unit" :options="UNITS" />
-      <SegmentedControl v-model:value="tz" label="Picked time" :options="ZONES" />
+      <SegmentedControl v-model:value="unit" :label="$t('toolEpoch.unit')" :options="UNITS" />
+      <SegmentedControl v-model:value="tz" :label="$t('toolEpoch.pickedTime')" :options="ZONES" />
     </div>
 
     <div class="te-lanes">
       <section class="te-lane">
-        <span class="te-lane-k"><AppIcon name="calendar" /> Date → epoch</span>
+        <span class="te-lane-k"><AppIcon name="calendar" /> {{ $t('toolEpoch.dateEpoch') }}</span>
         <div class="te-in-row">
           <input
             v-model="picked"
             type="text"
             class="te-input"
-            placeholder="YYYY-MM-DD HH:MM"
+            :placeholder="$t('toolEpoch.yYYYMMDDHHMM')"
             spellcheck="false"
-            aria-label="Date and time, as YYYY-MM-DD HH:MM"
+            :aria-label="$t('toolEpoch.dateAndTimeAsYYYY')"
           />
-          <span class="te-cal" title="Pick from a calendar">
+          <span class="te-cal" :title="$t('toolEpoch.pickFromACalendar')">
             <AppIcon name="calendar" class="te-cal-ico" />
             <input
               type="datetime-local"
               class="te-cal-native"
               tabindex="-1"
               :style="{ colorScheme }"
-              aria-label="Pick from a calendar"
+              :aria-label="$t('toolEpoch.pickFromACalendar')"
               @input="fromPicker"
             />
           </span>
-          <button class="btn btn-sm" @click="setNow">Now</button>
+          <button class="btn btn-sm" @click="setNow">{{ $t('toolEpoch.now') }}</button>
         </div>
         <div class="te-out">
           <span class="te-out-v">{{ pickedEpoch || '—' }}</span>
           <button
             v-if="pickedEpoch"
             class="te-copy"
-            aria-label="Copy epoch"
-            data-tip="Copy"
+            :aria-label="$t('toolEpoch.copyEpoch')"
+            :data-tip="$t('common.copy')"
             @click="copy(pickedEpoch)"
           >
             <AppIcon :name="copied === pickedEpoch ? 'check' : 'copy'" />
@@ -109,25 +111,25 @@ async function copy(text) {
       </section>
 
       <section class="te-lane">
-        <span class="te-lane-k">Epoch → date</span>
+        <span class="te-lane-k">{{ $t('toolEpoch.epochDate') }}</span>
         <input
           v-model="epochIn"
           type="text"
           inputmode="numeric"
           class="te-input"
           placeholder="1753905600"
-          aria-label="Unix timestamp"
+          :aria-label="$t('toolEpoch.unixTimestamp')"
         />
         <div v-if="rows.length" class="te-rows">
           <div v-for="r in rows" :key="r.key" class="te-res">
             <span class="te-res-k">{{ r.key }}</span>
             <span class="te-res-v">{{ r.value }}</span>
-            <button class="te-copy" aria-label="Copy" @click="copy(r.value)">
+            <button class="te-copy" :aria-label="$t('common.copy')" @click="copy(r.value)">
               <AppIcon :name="copied === r.value ? 'check' : 'copy'" />
             </button>
           </div>
         </div>
-        <p v-else-if="epochIn" class="te-hint">Enter Unix {{ unit }} to see the date.</p>
+        <p v-else-if="epochIn" class="te-hint">{{ $t('toolEpoch.enterUnix') }} {{ unit }}</p>
       </section>
     </div>
   </div>

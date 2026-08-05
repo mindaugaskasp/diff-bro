@@ -8,7 +8,8 @@ import { defineStore } from 'pinia'
 import { useDiffStore } from '../../stores/diffStore'
 import { useVaultStore } from '../../stores/vaultStore'
 import { useEmailStore } from '../email'
-import { SHARE_ERRORS } from '../../utils/shareErrors'
+import { errorMessage } from '../../utils/shareErrors'
+import { t } from '../../i18n'
 
 export const useShareStore = defineStore('share', {
   state: () => ({
@@ -30,7 +31,7 @@ export const useShareStore = defineStore('share', {
     shareCurrent() {
       const diff = useDiffStore()
       if (!diff.canSave) {
-        diff.showNotice('Nothing to share yet — load two files or paste some text first.')
+        diff.showNotice(t('shareNotices.nothingToShareYetLoad'))
         return
       }
       this.saveThenShare = true
@@ -47,9 +48,7 @@ export const useShareStore = defineStore('share', {
       this.shareDraft = draft
     },
     noticeBadEmail() {
-      useDiffStore().showNotice(
-        'That is not a usable email address — it was not saved. Check for a stray space or comma.'
-      )
+      useDiffStore().showNotice(t('shareNotices.thatIsNotAUsable'))
     },
     // Close the share dialog without sharing (both entry points).
     dismissShare() {
@@ -73,7 +72,7 @@ export const useShareStore = defineStore('share', {
       const built = draft ? vault.draftEntry(draft) : id ? await vault.entryForShare(id) : null
       const entry = draft && built ? JSON.parse(JSON.stringify(built)) : built
       if (!entry) {
-        diff.showNotice('That diff could not be read — nothing was sealed.')
+        diff.showNotice(t('shareNotices.thatDiffCouldNotBe'))
         return
       }
       // Runs only once main has written the file.
@@ -117,7 +116,7 @@ export const useShareStore = defineStore('share', {
             : `Sealed shared diff for "${res.to}" written to ${res.path}`
         )
       } else if (res.error) {
-        diff.showNotice(SHARE_ERRORS[res.error] ?? 'Sharing failed.')
+        diff.showNotice(errorMessage(res.error, t, 'shareErrors.sharingFailed'))
       }
     },
     // Import a sealed diff and open it — but only when nothing is on screen; with
@@ -126,7 +125,7 @@ export const useShareStore = defineStore('share', {
       const diff = useDiffStore()
       const res = await useVaultStore().importShared()
       if (!res.ok) {
-        if (res.error) diff.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+        if (res.error) diff.showNotice(errorMessage(res.error, t, 'shareErrors.importFailed'))
         return
       }
       if (diff.hasActive) {
@@ -144,7 +143,7 @@ export const useShareStore = defineStore('share', {
       const diff = useDiffStore()
       const res = await useVaultStore().importSharedFromPath(path)
       if (!res.ok) {
-        if (res.error) diff.showNotice(SHARE_ERRORS[res.error] ?? 'Import failed.')
+        if (res.error) diff.showNotice(errorMessage(res.error, t, 'shareErrors.importFailed'))
         return
       }
       await this._openImported(res)
@@ -193,7 +192,7 @@ export const useShareStore = defineStore('share', {
       } else if (res.error === 'own-key') {
         diff.showNotice("That's your own public key — you don't need to trust yourself.")
       } else if (res.error) {
-        diff.showNotice('That file is not a valid public key.')
+        diff.showNotice(t('shareNotices.thatFileIsNotA'))
       }
     },
     // A dropped .diffbrokey: validate, then open the naming dialog before adding.
@@ -210,7 +209,7 @@ export const useShareStore = defineStore('share', {
       } else if (res.error === 'own-key') {
         diff.showNotice("That's your own public key — you don't need to trust yourself.")
       } else {
-        diff.showNotice('That file is not a valid Diff Bro public key.')
+        diff.showNotice(t('shareNotices.thatFileIsNotA2'))
       }
     },
     async confirmTrustedKey(label) {
@@ -232,7 +231,7 @@ export const useShareStore = defineStore('share', {
         // Flag the new key so the manager highlights it.
         this.lastAddedTrustedFp = res.fingerprint
         this.showTrustedKeysDialog = true
-      } else diff.showNotice('Could not add that key.')
+      } else diff.showNotice(t('shareNotices.couldNotAddThatKey'))
     },
     cancelTrustedKey() {
       this.pendingTrustedKey = null

@@ -8,10 +8,16 @@ const diff = useDiffStore()
 </script>
 
 <template>
-  <BaseDialog width="380px" title="No free tab" @close="diff.dismissCliBlocked()">
+  <BaseDialog
+    width="380px"
+    :title="$t('cliBlockedDialog.noFreeTab')"
+    @close="diff.dismissCliBlocked()"
+  >
     <p class="dialog-note">{{ diff.cliBlocked }}</p>
     <template #actions>
-      <button class="btn btn-primary" @click="diff.dismissCliBlocked()">Got it</button>
+      <button class="btn btn-primary" @click="diff.dismissCliBlocked()">
+        {{ $t('cliBlockedDialog.gotIt') }}
+      </button>
     </template>
   </BaseDialog>
 </template>

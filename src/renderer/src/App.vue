@@ -18,6 +18,7 @@ import DiagramDiffViewer from './components/DiagramDiffViewer.vue'
 import StructureDiffViewer from './components/StructureDiffViewer.vue'
 import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
+import WaitingForSecond from './components/WaitingForSecond.vue'
 import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
@@ -33,14 +34,14 @@ import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import AppIcon from './components/AppIcon.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
-import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
+import { CLAUDE_EXAMPLE_SNIPPET, useSnippetStore } from './stores/snippetStore'
+import { t } from './i18n'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
 import { hasStatusBand } from './utils/viewChrome'
 
 const store = useDiffStore()
-
 const ui = useUiStore()
 const imageExport = useImageExportStore()
 const tabs = useTabsStore()
@@ -54,15 +55,15 @@ const { runFromMenu, runCli } = useCommands()
 settings.initTheme()
 window.api.onMenuAction((action) => runFromMenu(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
-// Main holds a `diffbro` command until the restored session is in place (below).
+// Main holds a diffbro command until the restored session is in place (below).
 window.api.onCliCommand((command) => runCli(command))
 useTourCommands()
 usePasteShortcut(() => usePasteToCompareStore().request())
-// Writes only after the stored session is read back, so a blank window can't overwrite it.
+// Writes only after the session is read back, so a blank window cannot overwrite it.
 useSessionPersistence()
 // Mermaid's renderer, pulled in at idle so no first render stops the app.
 useDiagramWarmup()
-// Re-diff loaded files + roll the daily theme over when the window regains focus.
+// Re-diff + roll the daily theme over when the window regains focus.
 window.addEventListener('focus', () => {
   store.refreshFromDisk()
   settings.resolveActiveTheme()
@@ -81,7 +82,7 @@ onMounted(async () => {
   if (snippets.entries.length === 0) {
     const id = await snippets.seedExample()
     if (!id) return // vault key not ready — retry next launch
-    await snippets.add({ ...CLAUDE_EXAMPLE_SNIPPET })
+    await snippets.add({ ...CLAUDE_EXAMPLE_SNIPPET, name: t(CLAUDE_EXAMPLE_SNIPPET.nameKey) })
   }
   settings.markExamplesSeeded()
 })
@@ -177,17 +178,13 @@ useSnippetDiffSync()
             <SpreadsheetDiffViewer v-else />
           </template>
           <!-- One side loaded: make it obvious a second file is still needed. -->
-          <div v-else-if="store.left || store.right" class="empty waiting">
-            <p class="waiting-title">
-              Loaded <strong>{{ (store.left || store.right).name }}</strong>
-            </p>
-            <p>
-              Now drop or choose the
-              <strong>{{ store.left ? 'right' : 'left' }}</strong> file to compare.
-            </p>
-          </div>
+          <WaitingForSecond
+            v-else-if="store.left || store.right"
+            :name="(store.left || store.right).name"
+            :missing="store.left ? 'right' : 'left'"
+          />
           <div v-else class="empty">
-            <p class="empty-title">Choose or drop two files to compare.</p>
+            <p class="empty-title">{{ $t('app.chooseTwoFiles') }}</p>
             <SupportedFormats />
           </div>
 
@@ -214,7 +211,7 @@ useSnippetDiffSync()
     <transition name="fade">
       <div v-if="dragActive" class="drop-overlay">
         <div class="drop-card">
-          {{ snippetDrag ? 'Drop a snippet to compare' : 'Drop up to two files to compare' }}
+          {{ snippetDrag ? $t('app.dropASnippetTo') : $t('app.dropUpToTwo') }}
         </div>
       </div>
     </transition>

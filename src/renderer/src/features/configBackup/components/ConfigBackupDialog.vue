@@ -40,25 +40,27 @@ function close() {
 <template>
   <BaseDialog
     width="380px"
-    :title="isBackup ? 'Back up configuration' : 'Restore configuration'"
+    :title="
+      isBackup
+        ? $t('configBackupDialog.backUpConfiguration')
+        : $t('configBackupDialog.restoreConfiguration')
+    "
     @close="close"
   >
     <form class="dialog-form" @submit.prevent="submit">
       <p class="dialog-note">
         <template v-if="isBackup">
-          Encrypts your identity keys, trusted hosts, snippets, saved diffs and settings into one
-          passphrase-protected file. Diffs that expire are left out. Keep the passphrase safe — it's
-          the only way to restore.
+          {{ $t('configBackup.dialog.encryptsYourIdentityKeysTrusted') }}
         </template>
         <template v-else>
-          Restores identity keys, trusted hosts, snippets, saved diffs and settings from a backup
-          file. Enter the passphrase it was created with. This overwrites your current identity
-          keys.
+          {{ $t('configBackup.dialog.restoresIdentityKeysTrustedHosts') }}
         </template>
       </p>
-      <p v-if="destination" class="dialog-note dest">Writing to {{ destination }}</p>
+      <p v-if="destination" class="dialog-note dest">
+        {{ $t('configBackup.dialog.writingTo') }} {{ destination }}
+      </p>
       <label>
-        Passphrase
+        {{ $t('configBackup.dialog.passphrase') }}
         <input
           v-model="passphrase"
           type="password"
@@ -69,9 +71,11 @@ function close() {
       </label>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary" :disabled="!passphrase || busy">
-          {{ isBackup ? 'Back up' : 'Restore' }}
+          {{ isBackup ? $t('configBackupDialog.backUp') : $t('configBackupDialog.restore') }}
         </button>
-        <button type="button" class="btn btn-ghost" @click="close">Cancel</button>
+        <button type="button" class="btn btn-ghost" @click="close">
+          {{ $t('common.cancel') }}
+        </button>
       </div>
     </form>
   </BaseDialog>

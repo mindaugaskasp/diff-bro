@@ -42,9 +42,9 @@ offerToolOutput(
     <textarea
       v-model="input"
       class="tj-in"
-      placeholder="Paste a JWT — header.payload.signature"
+      :placeholder="$t('toolJwt.pasteAJWTHeaderPayload')"
       spellcheck="false"
-      aria-label="JWT"
+      :aria-label="$t('toolJwt.jWT')"
     ></textarea>
 
     <p v-if="!empty && parsed.error" class="tj-err">{{ parsed.error }}</p>
@@ -54,9 +54,9 @@ offerToolOutput(
         <span class="tj-badge">{{ claims.alg }}</span>
         <span v-if="hasExp" class="tj-pill" :class="{ bad: claims.expired }">
           <AppIcon :name="claims.expired ? 'x' : 'check'" />
-          {{ claims.expired ? 'Expired' : 'Not expired' }}
+          {{ claims.expired ? $t('toolJwt.expired') : $t('toolJwt.notExpired') }}
         </span>
-        <span v-if="claims.notYetValid" class="tj-pill bad">Not yet valid</span>
+        <span v-if="claims.notYetValid" class="tj-pill bad">{{ $t('toolJwt.notYetValid') }}</span>
       </div>
 
       <div v-if="claims.rows.length" class="tj-claims">
@@ -69,11 +69,11 @@ offerToolOutput(
 
       <div class="tj-block">
         <div class="tj-bh">
-          Header
+          {{ $t('toolJwt.header') }}
           <button
             class="tj-copy"
-            aria-label="Copy header"
-            data-tip="Copy"
+            :aria-label="$t('toolJwt.copyHeader')"
+            :data-tip="$t('common.copy')"
             @click="copy(headerJson)"
           >
             <AppIcon :name="copied === headerJson ? 'check' : 'copy'" />
@@ -84,11 +84,11 @@ offerToolOutput(
 
       <div class="tj-block">
         <div class="tj-bh">
-          Payload
+          {{ $t('toolJwt.payload') }}
           <button
             class="tj-copy"
-            aria-label="Copy payload"
-            data-tip="Copy"
+            :aria-label="$t('toolJwt.copyPayload')"
+            :data-tip="$t('common.copy')"
             @click="copy(payloadJson)"
           >
             <AppIcon :name="copied === payloadJson ? 'check' : 'copy'" />
@@ -97,9 +97,7 @@ offerToolOutput(
         <pre class="tj-json">{{ payloadJson }}</pre>
       </div>
 
-      <p class="tj-note">
-        <AppIcon name="unlock" /> The signature isn't verified — don't trust the contents.
-      </p>
+      <p class="tj-note"><AppIcon name="unlock" /> {{ $t('toolJwt.theSignatureIsnTVerified') }}</p>
     </template>
   </div>
 </template>

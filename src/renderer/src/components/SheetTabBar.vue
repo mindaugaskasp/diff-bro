@@ -32,7 +32,9 @@ function tipFor(sheet) {
     >
       <AppIcon v-if="sheet.hidden" name="eye-off" class="hidden-mark" />
       <span class="name">{{ sheet.name || '(unnamed)' }}</span>
-      <span v-if="sheet.present !== 'both'" class="badge only">only {{ sheet.present }}</span>
+      <span v-if="sheet.present !== 'both'" class="badge only">{{
+        $t('sheetTabBar.onlyIn', { side: sheet.present })
+      }}</span>
       <span v-else-if="sheet.changes" class="badge">{{ sheet.changes }}</span>
     </button>
   </div>

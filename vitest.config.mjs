@@ -69,6 +69,7 @@ export default defineConfig({
         'src/main/clipboardFiles.js',
         'src/main/demoContent.js',
         'src/main/xlsx/**',
+        'src/shared/**',
         'src/renderer/src/stores/**',
         // A slice's store is shipped logic like any other; without this line
         // moving one out of stores/ would raise coverage by measuring less.

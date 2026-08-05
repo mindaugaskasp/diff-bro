@@ -41,7 +41,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
   <section class="sidebar-section">
     <SectionHeader
       section-id="saved"
-      title="Saved diffs"
+      :title="$t('savedDiffsSection.savedDiffs')"
       icon="folder"
       :open="open"
       :first="first"
@@ -59,7 +59,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
               ? 'New comparison, ready for pasted text'
               : `${tabsFullNotice(tabs.tabs)} — close one first`
           "
-          aria-label="New comparison from pasted text"
+          :aria-label="$t('savedDiffsSection.newComparisonFromPastedText')"
           @click.stop="tabs.newTab({ paste: true })"
         >
           <AppIcon name="plus" />
@@ -68,11 +68,13 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
     </SectionHeader>
 
     <div v-show="open" class="section-body">
-      <p v-if="!hasOwn" class="empty"><AppIcon name="inbox" /> Empty</p>
+      <p v-if="!hasOwn" class="empty">
+        <AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}
+      </p>
       <ul v-else class="rows">
         <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
         <li v-if="!rows.length" class="empty small">
-          No saved diffs match — try removing a filter.
+          {{ $t('savedDiffsSection.noSavedDiffsMatchTry') }}
         </li>
         <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
       </ul>

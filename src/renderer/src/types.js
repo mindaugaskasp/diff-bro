@@ -193,7 +193,7 @@
  * A formatting-toolbar button (see jiraMarkup / markdownMarkup, FormatToolbar).
  * @typedef {object} MarkupAction
  * @property {string} id        action id passed to the language's apply*Action
- * @property {string} title     tooltip / aria-label
+ * @property {string} labelKey     tooltip / aria-label
  * @property {string} [icon]    AppIcon name (icon buttons)
  * @property {string} [text]    short label instead of an icon (e.g. "H1")
  */
@@ -293,7 +293,7 @@
  * @property {string} since         app version that introduced it
  * @property {string} target        a `[data-tour="…"]` selector
  * @property {'top'|'bottom'|'left'|'right'} [side]  preferred callout side
- * @property {string} title
+ * @property {string} labelKey
  * @property {string} body          `{shortcut}` / `{settingsKey}` are filled in
  * @property {string} [advance]     command the step's Next runs
  * @property {string} [enter]       command run as the step arrives

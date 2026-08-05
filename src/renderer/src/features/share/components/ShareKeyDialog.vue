@@ -38,37 +38,50 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="420px" title="Share my public key" @close="close">
-    <p class="dialog-note">
-      This is <strong>your</strong> public key — hand it to the other person so they can receive
-      diffs you share. To receive <em>their</em> diffs, use
-      <strong>Security → Add Trusted Key</strong> on the file <em>they</em> send you. You never
-      import your own key.
-    </p>
+  <BaseDialog width="420px" :title="$t('share.keyDialog.shareMyPublicKey')" @close="close">
+    <i18n-t keypath="share.keyDialog.intro" tag="p" class="dialog-note">
+      <template #your
+        ><strong>{{ $t('share.keyDialog.your') }}</strong></template
+      >
+      <template #their
+        ><em>{{ $t('share.keyDialog.their') }}</em></template
+      >
+      <template #menu
+        ><strong>{{ $t('share.keyDialog.securityAddTrustedKey') }}</strong></template
+      >
+      <template #they
+        ><em>{{ $t('share.keyDialog.they') }}</em></template
+      >
+    </i18n-t>
 
     <label>
-      Name others will see
+      {{ $t('share.keyDialog.nameOthersWillSee') }}
       <input
         v-model="label"
         type="text"
         spellcheck="false"
         maxlength="80"
-        placeholder="e.g. Alice — laptop"
+        :placeholder="$t('share.keyDialog.eGAliceLaptop')"
       />
     </label>
     <p class="hint">
-      Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part
-      of the key's identity.
+      {{ $t('share.keyDialog.shownToWhoeverImportsThis') }}
     </p>
 
-    <p v-if="fingerprint" class="fp">
-      Fingerprint: <code>{{ fingerprint }}</code>
-    </p>
+    <i18n-t v-if="fingerprint" keypath="share.keyDialog.fingerprint" tag="p" class="fp">
+      <template #fp
+        ><code>{{ fingerprint }}</code></template
+      >
+    </i18n-t>
 
     <template #actions>
-      <button class="btn btn-primary" :disabled="busy" @click="save">Save to file…</button>
-      <button class="btn" :disabled="busy" @click="copy">Copy to clipboard</button>
-      <button class="btn btn-ghost" @click="close">Close</button>
+      <button class="btn btn-primary" :disabled="busy" @click="save">
+        {{ $t('share.keyDialog.saveToFile') }}
+      </button>
+      <button class="btn" :disabled="busy" @click="copy">
+        {{ $t('share.keyDialog.copyToClipboard') }}
+      </button>
+      <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
     </template>
   </BaseDialog>
 </template>

@@ -2,6 +2,7 @@ import { BrowserWindow, clipboard, dialog, ipcMain, nativeImage, screen } from '
 import { writeFile } from 'fs/promises'
 import { normalizeCaptureRect, pngDimensions, previewSize, safeImageName } from './captureRect'
 import { stitchBitmaps } from './stitchBitmap'
+import { t } from './i18n'
 
 // Diff images are a real screenshot of the app's own diff view, not a redrawn
 // look-alike: capturePage photographs the composited page, so the picture always
@@ -113,9 +114,9 @@ export function registerDiffImageIpc() {
     if (!lastCapture) return { ok: false, error: 'nothing-captured' }
     const win = BrowserWindow.fromWebContents(e.sender)
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
-      title: 'Export diff as image',
+      title: t('dialog.exportImage'),
       defaultPath: `${safeImageName(name)}.png`,
-      filters: [{ name: 'PNG image', extensions: ['png'] }]
+      filters: [{ name: t('fileFilter.png'), extensions: ['png'] }]
     })
     if (canceled || !filePath) return { canceled: true }
     await writeFile(filePath, lastCapture.image.toPNG({ scaleFactor: lastCapture.scaleFactor }))

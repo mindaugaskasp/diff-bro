@@ -5,6 +5,7 @@
 // Everything else is refused; there is no open-any-URL surface.
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { isClaudeUrl, isSafeExternalUrl } from './linkPolicy'
+import { t } from './i18n'
 
 export function registerLinkIpc() {
   ipcMain.handle('link:openClaude', async (e, url) => {
@@ -12,10 +13,10 @@ export function registerLinkIpc() {
     const parent = BrowserWindow.fromWebContents(e.sender) ?? undefined
     const { response } = await dialog.showMessageBox(parent, {
       type: 'question',
-      buttons: ['Open in browser', 'Cancel'],
+      buttons: [t('dialog.openInBrowser'), t('common.cancel')],
       defaultId: 0,
       cancelId: 1,
-      message: 'Open this Claude link in your browser?',
+      message: t('dialog.openClaudeLink'),
       detail: url
     })
     if (response !== 0) return { canceled: true }
@@ -31,11 +32,11 @@ export function registerLinkIpc() {
     const parent = BrowserWindow.fromWebContents(e.sender) ?? undefined
     const { response } = await dialog.showMessageBox(parent, {
       type: 'question',
-      buttons: ['Open in browser', 'Cancel'],
+      buttons: [t('dialog.openInBrowser'), t('common.cancel')],
       defaultId: 0,
       cancelId: 1,
-      message: 'Open this link in your browser?',
-      detail: `${url}\n\nDiff Bro itself stays offline; your browser does not.`
+      message: t('dialog.openLink'),
+      detail: t('dialog.linkLeavesApp', { url })
     })
     if (response !== 0) return { canceled: true }
     await shell.openExternal(url)

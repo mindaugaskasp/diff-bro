@@ -23,26 +23,34 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
 <template>
   <BaseDialog
     :width="many ? '400px' : '340px'"
-    :title="many ? 'Close comparisons?' : 'Close comparison?'"
+    :title="many ? $t('tabCloseDialog.closeComparisons') : $t('tabCloseDialog.closeComparison')"
     :closable="false"
     @close="tabs.cancelClose()"
   >
     <p v-if="many" class="dialog-note">
-      Closing {{ pending.length }} comparisons. <strong>{{ risky.length }}</strong> of them haven’t
-      been saved, and closing discards them.
+      <i18n-t keypath="tabCloseDialog.closingMany" tag="span">
+        <template #count>{{ pending.length }}</template>
+        <template #risky
+          ><strong>{{ risky.length }}</strong></template
+        >
+      </i18n-t>
     </p>
     <p v-else class="dialog-note">
-      <strong>“{{ only }}”</strong> hasn’t been saved. Closing it discards the comparison.
+      <i18n-t keypath="tabCloseDialog.closingOne" tag="span">
+        <template #name
+          ><strong>“{{ only }}”</strong></template
+        >
+      </i18n-t>
     </p>
     <ul v-if="many" class="risk-list">
       <li v-for="tab in risky" :key="tab.id">{{ tabLabel(tab) }}</li>
     </ul>
     <template #actions>
       <button class="btn btn-destructive" @click="tabs.confirmClose()">
-        {{ many ? 'Close them' : 'Close it' }}
+        {{ many ? $t('tabCloseDialog.closeThem') : $t('tabCloseDialog.closeIt') }}
       </button>
       <button class="btn btn-ghost" @click="tabs.cancelClose()">
-        {{ many ? 'Keep them open' : 'Keep it open' }}
+        {{ many ? $t('tabCloseDialog.keepThemOpen') : $t('tabCloseDialog.keepItOpen') }}
       </button>
     </template>
   </BaseDialog>

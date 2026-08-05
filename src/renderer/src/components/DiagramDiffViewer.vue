@@ -100,23 +100,43 @@ watch(
 <template>
   <div class="dgv">
     <div class="dg-legend">
-      <span class="lg add"><span class="lgchip">+</span>added</span>
-      <span class="lg del"><span class="lgchip">−</span>removed</span>
-      <span class="lg chg"><span class="lgchip">±</span>changed</span>
-      <span class="lg same"><span class="lgchip">·</span>unchanged</span>
+      <span class="lg add"><span class="lgchip">+</span>{{ $t('legend.added') }}</span>
+      <span class="lg del"><span class="lgchip">−</span>{{ $t('legend.removed') }}</span>
+      <span class="lg chg"><span class="lgchip">±</span>{{ $t('legend.changed') }}</span>
+      <span class="lg same"><span class="lgchip">·</span>{{ $t('legend.unchanged') }}</span>
       <span class="lg-right">
-        <button class="dg-zbtn" data-tip="Zoom out" aria-label="Zoom out" @click="zoom(1 / 1.2)">
+        <button
+          class="dg-zbtn"
+          :data-tip="$t('diagramDiffViewer.zoomOut')"
+          :aria-label="$t('diagramDiffViewer.zoomOut')"
+          @click="zoom(1 / 1.2)"
+        >
           <AppIcon name="minus" />
         </button>
-        <button class="dg-pct" data-tip="Reset to fit" @click="fit">{{ pct }}%</button>
-        <button class="dg-zbtn" data-tip="Zoom in" aria-label="Zoom in" @click="zoom(1.2)">
+        <button class="dg-pct" :data-tip="$t('diagramDiffViewer.resetToFit')" @click="fit">
+          {{ pct }}%
+        </button>
+        <button
+          class="dg-zbtn"
+          :data-tip="$t('diagramDiffViewer.zoomIn')"
+          :aria-label="$t('diagramDiffViewer.zoomIn')"
+          @click="zoom(1.2)"
+        >
           <AppIcon name="plus" />
         </button>
         <button
           v-if="hasRegister"
           class="dg-zbtn"
-          :data-tip="showRegister ? 'Hide the change list' : 'Show the change list'"
-          :aria-label="showRegister ? 'Hide the change list' : 'Show the change list'"
+          :data-tip="
+            showRegister
+              ? $t('diagramDiffViewer.hideTheChangeList')
+              : $t('diagramDiffViewer.showTheChangeList')
+          "
+          :aria-label="
+            showRegister
+              ? $t('diagramDiffViewer.hideTheChangeList')
+              : $t('diagramDiffViewer.showTheChangeList')
+          "
           :aria-pressed="showRegister"
           @click="showRegister = !showRegister"
         >
@@ -127,8 +147,7 @@ watch(
     </div>
 
     <p v-if="store.renderSideBySide && !error" class="dg-drift">
-      Aligned at the first node — below it each revision was laid out on its own, so an unchanged
-      node can still sit at a different height.
+      {{ $t('diagramDiffViewer.alignedAtTheFirstNode') }}
     </p>
 
     <div class="dg-body">
@@ -146,11 +165,11 @@ watch(
         <div v-else class="dg-zoom" :style="zoomStyle">
           <template v-if="store.renderSideBySide">
             <div class="dg-pane">
-              <span class="dg-ttl">before</span>
+              <span class="dg-ttl">{{ $t('legend.before') }}</span>
               <MermaidDiagram :code="beforeSrc" :debounce="0" @rendered="sizeToNatural" />
             </div>
             <div class="dg-pane">
-              <span class="dg-ttl">after</span>
+              <span class="dg-ttl">{{ $t('legend.after') }}</span>
               <MermaidDiagram :code="afterSrc" :debounce="0" @rendered="sizeToNatural" />
             </div>
           </template>
@@ -166,19 +185,21 @@ watch(
 
     <div class="status-band">
       <span v-if="full">
-        Nodes <span class="add">{{ tally(full.nodes, 'added') }} added</span> ·
-        <span class="chg"
-          >{{ tally(full.nodes, 'changed') + tally(full.nodes, 'renamed') }} changed</span
-        >
+        {{ $t('diagramDiffViewer.nodes') }}
+        <span class="add">{{ $t('count.added', tally(full.nodes, 'added')) }}</span> ·
+        <span class="chg">{{
+          $t('count.changed', tally(full.nodes, 'changed') + tally(full.nodes, 'renamed'))
+        }}</span>
         ·
-        <span class="del">{{ tally(full.nodes, 'removed') }} removed</span>
+        <span class="del">{{ $t('count.removed', tally(full.nodes, 'removed')) }}</span>
       </span>
       <span v-if="full">
-        Edges <span class="add">{{ tally(full.edges, 'added') }} added</span> ·
-        <span class="del">{{ tally(full.edges, 'removed') }} removed</span>
+        {{ $t('diagramDiffViewer.edges') }}
+        <span class="add">{{ $t('count.added', tally(full.edges, 'added')) }}</span> ·
+        <span class="del">{{ $t('count.removed', tally(full.edges, 'removed')) }}</span>
       </span>
       <span class="band-end">
-        <span v-if="hidden" class="dg-hidden">{{ hidden }} unchanged hidden</span>
+        <span v-if="hidden" class="dg-hidden">{{ $t('count.unchangedHidden', hidden) }}</span>
       </span>
     </div>
   </div>

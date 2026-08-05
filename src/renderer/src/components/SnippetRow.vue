@@ -87,14 +87,14 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     @dragstart="startDrag($event, entry)"
   >
     <Transition name="flash">
-      <span v-if="copied" class="copied-flash" aria-live="polite">Copied</span>
+      <span v-if="copied" class="copied-flash" aria-live="polite">{{ $t('common.copied') }}</span>
     </Transition>
     <button
       class="star"
       draggable="false"
       :class="{ on: favorite }"
-      :data-tip="favorite ? 'Unfavorite' : 'Favorite'"
-      :aria-label="favorite ? 'Unfavorite' : 'Favorite (pin to top)'"
+      :data-tip="favorite ? $t('snippetRow.unfavorite') : $t('snippetRow.favorite')"
+      :aria-label="favorite ? $t('snippetRow.unfavorite') : $t('snippetRow.favoritePinToTop')"
       @click="store.toggleFavorite(entry.id)"
     >
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
@@ -133,8 +133,8 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <button
         v-if="isDiagram"
         class="row-btn"
-        data-tip="Diagram"
-        aria-label="View diagram"
+        :data-tip="$t('snippetRow.diagram')"
+        :aria-label="$t('snippetRow.viewDiagram')"
         @click="viewDiagram(entry)"
       >
         <AppIcon name="diagram" />
@@ -142,8 +142,8 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <button
         v-if="isUrl"
         class="row-btn"
-        data-tip="Open"
-        aria-label="Open link in browser"
+        :data-tip="$t('snippetRow.open')"
+        :aria-label="$t('snippetRow.openLinkInBrowser')"
         @click="openUrl"
       >
         <AppIcon name="link" />
@@ -151,8 +151,8 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <button
         v-if="isClaude"
         class="row-btn"
-        data-tip="Open"
-        aria-label="Open Claude link"
+        :data-tip="$t('snippetRow.open')"
+        :aria-label="$t('snippetRow.openClaudeLink')"
         @click="openLink"
       >
         <AppIcon name="link" />
@@ -161,24 +161,24 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       <button
         v-if="!isSecret(entry)"
         class="row-btn"
-        :data-tip="isDiagram ? 'Capture the diagram' : 'Capture'"
-        aria-label="Export as image"
+        :data-tip="isDiagram ? $t('snippetRow.captureTheDiagram') : $t('snippetRow.capture')"
+        :aria-label="$t('snippetRow.exportAsImage')"
         @click="imageExport.exportSnippetImage(entry.id)"
       >
         <AppIcon name="image" />
       </button>
       <button
         class="row-btn"
-        data-tip="Copy"
-        aria-label="Copy to clipboard"
+        :data-tip="$t('common.copy')"
+        :aria-label="$t('snippetRow.copyToClipboard')"
         @click="copySnippet(entry.id)"
       >
         <AppIcon name="copy" />
       </button>
       <button
         class="row-btn delete"
-        data-tip="Delete"
-        aria-label="Delete"
+        :data-tip="$t('snippetRow.delete')"
+        :aria-label="$t('snippetRow.delete')"
         @click="store.requestDelete('snippet', entry.id, entry.name)"
       >
         <AppIcon name="trash" />
