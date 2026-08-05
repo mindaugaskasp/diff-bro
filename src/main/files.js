@@ -7,6 +7,7 @@ import { readSettings } from './appData'
 import { readXlsx } from './xlsx/index'
 import { filtersFor } from './fileFilters'
 import { clipboardFilePaths } from './clipboardFiles'
+import { t } from './i18n'
 
 // Mirrors the renderer's FILE_TYPE_LIMITS; main enforces independently so a
 // hand-edited settings.json can't wedge the app. Keep the numbers in sync.
@@ -15,12 +16,10 @@ const TYPE_LIMITS = {
   spreadsheet: { default: 25, cap: 100 }
 }
 
-// Past this a text file is compared STREAMED — indexed by line and read a
-// window at a time — instead of being loaded whole into an editor model.
-// Three times the 10 MB default soft prompt, so an ordinarily-large file keeps
-// the full editor (highlighting, search, save, share) and only genuinely
-// unmanageable ones give those up; an editor model plus its tokenizer costs
-// several times the file's own size, which is what stops paying off here.
+// Past this a text file is compared STREAMED — indexed by line, read a window at
+// a time — rather than loaded whole into an editor model. Three times the 10 MB
+// soft prompt: an editor model plus its tokenizer costs several times the file's
+// own size, so only genuinely unmanageable files give up the full editor.
 export const STREAM_THRESHOLD_BYTES = 32 * 1024 * 1024
 
 function fileTypeFor(name) {
@@ -82,8 +81,8 @@ export function mayReadPath(filePath) {
 // prototype keeps 'constructor' from resolving up the chain.
 const EXPORT_FORMATS = Object.freeze(
   Object.assign(Object.create(null), {
-    html: { ext: 'html', label: 'HTML', title: 'Export diff as HTML' },
-    csv: { ext: 'csv', label: 'CSV', title: 'Export the change register' }
+    html: { ext: 'html', label: 'HTML', titleKey: 'export.html' },
+    csv: { ext: 'csv', label: 'CSV', titleKey: 'export.csv' }
   })
 )
 
@@ -121,10 +120,10 @@ async function allowsLargeLoad({ win, name, size, quiet }) {
   if (quiet) return false
   const { response } = await dialog.showMessageBox(win, {
     type: 'warning',
-    title: 'Large file',
-    message: `"${name}" is ${(size / 1024 / 1024).toFixed(1)} MB.`,
-    detail: 'Diffing very large files can be slow. Load it anyway?',
-    buttons: ['Load anyway', 'Cancel'],
+    title: t('dialog.largeFile.title'),
+    message: t('dialog.largeFile.message', { name, size: (size / 1024 / 1024).toFixed(1) }),
+    detail: t('dialog.largeFile.detail'),
+    buttons: [t('dialog.largeFile.loadAnyway'), t('common.cancel')],
     defaultId: 1,
     cancelId: 1
   })
@@ -239,7 +238,7 @@ export function registerFileIpc() {
     const win = BrowserWindow.fromWebContents(e.sender)
     const safe = String(name || 'diff').replace(/[\\/:*?"<>|]/g, '-')
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
-      title: spec.title,
+      title: t(spec.titleKey),
       defaultPath: `${safe}.${spec.ext}`,
       filters: [{ name: spec.label, extensions: [spec.ext] }]
     })

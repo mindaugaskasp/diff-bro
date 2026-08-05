@@ -1,0 +1,202 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "copy": "Copy",
+    "copied": "Copied",
+    "remove": "Remove",
+    "left": "Left",
+    "right": "Right"
+  },
+  "settings": {
+    "language": {
+      "label": "Language",
+      "hint": "Menus and app text. Restart is not needed."
+    }
+  },
+  "menu": {
+    "file": {
+      "title": "File",
+      "openLeft": "Open Left",
+      "openRight": "Open Right",
+      "save": "Save",
+      "share": "Share",
+      "import": "Import",
+      "exportHtml": "Export Diff as HTML…",
+      "exportImage": "Export Diff as Image…",
+      "newComparison": "New Comparison",
+      "closeComparison": "Close Comparison",
+      "nextComparison": "Next Comparison",
+      "prevComparison": "Previous Comparison",
+      "importSnippets": "Import Snippets…",
+      "settings": "Settings",
+      "quit": "Quit"
+    },
+    "edit": {
+      "title": "Edit",
+      "swapSides": "Swap Sides",
+      "clear": "Clear",
+      "copyPatch": "Copy Diff as Patch",
+      "copyFile": "Copy Diff as File",
+      "applyPatch": "Apply Patch…",
+      "pasteTextMode": "Paste Text Mode"
+    },
+    "view": {
+      "title": "View",
+      "commandPalette": "Command Palette…",
+      "toggleSidebar": "Toggle Sidebar",
+      "toggleStructure": "Toggle Structure View",
+      "toggleSplit": "Toggle Split View",
+      "toggleTheme": "Toggle Light/Dark Theme",
+      "quickLook": "Quick Look-up",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "resetZoom": "Reset Zoom",
+      "devTools": "Toggle Developer Tools"
+    },
+    "security": {
+      "title": "Security",
+      "sharePublicKey": "Share My Public Key",
+      "addTrustedKey": "Add Trusted Key",
+      "manageTrustedKeys": "Manage Trusted Keys",
+      "replaceKey": "Replace My Key…",
+      "configuration": "Configuration",
+      "backUp": "Back Up",
+      "restore": "Restore"
+    },
+    "tools": {
+      "title": "Tools",
+      "base64": "Base64",
+      "json": "JSON",
+      "xml": "XML",
+      "uuid": "UUID",
+      "jwt": "JWT Decode",
+      "epoch": "Epoch / Date",
+      "url": "URL Encode / Decode",
+      "lines": "Lines",
+      "checksum": "Checksum / Hash",
+      "regex": "Regex Tester",
+      "textEncryption": "Text Encryption",
+      "encryptDecrypt": "Encrypt / Decrypt"
+    },
+    "help": {
+      "title": "Help",
+      "shortcuts": "Keyboard Shortcuts",
+      "showTour": "Show Tour",
+      "reportIssue": "Report an Issue"
+    }
+  },
+  "reportIssue": {
+    "title": "Report an Issue",
+    "message": "Open the issue tracker in your browser?",
+    "openInBrowser": "Open in browser",
+    "leavesApp": "Diff Bro itself stays offline. This opens your web browser (which does connect to the internet) at:\n\n{url}",
+    "prefilledTitle": "\n\nPrefilled title:\n\n{title}",
+    "youSubmit": "\n\nYou review and submit the issue yourself; nothing is sent from the app."
+  },
+  "dialog": {
+    "openInBrowser": "Open in browser",
+    "continue": "Continue",
+    "openClaudeLink": "Open this Claude link in your browser?",
+    "openLink": "Open this link in your browser?",
+    "linkLeavesApp": "{url}\n\nDiff Bro itself stays offline; your browser does not.",
+    "largeFile": {
+      "title": "Large file",
+      "message": "\"{name}\" is {size} MB.",
+      "detail": "Diffing very large files can be slow. Load it anyway?",
+      "loadAnyway": "Load anyway"
+    },
+    "mail": {
+      "openMailApp": "Open my mail app",
+      "message": "Open a new message in your mail app?",
+      "detail": "To: {to}\n\n{file} is already saved. Diff Bro will copy it to the clipboard so you can paste it into the message — it does not send anything itself."
+    },
+    "cliInstall": {
+      "message": "Add the diffbro command to your terminal?",
+      "detail": "This writes a small launcher script into ~/.local/bin."
+    },
+    "gitRegister": {
+      "message": "Register Diff Bro as your git difftool?",
+      "detail": "This changes your global git configuration (~/.gitconfig)."
+    },
+    "chooseDataFolder": "Choose a folder for Diff Bro data",
+    "chooseLogFolder": "Choose a folder for logs",
+    "exportImage": "Export diff as image",
+    "checksumFile": "Checksum a file",
+    "exportSnippets": "Export snippets",
+    "importSnippets": "Import snippets",
+    "importSharedDiff": "Import shared diff",
+    "exportPublicKey": "Export my public key",
+    "addTrustedKey": "Add trusted public key",
+    "backupConfig": "Back up configuration",
+    "restoreConfig": "Restore configuration"
+  },
+  "export": {
+    "html": "Export diff as HTML",
+    "csv": "Export the change register"
+  },
+  "fileFilter": {
+    "png": "PNG image",
+    "snippets": "Diff Bro snippets",
+    "sharedDiff": "Diff Bro shared diff",
+    "publicKey": "Diff Bro public key",
+    "configuration": "Diff Bro configuration"
+  },
+  "shortcuts": {
+    "group": {
+      "file": "File",
+      "comparisons": "Comparisons",
+      "edit": "Edit",
+      "view": "View",
+      "tools": "Tools"
+    },
+    "openLeft": "Open left file",
+    "openRight": "Open right file",
+    "saveDiff": "Save diff",
+    "shareDiff": "Share diff",
+    "importShared": "Import shared diff",
+    "settings": "Settings",
+    "newComparison": "New comparison",
+    "closeComparison": "Close comparison",
+    "nextComparison": "Next comparison",
+    "prevComparison": "Previous comparison",
+    "swapSides": "Swap sides",
+    "clear": "Clear",
+    "copyPatch": "Copy diff as patch",
+    "copyFile": "Copy diff as file",
+    "pasteTextMode": "Paste text mode",
+    "pasteToCompare": "Paste to compare",
+    "commandPalette": "Command palette",
+    "toggleSplit": "Toggle split view",
+    "toggleSidebar": "Toggle sidebar",
+    "toggleStructure": "Toggle structure view",
+    "toggleTheme": "Toggle light/dark theme",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetZoom": "Reset zoom",
+    "base64": "Base64 encode / decode",
+    "json": "JSON format / validate",
+    "xml": "XML format / validate",
+    "uuid": "UUID convert",
+    "lines": "Lines (split, sort, replace)",
+    "crypt": "Encrypt / decrypt text",
+    "bar": {
+      "openLeft": "open left",
+      "openRight": "open right",
+      "saveDiff": "save diff",
+      "swap": "swap",
+      "pasteText": "paste text",
+      "splitView": "split view",
+      "clear": "clear"
+    },
+    "quickLookAppWide": "Quick look-up (works app-wide)"
+  },
+  "shortcutBar": {
+    "hideTip": "Hide this bar — bring it back in Settings",
+    "hideLabel": "Hide shortcuts"
+  },
+  "shortcutsDialog": {
+    "title": "Keyboard shortcuts"
+  }
+}

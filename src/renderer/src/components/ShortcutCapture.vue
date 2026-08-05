@@ -2,7 +2,8 @@
 // A new binding goes through main FIRST — it owns the OS registration and
 // reports if the combo is taken — and only a success persists.
 import { computed, ref } from 'vue'
-import { useSettingsStore, DEFAULT_QUICKLOOK_SHORTCUT } from '../stores/settingsStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { DEFAULT_QUICKLOOK_SHORTCUT } from '../utils/settingsDefaults'
 import { acceleratorFromEvent, isValidAccelerator, acceleratorLabel } from '../utils/accelerator'
 import { isMac } from '../keys'
 

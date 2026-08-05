@@ -115,6 +115,9 @@ contextBridge.exposeInMainWorld('api', {
   // synchronously for the window title and Help menu.
   appVersion: ipcRenderer.sendSync('app:version'),
   storeSave: (name, contents) => ipcRenderer.invoke('store:save', name, contents),
+  // Language change: main re-reads the catalogue and rebuilds the application
+  // menu, which is built once from a template at startup.
+  setLocale: (id) => ipcRenderer.invoke('app:setLocale', id),
   // Write/read the OS clipboard from the main process (navigator.clipboard is
   // blocked by the deny-all permission handler; see src/main/clipboard.js).
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),

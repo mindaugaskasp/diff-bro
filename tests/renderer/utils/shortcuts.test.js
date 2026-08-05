@@ -6,27 +6,30 @@ describe('shortcuts', () => {
   it('groups every advertised shortcut with a key label and description', () => {
     expect(SHORTCUT_GROUPS.length).toBeGreaterThan(0)
     for (const group of SHORTCUT_GROUPS) {
-      expect(group.group).toBeTruthy()
+      expect(group.id).toBeTruthy()
+      expect(group.labelKey).toBeTruthy()
       expect(group.items.length).toBeGreaterThan(0)
       for (const item of group.items) {
         expect(item.keys).toBeTruthy()
-        expect(item.label).toBeTruthy()
+        // A key ID, not text — utils/ is pure, so the component translates it.
+        expect(item.labelKey).toMatch(/^shortcuts\./)
       }
     }
   })
 
   it('labels resolve the platform modifier (Cmd on mac, Ctrl elsewhere)', () => {
     const mod = navigator.platform.toUpperCase().includes('MAC') ? 'Cmd' : 'Ctrl'
-    const save = SHORTCUT_GROUPS.flatMap((g) => g.items).find((i) => i.label === 'Save diff')
+    const save = SHORTCUT_GROUPS.flatMap((g) => g.items).find(
+      (i) => i.labelKey === 'shortcuts.saveDiff'
+    )
     expect(save.keys).toBe(`${mod}+S`)
   })
 
-  it('the compact bar list is a set of [keys, label] pairs', () => {
+  it('the compact bar list carries keys and a catalogue label', () => {
     expect(SHORTCUT_BAR.length).toBeGreaterThan(0)
-    for (const pair of SHORTCUT_BAR) {
-      expect(pair).toHaveLength(2)
-      expect(pair[0]).toBeTruthy()
-      expect(pair[1]).toBeTruthy()
+    for (const { keys, labelKey } of SHORTCUT_BAR) {
+      expect(keys).toBeTruthy()
+      expect(labelKey).toMatch(/^shortcuts\.bar\./)
     }
   })
 })
@@ -35,20 +38,20 @@ describe('shortcuts', () => {
 // is a binding nobody can discover. The tabs feature shipped four and none of
 // them appeared.
 describe('what the dialog advertises', () => {
-  const keysFor = (label) =>
-    SHORTCUT_GROUPS.flatMap((g) => g.items).find((i) => i.label === label)?.keys
+  const keysFor = (labelKey) =>
+    SHORTCUT_GROUPS.flatMap((g) => g.items).find((i) => i.labelKey === labelKey)?.keys
   const mod = navigator.platform.toUpperCase().includes('MAC') ? 'Cmd' : 'Ctrl'
 
   it('lists every comparison-tab binding the menu defines', () => {
-    expect(keysFor('New comparison')).toBe(`${mod}+Shift+T`)
-    expect(keysFor('Close comparison')).toBe(`${mod}+Shift+W`)
-    expect(keysFor('Next comparison')).toBe('Ctrl+Tab')
-    expect(keysFor('Previous comparison')).toBe('Ctrl+Shift+Tab')
+    expect(keysFor('shortcuts.newComparison')).toBe(`${mod}+Shift+T`)
+    expect(keysFor('shortcuts.closeComparison')).toBe(`${mod}+Shift+W`)
+    expect(keysFor('shortcuts.nextComparison')).toBe('Ctrl+Tab')
+    expect(keysFor('shortcuts.prevComparison')).toBe('Ctrl+Shift+Tab')
   })
 
   it('lists the command palette and paste-to-compare', () => {
-    expect(keysFor('Command palette')).toBe(`${mod}+Shift+P`)
-    expect(keysFor('Paste to compare')).toBe(`${mod}+V`)
+    expect(keysFor('shortcuts.commandPalette')).toBe(`${mod}+Shift+P`)
+    expect(keysFor('shortcuts.pasteToCompare')).toBe(`${mod}+V`)
   })
 
   it('never advertises the same combination twice', () => {
@@ -73,9 +76,9 @@ describe('the shortcuts dialog against the menus that bind the keys', () => {
   // (features/pasteToCompare), find-in-diff is Monaco's own, and quick look-up
   // is a user-rebindable global appended live by KeyboardShortcutsDialog.
   const NOT_IN_MENUS = new Set([
-    'Quick look-up (works app-wide)',
-    'Find in diff',
-    'Paste to compare'
+    'shortcuts.quickLookAppWide',
+    'shortcuts.findInDiff',
+    'shortcuts.pasteToCompare'
   ])
 
   const menuKeys = () => {
@@ -101,8 +104,8 @@ describe('the shortcuts dialog against the menus that bind the keys', () => {
   it('advertises nothing that no longer exists', () => {
     const bound = new Set(menuKeys().keys())
     const stale = SHORTCUT_GROUPS.flatMap((g) => g.items)
-      .filter((i) => !bound.has(i.keys) && !NOT_IN_MENUS.has(i.label))
-      .map((i) => `${i.keys} (${i.label})`)
+      .filter((i) => !bound.has(i.keys) && !NOT_IN_MENUS.has(i.labelKey))
+      .map((i) => `${i.keys} (${i.labelKey})`)
     expect(stale, 'advertised in the dialog but bound by nothing').toEqual([])
   })
 })

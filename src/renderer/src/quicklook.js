@@ -5,6 +5,7 @@ import { installErrorHandlers } from './errorHandlers'
 import { installUpdateRecovery } from './updateRecovery'
 import { normalizeTheme, themeForDay } from './utils/themes'
 import { loadPersisted } from './persist'
+import { i18n } from './i18n'
 import './styles/tokens.css'
 import './styles/themes.css'
 import './styles/base.css'
@@ -29,6 +30,7 @@ window.api.onQuickLookShow(applyTheme)
 const pinia = createPinia()
 const app = createApp(QuickLook)
 app.use(pinia)
+app.use(i18n)
 // Catch uncaught errors before the UI mounts, so even a startup failure logs.
 installErrorHandlers(app, pinia)
 app.mount('#app')

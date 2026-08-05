@@ -13,7 +13,7 @@ import { registerDiffImageIpc } from './diffImage'
 import { registerTextToolsIpc } from './textTools'
 import { registerHashIpc } from './hashTools'
 import { backupIfDue, registerBackupIpc } from './backupRoute'
-import { setBackupHook } from './appData'
+import { readSettings, setBackupHook } from './appData'
 import { registerShareIpc } from './share'
 import { registerMailIpc } from './mail'
 import { registerClipboardCopyIpc } from './clipboardCopy'
@@ -23,6 +23,7 @@ import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
 import { CLI_USAGE, helpText, parseCli } from './cli'
+import { loadLocale } from './i18n'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
@@ -64,6 +65,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerAppDataIpc()
     registerDemoIpc()
     registerQuickLookFocusIpc()
+    loadLocale(readSettings().locale) // before installMenu: it builds from this
     installMenu()
     registerMenuIpc()
     registerVaultIpc()

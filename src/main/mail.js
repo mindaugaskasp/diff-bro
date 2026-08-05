@@ -16,6 +16,7 @@ import { sealAndWrite } from './shareExport'
 import { copyPathToClipboard } from './clipboardCopy'
 import { getIdentity } from './share'
 import { guardIdentity } from './shareCore'
+import { t } from './i18n'
 
 // Test seam: e2e stubs these so a spec never opens a real mail draft or a Finder
 // window on the machine running it. Never reachable from a packaged build.
@@ -40,14 +41,14 @@ async function confirmHandoff(sender, { to, path }) {
   const parent = BrowserWindow.fromWebContents(sender) ?? undefined
   const { response } = await dialog.showMessageBox(parent, {
     type: 'question',
-    buttons: ['Open my mail app', 'Cancel'],
+    buttons: [t('dialog.mail.openMailApp'), t('common.cancel')],
     defaultId: 0,
     cancelId: 1,
-    message: 'Open a new message in your mail app?',
-    detail:
-      `To: ${to.map((r) => r.email).join(', ')}\n\n` +
-      `${basename(path)} is already saved. Diff Bro will copy it to the clipboard so you ` +
-      `can paste it into the message — it does not send anything itself.`
+    message: t('dialog.mail.message'),
+    detail: t('dialog.mail.detail', {
+      to: to.map((r) => r.email).join(', '),
+      file: basename(path)
+    })
   })
   return response === 0
 }

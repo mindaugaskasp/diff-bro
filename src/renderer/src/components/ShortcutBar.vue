@@ -16,13 +16,13 @@ function dismiss() {
 
 <template>
   <div v-if="settings.showShortcutBar" class="shortcut-bar">
-    <span v-for="[keys, label] in shortcuts" :key="keys" class="hint">
-      <kbd>{{ keys }}</kbd> {{ label }}
+    <span v-for="{ keys, labelKey } in shortcuts" :key="keys" class="hint">
+      <kbd>{{ keys }}</kbd> {{ $t(labelKey) }}
     </span>
     <button
       class="close"
-      data-tip="Hide this bar — bring it back in Settings"
-      aria-label="Hide shortcuts"
+      :data-tip="$t('shortcutBar.hideTip')"
+      :aria-label="$t('shortcutBar.hideLabel')"
       @click="dismiss"
     >
       <AppIcon name="x" />

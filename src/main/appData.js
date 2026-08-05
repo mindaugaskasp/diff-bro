@@ -18,6 +18,7 @@ import { join } from 'path'
 // Extension required, unlike the rest of src/main: seed-worker.cjs loads this
 // module without a bundler. tests/scripts/seedWorker.test.js guards it.
 import { DATA_FILES, isStoreName, planDataDirMove } from './dataFiles.js'
+import { t } from './i18n.js'
 
 const pointerPath = () => join(app.getPath('userData'), 'data-location.json')
 
@@ -133,7 +134,7 @@ export function registerAppDataIpc() {
 
   ipcMain.handle('datadir:choose', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Choose a folder for Diff Bro data',
+      title: t('dialog.chooseDataFolder'),
       properties: ['openDirectory', 'createDirectory']
     })
     if (canceled || !filePaths.length) return { canceled: true }

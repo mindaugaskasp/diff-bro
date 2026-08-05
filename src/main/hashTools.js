@@ -5,6 +5,7 @@ import { basename } from 'node:path'
 import { stat } from 'node:fs/promises'
 import { dialog, ipcMain } from 'electron'
 import { hashBuffer, hashFile } from './hashing'
+import { t } from './i18n'
 
 export function registerHashIpc() {
   ipcMain.handle('hash:text', (e, text) => {
@@ -16,7 +17,7 @@ export function registerHashIpc() {
   // file-open path does, so this can't be turned into an arbitrary-file read.
   ipcMain.handle('hash:file', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: 'Checksum a file',
+      title: t('dialog.checksumFile'),
       properties: ['openFile']
     })
     if (canceled || !filePaths.length) return { canceled: true }

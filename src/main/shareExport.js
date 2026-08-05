@@ -7,6 +7,7 @@ import { writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import { sealEntry, shareFilename, ttlError } from './sealing'
 import { readTrusted } from './trustedKeys'
+import { t } from './i18n'
 
 /**
  * Seal `entry` for the given fingerprints and write it. Returns the written path
@@ -39,7 +40,7 @@ export async function sealAndWrite({ entry, recipientFps, identity }) {
         ? `Share diff (sealed for ${recipients.length} recipients)`
         : 'Share diff (sealed for one recipient)',
     defaultPath: forcedName,
-    filters: [{ name: 'Diff Bro shared diff', extensions: ['diffbro'] }]
+    filters: [{ name: t('fileFilter.sharedDiff'), extensions: ['diffbro'] }]
   })
   if (canceled || !filePath) return { canceled: true }
 

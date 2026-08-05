@@ -10,6 +10,7 @@ import { installShim, removeShim, shimStatus } from './cliShim'
 import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from './gitTool'
 import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
+import { t } from './i18n'
 
 // A command can arrive before any window exists (a cold `diffbro compare …`),
 // so it waits here until the renderer says it is listening.
@@ -69,7 +70,7 @@ export function registerCliIpc() {
     (
       await dialog.showMessageBox({
         type: 'question',
-        buttons: ['Cancel', 'Continue'],
+        buttons: [t('common.cancel'), t('dialog.continue')],
         defaultId: 1,
         cancelId: 0,
         message,
@@ -79,10 +80,7 @@ export function registerCliIpc() {
 
   ipcMain.handle('cli:status', () => shimStatus(where()))
   ipcMain.handle('cli:install', async () =>
-    (await confirmed(
-      'Add the diffbro command to your terminal?',
-      'This writes a small launcher script into ~/.local/bin.'
-    ))
+    (await confirmed(t('dialog.cliInstall.message'), t('dialog.cliInstall.detail')))
       ? installShim(where())
       : { canceled: true }
   )
@@ -90,10 +88,7 @@ export function registerCliIpc() {
 
   ipcMain.handle('git:toolStatus', () => gitToolStatus(where()))
   ipcMain.handle('git:register', async () =>
-    (await confirmed(
-      'Register Diff Bro as your git difftool?',
-      'This changes your global git configuration (~/.gitconfig).'
-    ))
+    (await confirmed(t('dialog.gitRegister.message'), t('dialog.gitRegister.detail')))
       ? registerGitTool(where())
       : { canceled: true }
   )

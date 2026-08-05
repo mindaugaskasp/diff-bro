@@ -181,6 +181,31 @@ export default [
     languageOptions: { globals: { ...globals.node } }
   },
 
+  // src/shared is bundled into BOTH processes, so it lives under the renderer's
+  // restrictions rather than main's — a Node import here would reach the
+  // renderer without tripping the rule below, which only looks at src/renderer.
+  // No Vue either: the main process reads this code too.
+  {
+    files: ['src/shared/**'],
+    languageOptions: { globals: {} },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: NO_NODE_IN_RENDERER.paths,
+          patterns: [
+            ...NO_NODE_IN_RENDERER.patterns,
+            {
+              group: ['vue', 'pinia', '*/stores/*', '*/components/*', '**/features/**'],
+              message:
+                'src/shared is imported by the main process too — it must stay free of Vue, Pinia and renderer state.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+
   // Renderer: browser only. It must never touch Node or Electron directly —
   // everything goes through the window.api preload surface.
   {

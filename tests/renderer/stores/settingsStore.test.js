@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import {
-  useSettingsStore,
   SECTIONS,
   FILE_TYPE_LIMITS,
   MAX_SNIPPET_SIZE_KB_CAP,
   DEFAULT_MAX_EXPORT_HEIGHT_PX,
   MAX_EXPORT_HEIGHT_PX_CAP,
   MIN_EXPORT_HEIGHT_PX
-} from '../../../src/renderer/src/stores/settingsStore'
+} from '../../../src/renderer/src/utils/settingsDefaults'
 import { MAX_RECENT_TOOLS, TOOLS, recentTools } from '../../../src/renderer/src/utils/tools'
 
 beforeEach(() => {
@@ -393,5 +393,30 @@ describe('theme', () => {
     s.setRotateThemeDaily(false)
     s.resolveActiveTheme()
     expect(s.theme).toBe('solar')
+  })
+})
+
+describe('locale', () => {
+  it('defaults to English and persists a change', () => {
+    const s = useSettingsStore()
+    expect(s.locale).toBe('en')
+    s.setLocale('en')
+    expect(JSON.parse(localStorage.getItem('diffbro.settings')).locale).toBe('en')
+  })
+
+  // The value reaches a message lookup and is handed to main, so an unknown one
+  // must never survive the setter.
+  it('normalizes a locale it does not ship', () => {
+    const s = useSettingsStore()
+    s.setLocale('kl')
+    expect(s.locale).toBe('en')
+    s.setLocale(null)
+    expect(s.locale).toBe('en')
+  })
+
+  it('reads a persisted locale back on init', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ locale: 'en' }))
+    setActivePinia(createPinia())
+    expect(useSettingsStore().locale).toBe('en')
   })
 })

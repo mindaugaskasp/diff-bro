@@ -1,13 +1,13 @@
 <script setup>
 // The Settings → Limits pane, split out of SettingsDialog to keep it within
 // its line budget. Shares SettingsDialog.css.
+import { useSettingsStore } from '../stores/settingsStore'
 import {
-  useSettingsStore,
   FILE_TYPE_LIMITS,
   MAX_SNIPPET_SIZE_KB_CAP,
   MAX_EXPORT_HEIGHT_PX_CAP,
   MIN_EXPORT_HEIGHT_PX
-} from '../stores/settingsStore'
+} from '../utils/settingsDefaults'
 
 const settings = useSettingsStore()
 </script>

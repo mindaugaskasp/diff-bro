@@ -19,7 +19,7 @@
     "check:styles": "node scripts/check-style-tokens.mjs",
     "check:themes": "node scripts/check-theme-depth.mjs",
     "format": "prettier --write \"src/**/*.{js,vue,css}\" \"tests/**/*.js\" \"*.mjs\"",
-    "check": "npm run lint && npm run check:styles && npm run check:themes && npm run check:structure && npm run test:coverage && npm run build",
+    "check": "npm run lint && npm run check:styles && npm run check:themes && npm run check:structure && npm run check:i18n && npm run test:coverage && npm run build",
     "postinstall": "electron-builder install-app-deps",
     "build:win": "npm run build && electron-builder --win --publish never",
     "build:mac": "npm run build && electron-builder --mac --publish never",
@@ -28,9 +28,11 @@
     "docker:down": "docker compose down",
     "render:dmg-bg": "electron scripts/render-dmg-background.mjs",
     "render:brand": "electron scripts/render-brand-assets.mjs",
-    "check:structure": "node scripts/check-structure.mjs"
+    "check:structure": "node scripts/check-structure.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
+    "@intlify/core": "^11.4.8",
     "chardet": "^2.0.0",
     "fflate": "^0.8.3",
     "iconv-lite": "^0.6.3",
@@ -39,9 +41,10 @@
     "prismjs": "1.30.0",
     "saxen": "^11.1.0",
     "vue": "^3.5.13",
+    "vue-i18n": "^11.4.8",
     "yaml": "^2.9.0"
   },
-  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows.",
+  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass \u2014 and being exact, npm audit fix could not move it. A caret so a patch flows.",
   "overrides": {
     "brace-expansion": "^5.0.9"
   },
@@ -49,6 +52,7 @@
     "@emnapi/core": "^1.11.2",
     "@emnapi/runtime": "^1.11.2",
     "@eslint/js": "^10.0.1",
+    "@intlify/eslint-plugin-vue-i18n": "^4.5.1",
     "@playwright/test": "^1.61.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitest/coverage-v8": "^4.1.10",

@@ -206,6 +206,9 @@ describe('mail:handoff', () => {
       const src = readFileSync(file, 'utf-8')
       expect(src, file).not.toMatch(NETWORK)
       for (const [, spec] of src.matchAll(/from\s+'(\.[^']+)'/g)) {
+        // .json is data, not code — it cannot open a socket, and appending .js
+        // to it would send the walk at a file that does not exist.
+        if (spec.endsWith('.json')) continue
         walk(join(dirname(file), spec.endsWith('.js') ? spec : `${spec}.js`))
       }
     }

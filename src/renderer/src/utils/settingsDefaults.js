@@ -1,6 +1,10 @@
 // Defaults, limits and the sanitizers that clamp a hand-edited settings file
 // back into range. Pure data and pure functions — no store, so the clamping is
 // testable on its own.
+import { normalizeLocale } from '../../../shared/i18n'
+import { isValidAccelerator } from './accelerator'
+import { MAX_RECENT_TOOLS } from './tools'
+import { normalizeTheme } from './themes'
 
 export const DEFAULT_QUICKLOOK_SHORTCUT = 'CommandOrControl+Shift+Space'
 
@@ -120,4 +124,63 @@ export function readDialogSizes(parsed) {
     if (size) out[key] = size
   }
   return out
+}
+
+/**
+ * The store's initial state, shaped and clamped from a hand-editable file. Pure:
+ * the store does the reading, so every fallback here is testable without one.
+ *
+ * @param {object} parsed the persisted settings blob
+ * @param {{ showShortcutBar: boolean, theme: unknown }} outside values kept
+ *   under their own store keys rather than inside settings.json
+ */
+export function settingsStateFrom(parsed, outside) {
+  return {
+    sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
+    sectionsLocked: parsed.sectionsLocked === true,
+    shelfOrder:
+      parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
+    showShortcutBar: outside.showShortcutBar,
+    rotateThemeDaily: parsed.rotateThemeDaily === true,
+    fileSizeLimitsMb: readFileLimits(parsed),
+    maxSnippetSizeKb: clampNumber(
+      parsed.maxSnippetSizeKb,
+      DEFAULT_MAX_SNIPPET_SIZE_KB,
+      16,
+      MAX_SNIPPET_SIZE_KB_CAP
+    ),
+    maxExportHeightPx: clampNumber(
+      parsed.maxExportHeightPx,
+      DEFAULT_MAX_EXPORT_HEIGHT_PX,
+      MIN_EXPORT_HEIGHT_PX,
+      MAX_EXPORT_HEIGHT_PX_CAP
+    ),
+    dialogSizes: readDialogSizes(parsed),
+    maximizeDialogs: parsed.maximizeDialogs === true,
+    // The language the chrome renders in. Unset means "follow the OS", which is
+    // resolved at startup (i18n/index.js) rather than stored.
+    locale: normalizeLocale(parsed.locale),
+    // A sound the app makes on its own, so it is escapable; default on.
+    shutterSound: parsed.shutterSound !== false,
+    // Reopen the comparisons that were open at quit. On by default; turning it
+    // off forgets the stored one too (see tabsStore.setRestoreSession).
+    restoreSession: parsed.restoreSession !== false,
+    autoBackup: parsed.autoBackup !== false,
+    // The sidebar collapsed to its rail. Off by default: the library is how a
+    // comparison is usually reached.
+    sidebarCollapsed: parsed.sidebarCollapsed === true,
+    autoBackupHours: clampBackupHours(parsed.autoBackupHours),
+    examplesSeeded: parsed.examplesSeeded === true,
+    // Most-recent-first tool ids; unknown ids are dropped when rendered.
+    recentTools: Array.isArray(parsed.recentTools)
+      ? parsed.recentTools.filter((id) => typeof id === 'string').slice(0, MAX_RECENT_TOOLS)
+      : [],
+    // A hand-edited/invalid stored accelerator falls back to the default.
+    quickLookShortcut: isValidAccelerator(parsed.quickLookShortcut)
+      ? parsed.quickLookShortcut
+      : DEFAULT_QUICKLOOK_SHORTCUT,
+    userTheme: normalizeTheme(outside.theme),
+    // The ACTIVE theme components read — userTheme, unless daily rotation is on.
+    theme: normalizeTheme(outside.theme)
+  }
 }

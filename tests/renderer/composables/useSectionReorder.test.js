@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSectionReorder } from '../../../src/renderer/src/composables/useSectionReorder'
-import { useSettingsStore, SECTIONS } from '../../../src/renderer/src/stores/settingsStore'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
+import { SECTIONS } from '../../../src/renderer/src/utils/settingsDefaults'
 
 // A drag event carrying a spyable dataTransfer.
 const dragEvent = () => ({ dataTransfer: { effectAllowed: '', setData: vi.fn() } })

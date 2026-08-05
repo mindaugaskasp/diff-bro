@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { THEMES } from '../utils/themes'
+import { LOCALES } from '../../../shared/i18n'
 import BaseDialog from './BaseDialog.vue'
 import LogSettings from './LogSettings.vue'
 import CliSettings from './CliSettings.vue'
@@ -80,6 +81,17 @@ function close() {
               <span>{{ t.label }}</span>
             </button>
           </div>
+          <label class="language-row">
+            <span>{{ $t('settings.language.label') }}</span>
+            <select
+              :value="settings.locale"
+              :aria-label="$t('settings.language.label')"
+              @change="settings.setLocale($event.target.value)"
+            >
+              <option v-for="l in LOCALES" :key="l.id" :value="l.id">{{ l.name }}</option>
+            </select>
+          </label>
+          <p class="dialog-note">{{ $t('settings.language.hint') }}</p>
           <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
             Show the keyboard-shortcut bar over diffs
           </SettingToggle>

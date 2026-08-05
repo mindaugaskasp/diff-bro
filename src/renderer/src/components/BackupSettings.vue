@@ -2,7 +2,8 @@
 // Rolling local backups. On by default, because the failure it covers — a store
 // file going bad — gives no warning and takes work you cannot recreate.
 import { computed, onMounted, ref } from 'vue'
-import { BACKUP_HOURS, useSettingsStore } from '../stores/settingsStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { BACKUP_HOURS } from '../utils/settingsDefaults'
 import { ago } from '../utils/relativeTime'
 import { byteSize } from '../utils/byteSize'
 import SettingToggle from './SettingToggle.vue'
