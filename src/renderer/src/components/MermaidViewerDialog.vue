@@ -161,7 +161,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="foot">
         <span class="hint">{{ $t('mermaidViewerDialog.dragToPanCtrlScroll') }}</span>
-        <span class="resize-hint">drag any corner to resize</span>
+        <span class="resize-hint">{{ $t('mermaidViewerDialog.dragAnyCornerToResize') }}</span>
       </div>
       <span
         v-for="c in CORNERS"

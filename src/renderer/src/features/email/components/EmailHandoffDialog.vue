@@ -39,10 +39,11 @@ const note = ref(email.noteTemplate)
 
       <p class="strip">
         <AppIcon name="clipboard" />
-        <span>
-          {{ $t('email.handoffDialog.yourMailAppOpensWith') }}
-          <strong>paste it into the draft</strong> and send it yourself.
-        </span>
+        <i18n-t keypath="email.handoffDialog.pasteNote" tag="span">
+          <template #paste
+            ><strong>{{ $t('email.handoffDialog.pasteIt') }}</strong></template
+          >
+        </i18n-t>
       </p>
 
       <div class="dialog-actions">

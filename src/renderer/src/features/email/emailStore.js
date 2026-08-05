@@ -6,22 +6,25 @@
 import { defineStore } from 'pinia'
 import { loadPersisted, savePersisted } from '../../persist'
 import { useDiffStore } from '../../stores/diffStore'
+import { t } from '../../i18n'
 
-export const DEFAULT_SUBJECT = 'Sealed diff: {name}'
+export const DEFAULT_SUBJECT = t('emailNotices.sealedDiffName')
 export const DEFAULT_NOTE = ''
 
 // The file exists whenever a path came back; not saying so orphans it.
 function failureNotice(res) {
   if (res.error === 'no-address') return `No email address for ${(res.who || []).join(', ')}.`
-  const why = HANDOFF_ERRORS[res.error] || 'Could not open your mail app.'
+  // The fallback stays email-specific: a generic "That failed." does not tell
+  // the user which of the things they were doing went wrong.
+  const why = t(HANDOFF_ERROR_KEYS[res.error] ?? 'emailNotices.couldNotOpenYourMail')
   return res.path ? `${why} The sealed file is saved as ${res.name || res.path}.` : why
 }
 
 function handoffNotice(res, localCopy) {
   if (res.canceled) {
     return res.path
-      ? 'Nothing was opened. The sealed file is saved.'
-      : 'Cancelled — nothing was sealed or saved.'
+      ? t('emailNotices.nothingWasOpenedTheSealed')
+      : t('emailNotices.cancelledNothingWasSealedOr')
   }
   if (!res.ok) return failureNotice(res)
   if (localCopy === false) {
@@ -42,15 +45,16 @@ function handoffNotice(res, localCopy) {
 //      living any longer than the dialog it belongs to.
 let pending = null
 
-const HANDOFF_ERRORS = {
-  'unknown-recipient': 'One of those recipients is no longer a trusted key.',
-  'bad-address': 'That address could not be used — check it under Security → Trusted keys.',
-  'note-too-long': 'That note is too long for a mail link — shorten it and try again.',
-  'no-mail-app': 'No mail app is set up to handle links on this machine.',
-  'invalid-ttl': 'Rejected: shared diffs cannot live longer than a week.',
-  expired: 'This diff has already expired.',
-  'identity-unavailable':
-    'Your identity key couldn’t be unlocked (the OS keychain may be locked). Nothing was changed — unlock it and try again.'
+// KEYS, resolved per use: translating in a module-level table would run once at
+// load and freeze whatever locale the app started in.
+const HANDOFF_ERROR_KEYS = {
+  'unknown-recipient': 'emailNotices.oneOfThoseRecipientsIs',
+  'bad-address': 'emailNotices.thatAddressCouldNotBe',
+  'note-too-long': 'emailNotices.thatNoteIsTooLong',
+  'no-mail-app': 'emailNotices.noMailAppIsSet',
+  'invalid-ttl': 'emailNotices.rejectedSharedDiffsCannotLive',
+  expired: 'emailNotices.thisDiffHasAlreadyExpired',
+  'identity-unavailable': 'emailNotices.yourIdentityKeyCouldnT'
 }
 
 function readState() {

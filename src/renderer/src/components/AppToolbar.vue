@@ -2,7 +2,9 @@
 // Top bar: stats, display toggles, document actions, theme switch. Every action
 // has a menu twin (menu.js / MenuBar.vue).
 import { computed } from 'vue'
-import { STREAMED_LIMITS, useDiffStore } from '../stores/diffStore'
+import { useDiffStore } from '../stores/diffStore'
+import { STREAMED_LIMITS } from '../utils/streamedLimits'
+import { t } from '../i18n'
 import { useImageExportStore } from '../features/imageExport'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
@@ -17,7 +19,7 @@ const imageExport = useImageExportStore()
 // A disabled control has to say WHY, and a streamed comparison disables three of
 // them for the same underlying reason with three different consequences.
 const saveTip = computed(() => {
-  if (store.isStreamed) return STREAMED_LIMITS.save
+  if (store.isStreamed) return t(STREAMED_LIMITS.save)
   if (store.canSave && !store.hasUnsavedWork) {
     return 'Already saved — change something to save it again'
   }
@@ -25,11 +27,11 @@ const saveTip = computed(() => {
 })
 const shareTip = computed(() =>
   store.isStreamed
-    ? STREAMED_LIMITS.share
+    ? t(STREAMED_LIMITS.share)
     : 'Share this diff as a sealed file, for the trusted people you pick'
 )
 const copyTip = computed(() => {
-  if (store.isStreamed) return STREAMED_LIMITS.copy
+  if (store.isStreamed) return t(STREAMED_LIMITS.copy)
   if (store.comparableKind !== 'text') return 'Copy diff is only available for text comparisons'
   return `Copy this diff as a unified patch (${MOD}+Shift+C)`
 })

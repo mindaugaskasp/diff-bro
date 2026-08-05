@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { t } from '../i18n'
 
 // Uncaught renderer errors → the LOCAL log + a report dialog. Identical errors
 // are throttled so a render loop can't spam either.
@@ -6,7 +7,7 @@ const THROTTLE_MS = 3000
 
 function messageOf(reason) {
   if (reason?.message) return reason.message
-  return String(reason ?? 'Unknown error')
+  return String(reason ?? t('errorNotices.unknownError'))
 }
 
 // Benign framework noise (Monaco cancellations, ResizeObserver loop, opaque

@@ -558,7 +558,8 @@
     "closeTheViewerEsc": "Close the viewer (Esc)",
     "theme": "Theme",
     "fit": "Fit",
-    "dragToPanCtrlScroll": "Drag to pan · Ctrl/⌘ + scroll to zoom · click % to fit"
+    "dragToPanCtrlScroll": "Drag to pan · Ctrl/⌘ + scroll to zoom · click % to fit",
+    "dragAnyCornerToResize": "drag any corner to resize"
   },
   "pasteInput": {
     "nameThisSide": "Name this side…",
@@ -876,7 +877,8 @@
     "pasteTheTextToTest": "Paste the text to test against…",
     "regularExpression": "Regular expression",
     "subjectText": "Subject text",
-    "replacement": "Replacement"
+    "replacement": "Replacement",
+    "firstMatchesOnly": "first matches only"
   },
   "toolUrl": {
     "uRLOrTextToEncode": "URL or text to encode / decode…",
@@ -926,7 +928,8 @@
       "emailThisDiff": "Email this diff",
       "toFromTheirTrustedKeys": "To — from their trusted keys, not typed here",
       "note": "Note",
-      "yourMailAppOpensWith": "Your mail app opens with this message. The sealed file goes on the clipboard —"
+      "pasteNote": "Your mail app opens with the message ready — {paste} and send it yourself.",
+      "pasteIt": "paste it into the draft"
     },
     "settings": {
       "newMessage": "New message",
@@ -1040,5 +1043,73 @@
       "noTrustedKeysYetAdd": "No trusted keys yet. Add someone's",
       "addKey": "Add key…"
     }
+  },
+  "diffNotices": {
+    "couldNotCopyThatAs": "Could not copy that as a file.",
+    "tooLargeToSaveA": "Too large to save — a saved diff keeps its own copy of both files.",
+    "tooLargeToShareA": "Too large to share — a shared diff carries its own copy of both files.",
+    "tooLargeToCopyAs": "Too large to copy as a patch — that needs both files in full.",
+    "tooLargeToExportAn": "Too large to export — an HTML export embeds both files.",
+    "bothSidesLookLikeStructured": "Both sides look like structured data — pretty-print?",
+    "nothingToExportYet": "Nothing to export yet.",
+    "thisComparisonIsTooLarge": "This comparison is too large to export.",
+    "exportedDiffToHTML": "Exported diff to HTML.",
+    "noChangesToExport": "No changes to export.",
+    "savedLoadingTheDroppedFile": "Saved. Loading the dropped file…",
+    "savedLoadingTheFile": "Saved. Loading the file…",
+    "savedKeptUntilYouDelete": "Saved — kept until you delete it.",
+    "thatFileIsTooLarge": "That file is too large to import.",
+    "couldNotReadThatFile": "Could not read that file.",
+    "noSnippetsFoundToImport": "No snippets found to import.",
+    "unifiedDiffCopiedToClipboard": "Unified diff copied to clipboard.",
+    "couldNotCopyTheDiff": "Could not copy the diff.",
+    "hiddenSnippetsCanTBe": "Hidden snippets can’t be compared.",
+    "theClipboardIsEmpty": "The clipboard is empty.",
+    "copiedAsFile": "{name} copied as a file — paste it where you need it."
+  },
+  "errorNotices": {
+    "unknownError": "Unknown error"
+  },
+  "snippetNotices": {
+    "untitledSnippet": "Untitled snippet",
+    "exampleMermaidDiagram": "Example — Mermaid diagram",
+    "exampleClaudeReviewPrompt": "Example — Claude review prompt",
+    "signedButNotByAny": "Signed, but not by any of your trusted keys — treat these snippets as untrusted."
+  },
+  "vaultNotices": {
+    "untitledDiff": "Untitled diff"
+  },
+  "emailNotices": {
+    "sealedDiffName": "Sealed diff: {name}",
+    "couldNotOpenYourMail": "Could not open your mail app.",
+    "nothingWasOpenedTheSealed": "Nothing was opened. The sealed file is saved.",
+    "cancelledNothingWasSealedOr": "Cancelled — nothing was sealed or saved.",
+    "oneOfThoseRecipientsIs": "One of those recipients is no longer a trusted key.",
+    "thatAddressCouldNotBe": "That address could not be used — check it under Security → Trusted keys.",
+    "thatNoteIsTooLong": "That note is too long for a mail link — shorten it and try again.",
+    "noMailAppIsSet": "No mail app is set up to handle links on this machine.",
+    "rejectedSharedDiffsCannotLive": "Rejected: shared diffs cannot live longer than a week.",
+    "thisDiffHasAlreadyExpired": "This diff has already expired.",
+    "yourIdentityKeyCouldnT": "Your identity key couldn’t be unlocked (the OS keychain may be locked). Nothing was changed — unlock it and try again."
+  },
+  "imageExportNotices": {
+    "thisSavedDiffHasExpired": "This saved diff has expired or could not be decrypted.",
+    "couldNotTakeAPicture": "Could not take a picture of this diff.",
+    "hiddenSnippetsCanTBe": "Hidden snippets can’t be exported as an image.",
+    "thatSnippetCouldNotBe": "That snippet could not be opened.",
+    "thatDiagramCouldNotBe": "That diagram could not be rendered.",
+    "couldNotTakeAPicture2": "Could not take a picture of this snippet.",
+    "nothingToExportYet": "Nothing to export yet.",
+    "diffImageCopiedToClipboard": "Diff image copied to clipboard.",
+    "couldNotCopyTheImage": "Could not copy the image.",
+    "couldNotSaveTheImage": "Could not save the image."
+  },
+  "shareNotices": {
+    "nothingToShareYetLoad": "Nothing to share yet — load two files or paste some text first.",
+    "thatIsNotAUsable": "That is not a usable email address — it was not saved. Check for a stray space or comma.",
+    "thatDiffCouldNotBe": "That diff could not be read — nothing was sealed.",
+    "thatFileIsNotA": "That file is not a valid public key.",
+    "thatFileIsNotA2": "That file is not a valid Diff Bro public key.",
+    "couldNotAddThatKey": "Could not add that key."
   }
 }

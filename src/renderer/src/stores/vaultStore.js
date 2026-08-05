@@ -3,11 +3,11 @@ import { loadPersisted, savePersisted } from '../persist'
 import { useSnippetStore } from './snippetStore'
 import { useTabsStore } from './tabsStore'
 import { sealableFromDraft, sealableFromEntry, ttlSpan } from '../utils/shareEntry'
+import { t } from '../i18n'
 
-// Content crypto runs in main (vault:encrypt/decrypt); this store never sees the
-// key. Only name/tags/timestamps are plaintext.
-// Re-exported: many modules import these from here, and the definitions live in
-// utils/shareEntry.js so the expiry arithmetic stays unit-testable.
+// Content crypto runs in main (vault:*); only name/tags/timestamps are plaintext.
+// Re-exported: many modules import these from here; they live in
+// utils/shareEntry.js so the expiry maths stays unit-testable.
 export { DEFAULT_TTL_HOURS, MAX_KEEP_HOURS } from '../utils/shareEntry'
 export const TTL_OPTIONS = [
   { label: '1 hour', hours: 1 },
@@ -18,9 +18,8 @@ export const TTL_OPTIONS = [
   { label: '1 week', hours: 168 }
 ]
 
-// Timestamps bind the ciphertext as AES-GCM AAD (tampering expiresAt makes the
-// entry undecryptable); name/tags/favorite are deliberately excluded so they
-// stay editable free metadata.
+// Timestamps bind the ciphertext as AES-GCM AAD (tampering expiresAt makes it
+// undecryptable); name/tags/favorite are excluded so they stay free metadata.
 const entryAad = (id, createdAt, expiresAt, from) =>
   [id, createdAt, expiresAt, from ?? ''].join('|')
 
@@ -49,7 +48,8 @@ function readEntries() {
       // decryption is unaffected).
       const clean = {
         ...e,
-        name: typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled diff'),
+        name:
+          typeof e?.name === 'string' ? e.name : String(e?.name ?? t('vaultNotices.untitledDiff')),
         tags: Array.isArray(e.tags) ? e.tags.filter((t) => typeof t === 'string') : [],
         sharedTo: readSharedTo(e.sharedTo)
       }
@@ -199,7 +199,7 @@ export const useVaultStore = defineStore('vault', {
       const applied = useSnippetStore().registerTags(tags)
       this.entries.push({
         id,
-        name: name || 'Untitled diff',
+        name: name || t('vaultNotices.untitledDiff'),
         createdAt,
         expiresAt,
         from: from ?? null,

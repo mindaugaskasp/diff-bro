@@ -31,7 +31,7 @@ export const useShareStore = defineStore('share', {
     shareCurrent() {
       const diff = useDiffStore()
       if (!diff.canSave) {
-        diff.showNotice('Nothing to share yet — load two files or paste some text first.')
+        diff.showNotice(t('shareNotices.nothingToShareYetLoad'))
         return
       }
       this.saveThenShare = true
@@ -48,9 +48,7 @@ export const useShareStore = defineStore('share', {
       this.shareDraft = draft
     },
     noticeBadEmail() {
-      useDiffStore().showNotice(
-        'That is not a usable email address — it was not saved. Check for a stray space or comma.'
-      )
+      useDiffStore().showNotice(t('shareNotices.thatIsNotAUsable'))
     },
     // Close the share dialog without sharing (both entry points).
     dismissShare() {
@@ -74,7 +72,7 @@ export const useShareStore = defineStore('share', {
       const built = draft ? vault.draftEntry(draft) : id ? await vault.entryForShare(id) : null
       const entry = draft && built ? JSON.parse(JSON.stringify(built)) : built
       if (!entry) {
-        diff.showNotice('That diff could not be read — nothing was sealed.')
+        diff.showNotice(t('shareNotices.thatDiffCouldNotBe'))
         return
       }
       // Runs only once main has written the file.
@@ -194,7 +192,7 @@ export const useShareStore = defineStore('share', {
       } else if (res.error === 'own-key') {
         diff.showNotice("That's your own public key — you don't need to trust yourself.")
       } else if (res.error) {
-        diff.showNotice('That file is not a valid public key.')
+        diff.showNotice(t('shareNotices.thatFileIsNotA'))
       }
     },
     // A dropped .diffbrokey: validate, then open the naming dialog before adding.
@@ -211,7 +209,7 @@ export const useShareStore = defineStore('share', {
       } else if (res.error === 'own-key') {
         diff.showNotice("That's your own public key — you don't need to trust yourself.")
       } else {
-        diff.showNotice('That file is not a valid Diff Bro public key.')
+        diff.showNotice(t('shareNotices.thatFileIsNotA2'))
       }
     },
     async confirmTrustedKey(label) {
@@ -233,7 +231,7 @@ export const useShareStore = defineStore('share', {
         // Flag the new key so the manager highlights it.
         this.lastAddedTrustedFp = res.fingerprint
         this.showTrustedKeysDialog = true
-      } else diff.showNotice('Could not add that key.')
+      } else diff.showNotice(t('shareNotices.couldNotAddThatKey'))
     },
     cancelTrustedKey() {
       this.pendingTrustedKey = null

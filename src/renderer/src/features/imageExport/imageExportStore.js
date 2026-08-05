@@ -10,6 +10,7 @@ import { languageOf, useSnippetStore } from '../../stores/snippetStore'
 import { isSecret } from '../../utils/secretSnippet'
 import { getDiffScroller } from '../../utils/diffScroller'
 import { playShutter } from '../../utils/shutter'
+import { t } from '../../i18n'
 import {
   afterFrames,
   captureRectOf,
@@ -75,7 +76,7 @@ export const useImageExportStore = defineStore('imageExport', {
       if (!entry) return
       const payload = await vault.load(id)
       if (!payload) {
-        return diff.showNotice('This saved diff has expired or could not be decrypted.')
+        return diff.showNotice(t('imageExportNotices.thisSavedDiffHasExpired'))
       }
       // The saved diff is only ON SCREEN long enough to be photographed. Leaving
       // it there replaced the user's live comparison, marked it saved (so no
@@ -87,7 +88,7 @@ export const useImageExportStore = defineStore('imageExport', {
       try {
         // Restoring replaces the models, so there is never a selection to honour.
         const res = await this._shoot({ awaitRediff: true })
-        if (res?.error) return diff.showNotice('Could not take a picture of this diff.')
+        if (res?.error) return diff.showNotice(t('imageExportNotices.couldNotTakeAPicture'))
         this.imageEntry = { id, name: entry.name, subject: 'diff', ...res }
       } finally {
         diff.restore(live)
@@ -104,19 +105,19 @@ export const useImageExportStore = defineStore('imageExport', {
       // Refused before anything decrypts it: a picture of a mask is useless, and
       // a picture of the plaintext is the leak the mask exists to prevent.
       if (isSecret(entry)) {
-        return diff.showNotice('Hidden snippets can’t be exported as an image.')
+        return diff.showNotice(t('imageExportNotices.hiddenSnippetsCanTBe'))
       }
       const code = await snippets.load(id)
-      if (code == null) return diff.showNotice('That snippet could not be opened.')
+      if (code == null) return diff.showNotice(t('imageExportNotices.thatSnippetCouldNotBe'))
       const lang = languageOf(entry)
       const diagram = lang === 'mermaid'
       this.snippetShot = { name: entry.name, lang, code, ready: false, failed: false }
       try {
         const shot = this.snippetShot
         await untilTrue(() => shot.ready || shot.failed, { frames: SHOT_READY_FRAMES })
-        if (shot.failed) return diff.showNotice('That diagram could not be rendered.')
+        if (shot.failed) return diff.showNotice(t('imageExportNotices.thatDiagramCouldNotBe'))
         const res = await this._shoot()
-        if (res?.error) return diff.showNotice('Could not take a picture of this snippet.')
+        if (res?.error) return diff.showNotice(t('imageExportNotices.couldNotTakeAPicture2'))
         this.imageEntry = {
           id,
           name: entry.name,
@@ -137,9 +138,9 @@ export const useImageExportStore = defineStore('imageExport', {
     // pane narrow the picture to just those; with none it covers the whole diff.
     async exportCurrentImage() {
       const diff = useDiffStore()
-      if (!this.canExportImage) return diff.showNotice('Nothing to export yet.')
+      if (!this.canExportImage) return diff.showNotice(t('imageExportNotices.nothingToExportYet'))
       const res = await this._shoot({ band: getDiffScroller()?.selection() ?? null })
-      if (res?.error) return diff.showNotice('Could not take a picture of this diff.')
+      if (res?.error) return diff.showNotice(t('imageExportNotices.couldNotTakeAPicture'))
       const [l, r] = comparedSides(diff)
       this.imageEntry = { id: null, name: `${l.name} ↔ ${r.name}`, subject: 'diff', ...res }
     },
@@ -222,7 +223,9 @@ export const useImageExportStore = defineStore('imageExport', {
     async copyImage() {
       const res = await window.api.copyDiffImage()
       useDiffStore().showNotice(
-        res?.ok ? 'Diff image copied to clipboard.' : 'Could not copy the image.'
+        res?.ok
+          ? t('imageExportNotices.diffImageCopiedToClipboard')
+          : t('imageExportNotices.couldNotCopyTheImage')
       )
       return !!res?.ok
     },
@@ -230,7 +233,7 @@ export const useImageExportStore = defineStore('imageExport', {
       const diff = useDiffStore()
       const res = await window.api.saveDiffImage(this.imageEntry?.name ?? 'diff')
       if (res?.ok) diff.showNotice(`Saved diff image to ${res.path}`)
-      else if (!res?.canceled) diff.showNotice('Could not save the image.')
+      else if (!res?.canceled) diff.showNotice(t('imageExportNotices.couldNotSaveTheImage'))
     }
   }
 })

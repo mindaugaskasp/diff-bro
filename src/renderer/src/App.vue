@@ -33,7 +33,8 @@ import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import AppIcon from './components/AppIcon.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
-import { useSnippetStore, CLAUDE_EXAMPLE_SNIPPET } from './stores/snippetStore'
+import { CLAUDE_EXAMPLE_SNIPPET, useSnippetStore } from './stores/snippetStore'
+import { t } from './i18n'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
@@ -81,7 +82,7 @@ onMounted(async () => {
   if (snippets.entries.length === 0) {
     const id = await snippets.seedExample()
     if (!id) return // vault key not ready — retry next launch
-    await snippets.add({ ...CLAUDE_EXAMPLE_SNIPPET })
+    await snippets.add({ ...CLAUDE_EXAMPLE_SNIPPET, name: t(CLAUDE_EXAMPLE_SNIPPET.nameKey) })
   }
   settings.markExamplesSeeded()
 })

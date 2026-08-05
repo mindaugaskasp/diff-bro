@@ -26,7 +26,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/composables/useTagInput.js': { fn: 84 },
   'src/renderer/src/menus.js': { fn: 151 },
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
-  'src/renderer/src/stores/diffStore.js': { file: 783 },
+  'src/renderer/src/stores/diffStore.js': { file: 779 },
   'src/renderer/src/stores/snippetStore.js': { file: 575 },
   'src/renderer/src/stores/tabsStore.js': { file: 398 },
   'src/renderer/src/stores/vaultStore.js': { file: 408 },

@@ -8,15 +8,14 @@ import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
 
-// Snippets of this language hold a link and are deliberately never shared.
+// These snippets hold a link and are deliberately never shared.
 export const URL_LANGUAGE = 'url'
 
-// Personal, non-expiring text library, encrypted at rest with the vault key
-// (crypto in main; the key never enters this store). Organized by TAGS —
-// plaintext metadata, deliberately NOT in the AAD, so retagging never re-encrypts.
-
+// Personal, non-expiring text library, encrypted at rest with the vault key (crypto
+// in main). Organized by TAGS: plaintext metadata, NOT in the AAD, so retagging
+// never re-encrypts.
 // 20 colours, evenly spaced around the OKLCH hue wheel at one lightness and
-// chroma, and interleaved so two tags made in a row land on opposite sides of it.
+// chroma, interleaved so two tags made in a row land on opposite sides.
 // The previous set had 20 entries but only ~8 distinct hues (three greens within
 // 3 deg, three reds within 2), which the ink normalisation in ui.css then made
 // indistinguishable. A new tag takes the next unused colour, then cycles.
@@ -95,7 +94,7 @@ function tagsFromCategories(categories) {
 // Coerce name/tags so old/partial data can't throw the sidebar's unguarded field
 // access (not in the AAD, so decryption is unaffected).
 const entryName = (e) =>
-  typeof e?.name === 'string' ? e.name : String(e?.name ?? 'Untitled snippet')
+  typeof e?.name === 'string' ? e.name : String(e?.name ?? t('snippetNotices.untitledSnippet'))
 const entryTags = (e) => (Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : [])
 
 function normalizeEntry(e) {
@@ -148,9 +147,9 @@ function readState() {
 // so tags stay free metadata.
 const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
 
-// Seeded once into an empty library so a first-time user sees a real snippet.
+// Seeded into an empty library so a first-time user sees a real snippet.
 export const EXAMPLE_SNIPPET = {
-  name: 'Example — Mermaid diagram',
+  nameKey: 'snippetNotices.exampleMermaidDiagram',
   language: 'mermaid',
   tags: ['example'],
   content: `flowchart TD
@@ -165,7 +164,7 @@ export const EXAMPLE_SNIPPET = {
 // Seeded alongside the Mermaid example: a Claude prompt showing {{variables}} —
 // copying it asks you to fill them in first (see SnippetFillDialog).
 export const CLAUDE_EXAMPLE_SNIPPET = {
-  name: 'Example — Claude review prompt',
+  nameKey: 'snippetNotices.exampleClaudeReviewPrompt',
   language: 'claude',
   tags: ['example', 'prompt'],
   content: `Review the {{language}} changes in {{file}} for correctness, edge cases, and {{concern}}.
@@ -271,7 +270,8 @@ export const useSnippetStore = defineStore('snippets', {
     },
     // Returns the id, or null if the vault key wasn't available (caller retries).
     async seedExample() {
-      return this.add({ ...EXAMPLE_SNIPPET })
+      const { nameKey, ...rest } = EXAMPLE_SNIPPET
+      return this.add({ ...rest, name: t(nameKey) })
     },
     // Opens the snippet editor prefilled from a Tools dialog's "Add to Snippets".
     startNewSnippetFrom(content, language) {
@@ -567,7 +567,7 @@ export const useSnippetStore = defineStore('snippets', {
       const match = trusted.find((t) => t.fingerprint === res.signer)
       res.signerNote = match
         ? `Signed by trusted key "${match.label}".`
-        : 'Signed, but not by any of your trusted keys — treat these snippets as untrusted.'
+        : t('snippetNotices.signedButNotByAny')
       await this.restoreBundle(res.bundle)
       return res
     }

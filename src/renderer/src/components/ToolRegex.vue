@@ -78,7 +78,9 @@ async function copyOutput() {
         <span v-if="result.truncated" class="tre-warn">
           this pattern is too slow on this input — stopped early
         </span>
-        <span v-else-if="result.capped" class="tre-warn">first matches only</span>
+        <span v-else-if="result.capped" class="tre-warn">{{
+          $t('toolRegex.firstMatchesOnly')
+        }}</span>
       </div>
 
       <p class="tre-out mono">
