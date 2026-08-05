@@ -24,10 +24,10 @@ async function toggle(on) {
 <template>
   <section>
     <h4>{{ $t('gitToolSettings.git') }}</h4>
-    <p class="dialog-note">
-      {{ $t('gitToolSettings.makes') }} <code>git difftool</code> and
-      <code>git mergetool</code> open the comparison here instead of in the terminal.
-    </p>
+    <i18n-t keypath="gitToolSettings.intro" tag="p" class="dialog-note">
+      <template #difftool><code>git difftool</code></template>
+      <template #mergetool><code>git mergetool</code></template>
+    </i18n-t>
 
     <SettingToggle
       v-if="status?.available"
@@ -37,7 +37,7 @@ async function toggle(on) {
     >
       {{ $t('gitToolSettings.openGitComparisonsInDiff') }}
     </SettingToggle>
-    <p v-else-if="status" class="hint">git isn’t on your PATH, so there is nothing to register.</p>
+    <p v-else-if="status" class="hint">{{ $t('gitToolSettings.notOnPath') }}</p>
 
     <p v-if="status?.registered" class="hint">
       {{ $t('gitToolSettings.aMergeOpensItsTwo') }}

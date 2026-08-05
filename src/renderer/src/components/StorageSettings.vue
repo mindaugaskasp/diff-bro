@@ -47,14 +47,14 @@ function reveal() {
 <template>
   <section>
     <h4>{{ $t('storageSettings.dataFolder') }}</h4>
-    <p class="dialog-note">
-      {{ $t('storageSettings.whereSavedDiffsSnippetsAnd') }} <strong>survives a reinstall</strong>.
-      The folder is self-contained — after reinstalling, point Diff Bro back at it to restore
-      everything.
-    </p>
+    <i18n-t keypath="storageSettings.intro" tag="p" class="dialog-note">
+      <template #survives
+        ><strong>{{ $t('storageSettings.survivesAReinstall') }}</strong></template
+      >
+    </i18n-t>
     <div class="path">
       <code :title="dir">{{ dir }}</code>
-      <span v-if="isDefault" class="badge">default</span>
+      <span v-if="isDefault" class="badge">{{ $t('logSettings.default') }}</span>
     </div>
     <div class="dialog-actions">
       <button class="btn" :disabled="busy" @click="reveal">

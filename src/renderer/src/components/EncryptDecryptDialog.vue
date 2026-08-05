@@ -135,7 +135,8 @@ function close() {
     <template v-else>
       <div class="row">
         <label class="grow">
-          {{ $t('encryptDecryptDialog.key') }} <span class="hint">(hex or base64)</span>
+          {{ $t('encryptDecryptDialog.key') }}
+          <span class="hint">{{ $t('encryptDecryptDialog.hexOrBase64') }}</span>
           <input
             v-model="rawKey"
             type="text"
@@ -145,7 +146,8 @@ function close() {
           />
         </label>
         <label class="grow">
-          {{ $t('encryptDecryptDialog.iV') }} <span class="hint">(hex or base64)</span>
+          {{ $t('encryptDecryptDialog.iV') }}
+          <span class="hint">{{ $t('encryptDecryptDialog.hexOrBase64') }}</span>
           <input
             v-model="rawIv"
             type="text"
@@ -156,8 +158,11 @@ function close() {
         </label>
       </div>
       <p class="warn">
-        {{ $t('encryptDecryptDialog.aES256CBCIs') }} <strong>unauthenticated</strong> — a successful
-        decrypt does not prove the data is untampered. For decrypting external payloads only.
+        <i18n-t keypath="encryptDecryptDialog.unauthenticatedNote" tag="span">
+          <template #word
+            ><strong>{{ $t('encryptDecryptDialog.unauthenticated') }}</strong></template
+          >
+        </i18n-t>
       </p>
     </template>
     <div class="dialog-actions">

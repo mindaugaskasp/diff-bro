@@ -52,13 +52,14 @@ const clearLabel = computed(() =>
 <template>
   <section>
     <h4>{{ $t('logSettings.logs') }}</h4>
-    <p class="dialog-note">
-      {{ $t('logSettings.diffBroWritesUnexpectedErrors') }}
-      <strong>nothing is ever sent anywhere</strong>. Choose where the log files are stored.
-    </p>
+    <i18n-t keypath="logSettings.intro" tag="p" class="dialog-note">
+      <template #never
+        ><strong>{{ $t('logSettings.neverSent') }}</strong></template
+      >
+    </i18n-t>
     <div class="path">
       <code :title="dir">{{ dir }}</code>
-      <span v-if="isDefault" class="badge">default</span>
+      <span v-if="isDefault" class="badge">{{ $t('logSettings.default') }}</span>
     </div>
     <div class="dialog-actions">
       <button class="btn" :disabled="busy" @click="reveal">{{ $t('logSettings.reveal') }}</button>

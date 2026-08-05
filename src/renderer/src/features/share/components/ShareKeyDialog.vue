@@ -39,12 +39,20 @@ function close() {
 
 <template>
   <BaseDialog width="420px" :title="$t('share.keyDialog.shareMyPublicKey')" @close="close">
-    <p class="dialog-note">
-      {{ $t('share.keyDialog.thisIs') }} <strong>your</strong> public key — hand it to the other
-      person so they can receive diffs you share. To receive <em>their</em> diffs, use
-      <strong>{{ $t('share.keyDialog.securityAddTrustedKey') }}</strong> on the file
-      <em>they</em> send you. You never import your own key.
-    </p>
+    <i18n-t keypath="share.keyDialog.intro" tag="p" class="dialog-note">
+      <template #your
+        ><strong>{{ $t('share.keyDialog.your') }}</strong></template
+      >
+      <template #their
+        ><em>{{ $t('share.keyDialog.their') }}</em></template
+      >
+      <template #menu
+        ><strong>{{ $t('share.keyDialog.securityAddTrustedKey') }}</strong></template
+      >
+      <template #they
+        ><em>{{ $t('share.keyDialog.they') }}</em></template
+      >
+    </i18n-t>
 
     <label>
       {{ $t('share.keyDialog.nameOthersWillSee') }}
@@ -60,9 +68,11 @@ function close() {
       {{ $t('share.keyDialog.shownToWhoeverImportsThis') }}
     </p>
 
-    <p v-if="fingerprint" class="fp">
-      {{ $t('share.keyDialog.fingerprint') }} <code>{{ fingerprint }}</code>
-    </p>
+    <i18n-t v-if="fingerprint" keypath="share.keyDialog.fingerprint" tag="p" class="fp">
+      <template #fp
+        ><code>{{ fingerprint }}</code></template
+      >
+    </i18n-t>
 
     <template #actions>
       <button class="btn btn-primary" :disabled="busy" @click="save">

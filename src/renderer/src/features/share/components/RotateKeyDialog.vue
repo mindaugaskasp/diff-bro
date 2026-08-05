@@ -37,11 +37,11 @@ const close = () => (share.showRotateKeyDialog = false)
 <template>
   <BaseDialog width="460px" :title="$t('share.rotateKeyDialog.replaceMyKey')" @close="close">
     <template v-if="done">
-      <p class="dialog-note">
-        {{ $t('share.rotateKeyDialog.yourNewFingerprintIs') }} <strong class="fp">{{ done }}</strong
-        >. Send your public key again — until each person imports it, anything you seal will reach
-        them as an unknown sender.
-      </p>
+      <i18n-t keypath="share.rotateKeyDialog.doneNote" tag="p" class="dialog-note">
+        <template #fp
+          ><strong class="fp">{{ done }}</strong></template
+        >
+      </i18n-t>
     </template>
 
     <template v-else>

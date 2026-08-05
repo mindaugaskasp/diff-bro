@@ -35,11 +35,12 @@ function cancel() {
     :closable="false"
     @close="cancel"
   >
-    <p class="dialog-note">
-      {{ $t('common.remove') }} <strong>“{{ share.pendingUntrust.label }}”</strong> from your
-      trusted keys? You won't be able to open sealed diffs signed by it, or share to it, until you
-      re-add its <code>.diffbrokey</code>.
-    </p>
+    <i18n-t keypath="share.removeTrustedKeyDialog.confirm" tag="p" class="dialog-note">
+      <template #name
+        ><strong>“{{ share.pendingUntrust.label }}”</strong></template
+      >
+      <template #ext><code>.diffbrokey</code></template>
+    </i18n-t>
 
     <div v-if="sent.length" class="sent">
       <p class="dialog-note">

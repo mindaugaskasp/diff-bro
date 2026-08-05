@@ -437,8 +437,11 @@
   },
   "cliSettings": {
     "terminalCommand": "Terminal command",
-    "addsA": "Adds a",
-    "thatFolderIsnTOn": "That folder isn’t on your PATH yet — add it to your shell profile to run"
+    "intro": "Adds a {cmd} command so a comparison can start from a terminal: {compare}, {create}, or {save} to keep what you just copied.",
+    "notOnPath": "That folder isn’t on your PATH, so your shell won’t find {cmd} by name.",
+    "installed": "installed",
+    "install": "Install",
+    "reinstall": "Reinstall"
   },
   "commandPalette": {
     "commandPalette": "Command palette",
@@ -483,19 +486,23 @@
     "passphrase": "Passphrase",
     "key": "Key",
     "iV": "IV",
-    "aES256CBCIs": "AES-256-CBC is",
     "encrypt": "Encrypt →",
     "decrypt": "Decrypt →",
     "output": "Output",
     "useOutputAsInput": "Use output as input",
-    "copyOutput": "Copy output"
+    "copyOutput": "Copy output",
+    "hexOrBase64": "(hex or base64)",
+    "unauthenticated": "unauthenticated",
+    "unauthenticatedNote": "AES-256-CBC is {word} — a successful decrypt does not prove the data is untampered. For decrypting external payloads only."
   },
   "errorReportDialog": {
     "somethingWentWrong": "Something went wrong",
-    "diffBroHitAnUnexpected": "Diff Bro hit an unexpected error. It's been written to a log",
     "revealLog": "Reveal log",
     "reportOnGitHub": "Report on GitHub",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "intro": "Diff Bro hit an unexpected error and wrote it to a log {local} — nothing was sent anywhere. If it keeps happening, please report it so it can be fixed: copy the log and paste it into the issue.",
+    "machineOnly": "on your machine only",
+    "copyLog": "Copy log"
   },
   "externalDiffsSection": {
     "externalDiffs": "External diffs",
@@ -509,9 +516,10 @@
   },
   "gitToolSettings": {
     "git": "Git",
-    "makes": "Makes",
     "openGitComparisonsInDiff": "Open git comparisons in Diff Bro",
-    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the\n      merged file, so git still asks you whether the merge worked."
+    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the\n      merged file, so git still asks you whether the merge worked.",
+    "intro": "Makes {difftool} and {mergetool} open the comparison here instead of in the terminal.",
+    "notOnPath": "git isn’t on your PATH, so there is nothing to register."
   },
   "jiraRendered": {
     "nothingToPreviewYetSwitch": "Nothing to preview yet — switch to Plain to write."
@@ -527,10 +535,12 @@
   },
   "logSettings": {
     "logs": "Logs",
-    "diffBroWritesUnexpectedErrors": "Diff Bro writes unexpected errors to a local log so you can paste it into a bug report. One\n      file per day is kept for a week, and",
     "reveal": "Reveal",
     "useDefault": "Use default",
-    "changeFolder": "Change folder…"
+    "changeFolder": "Change folder…",
+    "intro": "Diff Bro writes unexpected errors to a local log — {never}. Choose where the log files are stored.",
+    "neverSent": "nothing is ever sent anywhere",
+    "default": "default"
   },
   "mermaidDiagram": {
     "diagramError": "Diagram error"
@@ -556,7 +566,8 @@
     "pasteChangedTextHereOr": "Paste changed text here… or drop a file",
     "original": "Original",
     "changed": "Changed",
-    "compare": "Compare"
+    "compare": "Compare",
+    "useText": "use text"
   },
   "quickLookCompose": {
     "nameOptional": "Name (optional)",
@@ -743,14 +754,15 @@
   },
   "storageSettings": {
     "dataFolder": "Data folder",
-    "whereSavedDiffsSnippetsAnd": "Where saved diffs, snippets, and your keys are stored. Put it in a folder you control (e.g.\n      Documents or a synced folder) so your data",
     "reveal": "Reveal",
     "useDefault": "Use default",
     "changeFolder": "Change folder…",
     "changingTheFolderRestartsDiff": "Changing the folder restarts Diff Bro.",
     "onLaunch": "On launch",
     "reopenTheComparisonsThatWere": "Reopen the comparisons that were open when I quit",
-    "onByDefaultTurningIt": "On by default. Turning it off also forgets the ones already stored."
+    "onByDefaultTurningIt": "On by default. Turning it off also forgets the ones already stored.",
+    "intro": "Where saved diffs, snippets and keys are kept. Point it somewhere that {survives}. The folder is self-contained — after reinstalling, point Diff Bro back at it to restore everything.",
+    "survivesAReinstall": "survives a reinstall"
   },
   "streamedDiffViewer": {
     "indexing": "Indexing…",
@@ -957,9 +969,10 @@
     "addTrustedKeyDialog": {
       "eGAliceLaptop": "e.g. Alice — laptop",
       "addTrustedKey": "Add trusted key",
-      "adding": "Adding",
-      "thisKeySaysItReplaces": "This key says it replaces",
-      "name": "Name"
+      "name": "Name",
+      "intro": "Adding {whose} public key so you can receive diffs they share. The name is prefilled from what they called their key — keep it or rename it. Fingerprint {fp}.",
+      "someoneElses": "someone else's",
+      "vouch": "This key says it replaces {who}, and that key signed the claim. Check the fingerprint with them anyway — anyone holding their old key could have signed it."
     },
     "recipientPicker": {
       "searchRecipients": "Search recipients…",
@@ -970,14 +983,15 @@
       "addRecipient": "Add recipient…"
     },
     "removeTrustedKeyDialog": {
-      "removeTrustedKey": "Remove trusted key?"
+      "removeTrustedKey": "Remove trusted key?",
+      "confirm": "Remove {name} from your trusted keys? You won't be able to open sealed diffs signed by it, or share to it, until you re-add its {ext}."
     },
     "rotateKeyDialog": {
       "replaceMyKey": "Replace my key",
-      "yourNewFingerprintIs": "Your new fingerprint is",
       "aNewKeyTakesOver": "A new key takes over from here. Your old one is kept so that diffs already sealed to it\n        still open — it is only ever used to read, never to send.",
       "diffsYouHave": "Diffs you have",
-      "doThisIfYourMachine": "Do this if your machine or your key may have been exposed."
+      "doThisIfYourMachine": "Do this if your machine or your key may have been exposed.",
+      "doneNote": "Your new fingerprint is {fp}. Send your public key again — until each person imports it, anything you seal will reach them as an unknown sender."
     },
     "diffDialog": {
       "shareDiff": "Share diff",
@@ -998,13 +1012,16 @@
     "keyDialog": {
       "eGAliceLaptop": "e.g. Alice — laptop",
       "shareMyPublicKey": "Share my public key",
-      "thisIs": "This is",
       "securityAddTrustedKey": "Security → Add Trusted Key",
       "nameOthersWillSee": "Name others will see",
       "shownToWhoeverImportsThis": "Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part\n      of the key's identity.",
-      "fingerprint": "Fingerprint:",
+      "fingerprint": "Fingerprint {fp}",
       "saveToFile": "Save to file…",
-      "copyToClipboard": "Copy to clipboard"
+      "copyToClipboard": "Copy to clipboard",
+      "intro": "This is {your} public key — hand it to the other person so they can receive diffs you share. To receive {their} diffs, use {menu} on the file {they} send you. You never import your own key.",
+      "your": "your",
+      "their": "their",
+      "they": "they"
     },
     "trustedKeyRow": {
       "nameExampleCom": "name@example.com",

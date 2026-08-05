@@ -30,7 +30,9 @@ const rightDrop = useFileTextDrop((content, name, path) =>
             <span class="file-name" :title="store.pasteLeftFile.name"
               ><AppIcon name="file" /> {{ store.pasteLeftFile.name }}</span
             >
-            <button class="link" @click="store.clearPasteFile('left')">use text</button>
+            <button class="link" @click="store.clearPasteFile('left')">
+              {{ $t('pasteInput.useText') }}
+            </button>
           </template>
           <template v-else>
             <input
@@ -67,7 +69,9 @@ const rightDrop = useFileTextDrop((content, name, path) =>
             <span class="file-name" :title="store.pasteRightFile.name"
               ><AppIcon name="file" /> {{ store.pasteRightFile.name }}</span
             >
-            <button class="link" @click="store.clearPasteFile('right')">use text</button>
+            <button class="link" @click="store.clearPasteFile('right')">
+              {{ $t('pasteInput.useText') }}
+            </button>
           </template>
           <template v-else>
             <input
