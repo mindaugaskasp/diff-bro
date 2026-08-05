@@ -61,21 +61,42 @@ const stores = () => ({
   snippets: { startNewSnippetFrom: spy() },
   share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy() },
   imageExport: { exportCurrentImage: spy() },
-  configBackup: { open: spy(), pendingPath: null }
+  configBackup: { open: spy(), pendingPath: null },
+  onboarding: {
+    replay: spy(),
+    openDemo: spy(),
+    openSnippet: spy(),
+    closeSnippet: spy(),
+    typeSearch: spy(),
+    clearSearch: spy(),
+    clearFilters: spy(),
+    armChord: spy(),
+    disarmChord: spy()
+  }
 })
 
 describe('the registry covers every surface that dispatches into it', () => {
-  // buildMenus renders the installed version into its Help menu.
+  // buildMenus renders the installed version into its Help menu. A few leaves
+  // reach the preload directly rather than the registry (Quick Look-up, Quit);
+  // those are not this test's business, so every call is a no-op.
   beforeAll(() => {
-    window.api = { appVersion: '0.0.0-test' }
+    window.api = new Proxy(
+      { appVersion: '0.0.0-test' },
+      { get: (target, key) => target[key] ?? (() => {}) }
+    )
   })
 
-  // The in-app menu bar and the palette are built from the same tree.
+  // The in-app menu bar and the palette are built from the same tree. A menu
+  // leaf carries a `run()` closure, not an action name, so the only way to learn
+  // which action it dispatches is to call it — reading `.action` off the
+  // flattened rows found nothing to check and passed no matter what broke.
   it('resolves every action the menu bar offers', () => {
-    const missing = flattenCommands(buildMenus(() => {}))
-      .map((c) => c.action)
-      .filter((a) => a && !COMMANDS[a])
-    expect(missing).toEqual([])
+    const dispatched = []
+    for (const command of flattenCommands(buildMenus((action) => dispatched.push(action)))) {
+      command.run()
+    }
+    expect(dispatched.length).toBeGreaterThan(20)
+    expect(dispatched.filter((a) => !COMMANDS[a])).toEqual([])
   })
 
   it('resolves every tool action from the shelf and the rail', () => {

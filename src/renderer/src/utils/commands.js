@@ -83,7 +83,22 @@ export const COMMANDS = {
   'tools-url': openTool('url'),
   'tools-lines': openTool('lines'),
   'tools-crypt': ({ ui }) => (ui.showCryptDialog = true),
-  shortcuts: ({ ui }) => (ui.showShortcutsDialog = true)
+  shortcuts: ({ ui }) => (ui.showShortcutsDialog = true),
+  // Summoned deliberately, so it ignores the tips setting rather than reading a
+  // request to see it once as consent to automatic tips.
+  'show-tour': ({ onboarding }) => onboarding.replay(),
+  // The tour's own props. Each one is fired by a step's Next, never by arriving
+  // at a step, and every one of them is put back when the tour ends.
+  'tour-demo-diff': ({ onboarding }) => onboarding.openDemo(),
+  'tour-demo-diagram': ({ onboarding }) => onboarding.openDemo('diagram'),
+  'tour-demo-snippet': ({ onboarding }) => onboarding.openSnippet(),
+  'tour-close-settings': ({ ui }) => (ui.showSettingsDialog = false),
+  'tour-close-snippet': ({ onboarding }) => onboarding.closeSnippet(),
+  'tour-demo-search': ({ onboarding }) => onboarding.typeSearch(),
+  'tour-clear-search': ({ onboarding }) => onboarding.clearSearch(),
+  'tour-clear-filters': ({ onboarding }) => onboarding.clearFilters(),
+  'tour-arm-chord': ({ onboarding }) => onboarding.armChord(),
+  'tour-disarm-chord': ({ onboarding }) => onboarding.disarmChord()
 }
 
 export const commandActions = () => Object.keys(COMMANDS)

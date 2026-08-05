@@ -1,7 +1,8 @@
 /* Tool launcher pinned to the bottom — flex:none keeps it out of the scroll, so
-   it's always visible under the list regardless of how far the list scrolls. */
-/* Two lines at most: the recents, then the way into the full list. The row used
-   to wrap, so the footer grew a line every few tools and the search moved. */
+   it's always visible under the list regardless of how far the list scrolls.
+   TWO strips, not one: the recents, then the way into the full list on a band
+   of its own. One strip meant the sidebar's bottom seam moved with the number
+   of chips, so it stopped lining up with the status band beside it. */
 .usb-tools {
   flex: none;
   display: flex;
@@ -14,6 +15,16 @@
      band with three shades of the accent competing in it. */
   border-top: 1px solid var(--border);
   background: var(--bg-elevated);
+}
+/* .band centres it; --band-row is the height it shares with the status band.
+   Row rather than the strip's own column, or the control stretches to fill the
+   band instead of sitting centred in it. */
+.usb-tools-search {
+  flex-direction: row;
+  padding: 0 var(--space-3);
+}
+.usb-tools-search .usb-tool-all {
+  flex: 1;
 }
 /* Label over its row, not beside it: the sidebar is narrow enough that an
    inline "Recent tools" wrapped onto two lines and squeezed the chips. */
@@ -84,24 +95,9 @@
   transform: translateY(0);
   box-shadow: none;
 }
-/* The way into the full list. It opens a search, so it is shaped like the
-   sidebar's own search field rather than a pill: same radius, same surface,
-   same left-aligned glyph-then-label. A full-width lozenge read as a big
-   button and sat oddly in the strip. */
+/* The way into the full list, and a .btn like any other: shaped like the
+   sidebar's search field it read as a box you could type into, which it never
+   was — clicking it opens the palette. */
 .usb-tool-all {
-  border-radius: var(--radius);
-  color: var(--text-dim);
-  font-weight: 500;
-}
-.usb-tool-all {
-  justify-content: flex-start;
-  padding: 4px 8px;
-}
-/* A search entry point should not light up like a tool it is about to run. */
-.usb-tool-all:hover {
-  color: var(--text);
-  background: var(--bg-hover);
-  border-color: var(--accent);
-  transform: none;
-  box-shadow: none;
+  gap: 5px;
 }

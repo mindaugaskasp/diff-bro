@@ -9,7 +9,7 @@ export const LEGACY_SIZE = {
   'src/main/hashDiff.js': { file: 335 },
   'src/main/lineIndexCore.js': { fn: 67 },
   'src/main/menu.js': { fn: 204, file: 302 },
-  'src/main/quickLook.js': { file: 255 },
+  'src/main/quickLook.js': { file: 254 },
   'src/main/sealing.js': { file: 388 },
   'src/main/share.js': { fn: 225, file: 510 },
   'src/main/window.js': { fn: 74 },

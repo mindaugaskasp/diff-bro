@@ -269,11 +269,11 @@ export function installMenu() {
       role: 'help',
       label: 'Help',
       submenu: [
-        // Installed version — the anchor for a future "Check for Updates…" item
-        // that opens this tag's release page.
+        // Anchor for a future "Check for Updates…" opening this tag's release.
         { label: `Diff Bro v${app.getVersion()}`, enabled: false },
         { type: 'separator' },
         { label: 'Keyboard Shortcuts', click: () => sendToFocused('shortcuts') },
+        { label: 'Show Tour', click: () => sendToFocused('show-tour') },
         { type: 'separator' },
         { label: 'Report an Issue', click: (_item, win) => promptAndOpenIssue(win) }
       ]

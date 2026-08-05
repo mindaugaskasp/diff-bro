@@ -11,10 +11,12 @@ import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
 import { EmailSettings } from '../features/email'
+import { useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
 
 const ui = useUiStore()
 const settings = useSettingsStore()
+const tour = useOnboardingStore()
 
 // One pane shows at a time behind the left rail.
 const TABS = [
@@ -41,9 +43,9 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="580px" title="Settings" @close="close">
+  <BaseDialog width="580px" tour="settings" title="Settings" @close="close">
     <div class="settings-body">
-      <nav class="settings-nav" aria-label="Settings sections">
+      <nav class="settings-nav" aria-label="Settings sections" data-tour="settings-nav">
         <button
           v-for="t in TABS"
           :key="t.id"
@@ -87,6 +89,19 @@ function close() {
           <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
             Maximize tool &amp; snippet windows (turn off to restore each one's size)
           </SettingToggle>
+          <div class="tips-row" data-tour="tips">
+            <SettingToggle :checked="tour.showTips" @change="tour.setShowTips">
+              Show tips after an update
+            </SettingToggle>
+            <button
+              class="btn btn-sm"
+              :disabled="tour.active"
+              :data-tip="tour.active ? 'The tour is running' : 'Run the tour again from the start'"
+              @click="tour.replay()"
+            >
+              Show tour
+            </button>
+          </div>
         </section>
 
         <section v-else-if="tab === 'shortcuts'">

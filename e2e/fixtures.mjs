@@ -1,8 +1,9 @@
 import { test as base, _electron as electron, expect } from '@playwright/test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { workerEnv } from './workerEnv.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
@@ -10,14 +11,25 @@ const MAIN = join(ROOT, 'build', 'main', 'index.js')
 // A throwaway userData dir so a run never reads or clobbers the developer's real
 // vault/keys/snippets, and its single-instance lock never collides with a
 // Diff Bro that's already open.
-export const freshUserDataDir = () => mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))
+//
+// Tips are OFF in it by default. Every profile here is cold, which is exactly
+// what the onboarding tour fires on, and its veil takes the pointer for the
+// whole window — left on, it intercepts the first click of nearly every spec in
+// this suite. `{ tips: true }` asks for it back; only the tour's own spec does.
+export const freshUserDataDir = ({ tips = false } = {}) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))
+  if (!tips) writeFileSync(join(dir, 'onboarding.json'), JSON.stringify({ showTips: false }))
+  return dir
+}
 
 // Launch the BUILT app against a given userData dir. `--user-data-dir` is a
 // Chromium switch Electron honours for app.getPath('userData'), which is what
 // makes each run's data (and its lock) isolated. Reused by the `app` fixture
 // and by tests that need to relaunch the same profile (persistence).
+// Not in the `app` fixture: the persistence specs call this directly, and would
+// launch unisolated. workerEnv.mjs says what each variable stops leaking.
 export const launchApp = (userDataDir) =>
-  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`] })
+  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`], env: workerEnv(userDataDir) })
 
 // The first window, loaded and ready to assert against.
 export async function firstReadyPage(app) {
@@ -29,8 +41,10 @@ export async function firstReadyPage(app) {
 // Fixtures for the common case: one fresh app + its window, torn down (and the
 // temp profile removed) after the test.
 export const test = base.extend({
-  app: async ({}, use) => {
-    const userDataDir = freshUserDataDir()
+  // Per-file: `test.use({ tips: true })` launches with the onboarding tour armed.
+  tips: [false, { option: true }],
+  app: async ({ tips }, use) => {
+    const userDataDir = freshUserDataDir({ tips })
     const app = await launchApp(userDataDir)
     // Trace the whole run (with screenshots); keep it only when the test fails,
     // attached so it shows up in the HTML report and as a CI artifact. Electron

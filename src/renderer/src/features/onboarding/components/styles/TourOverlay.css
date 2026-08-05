@@ -1,0 +1,106 @@
+/* Above the dialog layer (z 30) and the drop overlay (z 50): the tour points at
+   controls inside dialogs, so it has to sit over them. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* TINT: one layer with the target clipped out as a rounded subpath. One layer
+   means the scrim can never overlap itself — patching a rectangular hole's
+   corners with a second scrim element double-darkens to ~75% black, which reads
+   as a heavy rim around the ring. */
+.tour-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  /* The tint SWALLOWS clicks, and the clipped-out hole does not — so the spotlit
+     control stays live (the "press Save" step depends on it) while everything
+     else is blocked. Without this the veil was decoration: you could click through
+     it and navigate the dialog the tour was pointing into, leaving the ring on a
+     control that was no longer there. */
+  pointer-events: auto;
+}
+
+/* BLUR: four rectangles around the hole, because backdrop-filter resolves
+   before clip-path. Rectangles leave unblurred corner slivers, which nobody can
+   see; a blurred spotlight, everybody can. The blur is what carries the focus
+   cue on the seven dark themes, where the scrim changes the ground by only
+   1.00–1.17× (beacon is #000000 and cannot darken at all). */
+.tour-blur {
+  position: absolute;
+  backdrop-filter: blur(2.5px) saturate(0.7);
+  -webkit-backdrop-filter: blur(2.5px) saturate(0.7);
+}
+
+/* Drawn INSIDE the target's box. Any outward offset collides with whatever the
+   target sits flush against, and adjacent chrome is often already accent — the
+   active tab's underline is the same 2px --accent, so an offset over the
+   file-slots band read as one thick edge instead of two elements.
+   Flat, never a glow: matrix #00ff41, nyan #ff2ecb and neon #22d3ee turn an
+   accent-tinted shadow into a halo. */
+.tour-ring {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+}
+/* A zone is an area, not a control — the whole comparison pane takes the drop. */
+.tour-ring.zone {
+  border-style: dashed;
+}
+.tour-ring.filled {
+  border-color: var(--text-on-accent);
+}
+
+/* The REGION a step is about, when that is not the control it points at: the
+   Share button is what you press, the comparison is what gets sealed. Stroked
+   rather than cut out — a second hole would need a second subpath in the tint
+   and a fifth blur rectangle — and the veil is softened for the same step, since
+   a diff blurred past reading cannot be what the step says is being shared. */
+.tour-context {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+}
+.tour.soft .tour-tint {
+  opacity: 0.45;
+}
+.tour.soft .tour-blur {
+  backdrop-filter: blur(1px) saturate(0.92);
+  -webkit-backdrop-filter: blur(1px) saturate(0.92);
+}
+
+/* The hole stays cut, so the target is sharp and unblurred — but the pointer
+   stops here unless the step is `live`. A step SHOWS a control; only the one
+   that asks you to press it lets the press through. */
+.tour-block {
+  position: absolute;
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+.tour :deep(.tour-callout) {
+  pointer-events: auto;
+}
+
+/* Says why, on the edge of the blocked box the card is NOT on — the shared
+   tooltip anchors under its control, which here is the control the card sits
+   beside, so it landed on top of the step's own words. */
+.tour-note {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-hint);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tour-note.below {
+  transform: translate(-50%, 0);
+}

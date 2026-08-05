@@ -52,16 +52,16 @@ watch(
     :class="{
       first,
       unified,
-      'drop-target': dropTarget && !unified,
+      'drop-target': dropTarget,
       dragging,
       settling,
-      draggable: !locked && !unified,
+      draggable: !locked,
       'cue-unlock': lockCue === 'unlock',
       'cue-lock': lockCue === 'lock'
     }"
     :data-section="sectionId"
-    :draggable="!locked && !unified"
-    :data-tip="unified || locked ? null : 'Drag to reorder — lock in the toolbar to freeze'"
+    :draggable="!locked"
+    :data-tip="locked ? null : 'Drag to reorder — lock in the toolbar to freeze'"
     @click="$emit('toggle')"
     @dragstart="onDragStart(sectionId, $event)"
     @dragend="onDragEnd"

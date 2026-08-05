@@ -131,6 +131,8 @@ contextBridge.exposeInMainWorld('api', {
   readText: () => ipcRenderer.invoke('clipboard:read'),
   // Data-location settings.
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),
+  // The tour's demo pair, contents and all. Nothing is passed in.
+  demoFiles: (kind) => ipcRenderer.invoke('demo:files', kind),
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),
   dataDirReset: () => ipcRenderer.invoke('datadir:reset'),
   dataDirReveal: () => ipcRenderer.invoke('datadir:reveal'),
@@ -167,6 +169,9 @@ contextBridge.exposeInMainWorld('api', {
   // renderer receives that pick. Shared preload → both windows see these, but
   // each only wires the half it uses.
   quickLookToggle: () => ipcRenderer.invoke('quicklook:toggle'),
+  // The tour's "press it now" step, which runs with this window in front.
+  quickLookAllowWhileFocused: (on) =>
+    ipcRenderer.send('quicklook:allow-while-focused', on === true),
   // Settings → Shortcuts: apply a new summon accelerator live. Resolves to
   // { ok } or { ok:false, error } ('unavailable' / 'invalid').
   quickLookSetShortcut: (accel) => ipcRenderer.invoke('quicklook:setShortcut', accel),

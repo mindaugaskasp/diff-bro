@@ -36,7 +36,7 @@ export const useShareStore = defineStore('share', {
       this.saveThenShare = true
       diff.showSaveDialog = true
     },
-    // Opens the recipient picker (a share file is sealed for one recipient).
+    // Opens the recipient picker; one file, sealed for everyone chosen in it.
     // With no trusted keys yet, the dialog walks through the one-time setup.
     shareEntry(id) {
       this.shareEntryId = id

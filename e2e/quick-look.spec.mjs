@@ -37,6 +37,33 @@ test('summons the launcher with the seeded snippet and previews it', async ({ ap
   await expect(ql.locator('.ql-pv-name')).toHaveText(EXAMPLE)
 })
 
+// The launcher tokenizes with Prism because it cannot carry Monaco, and paints
+// the runs with the shared --syn-* roles. Those class RULES lived in a scoped
+// stylesheet belonging to another component, so the spans rendered and matched
+// nothing: every preview here was monochrome. The seeded examples are mermaid
+// and claude, neither of which Prism has a grammar for, so this brings its own.
+test('paints the preview with the syntax roles it tokenizes', async ({ app, page }) => {
+  await seededReady(page)
+  await page.getByRole('button', { name: 'New snippet' }).click()
+  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill('Highlight probe')
+  await editor.locator('.lang-picker select').selectOption('json')
+  await editor.locator('.editor').click()
+  await page.keyboard.type('{ "keep": true, "count": 42 }')
+  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.keyboard.press('Escape')
+
+  const ql = await summon(app, page)
+  await ql.locator('.ql-input').fill('Highlight probe')
+  const roled = ql.locator('.ql-pv-body [class*="syn-"]').first()
+  await expect(roled).toBeVisible()
+  const [ink, plain] = await Promise.all([
+    roled.evaluate((el) => getComputedStyle(el).color),
+    ql.locator('.ql-pv-body').evaluate((el) => getComputedStyle(el).color)
+  ])
+  expect(ink).not.toBe(plain)
+})
+
 test('→ enters snippet-scroll mode and ← returns to the list', async ({ app, page }) => {
   await seededReady(page)
   const ql = await summon(app, page)

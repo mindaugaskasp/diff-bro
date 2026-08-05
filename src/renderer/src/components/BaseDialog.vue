@@ -14,6 +14,10 @@ const props = defineProps({
   // The panel is BaseDialog's, so a dialog styles its size with this prop.
   width: { type: String, default: null },
   closable: { type: Boolean, default: true },
+  // A `data-tour` name for the PANEL, so the tour can stroke a dialog it is
+  // explaining rather than blurring it. The backdrop takes fallthrough attrs,
+  // which would anchor the whole screen instead.
+  tour: { type: String, default: null },
   escapeCloses: { type: Boolean, default: true },
   // Opt-in backdrop-click close (useBackdropClose gates out a drag that starts
   // in the panel).
@@ -99,6 +103,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
       ref="panel"
       class="dialog"
       :class="{ 'dialog--resizable': resizable }"
+      :data-tour="tour"
       :style="panelStyle"
       role="dialog"
       aria-modal="true"

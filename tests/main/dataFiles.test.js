@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
-import { DATA_FILES, planDataDirMove } from '../../src/main/dataFiles'
+import { DATA_FILES, STORE_NAMES, isStoreName, planDataDirMove } from '../../src/main/dataFiles'
 
 const slash = (dir, name) => `${dir}/${name}`
 
@@ -20,6 +20,23 @@ function sourceFiles(dir) {
     else if (/\.(js|vue)$/.test(entry.name)) out.push(path)
   }
   return out
+}
+
+const PERSIST_CALL = /\b(?:save|load)Persisted\(\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/g
+
+function persistedNames(text) {
+  const consts = new Map(
+    [...text.matchAll(/\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*'([^']+)'/g)].map(([, id, value]) => [
+      id,
+      value
+    ])
+  )
+  const names = []
+  for (const [, quoted, identifier] of text.matchAll(PERSIST_CALL)) {
+    const name = quoted ?? consts.get(identifier)
+    if (name) names.push(name)
+  }
+  return names
 }
 
 describe('DATA_FILES', () => {
@@ -40,9 +57,15 @@ describe('DATA_FILES', () => {
     }
   })
 
+  it('carries every store', () => {
+    for (const name of STORE_NAMES) expect(DATA_FILES).toContain(`${name}.json`)
+  })
+
   // The guard that stops this from rotting: every dataFile('x') and every
-  // savePersisted('x') in the tree has to be accounted for, so a new data file
-  // cannot be added without landing in the list.
+  // persisted store name in the tree has to be accounted for, so a new data
+  // file cannot be added without landing in the list. It resolves a name held
+  // in a const too — writing `savePersisted(KEY, …)` is how onboarding.json and
+  // sidebar.json slipped past a literals-only version of this.
   it('accounts for every dataFile() and persisted store name in the source', () => {
     const missing = new Set()
     for (const path of sourceFiles(SRC)) {
@@ -50,11 +73,37 @@ describe('DATA_FILES', () => {
       for (const [, name] of text.matchAll(/\bdataFile\(\s*'([^']+)'/g)) {
         if (!DATA_FILES.includes(name)) missing.add(`${name} (dataFile)`)
       }
-      for (const [, name] of text.matchAll(/\bsavePersisted\(\s*'([^']+)'/g)) {
-        if (!DATA_FILES.includes(`${name}.json`)) missing.add(`${name}.json (savePersisted)`)
+      for (const name of persistedNames(text)) {
+        if (!STORE_NAMES.includes(name)) missing.add(`${name} (persisted store)`)
       }
     }
     expect([...missing]).toEqual([])
+  })
+})
+
+// A name reaching store:load / store:save becomes a path, so an unknown one is
+// refused rather than sanitised into something adjacent.
+describe('isStoreName', () => {
+  it('accepts every real store', () => {
+    for (const name of STORE_NAMES) expect(isStoreName(name)).toBe(true)
+  })
+
+  it('rejects a traversing or absolute name', () => {
+    for (const name of ['../../evil', '../vault', 'a/b', 'a\\b', '/etc/passwd', '', '.', '..']) {
+      expect(isStoreName(name)).toBe(false)
+    }
+  })
+
+  it('rejects a data file that is not a store', () => {
+    for (const name of ['trusted-keys', 'identity', 'vault.key', 'vault.json']) {
+      expect(isStoreName(name)).toBe(false)
+    }
+  })
+
+  it('rejects a non-string', () => {
+    for (const name of [null, undefined, 0, ['vault'], { toString: () => 'vault' }]) {
+      expect(isStoreName(name)).toBe(false)
+    }
   })
 })
 

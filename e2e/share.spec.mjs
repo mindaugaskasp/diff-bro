@@ -1,12 +1,13 @@
 import { test, expect } from './fixtures.mjs'
 
-// Sharing seals a diff for one recipient. The full sealed-file roundtrip needs
-// native save/open dialogs and a second identity, and is already covered by the
-// crypto unit tests (sealing roundtrip/tamper/binding). What only a real launch
-// exercises — and what this guards — is the two-step share UX and the on-demand
-// identity-key creation: Share must save first (a share file needs a name and
-// expiry), then, with no trusted keys yet, drop into the one-time key-exchange
-// setup instead of a recipient picker. Rendering that dialog asks the main
+// Sharing seals a diff for everyone picked in the recipient list. The full
+// sealed-file roundtrip needs native save/open dialogs and a second identity,
+// and is already covered by the crypto unit tests (sealing roundtrip / tamper /
+// binding). What only a real launch exercises — and what this guards — is the
+// two-step share UX and the on-demand identity-key creation: Share must save
+// first (a share file needs a name and expiry), then, with no trusted keys yet,
+// drop into the one-time key-exchange setup instead of a recipient picker.
+// Rendering that dialog asks the main
 // process for this install's fingerprint, which creates its keypair in
 // safeStorage — a path jsdom can't reach.
 test('sharing with no trusted keys walks through first-time key setup', async ({ page }) => {

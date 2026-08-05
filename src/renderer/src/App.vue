@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import { SnippetShot, useImageExportStore } from './features/imageExport'
+import { ContinueTourDialog, TourOverlay } from './features/onboarding'
 import { usePasteToCompareStore } from './features/pasteToCompare'
 import { useCommands } from './composables/useCommands'
 import { useSettingsStore } from './stores/settingsStore'
@@ -9,6 +10,7 @@ import { useWindowFileDrop } from './composables/useFileDrop'
 import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
 import { usePasteShortcut } from './composables/usePasteShortcut'
 import { useSessionPersistence } from './composables/useSessionPersistence'
+import { useTourCommands } from './composables/useTourCommands'
 import FileSlot from './components/FileSlot.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
@@ -47,18 +49,16 @@ const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
 const showStatusBand = computed(() => hasStatusBand(store))
-const { run, runCli } = useCommands()
+const { runFromMenu, runCli } = useCommands()
 
 settings.initTheme()
-window.api.onMenuAction((action) => run(action))
+window.api.onMenuAction((action) => runFromMenu(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
-// The `diffbro` command: main holds anything that arrived before this window
-// existed, and releases it only once the restored session is in place (below),
-// so a comparison the user asked for is never overwritten by an old one.
+// Main holds a `diffbro` command until the restored session is in place (below).
 window.api.onCliCommand((command) => runCli(command))
+useTourCommands()
 usePasteShortcut(() => usePasteToCompareStore().request())
-// Nothing is written until the stored session has been read back (or found
-// absent), so a blank startup window can never overwrite it.
+// Writes only after the stored session is read back, so a blank window can't overwrite it.
 useSessionPersistence()
 // Mermaid's renderer, pulled in at idle so no first render stops the app.
 useDiagramWarmup()
@@ -127,6 +127,7 @@ useSnippetDiffSync()
            catch it mid-fade. -->
         <main
           class="content"
+          data-tour="pane"
           :class="{ capturing: imageExport.imageCapturing, 'with-status-band': showStatusBand }"
         >
           <!-- Matrix theme: code rain behind the empty state / diff area, only
@@ -135,7 +136,7 @@ useSnippetDiffSync()
             v-if="settings.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
             fill
           />
-          <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row">
+          <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row" data-tour="slots">
             <div class="slot-half">
               <FileSlot
                 side="left"
@@ -207,6 +208,8 @@ useSnippetDiffSync()
 
     <AppDialogs />
     <AppTooltip />
+    <ContinueTourDialog />
+    <TourOverlay />
 
     <transition name="fade">
       <div v-if="dragActive" class="drop-overlay">

@@ -19,6 +19,12 @@ over the Vite port and the X display. Use `make restart` to relaunch the app
 and `make shell` for a shell (its `DISPLAY` is preset to `:99`, so `xdotool`
 and `scrot` work straight away).
 
+`:99` is the display you see over noVNC. The entrypoint also starts one more per
+E2E worker from `:100` up (`scripts/e2e-displays.sh`, `E2E_WORKERS`),
+because the X11 clipboard is per-display and parallel workers sharing one would
+read each other's copies. Nothing interactive uses those — a `make e2e` run is
+invisible in the VNC view, which is the point.
+
 - The source tree is bind-mounted into the container and runs under
   `electron-vite dev`, so edits on the host hot-reload inside the container.
 - Sample files to diff live in `tests/data/` → `/app/tests/data` in the

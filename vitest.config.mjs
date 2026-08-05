@@ -60,6 +60,7 @@ export default defineConfig({
         'src/main/clipboardWrite.js',
         'src/main/clipboardStage.js',
         'src/main/clipboardFiles.js',
+        'src/main/demoContent.js',
         'src/main/xlsx/**',
         'src/renderer/src/stores/**',
         // A slice's store is shipped logic like any other; without this line

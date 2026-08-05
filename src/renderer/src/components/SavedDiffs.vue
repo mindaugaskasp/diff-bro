@@ -1,10 +1,10 @@
 <script setup>
-// The sidebar shell: a search + a segmented filter (All / Saved / Shared /
+// The sidebar shell: a search + a segmented filter (All / Saved / External /
 // Snippets) over one scroll; each group is its own component.
 import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
-import { toggleTag } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
-import { useSnippetStore } from '../stores/snippetStore'
+import { useSidebarResize } from '../composables/useSidebarResize'
+import { useSidebarTags } from '../composables/useSidebarTags'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
@@ -15,12 +15,27 @@ import AppIcon from './AppIcon.vue'
 import SidebarRail from './SidebarRail.vue'
 import SidebarSearch from './SidebarSearch.vue'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useUiStore } from '../stores/uiStore'
 
 const vault = useVaultStore()
-const snippets = useSnippetStore()
 const settings = useSettingsStore()
+const ui = useUiStore()
+const tags = useSidebarTags()
+const size = useSidebarResize()
 
 const searchBox = ref(null)
+const aside = ref(null)
+// Published so the toolbar's key buttons can centre on this column whatever it
+// is doing — dragged wider, collapsed to the rail, mid-transition. Measured
+// rather than recomputed from the same numbers in two places.
+let observer = null
+onMounted(() => {
+  observer = new ResizeObserver(([entry]) =>
+    document.documentElement.style.setProperty('--sidebar-w', `${entry.contentRect.width}px`)
+  )
+  if (aside.value) observer.observe(aside.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
 // Opening from a rail icon lands on what was asked for: the search box focused,
 // or that section shown on its own.
 function expandTo(what) {
@@ -38,14 +53,22 @@ onMounted(() => {
 onBeforeUnmount(() => clearInterval(timer))
 
 // Section toggles are multi-select; "All" shows all, "★" narrows to favorites.
+// The ids are settingsDefaults' SECTIONS, so the filter, the rail and the stored
+// drag order all name the same three things.
 const SECTIONS = [
   { id: 'saved', label: 'Saved' },
-  { id: 'shared', label: 'Shared' },
+  { id: 'external', label: 'External' },
   { id: 'snippets', label: 'Snippets' }
 ]
+// Which component renders each, so the scroll can follow the stored order
+// rather than the order they happen to be written in.
+const SECTION_VIEW = {
+  saved: SavedDiffsSection,
+  external: ExternalDiffsSection,
+  snippets: SnippetsPanel
+}
 const visible = ref(new Set(SECTIONS.map((s) => s.id)))
 const favOnly = ref(false)
-const query = ref('')
 const allOn = computed(() => visible.value.size === SECTIONS.length)
 const shows = (id) => visible.value.has(id)
 function toggleSection(id) {
@@ -62,53 +85,26 @@ function showAll() {
   visible.value = new Set(SECTIONS.map((s) => s.id))
 }
 
-// One tag filter across the sidebar: the union of diff + snippet tags, most-used
-// first.
-const activeTags = ref([])
-const allTags = computed(() => {
-  const counts = {}
-  for (const e of vault.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
-  for (const e of snippets.entries) for (const t of e.tags || []) counts[t] = (counts[t] || 0) + 1
-  return Object.keys(counts)
-    .map((name) => ({
-      name,
-      color: snippets.colorOf(name) || 'var(--text-dim)',
-      count: counts[name]
-    }))
-    .sort((a, b) => b.count - a.count)
-})
-const pickTag = (name) => (activeTags.value = toggleTag(activeTags.value, name))
-
-// Two rows' worth. Diffs and snippets are what the sidebar is FOR; an unbounded
-// tag bar pushed them into a sliver the moment a library grew past a few dozen
-// tags. The rest live behind the picker, which is searchable and so is better
-// at fifty tags than the flat wall ever was.
-const TAG_BAR_LIMIT = 8
-const showAllTags = ref(false)
-
-// Selected tags come first whatever their count: a filter you cannot see is
-// worse than one you cannot reach, and rank alone would hide your own choice
-// behind "+42 more".
-const barTags = computed(() => {
-  const chosen = allTags.value.filter((t) => activeTags.value.includes(t.name))
-  const rest = allTags.value.filter((t) => !activeTags.value.includes(t.name))
-  return [...chosen, ...rest].slice(0, Math.max(TAG_BAR_LIMIT, chosen.length))
-})
-const overflowCount = computed(() => allTags.value.length - barTags.value.length)
-const clearTags = () => (activeTags.value = [])
 // Right-click is the only way in: a tag chip's primary job is filtering, and a
 // second visible control on every chip would crowd the bar.
 const managing = ref('')
+const showAllTags = ref(false)
 </script>
 
 <template>
-  <aside class="saved" :class="{ collapsed: settings.sidebarCollapsed }">
+  <aside
+    ref="aside"
+    class="saved"
+    :class="{ collapsed: settings.sidebarCollapsed, resizing: size.resizing.value }"
+    :style="settings.sidebarCollapsed ? null : { width: `${size.width.value}px` }"
+    data-tour="sidebar"
+  >
     <SidebarRail v-if="settings.sidebarCollapsed" @expand="expandTo" />
     <template v-else>
       <div class="usb-controls band">
         <SidebarSearch
           ref="searchBox"
-          v-model="query"
+          v-model="ui.sidebarQuery"
           @collapse="settings.setSidebarCollapsed(true)"
         />
         <div class="usb-seg">
@@ -134,32 +130,35 @@ const managing = ref('')
             {{ s.label }}
           </button>
         </div>
-        <div v-if="allTags.length" class="usb-tags">
+        <div v-if="tags.all.value.length" class="usb-tags">
           <button
-            v-for="t in barTags"
+            v-for="t in tags.bar.value"
             :key="t.name"
             class="tag-chip usb-tag"
-            :class="{ on: activeTags.includes(t.name) }"
+            :class="{ on: tags.active.value.includes(t.name) }"
             :style="{ '--tc': t.color }"
             :data-tip="`Filter by ${t.name} · right-click to manage`"
-            @click="pickTag(t.name)"
+            @click="tags.pick(t.name)"
             @contextmenu.prevent="managing = t.name"
           >
             <span class="usb-dot" />{{ t.name }}
             <span class="usb-tct">{{ t.count }}</span>
           </button>
           <button
-            v-if="overflowCount > 0"
+            v-if="tags.overflow.value > 0"
             class="tag-chip usb-more"
             data-tip="Every tag, searchable"
             @click="showAllTags = true"
           >
-            +{{ overflowCount }} more
+            +{{ tags.overflow.value }} more
           </button>
         </div>
-        <div v-if="activeTags.length" class="usb-filtering">
-          <span>{{ activeTags.length }} tag{{ activeTags.length === 1 ? '' : 's' }} selected</span>
-          <button class="usb-clear" data-tip="Drop every tag filter" @click="clearTags">
+        <div v-if="tags.active.value.length" class="usb-filtering">
+          <span>
+            {{ tags.active.value.length }} tag{{ tags.active.value.length === 1 ? '' : 's' }}
+            selected
+          </span>
+          <button class="usb-clear" data-tip="Drop every tag filter" @click="tags.clear()">
             Clear
           </button>
         </div>
@@ -167,36 +166,34 @@ const managing = ref('')
       <TagManagePopover v-if="managing" :name="managing" @close="managing = ''" />
       <TagPickerPopover
         v-if="showAllTags"
-        :tags="allTags"
-        :active="activeTags"
-        @pick="pickTag"
+        :tags="tags.all.value"
+        :active="tags.active.value"
+        @pick="tags.pick"
         @close="showAllTags = false"
       />
 
       <div class="usb-scroll">
-        <SavedDiffsSection
-          v-show="shows('saved')"
+        <component
+          :is="SECTION_VIEW[id]"
+          v-for="id in settings.orderedSections"
+          v-show="shows(id)"
+          :key="id"
           unified
-          :search="query"
-          :tags="activeTags"
-          :fav-only="favOnly"
-        />
-        <ExternalDiffsSection
-          v-show="shows('shared')"
-          unified
-          :search="query"
-          :tags="activeTags"
-          :fav-only="favOnly"
-        />
-        <SnippetsPanel
-          v-show="shows('snippets')"
-          unified
-          :search="query"
-          :tags="activeTags"
+          :search="ui.sidebarQuery"
+          :tags="tags.active.value"
           :fav-only="favOnly"
         />
       </div>
       <ToolsShelf />
+      <!-- Widen only: the sidebar collapses to a rail for the other direction,
+           and a half-narrow list truncates every name without freeing space. -->
+      <div
+        class="usb-grip"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Drag to widen the sidebar"
+        @pointerdown="size.start"
+      ></div>
     </template>
   </aside>
 </template>

@@ -17,7 +17,7 @@ import {
 import { join } from 'path'
 // Extension required, unlike the rest of src/main: seed-worker.cjs loads this
 // module without a bundler. tests/scripts/seedWorker.test.js guards it.
-import { DATA_FILES, planDataDirMove } from './dataFiles.js'
+import { DATA_FILES, isStoreName, planDataDirMove } from './dataFiles.js'
 
 const pointerPath = () => join(app.getPath('userData'), 'data-location.json')
 
@@ -114,11 +114,11 @@ export function setBackupHook(fn) {
 export function registerAppDataIpc() {
   // Sync so the Pinia stores can read state during setup.
   ipcMain.on('store:load', (e, name) => {
-    e.returnValue = typeof name === 'string' ? readStore(name) : null
+    e.returnValue = isStoreName(name) ? readStore(name) : null
   })
 
   ipcMain.handle('store:save', (e, name, contents) => {
-    if (typeof name !== 'string' || typeof contents !== 'string') return { error: 'bad-request' }
+    if (!isStoreName(name) || typeof contents !== 'string') return { error: 'bad-request' }
     writeStore(name, contents)
     // A save is what OFFERS a backup; autoBackup's window decides whether one
     // is actually taken.

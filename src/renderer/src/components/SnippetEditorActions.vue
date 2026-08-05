@@ -123,7 +123,15 @@ defineExpose({ flash })
   <button v-if="!editMode" class="btn btn-primary" @click="emit('edit')">
     <AppIcon name="edit" /> Edit
   </button>
-  <button v-else class="btn btn-primary" :disabled="!canSave" @click="emit('save')">Save</button>
+  <button
+    v-else
+    class="btn btn-primary"
+    data-tour="snippet-save"
+    :disabled="!canSave"
+    @click="emit('save')"
+  >
+    Save
+  </button>
   <button class="btn btn-ghost" @click="emit('close')">{{ editMode ? 'Cancel' : 'Close' }}</button>
 </template>
 

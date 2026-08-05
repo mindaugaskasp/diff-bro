@@ -11,6 +11,7 @@ import { join } from 'path'
 import { DEV_URL } from './env'
 import { readSettings } from './appData'
 import { appendLog } from './logger'
+import { allowsWhileFocused } from './quickLookFocus'
 import {
   placeWindow,
   displayForPoint,
@@ -119,14 +120,12 @@ export function ensureMainWindow() {
 // overlay" report can be correlated against a real multi-display state.
 function logDiag(event, displays, cursor, launcher) {
   const m = mainWindow()
-  const main = m
-    ? {
-        visible: m.isVisible(),
-        minimized: m.isMinimized(),
-        focused: m.isFocused(),
-        bounds: m.getBounds()
-      }
-    : null
+  const main = m && {
+    visible: m.isVisible(),
+    minimized: m.isMinimized(),
+    focused: m.isFocused(),
+    bounds: m.getBounds()
+  }
   appendLog({
     source: 'quicklook',
     message: `launcher ${event}`,
@@ -204,7 +203,7 @@ export function toggleQuickLook() {
 function onShortcut() {
   const w = ensure()
   const main = BrowserWindow.getAllWindows().find((x) => x !== w)
-  if (!w.isVisible() && main?.isFocused()) return
+  if (!w.isVisible() && main?.isFocused() && !allowsWhileFocused()) return
   toggleQuickLook()
 }
 

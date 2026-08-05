@@ -144,8 +144,10 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
   await dialog.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
   await expect(dialog).toHaveCount(0)
 
-  // Same comparison, same place in it.
-  await expect(page.getByText('line 40 CHANGED').first()).toBeVisible()
+  // Same comparison, same place in it. Identity off the stats, not a changed
+  // LINE: Monaco renders only the rows in view, and this change is below them.
+  await expect(page.locator('.status-band .add')).toHaveText('1 added')
+  await expect(page.locator('.status-band .del')).toContainText('1 removed')
   const after = await page.evaluate(
     () => document.querySelector('.editor.modified .view-lines').getBoundingClientRect().top
   )

@@ -18,7 +18,14 @@ export const useUiStore = defineStore('ui', {
     // What the palette lists: every menu command, or just the tools.
     paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
-    mermaidView: null
+    mermaidView: null,
+    // The sidebar's two filters. Core rather than local to the sidebar because
+    // the tour drives both — it types into the search, and it clears a tag
+    // filter that would hide the very snippet a step points at — and the core
+    // may not import a slice.
+    sidebarQuery: '',
+    /** @type {string[]} */
+    sidebarTags: []
   }),
   actions: {
     // Open the Mermaid viewer for a diagram's decrypted source.
@@ -28,7 +35,7 @@ export const useUiStore = defineStore('ui', {
     closeMermaid() {
       this.mermaidView = null
     },
-    // The command palette, scoped to tools (sidebar shelf → "Search tools…").
+    // The command palette, scoped to tools (the shelf's "Browse all tools").
     openToolsPalette() {
       this.paletteScope = 'tools'
       this.showCommandPalette = true

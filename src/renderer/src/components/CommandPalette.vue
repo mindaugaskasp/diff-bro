@@ -17,7 +17,7 @@ import { useUiStore } from '../stores/uiStore'
 
 const ui = useUiStore()
 const settings = useSettingsStore()
-const { run } = useCommands()
+const { runFromMenu: run } = useCommands()
 const commands = flattenCommands(buildMenus(run))
 const query = ref('')
 const selected = ref(0)

@@ -52,7 +52,7 @@ function newSnippet() {
 </script>
 
 <template>
-  <section class="snippets-section sidebar-section">
+  <section class="snippets-section sidebar-section" data-tour="snippets">
     <SectionHeader
       section-id="snippets"
       title="Snippets"
@@ -69,6 +69,7 @@ function newSnippet() {
           class="btn btn-icon"
           data-tip="New"
           aria-label="New snippet"
+          data-tour="snippet-new"
           @click.stop="newSnippet"
         >
           <AppIcon name="plus" />

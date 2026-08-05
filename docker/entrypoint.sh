@@ -26,6 +26,9 @@ done
 # typing / menu accelerators never reach the app.
 openbox &
 
+# One more per E2E worker, :100 up — the X11 clipboard is per-display.
+bash /app/scripts/e2e-displays.sh
+
 # Chromium probes both dbus buses on startup and, finding neither, logs a wall
 # of errors that read like fatal failures but are not. Starting them is purely
 # cosmetic — it keeps the log readable so real problems stand out.

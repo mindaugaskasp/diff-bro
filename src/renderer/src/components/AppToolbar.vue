@@ -6,6 +6,7 @@ import { STREAMED_LIMITS, useDiffStore } from '../stores/diffStore'
 import { useImageExportStore } from '../features/imageExport'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
+import KeyActions from './KeyActions.vue'
 import { useShareStore } from '../features/share'
 import { showsSplitView, showsWhitespaceToggle } from '../utils/viewChrome'
 
@@ -25,7 +26,7 @@ const saveTip = computed(() => {
 const shareTip = computed(() =>
   store.isStreamed
     ? STREAMED_LIMITS.share
-    : 'Share this diff as a sealed file for one trusted recipient'
+    : 'Share this diff as a sealed file, for the trusted people you pick'
 )
 const copyTip = computed(() => {
   if (store.isStreamed) return STREAMED_LIMITS.copy
@@ -69,6 +70,9 @@ const clearTitle = computed(() =>
 
 <template>
   <header class="toolbar band">
+    <!-- Left of everything: `.options` is margin-left:auto, so this sits over
+         the sidebar, beside the library these two set up. -->
+    <KeyActions />
     <!-- Change counts live in the status band under the panes (DiffViewer), in
          the same words the diagram diff uses. -->
     <div class="options">
@@ -126,6 +130,7 @@ const clearTitle = computed(() =>
         </button>
         <button
           class="btn"
+          data-tour="share"
           :data-tip="shareTip"
           :disabled="!store.canSave"
           @click="share.shareCurrent()"

@@ -104,6 +104,7 @@ function saveSnippet() {
 <template>
   <BaseDialog
     width="560px"
+    tour="snippet-editor"
     resizable
     :min-size="{ width: 420, height: 460 }"
     :initial-size="settings.dialogSize('snippet')"

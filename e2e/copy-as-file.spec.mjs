@@ -147,8 +147,13 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
     ;[staged] = await readBackPaths(app)
     expect(readFileSync(staged, 'utf-8')).toBe('plaintext')
   } finally {
-    // Closed without will-quit: this IS the crash the launch sweep is for.
-    await app.close()
+    // SIGKILL, because this IS the crash the launch sweep is for and no exit
+    // handler may run. `app.close()` quits GRACEFULLY, which fires will-quit and
+    // starts its sweep — that sweep then races process exit for the file below,
+    // a coin toss this test won locally and lost on CI.
+    const main = app.process()
+    main.kill('SIGKILL')
+    await new Promise((resolve) => main.once('exit', resolve))
   }
   expect(isGone(staged)).toBe('present')
 
