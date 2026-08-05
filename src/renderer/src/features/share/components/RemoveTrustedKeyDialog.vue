@@ -44,9 +44,7 @@ function cancel() {
 
     <div v-if="sent.length" class="sent">
       <p class="dialog-note">
-        You have sealed {{ sent.length }} {{ sent.length === 1 ? 'diff' : 'diffs' }} for this key.
-        Removing it doesn't reach them — they're already on the other machine, and stay readable
-        until they expire.
+        {{ $t('share.removeTrustedKeyDialog.alreadySealed', sent.length) }}
       </p>
       <ul class="sent-list">
         <li v-for="s in sent" :key="`${s.id}-${s.at}`">

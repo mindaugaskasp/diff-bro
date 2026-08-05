@@ -28,7 +28,7 @@ defineExpose(field)
   <div class="tag-section">
     <div class="field-label">
       {{ $t('tagChipsField.tags') }}
-      <span class="hint">— up to {{ MAX_TAGS }}, or leave empty for Default</span>
+      <span class="hint">{{ $t('tagChipsField.upTo', { max: MAX_TAGS }) }}</span>
     </div>
     <div class="tagfield" :class="{ ro: readonly }" @click="!readonly && field.inputEl?.focus()">
       <span
@@ -65,8 +65,8 @@ defineExpose(field)
       />
     </div>
     <div v-if="!readonly" class="cap" :class="{ full: !field.canAddMore }">
-      {{ field.tags.length }} of {{ MAX_TAGS
-      }}{{ field.canAddMore ? '' : ' — remove one to add another' }}
+      {{ $t('tagChipsField.usedOf', { used: field.tags.length, max: MAX_TAGS })
+      }}{{ field.canAddMore ? '' : $t('tagChipsField.removeOneFirst') }}
     </div>
     <div v-if="!readonly && field.suggestions.length && field.canAddMore" class="suggest">
       <button

@@ -100,7 +100,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
             />
             <span class="rc-name">{{ r.label }}</span>
             <span v-if="r.email" class="rc-mail">{{ r.email }}</span>
-            <span v-else class="rc-mail none">no address</span>
+            <span v-else class="rc-mail none">{{ $t('share.recipientPicker.noAddress') }}</span>
           </label>
         </li>
       </ul>
@@ -108,9 +108,14 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
 
     <div class="listfoot">
       <span v-if="picker.isFiltered.value">
-        {{ picker.visible.value.length }} of {{ picker.total.value }}
+        {{
+          $t('share.recipientPicker.visibleOfTotal', {
+            shown: picker.visible.value.length,
+            total: picker.total.value
+          })
+        }}
       </span>
-      <span v-else>{{ picker.total.value }} {{ picker.total.value === 1 ? 'key' : 'keys' }}</span>
+      <span v-else>{{ $t('share.recipientPicker.keyCount', picker.total.value) }}</span>
       <span class="spacer" />
       <button type="button" class="btn btn-sm" @click="$emit('add')">
         {{ $t('share.recipientPicker.addRecipient') }}

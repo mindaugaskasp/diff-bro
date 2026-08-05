@@ -652,7 +652,9 @@
     "everyTagSearchable": "Every tag, searchable",
     "dropEveryTagFilter": "Drop every tag filter",
     "all": "All",
-    "clear": "Clear"
+    "clear": "Clear",
+    "plusMore": "+{n} more",
+    "tagCount": "{n} tag | {n} tags"
   },
   "savedDiffsSection": {
     "savedDiffs": "Saved diffs",
@@ -841,7 +843,10 @@
   },
   "tagChipsField": {
     "tags": "Tags",
-    "default": "Default"
+    "default": "Default",
+    "upTo": "— up to {max}, or leave empty for Default",
+    "usedOf": "{used} of {max}",
+    "removeOneFirst": " — remove one to add another"
   },
   "tagManagePopover": {
     "tagName": "Tag name",
@@ -1043,11 +1048,15 @@
       "clearSearch": "Clear search",
       "showOnlyRecipientsWithAn": "Show only recipients with an email address",
       "withAnAddress": "With an address",
-      "addRecipient": "Add recipient…"
+      "addRecipient": "Add recipient…",
+      "noAddress": "no address",
+      "visibleOfTotal": "{shown} of {total}",
+      "keyCount": "{n} key | {n} keys"
     },
     "removeTrustedKeyDialog": {
       "removeTrustedKey": "Remove trusted key?",
-      "confirm": "Remove {name} from your trusted keys? You won't be able to open sealed diffs signed by it, or share to it, until you re-add its {ext}."
+      "confirm": "Remove {name} from your trusted keys? You won't be able to open sealed diffs signed by it, or share to it, until you re-add its {ext}.",
+      "alreadySealed": "You have sealed {n} diff for this key. Removing it doesn't reach them — they're already on the other machine, and stay readable until they expire. | You have sealed {n} diffs for this key. Removing it doesn't reach them — they're already on the other machine, and stay readable until they expire."
     },
     "rotateKeyDialog": {
       "replaceMyKey": "Replace my key",

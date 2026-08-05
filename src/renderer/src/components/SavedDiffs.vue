@@ -156,12 +156,12 @@ const showAllTags = ref(false)
             :data-tip="$t('savedDiffs.everyTagSearchable')"
             @click="showAllTags = true"
           >
-            +{{ tags.overflow.value }} more
+            {{ $t('savedDiffs.plusMore', { n: tags.overflow.value }) }}
           </button>
         </div>
         <div v-if="tags.active.value.length" class="usb-filtering">
           <span>
-            {{ tags.active.value.length }} tag{{ tags.active.value.length === 1 ? '' : 's' }}
+            {{ $t('savedDiffs.tagCount', tags.active.value.length) }}
             selected
           </span>
           <button
