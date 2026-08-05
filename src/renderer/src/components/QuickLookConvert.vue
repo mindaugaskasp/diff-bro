@@ -59,8 +59,8 @@ watch(
     <div class="qc-head band">
       <button
         class="btn btn-icon qc-back"
-        data-tip="Back (Esc)"
-        aria-label="Back to the results"
+        :data-tip="$t('quickLook.backTip')"
+        :aria-label="$t('quickLook.backLabel')"
         @click="$emit('back')"
       >
         <AppIcon name="chevron-left" />

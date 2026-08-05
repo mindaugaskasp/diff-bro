@@ -4,26 +4,98 @@
 /**
  * @typedef {object} Tool
  * @property {string} id      stable key, also what `recent` stores
- * @property {string} name    proper-case label
+ * @property {string} nameKey catalogue key for its proper-case label
  * @property {string} icon    an ICONS key (src/renderer/src/icons.js)
- * @property {string} kind    accurate one-word action
+ * @property {string} kindKey catalogue key for its one-word action
  * @property {string} action  menu action that opens it
  */
 
 /** @type {Tool[]} */
 export const TOOLS = [
-  { id: 'base64', name: 'Base64', icon: 'binary', kind: 'Encode', action: 'tools-base64' },
-  { id: 'json', name: 'JSON', icon: 'braces', kind: 'Format', action: 'tools-json' },
-  { id: 'xml', name: 'XML', icon: 'code', kind: 'Format', action: 'tools-xml' },
-  { id: 'uuid', name: 'UUID', icon: 'hash', kind: 'Generate', action: 'tools-uuid' },
-  { id: 'jwt', name: 'JWT', icon: 'shield-check', kind: 'Decode', action: 'tools-jwt' },
-  { id: 'epoch', name: 'Epoch', icon: 'clock', kind: 'Convert', action: 'tools-epoch' },
-  { id: 'url', name: 'URL', icon: 'link', kind: 'Encode', action: 'tools-url' },
-  { id: 'lines', name: 'Lines', icon: 'list', kind: 'Transform', action: 'tools-lines' },
-  { id: 'hash', name: 'Checksum', icon: 'fingerprint', kind: 'Verify', action: 'tools-hash' },
-  { id: 'regex', name: 'Regex', icon: 'regex', kind: 'Test', action: 'tools-regex' },
-  { id: 'crypt', name: 'Encrypt', icon: 'lock', kind: 'Encrypt', action: 'tools-crypt' },
-  { id: 'patch', name: 'Patch', icon: 'file', kind: 'Apply', action: 'apply-patch' }
+  {
+    id: 'base64',
+    nameKey: 'tools.base64.name',
+    icon: 'binary',
+    kindKey: 'tools.base64.kind',
+    action: 'tools-base64'
+  },
+  {
+    id: 'json',
+    nameKey: 'tools.json.name',
+    icon: 'braces',
+    kindKey: 'tools.json.kind',
+    action: 'tools-json'
+  },
+  {
+    id: 'xml',
+    nameKey: 'tools.xml.name',
+    icon: 'code',
+    kindKey: 'tools.xml.kind',
+    action: 'tools-xml'
+  },
+  {
+    id: 'uuid',
+    nameKey: 'tools.uuid.name',
+    icon: 'hash',
+    kindKey: 'tools.uuid.kind',
+    action: 'tools-uuid'
+  },
+  {
+    id: 'jwt',
+    nameKey: 'tools.jwt.name',
+    icon: 'shield-check',
+    kindKey: 'tools.jwt.kind',
+    action: 'tools-jwt'
+  },
+  {
+    id: 'epoch',
+    nameKey: 'tools.epoch.name',
+    icon: 'clock',
+    kindKey: 'tools.epoch.kind',
+    action: 'tools-epoch'
+  },
+  {
+    id: 'url',
+    nameKey: 'tools.url.name',
+    icon: 'link',
+    kindKey: 'tools.url.kind',
+    action: 'tools-url'
+  },
+  {
+    id: 'lines',
+    nameKey: 'tools.lines.name',
+    icon: 'list',
+    kindKey: 'tools.lines.kind',
+    action: 'tools-lines'
+  },
+  {
+    id: 'hash',
+    nameKey: 'tools.hash.name',
+    icon: 'fingerprint',
+    kindKey: 'tools.hash.kind',
+    action: 'tools-hash'
+  },
+  {
+    id: 'regex',
+    nameKey: 'tools.regex.name',
+    icon: 'regex',
+    kindKey: 'tools.regex.kind',
+    action: 'tools-regex'
+  },
+  {
+    id: 'crypt',
+    nameKey: 'tools.crypt.name',
+    icon: 'lock',
+    kindKey: 'tools.crypt.kind',
+    action: 'tools-crypt'
+  },
+  {
+    id: 'patch',
+    nameKey: 'tools.patch.name',
+    icon: 'file',
+    kindKey: 'tools.patch.kind',
+    action: 'apply-patch'
+  }
 ]
 
 // How many the palette's "Recent" section remembers. Most-recent-first, so it
@@ -75,6 +147,20 @@ export function toolRows(pinnedIds, limit = TOOLS.length) {
 }
 
 /**
+ * Resolve a row's `nameKey`/`kindKey` into the `name`/`kind` every surface
+ * renders and SEARCHES on. The translator is passed in rather than imported:
+ * utils/ may not touch Vue, and doing it once here keeps the two names from
+ * being resolved differently by each caller — the launcher ranks on `name`, so
+ * a missed one silently stops matching.
+ *
+ * @param {Tool[]} rows
+ * @param {(key: string) => string} translate
+ * @returns {(Tool & { name: string, kind: string })[]}
+ */
+export const namedTools = (rows, translate) =>
+  rows.map((tool) => ({ ...tool, name: translate(tool.nameKey), kind: translate(tool.kindKey) }))
+
+/**
  * @param {string[]} ids  the current recents, most-recent-first
  * @param {string} id     the tool just used
  * @returns {string[]}    ids with `id` first, deduped, capped
@@ -89,15 +175,15 @@ export function noteRecent(ids, id) {
  * then everything. A recent tool appears in both — it is the shortcut, not a
  * different tool.
  * @param {string[]} ids
- * @returns {{ label: string, items: Tool[] }[]}
+ * @returns {{ labelKey: string, items: Tool[] }[]}
  */
 export function toolSections(ids) {
   const recent = recentTools(ids)
-  if (!recent.length) return [{ label: 'All tools', items: TOOLS }]
+  if (!recent.length) return [{ labelKey: 'tools.section.all', items: TOOLS }]
   const recentIds = new Set(recent.map((t) => t.id))
   return [
-    { label: 'Recent', items: recent },
-    { label: 'Other tools', items: TOOLS.filter((t) => !recentIds.has(t.id)) }
+    { labelKey: 'tools.section.recent', items: recent },
+    { labelKey: 'tools.section.other', items: TOOLS.filter((t) => !recentIds.has(t.id)) }
   ]
 }
 
@@ -106,12 +192,12 @@ export function toolSections(ids) {
  * single index, with `section` set on the row that opens each group. Filtering
  * ranks plain TOOLS instead, so a recent tool can't match twice.
  * @param {string[]} ids
- * @returns {(Tool & { section: string })[]}
+ * @returns {(Tool & { sectionKey: string })[]}
  */
 export function toolPaletteItems(ids) {
   const out = []
-  for (const { label, items } of toolSections(ids)) {
-    items.forEach((tool, i) => out.push({ ...tool, section: i === 0 ? label : '' }))
+  for (const { labelKey, items } of toolSections(ids)) {
+    items.forEach((tool, i) => out.push({ ...tool, sectionKey: i === 0 ? labelKey : '' }))
   }
   return out
 }

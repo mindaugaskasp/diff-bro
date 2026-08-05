@@ -8,6 +8,8 @@ import AppIcon from '../../../components/AppIcon.vue'
 import { useUiStore } from '../../../stores/uiStore'
 import ToolRow from './ToolRow.vue'
 import { useToolsStore } from '../toolsStore'
+import { t } from '../../../i18n'
+import { namedTools } from '../../../utils/tools'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -32,10 +34,11 @@ const filtering = computed(() => !!q.value || props.tags.length > 0)
 // visible and reports zero — that IS the answer to "why is this empty".
 const matches = computed(() => {
   if (props.tags.length) return []
-  const rows = props.favOnly ? store.rows.filter((t) => t.pinned) : store.rows
+  const all = namedTools(store.rows, t)
+  const rows = props.favOnly ? all.filter((row) => row.pinned) : all
   if (!q.value) return rows
   return rows.filter(
-    (t) => t.name.toLowerCase().includes(q.value) || t.kind.toLowerCase().includes(q.value)
+    (row) => row.name.toLowerCase().includes(q.value) || row.kind.toLowerCase().includes(q.value)
   )
 })
 

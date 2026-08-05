@@ -3,7 +3,7 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 7.5 / 16 steps                |
+| **Progress**                            | 8 / 16 steps                  |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
@@ -299,12 +299,9 @@ reviewable; each ends with `no-raw-text` enabled for that path)
 - [x] 7. `src/main` — 140 strings. `menu.js` first (60), then the six
       `showMessageBox` call sites and the native dialog filter names.
       `--retighten` `menu.js`.
-- [ ] 8. Command and shortcut surfaces — **menus.js, menuSecurity.js,
-      menuTools.js, shortcuts.js + both consumers DONE**; `utils/tools.js`,
-      `commands.js`, `commandPalette.js` remain. `tools.js` was deliberately not
-      started: `name`/`kind` feed seven consumers *including search filtering*
-      (`ToolsSection.vue:38`), so translating them changes matching behaviour
-      and is one unit of work, not a rename. — `renderer/src/menus.js`,
+- [x] 8. Command and shortcut surfaces — `menus.js`, `menuSecurity.js`,
+      `menuTools.js`, `shortcuts.js`, `tools.js`, `quickLookCommands.js` and all
+      nine consumers. `commands.js` and `commandPalette.js` held no copy. — `renderer/src/menus.js`,
       `utils/shortcuts.js`, `utils/commands.js`, `utils/tools.js`,
       `utils/commandPalette.js`. `--retighten` `menus.js`.
 - [ ] 9. Error and message catalogues — `utils/shareErrors.js`,
@@ -349,6 +346,7 @@ reviewable; each ends with `no-raw-text` enabled for that path)
 | 2026-08-05 | `src/shared/i18n` uses import ATTRIBUTES and extension-ful relative paths   | `scripts/seed-worker.cjs` loads `src/main/appData.js` under Electron's own ESM loader with no bundler, and appData needs `t()` for its folder dialog. `import … with { type: 'json' }` + `./i18n.js` + `../shared/i18n/index.js` is what makes the graph resolvable there. Verified by running it under Electron, not just by the static guard. | leaving one string unextracted; moving the dialog out of appData |
 | 2026-08-05 | The guard counts a `*Key: 'a.b'` property as a use                                        | The utils-export-IDs rule made every shortcut label look like an unused catalogue entry, which would have made step 13's flip to error impossible. A dotted value is required, so `sortKey: 'name'` is not a reference.        | listing exceptions; giving up on the unused check |
 | 2026-08-05 | `SHORTCUT_BAR` became objects rather than `[keys, label]` tuples                          | A key inside a tuple is invisible to the guard. Matching `SHORTCUT_GROUPS`' shape closes the gap instead of special-casing it.                                                                                                | a `shortcuts.bar.*` exception in the guard |
+| 2026-08-05 | Key IDs are resolved ONCE at the boundary (`namedTools`), not per call site | `rank()` searches `.name`. Leaving `nameKey` on the rows meant the launcher ranked against catalogue ids — `rank('date')` stopped finding Epoch while `rank('base64')` still passed by coincidence, which is exactly the failure that hides. utils/ stays pure by taking the translator as an argument. | translating in each of the nine consumers |
 | 2026-08-05 | RTL is out of scope                                                | A logical-property sweep across every stylesheet is a comparable amount of work again, and is untestable without a real RTL locale.                                                                                                                          | `dir="rtl"` support now                                                                                          |
 
 ### Measurement method

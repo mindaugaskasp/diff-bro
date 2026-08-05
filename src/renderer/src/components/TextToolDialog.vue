@@ -7,6 +7,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { toolOutput } from '../composables/useToolOutput'
 import { toolById } from '../utils/tools'
+import { t } from '../i18n'
 import BaseDialog from './BaseDialog.vue'
 import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
@@ -27,7 +28,8 @@ const props = defineProps({
 
 const ui = useUiStore()
 const snippets = useSnippetStore()
-const title = computed(() => toolById(props.tool)?.name ?? 'Tools')
+const nameKey = computed(() => toolById(props.tool)?.nameKey)
+const title = computed(() => (nameKey.value ? t(nameKey.value) : t('tools.fallbackTitle')))
 
 // Re-read on every render rather than once: a panel's output changes as it is
 // typed into, and an empty tool has nothing worth keeping.

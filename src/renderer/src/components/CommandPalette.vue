@@ -8,7 +8,8 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { buildMenus } from '../menus'
 import { useCommands } from '../composables/useCommands'
 import { flattenCommands } from '../utils/commandPalette'
-import { TOOLS, toolPaletteItems } from '../utils/tools'
+import { TOOLS, namedTools, toolPaletteItems } from '../utils/tools'
+import { t } from '../i18n'
 import { rank } from '../utils/quickLook'
 import { useQuickLookKeys } from '../composables/useQuickLookKeys'
 import { useBackdropClose } from '../composables/useBackdropClose'
@@ -29,7 +30,15 @@ const isTools = computed(() => ui.paletteScope === 'tools')
 // ranks the plain registry so a recent tool can't match twice.
 const results = computed(() => {
   if (!isTools.value) return rank(query.value, commands)
-  return query.value.trim() ? rank(query.value, TOOLS) : toolPaletteItems(settings.recentTools)
+  // Translated first: rank() searches `name`, so ranking the raw registry would
+  // match against catalogue keys instead of what the user can see.
+  const named = (rows) => namedTools(rows, t)
+  return query.value.trim()
+    ? rank(query.value, named(TOOLS))
+    : named(toolPaletteItems(settings.recentTools)).map((row) => ({
+        ...row,
+        section: row.sectionKey ? t(row.sectionKey) : ''
+      }))
 })
 watch(results, () => (selected.value = 0))
 watch(selected, (i) => listEl.value?.children?.[i]?.scrollIntoView({ block: 'nearest' }))
@@ -66,7 +75,7 @@ onMounted(() => input.value?.focus())
           v-model="query"
           class="cp-input"
           type="text"
-          :placeholder="isTools ? 'Search tools…' : 'Search commands…'"
+          :placeholder="isTools ? $t('palette.searchTools') : $t('palette.searchCommands')"
           autocomplete="off"
           spellcheck="false"
           @keydown="onKeydown"
@@ -75,7 +84,7 @@ onMounted(() => input.value?.focus())
       </div>
       <ul ref="listEl" class="cp-list">
         <li v-if="!results.length" class="cp-empty">
-          {{ isTools ? 'No matching tool.' : 'No matching command.' }}
+          {{ isTools ? $t('palette.noTool') : $t('palette.noCommand') }}
         </li>
         <li
           v-for="(cmd, i) in results"

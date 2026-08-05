@@ -198,5 +198,89 @@
   },
   "shortcutsDialog": {
     "title": "Keyboard shortcuts"
+  },
+  "tools": {
+    "base64": {
+      "name": "Base64",
+      "kind": "Encode"
+    },
+    "json": {
+      "name": "JSON",
+      "kind": "Format"
+    },
+    "xml": {
+      "name": "XML",
+      "kind": "Format"
+    },
+    "uuid": {
+      "name": "UUID",
+      "kind": "Generate"
+    },
+    "jwt": {
+      "name": "JWT",
+      "kind": "Decode"
+    },
+    "epoch": {
+      "name": "Epoch",
+      "kind": "Convert"
+    },
+    "url": {
+      "name": "URL",
+      "kind": "Encode"
+    },
+    "lines": {
+      "name": "Lines",
+      "kind": "Transform"
+    },
+    "hash": {
+      "name": "Checksum",
+      "kind": "Verify"
+    },
+    "regex": {
+      "name": "Regex",
+      "kind": "Test"
+    },
+    "crypt": {
+      "name": "Encrypt",
+      "kind": "Encrypt"
+    },
+    "patch": {
+      "name": "Patch",
+      "kind": "Apply"
+    },
+    "section": {
+      "all": "All tools",
+      "recent": "Recent",
+      "other": "Other tools"
+    },
+    "fallbackTitle": "Tools",
+    "openAction": "Open",
+    "alias": {
+      "base64": "Base64",
+      "jwt": "JWT Decode",
+      "url": "URL",
+      "epoch": "Epoch / Date",
+      "json": "JSON",
+      "xml": "XML",
+      "uuid": "UUID",
+      "lines": "Lines",
+      "hash": "Checksum",
+      "regex": "Regex"
+    }
+  },
+  "palette": {
+    "searchTools": "Search tools…",
+    "searchCommands": "Search commands…",
+    "noTool": "No matching tool.",
+    "noCommand": "No matching command."
+  },
+  "quickLook": {
+    "backTip": "Back (Esc)",
+    "backLabel": "Back to the results"
+  },
+  "toolRow": {
+    "unpin": "Unpin {name}",
+    "pin": "Pin {name} to the top",
+    "tip": "{kind} — {name}"
   }
 }

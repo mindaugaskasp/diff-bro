@@ -91,7 +91,7 @@ const groups = computed(() => [
         :key="tool.id"
         class="rail-btn"
         :class="{ pinned: tool.pinned }"
-        :data-tip="`${tool.kind} — ${tool.name}`"
+        :data-tip="$t('toolRow.tip', { kind: tool.kind, name: tool.name })"
         :aria-label="`${tool.kind} ${tool.name}`"
         @click="run(tool.action)"
       >
