@@ -5,9 +5,7 @@
     "save": "Save",
     "copy": "Copy",
     "copied": "Copied",
-    "remove": "Remove",
-    "left": "Left",
-    "right": "Right"
+    "remove": "Remove"
   },
   "settings": {
     "language": {

@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { catalogueKeys, dottedLiteralsIn, dynamicKeyLines, keysUsedIn } from './lib/i18nKeys.mjs'
 import { pseudoTree } from './lib/pseudo.mjs'
 
-const UNUSED_IS_ERROR = false
+const UNUSED_IS_ERROR = true
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const i18nDir = join(root, 'src/shared/i18n')

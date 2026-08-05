@@ -227,3 +227,35 @@ flowchart LR
 - The fuse is off _because_ nothing is signed — `electron-builder.yml` header
   documents the dependency
 - Notarization is automated by electron-builder; no app change needed
+
+---
+
+## Language
+
+```mermaid
+flowchart LR
+  cat["src/shared/i18n/en.json<br>one catalogue"]
+  r["renderer — vue-i18n"]
+  m["main — @intlify/core<br>menus, native dialogs"]
+  xa["en-XA — generated<br>accented · bracketed · +40%"]
+  g["npm run check:i18n<br>missing key · stale pseudolocale"]
+  cat --> r
+  cat --> m
+  cat --> xa
+  xa --> g
+  cat --> g
+```
+
+Done. Chrome reads from one catalogue; Settings ▸ Appearance switches it, menus
+included, without a restart.
+
+- `utils/` exports key IDs and never calls `t()` — it is pure, and a string
+  resolved at module load freezes the locale the app started in
+- A sentence wrapping inline markup is ONE `<i18n-t>` message with named slots;
+  fragments cannot be reordered by a translator
+- Syntax examples (`[text|url]`, `{code}`) never enter the catalogue — vue-i18n
+  reads them as plural separators and interpolation
+
+**Open.** No second language ships yet: `en-XA` is a generated pseudolocale for
+testing, not a translation. Adding a real locale is a data file plus one row in
+`LOCALES`. RTL is untouched — no `dir` handling, no logical-property sweep.

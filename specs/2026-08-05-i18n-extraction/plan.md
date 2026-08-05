@@ -3,7 +3,7 @@
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
 | **Status**                              | in-progress                   |
-| **Progress**                            | 12 / 16 steps                 |
+| **Progress**                            | 15 / 16 steps                 |
 | **Branch**                              | `improvement/i18n-extraction` |
 | **Started**                             | 2026-08-05                    |
 | **Finished**                            |                               |
@@ -313,15 +313,15 @@ reviewable; each ends with `no-raw-text` enabled for that path)
       alphabetically, so a reviewer sees one screen's copy at a time.
 - [x] 12. `features/` slices — each slice's copy lives under its own key
       namespace, mirroring the slice boundary.
-- [ ] 13. Flip the unused-key check from warning to error; confirm
+- [x] 13. Flip the unused-key check from warning to error; confirm
       `no-raw-text` now covers every path under `src/renderer/src` and
       `src/main`.
 
 **Phase 3 — proof and docs**
 
-- [ ] 14. `e2e/locale.spec.mjs` — switch, relaunch, application-menu read-back,
+- [x] 14. `e2e/locale.spec.mjs` — switch, relaunch, application-menu read-back,
       and the clipping assertion.
-- [ ] 15. Docs: `README.md`, `docs/roadmap.md` + `docs/brand/roadmap.svg`,
+- [x] 15. Docs: `README.md`, `docs/roadmap.md` + `docs/brand/roadmap.svg`,
       `docs/standards.md` rule, `docs/glossary.md`.
 - [ ] 16. `/validate`, `npm run check`, `make e2e`, full theme pass on the
       Settings picker.
