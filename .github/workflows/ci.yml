@@ -19,7 +19,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm install -g npm@11
-      - run: npm ci
+      # Captured so the guard below sees it. The guard used to run ONLY in the
+      # release workflow, so a new upstream deprecation passed every PR and then
+      # failed the tagged build — which is how v0.4.10 broke on a glob@10 notice
+      # that had been in the tree since the i18n plugin landed.
+      - name: Install dependencies
+        run: npm ci 2>&1 | tee npm-ci.log
+      - name: Guard against unexpected install warnings
+        run: node scripts/check-install-warnings.mjs npm-ci.log
       - run: npm run check # ESLint + Vitest
       - run: npm run build # ensure it bundles
 

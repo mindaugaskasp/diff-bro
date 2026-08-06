@@ -550,12 +550,17 @@ directory move passes CI while silently removing enforcement.
   warns `EBADENGINE` for the app and for `@electron/rebuild` / `node-abi`,
   which genuinely require it. Fix the local Node (`nvm use`); never widen
   `engines` to silence it.
-- Three deprecation warnings on install (`inflight`, `rimraf@2`, `glob@7`) are
-  transitive dev-only dependencies of `electron-builder`, which is already at
-  its latest — `npm audit` reports zero vulnerabilities and nothing we import
-  reaches them. They are upstream's to fix: do NOT add `overrides` to force
-  newer versions inside a build tool, which risks the installer builds for no
-  security gain.
+- Four deprecation warnings on install are transitive DEV-only dependencies whose
+  own packages are already at their latest — `npm audit` reports zero
+  vulnerabilities and nothing we import reaches them. `inflight`, `rimraf@2` and
+  `glob@7` come from `electron-builder`; `glob@10` from
+  `@intlify/eslint-plugin-vue-i18n`. They are upstream's to fix: do NOT add
+  `overrides` to force newer versions into someone else's tool, which risks the
+  installer builds (or the lint rules) for no security gain. Each is signed off
+  by name in `scripts/lib/installWarnings.mjs`, and
+  `tests/scripts/installWarnings.test.js` holds the list against the log a real
+  install produces — the allowlist used to be checked only during a release
+  build, which is the worst moment to learn it is stale.
 - After dependency changes, the Docker env needs `make rebuild`
   (volume-shadowed `node_modules`). Prefer `make install` for adding or
   updating dependencies — it writes `package-lock.json` with the
