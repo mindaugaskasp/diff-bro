@@ -62,6 +62,15 @@ jobs:
   e2e:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
+    strategy:
+      # Every shard reports: a cancelled sibling hides which slice actually broke.
+      fail-fast: false
+      matrix:
+        # Playwright splits by FILE, the same axis the suite already parallelises
+        # on, so a spec's internal order — which the relaunch tests depend on —
+        # is preserved. Setup + build is ~1.2 min per shard and does not divide,
+        # so past ~6 shards the fixed cost starts eating the gain.
+        shard: [1, 2, 3, 4]
     env:
       # Never let Playwright pull Chromium/Firefox/WebKit — the suite uses none.
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
@@ -91,13 +100,15 @@ jobs:
       - name: Start a virtual display per worker
         run: bash scripts/e2e-displays.sh
       - name: Run end-to-end tests
-        run: npm run test:e2e # electron-vite build && playwright test
+        # job-total, not a literal: the shard count can only be wrong in one
+        # place, and adding a shard to the matrix is the whole edit.
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
       # Report + per-failure traces (with screenshots) for inspection after the run.
       - name: Upload Playwright report and traces
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: e2e-report
+          name: e2e-report-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
