@@ -40,6 +40,21 @@ function compactUnit(el) {
 // subtraction returns the group's own width and the budget becomes "whatever
 // is currently shown". Everything then folds at any width, because folding
 // one control is what makes the next one not fit.
+// Watches the row AND its non-action siblings. `available` is clientWidth minus
+// what those siblings cost, and one of them — the View button — changes width on
+// its own: its count chip appears the moment an option leaves its default, which
+// is the state a grid or diagram comparison OPENS in. `.options` is `flex: 1`, so
+// its own box never moves when a sibling grows, and the row would go on believing
+// it had ~28px it no longer has. The action group is deliberately NOT observed:
+// folding changes its width, and watching that is a feedback loop.
+function observeRow(options, el, onResize) {
+  if (typeof ResizeObserver !== 'function' || !options) return null
+  const observer = new ResizeObserver(onResize)
+  observer.observe(options)
+  for (const kid of options.children) if (kid !== el) observer.observe(kid)
+  return observer
+}
+
 function otherWidth(options, el) {
   const kids = [...options.children]
   const gap = columnGap(options)
@@ -100,13 +115,17 @@ export function useToolbarOverflow({ host, group }, { rows, order, signature }) 
   }
 
   let observer = null
+  let gone = false
   onMounted(async () => {
     await remeasure()
-    if (typeof ResizeObserver !== 'function') return
-    observer = new ResizeObserver(measure)
-    if (host.value) observer.observe(host.value)
+    // remeasure() awaits a tick, so the component can be gone by the time it
+    // returns — an observer attached after that would never be disconnected.
+    if (!gone) observer = observeRow(host.value, group.value, measure)
   })
-  onBeforeUnmount(() => observer?.disconnect())
+  onBeforeUnmount(() => {
+    gone = true
+    observer?.disconnect()
+  })
   watch(signature, remeasure)
 
   return { folded, compact, measure, remeasure }

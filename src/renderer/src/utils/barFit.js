@@ -4,10 +4,10 @@
  * Pure arithmetic so the fold order is testable without a browser — the same
  * split railFit/useFittingCount already use. The caller measures; this decides.
  *
- * Items fold from the END of `order` backwards, so `order` is written
- * least-important first. A pinned id is never folded: at the widths this runs
- * at there is always room for the pinned set, and a bar whose primary action can
- * disappear into a menu is the bug, not the fix.
+ * Items fold from the FRONT of `order`, which is written least-important first.
+ * A pinned id is never folded: at the widths this runs at there is always room
+ * for the pinned set, and a bar whose primary action can disappear into a menu
+ * is the bug, not the fix.
  */
 
 /**
@@ -40,10 +40,16 @@
  * @param {number} [opts.trigger] width of the overflow control
  * @returns {{compact: boolean, folded: string[]}}
  */
-export function barLayout({ labelled, compactWidth, available, order, pinned, trigger }) {
+export function barLayout({ labelled, compactWidth, available, order, pinned = [], trigger }) {
   const ids = Object.keys(labelled)
   const labelledTotal = ids.reduce((sum, id) => sum + labelled[id], 0)
-  if (!(available > 0) || labelledTotal <= available) return { compact: false, folded: [] }
+  // Nothing measured yet: stay labelled, and let the first real pass decide.
+  if (!ids.length) return { compact: false, folded: [] }
+  // A budget of nothing is the moment there is LEAST room, so the safe fallback
+  // is the tersest layout, not the widest one. Returning `compact: false` here
+  // would draw every label at exactly the width that cannot hold them.
+  if (!(available > 0)) return { compact: true, folded: order.filter((id) => !pinned.includes(id)) }
+  if (labelledTotal <= available) return { compact: false, folded: [] }
 
   const widths = Object.fromEntries(ids.map((id) => [id, compactWidth]))
   return { compact: true, folded: foldedIds({ widths, available, order, pinned, trigger }) }

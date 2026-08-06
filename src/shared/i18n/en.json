@@ -444,7 +444,8 @@
       "clearFiles": "Clear both files ({mod}+K)",
       "clearPaste": "Clear the pasted text ({mod}+K)",
       "comparePasted": "Compare pasted text ({mod}+T)",
-      "backToFiles": "Back to comparing files ({mod}+T)"
+      "backToFiles": "Back to comparing files ({mod}+T)",
+      "resetZoom": "The comparison is zoomed — click to return it to 100% ({mod}+0)"
     },
     "why": {
       "split": "Side by side applies to text and diagram comparisons",
@@ -453,7 +454,8 @@
       "focus": "Focus applies to a diagram comparison"
     },
     "pasteMode": "Paste mode",
-    "fileMode": "File mode"
+    "fileMode": "File mode",
+    "resetZoom": "Reset the diff zoom"
   },
   "backupSettings": {
     "olderThan": "Older than",

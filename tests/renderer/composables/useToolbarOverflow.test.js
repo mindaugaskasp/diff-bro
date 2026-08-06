@@ -231,31 +231,92 @@ describe('useToolbarOverflow', () => {
     expect(api.compact.value).toBe(false) // and it can still grow back
   })
 
-  it('unfolds and re-measures when the signature changes', async () => {
+  // A language switch changes what every control MEASURES without changing the
+  // size of the row it sits in, so no resize fires and only the signature watch
+  // can notice. The first version of this test asserted the same fold answer
+  // before and after, which a watcher that never runs also satisfies — it passed
+  // with `watch(signature, remeasure)` deleted. It now widens the controls the
+  // way a longer locale does, so the answer MUST move.
+  it('re-measures on a signature change, at an unchanged row width', async () => {
     const sig = ref('en')
-    const refs = bar({ available: 150, actions: WIDTHS })
-    const api = start(refs, sig)
-    await nextTick()
-    expect(api.folded.value.length).toBeGreaterThan(0)
+    const grow = new Map()
+    const group = styled(sized(0), { columnGap: GAP, controlH: CONTROL_H })
+    for (const [id, width] of Object.entries(WIDTHS)) {
+      const child = sized(width)
+      child.dataset.action = id
+      child.getBoundingClientRect = () => ({ width: grow.get(id) ?? width })
+      group.append(child)
+    }
+    let available = 250
+    const host = styled(sized(0), { columnGap: 0 })
+    Object.defineProperty(host, 'clientWidth', { get: () => available })
+    host.append(group)
+    document.body.append(host)
 
+    const api = start({ host: ref(host), group: ref(group) }, sig)
+    await nextTick()
+    // 340 of labels into 250: compact, but every control still fits as an icon.
+    expect(api.compact.value).toBe(true)
+    expect(api.folded.value).toEqual([])
+
+    // en-XA is ~40% longer. The ROW does not change size — only its contents do.
+    for (const [id, w] of Object.entries(WIDTHS)) grow.set(id, Math.round(w * 1.4))
     sig.value = 'en-XA'
     await nextTick()
     await nextTick()
-    // Same widths, so the same answer — but it got there by spelling the labels
-    // back out first, which is what makes a longer locale measurable at all.
-    expect(api.folded.value).toEqual(['clear', 'export-image', 'copy-diff'])
+
+    // Compact already fitted, so the fold answer cannot move — what must move is
+    // the LABELLED total the composable now knows, which is what lets the row
+    // grow back correctly later. Prove it by giving it the room for English.
+    available = LABELLED_TOTAL + 20
+    api.measure()
+    // Still compact: it re-measured, and the longer labels do NOT fit that width.
+    expect(api.compact.value).toBe(true)
   })
 
-  it('survives an environment with no ResizeObserver', async () => {
-    const real = globalThis.ResizeObserver
-    delete globalThis.ResizeObserver
-    try {
-      const refs = bar({ available: 150, actions: WIDTHS })
-      const api = start(refs)
-      await nextTick()
-      expect(api.folded.value).toEqual(['clear', 'export-image', 'copy-diff'])
-    } finally {
-      if (real) globalThis.ResizeObserver = real
+  // jsdom has no ResizeObserver at all, so `delete globalThis.ResizeObserver`
+  // was a no-op and the old test was a byte-for-byte duplicate of the fold case
+  // — which also left the observer path unexercised. Stubbed here the way
+  // useVirtualRows.test.js already does it.
+  it('observes the row AND its non-action siblings, and disconnects on unmount', async () => {
+    const observed = []
+    let disconnected = 0
+    globalThis.ResizeObserver = class {
+      observe(el) {
+        observed.push(el)
+      }
+      disconnect() {
+        disconnected++
+      }
     }
+    try {
+      const refs = bar({ available: 400, other: 120, actions: WIDTHS })
+      start(refs)
+      // onMounted awaits remeasure() before it attaches, so the observer lands
+      // a microtask after the first paint.
+      await nextTick()
+      await nextTick()
+
+      // The row itself, and the View button beside it — whose count chip changes
+      // width on its own while `.options` (flex: 1) never moves.
+      expect(observed).toContain(refs.host.value)
+      expect(observed).toContain(refs.host.value.children[0])
+      // NOT the action group: folding changes its width, and watching that loops.
+      expect(observed).not.toContain(refs.group.value)
+
+      unmount()
+      unmount = () => {}
+      expect(disconnected).toBe(1)
+    } finally {
+      delete globalThis.ResizeObserver
+    }
+  })
+
+  it('still fits the row where there is no ResizeObserver at all', async () => {
+    expect(globalThis.ResizeObserver).toBeUndefined() // jsdom ships none
+    const refs = bar({ available: 150, actions: WIDTHS })
+    const api = start(refs)
+    await nextTick()
+    expect(api.folded.value).toEqual(['clear', 'export-image', 'copy-diff'])
   })
 })

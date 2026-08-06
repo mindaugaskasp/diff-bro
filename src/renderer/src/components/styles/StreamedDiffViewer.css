@@ -17,7 +17,7 @@
   overflow: auto;
   background: var(--bg);
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: var(--font-md);
+  font-size: calc(var(--font-md) * var(--diff-zoom, 1));
   line-height: 1;
 }
 
@@ -39,7 +39,7 @@
   padding-right: var(--space-2);
   background: var(--bg-panel);
   color: var(--text-dim);
-  font-size: var(--font-sm);
+  font-size: calc(var(--font-sm) * var(--diff-zoom, 1));
   font-variant-numeric: tabular-nums;
   user-select: none;
   overflow: hidden;

@@ -9,7 +9,7 @@
 //
 // The label is on `aria-label` at every rung, so the accessible name is the same
 // whether the word is drawn or not.
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { MOD } from '../keys'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useCommands } from '../composables/useCommands'
@@ -55,6 +55,16 @@ const shown = computed(() => rows.value.filter((r) => !folded.value.includes(r.i
 const hidden = computed(() => rows.value.filter((r) => folded.value.includes(r.id)))
 
 const { open, toggle, onKeydown, backdrop, close } = usePopover()
+
+// The anchor is `v-if="hidden.length"`, and the backdrop is teleported to body
+// under `v-if="open"`. Widening the window while the menu is open unfolds
+// everything and unmounts the anchor — which took the panel and the Escape
+// handler with it and left a full-window backdrop in the document, eating the
+// next click anywhere in the app with no way to dismiss it.
+watch(
+  () => hidden.value.length,
+  (n) => !n && close()
+)
 
 function activate(id) {
   close()

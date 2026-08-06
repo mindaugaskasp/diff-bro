@@ -87,6 +87,16 @@ describe('barLayout', () => {
     expect(folded).not.toContain('share')
   })
 
+  // A budget of nothing is the moment there is LEAST room. Falling back to
+  // `compact: false` drew every label at exactly the width that cannot hold them.
+  it('degrades to the tersest layout when there is no room at all', () => {
+    expect(barLayout({ ...args, available: 0 })).toEqual({
+      compact: true,
+      folded: ['clear', 'capture', 'copy', 'paste']
+    })
+    expect(barLayout({ ...args, available: -50 }).compact).toBe(true)
+  })
+
   it('treats an unmeasured row as fitting rather than folding blind', () => {
     expect(barLayout({ ...args, labelled: {}, available: 0 })).toEqual({
       compact: false,

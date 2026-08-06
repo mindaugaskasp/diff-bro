@@ -67,6 +67,27 @@ test('zoom out steps below the resting size, and the ladder has ends', async ({ 
   expect(await editorFontPx(page)).toBe(floor)
 })
 
+// A zoom nobody can see is a zoom nobody can undo: the level has to be stated,
+// and stating it has to be the way back to 100%.
+test('the level is shown while zoomed, and pressing it resets', async ({ app, page }) => {
+  await pasteCompare(page, 'alpha\nbeta', 'alpha\ngamma')
+  const chip = page.locator('.zoom-level')
+  const baseFont = await editorFontPx(page)
+
+  // Nothing to say at the resting size — it must not spend toolbar width there.
+  await expect(chip).toHaveCount(0)
+
+  await clickAppMenuItem(app, 'Zoom In')
+  await expect(chip).toBeVisible()
+  await expect(chip).toHaveText('110%')
+  await clickAppMenuItem(app, 'Zoom In')
+  await expect(chip).toHaveText('125%')
+
+  await chip.click()
+  await expect(chip).toHaveCount(0)
+  expect(await editorFontPx(page)).toBe(baseFont)
+})
+
 // The grid and the structural view are VIRTUALIZED on an exact row height, so a
 // font that grew without the row growing with it makes the spacers describe a
 // list of a different size than the one drawn.

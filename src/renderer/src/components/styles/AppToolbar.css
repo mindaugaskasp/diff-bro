@@ -57,3 +57,10 @@
   margin: 0 2px;
   background: var(--border);
 }
+/* The comparison's zoom, shown only while it is off 100% — pressing it returns
+   the diff to its resting size. Tabular figures so 90% and 125% do not shift the
+   controls beside them as the level steps. */
+.zoom-level {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}

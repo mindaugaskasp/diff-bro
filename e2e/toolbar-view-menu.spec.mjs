@@ -109,6 +109,32 @@ test('the document actions keep the toolbar cluster gap between them', async ({ 
   expect(new Set(row.heights).size).toBe(1) // one band row, equal-height boxes
 })
 
+// The backdrop is `position: fixed; inset: 0` at z-index 20, and the anchor had
+// no z-index of its own — so only the PANEL (21) cleared it and the trigger
+// underneath was covered. Hover and the pointer cursor went to the backdrop, and
+// a control plainly still on screen stopped reading as pressable the moment it
+// was pressed. Asserted as the element actually under the cursor, not as a style.
+test('the View trigger stays pressable while its panel is open', async ({ page }) => {
+  await pasteCompare(page, 'a\nb', 'a\nc')
+  const trigger = page.locator('.toolbar .anchor > .btn').first()
+  await openViewMenu(page)
+
+  const box = await trigger.boundingBox()
+  const onTop = await page.evaluate(
+    ([x, y]) => {
+      const el = document.elementFromPoint(x, y)
+      return { backdrop: !!el.closest('.popover-backdrop'), cursor: getComputedStyle(el).cursor }
+    },
+    [box.x + box.width / 2, box.y + box.height / 2]
+  )
+  expect(onTop.backdrop).toBe(false)
+  expect(onTop.cursor).toBe('pointer')
+
+  // And it still closes on its own press rather than the backdrop swallowing it.
+  await trigger.click()
+  await expect(page.getByRole('group', { name: 'View' })).toBeHidden()
+})
+
 // The ladder, all three rungs in one pass. A control loses its WORD before it
 // loses its PLACE — a bar that folded straight from labelled to a menu would
 // hide something the reader could still have reached with a glyph.
@@ -186,4 +212,43 @@ test('the overflow menu appears only when the row runs out of room', async ({ ap
   await more.click()
   await expect(page.getByRole('menu')).toBeVisible()
   await expect(page.getByRole('menuitem').first()).toBeVisible()
+})
+
+// The overflow anchor is `v-if="hidden.length"` and its backdrop is teleported
+// to body under `v-if="open"`. Widening the window while the menu is open
+// unfolds everything and unmounts the anchor — taking the panel AND the Escape
+// handler with it, while `open` stayed true and left a full-window backdrop in
+// the document. It ate the next click anywhere in the app, and narrowing again
+// re-opened the menu nobody had pressed.
+test('unfolding the row while its menu is open takes the backdrop with it', async ({
+  app,
+  page
+}) => {
+  await pasteCompare(page, 'a\nb', 'a\nc')
+  const more = page.getByRole('button', { name: /More actions|Ṁōřé àçţĩōńş/u })
+  const win = await app.browserWindow(page)
+  const [w, h] = await win.evaluate((b) => b.getMinimumSize())
+  await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
+
+  const grip = page.locator('.usb-grip')
+  const box = await grip.boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + 200)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 400, box.y + 200, { steps: 8 })
+  await page.mouse.up()
+  await clickAppMenuItem(app, 'Settings')
+  await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
+  await page.keyboard.press('Escape')
+  await win.evaluate((b) => b.webContents.setZoomLevel(2.5))
+
+  await expect(more).toBeVisible()
+  await more.click()
+  await expect(page.getByRole('menu')).toBeVisible()
+
+  // Give the row its room back: everything unfolds and the trigger goes.
+  await win.evaluate((b) => b.webContents.setZoomLevel(0))
+  await expect(more).toBeHidden()
+
+  // The backdrop must have gone with it, or the next click lands on nothing.
+  await expect(page.locator('.popover-backdrop')).toHaveCount(0)
 })

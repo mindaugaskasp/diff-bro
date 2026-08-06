@@ -228,10 +228,11 @@
    for 3, which over-states them.
 
    Stacking: the backdrop sits at 20 and the panel at 21, so both stay UNDER the
-   dialog layer (30) — a popover must never outrank a modal. The backdrop being
-   below the toolbar's own controls is deliberate: a press on another trigger
-   dismisses this panel and opens that one in a single click, which is what
-   MenuBar.vue's dropdowns already do. */
+   dialog layer (30) — a popover must never outrank a modal. The backdrop is
+   ABOVE every other toolbar control, because `.toolbar` establishes no stacking
+   context: a press on a second trigger therefore dismisses this panel rather
+   than opening that one, so the two popovers can never both be open. Only the
+   OPEN anchor rises past it, so its own trigger stays hoverable and pressable. */
 .popover-backdrop {
   position: fixed;
   inset: 0;
@@ -240,6 +241,15 @@
 .anchor {
   position: relative;
   display: inline-flex;
+}
+/* The OPEN anchor rises above the backdrop, and it has to carry its trigger up
+   with it: at `z-index: auto` only the panel (21) cleared the backdrop, so the
+   button underneath was covered by it. Hover and `cursor: pointer` then went to
+   the backdrop instead, and the control that was plainly still there stopped
+   reading as pressable the moment it was pressed. Its own press still closes the
+   panel because the anchor — not the backdrop — receives the click. */
+.anchor:has(> .popover) {
+  z-index: 21;
 }
 .popover {
   position: absolute;
