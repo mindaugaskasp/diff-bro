@@ -11,20 +11,23 @@ const today = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-async function newSnippet(app, page, name) {
+// Typed, not pasted. Filling the editor through the OS clipboard is what made
+// this spec (and compare-snippets) fail a release: under CI's parallel workers
+// the paste sometimes did not land, content stayed empty, and Save sat disabled
+// until the test timed out — reported as "page has been closed", which names
+// nothing. Bracket-free text, so Monaco's auto-closing cannot perturb it.
+async function newSnippet(page, name) {
   await page.getByRole('button', { name: 'New snippet' }).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await dialog.getByPlaceholder('Snippet name…').fill(name)
   await dialog.locator('.editor').click()
-  await app.evaluate(({ clipboard }) => clipboard.writeText('some content'))
-  await app.evaluate(({ BrowserWindow }) =>
-    (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
-  )
+  await page.keyboard.type('some content')
+  await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
   return dialog
 }
 
-test('a templated name is resolved when the snippet is saved', async ({ app, page }) => {
-  const dialog = await newSnippet(app, page, 'Standup {{today}}')
+test('a templated name is resolved when the snippet is saved', async ({ page }) => {
+  const dialog = await newSnippet(page, 'Standup {{today}}')
 
   // The preview says what will happen before it happens.
   await expect(dialog.locator('.name-templates .preview')).toContainText(`Standup ${today()}`)
@@ -45,8 +48,8 @@ test('a templated name is resolved when the snippet is saved', async ({ app, pag
 // The trigger is ALWAYS there — that is what makes the feature discoverable
 // without already knowing it exists — but it costs one row, not three: the
 // preview only appears with a placeholder typed, and the list only on request.
-test('the tags button is always offered, the list and preview are not', async ({ app, page }) => {
-  const dialog = await newSnippet(app, page, 'Just a name')
+test('the tags button is always offered, the list and preview are not', async ({ page }) => {
+  const dialog = await newSnippet(page, 'Just a name')
   const tags = dialog.getByRole('button', { name: 'Template tags' })
   await expect(tags).toBeVisible()
   await expect(dialog.locator('.name-templates .preview')).toHaveCount(0)
@@ -62,8 +65,8 @@ test('the tags button is always offered, the list and preview are not', async ({
 
 // The report that prompted the rework: nine tokens permanently under the field
 // pushed the dialog body into a scrollbar on a small window.
-test('the resting dialog does not scroll its body open', async ({ app, page }) => {
-  await newSnippet(app, page, 'Standup {{today}}')
+test('the resting dialog does not scroll its body open', async ({ page }) => {
+  await newSnippet(page, 'Standup {{today}}')
   const overflow = await page
     .locator('.dialog .dialog-body, .dialog')
     .first()
@@ -71,8 +74,8 @@ test('the resting dialog does not scroll its body open', async ({ app, page }) =
   expect(overflow).toBeLessThanOrEqual(0)
 })
 
-test('an unknown token is kept, not silently dropped', async ({ app, page }) => {
-  const dialog = await newSnippet(app, page, 'Build {{version}}')
+test('an unknown token is kept, not silently dropped', async ({ page }) => {
+  const dialog = await newSnippet(page, 'Build {{version}}')
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByPlaceholder('Snippet name…')).toHaveValue('Build {{version}}')
 })

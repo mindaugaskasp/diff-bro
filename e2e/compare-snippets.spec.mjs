@@ -45,12 +45,14 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   await page.getByRole('button', { name: 'New snippet' }).click()
   const make = page.getByRole('dialog', { name: 'New Snippet' })
   await make.getByPlaceholder('Snippet name…').fill('Live target')
+  // Typed rather than pasted: routing this through the OS clipboard sometimes
+  // did not land under CI's parallel workers, leaving the editor empty and Save
+  // disabled until the test timed out. The clipboard is not what this covers.
   await make.locator('.editor').click()
-  await app.evaluate(({ clipboard }) => clipboard.writeText('before-the-edit'))
-  await app.evaluate(({ BrowserWindow }) =>
-    (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
-  )
-  await make.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.keyboard.type('before-the-edit')
+  const save = make.getByRole('button', { name: 'Save', exact: true })
+  await expect(save).toBeEnabled()
+  await save.click()
   await page.keyboard.press('Escape')
 
   await dragRowTo(page, 'Live target', '.slot[data-side="left"]')
