@@ -151,14 +151,6 @@ describe('useSectionReorder', () => {
     expect(useSettingsStore().sectionOrder).toEqual(SECTIONS)
   })
 
-  it('does nothing while the order is locked', () => {
-    useSettingsStore().toggleSectionsLock()
-    const r = useSectionReorder()
-    drag(r, 'snippets', 'saved') // refused: no gesture begins
-    expect(r.isDropTarget('saved')).toBe(false)
-    expect(useSettingsStore().sectionOrder).toEqual(SECTIONS)
-  })
-
   // A press the window never sees the end of (focus lost mid-gesture) used to
   // stay armed, so the next unrelated move finished a drag nobody started.
   it('an abandoned press does not arm the next gesture', () => {

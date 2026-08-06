@@ -56,7 +56,6 @@ export function defaultFileLimits() {
 
 export const DEFAULT_SETTINGS = {
   sectionOrder: [...SECTIONS],
-  sectionsLocked: false,
   shelfOrder: {}, // { [sectionId]: [shelfId, …] }
   showShortcutBar: true,
   rotateThemeDaily: false,
@@ -143,7 +142,6 @@ export function readDialogSizes(parsed) {
 export function settingsStateFrom(parsed, outside) {
   return {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
-    sectionsLocked: parsed.sectionsLocked === true,
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     showShortcutBar: outside.showShortcutBar,

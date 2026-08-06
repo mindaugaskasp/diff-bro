@@ -87,13 +87,21 @@
   height: 18px;
   line-height: 1;
 }
-/* The whole header is the drag handle when unlocked — the grab cursor is the
-   only affordance needed. A plain click still toggles the section collapsed. */
+/* The whole header is the drag handle — the grab cursor is the only affordance
+   needed. A plain click still toggles the section collapsed. */
 .head.draggable {
   cursor: grab;
   /* The gesture is ours: without this a trackpad or touch drag scrolls the
      sidebar out from under the header instead of moving it. */
   touch-action: none;
+}
+/* An inline <svg> is a native drag source in Chromium, so grabbing an icon
+   would start an image-drag that fires pointercancel and kills the pointer
+   reorder. Refuse it on the header AND every child (user-drag does not
+   inherit). @dragstart.prevent is the belt; this is the braces. */
+.head.draggable,
+.head.draggable * {
+  -webkit-user-drag: none;
 }
 .head.draggable:active {
   cursor: grabbing;
@@ -112,47 +120,6 @@
 /* The header being dragged dims, so it's clear which section is moving. */
 .head.dragging {
   opacity: 0.4;
-}
-/* Toggling the sidebar lock plays a one-shot cue on EVERY header, so the state
-   change is unmistakable: unlocking wiggles them (they're draggable now), locking
-   snaps them firm. prefers-reduced-motion parks both. */
-.head.cue-unlock {
-  animation: section-cue-unlock 0.5s ease;
-}
-.head.cue-lock {
-  animation: section-cue-lock 0.32s ease;
-}
-@keyframes section-cue-unlock {
-  0%,
-  100% {
-    transform: translateX(0) rotate(0);
-  }
-  20% {
-    transform: translateX(-3px) rotate(-0.6deg);
-  }
-  50% {
-    transform: translateX(3px) rotate(0.6deg);
-  }
-  80% {
-    transform: translateX(-2px) rotate(-0.3deg);
-  }
-}
-@keyframes section-cue-lock {
-  0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(0.97);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .head.cue-unlock,
-  .head.cue-lock {
-    animation: none;
-  }
 }
 /* When a section settles into its new slot after a drag, its header pulses once
    — a brief accent wash that draws the eye to WHERE the moved section landed, so

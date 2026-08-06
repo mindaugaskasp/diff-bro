@@ -69,10 +69,42 @@ const FILE_ATTRIBUTE_NORMAL = 0x80
 // FILETIME counts 100ns ticks from 1601-01-01; Date counts ms from 1970-01-01.
 const FILETIME_EPOCH_OFFSET_MS = 11_644_473_600_000
 
-// Descriptor-based, not CF_HDROP: a format NAME becomes a format through
-// RegisterClipboardFormat, and the predefined CF_HDROP has no name to register —
-// writing under it minted a private format only this app could paste. See
-// docs/standards.md rule 7 before simplifying this back.
+// The environment variable the PowerShell hand-off reads the staged path from.
+// The path travels HERE, never interpolated into the script, so a name can never
+// break out of the string and inject a command.
+export const WIN_CLIP_PATH_ENV = 'DIFFBRO_CLIP_PATH'
+
+// Windows shell paste needs the PREDEFINED CF_HDROP (id 15). Electron cannot
+// produce it: writeBuffer('CF_HDROP', …) registers a private same-named format,
+// and the descriptor pair below cannot be written either — each writeBuffer
+// REPLACES the whole clipboard, so only the last format ever survives (verified:
+// FileGroupDescriptorW/FileContents come back 0 bytes, only the final buffer
+// remains). PowerShell SetFileDropList writes the genuine format in one shot.
+// The script is CONSTANT; the only variable, the path, arrives via env (above).
+// See docs/standards.md rule 7 — this is a fenced subprocess hand-off, not a
+// renderer-driven one: the path is computed in main and never round-tripped.
+export function windowsFileDropListCommand() {
+  const script = [
+    'Add-Type -AssemblyName System.Windows.Forms',
+    '$paths = New-Object System.Collections.Specialized.StringCollection',
+    `$paths.Add($env:${WIN_CLIP_PATH_ENV}) | Out-Null`,
+    '[System.Windows.Forms.Clipboard]::SetFileDropList($paths)'
+  ].join('\n')
+  return {
+    command: 'powershell.exe',
+    args: [
+      '-NoProfile',
+      '-NonInteractive',
+      '-STA', // clipboard APIs require a single-threaded apartment
+      '-EncodedCommand',
+      Buffer.from(script, 'utf16le').toString('base64')
+    ]
+  }
+}
+
+// Descriptor buffers, kept as the canWriteFile support probe and the documented
+// Win32 layout — NOT the write path: see windowsFileDropListCommand above for why
+// Electron cannot put these on the clipboard. See docs/standards.md rule 7.
 function windowsFlavours(paths, bytes) {
   const content = Buffer.isBuffer(bytes) ? bytes : Buffer.alloc(0)
   const name = paths[0].split(/[\\/]/).pop()

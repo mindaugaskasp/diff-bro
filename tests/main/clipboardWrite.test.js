@@ -5,7 +5,9 @@ import {
   filenamesPlist,
   gnomeCopiedFiles,
   hdrop,
-  uriList
+  uriList,
+  windowsFileDropListCommand,
+  WIN_CLIP_PATH_ENV
 } from '../../src/main/clipboardWrite'
 import { pathsFromHdrop, pathsFromPlist, pathsFromUriList } from '../../src/main/clipboardFiles'
 
@@ -114,6 +116,38 @@ describe('fileGroupDescriptor', () => {
   })
 })
 
+// The real Windows write path: Electron cannot put a shell-paste-able file on the
+// clipboard, so copyPathToClipboard shells out to this. The path must NEVER be in
+// the command — an injection there would run arbitrary PowerShell.
+describe('windowsFileDropListCommand', () => {
+  const decode = () => {
+    const { command, args } = windowsFileDropListCommand()
+    const i = args.indexOf('-EncodedCommand')
+    const script = Buffer.from(args[i + 1], 'base64').toString('utf16le')
+    return { command, args, script }
+  }
+
+  it('invokes powershell in a single-threaded apartment with no profile', () => {
+    const { command, args } = decode()
+    expect(command).toBe('powershell.exe')
+    expect(args).toContain('-NoProfile')
+    expect(args).toContain('-NonInteractive')
+    expect(args).toContain('-STA')
+  })
+
+  it('writes a real file-drop list via SetFileDropList', () => {
+    expect(decode().script).toContain('SetFileDropList')
+  })
+
+  it('reads the path from the environment, never from the command string', () => {
+    const { script } = decode()
+    expect(script).toContain(`$env:${WIN_CLIP_PATH_ENV}`)
+    // No filesystem path is baked in — the only variable is the env reference.
+    expect(script).not.toMatch(/[A-Za-z]:\\/)
+    expect(script).not.toContain('/')
+  })
+})
+
 describe('fileFlavours', () => {
   const bytes = Buffer.from('hello')
 
@@ -123,11 +157,12 @@ describe('fileFlavours', () => {
     ).toEqual(['NSFilenamesPboardType', 'public.file-url'])
   })
 
-  // The bug this replaced: `writeBuffer('CF_HDROP', …)` registers a CUSTOM format
-  // that merely has that NAME. The predefined CF_HDROP (id 15) has no name to
-  // register, so nothing outside this app ever saw the copy. These three are
-  // name-registered, which is why they arrive as the real thing.
-  it('writes the descriptor flavours on win32, so the shell can read the copy', () => {
+  // win32's fileFlavours is the canWriteFile support probe and the documented
+  // layout — NOT the write path. Electron cannot put these on the clipboard
+  // (each writeBuffer replaces it), so the real copy goes through
+  // windowsFileDropListCommand → PowerShell SetFileDropList. These assertions
+  // keep the reference layout honest.
+  it('describes the descriptor flavours on win32', () => {
     const formats = fileFlavours({ paths: ['C:\\a.txt'], platform: 'win32', bytes }).map(
       (f) => f.format
     )
@@ -159,9 +194,9 @@ describe('fileFlavours', () => {
     expect(effect.buffer.readUInt32LE(0)).toBe(1) // DROPEFFECT_COPY
   })
 
-  // Inert to every other application, and the only thing this app's own reader
-  // knows how to find — dropping it would break DiffBro-to-DiffBro paste.
-  it('keeps the custom CF_HDROP buffer for the app’s own reader', () => {
+  // Part of the reference layout only; the win32 write path is PowerShell, which
+  // produces the genuine predefined CF_HDROP the shell reads.
+  it('includes a valid custom CF_HDROP buffer in the reference set', () => {
     const flavours = fileFlavours({ paths: ['C:\\a.txt'], platform: 'win32', bytes })
     const own = flavours.find((f) => f.format === 'CF_HDROP')
     expect(pathsFromHdrop(own.buffer)).toEqual(['C:\\a.txt'])

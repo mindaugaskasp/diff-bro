@@ -92,7 +92,7 @@ export function useSectionReorder() {
     // whose click never arrived — it must not eat this gesture's.
     endGesture()
     clickSuppressed.value = false
-    if (settings.sectionsLocked || e.button !== 0 || isOwnControl(e.target)) return
+    if (e.button !== 0 || isOwnControl(e.target)) return
     pressId = id
     pressAt = { x: e.clientX, y: e.clientY }
   }

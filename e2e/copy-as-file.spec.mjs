@@ -1,5 +1,29 @@
 import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { test, expect, openMenu, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+
+// Read the clipboard the way the Windows shell does — the predefined FileDropList
+// that Explorer and mail clients paste. This is the format Electron cannot write
+// and the PowerShell hand-off does; readBackPaths above only knows the mac/Linux
+// flavours, so it can't see it.
+const shellDropList = () => {
+  try {
+    const out = execFileSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-STA',
+        '-Command',
+        'Get-Clipboard -Format FileDropList | ForEach-Object { $_.FullName }'
+      ],
+      { encoding: 'utf8' }
+    )
+    return out.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  } catch {
+    return []
+  }
+}
 
 // The clipboard is the one thing only a real launch exercises — it is why
 // window.api.copyText exists at all (a trusted-click navigator.clipboard write
@@ -10,6 +34,9 @@ import { test, expect, openMenu, launchApp, freshUserDataDir, firstReadyPage } f
 // Read the raw flavours out and decode them here — still the real OS clipboard,
 // still the write side under test.
 const readBackPaths = async (app) => {
+  // Windows carries the file as the shell's own FileDropList, which the mac/Linux
+  // flavours below cannot see — read it the way Explorer would.
+  if (process.platform === 'win32') return shellDropList()
   const raw = await app.evaluate(({ clipboard }) => {
     const read = (f) => {
       try {
@@ -30,6 +57,28 @@ const readBackPaths = async (app) => {
     .filter((l) => l.startsWith('file://'))
     .map((l) => decodeURIComponent(l.slice('file://'.length)))
   return [...new Set([...fromPlist, ...fromUris])].filter(Boolean)
+}
+
+// The Windows clipboard is system-wide and OUTLIVES the run, so a prior run's
+// entry (same deterministic filename, a temp dir since deleted) can satisfy a
+// name poll before this copy lands. Empty it first so only a fresh copy matches.
+const clearClipboard = (app) => app.evaluate(({ clipboard }) => clipboard.clear())
+
+// Wait for THIS test's copied file, matched by name. The copy is async (a
+// PowerShell hand-off on Windows), and the Windows clipboard is system-wide, so a
+// bare "non-empty" poll can latch a prior test's stale, already-swept path.
+const waitForCopiedPath = async (app, re) => {
+  let match
+  await expect
+    .poll(
+      async () => {
+        match = (await readBackPaths(app)).find((p) => re.test(p))
+        return match ? 1 : 0
+      },
+      { timeout: 10_000 }
+    )
+    .toBe(1)
+  return match
 }
 
 const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
@@ -53,13 +102,12 @@ test('copying a snippet as a file puts a real file on the clipboard', async ({ a
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   const view = await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
+  await clearClipboard(app)
   await view.getByRole('button', { name: 'Copy as file' }).click()
 
-  const paths = await readBackPaths(app)
-  expect(paths).toHaveLength(1)
-  expect(paths[0]).toMatch(/E2E-copy-target\.\w+$/)
+  const path = await waitForCopiedPath(app, /E2E-copy-target\.\w+$/)
   // The bytes are the snippet's, so what pastes is the snippet and not its name.
-  expect(readFileSync(paths[0], 'utf-8')).toContain('alpha')
+  expect(readFileSync(path, 'utf-8')).toContain('alpha')
 })
 
 test('copy content puts text, and no file, on the clipboard', async ({ app, page }) => {
@@ -94,13 +142,10 @@ test('copying the diff as a file writes a patch, not the diff text', async ({ ap
 
   // Through the menu, which is what a reader actually reaches for and what
   // menu-actions.spec.mjs already proves is wired.
+  await clearClipboard(app)
   await openMenu(page, 'Edit', 'Copy Diff as File')
 
-  await expect
-    .poll(async () => (await readBackPaths(app)).length, { timeout: 10_000 })
-    .toBeGreaterThan(0)
-  const [path] = await readBackPaths(app)
-  expect(path).toMatch(/\.patch$/)
+  const path = await waitForCopiedPath(app, /\.patch$/)
   const patch = readFileSync(path, 'utf-8')
   expect(patch).toContain('-two')
   expect(patch).toContain('+TWO')
@@ -121,8 +166,9 @@ test('the quit sweep removes staged plaintext', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   const view = await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
+  await clearClipboard(app)
   await view.getByRole('button', { name: 'Copy as file' }).click()
-  const [staged] = await readBackPaths(app)
+  const staged = await waitForCopiedPath(app, /E2E-ephemeral\.\w+$/)
   expect(readFileSync(staged, 'utf-8')).toBe('transient')
 
   await app.evaluate(({ app: electronApp }) => electronApp.emit('will-quit'))
@@ -142,9 +188,9 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
   let staged
   try {
     const view = await addSnippet(page, { name: 'E2E crash victim', body: 'plaintext' })
+    await clearClipboard(app)
     await view.getByRole('button', { name: 'Copy as file' }).click()
-    await expect.poll(async () => (await readBackPaths(app)).length).toBeGreaterThan(0)
-    ;[staged] = await readBackPaths(app)
+    staged = await waitForCopiedPath(app, /E2E-crash-victim\.\w+$/)
     expect(readFileSync(staged, 'utf-8')).toBe('plaintext')
   } finally {
     // SIGKILL, because this IS the crash the launch sweep is for and no exit

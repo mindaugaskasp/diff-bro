@@ -8,7 +8,6 @@
 // the renderer, which would hand it an arbitrary-path parameter into
 // shell.showItemInFolder. The renderer supplies fingerprints and text.
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
-import { readFile } from 'fs/promises'
 import { basename } from 'path'
 import { isSafeMailtoUrl } from './linkPolicy'
 import { buildMailto, fillTemplate } from './mailto'
@@ -87,11 +86,9 @@ async function handoff(sender, { entry, recipientFps, subjectTemplate, note, rev
 
 // The OS half, split out so `handoff` stays inside the complexity cap.
 async function deliver(path, { url, reveal, to }) {
-  // Windows' file flavour serves BYTES, not a path, so the sealed file is read
-  // back for it. A failure here only costs the clipboard fallback, never the
-  // hand-off itself.
-  const sealedBytes = await readFile(path).catch(() => null)
-  const copied = copyPathToClipboard(path, sealedBytes)
+  // Puts the sealed file on the clipboard as the fallback. A failure here only
+  // costs that fallback, never the hand-off itself.
+  const copied = await copyPathToClipboard(path)
   // A machine with no registered mailto: handler rejects here. The file is
   // already written, so this reports rather than throws — an unhandled
   // rejection would tell the user nothing and orphan the file.

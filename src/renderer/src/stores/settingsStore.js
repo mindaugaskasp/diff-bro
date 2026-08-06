@@ -87,7 +87,6 @@ export const useSettingsStore = defineStore('settings', {
         'settings',
         JSON.stringify({
           sectionOrder: this.sectionOrder,
-          sectionsLocked: this.sectionsLocked,
           shelfOrder: this.shelfOrder,
           showShortcutBar: this.showShortcutBar,
           rotateThemeDaily: this.rotateThemeDaily,
@@ -128,7 +127,6 @@ export const useSettingsStore = defineStore('settings', {
     },
     // Move a section one step up or down (delta -1 / +1). No-op at the ends.
     moveSection(id, delta) {
-      if (this.sectionsLocked) return
       const order = [...this.sectionOrder]
       const from = order.indexOf(id)
       const to = from + delta
@@ -138,17 +136,13 @@ export const useSettingsStore = defineStore('settings', {
       this.persist()
     },
     // Drag-and-drop reorder: drop section `fromId` so it lands just before
-    // `toId`. No-op when locked or when either id is unknown.
+    // `toId`. No-op when either id is unknown.
     reorderSections(fromId, toId) {
-      if (this.sectionsLocked || fromId === toId) return
+      if (fromId === toId) return
       if (!this.sectionOrder.includes(fromId) || !this.sectionOrder.includes(toId)) return
       const order = this.sectionOrder.filter((id) => id !== fromId)
       order.splice(order.indexOf(toId), 0, fromId)
       this.sectionOrder = order
-      this.persist()
-    },
-    toggleSectionsLock() {
-      this.sectionsLocked = !this.sectionsLocked
       this.persist()
     },
     // Persist the shelf order for a section (item drag-reorder). ids is the full

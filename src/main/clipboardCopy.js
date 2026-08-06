@@ -6,19 +6,43 @@
 // and letting the renderer name a file to stage would be the same mistake in the
 // other direction. There is no IPC surface here that can put an arbitrary
 // existing file on the clipboard.
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { app, clipboard, ipcMain } from 'electron'
-import { fileFlavours } from './clipboardWrite'
+import { fileFlavours, windowsFileDropListCommand, WIN_CLIP_PATH_ENV } from './clipboardWrite'
 import { sweepStage, stageFile } from './clipboardStage'
 
+const execFileAsync = promisify(execFile)
 const MAX_COPY_BYTES = 64 * 1024 * 1024
+const POWERSHELL_TIMEOUT_MS = 10_000
+
+// Windows: hand the staged PATH to PowerShell, which writes a real CF_HDROP the
+// shell can paste — the one thing Electron's clipboard cannot do (see
+// clipboardWrite.js). The path is computed in main and passed by ENV, never
+// interpolated, so nothing the renderer supplied reaches a command string.
+async function copyPathWindows(path) {
+  const { command, args } = windowsFileDropListCommand()
+  try {
+    await execFileAsync(command, args, {
+      env: { ...process.env, [WIN_CLIP_PATH_ENV]: path },
+      timeout: POWERSHELL_TIMEOUT_MS,
+      windowsHide: true
+    })
+    return { ok: true }
+  } catch (err) {
+    // A missing PowerShell or Constrained Language Mode lands here rather than
+    // silently leaving the private CF_HDROP nothing else can paste.
+    return { error: 'clipboard-failed', message: err?.message }
+  }
+}
 
 /**
- * Put an already-staged path on the clipboard as a file. Windows also carries
- * the CONTENT, because its file flavour announces a file and then serves its
- * bytes rather than naming a path (see clipboardWrite.js).
+ * Put an already-staged path on the clipboard as a file.
+ * @returns {Promise<{ ok: true } | { error: string }>}
  */
-export function copyPathToClipboard(path, bytes) {
-  const flavours = fileFlavours({ paths: [path], platform: process.platform, bytes })
+export async function copyPathToClipboard(path) {
+  if (process.platform === 'win32') return copyPathWindows(path)
+  const flavours = fileFlavours({ paths: [path], platform: process.platform })
   if (!flavours.length) return { error: 'unsupported' }
   clipboard.clear()
   for (const { format, buffer } of flavours) clipboard.writeBuffer(format, buffer)
@@ -32,7 +56,7 @@ export function copyPathToClipboard(path, bytes) {
 export async function copyBytesAsFile(name, bytes) {
   const staged = await stageFile({ name, bytes })
   if (!staged.ok) return staged
-  const copied = copyPathToClipboard(staged.path, bytes)
+  const copied = await copyPathToClipboard(staged.path)
   return copied.ok ? { ok: true, name: staged.path.split(/[\\/]/).pop() } : copied
 }
 

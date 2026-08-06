@@ -1,8 +1,7 @@
 <script setup>
 // Shared band at the top of each sidebar section. The whole header is the
-// reorder drag handle (unless locked).
-import { computed, ref, watch } from 'vue'
-import { useSettingsStore } from '../stores/settingsStore'
+// reorder drag handle.
+import { computed } from 'vue'
 import { useSectionReorder } from '../composables/useSectionReorder'
 import AppIcon from './AppIcon.vue'
 
@@ -13,7 +12,7 @@ const props = defineProps({
   icon: { type: String, default: '' }, // per-section AppIcon for identity
   // The topmost section aligns its label with the file-slot row.
   first: { type: Boolean, default: false },
-  // Quiet group-label mode: no band fill, drag-reorder, or lock cue.
+  // Quiet group-label mode: no band fill.
   unified: { type: Boolean, default: false },
   // How many rows survived the search/tag filter. Shown only while one is on:
   // a resting sidebar does not need every section counting itself, but a
@@ -22,7 +21,6 @@ const props = defineProps({
   count: { type: Number, default: null },
   filtering: { type: Boolean, default: false }
 })
-const settings = useSettingsStore()
 const {
   onPointerDown,
   onPointerMove,
@@ -40,40 +38,25 @@ const onClick = () => {
   if (!consumeClickSuppression()) emit('toggle')
 }
 
-const locked = computed(() => settings.sectionsLocked)
 const dropTarget = computed(() => isDropTarget(props.sectionId))
 const dragging = computed(() => isDragging(props.sectionId))
 const settling = computed(() => isSettling(props.sectionId))
-
-// One-shot animation cue when the lock toggles ('' | 'unlock' | 'lock').
-const lockCue = ref('')
-let cueTimer = null
-watch(
-  () => settings.sectionsLocked,
-  (isLocked) => {
-    lockCue.value = isLocked ? 'lock' : 'unlock'
-    clearTimeout(cueTimer)
-    cueTimer = setTimeout(() => (lockCue.value = ''), 650)
-  }
-)
 </script>
 
 <template>
   <div
-    class="head section-head band band-row"
+    class="head section-head band band-row draggable"
     :class="{
       first,
       unified,
       'drop-target': dropTarget,
       dragging,
-      settling,
-      draggable: !locked,
-      'cue-unlock': lockCue === 'unlock',
-      'cue-lock': lockCue === 'lock'
+      settling
     }"
     :data-section="sectionId"
-    :data-tip="locked ? null : 'Drag to reorder'"
+    data-tip="Drag to reorder"
     @click="onClick"
+    @dragstart.prevent
     @pointerdown="onPointerDown(sectionId, $event)"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"

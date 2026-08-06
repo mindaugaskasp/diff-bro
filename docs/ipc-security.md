@@ -92,15 +92,18 @@ that enforces each:
 | **No injection sinks**                            | `v-html`, `eval`, `new Function`, `innerHTML` are ESLint-banned                                                                                                                                                                                                                                                                                                                                        | `eslint.config.mjs`                                          |
 | **Capture rect clamped**                          | `image:capture` / `image:appendSlice` screenshot only a region clamped inside the window's own content, never a forged or unbounded one; a stitched export is capped in height so a renderer-driven loop can't exhaust memory, and the bitmap stays in main                                                                                                                                            | `captureRect.js`, `stitchBitmap.js`, `diffImage.js`          |
 
-**One exposure worth naming.** On Windows the shell's file flavour announces a
-file and then serves its BYTES (`FileGroupDescriptorW` + `FileContents`) rather
-than naming a path, so a Copy as file there puts the content on the clipboard
-itself, not only a pointer to the staged copy. Nothing crosses a line it was not
-already crossing — the plain-text clipboard already carries the same content, and
-a secret snippet refuses Copy as file outright — but it is a difference from the
-macOS and Linux flavours, which carry a path. The predefined `CF_HDROP` is
-unreachable from Electron: it has no name to register, so writing a buffer under
-that name mints a private format only Diff Bro can see.
+**One surface worth naming.** Electron cannot put a shell-paste-able file on the
+Windows clipboard: `clipboard.writeBuffer` is not additive (each call REPLACES the
+whole clipboard, so the descriptor pair can never coexist) and the predefined
+`CF_HDROP` has no name to register, so writing a buffer under that name mints a
+private format only Diff Bro can see. So on Windows the copy shells out to
+`powershell.exe … SetFileDropList`, which writes the genuine `CF_HDROP` the shell
+reads. This is a fenced subprocess (hard rule 7): the staged path is computed in
+MAIN and passed by ENVIRONMENT variable (`DIFFBRO_CLIP_PATH`), never interpolated
+into the script, so nothing the renderer supplied reaches a command string; the
+script itself is a constant `-EncodedCommand`. It opens no socket (rule 1 intact)
+and the staged file keeps its `0o700` staging + 30-minute + quit/launch sweep. A
+secret snippet still refuses Copy as file outright.
 
 The renderer **cannot**: read a file by path it made up, obtain a private key,
 evaluate a spreadsheet formula, or make a network request. Each of those is

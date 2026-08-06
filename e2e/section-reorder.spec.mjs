@@ -74,9 +74,25 @@ test('a plain click still collapses the section, and a drag does not', async ({ 
   await expect(header(page, 'snippets').locator('.chev')).toHaveClass(/open/)
 })
 
-// The locked case lives in useSectionReorder.test.js, not here: nothing in the
-// UI toggles sectionsLocked — the store action has no caller, and the header's
-// own tip points at a toolbar control that does not exist.
+// A section header carries SVG icons, and an inline <svg> is a native drag
+// source in Chromium (`-webkit-user-drag: auto`). On real hardware, grabbing the
+// icon starts a native image-drag that fires `pointercancel` and kills the
+// pointer-capture reorder — invisible to page.mouse, which never engages the OS
+// drag controller. The header must therefore REFUSE to become a drag source, so
+// no native drag can ever race the gesture.
+test('the header refuses to become a native drag source', async ({ page }) => {
+  const preventedFrom = (selector) =>
+    page.evaluate((sel) => {
+      const el = document.querySelector(sel)
+      const ev = new DragEvent('dragstart', { bubbles: true, cancelable: true })
+      el.dispatchEvent(ev)
+      return ev.defaultPrevented
+    }, selector)
+
+  expect(await preventedFrom('.head[data-section="snippets"] svg')).toBe(true)
+  expect(await preventedFrom('.head[data-section="snippets"] .section-title')).toBe(true)
+  expect(await preventedFrom('.head[data-section="snippets"]')).toBe(true)
+})
 
 test('a reorder survives a relaunch', async () => {
   const dir = freshUserDataDir()
