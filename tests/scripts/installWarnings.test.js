@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   ACKNOWLEDGED,
+  installedFromLock,
+  staleAcknowledgements,
   unexpectedWarnings,
   warningLines
 } from '../../scripts/lib/installWarnings.mjs'
@@ -60,5 +62,65 @@ describe('ACKNOWLEDGED', () => {
   it('does not acknowledge a package outright by bare name where a version exists', () => {
     expect(ACKNOWLEDGED).not.toContain('glob')
     expect(ACKNOWLEDGED).not.toContain('rimraf')
+  })
+})
+
+describe('installedFromLock', () => {
+  const lock = {
+    packages: {
+      '': { name: 'diffbro', version: '0.4.10' },
+      'node_modules/glob': { version: '7.2.3' },
+      'node_modules/a/node_modules/glob': { version: '10.5.0' },
+      'node_modules/@scope/thing': { version: '2.0.0' },
+      'node_modules/nover': {}
+    }
+  }
+
+  it('keeps every copy of a package that appears more than once', () => {
+    expect(installedFromLock(lock).get('glob')).toEqual(['7.2.3', '10.5.0'])
+  })
+
+  it('reads a scoped name whole, and skips the root and versionless entries', () => {
+    const found = installedFromLock(lock)
+    expect(found.get('@scope/thing')).toEqual(['2.0.0'])
+    expect(found.has('diffbro')).toBe(false)
+    expect(found.has('nover')).toBe(false)
+  })
+
+  it('survives a lock with nothing in it', () => {
+    expect(installedFromLock({}).size).toBe(0)
+    expect(installedFromLock(null).size).toBe(0)
+  })
+})
+
+// An allowlist nobody prunes drifts into permanent permission — which is exactly
+// what docs/standards.md refuses for the size and cycle baselines. Three entries
+// (are-we-there-yet, gauge, npmlog) had already outlived their packages.
+describe('staleAcknowledgements', () => {
+  const installed = (pairs) => new Map(Object.entries(pairs))
+
+  it('is empty when every entry still matches something installed', () => {
+    const tree = installed({
+      rimraf: ['2.6.3'],
+      inflight: ['1.0.6'],
+      glob: ['7.2.3', '10.5.0']
+    })
+    expect(staleAcknowledgements(tree)).toEqual([])
+  })
+
+  it('flags an entry whose package left the tree entirely', () => {
+    const tree = installed({ rimraf: ['2.6.3'], inflight: ['1.0.6'], glob: ['7.2.3'] })
+    expect(staleAcknowledgements(tree)).toContain('glob@10')
+  })
+
+  it('flags an entry whose major is gone even though the package remains', () => {
+    const tree = installed({ rimraf: ['5.0.0'], inflight: ['1.0.6'], glob: ['7.2.3', '10.5.0'] })
+    expect(staleAcknowledgements(tree)).toContain('rimraf@2')
+  })
+
+  // glob@1 must not be satisfied by 10.5.0.
+  it('matches on a version boundary, not a string prefix', () => {
+    const tree = installed({ rimraf: ['2.6.3'], inflight: ['1.0.6'], glob: ['10.5.0'] })
+    expect(staleAcknowledgements(tree)).toContain('glob@7')
   })
 })

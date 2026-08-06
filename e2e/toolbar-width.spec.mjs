@@ -46,6 +46,26 @@ test('the toolbar is not clipped at the minimum window size', async ({ app, page
     .toBe(0)
 })
 
+// Neither assertion above notices a SCROLLBAR. The regression that shipped past
+// them was the group divider bleeding into the bar's padding with a negative
+// margin: once `.options` became a scroll container that bleed was the only
+// thing overflowing it, which bought a stepper-arrow scrollbar on the band's
+// right edge for 8px of line. It was caught by LOOKING at screenshots.
+//
+// Measured as overflow rather than as a gutter: macOS draws overlay scrollbars,
+// which consume no layout width, so offsetWidth - clientWidth stays 0 there even
+// with a bar on screen.
+test('the toolbar has nothing to scroll vertically at the minimum size', async ({ app, page }) => {
+  await minimumSize(app, page)
+
+  const options = page.locator('.toolbar .options')
+  await expect.poll(() => options.evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0)
+
+  // And the axis stays named, so `overflow-x` alone cannot silently reintroduce
+  // the vertical bar the next time something in here grows.
+  expect(await options.evaluate((el) => getComputedStyle(el).overflowY)).toBe('hidden')
+})
+
 // A translated build is where this re-breaks: en-XA pads every message by ~40%,
 // so a minimum tuned only to English silently reintroduces the scrollbar the
 // moment anyone switches language. The toolbar absorbs it internally.

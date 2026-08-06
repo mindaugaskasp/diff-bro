@@ -569,10 +569,11 @@ directory move passes CI while silently removing enforcement.
   `@intlify/eslint-plugin-vue-i18n`. They are upstream's to fix: do NOT add
   `overrides` to force newer versions into someone else's tool, which risks the
   installer builds (or the lint rules) for no security gain. Each is signed off
-  by name in `scripts/lib/installWarnings.mjs`, and
-  `tests/scripts/installWarnings.test.js` holds the list against the log a real
-  install produces — the allowlist used to be checked only during a release
-  build, which is the worst moment to learn it is stale.
+  by name in `scripts/lib/installWarnings.mjs`. That list is a RATCHET in both
+  directions, like the size and cycle baselines: a new deprecation fails, and so
+  does an acknowledgement whose package has left the tree — three (`npmlog`,
+  `gauge`, `are-we-there-yet`) had already outlived theirs before the check
+  existed, which is how an allowlist becomes permanent permission.
 - After dependency changes, the Docker env needs `make rebuild`
   (volume-shadowed `node_modules`). Prefer `make install` for adding or
   updating dependencies — it writes `package-lock.json` with the

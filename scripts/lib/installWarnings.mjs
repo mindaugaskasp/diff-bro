@@ -13,9 +13,6 @@ export const ACKNOWLEDGED = [
   'rimraf@2', // node-gyp's rimraf; superseded upstream, build-time only
   'inflight@1.0.6', // leaks memory, but only inside node-gyp's glob at build time
   'glob@7', // pulls inflight; node-gyp dependency
-  'are-we-there-yet', // npmlog stack, build-time only
-  'gauge', // npmlog stack, build-time only
-  'npmlog', // build-time progress logging
   // @intlify/eslint-plugin-vue-i18n depends on glob@^10, deprecated upstream
   // after 4.5.1 shipped. 4.5.1 IS the latest plugin, so there is no upgrade to
   // take, and an `overrides` pin would force a breaking major into someone
@@ -42,3 +39,42 @@ export const warningLines = (log) =>
  */
 export const unexpectedWarnings = (log) =>
   warningLines(log).filter((line) => !ACKNOWLEDGED.some((ok) => line.includes(ok)))
+
+// `name`, `name@major` or `name@exact` — scoped names keep their leading @.
+function parseEntry(entry) {
+  const at = entry.lastIndexOf('@')
+  if (at <= 0) return { name: entry, version: null }
+  return { name: entry.slice(0, at), version: entry.slice(at + 1) }
+}
+
+const covers = (version, prefix) => !prefix || version === prefix || version.startsWith(`${prefix}.`)
+
+/**
+ * Installed packages as name -> versions, from a package-lock.
+ * @param {{ packages?: Record<string, {version?: string}> }} lock
+ * @returns {Map<string, string[]>}
+ */
+export function installedFromLock(lock) {
+  const found = new Map()
+  for (const [path, meta] of Object.entries(lock?.packages ?? {})) {
+    const at = path.lastIndexOf('node_modules/')
+    if (at === -1 || !meta?.version) continue // the root entry has no node_modules/
+    const name = path.slice(at + 'node_modules/'.length)
+    found.set(name, [...(found.get(name) ?? []), meta.version])
+  }
+  return found
+}
+
+/**
+ * Acknowledged entries matching nothing installed. A stale one is standing
+ * permission for a package that left — the rot `legacySize` and
+ * `structure-baseline` both refuse to carry, and this list is the one baseline
+ * that could rot in silence. Three entries already had.
+ * @param {Map<string, string[]>} installed
+ * @returns {string[]}
+ */
+export const staleAcknowledgements = (installed) =>
+  ACKNOWLEDGED.filter((entry) => {
+    const { name, version } = parseEntry(entry)
+    return !(installed.get(name) ?? []).some((v) => covers(v, version))
+  })

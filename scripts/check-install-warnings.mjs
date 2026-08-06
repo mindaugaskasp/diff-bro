@@ -8,12 +8,30 @@
 //
 // Usage: node scripts/check-install-warnings.mjs <npm-ci-log-file>
 import { readFileSync } from 'fs'
-import { unexpectedWarnings, warningLines } from './lib/installWarnings.mjs'
+import { fileURLToPath } from 'node:url'
+import {
+  installedFromLock,
+  staleAcknowledgements,
+  unexpectedWarnings,
+  warningLines
+} from './lib/installWarnings.mjs'
 
 const logPath = process.argv[2]
 if (!logPath) {
   console.error('usage: check-install-warnings.mjs <npm-ci-log-file>')
   process.exit(2)
+}
+
+// A ratchet in both directions, like the size and cycle baselines: a new
+// deprecation fails, and so does an acknowledgement whose package has left.
+// Three entries had already outlived theirs before this check existed.
+const lockPath = fileURLToPath(new URL('../package-lock.json', import.meta.url))
+const stale = staleAcknowledgements(installedFromLock(JSON.parse(readFileSync(lockPath, 'utf8'))))
+if (stale.length) {
+  console.error('\nAcknowledged install warnings that no longer match anything installed:\n')
+  for (const entry of stale) console.error(`  ${entry}`)
+  console.error('\ndelete them from ACKNOWLEDGED in scripts/lib/installWarnings.mjs.\n')
+  process.exit(1)
 }
 
 const log = readFileSync(logPath, 'utf8')
