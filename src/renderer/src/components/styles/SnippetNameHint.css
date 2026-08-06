@@ -1,32 +1,42 @@
-/* The templated-name preview (SnippetNameHint.vue), shown under the name field
-   only while a placeholder is in it. */
-.name-hint {
+/* Template placeholders for a snippet name (SnippetNameHint.vue). The trigger
+   sits on one line with the live preview; the token list only exists while it is
+   open, so the resting dialog is one row taller, not three. */
+.name-templates {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
 }
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+/* Truncates rather than wrapping: a long templated name would otherwise push the
+   dialog taller every character, which is what sent it into a scrollbar. */
 .preview {
   margin: 0;
+  min-width: 0;
   font-size: var(--font-sm);
   color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .preview strong {
   color: var(--text);
   font-weight: 600;
 }
-/* Wraps rather than scrolls: this sits inside a dialog whose width the user
-   controls, and a hidden token is a token nobody discovers. */
 .tokens {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-3);
   margin: 0;
-  padding: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
   list-style: none;
 }
 .tokens li {

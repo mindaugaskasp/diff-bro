@@ -2,6 +2,7 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
 import { useUiStore } from '../stores/uiStore'
+import { previewCardPosition } from '../utils/previewPlacement'
 
 // Hover preview: decrypt on demand, debounced (only the row the pointer settles
 // on costs a vault:decrypt), briefly cached. Renders via interpolation, never v-html.
@@ -23,16 +24,12 @@ export function useSnippetPreview() {
   let closeTimer = null
   let pendingId = null
 
-  // Just outside the sidebar, clamped so a tall card never runs off the bottom.
-  function cardStyle(row) {
-    const r = row.getBoundingClientRect()
-    const gap = 8
-    let left = r.right + gap
-    if (left + CARD_WIDTH > window.innerWidth - 8) left = Math.max(8, r.left - CARD_WIDTH - gap)
-    const reserve = Math.min(480, window.innerHeight - 16)
-    const top = Math.min(r.top, window.innerHeight - reserve)
-    return { left: `${left}px`, top: `${Math.max(8, top)}px` }
-  }
+  const cardStyle = (row) =>
+    previewCardPosition({
+      rect: row.getBoundingClientRect(),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      width: CARD_WIDTH
+    })
 
   async function onRowEnter(entry, e) {
     clearTimeout(hoverTimer)

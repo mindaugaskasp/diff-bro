@@ -19,7 +19,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/composables/useQuickLookCompose.js': { fn: 66 },
   'src/renderer/src/composables/useQuickLookKeys.js': { fn: 105 },
   'src/renderer/src/composables/useSnippetDraft.js': { fn: 183 },
-  'src/renderer/src/composables/useSnippetPreview.js': { fn: 94 },
+  'src/renderer/src/composables/useSnippetPreview.js': { fn: 90 },
   'src/renderer/src/composables/useSpreadsheetDiff.js': { fn: 73 },
   'src/renderer/src/composables/useStreamedDiff.js': { fn: 99 },
   'src/renderer/src/composables/useTabContextMenu.js': { fn: 70 },

@@ -1,10 +1,10 @@
 <script setup>
-// Create/edit a snippet. The draft (fields, syntax, save, format) lives in
-// useSnippetDraft; this is the Monaco + tag-field wiring.
+// Create/edit a snippet: Monaco + tag-field wiring over useSnippetDraft.
 import { computed, nextTick, ref, watch } from 'vue'
 import { JIRA_ACTIONS, applyJiraAction } from '../utils/jiraMarkup'
 import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../utils/markdownMarkup'
 import { useSettingsStore } from '../stores/settingsStore'
+import { DEFAULT_SNIPPET_DIALOG_SIZE } from '../utils/settingsDefaults'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
@@ -107,7 +107,7 @@ function saveSnippet() {
     tour="snippet-editor"
     resizable
     :min-size="{ width: 420, height: 460 }"
-    :initial-size="settings.dialogSize('snippet')"
+    :initial-size="settings.dialogSize('snippet') ?? DEFAULT_SNIPPET_DIALOG_SIZE"
     :title="
       isNew
         ? 'New Snippet'

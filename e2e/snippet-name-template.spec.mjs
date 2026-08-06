@@ -27,7 +27,7 @@ test('a templated name is resolved when the snippet is saved', async ({ app, pag
   const dialog = await newSnippet(app, page, 'Standup {{today}}')
 
   // The preview says what will happen before it happens.
-  await expect(dialog.locator('.name-hint .preview')).toContainText(`Standup ${today()}`)
+  await expect(dialog.locator('.name-templates .preview')).toContainText(`Standup ${today()}`)
 
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
   // The field itself takes the resolved text, so the editor and the library
@@ -42,9 +42,33 @@ test('a templated name is resolved when the snippet is saved', async ({ app, pag
   await expect(page.locator('.snippets-section .row', { hasText: '{{today}}' })).toHaveCount(0)
 })
 
-test('the hint stays out of the way of an ordinary name', async ({ app, page }) => {
+// The trigger is ALWAYS there — that is what makes the feature discoverable
+// without already knowing it exists — but it costs one row, not three: the
+// preview only appears with a placeholder typed, and the list only on request.
+test('the tags button is always offered, the list and preview are not', async ({ app, page }) => {
   const dialog = await newSnippet(app, page, 'Just a name')
-  await expect(dialog.locator('.name-hint')).toHaveCount(0)
+  const tags = dialog.getByRole('button', { name: 'Template tags' })
+  await expect(tags).toBeVisible()
+  await expect(dialog.locator('.name-templates .preview')).toHaveCount(0)
+  await expect(dialog.locator('.name-templates .tokens')).toHaveCount(0)
+
+  await tags.click()
+  await expect(dialog.locator('.name-templates .tokens')).toBeVisible()
+  await expect(dialog.locator('.name-templates .tokens code').first()).toHaveText('{{today}}')
+
+  await tags.click()
+  await expect(dialog.locator('.name-templates .tokens')).toHaveCount(0)
+})
+
+// The report that prompted the rework: nine tokens permanently under the field
+// pushed the dialog body into a scrollbar on a small window.
+test('the resting dialog does not scroll its body open', async ({ app, page }) => {
+  await newSnippet(app, page, 'Standup {{today}}')
+  const overflow = await page
+    .locator('.dialog .dialog-body, .dialog')
+    .first()
+    .evaluate((el) => el.scrollHeight - el.clientHeight)
+  expect(overflow).toBeLessThanOrEqual(0)
 })
 
 test('an unknown token is kept, not silently dropped', async ({ app, page }) => {

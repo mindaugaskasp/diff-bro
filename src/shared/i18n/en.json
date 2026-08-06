@@ -1312,6 +1312,8 @@
     "week": "ISO week",
     "weekday": "day of the week",
     "month": "month name",
-    "year": "the year"
+    "year": "the year",
+    "tokens": "Template tags",
+    "tip": "Insert today’s date, the time, the ISO week and more — resolved once, when you save"
   }
 }

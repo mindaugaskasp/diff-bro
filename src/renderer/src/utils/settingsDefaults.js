@@ -44,6 +44,12 @@ export const DEFAULT_MAX_EXPORT_HEIGHT_PX = 8000
 export const MAX_EXPORT_HEIGHT_PX_CAP = 12000
 export const MIN_EXPORT_HEIGHT_PX = 1000
 
+// What the snippet editor opens at before the user has resized it: tall enough
+// for the name, its template row, tags, the syntax row and a usable editor
+// without the body scrolling. `.dialog`'s max-height still caps it on a short
+// window, which is why the row above it is one line rather than three.
+export const DEFAULT_SNIPPET_DIALOG_SIZE = { width: 560, height: 680 }
+
 // Bounds for a remembered dialog size, so a stale file can't restore an absurd box.
 export const DIALOG_SIZE_MIN = { width: 320, height: 240 }
 export const DIALOG_SIZE_MAX = { width: 3000, height: 3000 }
