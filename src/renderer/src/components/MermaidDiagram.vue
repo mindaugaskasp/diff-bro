@@ -16,7 +16,7 @@ const props = defineProps({
   // it, on every future launch.
   theme: { type: String, default: '' }
 })
-const emit = defineEmits(['rendered', 'error'])
+const emit = defineEmits(['rendered', 'error', 'paper'])
 const settings = useSettingsStore()
 const host = ref(null)
 const error = ref('')
@@ -29,6 +29,11 @@ const mode = computed(() => effectiveDiagramMode(settings.theme, props.theme || 
 // from the painted mode also keeps an app-theme flip correct with no re-render.
 const painted = ref(mode.value)
 const paper = computed(() => diagramPaperFor(settings.theme, painted.value))
+// A pinned ground belongs to whatever CLIPS the diagram, not to the box that
+// pans and zooms inside it. Painted only here, the viewer's paper was a
+// rectangle the reader could drag aside to reveal the app's own surface
+// underneath, so the host that owns the viewport gets told which sheet to wear.
+watch(paper, (p) => emit('paper', p), { immediate: true })
 let timer = null
 // Only the newest render may touch the DOM (a fast edit can outrace an old one).
 let renderSeq = 0

@@ -20,6 +20,10 @@ const view = computed(() => ui.mermaidView) // { name, code, theme? }
 // preview carried a ground over through Expand.
 const diagramTheme = ref(view.value?.theme || 'auto')
 watch(view, (v) => v && (diagramTheme.value = v.theme || 'auto'))
+// The sheet the diagram is drawn on, reported by MermaidDiagram once it has
+// actually painted. The STAGE wears it, not the transform box inside it: the
+// stage is what clips, so it is the only element whose ground survives a pan.
+const paper = ref('')
 const isFullScreen = useFullScreen()
 
 const DEFAULT_W = 880
@@ -152,6 +156,7 @@ onBeforeUnmount(() => {
       </div>
       <div
         class="stage"
+        :data-paper="paper || null"
         @wheel="onWheel"
         @pointerdown="onDown"
         @pointermove="onMove"
@@ -162,7 +167,12 @@ onBeforeUnmount(() => {
           class="transform"
           :style="{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }"
         >
-          <MermaidDiagram :code="view.code" :debounce="0" :theme="diagramTheme" />
+          <MermaidDiagram
+            :code="view.code"
+            :debounce="0"
+            :theme="diagramTheme"
+            @paper="paper = $event"
+          />
         </div>
       </div>
       <div class="foot">

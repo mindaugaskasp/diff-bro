@@ -12,6 +12,10 @@ const emit = defineEmits(['expand'])
 // Scoped to this editor session, never persisted: picking a ground to read one
 // diagram on is not a preference about every future diagram.
 const diagramTheme = ref('auto')
+// The body is padded, so a pinned diagram left the sheet inset inside a gutter
+// of the app's own ground. Same rule as the full viewer: whatever CLIPS the
+// diagram wears the paper.
+const paper = ref('')
 </script>
 
 <template>
@@ -34,7 +38,9 @@ const diagramTheme = ref('auto')
         <AppIcon name="expand" /> {{ $t('mermaidPreview.expand') }}
       </button>
     </div>
-    <div class="mmd-preview-body"><MermaidDiagram :code="code" :theme="diagramTheme" /></div>
+    <div class="mmd-preview-body" :data-paper="paper || null">
+      <MermaidDiagram :code="code" :theme="diagramTheme" @paper="paper = $event" />
+    </div>
   </div>
 </template>
 
