@@ -195,7 +195,12 @@ test('the preview survives the pointer travelling into it', async ({ page }) => 
   await expect(card).toBeVisible()
 
   const box = await card.boundingBox()
-  await page.mouse.move(box.x + 20, box.y + 20, { steps: 12 })
+  // Few steps on purpose. Each one is a CDP round trip, and twelve of them over
+  // a ~28px move measures harness latency rather than the app: on a loaded
+  // runner they outlast the 160ms close delay and the card shuts mid-trip,
+  // which cost two release builds. Four still puts the pointer down inside the
+  // gap — the thing being tested — over the same distance a user crosses.
+  await page.mouse.move(box.x + 20, box.y + 20, { steps: 4 })
   await page.waitForTimeout(400)
   await expect(card).toBeVisible()
 })
