@@ -16,6 +16,13 @@ export const diffEditorOptions = ({ dark, renderSideBySide, ignoreTrimWhitespace
   readOnly: true,
   originalEditable: false,
   renderSideBySide,
+  // Monaco goes INLINE on its own below `renderSideBySideInlineBreakpoint`
+  // (900px), whatever renderSideBySide says. The window's minimum is 1120 and
+  // the sidebar rests at 256, so the panes get ~864 — at the smallest size the
+  // app opens at, Split view did nothing while its checkbox stayed ticked and
+  // pressable. Greying it out on a drag would be worse: the reader asked for
+  // two panes, so they get two panes.
+  useInlineViewWhenSpaceIsLimited: false,
   ignoreTrimWhitespace,
   scrollBeyondLastLine: false,
   contextmenu: false,

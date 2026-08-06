@@ -67,3 +67,33 @@ test('Clear is available over pasted text, not just loaded files', async ({ page
   await expect(page.getByPlaceholder('Paste original text here')).toHaveValue('')
   await expect(clear).toBeDisabled()
 })
+
+// Monaco falls back to the inline view on its own below
+// `renderSideBySideInlineBreakpoint` (900px), whatever `renderSideBySide` is set
+// to. The window's minimum is 1120 and the sidebar rests at 256, so the panes
+// get ~864 — meaning at the smallest size the app opens at, Split view rendered
+// ONE pane while its checkbox stayed ticked, enabled and pressable. Pressing it
+// twice changed nothing either way, which is the shape the bug was reported in.
+test('split view survives the narrowest window the app allows', async ({ app, page }) => {
+  await pasteCompare(page, 'alpha\nbeta', 'alpha\ngamma')
+  const sideBySide = page.locator('.monaco-diff-editor.side-by-side')
+  await expect(sideBySide).toHaveCount(1)
+
+  const win = await app.browserWindow(page)
+  const [w, h] = await win.evaluate((b) => b.getMinimumSize())
+  await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
+  // Proves the panes really are inside Monaco's breakpoint, so a raised
+  // minimum re-aims this test instead of stranding it.
+  await expect
+    .poll(() => page.locator('.monaco-diff-editor').evaluate((el) => el.clientWidth))
+    .toBeLessThan(900)
+
+  // Still two panes: the toggle means what it says at every width.
+  await expect(sideBySide).toHaveCount(1)
+
+  // And it still WORKS here — off is one pane, on is two again.
+  await setViewOption(page, 'Split view', false)
+  await expect(sideBySide).toHaveCount(0)
+  await setViewOption(page, 'Split view', true)
+  await expect(sideBySide).toHaveCount(1)
+})
