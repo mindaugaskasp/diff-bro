@@ -1355,5 +1355,9 @@
     "year": "the year",
     "tokens": "Template tags",
     "tip": "Insert today’s date, the time, the ISO week and more — resolved once, when you save"
+  },
+  "newRow": {
+    "badge": "New",
+    "hiddenByFilter": "\"{name}\" was added, but the current filter hides it."
   }
 }

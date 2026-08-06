@@ -27,9 +27,9 @@ export const LEGACY_SIZE = {
   'src/renderer/src/menus.js': { fn: 142 },
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 747 },
-  'src/renderer/src/stores/snippetStore.js': { file: 575 },
+  'src/renderer/src/stores/snippetStore.js': { file: 496 },
   'src/renderer/src/stores/tabsStore.js': { file: 398 },
-  'src/renderer/src/stores/vaultStore.js': { file: 408 },
+  'src/renderer/src/stores/vaultStore.js': { file: 366 },
   'src/renderer/src/utils/structuralDiff.js': { file: 279 },
   'src/renderer/src/utils/tabs.js': { file: 260 }
 }

@@ -8,6 +8,10 @@ import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
 import AppIcon from './AppIcon.vue'
 import { tabsFullNotice } from '../utils/tabNotices'
+import { useNewRowMarker } from '../composables/useNewRowMarker'
+import { useDiffStore } from '../stores/diffStore'
+import { useUiStore } from '../stores/uiStore'
+import { t } from '../i18n'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -28,6 +32,7 @@ const filtering = computed(() => !!q.value || props.tags.length > 0)
 
 const tabs = useTabsStore()
 const vault = useVaultStore()
+const ui = useUiStore()
 const open = ref(true)
 
 // One list, favorites first; the ★ filter keeps only them.
@@ -35,6 +40,22 @@ const rows = computed(() =>
   (props.favOnly ? vault.favoritesOwn : [...vault.favoritesOwn, ...vault.ownActive]).filter(matches)
 )
 const hasOwn = computed(() => vault.active.some((e) => !e.from))
+
+// This section owns a marked diff only if it is one of yours; an imported one
+// belongs to ExternalDiffsSection, which arms its own timer for it.
+useNewRowMarker({
+  markedId: () => ui.lastCreatedRowId,
+  locate: (id) => {
+    if (rows.value.some((e) => e.id === id)) return 'visible'
+    return vault.active.some((e) => e.id === id && !e.from) ? 'filtered' : 'elsewhere'
+  },
+  retire: () => ui.clearNewRow(ui.lastCreatedRowId),
+  onHidden: (id) =>
+    useDiffStore().showNotice(
+      t('newRow.hiddenByFilter', { name: vault.active.find((e) => e.id === id)?.name ?? '' })
+    ),
+  open: () => (open.value = true)
+})
 </script>
 
 <template>

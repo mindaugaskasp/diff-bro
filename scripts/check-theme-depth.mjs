@@ -199,11 +199,11 @@ console.log('\nfloors:    ' + RULES.map((r) => pad(r.min, w + 1)).join(''))
 const TAG_INK_MIN = 3.0
 const TAG_LABEL_MIN = 4.5
 const uiCss = readFileSync(join(root, 'src/renderer/src/styles/ui.css'), 'utf8')
-const storeJs = readFileSync(join(root, 'src/renderer/src/stores/snippetStore.js'), 'utf8')
+const paletteJs = readFileSync(join(root, 'src/renderer/src/utils/snippetState.js'), 'utf8')
 const inkL = uiCss.match(/--tag-ink:\s*oklch\(from .+?\s+var\((--[a-z-]+)\)\s+c\s+h\)/)
 if (!inkL) failures.push('ui.css: no --tag-ink oklch(from …) to check')
-const palette = [...storeJs.matchAll(/'(#[0-9a-f]{6})'/gi)].map((m) => m[1])
-if (palette.length < 5) failures.push('snippetStore.js: no tag palette to check')
+const palette = [...paletteJs.matchAll(/'(#[0-9a-f]{6})'/gi)].map((m) => m[1])
+if (palette.length < 5) failures.push('snippetState.js: no tag palette to check')
 
 // --- OKLab (Björn Ottosson) ------------------------------------------------
 const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)

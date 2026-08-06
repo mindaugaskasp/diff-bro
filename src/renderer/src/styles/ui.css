@@ -667,6 +667,109 @@ button.tag-chip:hover .usb-tct {
   background: var(--danger-bg);
   color: var(--danger-text);
 }
+/* The row a create just made. Not the .key.added idiom (TrustedKeyRow.css): a
+   sidebar row has --bg-hover, so a resting wash competes with HOVER rather than
+   the panel, and the tint that clears it ranges 12% (dim) to 26% (sepia) — none
+   on light. Hence a transient wash and a rail + badge that stay. */
+.is-new {
+  position: relative;
+  animation: new-open 320ms cubic-bezier(0.2, 0, 0.1, 1);
+}
+@keyframes new-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.is-new::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: new-wash 1.4s ease-out;
+}
+@keyframes new-wash {
+  from {
+    background: color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+/* RIGHT edge: the left carries the pin bar (inset 3px 0 0 var(--pin-ink)), and a
+   row you just made is one you then star, so the two states have to stack. */
+.is-new::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 3px;
+  background: var(--accent);
+  transform-origin: top;
+  animation: new-rail 900ms cubic-bezier(0.2, 0, 0.1, 1);
+}
+@keyframes new-rail {
+  0% {
+    transform: scaleY(0);
+  }
+  45% {
+    transform: scaleY(1);
+  }
+  65% {
+    transform: scaleY(1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+/* A keyline, never a fill: --bg-raised resolves to var(--bg) while the row's
+   ground is --bg-panel, so a filled chip does not lift. The label is --text
+   because --accent as text fails 4.5:1 on solar, meridian, sepia, bloom, light. */
+.new-badge {
+  flex: none;
+  height: var(--chip-h);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+  animation: new-badge-in 300ms 60ms backwards cubic-bezier(0.2, 0, 0.1, 1);
+}
+@keyframes new-badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* The marks stay drawn; only the motion goes. Identifying the row matters more
+   without motion, not less — every other reduced-motion block here parks an
+   animation that was only ever decoration. */
+@media (prefers-reduced-motion: reduce) {
+  .is-new,
+  .is-new::before,
+  .is-new::after,
+  .new-badge {
+    animation: none;
+  }
+  .is-new::before {
+    background: none;
+  }
+}
 .trust-mark {
   flex: none;
   display: inline-flex;

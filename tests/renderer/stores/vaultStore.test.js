@@ -11,6 +11,7 @@ import {
   useVaultStore
 } from '../../../src/renderer/src/stores/vaultStore'
 import { TAG_PALETTE, useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
 
 const KEY = randomBytes(32)
 const PAYLOAD = { mode: 'paste', pasteLeft: 'secret left', pasteRight: 'secret right' }
@@ -783,5 +784,37 @@ describe('vaultStore — backup bundle', () => {
     await vault.restoreBundle(bundle)
     expect(vault.active).toHaveLength(1)
     await expect(vault.load(vault.active[0].id)).resolves.toEqual(PAYLOAD)
+  })
+})
+
+// The saved-diff half of the same marker. Both arrival paths mark: one you
+// saved, and one that arrived sealed from someone else.
+describe('marking the row a create just made', () => {
+  it('names the diff save() just created', async () => {
+    const vault = useVaultStore()
+    const ui = useUiStore()
+    expect(ui.lastCreatedRowId).toBeNull()
+    const id = await vault.save('my diff', 1, PAYLOAD)
+    expect(ui.lastCreatedRowId).toBe(id)
+  })
+
+  it('marks an imported diff too — it is just as new to this machine', async () => {
+    const vault = useVaultStore()
+    const id = await vault.addShared({
+      name: 'from Ana',
+      payload: PAYLOAD,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 3600_000,
+      from: 'Ana'
+    })
+    expect(useUiStore().lastCreatedRowId).toBe(id)
+  })
+
+  it('holds ONE mark across both collections — a snippet create replaces it', async () => {
+    const vault = useVaultStore()
+    const snippets = useSnippetStore()
+    await vault.save('my diff', 1, PAYLOAD)
+    const snippetId = await snippets.add({ name: 'later', content: 'x' })
+    expect(useUiStore().lastCreatedRowId).toBe(snippetId)
   })
 })

@@ -15,6 +15,7 @@ import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import { useShareStore } from '../features/share'
+import { useUiStore } from '../stores/uiStore'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').VaultEntry>} */
@@ -22,6 +23,7 @@ const props = defineProps({
 })
 
 const vault = useVaultStore()
+const ui = useUiStore()
 const share = useShareStore()
 const imageExport = useImageExportStore()
 const diff = useDiffStore()
@@ -30,6 +32,7 @@ const tabs = useTabsStore()
 const dataDir = useDataDir()
 
 const SOON_MS = 15 * 60_000
+const isNew = computed(() => ui.lastCreatedRowId === props.entry.id)
 const formatKey = computed(() => rowFormatKey(props.entry))
 const mono = computed(() => languageMonogram(formatKey.value))
 const shownTags = computed(() => rowTags(props.entry))
@@ -64,7 +67,11 @@ async function open() {
 </script>
 
 <template>
-  <li class="diff" :class="{ favorite: entry.favorite, external: entry.from }">
+  <li
+    class="diff"
+    :class="{ favorite: entry.favorite, external: entry.from, 'is-new': isNew }"
+    :data-new-row="isNew ? entry.id : null"
+  >
     <button
       class="star"
       :class="{ on: entry.favorite }"
@@ -79,7 +86,7 @@ async function open() {
       <AppIcon :name="entry.favorite ? 'star-filled' : 'star'" />
     </button>
 
-    <button class="stack" :data-tip="title" @click="open">
+    <button class="stack" :data-tip="title" @pointerdown="ui.clearNewRow(entry.id)" @click="open">
       <span
         class="monogram"
         :style="{ '--fam': mono.family }"
@@ -90,6 +97,9 @@ async function open() {
         <span class="l1">
           <span class="name">{{ entry.name }}</span>
           <span v-if="state.text" class="state-chip" :class="state.cls">{{ state.text }}</span>
+          <!-- Beside the lifetime, not instead of it: how long a diff has left
+               is information a ten-second-old snippet's age is not. -->
+          <span v-if="isNew" class="new-badge">{{ $t('newRow.badge') }}</span>
         </span>
         <span class="l2">
           <template v-if="entry.from">

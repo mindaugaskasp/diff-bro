@@ -16,6 +16,7 @@ import {
   languageOf,
   useSnippetStore
 } from '../../../src/renderer/src/stores/snippetStore'
+import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
 import { createTranslator } from '../../../src/shared/i18n'
 
 const t = createTranslator('en')
@@ -47,26 +48,31 @@ beforeEach(() => {
   }
 })
 
-describe('snippetStore — first-run example', () => {
-  it('seeds the Mermaid example through the normal encrypted add path', async () => {
+describe('snippetStore — first-run examples', () => {
+  it('seeds both examples through the normal encrypted add path', async () => {
     const store = useSnippetStore()
-    const id = await store.seedExample()
-    expect(id).toBeTruthy()
-    expect(store.entries).toHaveLength(1)
+    expect(await store.seedExamples()).toBe(true)
+    expect(store.entries).toHaveLength(2)
     const [entry] = store.entries
     expect(entry.name).toBe(t(EXAMPLE_SNIPPET.nameKey))
     expect(languageOf(entry)).toBe('mermaid')
     // stored encrypted, decrypts back to the example content
     const raw = localStorage.getItem('diffbro.snippets')
     expect(raw).not.toContain('flowchart')
-    await expect(store.load(id)).resolves.toBe(EXAMPLE_SNIPPET.content)
+    await expect(store.load(entry.id)).resolves.toBe(EXAMPLE_SNIPPET.content)
   })
 
-  it('reports null (and seeds nothing) when the vault key is unavailable', async () => {
+  // A seeded row is not one the user made, so it must not wear the new-row mark.
+  it('leaves the new-row marker alone', async () => {
+    const store = useSnippetStore()
+    await store.seedExamples()
+    expect(useUiStore().lastCreatedRowId).toBeNull()
+  })
+
+  it('reports false (and seeds nothing) when the vault key is unavailable', async () => {
     const store = useSnippetStore()
     window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
-    const id = await store.seedExample()
-    expect(id).toBeNull()
+    expect(await store.seedExamples()).toBe(false)
     expect(store.entries).toHaveLength(0)
   })
 })
@@ -776,5 +782,45 @@ describe('hasDiagrams', () => {
 
     store.entries = [{ id: 'b', language: 'auto', detected: 'mermaid' }]
     expect(store.hasDiagrams).toBe(true)
+  })
+})
+
+// The one bit of state the new-row marker reads. It lives on uiStore, not here:
+// "the row you just made" is ONE row, so saving a diff and then adding a snippet
+// must leave one mark, not two in different sections.
+describe('marking the row a create just made', () => {
+  it('names the snippet add() just created', async () => {
+    const store = useSnippetStore()
+    const ui = useUiStore()
+    expect(ui.lastCreatedRowId).toBeNull()
+    const id = await store.add({ name: 'fresh', content: 'x' })
+    expect(ui.lastCreatedRowId).toBe(id)
+  })
+
+  it('is replaced by the next create, so only one row is ever marked', async () => {
+    const store = useSnippetStore()
+    await store.add({ name: 'first', content: 'a' })
+    const second = await store.add({ name: 'second', content: 'b' })
+    expect(useUiStore().lastCreatedRowId).toBe(second)
+  })
+
+  it('stays null through a bulk import — marking the last of thirty is noise', async () => {
+    const store = useSnippetStore()
+    window.api.openFile = async () => ({
+      name: 'x.code-snippets.json',
+      content: JSON.stringify({ Log: { body: 'a' }, Hi: { body: 'b' } })
+    })
+    expect(await store.importFromFile()).toEqual({ count: 2 })
+    expect(useUiStore().lastCreatedRowId).toBeNull()
+  })
+
+  it('clears only for a matching id', async () => {
+    const store = useSnippetStore()
+    const ui = useUiStore()
+    const id = await store.add({ name: 'fresh', content: 'x' })
+    ui.clearNewRow('someone-else')
+    expect(ui.lastCreatedRowId).toBe(id)
+    ui.clearNewRow(id)
+    expect(ui.lastCreatedRowId).toBeNull()
   })
 })

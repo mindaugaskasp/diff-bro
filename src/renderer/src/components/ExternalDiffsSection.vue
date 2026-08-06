@@ -8,6 +8,10 @@ import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
 import { useShareStore } from '../features/share'
+import { useNewRowMarker } from '../composables/useNewRowMarker'
+import { useDiffStore } from '../stores/diffStore'
+import { useUiStore } from '../stores/uiStore'
+import { t } from '../i18n'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -19,6 +23,7 @@ const props = defineProps({
 })
 
 const vault = useVaultStore()
+const ui = useUiStore()
 const share = useShareStore()
 
 const open = ref(true)
@@ -37,6 +42,24 @@ const rows = computed(() =>
   ).filter(matches)
 )
 const hasImported = computed(() => vault.importedActive.length > 0)
+
+// The mirror of SavedDiffsSection: this one owns a marked diff only when it
+// came from someone else, so the two never both retire the same mark.
+useNewRowMarker({
+  markedId: () => ui.lastCreatedRowId,
+  locate: (id) => {
+    if (rows.value.some((e) => e.id === id)) return 'visible'
+    return vault.importedActive.some((e) => e.id === id) ? 'filtered' : 'elsewhere'
+  },
+  retire: () => ui.clearNewRow(ui.lastCreatedRowId),
+  onHidden: (id) =>
+    useDiffStore().showNotice(
+      t('newRow.hiddenByFilter', {
+        name: vault.importedActive.find((e) => e.id === id)?.name ?? ''
+      })
+    ),
+  open: () => (open.value = true)
+})
 
 // Expand the section, then run the import flow.
 function startImport() {
