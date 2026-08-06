@@ -269,6 +269,49 @@ const SURFACES = [
     }
   },
   {
+    name: 'new-row',
+    // The row a create just made. Its rail is a ::after, which querySelector
+    // cannot reach, so the badge's keyline stands in for it: both are solid
+    // --accent on --bg-panel, so one measurement holds the other's floor.
+    // Waits past the 1.4s wash so what is measured is the state that STAYS,
+    // not a frame of an animation.
+    open: async (page) => {
+      await page.getByRole('button', { name: 'New snippet' }).click()
+      const editor = page.getByRole('dialog', { name: 'New Snippet' })
+      await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
+      await editor.locator('.editor').click()
+      await page.keyboard.type('sweep')
+      await editor.getByRole('button', { name: 'Save', exact: true }).click()
+      await page.getByRole('dialog', { name: 'Snippet', exact: true }).waitFor()
+      await page.keyboard.press('Escape')
+      await page.locator('.row.is-new .new-badge').waitFor()
+      await page.waitForTimeout(1500)
+    },
+    // DELETE the row rather than merely retiring it. A sweep that leaves its
+    // scratch snippet behind grows the sidebar by one per theme, and every other
+    // surface's screenshot then differs from its baseline for no reason — which
+    // is how one run dirtied 98 committed PNGs.
+    close: async (page) => {
+      const row = page.locator('.row.is-new')
+      await row.hover()
+      await row.getByRole('button', { name: 'Delete' }).click()
+      const dialog = page.getByRole('dialog', { name: 'Delete snippet?' })
+      await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+      await page.locator('.row.is-new').waitFor({ state: 'detached' })
+    },
+    probes: {
+      // The word is what identifies the row on dim and matrix, where --accent
+      // and --favorite are 0.044 apart in OKLab — so it takes the reading floor.
+      'badge label': ['.row.is-new .new-badge', TEXT],
+      // The claim the whole design rests on: a solid --accent edge on the panel
+      // clears the non-text floor on all 14 (weakest solar 3.21). Gated on the
+      // BORDER channel, or it would be reported and never enforced.
+      'badge keyline': ['.row.is-new .new-badge', DIM, 'border'],
+      // The name must stay readable while the row wears the marker.
+      'row name': ['.row.is-new .nm', TEXT]
+    }
+  },
+  {
     name: 'trusted-keys',
     open: async (page) => {
       await page.getByRole('button', { name: 'Security', exact: true }).click()
@@ -318,7 +361,8 @@ async function sweepSurface(page, surface, theme, findings) {
 
   for (const [what, got] of Object.entries(probe)) {
     if (!got) continue
-    findings.push({ theme, surface: surface.name, what, ...got, floor: surface.probes[what][1] })
+    const [, floor, channel = 'text'] = surface.probes[what]
+    findings.push({ theme, surface: surface.name, what, ...got, floor, channel })
   }
   await surface.close(page)
   await page.waitForTimeout(80)
@@ -383,14 +427,15 @@ function report(findings) {
       const cells = probes.map((p) => {
         const hit = rows.find((r) => r.theme === theme && r.what === p)
         if (!hit) return '—'.padEnd(17)
-        const mark = hit.text < hit.floor ? ' ✗' : ''
-        return `${String(hit.text)}${mark}`.padEnd(17)
+        const got = hit[hit.channel]
+        const mark = got == null || got < hit.floor ? ' ✗' : ''
+        return `${String(got)}${mark}`.padEnd(17)
       })
       console.log(`  ${theme.toLowerCase().padEnd(10)}${cells.join('')}`)
     }
   }
 
-  const failed = findings.filter((f) => f.text < f.floor)
+  const failed = findings.filter((f) => f[f.channel] == null || f[f.channel] < f.floor)
   console.log('')
   if (!failed.length) {
     console.log(`✓ theme sweep ok — ${findings.length} measurements across ${THEMES.length} themes`)
@@ -399,7 +444,7 @@ function report(findings) {
   }
   console.log(`✗ theme sweep: ${failed.length} measurement(s) under floor:`)
   for (const f of failed) {
-    console.log(`  ${f.theme} · ${f.surface} · ${f.what} — ${f.text} < ${f.floor}`)
+    console.log(`  ${f.theme} · ${f.surface} · ${f.what} — ${f[f.channel]} < ${f.floor}`)
   }
   process.exitCode = 1
 }

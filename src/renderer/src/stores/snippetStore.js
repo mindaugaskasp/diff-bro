@@ -1,6 +1,17 @@
 import { defineStore } from 'pinia'
 import { useVaultStore } from './vaultStore'
+import { useUiStore } from './uiStore'
 import { loadPersisted, savePersisted } from '../persist'
+import {
+  MAX_TAGS,
+  TAG_PALETTE,
+  cleanTag,
+  dropTag,
+  effectiveLanguage,
+  migrate,
+  nextColor,
+  nextRank
+} from '../utils/snippetState'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseTemplateVars } from '../utils/templateVars'
 import { parseSnippetImport } from '../utils/snippetImport'
@@ -13,120 +24,13 @@ export const URL_LANGUAGE = 'url'
 
 // Personal, non-expiring text library, encrypted at rest with the vault key (crypto
 // in main). Organized by TAGS: plaintext metadata, NOT in the AAD, so retagging
-// never re-encrypts.
-// 20 colours, evenly spaced around the OKLCH hue wheel at one lightness and
-// chroma, interleaved so two tags made in a row land on opposite sides.
-// The previous set had 20 entries but only ~8 distinct hues (three greens within
-// 3 deg, three reds within 2), which the ink normalisation in ui.css then made
-// indistinguishable. A new tag takes the next unused colour, then cycles.
-export const TAG_PALETTE = [
-  '#e9687e',
-  '#c18f00',
-  '#18b46d',
-  '#00a7d8',
-  '#a87eeb',
-  '#ea6c5a',
-  '#aa9a00',
-  '#00b292',
-  '#299ff4',
-  '#c075d7',
-  '#e57431',
-  '#8ca507',
-  '#00afab',
-  '#6594fa',
-  '#d46ebd',
-  '#d68200',
-  '#62ae45',
-  '#00abc0',
-  '#8a89f7',
-  '#e1699f'
-]
-// Per-entry tag cap (one slot is often the auto-added format tag).
-export const MAX_TAGS = 20
+// never re-encrypts. Re-exported: many modules import these from this path.
+export { MAX_TAGS, TAG_PALETTE, cleanTag } from '../utils/snippetState'
 
-export const cleanTag = (name) =>
-  String(name ?? '')
-    .trim()
-    .toLowerCase()
-    .slice(0, 40)
 // The one seam every save runs through — add() and update() directly, and
 // import/restore by way of add() — so sentence-casing here covers them all.
 const cleanName = (name, fallback = untitledName()) =>
   sentenceCaseName(String(name ?? '').trim() || fallback)
-
-// Next unused palette color; cycles once every color is taken.
-function nextColor(tags) {
-  const used = new Set(Object.values(tags).map((t) => t.color))
-  return (
-    TAG_PALETTE.find((c) => !used.has(c)) ??
-    TAG_PALETTE[Object.keys(tags).length % TAG_PALETTE.length]
-  )
-}
-// Monotonic recency rank (higher = more recent), derived from stored ranks.
-const dropTag = (entries, name) => {
-  for (const e of entries ?? []) {
-    const i = e.tags?.indexOf(name) ?? -1
-    if (i > -1) e.tags.splice(i, 1)
-  }
-}
-
-function nextRank(tags) {
-  const ranks = Object.values(tags).map((t) => t.rank)
-  return (ranks.length ? Math.max(...ranks) : 0) + 1
-}
-
-// Migrate the legacy categories shape to tags. The AAD keeps aadSalt = the old
-// categoryId, so existing ciphertext still decrypts — metadata-only reshape.
-const isTagShape = (parsed) =>
-  !!parsed && !!parsed.tags && Array.isArray(parsed.entries) && !parsed.categories
-
-// Every non-default category becomes a tag of the same name.
-function tagsFromCategories(categories) {
-  const tags = {}
-  for (const c of categories) {
-    if (c.isDefault) continue
-    const n = cleanTag(c.name)
-    if (n && !tags[n]) tags[n] = { color: nextColor(tags), rank: nextRank(tags) }
-  }
-  return tags
-}
-
-// Coerce name/tags so old/partial data can't throw the sidebar's unguarded field
-// access (not in the AAD, so decryption is unaffected).
-const entryName = (e) =>
-  typeof e?.name === 'string' ? e.name : String(e?.name ?? t('snippetNotices.untitledSnippet'))
-const entryTags = (e) => (Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t === 'string') : [])
-
-function normalizeEntry(e) {
-  return {
-    ...e,
-    // Pre-existing snippets have never been edited, so they date from creation.
-    updatedAt: Number.isFinite(e?.updatedAt) ? e.updatedAt : e?.createdAt,
-    name: entryName(e),
-    // Only a real `true` masks: a hand-edited store must not be able to unmask a
-    // secret with a missing field, nor mask one with a stray truthy value.
-    secret: e?.secret === true,
-    tags: entryTags(e)
-  }
-}
-
-function migrate(parsed) {
-  if (isTagShape(parsed)) {
-    return {
-      tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
-      entries: (Array.isArray(parsed.entries) ? parsed.entries : []).map(normalizeEntry)
-    }
-  }
-  const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
-  const catById = new Map(categories.map((c) => [c.id, c]))
-  const entries = (Array.isArray(parsed?.entries) ? parsed.entries : []).map((e) => {
-    const cat = catById.get(e.categoryId)
-    const tagName = cat && !cat.isDefault ? cleanTag(cat.name) : null
-    const { categoryId, ...rest } = e
-    return normalizeEntry({ ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] })
-  })
-  return { tags: tagsFromCategories(categories), entries }
-}
 
 function readState() {
   const raw = loadPersisted('snippets')
@@ -138,7 +42,7 @@ function readState() {
       parsed = null
     }
   }
-  const state = migrate(parsed)
+  const state = migrate(parsed, t('snippetNotices.untitledSnippet'))
   savePersisted('snippets', JSON.stringify(state)) // write the migrated shape back
   return state
 }
@@ -179,7 +83,7 @@ Reply with a prioritized list — most critical first — and suggest a fix for 
  * @returns {string} Monaco language id the snippet resolves to
  */
 export const languageOf = (entry) =>
-  entry?.language && entry.language !== 'auto' ? entry.language : (entry?.detected ?? 'plaintext')
+  effectiveLanguage(entry?.language, entry?.detected ?? 'plaintext')
 
 // Distinct {{variables}} in a claude prompt, stored as plaintext metadata so the
 // sidebar row can flag "fillable on copy" without decrypting. Empty for every
@@ -190,7 +94,7 @@ const promptVars = (effectiveLang, content) =>
 // The snippet's format as a tag name (added on save so it's findable); null for
 // plaintext/unknown.
 export function formatTagFor(language, content) {
-  const lang = language && language !== 'auto' ? language : detectSnippetLanguage(content)
+  const lang = effectiveLanguage(language, detectSnippetLanguage(content))
   return lang && lang !== 'plaintext' ? lang : null
 }
 
@@ -268,10 +172,14 @@ export const useSnippetStore = defineStore('snippets', {
       }
       return out
     },
-    // Returns the id, or null if the vault key wasn't available (caller retries).
-    async seedExample() {
-      const { nameKey, ...rest } = EXAMPLE_SNIPPET
-      return this.add({ ...rest, name: t(nameKey) })
+    // Both first-run examples. Returns false if the vault key wasn't available,
+    // so the caller retries next launch rather than recording them as seeded.
+    // Never marks: a seeded row is not one the user made.
+    async seedExamples() {
+      for (const { nameKey, ...rest } of [EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET]) {
+        if (!(await this.add({ ...rest, name: t(nameKey), marks: false }))) return false
+      }
+      return true
     },
     // Opens the snippet editor prefilled from a Tools dialog's "Add to Snippets".
     startNewSnippetFrom(content, language) {
@@ -282,7 +190,18 @@ export const useSnippetStore = defineStore('snippets', {
         initialTags: []
       }
     },
-    async add({ name, content, language, tags = [], tagColors = {}, secret = false }) {
+    // `marks` is the new-row highlight, and it means "a user made this" — so
+    // seeding, importing and restoring a backup all pass false. Marking the last
+    // of thirty restored rows points at nothing anyone did.
+    async add({
+      name,
+      content,
+      language,
+      tags = [],
+      tagColors = {},
+      secret = false,
+      marks = true
+    }) {
       const id = crypto.randomUUID()
       const createdAt = Date.now()
       const aadSalt = crypto.randomUUID()
@@ -295,7 +214,7 @@ export const useSnippetStore = defineStore('snippets', {
       const ft = formatTagFor(language, content)
       const applied = this.registerTags(ft ? [ft, ...tags] : tags, tagColors)
       const detected = detectSnippetLanguage(content)
-      const eff = language && language !== 'auto' ? language : detected
+      const eff = effectiveLanguage(language, detected)
       this.entries.push({
         id,
         aadSalt,
@@ -315,6 +234,7 @@ export const useSnippetStore = defineStore('snippets', {
         iv: box.iv,
         data: box.data
       })
+      if (marks) useUiStore().markNewRow(id)
       this.persist()
       return id
     },
@@ -329,7 +249,7 @@ export const useSnippetStore = defineStore('snippets', {
       if (error) return { error }
       let count = 0
       for (const draft of snippets) {
-        if (await this.add(draft)) count++
+        if (await this.add({ ...draft, marks: false })) count++
       }
       return { count }
     },
@@ -512,7 +432,8 @@ export const useSnippetStore = defineStore('snippets', {
           content: s.content,
           language: s.language,
           secret: s.secret === true,
-          tags: Array.isArray(s.tags) ? s.tags : []
+          tags: Array.isArray(s.tags) ? s.tags : [],
+          marks: false
         })
       }
     },

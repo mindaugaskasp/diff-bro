@@ -34,8 +34,7 @@ import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import AppIcon from './components/AppIcon.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
-import { CLAUDE_EXAMPLE_SNIPPET, useSnippetStore } from './stores/snippetStore'
-import { t } from './i18n'
+import { useSnippetStore } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { MOD, isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
@@ -76,14 +75,11 @@ onMounted(async () => {
   window.api.cliReady()
 })
 
-// First run only: seed the example snippet into an empty library, once.
+// First run only: seed the example snippets into an empty library, once.
 onMounted(async () => {
   if (settings.examplesSeeded) return
-  if (snippets.entries.length === 0) {
-    const id = await snippets.seedExample()
-    if (!id) return // vault key not ready — retry next launch
-    await snippets.add({ ...CLAUDE_EXAMPLE_SNIPPET, name: t(CLAUDE_EXAMPLE_SNIPPET.nameKey) })
-  }
+  // Vault key not ready — retry next launch rather than record them as seeded.
+  if (snippets.entries.length === 0 && !(await snippets.seedExamples())) return
   settings.markExamplesSeeded()
 })
 

@@ -356,4 +356,17 @@
  * @property {boolean} pinned    never folds into the overflow menu
  */
 
+/**
+ * What one sidebar section hands `useNewRowMarker` so it can reveal and retire
+ * the row that was just created.
+ * @typedef {object} NewRowMarkerOptions
+ * @property {() => string|null} markedId      the store's `lastCreatedId`
+ * @property {(id: string) => 'visible'|'filtered'|'elsewhere'} locate
+ *   'elsewhere' means another section owns the row — the one place two panels
+ *   watching the same store key are stopped from fighting over it
+ * @property {() => void} retire               clears the store key
+ * @property {(id: string) => void} [onHidden] the row exists but a filter excludes it
+ * @property {() => void} [open]               expand a collapsed section
+ */
+
 export {}

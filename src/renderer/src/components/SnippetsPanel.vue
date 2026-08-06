@@ -6,6 +6,10 @@ import { matchesTags } from '../utils/tagFilter'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
 import { useSnippetPreview } from '../composables/useSnippetPreview'
+import { useNewRowMarker } from '../composables/useNewRowMarker'
+import { useDiffStore } from '../stores/diffStore'
+import { useUiStore } from '../stores/uiStore'
+import { t } from '../i18n'
 import SnippetRow from './SnippetRow.vue'
 import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
@@ -21,6 +25,7 @@ const props = defineProps({
 })
 
 const store = useSnippetStore()
+const ui = useUiStore()
 const sectionOpen = ref(true)
 
 // Tag filtering + search live in the shell (props); this just mirrors the query.
@@ -43,6 +48,24 @@ const rows = computed(() => {
 // A filter is on when there is a search term or a tag selected — the only time
 // a per-section count is worth the space.
 const filtering = computed(() => !!props.search.trim() || props.tags.length > 0)
+
+// Reveal and retire the row a create just inserted. Snippets have one section,
+// so anything the store marks and this list does not show is filtered out.
+useNewRowMarker({
+  markedId: () => ui.lastCreatedRowId,
+  locate: (id) =>
+    rows.value.some((e) => e.id === id)
+      ? 'visible'
+      : store.entries.some((e) => e.id === id)
+        ? 'filtered'
+        : 'elsewhere',
+  retire: () => ui.clearNewRow(ui.lastCreatedRowId),
+  onHidden: (id) =>
+    useDiffStore().showNotice(
+      t('newRow.hiddenByFilter', { name: store.entries.find((e) => e.id === id)?.name ?? '' })
+    ),
+  open: () => (sectionOpen.value = true)
+})
 
 // Expand the section and open a blank snippet.
 function newSnippet() {

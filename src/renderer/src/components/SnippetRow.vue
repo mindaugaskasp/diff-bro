@@ -30,6 +30,7 @@ const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 const { startDrag } = useSnippetDrag()
 
+const isNew = computed(() => ui.lastCreatedRowId === props.entry.id)
 const lang = computed(() => languageOf(props.entry))
 const mono = computed(() => languageMonogram(lang.value))
 const isDiagram = computed(() => lang.value === 'mermaid')
@@ -80,7 +81,8 @@ defineEmits(['hoverTitle', 'leaveTitle'])
 <template>
   <li
     class="row"
-    :class="{ favorite }"
+    :class="{ favorite, 'is-new': isNew }"
+    :data-new-row="isNew ? entry.id : null"
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"
@@ -102,6 +104,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     <button
       class="entry"
       draggable="false"
+      @pointerdown="ui.clearNewRow(entry.id)"
       @click="store.editingSnippet = { id: entry.id }"
       @mouseenter="$emit('hoverTitle', $event)"
       @mouseleave="$emit('leaveTitle')"
@@ -128,7 +131,10 @@ defineEmits(['hoverTitle', 'leaveTitle'])
         <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
       </span>
     </button>
-    <span class="when">{{ ago(entry.createdAt) }}</span>
+    <!-- The badge takes the age slot: the age of a row made ten seconds ago is
+         not information, and which row is new is. -->
+    <span v-if="isNew" class="new-badge">{{ $t('newRow.badge') }}</span>
+    <span v-else class="when">{{ ago(entry.createdAt) }}</span>
     <span class="rowacts" draggable="false">
       <button
         v-if="isDiagram"

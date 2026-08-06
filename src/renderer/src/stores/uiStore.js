@@ -31,9 +31,20 @@ export const useUiStore = defineStore('ui', {
     // scaled the toolbar and sidebar with it, which is what ran the bar out of
     // room. Transient by design, like the diagram viewer's own zoom: it is a
     // "let me look closer at this", not a setting.
-    diffZoom: ZOOM_DEFAULT
+    diffZoom: ZOOM_DEFAULT,
+    // The row the new-row marker draws. ONE key, not one per collection: saving
+    // a diff and then adding a snippet must leave one mark, not two. Never
+    // persisted — a mark surviving a relaunch would be a second pinned-like
+    // row state.
+    lastCreatedRowId: null
   }),
   actions: {
+    markNewRow(id) {
+      this.lastCreatedRowId = id
+    },
+    clearNewRow(id) {
+      if (this.lastCreatedRowId === id) this.lastCreatedRowId = null
+    },
     zoomDiff(direction) {
       this.diffZoom = steppedZoom(this.diffZoom, direction)
     },
