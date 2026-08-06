@@ -13,7 +13,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { catalogueKeys, dottedLiteralsIn, dynamicKeyLines, keysUsedIn } from './lib/i18nKeys.mjs'
-import { pseudoTree } from './lib/pseudo.mjs'
+import { isStaleGenerated, pseudoTree } from './lib/pseudo.mjs'
 
 const UNUSED_IS_ERROR = true
 
@@ -56,7 +56,7 @@ try {
 } catch {
   current = null
 }
-if (current !== expected) {
+if (isStaleGenerated(current, expected)) {
   problems.push('en-XA.json is stale — run `node scripts/pseudolocale.mjs`')
 }
 

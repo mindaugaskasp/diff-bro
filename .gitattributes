@@ -8,3 +8,10 @@
 *.sh text eol=lf
 docker/Dockerfile text eol=lf
 Makefile text eol=lf
+
+# Generated files that a check compares BYTE FOR BYTE against freshly generated
+# contents. The generator writes LF, so a Windows checkout under `text=auto`
+# handed back CRLF and en-XA.json read as stale — in the release build, the only
+# job that runs `npm run check` on Windows. The comparison tolerates either now
+# (scripts/lib/pseudo.mjs), but the file has no business being CRLF.
+src/shared/i18n/en-XA.json text eol=lf

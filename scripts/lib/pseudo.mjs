@@ -108,3 +108,17 @@ export function pseudoTree(tree) {
   }
   return out
 }
+
+const withLfEndings = (text) => (text == null ? null : String(text).replace(/\r\n/g, '\n'))
+
+/**
+ * Whether the committed en-XA.json differs from what the generator would write.
+ * Line-ending agnostic: the generator emits LF, but `.gitattributes` marks the
+ * repo `text=auto`, so a Windows checkout hands the same file back as CRLF and a
+ * byte compare called it stale.
+ * @param {string|null} current   file contents, or null when it is missing
+ * @param {string} expected       freshly generated contents
+ * @returns {boolean}
+ */
+export const isStaleGenerated = (current, expected) =>
+  withLfEndings(current) !== withLfEndings(expected)

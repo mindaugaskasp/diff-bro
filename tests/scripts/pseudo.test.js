@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pseudoText, pseudoTree } from '../../scripts/lib/pseudo.mjs'
+import { isStaleGenerated, pseudoText, pseudoTree } from '../../scripts/lib/pseudo.mjs'
 
 // en-XA exists to make three failures visible that no unit test catches: text
 // that was never extracted (it stays plain ASCII), a container that truncates
@@ -59,5 +59,26 @@ describe('pseudoTree', () => {
       a: '[Ĥéłłō {x} ·øé]',
       b: { c: '[Ŵōřłđ ·ø]' }
     })
+  })
+})
+
+// The comparison is a byte compare against a string the generator builds with
+// LF. `.gitattributes` marks the repo `* text=auto`, so a WINDOWS checkout hands
+// the same file back as CRLF and a freshly generated file reads as stale — which
+// only ever showed up in a release build, the one job that runs `npm run check`
+// on Windows.
+describe('isStaleGenerated', () => {
+  const expected = '{\n  "a": "b"\n}\n'
+
+  it('accepts a Windows checkout of an up-to-date file', () => {
+    expect(isStaleGenerated(expected.replace(/\n/g, '\r\n'), expected)).toBe(false)
+  })
+
+  it('still reports a file that genuinely differs', () => {
+    expect(isStaleGenerated('{\n  "a": "CHANGED"\n}\n', expected)).toBe(true)
+  })
+
+  it('reports a missing file as stale', () => {
+    expect(isStaleGenerated(null, expected)).toBe(true)
   })
 })
