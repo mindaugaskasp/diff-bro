@@ -18,3 +18,7 @@ quality-audit.md
 
 # A GitHub App private key must never be committed, wherever it is dropped.
 *.pem
+
+# electron-builder download cache, pinned into the workspace by the release
+# workflow so one actions/cache path works on every platform.
+.cache/

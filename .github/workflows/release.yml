@@ -87,8 +87,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # Lint, guards, unit tests and coverage — ONCE, on the cheapest runner, in
+  # parallel with e2e. It used to run inside BOTH build jobs, where it was 47% of
+  # the Windows job (246s of 520s) and bought nothing the other platform had not
+  # already proved: nothing in `npm run check` is platform-specific by design,
+  # and ci.yml runs it on ubuntu AND windows for every push to main, which is the
+  # commit a tag points at.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npm run check
+
   build:
-    needs: [audit, e2e]
+    needs: [audit, e2e, check]
     strategy:
       fail-fast: false
       matrix:
@@ -100,8 +118,23 @@ jobs:
             build-script: build:mac
             installer-glob: dist/*.dmg
     runs-on: ${{ matrix.os }}
+    # Both default to a per-OS location under the home directory; pinning them
+    # into the workspace gives actions/cache ONE path that means the same thing
+    # on Windows and macOS.
+    env:
+      ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
+      ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
     steps:
       - uses: actions/checkout@v5
+
+      # electron-builder re-downloaded the ~100MB Electron zip (plus winCodeSign
+      # and nsis) on every single run. Keyed on the lockfile, so an Electron bump
+      # misses and refetches rather than packaging a stale runtime.
+      - name: Cache the Electron + electron-builder downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cache
+          key: ${{ runner.os }}-ebuilder-${{ hashFiles('package-lock.json') }}
 
       - uses: actions/setup-node@v5
         with:
@@ -133,9 +166,6 @@ jobs:
       - name: Sync version to the release tag
         shell: bash
         run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
-
-      # Lint + tests before spending build minutes on a packaged installer.
-      - run: npm run check
 
       - run: npm run ${{ matrix.build-script }}
 
