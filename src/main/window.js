@@ -49,6 +49,24 @@ function trackWindowState(win) {
 const MIN_WIDTH = 1120
 const MIN_HEIGHT = 640
 
+// What the frame itself may never do: navigate, spawn a window, or SCALE.
+//
+// Chromium offers three ways into zoom — the menu accelerators, pinch, and
+// Ctrl+wheel — and scaling the chrome takes the toolbar and the sidebar with it,
+// which is what put the bar past the window's own minimum width. Zoom is a
+// property of the COMPARISON here (uiStore.diffZoom), so this is pinned at 1 and
+// the accelerators are bound to the diff's own level.
+function lockDownFrame(win) {
+  win.webContents.setVisualZoomLevelLimits(1, 1)
+  win.webContents.setZoomFactor(1)
+  win.webContents.on('zoom-changed', () => win.webContents.setZoomFactor(1))
+  // Only the dev server's HMR full-reloads may navigate.
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  win.webContents.on('will-navigate', (e, url) => {
+    if (!DEV_URL || !url.startsWith(DEV_URL)) e.preventDefault()
+  })
+}
+
 /**
  * @param {{ show?: boolean }} [opts] `show: false` is the login-item launch —
  *   the window is built so the shortcut and the CLI have something to raise, but
@@ -82,12 +100,7 @@ export function createWindow({ show = true } = {}) {
     }
   })
 
-  // Never open external links or navigate away — allow only the dev server's
-  // HMR full-reloads.
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  win.webContents.on('will-navigate', (e, url) => {
-    if (!DEV_URL || !url.startsWith(DEV_URL)) e.preventDefault()
-  })
+  lockDownFrame(win)
 
   // Native right-click Cut/Copy/Paste via menu roles, so the clipboard works on
   // every platform regardless of the app menu.

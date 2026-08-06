@@ -59,7 +59,7 @@ const stores = () => ({
     noteToolUsed: spy(),
     toggleTheme: spy()
   },
-  ui: {},
+  ui: { zoomDiff: spy() },
   snippets: { startNewSnippetFrom: spy() },
   share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy() },
   imageExport: { exportCurrentImage: spy() },

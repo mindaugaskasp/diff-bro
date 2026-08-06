@@ -1,4 +1,13 @@
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  closeViewMenu,
+  openViewMenu,
+  setViewOption
+} from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
@@ -58,7 +67,8 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
       timeout: 15000
     })
     // The toggle renames itself rather than adding a second control.
-    const toggle = page.getByRole('checkbox', { name: /Diagram/i })
+    const panel = await openViewMenu(page)
+    const toggle = panel.getByRole('checkbox', { name: /^Diagram$/i })
     await expect(toggle).toBeVisible({ timeout: 15000 })
     await toggle.check()
 
@@ -66,14 +76,15 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     // the same toggle that splits a text diff into two panes. It must still be
     // OFFERED here: it is not a Monaco-only option, and hiding it beside a
     // diagram removed the only way back to the stitched layout.
-    await expect(page.getByRole('checkbox', { name: 'Split view' })).toBeVisible()
+    await expect(panel.getByRole('checkbox', { name: 'Split view' })).toBeVisible()
+    await closeViewMenu(page)
     await expect(page.locator('.dg-stage svg')).toHaveCount(2, { timeout: 20000 })
     await expect(page.locator('.dg-pane .dg-ttl').first()).toContainText('before')
     await expect(page.locator('.dg-drift')).toBeVisible()
 
     // Turning it off gives ONE layout carrying both revisions, which is what
     // stops an unchanged node drifting between two independent renders.
-    await page.getByRole('checkbox', { name: 'Split view' }).uncheck()
+    await setViewOption(page, 'Split view', false)
     await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
     await expect(page.locator('.dg-drift')).toHaveCount(0)
     // The status band counts in words, as the proposal specifies.
@@ -107,13 +118,13 @@ test('focus hides the untouched part and says how much', async () => {
     await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
       timeout: 15000
     })
-    await page.getByRole('checkbox', { name: /Diagram/i }).check()
-    await page.getByRole('checkbox', { name: 'Split view' }).uncheck()
+    await setViewOption(page, /^Diagram$/i)
+    await setViewOption(page, 'Split view', false)
     await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
 
     // Focus is on by default; the count of what it hid is stated, never silent.
     await expect(page.locator('.dg-hidden')).toContainText('unchanged hidden', { timeout: 20000 })
-    await page.getByRole('checkbox', { name: 'Focus on changes' }).uncheck()
+    await setViewOption(page, 'Focus on changes', false)
     await expect(page.locator('.dg-hidden')).toHaveCount(0)
     // Still one picture, still a real diagram.
     await expect(page.locator('.dg-stage svg')).toHaveCount(1)
@@ -133,10 +144,9 @@ test('turning the toggle off returns to the text diff', async () => {
     await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
       timeout: 15000
     })
-    const toggle = page.getByRole('checkbox', { name: /Diagram/i })
-    await toggle.check()
+    await setViewOption(page, /^Diagram$/i)
     await expect(page.locator('.dg-stage svg')).not.toHaveCount(0, { timeout: 20000 })
-    await toggle.uncheck()
+    await setViewOption(page, /^Diagram$/i, false)
     await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.dgv')).toHaveCount(0)
   } finally {
@@ -155,9 +165,10 @@ test('the change list collapses and hands its width to the diagram', async () =>
   const page = await firstReadyPage(app)
   const work = await openPair(userDataDir)
   try {
-    const toggle = page.getByRole('checkbox', { name: /Diagram/i })
-    await expect(toggle).toBeVisible({ timeout: 15000 })
-    await toggle.check()
+    await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
+      timeout: 15000
+    })
+    await setViewOption(page, /^Diagram$/i)
     await expect(page.locator('.dg-stage svg').first()).toBeVisible({ timeout: 20000 })
 
     const stageWidth = async () => (await page.locator('.dg-stage').boundingBox()).width
@@ -193,7 +204,10 @@ test('the Diagram toggle keeps its position when pressed', async () => {
   const page = await firstReadyPage(app)
   const work = await openPair(userDataDir)
   try {
-    const toggle = page.getByRole('checkbox', { name: /Diagram/i })
+    const panel = await openViewMenu(page)
+    // Anchored: an unavailable row carries its REASON in its accessible name, so
+    // a loose /Diagram/ also matches "Focus applies to a diagram comparison".
+    const toggle = panel.getByRole('checkbox', { name: /^Diagram$/i })
     await expect(toggle).toBeVisible({ timeout: 15000 })
 
     // Its own box, not the label's: the label text is the same either way.
@@ -201,13 +215,13 @@ test('the Diagram toggle keeps its position when pressed', async () => {
     const on = await x()
 
     await toggle.uncheck()
-    await expect(page.getByRole('checkbox', { name: 'Ignore whitespace' })).toBeVisible()
+    await expect(panel.getByRole('checkbox', { name: 'Ignore whitespace' })).toBeVisible()
     expect(Math.abs((await x()) - on), 'unchecking must not slide the control').toBeLessThanOrEqual(
       1
     )
 
     await toggle.check()
-    await expect(page.getByRole('checkbox', { name: 'Focus on changes' })).toBeVisible()
+    await expect(panel.getByRole('checkbox', { name: 'Focus on changes' })).toBeVisible()
     expect(Math.abs((await x()) - on)).toBeLessThanOrEqual(1)
   } finally {
     await app.close()

@@ -6,7 +6,7 @@ import { test, expect } from './fixtures.mjs'
 // is checked here.
 
 async function compare(page) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('alpha\nbravo')
   await page.getByPlaceholder('Paste changed text here').fill('alpha\nBRAVO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -41,7 +41,7 @@ test('icon-only controls carry both a tooltip and an accessible name', async ({ 
 // changed two things the OS used to handle: the OS hid its tip the moment you
 // clicked, and it wrapped long text. Both had to be reproduced here.
 async function savedDiffRow(page) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
   await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

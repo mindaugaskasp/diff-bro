@@ -8,7 +8,7 @@ async function saveKeptDiff(page, name) {
   // The button TOGGLES, so a second call must not switch paste mode back off.
   const left = page.getByPlaceholder('Paste original text here')
   if (!(await left.isVisible().catch(() => false))) {
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill('before')
   await page.getByPlaceholder('Paste changed text here').fill('after')

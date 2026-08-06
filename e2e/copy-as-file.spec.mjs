@@ -19,7 +19,10 @@ const shellDropList = () => {
       ],
       { encoding: 'utf8' }
     )
-    return out.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+    return out
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean)
   } catch {
     return []
   }
@@ -134,7 +137,7 @@ test('copying the diff as a file writes a patch, not the diff text', async ({ ap
 
   const left = page.getByPlaceholder('Paste original text here')
   if (!(await left.isVisible().catch(() => false))) {
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill('one\ntwo\n')
   await page.getByPlaceholder('Paste changed text here').fill('one\nTWO\n')

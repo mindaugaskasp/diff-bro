@@ -54,7 +54,9 @@
       "zoomIn": "Zoom In",
       "zoomOut": "Zoom Out",
       "resetZoom": "Reset Zoom",
-      "devTools": "Toggle Developer Tools"
+      "devTools": "Toggle Developer Tools",
+      "toggleWhitespace": "Ignore Whitespace",
+      "toggleFocus": "Focus on Changes"
     },
     "security": {
       "title": "Security",
@@ -173,9 +175,9 @@
     "toggleSidebar": "Toggle sidebar",
     "toggleStructure": "Toggle structure view",
     "toggleTheme": "Toggle light/dark theme",
-    "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out",
-    "resetZoom": "Reset zoom",
+    "zoomIn": "Zoom the diff in",
+    "zoomOut": "Zoom the diff out",
+    "resetZoom": "Reset the diff zoom",
     "base64": "Base64 encode / decode",
     "json": "JSON format / validate",
     "xml": "XML format / validate",
@@ -422,7 +424,36 @@
     "share": "Share",
     "copyDiff": "Copy diff",
     "capture": "Capture",
-    "clear": "Clear"
+    "clear": "Clear",
+    "view": "View",
+    "more": "More actions",
+    "structure": "Structure",
+    "structureGrid": "Grid",
+    "structureDiagram": "Diagram",
+    "tips": {
+      "view": "Split view, structure and whitespace — everything that changes how the comparison is drawn",
+      "more": "Actions the bar has no room for",
+      "save": "Save this diff to the sidebar ({mod}+S)",
+      "alreadySaved": "Already saved — change something to save it again",
+      "share": "Share this diff as a sealed file, for the trusted people you pick",
+      "copy": "Copy this diff as a unified patch ({mod}+Shift+C)",
+      "copyTextOnly": "Copy diff is only available for text comparisons",
+      "capture": "Export this diff as an image — select lines first to capture just those",
+      "captureGrid": "Export this comparison as an image",
+      "captureNeedsFiles": "Load two files to export an image",
+      "clearFiles": "Clear both files ({mod}+K)",
+      "clearPaste": "Clear the pasted text ({mod}+K)",
+      "comparePasted": "Compare pasted text ({mod}+T)",
+      "backToFiles": "Back to comparing files ({mod}+T)"
+    },
+    "why": {
+      "split": "Side by side applies to text and diagram comparisons",
+      "structure": "These two files have no structured view — only a text diff",
+      "whitespace": "Whitespace only means something in a text comparison",
+      "focus": "Focus applies to a diagram comparison"
+    },
+    "pasteMode": "Paste mode",
+    "fileMode": "File mode"
   },
   "backupSettings": {
     "olderThan": "Older than",
@@ -660,7 +691,14 @@
     "all": "All",
     "clear": "Clear",
     "plusMore": "+{n} more",
-    "tagsSelected": "{n} tag selected | {n} tags selected"
+    "tagsSelected": "{n} tag selected | {n} tags selected",
+    "filterByTag": "Filter by {name} · right-click to manage",
+    "sections": {
+      "saved": "Saved",
+      "external": "External",
+      "snippets": "Snippets",
+      "tools": "Tools"
+    }
   },
   "savedDiffsSection": {
     "savedDiffs": "Saved diffs",

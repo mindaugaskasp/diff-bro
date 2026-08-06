@@ -10,17 +10,22 @@ import { rowWindow } from '../utils/virtualRows'
  * height it had when it was last measured.
  * @param {import('vue').Ref<Element|null>} elRef  the scrolling box
  * @param {import('vue').Ref<number>|(() => number)|number} total
- * @param {number} rowHeight  every row, exactly
+ * @param {import('vue').Ref<number>|(() => number)|number} rowHeight every row, exactly
  * @returns {import('vue').ComputedRef<{ start, end, padTop, padBottom }>}
  */
 export function useVirtualRows(elRef, total, rowHeight) {
   const scrollTop = ref(0)
   const viewportHeight = ref(0)
   // A ref, a getter, or a plain number — the caller shouldn't have to care.
-  const count = computed(() => {
-    if (typeof total === 'function') return total()
-    return (typeof total === 'object' ? total?.value : total) ?? 0
-  })
+  const unwrap = (v, fallback) => {
+    if (typeof v === 'function') return v()
+    return (typeof v === 'object' ? v?.value : v) ?? fallback
+  }
+  const count = computed(() => unwrap(total, 0))
+  // Reactive for the same reason the count is: the diff's zoom changes the row
+  // height, and a window still measuring the old one leaves the spacers lying
+  // about how tall the list is.
+  const height = computed(() => unwrap(rowHeight, 0))
 
   let observer = null
   const measure = () => {
@@ -62,7 +67,7 @@ export function useVirtualRows(elRef, total, rowHeight) {
   return computed(() =>
     rowWindow({
       total: count.value,
-      rowHeight,
+      rowHeight: height.value,
       scrollTop: scrollTop.value,
       viewportHeight: viewportHeight.value
     })

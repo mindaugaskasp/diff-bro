@@ -130,6 +130,7 @@ useSnippetDiffSync()
           class="content"
           data-tour="pane"
           :class="{ capturing: imageExport.imageCapturing, 'with-status-band': showStatusBand }"
+          :style="{ '--diff-zoom': ui.diffZoom }"
         >
           <!-- Matrix theme: code rain behind the empty state / diff area, only
              while no diff is loaded (it never sits behind a comparison). -->

@@ -123,7 +123,7 @@ test('the rail is built from the size scale, not a bespoke box', async ({ page }
 // "The side looks detached": the rail's first rule sat 31px above the line under
 // the file slots, so the two columns read as unrelated grids.
 test('the rail rule lands on the same line as the file slots', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('a')
   await page.getByPlaceholder('Paste changed text here').fill('b')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

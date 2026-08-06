@@ -56,10 +56,10 @@ onBeforeUnmount(() => clearInterval(timer))
 // The ids are settingsDefaults' SECTIONS, so the filter, the rail and the stored
 // drag order all name the same four things.
 const SECTIONS = [
-  { id: 'saved', label: 'Saved' },
-  { id: 'external', label: 'External' },
-  { id: 'snippets', label: 'Snippets' },
-  { id: 'tools', label: 'Tools' }
+  { id: 'saved', labelKey: 'savedDiffs.sections.saved' },
+  { id: 'external', labelKey: 'savedDiffs.sections.external' },
+  { id: 'snippets', labelKey: 'savedDiffs.sections.snippets' },
+  { id: 'tools', labelKey: 'savedDiffs.sections.tools' }
 ]
 // Which component renders each, so the scroll can follow the stored order
 // rather than the order they happen to be written in.
@@ -133,7 +133,7 @@ const showAllTags = ref(false)
             :class="{ on: shows(s.id) }"
             @click="toggleSection(s.id)"
           >
-            {{ s.label }}
+            {{ $t(s.labelKey) }}
           </button>
         </div>
         <div v-if="tags.all.value.length" class="usb-tags">
@@ -143,7 +143,7 @@ const showAllTags = ref(false)
             class="tag-chip usb-tag"
             :class="{ on: tags.active.value.includes(t.name) }"
             :style="{ '--tc': t.color }"
-            :data-tip="`Filter by ${t.name} · right-click to manage`"
+            :data-tip="$t('savedDiffs.filterByTag', { name: t.name })"
             @click="tags.pick(t.name)"
             @contextmenu.prevent="managing = t.name"
           >

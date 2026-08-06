@@ -55,21 +55,63 @@ test('the toolbar is not clipped at the minimum window size', async ({ app, page
 // Measured as overflow rather than as a gutter: macOS draws overlay scrollbars,
 // which consume no layout width, so offsetWidth - clientWidth stays 0 there even
 // with a bar on screen.
-test('the toolbar has nothing to scroll vertically at the minimum size', async ({ app, page }) => {
+test('the toolbar has nothing to scroll at the minimum size', async ({ app, page }) => {
   await minimumSize(app, page)
 
   const options = page.locator('.toolbar .options')
   await expect.poll(() => options.evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0)
 
-  // And the axis stays named, so `overflow-x` alone cannot silently reintroduce
-  // the vertical bar the next time something in here grows.
-  expect(await options.evaluate((el) => getComputedStyle(el).overflowY)).toBe('hidden')
+  // This used to assert `overflowY === 'hidden'`, which guarded the old
+  // mechanism: `.options` was `overflow: auto hidden`, and naming only overflow-x
+  // would have computed overflow-y to `auto` and bought a stepper scrollbar on
+  // the band's edge. The row is not a scroll container at all now — the View menu
+  // and the overflow menu keep it inside its width instead of hiding the end of
+  // it — so the invariant is the stronger one: NEITHER axis may scroll. It also
+  // has to stay visible for either popover to hang below the bar rather than be
+  // clipped by it.
+  const { overflowX, overflowY } = await options.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    return { overflowX: cs.overflowX, overflowY: cs.overflowY }
+  })
+  expect(overflowX).toBe('visible')
+  expect(overflowY).toBe('visible')
 })
+
+const hiddenInBar = (page) =>
+  page.locator('.toolbar .options').evaluate((el) => el.scrollWidth - el.clientWidth)
+
+// Drag the sidebar seam to its cap. `.key-actions` is `width: var(--sidebar-w)`,
+// so every pixel the sidebar gains is a pixel the bar's controls lose — the one
+// term in the toolbar's width that the READER moves.
+async function widenSidebarToCap(page) {
+  const grip = page.locator('.usb-grip')
+  const box = await grip.boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + 200)
+  await page.mouse.down()
+  // Past SIDEBAR_MAX on purpose; clampSidebarWidth pins it to 384.
+  await page.mouse.move(box.x + 400, box.y + 200, { steps: 8 })
+  await page.mouse.up()
+  await expect
+    .poll(() =>
+      page.locator('.saved').evaluate((el) => Math.round(el.getBoundingClientRect().width))
+    )
+    .toBe(384)
+}
+
+const setZoom = (app, page, level) =>
+  app
+    .browserWindow(page)
+    .then((win) => win.evaluate((w, z) => w.webContents.setZoomLevel(z), level))
 
 // A translated build is where this re-breaks: en-XA pads every message by ~40%,
 // so a minimum tuned only to English silently reintroduces the scrollbar the
-// moment anyone switches language. The toolbar absorbs it internally.
-test('a longer locale scrolls the toolbar, never the application', async ({ app, page }) => {
+// moment anyone switches language.
+//
+// This used to assert only that the DOCUMENT stayed put, and its name said the
+// toolbar "absorbs it internally" — which is precisely the bug. Absorbing it
+// means Save, Share and the three icon buttons scroll out of sight behind a
+// hairline track, with nothing to say they left. Both halves are asserted now.
+test('a longer locale fits the toolbar as well as the application', async ({ app, page }) => {
   await minimumSize(app, page)
   // The application menu, not the in-app MenuBar: the latter only exists on
   // Windows/Linux, and this invariant is not platform-specific.
@@ -83,4 +125,60 @@ test('a longer locale scrolls the toolbar, never the application', async ({ app,
       return scrollWidth - clientWidth
     })
     .toBe(0)
+  await expect.poll(() => hiddenInBar(page)).toBe(0)
+})
+
+// The widest reachable layout: minimum window, sidebar dragged to its cap. Both
+// are things a reader does deliberately, and together they cost the bar 128px it
+// never had.
+test('the toolbar fits with the sidebar dragged to its cap', async ({ app, page }) => {
+  await minimumSize(app, page)
+  await widenSidebarToCap(page)
+
+  await expect.poll(() => hiddenInBar(page)).toBe(0)
+})
+
+// The two together, at 100% zoom — the gap between the two tests above, and the
+// one state neither of them reaches. It matters because a language switch
+// changes what every control MEASURES without changing the size of the row it
+// sits in: the ResizeObserver never fires, so the bar has to notice on its own
+// or it goes on believing the widths it learned in English.
+test('a longer locale re-measures the bar even at an unchanged window size', async ({
+  app,
+  page
+}) => {
+  await minimumSize(app, page)
+  await widenSidebarToCap(page)
+  await clickAppMenuItem(app, 'Settings')
+  await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
+  await page.keyboard.press('Escape')
+
+  await expect
+    .poll(async () => {
+      const { scrollWidth, clientWidth } = await overflow(page)
+      return scrollWidth - clientWidth
+    })
+    .toBe(0)
+  await expect.poll(() => hiddenInBar(page)).toBe(0)
+})
+
+// Zoom is the case no fixed layout survives on its own. ZOOM_MAX is 2.5
+// (src/main/menu.js), a factor of 1.2^2.5 ≈ 1.577, so the minimum window offers
+// the layout ~710 CSS px — well under the bar's intrinsic width however short
+// the language is. Read off getMinimumSize() and the live zoom level rather than
+// hardcoded, so changing either bound re-aims the test instead of stranding it.
+test('the toolbar fits at maximum zoom, in a long locale, at the cap', async ({ app, page }) => {
+  await minimumSize(app, page)
+  await widenSidebarToCap(page)
+  await clickAppMenuItem(app, 'Settings')
+  await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
+  await page.keyboard.press('Escape')
+  await setZoom(app, page, 2.5)
+
+  // Proves the zoom actually took, so a silently-ignored setZoomLevel cannot
+  // turn this into a second copy of the test above.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.clientWidth))
+    .toBeLessThan(800)
+  await expect.poll(() => hiddenInBar(page)).toBe(0)
 })

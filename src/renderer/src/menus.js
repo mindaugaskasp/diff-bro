@@ -13,6 +13,20 @@ import { t } from './i18n'
 // Declarative: an item names an action, it never calls a store. `run` comes
 // from useCommands, and commands.test.js fails if a name here resolves to
 // nothing.
+// The four display options, in the order the View menu and ViewOptionsMenu both
+// show them. Whitespace and Focus carry no accelerator: the free keys near
+// MOD+\\ are worth more elsewhere.
+const displayToggles = (run) => [
+  {
+    label: t('menu.view.toggleStructure'),
+    keys: `${MOD}+Shift+D`,
+    run: () => run('toggle-structure')
+  },
+  { label: t('menu.view.toggleSplit'), keys: `${MOD}+\\`, run: () => run('toggle-split') },
+  { label: t('menu.view.toggleWhitespace'), run: () => run('toggle-whitespace') },
+  { label: t('menu.view.toggleFocus'), run: () => run('toggle-focus') }
+]
+
 export function buildMenus(run) {
   return [
     {
@@ -87,16 +101,7 @@ export function buildMenus(run) {
           run: () => run('command-palette')
         },
         { sep: true },
-        {
-          label: t('menu.view.toggleStructure'),
-          keys: `${MOD}+Shift+D`,
-          run: () => run('toggle-structure')
-        },
-        {
-          label: t('menu.view.toggleSplit'),
-          keys: `${MOD}+\\`,
-          run: () => run('toggle-split')
-        },
+        ...displayToggles(run),
         {
           label: t('menu.view.toggleSidebar'),
           keys: `${MOD}+B`,
@@ -115,19 +120,19 @@ export function buildMenus(run) {
           label: t('menu.view.zoomIn'),
           keys: `${MOD}++`,
           paletteHidden: true,
-          run: () => window.api.zoom(1)
+          run: () => run('zoom-in')
         },
         {
           label: t('menu.view.zoomOut'),
           keys: `${MOD}+-`,
           paletteHidden: true,
-          run: () => window.api.zoom(-1)
+          run: () => run('zoom-out')
         },
         {
           label: t('menu.view.resetZoom'),
           keys: `${MOD}+0`,
           paletteHidden: true,
-          run: () => window.api.zoom(0)
+          run: () => run('zoom-reset')
         },
         { sep: true, devOnly: true },
         {

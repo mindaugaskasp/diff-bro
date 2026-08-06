@@ -96,7 +96,7 @@ test('a diff sealed before rotation still opens after it', async () => {
     )
     expect(fp).toMatch(/^[0-9a-f]{32}$/)
 
-    await alicePage.getByRole('button', { name: 'Paste text' }).click()
+    await alicePage.getByRole('button', { name: 'Paste mode' }).click()
     await alicePage.getByPlaceholder('Paste original text here').fill('before rotation')
     await alicePage.getByPlaceholder('Paste changed text here').fill('after rotation')
     await alicePage.getByRole('button', { name: 'Compare', exact: true }).click()

@@ -2,6 +2,11 @@
 // room and the SFC stays inside its script budget.
 
 /**
+ * No fontSize here on purpose: Monaco's own default is PLATFORM-SPECIFIC (12 on
+ * macOS, 14 everywhere else), so a constant would silently shrink every diff on
+ * Linux and Windows. DiffViewer reads the resolved size back once and zooms from
+ * whatever this platform actually chose.
+ *
  * @param {{ dark: boolean, renderSideBySide: boolean, ignoreTrimWhitespace: boolean }} view
  * @returns {object} options for monaco.editor.createDiffEditor
  */

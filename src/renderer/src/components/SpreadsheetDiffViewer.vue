@@ -5,6 +5,8 @@ import { TOLERANCES, TOLERANCE_UNITS, useSpreadsheetDiff } from '../composables/
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { GRID_ROW_H } from '../utils/virtualRows'
+import { zoomedPx } from '../utils/diffZoom'
+import { useUiStore } from '../stores/uiStore'
 import SheetTabBar from './SheetTabBar.vue'
 import SpreadsheetGrid from './SpreadsheetGrid.vue'
 import SegmentedControl from './SegmentedControl.vue'
@@ -32,7 +34,9 @@ const allRows = computed(() => activeSheet.value?.rows ?? [])
 // BOTH grids, or the two sides would scroll out of alignment.
 const grids = ref(null)
 useCaptureRegion(grids)
-const win = useVirtualRows(grids, () => allRows.value.length, GRID_ROW_H)
+const ui = useUiStore()
+const rowH = computed(() => zoomedPx(GRID_ROW_H, ui.diffZoom))
+const win = useVirtualRows(grids, () => allRows.value.length, rowH)
 const windowed = computed(() => allRows.value.slice(win.value.start, win.value.end))
 
 // Clear the Monaco +/− stat; the grid shows its own changed/added/removed strip.
@@ -107,12 +111,7 @@ onMounted(() => {
       <span>{{ $t('spreadsheetDiffViewer.noDifferencesEverySheetMatches') }}</span>
     </div>
 
-    <div
-      v-if="activeSheet"
-      ref="grids"
-      class="grids"
-      :style="{ '--grid-row-h': `${GRID_ROW_H}px` }"
-    >
+    <div v-if="activeSheet" ref="grids" class="grids" :style="{ '--grid-row-h': `${rowH}px` }">
       <SpreadsheetGrid
         v-for="side in ['left', 'right']"
         :key="side"

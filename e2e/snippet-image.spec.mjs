@@ -126,7 +126,7 @@ test('a code snippet is photographed with its colouring and its name', async ({ 
 test('the live comparison survives the shot, scroll position and all', async ({ page }) => {
   const LEFT = Array.from({ length: 200 }, (_, i) => `line ${i + 1}`).join('\n')
   const RIGHT = LEFT.replace('line 40', 'line 40 CHANGED')
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(LEFT)
   await page.getByPlaceholder('Paste changed text here').fill(RIGHT)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

@@ -3,6 +3,17 @@ import { useDiffStore } from '../stores/diffStore'
 import { buildRowPlan, lineSpanOf, rowsIn } from '../utils/streamRows'
 import { useVirtualRows } from './useVirtualRows'
 import { STREAM_ROW_H } from '../utils/virtualRows'
+import { zoomedPx } from '../utils/diffZoom'
+import { useUiStore } from '../stores/uiStore'
+
+// The row height and the window that measures it, together — they are one fact.
+// Zoomed like every other comparison, and the virtualization computes its
+// spacers from this number, so a row drawn at any other height makes them lie.
+function streamRows(elementRef, total) {
+  const ui = useUiStore()
+  const rowHeight = computed(() => zoomedPx(STREAM_ROW_H, ui.diffZoom))
+  return { rowHeight, rowView: useVirtualRows(elementRef, total, rowHeight) }
+}
 
 // Lines held per side. Well past any viewport, so scrolling back a page is
 // instant; cleared wholesale when it fills, because an exact LRU would cost
@@ -28,7 +39,7 @@ export function useStreamedDiff(elementRef) {
   const cache = { left: reactive(new Map()), right: reactive(new Map()) }
 
   const total = computed(() => plan.value.total)
-  const rowView = useVirtualRows(elementRef, total, STREAM_ROW_H)
+  const { rowHeight, rowView } = streamRows(elementRef, total)
   // Bumped per open, so a slow index for a comparison the user has already
   // moved on from cannot land and repaint with the wrong file's rows.
   let generation = 0
@@ -115,5 +126,5 @@ export function useStreamedDiff(elementRef) {
 
   // useVirtualRows attaches its own scroll listener, so the viewer no longer
   // needs an onScroll of its own — it just reads the window.
-  return { window: rowView, rowHeight: STREAM_ROW_H, rows, total, summary, error, loading }
+  return { window: rowView, rowHeight, rows, total, summary, error, loading }
 }

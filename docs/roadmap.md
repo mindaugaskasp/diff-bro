@@ -214,6 +214,59 @@ Done. Anchored coach marks over the real controls, split 6 + 4.
 
 ---
 
+## Toolbar
+
+```mermaid
+flowchart LR
+  m["measure .options<br>clientWidth − siblings"]
+  a{"labels fit?"}
+  b{"icons fit?"}
+  lab(["every control labelled"])
+  ico(["every control an icon"])
+  fold(["fold into ⋯<br>Save pinned"])
+  m --> a
+  a -->|yes| lab
+  a -->|no| b
+  b -->|yes| ico
+  b -->|no| fold
+```
+
+Done. The four display toggles collapse into one `View` button with a count
+chip; the document actions shed in three rungs.
+
+- A control loses its WORD before it loses its PLACE — folding straight from
+  labelled to a menu hides something a glyph could still have reached
+- The compact width is `--control-h`, never measured: measuring it would mean
+  rendering the compact row to decide whether to render it
+- Widths are cached per id and read ONLY while the row is labelled — a folded
+  control measures 0, a compact one measures `--control-h`, and either would
+  overwrite the labelled width the row needs to grow back
+- The re-measure signature carries the active locale: a language switch changes
+  what every control measures without changing the size of the row, so the
+  `ResizeObserver` never fires
+- The count chip counts options CHANGED from their default, not options that are
+  on — split view and diagram focus both default to on
+- `.options` is `flex: 1; min-width: 0` with the auto margin on its first child;
+  an end-justified row spills overflow backwards where `scrollWidth` cannot see it
+
+Zoom belongs to the COMPARISON, not to the window.
+
+- `Cmd +/-/0` scale the diff: Monaco's font, the grid, the structural and
+  streamed rows. The toolbar, sidebar and menus never move
+- Chromium's own zoom is pinned off at the frame — `setVisualZoomLevelLimits(1, 1)`
+  plus a `zoom-changed` reset, because pinch and Ctrl+wheel are two more ways in
+  besides the accelerators
+- A virtualized view zooms its ROW HEIGHT in step with its font, or the spacers
+  describe a list of a different size than the one drawn. The grid had
+  `height: 24px` in CSS beside a `GRID_ROW_H` of 24 in JS — two copies of one
+  fact, true only while nothing moved either
+
+**Open.** `.key-actions` is still `width: var(--sidebar-w)`, so the bar's widest
+term is the one the reader drags. Moving it to the sidebar header needs an
+unconditional status band first.
+
+---
+
 ## Code signing
 
 ```mermaid

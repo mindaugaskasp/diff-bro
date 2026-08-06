@@ -1,0 +1,9 @@
+/* The document-action group and its overflow menu (ToolbarOverflow.vue). The
+   panel shell is the shared .popover layer in ui.css. */
+
+/* Menu rows sit at the icon's own scale; the glyph is a hint beside the name,
+   not a second control. */
+.popover-row .app-icon {
+  font-size: var(--font-lg);
+  color: var(--text-dim);
+}

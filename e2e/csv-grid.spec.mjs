@@ -1,4 +1,11 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  closeViewMenu,
+  openViewMenu,
+  setViewOption,
+  stubOpenDialog
+} from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -43,12 +50,13 @@ test('the Monaco-only toggles grey out once the grid is showing', async ({ app, 
     await stubOpenDialog(app, [right])
     await page.locator('.slot[data-side="right"]').click()
 
-    const splitBox = page.getByRole('checkbox', { name: 'Split view' })
-    const wsBox = page.getByRole('checkbox', { name: 'Ignore whitespace' })
-    const gridBox = page.getByRole('checkbox', { name: 'Grid' })
-
     // A CSV pair opens on the grid, so both Monaco-only toggles start disabled.
     await expect(page.locator('.grid').first()).toBeVisible()
+
+    const panel = await openViewMenu(page)
+    const splitBox = panel.getByRole('checkbox', { name: 'Split view' })
+    const wsBox = panel.getByRole('checkbox', { name: 'Ignore whitespace' })
+    const gridBox = panel.getByRole('checkbox', { name: 'Grid' })
     await expect(splitBox).toBeDisabled()
     await expect(wsBox).toBeDisabled()
     // Still on screen, and still where they were.
@@ -75,14 +83,14 @@ test('a CSV pair opens as a grid, and the toggle returns it to text', async ({ a
   const dir = await loadPair(app, page, { left: LEFT, right: RIGHT })
   try {
     // The toggle names the view it gives, and it is already on.
-    const toggle = page.locator('.options label', { hasText: 'Grid' })
-    await expect(toggle).toBeVisible()
-    await expect(toggle.locator('input')).toBeChecked()
+    const panel = await openViewMenu(page)
+    await expect(panel.getByRole('checkbox', { name: 'Grid' })).toBeChecked()
+    await closeViewMenu(page)
 
     // Unticking returns the text diff...
-    await toggle.locator('input').uncheck()
+    await setViewOption(page, 'Grid', false)
     await expect(page.locator('.grids')).toHaveCount(0)
-    await toggle.locator('input').check()
+    await setViewOption(page, 'Grid')
 
     // Both grids painted, as one paired sheet rather than two one-sided ones.
     await expect(page.locator('.grids')).toBeVisible()
@@ -98,7 +106,7 @@ test('a CSV pair opens as a grid, and the toggle returns it to text', async ({ a
     await expect(page.locator('.status-band .cells')).toHaveText('1 changed')
 
     // Turning it off hands the comparison back to the text viewer.
-    await toggle.locator('input').uncheck()
+    await setViewOption(page, 'Grid', false)
     await expect(page.locator('.grids')).toHaveCount(0)
   } finally {
     rmSync(dir, { recursive: true, force: true })
@@ -113,7 +121,7 @@ test('keeps a quoted delimiter inside its cell', async ({ app, page }) => {
     right: 'name,note\n"Doe, Jane",changed\n'
   })
   try {
-    await page.locator('.options label', { hasText: 'Grid' }).locator('input').check()
+    await setViewOption(page, 'Grid')
     await expect(page.locator('.grid td', { hasText: 'Doe, Jane' }).first()).toBeVisible()
     // Two data columns, not three — the comma inside the quotes stayed put.
     await expect(page.locator('.grid').first().locator('thead th')).toHaveCount(3)
@@ -134,7 +142,8 @@ test('offers no grid when only one side is delimited', async ({ app, page }) => 
     await page.locator('.slot[data-side="left"]').click()
     await stubOpenDialog(app, [txtPath])
     await page.locator('.slot[data-side="right"]').click()
-    await expect(page.locator('.options label', { hasText: 'Grid' })).toHaveCount(0)
+    const panel = await openViewMenu(page)
+    await expect(panel.getByRole('checkbox', { name: 'Grid' })).toHaveCount(0)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

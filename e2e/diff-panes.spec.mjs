@@ -4,7 +4,7 @@ import { test, expect } from './fixtures.mjs'
 // right edges has to match. Monaco adds a diff overview ruler to the modified
 // side only, which made the right scrollbar visibly wider than the left.
 test('both panes carry the same scrollbar furniture', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   const many = Array.from({ length: 60 }, (_, i) => `line ${i}`).join('\n')
   await page.getByPlaceholder('Paste original text here').fill(many)
   await page.getByPlaceholder('Paste changed text here').fill(many.replace('line 5', 'LINE 5!'))
@@ -26,7 +26,7 @@ test('both panes carry the same scrollbar furniture', async ({ page }) => {
 // The panes themselves were already equal; this pins that too, so a future
 // change to the ruler cannot quietly start stealing width from one side.
 test('the two panes are the same width', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
   await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -43,7 +43,7 @@ test('the two panes are the same width', async ({ page }) => {
 // Monaco's 14px default read as a slab down each pane; the app's own scrollbars
 // are slimmer, so the diff was the odd one out.
 test('the pane scrollbars are slim, and the same on both sides', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   const many = Array.from({ length: 80 }, (_, i) => `line ${i}`).join('\n')
   await page.getByPlaceholder('Paste original text here').fill(many)
   await page.getByPlaceholder('Paste changed text here').fill(many.replace('line 5', 'CHANGED'))

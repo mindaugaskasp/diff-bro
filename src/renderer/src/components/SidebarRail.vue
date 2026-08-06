@@ -40,11 +40,21 @@ const groups = computed(() => [
   {
     id: 'saved',
     icon: 'folder',
-    label: 'Saved diffs',
+    labelKey: 'savedDiffsSection.savedDiffs',
     count: vault.active.filter((e) => !e.from).length
   },
-  { id: 'external', icon: 'share', label: 'External diffs', count: vault.importedActive.length },
-  { id: 'snippets', icon: 'code', label: 'Snippets', count: snippets.entries.length }
+  {
+    id: 'external',
+    icon: 'share',
+    labelKey: 'externalDiffsSection.externalDiffs',
+    count: vault.importedActive.length
+  },
+  {
+    id: 'snippets',
+    icon: 'code',
+    labelKey: 'snippetsPanel.snippets',
+    count: snippets.entries.length
+  }
 ])
 </script>
 
@@ -76,8 +86,8 @@ const groups = computed(() => [
       v-for="g in groups"
       :key="g.id"
       class="rail-btn"
-      :data-tip="`${g.label} (${g.count})`"
-      :aria-label="`${g.label}, ${g.count}`"
+      :data-tip="`${$t(g.labelKey)} (${g.count})`"
+      :aria-label="`${$t(g.labelKey)}, ${g.count}`"
       @click="emit('expand', g.id)"
     >
       <AppIcon :name="g.icon" />

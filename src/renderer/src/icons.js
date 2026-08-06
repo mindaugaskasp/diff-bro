@@ -84,10 +84,23 @@ export const ICONS = {
     { t: 'path', d: 'm19 12-7 7-7-7' }
   ],
   // Diagonal share arrow (out of the box).
+  // A floppy disk — Save, when the toolbar is too narrow to spell it out.
+  save: [
+    { t: 'path', d: 'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z' },
+    { t: 'path', d: 'M17 21v-8H7v8' },
+    { t: 'path', d: 'M7 3v5h8' }
+  ],
   share: [
     { t: 'path', d: 'M9 15 20 4' },
     { t: 'path', d: 'M15 4h5v5' },
     { t: 'path', d: 'M20 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6' }
+  ],
+  // Three dots — the toolbar's overflow menu, holding whatever the bar could
+  // not fit. Same filled-circle idiom as `grip`, laid across instead of down.
+  'more-horizontal': [
+    { t: 'circle', cx: 5, cy: 12, r: 1.4, fill: true },
+    { t: 'circle', cx: 12, cy: 12, r: 1.4, fill: true },
+    { t: 'circle', cx: 19, cy: 12, r: 1.4, fill: true }
   ],
   grip: [
     { t: 'circle', cx: 9, cy: 6, r: 1.1, fill: true },

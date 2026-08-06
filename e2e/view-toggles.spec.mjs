@@ -1,9 +1,9 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, setViewOption } from './fixtures.mjs'
 
 // The toolbar toggles feed Monaco options and store state; a launch proves each
 // actually changes the rendered diff, which jsdom can't show.
 async function pasteCompare(page, left, right) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -15,20 +15,20 @@ test('ignore-whitespace turns a whitespace-only diff into "No differences"', asy
   const identical = page.locator('.diff-viewer .identical-row')
   await expect(identical).toBeHidden() // a change, for now
 
-  await page.getByLabel('Ignore whitespace').check()
+  await setViewOption(page, 'Ignore whitespace')
   await expect(identical).toContainText('No differences')
 })
 
-test('the Paste text button names its destination so the toggle is explicit', async ({ page }) => {
+test('the Paste mode button names its destination so the toggle is explicit', async ({ page }) => {
   const toggle = page
     .locator('.toolbar .actions button')
-    .filter({ hasText: /Paste text|File mode/ })
-  await expect(toggle).toHaveText('Paste text') // files mode: offers paste
+    .filter({ hasText: /Paste mode|File mode/ })
+  await expect(toggle).toHaveText('Paste mode') // files mode: offers paste
   await toggle.click()
   await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
   await expect(toggle).toHaveText('File mode') // now offers the way back
   await toggle.click()
-  await expect(toggle).toHaveText('Paste text') // back to files mode
+  await expect(toggle).toHaveText('Paste mode') // back to files mode
   await expect(page.getByPlaceholder('Paste original text here')).toBeHidden()
 })
 
@@ -48,7 +48,7 @@ test('Split view toggles between side-by-side and inline', async ({ page }) => {
   const sideBySide = page.locator('.monaco-diff-editor.side-by-side')
   await expect(sideBySide).toHaveCount(1)
 
-  await page.getByLabel('Split view').uncheck()
+  await setViewOption(page, 'Split view', false)
   await expect(sideBySide).toHaveCount(0) // now inline
 })
 
@@ -58,7 +58,7 @@ test('Clear is available over pasted text, not just loaded files', async ({ page
   const clear = page.getByRole('button', { name: 'Clear', exact: true })
   await expect(clear).toBeDisabled() // nothing anywhere yet
 
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('some pasted work')
   await expect(clear).toBeEnabled()
   await expect(clear).toHaveAttribute('data-tip', /Clear/)

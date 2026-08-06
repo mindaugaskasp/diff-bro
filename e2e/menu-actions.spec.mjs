@@ -5,7 +5,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // renderer, so this drives the menu bar itself — which shares the menus.js
 // action table — proving each menu action reaches the store.
 async function pasteCompare(page, left, right) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

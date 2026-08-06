@@ -14,52 +14,46 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  /* Reading ink: --text-dim put these words under 4.5:1 on four themes, and made
-     the .off rule below a no-op — it greyed a toggle to the colour it already had. */
+  /* Reading ink: --text-dim put these words under 4.5:1 on four themes. */
   color: var(--text);
   white-space: nowrap;
-  margin-left: auto;
-  /* The bar absorbs its own overflow, so a longer locale scrolls THIS and not
-     the document. Both axes named: overflow-x alone computes overflow-y to
-     `auto` and puts a stepper scrollbar on the band's right edge. */
+  /* Takes the space the key buttons leave, rather than shrink-wrapping its
+     content the way `margin-left: auto` did. That distinction is the whole
+     measurement: useToolbarOverflow reads clientWidth as the space AVAILABLE,
+     and with an auto margin it read the width of whatever was currently shown —
+     so folding one control shrank the box, which "proved" there was no room,
+     which folded the next. The row collapsed to Save alone at any width.
+     Content still sits right; justify-content does it without resizing the box. */
+  flex: 1;
   min-width: 0;
-  overflow: auto hidden;
-  scrollbar-width: thin;
+  /* NOT a scroll container. It was `overflow: auto hidden`, which meant a bar
+     too wide for the window hid its right-hand end — Save, Share and the three
+     icon buttons — behind a hairline track, with nothing to say they had gone.
+     The View menu and the overflow menu are what keep this row inside its width
+     now, and `overflow: visible` is also what lets either panel hang BELOW the
+     bar instead of being clipped by it.
+
+     If something here ever overflows again it will push the document sideways,
+     which e2e/toolbar-width.spec.mjs fails on loudly. That is the point: a
+     silent scroll is how this shipped. */
+  overflow: visible;
 }
-/* Logical clusters (display toggles · actions · appearance), each separated by
-   a divider, so the toolbar reads as groups rather than one glued-together row. */
-.group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: none;
+/* Right-aligns the controls, and NOT `justify-content: flex-end` on the row: an
+   end-justified flex row spills its overflow BACKWARDS, off the start edge,
+   where scrollWidth cannot see it — the measurement went blind and the bar
+   quietly overlapped the key buttons instead of folding. An auto margin resolves
+   to 0 once there is no free space, so the row falls back to flex-start and
+   overflows to the RIGHT, where both the fold logic and the e2e can measure it. */
+.options > :first-child {
+  margin-left: auto;
 }
-.group.actions {
-  gap: 6px;
-}
-/* Spans the control row, not the band: the negative margin it used to bleed with
-   is the only thing that overflowed `.options`, now a scroll container. */
+/* The clusters themselves are `.toolbar .group` in ui.css — one of them is a
+   child component's root, which scoped CSS here cannot reach. */
+/* Spans the control row, not the band. */
 .divider {
   width: 1px;
   flex: none;
   align-self: stretch;
   margin: 0 2px;
   background: var(--border);
-}
-.options label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-}
-/* A toggle this comparison cannot use keeps its slot and greys out, so the row
-   never re-flows under the cursor. Dimmed ink plus the browser's own disabled
-   box — not a lower opacity on the same colours, which reads as "loading". The
-   tip says why it is off. */
-.options label.off {
-  color: var(--text-dim);
-  cursor: not-allowed;
-}
-.options label.off input {
-  cursor: not-allowed;
 }

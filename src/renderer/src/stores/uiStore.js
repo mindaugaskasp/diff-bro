@@ -2,6 +2,7 @@
 // features raise and none owns, so it is core rather than a slice.
 
 import { defineStore } from 'pinia'
+import { ZOOM_DEFAULT, steppedZoom } from '../utils/diffZoom'
 
 export const useUiStore = defineStore('ui', {
   state: () => ({
@@ -25,9 +26,17 @@ export const useUiStore = defineStore('ui', {
     // may not import a slice.
     sidebarQuery: '',
     /** @type {string[]} */
-    sidebarTags: []
+    sidebarTags: [],
+    // How closely the COMPARISON is read. Not the app's zoom — Chromium's own
+    // scaled the toolbar and sidebar with it, which is what ran the bar out of
+    // room. Transient by design, like the diagram viewer's own zoom: it is a
+    // "let me look closer at this", not a setting.
+    diffZoom: ZOOM_DEFAULT
   }),
   actions: {
+    zoomDiff(direction) {
+      this.diffZoom = steppedZoom(this.diffZoom, direction)
+    },
     // Open the Mermaid viewer for a diagram's decrypted source. `theme` carries
     // a per-viewing ground over from the editor preview; the viewer falls back
     // to the stored default without one.

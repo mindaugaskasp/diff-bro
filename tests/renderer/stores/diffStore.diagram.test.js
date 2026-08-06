@@ -31,7 +31,7 @@ describe('diagram comparison', () => {
   it('calls itself Diagram, not Structure', () => {
     const diff = useDiffStore()
     load(diff, mmd('  A --> B'), mmd('  A --> C'))
-    expect(diff.structureLabel).toBe('Diagram')
+    expect(diff.structureLabelKey).toBe('appToolbar.structureDiagram')
   })
 
   it('routes to the diagram viewer only with the toggle on', () => {
