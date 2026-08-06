@@ -10,24 +10,6 @@ on:
 jobs:
   # Fail the whole release fast, on one cheap runner, if any known
   # vulnerability is present — before spending Windows/macOS build minutes.
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm install -g npm@11
-      - run: npm ci
-      # Blocks the release when npm audit finds a vulnerability at or above the
-      # threshold. Audits against package-lock.json, i.e. the exact versions
-      # that ship in CI. `moderate` covers the actionable set (moderate / high /
-      # critical) while ignoring unfixable low-severity dev-tool noise; change
-      # to `--audit-level=low` to fail on any advisory at all.
-      - name: Audit dependencies for known vulnerabilities
-        run: npm audit --audit-level=moderate
-
   # E2E is the behavioural source of truth. On PRs it's the merge gate (see
   # ci.yml); at release time we re-run it as a safety net so a tag can never
   # ship without it — a direct push to main or a tag on an arbitrary commit
@@ -54,8 +36,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install -g npm@11
-      - run: npm ci
+      - run: npm install -g npm@11 --no-fund --no-audit
+      - run: npm ci --no-fund
       # Electron's runtime libraries + Xvfb + a window manager — the same set the
       # Docker test env installs. openbox is NOT optional: unmanaged, the window
       # takes a different width and the diff panes split 571/572 instead of evenly.
@@ -101,12 +83,25 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install -g npm@11
-      - run: npm ci
+
+      # Blocks the release when npm audit finds a vulnerability at or above the
+      # threshold. `moderate` covers the actionable set (moderate / high /
+      # critical) while ignoring unfixable low-severity dev-tool noise; change
+      # to `--audit-level=low` to fail on any advisory at all.
+      #
+      # FIRST, and --package-lock-only: this reads the lock and needs no
+      # node_modules at all. It used to be its own job that installed the whole
+      # 872MB tree to run a one-second check. Here it still fails the release
+      # before a single build minute is spent, ~15s in.
+      - name: Audit dependencies for known vulnerabilities
+        run: npm audit --package-lock-only --audit-level=moderate
+
+      - run: npm install -g npm@11 --no-fund --no-audit
+      - run: npm ci --no-fund
       - run: npm run check
 
   build:
-    needs: [audit, e2e, check]
+    needs: [e2e, check]
     strategy:
       fail-fast: false
       matrix:
@@ -145,13 +140,13 @@ jobs:
       # target / docker/Dockerfile) — Node's bundled npm 10 resolves
       # optional platform packages differently and `npm ci` then rejects the
       # lock as out of sync. One resolver everywhere.
-      - run: npm install -g npm@11
+      - run: npm install -g npm@11 --no-fund --no-audit
 
       # Install with the output captured so the guard below can flag any
       # NEW deprecation / engine warnings (see scripts/check-install-warnings.mjs).
       - name: Install dependencies
         shell: bash
-        run: npm ci 2>&1 | tee npm-ci.log
+        run: npm ci --no-fund 2>&1 | tee npm-ci.log
 
       - name: Guard against unexpected install warnings
         shell: bash
@@ -228,7 +223,7 @@ jobs:
         with:
           node-version: 22
 
-      - run: npm install -g npm@11
+      - run: npm install -g npm@11 --no-fund --no-audit
 
       # Only touches package.json + package-lock.json (no node_modules needed);
       # --allow-same-version makes a re-run a clean no-op.

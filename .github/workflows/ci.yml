@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install -g npm@11
+      - run: npm install -g npm@11 --no-fund --no-audit
       # Captured so the guard below sees it. The guard used to run ONLY in the
       # release workflow, so a new upstream deprecation passed every PR and then
       # failed the tagged build — which is how v0.4.10 broke on a glob@10 notice
@@ -44,7 +44,7 @@ jobs:
       # the same thing.
       - name: Install dependencies
         shell: bash
-        run: npm ci 2>&1 | tee npm-ci.log
+        run: npm ci --no-fund 2>&1 | tee npm-ci.log
       - name: Guard against unexpected install warnings
         shell: bash
         run: node scripts/check-install-warnings.mjs npm-ci.log
@@ -82,8 +82,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install -g npm@11
-      - run: npm ci
+      - run: npm install -g npm@11 --no-fund --no-audit
+      - run: npm ci --no-fund
       # Electron's runtime libraries + Xvfb + a window manager — the same set the
       # Docker test env installs. openbox is NOT optional: unmanaged, the window
       # takes a different width and the diff panes split 571/572 instead of evenly.
