@@ -523,6 +523,18 @@ directory move passes CI while silently removing enforcement.
   folder before that can happen; open one with
   `npx playwright show-trace e2e-failures/<stamp>/<test>/trace.zip`. Never
   delete `test-results/` while chasing an intermittent.
+- **`npm run check` runs on Windows in CI, not only at release.** `ci.yml`'s
+  check job is a matrix over `ubuntu-latest` and `windows-latest`, because the
+  release build used to be the only place it ran on Windows and v0.4.10 met
+  three Windows-only failures one tag at a time: a deprecation the install
+  allowlist did not cover, a CRLF checkout that made a generated file compare as
+  stale, and `npx` — a `.cmd` there, which `execFileSync` cannot spawn. None of
+  them could fail a PR. When something is platform-shaped, prefer a form that
+  works everywhere over one guarded by `process.platform`: spawn `process.execPath`
+  against a package's own `bin`, compare generated text line-ending agnostically.
+  E2E stays Linux-only (it needs Xvfb), so a Windows INTERACTION bug still has to
+  be found by hand.
+
 - **macOS-only E2E runs on the Mac, not in Docker.** Some window-lifecycle bugs
   cannot exist on Linux — closing the last window quits the app there
   (`window-all-closed`), so the "app alive with no main window" state is

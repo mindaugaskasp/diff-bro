@@ -10,8 +10,23 @@ on:
     branches: [main]
 
 jobs:
+  # Both platforms the app ships on. Windows is here because the release build
+  # used to be the ONLY job that ran `npm run check` there, and v0.4.10 walked
+  # into three Windows-only failures one tag at a time — a deprecation the
+  # allowlist did not cover, a CRLF checkout that made a generated file read as
+  # stale, and `npx` (a .cmd there) that execFileSync cannot spawn. None could
+  # fail a PR. All three would have.
+  #
+  # macOS is deliberately NOT here: it shares Windows' nothing and the release
+  # build covers it, so it would double the bill to re-prove what ubuntu does.
   check:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Both report. The whole point is seeing WHICH platform broke, and a
+      # cancelled sibling hides that.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -23,9 +38,15 @@ jobs:
       # release workflow, so a new upstream deprecation passed every PR and then
       # failed the tagged build — which is how v0.4.10 broke on a glob@10 notice
       # that had been in the tree since the i18n plugin landed.
+      #
+      # `shell: bash` because the pipe and 2>&1 are written for it; the Windows
+      # runner would otherwise take this as PowerShell, where they do not mean
+      # the same thing.
       - name: Install dependencies
+        shell: bash
         run: npm ci 2>&1 | tee npm-ci.log
       - name: Guard against unexpected install warnings
+        shell: bash
         run: node scripts/check-install-warnings.mjs npm-ci.log
       - run: npm run check # ESLint + Vitest
       - run: npm run build # ensure it bundles
