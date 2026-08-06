@@ -214,3 +214,28 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
     await app.close()
   }
 })
+
+// One useCopyFeedback drove BOTH buttons, so pressing Copy as file flipped the
+// shared boolean and the acknowledgement appeared on COPY — the button beside
+// the one the reader had actually pressed. `flash(mark)` exists for exactly this
+// (a panel with several copy buttons records WHICH one), and neither caller used
+// it. Asserted on the rendered labels, since that is the whole of the bug.
+test('Copy as file acknowledges itself, not the button beside it', async ({ page }) => {
+  test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
+
+  const view = await addSnippet(page, { name: 'E2E flash target', body: 'alpha' })
+  // Names are stable across the flash: only the visible word swaps, so a screen
+  // reader is never told the button it is on has become a different button.
+  const copy = view.getByRole('button', { name: 'Copy', exact: true })
+  const asFile = view.getByRole('button', { name: 'Copy as file' })
+
+  await asFile.click()
+  await expect(asFile).toHaveText(/Copied/)
+  await expect(copy).toHaveText('Copy') // the untouched twin must not claim it
+
+  // And the same in reverse, so neither is merely hard-coded to its own state.
+  await expect(asFile).toHaveText(/Copy as file/) // flash elapsed
+  await copy.click()
+  await expect(copy).toHaveText('Copied')
+  await expect(asFile).toHaveText(/Copy as file/)
+})
