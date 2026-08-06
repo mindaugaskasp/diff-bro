@@ -11,21 +11,28 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { eslintJsonCommand } from './lib/eslintRun.mjs'
 
 const BASELINE = fileURLToPath(new URL('./lib/rawTextBaseline.json', import.meta.url))
 const root = fileURLToPath(new URL('..', import.meta.url))
 
+const { command, args } = eslintJsonCommand({
+  config: 'eslint.i18n.mjs',
+  targets: ['src/renderer/src']
+})
+
 let report
 try {
   report = JSON.parse(
-    execFileSync(
-      'npx',
-      ['eslint', '--no-config-lookup', '-c', 'eslint.i18n.mjs', '-f', 'json', 'src/renderer/src'],
-      { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
-    )
+    execFileSync(command, args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
   )
 } catch (err) {
   // eslint exits non-zero when it reports errors; the JSON is still on stdout.
+  // A SPAWN failure has no stdout at all, and reading it blindly turned that
+  // into `JSON.parse(undefined)` — say what actually went wrong instead.
+  if (typeof err.stdout !== 'string') {
+    throw new Error(`could not run eslint: ${err.message}`, { cause: err })
+  }
   report = JSON.parse(err.stdout)
 }
 
