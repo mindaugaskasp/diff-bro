@@ -1,6 +1,6 @@
 {
   "name": "diffbro",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Desktop file diff viewer with GitHub-style rendering",
   "main": "./build/main/index.js",
   "author": "Mindaugas",
@@ -45,7 +45,7 @@
     "vue-i18n": "^11.4.8",
     "yaml": "^2.9.0"
   },
-  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass \u2014 and being exact, npm audit fix could not move it. A caret so a patch flows.",
+  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows.",
   "overrides": {
     "brace-expansion": "^5.0.9"
   },
