@@ -17,6 +17,14 @@ export default defineConfig({
     environmentOptions: { jsdom: { url: 'http://localhost/' } },
     setupFiles: ['tests/setup.js'],
     include: ['tests/**/*.test.js'],
+    // A HANG detector, not a performance budget — which is why it is generous.
+    // The Windows runner is roughly 7x slower than a dev machine on these
+    // jsdom-heavy tests, and ~40 of them sit over 300ms locally (the slowest at
+    // ~1s), so vitest's 5s default put about eight of them over the line at
+    // once. Which one tripped was luck; v0.4.11 lost a release build to it.
+    // Raise this rather than sprinkling per-test timeouts: the number is about
+    // the slowest PLATFORM, not about any one test.
+    testTimeout: 20_000,
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'text'],
