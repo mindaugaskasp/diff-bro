@@ -18,7 +18,9 @@ import { registerShareIpc } from './share'
 import { registerMailIpc } from './mail'
 import { registerClipboardCopyIpc } from './clipboardCopy'
 import { registerSnippetIpc } from './snippets'
-import { ensureMainWindow, registerQuickLook, destroyQuickLook } from './quickLook'
+import { ensureMainWindow, registerQuickLook, destroyQuickLook, toggleQuickLook } from './quickLook'
+import { attachCloseToTray, installTray, markQuitting, registerTrayIpc } from './tray'
+import { startsHidden } from './trayCore'
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
@@ -84,21 +86,34 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     registerLoggerIpc()
     registerLinkIpc()
     registerCliIpc()
+    registerTrayIpc()
     // Every main window, not just the first: without this the hidden launcher
     // keeps a window alive and blocks quit.
-    const openMainWindow = () => {
-      const w = createWindow()
+    const openMainWindow = (opts) => {
+      const w = createWindow(opts)
+      attachCloseToTray(w)
       w.on('closed', destroyQuickLook)
       return w
     }
-    openMainWindow()
+    // A login-item launch (`--hidden`) comes up in the tray: signing in should
+    // not throw a window at you. It is still BUILT, so the shortcut and the CLI
+    // have something to raise.
+    openMainWindow({ show: !startsHidden(process.argv) })
+    // After registerQuickLook, which is what hands ensureMainWindow the way to
+    // build one — the tray's Open would otherwise have nothing to call in the
+    // moment between.
     registerQuickLook(openMainWindow)
+    installTray({ openMainWindow: () => ensureMainWindow(), toggleQuickLook })
     // A cold `diffbro …`: this process IS the launch, so its own argv carries
     // the command. It waits for the renderer to announce itself.
     routeCliArgv(process.argv, process.cwd())
     app.on('activate', ensureMainWindow)
   })
 }
+
+// Every route out of the app passes through here first, so the close handler
+// knows this one is a real quit and lets the window go (see trayCore).
+app.on('before-quit', markQuitting)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

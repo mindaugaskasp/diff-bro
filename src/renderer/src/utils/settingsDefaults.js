@@ -2,11 +2,13 @@
 // back into range. Pure data and pure functions — no store, so the clamping is
 // testable on its own.
 import { isLocale } from '../../../shared/i18n'
+import { defaultQuickLookShortcut, migratedQuickLookShortcut } from '../../../shared/shortcuts'
 import { isValidAccelerator } from './accelerator'
+import { platformId } from '../keys'
 import { MAX_RECENT_TOOLS } from './tools'
 import { normalizeTheme } from './themes'
 
-export const DEFAULT_QUICKLOOK_SHORTCUT = 'CommandOrControl+Shift+Space'
+export const DEFAULT_QUICKLOOK_SHORTCUT = defaultQuickLookShortcut(platformId)
 
 // Mirrors autoBackup.js's MIN/MAX_WINDOW_HOURS. Main clamps independently, so a
 // hand-edited settings file cannot widen the window.
@@ -54,7 +56,6 @@ export function defaultFileLimits() {
 
 export const DEFAULT_SETTINGS = {
   sectionOrder: [...SECTIONS],
-  sectionsLocked: false,
   shelfOrder: {}, // { [sectionId]: [shelfId, …] }
   showShortcutBar: true,
   rotateThemeDaily: false,
@@ -70,7 +71,11 @@ export const DEFAULT_SETTINGS = {
   autoBackupHours: 6,
   examplesSeeded: false,
   // Global shortcut for the quick look-up launcher (Electron accelerator form).
-  quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT
+  quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT,
+  quickLookShortcutMigrated: true,
+  // Windows only, and ON: pressing X stores the window in the notification area
+  // rather than ending the app, so the global shortcut survives it.
+  closeToTray: true
 }
 
 export const clampNumber = (value, fallback, min, max) => {
@@ -137,7 +142,6 @@ export function readDialogSizes(parsed) {
 export function settingsStateFrom(parsed, outside) {
   return {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
-    sectionsLocked: parsed.sectionsLocked === true,
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     showShortcutBar: outside.showShortcutBar,
@@ -176,10 +180,16 @@ export function settingsStateFrom(parsed, outside) {
     recentTools: Array.isArray(parsed.recentTools)
       ? parsed.recentTools.filter((id) => typeof id === 'string').slice(0, MAX_RECENT_TOOLS)
       : [],
-    // A hand-edited/invalid stored accelerator falls back to the default.
-    quickLookShortcut: isValidAccelerator(parsed.quickLookShortcut)
-      ? parsed.quickLookShortcut
-      : DEFAULT_QUICKLOOK_SHORTCUT,
+    // A hand-edited/invalid stored accelerator falls back to the default, and an
+    // install still holding the old cross-platform default is moved off it once.
+    quickLookShortcut: migratedQuickLookShortcut({
+      stored: isValidAccelerator(parsed.quickLookShortcut) ? parsed.quickLookShortcut : null,
+      migrated: parsed.quickLookShortcutMigrated,
+      fallback: DEFAULT_QUICKLOOK_SHORTCUT
+    }),
+    // Set on first read and persisted, so the move above happens exactly once.
+    quickLookShortcutMigrated: true,
+    closeToTray: parsed.closeToTray !== false,
     userTheme: normalizeTheme(outside.theme),
     // The ACTIVE theme components read — userTheme, unless daily rotation is on.
     theme: normalizeTheme(outside.theme)

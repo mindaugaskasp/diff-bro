@@ -57,14 +57,104 @@ export const uriList = (paths) => paths.map(fileUrl).join('\r\n')
 // is ignored rather than treated as a copy.
 export const gnomeCopiedFiles = (paths) => `copy\n${paths.map(fileUrl).join('\n')}`
 
+// Windows FILEDESCRIPTORW: a fixed 592-byte record, of which the last 520 are
+// cFileName as WCHAR[MAX_PATH].
+const DESCRIPTOR_BYTES = 592
+const NAME_BYTES = 260 * 2
+const NAME_AT = 72
+const FD_ATTRIBUTES = 0x04
+const FD_WRITESTIME = 0x20
+const FD_FILESIZE = 0x40
+const FILE_ATTRIBUTE_NORMAL = 0x80
+// FILETIME counts 100ns ticks from 1601-01-01; Date counts ms from 1970-01-01.
+const FILETIME_EPOCH_OFFSET_MS = 11_644_473_600_000
+
+// The environment variable the PowerShell hand-off reads the staged path from.
+// The path travels HERE, never interpolated into the script, so a name can never
+// break out of the string and inject a command.
+export const WIN_CLIP_PATH_ENV = 'DIFFBRO_CLIP_PATH'
+
+// Windows shell paste needs the PREDEFINED CF_HDROP (id 15). Electron cannot
+// produce it: writeBuffer('CF_HDROP', …) registers a private same-named format,
+// and the descriptor pair below cannot be written either — each writeBuffer
+// REPLACES the whole clipboard, so only the last format ever survives (verified:
+// FileGroupDescriptorW/FileContents come back 0 bytes, only the final buffer
+// remains). PowerShell SetFileDropList writes the genuine format in one shot.
+// The script is CONSTANT; the only variable, the path, arrives via env (above).
+// See docs/standards.md rule 7 — this is a fenced subprocess hand-off, not a
+// renderer-driven one: the path is computed in main and never round-tripped.
+export function windowsFileDropListCommand() {
+  const script = [
+    'Add-Type -AssemblyName System.Windows.Forms',
+    '$paths = New-Object System.Collections.Specialized.StringCollection',
+    `$paths.Add($env:${WIN_CLIP_PATH_ENV}) | Out-Null`,
+    '[System.Windows.Forms.Clipboard]::SetFileDropList($paths)'
+  ].join('\n')
+  return {
+    command: 'powershell.exe',
+    args: [
+      '-NoProfile',
+      '-NonInteractive',
+      '-STA', // clipboard APIs require a single-threaded apartment
+      '-EncodedCommand',
+      Buffer.from(script, 'utf16le').toString('base64')
+    ]
+  }
+}
+
+// Descriptor buffers, kept as the canWriteFile support probe and the documented
+// Win32 layout — NOT the write path: see windowsFileDropListCommand above for why
+// Electron cannot put these on the clipboard. See docs/standards.md rule 7.
+function windowsFlavours(paths, bytes) {
+  const content = Buffer.isBuffer(bytes) ? bytes : Buffer.alloc(0)
+  const name = paths[0].split(/[\\/]/).pop()
+  const dropEffect = Buffer.alloc(4)
+  dropEffect.writeUInt32LE(1, 0) // DROPEFFECT_COPY — never move the staged file
+  return [
+    { format: 'FileGroupDescriptorW', buffer: fileGroupDescriptor(name, content.length) },
+    { format: 'FileContents', buffer: content },
+    { format: 'Preferred DropEffect', buffer: dropEffect },
+    // Inert to other applications, and the only thing clipboardFiles.js knows
+    // how to find — this is what keeps a DiffBro-to-DiffBro paste working.
+    { format: 'CF_HDROP', buffer: hdrop(paths) }
+  ]
+}
+
+/**
+ * FILEGROUPDESCRIPTORW for a single file — the shell's "here is a file, ask me
+ * for its bytes" announcement.
+ * @param {string} name  basename as the receiver should save it
+ * @param {number} size  byte count, carried as a 64-bit value
+ * @returns {Buffer}
+ */
+export function fileGroupDescriptor(name, size) {
+  const buf = Buffer.alloc(4 + DESCRIPTOR_BYTES)
+  buf.writeUInt32LE(1, 0) // cItems
+  const fd = 4
+  buf.writeUInt32LE(FD_ATTRIBUTES | FD_WRITESTIME | FD_FILESIZE, fd)
+  buf.writeUInt32LE(FILE_ATTRIBUTE_NORMAL, fd + 36)
+  const ticks = BigInt(Date.now() + FILETIME_EPOCH_OFFSET_MS) * 10_000n
+  buf.writeUInt32LE(Number(ticks & 0xffff_ffffn), fd + 56) // ftLastWriteTime
+  buf.writeUInt32LE(Number(ticks >> 32n), fd + 60)
+  buf.writeUInt32LE(Math.floor(size / 2 ** 32), fd + 64) // nFileSizeHigh
+  buf.writeUInt32LE(size >>> 0, fd + 68) // nFileSizeLow
+  // Truncated to leave room for the terminator: an unterminated cFileName runs
+  // into whatever follows it in the receiver's copy of the struct.
+  const encoded = Buffer.from(String(name).slice(0, 259), 'ucs2')
+  encoded.copy(buf, fd + NAME_AT, 0, Math.min(encoded.length, NAME_BYTES - 2))
+  return buf
+}
+
 /**
  * Every flavour for this platform, as { format, buffer } pairs in the order they
  * should be written.
- * @param {string[]} paths
- * @param {NodeJS.Platform} platform
+ * @param {{ paths: string[], platform: NodeJS.Platform, bytes?: Buffer }} spec
+ *   `bytes` is the staged file's content, needed only by Windows. Omitting it
+ *   still yields the platform's format list, which is how the support probe asks
+ *   whether a file can be copied here at all.
  * @returns {Array<{ format: string, buffer: Buffer }>}
  */
-export function fileFlavours(paths, platform) {
+export function fileFlavours({ paths, platform, bytes } = {}) {
   const list = (paths ?? []).filter((p) => typeof p === 'string' && p)
   if (!list.length) return []
   if (platform === 'darwin') {
@@ -73,9 +163,7 @@ export function fileFlavours(paths, platform) {
       { format: 'public.file-url', buffer: Buffer.from(fileUrl(list[0]), 'utf8') }
     ]
   }
-  if (platform === 'win32') {
-    return [{ format: 'CF_HDROP', buffer: hdrop(list) }]
-  }
+  if (platform === 'win32') return windowsFlavours(list, bytes)
   // Named rather than defaulted: the freedesktop flavours are what X11/Wayland
   // read, and returning them for an unknown platform made canWriteFile
   // unconditionally true — so "an unsupported platform hides the command"

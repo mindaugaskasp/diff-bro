@@ -4,7 +4,7 @@
   /* Its own inset, named so the key buttons can cancel it and line their block
      up with the window edge — and so the two cannot drift apart. */
   --bar-pad: 12px;
-  gap: 16px;
+  gap: 12px;
   padding: 8px var(--bar-pad);
   background: var(--bg-panel);
   /* Distinct separator so the stacked bars don't blend into one dark mass. */
@@ -13,25 +13,37 @@
 .options {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: var(--text-dim);
+  gap: 10px;
+  /* Reading ink: --text-dim put these words under 4.5:1 on four themes, and made
+     the .off rule below a no-op — it greyed a toggle to the colour it already had. */
+  color: var(--text);
   white-space: nowrap;
   margin-left: auto;
+  /* The bar absorbs its own overflow, so a longer locale scrolls THIS and not
+     the document. Both axes named: overflow-x alone computes overflow-y to
+     `auto` and puts a stepper scrollbar on the band's right edge. */
+  min-width: 0;
+  overflow: auto hidden;
+  scrollbar-width: thin;
 }
 /* Logical clusters (display toggles · actions · appearance), each separated by
    a divider, so the toolbar reads as groups rather than one glued-together row. */
 .group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex: none;
 }
 .group.actions {
-  gap: 8px;
+  gap: 6px;
 }
+/* Spans the control row, not the band: the negative margin it used to bleed with
+   is the only thing that overflowed `.options`, now a scroll container. */
 .divider {
   width: 1px;
+  flex: none;
   align-self: stretch;
-  margin: -8px 2px; /* bleed to the toolbar's top/bottom padding for a full line */
+  margin: 0 2px;
   background: var(--border);
 }
 .options label {

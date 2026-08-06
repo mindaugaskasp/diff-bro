@@ -87,9 +87,23 @@ that enforces each:
 | **Backup deletion by age, never by name**         | `backup:prune` is the only handler that DELETES. It takes an age in days that must be one of the two the app offers (`PRUNE_DAYS`), never a path or a filename, so the renderer cannot name a file to remove; every candidate comes from `listBackups`, which yields only names that parse as one of ours, so anything else sharing the folder is untouched                                            | `backupRoute.js`, `autoBackup.js`                            |
 | **The mail hand-off supplies no URL and no path** | `mail:handoff` takes fingerprints and text. Main resolves the addresses from the trust store, BUILDS the `mailto:` (`mailto.js`), and re-checks it with `isSafeMailtoUrl` before `shell.openExternal` — `mailto:` only, and an `attach`/`attachment` parameter is refused rather than ignored. The file it copies and reveals is the path it just sealed, never one round-tripped through the renderer | `mail.js`, `mailto.js`, `linkPolicy.js`, `mailAddress.js`    |
 | **Copy as file takes bytes, never a path**        | `clipboard:writeFile` receives content and a DISPLAY NAME. Main slugs the name flat (so `../../.ssh/config` cannot traverse), stages it in a `0o700` directory, and puts that path on the clipboard. The renderer cannot name a file to stage, read one back, or learn the staging directory; staged copies are pruned at 30 minutes and swept on quit **and** on next launch                          | `clipboardCopy.js`, `clipboardStage.js`, `clipboardWrite.js` |
+| **The tray settings are booleans**                | `tray:supported`, `app:startAtLogin` and `app:setStartAtLogin` take and return nothing but booleans. The login item registers `process.execPath` — main's own — with a fixed `--hidden` argument; the renderer never supplies an executable, an argument or a registry key, and there is no handler that would accept one                                                                              | `tray.js`, `trayCore.js`                                     |
 | **A stored address cannot become a header**       | `share:setTrustedEmail` refuses anything carrying CR/LF, a comma, a semicolon, angle brackets or whitespace, **before it reaches disk** — otherwise a stored address would inject a second header into the hand-off URL. A restored backup's `email` field is dropped if it fails the same check                                                                                                       | `trustedKeys.js`, `mailAddress.js`, `shareCore.js`           |
 | **No injection sinks**                            | `v-html`, `eval`, `new Function`, `innerHTML` are ESLint-banned                                                                                                                                                                                                                                                                                                                                        | `eslint.config.mjs`                                          |
 | **Capture rect clamped**                          | `image:capture` / `image:appendSlice` screenshot only a region clamped inside the window's own content, never a forged or unbounded one; a stitched export is capped in height so a renderer-driven loop can't exhaust memory, and the bitmap stays in main                                                                                                                                            | `captureRect.js`, `stitchBitmap.js`, `diffImage.js`          |
+
+**One surface worth naming.** Electron cannot put a shell-paste-able file on the
+Windows clipboard: `clipboard.writeBuffer` is not additive (each call REPLACES the
+whole clipboard, so the descriptor pair can never coexist) and the predefined
+`CF_HDROP` has no name to register, so writing a buffer under that name mints a
+private format only Diff Bro can see. So on Windows the copy shells out to
+`powershell.exe … SetFileDropList`, which writes the genuine `CF_HDROP` the shell
+reads. This is a fenced subprocess (hard rule 7): the staged path is computed in
+MAIN and passed by ENVIRONMENT variable (`DIFFBRO_CLIP_PATH`), never interpolated
+into the script, so nothing the renderer supplied reaches a command string; the
+script itself is a constant `-EncodedCommand`. It opens no socket (rule 1 intact)
+and the staged file keeps its `0o700` staging + 30-minute + quit/launch sweep. A
+secret snippet still refuses Copy as file outright.
 
 The renderer **cannot**: read a file by path it made up, obtain a private key,
 evaluate a spreadsheet formula, or make a network request. Each of those is

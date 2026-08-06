@@ -4,6 +4,7 @@ import { ISSUE_BASE, buildIssueUrl } from './issueUrl'
 import { isLauncher, toggleQuickLook } from './quickLook'
 import { editMenu, helpMenu, securityMenu, toolsMenu } from './menuSections'
 import { setLocale, t } from './i18n'
+import { refreshTrayMenu } from './tray'
 
 // Leaves the offline sandbox, so confirm first — showing the prefill, since
 // this is the moment that text stops being local.
@@ -225,5 +226,6 @@ export function registerMenuIpc() {
   ipcMain.handle('app:setLocale', (_e, id) => {
     setLocale(id)
     installMenu()
+    refreshTrayMenu()
   })
 }

@@ -170,21 +170,17 @@ describe('settingsStore', () => {
     expect(s.sectionOrder).toEqual(SECTIONS)
   })
 
-  it('locks section order: move and reorder become no-ops until unlocked', () => {
+  it('ignores a legacy persisted section lock — reorder is never disabled', () => {
+    // The lock had no UI to release it, so a stored `true` stranded the user
+    // with reordering permanently dead. The setting is gone; a leftover value
+    // must not resurrect the freeze.
+    localStorage.setItem('diffbro.settings', JSON.stringify({ sectionsLocked: true }))
     const s = useSettingsStore()
-    expect(s.sectionsLocked).toBe(false)
-    s.toggleSectionsLock()
-    expect(s.sectionsLocked).toBe(true)
+    expect(s.sectionsLocked).toBeUndefined()
     s.moveSection('snippets', -1)
-    s.reorderSections('snippets', 'saved')
-    expect(s.sectionOrder).toEqual(SECTIONS) // frozen
-    // survives a reload
-    setActivePinia(createPinia())
-    const reloaded = useSettingsStore()
-    expect(reloaded.sectionsLocked).toBe(true)
-    reloaded.toggleSectionsLock()
-    reloaded.moveSection('snippets', -1)
-    expect(reloaded.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
+    s.reorderSections('external', 'saved')
+    expect(s.sectionOrder.slice(0, 3)).toEqual(['external', 'saved', 'snippets'])
   })
 
   it('remembers a keyed dialog size across reloads', () => {

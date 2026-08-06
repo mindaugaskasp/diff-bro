@@ -317,34 +317,7 @@ test('the sidebar drags wider, stops at the cap, and comes back that way', async
   }
 })
 
-// The order is the store's, and the headers are the handles. Dragging one past
-// another has to survive a relaunch, or it is a preference the app forgets.
-test('a sidebar section drags to a new place and stays there', async () => {
-  const dir = freshUserDataDir()
-  const order = (page) =>
-    page
-      .locator('.usb-scroll .section-head')
-      .evaluateAll((els) => els.map((e) => e.dataset.section))
-
-  try {
-    const first = await launchApp(dir)
-    const page = await firstReadyPage(first)
-    expect(await order(page)).toStrictEqual(['saved', 'external', 'snippets', 'tools'])
-
-    // HTML5 drag-and-drop is not driven by mouse events, so the handlers are
-    // called the way the browser would call them.
-    await page.locator('[data-section="snippets"]').dispatchEvent('dragstart')
-    await page.locator('[data-section="saved"]').dispatchEvent('dragover')
-    await page.locator('[data-section="saved"]').dispatchEvent('drop')
-    expect(await order(page)).toStrictEqual(['snippets', 'saved', 'external', 'tools'])
-    await first.close()
-
-    const second = await launchApp(dir)
-    const back = await firstReadyPage(second)
-    await expect(back.locator('.usb-scroll .section-head').first()).toBeVisible()
-    expect(await order(back)).toStrictEqual(['snippets', 'saved', 'external', 'tools'])
-    await second.close()
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
+// Section reorder moved to e2e/section-reorder.spec.mjs. The version that lived
+// here dispatched dragstart/dragover/drop by hand, on the belief that "HTML5
+// drag-and-drop is not driven by mouse events" — which is untrue, and is exactly
+// why a reorder that was dead on Windows kept a green test.

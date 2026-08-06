@@ -43,17 +43,28 @@ function trackWindowState(win) {
   win.on('close', save)
 }
 
-export function createWindow() {
+// The TOOLBAR sets the width floor, not the panes — below it the whole document
+// scrolled sideways. e2e/toolbar-width.spec.mjs asserts against
+// getMinimumSize(), so the number and the layout cannot drift apart.
+const MIN_WIDTH = 1120
+const MIN_HEIGHT = 640
+
+/**
+ * @param {{ show?: boolean }} [opts] `show: false` is the login-item launch —
+ *   the window is built so the shortcut and the CLI have something to raise, but
+ *   signing in does not throw it on screen.
+ */
+export function createWindow({ show = true } = {}) {
   const state = loadWindowState()
   const win = new BrowserWindow({
+    show,
     width: state.width ?? 1400,
     height: state.height ?? 900,
     x: state.x,
     y: state.y,
     resizable: true,
-    // Keeps the sidebar + split Monaco panes usable, and openable on 1024x768.
-    minWidth: 940,
-    minHeight: 640,
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
     backgroundColor: '#0d1117',
     ...(process.platform !== 'darwin' ? { icon: appIcon } : {}),
     // Windows/Linux draw their own themed menu bar (MenuBar.vue); macOS keeps
@@ -101,7 +112,7 @@ export function createWindow() {
   // its accelerators keep working.
   if (process.platform !== 'darwin') win.setMenuBarVisibility(false)
 
-  if (state.maximized) win.maximize()
+  if (state.maximized && show) win.maximize()
   trackWindowState(win)
 
   // No renderer-observable signal exists for OS-level fullscreen, so push it (the

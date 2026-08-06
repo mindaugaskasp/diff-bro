@@ -127,7 +127,23 @@ regression test from decoration.
    **Copy as file** (`clipboardCopy.js`) stages bytes and puts the staged path on
    the clipboard; `clipboard:writeFile` takes **bytes and a display name, never a
    path**, so the renderer cannot name a file to stage, read one back, or learn
-   the staging directory. Staged copies live in a `0o700` directory under the OS
+   the staging directory. Windows cannot use `writeBuffer` at all: it is not
+   additive (each call REPLACES the clipboard, so the descriptor pair
+   `FileGroupDescriptorW` + `FileContents` can never coexist — verified, only the
+   last format survives), and the predefined `CF_HDROP` has no name to register,
+   so writing under that name mints a private format nothing outside the app can
+   paste. The `FileGroupDescriptorW`/`FileContents` route was tried and shipped
+   before this was understood; it does not work — do not restore it. Instead
+   Windows shells out to `powershell.exe … SetFileDropList`
+   (`windowsFileDropListCommand`), which writes the genuine `CF_HDROP` the shell
+   reads. That subprocess is fenced like any other sandbox exit: the path is
+   computed in MAIN and passed by ENV (`DIFFBRO_CLIP_PATH`), NEVER interpolated
+   into the constant `-EncodedCommand` script, so no renderer-supplied string
+   reaches a command line; it opens no socket. It fails closed under Constrained
+   Language Mode (returns an error, never a half-written clipboard). The macOS and
+   freedesktop flavours still use `writeBuffer` because their format names ARE
+   registered and their last-written format is the one the file manager reads.
+   Staged copies live in a `0o700` directory under the OS
    temp dir, are pruned after 30 minutes, and are swept both on `will-quit` and
    on next launch — the second sweep because a crash skips the first, and a
    snippet's plaintext surviving a reboot in `/tmp` is the failure that matters.

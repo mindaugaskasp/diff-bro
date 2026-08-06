@@ -12,19 +12,20 @@ import { DEV_URL } from './env'
 import { readSettings } from './appData'
 import { appendLog } from './logger'
 import { allowsWhileFocused } from './quickLookFocus'
+import { defaultQuickLookShortcut } from '../shared/shortcuts'
 import {
   placeWindow,
   displayForPoint,
-  resolveAccelerator,
   launcherDiagnostics,
   launcherSpaceBehavior,
   needsMainWindow,
+  storedAccelerator,
   swapShortcut
 } from './quickLookCore'
 
-// Fallback when settings.json has none. Mirror the renderer's
-// DEFAULT_QUICKLOOK_SHORTCUT (settingsStore.js) — keep the two in step.
-const DEFAULT_ACCELERATOR = 'CommandOrControl+Shift+Space'
+// Fallback when settings.json has none. The renderer's DEFAULT_QUICKLOOK_SHORTCUT
+// resolves from the same table, so the two cannot disagree.
+const DEFAULT_ACCELERATOR = defaultQuickLookShortcut(process.platform)
 
 let win = null
 // The accelerator currently registered, so a change unregisters exactly it.
@@ -234,9 +235,7 @@ function registerShortcut(accel) {
 
 export function registerQuickLook(openMainWindow) {
   createMain = openMainWindow
-  const res = registerShortcut(
-    resolveAccelerator(readSettings().quickLookShortcut, DEFAULT_ACCELERATOR)
-  )
+  const res = registerShortcut(storedAccelerator(readSettings(), DEFAULT_ACCELERATOR))
   if (!res.ok) registerShortcut(DEFAULT_ACCELERATOR)
   ipcMain.handle('quicklook:toggle', () => toggleQuickLook())
   ipcMain.handle('quicklook:setShortcut', (_e, accel) => registerShortcut(accel))

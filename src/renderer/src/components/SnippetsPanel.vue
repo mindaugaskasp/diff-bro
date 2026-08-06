@@ -112,16 +112,18 @@ function newSnippet() {
         />
       </ul>
     </div>
-  </section>
 
-  <SnippetPreviewCard
-    v-if="preview"
-    :preview="preview"
-    @mouseenter="onCardEnter"
-    @mouseleave="onCardLeave"
-    @edit="openEditor"
-    @view="openDiagram"
-  />
+    <!-- Fixed-positioned (escapes the sidebar scroll), so it lives INSIDE the
+         single section root — a second root node breaks the parent's v-show. -->
+    <SnippetPreviewCard
+      v-if="preview"
+      :preview="preview"
+      @mouseenter="onCardEnter"
+      @mouseleave="onCardLeave"
+      @edit="openEditor"
+      @view="openDiagram"
+    />
+  </section>
 </template>
 
 <style scoped src="./styles/SnippetsPanel.css"></style>

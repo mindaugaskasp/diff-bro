@@ -86,7 +86,9 @@ async function handoff(sender, { entry, recipientFps, subjectTemplate, note, rev
 
 // The OS half, split out so `handoff` stays inside the complexity cap.
 async function deliver(path, { url, reveal, to }) {
-  const copied = copyPathToClipboard(path)
+  // Puts the sealed file on the clipboard as the fallback. A failure here only
+  // costs that fallback, never the hand-off itself.
+  const copied = await copyPathToClipboard(path)
   // A machine with no registered mailto: handler rejects here. The file is
   // already written, so this reports rather than throws — an unhandled
   // rejection would tell the user nothing and orphan the file.

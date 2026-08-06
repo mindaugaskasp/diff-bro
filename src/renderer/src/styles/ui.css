@@ -139,6 +139,15 @@
   padding: 0 10px;
   font-size: var(--font-sm);
 }
+/* Icon-only but still a PLATE. `.btn-icon` below is flat, and flat beside a
+   labelled sibling reads as unavailable — this sheds the label and nothing else. */
+.btn-square {
+  width: var(--control-h);
+  padding: 0;
+}
+.btn-sm.btn-square {
+  width: var(--control-h-sm);
+}
 /* Square, borderless glyph button (header affordances, row actions). Flat by
    design — a plate on every row action would make the sidebar heavy. */
 .btn-icon {

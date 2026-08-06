@@ -162,30 +162,36 @@ const clearTitle = computed(() =>
         >
           {{ $t('appToolbar.share') }}
         </button>
+        <!-- Icon-only: their glyphs already carried the meaning, and the label
+             was 137px of the toolbar's intrinsic width. The tip still names
+             them, and aria-label keeps the name for assistive tech. -->
         <button
-          class="btn"
+          class="btn btn-square"
           :data-tip="copyTip"
+          :aria-label="$t('appToolbar.copyDiff')"
           :disabled="!store.ready || store.comparableKind !== 'text'"
           @click="store.copyDiff()"
         >
-          <AppIcon name="copy" /> {{ $t('appToolbar.copyDiff') }}
+          <AppIcon name="copy" />
         </button>
         <button
-          class="btn"
+          class="btn btn-square"
           :data-tip="imageTitle"
+          :aria-label="$t('appToolbar.capture')"
           :disabled="!imageExport.canExportImage"
           @click="imageExport.exportCurrentImage()"
         >
-          <AppIcon name="image" /> {{ $t('appToolbar.capture') }}
+          <AppIcon name="image" />
         </button>
         <button
           v-if="!store.isSavedDiff"
-          class="btn"
+          class="btn btn-square"
           :data-tip="clearTitle"
+          :aria-label="$t('appToolbar.clear')"
           :disabled="!store.canClear"
           @click="store.clear"
         >
-          {{ $t('appToolbar.clear') }}
+          <AppIcon name="x" />
         </button>
       </div>
     </div>

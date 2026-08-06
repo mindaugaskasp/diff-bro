@@ -4,6 +4,7 @@
 //   npm run render:brand
 //
 //   logo.svg              -> icon.png            (1024, macOS/Win/Linux app icon)
+//   logo.svg              -> tray.png            (32, Windows notification area)
 //   installer-sidebar.svg -> installerSidebar.bmp (164x314, NSIS welcome panel)
 //   installer-header.svg  -> installerHeader.bmp  (150x57,  NSIS inner header)
 //
@@ -30,6 +31,10 @@ const res = (f) => join(root, 'resources', f)
 
 const JOBS = [
   { src: 'logo.svg', w: 1024, h: 1024, out: 'icon.png', format: 'png' },
+  // Windows notification area. Rendered at 32 — the shell downscales to 16 at
+  // 100% DPI and uses it as-is above that — rather than letting it shrink the
+  // 1024 app icon, which turns a monoline mark to mush.
+  { src: 'logo.svg', w: 32, h: 32, out: 'tray.png', format: 'png' },
   { src: 'installer-sidebar.svg', w: 164, h: 314, out: 'installerSidebar.bmp', format: 'bmp' },
   { src: 'installer-header.svg', w: 150, h: 57, out: 'installerHeader.bmp', format: 'bmp' }
 ]

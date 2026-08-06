@@ -684,7 +684,12 @@
     "theTourIsRunning": "The tour is running",
     "runTheTourAgain": "Run the tour again from the start",
     "useTheme": "Use the {name} theme",
-    "maximizeToolSnippet": "Maximize tool & snippet windows (turn off to restore each one's size)"
+    "maximizeToolSnippet": "Maximize tool & snippet windows (turn off to restore each one's size)",
+    "desktop": "Desktop",
+    "keepRunningInTheTray": "Keep running in the notification area when the window is closed",
+    "keepRunningHint": "Diff Bro stays in the notification area, so the quick look-up shortcut keeps working. Right-click its icon to exit.",
+    "startWhenISignIn": "Start Diff Bro when I sign in",
+    "startWhenISignInHint": "Starts in the notification area with no window on screen."
   },
   "settingsLimits": {
     "limits": "Limits",
@@ -1290,5 +1295,23 @@
   },
   "sheetTabBar": {
     "onlyIn": "only {side}"
+  },
+  "tray": {
+    "open": "Open Diff Bro",
+    "quickLook": "Quick look-up",
+    "exit": "Exit",
+    "tooltip": "Diff Bro"
+  },
+  "snippetTemplates": {
+    "savesAs": "Saves as",
+    "today": "today’s date",
+    "time": "the time now",
+    "now": "date and time",
+    "yesterday": "yesterday’s date",
+    "tomorrow": "tomorrow’s date",
+    "week": "ISO week",
+    "weekday": "day of the week",
+    "month": "month name",
+    "year": "the year"
   }
 }

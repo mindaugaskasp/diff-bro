@@ -4,6 +4,7 @@ import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useImageExportStore } from '../features/imageExport'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
+import { expandTemplates } from '../utils/snippetTemplates'
 import { formatJson, formatXml } from '../utils/textFormats'
 import { formatSql } from '../utils/sqlFormat'
 import { repairMermaid } from '../utils/mermaid'
@@ -83,9 +84,7 @@ export function useSnippetDraft() {
   const isJira = computed(() => language.value === 'jira')
   const isMarkdown = computed(() => language.value === 'markdown')
 
-  function close() {
-    store.editingSnippet = null
-  }
+  const close = () => (store.editingSnippet = null)
 
   // Unsaved-changes guard: a dirty draft confirms before closing.
   const baselineSecret = ref(initial.secret)
@@ -100,9 +99,7 @@ export function useSnippetDraft() {
     if (isDirty.value) confirmingDiscard.value = true
     else close()
   }
-  function keepEditing() {
-    confirmingDiscard.value = false
-  }
+  const keepEditing = () => (confirmingDiscard.value = false)
   function discardDraft() {
     confirmingDiscard.value = false
     close()
@@ -120,6 +117,9 @@ export function useSnippetDraft() {
       return
     }
     saving.value = true
+    // Resolved ONCE, and into the field too, so the editor and the library hold
+    // the same string — re-evaluating on read would rename yesterday's note.
+    name.value = expandTemplates(name.value, { locale: settings.activeLocale })
     const fields = {
       name: name.value,
       content: content.value,
