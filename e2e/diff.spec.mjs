@@ -12,7 +12,7 @@ test('paste-compare diffs two texts and reports the change stats', async ({ page
   // The empty state is what a fresh window shows; it must give way to the diff.
   await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('alpha\ngamma')
   await page.getByPlaceholder('Paste changed text here').fill('alpha\nZEBRA\ngamma')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

@@ -55,6 +55,11 @@ const THEMES = [
 //         so holding this sweep to 4.5 there would contradict the repo's own gate
 const TEXT = 4.5
 const DIM = 3
+// A panel keyline is a separator, not a mark: --border sits at 1.11 against the
+// panel on the quietest themes (check-theme-depth.mjs `border/panel`), and is a
+// hard rule only on contrast and beacon. Holding it to DIM here would fail
+// twelve themes for a line that is doing exactly its job.
+const SEPARATOR = 1.11
 
 // Measured in the renderer. Walks up for the first OPAQUE background and
 // composites the translucent layers back down, because a chip on a card on a
@@ -133,7 +138,7 @@ async function setTheme(page, label) {
 // Leaves a structure diff on screen: its status band is the only one carrying
 // all three counts (added / changed / removed) at once.
 async function loadStructureDiff(page) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page
     .getByPlaceholder('Paste original text here')
     .fill('{\n  "a": 1,\n  "b": 2,\n  "gone": 3\n}')
@@ -141,7 +146,13 @@ async function loadStructureDiff(page) {
     .getByPlaceholder('Paste changed text here')
     .fill('{\n  "a": 9,\n  "b": 2,\n  "added": 4\n}')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await page.getByText('Structure', { exact: true }).click()
+  // The display toggles live behind the View button now.
+  await page
+    .locator('.toolbar')
+    .getByRole('button', { name: /^View\b/ })
+    .click()
+  await page.getByRole('checkbox', { name: 'Structure' }).check()
+  await page.keyboard.press('Escape')
   await page.locator('.status-band').waitFor()
 }
 
@@ -193,7 +204,7 @@ const SURFACES = [
       'star, pinned': ['.sidebar-section .row.pinned .star', DIM],
       'type badge': ['.sidebar-section .row .monogram', DIM],
       'row, hovered': ['.sidebar-section .row:hover .nm', TEXT],
-      'disclosure': ['.sidebar-section .disclosure .nm', TEXT]
+      disclosure: ['.sidebar-section .disclosure .nm', TEXT]
     }
   },
   {
@@ -212,17 +223,49 @@ const SURFACES = [
   },
   {
     name: 'toolbar-actions',
-    // Already on screen. The label is what used to carry these two, so the
-    // glyph now has to do it alone — and a mark, unlike a word, has only the
-    // plate and the keyline behind it.
-    open: (page) => page.locator('.toolbar .btn-square').first().waitFor(),
+    // Already on screen, and labelled: the row only drops to glyphs when it runs
+    // out of room, which at this window size it does not.
+    open: (page) => page.locator('.toolbar .group.actions .btn').first().waitFor(),
     close: async () => {},
     probes: {
-      // One probe carries both: the glyph inherits `color`, the plate's keyline
-      // is the border, and a square that lost either would read as disabled.
-      'square, resting': ['.toolbar .btn-square:not(:disabled)', DIM],
-      'labelled action': ['.toolbar .group.actions .btn:not(.btn-square)', TEXT],
-      'toggle label': ['.toolbar .options label:not(.off)', TEXT]
+      // The word and the plate's keyline together — an action that lost either
+      // reads as disabled, which is the whole reason .btn carries three cues.
+      'action, resting': ['.toolbar .group.actions .btn:not(:disabled)', TEXT],
+      // The repo already holds this exact pair — --text-on-accent over --accent —
+      // to 3.0 (check-theme-depth's `onAccent/accent`), so that contract is what
+      // this probe enforces rather than a stricter one invented here. It sits
+      // below the 4.5 reading floor on dark, solar and meridian; that is a
+      // pre-existing app-wide decision about every primary button, not something
+      // this surface introduced, and reopening it is its own spec.
+      'action, primary': ['.toolbar .group.actions .btn-primary', 3.0],
+      'action, disabled': ['.toolbar .group.actions .btn:disabled', DIM],
+      // The View trigger sits in the same band and must read as the same control.
+      'view trigger': ['.toolbar .anchor .btn', TEXT]
+    }
+  },
+  {
+    name: 'view-menu',
+    // The panel this spec added: a surface that has to LIFT off the toolbar on
+    // all 14, on a shadow that does not exist on seven of them.
+    open: async (page) => {
+      await page
+        .locator('.toolbar')
+        .getByRole('button', { name: /^View\b/ })
+        .click()
+      await page.locator('.popover').waitFor()
+    },
+    close: (page) => page.keyboard.press('Escape'),
+    probes: {
+      // --shadow-rgb is `0 0 0` on every dark theme, so on beacon, matrix and
+      // neon this keyline is the ONLY thing separating the panel from the bar.
+      'panel keyline': ['.popover', SEPARATOR],
+      'row label': ['.popover-row:not(.off) .popover-line', TEXT],
+      // The reason is read as a sentence, so it takes the reading floor — which
+      // is why it is --text-hint and not --text-dim.
+      'row reason': ['.popover-row .popover-why', TEXT],
+      // Unavailable is a state, not text to read: --text-dim at the mark floor.
+      'row, unavailable': ['.popover-row.off .popover-line', DIM],
+      'trigger, open': ['.toolbar .anchor .btn.active', TEXT]
     }
   },
   {

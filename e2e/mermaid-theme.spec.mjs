@@ -301,3 +301,41 @@ test('an Auto diagram redraws when the app theme flips', async ({ app, page }) =
     .poll(() => viewer.locator('.mermaid-diagram .host').getAttribute('data-paper'))
     .toBeNull()
 })
+
+const PAPER_DARK = 'rgb(22, 27, 34)'
+
+// The paper was painted on `.host`, which lives INSIDE the panned-and-zoomed
+// `.transform`, while the `.stage` that CLIPS it kept the app's own --bg. Pinning
+// a diagram against the app's ground therefore produced a floating rectangle of
+// paper: dragging slid it aside and revealed the app surface underneath, and
+// zooming out left it framed by it. The ground belongs to the VIEWPORT, not to
+// the box that moves inside it.
+test('a pinned diagram grounds the whole stage, not a box that pans away', async ({ page }) => {
+  // App stays Light (the default), so pinning Dark is the mismatch — and the
+  // surface that used to show through was white.
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.getByText('Example — Mermaid diagram').hover()
+  await page.getByRole('button', { name: 'View diagram' }).click()
+  const viewer = page.locator('.viewer-backdrop')
+  await expect(viewer.locator('.mermaid-diagram svg').first()).toBeVisible()
+
+  const stage = viewer.locator('.stage')
+  await themeButton(viewer, 'Dark').click()
+  await expect(viewer.locator('.mermaid-diagram .host')).toHaveAttribute('data-paper', 'dark')
+
+  // The clipping viewport itself wears the paper — this is the whole fix.
+  await expect(stage).toHaveCSS('background-color', PAPER_DARK)
+
+  // And prove there is genuinely uncovered stage to look at: drag the diagram
+  // most of the way out of the viewport, the way the bug was reported.
+  const box = await stage.boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width, box.y + box.height, { steps: 10 })
+  await page.mouse.up()
+
+  const moved = await viewer.locator('.transform').boundingBox()
+  expect(moved.x).toBeGreaterThan(box.x) // it really panned off the left edge
+  // Whatever is now under the cursor's old spot is stage, and it is still paper.
+  await expect(stage).toHaveCSS('background-color', PAPER_DARK)
+})

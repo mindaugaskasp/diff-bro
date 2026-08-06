@@ -126,6 +126,18 @@
     linear-gradient(var(--bg) 0 0) padding-box,
     var(--bg);
 }
+/* A pinned diagram grounds the STAGE, because the stage is what clips. The paper
+   used to be painted only on `.host`, which sits inside `.transform` — the box
+   that pans and scales — so a diagram pinned against the app's ground was a
+   rectangle of paper the reader could drag aside to reveal the app surface
+   underneath, and zooming out framed it in the same. Same tokens the host uses,
+   so the two sheets are one colour rather than two that nearly match. */
+.stage[data-paper='light'] {
+  background: var(--diagram-paper-light);
+}
+.stage[data-paper='dark'] {
+  background: var(--diagram-paper-dark);
+}
 .stage:active {
   cursor: grabbing;
 }

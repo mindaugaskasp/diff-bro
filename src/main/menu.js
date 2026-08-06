@@ -57,18 +57,14 @@ function sendToFocused(action) {
   documentWindow()?.webContents.send('menu:action', action)
 }
 
-// Clamped zoom (roughly 60%–250%) so it can never run away.
-const ZOOM_MIN = -2.5
-const ZOOM_MAX = 2.5
-function zoomBy(delta) {
-  const wc = focusedWindow()?.webContents
-  if (!wc) return
-  wc.setZoomLevel(Math.min(Math.max(wc.getZoomLevel() + delta, ZOOM_MIN), ZOOM_MAX))
-}
-function resetZoom() {
-  const wc = focusedWindow()?.webContents
-  if (wc) wc.setZoomLevel(0)
-}
+// Zoom scales the COMPARISON, never the window: setZoomLevel took the toolbar
+// and the sidebar with it, and the bar then ran out of room at the window's own
+// minimum width. The renderer owns the level (uiStore.diffZoom).
+const zoomItem = (key, accelerator, action) => ({
+  label: t(`menu.view.${key}`),
+  accelerator,
+  click: () => sendToFocused(action)
+})
 
 // Suppress AppKit's injected "Start Dictation" (a network service) and "Emoji &
 // Symbols" via their user-default kill switches. (AutoFill / Writing Tools are
@@ -77,6 +73,26 @@ function disableInjectedMacMenuItems() {
   if (process.platform !== 'darwin') return
   systemPreferences.setUserDefault('NSDisabledDictationMenuItem', 'boolean', true)
   systemPreferences.setUserDefault('NSDisabledCharacterPaletteMenuItem', 'boolean', true)
+}
+
+// The four display options, mirroring the renderer's own View menu
+// (src/renderer/src/menus.js displayToggles) — its own function like editMenu
+// and toolsMenu, so installMenu does not carry them inline.
+function displayToggles(sendToFocused) {
+  return [
+    {
+      label: t('menu.view.toggleStructure'),
+      accelerator: 'CmdOrCtrl+Shift+D',
+      click: () => sendToFocused('toggle-structure')
+    },
+    {
+      label: t('menu.view.toggleSplit'),
+      accelerator: 'CmdOrCtrl+\\',
+      click: () => sendToFocused('toggle-split')
+    },
+    { label: t('menu.view.toggleWhitespace'), click: () => sendToFocused('toggle-whitespace') },
+    { label: t('menu.view.toggleFocus'), click: () => sendToFocused('toggle-focus') }
+  ]
 }
 
 export function installMenu() {
@@ -164,16 +180,7 @@ export function installMenu() {
           click: () => sendToFocused('toggle-sidebar')
         },
         { type: 'separator' },
-        {
-          label: t('menu.view.toggleStructure'),
-          accelerator: 'CmdOrCtrl+Shift+D',
-          click: () => sendToFocused('toggle-structure')
-        },
-        {
-          label: t('menu.view.toggleSplit'),
-          accelerator: 'CmdOrCtrl+\\',
-          click: () => sendToFocused('toggle-split')
-        },
+        ...displayToggles(sendToFocused),
         {
           label: t('menu.view.toggleTheme'),
           accelerator: 'CmdOrCtrl+D',
@@ -186,9 +193,9 @@ export function installMenu() {
           click: () => toggleQuickLook()
         },
         { type: 'separator' },
-        { label: t('menu.view.zoomIn'), accelerator: 'CmdOrCtrl+=', click: () => zoomBy(0.5) },
-        { label: t('menu.view.zoomOut'), accelerator: 'CmdOrCtrl+-', click: () => zoomBy(-0.5) },
-        { label: t('menu.view.resetZoom'), accelerator: 'CmdOrCtrl+0', click: resetZoom },
+        zoomItem('zoomIn', 'CmdOrCtrl+=', 'zoom-in'),
+        zoomItem('zoomOut', 'CmdOrCtrl+-', 'zoom-out'),
+        zoomItem('resetZoom', 'CmdOrCtrl+0', 'zoom-reset'),
         ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : [])
       ]
     },

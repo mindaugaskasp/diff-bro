@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 contextBridge.exposeInMainWorld('api', {
   openFile: (side, format) => ipcRenderer.invoke('file:open', side, format),
@@ -80,17 +80,6 @@ contextBridge.exposeInMainWorld('api', {
   exportSnippets: (bundle, passphrase, defaultName) =>
     ipcRenderer.invoke('snippets:export', bundle, passphrase, defaultName),
   importSnippets: (passphrase) => ipcRenderer.invoke('snippets:import', passphrase),
-  // Used by the custom in-app menu bar (Windows/Linux).
-  zoom: (dir) => {
-    if (dir === 0) {
-      webFrame.setZoomLevel(0)
-      return
-    }
-    // Clamp so zoom can't run away: roughly 60%–250% (each step is 0.5 of a
-    // Chromium zoom level).
-    const next = webFrame.getZoomLevel() + dir * 0.5
-    webFrame.setZoomLevel(Math.min(Math.max(next, -2.5), 2.5))
-  },
   toggleDevTools: () => ipcRenderer.invoke('app:toggleDevTools'),
   isPackaged: () => ipcRenderer.invoke('app:isPackaged'),
   quit: () => ipcRenderer.invoke('app:quit'),

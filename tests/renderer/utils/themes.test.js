@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   THEMES,
@@ -53,6 +55,31 @@ describe('themes registry', () => {
         expect(t.swatch[k]).toMatch(/^#[0-9a-f]{6}$/i)
       }
     }
+  })
+})
+
+// Native controls (checkboxes, selects, scrollbars) take their appearance from
+// color-scheme, which is declared per theme in themes.css beside the palette it
+// has to agree with. `dark` in this registry is the other half of that fact, so
+// the two can drift — and while nothing declared it at all, every dark theme
+// painted a ticked checkbox as a light-mode box on a near-black toolbar.
+describe('color-scheme agrees with the registry', () => {
+  // Vitest runs from the repo root; import.meta.url is not a file URL here.
+  const css = readFileSync(join(process.cwd(), 'src/renderer/src/styles/themes.css'), 'utf8')
+  // The bare :root carries the Light palette and is the pre-JS default.
+  const declared = (id) => {
+    const selector = id === DEFAULT_THEME ? ':root \\{' : `:root\\[data-theme='${id}'\\] \\{`
+    const block = new RegExp(`${selector}([^}]*)\\}`).exec(css)
+    return block ? /color-scheme:\s*(light|dark)/.exec(block[1])?.[1] : undefined
+  }
+
+  it('declares one for every theme in the registry', () => {
+    expect(THEMES.filter((t) => !declared(t.id)).map((t) => t.id)).toEqual([])
+  })
+
+  it('matches each theme dark/light flag', () => {
+    const wrong = THEMES.filter((t) => declared(t.id) !== (t.dark ? 'dark' : 'light'))
+    expect(wrong.map((t) => `${t.id}: ${declared(t.id)}`)).toEqual([])
   })
 })
 

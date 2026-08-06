@@ -138,7 +138,7 @@ test('hovering an icon button shows a visible tooltip', async ({ page }) => {
 // bare ✕ rather than the trash the rest of the app uses, and non-expiring diffs
 // carried a "kept" label that said nothing a blank space would not.
 test('saved-diff actions stay out of the way until the row is hovered', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('a')
   await page.getByPlaceholder('Paste changed text here').fill('b')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -247,7 +247,7 @@ const SURFACE = (buttonSel, groundSel) => `(() => {
 // A ghost button had no fill, so its contrast against the band was exactly 1.00
 // — the same nothing a disabled control shows.
 test('a resting toolbar button has a surface of its own', async ({ page }) => {
-  const paste = page.getByRole('button', { name: 'Paste text' })
+  const paste = page.getByRole('button', { name: 'Paste mode' })
   await expect(paste).toBeEnabled()
 
   const s = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
@@ -278,7 +278,7 @@ test('a disabled toolbar button differs from a resting one by more than opacity'
 // AppToolbar bound :class="{ active: inPaste }" for a long time with no
 // .btn.active rule anywhere — the toggle had no on-state at all.
 test('the paste-mode toggle shows an on-state', async ({ page }) => {
-  const toggle = page.getByRole('button', { name: 'Paste text' })
+  const toggle = page.getByRole('button', { name: 'Paste mode' })
   const before = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
 
   await toggle.click()

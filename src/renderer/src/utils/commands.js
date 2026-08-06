@@ -4,7 +4,7 @@
 // into a feature to satisfy a menu item.
 
 import { TOOLS } from './tools'
-import { showsSplitView } from './viewChrome'
+import { showsSplitView, showsWhitespaceToggle } from './viewChrome'
 import { MAX_TABS } from './tabs'
 import { tabsFullMessage } from './cliCommand'
 
@@ -58,7 +58,23 @@ export const COMMANDS = {
   'toggle-structure': ({ diff }) => {
     if (diff.canCompareStructure) diff.semanticView = !diff.semanticView
   },
+  // Behind the View menu these two are equal citizens of the other pair, so
+  // they get the menu and the palette too. They had neither while they were
+  // checkboxes, which made AppToolbar's "every action has a menu twin" false.
+  // Guarded here, where every surface meets, exactly like toggle-split.
+  'toggle-whitespace': ({ diff }) => {
+    if (showsWhitespaceToggle(diff)) diff.ignoreTrimWhitespace = !diff.ignoreTrimWhitespace
+  },
+  'toggle-focus': ({ diff }) => {
+    if (diff.comparableKind === 'diagram') diff.diagramFocus = !diff.diagramFocus
+  },
   'toggle-theme': ({ settings }) => settings.toggleTheme(),
+  // Zoom belongs to the comparison, not to the window: Chromium's own scaled the
+  // toolbar and sidebar with the diff, which is what pushed the bar past the
+  // window's minimum width.
+  'zoom-in': ({ ui }) => ui.zoomDiff(1),
+  'zoom-out': ({ ui }) => ui.zoomDiff(-1),
+  'zoom-reset': ({ ui }) => ui.zoomDiff(0),
   'import-shared': ({ share }) => share.importShared(),
   'export-pubkey': ({ share }) => (share.showShareKeyDialog = true),
   'rotate-key': ({ share }) => (share.showRotateKeyDialog = true),

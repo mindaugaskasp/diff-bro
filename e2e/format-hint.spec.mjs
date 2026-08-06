@@ -5,7 +5,7 @@ import { test, expect } from './fixtures.mjs'
 // proves the single merged banner renders above the diff, formats (one side or
 // both), and then clears itself — never two stacked strips.
 async function pasteCompare(page, left, right) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

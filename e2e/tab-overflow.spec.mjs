@@ -11,7 +11,7 @@ const chevrons = (page) => page.locator('.diff-tabs .scroll')
 async function addTabs(page, count) {
   for (let i = 0; i < count; i++) {
     if (i > 0) await bar(page).getByRole('button', { name: 'New comparison' }).click()
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill(`left ${i}`)
     await page.getByPlaceholder('Paste changed text here').fill(`right ${i}`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()

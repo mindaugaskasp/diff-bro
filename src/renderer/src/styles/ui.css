@@ -26,6 +26,24 @@
 .band-row {
   min-height: var(--band-row);
 }
+/* A cluster of controls inside a band, so the toolbar reads as groups rather
+   than one glued-together row. Shared rather than scoped to AppToolbar: the
+   action cluster is rendered by ToolbarOverflow, whose template has two roots
+   (the row and its Teleport), and Vue cannot put a parent's scope id on a
+   fragment — so AppToolbar's scoped copy stopped matching it and the row
+   silently fell back to `display: block` with no gap at all. Descendant-scoped
+   to `.toolbar` because `.group` is also KeyboardShortcutsDialog's section
+   class. */
+.toolbar .group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+/* Icon buttons sit tighter than labelled ones. */
+.toolbar .group.actions {
+  gap: 6px;
+}
 /* The neutral workhorse — every action that is not its group's one affirmative
    choice. It must read as pressable AT REST, on three axes: face, keyline, lift.
    Flat + dim is the language :disabled speaks, which is why the toolbar looked
@@ -67,9 +85,14 @@
   background: var(--btn-face-press);
   box-shadow: none;
 }
-/* A toggle that is ON — AppToolbar bound .active for a long time with no rule. */
+/* A toggle that is ON — AppToolbar bound .active for a long time with no rule.
+   The face steps to --btn-face-hover, NOT --btn-face-press: press is --text at
+   30%, which on nord lands close enough to the ink that the label itself scores
+   3.96 — under the reading floor, in a state that PERSISTS for as long as a
+   popover is open, unlike the momentary :active it borrowed the face from. The
+   accent keyline is what says "open"; the face only has to say "not at rest". */
 .btn.active {
-  background: var(--btn-face-press);
+  background: var(--btn-face-hover);
   border-color: var(--accent);
 }
 /* Off is FLAT — no plate, no lift, weak keyline. Opacity alone left enabled and
@@ -180,6 +203,130 @@
   color: var(--danger-text);
   filter: brightness(1.08);
 }
+/* --- Popover layer ------------------------------------------------------
+   A panel anchored to a button, dismissed by Escape or a press outside — the
+   View options and the toolbar's overflow menu. Shared because there were
+   already TWO hand-rolled copies of this shell (TagPickerPopover.css,
+   TagManagePopover.css) and a third scoped one is how the sidebar ended up with
+   three different "action" buttons. Those two are candidates for adopting this;
+   they are not migrated here because they position themselves against the
+   sidebar and sit above the dialog layer, which is their own change.
+
+   Surface is --bg-elevated, NOT --bg-panel: --bg-raised resolves to --bg-panel
+   on 13 of 14 themes, which is the toolbar's own colour, so a panel hanging off
+   the bar would differ from it by nothing at all. Mixing the panel toward the
+   text lifts it on every theme by construction.
+
+   The 1px --border is load-bearing, not trim. --shadow-rgb is `0 0 0` on all
+   seven dark themes, so --shadow-2 over beacon (#000000), matrix (#020a04) and
+   neon (#090d18) lands on a ground it cannot darken and does not exist; the
+   keyline is the only separation there. contrast and beacon carry a hard
+   keyline by contract anyway.
+
+   --shadow-2 and not --shadow-3: tokens.css names level 2 "a raised element
+   (popovers, cards…)" and level 3 the modal layer. The two older copies reach
+   for 3, which over-states them.
+
+   Stacking: the backdrop sits at 20 and the panel at 21, so both stay UNDER the
+   dialog layer (30) — a popover must never outrank a modal. The backdrop is
+   ABOVE every other toolbar control, because `.toolbar` establishes no stacking
+   context: a press on a second trigger therefore dismisses this panel rather
+   than opening that one, so the two popovers can never both be open. Only the
+   OPEN anchor rises past it, so its own trigger stays hoverable and pressable. */
+.popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+.anchor {
+  position: relative;
+  display: inline-flex;
+}
+/* The OPEN anchor rises above the backdrop, and it has to carry its trigger up
+   with it: at `z-index: auto` only the panel (21) cleared the backdrop, so the
+   button underneath was covered by it. Hover and `cursor: pointer` then went to
+   the backdrop instead, and the control that was plainly still there stopped
+   reading as pressable the moment it was pressed. Its own press still closes the
+   panel because the anchor — not the backdrop — receives the click. */
+.anchor:has(> .popover) {
+  z-index: 21;
+}
+.popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  min-width: 200px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+/* One row: a menu entry, or a checkbox and its name. Height from the control
+   scale, never grown out of padding. */
+.popover-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-md);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.popover-row:hover:not(:disabled):not(.off) {
+  background: var(--bg-hover);
+}
+.popover-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+/* Unavailable: dimmed ink and the browser's own disabled box, with the reason
+   below it — not a lower opacity on the same colours, which reads as "loading".
+   --text-hint, NOT --text-dim: dim's 3.0 floor is held against --bg-panel
+   (check-theme-depth's `dim/panel`), and this panel is --bg-elevated, which is
+   the panel mixed 12% toward the text. Dim ink loses that margin on the way up —
+   `make theme-sweep` measured 2.92 on nord and 2.82 on sepia, both under the
+   non-text floor, for a word the reader still has to identify. */
+.popover-row:disabled,
+.popover-row.off {
+  color: var(--text-hint);
+  cursor: not-allowed;
+}
+.popover-row.off input {
+  cursor: not-allowed;
+}
+/* A row that carries a reason grows to two lines, so it stacks instead. */
+.popover-row.stacked {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0;
+  padding-block: var(--space-1);
+}
+.popover-why {
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+  white-space: normal;
+}
+/* The toolbar's checkboxes had neither of these: no color-scheme meant a
+   light-appearance box on all seven dark themes, and no accent-color meant a
+   ticked box wore the OS accent instead of the theme's. */
+.popover input[type='checkbox'] {
+  accent-color: var(--accent);
+  flex: none;
+}
+
 /* --- Dialog layer -------------------------------------------------------
    Every modal is the same box: a dimmed backdrop, a panel with a header row,
    optional note, body, and a right-aligned action row. A dialog's own stylesheet

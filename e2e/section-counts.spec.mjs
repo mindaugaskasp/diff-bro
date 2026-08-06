@@ -4,7 +4,7 @@ import { test, expect } from './fixtures.mjs'
 // the answer to "why is this empty", so it stays visible showing zero rather
 // than leaving the reader to guess.
 async function saveTaggedDiff(page, name, tag) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('before')
   await page.getByPlaceholder('Paste changed text here').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

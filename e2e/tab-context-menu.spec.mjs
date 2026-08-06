@@ -16,7 +16,7 @@ async function savedTabs(page, count) {
     if (i > 0) {
       await page.locator('.diff-tabs').getByRole('button', { name: 'New comparison' }).click()
     }
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill(`left ${i}`)
     await page.getByPlaceholder('Paste changed text here').fill(`right ${i}`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -95,7 +95,7 @@ test('Close All returns to a single blank comparison, not an empty window', asyn
   await item(page, 'Close All').click()
   await expect(tabs(page)).toHaveCount(1)
   await expect(page.locator('.diff-tabs')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Paste text' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Paste mode' })).toBeVisible()
 })
 
 // The reported trap: the discard dialog names ONE comparison, so a bulk close
@@ -104,7 +104,7 @@ test('a bulk close over unsaved work asks once, and counts', async ({ page }) =>
   await savedTabs(page, 1)
   for (const text of ['first', 'second']) {
     await page.locator('.diff-tabs').getByRole('button', { name: 'New comparison' }).click()
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill(text)
     await page.getByPlaceholder('Paste changed text here').fill(`${text} changed`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()

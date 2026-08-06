@@ -7,6 +7,8 @@ import { useDiffStore } from '../stores/diffStore'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { SD_ROW_H } from '../utils/virtualRows'
+import { zoomedPx } from '../utils/diffZoom'
+import { useUiStore } from '../stores/uiStore'
 import { visibleStructureRows } from '../utils/structureRows'
 import AppIcon from './AppIcon.vue'
 
@@ -24,7 +26,11 @@ const rows = ref(null)
 useCaptureRegion(rows)
 // Only the visible slice reaches the DOM; the spacers hold the scroll height.
 // Rows are a fixed height by CSS, which is what makes the arithmetic exact.
-const win = useVirtualRows(rows, () => shown.value.length, SD_ROW_H)
+const ui = useUiStore()
+// The row height moves with the zoom, or the virtualization's spacers describe a
+// list of a different size than the one being drawn.
+const rowH = computed(() => zoomedPx(SD_ROW_H, ui.diffZoom))
+const win = useVirtualRows(rows, () => shown.value.length, rowH)
 const windowed = computed(() => shown.value.slice(win.value.start, win.value.end))
 
 const MARK = { added: '+', removed: '−', changed: '~', same: '' }
@@ -52,7 +58,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
       class="sd-rows"
       role="list"
       :aria-label="$t('structureDiffViewer.structuralDifferences')"
-      :style="{ '--sd-row-h': `${SD_ROW_H}px` }"
+      :style="{ '--sd-row-h': `${rowH}px` }"
     >
       <div class="sd-pad" :style="{ height: `${win.padTop}px` }"></div>
       <div

@@ -329,4 +329,31 @@
  * @property {boolean} pinned   heads the list, and marks itself
  */
 
+/**
+ * The slice of comparison state the toolbar's document actions read — a plain
+ * snapshot, never the store, so `utils/toolbarActions.js` stays pure.
+ * @typedef {object} ToolbarState
+ * @property {boolean} isStreamed      too large to save, share or copy
+ * @property {boolean} hasUnsavedWork
+ * @property {boolean} canSave
+ * @property {boolean} ready
+ * @property {string}  comparableKind  'text' | 'diagram' | 'spreadsheet' | …
+ * @property {boolean} isSavedDiff     a vault-backed tab: no paste toggle, no clear
+ * @property {boolean} canClear
+ * @property {boolean} isPaste         paste mode rather than file mode
+ * @property {boolean} canExportImage
+ * @property {boolean} isSpreadsheet
+ */
+
+/**
+ * One document action, drawn both inline and in the overflow menu.
+ * @typedef {object} ToolbarAction
+ * @property {string}  id        also the `utils/commands.js` id it runs
+ * @property {string}  labelKey
+ * @property {string}  tipKey
+ * @property {string}  [icon]    an ICONS key; absent means a labelled button
+ * @property {boolean} disabled
+ * @property {boolean} pinned    never folds into the overflow menu
+ */
+
 export {}

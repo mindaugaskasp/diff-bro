@@ -182,10 +182,10 @@ export const useDiffStore = defineStore('diff', {
       )
     },
     // What the toggle calls itself: delimited text becomes a grid, everything
-    // else a tree.
-    structureLabel() {
-      if (this.canCompareDiagram) return 'Diagram'
-      return this.delimitedFormat ? 'Grid' : 'Structure'
+    // else a tree. A KEY — as a word it stayed English in every locale.
+    structureLabelKey() {
+      if (this.canCompareDiagram) return 'appToolbar.structureDiagram'
+      return this.delimitedFormat ? 'appToolbar.structureGrid' : 'appToolbar.structure'
     },
     structureDiff() {
       const kind = this.structuredFormat

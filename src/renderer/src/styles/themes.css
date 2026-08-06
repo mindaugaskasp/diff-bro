@@ -86,6 +86,11 @@
   --syn-number: #8b4e18;
   --syn-property: #226587;
   --syn-comment: #5f6267;
+  /* Native controls (checkboxes, selects, scrollbars) follow the palette.
+     Declared per theme beside the colours it must agree with, and held to
+     themes.js's `dark` flag by tests/renderer/utils/themes.test.js — without it
+     a ticked checkbox painted a light-mode box on every dark theme. */
+  color-scheme: light;
 }
 
 /* Light opts into the FLOATING-CANVAS surface model (see the surface-role
@@ -131,6 +136,7 @@
   --syn-number: #da7c2b;
   --syn-property: #3b9dce;
   --syn-comment: #8d9096;
+  color-scheme: dark;
 }
 
 /* Solar — warm, high-key light; vivid orange accent, amber favourites. */
@@ -158,6 +164,7 @@
   --syn-number: #8f5019;
   --syn-property: #226587;
   --syn-comment: #62656a;
+  color-scheme: light;
 }
 
 /* Neon — electric cyan and neon add/remove on deep navy. */
@@ -186,6 +193,7 @@
   --syn-number: #da7f2f;
   --syn-property: #3f9fcf;
   --syn-comment: #8d9096;
+  color-scheme: dark;
 }
 
 /* Nord — the low-saturation arctic palette; calm frost-blue accent on slate,
@@ -218,6 +226,7 @@
   --syn-number: #e8bea1;
   --syn-property: #9ccdde;
   --syn-comment: #bcbec2;
+  color-scheme: dark;
 }
 
 /* Sepia — a deep, saturated PARCHMENT (distinct from Solar's pale sunny cream):
@@ -247,6 +256,7 @@
   --syn-number: #72391d;
   --syn-property: #224b67;
   --syn-comment: #4e4b46;
+  color-scheme: light;
 }
 
 /* Dim — the warm counterpart to the cool darks (Dark/Neon/Nord): a warm
@@ -277,6 +287,7 @@
   --syn-number: #d58258;
   --syn-property: #629fcb;
   --syn-comment: #969188;
+  color-scheme: dark;
 }
 
 /* Beacon — the dark sibling of Contrast: an accessibility-grade dark aimed at
@@ -307,6 +318,7 @@
   --syn-number: #e09452;
   --syn-property: #60afd7;
   --syn-comment: #a0a2a7;
+  color-scheme: dark;
 }
 
 /* Meridian — a low-glare daytime coding light (the Solarized-Light lane): a
@@ -337,6 +349,7 @@
   --syn-number: #8f5019;
   --syn-property: #226587;
   --syn-comment: #62656a;
+  color-scheme: light;
 }
 
 /* Linen — a quiet warm light between Solar's vivid sun and Sepia's saturated
@@ -367,6 +380,7 @@
   --syn-number: #864b18;
   --syn-property: #216283;
   --syn-comment: #5f6267;
+  color-scheme: light;
 }
 
 /* Bloom — the only rose/plum accent in the set, kept low-saturation and
@@ -396,6 +410,7 @@
   --syn-number: #864b18;
   --syn-property: #205f7e;
   --syn-comment: #5b5d62;
+  color-scheme: light;
 }
 
 /* Nyan — playful but usable: a readable deep-violet base with hot-pink accent
@@ -428,6 +443,7 @@
   --syn-number: #b38a0f;
   --syn-property: #aa7de8;
   --syn-comment: #94849a;
+  color-scheme: dark;
 }
 
 /* Matrix — phosphor green on near-black, like a CRT terminal. Pairs with the
@@ -457,6 +473,7 @@
   --syn-number: #789c0d;
   --syn-property: #2e9e8b;
   --syn-comment: #768f76;
+  color-scheme: dark;
 }
 
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
@@ -488,4 +505,5 @@
   --syn-number: #6c3d13;
   --syn-property: #194c66;
   --syn-comment: #494b50;
+  color-scheme: light;
 }

@@ -27,3 +27,11 @@
      viewer uses — so a diagram always reads as a diagram. */
   background: var(--bg);
 }
+/* A pinned diagram grounds the padded BODY, not just the host inside it — the
+   8px inset was otherwise a gutter of the app's ground around the sheet. */
+.mmd-preview-body[data-paper='light'] {
+  background: var(--diagram-paper-light);
+}
+.mmd-preview-body[data-paper='dark'] {
+  background: var(--diagram-paper-dark);
+}

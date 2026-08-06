@@ -1,0 +1,36 @@
+/* The View button and its panel (ViewOptionsMenu.vue). The panel shell — surface,
+   keyline, rows — is the shared .popover layer in ui.css; only what is genuinely
+   local lives here. */
+
+/* Wide enough that the longest reason wraps to two lines rather than five. */
+.popover {
+  min-width: 260px;
+}
+/* The checkbox and its name stay on one line when a reason wraps underneath. */
+.popover-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+}
+.popover-row.stacked .popover-line {
+  min-height: auto;
+  padding-top: var(--space-1);
+}
+/* How many options the reader has changed from their defaults. Height comes from
+   --chip-h, never from padding — that is how the Esc chip drifted to 19px beside
+   a 26px button. Face is the theme's own ink at 30%, the same step .btn.active
+   takes: --accent as a fill under a label scores under 4.5:1 on five themes. */
+.count {
+  min-width: var(--chip-h);
+  height: var(--chip-h);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--btn-face-press);
+  color: var(--text);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

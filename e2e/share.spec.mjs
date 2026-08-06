@@ -11,7 +11,7 @@ import { test, expect } from './fixtures.mjs'
 // process for this install's fingerprint, which creates its keypair in
 // safeStorage — a path jsdom can't reach.
 test('sharing with no trusted keys walks through first-time key setup', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('before')
   await page.getByPlaceholder('Paste changed text here').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

@@ -45,8 +45,11 @@ test('the repair is what gets saved', async ({ app, page }) => {
 
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
   await app.evaluate(({ clipboard }) => clipboard.clear())
-  await view.getByRole('button', { name: 'Copy', exact: true }).click()
-  await expect(view.getByRole('button', { name: 'Copied' })).toBeVisible()
+  const copy = view.getByRole('button', { name: 'Copy', exact: true })
+  await copy.click()
+  // The NAME is stable across the flash — only the visible word swaps — so the
+  // acknowledgement is read off the text, not off a second accessible name.
+  await expect(copy).toHaveText(/Copied/)
 
   const saved = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(saved).toContain('A[Start] --> B[End]')

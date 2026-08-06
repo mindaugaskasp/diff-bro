@@ -6,6 +6,9 @@ test-results/
 # Traces copied out of test-results/ before the next run wipes it (see `make e2e`).
 e2e-failures/
 playwright-report/
+# Both agent settings files stay local: the permission allowlist is a statement
+# about one machine's trust, not about the project.
+.claude/settings.json
 .claude/settings.local.json
 # Agent worktrees are whole checkouts of this repo nested inside it.
 .claude/worktrees/

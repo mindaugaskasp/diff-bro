@@ -8,14 +8,20 @@ import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { isDarkTheme } from '../utils/themes'
 import { diffEditorOptions } from '../utils/diffEditorOptions'
+import { zoomedPx } from '../utils/diffZoom'
 import { diffLineStats } from '../utils/diffStats'
 import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
 import AppIcon from './AppIcon.vue'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useUiStore } from '../stores/uiStore'
 
 const store = useDiffStore()
 
 const settings = useSettingsStore()
+const ui = useUiStore()
+let baseFont = 0
+const applyZoom = (zoom) =>
+  baseFont && editor?.updateOptions({ fontSize: zoomedPx(baseFont, zoom) })
 const container = ref(null)
 
 let editor = null
@@ -46,6 +52,10 @@ onMounted(() => {
       ignoreTrimWhitespace: store.ignoreTrimWhitespace
     })
   )
+  // Monaco's default size is platform-specific, so the resting size is whatever
+  // it just chose — read once, before any zoom has moved it.
+  baseFont = editor.getModifiedEditor().getOption(monaco.editor.EditorOption.fontInfo).fontSize
+  applyZoom(ui.diffZoom)
   editor.onDidUpdateDiff(() => {
     const stats = diffLineStats(editor.getLineChanges())
     store.stats = stats
@@ -68,6 +78,7 @@ watch(
   () => settings.theme,
   (theme) => monaco.editor.setTheme(isDarkTheme(theme) ? 'vs-dark' : 'vs')
 )
+watch(() => ui.diffZoom, applyZoom)
 
 onBeforeUnmount(() => {
   setDiffScroller(null)

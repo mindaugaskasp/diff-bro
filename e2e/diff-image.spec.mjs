@@ -14,7 +14,7 @@ const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 // point, and only a SAVED diff has one.
 async function saveDiff(page, name, texts) {
   const [left, right] = texts ?? ['alpha\nbravo\ncharlie', 'alpha\nBRAVO!\ncharlie']
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -81,7 +81,7 @@ test('the screenshot is of the saved diff, and excludes the app chrome', async (
     .locator('.diff-tabs')
     .getByRole('button', { name: 'New comparison', exact: true })
     .click()
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('zulu')
   await page.getByPlaceholder('Paste changed text here').fill('zulu\nyankee')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -242,7 +242,7 @@ test('the exported picture actually carries the diff highlighting', async ({ app
 // own selection geometry, which jsdom cannot produce — only a real editor knows
 // where line 7 sits, so this is the one place the feature is actually verified.
 async function pasteCompare(page, left, right) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -414,7 +414,7 @@ test('two genuinely identical sides still say so', async ({ page }) => {
 // being photographed. `.capturing` cannot reach it either: the tooltip is
 // teleported to <body>, outside the region's element tree.
 test('a hovering tooltip is not photographed with the diff', async ({ app, page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('alpha\nbeta')
   await page.getByPlaceholder('Paste changed text here').fill('alpha\nGAMMA')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

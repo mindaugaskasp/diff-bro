@@ -285,9 +285,16 @@ async function main() {
     writeFileSync(MMD_A, MMD_BEFORE)
     writeFileSync(MMD_B, MMD_AFTER)
     await loadPair(app, page, MMD_A, MMD_B)
+    // Both toggles live behind the View button now; one visit sets both, and the
+    // panel is closed again so it is not in the frame.
+    await page
+      .locator('.toolbar')
+      .getByRole('button', { name: /^View\b/ })
+      .click()
     await page.getByRole('checkbox', { name: /Diagram/i }).check()
     // Union view: one layout carrying both revisions is the thing worth showing.
     await page.getByRole('checkbox', { name: 'Split view' }).uncheck()
+    await page.keyboard.press('Escape')
     await page.locator('.dg-stage svg').first().waitFor({ state: 'visible' })
     await page.waitForTimeout(1200)
     await shoot(page, 'diagram-diff', want)

@@ -124,7 +124,7 @@ flowchart LR
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/screenshots/diagram-diff.png" alt="Two Mermaid files compared as one diagram carrying both revisions: added nodes and edges in solid green, a removed node and its edges dashed in red, unchanged nodes as plain hairlines, and a rail listing every changed node and edge beside the picture">
+      <img src="docs/screenshots/diagram-diff.png" alt="Two Mermaid files compared as one diagram carrying both revisions: added nodes and edges in solid green, a removed node and its edges dashed in red, unchanged nodes as plain hairlines, a legend naming each status, and a status band counting the changed nodes and edges">
       <p align="center"><em>Mermaid files compare as a picture, not as text.</em></p>
     </td>
     <td width="50%" valign="top"></td>

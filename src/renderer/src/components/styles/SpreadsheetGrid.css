@@ -1,17 +1,27 @@
 .grid {
   border-collapse: collapse;
-  font-size: var(--font-md);
+  /* Cmd+/- scale the comparison, not the window — App.vue sets --diff-zoom on
+     .content and Monaco reads the same level through diffEditorOptions. */
+  font-size: calc(var(--font-md) * var(--diff-zoom, 1));
   font-variant-numeric: tabular-nums;
   table-layout: auto;
 }
 .grid th,
 .grid td {
   border: 1px solid var(--border);
-  padding: 3px var(--space-3);
+  padding: 0 var(--space-3);
   text-align: left;
   white-space: nowrap;
   color: var(--text);
-  height: 24px;
+  /* The virtualization computes its spacers from this exact number, so the row
+     the reader sees and the row the arithmetic assumes must be the SAME one.
+     It used to be a hardcoded 24px beside a GRID_ROW_H of 24 in
+     utils/virtualRows.js — two copies of one fact, which only stayed true while
+     nothing moved either. The component now sets --grid-row-h from the constant
+     AND the diff's zoom, and this reads it. line-height is pinned for the same
+     reason: a taller line would push the row past the height declared here. */
+  height: var(--grid-row-h);
+  line-height: 1;
 }
 .grid thead th {
   position: sticky;

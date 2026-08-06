@@ -1,4 +1,4 @@
-import { test, expect, openMenu, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openMenu, openViewMenu, setViewOption, stubOpenDialog } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -68,9 +68,7 @@ test('reordered keys are a text diff but not a structural one', async ({ app, pa
     // As text, the two files differ line for line.
     await expect(page.locator('.monaco-diff-editor')).toBeVisible()
 
-    const structure = page.getByRole('checkbox', { name: 'Structure' })
-    await expect(structure).toBeVisible()
-    await structure.check()
+    await setViewOption(page, 'Structure')
 
     await expect(page.locator('.structure-diff')).toBeVisible()
     await expect(page.getByText(/the same data/)).toBeVisible()
@@ -86,7 +84,7 @@ test('a structural change is reported on its own key, with both values', async (
   )
   try {
     await loadPair(app, page, left, right)
-    await page.getByRole('checkbox', { name: 'Structure' }).check()
+    await setViewOption(page, 'Structure')
 
     const changed = page.locator('.sd-row.changed', { hasText: 'host' })
     await expect(changed).toBeVisible()
@@ -105,23 +103,20 @@ test('a structural change is reported on its own key, with both values', async (
 })
 
 // It used to be REMOVED here, which re-flowed the toggle row whenever a
-// comparison changed shape. It now keeps its slot and greys out, so nothing
-// moves and the tip says why it cannot act.
-test('the structure toggle is disabled when the two sides are not both structured', async ({
+// comparison changed shape. It keeps its slot and greys out instead, so nothing
+// moves. The wording of the reason belongs to toolbar-view-menu.spec.mjs.
+test('the structure toggle keeps its slot when the two sides are not both structured', async ({
   page
 }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('just some prose')
   await page.getByPlaceholder('Paste changed text here').fill('some other prose')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
-  const toggle = page.getByRole('checkbox', { name: 'Structure' })
+  const panel = await openViewMenu(page)
+  const toggle = panel.getByRole('checkbox', { name: 'Structure' })
   await expect(toggle).toBeVisible()
   await expect(toggle).toBeDisabled()
-  await expect(page.locator('.options label', { hasText: 'Structure' })).toHaveAttribute(
-    'data-tip',
-    /no structured view/
-  )
 })
 
 // The toolbar's +/− are Monaco's line counts. Switching to the structural view
@@ -134,13 +129,13 @@ test('the line counts do not linger over the structural view', async ({ app, pag
     // The text diff reports its line counts.
     await expect(page.locator('.diff-viewer .status-band')).toBeVisible()
 
-    await page.getByRole('checkbox', { name: 'Structure' }).check()
+    await setViewOption(page, 'Structure')
     await expect(page.locator('.structure-diff')).toBeVisible()
     // Only the structural totals remain — one comparison, one set of numbers.
     await expect(page.locator('.diff-viewer .status-band')).toHaveCount(0)
     await expect(page.locator('.status-band')).toContainText('1 changed')
 
-    await page.getByRole('checkbox', { name: 'Structure' }).uncheck()
+    await setViewOption(page, 'Structure', false)
     await expect(page.locator('.diff-viewer .status-band')).toBeVisible()
   } finally {
     rmSync(dir, { recursive: true, force: true })
@@ -153,7 +148,7 @@ test('the structural view exposes a valid accessible structure', async ({ app, p
   const { dir, left, right } = jsonFiles('{"a":1}', '{"a":2}')
   try {
     await loadPair(app, page, left, right)
-    await page.getByRole('checkbox', { name: 'Structure' }).check()
+    await setViewOption(page, 'Structure')
     await expect(page.locator('.structure-diff')).toBeVisible()
 
     const bad = await page.evaluate(
@@ -175,7 +170,7 @@ test('a structural comparison can still be exported as an image', async ({ app, 
   const { dir, left, right } = jsonFiles('{"a":1}', '{"a":2}')
   try {
     await loadPair(app, page, left, right)
-    await page.getByRole('checkbox', { name: 'Structure' }).check()
+    await setViewOption(page, 'Structure')
     await expect(page.locator('.structure-diff')).toBeVisible()
 
     await page.getByRole('button', { name: /Capture/ }).click()
@@ -196,9 +191,7 @@ test('two YAML files compare as data, not as re-indented lines', async ({ app, p
   writeFileSync(right, 'image:\n    tag: v2\n    repo: api\nreplicas: 2\n')
   try {
     await loadPair(app, page, left, right)
-    const structure = page.getByRole('checkbox', { name: 'Structure' })
-    await expect(structure).toBeVisible()
-    await structure.check()
+    await setViewOption(page, 'Structure')
 
     await expect(page.locator('.structure-diff')).toBeVisible()
     // Re-indented and reordered, so only the real change is reported.

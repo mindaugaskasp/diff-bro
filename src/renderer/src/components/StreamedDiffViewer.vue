@@ -16,7 +16,7 @@ const { rows, window: view, rowHeight, total, summary, error, loading } = useStr
 
 useCaptureRegion(box)
 
-const rowStyle = computed(() => ({ height: `${rowHeight}px` }))
+const rowStyle = computed(() => ({ height: `${rowHeight.value}px` }))
 const identical = computed(
   () => !!summary.value && summary.value.additions === 0 && summary.value.deletions === 0
 )

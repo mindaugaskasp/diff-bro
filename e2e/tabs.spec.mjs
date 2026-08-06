@@ -6,7 +6,7 @@ import { MAX_TABS } from '../src/renderer/src/utils/tabs.js'
 // real Monaco there to count or to swap models on.
 
 async function compare(page, left, right) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -124,7 +124,7 @@ test('closing the last comparison empties it rather than the window', async ({ p
     .click()
   await expect(tabs(page)).toHaveCount(1)
   await expect(tabs(page).first()).toContainText('Untitled')
-  await expect(page.getByRole('button', { name: 'Paste text' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Paste mode' })).toBeVisible()
 })
 
 test('a saved diff is focused rather than opened twice', async ({ page }) => {
@@ -423,7 +423,7 @@ test('the close confirmation calls a renamed tab by its name', async ({ page }) 
 // "Changed" pane left the tab reading Untitled while the "Original" pane
 // retitled it immediately.
 test('a tab retitles from either paste pane', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await expect(tabs(page).first()).toContainText('Untitled')
 
   await page.getByPlaceholder('Paste changed text here').fill('right-hand side only')

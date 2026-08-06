@@ -9,7 +9,7 @@ const addTab = (page) =>
   page.locator('.diff-tabs').getByRole('button', { name: 'New comparison', exact: true })
 
 async function pasteNamed(page, { left, right, leftName, rightName }) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   const names = page.getByPlaceholder('Name this side…')

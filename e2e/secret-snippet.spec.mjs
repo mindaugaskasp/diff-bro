@@ -32,8 +32,11 @@ test('a saved secret is masked on screen but copies in full', async ({ app, page
 
   // But copying still yields the real thing — the whole point.
   await app.evaluate(({ clipboard }) => clipboard.clear())
-  await view.getByRole('button', { name: 'Copy', exact: true }).click()
-  await expect(view.getByRole('button', { name: 'Copied' })).toBeVisible()
+  const copy = view.getByRole('button', { name: 'Copy', exact: true })
+  await copy.click()
+  // The NAME is stable across the flash — only the visible word swaps — so the
+  // acknowledgement is read off the text, not off a second accessible name.
+  await expect(copy).toHaveText(/Copied/)
   expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(SECRET)
 })
 

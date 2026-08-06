@@ -23,13 +23,18 @@ const props = defineProps({
 })
 const emit = defineEmits(['format', 'copy', 'capture', 'clear', 'reveal', 'edit', 'save', 'close'])
 
+// One flash, two buttons — so it records WHICH was pressed. A bare boolean put
+// the acknowledgement on Copy when the reader had pressed Copy as file, the
+// button right beside it. That is what flash's `mark` is for.
 const { copied, flash } = useCopyFeedback()
+const copiedText = computed(() => copied.value === 'text')
+const copiedFile = computed(() => copied.value === 'file')
 // The twin of Copy, and adjacent to it: that adjacency is what makes them read
 // as a choice between two things rather than two unrelated actions.
 const { supported: canCopyFile, copyFile } = useCopyAsFile()
 async function copyAsFile() {
   const draft = { name: props.name, content: props.content, secret: props.secret }
-  if (await copyFile(snippetFile({ ...draft, lang: props.language }))) flash()
+  if (await copyFile(snippetFile({ ...draft, lang: props.language }))) flash('file')
 }
 const copyFileTip = computed(() =>
   props.secret
@@ -56,10 +61,11 @@ const clearTip = computed(() =>
 // Copy works whether or not the contents are on screen — that is the whole
 // point of a secret snippet.
 const copyTip = computed(() =>
-  copied.value ? 'Copied to clipboard' : 'Copy the contents to the clipboard'
+  copiedText.value ? 'Copied to clipboard' : 'Copy the contents to the clipboard'
 )
 
-defineExpose({ flash })
+// The parent owns the clipboard write and flashes only once it succeeded.
+defineExpose({ flash: () => flash('text') })
 </script>
 
 <template>
@@ -85,23 +91,30 @@ defineExpose({ flash })
     <AppIcon :name="masked ? 'eye' : 'eye-off'" />
     {{ masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide') }}
   </button>
+  <!-- aria-label is the STABLE name on both: only the visible word swaps for the
+       flash, so a screen reader is never told the button it is on has become a
+       different button mid-press. -->
   <button
     class="btn btn-sm"
-    :class="{ copied }"
+    :class="{ copied: copiedText }"
     :disabled="!hasContent"
     :data-tip="copyTip"
+    :aria-label="$t('common.copy')"
     @click="emit('copy')"
   >
-    {{ copied ? $t('common.copied') : $t('common.copy') }}
+    {{ copiedText ? $t('common.copied') : $t('common.copy') }}
   </button>
   <button
     v-if="canCopyFile && !editMode"
     class="btn btn-sm"
+    :class="{ copied: copiedFile }"
     :disabled="!hasContent || secret"
     :data-tip="copyFileTip"
+    :aria-label="$t('snippetEditorActions.copyAsFile')"
     @click="copyAsFile"
   >
-    <AppIcon name="clipboard" /> {{ $t('snippetEditorActions.copyAsFile') }}
+    <AppIcon :name="copiedFile ? 'check' : 'clipboard'" />
+    {{ copiedFile ? $t('common.copied') : $t('snippetEditorActions.copyAsFile') }}
   </button>
   <button
     v-if="editMode"

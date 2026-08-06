@@ -100,7 +100,7 @@ describe('diffStore', () => {
       const store = loadCsv(useDiffStore())
       expect(store.delimitedFormat).toBe(',')
       expect(store.canCompareStructure).toBe(true)
-      expect(store.structureLabel).toBe('Grid')
+      expect(store.structureLabelKey).toBe('appToolbar.structureGrid')
     })
 
     // This asserted the opposite — text until you found the toggle — which meant
@@ -129,7 +129,7 @@ describe('diffStore', () => {
       store.receive('left', CSV('a.json', '{"a":1}'))
       store.receive('right', CSV('b.json', '{"a":2}'))
       expect(store.delimitedFormat).toBeNull()
-      expect(store.structureLabel).toBe('Structure')
+      expect(store.structureLabelKey).toBe('appToolbar.structure')
       store.semanticView = true
       expect(store.comparableKind).toBe('tree')
     })

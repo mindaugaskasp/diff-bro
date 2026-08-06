@@ -3,7 +3,7 @@ import { test, expect } from './fixtures.mjs'
 // Build a two-sided comparison without a native dialog (paste-compare), then
 // return to files mode where the file slots are live.
 async function pasteCompare(page, left, right) {
-  await page.getByRole('button', { name: 'Paste text' }).click()
+  await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()

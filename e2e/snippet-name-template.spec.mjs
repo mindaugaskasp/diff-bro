@@ -45,21 +45,31 @@ test('a templated name is resolved when the snippet is saved', async ({ page }) 
   await expect(page.locator('.snippets-section .row', { hasText: '{{today}}' })).toHaveCount(0)
 })
 
-// The trigger is ALWAYS there — that is what makes the feature discoverable
-// without already knowing it exists — but it costs one row, not three: the
-// preview only appears with a placeholder typed, and the list only on request.
-test('the tags button is always offered, the list and preview are not', async ({ page }) => {
+// The hint is ALWAYS there — that is what makes the feature discoverable without
+// already knowing it exists — but the table it carries costs no row and no
+// click. It was a button opening a nine-token list; the list is reference
+// material read once, so it is a tooltip now and the row never grows.
+test('the tags hint is always offered, and carries the table in its tip', async ({ page }) => {
   const dialog = await newSnippet(page, 'Just a name')
-  const tags = dialog.getByRole('button', { name: 'Template tags' })
-  await expect(tags).toBeVisible()
+  const hint = dialog.locator('.name-templates .tokens-hint')
+  await expect(hint).toBeVisible()
   await expect(dialog.locator('.name-templates .preview')).toHaveCount(0)
-  await expect(dialog.locator('.name-templates .tokens')).toHaveCount(0)
 
-  await tags.click()
-  await expect(dialog.locator('.name-templates .tokens')).toBeVisible()
-  await expect(dialog.locator('.name-templates .tokens code').first()).toHaveText('{{today}}')
+  // Not a control: nothing here is pressable, so nothing can read as pressable.
+  await expect(dialog.locator('.name-templates button')).toHaveCount(0)
 
-  await tags.click()
+  // Every token is named in the tip, with what it means and what it resolves to.
+  const tip = await hint.getAttribute('data-tip')
+  expect(tip).toContain('{{today}}')
+  expect(tip).toContain('{{week}}')
+  expect(tip).toContain(today()) // the same clock the preview uses
+  expect(tip.split('\n').length).toBeGreaterThan(9) // the sentence + nine tokens
+
+  // And it really surfaces on hover, through the app's own tooltip.
+  await hint.hover()
+  await expect(page.locator('.tip-bubble')).toContainText('{{today}}')
+
+  // The row itself never grew: no list is added to the layout, open or shut.
   await expect(dialog.locator('.name-templates .tokens')).toHaveCount(0)
 })
 

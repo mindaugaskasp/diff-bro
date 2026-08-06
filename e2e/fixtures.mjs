@@ -111,6 +111,42 @@ export async function openSettings(page) {
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
 }
 
+// The four display toggles live behind the toolbar's View button, so anything
+// driving one opens the panel first. Idempotent — the panel stays open across a
+// toggle, so a test flipping two in a row calls this once.
+export async function openViewMenu(page) {
+  const panel = page.getByRole('group', { name: 'View' })
+  if (await panel.isVisible()) return panel
+  // Scoped to `.toolbar`, because the in-app MenuBar has a "View" menu of its
+  // own on Windows/Linux — unscoped this is a strict-mode violation in the
+  // container and passes only on the Mac, where MenuBar does not render.
+  //
+  // And NOT `{ name: 'View', exact: true }`: the count chip is inside the
+  // button, so the accessible name is "View 1" the moment an option is off its
+  // default — the state a grid or diagram comparison OPENS in.
+  await page
+    .locator('.toolbar')
+    .getByRole('button', { name: /^View\b/ })
+    .click()
+  await expect(panel).toBeVisible()
+  return panel
+}
+
+export async function closeViewMenu(page) {
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('group', { name: 'View' })).toBeHidden()
+}
+
+// Open, flip one option, close. The close is not tidiness: the panel carries a
+// full-window backdrop, so a test that leaves it open has its NEXT click land on
+// that backdrop instead of on what it aimed at.
+export async function setViewOption(page, name, on = true) {
+  const panel = await openViewMenu(page)
+  const box = panel.getByRole('checkbox', { name })
+  await (on ? box.check() : box.uncheck())
+  await closeViewMenu(page)
+}
+
 // Navigate the in-app menu bar (Windows/Linux — the Docker env is Linux). Pass a
 // leaf item under a top menu, or a submenu + leaf for the nested Tools/Security
 // groups. Targets by structural class + text so kbd hints in the label don't

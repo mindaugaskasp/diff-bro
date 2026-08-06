@@ -35,7 +35,9 @@
   overflow: auto;
   padding: var(--space-2) 0;
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: var(--font-sm);
+  /* Scales with --sd-row-h, which the component zooms in step — a font that grew
+     past the row height would make the virtualization's spacers lie. */
+  font-size: calc(var(--font-sm) * var(--diff-zoom, 1));
 }
 /* Every row is EXACTLY --sd-row-h tall: the list is virtualized, and a row that
    wraps makes the spacers lie and the scroll jump. The value comes from

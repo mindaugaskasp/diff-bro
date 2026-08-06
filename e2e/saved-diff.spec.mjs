@@ -10,7 +10,7 @@ import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fix
 // Setting up a comparison, not viewing one. A vault-backed tab has nothing to
 // switch the input mode OF, and the click would replace what the reader opened.
 test('a saved diff does not offer the paste/file mode toggle', async ({ page }) => {
-  const paste = page.getByRole('button', { name: 'Paste text' })
+  const paste = page.getByRole('button', { name: 'Paste mode' })
   await expect(paste).toBeVisible()
 
   await paste.click()
@@ -18,7 +18,7 @@ test('a saved diff does not offer the paste/file mode toggle', async ({ page }) 
   await page.getByPlaceholder('Paste changed text here').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   // Still a scratch comparison, so the toggle stays — whichever way it reads.
-  const toggle = page.getByRole('button', { name: /^(Paste text|File mode)$/ })
+  const toggle = page.getByRole('button', { name: /^(Paste mode|File mode)$/ })
   await expect(toggle).toBeVisible()
 
   await page.getByRole('button', { name: 'Save', exact: true }).click()
@@ -39,7 +39,7 @@ test('a saved diff persists across a relaunch and reopens', async () => {
     let page = await firstReadyPage(app)
 
     // Make something saveable via paste-compare (no file dialog needed).
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
     await page.getByPlaceholder('Paste changed text here').fill('one\nZULU')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -81,7 +81,7 @@ test('a filter that matches nothing says so in every sidebar section', async () 
   const app = await launchApp(dir)
   try {
     const page = await firstReadyPage(app)
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill('alpha')
     await page.getByPlaceholder('Paste changed text here').fill('beta')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -110,7 +110,7 @@ test('a diff can be kept for as long as a week', async () => {
   const app = await launchApp(dir)
   try {
     const page = await firstReadyPage(app)
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill('alpha')
     await page.getByPlaceholder('Paste changed text here').fill('beta')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -150,7 +150,7 @@ test('Clear leaves the toolbar once the diff is in the vault', async () => {
     const page = await firstReadyPage(app)
     const clear = page.locator('header.toolbar').getByRole('button', { name: 'Clear' })
 
-    await page.getByRole('button', { name: 'Paste text' }).click()
+    await page.getByRole('button', { name: 'Paste mode' }).click()
     await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
     await page.getByPlaceholder('Paste changed text here').fill('one\nZULU')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()

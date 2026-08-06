@@ -65,7 +65,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     await addTrusted(appB, pageB, keyA)
 
     // 3. Alice makes a diff, saves it, and shares it — Bob is the only recipient.
-    await pageA.getByRole('button', { name: 'Paste text' }).click()
+    await pageA.getByRole('button', { name: 'Paste mode' }).click()
     await pageA.getByPlaceholder('Paste original text here').fill('release v1')
     await pageA.getByPlaceholder('Paste changed text here').fill('release v2')
     await pageA.getByRole('button', { name: 'Compare', exact: true }).click()
@@ -187,7 +187,7 @@ test('one sealed file opens for every recipient it was addressed to', async () =
     await addTrusted(appB, pageB, keyA)
     await addTrusted(appC, pageC, keyA)
 
-    await pageA.getByRole('button', { name: 'Paste text' }).click()
+    await pageA.getByRole('button', { name: 'Paste mode' }).click()
     await pageA.getByPlaceholder('Paste original text here').fill('team before')
     await pageA.getByPlaceholder('Paste changed text here').fill('team after')
     await pageA.getByRole('button', { name: 'Compare', exact: true }).click()
