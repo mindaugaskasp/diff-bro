@@ -15,7 +15,8 @@ const marks = (row) =>
     return { shadow: s.boxShadow, background: s.backgroundColor }
   })
 
-const drawn = (m) => m.shadow !== 'none' && m.shadow !== '' && !/rgba\(0, 0, 0, 0\)/.test(m.background)
+const drawn = (m) =>
+  m.shadow !== 'none' && m.shadow !== '' && !/rgba\(0, 0, 0, 0\)/.test(m.background)
 
 async function addSnippet(page, name) {
   await page.getByRole('button', { name: 'New snippet' }).click()
@@ -24,8 +25,7 @@ async function addSnippet(page, name) {
   await editor.locator('.editor').click()
   await page.keyboard.type('body text')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.getByRole('dialog', { name: 'Snippet', exact: true }).waitFor()
-  await page.keyboard.press('Escape')
+  await expect(editor).toBeHidden()
 }
 
 test('a favourited snippet row carries the same mark a pinned tool does', async ({ page }) => {

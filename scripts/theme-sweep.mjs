@@ -273,8 +273,8 @@ const SURFACES = [
     // The row a create just made. Its rail is a ::after, which querySelector
     // cannot reach, so the badge's keyline stands in for it: both are solid
     // --accent on --bg-panel, so one measurement holds the other's floor.
-    // Waits past the 1.4s wash so what is measured is the state that STAYS,
-    // not a frame of an animation.
+    // Waits past the 4s wash so what is measured is the state that STAYS, not a
+    // frame of an animation.
     open: async (page) => {
       await page.getByRole('button', { name: 'New snippet' }).click()
       const editor = page.getByRole('dialog', { name: 'New Snippet' })
@@ -282,10 +282,8 @@ const SURFACES = [
       await editor.locator('.editor').click()
       await page.keyboard.type('sweep')
       await editor.getByRole('button', { name: 'Save', exact: true }).click()
-      await page.getByRole('dialog', { name: 'Snippet', exact: true }).waitFor()
-      await page.keyboard.press('Escape')
       await page.locator('.row.is-new .new-badge').waitFor()
-      await page.waitForTimeout(1500)
+      await page.waitForTimeout(4200)
     },
     // DELETE the row rather than merely retiring it. A sweep that leaves its
     // scratch snippet behind grows the sidebar by one per theme, and every other

@@ -138,13 +138,13 @@ export function useSnippetDraft() {
       await store.update(editing.id, fields)
       saving.value = false
     }
-    // Save drops back to view mode rather than closing; reset the dirty baseline.
+    // Saving is a finished action, so it closes. The baseline moves first: close
+    // runs the same path Cancel does, and a stale baseline would read as unsaved
+    // work and raise the discard prompt over a snippet already written.
     baselineName.value = name.value
     baselineContent.value = content.value
     baselineSecret.value = secret.value
-    // Saved secrets go straight back behind the mask.
-    if (secret.value) revealed.value = false
-    editMode.value = false
+    close()
   }
 
   const canFormat = computed(() => !!content.value.trim() && !!FORMATTERS[language.value])

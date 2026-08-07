@@ -32,8 +32,7 @@ async function addSnippet(page, name) {
   await editor.locator('.editor').click()
   await page.keyboard.type('body text')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.getByRole('dialog', { name: 'Snippet', exact: true }).waitFor()
-  await page.keyboard.press('Escape')
+  await expect(editor).toBeHidden()
 }
 
 const snippetRow = (page, name) =>
@@ -65,6 +64,21 @@ test('a newly created snippet marks itself with a rail and a NEW badge', async (
   expect(chip.text.length, 'the badge says it in words').toBeGreaterThan(0)
   expect(chip.border, 'the accent goes on the keyline').toBe(accent)
   expect(chip.color, 'never on the label — it fails 4.5:1 on five themes').not.toBe(accent)
+})
+
+// The wash is the part a reader sees from across the screen, and the first
+// version eased out over 1.4s — gone before anyone looking elsewhere turned
+// back. A floor rather than an exact value, so the timing can still be tuned.
+test('the wash lingers long enough to be seen', async ({ page }) => {
+  await addSnippet(page, 'E2E lingering wash')
+  const row = snippetRow(page, 'E2E lingering wash')
+
+  const wash = await row.evaluate((el) => {
+    const s = getComputedStyle(el, '::before')
+    return { duration: s.animationDuration, name: s.animationName }
+  })
+  expect(wash.name, 'the row draws a wash at all').toBe('new-wash')
+  expect(parseFloat(wash.duration), 'the wash must outlast a glance away').toBeGreaterThanOrEqual(3)
 })
 
 test('a starred new row keeps the pin bar AND the new rail', async ({ page }) => {

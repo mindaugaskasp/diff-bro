@@ -29,8 +29,7 @@ async function saveTaggedSnippet(page, name, tag) {
   await editor.getByPlaceholder('add a tag…').press('Enter')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.locator('.snippets-section .row', { hasText: name })).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toHaveCount(0)
+  await expect(editor).toBeHidden()
 }
 
 const openTagManager = async (page, tag) => {
