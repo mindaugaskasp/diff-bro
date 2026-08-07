@@ -89,6 +89,55 @@ describe('useSnippetDraft — view/edit mode', () => {
 
 // Pasted Mermaid arrives with autocorrected arrows and rich-text spaces. Repair
 // rides the Format button the editor already has, rather than a second control.
+// Saving is a finished action: it closes the editor and returns you to the
+// list, rather than parking you in a read-only view of what you just wrote.
+describe('useSnippetDraft — saving closes the editor', () => {
+  it('closes after saving a NEW snippet, and the snippet is stored', async () => {
+    const { snippets, draft } = newDraft()
+    window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
+    draft.name.value = 'My note'
+    draft.content.value = 'remember to hydrate'
+
+    await draft.save({ tags: [], tagColors: {} })
+
+    expect(snippets.editingSnippet).toBeNull()
+    expect(snippets.entries).toHaveLength(1)
+    expect(snippets.entries[0].name).toBe('My note')
+  })
+
+  it('closes after saving an EDIT of an existing snippet', async () => {
+    const snippets = useSnippetStore()
+    window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
+    const id = await snippets.add({ name: 'Original', content: 'body' })
+    // The composable decrypts on mount; without this it rejects unhandled.
+    window.api.vaultDecrypt = async () => 'body'
+    snippets.editingSnippet = { id }
+    const draft = useSnippetDraft()
+    draft.editMode.value = true
+    draft.name.value = 'Renamed'
+    // save() guards on non-empty content; the real editor has it decrypted by now.
+    draft.content.value = 'body'
+
+    await draft.save({ tags: [], tagColors: {} })
+
+    expect(snippets.editingSnippet).toBeNull()
+    expect(snippets.entries[0].name).toBe('Renamed')
+  })
+
+  it('stays OPEN when the vault key is unavailable, so the draft can retry', async () => {
+    const { snippets, draft } = newDraft()
+    window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
+    draft.name.value = 'My note'
+    draft.content.value = 'body'
+
+    await draft.save({ tags: [], tagColors: {} })
+
+    // Closing here would silently destroy what the user typed.
+    expect(snippets.editingSnippet).not.toBeNull()
+    expect(snippets.entries).toHaveLength(0)
+  })
+})
+
 describe('useSnippetDraft — repairing a diagram', () => {
   const BROKEN = 'flowchart TD\n  A —> B  '
 

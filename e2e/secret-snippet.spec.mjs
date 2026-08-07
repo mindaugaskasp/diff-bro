@@ -15,7 +15,13 @@ async function createSecret(page, name = 'Prod API key') {
   await page.keyboard.type(SECRET)
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  return page.getByRole('dialog', { name: 'Snippet', exact: true })
+  // Save closes the editor, so the read-only view is reached the way a reader
+  // reaches it: by opening the row.
+  await expect(editor).toBeHidden()
+  await page.locator('.snippets-section .row', { hasText: name }).locator('.entry').click()
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
+  return view
 }
 
 test('a saved secret is masked on screen but copies in full', async ({ app, page }) => {
@@ -89,8 +95,11 @@ test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await editor.locator('.editor').click()
   await page.keyboard.type('nothing secret here')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(editor).toBeHidden()
 
+  await page.locator('.snippets-section .row', { hasText: 'Plain note' }).locator('.entry').click()
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
   await expect(view.getByRole('button', { name: 'Show' })).toHaveCount(0)
   await expect(page.locator('.monaco-editor').first()).toContainText('nothing secret here')

@@ -96,7 +96,12 @@ async function addSnippet(page, { name, body, secret = false }) {
   await page.keyboard.type(body)
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  // Save closes the editor; the copy pair lives on the read-only VIEW, which is
+  // reached by opening the row.
+  await expect(editor).toBeHidden()
+  await page.locator('.snippets-section .row', { hasText: name }).locator('.entry').click()
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
   await expect(view).toBeVisible()
   return view
 }

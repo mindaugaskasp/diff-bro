@@ -33,12 +33,10 @@ test('a templated name is resolved when the snippet is saved', async ({ page }) 
   await expect(dialog.locator('.name-templates .preview')).toContainText(`Standup ${today()}`)
 
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
-  // The field itself takes the resolved text, so the editor and the library
-  // cannot show two different names for the same snippet. Read off the page,
-  // not the dialog: saving drops back to view mode and retitles it.
-  await expect(page.getByPlaceholder('Snippet name…')).toHaveValue(`Standup ${today()}`)
-  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
 
+  // Saving resolves the template into the STORED name, so the row is what says
+  // whether it worked — the editor is gone by then.
   await expect(
     page.locator('.snippets-section .row', { hasText: `Standup ${today()}` })
   ).toHaveCount(1)
@@ -87,5 +85,8 @@ test('the resting dialog does not scroll its body open', async ({ page }) => {
 test('an unknown token is kept, not silently dropped', async ({ page }) => {
   const dialog = await newSnippet(page, 'Build {{version}}')
   await dialog.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.getByPlaceholder('Snippet name…')).toHaveValue('Build {{version}}')
+  await expect(dialog).toBeHidden()
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Build {{version}}' })
+  ).toHaveCount(1)
 })

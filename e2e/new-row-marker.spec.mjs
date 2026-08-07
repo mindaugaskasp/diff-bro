@@ -32,8 +32,7 @@ async function addSnippet(page, name) {
   await editor.locator('.editor').click()
   await page.keyboard.type('body text')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.getByRole('dialog', { name: 'Snippet', exact: true }).waitFor()
-  await page.keyboard.press('Escape')
+  await expect(editor).toBeHidden()
 }
 
 const snippetRow = (page, name) =>

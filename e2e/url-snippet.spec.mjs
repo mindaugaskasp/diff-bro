@@ -11,10 +11,7 @@ async function newUrlSnippet(page, name, url) {
   await editor.locator('.editor').click()
   await page.keyboard.type(url)
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  // Save drops the dialog into read-only view mode; close it for the next one.
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
-  await expect(view).toBeVisible()
-  await view.getByRole('button', { name: 'Close' }).last().click()
+  await expect(editor).toBeHidden()
 }
 
 test('a URL snippet offers a one-click open', async ({ page }) => {

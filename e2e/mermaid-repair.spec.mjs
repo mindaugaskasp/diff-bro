@@ -42,8 +42,13 @@ test('the repair is what gets saved', async ({ app, page }) => {
   await page.keyboard.insertText(BROKEN)
   await editor.getByRole('button', { name: 'Repair', exact: true }).click()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(editor).toBeHidden()
 
+  // Reopened from the row, so what is copied comes from the STORE rather than
+  // from the buffer the editor still had in hand.
+  await page.locator('.snippets-section .row', { hasText: 'Saved flow' }).locator('.entry').click()
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
   await app.evaluate(({ clipboard }) => clipboard.clear())
   const copy = view.getByRole('button', { name: 'Copy', exact: true })
   await copy.click()

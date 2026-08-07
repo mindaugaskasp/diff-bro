@@ -35,11 +35,7 @@ async function createSnippet({ page, app }, name, body) {
   )
   await expect(editor.locator('.view-line').first()).not.toHaveText('')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page
-    .getByRole('dialog', { name: 'Snippet', exact: true })
-    .locator('.dialog-actions')
-    .getByRole('button', { name: 'Close' })
-    .click()
+  await expect(editor).toBeHidden()
 }
 
 // The whole point of the feature: what leaves the app is the DIAGRAM, not the
@@ -164,11 +160,7 @@ test('a secret snippet offers no image button', async ({ page }) => {
   await page.keyboard.type('sk-live-DEADBEEF')
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page
-    .getByRole('dialog', { name: 'Snippet', exact: true })
-    .locator('.dialog-actions')
-    .getByRole('button', { name: 'Close' })
-    .click()
+  await expect(editor).toBeHidden()
 
   const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
   await secret.hover()
