@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs'
+import { focusEditor } from './monaco.mjs'
 
 // Dragging is only real in a launched app: the payload rides a DataTransfer the
 // browser owns, the drop is a window-level handler, and the content comes back
@@ -66,7 +67,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
   await view.getByRole('button', { name: 'Edit', exact: true }).click()
   const edit = page.getByRole('dialog', { name: 'Edit Snippet' })
-  await edit.locator('.editor').click()
+  await focusEditor(edit)
   await page.keyboard.press('ControlOrMeta+a')
   await app.evaluate(({ clipboard }) => clipboard.writeText('LIVE-EDIT-MARKER'))
   await app.evaluate(({ BrowserWindow }) =>

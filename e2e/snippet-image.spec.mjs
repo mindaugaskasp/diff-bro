@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs'
+import { focusEditor } from './monaco.mjs'
 
 // Photographing a snippet is only real in a launched app: the picture is taken
 // by webContents.capturePage in MAIN, the diagram is an SVG Mermaid lays out,
@@ -27,7 +28,7 @@ async function createSnippet({ page, app }, name, body) {
   await page.getByRole('button', { name: 'New snippet' }).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
-  await editor.locator('.editor').click()
+  await focusEditor(editor)
   await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), body)
   await app.evaluate(({ BrowserWindow }) =>
     (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
