@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useQuickLookCompose } from '../../../src/renderer/src/composables/useQuickLookCompose'
 
 const harness = (addResult = 'new-id') => {
@@ -20,7 +20,7 @@ describe('useQuickLookCompose', () => {
     expect(c.body.value).toBe('')
   })
 
-  it('saves a plaintext snippet and closes', async () => {
+  it("saves with language auto, so the store's detection decides", async () => {
     const { add, onSaved, c } = harness()
     c.start()
     c.name.value = 'auth token'
@@ -29,7 +29,7 @@ describe('useQuickLookCompose', () => {
     expect(add).toHaveBeenCalledWith({
       name: 'auth token',
       content: 'ghp_xxx',
-      language: 'plaintext',
+      language: 'auto',
       tags: []
     })
     expect(c.composing.value).toBe(false)
@@ -99,7 +99,7 @@ describe('useQuickLookCompose', () => {
       expect(update).toHaveBeenCalledWith('abc', {
         name: 'Auth token',
         content: 'token=1',
-        language: 'plaintext',
+        language: 'auto',
         tags: []
       })
       expect(c.composing.value).toBe(false)
@@ -126,5 +126,89 @@ describe('useQuickLookCompose', () => {
       expect(add).toHaveBeenCalled()
       expect(update).not.toHaveBeenCalled()
     })
+  })
+})
+
+// The launcher's query is almost always the name of the thing you failed to
+// find, so Cmd+N carries it across rather than making you retype it.
+describe('useQuickLookCompose — seeded name', () => {
+  it('start(query) prefills the name and leaves the body empty', () => {
+    const { c } = harness()
+    c.start('deploy rollback')
+    expect(c.name.value).toBe('deploy rollback')
+    expect(c.body.value).toBe('')
+  })
+
+  it('start() with no argument still opens blank', () => {
+    const { c } = harness()
+    c.start()
+    expect(c.name.value).toBe('')
+  })
+})
+
+describe('useQuickLookCompose — language', () => {
+  const settle = () => vi.advanceTimersByTimeAsync(300)
+
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('starts on auto and resolves to what the body looks like', async () => {
+    const { c } = harness()
+    c.start()
+    expect(c.language.value).toBe('auto')
+    c.body.value = 'SELECT id FROM orders;'
+    await settle()
+    expect(c.resolvedLanguage.value).toBe('sql')
+  })
+
+  it('waits for a pause rather than re-detecting every keystroke', async () => {
+    const { c } = harness()
+    c.start()
+    c.body.value = 'SELECT id FROM orders;'
+    expect(c.resolvedLanguage.value).toBe('plaintext')
+    await settle()
+    expect(c.resolvedLanguage.value).toBe('sql')
+  })
+
+  it('an explicit choice survives a later body change', async () => {
+    const { c } = harness()
+    c.start()
+    c.language.value = 'plaintext'
+    c.body.value = 'SELECT id FROM orders;'
+    await settle()
+    expect(c.resolvedLanguage.value).toBe('plaintext')
+  })
+
+  it('returning to auto re-reads the body it skipped', async () => {
+    const { c } = harness()
+    c.start()
+    c.language.value = 'plaintext'
+    c.body.value = 'SELECT id FROM orders;'
+    await settle()
+    c.language.value = 'auto'
+    expect(c.resolvedLanguage.value).toBe('sql')
+  })
+
+  it('saves the CHOICE, not the guess — the store re-detects on its own', async () => {
+    const { add, c } = harness()
+    c.start()
+    c.body.value = 'SELECT id FROM orders;'
+    await settle()
+    await c.save()
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ language: 'auto' }))
+  })
+
+  it('start() clears a language pinned by the previous snippet', async () => {
+    const { c } = harness()
+    c.start()
+    c.language.value = 'python'
+    c.start('next one')
+    expect(c.language.value).toBe('auto')
+  })
+
+  it('startEdit adopts the snippet own language so a save cannot relabel it', () => {
+    const { c } = harness()
+    c.startEdit({ id: 'a', name: 'N', content: 'print(1)', language: 'python' })
+    expect(c.language.value).toBe('python')
   })
 })

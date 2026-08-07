@@ -2,7 +2,11 @@
 // The launcher's search band. Its own component so QuickLook.vue's template
 // stays within its cap, and because compose mode takes the band away entirely.
 import { ref } from 'vue'
+import { isMac } from '../keys'
 import AppIcon from './AppIcon.vue'
+
+// The tip names the key, so reaching for the mouse teaches the shortcut.
+const NEW_KEY = isMac ? '⌘N' : 'Ctrl+N'
 
 const query = defineModel('query', { type: String, required: true })
 // Read-only rather than blurred or hidden: the arrow-key driver hangs off this
@@ -38,8 +42,8 @@ defineExpose({
     />
     <button
       class="btn btn-icon ql-add"
-      :data-tip="$t('quickLookSearch.captureANewPlaintextSnippet')"
-      :aria-label="$t('quickLookSearch.newPlaintextSnippet')"
+      :data-tip="$t('quickLookSearch.captureANewSnippet', { key: NEW_KEY })"
+      :aria-label="$t('quickLookSearch.newSnippet')"
       @click="$emit('add')"
     >
       <AppIcon name="plus" />

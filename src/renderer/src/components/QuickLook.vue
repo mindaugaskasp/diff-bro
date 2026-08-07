@@ -1,9 +1,10 @@
 <script setup>
 // Root of the floating quick look-up window (see src/main/quickLook.js); logic
 // lives in useQuickLook. Preview renders via interpolation, never v-html (#7).
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useQuickLook } from '../composables/useQuickLook'
 import { useSnippetStore } from '../stores/snippetStore'
+import { t } from '../i18n'
 import AppIcon from './AppIcon.vue'
 import QuickLookToolHint from './QuickLookToolHint.vue'
 import QuickLookCompose from './QuickLookCompose.vue'
@@ -12,58 +13,40 @@ import QuickLookPreviewHead from './QuickLookPreviewHead.vue'
 import QuickLookResults from './QuickLookResults.vue'
 import QuickLookSearch from './QuickLookSearch.vue'
 
+// prettier-ignore
 const {
-  query,
-  selected,
-  results,
-  current,
-  toolsOpen,
-  snippetSpans,
-  lineClass,
-  hoverLine,
-  footHints,
-  copyKey,
-  zone,
-  previewEl,
-  choose,
-  copy,
-  copied,
-  copiedName,
-  copiedIndex,
-  closing,
-  refresh,
-  onKeydown,
-  convertTool,
-  lastTool,
-  exitConvert,
-  compose,
-  canEditInline,
-  editCurrent
+  query, selected, results, current, toolsOpen, snippetSpans, lineClass, hoverLine,
+  footHints, copyKey, zone, previewEl, choose, copy, copied, copiedName, copiedIndex,
+  closing, refresh, onKeydown, convertTool, lastTool, exitConvert, compose,
+  canEditInline, editCurrent
 } = useQuickLook()
+// prettier-ignore
 const {
-  composing,
-  name: composeName,
-  body: composeBody,
-  canSave: composeCanSave,
-  saving: composeSaving,
-  editing: composeEditing,
-  start: startCompose,
-  cancel: cancelCompose,
-  save: saveCompose
+  composing, name: composeName, body: composeBody, language: composeLanguage,
+  resolvedLanguage: composeResolved, canSave: composeCanSave, saving: composeSaving,
+  editing: composeEditing, start: startCompose, cancel: cancelCompose, save: saveCompose
 } = compose
 const store = useSnippetStore()
 const input = ref(null)
 const composeEl = ref(null)
+// The + and Cmd+N are the same action: whatever was typed becomes the name.
+const addSnippet = () => startCompose(query.value.trim())
 
-// Per-kind preview action + lock note — snippet opens, command/tools stay local.
 // A tool speaks for itself (its own icon and action word), so the button never
-// says a blanket "Convert" over a tool that formats or generates.
+// says a blanket "Convert" over one that formats or generates. Null for a kind
+// with no action: reading `.icon` off undefined took the whole pane down once.
 const ACTIONS = {
-  snippet: { icon: 'edit', label: 'Open in editor' },
-  tools: { icon: 'wrench', label: 'Browse tools' }
+  snippet: { icon: 'edit', key: 'quickLook.action.openInEditor' },
+  tools: { icon: 'wrench', key: 'quickLook.action.browseTools' },
+  create: { icon: 'plus', key: 'quickLook.action.createSnippet' }
 }
-const previewAction = (it) =>
-  it.kind === 'command' ? { icon: it.icon, label: it.action } : ACTIONS[it.kind]
+const previewAction = computed(() => {
+  const it = current.value
+  if (!it) return null
+  if (it.kind === 'command') return { icon: it.icon, label: it.action }
+  const a = ACTIONS[it.kind]
+  return a ? { icon: a.icon, label: t(a.key) } : null
+})
 
 function focusInput() {
   input.value?.focus()
@@ -122,7 +105,7 @@ watch(composing, (on) => {
           v-model:query="query"
           :readonly="zone === 'preview'"
           @keydown="onKeydown"
-          @add="startCompose"
+          @add="addSnippet"
         />
       </transition>
 
@@ -142,6 +125,8 @@ watch(composing, (on) => {
             ref="composeEl"
             v-model:name="composeName"
             v-model:body="composeBody"
+            v-model:language="composeLanguage"
+            :resolved="composeResolved"
             :can-save="composeCanSave"
             :saving="composeSaving"
             :editing="composeEditing"
@@ -160,13 +145,13 @@ watch(composing, (on) => {
             />
             <div v-if="current.tags?.length" class="ql-pv-tags">
               <span
-                v-for="t in current.tags"
-                :key="t"
+                v-for="tag in current.tags"
+                :key="tag"
                 class="tag-word"
-                :style="{ '--tc': store.colorOf(t) }"
+                :style="{ '--tc': store.colorOf(tag) }"
               >
                 <span class="tw-dot"></span>
-                <span class="tw-label">{{ t }}</span>
+                <span class="tw-label">{{ tag }}</span>
               </span>
             </div>
 
@@ -190,8 +175,12 @@ watch(composing, (on) => {
 
             <div class="ql-pv-foot band">
               <span class="ql-pv-actions">
-                <button class="btn btn-primary btn-sm" @click="choose(selected)">
-                  <AppIcon :name="previewAction(current).icon" /> {{ previewAction(current).label }}
+                <button
+                  v-if="previewAction"
+                  class="btn btn-primary btn-sm"
+                  @click="choose(selected)"
+                >
+                  <AppIcon :name="previewAction.icon" /> {{ previewAction.label }}
                 </button>
               </span>
             </div>

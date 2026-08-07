@@ -286,7 +286,33 @@
     "enter": "[Éńţéř ·ø]",
     "selectAResultToPreview": "[Šéłéçţ à řéşūłţ ţō ƥřéṽĩéŵ ĩţ. ·øé·øé·øé·]",
     "browseTools": "[Ƥřéşş {key} ţō ƀřōŵşé ţĥé ţōōł | Ƥřéşş {key} ţō ƀřōŵşé ţĥé {count} ţōōłş. ·øé·øé·øé·øé·øé·øé·øé]",
-    "openTool": "[Ƥřéşş {key} ţō ōƥéń ţĥĩş ţōōł. ·øé·øé·øé]"
+    "openTool": "[Ƥřéşş {key} ţō ōƥéń ţĥĩş ţōōł. ·øé·øé·øé]",
+    "hint": {
+      "navigate": "[ńàṽĩğàţé ·øé·]",
+      "scrollPreview": "[şçřōłł ƥřéṽĩéŵ ·øé·øé]",
+      "openTool": "[ōƥéń ţōōł ·øé·]",
+      "browseTools": "[ƀřōŵşé ţōōłş ·øé·ø]",
+      "open": "[ōƥéń ·ø]",
+      "create": "[çřéàţé ·øé]",
+      "copy": "[çōƥŷ ·ø]",
+      "newSnippet": "[ńéŵ şńĩƥƥéţ ·øé·]",
+      "collapse": "[çōłłàƥşé ·øé·]",
+      "close": "[çłōşé ·ø]",
+      "save": "[şàṽé ·ø]",
+      "language": "[łàńğūàğé ·øé·]",
+      "cancel": "[çàńçéł ·øé]",
+      "line": "[łĩńé ·ø]",
+      "selectLines": "[şéłéçţ łĩńéş ·øé·ø]",
+      "copyLines": "[çōƥŷ łĩńéş ·øé·]",
+      "backToList": "[ƀàçķ ţō łĩşţ ·øé·]",
+      "back": "[ƀàçķ ·ø]"
+    },
+    "createHint": "[Ƥřéşş {key} ţō şàṽé ĩţ àş à ńéŵ şńĩƥƥéţ. ·øé·øé·øé·øé]",
+    "action": {
+      "openInEditor": "[Ōƥéń ĩń éđĩţōř ·øé·ø]",
+      "browseTools": "[Ɓřōŵşé ţōōłş ·øé·ø]",
+      "createSnippet": "[Çřéàţé şńĩƥƥéţ ·øé·øé]"
+    }
   },
   "toolRow": {
     "unpin": "[Ūńƥĩń ·ø]",
@@ -627,7 +653,8 @@
     "pasteOrTypeTheSnippet": "[Ƥàşţé ōř ţŷƥé ţĥé şńĩƥƥéţ… ·øé·øé·øé]",
     "editSnippet": "[Éđĩţ şńĩƥƥéţ ·øé·ø]",
     "newSnippet": "[Ńéŵ şńĩƥƥéţ ·øé·]",
-    "saving": "[Šàṽĩńğ… ·øé]"
+    "saving": "[Šàṽĩńğ… ·øé]",
+    "language": "[Łàńğūàğé ·øé·]"
   },
   "quickLookConvert": {
     "esc": "[Éşç ·ø]"
@@ -639,13 +666,14 @@
     "edit": "[Éđĩţ ·ø]"
   },
   "quickLookResults": {
-    "noSnippetOrToolMatches": "[Ńō şńĩƥƥéţ ōř ţōōł ɱàţçĥéş. ·øé·øé·øé]"
+    "noSnippetOrToolMatches": "[Ńō şńĩƥƥéţ ōř ţōōł ɱàţçĥéş. ·øé·øé·øé]",
+    "createSnippet": "[Çřéàţé şńĩƥƥéţ “{name}” ·øé·øé·]"
   },
   "quickLookSearch": {
     "searchSnippetsTools": "[Šéàřçĥ şńĩƥƥéţş & ţōōłş… ·øé·øé·ø]",
-    "newPlaintextSnippet": "[Ńéŵ ƥłàĩńţéẋţ şńĩƥƥéţ ·øé·øé·ø]",
-    "captureANewPlaintextSnippet": "[Çàƥţūřé à ńéŵ ƥłàĩńţéẋţ şńĩƥƥéţ ·øé·øé·øé·ø]",
-    "esc": "[Éşç ·ø]"
+    "esc": "[Éşç ·ø]",
+    "newSnippet": "[Ńéŵ şńĩƥƥéţ ·øé·]",
+    "captureANewSnippet": "[Çàƥţūřé à ńéŵ şńĩƥƥéţ ({key}) ·øé·øé·øé]"
   },
   "replaceDiffDialog": {
     "replaceCurrentComparison": "[Řéƥłàçé çūřřéńţ çōɱƥàřĩşōń? ·øé·øé·øé·]",

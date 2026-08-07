@@ -19,7 +19,9 @@ async function summon(app, page) {
 // → into a tool mirrors → into a snippet preview.
 async function enterBase64(ql) {
   await ql.locator('.ql-input').fill('base64')
-  await expect(ql.locator('.ql-res', { hasText: 'Base64' })).toBeVisible()
+  // Excluding the create row: hasText is a case-insensitive substring match, so
+  // `Create snippet "base64"` matches 'Base64' too.
+  await expect(ql.locator('.ql-res:not(.ql-res-create)', { hasText: 'Base64' })).toBeVisible()
   await ql.locator('.ql-input').press('ArrowRight')
   await expect(ql.locator('.qc-name')).toHaveText('Base64')
 }

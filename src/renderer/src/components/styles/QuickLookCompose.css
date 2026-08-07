@@ -21,12 +21,27 @@
   font-weight: 600;
   color: var(--text);
 }
+/* The label is --text, NOT --accent: accent-as-ink scores 3.52 on solar, 3.88
+   on meridian and 4.35 on sepia against --bg, all under the 4.5:1 reading
+   floor. The accent moves to the rim, where the 3:1 non-text floor applies and
+   the weakest theme clears it. */
 .ql-compose-lang {
   flex: none;
+  height: var(--chip-h);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text);
+  font-family: inherit;
   font-size: var(--font-2xs);
-  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.ql-compose-lang:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .ql-compose-foot {
@@ -68,10 +83,49 @@
   outline: none;
 }
 
+/* The two layers of the highlighted body. EVERY property that decides where a
+   glyph lands is set on both through the same token — change one and you must
+   change the other, or the colour drifts off the characters it belongs to.
+   `pre` (not `pre-wrap`) on both removes soft wrap as a source of drift. */
+.ql-compose-field {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.ql-compose-hl,
 .ql-compose-text {
+  padding: var(--space-2);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
+}
+.ql-compose-hl {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  color: var(--text);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  pointer-events: none;
+}
+.ql-compose-text {
+  position: relative;
   flex: 1;
   min-height: 0;
   resize: none;
-  font-family: var(--font-mono);
-  line-height: 1.5;
+  border-color: var(--border);
+  background: none;
+  /* The caret and the selection stay visible; the glyphs come from the layer
+     behind. `.plain` hands the text back when the overlay stands down — an IME
+     composition would otherwise be invisible while it is being typed. */
+  color: transparent;
+  caret-color: var(--accent);
+}
+.ql-compose-text.plain {
+  color: var(--text);
 }

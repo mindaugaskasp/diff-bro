@@ -286,7 +286,33 @@
     "enter": "Enter",
     "selectAResultToPreview": "Select a result to preview it.",
     "browseTools": "Press {key} to browse the tool | Press {key} to browse the {count} tools.",
-    "openTool": "Press {key} to open this tool."
+    "openTool": "Press {key} to open this tool.",
+    "hint": {
+      "navigate": "navigate",
+      "scrollPreview": "scroll preview",
+      "openTool": "open tool",
+      "browseTools": "browse tools",
+      "open": "open",
+      "create": "create",
+      "copy": "copy",
+      "newSnippet": "new snippet",
+      "collapse": "collapse",
+      "close": "close",
+      "save": "save",
+      "language": "language",
+      "cancel": "cancel",
+      "line": "line",
+      "selectLines": "select lines",
+      "copyLines": "copy lines",
+      "backToList": "back to list",
+      "back": "back"
+    },
+    "createHint": "Press {key} to save it as a new snippet.",
+    "action": {
+      "openInEditor": "Open in editor",
+      "browseTools": "Browse tools",
+      "createSnippet": "Create snippet"
+    }
   },
   "toolRow": {
     "unpin": "Unpin",
@@ -627,7 +653,8 @@
     "pasteOrTypeTheSnippet": "Paste or type the snippet…",
     "editSnippet": "Edit snippet",
     "newSnippet": "New snippet",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "language": "Language"
   },
   "quickLookConvert": {
     "esc": "Esc"
@@ -639,13 +666,14 @@
     "edit": "Edit"
   },
   "quickLookResults": {
-    "noSnippetOrToolMatches": "No snippet or tool matches."
+    "noSnippetOrToolMatches": "No snippet or tool matches.",
+    "createSnippet": "Create snippet “{name}”"
   },
   "quickLookSearch": {
     "searchSnippetsTools": "Search snippets & tools…",
-    "newPlaintextSnippet": "New plaintext snippet",
-    "captureANewPlaintextSnippet": "Capture a new plaintext snippet",
-    "esc": "Esc"
+    "esc": "Esc",
+    "newSnippet": "New snippet",
+    "captureANewSnippet": "Capture a new snippet ({key})"
   },
   "replaceDiffDialog": {
     "replaceCurrentComparison": "Replace current comparison?",

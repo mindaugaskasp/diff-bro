@@ -1,3 +1,5 @@
+import { isSecret } from './secretSnippet'
+
 // Pure ranking for the quick look-up. The scoring bands mirror useSnippetFilters'
 // text match so the two search surfaces agree on what a query finds.
 
@@ -41,17 +43,95 @@ export function rank(query, items) {
   return scored.map((x) => x.item)
 }
 
+export const TOOLS_ID = '__tools__'
+export const CREATE_ID = '__create__'
+
 /**
- * The preview zone's footer hints — a table, not logic, so adding a row never
- * pushes the composable that renders it over its size cap.
+ * The snippet library as launcher rows, newest first. `languageOf` is passed in
+ * because it lives in the store and utils/ may not reach one.
+ * @param {object[]} entries
+ * @param {(entry: object) => string} languageOf
+ * @returns {QuickLookItem[]}
+ */
+export const snippetRows = (entries, languageOf) =>
+  entries
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map((e) => {
+      const lang = languageOf(e)
+      return {
+        kind: 'snippet',
+        id: e.id,
+        name: e.name,
+        tags: e.tags ?? [],
+        secret: isSecret(e),
+        lang: lang === 'plaintext' ? '' : lang
+      }
+    })
+
+/**
+ * Every row the launcher lists, in order. The create row is LAST: the selection
+ * should stay on the best match, and Cmd/Ctrl+N is the fast path from anywhere,
+ * so this row is for discovery and the mouse rather than the hurry.
+ * @param {{query: string, tools: QuickLookItem[], snippets: QuickLookItem[], toolsOpen: boolean}} o
+ * @returns {QuickLookItem[]}
+ */
+export function resultRows({ query, tools, snippets, toolsOpen }) {
+  const matchedTools = rank(query, tools)
+  const rows = []
+  if (matchedTools.length) {
+    rows.push({ kind: 'tools', id: TOOLS_ID, name: 'Tools', count: matchedTools.length })
+    if (toolsOpen) rows.push(...matchedTools)
+  }
+  rows.push(...rank(query, snippets))
+  const named = String(query ?? '').trim()
+  if (named) rows.push({ kind: 'create', id: CREATE_ID, name: named })
+  return rows
+}
+
+// Hint tables hand back i18n KEY IDs: utils/ is pure, and a t() resolved at
+// module load would freeze whatever locale the app started in.
+
+/** @returns {Array<[string, string]>} [key glyph, message id] */
+export const composeHints = (saveKey) => [
+  [saveKey, 'quickLook.hint.save'],
+  ['\u21e7Tab', 'quickLook.hint.language'],
+  ['\u2190/Esc', 'quickLook.hint.cancel']
+]
+
+/**
  * @param {string} copyLineKey the platform's Shift+Cmd/Ctrl+C label
- * @returns {Array<[string, string]>}
+ * @returns {Array<[string, string]>} [key glyph, message id]
  */
 export const previewHints = (copyLineKey) => [
-  ['↑↓', 'line'],
-  ['⇧↑↓', 'select lines'],
-  [copyLineKey, 'copy lines'],
-  ['←', 'back to list'],
-  ['↵', 'open'],
-  ['Esc', 'back']
+  ['↑↓', 'quickLook.hint.line'],
+  ['⇧↑↓', 'quickLook.hint.selectLines'],
+  [copyLineKey, 'quickLook.hint.copyLines'],
+  ['←', 'quickLook.hint.backToList'],
+  ['↵', 'quickLook.hint.open'],
+  ['Esc', 'quickLook.hint.back']
 ]
+
+const DRILL_IN = {
+  snippet: 'quickLook.hint.scrollPreview',
+  command: 'quickLook.hint.openTool',
+  tools: 'quickLook.hint.browseTools'
+}
+
+/**
+ * @param {{kind: string|undefined, toolsOpen: boolean, copyKey: string, newKey: string}} o
+ * @returns {Array<[string, string]>} [key glyph, message id]
+ */
+export function listHints({ kind, toolsOpen, copyKey, newKey }) {
+  const hints = [['↑↓', 'quickLook.hint.navigate']]
+  if (DRILL_IN[kind]) hints.push(['→', DRILL_IN[kind]])
+  hints.push(
+    ['↵', kind === 'create' ? 'quickLook.hint.create' : 'quickLook.hint.open'],
+    [copyKey, 'quickLook.hint.copy'],
+    [newKey, 'quickLook.hint.newSnippet'],
+    // ← and Esc walk the same ladder, so they share one chip rather than
+    // spending two on the same action.
+    ['←/Esc', toolsOpen ? 'quickLook.hint.collapse' : 'quickLook.hint.close']
+  )
+  return hints
+}

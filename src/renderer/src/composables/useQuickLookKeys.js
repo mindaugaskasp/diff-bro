@@ -6,6 +6,29 @@
 // the active snippet). ← and Escape share one back-out ladder — preview → list →
 // collapse section → dismiss — so ← is exit navigation, not just a zone step.
 
+// Modifier chords are checked before the key table, which is keyed by `e.key`
+// and so cannot express one.
+function tryChord(e, key, run) {
+  if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === key)) return false
+  e.preventDefault()
+  run()
+  return true
+}
+
+// A live text selection in the search box copies natively; otherwise Cmd/Ctrl+C
+// copies the highlighted result, and Shift+Cmd/Ctrl+C the selected line range.
+function copyChord({ count, selected, onCopy, onCopyLine }) {
+  return (e) => {
+    if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return false
+    const t = e.target
+    if (t && t.selectionStart != null && t.selectionStart !== t.selectionEnd) return true
+    e.preventDefault()
+    if (e.shiftKey) onCopyLine()
+    else if (count() > 0) onCopy(selected.value)
+    return true
+  }
+}
+
 /**
  * @param {object} o
  * @param {() => number} o.count           current result count
@@ -14,6 +37,7 @@
  * @param {() => void} o.onDismiss
  * @param {(index: number) => void} [o.onCopy]     Cmd/Ctrl+C: copy the whole selected item
  * @param {() => void} [o.onCopyLine]              Shift+Cmd/Ctrl+C: copy the active preview line
+ * @param {() => void} [o.onNew]                   Cmd/Ctrl+N: start a new snippet
  * @param {{ value: 'list' | 'preview' }} [o.zone]  focus zone (a Vue ref, or any {value})
  * @param {() => boolean} [o.canEnterPreview]       true when the active row has a scrollable preview
  * @param {(dir: 1|-1, extend?: boolean) => void} [o.movePreview]  step the preview line
@@ -28,6 +52,7 @@ export function useQuickLookKeys({
   onDismiss,
   onCopy = () => {},
   onCopyLine = () => {},
+  onNew = () => {},
   zone = { value: 'list' },
   canEnterPreview = () => false,
   movePreview = () => {},
@@ -37,17 +62,7 @@ export function useQuickLookKeys({
   const clamp = (i) => Math.max(0, Math.min(i, count() - 1))
   const inPreview = () => zone.value === 'preview'
 
-  // A live text selection in the search box copies natively; otherwise Cmd/Ctrl+C
-  // copies the highlighted result, and Shift+Cmd/Ctrl+C the selected line range.
-  function tryCopy(e) {
-    if (!((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C'))) return false
-    const t = e.target
-    if (t && t.selectionStart != null && t.selectionStart !== t.selectionEnd) return true
-    e.preventDefault()
-    if (e.shiftKey) onCopyLine()
-    else if (count() > 0) onCopy(selected.value)
-    return true
-  }
+  const tryCopy = copyChord({ count, selected, onCopy, onCopyLine })
 
   // → only enters the preview from the end of the query text, so it never fights
   // the caret while the user is still editing the search.
@@ -121,7 +136,8 @@ export function useQuickLookKeys({
   }
 
   function onKeydown(e) {
-    if (tryCopy(e)) return
+    // Creating needs no results, so Cmd/Ctrl+N fires on an empty list too.
+    if (tryCopy(e) || tryChord(e, 'n', onNew)) return
     HANDLERS[e.key]?.(e)
   }
   return { onKeydown }

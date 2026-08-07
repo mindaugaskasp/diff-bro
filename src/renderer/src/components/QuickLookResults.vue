@@ -4,6 +4,7 @@
 import { ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { languageMonogram } from '../utils/languageMonogram'
+import { isMac } from '../keys'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -24,8 +25,13 @@ const monoStyle = (it) => ({ '--fam': it.kind === 'snippet' ? mono(it.lang).fami
 const monoText = (it) => (it.kind === 'snippet' ? mono(it.lang).label : '')
 const tagStyle = (it) => ({ '--tc': store.colorOf(it.tags?.[0]) })
 const rowIcon = () => (props.toolsOpen ? 'chevron-down' : 'chevron-right')
-const kindLabel = (it) =>
-  it.kind === 'command' ? it.action : it.kind === 'tools' ? `${it.count} tools` : it.kind
+const NEW_KEY = isMac ? '⌘N' : 'Ctrl+N'
+const KIND_LABEL = {
+  command: (it) => it.action,
+  tools: (it) => `${it.count} tools`,
+  create: () => NEW_KEY
+}
+const kindLabel = (it) => (KIND_LABEL[it.kind] ?? (() => it.kind))(it)
 
 // The seam sits under the tools block, above the first snippet.
 const isSectionStart = (i) =>
@@ -38,7 +44,8 @@ const resClass = (i) => ({
   copied: props.copied && i === props.copiedIndex,
   'group-start': isSectionStart(i),
   section: props.results[i]?.kind === 'tools',
-  sub: props.results[i]?.kind === 'command'
+  sub: props.results[i]?.kind === 'command',
+  'ql-res-create': props.results[i]?.kind === 'create'
 })
 </script>
 
@@ -56,9 +63,13 @@ const resClass = (i) => ({
       @dblclick="$emit('choose', i)"
     >
       <span v-if="it.kind === 'command'" class="monogram cmd"><AppIcon :name="it.icon" /></span>
+      <span v-else-if="it.kind === 'create'" class="monogram cmd"><AppIcon name="plus" /></span>
       <span v-else-if="it.count" class="monogram sec"><AppIcon :name="rowIcon()" /></span>
       <span v-else class="monogram" :style="monoStyle(it)">{{ monoText(it) }}</span>
-      <span class="ql-name">{{ it.name }}</span>
+      <span v-if="it.kind === 'create'" class="ql-name">{{
+        $t('quickLookResults.createSnippet', { name: it.name })
+      }}</span>
+      <span v-else class="ql-name">{{ it.name }}</span>
       <span v-if="it.tags?.[0]" class="tag-word" :style="tagStyle(it)">
         <span class="tw-dot"></span>
         <span class="tw-label">{{ it.tags[0] }}</span>
