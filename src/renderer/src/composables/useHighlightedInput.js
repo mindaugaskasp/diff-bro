@@ -9,7 +9,7 @@ import { miniLines } from '../utils/miniHighlight'
 // An empty <div> collapses to no height, which rides the overlay up by one line
 // for every blank line in the body. A zero-width space gives the box back
 // without shifting a glyph.
-export const ZWSP = '​'
+export const ZWSP = '\u200B'
 
 // Past this the pane is a wall of text nobody is reading in a launcher, and
 // re-tokenizing it on every keystroke is felt. Colour is the thing to drop.
@@ -22,22 +22,22 @@ const MAX_CHARS = 20000
  * @returns {object}
  */
 export function useHighlightedInput({ text, language }) {
-  const taEl = ref(null)
-  const hlEl = ref(null)
+  const textareaEl = ref(null)
+  const overlayEl = ref(null)
   const composing = ref(false)
 
-  const plain = computed(() => composing.value || (text.value?.length ?? 0) > MAX_CHARS)
+  const isPlain = computed(() => composing.value || (text.value?.length ?? 0) > MAX_CHARS)
 
   const lines = computed(() => {
-    if (plain.value) return []
+    if (isPlain.value) return []
     return miniLines(text.value, language.value).map((spans) =>
       spans.length === 1 && spans[0].text === '' ? [{ text: ZWSP, role: '' }] : spans
     )
   })
 
   function onScroll() {
-    const ta = taEl.value
-    const hl = hlEl.value
+    const ta = textareaEl.value
+    const hl = overlayEl.value
     if (!ta || !hl) return
     hl.scrollTop = ta.scrollTop
     hl.scrollLeft = ta.scrollLeft
@@ -50,5 +50,5 @@ export function useHighlightedInput({ text, language }) {
     composing.value = false
   }
 
-  return { taEl, hlEl, lines, plain, onScroll, onCompositionStart, onCompositionEnd }
+  return { textareaEl, overlayEl, lines, isPlain, onScroll, onCompositionStart, onCompositionEnd }
 }

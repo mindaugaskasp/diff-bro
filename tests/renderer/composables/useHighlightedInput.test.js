@@ -54,10 +54,10 @@ describe('useHighlightedInput', () => {
 
   it('mirrors both scroll axes onto the overlay', () => {
     const { hl } = setup('SELECT 1;')
-    hl.taEl.value = { scrollTop: 42, scrollLeft: 17 }
-    hl.hlEl.value = { scrollTop: 0, scrollLeft: 0 }
+    hl.textareaEl.value = { scrollTop: 42, scrollLeft: 17 }
+    hl.overlayEl.value = { scrollTop: 0, scrollLeft: 0 }
     hl.onScroll()
-    expect(hl.hlEl.value).toMatchObject({ scrollTop: 42, scrollLeft: 17 })
+    expect(hl.overlayEl.value).toMatchObject({ scrollTop: 42, scrollLeft: 17 })
   })
 
   it('survives a scroll before either element is mounted', () => {
@@ -69,19 +69,19 @@ describe('useHighlightedInput', () => {
   // commits, so the overlay stands down for the duration.
   it('drops the overlay while composing and restores it after', () => {
     const { hl } = setup('SELECT 1;')
-    expect(hl.plain.value).toBe(false)
+    expect(hl.isPlain.value).toBe(false)
     hl.onCompositionStart()
-    expect(hl.plain.value).toBe(true)
+    expect(hl.isPlain.value).toBe(true)
     expect(hl.lines.value).toEqual([])
     hl.onCompositionEnd()
-    expect(hl.plain.value).toBe(false)
+    expect(hl.isPlain.value).toBe(false)
     expect(hl.lines.value.length).toBe(1)
   })
 
   it('stops tokenizing a body past the cap rather than stalling on every key', () => {
     const { hl, text } = setup('SELECT 1;')
     text.value = 'SELECT 1;'.repeat(4000)
-    expect(hl.plain.value).toBe(true)
+    expect(hl.isPlain.value).toBe(true)
     expect(hl.lines.value).toEqual([])
   })
 

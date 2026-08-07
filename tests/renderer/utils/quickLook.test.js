@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
-  composeHints,
-  listHints,
-  previewHints,
   rank,
   resultRows,
   scoreItem,
   snippetRows,
   NO_MATCH
 } from '../../../src/renderer/src/utils/quickLook'
+import {
+  composeHints,
+  listHints,
+  previewHints
+} from '../../../src/renderer/src/utils/quickLookHints'
 
 const item = (over) => ({ kind: 'snippet', id: '1', name: '', tags: [], lang: '', ...over })
 
@@ -86,12 +88,32 @@ describe('snippetRows', () => {
   it('defaults tags to an array so a row never reads undefined', () => {
     expect(snippetRows(entries, languageOf).find((r) => r.id === 'a').tags).toEqual([])
   })
+
+  // `lang` is for DISPLAY and flattens plaintext to ''. Saving that back as the
+  // snippet's language rewrites it: an explicit 'plaintext' became 'auto' (so a
+  // SQL-looking body silently re-detected as sql), and an 'auto' snippet froze
+  // to whatever it had resolved to. The stored value has to travel separately.
+  it('carries the STORED language beside the displayed one', () => {
+    const stored = [
+      { id: 'p', name: 'pinned plain', createdAt: 3, language: 'plaintext' },
+      { id: 'a', name: 'auto sql', createdAt: 2, language: 'auto' }
+    ]
+    const resolve = (e) => (e.language === 'auto' ? 'sql' : e.language)
+    const rows = snippetRows(stored, resolve)
+    const plain = rows.find((r) => r.id === 'p')
+    const auto = rows.find((r) => r.id === 'a')
+    expect(plain.language).toBe('plaintext')
+    expect(plain.lang).toBe('')
+    expect(auto.language).toBe('auto')
+    expect(auto.lang).toBe('sql')
+  })
 })
 
 describe('resultRows', () => {
   const tools = [{ kind: 'command', id: 'base64', name: 'Base64' }]
   const snippets = [{ kind: 'snippet', id: 's1', name: 'deploy notes' }]
-  const rows = (o) => resultRows({ query: '', tools, snippets, toolsOpen: false, ...o })
+  const rows = (o) =>
+    resultRows({ query: '', matchedTools: tools, snippets, toolsOpen: false, ...o })
 
   it('offers no create row until something is typed', () => {
     expect(rows().some((r) => r.kind === 'create')).toBe(false)
@@ -113,8 +135,10 @@ describe('resultRows', () => {
     expect(rows({ query: '  stuck orders  ' }).at(-1).name).toBe('stuck orders')
   })
 
+  // Tools arrive pre-ranked from the caller, so "nothing matches" is an empty
+  // matchedTools plus a query no snippet answers.
   it('is the only row when nothing matches, so Enter creates', () => {
-    const out = rows({ query: 'zzzz' })
+    const out = rows({ query: 'zzzz', matchedTools: [] })
     expect(out).toHaveLength(1)
     expect(out[0].kind).toBe('create')
   })
@@ -127,7 +151,12 @@ describe('resultRows', () => {
   })
 
   it('drops the tools header entirely when no tool matches', () => {
-    expect(rows({ query: 'deploy' }).some((r) => r.kind === 'tools')).toBe(false)
+    expect(rows({ matchedTools: [] }).some((r) => r.kind === 'tools')).toBe(false)
+  })
+
+  // The header is built in utils/, which cannot translate — it carries a key.
+  it('gives the tools header a message id rather than raw English', () => {
+    expect(rows({ toolsOpen: true })[0]).toMatchObject({ nameKey: 'quickLook.toolsHeader' })
   })
 })
 
@@ -138,40 +167,36 @@ describe('hint tables', () => {
   const isKey = (id) => id.startsWith('quickLook.hint.')
 
   it('previewHints returns message ids and keeps the given glyph', () => {
-    const rows = previewHints('⇧⌘C')
+    const rows = previewHints()
     expect(ids(rows).every(isKey)).toBe(true)
-    expect(rows.some(([glyph]) => glyph === '⇧⌘C')).toBe(true)
+    expect(rows.some(([glyph]) => /C$/.test(glyph))).toBe(true)
   })
 
   it('composeHints returns message ids', () => {
-    expect(ids(composeHints('⌘↵')).every(isKey)).toBe(true)
+    expect(ids(composeHints()).every(isKey)).toBe(true)
   })
 
   it('listHints always advertises the new-snippet key', () => {
-    const rows = listHints({ kind: 'snippet', toolsOpen: false, copyKey: '⌘C', newKey: '⌘N' })
+    const rows = listHints({ kind: 'snippet', toolsOpen: false })
     expect(ids(rows).every(isKey)).toBe(true)
-    expect(rows).toContainEqual(['⌘N', 'quickLook.hint.newSnippet'])
+    expect(ids(rows)).toContain('quickLook.hint.newSnippet')
   })
 
   it('listHints says "create" on the create row and "open" elsewhere', () => {
-    const on = (kind) => ids(listHints({ kind, toolsOpen: false, copyKey: '⌘C', newKey: '⌘N' }))
+    const on = (kind) => ids(listHints({ kind, toolsOpen: false }))
     expect(on('create')).toContain('quickLook.hint.create')
     expect(on('snippet')).toContain('quickLook.hint.open')
   })
 
   it('listHints offers → only on a row that drills in', () => {
-    const arrow = (kind) =>
-      listHints({ kind, toolsOpen: false, copyKey: '⌘C', newKey: '⌘N' }).some(
-        ([glyph]) => glyph === '→'
-      )
+    const arrow = (kind) => listHints({ kind, toolsOpen: false }).some(([glyph]) => glyph === '→')
     expect(arrow('snippet')).toBe(true)
     expect(arrow('tools')).toBe(true)
     expect(arrow('create')).toBe(false)
   })
 
   it('listHints reads ←/Esc as collapse only while the section is open', () => {
-    const last = (toolsOpen) =>
-      listHints({ kind: 'tools', toolsOpen, copyKey: '⌘C', newKey: '⌘N' }).at(-1)[1]
+    const last = (toolsOpen) => listHints({ kind: 'tools', toolsOpen }).at(-1)[1]
     expect(last(true)).toBe('quickLook.hint.collapse')
     expect(last(false)).toBe('quickLook.hint.close')
   })

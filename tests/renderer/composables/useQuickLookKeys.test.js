@@ -366,3 +366,14 @@ describe('useQuickLookKeys — Cmd/Ctrl+N', () => {
     expect(h.onNew).toHaveBeenCalledTimes(1)
   })
 })
+
+// AltGr reports as Ctrl+Alt on European keyboard layouts, so an unguarded chord
+// swallows AltGr+N instead of letting it type into the search box.
+describe('useQuickLookKeys — AltGr', () => {
+  it('leaves Ctrl+Alt+N alone', () => {
+    const h = harness()
+    const prevented = h.press('n', { ctrlKey: true, altKey: true })
+    expect(h.onNew).not.toHaveBeenCalled()
+    expect(prevented).not.toHaveBeenCalled()
+  })
+})

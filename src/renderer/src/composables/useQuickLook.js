@@ -1,16 +1,9 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { SECRET_MASK } from '../utils/secretSnippet'
-import {
-  composeHints,
-  listHints,
-  previewHints,
-  rank,
-  resultRows,
-  snippetRows
-} from '../utils/quickLook'
+import { rank, resultRows, snippetRows } from '../utils/quickLook'
+import { composeHints, copyKeyLabel, listHints, previewHints } from '../utils/quickLookHints'
 import { convertItems } from '../utils/quickLookCommands'
-import { isMac } from '../keys'
 import { useQuickLookKeys } from './useQuickLookKeys'
 import { useQuickLookCompose } from './useQuickLookCompose'
 import { usePreviewLines } from './usePreviewLines'
@@ -41,7 +34,7 @@ export function useQuickLook() {
   const results = computed(() =>
     resultRows({
       query: query.value,
-      tools: convertItems(t),
+      matchedTools: toolItems.value,
       snippets: snippetItems.value,
       toolsOpen: toolsOpen.value
     })
@@ -107,7 +100,7 @@ export function useQuickLook() {
   // add() pushes onto this window's own entries, so the list updates without a
   // reload; the main window picks it up on its next reload().
   const compose = useQuickLookCompose({ snippets })
-  const startCompose = () => compose.start(query.value.trim())
+  const startCompose = () => compose.open({ name: query.value.trim() })
 
   function choose(i) {
     const it = results.value[i]
@@ -147,6 +140,7 @@ export function useQuickLook() {
     preview.reset()
     handoff.reset()
     convertTool.value = null
+    compose.cancel()
   }
 
   // A textarea handles any text, so the language is not the gate — only tooling
@@ -164,26 +158,17 @@ export function useQuickLook() {
     if (!canEditInline.value) return
     const text = await snippets.load(it.id)
     if (typeof text !== 'string') return
-    const { id, name, tags, lang } = it
-    compose.startEdit({ id, name, tags, content: text, language: lang || undefined })
+    const { id, name, tags, language } = it
+    compose.open({ id, name, tags, content: text, language })
   }
 
-  const copyKey = isMac ? '⌘C' : 'Ctrl+C'
-  const copyLineKey = isMac ? '⇧⌘C' : 'Ctrl+Shift+C'
-  const saveKey = isMac ? '⌘↵' : 'Ctrl+↵'
-  const newKey = isMac ? '⌘N' : 'Ctrl+N'
   // Rows are [glyph, message id]; utils/ cannot translate, so t() runs here.
   const footHints = computed(() => {
     const rows = compose.composing.value
-      ? composeHints(saveKey)
+      ? composeHints()
       : zone.value === 'preview'
-        ? previewHints(copyLineKey)
-        : listHints({
-            kind: current.value?.kind,
-            toolsOpen: toolsOpen.value,
-            copyKey,
-            newKey
-          })
+        ? previewHints()
+        : listHints({ kind: current.value?.kind, toolsOpen: toolsOpen.value })
     return rows.map(([glyph, id]) => [glyph, t(id)])
   })
 
@@ -226,7 +211,7 @@ export function useQuickLook() {
     lineClass: preview.lineClass,
     hoverLine: preview.hoverLine,
     footHints,
-    copyKey,
+    copyKey: copyKeyLabel,
     zone,
     previewEl,
     choose,

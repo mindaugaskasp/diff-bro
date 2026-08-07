@@ -9,7 +9,8 @@
 // Modifier chords are checked before the key table, which is keyed by `e.key`
 // and so cannot express one.
 function tryChord(e, key, run) {
-  if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === key)) return false
+  // altKey is excluded because AltGr reports as Ctrl+Alt on European layouts.
+  if (e.altKey || !((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === key)) return false
   e.preventDefault()
   run()
   return true

@@ -31,6 +31,25 @@ function useDraftLanguage(body) {
   return { language, resolved, stop, reset }
 }
 
+// `editingId` is set only when reopening an existing snippet; it is what decides
+// update() vs add() at save time.
+function useDraftFields() {
+  const name = ref('')
+  const body = ref('')
+  const editingId = ref(null)
+  const editingTags = ref([])
+  const editing = computed(() => editingId.value !== null)
+  // `content` must be the FULL body: the launcher's preview is truncated, and
+  // saving that back would amputate the snippet.
+  const fill = ({ id = null, tags = [], name: as = '', content = '' }) => {
+    editingId.value = id
+    editingTags.value = tags
+    name.value = as
+    body.value = content
+  }
+  return { name, body, editingId, editingTags, editing, fill }
+}
+
 /** @returns {Promise<string|null>} the stored id, or null when the vault refused */
 async function persist(snippets, editingId, draft) {
   if (!editingId) return snippets.add({ ...draft, tags: [] })
@@ -46,28 +65,19 @@ async function persist(snippets, editingId, draft) {
  */
 export function useQuickLookCompose({ snippets, onSaved = () => {} }) {
   const composing = ref(false)
-  const name = ref('')
-  const body = ref('')
   const saving = ref(false)
-  // Set only in edit mode; the id decides update() vs add() at save time.
-  const editingId = ref(null)
-  const editingTags = ref([])
-  const editing = computed(() => editingId.value !== null)
+  const { name, body, editingId, editingTags, editing, fill } = useDraftFields()
   const lang = useDraftLanguage(body)
-  const language = lang.language
-  const resolvedLanguage = lang.resolved
 
   // The body is what makes a snippet; an empty name falls back to a placeholder
   // in the store, so it is never what blocks a save.
   const canSave = computed(() => body.value.trim() !== '' && !saving.value)
 
-  function open({ id = null, tags = [], as = '', text = '', lang: chosen }) {
-    editingId.value = id
-    editingTags.value = tags
-    name.value = as
-    body.value = text
+  /** @param {{id?: string, name?: string, content?: string, tags?: string[], language?: string}} [snippet] */
+  function open(snippet = {}) {
+    fill(snippet)
+    lang.reset(snippet.language)
     saving.value = false
-    lang.reset(chosen)
     composing.value = true
   }
 
@@ -82,7 +92,7 @@ export function useQuickLookCompose({ snippets, onSaved = () => {} }) {
     const id = await persist(snippets, editingId.value, {
       name: name.value,
       content: body.value,
-      language: language.value,
+      language: lang.language.value,
       tags: editingTags.value
     })
     saving.value = false
@@ -94,15 +104,17 @@ export function useQuickLookCompose({ snippets, onSaved = () => {} }) {
     return id
   }
 
-  const start = (as = '') => open({ as })
-  // `text` must be the FULL body: the launcher's preview is truncated, and
-  // saving that back would amputate the snippet.
-  const startEdit = (s) =>
-    open({ id: s.id, as: s.name, text: s.content, tags: s.tags ?? [], lang: s.language })
-
-  // prettier-ignore
   return {
-    composing, editing, name, body, language, resolvedLanguage,
-    saving, canSave, start, startEdit, cancel, save
+    composing,
+    editing,
+    name,
+    body,
+    language: lang.language,
+    resolvedLanguage: lang.resolved,
+    saving,
+    canSave,
+    open,
+    cancel,
+    save
   }
 }

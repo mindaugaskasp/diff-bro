@@ -69,7 +69,7 @@ const resClass = (i) => ({
       <span v-if="it.kind === 'create'" class="ql-name">{{
         $t('quickLookResults.createSnippet', { name: it.name })
       }}</span>
-      <span v-else class="ql-name">{{ it.name }}</span>
+      <span v-else class="ql-name">{{ it.nameKey ? $t(it.nameKey) : it.name }}</span>
       <span v-if="it.tags?.[0]" class="tag-word" :style="tagStyle(it)">
         <span class="tw-dot"></span>
         <span class="tw-label">{{ it.tags[0] }}</span>

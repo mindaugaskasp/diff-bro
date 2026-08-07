@@ -27,21 +27,17 @@
    the weakest theme clears it. */
 .ql-compose-lang {
   flex: none;
-  height: var(--chip-h);
-  padding: 0 var(--space-1);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
   border: 1px solid var(--accent);
   border-radius: var(--radius-pill);
-  background: none;
+  background: var(--bg);
   color: var(--text);
   font-family: inherit;
   font-size: var(--font-2xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;
-}
-.ql-compose-lang:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
 }
 
 .ql-compose-foot {

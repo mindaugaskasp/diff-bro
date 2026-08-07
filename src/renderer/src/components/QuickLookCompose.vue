@@ -13,7 +13,7 @@ const props = defineProps({
   editing: { type: Boolean, default: false },
   canSave: { type: Boolean, default: false },
   saving: { type: Boolean, default: false },
-  resolved: { type: String, default: 'plaintext' }
+  resolvedLanguage: { type: String, default: 'plaintext' }
 })
 const name = defineModel('name', { type: String, required: true })
 const body = defineModel('body', { type: String, required: true })
@@ -21,8 +21,8 @@ const language = defineModel('language', { type: String, required: true })
 const emit = defineEmits(['save', 'cancel'])
 
 const nameEl = ref(null)
-const { taEl, hlEl, lines, plain, onScroll, onCompositionStart, onCompositionEnd } =
-  useHighlightedInput({ text: body, language: toRef(props, 'resolved') })
+const { textareaEl, overlayEl, lines, isPlain, onScroll, onCompositionStart, onCompositionEnd } =
+  useHighlightedInput({ text: body, language: toRef(props, 'resolvedLanguage') })
 
 // Auto carries what it resolved to, so the picker doubles as the readout and
 // there is no second chip saying the same thing.
@@ -31,7 +31,7 @@ const labelOf = (id) =>
 const options = computed(() =>
   SNIPPET_LANGUAGES.map(({ id, labelKey }) => ({
     id,
-    label: id === 'auto' ? `${t(labelKey)} · ${labelOf(props.resolved)}` : t(labelKey)
+    label: id === 'auto' ? `${t(labelKey)} · ${labelOf(props.resolvedLanguage)}` : t(labelKey)
   }))
 )
 
@@ -50,7 +50,7 @@ function onKeydown(e) {
 
 // The body is what makes a snippet and the name is optional, so typing starts
 // where the content goes; Shift+Tab reaches the name, then the language.
-defineExpose({ focus: () => nextTick(() => taEl.value?.focus()) })
+defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
 </script>
 
 <template>
@@ -61,7 +61,7 @@ defineExpose({ focus: () => nextTick(() => taEl.value?.focus()) })
       }}</span>
       <select
         v-model="language"
-        class="ql-compose-lang"
+        class="ql-compose-lang focus-ring"
         :aria-label="$t('quickLookCompose.language')"
       >
         <option v-for="o in options" :key="o.id" :value="o.id">{{ o.label }}</option>
@@ -79,7 +79,7 @@ defineExpose({ focus: () => nextTick(() => taEl.value?.focus()) })
         spellcheck="false"
       />
       <div class="ql-compose-field">
-        <pre ref="hlEl" class="ql-compose-hl" aria-hidden="true"><div
+        <pre ref="overlayEl" class="ql-compose-hl" aria-hidden="true"><div
           v-for="(spans, i) in lines"
           :key="i"
           class="ql-compose-line"
@@ -89,10 +89,10 @@ defineExpose({ focus: () => nextTick(() => taEl.value?.focus()) })
           :class="span.role && `syn-${span.role}`"
         >{{ span.text }}</span></div></pre>
         <textarea
-          ref="taEl"
+          ref="textareaEl"
           v-model="body"
           class="ql-compose-text"
-          :class="{ plain }"
+          :class="{ plain: isPlain }"
           :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
           spellcheck="false"
           @scroll="onScroll"

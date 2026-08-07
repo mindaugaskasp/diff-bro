@@ -72,3 +72,25 @@ describe('useCaretBackOut', () => {
     expect(back).toHaveBeenCalledOnce()
   })
 })
+
+// The compose panel gained a <select> and two buttons. On Windows and Linux
+// ArrowLeft is the NATIVE way to change a closed select, so backing out there
+// threw away the whole draft the moment a keyboard user picked a language.
+describe('useCaretBackOut — non-text controls', () => {
+  const press = (tagName) => {
+    const onBack = vi.fn()
+    const preventDefault = vi.fn()
+    useCaretBackOut(onBack).onKeydown({ key: 'ArrowLeft', preventDefault, target: { tagName } })
+    return { onBack, preventDefault }
+  }
+
+  it('leaves ArrowLeft to a <select>, which uses it to change value', () => {
+    const { onBack, preventDefault } = press('SELECT')
+    expect(onBack).not.toHaveBeenCalled()
+    expect(preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('leaves ArrowLeft to a button rather than discarding the panel', () => {
+    expect(press('BUTTON').onBack).not.toHaveBeenCalled()
+  })
+})

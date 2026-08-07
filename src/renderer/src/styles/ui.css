@@ -88,7 +88,8 @@
 /* Keyboard focus had NO rule at all, so tabbing anywhere in the app fell back to
    Chromium's UA ring — the reason reaching the launcher's + felt broken. Offset
    outward so it reads against the surface rather than eating the keyline. */
-.btn:focus-visible {
+.btn:focus-visible,
+.focus-ring:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }

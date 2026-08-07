@@ -299,20 +299,21 @@
       "collapse": "collapse",
       "close": "close",
       "save": "save",
-      "language": "language",
       "cancel": "cancel",
       "line": "line",
       "selectLines": "select lines",
       "copyLines": "copy lines",
       "backToList": "back to list",
-      "back": "back"
+      "back": "back",
+      "name": "name"
     },
-    "createHint": "Press {key} to save it as a new snippet.",
+    "createHint": "Press {key} to name and capture it.",
     "action": {
       "openInEditor": "Open in editor",
       "browseTools": "Browse tools",
       "createSnippet": "Create snippet"
-    }
+    },
+    "toolsHeader": "Tools"
   },
   "toolRow": {
     "unpin": "Unpin",

@@ -7,7 +7,7 @@
 | **Branch**                              | `improvement/quicklook-keyboard-capture` |
 | **Started**                             | 2026-08-07                               |
 | **Finished**                            | 2026-08-07                               |
-| **Bugs found and fixed this iteration** | 3 / 3                                    |
+| **Bugs found and fixed this iteration** | 6 / 6                                    |
 | **Token baseline**                      | 2026-08-07T17:21:07Z                     |
 | **Claude tokens used**                  | 47,768,243 (measured)                    |
 
@@ -263,14 +263,15 @@ Written before the code.
 
 ## Decisions
 
-| date       | decision                                                                              | why                                                                                                                                                                                      | rejected                                                                                                  |
-| ---------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 2026-08-07 | `⌘N` is **not** added to the application menu or `MenuBar.vue`                        | On macOS an app-menu accelerator fires whichever window has focus, so a menu entry would swallow the launcher's own key. The launcher's `⌘C` and `⌘↵` already live only in the renderer. | Registering it in both places, as the standards' shortcut rule normally requires — noted as the exception |
-| 2026-08-07 | The create row sits **last**, not first                                               | Selection should stay on the best match; the row is for discovery and the mouse, since `⌘N` is the fast path from anywhere                                                               | Top placement, which steals the default selection from the match you were looking for                     |
-| 2026-08-07 | The language `<select>` **replaces** the head chip rather than joining it in the foot | One control, not a chip and a picker saying the same thing. It keeps the language in the header where the label already was, so the contrast fix stays meaningful                        | Select in the foot band + a read-only chip in the head — redundant                                        |
-| 2026-08-07 | `white-space: pre` + shared horizontal scroll, not `pre-wrap`                         | Two layers must break lines at the same character or they drift; `pre` removes the question, and it is the right mode for code                                                           | `pre-wrap` on both, which depends on two engines agreeing on break opportunities                          |
-| 2026-08-07 | `footHints` translation is **in** scope                                               | It is raw English in source (a standards violation) in the exact array this change edits; adding a raw hint beside translated ones is worse than fixing the array                        | Leaving it and filing a follow-up                                                                         |
-| 2026-08-07 | `previewHints` (in `utils/`) is **out** of scope                                      | `utils/` is pure and must export key IDs, so it is a wider change; the preview zone is not touched by this work                                                                          | Doing both at once and widening the diff                                                                  |
+| date       | decision                                                                                                                                                                                             | why                                                                                                                                                                                      | rejected                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 2026-08-07 | `⌘N` is **not** added to the application menu or `MenuBar.vue`                                                                                                                                       | On macOS an app-menu accelerator fires whichever window has focus, so a menu entry would swallow the launcher's own key. The launcher's `⌘C` and `⌘↵` already live only in the renderer. | Registering it in both places, as the standards' shortcut rule normally requires — noted as the exception |
+| 2026-08-07 | The create row sits **last**, not first                                                                                                                                                              | Selection should stay on the best match; the row is for discovery and the mouse, since `⌘N` is the fast path from anywhere                                                               | Top placement, which steals the default selection from the match you were looking for                     |
+| 2026-08-07 | The language `<select>` **replaces** the head chip rather than joining it in the foot                                                                                                                | One control, not a chip and a picker saying the same thing. It keeps the language in the header where the label already was, so the contrast fix stays meaningful                        | Select in the foot band + a read-only chip in the head — redundant                                        |
+| 2026-08-07 | `white-space: pre` + shared horizontal scroll, not `pre-wrap`                                                                                                                                        | Two layers must break lines at the same character or they drift; `pre` removes the question, and it is the right mode for code                                                           | `pre-wrap` on both, which depends on two engines agreeing on break opportunities                          |
+| 2026-08-07 | `footHints` translation is **in** scope                                                                                                                                                              | It is raw English in source (a standards violation) in the exact array this change edits; adding a raw hint beside translated ones is worse than fixing the array                        | Leaving it and filing a follow-up                                                                         |
+| 2026-08-07 | **Amended:** `previewHints` came **into** scope after all — `footHints` maps every row through one `t(id)`, so leaving it raw was not possible. The Scope section anticipated this; this row did not | one array cannot be half-translated                                                                                                                                                      | the original carve-out below                                                                              |
+| 2026-08-07 | `previewHints` (in `utils/`) is **out** of scope                                                                                                                                                     | `utils/` is pure and must export key IDs, so it is a wider change; the preview zone is not touched by this work                                                                          | Doing both at once and widening the diff                                                                  |
 
 ## Validation
 
@@ -309,6 +310,19 @@ node .claude/skills/implement/token-usage.mjs --since <token baseline>
 148 requests over 2026-08-07T17:21:15Z → 18:50:33Z, all of it this feature — the
 session did not wander onto other work inside the window. Cache read is 99.4% of
 the total, so this is tokens _processed_, not a bill.
+
+**Second pass (agent review + QA).** 14 review findings and 6 QA findings; 3 QA
+bugs proved with failing tests. The serious one was mine and structural: three
+`prettier-ignore` blocks — the first in the repo — were compressing lines purely
+to fit the size caps, which made the ratchet record a figure that no longer
+measured the function. Fixed by splitting (`QuickLookPreview.vue`,
+`useLauncherFocus.js`, `useDraftFields()`), after which
+`useQuickLookCompose` beat the real 60-line cap and its legacy entry was
+**deleted**. Three more real bugs fixed: an unmodified inline edit rewrote the
+snippet's stored language (touching data created by every previous launcher
+save), `←` on the language select discarded the whole draft, and `⌘N` swallowed
+AltGr+N. Two pieces of wrong user-visible copy corrected. Full detail, including
+what was deliberately left and why, is in `quality-audit.md`.
 
 **Outcome:** Shipped. The keyboard path works end to end — summon, type, `⌘N`,
 paste, `⌘↵` — and the body is syntax-coloured as it is typed, in whatever

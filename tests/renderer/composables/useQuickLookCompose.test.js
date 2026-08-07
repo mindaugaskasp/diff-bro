@@ -14,7 +14,7 @@ describe('useQuickLookCompose', () => {
     expect(c.composing.value).toBe(false)
     c.name.value = 'left over'
     c.body.value = 'left over'
-    c.start()
+    c.open()
     expect(c.composing.value).toBe(true)
     expect(c.name.value).toBe('')
     expect(c.body.value).toBe('')
@@ -22,7 +22,7 @@ describe('useQuickLookCompose', () => {
 
   it("saves with language auto, so the store's detection decides", async () => {
     const { add, onSaved, c } = harness()
-    c.start()
+    c.open()
     c.name.value = 'auth token'
     c.body.value = 'ghp_xxx'
     await c.save()
@@ -39,7 +39,7 @@ describe('useQuickLookCompose', () => {
   // The store supplies a placeholder name, so only the body can block a save.
   it('allows an empty name but not an empty body', async () => {
     const { add, c } = harness()
-    c.start()
+    c.open()
     c.body.value = '   '
     expect(c.canSave.value).toBe(false)
     expect(await c.save()).toBe(null)
@@ -55,7 +55,7 @@ describe('useQuickLookCompose', () => {
   // whatever was typed.
   it('stays open when the store refuses to store the snippet', async () => {
     const { onSaved, c } = harness(null)
-    c.start()
+    c.open()
     c.body.value = 'text'
     expect(await c.save()).toBe(null)
     expect(c.composing.value).toBe(true)
@@ -64,7 +64,7 @@ describe('useQuickLookCompose', () => {
 
   it('does not fire a second save while one is in flight', async () => {
     const { add, c } = harness()
-    c.start()
+    c.open()
     c.body.value = 'text'
     const first = c.save()
     expect(c.canSave.value).toBe(false)
@@ -75,7 +75,7 @@ describe('useQuickLookCompose', () => {
 
   it('cancel closes without saving', async () => {
     const { add, c } = harness()
-    c.start()
+    c.open()
     c.body.value = 'text'
     c.cancel()
     expect(c.composing.value).toBe(false)
@@ -87,7 +87,7 @@ describe('useQuickLookCompose', () => {
   describe('edit mode', () => {
     it('opens prefilled and updates instead of adding', async () => {
       const { add, update, onSaved, c } = harness()
-      c.startEdit({ id: 'abc', name: 'Untitled snippet', content: 'token=1' })
+      c.open({ id: 'abc', name: 'Untitled snippet', content: 'token=1' })
       expect(c.composing.value).toBe(true)
       expect(c.editing.value).toBe(true)
       expect(c.name.value).toBe('Untitled snippet')
@@ -108,7 +108,7 @@ describe('useQuickLookCompose', () => {
 
     it('preserves the tags an existing snippet already carries', async () => {
       const { update, c } = harness()
-      c.startEdit({ id: 'abc', name: 'N', content: 'x', tags: ['work', 'keys'] })
+      c.open({ id: 'abc', name: 'N', content: 'x', tags: ['work', 'keys'] })
       await c.save()
       expect(update).toHaveBeenCalledWith(
         'abc',
@@ -116,10 +116,10 @@ describe('useQuickLookCompose', () => {
       )
     })
 
-    it('start() clears edit mode so the next + creates rather than overwrites', async () => {
+    it('open() with no id clears edit mode so the next create does not overwrite', async () => {
       const { add, update, c } = harness()
-      c.startEdit({ id: 'abc', name: 'N', content: 'x' })
-      c.start()
+      c.open({ id: 'abc', name: 'N', content: 'x' })
+      c.open()
       expect(c.editing.value).toBe(false)
       c.body.value = 'fresh'
       await c.save()
@@ -132,16 +132,16 @@ describe('useQuickLookCompose', () => {
 // The launcher's query is almost always the name of the thing you failed to
 // find, so Cmd+N carries it across rather than making you retype it.
 describe('useQuickLookCompose — seeded name', () => {
-  it('start(query) prefills the name and leaves the body empty', () => {
+  it('open({name}) prefills the name and leaves the body empty', () => {
     const { c } = harness()
-    c.start('deploy rollback')
+    c.open({ name: 'deploy rollback' })
     expect(c.name.value).toBe('deploy rollback')
     expect(c.body.value).toBe('')
   })
 
-  it('start() with no argument still opens blank', () => {
+  it('open() with no argument still opens blank', () => {
     const { c } = harness()
-    c.start()
+    c.open()
     expect(c.name.value).toBe('')
   })
 })
@@ -154,7 +154,7 @@ describe('useQuickLookCompose — language', () => {
 
   it('starts on auto and resolves to what the body looks like', async () => {
     const { c } = harness()
-    c.start()
+    c.open()
     expect(c.language.value).toBe('auto')
     c.body.value = 'SELECT id FROM orders;'
     await settle()
@@ -163,7 +163,7 @@ describe('useQuickLookCompose — language', () => {
 
   it('waits for a pause rather than re-detecting every keystroke', async () => {
     const { c } = harness()
-    c.start()
+    c.open()
     c.body.value = 'SELECT id FROM orders;'
     expect(c.resolvedLanguage.value).toBe('plaintext')
     await settle()
@@ -172,7 +172,7 @@ describe('useQuickLookCompose — language', () => {
 
   it('an explicit choice survives a later body change', async () => {
     const { c } = harness()
-    c.start()
+    c.open()
     c.language.value = 'plaintext'
     c.body.value = 'SELECT id FROM orders;'
     await settle()
@@ -181,7 +181,7 @@ describe('useQuickLookCompose — language', () => {
 
   it('returning to auto re-reads the body it skipped', async () => {
     const { c } = harness()
-    c.start()
+    c.open()
     c.language.value = 'plaintext'
     c.body.value = 'SELECT id FROM orders;'
     await settle()
@@ -191,24 +191,24 @@ describe('useQuickLookCompose — language', () => {
 
   it('saves the CHOICE, not the guess — the store re-detects on its own', async () => {
     const { add, c } = harness()
-    c.start()
+    c.open()
     c.body.value = 'SELECT id FROM orders;'
     await settle()
     await c.save()
     expect(add).toHaveBeenCalledWith(expect.objectContaining({ language: 'auto' }))
   })
 
-  it('start() clears a language pinned by the previous snippet', async () => {
+  it('open() clears a language pinned by the previous snippet', async () => {
     const { c } = harness()
-    c.start()
+    c.open()
     c.language.value = 'python'
-    c.start('next one')
+    c.open({ name: 'next one' })
     expect(c.language.value).toBe('auto')
   })
 
-  it('startEdit adopts the snippet own language so a save cannot relabel it', () => {
+  it('open() adopts an existing language so a save cannot relabel it', () => {
     const { c } = harness()
-    c.startEdit({ id: 'a', name: 'N', content: 'print(1)', language: 'python' })
+    c.open({ id: 'a', name: 'N', content: 'print(1)', language: 'python' })
     expect(c.language.value).toBe('python')
   })
 })

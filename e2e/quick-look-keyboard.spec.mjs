@@ -142,3 +142,55 @@ test('picking a language stops detection from overriding it', async ({ app, page
   await expect(ql.locator('.ql-compose-lang')).toHaveValue('plaintext')
   await expect(ql.locator('.ql-compose-hl .syn-keyword')).toHaveCount(0)
 })
+
+// QA found three of these by hand. Each is a save-time or state bug that no
+// unit test could reach, because they all need a real launch.
+
+// The row carried only the RESOLVED language, so an unmodified inline edit
+// wrote it back as the stored one: an explicit "keep this plain" became auto,
+// and an auto snippet froze to whatever it had resolved to that day.
+test('an unmodified inline edit does not rewrite the stored language', async ({ app, page }) => {
+  const ql = await summon(app, page)
+
+  await ql.keyboard.press('ControlOrMeta+n')
+  await ql.locator('.ql-compose-name').fill('orders probe')
+  await ql.locator('.ql-compose-text').fill(SQL)
+  await expect(ql.locator('.ql-compose-lang option:checked')).toHaveText(/SQL/)
+  await ql.keyboard.press('ControlOrMeta+Enter')
+
+  await ql.locator('.ql-input').fill('orders probe')
+  await ql.locator('.ql-res:not(.ql-res-create)', { hasText: 'Orders probe' }).first().click()
+  await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
+
+  // Still Auto — the picker would read a bare "SQL" if the language had frozen.
+  await expect(ql.locator('.ql-compose-lang')).toHaveValue('auto')
+  await ql.keyboard.press('ControlOrMeta+Enter')
+
+  await ql.locator('.ql-input').fill('orders probe')
+  await ql.locator('.ql-res:not(.ql-res-create)', { hasText: 'Orders probe' }).first().click()
+  await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
+  await expect(ql.locator('.ql-compose-lang')).toHaveValue('auto')
+})
+
+// ArrowLeft is the native way to change a CLOSED select on Windows and Linux,
+// and the compose hints invite the user to Shift+Tab to it.
+test('changing the language with an arrow key does not discard the draft', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+
+  await ql.keyboard.press('ControlOrMeta+n')
+  await ql.locator('.ql-compose-text').fill('keep me')
+  await ql.locator('.ql-compose-lang').focus()
+  await ql.keyboard.press('ArrowLeft')
+
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await expect(ql.locator('.ql-compose-text')).toHaveValue('keep me')
+})
+
+// NOT covered here: a re-summon should land on the search band rather than last
+// time's draft. refresh() now cancels compose, but refresh() itself never runs
+// on a re-summon — the launcher's onMounted show-listener does not fire, which
+// reproduces on `main` (the search query survives too). Pre-existing launcher
+// lifecycle bug; see quality-audit.md.
