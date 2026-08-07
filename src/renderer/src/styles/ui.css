@@ -685,18 +685,22 @@ button.tag-chip:hover .usb-tct {
     transform: none;
   }
 }
+/* Holds the peak, THEN fades. The first version eased out over 1.4s, and
+   ease-out sheds most of the colour in the first few hundred ms — so the tint
+   was gone before a reader looking elsewhere ever turned back to the list. */
 .is-new::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  animation: new-wash 1.4s ease-out;
+  animation: new-wash 4s ease-in;
 }
 @keyframes new-wash {
-  from {
+  0%,
+  35% {
     background: color-mix(in srgb, var(--accent) 26%, transparent);
   }
-  to {
+  100% {
     background: transparent;
   }
 }
