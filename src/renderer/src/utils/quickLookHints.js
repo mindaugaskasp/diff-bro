@@ -12,6 +12,7 @@ export const copyKeyLabel = COPY
 /** @returns {Array<[string, string]>} [key glyph, message id] */
 export const composeHints = () => [
   [SAVE, 'quickLook.hint.save'],
+  ['\u21e5', 'quickLook.hint.acceptName'],
   ['\u21e7Tab', 'quickLook.hint.name'],
   ['\u2190/Esc', 'quickLook.hint.cancel']
 ]

@@ -6,11 +6,11 @@ import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../utils/markdownMarkup'
 import { useSettingsStore } from '../stores/settingsStore'
 import { DEFAULT_SNIPPET_DIALOG_SIZE } from '../utils/settingsDefaults'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
+import SnippetNameField from './SnippetNameField.vue'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import TagChipsField from './TagChipsField.vue'
 import SnippetEditorHeader from './SnippetEditorHeader.vue'
-import SnippetNameHint from './SnippetNameHint.vue'
 import SnippetSecretToggle from './SnippetSecretToggle.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
@@ -123,17 +123,15 @@ function saveSnippet() {
     <div class="fields">
       <label class="grow">
         {{ $t('snippetEditorDialog.name') }}
-        <input
+        <SnippetNameField
           v-model="name"
-          type="text"
-          spellcheck="false"
           :placeholder="$t('snippetEditorDialog.snippetName')"
           :readonly="readOnly"
+          :template-hint="editMode"
         />
         <span v-if="editMode && !name.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsAName') }}
         </span>
-        <SnippetNameHint v-if="editMode" :name="name" />
       </label>
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />
