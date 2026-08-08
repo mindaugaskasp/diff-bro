@@ -60,7 +60,13 @@ export function registerCliIpc() {
       pending = null
     }
   })
-  const where = () => ({ exePath: app.getPath('exe'), home: homedir() })
+  // Unpackaged, `exe` is Electron itself, so the app directory has to travel
+  // with it or the shim launches Electron with the verb as its app path.
+  const where = () => ({
+    exePath: app.getPath('exe'),
+    home: homedir(),
+    entryPath: app.isPackaged ? null : app.getAppPath()
+  })
 
   // Both of these put something OUTSIDE the app: a 0755 shim on PATH, and five
   // git config --global mutations. Rule 7 fences shell.openExternal behind a

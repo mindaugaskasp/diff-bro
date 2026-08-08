@@ -134,3 +134,28 @@ describe('an app path with shell metacharacters', () => {
     expect(execTarget('/usr/local/bin/diffbro')).toBe('/usr/local/bin/diffbro')
   })
 })
+
+// In a DEV run `app.getPath('exe')` is the ELECTRON binary, not the app — so a
+// shim built from it alone became `exec .../Electron "$@"`, and `diffbro help`
+// ran `Electron help`, which Electron reads as the path to an app to launch:
+// "Unable to find Electron app at <cwd>/help". The entry point has to travel
+// with it.
+describe('shimScript — a shim installed from a dev run', () => {
+  const ELECTRON = '/repo/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'
+  const ENTRY = '/repo'
+
+  it('passes the app entry point, so a bare verb is not read as one', () => {
+    const s = shimScript(ELECTRON, 'darwin', ENTRY)
+    expect(s).toContain(`exec '${ELECTRON}' '${ENTRY}' "$@"`)
+  })
+
+  it('leaves a packaged shim exactly as it was', () => {
+    expect(shimScript(APP, 'darwin')).toContain(`exec '${APP}' "$@"`)
+    expect(shimScript(APP, 'darwin', null)).toContain(`exec '${APP}' "$@"`)
+  })
+
+  it('does the same on Windows, where the entry is just another argument', () => {
+    const s = shimScript('C:\\el\\electron.exe', 'win32', 'C:\\repo')
+    expect(s).toContain('"C:\\el\\electron.exe" "C:\\repo" %*')
+  })
+})
