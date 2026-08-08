@@ -90,17 +90,36 @@ export const termFrom = (env = process.env, stream = process.stderr) => ({
 
 const BUF = Buffer.alloc(1)
 
-// One line from stdin, synchronously. Reading a byte at a time is the only way
-// to stop at the newline without swallowing what comes after it — the content
-// prompt reads many lines from the same stream.
-function readLine() {
+// A real terminal leaves fd 0 NON-BLOCKING, so readSync throws EAGAIN whenever
+// nobody has typed anything yet. Reading that as end-of-input is what made
+// every prompt return instantly in an actual shell: the questions printed, the
+// answers were all null, and the command exited "Nothing to save."
+//
+// Waiting is therefore the normal case, not the exception. Atomics.wait is the
+// only true synchronous sleep — setTimeout cannot help a loop that never yields.
+const SLEEP = new Int32Array(new SharedArrayBuffer(4))
+const nap = () => Atomics.wait(SLEEP, 0, 0, 15)
+
+/**
+ * One line, a byte at a time — the only way to stop at the newline without
+ * swallowing what follows it, since the content prompt reads many lines from
+ * the same stream.
+ * @param {(buf: Buffer) => number} read  bytes into buf; throws EAGAIN when idle
+ * @param {() => void} wait
+ * @returns {string|null} null at end of input
+ */
+export function readLineFrom(read, wait) {
   let out = ''
   for (;;) {
     let got
     try {
-      got = readSync(0, BUF, 0, 1, null)
-    } catch {
-      // EOF on a closed stdin, or a pipe that went away mid-answer.
+      got = read(BUF)
+    } catch (e) {
+      if (e?.code === 'EAGAIN') {
+        wait()
+        continue
+      }
+      // A closed stdin, or a pipe that went away mid-answer.
       return out || null
     }
     if (!got) return out || null
@@ -110,6 +129,8 @@ function readLine() {
   }
 }
 
+const readLine = () => readLineFrom((buf) => readSync(0, buf, 0, 1, null), nap)
+
 // Everything stdin has, for the piped case.
 function readAll() {
   const chunks = []
@@ -118,7 +139,11 @@ function readAll() {
     let got
     try {
       got = readSync(0, buf, 0, buf.length, null)
-    } catch {
+    } catch (e) {
+      if (e?.code === 'EAGAIN') {
+        nap()
+        continue
+      }
       break
     }
     if (!got) break

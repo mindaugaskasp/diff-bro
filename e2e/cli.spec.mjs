@@ -45,7 +45,9 @@ function runCliAnswering(userDataDir, args, answers) {
     let stderr = ''
     p.stdout.on('data', (d) => (stdout += d))
     p.stderr.on('data', (d) => (stderr += d))
-    p.stdin.write(answers.join('\n') + '\n')
+    // end(), not write(): reading stdin to EOF is what `cat x | cmd` gives it,
+    // and a stream left open makes the read wait forever — correctly.
+    p.stdin.end(answers.join('\n') + '\n')
     p.on('exit', (code) => resolve({ code, stdout, stderr }))
   })
 }

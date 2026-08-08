@@ -2,7 +2,14 @@
 // line reader, because the cold CLI path runs before the single-instance lock
 // and cannot await. What is testable is what it builds from the answers.
 import { describe, expect, it } from 'vitest'
-import { SYNTAXES, bodyFrom, draftFrom, promptSnippet, syntaxFor } from '../../src/main/cliPrompt'
+import {
+  SYNTAXES,
+  bodyFrom,
+  draftFrom,
+  promptSnippet,
+  readLineFrom,
+  syntaxFor
+} from '../../src/main/cliPrompt'
 
 describe('syntaxFor', () => {
   it('takes a name from the list', () => {
@@ -183,5 +190,67 @@ describe('promptSnippet — the conversation', () => {
   it('refuses an empty pipe rather than saving nothing', () => {
     const { io } = scripted([''], { isTty: false })
     expect(promptSnippet({ name: 'Piped' }, io)).toBeNull()
+  })
+})
+
+// A real terminal hands back EAGAIN when no key has been pressed yet — fd 0 is
+// non-blocking there. Treating that as end-of-input made every prompt return
+// instantly, so `diffbro new snippet` in an actual shell asked nothing and
+// exited "Nothing to save." Neither the injected-IO units nor the piped e2e
+// could see it: only a TTY produces EAGAIN.
+describe('readLineFrom — a terminal that has not been typed into yet', () => {
+  const eagain = () =>
+    Object.assign(new Error('resource temporarily unavailable'), { code: 'EAGAIN' })
+
+  it('waits through EAGAIN instead of reading it as end of input', () => {
+    const script = [eagain, eagain, 'h', 'i', '\n']
+    let i = 0
+    const read = (buf) => {
+      const next = script[i++]
+      if (typeof next === 'function') throw next()
+      if (next === undefined) return 0
+      buf.write(next)
+      return 1
+    }
+    expect(readLineFrom(read, () => {})).toBe('hi')
+  })
+
+  it('still treats a real end of input as the end', () => {
+    const read = () => 0
+    expect(readLineFrom(read, () => {})).toBeNull()
+  })
+
+  it('still treats an error that is not EAGAIN as the end', () => {
+    const read = () => {
+      throw Object.assign(new Error('bad fd'), { code: 'EBADF' })
+    }
+    expect(readLineFrom(read, () => {})).toBeNull()
+  })
+
+  it('keeps what was typed before the stream ended mid-line', () => {
+    const script = ['a', 'b']
+    let i = 0
+    const read = (buf) => {
+      if (i >= script.length) return 0
+      buf.write(script[i++])
+      return 1
+    }
+    expect(readLineFrom(read, () => {})).toBe('ab')
+  })
+
+  // Blocking the whole process in a tight loop would peg a core while someone
+  // decides what to type.
+  it('sleeps between retries rather than spinning', () => {
+    let slept = 0
+    const script = [eagain, eagain, '\n']
+    let i = 0
+    const read = (buf) => {
+      const next = script[i++]
+      if (typeof next === 'function') throw next()
+      buf.write(next)
+      return 1
+    }
+    readLineFrom(read, () => slept++)
+    expect(slept).toBe(2)
   })
 })
