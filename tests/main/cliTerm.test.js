@@ -1,7 +1,7 @@
 // How the prompt PRESENTS itself. Pure, so the parts that decide what a reader
 // sees are testable without a terminal — the reading and writing stay glue.
 import { describe, expect, it } from 'vitest'
-import { handoffText, paint, syntaxHelp } from '../../src/main/cliTerm'
+import { handoffText, paint, syntaxHelp, termFrom } from '../../src/main/cliTerm'
 
 const ESC = String.fromCharCode(27)
 const plain = { colour: false }
@@ -86,5 +86,26 @@ describe('handoffText', () => {
   // An unnamed snippet is named by the store, which this process cannot ask.
   it('says so rather than printing an empty name', () => {
     expect(handoffText({ ...draft, name: '' }, plain)).toMatch(/unnamed/i)
+  })
+})
+
+// The confirmation is written to STDOUT, so whether to colour it is a question
+// about stdout. Asking stderr meant `… > out.txt` from a terminal (stdout a
+// file, stderr still a TTY) wrote escape codes into the file.
+describe('termFrom — which stream is being asked about', () => {
+  it('is colourless for a redirected stream even when the other is a terminal', () => {
+    expect(termFrom({}, { isTTY: false, columns: 80 }).colour).toBe(false)
+  })
+
+  it('colours a terminal', () => {
+    expect(termFrom({}, { isTTY: true, columns: 80 }).colour).toBe(true)
+  })
+
+  it('obeys NO_COLOR', () => {
+    expect(termFrom({ NO_COLOR: '1' }, { isTTY: true, columns: 80 }).colour).toBe(false)
+  })
+
+  it('falls back to 80 columns when the stream does not say', () => {
+    expect(termFrom({}, { isTTY: true }).width).toBe(80)
   })
 })

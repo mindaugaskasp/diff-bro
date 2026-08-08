@@ -131,10 +131,105 @@ describe('detectSnippetLanguage — programming languages', () => {
     expect(detect('import java.util.List;')).toBe('java')
   })
 
+  it('detects PHP without an open tag', () => {
+    expect(
+      detect(
+        'namespace App\\Services;\n\nuse App\\Models\\User;\n\nclass SendbirdClient\n{\n' +
+          '    private string $appId;\n\n    public function __construct(string $appId)\n' +
+          '    {\n        $this->appId = $appId;\n    }\n}'
+      )
+    ).toBe('php')
+    expect(
+      detect(
+        '$sendbird = new SendbirdClient($appId);\n' +
+          '$channel = $sendbird->createGroupChannel($userIds);\n' +
+          'echo $channel->url;'
+      )
+    ).toBe('php')
+    expect(detect('$appId = "ABCD";\n$apiToken = "EFGH";')).toBe('php')
+    expect(detect("$payload = [\n    'user_ids' => $userIds,\n    'is_distinct' => true,\n];")).toBe(
+      'php'
+    )
+    expect(detect("require_once __DIR__ . '/vendor/autoload.php';")).toBe('php')
+  })
+
+  // A `$` sigil and an arrow are not PHP on their own: `$name` is a shell
+  // expansion, an f-string field and a jQuery identifier too, and ` -> ` with
+  // spaces around it is prose. Every case here detected as PHP once.
+  it('does not claim other languages for PHP', () => {
+    expect(detect('use std::io;\n\nfn main() {\n    println!("hi");\n}')).toBe('rust')
+    expect(detect('const $el = document.querySelector("#app")\nconsole.log($el)')).toBe('javascript')
+    expect(detect('name=diffbro\necho "building $name"\nexport OUT=$name.zip')).toBe('shell')
+    // PHP writes the type BEFORE the sigil (`private string $x;`); a `$name`
+    // followed by a colon is a TypeScript annotation, not a PHP property.
+    expect(detect('class Widget {\n  private $el: JQuery\n  show() {}\n}')).toBe('typescript')
+    // A jQuery-flavoured parameter name does not make a function PHP.
+    expect(
+      detect("function bindTabs($root) {\n  $root.find('.tab').on('click', toggle)\n}")
+    ).toBe('javascript')
+    expect(detect('export function render($el: HTMLElement): void {\n  $el.remove()\n}')).toBe(
+      'javascript'
+    )
+    // ` -> ` spaced is prose or a shell string; PHP writes `$obj->prop`.
+    expect(detect('for f in *.txt; do\n  echo "$f -> done"\ndone')).toBe('shell')
+    expect(detect('def run(cmd):\n    print(f"$cmd -> ok")')).toBe('python')
+    expect(detect('package main\n\n// $x -> y\nfunc main() {}')).toBe('go')
+    // `.` is string concatenation in PHP, never member access — a dotted call
+    // on a sigil variable is jQuery-era JavaScript.
+    expect(detect("$el = document.querySelector('#app');\n$el.classList.add('ready');")).toBe(
+      'plaintext'
+    )
+    expect(detect('public class Money {\n  private String $amount;\n}')).toBe('java')
+    // An arrow inside a sentence is prose quoting code, not code.
+    expect(detect('# Notes\n\nCall $client->send() to publish.')).toBe('markdown')
+  })
+
+  // Notes ABOUT PHP are the commonest thing a PHP developer stores, and every
+  // case here was mislabelled php — which then stuck, because an auto snippet
+  // records its verdict on save.
+  it('does not claim prose and release notes that mention PHP', () => {
+    expect(
+      detect('# 2.1.0\n\n- Dropped the `require_once` bootstrap.\n- Bumped minimums.')
+    ).toBe('markdown')
+    expect(detect('fix: drop the require_once shim\n\nCloses #12')).toBe('plaintext')
+    expect(detect("# Config\n\nSet it:\n\n    $config['url'] = 'https://x';\n\nDone.")).toBe(
+      'markdown'
+    )
+    expect(
+      detect('# Autoloading\n\nEvery class declares one:\n\n    namespace App\\Models;\n\nPSR-4.')
+    ).toBe('markdown')
+    expect(detect('Spreadsheet notes\n\n$Total = SUM(A1:A9);')).toBe('plaintext')
+    expect(detect("let $panel\n$panel = $('#panel');\n$panel.show();")).not.toBe('php')
+    expect(detect('class A {\n  private $q = makeQ();\n  run(): void {}\n}')).not.toBe('php')
+  })
+
   it('detects shell scripts without a shebang', () => {
     expect(detect('if [ -f x ]; then\n  echo "yes"\nfi')).toBe('shell')
     expect(detect('for f in *.txt; do\n  echo "$f"\ndone')).toBe('shell')
     expect(detect('export API_KEY=secret')).toBe('shell')
+  })
+})
+
+// Detection runs on content nobody here wrote: restoreBundle feeds an imported
+// .diffbro straight through add(), and the snippet cap is 8 MB. A quadratic
+// detector is a renderer freeze a stranger can post you.
+describe('detectSnippetLanguage — hostile input', () => {
+  it('stays fast on a pathological run of whitespace', () => {
+    const started = performance.now()
+    detect(`public${' '.repeat(200_000)}x`)
+    expect(performance.now() - started).toBeLessThan(250)
+  })
+
+  it('reads only the head of a very large snippet', () => {
+    expect(detect(`${'\n'.repeat(60_000)}<?php echo 1;`)).toBe('plaintext')
+  })
+
+  it('is bounded whatever the body is made of', () => {
+    for (const filler of [' ', '\n', '\t', 'a', '$', '-', '{']) {
+      const started = performance.now()
+      detect(filler.repeat(400_000))
+      expect(performance.now() - started).toBeLessThan(250)
+    }
   })
 })
 

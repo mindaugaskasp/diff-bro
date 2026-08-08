@@ -4,6 +4,16 @@ import { t } from './i18n'
 // cliPrompt, so everything that decides what a reader ends up looking at can be
 // tested without a terminal.
 
+/**
+ * How this terminal wants to be written to. NO_COLOR is a convention, not a
+ * preference to weigh — https://no-color.org.
+ * @returns {{ colour: boolean, width: number }}
+ */
+export const termFrom = (env = process.env, stream = process.stderr) => ({
+  colour: !!stream.isTTY && !env.NO_COLOR,
+  width: stream.columns || 80
+})
+
 const ESC = String.fromCharCode(27)
 const CODES = { dim: 2, bold: 1, cyan: 36, green: 32, red: 31, amber: 33 }
 

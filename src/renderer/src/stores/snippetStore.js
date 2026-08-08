@@ -7,13 +7,14 @@ import {
   dropTag,
   TAG_PALETTE,
   cleanTag,
+  derivedFrom,
   effectiveLanguage,
   migrate,
   nextColor,
-  nextRank
+  nextRank,
+  promptVars
 } from '../utils/snippetState'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
-import { parseTemplateVars } from '../utils/templateVars'
 import { parseSnippetImport } from '../utils/snippetImport'
 import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
@@ -86,12 +87,6 @@ Reply with a prioritized list — most critical first — and suggest a fix for 
  */
 export const languageOf = (entry) =>
   effectiveLanguage(entry?.language, entry?.detected ?? 'plaintext')
-
-// Distinct {{variables}} in a claude prompt, stored as plaintext metadata so the
-// sidebar row can flag "fillable on copy" without decrypting. Empty for every
-// other language (where {{ }} is template code, not a fill placeholder).
-const promptVars = (effectiveLang, content) =>
-  effectiveLang === 'claude' ? parseTemplateVars(content) : []
 
 // The snippet's format as a tag name (added on save so it's findable); null for
 // plaintext/unknown.
@@ -284,18 +279,11 @@ export const useSnippetStore = defineStore('snippets', {
         return null
       }
       this.keyError = null
-      // Backfill `detected`/`vars` for pre-field snippets — the one place their
-      // plaintext is in hand.
-      let changed = false
-      if (entry.detected === undefined) {
-        entry.detected = detectSnippetLanguage(content)
-        changed = true
+      const derived = derivedFrom(entry, content)
+      if (derived.detected !== entry.detected || derived.vars !== entry.vars) {
+        Object.assign(entry, derived)
+        this.persist()
       }
-      if (entry.vars === undefined) {
-        entry.vars = promptVars(languageOf(entry), content)
-        changed = true
-      }
-      if (changed) this.persist()
       return content
     },
     // tags optional; the AAD is unchanged, so this is a metadata + content

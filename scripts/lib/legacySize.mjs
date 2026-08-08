@@ -26,7 +26,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/menus.js': { fn: 139 },
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 747 },
-  'src/renderer/src/stores/snippetStore.js': { file: 483 },
+  'src/renderer/src/stores/snippetStore.js': { file: 471 },
   'src/renderer/src/stores/tabsStore.js': { file: 323 },
   'src/renderer/src/stores/vaultStore.js': { file: 362 },
   'src/renderer/src/utils/structuralDiff.js': { file: 279 },

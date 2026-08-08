@@ -63,6 +63,8 @@ export default defineConfig({
         'src/main/captureRect.js',
         'src/main/autoBackup.js',
         'src/main/cliDraft.js',
+        'src/main/cliIo.js',
+        'src/main/cliNames.js',
         'src/main/cliPrompt.js',
         'src/main/cliTerm.js',
         'src/main/gitTool.js',

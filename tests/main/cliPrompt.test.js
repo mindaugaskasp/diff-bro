@@ -1,7 +1,7 @@
-// The interactive `diffbro new snippet`. The reading is glue; what is testable
-// is what it builds from the answers, and the shape of the conversation itself
-// — driven with its IO handed in, because a pipe is not a TTY and an e2e
-// feeding stdin can only ever reach the piped path.
+// The interactive `diffbro create snippet`. What is testable here is what the
+// conversation builds from the answers and the shape of the conversation
+// itself, driven with its IO handed in. The terminal half — where a real Tab
+// key is decoded — is cliIo.test.js.
 import { describe, expect, it } from 'vitest'
 import {
   SYNTAXES,
@@ -9,9 +9,9 @@ import {
   cliSnippetName,
   draftFrom,
   promptSnippet,
-  syntaxFor,
-  termFrom
+  syntaxFor
 } from '../../src/main/cliPrompt'
+import { EXPLICIT_LANGUAGES } from '../../src/shared/snippetLanguages'
 
 describe('syntaxFor', () => {
   it('takes a name from the list', () => {
@@ -20,9 +20,26 @@ describe('syntaxFor', () => {
     expect(syntaxFor('  json  ')).toBe('json')
   })
 
+  // The prompt and the editor's picker are one offer. They drifted: php was
+  // only ever in the picker, so `php` here fell back to auto without saying so.
+  it('offers every syntax the editor picker does', () => {
+    expect(SYNTAXES).toEqual(EXPLICIT_LANGUAGES)
+    expect(syntaxFor('php')).toBe('php')
+    expect(syntaxFor('typescript')).toBe('typescript')
+  })
+
   it('takes the number the list printed', () => {
     expect(syntaxFor('1')).toBe(SYNTAXES[0])
     expect(syntaxFor(String(SYNTAXES.length))).toBe(SYNTAXES.at(-1))
+  })
+
+  // A number is an affordance of the PROMPT — it means "the row you can see".
+  // Honouring it for --syntax makes the flag's meaning depend on the length and
+  // order of a list that grows: `--syntax 3` was yaml before php and typescript
+  // joined, and a script would have got a different language, not an error.
+  it('refuses a number from a flag, where there is no list to have read', () => {
+    expect(syntaxFor('3', { numbered: false })).toBe('auto')
+    expect(syntaxFor('sql', { numbered: false })).toBe('sql')
   })
 
   // An empty answer is the common one — Enter past the question.
@@ -111,36 +128,18 @@ describe('draftFrom', () => {
   })
 })
 
-// The confirmation is written to STDOUT, so whether to colour it is a question
-// about stdout. Asking stderr meant `… > out.txt` from a terminal (stdout a
-// file, stderr still a TTY) wrote escape codes into the file.
-describe('termFrom — which stream is being asked about', () => {
-  it('is colourless for a redirected stream even when the other is a terminal', () => {
-    expect(termFrom({}, { isTTY: false, columns: 80 }).colour).toBe(false)
-  })
-
-  it('colours a terminal', () => {
-    expect(termFrom({}, { isTTY: true, columns: 80 }).colour).toBe(true)
-  })
-
-  it('obeys NO_COLOR', () => {
-    expect(termFrom({ NO_COLOR: '1' }, { isTTY: true, columns: 80 }).colour).toBe(false)
-  })
-
-  it('falls back to 80 columns when the stream does not say', () => {
-    expect(termFrom({}, { isTTY: true }).width).toBe(80)
-  })
-})
-
 describe('promptSnippet — the conversation', () => {
-  const scripted = (answers, { isTty = true } = {}) => {
+  const scripted = (answers, { isTty = true, hasNames = false } = {}) => {
     const said = [...answers]
     const written = []
-    const state = { written, closed: false }
+    const completes = []
+    const state = { written, completes, closed: false }
     state.io = {
       isTty,
-      ask: async (question) => {
+      hasNames: () => hasNames,
+      ask: async (question, opts) => {
         written.push(question)
+        completes.push(opts?.completes === true)
         return said.length ? said.shift() : null
       },
       readAll: async () => said.join('\n'),
@@ -173,6 +172,15 @@ describe('promptSnippet — the conversation', () => {
     const t = s.written.join('')
     expect(t.indexOf('plaintext')).toBeLessThan(t.indexOf('Syntax'))
     expect(t.indexOf('plaintext')).toBeGreaterThan(t.indexOf('Name'))
+  })
+
+  // The editor's name field completes against the library; so does this one.
+  // Only this one, though — a Tab inside the body is a tab.
+  it('asks for completion on the name and nowhere else', async () => {
+    const s = scripted(['Deploy notes', 'sql', 'select 1;', ':wq'])
+    await promptSnippet({}, s.io)
+    expect(s.completes[0]).toBe(true)
+    expect(s.completes.slice(1).every((c) => c === false)).toBe(true)
   })
 
   it('skips a question a flag already answered', async () => {

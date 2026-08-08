@@ -13,7 +13,7 @@ import { registerDiffImageIpc } from './diffImage'
 import { registerTextToolsIpc } from './textTools'
 import { registerHashIpc } from './hashTools'
 import { backupIfDue, registerBackupIpc } from './backupRoute'
-import { readSettings, setBackupHook } from './appData'
+import { readSettings, readSnippetStore, setBackupHook } from './appData'
 import { registerShareIpc } from './share'
 import { registerMailIpc } from './mail'
 import { registerClipboardCopyIpc } from './clipboardCopy'
@@ -26,6 +26,8 @@ import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
 import { cliUsage, helpText, parseCli } from './cli'
 import { handoffLine, promptSnippet } from './cliPrompt'
+import { defaultIo } from './cliIo'
+import { namesFrom } from './cliNames'
 import { discardDraftFile, readDraftFile, sweepDraftFiles, writeDraftFile } from './cliDraft'
 import { loadLocale, t } from './i18n'
 
@@ -51,7 +53,10 @@ if (cold.command?.name === 'help') {
 // while the reader is being asked anything.
 async function askForDraft() {
   if (cold.command?.name !== 'new-snippet') return null
-  cold.command.draft = await promptSnippet(cold.command.flags)
+  // A thunk: reading the library parses the whole encrypted store, and a piped
+  // run never reaches the question that needs it.
+  const io = defaultIo({ names: () => namesFrom(readSnippetStore()) })
+  cold.command.draft = await promptSnippet(cold.command.flags, io)
   if (!cold.command.draft) {
     process.stderr.write(`${t('cliPrompt.nothingToSave')}\n`)
     app.exit(1)
