@@ -30,8 +30,9 @@ const sectionOpen = ref(true)
 
 // Tag filtering + search live in the shell (props); this just mirrors the query.
 const { query, visibleFavorites, visibleListed } = useSnippetFilters()
-const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, openDiagram } =
-  useSnippetPreview()
+const snippetPreview = useSnippetPreview()
+const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, dismiss } = snippetPreview
+const { openEditor, openDiagram } = snippetPreview
 
 watch(
   () => props.search,
@@ -132,6 +133,7 @@ function newSnippet() {
           :favorite="entry.favorite"
           @hover-title="onRowEnter(entry, $event)"
           @leave-title="onRowLeave"
+          @dragging="dismiss"
         />
       </ul>
     </div>

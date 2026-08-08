@@ -8,6 +8,9 @@ import { untitledName } from './snippetName'
 // Our own drag flavour. `Files` is the OS one; anything else on the drag is not
 // a snippet of ours and is ignored.
 export const DRAG_TYPE = 'application/x-diffbro-snippet'
+// A saved or external diff dragged out of the sidebar. Its own flavour, so a
+// drop target can tell "compare this snippet" from "open this comparison".
+export const DIFF_DRAG_TYPE = 'application/x-diffbro-diff'
 
 // A comparison has two sides, and an id is a uuid. Both caps exist so a crafted
 // drag cannot make the app decrypt an unbounded list of anything.
@@ -33,16 +36,19 @@ export function snippetSource(entry, content) {
 }
 
 /**
- * The snippet ids a drag carries. Only ids travel — never content — so this
- * never returns anything the store cannot vouch for.
+ * The ids a drag carries. Only ids travel — never content — so this never
+ * returns anything the store cannot vouch for. Shared by both flavours: the
+ * caps and the shape checks are the hardening, and duplicating them per type is
+ * how one copy ends up without them.
  * @param {DataTransfer|null} transfer
+ * @param {string} [type]
  * @returns {string[]}
  */
-export function dragIdsFrom(transfer) {
-  if (!Array.from(transfer?.types ?? []).includes(DRAG_TYPE)) return []
+export function dragIdsFrom(transfer, type = DRAG_TYPE) {
+  if (!Array.from(transfer?.types ?? []).includes(type)) return []
   let parsed
   try {
-    parsed = JSON.parse(transfer.getData(DRAG_TYPE))
+    parsed = JSON.parse(transfer.getData(type))
   } catch {
     return []
   }

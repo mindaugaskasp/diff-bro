@@ -75,7 +75,14 @@ async function openLink() {
 
 // Hovering the name previews the snippet — not the whole row, which made the
 // card appear while you were only reaching for the row's buttons.
-defineEmits(['hoverTitle', 'leaveTitle'])
+const emit = defineEmits(['hoverTitle', 'leaveTitle', 'dragging'])
+
+// The preview is anchored to this row, so it sits over the area the drag is
+// heading for. Nothing else closes it — the pointer never leaves the row.
+function onDragStart(e) {
+  emit('dragging')
+  startDrag(e, props.entry)
+}
 </script>
 
 <template>
@@ -86,7 +93,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"
-    @dragstart="startDrag($event, entry)"
+    @dragstart="onDragStart($event)"
   >
     <Transition name="flash">
       <span v-if="copied" class="copied-flash" aria-live="polite">{{ $t('common.copied') }}</span>

@@ -17,6 +17,31 @@ const CARD = { width: 1280, minWidth: 360 }
  *            onRowEnter: (entry: import('../types').SnippetEntry, e: MouseEvent) => void,
  *            onRowLeave: () => void }}
  */
+// What the card SHOWS, separate from when it opens and closes. A secret is
+// never decrypted for a preview at all — the plaintext has no reason to exist
+// here, so it never reaches the cache or the card.
+async function cardFor(entry, store, cache) {
+  let text = SECRET_MASK
+  if (!isSecret(entry)) {
+    text = cache.get(entry.id)
+    if (text === undefined) {
+      text = await store.load(entry.id)
+      if (text == null) return null // key unavailable / dropped — no preview
+      cache.set(entry.id, text)
+    }
+  }
+  const lang = languageOf(entry)
+  return {
+    id: entry.id,
+    name: entry.name,
+    tags: entry.tags,
+    // plaintext is the boring default — no badge for it.
+    lang: lang === 'plaintext' ? '' : lang,
+    secret: isSecret(entry),
+    text: text.slice(0, MAX_PREVIEW_CHARS)
+  }
+}
+
 export function useSnippetPreview() {
   const store = useSnippetStore()
   const ui = useUiStore()
@@ -41,53 +66,43 @@ export function useSnippetPreview() {
     const row = e.currentTarget.closest?.('[data-preview-anchor]') ?? e.currentTarget
     hoverTimer = setTimeout(async () => {
       pendingId = entry.id
-      // A secret is never decrypted for a preview at all — the plaintext has no
-      // reason to exist here, so it never reaches the cache or the card.
-      let text = SECRET_MASK
-      if (!isSecret(entry)) {
-        text = cache.get(entry.id)
-        if (text === undefined) {
-          text = await store.load(entry.id)
-          if (text == null) return // key unavailable / dropped — no preview
-          cache.set(entry.id, text)
-        }
-      }
-      if (pendingId !== entry.id) return // pointer already moved on
-      const lang = languageOf(entry)
-      preview.value = {
-        id: entry.id,
-        name: entry.name,
-        tags: entry.tags,
-        // plaintext is the boring default — no badge for it.
-        lang: lang === 'plaintext' ? '' : lang,
-        secret: isSecret(entry),
-        text: text.slice(0, MAX_PREVIEW_CHARS),
-        style: cardStyle(row)
-      }
+      const card = await cardFor(entry, store, cache)
+      if (!card || pendingId !== entry.id) return // no body, or pointer moved on
+      preview.value = { ...card, style: cardStyle(row) }
     }, HOVER_DELAY_MS)
   }
   // Short close delay so the pointer can travel into the card (onCardEnter cancels).
+  // The one close path. A drag is the case with no natural one: it starts on
+  // the row the card is anchored to, so the card sits over the very area being
+  // dragged TO, and the pointer never leaves the row to trigger a hover-out.
+  function dismiss() {
+    clearTimeout(hoverTimer)
+    clearTimeout(closeTimer)
+    pendingId = null
+    preview.value = null
+  }
+  const closeAfter = (ms) => {
+    clearTimeout(closeTimer)
+    closeTimer = setTimeout(dismiss, ms)
+  }
   function onRowLeave() {
     clearTimeout(hoverTimer)
     pendingId = null
-    clearTimeout(closeTimer)
-    closeTimer = setTimeout(() => (preview.value = null), 160)
+    closeAfter(160)
   }
   const onCardEnter = () => clearTimeout(closeTimer)
-  function onCardLeave() {
-    clearTimeout(closeTimer)
-    closeTimer = setTimeout(() => (preview.value = null), 90)
-  }
+  const onCardLeave = () => closeAfter(90)
+
   // Open the hovered snippet in the full editor (its enlarged, editable window).
   function openEditor() {
     if (preview.value) store.editingSnippet = { id: preview.value.id }
-    preview.value = null
+    dismiss()
   }
   // Reload the full source (the preview text is truncated) for the viewer.
   async function openDiagram() {
     if (!preview.value || preview.value.secret) return
     const { id, name } = preview.value
-    preview.value = null
+    dismiss()
     const code = await store.load(id)
     if (code != null) ui.openMermaid(name, code)
   }
@@ -105,5 +120,14 @@ export function useSnippetPreview() {
     clearTimeout(closeTimer)
   })
 
-  return { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, openDiagram }
+  return {
+    preview,
+    onRowEnter,
+    onRowLeave,
+    onCardEnter,
+    onCardLeave,
+    dismiss,
+    openEditor,
+    openDiagram
+  }
 }

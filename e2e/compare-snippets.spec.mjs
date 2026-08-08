@@ -138,3 +138,21 @@ test('one side loaded shows a filled slot and an empty one, in pane order', asyn
   expect(seen.rim).toBe('dashed')
   await expect(slots.locator('.wait-label')).toContainText('Right')
 })
+
+// The hover preview is anchored to the row you start the drag from, so it sat
+// directly over the area being dragged TO. Nothing else closed it: the pointer
+// never leaves the row before the drag takes over.
+test('the hover preview gets out of the way once a drag starts', async ({ page }) => {
+  const row = page.locator('.row', { hasText: DIAGRAM }).first()
+  const anchor = row.locator('[data-preview-anchor]').first()
+  await ((await anchor.count()) ? anchor : row).hover()
+  await expect(page.locator('.preview')).toBeVisible({ timeout: 5000 })
+
+  const rb = await row.boundingBox()
+  const pb = await page.locator('.pane').boundingBox()
+  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2, { steps: 10 })
+  await expect(page.locator('.preview')).toHaveCount(0)
+  await page.mouse.up()
+})
