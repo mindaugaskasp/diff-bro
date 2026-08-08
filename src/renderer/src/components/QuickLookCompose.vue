@@ -2,9 +2,10 @@
 // The launcher's new-snippet panel: it fills the preview pane while composing.
 // The body is a transparent-text textarea over a <pre> of tokenized runs
 // (useHighlightedInput) — never Monaco, which would cost the instant summon.
-import { computed, nextTick, ref, toRef } from 'vue'
+import { computed, nextTick, toRef } from 'vue'
 import { useCaretBackOut } from '../composables/useCaretBackOut'
 import { useHighlightedInput } from '../composables/useHighlightedInput'
+import SnippetNameField from './SnippetNameField.vue'
 import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 import { t } from '../i18n'
 import AppIcon from './AppIcon.vue'
@@ -20,7 +21,6 @@ const body = defineModel('body', { type: String, required: true })
 const language = defineModel('language', { type: String, required: true })
 const emit = defineEmits(['save', 'cancel'])
 
-const nameEl = ref(null)
 const { textareaEl, overlayEl, lines, isPlain, onScroll, onCompositionStart, onCompositionEnd } =
   useHighlightedInput({ text: body, language: toRef(props, 'resolvedLanguage') })
 
@@ -69,16 +69,13 @@ defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
     </div>
 
     <div class="ql-compose-body">
-      <input
-        ref="nameEl"
+      <SnippetNameField
         v-model="name"
-        class="ql-compose-name"
-        type="text"
+        input-class="ql-compose-name"
         :placeholder="$t('quickLookCompose.nameOptional')"
-        autocomplete="off"
-        spellcheck="false"
       />
       <div class="ql-compose-field">
+        <!-- Whitespace between these tags RENDERS and shifts every line. -->
         <pre ref="overlayEl" class="ql-compose-hl" aria-hidden="true"><div
           v-for="(spans, i) in lines"
           :key="i"

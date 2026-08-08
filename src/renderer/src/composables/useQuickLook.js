@@ -15,6 +15,10 @@ import { t } from '../i18n'
 // convert tools only; diffs stay in the main window.
 
 const MAX_PREVIEW_CHARS = 4000
+// A textarea handles any text, so the language is not the gate — only tooling
+// the launcher lacks is. A secret is refused because its guarantee is that the
+// contents never render where they can be read.
+const NEEDS_MAIN_WINDOW = new Set(['mermaid', 'claude'])
 
 export function useQuickLook() {
   const snippets = useSnippetStore()
@@ -143,10 +147,6 @@ export function useQuickLook() {
     compose.cancel()
   }
 
-  // A textarea handles any text, so the language is not the gate — only tooling
-  // the launcher lacks is. A secret is refused because its guarantee is that the
-  // contents never render where they can be read.
-  const NEEDS_MAIN_WINDOW = new Set(['mermaid', 'claude'])
   const canEditInline = computed(() => {
     const it = current.value
     return it?.kind === 'snippet' && !it.secret && !NEEDS_MAIN_WINDOW.has(it.lang)

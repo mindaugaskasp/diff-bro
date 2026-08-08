@@ -159,6 +159,24 @@ async function loadStructureDiff(page) {
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const SURFACES = [
   {
+    name: 'snippet-name-ghost',
+    // The inline name completion. Its ink is the one thing a computed-contrast
+    // table cannot settle: the ghost has to read as clearly SECONDARY to the
+    // typed text while staying legible, and that is a live-DOM judgement.
+    open: async (page) => {
+      await page.getByRole('button', { name: 'New snippet' }).click()
+      const editor = page.getByRole('dialog', { name: 'New Snippet' })
+      await editor.getByPlaceholder('Snippet name…').fill('Exam')
+      await editor.locator('.name-ghost').waitFor()
+    },
+    close: (page) => page.keyboard.press('Escape'),
+    probes: {
+      'typed name': ['.ghost-field input', TEXT],
+      // Hint ink, so the 3:1 floor --text-dim already carries elsewhere.
+      'name ghost': ['.name-ghost', DIM]
+    }
+  },
+  {
     name: 'tour-callout',
     // Summoned rather than waited for: the tour has usually been seen and
     // recorded by the time the sweep runs.

@@ -305,7 +305,8 @@
       "copyLines": "copy lines",
       "backToList": "back to list",
       "back": "back",
-      "name": "name"
+      "name": "name",
+      "acceptName": "accept name"
     },
     "createHint": "Press {key} to name and capture it.",
     "action": {

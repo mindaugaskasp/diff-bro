@@ -1,16 +1,16 @@
 <script setup>
 // Create/edit a snippet: Monaco + tag-field wiring over useSnippetDraft.
 import { computed, nextTick, ref, watch } from 'vue'
-import { JIRA_ACTIONS, applyJiraAction } from '../utils/jiraMarkup'
-import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../utils/markdownMarkup'
 import { useSettingsStore } from '../stores/settingsStore'
 import { DEFAULT_SNIPPET_DIALOG_SIZE } from '../utils/settingsDefaults'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
+import { useFormatToolbar } from '../composables/useFormatToolbar'
+import SnippetNameField from './SnippetNameField.vue'
+import SnippetNameHint from './SnippetNameHint.vue'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import TagChipsField from './TagChipsField.vue'
 import SnippetEditorHeader from './SnippetEditorHeader.vue'
-import SnippetNameHint from './SnippetNameHint.vue'
 import SnippetSecretToggle from './SnippetSecretToggle.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
@@ -66,17 +66,14 @@ const { reset, applySelectionEdit, layout } = useMonacoInput({
 // toggle, toolbar and rendered view.
 const plain = ref(editMode.value)
 const hasPreview = computed(() => isJira.value || isMarkdown.value)
-const toolbarActions = computed(() => (isMarkdown.value ? MARKDOWN_ACTIONS : JIRA_ACTIONS))
+const { actions: toolbarActions, applyAction } = useFormatToolbar({
+  isMarkdown,
+  applySelectionEdit
+})
 // Relayout Monaco once it becomes visible (it may have mounted hidden).
 watch(plain, (isPlain) => {
   if (isPlain) nextTick(layout)
 })
-
-// A toolbar button: apply its language-specific transform to the selection.
-function applyAction(id) {
-  const apply = isMarkdown.value ? applyMarkdownAction : applyJiraAction
-  applySelectionEdit((model) => apply(id, model))
-}
 
 // The action row owns its copy/clear feedback; this is its handle for the
 // "Copied" flash, which fires only once the clipboard write succeeded.
@@ -123,10 +120,8 @@ function saveSnippet() {
     <div class="fields">
       <label class="grow">
         {{ $t('snippetEditorDialog.name') }}
-        <input
+        <SnippetNameField
           v-model="name"
-          type="text"
-          spellcheck="false"
           :placeholder="$t('snippetEditorDialog.snippetName')"
           :readonly="readOnly"
         />
