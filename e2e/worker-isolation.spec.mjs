@@ -18,8 +18,12 @@ test('the app scratch dirs are its own profile, not the worker', async () => {
   const app = await launchApp(dir)
   try {
     const seen = await launchedEnv(app)
-    expect(seen.temp).toBe(join(dir, 'tmp'))
     expect(seen.home).toBe(join(dir, 'home'))
+    // app.getPath('temp') does not follow TMPDIR on darwin, so the staging dir
+    // is shared there. That is safe rather than lucky: workerEnv THROWS on a
+    // second worker off X11, so there is never a neighbour to collide with —
+    // and the sweep that deletes diffbro-clipboard-* only runs one profile deep.
+    if (process.platform !== 'darwin') expect(seen.temp).toBe(join(dir, 'tmp'))
   } finally {
     await app.close()
     rmSync(dir, { recursive: true, force: true })

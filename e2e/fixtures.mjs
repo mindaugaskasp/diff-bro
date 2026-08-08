@@ -35,6 +35,11 @@ export const launchApp = (userDataDir) =>
 export async function firstReadyPage(app) {
   const page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
+  // The menu helpers need the Electron app to drive the NATIVE bar on macOS,
+  // and every one of them is called with only the page. Set HERE and not in the
+  // `page` fixture, for the same reason TMPDIR/HOME are: the relaunch specs
+  // call launchApp + firstReadyPage directly and never touch the fixture.
+  page.electronApp = app
   return page
 }
 
@@ -66,10 +71,6 @@ export const test = base.extend({
   // months without a single spec noticing, because no spec clicked that button.
   page: async ({ app }, use) => {
     const page = await firstReadyPage(app)
-    // The menu helpers need the Electron app to drive the NATIVE bar on macOS,
-    // and every one of them is called with only the page. Stashing the handle
-    // here beats threading a second argument through ~60 call sites.
-    page.electronApp = app
     const thrown = []
     page.on('pageerror', (err) => thrown.push(err.message))
     await use(page)
@@ -95,15 +96,21 @@ export const test = base.extend({
 // — or that runs with no window at all — goes through the menu Electron owns.
 export const clickAppMenuItem = (app, label) =>
   app.evaluate(({ Menu }, wanted) => {
-    const find = (items) => {
+    // Exact first, then substring — the in-window path matches with `hasText`,
+    // and the two must agree or a caller has to know which platform it is on.
+    // The native labels are the longer ones ("Epoch / Date" for "Epoch").
+    const find = (items, match) => {
       for (const item of items) {
-        if (item.label === wanted) return item
-        const hit = item.submenu && find(item.submenu.items)
+        if (match(item.label)) return item
+        const hit = item.submenu && find(item.submenu.items, match)
         if (hit) return hit
       }
       return null
     }
-    const item = find(Menu.getApplicationMenu().items)
+    const all = Menu.getApplicationMenu().items
+    const item =
+      find(all, (l) => l === wanted) ??
+      find(all, (l) => typeof l === 'string' && l.includes(wanted))
     if (!item) throw new Error(`application menu item not found: ${wanted}`)
     item.click()
   }, label)
@@ -117,7 +124,7 @@ const usesNativeMenu = () => process.platform === 'darwin'
 // Open Settings through the same path a user takes: the File menu.
 export async function openSettings(page) {
   if (usesNativeMenu()) {
-    await clickAppMenuItem(page.electronApp, 'Settings…')
+    await clickAppMenuItem(page.electronApp, 'Settings')
   } else {
     await page.getByRole('button', { name: 'File', exact: true }).click()
     await page.getByText('Settings', { exact: true }).click()

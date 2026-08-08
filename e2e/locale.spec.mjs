@@ -36,11 +36,14 @@ test('switching language re-renders the chrome and survives a relaunch', async (
     await expect(page.getByText(/^\[.*\]$/u).first()).toBeVisible()
     await closeDialog(page)
 
-    // The in-app menu bar (Windows/Linux) is built from the same catalogue as
-    // the native menu, and was a computed for exactly this reason: built once,
-    // it would still be showing English here.
-    const fileMenu = page.locator('.menubar button').first()
-    await expect(fileMenu).toHaveText(PSEUDO)
+    // The in-app menu bar is built from the same catalogue as the native menu,
+    // and was a computed for exactly this reason: built once, it would still be
+    // showing English here. macOS renders no in-window bar at all (App.vue
+    // mounts MenuBar only when !isMac), so there the native check below is the
+    // whole test rather than a second opinion.
+    if (process.platform !== 'darwin') {
+      await expect(page.locator('.menubar button').first()).toHaveText(PSEUDO)
+    }
 
     // The APPLICATION menu lives in main, built from a template at startup, so
     // this proves main picked the change up rather than only the renderer.
@@ -55,7 +58,9 @@ test('switching language re-renders the chrome and survives a relaunch', async (
     // main reads it back before the menu is built.
     app = await launchApp(dir)
     page = await firstReadyPage(app)
-    await expect(page.locator('.menubar button').first()).toHaveText(PSEUDO)
+    if (process.platform !== 'darwin') {
+      await expect(page.locator('.menubar button').first()).toHaveText(PSEUDO)
+    }
     const afterRelaunch = await app.evaluate(({ Menu }) =>
       Menu.getApplicationMenu().items.map((i) => i.label)
     )
