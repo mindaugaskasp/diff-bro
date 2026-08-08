@@ -299,7 +299,7 @@ test('`diffbro create snippet -i` saves a piped body under the flags it was give
     expect(out.stdout).toContain('Handed to Diff Bro')
     expect(out.stdout).toContain('Written from the shell')
     expect(out.stdout).toContain('2 lines')
-    expect(out.stdout).not.toContain('Name')
+    expect(out.stdout).not.toContain('(optional)')
 
     const row = page.locator('.snippets-section .row', { hasText: 'Written from the shell' })
     await expect(row).toBeVisible({ timeout: 15000 })
@@ -329,8 +329,9 @@ test('`diffbro create snippet -i` takes a piped body and flags without asking', 
       ['create', 'snippet', '-i', '--name', 'Piped schema', '--syntax', 'sql', '--tag', 'db'],
       ['create table t (id int);', 'select 1;']
     )
-    // No questions were asked, so nothing was written to stderr to ask them.
-    expect(out.stderr).not.toContain('Name')
+    // No questions were asked. Matched on the PROMPT, not the word "Name":
+    // Linux Chromium logs `NameHasOwner` to stderr, which contains it.
+    expect(out.stderr).not.toContain('(optional)')
     expect(out.stdout).toContain('Piped schema')
     expect(out.stdout).toContain('tagged cli db')
 

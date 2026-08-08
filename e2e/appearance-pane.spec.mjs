@@ -9,7 +9,7 @@ import { COMMANDS } from '../src/shared/cliCommands.js'
 
 const openAppearance = async (page) => {
   await openSettings(page)
-  await page.getByRole('button', { name: 'Appearance' }).click()
+  await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
   await page.locator('.theme-tile').first().waitFor()
 }
 
@@ -107,6 +107,10 @@ test('the Terminal menu opens Settings on the pane that documents the CLI', asyn
 // OPEN Settings did nothing at all. The branch's own test only covered opening
 // it from closed, which is the case that happened to work.
 test('the Terminal menu switches panes when Settings is already open', async ({ page }) => {
+  // macOS only, and not as a convenience: elsewhere the menu bar lives INSIDE
+  // the window, behind the dialog's modal backdrop, so this is not a state a
+  // reader can reach. On macOS the menu is the platform's own and stays live.
+  test.skip(process.platform !== 'darwin', 'the in-window menu bar is behind the modal backdrop')
   await openSettings(page)
   await page.locator('.settings-nav .nav-item', { hasText: 'Storage' }).click()
   await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Storage')

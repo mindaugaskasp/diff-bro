@@ -417,7 +417,7 @@ const SURFACES = [
       await page.getByRole('button', { name: 'File', exact: true }).click()
       await page.getByText('Settings', { exact: true }).click()
       await page.getByRole('dialog', { name: 'Settings' }).waitFor()
-      await page.getByRole('button', { name: 'Appearance' }).click()
+      await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
       await page.locator('.theme-tile.active').waitFor()
     },
     close: async (page) => {
