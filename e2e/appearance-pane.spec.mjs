@@ -89,7 +89,7 @@ test('the Terminal menu opens Settings on the pane that documents the CLI', asyn
 
   const usages = await page.locator('.cli-list dt code').allTextContents()
   expect(usages).toContain('diffbro compare <file> [<file>]')
-  expect(usages).toContain('diffbro cb save')
+  expect(usages).toContain('diffbro clipboard save')
   expect(usages.length).toBeGreaterThanOrEqual(7)
   // Each one is explained, not just listed.
   expect(await page.locator('.cli-list dd').count()).toBe(usages.length)

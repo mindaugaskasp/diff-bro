@@ -39,10 +39,10 @@ export const COMMANDS = [
     detailKey: 'cli.create.detail'
   },
   {
-    topic: 'cb',
-    usage: 'diffbro cb save',
-    summaryKey: 'cli.cb.summary',
-    detailKey: 'cli.cb.detail'
+    topic: 'clipboard',
+    usage: 'diffbro clipboard save',
+    summaryKey: 'cli.clipboard.summary',
+    detailKey: 'cli.clipboard.detail'
   },
   {
     topic: 'help',

@@ -9,6 +9,14 @@ import { t } from './i18n'
 // forwarded by `second-instance`.
 
 const pad = (s, n) => s + ' '.repeat(Math.max(0, n - s.length))
+// The catalogue holds the prose flush left — indentation there is a source
+// artifact, which tests/shared/i18n guards against. Terminal layout is the
+// printer's job, so it is added here.
+const indented = (text) =>
+  text
+    .split('\n')
+    .map((line) => (line ? `  ${line}` : line))
+    .join('\n')
 const WIDTH = Math.max(...COMMANDS.map((c) => c.usage.length)) + 3
 
 export const CLI_USAGE = () =>
@@ -28,7 +36,7 @@ export function helpText(topic) {
   if (!topic) return { text: CLI_USAGE(), ok: true }
   const cmd = COMMANDS.find((c) => c.topic === topic)
   if (!cmd) return { text: t('cli.noHelpFor', { topic, usage: CLI_USAGE() }), ok: false }
-  return { text: `${cmd.usage}\n\n  ${t(cmd.detailKey)}`, ok: true }
+  return { text: `${cmd.usage}\n\n${indented(t(cmd.detailKey))}`, ok: true }
 }
 
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
@@ -69,7 +77,8 @@ const VERBS = {
   backup: (rest, resolve) => parseBackup(rest, resolve),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
-  cb: (rest) => (rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null),
+  clipboard: (rest) =>
+    rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
 }
 

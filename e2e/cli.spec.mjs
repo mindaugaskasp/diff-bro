@@ -70,7 +70,7 @@ test('`diffbro compare` opens the files in the running app', async () => {
   }
 })
 
-test('`diffbro cb save` stores the clipboard and opens it in the editor', async () => {
+test('`diffbro clipboard save` stores the clipboard and opens it in the editor', async () => {
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
   try {
@@ -78,7 +78,7 @@ test('`diffbro cb save` stores the clipboard and opens it in the editor', async 
     await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
     await page.evaluate(() => window.api.copyText('cli-clipboard-body'))
 
-    await runCli(userDataDir, ['cb', 'save'])
+    await runCli(userDataDir, ['clipboard', 'save'])
 
     const editor = page.getByRole('dialog', { name: /Snippet/i })
     await expect(editor).toBeVisible({ timeout: 15000 })
@@ -143,7 +143,7 @@ test('`diffbro help` prints without opening a window', async () => {
     expect(out.stdout).toContain('diffbro compare')
     expect(out.code).toBe(0)
 
-    const detail = await runCliCapture(userDataDir, ['help', 'cb'])
+    const detail = await runCliCapture(userDataDir, ['help', 'clipboard'])
     expect(detail.stdout).toContain('Clipboard - ')
 
     const bad = await runCliCapture(userDataDir, ['frobnicate'])

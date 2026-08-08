@@ -36,7 +36,7 @@ async function run(fn) {
       <template #cmd><code>diffbro</code></template>
       <template #compare><code>diffbro compare a.json b.json</code></template>
       <template #create><code>diffbro create snippet</code></template>
-      <template #save><code>diffbro cb save</code></template>
+      <template #save><code>diffbro clipboard save</code></template>
     </i18n-t>
 
     <div v-if="status" class="path">
