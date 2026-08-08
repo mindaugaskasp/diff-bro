@@ -11,7 +11,7 @@ import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 
 defineProps({
-  theme: { type: Object, required: true, validator: shaped('id', 'label', 'swatch') },
+  theme: { type: Object, required: true, validator: shaped('id', 'label', 'dark', 'swatch') },
   active: { type: Boolean, default: false }
 })
 defineEmits(['pick'])
@@ -23,7 +23,6 @@ defineEmits(['pick'])
     class="theme-tile"
     :class="{ active }"
     :aria-pressed="active"
-    :data-theme-id="theme.id"
     :aria-label="$t('settingsDialog.useTheme', { name: theme.label })"
     @click="$emit('pick')"
   >

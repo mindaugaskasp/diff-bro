@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // What the terminal SEES: colour, the folded syntax list, and the line printed
 // once the draft is on its way. Pure — the reading and writing stay in
 // cliPrompt, so everything that decides what a reader ends up looking at can be
@@ -41,8 +42,6 @@ export function syntaxHelp(names, width, term) {
   return rows.map((r) => paint('dim', `  ${r}`, term))
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
-
 /**
  * What this process can honestly say once the draft is away.
  *
@@ -53,18 +52,18 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
  * @param {{ name: string, language: string, content: string, tags: string[] }} draft
  * @param {{ colour: boolean }} term
  */
-export function handedOver(draft, term) {
+export function handoffText(draft, term) {
   const lines = draft.content === '' ? 0 : draft.content.split('\n').length
   // The store names an unnamed snippet, and this process cannot ask it what it
   // chose — so it says the name is coming rather than printing an empty one.
-  const name = draft.name || '(unnamed — Diff Bro will name it)'
-  const syntax = draft.language === 'auto' ? 'detected' : draft.language
+  const name = draft.name || t('cliPrompt.unnamed')
+  const syntax = draft.language === 'auto' ? t('cliPrompt.detected') : draft.language
   const dot = paint('dim', ' · ', term)
   const facts = [
     paint('bold', name, term),
     syntax,
-    plural(lines, 'line'),
-    `tagged ${paint('amber', draft.tags.join(' '), term)}`
+    t('cliPrompt.lineCount', lines, { named: { n: lines } }),
+    t('cliPrompt.taggedWith', { tags: paint('amber', draft.tags.join(' '), term) })
   ].join(dot)
-  return `${paint('green', '✓', term)} Handed to Diff Bro\n  ${facts}`
+  return `${paint('green', '✓', term)} ${t('cliPrompt.handedOver')}\n  ${facts}`
 }

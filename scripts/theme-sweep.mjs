@@ -427,7 +427,10 @@ const SURFACES = [
     probes: {
       'tile label': ['.theme-tile .tile-name', TEXT],
       'group subhead': ['.group-label', DIM],
-      'selected tile ring': ['.theme-tile.active', DIM, 'border']
+      'selected tile ring': ['.theme-tile.active', DIM, 'border'],
+      // The claim the redesign rests on: a RESTING cell has an edge. Nothing
+      // measured it, and on 12 of the 14 it did not.
+      'resting tile edge': ['.theme-tile:not(.active)', DIM, 'border']
     }
   },
   {

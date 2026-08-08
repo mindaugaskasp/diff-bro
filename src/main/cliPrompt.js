@@ -7,7 +7,8 @@
 // Prompts go to STDERR. stdout is for output, so `diffbro new snippet > out`
 // must not capture the questions.
 import { createInterface } from 'node:readline/promises'
-import { handedOver, paint, syntaxHelp } from './cliTerm'
+import { handoffText, paint, syntaxHelp } from './cliTerm'
+import { t } from './i18n'
 
 // Offered by number as well as name, because typing "mermaid" correctly at a
 // prompt is a worse experience than typing "7". Anything unrecognised is
@@ -41,10 +42,9 @@ export function syntaxFor(answer) {
 // backwards for exactly the readers the notation was chosen for. Matched only
 // as a whole line, so `echo ":wq"` stays content.
 //
-// Ctrl+C is NOT offered:
-// Electron's main process swallows SIGINT, and neither a process handler nor
-// readline's own SIGINT event settles the pending question — the command hangs.
-// Ctrl+D (end of input) is the signal-free way out, and it works.
+// Ctrl+C cancels: readline raises its own SIGINT on the ^C byte, which the
+// reader turns into a null answer. It could NOT under the synchronous reader
+// this replaced — the thread was blocked, so no handler ever ran.
 export const BODY_SAVE = [':wq', ':x']
 export const BODY_ABORT = [':q', ':a']
 
@@ -71,7 +71,7 @@ export const cliSnippetName = (now = new Date()) => {
   const stamp =
     `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
     `${pad(now.getHours())}:${pad(now.getMinutes())}`
-  return `${stamp} - cli snippet`
+  return t('cliPrompt.cliSnippetName', { stamp })
 }
 
 /**
@@ -140,9 +140,15 @@ export function defaultIo() {
     // null means "give up" — end of input, or Ctrl+C.
     ask: async (question) => {
       if (cancelled) return null
-      const answer = await reader()
-        .question(question, { signal: stop.signal })
-        .catch(() => null)
+      const r = reader()
+      // RACED against close, because a pending question() never settles when
+      // the interface closes under it — Ctrl+C hung the command rather than
+      // cancelling it, and neither an abort signal nor a process SIGINT
+      // handler resolved that on its own.
+      const answer = await Promise.race([
+        r.question(question, { signal: stop.signal }).catch(() => null),
+        new Promise((resolve) => r.once('close', () => resolve(null)))
+      ])
       return cancelled ? null : answer
     },
     readAll: async () => {
@@ -165,23 +171,26 @@ async function ask(io, label, hint) {
 }
 
 // Asked only for what the flags did not already answer.
-async function collect(io, flags) {
-  const name = flags.name ?? (await ask(io, 'Name', '(optional)'))
+async function askedFor(io, flags) {
+  const name = flags.name ?? (await ask(io, t('cliPrompt.name'), t('cliPrompt.nameHint')))
   if (name === null) return null
   let syntax = flags.syntax
   if (syntax === undefined) {
     // Before the question, not after it: the reader has to see the list they
     // are being asked to pick from.
     io.write(`${syntaxHelp(SYNTAXES, io.term.width, io.term).join('\n')}\n`)
-    syntax = await ask(io, 'Syntax', `[1-${SYNTAXES.length}, name, or enter to detect]`)
+    syntax = await ask(io, t('cliPrompt.syntax'), t('cliPrompt.syntaxHint', { n: SYNTAXES.length }))
     if (syntax === null) return null
   }
   return { name, syntax }
 }
 
 async function readBody(io) {
-  const how = `— ${BODY_SAVE.join(' / ')} saves · ${BODY_ABORT.join(' / ')} discards · ^D quits`
-  io.write(`\n${paint('cyan', 'Content', io.term)} ${paint('dim', how, io.term)}\n`)
+  const how = t('cliPrompt.contentHint', {
+    save: BODY_SAVE.join(' / '),
+    discard: BODY_ABORT.join(' / ')
+  })
+  io.write(`\n${paint('cyan', t('cliPrompt.content'), io.term)} ${paint('dim', how, io.term)}\n`)
   const lines = []
   for (;;) {
     const line = await io.ask('')
@@ -205,7 +214,7 @@ export async function promptSnippet(flags = {}, io = defaultIo()) {
     // wrong thing.
     if (!io.isTty) return draftFrom({ ...flags, content: await io.readAll(), tags: flags.tag })
 
-    const asked = await collect(io, flags)
+    const asked = await askedFor(io, flags)
     if (!asked) return null
     // Twice, then give up: an empty body used to exit and take the name and
     // syntax already typed with it.
@@ -215,7 +224,7 @@ export async function promptSnippet(flags = {}, io = defaultIo()) {
       const draft = draftFrom({ ...asked, content, tags: flags.tag })
       if (draft) return draft
       if (attempt === 0) {
-        io.write(paint('amber', '  Nothing typed — try again, or :q to discard.\n', io.term))
+        io.write(paint('amber', `${t('cliPrompt.nothingTyped')}\n`, io.term))
       }
     }
     return null
@@ -227,4 +236,4 @@ export async function promptSnippet(flags = {}, io = defaultIo()) {
 // Asked of STDOUT, because that is where it is written: judging by stderr meant
 // `diffbro new snippet > out.txt` from a terminal wrote escape codes into the
 // file — the exact noise the colour check exists to prevent.
-export const handoffLine = (draft) => handedOver(draft, termFrom(process.env, process.stdout))
+export const handoffLine = (draft) => handoffText(draft, termFrom(process.env, process.stdout))

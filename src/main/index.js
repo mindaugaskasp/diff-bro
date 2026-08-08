@@ -24,10 +24,10 @@ import { startsHidden } from './trayCore'
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
-import { CLI_USAGE, helpText, parseCli } from './cli'
+import { cliUsage, helpText, parseCli } from './cli'
 import { handoffLine, promptSnippet } from './cliPrompt'
 import { discardDraftFile, readDraftFile, sweepDraftFiles, writeDraftFile } from './cliDraft'
-import { loadLocale } from './i18n'
+import { loadLocale, t } from './i18n'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
@@ -41,7 +41,7 @@ if (cold.command?.name === 'help') {
   process.stdout.write(`${text}\n`)
   app.exit(ok ? 0 : 1)
 } else if (cold.error) {
-  process.stderr.write(`${cold.error}\n\n${CLI_USAGE()}\n`)
+  process.stderr.write(`${cold.error}\n\n${cliUsage()}\n`)
   app.exit(1)
 }
 
@@ -53,7 +53,7 @@ async function askForDraft() {
   if (cold.command?.name !== 'new-snippet') return null
   cold.command.draft = await promptSnippet(cold.command.flags)
   if (!cold.command.draft) {
-    process.stderr.write('Nothing to save.\n')
+    process.stderr.write(`${t('cliPrompt.nothingToSave')}\n`)
     app.exit(1)
     return null
   }

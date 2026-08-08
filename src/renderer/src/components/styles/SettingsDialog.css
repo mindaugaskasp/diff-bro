@@ -137,7 +137,9 @@ h4:not(:first-child) {
    width. The cell itself is ThemeTile.css. */
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  /* Seven per group, so four columns leaves 4+3 rather than the 6+1 an
+     auto-fill of six produced. */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: var(--space-2);
   margin-bottom: var(--space-2);
 }

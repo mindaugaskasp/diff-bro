@@ -7,6 +7,10 @@ const QUOTE_LINE = /^bq\.\s+(.*)$/
 // `*`/`#` (repeat for depth); `-` is the strike marker, not a bullet.
 const LIST_LINE = /^([*#]+)\s+(.*)$/
 const CODE_OPEN = /^\{code(?::[^}]*)?\}$/
+// Jira also takes a block opened and closed on ONE line, which is how a single
+// command is usually pasted. The fence patterns are anchored, so that form fell
+// through to a paragraph and rendered its braces literally.
+const CODE_INLINE = /^\{code(?::[^}]*)?\}([\s\S]*)\{code\}$/
 const QUOTE_OPEN = /^\{quote\}$/
 
 // --- inline -------------------------------------------------------------
@@ -80,18 +84,37 @@ export function parseInline(text) {
 
 // --- blocks -------------------------------------------------------------
 const isSpecial = (line) => HEADING.test(line) || QUOTE_LINE.test(line) || LIST_LINE.test(line)
-const isFenceOpen = (t) => CODE_OPEN.test(t) || QUOTE_OPEN.test(t)
+const isFenceOpen = (t) => CODE_OPEN.test(t) || QUOTE_OPEN.test(t) || CODE_INLINE.test(t)
+
+// The closer does not need a line of its own — Jira ends a code block wherever
+// `{code}` appears, and a body's last line commonly carries it.
+function fenceBody(lines, i, kind, closer) {
+  const inner = []
+  while (i < lines.length && lines[i].trim() !== closer) {
+    const at = kind === 'code' ? lines[i].indexOf(closer) : -1
+    if (at !== -1) {
+      if (at > 0) inner.push(lines[i].slice(0, at))
+      return { inner, i }
+    }
+    inner.push(lines[i++])
+  }
+  return { inner, i }
+}
 
 function consumeFence(lines, i, blocks) {
+  const oneLine = CODE_INLINE.exec(lines[i].trim())
+  if (oneLine) {
+    blocks.push({ type: 'code', code: oneLine[1] })
+    return i + 1
+  }
   const kind = CODE_OPEN.test(lines[i].trim()) ? 'code' : 'quote'
   const closer = kind === 'code' ? '{code}' : '{quote}'
-  const inner = []
-  i++
-  while (i < lines.length && lines[i].trim() !== closer) inner.push(lines[i++])
-  if (i < lines.length) i++ // drop the closing fence
-  if (kind === 'code') blocks.push({ type: 'code', code: inner.join('\n') })
-  else blocks.push({ type: 'quote', children: parseJira(inner.join('\n')) })
-  return i
+  const body = fenceBody(lines, i + 1, kind, closer)
+  const code = body.inner.join('\n')
+  blocks.push(
+    kind === 'code' ? { type: 'code', code } : { type: 'quote', children: parseJira(code) }
+  )
+  return body.i < lines.length ? body.i + 1 : body.i
 }
 
 function consumeQuoteLines(lines, i, blocks) {

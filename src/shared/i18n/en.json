@@ -1545,7 +1545,7 @@
     },
     "create": {
       "summary": "open a new snippet, or write one at the prompt",
-      "detail": "Raises the main window with an empty snippet in the editor — the full one, with the name field, syntax picker and tags.\n\nWith --interactive (or -i) it asks instead, in the terminal: a name, a syntax and the body, then saves the snippet tagged \"cli\" so it is findable as one afterwards. An unnamed one is named after the time it was made.\n\nThe body takes as many lines as you like. :wq or :x writes it, :q or :a discards it, and Ctrl+D quits — vim's own meanings, and a line that merely contains one of them is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
+      "detail": "Raises the main window with an empty snippet in the editor — the full one, with the name field, syntax picker and tags.\n\nWith --interactive (or -i) it asks instead, in the terminal: a name, a syntax and the body, then saves the snippet tagged \"cli\" so it is findable as one afterwards. An unnamed one is named after the time it was made.\n\nThe body takes as many lines as you like. :wq or :x writes it, :q or :a discards it, and Ctrl+C cancels — vim's own meanings, and a line that merely contains one of them is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
     },
     "help": {
       "summary": "list the commands, or explain one",
@@ -1556,5 +1556,23 @@
       "summary": "save the clipboard as a snippet",
       "detail": "Saves whatever is on the clipboard as a snippet named\nafter the date and time it was saved, guesses the syntax from the content, and\nopens it in the editor so it can be renamed or tagged.\n\nAn empty clipboard saves nothing and says so."
     }
+  },
+  "cliPrompt": {
+    "name": "Name",
+    "nameHint": "(optional)",
+    "syntax": "Syntax",
+    "syntaxHint": "[1-{n}, name, or enter to detect]",
+    "content": "Content",
+    "contentHint": "— {save} saves · {discard} discards · ^C cancels",
+    "nothingTyped": "  Nothing typed — try again, or :q to discard.",
+    "nothingToSave": "Nothing to save.",
+    "handedOver": "Handed to Diff Bro",
+    "unnamed": "(unnamed — Diff Bro will name it)",
+    "detected": "detected",
+    "taggedWith": "tagged {tags}",
+    "lineCount": "{n} line | {n} lines",
+    "cliSnippetName": "{stamp} - cli snippet",
+    "flagNeedsValue": "{flag} needs a value.",
+    "flagTwice": "{flag} given twice."
   }
 }

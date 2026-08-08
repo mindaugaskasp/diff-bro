@@ -1,7 +1,7 @@
 // How the prompt PRESENTS itself. Pure, so the parts that decide what a reader
 // sees are testable without a terminal — the reading and writing stay glue.
 import { describe, expect, it } from 'vitest'
-import { handedOver, paint, syntaxHelp } from '../../src/main/cliTerm'
+import { handoffText, paint, syntaxHelp } from '../../src/main/cliTerm'
 
 const ESC = String.fromCharCode(27)
 const plain = { colour: false }
@@ -51,19 +51,19 @@ describe('syntaxHelp', () => {
   })
 })
 
-describe('handedOver', () => {
+describe('handoffText', () => {
   const draft = { name: 'Deploy notes', language: 'sql', content: 'a\nb', tags: ['cli'] }
 
   // "Saved" would be a lie: another process does the saving, and the lock this
   // one hands through is one-way.
   it('reports the hand-off, never a save it cannot know happened', () => {
-    const text = handedOver(draft, plain)
+    const text = handoffText(draft, plain)
     expect(text).toContain('Handed to Diff Bro')
     expect(text).not.toMatch(/saved/i)
   })
 
   it('names what it resolved, so nothing has to be looked up in the app', () => {
-    const text = handedOver(draft, plain)
+    const text = handoffText(draft, plain)
     expect(text).toContain('Deploy notes')
     expect(text).toContain('sql')
     expect(text).toContain('2 lines')
@@ -71,20 +71,20 @@ describe('handedOver', () => {
   })
 
   it('counts one line as one line', () => {
-    expect(handedOver({ ...draft, content: 'only' }, plain)).toContain('1 line')
+    expect(handoffText({ ...draft, content: 'only' }, plain)).toContain('1 line')
   })
 
   it('says the syntax was detected when nobody chose it', () => {
-    expect(handedOver({ ...draft, language: 'auto' }, plain)).toMatch(/detected/)
+    expect(handoffText({ ...draft, language: 'auto' }, plain)).toMatch(/detected/)
   })
 
   it('lists every tag, not just the first', () => {
-    const text = handedOver({ ...draft, tags: ['cli', 'db', 'ops'] }, plain)
+    const text = handoffText({ ...draft, tags: ['cli', 'db', 'ops'] }, plain)
     for (const tag of ['cli', 'db', 'ops']) expect(text).toContain(tag)
   })
 
   // An unnamed snippet is named by the store, which this process cannot ask.
   it('says so rather than printing an empty name', () => {
-    expect(handedOver({ ...draft, name: '' }, plain)).toMatch(/unnamed/i)
+    expect(handoffText({ ...draft, name: '' }, plain)).toMatch(/unnamed/i)
   })
 })

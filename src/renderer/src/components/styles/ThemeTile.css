@@ -9,15 +9,21 @@
   padding: 0;
   overflow: hidden;
   background: var(--bg-raised);
-  border: 1px solid transparent;
+  /* A KEYLINE at rest, on every theme. The specimen was supposed to bound the
+     cell on its own, but --bg-raised resolves to var(--bg) on 13 of the 14, so
+     the label strip sits on the dialog's own colour — and the specimen only
+     draws an edge when the previewed theme's ground differs from the current
+     one. Unselected nyan on dark measured 1.02. --btn-edge is the token that
+     already clears the 3:1 non-text floor everywhere. */
+  border: 1px solid var(--btn-edge);
   border-radius: var(--radius);
   color: var(--text);
   cursor: pointer;
   text-align: left;
   box-shadow: var(--shadow-1);
 }
-/* beacon (#e0e0e0) and contrast (#111111) build on a hard keyline by contract,
-   so their tiles keep a visible one at rest where the other twelve do not. */
+/* beacon (#e0e0e0) and contrast (#111111) build on a HARD keyline by contract,
+   so theirs is the theme's own border rather than the softer edge. */
 :root[data-theme='beacon'] .theme-tile,
 :root[data-theme='contrast'] .theme-tile {
   border-color: var(--border);

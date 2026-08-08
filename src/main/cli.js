@@ -12,14 +12,14 @@ const pad = (s, n) => s + ' '.repeat(Math.max(0, n - s.length))
 // The catalogue holds the prose flush left — indentation there is a source
 // artifact, which tests/shared/i18n guards against. Terminal layout is the
 // printer's job, so it is added here.
-const indented = (text) =>
+const indent = (text) =>
   text
     .split('\n')
     .map((line) => (line ? `  ${line}` : line))
     .join('\n')
 const WIDTH = Math.max(...COMMANDS.map((c) => c.usage.length)) + 3
 
-export const CLI_USAGE = () =>
+export const cliUsage = () =>
   [
     'diffbro — offline diff viewer',
     '',
@@ -33,10 +33,10 @@ export const CLI_USAGE = () =>
  * @returns {{ text: string, ok: boolean }}
  */
 export function helpText(topic) {
-  if (!topic) return { text: CLI_USAGE(), ok: true }
+  if (!topic) return { text: cliUsage(), ok: true }
   const cmd = COMMANDS.find((c) => c.topic === topic)
-  if (!cmd) return { text: t('cli.noHelpFor', { topic, usage: CLI_USAGE() }), ok: false }
-  return { text: `${cmd.usage}\n\n${indented(t(cmd.detailKey))}`, ok: true }
+  if (!cmd) return { text: t('cli.noHelpFor', { topic, usage: cliUsage() }), ok: false }
+  return { text: `${cmd.usage}\n\n${indent(t(cmd.detailKey))}`, ok: true }
 }
 
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
@@ -102,10 +102,10 @@ export function parseNewSnippet(words) {
     if (!isOurFlag(flag)) continue
     const next = inline ?? words[i + 1]
     if (inline === undefined) i++
-    if (!next || isOurFlag(next)) return fail(`${flag} needs a value.`)
+    if (!next || isOurFlag(next)) return fail(t('cliPrompt.flagNeedsValue', { flag }))
     const key = flag.slice(2)
     if (REPEATABLE.has(flag)) (flags.tag ??= []).push(next)
-    else if (key in flags) return fail(`${flag} given twice.`)
+    else if (key in flags) return fail(t('cliPrompt.flagTwice', { flag }))
     else flags[key] = next
   }
   return { command: { name: 'new-snippet', flags }, error: null }
