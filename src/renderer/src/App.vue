@@ -116,7 +116,7 @@ useSnippetDiffSync()
       <!-- The comparison column. The tab strip sits OUTSIDE .content so the
            image export, which photographs .content, still frames only the
            diff. -->
-      <div class="pane">
+      <div class="pane" data-drop-region="diff">
         <DiffTabBar />
         <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the

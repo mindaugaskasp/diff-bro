@@ -31,9 +31,18 @@ export function useWindowFileDrop(store, suppressed) {
   const carries = (e) => hasFiles(e) || isSnippetDragType(e.dataTransfer)
   // A drop released over a file slot targets that side.
   const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
+  // A snippet BECOMES the comparison, so it has to be released on the thing it
+  // will be compared in. Bound to the window, this handler accepted one dropped
+  // anywhere — over the sidebar, over the toolbar, or from a drag that never
+  // really left the row — and silently replaced what was on screen. Files keep
+  // the window-wide target: dropping a file on the app is its own gesture.
+  const inDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
 
   function onDragEnter(e) {
     if (!carries(e) || suppressed.value) return
+    // The overlay promises "drop to compare", so it must not light up where a
+    // drop would be refused.
+    if (isSnippetDragType(e.dataTransfer) && !inDiffRegion(e)) return
     depth.value += 1
     active.value = true
     snippetDrag.value = isSnippetDragType(e.dataTransfer)
@@ -52,7 +61,7 @@ export function useWindowFileDrop(store, suppressed) {
     if (suppressed.value) return
     const ids = snippetIds(e)
     if (ids.length) {
-      await store.dropSnippets(ids, sideUnder(e))
+      if (inDiffRegion(e)) await store.dropSnippets(ids, sideUnder(e))
       return
     }
     if (!hasFiles(e)) return
