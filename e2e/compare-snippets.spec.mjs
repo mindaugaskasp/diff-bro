@@ -108,3 +108,33 @@ test('a secret snippet is not draggable', async ({ page }) => {
   const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM })
   await expect(ordinary).toHaveAttribute('draggable', 'true')
 })
+
+// One side loaded used to be two lines of centred prose, which SAID what was
+// missing without showing it. The slots mirror the panes, so the empty one sits
+// where the missing file will go — and its order flips with the missing side.
+test('one side loaded shows a filled slot and an empty one, in pane order', async ({ page }) => {
+  const row = page.locator('.row', { hasText: DIAGRAM }).first()
+  const rb = await row.boundingBox()
+  const pb = await page.locator('.pane').boundingBox()
+  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2, { steps: 10 })
+  await page.mouse.up()
+
+  const slots = page.locator('.wait-slots')
+  await expect(slots).toBeVisible()
+  const seen = await slots.evaluate((el) => ({
+    order: [...el.querySelectorAll('.wait-slot')].map((s) =>
+      s.classList.contains('filled') ? 'filled' : 'open'
+    ),
+    name: el.querySelector('.wait-name').textContent,
+    // The accent is on the RIM, never the label — as ink it is under the
+    // reading floor on solar, meridian and sepia.
+    rim: getComputedStyle(el.querySelector('.wait-slot.open')).borderStyle
+  }))
+  // The snippet filled the LEFT, so the empty slot is second.
+  expect(seen.order).toEqual(['filled', 'open'])
+  expect(seen.name).toBe(DIAGRAM)
+  expect(seen.rim).toBe('dashed')
+  await expect(slots.locator('.wait-label')).toContainText('Right')
+})

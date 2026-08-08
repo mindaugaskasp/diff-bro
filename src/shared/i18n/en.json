@@ -1323,9 +1323,12 @@
   "app": {
     "dropASnippetTo": "Drop a snippet to compare",
     "dropUpToTwo": "Drop up to two files to compare",
-    "loadedOne": "Loaded {name}",
-    "nowChooseOther": "Now drop or choose the {side} file to compare.",
-    "chooseTwoFiles": "Choose or drop two files to compare."
+    "chooseTwoFiles": "Choose or drop two files to compare.",
+    "waiting": {
+      "loaded": "Loaded",
+      "dropSide": "Drop or choose the {side} file",
+      "hint": "Drag a file or a snippet here, or use the field above."
+    }
   },
   "tabCloseDialog": {
     "closeComparisons": "Close comparisons?",

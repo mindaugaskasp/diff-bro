@@ -1,0 +1,61 @@
+/* Two slots in pane order, so the empty one sits where the missing file will.
+   The accent is on the dashed RIM of the empty slot, never on a label — as ink
+   it is under the reading floor on solar, meridian and sepia. */
+.wait-slots {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+}
+.wait-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 210px;
+  min-height: 96px;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+.wait-slot.filled {
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-1);
+}
+/* Dashed, because the slot is a place for something rather than a thing. */
+.wait-slot.open {
+  border: 2px dashed var(--accent);
+  background: none;
+  color: var(--text-dim);
+}
+.wait-slot.open .app-icon {
+  width: 20px;
+  height: 20px;
+}
+.wait-tag {
+  font-size: var(--font-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.wait-name {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.wait-label {
+  font-size: var(--font-sm);
+  color: var(--text);
+}
+.wait-vs {
+  align-self: center;
+  font-size: var(--font-lg);
+  color: var(--text-dim);
+}
+.wait-hint {
+  margin-top: var(--space-4);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}

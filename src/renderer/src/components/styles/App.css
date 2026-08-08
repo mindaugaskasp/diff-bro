@@ -73,13 +73,6 @@
   font-size: var(--font-xl);
   color: var(--text);
 }
-.empty.waiting .waiting-title {
-  font-size: var(--font-xl);
-  color: var(--text);
-}
-.empty.waiting strong {
-  color: var(--accent);
-}
 .notice {
   position: absolute;
   /* Top of the diff area, clear of the file-slots band, centred over the
