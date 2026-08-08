@@ -158,8 +158,7 @@ export function tabCost(tab) {
 export const tabsCost = (tabs) => (tabs ?? []).reduce((n, t) => n + tabCost(t), 0)
 
 /** @param {DiffTab[]} tabs */
-export const canAddTab = (tabs) =>
-  (tabs?.length ?? 0) < MAX_TABS && tabsCost(tabs) < MAX_LIVE_CHARS
+export const canAddTab = (tabs) => (tabs?.length ?? 0) < MAX_TABS && tabsCost(tabs) < MAX_LIVE_CHARS
 
 /**
  * The tab a git-handed comparison may take over when there is no free one: the

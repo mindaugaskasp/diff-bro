@@ -1329,7 +1329,8 @@
       "loaded": "Loaded",
       "dropSide": "Drop or choose the {side} file",
       "hint": "Drag a file or a snippet here, or use the field above."
-    }
+    },
+    "dropADiffTo": "Drop to open this comparison"
   },
   "tabCloseDialog": {
     "closeComparisons": "Close comparisons?",

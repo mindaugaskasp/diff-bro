@@ -22,9 +22,15 @@ const hasFiles = (e) => Array.from(e.dataTransfer?.types ?? []).includes('Files'
 const snippetIds = (e) => dragIdsFrom(e.dataTransfer)
 const diffIds = (e) => dragIdsFrom(e.dataTransfer, DIFF_DRAG_TYPE)
 // Types only: the payload is unreadable until drop.
-const isRowDrag = (e) =>
-  isSnippetDragType(e.dataTransfer) ||
-  Array.from(e.dataTransfer?.types ?? []).includes(DIFF_DRAG_TYPE)
+// Which flavour is in flight. The overlay says what will HAPPEN, and a diff
+// replaces the whole comparison while a snippet fills one side — so one flag
+// for "not a file" was never enough.
+const dragKindOf = (e) => {
+  if (Array.from(e.dataTransfer?.types ?? []).includes(DIFF_DRAG_TYPE)) return 'diff'
+  if (isSnippetDragType(e.dataTransfer)) return 'snippet'
+  return 'files'
+}
+const isRowDrag = (e) => dragKindOf(e) !== 'files'
 const carries = (e) => hasFiles(e) || isRowDrag(e)
 // A drop released over a file slot targets that side.
 const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
@@ -71,7 +77,9 @@ export function useWindowFileDrop(store, suppressed) {
   const depth = ref(0)
   const inWindow = ref(false)
   // Which flavour is in flight, so the overlay can say what will happen.
-  const snippetDrag = ref(false)
+  /** @type {import('vue').Ref<'files'|'snippet'|'diff'>} */
+  const dragKind = ref('files')
+  const snippetDrag = computed(() => dragKind.value !== 'files')
   const overDiff = ref(false)
   // A file may land anywhere; a snippet only counts over the comparison column,
   // so the overlay must not promise "drop to compare" outside it.
@@ -83,7 +91,7 @@ export function useWindowFileDrop(store, suppressed) {
     if (!carries(e) || suppressed.value) return
     depth.value += 1
     inWindow.value = true
-    snippetDrag.value = isRowDrag(e)
+    dragKind.value = dragKindOf(e)
   }
   // Where the pointer IS belongs to dragover: it fires continuously with the
   // element actually under it, which dragenter does not.
@@ -94,18 +102,18 @@ export function useWindowFileDrop(store, suppressed) {
     depth.value = Math.max(0, depth.value - 1)
     if (depth.value === 0) {
       inWindow.value = false
-      snippetDrag.value = false
+      dragKind.value = 'files'
       overDiff.value = false
     }
   }
   async function onDrop(e) {
     depth.value = 0
     inWindow.value = false
-    snippetDrag.value = false
+    dragKind.value = 'files'
     overDiff.value = false
     if (suppressed.value) return
     await routeDrop(e, store)
   }
 
-  return { active, onDragEnter, onDragOver, onDragLeave, onDrop, snippetDrag }
+  return { active, onDragEnter, onDragOver, onDragLeave, onDrop, dragKind, snippetDrag }
 }

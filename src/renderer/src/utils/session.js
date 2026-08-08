@@ -1,7 +1,7 @@
 // What the open comparisons look like on disk, so a quit is not a loss. Pure:
 // the store owns the crypto and the writing, this owns WHAT is worth keeping
 // and hands back a shape restore can trust.
-import { MAX_TABS, isBlank } from './tabs'
+import { MAX_TABS, blankSnapshot, cleanTabName, createTab, isBlank } from './tabs'
 
 // Bumped only when the stored shape changes meaning; an unrecognised version is
 // dropped rather than guessed at.
@@ -166,3 +166,25 @@ export const EMPTY_ENVELOPE = JSON.stringify({ version: SESSION_VERSION })
 // the same thing (whole file contents), so it is stored the same way. The AAD
 // binds it to this store and shape, so a box lifted from anywhere else fails.
 export const SESSION_AAD = 'session|v1'
+
+// One side loaded and one empty. A real state to be IN — you dropped a file and
+// are choosing the other — but not one to come back to: after a restart the
+// waiting slot has no memory of what you were about to pick, so it restores a
+// half-finished sentence. Paste text is left alone; that is typing the user did.
+export const isHalfLoaded = (tab) => {
+  const s = tab?.snapshot
+  return !!s && !s.left !== !s.right
+}
+
+/**
+ * A stored tab back into a live one, blanking a half-loaded snapshot.
+ * @param {object} stored
+ * @returns {import('./tabs').DiffTab}
+ */
+export function tabFromStored(stored) {
+  const snapshot = isHalfLoaded(stored) ? blankSnapshot(stored.snapshot?.view) : stored.snapshot
+  const tab = createTab(snapshot, { diffSaved: stored.diffSaved })
+  tab.entryId = stored.entryId
+  tab.customTitle = cleanTabName(stored.customTitle)
+  return tab
+}

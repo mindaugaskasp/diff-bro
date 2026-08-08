@@ -90,6 +90,7 @@ const dropSuppressed = computed(
 const {
   active: dragActive,
   snippetDrag,
+  dragKind,
   onDragEnter,
   onDragOver,
   onDragLeave,
@@ -120,7 +121,9 @@ useSnippetDiffSync()
       <div class="pane drop-anchor" data-drop-region="diff">
         <transition name="fade">
           <div v-if="dragActive && snippetDrag" class="drop-overlay in-pane">
-            <div class="drop-card">{{ $t('app.dropASnippetTo') }}</div>
+            <div class="drop-card">
+              {{ dragKind === 'diff' ? $t('app.dropADiffTo') : $t('app.dropASnippetTo') }}
+            </div>
           </div>
         </transition>
         <DiffTabBar />

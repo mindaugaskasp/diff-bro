@@ -8,6 +8,8 @@ import {
   readEnvelope,
   readSession,
   readSnapshot
+,
+  isHalfLoaded
 } from '../../../src/renderer/src/utils/session'
 import { MAX_TABS, blankSnapshot } from '../../../src/renderer/src/utils/tabs'
 
@@ -219,5 +221,26 @@ describe('what the session could not keep', () => {
   it('does not count blank tabs as losses', () => {
     const packed = packSession([tab('tab-1'), { id: 'blank', snapshot: blankSnapshot() }], 'tab-1')
     expect(packed.dropped).toBe(0)
+  })
+})
+
+describe('isHalfLoaded', () => {
+  const tab = (snapshot) => ({ snapshot })
+
+  it('is true for exactly one side', () => {
+    expect(isHalfLoaded(tab({ left: { name: 'a' }, right: null }))).toBe(true)
+    expect(isHalfLoaded(tab({ left: null, right: { name: 'b' } }))).toBe(true)
+  })
+
+  it('is false for a real comparison and for an empty tab', () => {
+    expect(isHalfLoaded(tab({ left: { name: 'a' }, right: { name: 'b' } }))).toBe(false)
+    expect(isHalfLoaded(tab({ left: null, right: null }))).toBe(false)
+    expect(isHalfLoaded(undefined)).toBe(false)
+  })
+
+  // Paste text is typing the user did, not a file they dropped — restoring half
+  // of it loses work, where restoring half a drop just confuses.
+  it('ignores paste-mode content', () => {
+    expect(isHalfLoaded(tab({ left: null, right: null, pasteLeft: 'typed' }))).toBe(false)
   })
 })
