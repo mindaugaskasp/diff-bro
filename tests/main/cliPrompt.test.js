@@ -2,7 +2,7 @@
 // line reader, because the cold CLI path runs before the single-instance lock
 // and cannot await. What is testable is what it builds from the answers.
 import { describe, expect, it } from 'vitest'
-import { SYNTAXES, draftFrom, syntaxFor } from '../../src/main/cliPrompt'
+import { SYNTAXES, bodyFrom, draftFrom, syntaxFor } from '../../src/main/cliPrompt'
 
 describe('syntaxFor', () => {
   it('takes a name from the list', () => {
@@ -60,5 +60,35 @@ describe('draftFrom', () => {
   it('keeps the body verbatim, including its blank lines and indentation', () => {
     const content = 'line one\n\n    indented\nlast'
     expect(draftFrom({ ...answers, content }).content).toBe(content)
+  })
+})
+
+// The body is many lines, so it needs a terminator that cannot appear in one by
+// accident. `:q` is the vim spelling and finishes the snippet; Ctrl+C is the
+// universal cancel and is handled as a signal, not a line.
+describe('bodyFrom', () => {
+  it('collects every line until :q', () => {
+    expect(bodyFrom(['one', 'two', ':q', 'after'])).toEqual({
+      content: 'one\ntwo',
+      cancelled: false
+    })
+  })
+
+  it('keeps blank lines, indentation and anything that merely contains :q', () => {
+    const lines = ['select 1;', '', '  indented', 'echo ":q"', 'a:q', ':q']
+    expect(bodyFrom(lines).content).toBe('select 1;\n\n  indented\necho ":q"\na:q')
+  })
+
+  it('is not fooled by trailing whitespace around the terminator', () => {
+    expect(bodyFrom(['x', '  :q  ']).content).toBe('x')
+  })
+
+  // EOF (Ctrl+D) is the other conventional "that is all".
+  it('finishes at end of input', () => {
+    expect(bodyFrom(['one', null])).toEqual({ content: 'one', cancelled: false })
+  })
+
+  it('takes an empty body as an empty body, not a cancel', () => {
+    expect(bodyFrom([':q'])).toEqual({ content: '', cancelled: false })
   })
 })

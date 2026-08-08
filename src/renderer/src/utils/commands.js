@@ -139,6 +139,9 @@ export function runCommand(action, stores) {
 export const CLI_COMMANDS = {
   'create-snippet': ({ snippets }) => snippets.startNewSnippetFrom('', 'auto'),
   'clipboard-save': ({ diff }, command) => diff.saveClipboardSnippet(command.text),
+  // Typed in the terminal, so it is saved outright rather than opened in the
+  // editor — the reader has already answered every question the editor asks.
+  'new-snippet': ({ snippets }, command) => snippets.add(command.draft),
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
   // The passphrase is asked for here, not in the terminal: the bundle is

@@ -1555,6 +1555,10 @@
     "clipboard": {
       "summary": "save the clipboard as a snippet",
       "detail": "Saves whatever is on the clipboard as a snippet named\n\"Clipboard - <date> <time>\", guesses the syntax from the content, and\nopens it in the editor so it can be renamed or tagged.\n\nAn empty clipboard saves nothing and says so."
+    },
+    "new": {
+      "summary": "write a snippet without leaving the terminal",
+      "detail": "Asks for a name, a syntax and the body, then saves the snippet and tags it \"cli\" so it is findable as one afterwards.\n\nThe body takes as many lines as you like. Type :q on a line of its own to save it, or press Ctrl+C to throw it away — a line that merely contains :q is kept as content.\n\nLeave the name blank and the snippet is named the way one saved from the app with no name is. Leave the syntax blank and it is detected from what you typed."
     }
   }
 }

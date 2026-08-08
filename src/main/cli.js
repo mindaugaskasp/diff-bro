@@ -77,6 +77,7 @@ const VERBS = {
   backup: (rest, resolve) => parseBackup(rest, resolve),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
+  new: (rest) => (rest[0] === 'snippet' ? { command: { name: 'new-snippet' }, error: null } : null),
   clipboard: (rest) =>
     rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })

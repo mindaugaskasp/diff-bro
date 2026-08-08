@@ -29,24 +29,26 @@ function deliver(command) {
  * @param {string[]} argv
  * @param {string} [cwd]  the shell's cwd, which second-instance forwards
  */
-export function routeCliArgv(argv, cwd) {
-  const { command, error } = parseCli(argv, (p) => resolve(cwd || process.cwd(), p))
-  if (error) {
-    process.stderr.write(`${error}\n`)
+export function routeCliArgv(argv, cwd, carried = null) {
+  const parsed = parseCli(argv, (p) => resolve(cwd || process.cwd(), p))
+  if (parsed.error) {
+    process.stderr.write(`${parsed.error}\n`)
     return
   }
+  // A command the CLI process already built — `new snippet`, whose answers
+  // cannot be re-derived from argv — wins over re-parsing the same words.
+  routeCommand(carried ?? parsed.command)
+}
+
+function routeCommand(command) {
   // `open` with no file has nothing to tell the renderer — the window IS the
   // answer, so it never reaches deliver's pending queue.
-  if (command?.name === 'raise') {
-    ensureMainWindow()?.focus()
-    return
-  }
+  if (command?.name === 'raise') return void ensureMainWindow()?.focus()
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
   if (command?.name === 'compare') command.files.forEach(allowCliPath)
   if (command?.name === 'clipboard-save') {
-    deliver({ ...command, text: clipboard.readText() })
-    return
+    return void deliver({ ...command, text: clipboard.readText() })
   }
   deliver(command)
 }

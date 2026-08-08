@@ -33,6 +33,21 @@ function runCli(userDataDir, args) {
 }
 
 // Same launch, but the output is what matters rather than the app's reaction.
+// Same as runCliCapture, but answers the prompts. `new snippet` is the only
+// command that reads stdin, and a synchronous reader is exactly the thing a
+// unit test cannot exercise.
+function runCliAnswering(userDataDir, args, answers) {
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  return new Promise((resolve) => {
+    const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], { env })
+    let stdout = ''
+    p.stdout.on('data', (d) => (stdout += d))
+    p.stdin.write(answers.join('\n') + '\n')
+    p.on('exit', (code) => resolve({ code, stdout }))
+  })
+}
+
 function runCliCapture(userDataDir, args) {
   const env = { ...process.env }
   delete env.ELECTRON_RUN_AS_NODE
@@ -239,5 +254,42 @@ test('`diffbro backup <path>` seals to the path the terminal named', async () =>
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
     rmSync(work, { recursive: true, force: true })
+  }
+})
+
+// The whole interaction, because nothing smaller covers it: the prompts read
+// from a real stdin, the draft crosses to the running app through the
+// single-instance lock rather than through argv, and the snippet is saved
+// outright — the terminal already asked everything the editor would.
+test('`diffbro new snippet` writes what was typed at the prompts', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    const before = await page.locator('.snippets-section .row').count()
+
+    const out = await runCliAnswering(
+      userDataDir,
+      ['new', 'snippet'],
+      ['Written from the shell', 'sql', 'select 1;', 'select 2;', ':q']
+    )
+    expect(out.stdout).toContain('Name:')
+    expect(out.stdout).toContain(':q')
+
+    const row = page.locator('.snippets-section .row', { hasText: 'Written from the shell' })
+    await expect(row).toBeVisible({ timeout: 15000 })
+    expect(await page.locator('.snippets-section .row').count()).toBe(before + 1)
+
+    // Tagged `cli`, which is the point of asking — and the body kept BOTH
+    // lines, so the terminator ended the input rather than the first newline.
+    await row.hover()
+    await row.click()
+    const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    await expect(view).toContainText('select 1;')
+    await expect(view).toContainText('select 2;')
+    await expect(view).toContainText('cli')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
   }
 })

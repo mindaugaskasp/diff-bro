@@ -25,6 +25,7 @@ import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
 import { CLI_USAGE, helpText, parseCli } from './cli'
+import { promptSnippet } from './cliPrompt'
 import { loadLocale } from './i18n'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
@@ -43,11 +44,23 @@ if (cold.command?.name === 'help') {
   app.exit(1)
 }
 
+// `new snippet` is asked for HERE, in the CLI process, before the lock decides
+// whether we are the app or a messenger for one already running. Ctrl+C during
+// the questions is a plain cancel, not a crash.
+if (cold.command?.name === 'new-snippet') {
+  process.on('SIGINT', () => app.exit(130))
+  cold.command.draft = promptSnippet()
+  if (!cold.command.draft) {
+    process.stderr.write('Nothing to save.\n')
+    app.exit(1)
+  }
+}
+
 // Single instance. When a newer build is launched over a running one (no
 // auto-updater by design), the loser's version differs, so the running instance
 // relaunches from its now-replaced path to pick up the update rather than
 // leaving the stale UI on screen.
-if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
+if (!app.requestSingleInstanceLock({ version: app.getVersion(), command: cold.command })) {
   app.quit()
 } else {
   // A `diffbro …` launch is a second instance: the lock hands us its argv and
@@ -59,7 +72,9 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
       return
     }
     ensureMainWindow()
-    routeCliArgv(argv, cwd)
+    // The draft was typed in the OTHER process, so it travels beside argv —
+    // there is no re-parsing it out of a command line it was never on.
+    routeCliArgv(argv, cwd, additionalData?.command)
   })
 
   app.whenReady().then(() => {
@@ -106,7 +121,7 @@ if (!app.requestSingleInstanceLock({ version: app.getVersion() })) {
     installTray({ openMainWindow: () => ensureMainWindow(), toggleQuickLook })
     // A cold `diffbro …`: this process IS the launch, so its own argv carries
     // the command. It waits for the renderer to announce itself.
-    routeCliArgv(process.argv, process.cwd())
+    routeCliArgv(process.argv, process.cwd(), cold.command)
     app.on('activate', ensureMainWindow)
   })
 }

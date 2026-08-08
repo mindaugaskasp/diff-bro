@@ -33,6 +33,25 @@ export function syntaxFor(answer) {
   return Number.isInteger(n) && n >= 1 && n <= SYNTAXES.length ? SYNTAXES[n - 1] : 'auto'
 }
 
+// The body runs to many lines, so it needs an end marker that cannot appear in
+// one by accident. `:q` is the vim spelling, matched only when it is the WHOLE
+// line — a line that merely contains it is content. EOF ends it too; Ctrl+C is
+// a signal, handled where the reading happens.
+export const BODY_END = ':q'
+
+/**
+ * @param {Array<string|null>} lines  as read; null is end of input
+ * @returns {{ content: string, cancelled: boolean }}
+ */
+export function bodyFrom(lines) {
+  const out = []
+  for (const line of lines) {
+    if (line === null || line.trim() === BODY_END) break
+    out.push(line)
+  }
+  return { content: out.join('\n'), cancelled: false }
+}
+
 /**
  * What the answers add up to, or null when there is nothing to save.
  * @param {{ name?: string, syntax?: string, content?: string }} answers
@@ -88,13 +107,13 @@ export function promptSnippet() {
   if (name === null) return null
   process.stdout.write(`\nSyntax:\n${SYNTAXES.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}\n`)
   const syntax = ask('Choose a number or name (Enter to detect it): ')
-  process.stdout.write('\nContent — finish with a line containing only a full stop:\n')
+  process.stdout.write(`\nContent — type ${BODY_END} on its own line to save, Ctrl+C to cancel:\n`)
 
   const lines = []
   for (;;) {
     const line = readLine()
-    if (line === null || line === '.') break
     lines.push(line)
+    if (line === null || line.trim() === BODY_END) break
   }
-  return draftFrom({ name, syntax, content: lines.join('\n') })
+  return draftFrom({ name, syntax, content: bodyFrom(lines).content })
 }

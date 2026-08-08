@@ -39,6 +39,12 @@ export const COMMANDS = [
     detailKey: 'cli.create.detail'
   },
   {
+    topic: 'new',
+    usage: 'diffbro new snippet',
+    summaryKey: 'cli.new.summary',
+    detailKey: 'cli.new.detail'
+  },
+  {
     topic: 'clipboard',
     usage: 'diffbro clipboard save',
     summaryKey: 'cli.clipboard.summary',
