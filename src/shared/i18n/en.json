@@ -1558,7 +1558,7 @@
     },
     "new": {
       "summary": "write a snippet without leaving the terminal",
-      "detail": "Asks for a name, a syntax and the body, then saves the snippet and tags it \"cli\" so it is findable as one afterwards.\n\nThe body takes as many lines as you like. Type :q on a line of its own to save it, or press Ctrl+C to throw it away — a line that merely contains :q is kept as content.\n\nLeave the name blank and the snippet is named the way one saved from the app with no name is. Leave the syntax blank and it is detected from what you typed."
+      "detail": "Asks for a name, a syntax and the body, then hands the snippet to Diff Bro tagged \"cli\" so it is findable as one afterwards.\n\nThe body takes as many lines as you like. Typing :q, :wq or :x saves it, :a abandons it, and Ctrl+C cancels — a line that merely contains one of those is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
     }
   }
 }

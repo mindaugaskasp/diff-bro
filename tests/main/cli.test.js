@@ -244,3 +244,45 @@ describe('helpText', () => {
     expect(text).toContain('diffbro compare')
   })
 })
+
+// `new snippet` is the one verb with options, and argv is shared with Chromium:
+// cliWords strips anything dash-prefixed so a `--enable-logging` cannot be read
+// as ours. Our own flags are therefore known BY NAME — the one place in this
+// file where a name, not a shape, decides.
+describe('parseCli — new snippet', () => {
+  const parse = (...words) => parseCli([...PACKAGED, ...words])
+
+  it('reads the bare verb', () => {
+    expect(parse('new', 'snippet').command).toEqual({ name: 'new-snippet', flags: {} })
+  })
+
+  it('refuses a noun it does not make', () => {
+    expect(parse('new', 'diff').error).toMatch(/Unknown command/)
+    expect(parse('new').error).toMatch(/Unknown command/)
+  })
+
+  it('takes the name, syntax and tags as flags', () => {
+    const { command } = parse(
+      'new', 'snippet',
+      '--name', 'Prod schema',
+      '--syntax', 'sql',
+      '--tag', 'db',
+      '--tag', 'ops'
+    )
+    expect(command.flags).toEqual({ name: 'Prod schema', syntax: 'sql', tag: ['db', 'ops'] })
+  })
+
+  it('takes --flag=value too', () => {
+    const { command } = parse('new', 'snippet', '--name=Quick', '--tag=db')
+    expect(command.flags).toEqual({ name: 'Quick', tag: ['db'] })
+  })
+
+  it('still drops Chromium switches, which are not ours', () => {
+    const { command } = parse('new', 'snippet', '--enable-logging', '--name', 'X')
+    expect(command.flags).toEqual({ name: 'X' })
+  })
+
+  it('reports a flag given no value rather than swallowing the next word', () => {
+    expect(parse('new', 'snippet', '--name').error).toMatch(/--name needs a value/)
+  })
+})

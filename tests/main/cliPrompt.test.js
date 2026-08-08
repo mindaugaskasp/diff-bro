@@ -2,7 +2,7 @@
 // line reader, because the cold CLI path runs before the single-instance lock
 // and cannot await. What is testable is what it builds from the answers.
 import { describe, expect, it } from 'vitest'
-import { SYNTAXES, bodyFrom, draftFrom, syntaxFor } from '../../src/main/cliPrompt'
+import { SYNTAXES, bodyFrom, draftFrom, promptSnippet, syntaxFor } from '../../src/main/cliPrompt'
 
 describe('syntaxFor', () => {
   it('takes a name from the list', () => {
@@ -90,5 +90,98 @@ describe('bodyFrom', () => {
 
   it('takes an empty body as an empty body, not a cancel', () => {
     expect(bodyFrom([':q'])).toEqual({ content: '', cancelled: false })
+  })
+})
+
+// The whole conversation, driven without a terminal. A pipe is NOT a TTY, so an
+// e2e feeding stdin can only ever exercise the piped path — the interactive one
+// is reachable only by handing the IO in.
+describe('promptSnippet — the conversation', () => {
+  const scripted = (answers, { isTty = true } = {}) => {
+    const said = [...answers]
+    const written = []
+    return {
+      io: {
+        isTty,
+        readLine: () => (said.length ? said.shift() : null),
+        readAll: () => said.join('\n'),
+        write: (t) => written.push(t),
+        term: { colour: false, width: 80 }
+      },
+      written,
+      left: said
+    }
+  }
+
+  it('asks for a name, a syntax and a body, in that order', () => {
+    const { io, written } = scripted(['Deploy notes', 'sql', 'select 1;', ':q'])
+    expect(promptSnippet({}, io)).toEqual({
+      name: 'Deploy notes',
+      language: 'sql',
+      content: 'select 1;',
+      tags: ['cli']
+    })
+    const transcript = written.join('')
+    expect(transcript).toContain('Name')
+    expect(transcript).toContain('Syntax')
+    expect(transcript).toContain('Content')
+  })
+
+  it('skips a question a flag already answered', () => {
+    const { io, written } = scripted(['select 1;', ':q'])
+    const draft = promptSnippet({ name: 'Prod', syntax: 'sql' }, io)
+    expect(draft.name).toBe('Prod')
+    expect(draft.language).toBe('sql')
+    expect(written.join('')).not.toContain('Name')
+  })
+
+  it('carries --tag alongside the cli tag', () => {
+    const { io } = scripted(['x', ':q'])
+    expect(promptSnippet({ name: 'n', syntax: 'sql', tag: ['db', 'ops'] }, io).tags).toEqual([
+      'cli',
+      'db',
+      'ops'
+    ])
+  })
+
+  // The old version exited on an empty body and took the name and syntax with
+  // it — the two things the reader had already answered.
+  it('asks again for an empty body instead of throwing the answers away', () => {
+    const { io, written } = scripted(['Deploy notes', 'sql', ':q', 'select 1;', ':q'])
+    const draft = promptSnippet({}, io)
+    expect(draft.name).toBe('Deploy notes')
+    expect(draft.content).toBe('select 1;')
+    expect(written.join('')).toContain('Nothing typed')
+  })
+
+  it('gives up after the second empty body rather than looping', () => {
+    const { io } = scripted(['n', 'sql', ':q', ':q'])
+    expect(promptSnippet({}, io)).toBeNull()
+  })
+
+  it(':a abandons it outright, without asking again', () => {
+    const { io, written } = scripted(['n', 'sql', 'typed something', ':a'])
+    expect(promptSnippet({}, io)).toBeNull()
+    expect(written.join('')).not.toContain('Nothing typed')
+  })
+
+  it('takes :wq and :x as well, because the spelling invites vim fingers', () => {
+    for (const end of [':wq', ':x']) {
+      const { io } = scripted(['n', 'sql', 'body', end])
+      expect(promptSnippet({}, io).content).toBe('body')
+    }
+  })
+
+  // Piped: nobody saw a prompt, so nothing is a reply to one.
+  it('reads the whole of stdin as the body when it is not a terminal', () => {
+    const { io, written } = scripted(['line one', 'line two'], { isTty: false })
+    const draft = promptSnippet({ name: 'Piped' }, io)
+    expect(draft.content).toBe('line one\nline two')
+    expect(written).toEqual([])
+  })
+
+  it('refuses an empty pipe rather than saving nothing', () => {
+    const { io } = scripted([''], { isTty: false })
+    expect(promptSnippet({ name: 'Piped' }, io)).toBeNull()
   })
 })

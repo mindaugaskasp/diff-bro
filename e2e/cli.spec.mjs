@@ -42,9 +42,11 @@ function runCliAnswering(userDataDir, args, answers) {
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], { env })
     let stdout = ''
+    let stderr = ''
     p.stdout.on('data', (d) => (stdout += d))
+    p.stderr.on('data', (d) => (stderr += d))
     p.stdin.write(answers.join('\n') + '\n')
-    p.on('exit', (code) => resolve({ code, stdout }))
+    p.on('exit', (code) => resolve({ code, stdout, stderr }))
   })
 }
 
@@ -257,11 +259,12 @@ test('`diffbro backup <path>` seals to the path the terminal named', async () =>
   }
 })
 
-// The whole interaction, because nothing smaller covers it: the prompts read
-// from a real stdin, the draft crosses to the running app through the
-// single-instance lock rather than through argv, and the snippet is saved
-// outright — the terminal already asked everything the editor would.
-test('`diffbro new snippet` writes what was typed at the prompts', async () => {
+// A pipe is NOT a TTY, so this drives the PIPED path — which is the only one a
+// spawned process can reach. The interactive conversation is unit-tested with
+// its IO handed in (tests/main/cliPrompt); what only a real launch proves is
+// that the draft crosses to the running app through the single-instance lock
+// rather than through argv, and comes out as a snippet.
+test('`diffbro new snippet` saves a piped body under the flags it was given', async () => {
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
   try {
@@ -270,24 +273,55 @@ test('`diffbro new snippet` writes what was typed at the prompts', async () => {
 
     const out = await runCliAnswering(
       userDataDir,
-      ['new', 'snippet'],
-      ['Written from the shell', 'sql', 'select 1;', 'select 2;', ':q']
+      ['new', 'snippet', '--name', 'Written from the shell', '--syntax', 'sql'],
+      ['select 1;', 'select 2;']
     )
-    expect(out.stdout).toContain('Name:')
-    expect(out.stdout).toContain(':q')
+    // The prompts live on stderr; stdout carries the confirmation alone, so a
+    // redirect captures the answer and never the questions.
+    expect(out.stdout).toContain('Handed to Diff Bro')
+    expect(out.stdout).toContain('Written from the shell')
+    expect(out.stdout).toContain('2 lines')
+    expect(out.stdout).not.toContain('Name')
 
     const row = page.locator('.snippets-section .row', { hasText: 'Written from the shell' })
     await expect(row).toBeVisible({ timeout: 15000 })
     expect(await page.locator('.snippets-section .row').count()).toBe(before + 1)
 
-    // Tagged `cli`, which is the point of asking — and the body kept BOTH
-    // lines, so the terminator ended the input rather than the first newline.
-    await row.hover()
     await row.click()
     const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
     await expect(view).toContainText('select 1;')
     await expect(view).toContainText('select 2;')
     await expect(view).toContainText('cli')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// Piped in, nobody saw a prompt — so every byte is the body, not an answer.
+// Reading it as answers is how `cat f.sql | diffbro new snippet` used to save
+// the wrong thing under the wrong name.
+test('`diffbro new snippet` takes a piped body and flags without asking', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    const out = await runCliAnswering(
+      userDataDir,
+      ['new', 'snippet', '--name', 'Piped schema', '--syntax', 'sql', '--tag', 'db'],
+      ['create table t (id int);', 'select 1;']
+    )
+    // No questions were asked, so nothing was written to stderr to ask them.
+    expect(out.stderr).not.toContain('Name')
+    expect(out.stdout).toContain('Piped schema')
+    expect(out.stdout).toContain('tagged cli db')
+
+    const row = page.locator('.snippets-section .row', { hasText: 'Piped schema' })
+    await expect(row).toBeVisible({ timeout: 15000 })
+    await row.click()
+    const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    await expect(view).toContainText('create table t (id int);')
+    await expect(view).toContainText('select 1;')
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })

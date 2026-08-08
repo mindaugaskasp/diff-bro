@@ -25,7 +25,7 @@ import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv } from './cliRoute'
 import { CLI_USAGE, helpText, parseCli } from './cli'
-import { promptSnippet } from './cliPrompt'
+import { handoffLine, promptSnippet } from './cliPrompt'
 import { loadLocale } from './i18n'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
@@ -49,11 +49,13 @@ if (cold.command?.name === 'help') {
 // the questions is a plain cancel, not a crash.
 if (cold.command?.name === 'new-snippet') {
   process.on('SIGINT', () => app.exit(130))
-  cold.command.draft = promptSnippet()
+  cold.command.draft = promptSnippet(cold.command.flags)
   if (!cold.command.draft) {
     process.stderr.write('Nothing to save.\n')
     app.exit(1)
   }
+  // The confirmation is the OUTPUT, so it is the one thing on stdout.
+  process.stdout.write(`${handoffLine(cold.command.draft)}\n`)
 }
 
 // Single instance. When a newer build is launched over a running one (no

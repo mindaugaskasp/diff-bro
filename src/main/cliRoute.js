@@ -30,14 +30,17 @@ function deliver(command) {
  * @param {string} [cwd]  the shell's cwd, which second-instance forwards
  */
 export function routeCliArgv(argv, cwd, carried = null) {
+  // A command the CLI process already built — `new snippet`, whose answers
+  // cannot be re-derived from argv — is routed as-is. Re-parsing argv here is
+  // not just redundant: `second-instance` hands over a REORDERED argv with the
+  // switches hoisted, which parsed as "Unknown command" and swallowed the draft.
+  if (carried) return routeCommand(carried)
   const parsed = parseCli(argv, (p) => resolve(cwd || process.cwd(), p))
   if (parsed.error) {
     process.stderr.write(`${parsed.error}\n`)
     return
   }
-  // A command the CLI process already built — `new snippet`, whose answers
-  // cannot be re-derived from argv — wins over re-parsing the same words.
-  routeCommand(carried ?? parsed.command)
+  routeCommand(parsed.command)
 }
 
 function routeCommand(command) {

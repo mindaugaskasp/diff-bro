@@ -41,7 +41,12 @@ export function helpText(topic) {
 
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
 // run it is [electron, ., ...args], and Chromium switches can appear anywhere.
-const isSwitch = (a) => a.startsWith('-')
+// Our own flags, known BY NAME — the one place a name rather than a shape
+// decides, because argv is shared with Chromium and its switch list is open
+// ended. Anything else dash-prefixed is still stripped as theirs.
+const FLAGS = new Set(['--name', '--syntax', '--tag'])
+const isOurFlag = (a) => FLAGS.has(a.split('=')[0])
+const isSwitch = (a) => a.startsWith('-') && !isOurFlag(a)
 // Structural, not by name: an entry point is a PATH, and every command is a bare
 // word. Matching on names instead meant any clone directory not called exactly
 // `diffbro` was read as a command, which exits before a window exists.
@@ -70,6 +75,25 @@ export function cliWords(argv) {
 
 // A verb returns null when its own arguments are wrong, so the caller reports
 // the whole thing as unknown rather than half-accepting it.
+/**
+ * `--name X`, `--name=X`, and `--tag` repeated. A flag with no value is an
+ * error rather than a silent swallow of whatever word came next.
+ * @param {string[]} words
+ */
+function newSnippet(words) {
+  const flags = {}
+  for (let i = 0; i < words.length; i++) {
+    const [flag, inline] = words[i].split(/=(.*)/s)
+    if (!isOurFlag(flag)) continue
+    const value = inline ?? words[++i]
+    if (value === undefined) return { command: null, error: `${flag} needs a value.` }
+    const key = flag.slice(2)
+    if (key === 'tag') (flags.tag ??= []).push(value)
+    else flags[key] = value
+  }
+  return { command: { name: 'new-snippet', flags }, error: null }
+}
+
 const VERBS = {
   compare: (rest, resolve) => parseCompare(rest, resolve),
   difftool: (rest, resolve) => parseCompare(rest, resolve, true),
@@ -77,7 +101,7 @@ const VERBS = {
   backup: (rest, resolve) => parseBackup(rest, resolve),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
-  new: (rest) => (rest[0] === 'snippet' ? { command: { name: 'new-snippet' }, error: null } : null),
+  new: (rest) => (rest[0] === 'snippet' ? newSnippet(rest.slice(1)) : null),
   clipboard: (rest) =>
     rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
