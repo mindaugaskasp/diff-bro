@@ -1512,5 +1512,11 @@
     "willClose": "Opening this closes {name}, which has unsaved changes.",
     "closeAndOpen": "Close it and open",
     "keepItOpen": "Keep it open"
+  },
+  "settingsAppearance": {
+    "groundLight": "Light",
+    "groundDark": "Dark",
+    "interfaceLanguage": "Interface language",
+    "behaviour": "Behaviour"
   }
 }

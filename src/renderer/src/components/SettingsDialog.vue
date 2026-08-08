@@ -47,7 +47,7 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="580px" tour="settings" :title="$t('settingsDialog.settings')" @close="close">
+  <BaseDialog width="870px" tour="settings" :title="$t('settingsDialog.settings')" @close="close">
     <div class="settings-body">
       <nav
         class="settings-nav"

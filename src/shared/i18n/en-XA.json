@@ -1512,5 +1512,11 @@
     "willClose": "[Ōƥéńĩńğ ţĥĩş çłōşéş {name}, ŵĥĩçĥ ĥàş ūńşàṽéđ çĥàńğéş. ·øé·øé·øé·øé·øé·øé]",
     "closeAndOpen": "[Çłōşé ĩţ àńđ ōƥéń ·øé·øé]",
     "keepItOpen": "[Ķééƥ ĩţ ōƥéń ·øé·]"
+  },
+  "settingsAppearance": {
+    "groundLight": "[Łĩğĥţ ·ø]",
+    "groundDark": "[Đàřķ ·ø]",
+    "interfaceLanguage": "[Ĩńţéřƒàçé łàńğūàğé ·øé·øé·]",
+    "behaviour": "[Ɓéĥàṽĩōūř ·øé·]"
   }
 }

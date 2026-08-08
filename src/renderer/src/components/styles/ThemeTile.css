@@ -1,0 +1,107 @@
+/* One theme in the picker (ThemeTile.vue). The SPECIMEN is the cell: it carries
+   the theme's own ground, so it is opaque and draws its own edge. That matters
+   because --border scores 1.41–1.84 against --bg-raised on twelve of the
+   fourteen themes — the old chip's keyline could not be seen on any of them, so
+   nothing bounded the cell and the grid read as a pile. */
+.theme-tile {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-raised);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  box-shadow: var(--shadow-1);
+}
+/* beacon (#e0e0e0) and contrast (#111111) build on a hard keyline by contract,
+   so their tiles keep a visible one at rest where the other twelve do not. */
+:root[data-theme='beacon'] .theme-tile,
+:root[data-theme='contrast'] .theme-tile {
+  border-color: var(--border);
+}
+.theme-tile:hover {
+  border-color: var(--btn-edge);
+}
+/* A ring AND a heavier label: solar's accent is 3.52 against the surface, which
+   clears the 3:1 non-text floor but is not enough to carry selection alone.
+   Never a glow — matrix, nyan and neon halo any accent-tinted shadow. */
+.theme-tile.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.theme-tile:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.specimen {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 46px;
+  padding: 7px 8px;
+  gap: 4px;
+}
+.sp-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sp-bar {
+  height: 4px;
+  border-radius: var(--radius-sm);
+  flex: none;
+}
+.sp-bar.accent {
+  width: 22px;
+}
+/* The specimen is a PICTURE of another theme, so borrowing the current one's
+   --text would draw all fourteen in the same ink. Black or white at low alpha
+   is the only pair that reads on every ground. */
+.sp-bar.ink {
+  /* token-exempt: depicts another theme's ink, not this one's */
+  background: rgb(0 0 0 / 30%);
+  width: 30px;
+}
+.sp-bar.ink.onDark {
+  /* token-exempt: the dark-ground half of the pair above */
+  background: rgb(255 255 255 / 34%);
+}
+.sp-bar.ink.faint {
+  width: 48px;
+  opacity: 0.55;
+}
+.sp-bar.ink.dim {
+  width: 26px;
+  opacity: 0.7;
+}
+.sp-dots {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.sp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.tile-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px 6px;
+  font-size: var(--font-sm);
+  border-top: 1px solid var(--border);
+}
+.theme-tile.active .tile-name {
+  font-weight: 600;
+}
+.tile-check {
+  color: var(--accent);
+  flex: none;
+}

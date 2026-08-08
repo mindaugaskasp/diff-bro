@@ -60,6 +60,12 @@
   min-width: 0;
   height: 380px;
   overflow-y: auto;
+  /* The pane scrolls, so keep content out from under its scrollbar. `stable`
+     alone is not enough: it is specified to do NOTHING where the platform draws
+     OVERLAY bars (macOS), and an overlay bar takes no layout width — it painted
+     straight over the rightmost tile. The padding is what actually holds. */
+  scrollbar-gutter: stable;
+  padding-right: var(--space-3);
 }
 h4 {
   margin: 0 0 8px;
@@ -125,47 +131,22 @@ h4:not(:first-child) {
   width: 88px;
   text-align: right;
 }
-/* Theme picker — a swatch preview (ground + accent/add/remove dots) per theme. */
+/* Theme picker. A real grid, not wrapped chips: fourteen labels sized to their
+   own text ran 85px to 111px wide and wrapped 4·4·3·3 with a torn right edge
+   and no column to scan. `auto-fill` keeps the columns even at any dialog
+   width. The cell itself is ThemeTile.css. */
 .theme-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
-.theme-opt {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 4px 10px 4px 5px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  cursor: pointer;
-  font-size: var(--font-md);
+/* Which ground a group of themes is on — the question people arrive with. */
+.group-label {
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: var(--font-sm);
+  color: var(--text-dim);
 }
-.theme-opt:hover {
-  border-color: var(--accent);
-}
-.theme-opt.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-.theme-opt .swatch {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 40px;
-  height: 20px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-.theme-opt .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
 /* The tips toggle and its replay button share a row, so the way out and the way
    back in sit together — the tour's last step rings this row. */
 .tips-row {
@@ -177,14 +158,4 @@ h4:not(:first-child) {
 .tips-row .btn {
   margin-left: auto;
   flex: none;
-}
-
-.language-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: var(--control-h);
-}
-.language-row > span {
-  flex: 1;
 }
