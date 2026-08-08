@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n'
 import { computed, ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { TTL_OPTIONS } from '../stores/vaultStore'
@@ -84,7 +85,7 @@ async function save() {
 // An update rewrites the diff this tab already is; a save makes a new one.
 const dialogTitle = computed(() => {
   if (share.saveThenShare) return 'Share diff — step 1 of 2: save it'
-  return isUpdate.value ? 'Update diff' : 'Save diff'
+  return isUpdate.value ? t('saveDiffDialog.updateDiff') : t('saveDiffDialog.saveDiff')
 })
 const submitLabel = computed(() => {
   if (share.saveThenShare) return 'Next: choose recipient'

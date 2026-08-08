@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n'
 import { computed, ref } from 'vue'
 import { stringifyJson, jsonPath, sortDeep } from '../utils/json'
 import SegmentedControl from './SegmentedControl.vue'
@@ -12,7 +13,7 @@ defineProps({ compact: { type: Boolean, default: false } })
 const MODES = [
   { value: 'pretty', label: 'Pretty' },
   { value: 'minify', label: 'Minify' },
-  { value: 'sort', label: 'Sort keys' }
+  { value: 'sort', label: t('toolJson.sortKeys') }
 ]
 const input = ref('')
 const mode = ref('pretty')

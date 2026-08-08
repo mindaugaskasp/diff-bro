@@ -1,13 +1,15 @@
 ---
 name: validate
-description: Audit the current change against DiffBro's engineering standards — sweep prose comments out of the diff, check it against docs/standards.md conventions, re-verify the eight hard security rules, and write findings to quality-audit.md. Use for /validate, or before declaring a feature done.
+description: Audit the current change against DiffBro's engineering standards — sweep prose comments out of the diff, check it against docs/standards.md conventions, re-verify the eight hard security rules, then FIX everything found and prune quality-audit.md to what is still wrong. Use for /validate, or before declaring a feature done.
 ---
 
 # Validate
 
-Audits **the change**, not the repo. Comments get fixed; conventions and
-security get reported. Findings go to `quality-audit.md` (gitignored working
-record).
+Audits **the change**, not the repo. **Everything found gets FIXED in this
+change** — comments, conventions, security, the lot. `quality-audit.md` is the
+working record of that, not a backlog: a finding written there is one being
+fixed now. Minor is not a licence to ship; low severity describes impact, not
+permission.
 
 ## Scope
 
@@ -96,7 +98,7 @@ Read the source at each call site; never infer from filenames.
 2. **Dependencies** — network audit + `npm audit` + pinned `allowScripts` entry
 3. **Renderer/main** — no Node/Electron import in `src/renderer/`
 4. **Keys never cross IPC**
-5. **Crypto** — audience bound in the signature *and* both AAD layers;
+5. **Crypto** — audience bound in the signature _and_ both AAD layers;
    per-recipient wrap bound by `format ‖ fp ‖ audience`; retired keys
    decrypt-only; rotation advisory, predecessor key from the local trust store;
    TTL ≤ 1 week both sides (`MAX_TTL_MS` / `MAX_KEEP_HOURS` in step)
@@ -125,13 +127,17 @@ Report the real result; a failure is the headline finding, output quoted, never
 
 ## Pass 5 — quality-audit.md
 
-Read the existing file first; it is cumulative.
+Read the existing file first. It opens with a statement of its own purpose —
+keep that, and keep to it.
 
-- **Prepend** `## Run — <YYYY-MM-DD> · <branch>`
-- Carry unresolved findings forward unchanged
-- Collapse earlier resolved ones to `Closed in <date>: <n> findings`; **merge**
-  their Verified clean list, never overwrite
-- Never delete a finding to make the file look better
+- Write each finding down as you go, then **fix it**, then **prune the entry**.
+- What remains at the end is what is still wrong. If that is not empty, the
+  change is not done.
+- Only two things may be left standing, and each must say which it is: something
+  outside this repo's control (with the evidence), or something the **user**
+  chose to defer (in their words, with the reason).
+- Never delete a finding to make the file look better — delete it because it is
+  fixed, and say where (`git log`, the spec) it went.
 
 Each finding: what is wrong · `file:line` · the concrete failure, not a
 category · the fix · how it is guarded. Severity order — data loss / security,
@@ -140,7 +146,10 @@ behaviour, lower priority. Close with which passes ran clean, what
 
 ## Fixes
 
-Comments are swept in place. Everything else is reported and left alone unless
-asked — most findings have more than one right fix, and picking one silently is
-worse than naming the choice. If asked, a bug fix still starts with the failing
-test.
+**Fix everything you find, in this change.** A bug fix starts with the failing
+test — red, then green, every time.
+
+Where a finding has more than one right fix, say which you took and why in the
+audit entry before you prune it; that is the record, not a reason to defer. The
+only findings that survive the run are the two exceptions in Pass 5, and a
+"minor" or "cosmetic" label is neither of them.

@@ -159,6 +159,28 @@ async function loadStructureDiff(page) {
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const SURFACES = [
   {
+    name: 'launcher-compose',
+    window: 'launcher',
+    // The launcher card is --bg-panel over a transparent window, a ground the
+    // main window never presents. Its compose panel carries three inks the
+    // theme table cannot settle on its own: the language pill, the syntax runs
+    // in the body overlay, and the name ghost.
+    open: async (page) => {
+      await page.keyboard.press('ControlOrMeta+n')
+      await page.locator('.ql-compose').waitFor()
+      await page.locator('.ql-compose-name').fill('Exam')
+      await page.locator('.ql-compose-text').fill('SELECT id FROM orders;')
+      await page.locator('.ql-compose-hl .syn-keyword').first().waitFor()
+    },
+    close: (page) => page.keyboard.press('Escape'),
+    probes: {
+      'compose title': ['.ql-compose-title', TEXT],
+      'language pill label': ['.ql-compose-lang', TEXT],
+      'body keyword': ['.ql-compose-hl .syn-keyword', TEXT],
+      'name ghost': ['.name-ghost', DIM]
+    }
+  },
+  {
     name: 'snippet-name-ghost',
     // The inline name completion. Its ink is the one thing a computed-contrast
     // table cannot settle: the ghost has to read as clearly SECONDARY to the
@@ -365,7 +387,23 @@ const SURFACES = [
   }
 ]
 
-async function sweepSurface(page, surface, theme, findings) {
+// The launcher is a SECOND BrowserWindow with its own card surface, and no
+// surface here ever opened it — so its compose panel, body overlay and name
+// ghost were only ever measured against the main window's ground.
+async function launcherPage(app, page) {
+  const open = app.windows().find((w) => w.url().includes('quicklook'))
+  if (open) return open
+  const [ql] = await Promise.all([
+    app.waitForEvent('window'),
+    page.evaluate(() => globalThis.api.quickLookToggle())
+  ])
+  await ql.waitForLoadState('domcontentloaded')
+  await ql.waitForTimeout(200)
+  return ql
+}
+
+async function sweepSurface({ app, main, surface, theme, findings }) {
+  const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
   await surface.open(page)
   await page.waitForTimeout(120)
   await page.screenshot({ path: join(OUT, `${surface.name}-${theme.toLowerCase()}.png`) })
@@ -422,7 +460,9 @@ async function main() {
 
     for (const theme of THEMES) {
       await setTheme(page, theme)
-      for (const surface of SURFACES) await sweepSurface(page, surface, theme, findings)
+      for (const surface of SURFACES) {
+        await sweepSurface({ app, main: page, surface, theme, findings })
+      }
       process.stdout.write(`  ${theme.padEnd(9)} ✓\n`)
     }
   } finally {

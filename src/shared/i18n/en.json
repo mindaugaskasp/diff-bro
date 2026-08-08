@@ -614,7 +614,10 @@
     "neverSent": "nothing is ever sent anywhere",
     "default": "default",
     "clickAgainToPermanently": "Click again to permanently delete every log file",
-    "deleteAllLocalLog": "Delete all local log files"
+    "deleteAllLocalLog": "Delete all local log files",
+    "cleared": "Cleared",
+    "confirmClear": "Confirm clear",
+    "clearLogs": "Clear logs"
   },
   "mermaidDiagram": {
     "diagramError": "Diagram error",
@@ -694,7 +697,9 @@
     "expiresAfter": "Expires after",
     "secureHint": "{label} — auto-expiring (deletes itself)",
     "deletesItselfAutomaticallyA": "Deletes itself automatically — a week is the longest it can live.",
-    "keptUntilYouDelete": "Kept until you delete it."
+    "keptUntilYouDelete": "Kept until you delete it.",
+    "updateDiff": "Update diff",
+    "saveDiff": "Save diff"
   },
   "savedDiffRow": {
     "exportAsImage": "Export as image",
@@ -807,7 +812,12 @@
     "show": "Show",
     "hide": "Hide",
     "confirmClear": "Confirm clear",
-    "clear": "Clear"
+    "clear": "Clear",
+    "clickAgainToClear": "Click again to clear the editor",
+    "clearTheEditor": "Clear the editor (e.g. remove pasted content)",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyTheContents": "Copy the contents to the clipboard",
+    "prettyPrintAs": "Pretty-print as {format}"
   },
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",
@@ -993,7 +1003,8 @@
     "pathJSONPath": "$.path[*] — JSONPath",
     "jSON": "JSON",
     "jSONPathFilter": "JSONPath filter",
-    "result": "Result"
+    "result": "Result",
+    "sortKeys": "Sort keys"
   },
   "toolJwt": {
     "pasteAJWTHeaderPayload": "Paste a JWT — header.payload.signature",
