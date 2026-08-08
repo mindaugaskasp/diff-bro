@@ -1012,7 +1012,37 @@ button.tag-chip:hover .usb-tct {
 .drop-below {
   box-shadow: inset 0 -2px 0 0 var(--accent);
 }
-/* The row being carried, so the list says what is moving. */
-.dragging {
+/* While a row is carried, the REST of the list recedes — the one in flight has
+   to read against its next position, and dimming the carried row instead (the
+   first version) hid the very thing being placed. A tint, not a blur: blur
+   forces a repaint of every row on each dragover and the list stutters. */
+.rows.reordering > .row:not(.is-dragging),
+.rows.reordering > .diff:not(.is-dragging) {
   opacity: 0.45;
+  transition: opacity 120ms ease-out;
+}
+
+/* The section body indents its rows under the header's chevron. The row's own
+   wash — hover, favourite, the just-created tint — has to reach the sidebar
+   edge anyway, or it reads as a stripe with a bite out of its left side. The
+   row takes the indent back as padding, so its CONTENT does not move. */
+.section-body > .rows > .row,
+.section-body > .rows > .diff {
+  margin-left: calc(-1 * var(--space-4));
+  padding-left: var(--space-4);
+}
+
+/* The row a reorder just moved. Deliberately NOT `.is-new`: that one announces
+   a row that did not exist a moment ago, with a badge and a rail. This says
+   "here it is now" and nothing more — the same wash, no badge, no rail, so the
+   two read as one language without one claiming to be the other. */
+.is-moved {
+  position: relative;
+}
+.is-moved::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: new-wash 4s ease-in;
 }

@@ -49,7 +49,9 @@ const rows = computed(() =>
     : [...placed('importedFavorites'), ...placed('importedOthers')]
 )
 
-provideRowReorder((group, from, to) => vault.reorder(group, from, to))
+const reorder = provideRowReorder((group, from, to) =>
+  ui.markMovedRow(vault.reorder(group, from, to))
+)
 const hasImported = computed(() => vault.importedActive.length > 0)
 
 // The mirror of SavedDiffsSection: this one owns a marked diff only when it
@@ -106,7 +108,7 @@ function startImport() {
         <AppIcon name="inbox" /> {{ $t('externalDiffsSection.empty') }}
       </p>
 
-      <ul v-else class="rows">
+      <ul v-else class="rows" :class="{ reordering: reorder.isReordering.value }">
         <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
         <li v-if="!rows.length" class="empty small">
           {{ $t('externalDiffsSection.noSharedDiffsMatchTry') }}

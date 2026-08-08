@@ -11,7 +11,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { openSavedDiff } from '../composables/useSavedDiffOpen'
 import { useDataDir } from '../composables/useDataDir'
 import { languageMonogram } from '../utils/languageMonogram'
-import { DIFF_DRAG_TYPE } from '../utils/snippetSource'
+import { DIFF_DRAG_TYPE, setRowDragPayload } from '../utils/snippetSource'
 import { injectRowReorder } from '../composables/useRowReorder'
 import { t } from '../i18n'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
@@ -73,9 +73,8 @@ async function open() {
 // Both payloads on one drag: the pane reads the compare type, a sibling row
 // reads the reorder one. Where it lands decides which gesture it was.
 function onDragStart(e) {
-  e.dataTransfer?.setData(DIFF_DRAG_TYPE, JSON.stringify([props.entry.id]))
+  setRowDragPayload(e.dataTransfer, DIFF_DRAG_TYPE, [props.entry.id])
   reorder.onDragStart(e, { group: props.group, index: props.index })
-  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy'
 }
 </script>
 
@@ -83,7 +82,12 @@ function onDragStart(e) {
   <li
     class="diff"
     :class="[
-      { favorite: entry.favorite, external: entry.from, 'is-new': isNew },
+      {
+        favorite: entry.favorite,
+        external: entry.from,
+        'is-new': isNew,
+        'is-moved': ui.lastMovedRowId === entry.id
+      },
       reorder.classFor(group, index)
     ]"
     :data-new-row="isNew ? entry.id : null"

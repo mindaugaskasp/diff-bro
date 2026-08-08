@@ -802,7 +802,8 @@
     "maxSnippetSizeKB": "Max snippet size (KB)",
     "maxDiffImageHeightPx": "Max diff image height (px)",
     "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if you need to. The image height is how much of a long diff one exported picture covers, measured on screen, so it captures the same amount whatever your display's scaling; a longer diff is cut short and says so.",
-    "maxFileMb": "Max {kind} file (MB)"
+    "maxFileMb": "Max {kind} file (MB)",
+    "tagShelfRows": "Rows of tag filters in the sidebar"
   },
   "shortcutCapture": {
     "pressAKeyCombination": "Press a key combination…",
@@ -967,7 +968,10 @@
     "reopenTheComparisonsThatWere": "Reopen the comparisons that were open when I quit",
     "onByDefaultTurningIt": "On by default. Turning it off also forgets the ones already stored.",
     "intro": "Where saved diffs, snippets and keys are kept. Point it somewhere that {survives}. The folder is self-contained — after reinstalling, point Diff Bro back at it to restore everything.",
-    "survivesAReinstall": "survives a reinstall"
+    "survivesAReinstall": "survives a reinstall",
+    "whenTheStripIsFull": "When the tab strip is full",
+    "closeTheOldestComparison": "Close the oldest comparison to make room",
+    "offByDefaultAnUnsaved": "Off by default. An unsaved comparison always asks before it goes."
   },
   "streamedDiffViewer": {
     "indexing": "Indexing…",
@@ -1502,5 +1506,11 @@
   },
   "trustedKeysDialog": {
     "searchKeys": "Search {count} keys…"
+  },
+  "tabEvictDialog": {
+    "makeRoom": "Make room?",
+    "willClose": "Opening this closes {name}, which has unsaved changes.",
+    "closeAndOpen": "Close it and open",
+    "keepItOpen": "Keep it open"
   }
 }

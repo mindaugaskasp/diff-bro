@@ -35,6 +35,11 @@ const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 const { startDrag } = useSnippetDrag()
 const reorder = injectRowReorder()
+const rowState = computed(() => ({
+  favorite: props.favorite,
+  'is-new': isNew.value,
+  'is-moved': ui.lastMovedRowId === props.entry.id
+}))
 
 const isNew = computed(() => ui.lastCreatedRowId === props.entry.id)
 const lang = computed(() => languageOf(props.entry))
@@ -97,7 +102,7 @@ function onDragStart(e) {
 <template>
   <li
     class="row"
-    :class="[{ favorite, 'is-new': isNew }, reorder.classFor(group, index)]"
+    :class="[rowState, reorder.classFor(group, index)]"
     :data-new-row="isNew ? entry.id : null"
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor

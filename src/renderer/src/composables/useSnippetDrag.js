@@ -3,7 +3,7 @@
 // (an id, never the body) and what is accepted OFF one.
 
 import { isSecret } from '../utils/secretSnippet'
-import { DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
+import { DRAG_TYPE, dragIdsFrom, setRowDragPayload } from '../utils/snippetSource'
 
 // dragenter/dragover see a PROTECTED drag data store: `types` is readable but
 // getData() returns "". A guard that reads the payload therefore never fires on
@@ -22,10 +22,8 @@ export function useSnippetDrag() {
       e.preventDefault?.()
       return
     }
-    if (!e.dataTransfer) return
     // The id alone: a drop target we do not own can read this payload.
-    e.dataTransfer.setData(DRAG_TYPE, JSON.stringify([entry.id]))
-    e.dataTransfer.effectAllowed = 'copy'
+    setRowDragPayload(e.dataTransfer, DRAG_TYPE, [entry.id])
   }
 
   return {

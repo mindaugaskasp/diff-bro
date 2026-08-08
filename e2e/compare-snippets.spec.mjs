@@ -188,3 +188,30 @@ test('the hover preview gets out of the way once a drag starts', async ({ page }
   await expect(page.locator('.preview')).toHaveCount(0, { timeout: 1000 })
   expect(await row.evaluate((el) => el.matches(':hover'))).toBe(true)
 })
+
+// The card said what would happen; nothing said WHERE. The pane draws the
+// landing area itself while a row is over it — measured, because "is the drop
+// zone visible" is a rendered property, not a state flag.
+test('the pane marks the area a dragged snippet would land in', async ({ page }) => {
+  const row = page.locator('.snippets-section .row[draggable="true"]').first()
+  await row.waitFor()
+  await expect(page.locator('.drop-overlay.in-pane')).toHaveCount(0)
+
+  await page.evaluate(() => {
+    const src = document.querySelector('.snippets-section .row[draggable="true"]')
+    const dt = new DataTransfer()
+    src.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
+    const pane = document.querySelector('.pane')
+    pane.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
+    pane.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true }))
+  })
+
+  const overlay = page.locator('.drop-overlay.in-pane')
+  await expect(overlay).toBeVisible()
+  const rim = await overlay.evaluate((el) => {
+    const s = getComputedStyle(el, '::before')
+    return { style: s.borderStyle, width: s.borderTopWidth }
+  })
+  expect(rim.style).toBe('dashed')
+  expect(Number.parseFloat(rim.width)).toBeGreaterThanOrEqual(2)
+})

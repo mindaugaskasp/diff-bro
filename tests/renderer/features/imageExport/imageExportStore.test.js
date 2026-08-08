@@ -192,7 +192,7 @@ describe('exportImage (saved diffs only)', () => {
     it('stops slicing at the configured ceiling and admits the picture is cut short', async () => {
       const cleanup = stageTallViewer({ contentHeight: 200_000 })
       const settings = useSettingsStore()
-      settings.setMaxExportHeightPx(2940) // five 588px viewports
+      settings.setLimit('maxExportHeightPx', 2940) // five 588px viewports
       const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
       let covered = 0
       window.api.appendDiffImageSlice = async (rect, reset) => {
@@ -214,7 +214,7 @@ describe('exportImage (saved diffs only)', () => {
         setActivePinia(createPinia())
         const cleanup = stageTallViewer({ contentHeight: 200_000 })
         window.devicePixelRatio = dpr
-        useSettingsStore().setMaxExportHeightPx(2940)
+        useSettingsStore().setLimit('maxExportHeightPx', 2940)
         window.api.vaultEncrypt = async (plaintext) => ({ iv: 'iv', data: plaintext })
         window.api.vaultDecrypt = async (box) => box.data
         const id = await useVaultStore().save('t', null, {

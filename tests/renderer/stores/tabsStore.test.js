@@ -905,3 +905,102 @@ describe('clearing a tab opened from the vault', () => {
     expect(diff.left).toBeNull()
   })
 })
+
+// The strip is capped, and past it `open()` refuses. For a reader who treats
+// tabs as scroll-back that is a stop sign in front of the thing they asked for,
+// so this makes room instead — opt-in, because a comparison evicted without
+// being asked is work silently lost.
+describe('tabsStore — making room on a full strip', () => {
+  // Saved by default: an UNSAVED tab is the case that has to ask first, so the
+  // silent-eviction tests would prove nothing if every tab were at risk.
+  const fill = (tabs, { saved = true } = {}) => {
+    for (let i = 0; i < MAX_TABS; i++) tabs.open(comparison(`a${i}.txt`, `b${i}.txt`))
+    if (saved) for (const t of tabs.tabs) t.diffSaved = true
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+  }
+
+  it('still refuses while the setting is off', () => {
+    const tabs = useTabsStore()
+    fill(tabs)
+    const oldest = tabs.tabs[0].id
+    expect(tabs.open(comparison('new-a.txt', 'new-b.txt'))).toBeNull()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+    expect(tabs.tabs[0].id).toBe(oldest)
+  })
+
+  it('closes the oldest and opens the new one when it is on', () => {
+    const tabs = useTabsStore()
+    useSettingsStore().autoCloseOldest = true
+    fill(tabs)
+    const oldest = tabs.tabs[0].id
+    const id = tabs.open(comparison('new-a.txt', 'new-b.txt'))
+    expect(id).toBeTruthy()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+    expect(tabs.tabs.some((t) => t.id === oldest)).toBe(false)
+    expect(tabs.activeId).toBe(id)
+  })
+
+  // Closing what someone is looking at to open what they asked for is a swap,
+  // not room.
+  it('never evicts the tab being looked at', () => {
+    const tabs = useTabsStore()
+    useSettingsStore().autoCloseOldest = true
+    fill(tabs)
+    tabs.activate(tabs.tabs[0].id)
+    const watching = tabs.activeId
+    tabs.open(comparison('new-a.txt', 'new-b.txt'))
+    expect(tabs.tabs.some((t) => t.id === watching)).toBe(true)
+  })
+
+  it('asks first when the oldest holds unsaved work, and opens nothing yet', () => {
+    const tabs = useTabsStore()
+    useSettingsStore().autoCloseOldest = true
+    fill(tabs, { saved: false })
+    const oldest = tabs.tabs[0]
+    expect(tabs.unsaved(oldest)).toBe(true)
+
+    expect(tabs.open(comparison('new-a.txt', 'new-b.txt'))).toBeNull()
+    expect(tabs.pendingEvict).toBeTruthy()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+    expect(tabs.tabs[0].id).toBe(oldest.id)
+  })
+
+  it('confirming closes it and opens the comparison that was waiting', () => {
+    const tabs = useTabsStore()
+    useSettingsStore().autoCloseOldest = true
+    fill(tabs, { saved: false })
+    const oldest = tabs.tabs[0]
+    tabs.open(comparison('new-a.txt', 'new-b.txt'))
+
+    tabs.confirmEvict()
+    expect(tabs.pendingEvict).toBeNull()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+    expect(tabs.tabs.some((t) => t.id === oldest.id)).toBe(false)
+    expect(tabs.active.snapshot.left.name).toBe('new-a.txt')
+  })
+
+  it('cancelling leaves the tab and opens nothing', () => {
+    const tabs = useTabsStore()
+    useSettingsStore().autoCloseOldest = true
+    fill(tabs, { saved: false })
+    const oldest = tabs.tabs[0]
+    tabs.open(comparison('new-a.txt', 'new-b.txt'))
+
+    tabs.cancelEvict()
+    expect(tabs.pendingEvict).toBeNull()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+    expect(tabs.tabs[0].id).toBe(oldest.id)
+    expect(tabs.tabs.some((t) => t.snapshot.left?.name === 'new-a.txt')).toBe(false)
+  })
+
+  it('opens the waiting comparison exactly once', () => {
+    const tabs = useTabsStore()
+    useSettingsStore().autoCloseOldest = true
+    fill(tabs, { saved: false })
+    tabs.open(comparison('new-a.txt', 'new-b.txt'))
+
+    tabs.confirmEvict()
+    tabs.confirmEvict()
+    expect(tabs.tabs.filter((t) => t.snapshot.left?.name === 'new-a.txt')).toHaveLength(1)
+  })
+})

@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   DIFF_DRAG_TYPE,
   DRAG_TYPE,
   dragIdsFrom,
+  setRowDragPayload,
   snippetSource
 } from '../../../src/renderer/src/utils/snippetSource'
 
@@ -98,5 +99,28 @@ describe('dragIdsFrom — the diff flavour', () => {
     const many = JSON.stringify(['a', 'b', 'c', 'd'])
     expect(dragIdsFrom(diffTransfer(many), DIFF_DRAG_TYPE)).toHaveLength(2)
     expect(dragIdsFrom(diffTransfer('not json'), DIFF_DRAG_TYPE)).toEqual([])
+  })
+})
+
+// The row's drag is two gestures at once. Allowing only one of them is what
+// made a saved diff snap back to where it started: Chromium refuses a 'move'
+// dropEffect under a 'copy'-only effectAllowed, and then fires no drop.
+describe('setRowDragPayload', () => {
+  const transfer = () => ({ setData: vi.fn(), effectAllowed: '' })
+
+  it('allows both the compare drop and the reorder', () => {
+    const dt = transfer()
+    setRowDragPayload(dt, DRAG_TYPE, ['snip-1'])
+    expect(dt.effectAllowed).toBe('copyMove')
+  })
+
+  it('carries the ids under the type it was given', () => {
+    const dt = transfer()
+    setRowDragPayload(dt, DIFF_DRAG_TYPE, ['diff-1'])
+    expect(dt.setData).toHaveBeenCalledWith(DIFF_DRAG_TYPE, JSON.stringify(['diff-1']))
+  })
+
+  it('does nothing without a dataTransfer', () => {
+    expect(() => setRowDragPayload(null, DRAG_TYPE, ['x'])).not.toThrow()
   })
 })

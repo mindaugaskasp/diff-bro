@@ -76,6 +76,12 @@ function reveal() {
       {{ $t('storageSettings.reopenTheComparisonsThatWere') }}
     </SettingToggle>
     <p class="hint">{{ $t('storageSettings.onByDefaultTurningIt') }}</p>
+
+    <h4>{{ $t('storageSettings.whenTheStripIsFull') }}</h4>
+    <SettingToggle :checked="settings.autoCloseOldest" @change="settings.setAutoCloseOldest">
+      {{ $t('storageSettings.closeTheOldestComparison') }}
+    </SettingToggle>
+    <p class="hint">{{ $t('storageSettings.offByDefaultAnUnsaved') }}</p>
   </section>
 </template>
 

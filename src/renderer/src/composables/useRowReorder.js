@@ -10,6 +10,11 @@ import { computed, inject, provide, ref } from 'vue'
 // open the comparison instead.
 export const REORDER_DRAG_TYPE = 'application/x-diffbro-reorder'
 
+// The drop line, and the row being carried — the rest of the list dims against
+// it so the one in flight reads against its next position.
+const rowClasses = (half, dragging) =>
+  [half && `drop-${half}`, dragging && 'is-dragging'].filter(Boolean).join(' ')
+
 const halfUnder = (e) => {
   const rect = e.currentTarget?.getBoundingClientRect?.()
   if (!rect) return 'above'
@@ -32,8 +37,9 @@ export function useRowReorder({ commit }) {
 
   function onDragStart(e, row) {
     source.value = row
+    // effectAllowed belongs to the row (setRowDragPayload) — this drag is two
+    // gestures, and a second writer here is what set it to 'copy' alone.
     e.dataTransfer?.setData(REORDER_DRAG_TYPE, `${row.group}:${row.index}`)
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
   }
 
   // Only inside the group the drag started in: each group renders as its own
@@ -63,6 +69,7 @@ export function useRowReorder({ commit }) {
       ? target.value.half
       : ''
 
+  const isSource = (group, index) => source.value?.group === group && source.value.index === index
   const api = { onDragStart, onDragOver, onDrop, onDragEnd: clear, markerFor, isReordering }
   // One bundle per row: three separate attributes on four call sites is three
   // chances to wire two of them.
@@ -73,7 +80,7 @@ export function useRowReorder({ commit }) {
       drop: (e) => onDrop(e, { group, index }),
       dragend: clear
     }),
-    classFor: (group, index) => (markerFor(group, index) ? `drop-${markerFor(group, index)}` : '')
+    classFor: (group, index) => rowClasses(markerFor(group, index), isSource(group, index))
   }
 }
 

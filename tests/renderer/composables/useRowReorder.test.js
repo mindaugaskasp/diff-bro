@@ -133,3 +133,34 @@ describe('useRowReorder — the payload', () => {
     expect(reorder.isReordering.value).toBe(false)
   })
 })
+
+// While a row is being carried, the rest of the list dims so the one in flight
+// reads against its next position rather than getting lost among its siblings.
+describe('useRowReorder — the row in flight', () => {
+  it('marks the source, and only the source', () => {
+    const { reorder } = setup()
+    reorder.onDragStart(dragEvent(), { group: 'snippets', index: 2 })
+    expect(reorder.classFor('snippets', 2)).toContain('is-dragging')
+    expect(reorder.classFor('snippets', 1)).not.toContain('is-dragging')
+  })
+
+  it('marks nothing in another group', () => {
+    const { reorder } = setup()
+    reorder.onDragStart(dragEvent(), { group: 'snippets', index: 2 })
+    expect(reorder.classFor('favorites', 2)).not.toContain('is-dragging')
+  })
+
+  it('stops marking once the drag ends', () => {
+    const { reorder } = setup()
+    reorder.onDragStart(dragEvent(), { group: 'snippets', index: 2 })
+    reorder.onDragEnd()
+    expect(reorder.classFor('snippets', 2)).toBe('')
+  })
+
+  it('still marks the drop target while carrying', () => {
+    const { reorder } = setup()
+    reorder.onDragStart(dragEvent(), { group: 'snippets', index: 2 })
+    reorder.onDragOver(dragEvent({ clientY: 4 }), { group: 'snippets', index: 0 })
+    expect(reorder.classFor('snippets', 0)).toContain('drop-above')
+  })
+})

@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useDiffStore } from './diffStore'
 import { useVaultStore } from './vaultStore'
-import { useSettingsStore } from './settingsStore'
-import { loadPersisted, savePersisted } from '../persist'
 import { tabsClosedBy } from '../utils/tabMenu'
 import {
   blankSnapshot,
@@ -16,26 +14,20 @@ import {
   recyclableTab,
   tabTitle
 } from '../utils/tabs'
-import {
-  EMPTY_ENVELOPE,
-  SESSION_AAD,
-  SESSION_VERSION,
-  packSession,
-  readEnvelope,
-  readSession,
-  tabFromStored
-} from '../utils/session'
-import { droppedTabsNotice, tabsFullNotice } from '../utils/tabNotices'
+import {} from '../utils/session'
+import { evictionActions } from './tabEviction'
+import { sessionActions } from './tabSession'
 
-// Several comparisons open at once. The diffStore stays THE ACTIVE DOCUMENT and
-// a tab is the snapshot it round-trips through snapshot()/restore(), so only the
-// tab you are looking at owns Monaco models — the memory bound by construction.
-
+// Several comparisons open at once. diffStore stays THE ACTIVE DOCUMENT and a
+// tab is the snapshot it round-trips through snapshot()/restore(), so only the
+// tab on screen owns Monaco models — the memory bound by construction.
 export const useTabsStore = defineStore('tabs', {
   state: () => ({
-    // The tab ids awaiting a discard confirmation, or null. Closing a tab is
-    // the one way paste-mode text can be lost — it exists nowhere else.
+    // Tab ids awaiting a discard confirmation — closing is the one way paste
+    // text is lost. `pendingEvict` is { id, snapshot, opts }: an open waiting
+    // on permission to evict a tab.
     pendingClose: null,
+    pendingEvict: null,
     /** @type {import('../utils/tabs').DiffTab[]} */
     tabs: [],
     activeId: null,
@@ -172,13 +164,20 @@ export const useTabsStore = defineStore('tabs', {
         spare.transient = transient
         return this._fill(spare, full, { diffSaved, entryId, name })
       }
-      if (!this.canAdd) {
-        useDiffStore().showNotice(`${tabsFullNotice(this.tabs)}. Close one first.`)
-        return null
-      }
+      if (!this.canAdd && !this._makeRoom(full, opts)) return null
       const tab = createTab(full, { diffSaved, transient })
       this.tabs.push(tab)
       return this._fill(tab, full, { diffSaved, entryId, name })
+    },
+    ...evictionActions,
+    // The seam: reaching diffStore from tabEviction or tabSession would close a
+    // new import cycle back through here.
+    _notice(text) {
+      useDiffStore().showNotice(text)
+    },
+    _liveDoc() {
+      const diff = useDiffStore()
+      return { snapshot: diff.snapshot(), diffSaved: diff.diffSaved }
     },
     // A tab this comparison may take over. Blank first; failing that, and only
     // for one git handed us, the OLDEST other tab that also came from git —
@@ -319,76 +318,6 @@ export const useTabsStore = defineStore('tabs', {
       if (!tab) return
       tab.title = tabTitle(useDiffStore().snapshot())
     },
-    /**
-     * Write the open comparisons out, so closing the app is not a loss. Sealed
-     * with the vault key (never plaintext: this is the file contents you were
-     * reading). Called on a debounce — see useSessionPersistence.
-     */
-    async saveSession() {
-      // sessionReady: nothing may be written before the stored session has been
-      // read back — the debounce races the restore, and a file dropped inside
-      // that window used to overwrite every other comparison with the one just
-      // opened.
-      const usable =
-        useSettingsStore().restoreSession &&
-        typeof window.api?.vaultEncrypt === 'function' &&
-        this.sessionReady
-      if (!usable) return
-      const diff = useDiffStore()
-      const packed = packSession(this.tabs, this.activeId, {
-        snapshot: diff.snapshot(),
-        diffSaved: diff.diffSaved
-      })
-      // A locked keychain is temporary; the comparisons behind it are not ours
-      // to throw away.
-      if (!packed) return savePersisted('session', EMPTY_ENVELOPE)
-      this._reportDropped(packed.dropped)
-      const box = await window.api.vaultEncrypt(JSON.stringify(packed), SESSION_AAD)
-      if (box?.error) return
-      savePersisted(
-        'session',
-        JSON.stringify({ version: SESSION_VERSION, iv: box.iv, data: box.data })
-      )
-    },
-    _reportDropped(count) {
-      if (count === this.sessionDropped) return
-      this.sessionDropped = count
-      if (count) useDiffStore().showNotice(droppedTabsNotice(count))
-    },
-    /** Reopen last session's comparisons, replacing the blank tab init() made.
-     * Runs before the window accepts anything else, so nothing it restores can
-     * land on top of a diff the user already asked for.
-     * @returns {Promise<number>} how many tabs came back */
-    async restoreSession() {
-      if (!useSettingsStore().restoreSession) return 0
-      const box = readEnvelope(loadPersisted('session'))
-      if (!box || typeof window.api?.vaultDecrypt !== 'function') {
-        this.sessionReady = true
-        return 0
-      }
-      const plaintext = await window.api.vaultDecrypt(box, SESSION_AAD)
-      // An { error } is the KEY, not the file: keep the session for a launch
-      // where the keychain is open rather than overwriting it with nothing.
-      if (plaintext && typeof plaintext === 'object') return 0
-      this.sessionReady = true
-      const session = readSession(plaintext)
-      if (!session) return 0
-      this._restoreTabs(session)
-      return session.tabs.length
-    },
-    /**
-     * Settings → Storage. Turning it off forgets what is already stored:
-     * leaving the last comparisons on disk after "don't reopen them" would be a
-     * promise only half kept.
-     * @param {boolean} on
-     */
-    setRestoreSession(on) {
-      useSettingsStore().setRestoreSession(on)
-      if (!on) savePersisted('session', EMPTY_ENVELOPE)
-    },
-    _restoreTabs(session) {
-      this.tabs = session.tabs.map(tabFromStored)
-      this._show(this.tabs[session.tabs.findIndex((t) => t.active)] ?? this.tabs[0])
-    }
+    ...sessionActions
   }
 })

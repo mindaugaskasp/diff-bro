@@ -48,7 +48,9 @@ const rows = computed(() =>
   props.favOnly ? placed('favoritesOwn') : [...placed('favoritesOwn'), ...placed('ownActive')]
 )
 
-provideRowReorder((group, from, to) => vault.reorder(group, from, to))
+const reorder = provideRowReorder((group, from, to) =>
+  ui.markMovedRow(vault.reorder(group, from, to))
+)
 const hasOwn = computed(() => vault.active.some((e) => !e.from))
 
 // This section owns a marked diff only if it is one of yours; an imported one
@@ -109,7 +111,7 @@ useNewRowMarker({
           <AppIcon name="plus" /> {{ $t('savedDiffsSection.newComparisonCta') }}
         </button>
       </div>
-      <ul v-else class="rows">
+      <ul v-else class="rows" :class="{ reordering: reorder.isReordering.value }">
         <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
         <li v-if="!rows.length" class="empty small">
           {{ $t('savedDiffsSection.noSavedDiffsMatchTry') }}

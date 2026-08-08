@@ -68,9 +68,11 @@ export const reorderAction = (groupOf) =>
   function reorder(group, from, to) {
     const list = groupOf(this, group)
     if (!list) return
+    const moved = list[from]?.id ?? null
     const orders = new Map(moveWithin(list, from, to).map((e) => [e.id, e.order]))
     for (const entry of this.entries) {
       if (orders.has(entry.id)) entry.order = orders.get(entry.id)
     }
     this.persist()
+    return moved
   }

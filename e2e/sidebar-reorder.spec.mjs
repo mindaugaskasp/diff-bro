@@ -1,5 +1,5 @@
 import { rmSync } from 'node:fs'
-import { test, expect, firstReadyPage, freshUserDataDir, launchApp } from './fixtures.mjs'
+import { test, expect, firstReadyPage, freshUserDataDir, launchApp, openMenu } from './fixtures.mjs'
 
 // Sidebar rows rearrange by dragging one onto another. The lists were ordered
 // by an accident of when things were captured, and the only lever was the star.
@@ -116,4 +116,82 @@ test('the order survives a relaunch', async () => {
     await app.close()
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+// Seeding three saved diffs through the UI is slow — a vault round-trip each.
+test.describe.configure({ timeout: 90_000 })
+
+const DIFFS = 'li.diff'
+const diffNames = (page) => page.locator(`${DIFFS} .name`).allTextContents()
+
+async function seedDiffs(page, labels) {
+  for (const label of labels) {
+    // A saved tab is vault-backed and drops the mode toggle, so each diff needs
+    // a fresh comparison to be made in. Through the menu, because the tab strip
+    // hides itself while only one tab is open.
+    await openMenu(page, 'File', 'New Comparison')
+    await page.getByRole('button', { name: 'Paste mode' }).click()
+    await page.getByPlaceholder('Paste original text here').fill(`before ${label}`)
+    await page.getByPlaceholder('Paste changed text here').fill(`after ${label}`)
+    await page.getByRole('button', { name: 'Compare', exact: true }).click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: 'Save diff' })
+    await dialog.getByLabel('Name', { exact: true }).fill(label)
+    await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.locator(DIFFS, { hasText: label })).toBeVisible()
+  }
+}
+
+// The user's report: a saved diff dropped in a new position snaps back. The
+// snippet list was covered and this one was not, which is exactly the gap.
+test('a saved diff dropped in a new position stays there', async ({ page }) => {
+  await seedDiffs(page, ['Diff one', 'Diff two', 'Diff three'])
+  const before = await diffNames(page)
+  expect(before).toHaveLength(3)
+
+  await dragRowOnto(page, DIFFS, { from: 2, to: 0 })
+
+  await expect.poll(() => diffNames(page)).toEqual([before[2], before[0], before[1]])
+})
+
+test('a saved diff order survives a relaunch', async () => {
+  const dir = freshUserDataDir()
+  let app = await launchApp(dir)
+  try {
+    let page = await firstReadyPage(app)
+    await seedDiffs(page, ['Diff one', 'Diff two', 'Diff three'])
+    await dragRowOnto(page, DIFFS, { from: 2, to: 0 })
+    const wanted = await diffNames(page)
+    await app.close()
+
+    app = await launchApp(dir)
+    page = await firstReadyPage(app)
+    await expect.poll(() => diffNames(page)).toEqual(wanted)
+  } finally {
+    await app.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The section body indents its rows under the header's chevron, and the row's
+// hover wash was clipped to that indent — a highlight with a bite out of its
+// left side. Measured, not screenshotted: the painted row has to start where
+// the list starts.
+test('a row wash spans the full width of its list', async ({ page }) => {
+  const row = page.locator(`${SNIPPETS}`).first()
+  await row.waitFor()
+  // Against the SECTION, not the list: the list is already indented, so a row
+  // that merely matches it still leaves the gap the reader is looking at.
+  const { rowLeft, sectionLeft, rowRight, sectionRight } = await row.evaluate((el) => {
+    const section = el.closest('.sidebar-section').getBoundingClientRect()
+    const box = el.getBoundingClientRect()
+    return {
+      rowLeft: box.left,
+      sectionLeft: section.left,
+      rowRight: box.right,
+      sectionRight: section.right
+    }
+  })
+  expect(rowLeft).toBeLessThanOrEqual(sectionLeft + 1)
+  expect(rowRight).toBeGreaterThanOrEqual(sectionRight - 1)
 })

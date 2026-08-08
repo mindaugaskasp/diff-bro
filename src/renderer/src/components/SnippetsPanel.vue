@@ -52,7 +52,9 @@ const rows = computed(() => {
   return props.favOnly ? favs : [...favs, ...placed(visibleListed.value, 'listed')]
 })
 
-provideRowReorder((group, from, to) => store.reorder(group, from, to))
+const reorder = provideRowReorder((group, from, to) =>
+  ui.markMovedRow(store.reorder(group, from, to))
+)
 
 // A filter is on when there is a search term or a tag selected — the only time
 // a per-section count is worth the space.
@@ -133,7 +135,11 @@ function newSnippet() {
         </button>
       </div>
 
-      <ul v-if="store.entries.length" class="rows">
+      <ul
+        v-if="store.entries.length"
+        class="rows"
+        :class="{ reordering: reorder.isReordering.value }"
+      >
         <li v-if="!rows.length" class="empty small">
           {{ $t('snippetsPanel.noSnippetsMatchTryRemoving') }}
         </li>
