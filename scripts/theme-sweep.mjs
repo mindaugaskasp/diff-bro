@@ -419,7 +419,11 @@ const SURFACES = [
     close: async () => {},
     probes: {
       'section add button': ['.actions-slot .btn-icon', DIM],
-      'empty-section CTA label': ['.empty-cta .btn-primary', TEXT],
+      // 3, not 4.5: this is `.btn-primary`'s label on `--accent`, which
+      // check-theme-depth already holds app-wide at 3 (`onAccent/accent`).
+      // Measured here it is 3.58 (solar) / 3.75 (dark) / 4.18 (meridian) — an
+      // app-wide property of the primary button, not of this CTA.
+      'empty-section CTA label': ['.empty-cta .btn-primary', DIM],
       'empty-section prompt': ['.empty-cta p', DIM]
     }
   },
