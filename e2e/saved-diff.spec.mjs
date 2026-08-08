@@ -168,3 +168,44 @@ test('Clear leaves the toolbar once the diff is in the vault', async () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// A saved diff is a handle too: drop the row into the comparison column and it
+// opens there, the same path the row click takes — one action, two gestures.
+test('a saved diff row can be dragged into the comparison column', async ({ page }) => {
+  await page.getByRole('button', { name: 'Paste mode' }).click()
+  await page.getByPlaceholder('Paste original text here').fill('alpha')
+  await page.getByPlaceholder('Paste changed text here').fill('beta')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill('Draggable diff')
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+
+  const row = page.locator('li.diff', { hasText: 'Draggable diff' })
+  await expect(row).toBeVisible()
+  await expect(row).toHaveAttribute('draggable', 'true')
+  // The handle says so before you try — same rule the snippet rows follow.
+  expect(await row.evaluate((el) => getComputedStyle(el).cursor)).toBe('grab')
+
+  // Move off it, so the drop has something to prove.
+  await page
+    .locator('.diff-tabs')
+    .getByRole('button', { name: /new|\+/i })
+    .first()
+    .click()
+  await expect(page.locator('.tab[data-active="true"]', { hasText: 'Draggable diff' })).toHaveCount(
+    0
+  )
+
+  const rb = await row.boundingBox()
+  const pb = await page.locator('.pane').boundingBox()
+  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2, { steps: 10 })
+  await page.mouse.up()
+
+  // The drop opened it — the same tab the row click would have focused.
+  await expect(
+    page.locator('.tab[data-active="true"]', { hasText: 'Draggable diff' })
+  ).toBeVisible()
+})

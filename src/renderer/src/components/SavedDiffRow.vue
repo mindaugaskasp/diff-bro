@@ -8,9 +8,11 @@ import { useVaultStore } from '../stores/vaultStore'
 import { useImageExportStore } from '../features/imageExport'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
-import { useTabsStore } from '../stores/tabsStore'
+import { openSavedDiff } from '../composables/useSavedDiffOpen'
 import { useDataDir } from '../composables/useDataDir'
 import { languageMonogram } from '../utils/languageMonogram'
+import { DIFF_DRAG_TYPE } from '../utils/snippetSource'
+import { t } from '../i18n'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
@@ -28,7 +30,6 @@ const share = useShareStore()
 const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const snippets = useSnippetStore()
-const tabs = useTabsStore()
 const dataDir = useDataDir()
 
 const SOON_MS = 15 * 60_000
@@ -58,11 +59,15 @@ const state = computed(() => {
 })
 
 async function open() {
-  const payload = await vault.load(props.entry.id)
-  if (!payload) return diff.showNotice('This saved diff has expired or could not be decrypted.')
-  // Its own tab, keyed by the vault id so clicking the row twice focuses the
-  // one already open rather than stacking a duplicate.
-  tabs.open(payload, { diffSaved: true, entryId: props.entry.id, name: props.entry.name })
+  const ok = await openSavedDiff(props.entry.id)
+  if (!ok) diff.showNotice(t('savedDiffRow.expiredOrUndecryptable'))
+}
+
+// A row is also a handle: drop it in the comparison column to open it there.
+// Only the id travels, exactly as a snippet drag does.
+function onDragStart(e) {
+  e.dataTransfer?.setData(DIFF_DRAG_TYPE, JSON.stringify([props.entry.id]))
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy'
 }
 </script>
 
@@ -71,6 +76,8 @@ async function open() {
     class="diff"
     :class="{ favorite: entry.favorite, external: entry.from, 'is-new': isNew }"
     :data-new-row="isNew ? entry.id : null"
+    draggable="true"
+    @dragstart="onDragStart"
   >
     <button
       class="star"

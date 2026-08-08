@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
-import { dragIdsFrom } from '../utils/snippetSource'
+import { DIFF_DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
+import { openSavedDiff } from './useSavedDiffOpen'
 import { isSnippetDragType } from './useSnippetDrag'
 import { useShareStore } from '../features/share'
 
@@ -19,8 +20,12 @@ export function useFileTextDrop(apply) {
 
 const hasFiles = (e) => Array.from(e.dataTransfer?.types ?? []).includes('Files')
 const snippetIds = (e) => dragIdsFrom(e.dataTransfer)
+const diffIds = (e) => dragIdsFrom(e.dataTransfer, DIFF_DRAG_TYPE)
 // Types only: the payload is unreadable until drop.
-const carries = (e) => hasFiles(e) || isSnippetDragType(e.dataTransfer)
+const isRowDrag = (e) =>
+  isSnippetDragType(e.dataTransfer) ||
+  Array.from(e.dataTransfer?.types ?? []).includes(DIFF_DRAG_TYPE)
+const carries = (e) => hasFiles(e) || isRowDrag(e)
 // A drop released over a file slot targets that side.
 const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
 // A snippet BECOMES the comparison, so it has to be released on the thing it
@@ -29,6 +34,36 @@ const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
 // really left the row — and silently replaced what was on screen. Files keep
 // the window-wide target: dropping a file on the app is its own gesture.
 const inDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
+
+// A dropped key or sealed diff is not a comparison: each opens its own flow.
+async function dropPaths(store, paths, targetSide) {
+  const keyPath = paths.find((p) => p.toLowerCase().endsWith('.diffbrokey'))
+  if (keyPath) return useShareStore().receiveDroppedKey(keyPath)
+  const sharedPath = paths.find((p) => p.toLowerCase().endsWith('.diffbro'))
+  if (sharedPath) return useShareStore().receiveDroppedSharedDiff(sharedPath)
+  return store.dropFiles(paths, targetSide)
+}
+
+// What a release actually means, by payload. A dropped DIFF replaces the
+// comparison wholesale; a dropped snippet fills one side; a file may be either.
+// Both row flavours only count inside the column that will host them.
+async function routeDrop(e, store) {
+  const dropped = diffIds(e)
+  if (dropped.length) {
+    if (inDiffRegion(e)) await openSavedDiff(dropped[0])
+    return
+  }
+  const ids = snippetIds(e)
+  if (ids.length) {
+    if (inDiffRegion(e)) await store.dropSnippets(ids, sideUnder(e))
+    return
+  }
+  if (!hasFiles(e)) return
+  const paths = Array.from(e.dataTransfer.files)
+    .map((f) => window.api.getPathForFile(f))
+    .filter(Boolean)
+  if (paths.length) await dropPaths(store, paths, sideUnder(e))
+}
 
 // Window-level diff drop. A dragenter/leave depth counter avoids child-element
 // flicker; `suppressed` stands it down while a dialog handles its own drops.
@@ -48,7 +83,7 @@ export function useWindowFileDrop(store, suppressed) {
     if (!carries(e) || suppressed.value) return
     depth.value += 1
     inWindow.value = true
-    snippetDrag.value = isSnippetDragType(e.dataTransfer)
+    snippetDrag.value = isRowDrag(e)
   }
   // Where the pointer IS belongs to dragover: it fires continuously with the
   // element actually under it, which dragenter does not.
@@ -69,25 +104,7 @@ export function useWindowFileDrop(store, suppressed) {
     snippetDrag.value = false
     overDiff.value = false
     if (suppressed.value) return
-    const ids = snippetIds(e)
-    if (ids.length) {
-      if (inDiffRegion(e)) await store.dropSnippets(ids, sideUnder(e))
-      return
-    }
-    if (!hasFiles(e)) return
-    const paths = Array.from(e.dataTransfer.files)
-      .map((f) => window.api.getPathForFile(f))
-      .filter(Boolean)
-    if (paths.length) await dropPaths(paths, sideUnder(e))
-  }
-
-  // A dropped key or sealed diff is not a comparison: each opens its own flow.
-  async function dropPaths(paths, targetSide) {
-    const keyPath = paths.find((p) => p.toLowerCase().endsWith('.diffbrokey'))
-    if (keyPath) return useShareStore().receiveDroppedKey(keyPath)
-    const sharedPath = paths.find((p) => p.toLowerCase().endsWith('.diffbro'))
-    if (sharedPath) return useShareStore().receiveDroppedSharedDiff(sharedPath)
-    return store.dropFiles(paths, targetSide)
+    await routeDrop(e, store)
   }
 
   return { active, onDragEnter, onDragOver, onDragLeave, onDrop, snippetDrag }

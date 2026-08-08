@@ -716,7 +716,8 @@
     "pinToTheTop": "Pin to the top of the list",
     "unfavorite": "Unfavorite",
     "favoritePinToTop": "Favorite (pin to top)",
-    "from": "from {who}"
+    "from": "from {who}",
+    "expiredOrUndecryptable": "This saved diff has expired or could not be decrypted."
   },
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
