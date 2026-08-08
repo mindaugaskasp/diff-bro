@@ -1,5 +1,6 @@
 import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 import { spawn } from 'node:child_process'
+import { workerEnv } from './workerEnv.mjs'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -20,8 +21,7 @@ const ELECTRON = createRequire(import.meta.url)('electron')
 // Same, but run FROM a directory — the only way to exercise a relative path,
 // which is what a shell actually hands over.
 function runCliIn(userDataDir, args, cwd) {
-  const env = { ...process.env }
-  delete env.ELECTRON_RUN_AS_NODE
+  const env = cliEnv(userDataDir)
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], {
       env,
@@ -33,11 +33,21 @@ function runCliIn(userDataDir, args, cwd) {
   })
 }
 
-function runCli(userDataDir, args) {
-  // DELETE the key — assigning undefined leaves "undefined" in the child env,
-  // which Electron reads as truthy and runs itself as plain Node (docs/standards.md).
-  const env = { ...process.env }
+// The same environment the app itself is launched with — the worker's DISPLAY
+// above all. Without it a spawned CLI has no X server on CI and Electron exits
+// before any of our code runs.
+//
+// DELETE the ELECTRON_RUN_AS_NODE key — assigning undefined leaves "undefined"
+// in the child env, which Electron reads as truthy and runs itself as plain
+// Node (docs/standards.md).
+function cliEnv(userDataDir) {
+  const env = { ...process.env, ...workerEnv(userDataDir) }
   delete env.ELECTRON_RUN_AS_NODE
+  return env
+}
+
+function runCli(userDataDir, args) {
+  const env = cliEnv(userDataDir)
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], {
       env,
@@ -53,8 +63,7 @@ function runCli(userDataDir, args) {
 // command that reads stdin, and a synchronous reader is exactly the thing a
 // unit test cannot exercise.
 function runCliAnswering(userDataDir, args, answers) {
-  const env = { ...process.env }
-  delete env.ELECTRON_RUN_AS_NODE
+  const env = cliEnv(userDataDir)
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], { env })
     let stdout = ''
@@ -69,8 +78,7 @@ function runCliAnswering(userDataDir, args, answers) {
 }
 
 function runCliCapture(userDataDir, args) {
-  const env = { ...process.env }
-  delete env.ELECTRON_RUN_AS_NODE
+  const env = cliEnv(userDataDir)
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], { env })
     let stdout = ''
@@ -296,9 +304,7 @@ test('`diffbro create snippet -i` saves a piped body under the flags it was give
     )
     // The prompts live on stderr; stdout carries the confirmation alone, so a
     // redirect captures the answer and never the questions.
-    expect(`${out.stdout}\n--- exit ${out.code}, stderr:\n${out.stderr}`).toContain(
-      'Handed to Diff Bro'
-    )
+    expect(out.stdout).toContain('Handed to Diff Bro')
     expect(out.stdout).toContain('Written from the shell')
     expect(out.stdout).toContain('2 lines')
     expect(out.stdout).not.toContain('(optional)')
