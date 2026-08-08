@@ -159,3 +159,33 @@ describe('shimScript — a shim installed from a dev run', () => {
     expect(s).toContain('"C:\\el\\electron.exe" "C:\\repo" %*')
   })
 })
+
+// A shim is only rewritten on install, so a fixed generator does nothing for
+// one already on disk — the dev-run shims out there still exec Electron with
+// no entry point. Settings has to be able to SAY so, or the fix is unreachable.
+describe('shimStatus — a shim that no longer matches what we would write', () => {
+  const ELECTRON = '/repo/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'
+
+  it('reports a shim written before the entry point was carried as stale', () => {
+    installShim({ exePath: ELECTRON, home })
+    const now = shimStatus({ home, exePath: ELECTRON, entryPath: '/repo' })
+    expect(now.installed).toBe(true)
+    expect(now.stale).toBe(true)
+  })
+
+  it('is not stale when it already says what we would write', () => {
+    installShim({ exePath: ELECTRON, home, entryPath: '/repo' })
+    expect(shimStatus({ home, exePath: ELECTRON, entryPath: '/repo' }).stale).toBe(false)
+  })
+
+  // Asked without the two, staleness is unknowable — say nothing rather than
+  // nag about a shim that may be perfectly correct.
+  it('claims nothing when it was not told what we would write', () => {
+    installShim({ exePath: ELECTRON, home })
+    expect(shimStatus({ home }).stale).toBe(false)
+  })
+
+  it('is not stale when there is no shim at all', () => {
+    expect(shimStatus({ home, exePath: ELECTRON, entryPath: '/repo' }).stale).toBe(false)
+  })
+})

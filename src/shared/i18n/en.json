@@ -519,7 +519,8 @@
     "reinstall": "Reinstall",
     "writeFailed": "Could not write the command.",
     "commands": "Commands",
-    "helpHint": "Run diffbro help <command> in a terminal for the long form of any of these."
+    "helpHint": "Run diffbro help <command> in a terminal for the long form of any of these.",
+    "outOfDate": "This command was installed by an older build and needs reinstalling to work."
   },
   "commandPalette": {
     "commandPalette": "Command palette",

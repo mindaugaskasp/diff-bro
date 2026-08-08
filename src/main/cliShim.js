@@ -71,12 +71,27 @@ const looksLikeOurs = (file) => {
 }
 
 /**
- * @param {{ exePath: string, home: string, platform?: string, localAppData?: string }} o
- * @returns {{ installed: boolean, target: string, onPath: boolean }}
+ * @param {{ home: string, platform?: string, localAppData?: string, exePath?: string,
+ *           entryPath?: string|null }} o
+ * @returns {{ installed: boolean, target: string, onPath: boolean, stale: boolean }}
  */
-export function shimStatus({ home, platform = process.platform, localAppData }) {
+export function shimStatus({
+  home,
+  platform = process.platform,
+  localAppData,
+  exePath,
+  entryPath
+}) {
   const target = shimTarget({ platform, home, localAppData })
-  return { installed: existsSync(target) && looksLikeOurs(target), target, onPath: onPath(target) }
+  const installed = existsSync(target) && looksLikeOurs(target)
+  // A shim is only written on install, so fixing the generator does nothing for
+  // one already on disk. Comparing against what we WOULD write is the only way
+  // Settings can tell the reader a reinstall is worth it.
+  const stale =
+    installed &&
+    !!exePath &&
+    readFileSync(target, 'utf8') !== shimScript(exePath, platform, entryPath)
+  return { installed, target, onPath: onPath(target), stale }
 }
 
 /**

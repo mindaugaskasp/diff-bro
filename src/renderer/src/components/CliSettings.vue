@@ -52,6 +52,7 @@ async function run(fn) {
     >
       <template #cmd><code>diffbro</code></template>
     </i18n-t>
+    <p v-if="status?.stale" class="hint">{{ $t('cliSettings.outOfDate') }}</p>
     <p v-if="error" class="hint">{{ error }}</p>
 
     <h4>{{ $t('cliSettings.commands') }}</h4>
