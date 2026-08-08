@@ -88,6 +88,10 @@
       "shortcuts": "Keyboard Shortcuts",
       "showTour": "Show Tour",
       "reportIssue": "Report an Issue"
+    },
+    "terminal": {
+      "title": "Terminal",
+      "info": "Commands & Setup"
     }
   },
   "reportIssue": {
@@ -513,7 +517,10 @@
     "installed": "installed",
     "install": "Install",
     "reinstall": "Reinstall",
-    "writeFailed": "Could not write the command."
+    "writeFailed": "Could not write the command.",
+    "commands": "Commands",
+    "helpHint": "Run {cmd} in a terminal for the long form of any of these.",
+    "outOfDate": "This command was installed by an older build and needs reinstalling to work."
   },
   "commandPalette": {
     "commandPalette": "Command palette",
@@ -795,7 +802,18 @@
     "keepRunningInTheTray": "Keep running in the notification area when the window is closed",
     "keepRunningHint": "Diff Bro stays in the notification area, so the quick look-up shortcut keeps working. Right-click its icon to exit.",
     "startWhenISignIn": "Start Diff Bro when I sign in",
-    "startWhenISignInHint": "Starts in the notification area with no window on screen."
+    "startWhenISignInHint": "Starts in the notification area with no window on screen.",
+    "tab": {
+      "appearance": "Appearance",
+      "shortcuts": "Shortcuts",
+      "desktop": "Desktop",
+      "storage": "Storage",
+      "limits": "Limits",
+      "logs": "Logs",
+      "email": "Email",
+      "cli": "Terminal",
+      "fun": "Fun"
+    }
   },
   "settingsLimits": {
     "limits": "Limits",
@@ -1512,5 +1530,60 @@
     "willClose": "Opening this closes {name}, which has unsaved changes.",
     "closeAndOpen": "Close it and open",
     "keepItOpen": "Keep it open"
+  },
+  "settingsAppearance": {
+    "groundLight": "Light",
+    "groundDark": "Dark",
+    "interfaceLanguage": "Interface language",
+    "behaviour": "Behaviour"
+  },
+  "cli": {
+    "compare": {
+      "summary": "open one or two files in a comparison tab",
+      "detail": "Opens the files in the running Diff Bro, or starts it first.\n\nOne file fills the left side and waits for the right; two open a full\ncomparison. Paths are resolved against the directory you run this in.\n\nComparisons open in a new tab, never over the one on screen. With every\ntab in use, Diff Bro says so and opens nothing — close a tab and repeat."
+    },
+    "difftool": {
+      "summary": "open a comparison git handed over",
+      "detail": "What `git difftool` and `git mergetool` run. Same as compare,\nexcept the two files are known to be throwaway copies git made.\n\nBecause they are throwaway, a merge with more conflicts than there are\ntabs reuses the oldest of them instead of running out — `git mergetool`\nwalks the whole conflict list without waiting for anyone."
+    },
+    "open": {
+      "summary": "raise the app, optionally on a file",
+      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, that file fills the left side and waits for the right — the\nsame as `compare` with one path, under a name that reads like opening.\nFor two files at once, use `compare`."
+    },
+    "backup": {
+      "summary": "write a passphrase-protected backup",
+      "detail": "Backs up your snippets, saved diffs, settings and sharing\nidentity to a zip file at the path you name.\n\nDiff Bro asks for a passphrase first — the archive is encrypted with it,\nwhich is what makes the backup restorable on another machine. Lose the\npassphrase and the archive cannot be opened. Restore it from\nSecurity → Configuration → Restore."
+    },
+    "create": {
+      "summary": "open a new snippet, or write one at the prompt",
+      "detail": "Raises the main window with an empty snippet in the editor — the full one, with the name field, syntax picker and tags.\n\nWith --interactive (or -i) it asks instead, in the terminal: a name, a syntax and the body, then saves the snippet tagged \"cli\" so it is findable as one afterwards. An unnamed one is named after the time it was made.\n\nThe body takes as many lines as you like. :wq or :x writes it, :q or :a discards it, and Ctrl+C cancels — vim's own meanings, and a line that merely contains one of them is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
+    },
+    "help": {
+      "summary": "list the commands, or explain one",
+      "detail": "Prints this list. With a command name, explains that command."
+    },
+    "noHelpFor": "No help for \"{topic}\".\n\n{usage}",
+    "clipboard": {
+      "summary": "save the clipboard as a snippet",
+      "detail": "Saves whatever is on the clipboard as a snippet named\nafter the date and time it was saved, guesses the syntax from the content, and\nopens it in the editor so it can be renamed or tagged.\n\nAn empty clipboard saves nothing and says so."
+    }
+  },
+  "cliPrompt": {
+    "name": "Name",
+    "nameHint": "(optional)",
+    "syntax": "Syntax",
+    "syntaxHint": "[1-{n}, name, or enter to detect]",
+    "content": "Content",
+    "contentHint": "— {save} saves · {discard} discards · ^C cancels",
+    "nothingTyped": "  Nothing typed — try again, or :q to discard.",
+    "nothingToSave": "Nothing to save.",
+    "handedOver": "Handed to Diff Bro",
+    "unnamed": "(unnamed — Diff Bro will name it)",
+    "detected": "detected",
+    "taggedWith": "tagged {tags}",
+    "lineCount": "{n} line | {n} lines",
+    "cliSnippetName": "{stamp} - cli snippet",
+    "flagNeedsValue": "{flag} needs a value.",
+    "flagTwice": "{flag} given twice."
   }
 }

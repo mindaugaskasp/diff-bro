@@ -407,6 +407,33 @@ const SURFACES = [
     }
   },
   {
+    name: 'settings-appearance',
+    // The theme picker. Its numbers were a table in a proposal; this is what
+    // re-measures them. The tile label is --text on --bg-raised, the group
+    // subhead --text-dim, and the selected ring --accent — solar is the
+    // weakest of the fourteen at 3.52, which is why selection also thickens
+    // the label rather than trusting colour alone.
+    open: async (page) => {
+      await page.getByRole('button', { name: 'File', exact: true }).click()
+      await page.getByText('Settings', { exact: true }).click()
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor()
+      await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
+      await page.locator('.theme-tile.active').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'hidden' })
+    },
+    probes: {
+      'tile label': ['.theme-tile .tile-name', TEXT],
+      'group subhead': ['.group-label', DIM],
+      'selected tile ring': ['.theme-tile.active', DIM, 'border'],
+      // The claim the redesign rests on: a RESTING cell has an edge. Nothing
+      // measured it, and on 12 of the 14 it did not.
+      'resting tile edge': ['.theme-tile:not(.active)', DIM, 'border']
+    }
+  },
+  {
     name: 'sidebar-affordances',
     // The section header's "+" and the empty-section CTA. The "+" inherited
     // .btn-icon's flat ROW treatment and scored 2.82 on sepia against the

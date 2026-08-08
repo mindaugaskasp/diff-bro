@@ -8,7 +8,7 @@ test('the terminal-command buttons actually reach the installer', async ({ app, 
   // Installing writes an executable onto PATH, so main confirms first.
   await stubMessageBox(app)
   await openSettings(page)
-  await page.getByRole('button', { name: 'Terminal' }).click()
+  await page.locator('.settings-nav .nav-item', { hasText: 'Terminal' }).click()
 
   const install = page.getByRole('button', { name: /^(Install|Reinstall)$/ })
   await expect(install).toBeVisible()

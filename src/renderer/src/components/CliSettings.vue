@@ -4,6 +4,7 @@
 // silently later, so the status line reports it.
 import { onMounted, ref } from 'vue'
 import { t } from '../i18n'
+import { COMMANDS } from '../../../shared/cliCommands'
 
 const status = ref(null)
 const busy = ref(false)
@@ -35,7 +36,7 @@ async function run(fn) {
       <template #cmd><code>diffbro</code></template>
       <template #compare><code>diffbro compare a.json b.json</code></template>
       <template #create><code>diffbro create snippet</code></template>
-      <template #save><code>diffbro cb save</code></template>
+      <template #save><code>diffbro clipboard save</code></template>
     </i18n-t>
 
     <div v-if="status" class="path">
@@ -51,7 +52,21 @@ async function run(fn) {
     >
       <template #cmd><code>diffbro</code></template>
     </i18n-t>
+    <p v-if="status?.stale" class="hint">{{ $t('cliSettings.outOfDate') }}</p>
     <p v-if="error" class="hint">{{ error }}</p>
+
+    <h4>{{ $t('cliSettings.commands') }}</h4>
+    <dl class="cli-list">
+      <template v-for="c in COMMANDS" :key="c.topic">
+        <dt>
+          <code>{{ c.usage }}</code>
+        </dt>
+        <dd>{{ $t(c.summaryKey) }}</dd>
+      </template>
+    </dl>
+    <i18n-t keypath="cliSettings.helpHint" tag="p" class="hint">
+      <template #cmd><code>diffbro help &lt;command&gt;</code></template>
+    </i18n-t>
 
     <div class="dialog-actions">
       <button v-if="status?.installed" class="btn" :disabled="busy" @click="uninstall">

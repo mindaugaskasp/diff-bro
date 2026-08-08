@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { COMMANDS, cliWords, helpText, parseCli } from '../../src/main/cli'
+import { cliWords, helpText, parseCli } from '../../src/main/cli'
+import { COMMANDS } from '../../src/shared/cliCommands'
 
 // Argv reaches the app in three shapes — packaged, dev, and forwarded by
 // second-instance — and Chromium switches can be mixed in anywhere. Every case
@@ -144,8 +145,14 @@ describe('parseCli — the other verbs', () => {
     })
   })
 
-  it('reads `cb save`', () => {
-    expect(parseCli([...PACKAGED, 'cb', 'save']).command).toEqual({ name: 'clipboard-save' })
+  it('reads `clipboard save`', () => {
+    expect(parseCli([...PACKAGED, 'clipboard', 'save']).command).toEqual({ name: 'clipboard-save' })
+  })
+
+  // Renamed from `cb`, so the old spelling must report rather than silently
+  // do nothing — a stale muscle-memory command that no-ops is the worst answer.
+  it('reports the retired `cb` spelling instead of ignoring it', () => {
+    expect(parseCli([...PACKAGED, 'cb', 'save']).error).toMatch(/Unknown command/)
   })
 
   it('reports an unknown command instead of doing nothing', () => {
@@ -235,5 +242,102 @@ describe('helpText', () => {
     expect(ok).toBe(false)
     expect(text).toContain('No help for "nope"')
     expect(text).toContain('diffbro compare')
+  })
+})
+
+// `new snippet` is the one verb with options, and argv is shared with Chromium:
+// cliWords strips anything dash-prefixed so a `--enable-logging` cannot be read
+// as ours. Our own flags are therefore known BY NAME — the one place in this
+// file where a name, not a shape, decides.
+describe('parseCli — create snippet --interactive', () => {
+  const parse = (...words) => parseCli([...PACKAGED, ...words])
+
+  // Without the flag it is the verb it always was: open the empty editor.
+  it('opens the editor without the flag', () => {
+    expect(parse('create', 'snippet').command).toEqual({ name: 'create-snippet' })
+  })
+
+  it('asks in the terminal with it, long or short', () => {
+    for (const flag of ['--interactive', '-i']) {
+      expect(parse('create', 'snippet', flag).command).toEqual({ name: 'new-snippet', flags: {} })
+    }
+  })
+
+  it('refuses a noun it does not make', () => {
+    expect(parse('create', 'diff').error).toMatch(/Unknown command/)
+    expect(parse('create').error).toMatch(/Unknown command/)
+  })
+
+  it('takes the name, syntax and tags as flags', () => {
+    const { command } = parse(
+      'create',
+      'snippet',
+      '-i',
+      '--name',
+      'Prod schema',
+      '--syntax',
+      'sql',
+      '--tag',
+      'db',
+      '--tag',
+      'ops'
+    )
+    expect(command.flags).toEqual({ name: 'Prod schema', syntax: 'sql', tag: ['db', 'ops'] })
+  })
+
+  it('takes --flag=value too', () => {
+    const { command } = parse('create', 'snippet', '-i', '--name=Quick', '--tag=db')
+    expect(command.flags).toEqual({ name: 'Quick', tag: ['db'] })
+  })
+
+  it('still drops Chromium switches, which are not ours', () => {
+    const { command } = parse('create', 'snippet', '-i', '--enable-logging', '--name', 'X')
+    expect(command.flags).toEqual({ name: 'X' })
+  })
+
+  it('reports a flag given no value rather than swallowing the next word', () => {
+    expect(parse('create', 'snippet', '-i', '--name').error).toMatch(/--name needs a value/)
+  })
+})
+
+// Carving our flags out of the GLOBAL switch strip changed every other verb.
+// A bare launch carrying any dash-prefixed argument used to be ignored; read as
+// a command it exits 1 before a window exists — the app refuses to start.
+describe('parseCli — our flags stay inside `new snippet`', () => {
+  // A switch our flag list happens to name must still be STRIPPED on a launch
+  // that is not `new snippet` — read as a verb it exits 1 before a window
+  // exists, so the app refuses to start.
+  it('a launch carrying one of our flag names is still a plain launch', () => {
+    expect(parseCli([...PACKAGED, '--name'])).toEqual({ command: null, error: null })
+    expect(parseCli([...PACKAGED, '--syntax', '--tag'])).toEqual({ command: null, error: null })
+  })
+
+  it('compare still strips them rather than counting them as files', () => {
+    const { command, error } = parseCli([...PACKAGED, 'compare', 'a.txt', '--name', 'b.txt'])
+    expect(error).toBeNull()
+    expect(command.files).toEqual(['a.txt', 'b.txt'])
+  })
+})
+
+// The docstring claimed a flag with no value errors; it swallowed the next word.
+describe('parseCli — create snippet, flags given no value', () => {
+  const parse = (...w) => parseCli([...PACKAGED, 'create', 'snippet', '-i', ...w])
+
+  it('refuses a flag followed by another flag instead of eating it', () => {
+    expect(parse('--name', '--syntax', 'sql').error).toMatch(/--name needs a value/)
+    expect(parse('--syntax', '--name', 'X').error).toMatch(/--syntax needs a value/)
+    expect(parse('--tag', '--tag', 'x').error).toMatch(/--tag needs a value/)
+  })
+
+  it('refuses an empty --name= rather than saving an unnamed snippet', () => {
+    expect(parse('--name=').error).toMatch(/--name needs a value/)
+  })
+
+  it('refuses the same flag twice rather than silently keeping the last', () => {
+    expect(parse('--name', 'a', '--name', 'b').error).toMatch(/--name given twice/)
+  })
+
+  it('still allows --tag more than once, which is the repeatable one', () => {
+    expect(parse('--tag', 'a', '--tag', 'b').command.flags.tag).toEqual(['a', 'b'])
   })
 })

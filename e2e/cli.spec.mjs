@@ -1,5 +1,6 @@
 import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 import { spawn } from 'node:child_process'
+import { workerEnv } from './workerEnv.mjs'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -17,11 +18,36 @@ const MAIN = join(ROOT, 'build', 'main', 'index.js')
 // on macOS, so it cannot be joined by hand.
 const ELECTRON = createRequire(import.meta.url)('electron')
 
-function runCli(userDataDir, args) {
-  // DELETE the key — assigning undefined leaves "undefined" in the child env,
-  // which Electron reads as truthy and runs itself as plain Node (docs/standards.md).
-  const env = { ...process.env }
+// Same, but run FROM a directory — the only way to exercise a relative path,
+// which is what a shell actually hands over.
+function runCliIn(userDataDir, args, cwd) {
+  const env = cliEnv(userDataDir)
+  return new Promise((resolve) => {
+    const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], {
+      env,
+      cwd,
+      stdio: 'ignore'
+    })
+    p.on('exit', resolve)
+    setTimeout(() => resolve(0), 8000)
+  })
+}
+
+// The same environment the app itself is launched with — the worker's DISPLAY
+// above all. Without it a spawned CLI has no X server on CI and Electron exits
+// before any of our code runs.
+//
+// DELETE the ELECTRON_RUN_AS_NODE key — assigning undefined leaves "undefined"
+// in the child env, which Electron reads as truthy and runs itself as plain
+// Node (docs/standards.md).
+function cliEnv(userDataDir) {
+  const env = { ...process.env, ...workerEnv(userDataDir) }
   delete env.ELECTRON_RUN_AS_NODE
+  return env
+}
+
+function runCli(userDataDir, args) {
+  const env = cliEnv(userDataDir)
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], {
       env,
@@ -33,9 +59,26 @@ function runCli(userDataDir, args) {
 }
 
 // Same launch, but the output is what matters rather than the app's reaction.
+// Same as runCliCapture, but answers the prompts. `new snippet` is the only
+// command that reads stdin, and a synchronous reader is exactly the thing a
+// unit test cannot exercise.
+function runCliAnswering(userDataDir, args, answers) {
+  const env = cliEnv(userDataDir)
+  return new Promise((resolve) => {
+    const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], { env })
+    let stdout = ''
+    let stderr = ''
+    p.stdout.on('data', (d) => (stdout += d))
+    p.stderr.on('data', (d) => (stderr += d))
+    // end(), not write(): reading stdin to EOF is what `cat x | cmd` gives it,
+    // and a stream left open makes the read wait forever — correctly.
+    p.stdin.end(answers.join('\n') + '\n')
+    p.on('exit', (code) => resolve({ code, stdout, stderr }))
+  })
+}
+
 function runCliCapture(userDataDir, args) {
-  const env = { ...process.env }
-  delete env.ELECTRON_RUN_AS_NODE
+  const env = cliEnv(userDataDir)
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], { env })
     let stdout = ''
@@ -70,7 +113,7 @@ test('`diffbro compare` opens the files in the running app', async () => {
   }
 })
 
-test('`diffbro cb save` stores the clipboard and opens it in the editor', async () => {
+test('`diffbro clipboard save` stores the clipboard and opens it in the editor', async () => {
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
   try {
@@ -78,7 +121,7 @@ test('`diffbro cb save` stores the clipboard and opens it in the editor', async 
     await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
     await page.evaluate(() => window.api.copyText('cli-clipboard-body'))
 
-    await runCli(userDataDir, ['cb', 'save'])
+    await runCli(userDataDir, ['clipboard', 'save'])
 
     const editor = page.getByRole('dialog', { name: /Snippet/i })
     await expect(editor).toBeVisible({ timeout: 15000 })
@@ -143,8 +186,8 @@ test('`diffbro help` prints without opening a window', async () => {
     expect(out.stdout).toContain('diffbro compare')
     expect(out.code).toBe(0)
 
-    const detail = await runCliCapture(userDataDir, ['help', 'cb'])
-    expect(detail.stdout).toContain('Clipboard - ')
+    const detail = await runCliCapture(userDataDir, ['help', 'clipboard'])
+    expect(detail.stdout).toContain('after the date and time it was saved')
 
     const bad = await runCliCapture(userDataDir, ['frobnicate'])
     expect(bad.code).toBe(1)
@@ -235,6 +278,101 @@ test('`diffbro backup <path>` seals to the path the terminal named', async () =>
     // A sealed envelope, not the plaintext bundle.
     const blob = Buffer.from(files['diffbro-backup.diffbroconf']).toString('utf8')
     expect(JSON.parse(Buffer.from(blob, 'base64').toString('utf8')).format).toBe('diffbro-config/1')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+    rmSync(work, { recursive: true, force: true })
+  }
+})
+
+// A pipe is NOT a TTY, so this drives the PIPED path — which is the only one a
+// spawned process can reach. The interactive conversation is unit-tested with
+// its IO handed in (tests/main/cliPrompt); what only a real launch proves is
+// that the draft crosses to the running app through the single-instance lock
+// rather than through argv, and comes out as a snippet.
+test('`diffbro create snippet -i` saves a piped body under the flags it was given', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    const before = await page.locator('.snippets-section .row').count()
+
+    const out = await runCliAnswering(
+      userDataDir,
+      ['create', 'snippet', '-i', '--name', 'Written from the shell', '--syntax', 'sql'],
+      ['select 1;', 'select 2;']
+    )
+    // The prompts live on stderr; stdout carries the confirmation alone, so a
+    // redirect captures the answer and never the questions.
+    expect(out.stdout).toContain('Handed to Diff Bro')
+    expect(out.stdout).toContain('Written from the shell')
+    expect(out.stdout).toContain('2 lines')
+    expect(out.stdout).not.toContain('(optional)')
+
+    const row = page.locator('.snippets-section .row', { hasText: 'Written from the shell' })
+    await expect(row).toBeVisible({ timeout: 15000 })
+    expect(await page.locator('.snippets-section .row').count()).toBe(before + 1)
+
+    await row.click()
+    const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    await expect(view).toContainText('select 1;')
+    await expect(view).toContainText('select 2;')
+    await expect(view).toContainText('cli')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// Piped in, nobody saw a prompt — so every byte is the body, not an answer.
+// Reading it as answers is how `cat f.sql | diffbro new snippet` used to save
+// the wrong thing under the wrong name.
+test('`diffbro create snippet -i` takes a piped body and flags without asking', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    const out = await runCliAnswering(
+      userDataDir,
+      ['create', 'snippet', '-i', '--name', 'Piped schema', '--syntax', 'sql', '--tag', 'db'],
+      ['create table t (id int);', 'select 1;']
+    )
+    // No questions were asked. Matched on the PROMPT, not the word "Name":
+    // Linux Chromium logs `NameHasOwner` to stderr, which contains it.
+    expect(out.stderr).not.toContain('(optional)')
+    expect(`${out.stdout}\n--- exit ${out.code}, stderr:\n${out.stderr}`).toContain('Piped schema')
+    expect(out.stdout).toContain('tagged cli db')
+
+    const row = page.locator('.snippets-section .row', { hasText: 'Piped schema' })
+    await expect(row).toBeVisible({ timeout: 15000 })
+    await row.click()
+    const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    await expect(view).toContainText('create table t (id int);')
+    await expect(view).toContainText('select 1;')
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// A relative path is resolved against the SHELL's cwd, never the running app's.
+// Every e2e passed absolute paths, so nothing noticed when the resolution was
+// skipped and `cd ~/work && diffbro compare a.json b.json` read `/a.json`.
+test('`diffbro compare` resolves relative paths against the shell, not the app', async () => {
+  const userDataDir = freshUserDataDir()
+  const work = mkdtempSync(join(tmpdir(), 'diffbro-rel-'))
+  writeFileSync(join(work, 'left.json'), '{"a":1}')
+  writeFileSync(join(work, 'right.json'), '{"a":2}')
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    // Bare filenames, run from `work` — the app's own cwd is somewhere else.
+    await runCliIn(userDataDir, ['compare', 'left.json', 'right.json'], work)
+    await expect(page.locator('.slot[data-side="left"]')).toContainText('left.json', {
+      timeout: 15000
+    })
+    await expect(page.locator('.slot[data-side="right"]')).toContainText('right.json')
+    await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })

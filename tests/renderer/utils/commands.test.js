@@ -59,7 +59,7 @@ const stores = () => ({
     noteToolUsed: spy(),
     toggleTheme: spy()
   },
-  ui: { zoomDiff: spy() },
+  ui: { zoomDiff: spy(), openSettings: spy() },
   snippets: { startNewSnippetFrom: spy() },
   share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy() },
   imageExport: { exportCurrentImage: spy() },
@@ -227,5 +227,28 @@ describe('guards that a hidden control would otherwise not enforce', () => {
     COMMANDS['command-palette']({ ui })
     expect(ui.paletteScope).toBe('all')
     expect(ui.showCommandPalette).toBe(true)
+  })
+})
+
+// `diffbro new snippet` collects its answers in the terminal, so by the time it
+// reaches the renderer there is nothing left to ask — it saves, rather than
+// opening the editor the way `create snippet` does.
+describe('the CLI new-snippet command', () => {
+  it('saves the draft it was handed, tag and all', async () => {
+    const s = stores()
+    s.snippets.add = spy()
+    await runCliCommand(
+      {
+        name: 'new-snippet',
+        draft: { name: 'From the shell', language: 'sql', content: 'select 1;', tags: ['cli'] }
+      },
+      s
+    )
+    expect(s.snippets.add).toHaveBeenCalledWith({
+      name: 'From the shell',
+      language: 'sql',
+      content: 'select 1;',
+      tags: ['cli']
+    })
   })
 })

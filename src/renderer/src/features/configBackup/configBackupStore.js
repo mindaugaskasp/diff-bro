@@ -31,7 +31,10 @@ export const useConfigBackupStore = defineStore('configBackup', {
       return {
         snippets: await useSnippetStore().fullBundle(),
         vault: await useVaultStore().fullBundle(),
-        settings: { theme: useSettingsStore().userTheme },
+        // The WHOLE settings blob, not just the theme. Carrying one key meant
+        // every limit, toggle, shortcut and ordering the reader had set was
+        // lost on restore — silently, which is the worst way to lose it.
+        settings: useSettingsStore().backupState(),
         session: loadPersisted('session')
       }
     },
@@ -58,7 +61,7 @@ export const useConfigBackupStore = defineStore('configBackup', {
       // Persisted, not applied live: replacing the comparisons on screen
       // mid-restore is not what "restore my backup" asked for.
       if (res.session) savePersisted('session', res.session)
-      if (res.settings?.theme) useSettingsStore().setTheme(res.settings.theme)
+      if (res.settings) useSettingsStore().restoreState(res.settings)
       diff.showNotice('Configuration restored — identity keys and trusted hosts are updated.')
     }
   }

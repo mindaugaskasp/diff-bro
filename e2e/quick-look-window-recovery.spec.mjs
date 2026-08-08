@@ -1,5 +1,9 @@
 import { test, expect, clickAppMenuItem } from './fixtures.mjs'
 
+// Real windows, not the hidden ones a macOS host run defaults to: this spec
+// closes the last window and summons the app back from having none.
+process.env.E2E_HIDDEN = '0'
+
 // macOS keeps the app running after its last window closes, so DiffBro can sit
 // frontmost with nothing on screen — the state behind "the menu bar says Diff
 // Bro but the window never comes up". The warm launcher makes it a dead end:

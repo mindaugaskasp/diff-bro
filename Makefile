@@ -17,6 +17,8 @@ VNC_URL := http://localhost:6080/vnc.html
 # in unrelated specs, not as an obvious resource error.
 # Override per run: `make e2e E2E_WORKERS=4`.
 E2E_WORKERS ?= 6
+E2E_HIDDEN=1
+
 export E2E_WORKERS
 
 # seed-local imports src/main/sealing.js so the demo keys are in the app's own

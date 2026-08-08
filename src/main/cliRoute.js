@@ -29,24 +29,32 @@ function deliver(command) {
  * @param {string[]} argv
  * @param {string} [cwd]  the shell's cwd, which second-instance forwards
  */
-export function routeCliArgv(argv, cwd) {
-  const { command, error } = parseCli(argv, (p) => resolve(cwd || process.cwd(), p))
-  if (error) {
-    process.stderr.write(`${error}\n`)
+export function routeCliArgv(argv, cwd, carried = null) {
+  // ONLY `new snippet`, whose typed answers cannot be re-derived from argv, is
+  // routed as the CLI process built it. Everything else must be re-parsed HERE,
+  // because this is the only place that resolves a path against the shell's cwd
+  // — carrying those verbs across skipped that, so `cd ~/work && diffbro compare
+  // a.json b.json` resolved against the RUNNING app's cwd and read the wrong
+  // file, or none. (Re-parsing is also wrong for the draft: second-instance
+  // hands over a REORDERED argv with switches hoisted.)
+  if (carried?.name === 'new-snippet') return routeCommand(carried)
+  const parsed = parseCli(argv, (p) => resolve(cwd || process.cwd(), p))
+  if (parsed.error) {
+    process.stderr.write(`${parsed.error}\n`)
     return
   }
+  routeCommand(parsed.command)
+}
+
+function routeCommand(command) {
   // `open` with no file has nothing to tell the renderer — the window IS the
   // answer, so it never reaches deliver's pending queue.
-  if (command?.name === 'raise') {
-    ensureMainWindow()?.focus()
-    return
-  }
+  if (command?.name === 'raise') return void ensureMainWindow()?.focus()
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
   if (command?.name === 'compare') command.files.forEach(allowCliPath)
   if (command?.name === 'clipboard-save') {
-    deliver({ ...command, text: clipboard.readText() })
-    return
+    return void deliver({ ...command, text: clipboard.readText() })
   }
   deliver(command)
 }
@@ -60,7 +68,13 @@ export function registerCliIpc() {
       pending = null
     }
   })
-  const where = () => ({ exePath: app.getPath('exe'), home: homedir() })
+  // Unpackaged, `exe` is Electron itself, so the app directory has to travel
+  // with it or the shim launches Electron with the verb as its app path.
+  const where = () => ({
+    exePath: app.getPath('exe'),
+    home: homedir(),
+    entryPath: app.isPackaged ? null : app.getAppPath()
+  })
 
   // Both of these put something OUTSIDE the app: a 0755 shim on PATH, and five
   // git config --global mutations. Rule 7 fences shell.openExternal behind a

@@ -13,6 +13,7 @@ import {
   sanitizeSize,
   settingsStateFrom
 } from '../utils/settingsDefaults'
+import { backupActions } from './settingsBackup'
 
 function readState() {
   let parsed
@@ -78,6 +79,7 @@ export const useSettingsStore = defineStore('settings', {
     toggleTheme() {
       this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
     },
+    ...backupActions,
     persist() {
       savePersisted(
         'settings',

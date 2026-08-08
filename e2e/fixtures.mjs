@@ -28,8 +28,18 @@ export const freshUserDataDir = ({ tips = false } = {}) => {
 // and by tests that need to relaunch the same profile (persistence).
 // Not in the `app` fixture: the persistence specs call this directly, and would
 // launch unisolated. workerEnv.mjs says what each variable stops leaking.
+// A macOS host run starts every window with `show: false` (the flag a tray
+// launch already used), so it does not flash windows across the screen for
+// twelve minutes. Chromium still renders offscreen, so visibility and geometry
+// assertions are unchanged. `E2E_HIDDEN=0` opts out — the window-recovery spec
+// needs real ones. Linux runs under Xvfb and has nothing to hide from.
+const hidden = () =>
+  process.platform === 'darwin' && process.env.E2E_HIDDEN !== '0' ? ['--hidden'] : []
 export const launchApp = (userDataDir) =>
-  electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`], env: workerEnv(userDataDir) })
+  electron.launch({
+    args: [MAIN, `--user-data-dir=${userDataDir}`, ...hidden()],
+    env: workerEnv(userDataDir)
+  })
 
 // The first window, loaded and ready to assert against.
 export async function firstReadyPage(app) {

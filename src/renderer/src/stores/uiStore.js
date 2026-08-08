@@ -46,9 +46,16 @@ export const useUiStore = defineStore('ui', {
     // and "moved" carry different badges, and a move must not claim a row is
     // new. Self-clearing, because a move has no follow-up gesture to retire it
     // the way a create's does.
-    lastMovedRowId: null
+    lastMovedRowId: null,
+    // Which pane Settings opens on. Null means "wherever it opens by default" —
+    // a menu item that documents the CLI has to land on the CLI pane.
+    settingsTab: null
   }),
   actions: {
+    openSettings(tab = null) {
+      this.settingsTab = tab
+      this.showSettingsDialog = true
+    },
     markMovedRow(id) {
       clearTimeout(movedTimer)
       this.lastMovedRowId = id

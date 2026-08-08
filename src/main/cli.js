@@ -1,3 +1,5 @@
+import { COMMANDS } from '../shared/cliCommands'
+import { t } from './i18n'
 // The `diffbro` terminal command. A second launch never becomes a second app:
 // Electron's single-instance lock hands its argv to the running one, which is
 // what routes these — no socket, no port, nothing that could reach the network.
@@ -6,105 +8,48 @@
 // function serves both entry points: the argv of a cold launch and the argv
 // forwarded by `second-instance`.
 
-// One list, so `help` can never drift from what parseCli actually accepts.
-export const COMMANDS = [
-  {
-    topic: 'compare',
-    usage: 'diffbro compare <file> [<file>]',
-    summary: 'open one or two files in a comparison tab',
-    detail: `Opens the files in the running Diff Bro, or starts it first.
-
-  One file fills the left side and waits for the right; two open a full
-  comparison. Paths are resolved against the directory you run this in.
-
-  Comparisons open in a new tab, never over the one on screen. With every
-  tab in use, Diff Bro says so and opens nothing — close a tab and repeat.`
-  },
-  {
-    topic: 'difftool',
-    usage: 'diffbro difftool <file> <file>',
-    summary: 'open a comparison git handed over',
-    detail: `What \`git difftool\` and \`git mergetool\` run. Same as compare,
-  except the two files are known to be throwaway copies git made.
-
-  Because they are throwaway, a merge with more conflicts than there are
-  tabs reuses the oldest of them instead of running out — \`git mergetool\`
-  walks the whole conflict list without waiting for anyone.`
-  },
-  {
-    topic: 'open',
-    usage: 'diffbro open [<file>]',
-    summary: 'raise the app, optionally on a file',
-    detail: `Brings Diff Bro to the front, starting it if it is not running.
-
-  With a file, that file fills the left side and waits for the right — the
-  same as \`compare\` with one path, under a name that reads like opening.
-  For two files at once, use \`compare\`.`
-  },
-  {
-    topic: 'backup',
-    usage: 'diffbro backup <path>',
-    summary: 'write a passphrase-protected backup',
-    detail: `Backs up your snippets, saved diffs, settings and sharing
-  identity to a zip file at the path you name.
-
-  Diff Bro asks for a passphrase first — the archive is encrypted with it,
-  which is what makes the backup restorable on another machine. Lose the
-  passphrase and the archive cannot be opened. Restore it from
-  Security → Configuration → Restore.`
-  },
-  {
-    topic: 'create',
-    usage: 'diffbro create snippet',
-    summary: 'open a new snippet in the editor',
-    detail: `Raises the main window with an empty snippet in the editor.
-
-  This is the full editor, not the quick look-up bar, so it has the name
-  field, syntax picker and tags.`
-  },
-  {
-    topic: 'cb',
-    usage: 'diffbro cb save',
-    summary: 'save the clipboard as a snippet',
-    detail: `Saves whatever is on the clipboard as a snippet named
-  "Clipboard - <date> <time>", guesses the syntax from the content, and
-  opens it in the editor so it can be renamed or tagged.
-
-  An empty clipboard saves nothing and says so.`
-  },
-  {
-    topic: 'help',
-    usage: 'diffbro help [<command>]',
-    summary: 'list the commands, or explain one',
-    detail: 'Prints this list. With a command name, explains that command.'
-  }
-]
-
 const pad = (s, n) => s + ' '.repeat(Math.max(0, n - s.length))
+// The catalogue holds the prose flush left — indentation there is a source
+// artifact, which tests/shared/i18n guards against. Terminal layout is the
+// printer's job, so it is added here.
+const indent = (text) =>
+  text
+    .split('\n')
+    .map((line) => (line ? `  ${line}` : line))
+    .join('\n')
 const WIDTH = Math.max(...COMMANDS.map((c) => c.usage.length)) + 3
 
-export const CLI_USAGE = [
-  'diffbro — offline diff viewer',
-  '',
-  ...COMMANDS.map((c) => `  ${pad(c.usage, WIDTH)}${c.summary}`),
-  '',
-  '  diffbro help <command> explains one of them.'
-].join('\n')
+export const cliUsage = () =>
+  [
+    'diffbro — offline diff viewer',
+    '',
+    ...COMMANDS.map((c) => `  ${pad(c.usage, WIDTH)}${t(c.summaryKey)}`),
+    '',
+    '  diffbro help <command> explains one of them.'
+  ].join('\n')
 
 /**
  * @param {string} [topic]
  * @returns {{ text: string, ok: boolean }}
  */
 export function helpText(topic) {
-  if (!topic) return { text: CLI_USAGE, ok: true }
+  if (!topic) return { text: cliUsage(), ok: true }
   const cmd = COMMANDS.find((c) => c.topic === topic)
-  if (!cmd) return { text: `No help for "${topic}".\n\n${CLI_USAGE}`, ok: false }
-  return { text: `${cmd.usage}\n\n  ${cmd.detail}`, ok: true }
+  if (!cmd) return { text: t('cli.noHelpFor', { topic, usage: cliUsage() }), ok: false }
+  return { text: `${cmd.usage}\n\n${indent(t(cmd.detailKey))}`, ok: true }
 }
 
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
 // run it is [electron, ., ...args], and Chromium switches can appear anywhere.
 const isSwitch = (a) => a.startsWith('-')
+// `new snippet`'s own flags. They are read from the RAW tail after the verb,
+// never carved out of the global switch strip: argv is shared with Chromium,
+// whose switch list is open ended, and treating any `--x` as ours turned a
+// bare launch carrying one into "Unknown command" — which exits before a
+// window exists, so the app simply refused to start.
+const FLAGS = new Set(['--name', '--syntax', '--tag'])
+const REPEATABLE = new Set(['--tag'])
+const isOurFlag = (a) => FLAGS.has(String(a).split('=')[0])
 // Structural, not by name: an entry point is a PATH, and every command is a bare
 // word. Matching on names instead meant any clone directory not called exactly
 // `diffbro` was read as a command, which exits before a window exists.
@@ -133,14 +78,57 @@ export function cliWords(argv) {
 
 // A verb returns null when its own arguments are wrong, so the caller reports
 // the whole thing as unknown rather than half-accepting it.
+/**
+ * `--name X`, `--name=X`, and `--tag` repeated. A flag whose value is missing,
+ * empty, or another flag is an ERROR — swallowing the next word named a
+ * snippet `--syntax` and dropped the value that followed it.
+ * @param {string[]} words  the raw tail after `new snippet`
+ */
+// The words after `new snippet` in the UNFILTERED argv — cliWords has already
+// stripped every dash-prefixed argument, ours included, by the time a verb runs.
+export function afterVerb(argv) {
+  const words = (argv ?? []).filter((a) => typeof a === 'string')
+  const at = words.findIndex((w, i) => w === 'create' && words[i + 1] === 'snippet')
+  return at === -1 ? [] : words.slice(at + 2)
+}
+
+const isInteractive = (a) => a === '--interactive' || a === '-i'
+
+export function parseNewSnippet(words) {
+  const flags = {}
+  const fail = (m) => ({ command: null, error: m })
+  for (let i = 0; i < words.length; i++) {
+    const [flag, inline] = words[i].split(/=(.*)/s)
+    if (!isOurFlag(flag)) continue
+    const next = inline ?? words[i + 1]
+    if (inline === undefined) i++
+    if (!next || isOurFlag(next)) return fail(t('cliPrompt.flagNeedsValue', { flag }))
+    const key = flag.slice(2)
+    if (REPEATABLE.has(flag)) (flags.tag ??= []).push(next)
+    else if (key in flags) return fail(t('cliPrompt.flagTwice', { flag }))
+    else flags[key] = next
+  }
+  return { command: { name: 'new-snippet', flags }, error: null }
+}
+
 const VERBS = {
   compare: (rest, resolve) => parseCompare(rest, resolve),
   difftool: (rest, resolve) => parseCompare(rest, resolve, true),
   open: (rest, resolve) => parseOpen(rest, resolve),
   backup: (rest, resolve) => parseBackup(rest, resolve),
-  create: (rest) =>
-    rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
-  cb: (rest) => (rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null),
+  // One verb. `--interactive` asks in the terminal and saves; without it the
+  // empty editor opens, as it always did. Two near-identical verbs sitting
+  // side by side in --help read as a mistake.
+  create: (rest, _resolve, argv) => {
+    if (rest[0] !== 'snippet') return null
+    const tail = afterVerb(argv)
+    return tail.some(isInteractive)
+      ? parseNewSnippet(tail.filter((a) => !isInteractive(a)))
+      : { command: { name: 'create-snippet' }, error: null }
+  },
+
+  clipboard: (rest) =>
+    rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
 }
 
@@ -182,6 +170,6 @@ export function parseCli(argv, resolve = (p) => p) {
   }
   const [verb, ...rest] = words
   if (!verb) return { command: null, error: null }
-  const parsed = VERBS[verb]?.(rest, resolve)
+  const parsed = VERBS[verb]?.(rest, resolve, argv)
   return parsed ?? { command: null, error: `Unknown command: ${[verb, ...rest].join(' ')}` }
 }
