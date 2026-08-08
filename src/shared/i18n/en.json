@@ -1026,7 +1026,9 @@
     "result": "Result",
     "textToEncode": "Text to encode…",
     "base64ToDecode": "Base64 to decode…",
-    "invalid": "Not valid Base64 (or not valid UTF-8 once decoded)."
+    "invalid": "Not valid Base64 (or not valid UTF-8 once decoded).",
+    "encode": "Encode",
+    "decode": "Decode"
   },
   "toolEpoch": {
     "yYYYMMDDHHMM": "YYYY-MM-DD HH:MM",

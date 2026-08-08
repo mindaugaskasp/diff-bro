@@ -156,61 +156,21 @@ async function loadStructureDiff(page) {
   await page.locator('.status-band').waitFor()
 }
 
+// Any dialog the clear raised has to go too, or its backdrop swallows the
+// clicks the NEXT surface makes and the sweep dies three surfaces later.
 async function clearComparison(page) {
   const clear = page.getByRole('button', { name: 'Clear', exact: true })
   if (await clear.isEnabled().catch(() => false)) await clear.click()
+  const backdrop = page.locator('.dialog-backdrop')
+  while (await backdrop.count()) {
+    await page.keyboard.press('Escape')
+    await backdrop.first().waitFor({ state: 'detached' })
+  }
   await page.locator('.monaco-diff-editor, .wait-slots').waitFor({ state: 'detached' })
 }
 
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const SURFACES = [
-  {
-    name: 'sidebar-affordances',
-    // The section header's "+" and the empty-section CTA. The "+" inherited
-    // .btn-icon's flat ROW treatment and scored 2.82 on sepia against the
-    // header band — an e2e runs in ONE theme, so `not.toBe(rowInk)` could never
-    // have caught it. This is where that number gets checked on all 14.
-    open: async (page) => {
-      await page.locator('.actions-slot .btn-icon').first().waitFor()
-      await page.locator('.empty-cta .btn-primary').first().waitFor()
-    },
-    close: async () => {},
-    probes: {
-      'section add button': ['.actions-slot .btn-icon', DIM],
-      'empty-section CTA label': ['.empty-cta .btn-primary', TEXT],
-      'empty-section prompt': ['.empty-cta p', DIM]
-    }
-  },
-  {
-    name: 'waiting-for-second',
-    // One side loaded. Dashed rim, tag, name and hint all sit on the pane
-    // ground, and the rim is the affordance that says the slot is droppable.
-    // Synthesized DragEvents, not a mouse path: Chromium will not begin a
-    // native HTML5 drag from injected pointer input.
-    open: async (page) => {
-      // The pane may already hold a comparison (a persisted session, or a
-      // previous surface): dropping into a full one gives a diff, not a wait.
-      await clearComparison(page)
-      await page.locator('.snippets-section .row[draggable="true"]').first().waitFor()
-      /* global DataTransfer, DragEvent -- this body runs in the renderer */
-      await page.evaluate(() => {
-        const row = document.querySelector('.snippets-section .row[draggable="true"]')
-        const dt = new DataTransfer()
-        row.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
-        const slot = document.querySelector('.slot[data-side="left"]')
-        slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
-        slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
-      })
-      await page.locator('.wait-slots').waitFor()
-    },
-    close: clearComparison,
-    probes: {
-      'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
-      'loaded tag': ['.wait-slot.filled .wait-tag', DIM],
-      'loaded name': ['.wait-slot.filled .wait-name', TEXT],
-      'waiting hint': ['.wait-hint', DIM]
-    }
-  },
   {
     name: 'launcher-compose',
     window: 'launcher',
@@ -244,7 +204,15 @@ const SURFACES = [
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
       await editor.locator('.name-ghost').waitFor()
     },
-    close: (page) => page.keyboard.press('Escape'),
+    // The × and the discard guard behind it, not Escape: the name field owns
+    // Escape (it dismisses the completion), so the dialog never saw it and its
+    // backdrop swallowed the NEXT surface's clicks.
+    close: async (page) => {
+      await page.locator('.dialog-close').click()
+      const discard = page.locator('.discard-confirm .btn-danger')
+      if (await discard.count()) await discard.click()
+      await page.locator('.dialog-backdrop').waitFor({ state: 'detached' })
+    },
     probes: {
       'typed name': ['.ghost-field input', TEXT],
       // Hint ink, so the 3:1 floor --text-dim already carries elsewhere.
@@ -436,6 +404,58 @@ const SURFACES = [
       'field label': ['.email-settings .field-label', DIM],
       'subject input': ['.email-settings input', TEXT],
       'advisory strip': ['.email-settings .hint', TEXT]
+    }
+  },
+  {
+    name: 'sidebar-affordances',
+    // The section header's "+" and the empty-section CTA. The "+" inherited
+    // .btn-icon's flat ROW treatment and scored 2.82 on sepia against the
+    // header band — an e2e runs in ONE theme, so `not.toBe(rowInk)` could never
+    // have caught it. This is where that number gets checked on all 14.
+    open: async (page) => {
+      await page.locator('.actions-slot .btn-icon').first().waitFor()
+      await page.locator('.empty-cta .btn-primary').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      'section add button': ['.actions-slot .btn-icon', DIM],
+      'empty-section CTA label': ['.empty-cta .btn-primary', TEXT],
+      'empty-section prompt': ['.empty-cta p', DIM]
+    }
+  },
+  {
+    name: 'waiting-for-second',
+    // One side loaded. Dashed rim, tag, name and hint all sit on the pane
+    // ground, and the rim is the affordance that says the slot is droppable.
+    // Synthesized DragEvents, not a mouse path: Chromium will not begin a
+    // native HTML5 drag from injected pointer input.
+    open: async (page) => {
+      // The pane may already hold a comparison (a persisted session, or a
+      // previous surface): dropping into a full one gives a diff, not a wait.
+      await clearComparison(page)
+      await page.locator('.snippets-section .row[draggable="true"]').first().waitFor()
+      /* global DataTransfer, DragEvent -- this body runs in the renderer */
+      await page.evaluate(() => {
+        const row = document.querySelector('.snippets-section .row[draggable="true"]')
+        const dt = new DataTransfer()
+        row.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
+        const slot = document.querySelector('.slot[data-side="left"]')
+        slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
+        slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
+      })
+      await page.locator('.wait-slots').waitFor()
+    },
+    // The sweep leaves ONE structure diff loaded for every later surface to
+    // read; this is the only surface that has to disturb it, so it puts it back.
+    close: async (page) => {
+      await clearComparison(page)
+      await loadStructureDiff(page)
+    },
+    probes: {
+      'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
+      'loaded tag': ['.wait-slot.filled .wait-tag', DIM],
+      'loaded name': ['.wait-slot.filled .wait-name', TEXT],
+      'waiting hint': ['.wait-hint', DIM]
     }
   }
 ]

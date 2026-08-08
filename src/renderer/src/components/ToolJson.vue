@@ -22,10 +22,10 @@ const mode = ref('pretty')
 const filter = ref('')
 
 const parsed = computed(() => {
-  const t = input.value.trim()
-  if (!t) return {}
+  const text = input.value.trim()
+  if (!text) return {}
   try {
-    return { value: JSON.parse(t) }
+    return { value: JSON.parse(text) }
   } catch (e) {
     return { error: e.message }
   }
