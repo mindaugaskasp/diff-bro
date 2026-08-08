@@ -44,6 +44,56 @@
 .toolbar .group.actions {
   gap: 6px;
 }
+/* .btn-icon is flat by design for ROW actions — a plate on every one would make
+   the sidebar heavy. A section header's "+" is not a row action though; it is
+   the section's one affirmative action, and it inherited the row treatment by
+   sharing the class. At --text-dim it scored 2.82 on sepia and 2.92 on nord
+   against the header band, under the 3:1 floor. --text clears it on all 14
+   (worst 6.30, nord). Ink only: the flat shape is still right here. */
+.actions-slot .btn-icon {
+  color: var(--text);
+}
+/* An EMPTY section has no rows to compete with, so it can afford the real
+   button — which is the cold-start case: open the app, want to add something. */
+/* Compact on purpose: an empty section still sits in a dense column, and at 88px
+   this pushed the whole sidebar into a scrollbar on a short window. */
+.empty-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  /* .empty is the PANE's full-height empty state and sets height: 100%. In a
+     sidebar section that makes an empty section claim the whole column. */
+  height: auto;
+}
+
+/* A row you can pick up says so before you try. Keyed on the ATTRIBUTE, not a
+   class, so it is right by construction: a secret snippet sets
+   draggable="false" (its body must not reach a diff pane) and correctly keeps
+   the ordinary cursor, and a diff row picks this up the moment it becomes
+   draggable without anyone remembering to add a class. */
+/* `.reorderable` is the pointer-driven twin: a section header refuses the
+   native drag outright, so it cannot be keyed on the attribute — but "this is a
+   handle" gets ONE definition either way. */
+[draggable='true'],
+.reorderable {
+  cursor: grab;
+}
+[draggable='true']:active,
+.reorderable:active {
+  cursor: grabbing;
+}
+/* The row's own controls are not handles — they are buttons. */
+[draggable='true'] button,
+[draggable='true'] a {
+  cursor: pointer;
+}
+[draggable='true'] input,
+[draggable='true'] textarea {
+  cursor: text;
+}
+
 /* The neutral workhorse — every action that is not its group's one affirmative
    choice. It must read as pressable AT REST, on three axes: face, keyline, lift.
    Flat + dim is the language :disabled speaks, which is why the toolbar looked
@@ -514,7 +564,7 @@
 /* Dialog textareas are all code-ish input: monospace, user-resizable, and tall
    enough to be worth typing into. */
 .dialog textarea {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   resize: vertical;
   height: 90px;
 }
@@ -541,7 +591,7 @@
   background: var(--bg-elevated);
   color: var(--text-hint);
   border-bottom: 2px solid var(--fam, var(--border));
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-2xs);
   font-weight: 700;
   line-height: 1;
@@ -653,7 +703,7 @@ button.tag-chip:hover .usb-tct {
 }
 .state-chip {
   flex: none;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-2xs);
   font-weight: 600;
   padding: 1px 8px;

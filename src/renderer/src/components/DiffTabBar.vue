@@ -122,7 +122,7 @@ function onTabKey(e, tab) {
           type="text"
           spellcheck="false"
           :maxlength="MAX_TAB_NAME"
-          :aria-label="`Rename ${tabLabel(tab)}`"
+          :aria-label="$t('diffTabBar.renameTab', { name: tabLabel(tab) })"
           @keyup.enter="commitRename"
           @keyup.escape="renamingId = null"
           @blur="commitRename"
@@ -144,7 +144,7 @@ function onTabKey(e, tab) {
         <button
           v-if="tabs.tabs.length > 1"
           class="tab-close"
-          :aria-label="`Close ${tabLabel(tab)}`"
+          :aria-label="$t('diffTabBar.closeTab', { name: tabLabel(tab) })"
           @click="tabs.requestClose(tab.id)"
         >
           <AppIcon name="x" />
@@ -166,7 +166,9 @@ function onTabKey(e, tab) {
     <button
       class="add"
       :disabled="!tabs.canAdd"
-      :data-tip="tabs.canAdd ? `New comparison (${MOD}+Shift+T)` : tabsFullNotice(tabs.tabs)"
+      :data-tip="
+        tabs.canAdd ? $t('diffTabBar.newComparisonTip', { mod: MOD }) : tabsFullNotice(tabs.tabs)
+      "
       :aria-label="$t('diffTabBar.newComparison')"
       @click="tabs.newTab()"
     >

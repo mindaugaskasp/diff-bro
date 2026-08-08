@@ -22,7 +22,8 @@ import {
   SESSION_VERSION,
   packSession,
   readEnvelope,
-  readSession
+  readSession,
+  tabFromStored
 } from '../utils/session'
 import { droppedTabsNotice, tabsFullNotice } from '../utils/tabNotices'
 
@@ -386,12 +387,7 @@ export const useTabsStore = defineStore('tabs', {
       if (!on) savePersisted('session', EMPTY_ENVELOPE)
     },
     _restoreTabs(session) {
-      this.tabs = session.tabs.map((stored) => {
-        const tab = createTab(stored.snapshot, { diffSaved: stored.diffSaved })
-        tab.entryId = stored.entryId
-        tab.customTitle = cleanTabName(stored.customTitle)
-        return tab
-      })
+      this.tabs = session.tabs.map(tabFromStored)
       this._show(this.tabs[session.tabs.findIndex((t) => t.active)] ?? this.tabs[0])
     }
   }

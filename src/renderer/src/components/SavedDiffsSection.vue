@@ -77,8 +77,8 @@ useNewRowMarker({
           :disabled="!tabs.canAdd"
           :data-tip="
             tabs.canAdd
-              ? 'New comparison, ready for pasted text'
-              : `${tabsFullNotice(tabs.tabs)} — close one first`
+              ? $t('savedDiffsSection.newComparisonTip')
+              : $t('savedDiffsSection.closeOneFirst', { reason: tabsFullNotice(tabs.tabs) })
           "
           :aria-label="$t('savedDiffsSection.newComparisonFromPastedText')"
           @click.stop="tabs.newTab({ paste: true })"
@@ -89,9 +89,16 @@ useNewRowMarker({
     </SectionHeader>
 
     <div v-show="open" class="section-body">
-      <p v-if="!hasOwn" class="empty">
-        <AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}
-      </p>
+      <div v-if="!hasOwn" class="empty empty-cta">
+        <p><AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}</p>
+        <button
+          class="btn btn-primary btn-sm"
+          :disabled="!tabs.canAdd"
+          @click.stop="tabs.newTab({ paste: true })"
+        >
+          <AppIcon name="plus" /> {{ $t('savedDiffsSection.newComparisonCta') }}
+        </button>
+      </div>
       <ul v-else class="rows">
         <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
         <li v-if="!rows.length" class="empty small">

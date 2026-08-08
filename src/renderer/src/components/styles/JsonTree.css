@@ -1,5 +1,5 @@
 .jt {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   line-height: 1.55;
 }

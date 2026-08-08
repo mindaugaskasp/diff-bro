@@ -113,7 +113,7 @@ async function copy(row) {
         <span class="th-digest">{{ row.digest }}</span>
         <button
           class="th-copy"
-          :aria-label="`Copy ${row.label}`"
+          :aria-label="$t('toolHash.copyValue', { value: row.label })"
           :data-tip="$t('common.copy')"
           @click="copy(row)"
         >

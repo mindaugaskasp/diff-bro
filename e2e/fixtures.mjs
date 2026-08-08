@@ -35,6 +35,11 @@ export const launchApp = (userDataDir) =>
 export async function firstReadyPage(app) {
   const page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
+  // The menu helpers need the Electron app to drive the NATIVE bar on macOS,
+  // and every one of them is called with only the page. Set HERE and not in the
+  // `page` fixture, for the same reason TMPDIR/HOME are: the relaunch specs
+  // call launchApp + firstReadyPage directly and never touch the fixture.
+  page.electronApp = app
   return page
 }
 
@@ -91,23 +96,40 @@ export const test = base.extend({
 // — or that runs with no window at all — goes through the menu Electron owns.
 export const clickAppMenuItem = (app, label) =>
   app.evaluate(({ Menu }, wanted) => {
-    const find = (items) => {
-      for (const item of items) {
-        if (item.label === wanted) return item
-        const hit = item.submenu && find(item.submenu.items)
-        if (hit) return hit
-      }
-      return null
+    // Exact first, then substring — the in-window path matches with `hasText`,
+    // and the two must agree or a caller has to know which platform it is on.
+    // The native labels are the longer ones ("Epoch / Date" for "Epoch").
+    const findAll = (items, match) =>
+      items.flatMap((item) => [
+        ...(match(item.label) ? [item] : []),
+        ...(item.submenu ? findAll(item.submenu.items, match) : [])
+      ])
+    const all = Menu.getApplicationMenu().items
+    const exact = findAll(all, (l) => l === wanted)
+    // A substring match that hits twice is a coin toss, and a silently wrong
+    // click is worse than a failure: say so instead.
+    const loose = exact.length ? exact : findAll(all, (l) => l?.includes?.(wanted))
+    if (loose.length > 1) {
+      throw new Error(`ambiguous application menu item "${wanted}": ${loose.map((i) => i.label)}`)
     }
-    const item = find(Menu.getApplicationMenu().items)
-    if (!item) throw new Error(`application menu item not found: ${wanted}`)
-    item.click()
+    if (!loose.length) throw new Error(`application menu item not found: ${wanted}`)
+    loose[0].click()
   }, label)
 
-// Open Settings through the same path a user takes: the in-app File menu.
+// macOS renders no in-window menu bar — App.vue mounts MenuBar only when
+// !isMac, because the platform already owns one. Every helper below therefore
+// has TWO paths, and for a long time only the Linux one existed: 62 specs
+// failed on a developer Mac for no reason anyone had looked into.
+const usesNativeMenu = () => process.platform === 'darwin'
+
+// Open Settings through the same path a user takes: the File menu.
 export async function openSettings(page) {
-  await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings', { exact: true }).click()
+  if (usesNativeMenu()) {
+    await clickAppMenuItem(page.electronApp, 'Settings')
+  } else {
+    await page.getByRole('button', { name: 'File', exact: true }).click()
+    await page.getByText('Settings', { exact: true }).click()
+  }
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
 }
 
@@ -156,6 +178,9 @@ export async function setViewOption(page, name, on = true) {
 // pill for every section, so a page-wide "Tools" (or "Snippets") matches two
 // buttons and every one of these calls dies on a strict-mode violation.
 export async function openMenu(page, top, sub, leaf) {
+  // The native bar is addressed by leaf label, so the path through it needs no
+  // knowledge of which top menu or submenu the item lives under.
+  if (usesNativeMenu()) return clickAppMenuItem(page.electronApp, leaf ?? sub)
   await page.locator('.menubar').getByRole('button', { name: top, exact: true }).click()
   if (leaf) {
     // The submenu opens its flyout on hover; clicking the toggle would fire

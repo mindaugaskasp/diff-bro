@@ -81,7 +81,7 @@ function close() {
           <input
             v-model="query"
             type="search"
-            :placeholder="`Search ${keys.length} keys…`"
+            :placeholder="$t('trustedKeysDialog.searchKeys', { count: keys.length })"
             spellcheck="false"
             :aria-label="$t('share.trustedKeysDialog.searchTrustedKeys')"
           />

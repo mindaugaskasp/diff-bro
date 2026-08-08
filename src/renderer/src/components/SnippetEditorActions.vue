@@ -2,6 +2,7 @@
 // The snippet editor's action row, split out of SnippetEditorDialog to keep it
 // within its line budget. Owns only the two bits of feedback state its buttons
 // need (the copy flash, the two-step clear); everything else is the parent's.
+import { t } from '../i18n'
 import { computed } from 'vue'
 import { useArmedAction } from '../composables/useArmedAction'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
@@ -39,7 +40,7 @@ async function copyAsFile() {
 const copyFileTip = computed(() =>
   props.secret
     ? "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk"
-    : 'Put the snippet on the clipboard AS A FILE, to paste into a message or a folder'
+    : t('snippetEditorActions.copyAsFileTip')
 )
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
@@ -48,20 +49,22 @@ const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('
 const isRepair = computed(() => props.language === 'mermaid')
 const formatLabel = computed(() => (isRepair.value ? 'Repair' : 'Format'))
 const formatTip = computed(() => {
-  if (!props.canFormat) return 'Formatting is available for JSON, XML, SQL or Mermaid'
+  if (!props.canFormat) return t('snippetEditorActions.formatUnavailable')
   return isRepair.value
-    ? 'Put back the arrows, quotes and spaces a paste broke'
-    : `Pretty-print as ${props.language.toUpperCase()}`
+    ? t('snippetEditorActions.unmangleTip')
+    : t('snippetEditorActions.prettyPrintAs', { format: props.language.toUpperCase() })
 })
 const clearTip = computed(() =>
   clearArmed.value
-    ? 'Click again to clear the editor'
-    : 'Clear the editor (e.g. remove pasted content)'
+    ? t('snippetEditorActions.clickAgainToClear')
+    : t('snippetEditorActions.clearTheEditor')
 )
 // Copy works whether or not the contents are on screen — that is the whole
 // point of a secret snippet.
 const copyTip = computed(() =>
-  copiedText.value ? 'Copied to clipboard' : 'Copy the contents to the clipboard'
+  copiedText.value
+    ? t('snippetEditorActions.copiedToClipboard')
+    : t('snippetEditorActions.copyTheContents')
 )
 
 // The parent owns the clipboard write and flashes only once it succeeded.

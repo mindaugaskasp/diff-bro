@@ -56,7 +56,7 @@ async function copyOutput() {
         class="tre-flag"
         :class="{ on: flags.includes(f) }"
         :aria-pressed="flags.includes(f)"
-        :data-tip="`Flag ${f}`"
+        :data-tip="$t('toolRegex.flagTip', { flag: f })"
         @click="toggleFlag(f)"
       >
         {{ f }}
@@ -101,7 +101,7 @@ async function copyOutput() {
           v-model="replacement"
           class="tre-field"
           spellcheck="false"
-          placeholder="Replace with… ($1, $&lt;name&gt;)"
+          :placeholder="$t('toolRegex.replacePlaceholder')"
           :aria-label="$t('toolRegex.replacement')"
         />
         <button

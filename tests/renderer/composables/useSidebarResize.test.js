@@ -1,7 +1,7 @@
 // The drag itself, without a pointer. What makes this worth a unit is the state
 // BETWEEN the events: a move that arrives without a press must do nothing, and a
 // release must be what writes.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSidebarResize } from '../../../src/renderer/src/composables/useSidebarResize'
 import { SIDEBAR_MAX, SIDEBAR_W } from '../../../src/renderer/src/utils/sidebarWidth'
 
@@ -80,5 +80,17 @@ describe('useSidebarResize', () => {
   it('ignores a release that no press started', () => {
     useSidebarResize().end()
     expect(localStorage.getItem('diffbro.sidebar')).toBeNull()
+  })
+})
+
+// The grip is pinned to the sidebar's edge and overlays the rows, which are
+// draggable. Letting the pointerdown through starts a native HTML5 drag whose
+// pointercancel kills the resize partway.
+describe('useSidebarResize — the grip wins over a row drag', () => {
+  it('suppresses the native drag the pointerdown would otherwise begin', () => {
+    const { start } = useSidebarResize()
+    const preventDefault = vi.fn()
+    start({ clientX: 0, preventDefault })
+    expect(preventDefault).toHaveBeenCalled()
   })
 })

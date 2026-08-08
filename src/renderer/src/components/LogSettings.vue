@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n'
 import { computed, onMounted, ref } from 'vue'
 import { useArmedAction } from '../composables/useArmedAction'
 
@@ -45,7 +46,11 @@ async function doClear() {
 }
 const { armed: clearArmed, trigger: requestClear } = useArmedAction(doClear)
 const clearLabel = computed(() =>
-  cleared.value ? 'Cleared' : clearArmed.value ? 'Confirm clear' : 'Clear logs'
+  cleared.value
+    ? t('logSettings.cleared')
+    : clearArmed.value
+      ? t('logSettings.confirmClear')
+      : t('logSettings.clearLogs')
 )
 </script>
 

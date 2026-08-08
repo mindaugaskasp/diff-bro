@@ -70,7 +70,7 @@ function exportTag() {
           :style="{ background: c }"
           :aria-pressed="color === c"
           :data-tip="c"
-          :aria-label="`Use colour ${c}`"
+          :aria-label="$t('tagManagePopover.useColour', { colour: c })"
           @click="applyColor(c)"
         ></button>
       </div>

@@ -511,7 +511,8 @@
     "notOnPath": "That folder isn’t on your PATH, so your shell won’t find {cmd} by name.",
     "installed": "installed",
     "install": "Install",
-    "reinstall": "Reinstall"
+    "reinstall": "Reinstall",
+    "writeFailed": "Could not write the command."
   },
   "commandPalette": {
     "commandPalette": "Command palette",
@@ -529,13 +530,17 @@
     "nodes": "Nodes",
     "edges": "Edges",
     "hideTheChangeList": "Hide the change list",
-    "showTheChangeList": "Show the change list"
+    "showTheChangeList": "Show the change list",
+    "notComparableAsPicture": "This diagram type can’t be compared as a picture yet."
   },
   "diffTabBar": {
     "previousComparison": "Previous comparison",
     "openComparisons": "Open comparisons",
     "nextComparison": "Next comparison",
-    "newComparison": "New comparison"
+    "newComparison": "New comparison",
+    "renameTab": "Rename {name}",
+    "closeTab": "Close {name}",
+    "newComparisonTip": "New comparison ({mod}+Shift+T)"
   },
   "diffViewer": {
     "noDifferencesBothSidesAre": "No differences — both sides are identical",
@@ -565,7 +570,10 @@
     "copyOutput": "Copy output",
     "hexOrBase64": "(hex or base64)",
     "unauthenticated": "unauthenticated",
-    "unauthenticatedNote": "AES-256-CBC is {word} — a successful decrypt does not prove the data is untampered. For decrypting external payloads only."
+    "unauthenticatedNote": "AES-256-CBC is {word} — a successful decrypt does not prove the data is untampered. For decrypting external payloads only.",
+    "passphraseFirst": "Enter a passphrase first.",
+    "keyAndIvNeeded": "Enter the key and IV.",
+    "copied": "Copied to clipboard."
   },
   "errorReportDialog": {
     "somethingWentWrong": "Something went wrong",
@@ -580,7 +588,8 @@
     "externalDiffs": "External diffs",
     "importASharedDiff": "Import a shared diff",
     "empty": "Empty",
-    "noSharedDiffsMatchTry": "No shared diffs match — try removing a filter."
+    "noSharedDiffsMatchTry": "No shared diffs match — try removing a filter.",
+    "importTip": "Import ({mod}+I)"
   },
   "formatHintBanner": {
     "formatBoth": "Format both",
@@ -591,7 +600,8 @@
     "openGitComparisonsInDiff": "Open git comparisons in Diff Bro",
     "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the merged file, so git still asks you whether the merge worked.",
     "intro": "Makes {difftool} and {mergetool} open the comparison here instead of in the terminal.",
-    "notOnPath": "git isn’t on your PATH, so there is nothing to register."
+    "notOnPath": "git isn’t on your PATH, so there is nothing to register.",
+    "configFailed": "Could not change the git configuration."
   },
   "jiraRendered": {
     "nothingToPreviewYetSwitch": "Nothing to preview yet — switch to Plain to write."
@@ -614,11 +624,16 @@
     "neverSent": "nothing is ever sent anywhere",
     "default": "default",
     "clickAgainToPermanently": "Click again to permanently delete every log file",
-    "deleteAllLocalLog": "Delete all local log files"
+    "deleteAllLocalLog": "Delete all local log files",
+    "cleared": "Cleared",
+    "confirmClear": "Confirm clear",
+    "clearLogs": "Clear logs"
   },
   "mermaidDiagram": {
     "diagramError": "Diagram error",
-    "rendering": "rendering…"
+    "rendering": "rendering…",
+    "noDiagramProduced": "No diagram was produced.",
+    "renderFailed": "Could not render this diagram."
   },
   "mermaidPreview": {
     "openTheFullResizableDiagram": "Open the full, resizable diagram viewer",
@@ -648,7 +663,11 @@
     "changed": "Changed",
     "compare": "Compare",
     "useText": "use text",
-    "loadFile": "load file…"
+    "loadFile": "load file…",
+    "sideNameTipLeft": "What to call this side — defaults to \"Left (pasted)\"",
+    "nameLeftSide": "Name for the left side",
+    "sideNameTipRight": "What to call this side — defaults to \"Right (pasted)\"",
+    "nameRightSide": "Name for the right side"
   },
   "quickLookCompose": {
     "nameOptional": "Name (optional)",
@@ -665,7 +684,8 @@
     "backToList": "Back to list",
     "backToTheResultsList": "Back to the results list (←)",
     "editThisSnippetWithoutLeaving": "Edit this snippet without leaving the launcher",
-    "edit": "Edit"
+    "edit": "Edit",
+    "copyContentsTip": "Copy the contents to the clipboard ({key})"
   },
   "quickLookResults": {
     "noSnippetOrToolMatches": "No snippet or tool matches.",
@@ -694,7 +714,12 @@
     "expiresAfter": "Expires after",
     "secureHint": "{label} — auto-expiring (deletes itself)",
     "deletesItselfAutomaticallyA": "Deletes itself automatically — a week is the longest it can live.",
-    "keptUntilYouDelete": "Kept until you delete it."
+    "keptUntilYouDelete": "Kept until you delete it.",
+    "updateDiff": "Update diff",
+    "saveDiff": "Save diff",
+    "keyLocked": "Couldn’t save: the saved-diff key couldn’t be unlocked (the OS keychain may be locked). Try again once it’s available.",
+    "shareStepOne": "Share diff — step 1 of 2: save it",
+    "nextChooseRecipient": "Next: choose recipient"
   },
   "savedDiffRow": {
     "exportAsImage": "Export as image",
@@ -711,7 +736,10 @@
     "pinToTheTop": "Pin to the top of the list",
     "unfavorite": "Unfavorite",
     "favoritePinToTop": "Favorite (pin to top)",
-    "from": "from {who}"
+    "from": "from {who}",
+    "expiredOrUndecryptable": "This saved diff has expired or could not be decrypted.",
+    "formatTip": "Format: {format}",
+    "plainTextComparison": "Plain text comparison"
   },
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
@@ -736,7 +764,10 @@
     "savedDiffs": "Saved diffs",
     "newComparisonFromPastedText": "New comparison from pasted text",
     "empty": "Empty",
-    "noSavedDiffsMatchTry": "No saved diffs match — try removing a filter."
+    "noSavedDiffsMatchTry": "No saved diffs match — try removing a filter.",
+    "newComparisonCta": "New comparison",
+    "newComparisonTip": "New comparison, ready for pasted text",
+    "closeOneFirst": "{reason} — close one first"
   },
   "settingsDialog": {
     "settings": "Settings",
@@ -771,7 +802,11 @@
   "shortcutCapture": {
     "pressAKeyCombination": "Press a key combination…",
     "escToCancel": "Esc to cancel",
-    "reset": "Reset"
+    "reset": "Reset",
+    "updated": "Shortcut updated.",
+    "takenByAnotherApp": "That combination is already in use by another app — try another.",
+    "unusable": "That shortcut can’t be used — try another.",
+    "holdAModifier": "Hold a modifier (Ctrl/Cmd, Alt, or Shift) and press a key."
   },
   "sidebarRail": {
     "expandTheSidebar": "Expand the sidebar",
@@ -795,7 +830,8 @@
     "itsOn": "It’s on {carrying}.",
     "deleteCarryingToo": "Delete the {carrying} too",
     "deleteTagAnd": "Delete tag and {total}",
-    "delete": "Delete"
+    "delete": "Delete",
+    "deleteTitle": "Delete {name}?"
   },
   "snippetEditorActions": {
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
@@ -807,7 +843,15 @@
     "show": "Show",
     "hide": "Hide",
     "confirmClear": "Confirm clear",
-    "clear": "Clear"
+    "clear": "Clear",
+    "clickAgainToClear": "Click again to clear the editor",
+    "clearTheEditor": "Clear the editor (e.g. remove pasted content)",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyTheContents": "Copy the contents to the clipboard",
+    "prettyPrintAs": "Pretty-print as {format}",
+    "copyAsFileTip": "Put the snippet on the clipboard AS A FILE, to paste into a message or a folder",
+    "formatUnavailable": "Formatting is available for JSON, XML, SQL or Mermaid",
+    "unmangleTip": "Put back the arrows, quotes and spaces a paste broke"
   },
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",
@@ -827,19 +871,26 @@
     "secretHint": "{label} — hide the contents behind ****",
     "orDropAFile": "— or drop a file here",
     "editSnippet": "Edit Snippet",
-    "snippet": "Snippet"
+    "snippet": "Snippet",
+    "newSnippetTitle": "New Snippet"
   },
   "snippetFillDialog": {
     "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
     "copyFilled": "Copy filled",
-    "marker": "marker."
+    "marker": "marker.",
+    "fillInTitle": "Fill in — {name}"
   },
   "snippetPassphraseDialog": {
     "passphrase": "Passphrase",
     "import": "Import",
     "export": "Export",
     "enterExisting": "Enter the passphrase this file was exported with.",
-    "chooseNew": "Choose a passphrase. You'll need it again to reimport this file."
+    "chooseNew": "Choose a passphrase. You'll need it again to reimport this file.",
+    "importTitle": "Import Snippets",
+    "exportAllTitle": "Export All Snippets",
+    "exportTagTitle": "Export \"{tag}\" tag",
+    "exportedTo": "Exported to {path}",
+    "exportFailed": "Export failed."
   },
   "snippetPreviewCard": {
     "viewThisDiagramFullScreen": "View this diagram full screen",
@@ -861,7 +912,11 @@
     "favorite": "Favorite",
     "favoritePinToTop": "Favorite (pin to top)",
     "captureTheDiagram": "Capture the diagram",
-    "capture": "Capture"
+    "capture": "Capture",
+    "copyFailed": "Could not copy that snippet to the clipboard.",
+    "noOpenableLink": "That snippet has no link Diff Bro can open.",
+    "noClaudeLink": "No Claude link in this snippet.",
+    "languageTip": "Language: {lang}"
   },
   "snippetsPanel": {
     "snippets": "Snippets",
@@ -872,7 +927,8 @@
     "export": "Export",
     "import": "Import",
     "empty": "Empty",
-    "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter."
+    "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter.",
+    "newSnippetCta": "New snippet"
   },
   "spreadsheetDiffViewer": {
     "customTolerance": "Custom tolerance",
@@ -908,7 +964,9 @@
     "noDifferencesBothSidesAre": "No differences — both sides are identical",
     "lines": "Lines",
     "bestFit": "alignment is a best fit — the files differ too widely to match line for line",
-    "lineCounts": "{left} ↔ {right} lines"
+    "lineCounts": "{left} ↔ {right} lines",
+    "notPermitted": "These files can no longer be read.",
+    "unreadable": "This comparison could not be read from disk."
   },
   "streamedMarker": {
     "streamed": "Streamed",
@@ -928,7 +986,8 @@
   },
   "supportedFormats": {
     "supportedFiles": "Supported files",
-    "andAnyText": "…and any text or code file — binary files aren’t supported"
+    "andAnyText": "…and any text or code file — binary files aren’t supported",
+    "openFormatFile": "Open {format} file"
   },
   "tabContextMenu": {
     "tabActions": "Tab actions"
@@ -938,14 +997,17 @@
     "default": "Default",
     "upTo": "— up to {max}, or leave empty for Default",
     "usedOf": "{used} of {max}",
-    "removeOneFirst": " — remove one to add another"
+    "removeOneFirst": " — remove one to add another",
+    "removeTip": "Remove {tag}",
+    "removeTagLabel": "Remove tag {tag}"
   },
   "tagManagePopover": {
     "tagName": "Tag name",
     "manageTag": "Manage tag",
     "deleteTag": "Delete tag",
     "export": "Export…",
-    "rename": "Rename"
+    "rename": "Rename",
+    "useColour": "Use colour {colour}"
   },
   "tagPickerPopover": {
     "findATag": "Find a tag…",
@@ -963,7 +1025,10 @@
     "wrap76Cols": "Wrap 76 cols",
     "result": "Result",
     "textToEncode": "Text to encode…",
-    "base64ToDecode": "Base64 to decode…"
+    "base64ToDecode": "Base64 to decode…",
+    "invalid": "Not valid Base64 (or not valid UTF-8 once decoded).",
+    "encode": "Encode",
+    "decode": "Decode"
   },
   "toolEpoch": {
     "yYYYMMDDHHMM": "YYYY-MM-DD HH:MM",
@@ -976,7 +1041,8 @@
     "now": "Now",
     "dateEpoch": "Date → epoch",
     "epochDate": "Epoch → date",
-    "enterUnix": "Enter Unix"
+    "enterUnix": "Enter Unix",
+    "copyValue": "Copy {value}"
   },
   "toolHash": {
     "pasteText": "Paste text…",
@@ -986,14 +1052,18 @@
     "of": "Of",
     "uPPER": "UPPER",
     "reading": "Reading…",
-    "chooseAFile": "Choose a file…"
+    "chooseAFile": "Choose a file…",
+    "copyValue": "Copy {value}"
   },
   "toolJson": {
     "pasteJSON": "Paste JSON…",
     "pathJSONPath": "$.path[*] — JSONPath",
     "jSON": "JSON",
     "jSONPathFilter": "JSONPath filter",
-    "result": "Result"
+    "result": "Result",
+    "sortKeys": "Sort keys",
+    "pretty": "Pretty",
+    "minify": "Minify"
   },
   "toolJwt": {
     "pasteAJWTHeaderPayload": "Paste a JWT — header.payload.signature",
@@ -1035,7 +1105,9 @@
     "subjectText": "Subject text",
     "replacement": "Replacement",
     "firstMatchesOnly": "first matches only",
-    "tooSlow": "this pattern is too slow on this input — stopped early"
+    "tooSlow": "this pattern is too slow on this input — stopped early",
+    "flagTip": "Flag {flag}",
+    "replacePlaceholder": "Replace with… ($1, $<name>)"
   },
   "toolUrl": {
     "uRLOrTextToEncode": "URL or text to encode / decode…",
@@ -1046,7 +1118,8 @@
     "removeParameter": "Remove parameter",
     "copyURL": "Copy URL",
     "queryParameters": "Query parameters",
-    "parameter": "Parameter"
+    "parameter": "Parameter",
+    "fullUri": "Full URI"
   },
   "toolUuid": {
     "nameEGExampleCom": "name — e.g. example.com",
@@ -1312,9 +1385,16 @@
   "app": {
     "dropASnippetTo": "Drop a snippet to compare",
     "dropUpToTwo": "Drop up to two files to compare",
-    "loadedOne": "Loaded {name}",
-    "nowChooseOther": "Now drop or choose the {side} file to compare.",
-    "chooseTwoFiles": "Choose or drop two files to compare."
+    "chooseTwoFiles": "Choose or drop two files to compare.",
+    "waiting": {
+      "loaded": "Loaded",
+      "dropSide": "Drop or choose the {side} file",
+      "hint": "Drag a file or a snippet here, or use the field above.",
+      "chooseSide": "Choose the {side} file"
+    },
+    "dropADiffTo": "Drop to open this comparison",
+    "swapTip": "Swap the left and right files ({mod}+Shift+S)",
+    "swapSides": "Swap sides"
   },
   "tabCloseDialog": {
     "closeComparisons": "Close comparisons?",
@@ -1339,7 +1419,8 @@
     "restore": "Restore"
   },
   "diffImageDialog": {
-    "copyImage": "Copy image"
+    "copyImage": "Copy image",
+    "diffViewOf": "Diff view of {name}"
   },
   "emailHandoffDialog": {
     "creating": "Creating…",
@@ -1364,7 +1445,8 @@
     "unchangedHidden": "{n} unchanged hidden"
   },
   "sheetTabBar": {
-    "onlyIn": "only {side}"
+    "onlyIn": "only {side}",
+    "hiddenSheetPrefix": "Hidden sheet — "
   },
   "tray": {
     "open": "Open Diff Bro",
@@ -1389,5 +1471,24 @@
   "newRow": {
     "badge": "New",
     "hiddenByFilter": "\"{name}\" was added, but the current filter hides it."
+  },
+  "fileSlot": {
+    "chooseSideFile": "Choose {side} file"
+  },
+  "sectionHeader": {
+    "dragToReorder": "Drag to reorder"
+  },
+  "spreadsheetGrid": {
+    "hiddenInSource": "Hidden in the source file"
+  },
+  "recipientPicker": {
+    "removeTip": "Remove {name}",
+    "noMatches": "No one matches “{query}”."
+  },
+  "trustedKeyRow": {
+    "addEmail": "Add email"
+  },
+  "trustedKeysDialog": {
+    "searchKeys": "Search {count} keys…"
   }
 }

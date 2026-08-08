@@ -42,8 +42,8 @@ defineExpose(field)
           v-if="!readonly"
           type="button"
           class="x"
-          :data-tip="`Remove ${t}`"
-          :aria-label="`Remove tag ${t}`"
+          :data-tip="$t('tagChipsField.removeTip', { tag: t })"
+          :aria-label="$t('tagChipsField.removeTagLabel', { tag: t })"
           @click.stop="field.remove(t)"
         >
           <AppIcon name="x" />

@@ -30,8 +30,9 @@ const sectionOpen = ref(true)
 
 // Tag filtering + search live in the shell (props); this just mirrors the query.
 const { query, visibleFavorites, visibleListed } = useSnippetFilters()
-const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, openEditor, openDiagram } =
-  useSnippetPreview()
+const snippetPreview = useSnippetPreview()
+const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, dismiss } = snippetPreview
+const { openEditor, openDiagram } = snippetPreview
 
 watch(
   () => props.search,
@@ -117,9 +118,12 @@ function newSnippet() {
     </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <p v-if="!store.entries.length" class="empty">
-        <AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}
-      </p>
+      <div v-if="!store.entries.length" class="empty empty-cta">
+        <p><AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}</p>
+        <button class="btn btn-primary btn-sm" @click.stop="newSnippet">
+          <AppIcon name="plus" /> {{ $t('snippetsPanel.newSnippetCta') }}
+        </button>
+      </div>
 
       <ul v-if="store.entries.length" class="rows">
         <li v-if="!rows.length" class="empty small">
@@ -132,6 +136,7 @@ function newSnippet() {
           :favorite="entry.favorite"
           @hover-title="onRowEnter(entry, $event)"
           @leave-title="onRowLeave"
+          @dragging="dismiss"
         />
       </ul>
     </div>

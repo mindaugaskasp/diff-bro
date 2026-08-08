@@ -49,6 +49,8 @@ const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
 const showStatusBand = computed(() => hasStatusBand(store))
+// One side loaded: which one is still wanted.
+const missingSide = computed(() => (store.left ? 'right' : 'left'))
 const { runFromMenu, runCli } = useCommands()
 
 settings.initTheme()
@@ -89,22 +91,15 @@ const dropSuppressed = computed(
 )
 const {
   active: dragActive,
-  snippetDrag,
-  onDragEnter,
-  onDragLeave,
-  onDrop
+  needsDiffRegion,
+  dragKind,
+  handlers: dropHandlers
 } = useWindowFileDrop(store, dropSuppressed)
 useSnippetDiffSync()
 </script>
 
 <template>
-  <div
-    class="app"
-    @dragenter.prevent="onDragEnter"
-    @dragover.prevent
-    @dragleave="onDragLeave"
-    @drop.prevent="onDrop"
-  >
+  <div class="app" v-on="dropHandlers">
     <MenuBar v-if="!isMac" />
 
     <AppToolbar />
@@ -116,7 +111,14 @@ useSnippetDiffSync()
       <!-- The comparison column. The tab strip sits OUTSIDE .content so the
            image export, which photographs .content, still frames only the
            diff. -->
-      <div class="pane">
+      <div class="pane" data-drop-region="diff">
+        <transition name="fade">
+          <div v-if="dragActive && needsDiffRegion" class="drop-overlay in-pane">
+            <div class="drop-card">
+              {{ dragKind === 'diff' ? $t('app.dropADiffTo') : $t('app.dropASnippetTo') }}
+            </div>
+          </div>
+        </transition>
         <DiffTabBar />
         <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the
@@ -145,8 +147,8 @@ useSnippetDiffSync()
             </div>
             <button
               class="btn swap"
-              :data-tip="`Swap the left and right files (${MOD}+Shift+S)`"
-              aria-label="Swap sides"
+              :data-tip="$t('app.swapTip', { mod: MOD })"
+              :aria-label="$t('app.swapSides')"
               :disabled="!store.ready"
               @click="store.swap"
             >
@@ -178,7 +180,8 @@ useSnippetDiffSync()
           <WaitingForSecond
             v-else-if="store.left || store.right"
             :name="(store.left || store.right).name"
-            :missing="store.left ? 'right' : 'left'"
+            :missing="missingSide"
+            @pick="store.pick(missingSide)"
           />
           <div v-else class="empty">
             <p class="empty-title">{{ $t('app.chooseTwoFiles') }}</p>
@@ -206,10 +209,8 @@ useSnippetDiffSync()
     <TourOverlay />
 
     <transition name="fade">
-      <div v-if="dragActive" class="drop-overlay">
-        <div class="drop-card">
-          {{ snippetDrag ? $t('app.dropASnippetTo') : $t('app.dropUpToTwo') }}
-        </div>
+      <div v-if="dragActive && !needsDiffRegion" class="drop-overlay">
+        <div class="drop-card">{{ $t('app.dropUpToTwo') }}</div>
       </div>
     </transition>
   </div>

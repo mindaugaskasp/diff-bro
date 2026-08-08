@@ -8,6 +8,7 @@ import { useImageExportStore } from '../imageExportStore'
 import { useCopyFeedback } from '../../../composables/useCopyFeedback'
 import BaseDialog from '../../../components/BaseDialog.vue'
 import AppIcon from '../../../components/AppIcon.vue'
+import { t } from '../../../i18n'
 
 const imageExport = useImageExportStore()
 const { copied, flash } = useCopyFeedback()
@@ -18,7 +19,7 @@ const noun = computed(() => imageExport.imageEntry.subject ?? 'diff')
 const isDiff = computed(() => noun.value === 'diff')
 const alt = computed(() =>
   isDiff.value
-    ? `Diff view of ${imageExport.imageEntry.name}`
+    ? t('diffImageDialog.diffViewOf', { name: imageExport.imageEntry.name })
     : `${noun.value === 'diagram' ? 'Diagram' : 'Snippet'}: ${imageExport.imageEntry.name}`
 )
 const of = computed(() =>

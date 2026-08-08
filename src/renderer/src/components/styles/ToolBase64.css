@@ -7,7 +7,7 @@
   width: 100%;
   min-height: 96px;
   resize: vertical;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--text);
   background: var(--bg);
@@ -41,7 +41,7 @@
 }
 .tb-err {
   margin: 0;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--danger-border);
 }
@@ -91,7 +91,7 @@
   max-height: 220px;
   overflow: auto;
   padding: var(--space-3);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   line-height: 1.5;
   color: var(--text);

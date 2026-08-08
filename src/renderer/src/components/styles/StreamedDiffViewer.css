@@ -16,7 +16,7 @@
   min-height: 0;
   overflow: auto;
   background: var(--bg);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: calc(var(--font-md) * var(--diff-zoom, 1));
   line-height: 1;
 }

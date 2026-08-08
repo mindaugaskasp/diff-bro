@@ -14,7 +14,11 @@ export function splice(m, text, selStart, selEnd) {
 // Inline wrap with toggle-off when the markers already surround the selection.
 export function wrap(m, prefix, suffix) {
   const sel = selected(m)
-  if (sel.length >= prefix.length + suffix.length && sel.startsWith(prefix) && sel.endsWith(suffix)) {
+  if (
+    sel.length >= prefix.length + suffix.length &&
+    sel.startsWith(prefix) &&
+    sel.endsWith(suffix)
+  ) {
     const inner = sel.slice(prefix.length, sel.length - suffix.length)
     return splice(m, inner, m.start, m.start + inner.length)
   }
@@ -22,7 +26,12 @@ export function wrap(m, prefix, suffix) {
     const text = head(m).slice(0, -prefix.length) + sel + tail(m).slice(suffix.length)
     return { text, start: m.start - prefix.length, end: m.end - prefix.length }
   }
-  return splice(m, prefix + sel + suffix, m.start + prefix.length, m.start + prefix.length + sel.length)
+  return splice(
+    m,
+    prefix + sel + suffix,
+    m.start + prefix.length,
+    m.start + prefix.length + sel.length
+  )
 }
 
 // Grow to whole lines, so a per-line prefix never starts mid-line.
@@ -39,7 +48,11 @@ export function linePrefix(m, marker, existingRe) {
   const block = m.text.slice(start, end)
   const bare = block.replace(existingRe, '')
   const next = block.startsWith(`${marker} `) ? bare : `${marker} ${bare}`
-  return { text: m.text.slice(0, start) + next + m.text.slice(end), start, end: start + next.length }
+  return {
+    text: m.text.slice(0, start) + next + m.text.slice(end),
+    start,
+    end: start + next.length
+  }
 }
 
 // Per-line list marker on every non-blank line (toggle off when all have it).
@@ -52,12 +65,21 @@ export function listBlock(m, marker) {
   const next = lines
     .map((l) => (l.trim() === '' ? l : allMarked ? l.slice(token.length) : token + l))
     .join('\n')
-  return { text: m.text.slice(0, start) + next + m.text.slice(end), start, end: start + next.length }
+  return {
+    text: m.text.slice(0, start) + next + m.text.slice(end),
+    start,
+    end: start + next.length
+  }
 }
 
 // A fenced block wrapping the selection on its own lines.
 export function blockWrap(m, opener, closer) {
   const sel = selected(m)
   const open = `${opener}\n`
-  return splice(m, `${open}${sel}\n${closer}`, m.start + open.length, m.start + open.length + sel.length)
+  return splice(
+    m,
+    `${open}${sel}\n${closer}`,
+    m.start + open.length,
+    m.start + open.length + sel.length
+  )
 }

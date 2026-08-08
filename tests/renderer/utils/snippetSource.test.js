@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DIFF_DRAG_TYPE,
   DRAG_TYPE,
   dragIdsFrom,
   snippetSource
@@ -71,5 +72,31 @@ describe('dragIdsFrom', () => {
   it('takes at most two ids and caps their length', () => {
     expect(dragIdsFrom(transfer(JSON.stringify(['a', 'b', 'c', 'd'])))).toEqual(['a', 'b'])
     expect(dragIdsFrom(transfer(JSON.stringify(['x'.repeat(500)])))).toEqual([])
+  })
+})
+
+// A diff drags out of the sidebar too, and shares this parsing on purpose: the
+// caps and shape checks ARE the hardening, and a second copy is how one of them
+// ends up without them.
+describe('dragIdsFrom — the diff flavour', () => {
+  const diffTransfer = (data) => ({
+    types: [DIFF_DRAG_TYPE],
+    getData: (t) => (t === DIFF_DRAG_TYPE ? data : '')
+  })
+
+  it('reads ids off a diff drag', () => {
+    expect(dragIdsFrom(diffTransfer(JSON.stringify(['d1'])), DIFF_DRAG_TYPE)).toEqual(['d1'])
+  })
+
+  it('ignores a snippet drag when asked for diffs, and the reverse', () => {
+    expect(dragIdsFrom(diffTransfer(JSON.stringify(['d1'])))).toEqual([])
+    const snippet = { types: [DRAG_TYPE], getData: () => JSON.stringify(['s1']) }
+    expect(dragIdsFrom(snippet, DIFF_DRAG_TYPE)).toEqual([])
+  })
+
+  it('applies the same caps to both', () => {
+    const many = JSON.stringify(['a', 'b', 'c', 'd'])
+    expect(dragIdsFrom(diffTransfer(many), DIFF_DRAG_TYPE)).toHaveLength(2)
+    expect(dragIdsFrom(diffTransfer('not json'), DIFF_DRAG_TYPE)).toEqual([])
   })
 })

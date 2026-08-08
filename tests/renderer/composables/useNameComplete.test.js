@@ -123,3 +123,87 @@ describe('useNameComplete — keys that must not accept', () => {
     expect(name.value).toBe('Dep')
   })
 })
+
+// Writing straight to the model wipes Chromium's undo stack, so Cmd+Z after
+// accepting threw away the user's own typing too. insertText goes through the
+// editing pipeline, which keeps undo intact and fires input for v-model.
+describe('useNameComplete — accepting is undoable', () => {
+  it('inserts through the editing pipeline when the field can', () => {
+    const { name, hook } = setup('Dep')
+    const insert = vi.fn(() => true)
+    hook.inputEl.value = {
+      selectionStart: 3,
+      selectionEnd: 3,
+      focus: vi.fn(),
+      ownerDocument: { execCommand: insert }
+    }
+    press(hook, 'Tab')
+    expect(insert).toHaveBeenCalledWith('insertText', false, 'loy — ')
+    // The pipeline raises input, which drives v-model — the composable must not
+    // also write, or the text lands twice.
+    expect(name.value).toBe('Dep')
+  })
+
+  it('falls back to the model when the pipeline refuses', () => {
+    const { name, hook } = setup('Dep')
+    hook.inputEl.value = {
+      selectionStart: 3,
+      selectionEnd: 3,
+      focus: vi.fn(),
+      ownerDocument: { execCommand: () => false }
+    }
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+
+  it('still works with no document at all', () => {
+    const { name, hook } = setup('Dep')
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+})
+
+// The ghost is drawn at the END of the value, so accepting APPENDS — wherever
+// the caret happens to be. Letting insertText run at the caret spliced the
+// completion into the middle of the name and ate any selection with it.
+describe('useNameComplete — Tab appends, it never edits at the caret', () => {
+  const withRealInput = (typed, selStart, selEnd) => {
+    const name = ref(typed)
+    const el = document.createElement('input')
+    document.body.append(el)
+    el.value = typed
+    el.setSelectionRange(selStart, selEnd)
+    el.addEventListener('input', () => (name.value = el.value))
+    // jsdom has no execCommand, so the browser path would never run here. This
+    // is what Chromium does: splice at the caret, replacing any selection.
+    document.execCommand = (cmd, _ui, text) => {
+      if (cmd !== 'insertText') return false
+      const { selectionStart: a, selectionEnd: b } = el
+      el.value = el.value.slice(0, a) + text + el.value.slice(b)
+      el.setSelectionRange(a + text.length, a + text.length)
+      el.dispatchEvent(new Event('input'))
+      return true
+    }
+    const hook = useNameComplete({ name, names: ref(NAMES) })
+    hook.inputEl.value = el
+    return { name, el, hook }
+  }
+
+  it('appends when the caret sits in the middle of what was typed', () => {
+    const { name, hook } = withRealInput('Dep', 1, 1)
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+
+  it('does not swallow the selection', () => {
+    const { name, hook } = withRealInput('Dep', 0, 3)
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+
+  it('leaves the caret after the accepted text', () => {
+    const { el, hook } = withRealInput('Dep', 1, 1)
+    press(hook, 'Tab')
+    expect(el.selectionStart).toBe(el.value.length)
+  })
+})

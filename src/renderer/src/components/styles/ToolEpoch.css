@@ -38,7 +38,7 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-lg);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -96,7 +96,7 @@
   flex: 1;
   min-width: 0;
   height: var(--control-h);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-md);
   color: var(--text);
   background: var(--bg);
@@ -167,7 +167,7 @@
 .te-out-v {
   flex: 1;
   min-width: 0;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-md);
   font-variant-numeric: tabular-nums;
   color: var(--text);
@@ -196,7 +196,7 @@
 }
 .te-res-v {
   min-width: 0;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--text);
   overflow-x: auto;

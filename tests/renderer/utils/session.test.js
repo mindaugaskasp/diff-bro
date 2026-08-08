@@ -9,7 +9,7 @@ import {
   readSession,
   readSnapshot
 } from '../../../src/renderer/src/utils/session'
-import { MAX_TABS, blankSnapshot } from '../../../src/renderer/src/utils/tabs'
+import { MAX_TABS, blankSnapshot, isHalfLoaded } from '../../../src/renderer/src/utils/tabs'
 
 const side = (name, content = 'x') => ({ path: `/tmp/${name}`, name, content })
 
@@ -47,8 +47,13 @@ describe('packSession', () => {
   // The active tab's own snapshot is only refreshed when tabs switch, so
   // packing it would store the comparison as it was BEFORE the current edits.
   it('packs the active tab from the live document, not its stale snapshot', () => {
-    const tabs = [tab('tab-1', { snapshot: snapshot({ left: side('old.txt') }) })]
-    const live = { snapshot: snapshot({ left: side('new.txt') }), diffSaved: true }
+    const tabs = [
+      tab('tab-1', { snapshot: snapshot({ left: side('old.txt'), right: side('b.txt') }) })
+    ]
+    const live = {
+      snapshot: snapshot({ left: side('new.txt'), right: side('b.txt') }),
+      diffSaved: true
+    }
     const [packed] = packSession(tabs, 'tab-1', live).tabs
     expect(packed.snapshot.left.name).toBe('new.txt')
     expect(packed.diffSaved).toBe(true)
@@ -71,7 +76,10 @@ describe('packSession', () => {
 
   it('leaves out a tab too big to store, and keeps the rest', () => {
     const huge = tab('tab-1', {
-      snapshot: snapshot({ left: side('huge.txt', 'x'.repeat(MAX_TAB_BYTES + 1)) })
+      snapshot: snapshot({
+        left: side('huge.txt', 'x'.repeat(MAX_TAB_BYTES + 1)),
+        right: side('b.txt')
+      })
     })
     const packed = packSession([huge, tab('tab-2')], 'tab-2')
     expect(packed.tabs).toHaveLength(1)
@@ -80,7 +88,9 @@ describe('packSession', () => {
 
   it('stops at the session budget rather than growing without bound', () => {
     const big = (id) =>
-      tab(id, { snapshot: snapshot({ left: side(`${id}.txt`, 'x'.repeat(1_800_000)) }) })
+      tab(id, {
+        snapshot: snapshot({ left: side(`${id}.txt`, 'x'.repeat(1_800_000)), right: side('b.txt') })
+      })
     const packed = packSession([big('t1'), big('t2'), big('t3'), big('t4')], 't1')
     expect(packed.tabs.length).toBeLessThan(4)
     expect(JSON.stringify(packed).length).toBeLessThanOrEqual(MAX_SESSION_BYTES)
@@ -193,7 +203,11 @@ describe('readEnvelope', () => {
 describe('what the session could not keep', () => {
   const heavy = (id, chars) => ({
     id,
-    snapshot: { ...blankSnapshot(), left: { name: `${id}.txt`, content: 'x'.repeat(chars) } },
+    snapshot: {
+      ...blankSnapshot(),
+      left: { name: `${id}.txt`, content: 'x'.repeat(chars) },
+      right: { name: 'b.txt', content: 'y' }
+    },
     diffSaved: true
   })
 
@@ -219,5 +233,88 @@ describe('what the session could not keep', () => {
   it('does not count blank tabs as losses', () => {
     const packed = packSession([tab('tab-1'), { id: 'blank', snapshot: blankSnapshot() }], 'tab-1')
     expect(packed.dropped).toBe(0)
+  })
+})
+
+describe('isHalfLoaded', () => {
+  const tab = (snapshot) => ({ snapshot })
+
+  it('is true for exactly one side', () => {
+    expect(isHalfLoaded(tab({ left: { name: 'a' }, right: null }))).toBe(true)
+    expect(isHalfLoaded(tab({ left: null, right: { name: 'b' } }))).toBe(true)
+  })
+
+  it('is false for a real comparison and for an empty tab', () => {
+    expect(isHalfLoaded(tab({ left: { name: 'a' }, right: { name: 'b' } }))).toBe(false)
+    expect(isHalfLoaded(tab({ left: null, right: null }))).toBe(false)
+    expect(isHalfLoaded(undefined)).toBe(false)
+  })
+
+  // It is about the FILE SLOTS, and paste text does not make a tab half-loaded
+  // on its own. The old assertion passed with `pasteLeft` deleted, because both
+  // sides were already null — it guarded nothing.
+  it('is about the file slots, not the paste buffers', () => {
+    expect(isHalfLoaded(tab({ left: null, right: null, pasteLeft: 'typed' }))).toBe(false)
+    expect(isHalfLoaded(tab({ left: null, right: null, pasteLeft: '', pasteRight: 'typed' }))).toBe(
+      false
+    )
+    // …and one filled slot IS half-loaded however much has been typed beside it.
+    expect(isHalfLoaded(tab({ left: { name: 'a' }, right: null, pasteLeft: 'typed' }))).toBe(true)
+  })
+})
+
+// The half-loaded reset happens on the way OUT, so what is written is what
+// comes back. Clearing it on the way in made the writer produce tabs the reader
+// discarded, and it took the user's own typing with the drop they abandoned.
+describe('packSession — a half-loaded tab is reset, not blanked', () => {
+  const halfWithPaste = (over = {}) =>
+    tab('tab-1', {
+      snapshot: snapshot({
+        left: side('a.txt'),
+        right: null,
+        mode: 'paste',
+        pasteLeft: 'the draft I was writing',
+        renderSideBySide: false,
+        ignoreTrimWhitespace: true,
+        ...over
+      })
+    })
+
+  it('keeps the paste work, the mode and the view toggles', () => {
+    const packed = packSession([halfWithPaste()], 'tab-1')
+    const s = packed.tabs[0].snapshot
+    expect(s.pasteLeft).toBe('the draft I was writing')
+    expect(s.mode).toBe('paste')
+    expect(s.renderSideBySide).toBe(false)
+    expect(s.ignoreTrimWhitespace).toBe(true)
+  })
+
+  it('drops the one file slot that was filled', () => {
+    const s = packSession([halfWithPaste()], 'tab-1').tabs[0].snapshot
+    expect(s.left).toBe(null)
+    expect(s.right).toBe(null)
+  })
+
+  it('leaves a half-loaded tab with nothing else in it out of the session', () => {
+    const bare = tab('tab-1', { snapshot: snapshot({ left: side('a.txt'), right: null }) })
+    expect(packSession([bare], 'tab-1')).toBe(null)
+  })
+
+  it('does not restore a row of blanks when every tab was half-loaded', () => {
+    const bare = (id) => tab(id, { snapshot: snapshot({ left: side(`${id}.txt`) }) })
+    const packed = packSession([bare('a'), bare('b'), bare('c')], 'a')
+    expect(readSession(JSON.stringify(packed))).toBe(null)
+  })
+
+  it('does not count a reset tab as a dropped comparison', () => {
+    const bare = tab('tab-1', { snapshot: snapshot({ left: side('a.txt') }) })
+    const packed = packSession([bare, tab('tab-2')], 'tab-2')
+    expect(packed.dropped).toBe(0)
+  })
+
+  it('leaves a tab that still holds work wearing its own name', () => {
+    const named = { ...halfWithPaste(), customTitle: 'prod vs staging', entryId: 'entry-1' }
+    const packed = packSession([named], 'tab-1')
+    expect(packed.tabs[0].customTitle).toBe('prod vs staging')
   })
 })

@@ -156,8 +156,43 @@ async function loadStructureDiff(page) {
   await page.locator('.status-band').waitFor()
 }
 
+// Any dialog the clear raised has to go too, or its backdrop swallows the
+// clicks the NEXT surface makes and the sweep dies three surfaces later.
+async function clearComparison(page) {
+  const clear = page.getByRole('button', { name: 'Clear', exact: true })
+  if (await clear.isEnabled().catch(() => false)) await clear.click()
+  const backdrop = page.locator('.dialog-backdrop')
+  while (await backdrop.count()) {
+    await page.keyboard.press('Escape')
+    await backdrop.first().waitFor({ state: 'detached' })
+  }
+  await page.locator('.monaco-diff-editor, .wait-slots').waitFor({ state: 'detached' })
+}
+
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const SURFACES = [
+  {
+    name: 'launcher-compose',
+    window: 'launcher',
+    // The launcher card is --bg-panel over a transparent window, a ground the
+    // main window never presents. Its compose panel carries three inks the
+    // theme table cannot settle on its own: the language pill, the syntax runs
+    // in the body overlay, and the name ghost.
+    open: async (page) => {
+      await page.keyboard.press('ControlOrMeta+n')
+      await page.locator('.ql-compose').waitFor()
+      await page.locator('.ql-compose-name').fill('Exam')
+      await page.locator('.ql-compose-text').fill('SELECT id FROM orders;')
+      await page.locator('.ql-compose-hl .syn-keyword').first().waitFor()
+    },
+    close: (page) => page.keyboard.press('Escape'),
+    probes: {
+      'compose title': ['.ql-compose-title', TEXT],
+      'language pill label': ['.ql-compose-lang', TEXT],
+      'body keyword': ['.ql-compose-hl .syn-keyword', TEXT],
+      'name ghost': ['.name-ghost', DIM]
+    }
+  },
   {
     name: 'snippet-name-ghost',
     // The inline name completion. Its ink is the one thing a computed-contrast
@@ -169,7 +204,15 @@ const SURFACES = [
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
       await editor.locator('.name-ghost').waitFor()
     },
-    close: (page) => page.keyboard.press('Escape'),
+    // The × and the discard guard behind it, not Escape: the name field owns
+    // Escape (it dismisses the completion), so the dialog never saw it and its
+    // backdrop swallowed the NEXT surface's clicks.
+    close: async (page) => {
+      await page.locator('.dialog-close').click()
+      const discard = page.locator('.discard-confirm .btn-danger')
+      if (await discard.count()) await discard.click()
+      await page.locator('.dialog-backdrop').waitFor({ state: 'detached' })
+    },
     probes: {
       'typed name': ['.ghost-field input', TEXT],
       // Hint ink, so the 3:1 floor --text-dim already carries elsewhere.
@@ -362,10 +405,82 @@ const SURFACES = [
       'subject input': ['.email-settings input', TEXT],
       'advisory strip': ['.email-settings .hint', TEXT]
     }
+  },
+  {
+    name: 'sidebar-affordances',
+    // The section header's "+" and the empty-section CTA. The "+" inherited
+    // .btn-icon's flat ROW treatment and scored 2.82 on sepia against the
+    // header band — an e2e runs in ONE theme, so `not.toBe(rowInk)` could never
+    // have caught it. This is where that number gets checked on all 14.
+    open: async (page) => {
+      await page.locator('.actions-slot .btn-icon').first().waitFor()
+      await page.locator('.empty-cta .btn-primary').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      'section add button': ['.actions-slot .btn-icon', DIM],
+      // 3, not 4.5: this is `.btn-primary`'s label on `--accent`, which
+      // check-theme-depth already holds app-wide at 3 (`onAccent/accent`).
+      // Measured here it is 3.58 (solar) / 3.75 (dark) / 4.18 (meridian) — an
+      // app-wide property of the primary button, not of this CTA.
+      'empty-section CTA label': ['.empty-cta .btn-primary', DIM],
+      'empty-section prompt': ['.empty-cta p', DIM]
+    }
+  },
+  {
+    name: 'waiting-for-second',
+    // One side loaded. Dashed rim, tag, name and hint all sit on the pane
+    // ground, and the rim is the affordance that says the slot is droppable.
+    // Synthesized DragEvents, not a mouse path: Chromium will not begin a
+    // native HTML5 drag from injected pointer input.
+    open: async (page) => {
+      // The pane may already hold a comparison (a persisted session, or a
+      // previous surface): dropping into a full one gives a diff, not a wait.
+      await clearComparison(page)
+      await page.locator('.snippets-section .row[draggable="true"]').first().waitFor()
+      /* global DataTransfer, DragEvent -- this body runs in the renderer */
+      await page.evaluate(() => {
+        const row = document.querySelector('.snippets-section .row[draggable="true"]')
+        const dt = new DataTransfer()
+        row.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
+        const slot = document.querySelector('.slot[data-side="left"]')
+        slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
+        slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
+      })
+      await page.locator('.wait-slots').waitFor()
+    },
+    // The sweep leaves ONE structure diff loaded for every later surface to
+    // read; this is the only surface that has to disturb it, so it puts it back.
+    close: async (page) => {
+      await clearComparison(page)
+      await loadStructureDiff(page)
+    },
+    probes: {
+      'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
+      'loaded tag': ['.wait-slot.filled .wait-tag', DIM],
+      'loaded name': ['.wait-slot.filled .wait-name', TEXT],
+      'waiting hint': ['.wait-hint', DIM]
+    }
   }
 ]
 
-async function sweepSurface(page, surface, theme, findings) {
+// The launcher is a SECOND BrowserWindow with its own card surface, and no
+// surface here ever opened it — so its compose panel, body overlay and name
+// ghost were only ever measured against the main window's ground.
+async function launcherPage(app, page) {
+  const open = app.windows().find((w) => w.url().includes('quicklook'))
+  if (open) return open
+  const [ql] = await Promise.all([
+    app.waitForEvent('window'),
+    page.evaluate(() => globalThis.api.quickLookToggle())
+  ])
+  await ql.waitForLoadState('domcontentloaded')
+  await ql.waitForTimeout(200)
+  return ql
+}
+
+async function sweepSurface({ app, main, surface, theme, findings }) {
+  const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
   await surface.open(page)
   await page.waitForTimeout(120)
   await page.screenshot({ path: join(OUT, `${surface.name}-${theme.toLowerCase()}.png`) })
@@ -422,7 +537,9 @@ async function main() {
 
     for (const theme of THEMES) {
       await setTheme(page, theme)
-      for (const surface of SURFACES) await sweepSurface(page, surface, theme, findings)
+      for (const surface of SURFACES) {
+        await sweepSurface({ app, main: page, surface, theme, findings })
+      }
       process.stdout.write(`  ${theme.padEnd(9)} ✓\n`)
     }
   } finally {

@@ -17,7 +17,8 @@ function matchInline(text, i) {
   const link = /^\[([^\]]*)\]\(([^)\s]*)\)/.exec(rest)
   if (link) return { length: link[0].length, node: { type: 'link', label: link[1], href: link[2] } }
   const strong = /^\*\*(.+?)\*\*/.exec(rest) || /^__(.+?)__/.exec(rest)
-  if (strong) return { length: strong[0].length, node: { type: 'strong', inlines: parseInline(strong[1]) } }
+  if (strong)
+    return { length: strong[0].length, node: { type: 'strong', inlines: parseInline(strong[1]) } }
   const em = /^\*(.+?)\*/.exec(rest) || /^_(.+?)_/.exec(rest)
   if (em) return { length: em[0].length, node: { type: 'em', inlines: parseInline(em[1]) } }
   return null
@@ -116,7 +117,9 @@ function consumeBlock(lines, i, blocks) {
 }
 
 export function parseMarkdown(src) {
-  const lines = String(src ?? '').replace(/\r\n?/g, '\n').split('\n')
+  const lines = String(src ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
   const blocks = []
   let i = 0
   while (i < lines.length) i = consumeBlock(lines, i, blocks)

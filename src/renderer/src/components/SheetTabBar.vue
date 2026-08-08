@@ -1,6 +1,7 @@
 <script setup>
 import { arrayOfShape } from '../utils/props'
 import AppIcon from './AppIcon.vue'
+import { t } from '../i18n'
 
 defineProps({
   /** @type {import('vue').PropType<Array<object>>} */
@@ -10,7 +11,7 @@ defineProps({
 defineEmits(['select'])
 
 function tipFor(sheet) {
-  const hidden = sheet.hidden ? 'Hidden sheet — ' : ''
+  const hidden = sheet.hidden ? t('sheetTabBar.hiddenSheetPrefix') : ''
   if (sheet.present === 'left') return `${hidden}only in the left file`
   if (sheet.present === 'right') return `${hidden}only in the right file`
   const changes = `${sheet.changes} change${sheet.changes === 1 ? '' : 's'}`

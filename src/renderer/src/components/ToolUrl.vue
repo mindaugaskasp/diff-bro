@@ -8,6 +8,7 @@ import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
+import { t } from '../i18n'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
@@ -17,7 +18,7 @@ const MODES = [
 ]
 const SCOPES = [
   { value: 'component', label: 'Component' },
-  { value: 'full', label: 'Full URI' }
+  { value: 'full', label: t('toolUrl.fullUri') }
 ]
 
 const mode = ref('encode')

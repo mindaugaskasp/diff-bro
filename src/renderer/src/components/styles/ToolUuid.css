@@ -82,7 +82,7 @@
   padding: var(--space-2) var(--space-3);
 }
 .tu-mono {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
 }
 .tu-in:focus-visible {
   outline: none;

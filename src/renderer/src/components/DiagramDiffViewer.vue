@@ -10,6 +10,7 @@ import { useZoomPan } from '../composables/useZoomPan'
 import AppIcon from './AppIcon.vue'
 import MermaidDiagram from './MermaidDiagram.vue'
 import DiagramChangeRegister from './DiagramChangeRegister.vue'
+import { t } from '../i18n'
 
 const store = useDiffStore()
 const source = ref('')
@@ -62,7 +63,7 @@ async function build() {
   const [a, b] = [await modelFrom(store.left?.content), await modelFrom(store.right?.content)]
   if (mine !== buildSeq) return
   if (!a || !b) {
-    error.value = 'This diagram type can’t be compared as a picture yet.'
+    error.value = t('diagramDiffViewer.notComparableAsPicture')
     return
   }
   if (a.error || b.error) {

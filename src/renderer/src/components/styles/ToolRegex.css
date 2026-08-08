@@ -4,7 +4,7 @@
   gap: var(--space-3);
 }
 .mono {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
 }
 .tre-pat {
   display: flex;
@@ -42,7 +42,7 @@
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-dim);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   cursor: pointer;
   padding: 0;
@@ -60,7 +60,7 @@
   border-radius: var(--radius);
   color: var(--text);
   padding: var(--space-2) var(--space-3);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
 }
 .tre-bh {

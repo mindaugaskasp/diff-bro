@@ -18,7 +18,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/composables/useQuickLook.js': { fn: 211 },
   'src/renderer/src/composables/useQuickLookKeys.js': { fn: 97 },
   'src/renderer/src/composables/useSnippetDraft.js': { fn: 183 },
-  'src/renderer/src/composables/useSnippetPreview.js': { fn: 90 },
+  'src/renderer/src/composables/useSnippetPreview.js': { fn: 89 },
   'src/renderer/src/composables/useSpreadsheetDiff.js': { fn: 73 },
   'src/renderer/src/composables/useStreamedDiff.js': { fn: 99 },
   'src/renderer/src/composables/useTabContextMenu.js': { fn: 70 },
@@ -27,10 +27,10 @@ export const LEGACY_SIZE = {
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 747 },
   'src/renderer/src/stores/snippetStore.js': { file: 496 },
-  'src/renderer/src/stores/tabsStore.js': { file: 398 },
+  'src/renderer/src/stores/tabsStore.js': { file: 394 },
   'src/renderer/src/stores/vaultStore.js': { file: 366 },
   'src/renderer/src/utils/structuralDiff.js': { file: 279 },
-  'src/renderer/src/utils/tabs.js': { file: 260 }
+  'src/renderer/src/utils/tabs.js': { file: 254 }
 }
 
 /** Files whose length is a declaration list, where a cap fires on adding a row. */

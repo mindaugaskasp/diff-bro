@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n'
 import { computed, ref } from 'vue'
 import { stringifyJson, jsonPath, sortDeep } from '../utils/json'
 import SegmentedControl from './SegmentedControl.vue'
@@ -9,20 +10,22 @@ import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
-const MODES = [
-  { value: 'pretty', label: 'Pretty' },
-  { value: 'minify', label: 'Minify' },
-  { value: 'sort', label: 'Sort keys' }
-]
+// A computed, not a const: a t() resolved once at setup freezes whatever
+// locale the app started in — the same trap `utils/` is barred from entirely.
+const modes = computed(() => [
+  { value: 'pretty', label: t('toolJson.pretty') },
+  { value: 'minify', label: t('toolJson.minify') },
+  { value: 'sort', label: t('toolJson.sortKeys') }
+])
 const input = ref('')
 const mode = ref('pretty')
 const filter = ref('')
 
 const parsed = computed(() => {
-  const t = input.value.trim()
-  if (!t) return {}
+  const text = input.value.trim()
+  if (!text) return {}
   try {
-    return { value: JSON.parse(t) }
+    return { value: JSON.parse(text) }
   } catch (e) {
     return { error: e.message }
   }
@@ -74,7 +77,7 @@ offerToolOutput(
 
     <template v-else-if="hasValue">
       <div class="tjs-ctrls">
-        <SegmentedControl v-model:value="mode" :options="MODES" />
+        <SegmentedControl v-model:value="mode" :options="modes" />
         <input
           v-model="filter"
           class="tjs-filter"

@@ -11,7 +11,6 @@ export const tabsFullNotice = (tabs) =>
 // A comparison too big for the session is one that will not come back, and
 // saving it is the way to keep it.
 export const droppedTabsNotice = (count) => {
-  const [what, verb, it] =
-    count === 1 ? ['comparison', 'is', 'it'] : ['comparisons', 'are', 'them']
+  const [what, verb, it] = count === 1 ? ['comparison', 'is', 'it'] : ['comparisons', 'are', 'them']
   return `${count} open ${what} ${verb} too large to reopen next launch — save ${it} to keep ${it}.`
 }

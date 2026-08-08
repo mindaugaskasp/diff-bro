@@ -21,7 +21,7 @@
   --font-2xl: 20px;
   /* Two layers of a highlighted input must resolve to the SAME face, or glyph
      advances drift and the colour sits under the wrong characters. */
-  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, 'Cascadia Code', Consolas, monospace;
   /* Control heights: sidebar/toolbar controls, then dialog buttons. */
   --control-h-sm: 26px;
   /* Hint chips (kbd glyphs). Predefined so a font-size change can never

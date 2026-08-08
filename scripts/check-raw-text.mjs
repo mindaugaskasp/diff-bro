@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Counts the raw strings still hardcoded in templates and holds the number to a
+// Counts the raw strings still hardcoded in templates AND in <script setup>
+// label tables, and holds the number to a
 // committed baseline, which is now 0 — every string is in the catalogue.
 //
 // It stays a baseline rather than a bare `=== 0` because that is what carried
@@ -9,7 +10,8 @@
 //   node scripts/check-raw-text.mjs             fail if the count rose
 //   node scripts/check-raw-text.mjs --retighten lower the baseline to today's
 import { execFileSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { eslintJsonCommand } from './lib/eslintRun.mjs'
 
@@ -34,6 +36,52 @@ try {
     throw new Error(`could not run eslint: ${err.message}`, { cause: err })
   }
   report = JSON.parse(err.stdout)
+}
+
+// eslint-plugin-vue-i18n's no-raw-text only sees TEMPLATE TEXT. Two whole
+// classes of UI copy sit outside it: a string in <script setup>, and a string
+// inside an ATTRIBUTE EXPRESSION (`:data-tip="`Format: ${x}`"`). The first
+// version of this scan looked for `'Capital word followed by lowercase ones'`
+// in the script block alone and reported zero while 65 strings were live — a
+// ratchet whose blind spot is unmeasured is not a ratchet. This one reads the
+// whole file.
+const COPY = /(['"`])([A-Z][^'"`\n\\]*?)\1/g
+// The one thing that starts with a capital, holds a space and is not prose.
+const SVG_PATH = /^[MmLlHhVvCcSsQqTtAaZz][\d\s.,-]/
+const isCopy = (v) => /\s/.test(v) && !SVG_PATH.test(v)
+
+function vueFiles(dir) {
+  const out = []
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name)
+    if (e.isDirectory()) out.push(...vueFiles(p))
+    else if (e.name.endsWith('.vue')) out.push(p)
+  }
+  return out
+}
+
+const isComment = (line) => /^(\/\/|\*|<!--)/.test(line.trimStart())
+
+function copyInScript(file) {
+  return readFileSync(file, 'utf8')
+    .split('\n')
+    .flatMap((line, i) =>
+      isComment(line)
+        ? []
+        : [...line.matchAll(COPY)]
+            .map((m) => m[2])
+            .filter(isCopy)
+            .map((v) => `${relative(root, file)}:${i + 1}  ${v}`)
+    )
+}
+
+const scriptRawText = () => vueFiles(join(root, 'src/renderer/src')).flatMap(copyInScript)
+
+const inScript = scriptRawText()
+if (inScript.length) {
+  console.error(`raw UI copy in <script setup> (must be a catalogue key): ${inScript.length}`)
+  for (const hit of inScript) console.error(`  ${hit}`)
+  process.exit(1)
 }
 
 const count = report.reduce(

@@ -13,6 +13,21 @@ import { completionFor } from '../utils/nameComplete'
  * @param {{ value: boolean }} [o.readonly] when true there is nothing to offer
  * @returns {object}
  */
+// insertText goes through the browser's editing pipeline, so the accept joins
+// the undo stack and Cmd+Z gives back what was typed. Writing to the model
+// directly clears that stack, taking the user's own typing with it. It also
+// raises `input`, which drives v-model — so on success the caller must NOT
+// write too. It inserts at the CARET and replaces the selection, but the ghost
+// is drawn at the END: collapse there first or Tab splices the completion into
+// the middle of the name and eats whatever was selected.
+function appendThroughEditor(el, suffix, fallbackEnd) {
+  if (!el?.ownerDocument?.execCommand) return false
+  el.focus?.()
+  const end = el.value?.length ?? fallbackEnd
+  el.setSelectionRange?.(end, end)
+  return el.ownerDocument.execCommand('insertText', false, suffix)
+}
+
 export function useNameComplete({ name, names, readonly }) {
   const inputEl = ref(null)
   const overlayEl = ref(null)
@@ -30,7 +45,9 @@ export function useNameComplete({ name, names, readonly }) {
   }
 
   const accept = () => {
-    name.value += ghost.value
+    if (!appendThroughEditor(inputEl.value, ghost.value, name.value.length)) {
+      name.value += ghost.value
+    }
   }
 
   // Tab accepts wherever the caret is; → only from the end, where it would

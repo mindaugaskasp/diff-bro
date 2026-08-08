@@ -9,6 +9,7 @@ import { useStreamedDiff } from '../composables/useStreamedDiff'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import AppIcon from './AppIcon.vue'
 import StreamedMarker from './StreamedMarker.vue'
+import { t } from '../i18n'
 
 const store = useDiffStore()
 const box = ref(null)
@@ -21,8 +22,8 @@ const identical = computed(
   () => !!summary.value && summary.value.additions === 0 && summary.value.deletions === 0
 )
 const message = computed(() => {
-  if (error.value === 'not-permitted') return 'These files can no longer be read.'
-  if (error.value) return 'This comparison could not be read from disk.'
+  if (error.value === 'not-permitted') return t('streamedDiffViewer.notPermitted')
+  if (error.value) return t('streamedDiffViewer.unreadable')
   if (!store.streamedPairReady) {
     return 'A file this large can only be compared with another file — not with pasted text.'
   }

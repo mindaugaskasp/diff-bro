@@ -34,7 +34,7 @@
   min-height: 0;
   overflow: auto;
   padding: var(--space-2) 0;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   /* Scales with --sd-row-h, which the component zooms in step — a font that grew
      past the row height would make the virtualization's spacers lie. */
   font-size: calc(var(--font-sm) * var(--diff-zoom, 1));

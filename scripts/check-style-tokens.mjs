@@ -36,6 +36,14 @@ const RULES = [
     hint: 'use var(--font-xs|sm|md|lg)'
   },
   {
+    name: 'font-family',
+    // Three different monospace stacks had accumulated across 33 files before
+    // anyone noticed, and an overlay whose two layers resolve different faces
+    // drifts glyph by glyph. `inherit` is fine; a literal stack is not.
+    re: /font-family:\s*(?![^;]*(?:inherit|var\())[^;]+/,
+    hint: 'use var(--font-mono), or inherit'
+  },
+  {
     name: 'border-radius',
     re: /border-radius:\s*[\d.]+px/,
     hint: 'use var(--radius-sm|radius|radius-lg|radius-pill)'

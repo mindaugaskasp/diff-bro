@@ -89,5 +89,8 @@ export function acceleratorLabel(str, mac) {
     if (p === 'Super') return mac ? '⌘' : 'Super'
     return p
   }
-  return str.split('+').map(token).join(mac ? ' ' : '+')
+  return str
+    .split('+')
+    .map(token)
+    .join(mac ? ' ' : '+')
 }

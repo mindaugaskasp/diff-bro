@@ -15,6 +15,7 @@ import AppIcon from './AppIcon.vue'
 import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 import { useSnippetDrag } from '../composables/useSnippetDrag'
 import { useUiStore } from '../stores/uiStore'
+import { t } from '../i18n'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
@@ -49,7 +50,7 @@ async function copySnippet(id) {
     return
   }
   const res = await window.api.copyText(content)
-  if (!res?.ok) return diff.showNotice('Could not copy that snippet to the clipboard.')
+  if (!res?.ok) return diff.showNotice(t('snippetRow.copyFailed'))
   flash()
 }
 async function viewDiagram(entry) {
@@ -63,19 +64,26 @@ async function openUrl() {
   const content = await store.load(props.entry.id)
   const url = content?.trim().split(/\s+/)[0]
   const res = url ? await window.api.openLink(url) : { error: 'empty' }
-  if (res?.error) diff.showNotice('That snippet has no link Diff Bro can open.')
+  if (res?.error) diff.showNotice(t('snippetRow.noOpenableLink'))
 }
 
 async function openLink() {
   const content = await store.load(props.entry.id)
   const url = content != null ? firstClaudeUrl(content) : null
   if (url) await window.api.openClaudeLink(url)
-  else diff.showNotice('No Claude link in this snippet.')
+  else diff.showNotice(t('snippetRow.noClaudeLink'))
 }
 
 // Hovering the name previews the snippet — not the whole row, which made the
 // card appear while you were only reaching for the row's buttons.
-defineEmits(['hoverTitle', 'leaveTitle'])
+const emit = defineEmits(['hoverTitle', 'leaveTitle', 'dragging'])
+
+// The preview is anchored to this row, so it sits over the area the drag is
+// heading for. Nothing else closes it — the pointer never leaves the row.
+function onDragStart(e) {
+  emit('dragging')
+  startDrag(e, props.entry)
+}
 </script>
 
 <template>
@@ -86,7 +94,7 @@ defineEmits(['hoverTitle', 'leaveTitle'])
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"
-    @dragstart="startDrag($event, entry)"
+    @dragstart="onDragStart($event)"
   >
     <Transition name="flash">
       <span v-if="copied" class="copied-flash" aria-live="polite">{{ $t('common.copied') }}</span>
@@ -109,9 +117,12 @@ defineEmits(['hoverTitle', 'leaveTitle'])
       @mouseenter="$emit('hoverTitle', $event)"
       @mouseleave="$emit('leaveTitle')"
     >
-      <span class="monogram" :style="{ '--fam': mono.family }" :data-tip="`Language: ${lang}`">{{
-        mono.label
-      }}</span>
+      <span
+        class="monogram"
+        :style="{ '--fam': mono.family }"
+        :data-tip="$t('snippetRow.languageTip', { lang })"
+        >{{ mono.label }}</span
+      >
       <AppIcon v-if="isSecret(entry)" class="secret-mark" name="lock" :data-tip="SECRET_NOTICE" />
       <span class="nm">{{ entry.name }}</span>
       <span

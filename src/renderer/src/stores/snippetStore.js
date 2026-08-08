@@ -324,16 +324,16 @@ export const useSnippetStore = defineStore('snippets', {
     },
     // --- tag management ---
     touchTag(name) {
-      const t = this.tags[cleanTag(name)]
-      if (t) {
-        t.rank = nextRank(this.tags)
+      const tag = this.tags[cleanTag(name)]
+      if (tag) {
+        tag.rank = nextRank(this.tags)
         this.persist()
       }
     },
     recolorTag(name, color) {
-      const t = this.tags[cleanTag(name)]
-      if (t && TAG_PALETTE.includes(color)) {
-        t.color = color
+      const tag = this.tags[cleanTag(name)]
+      if (tag && TAG_PALETTE.includes(color)) {
+        tag.color = color
         this.persist()
       }
     },

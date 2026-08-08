@@ -7,6 +7,7 @@
 import { computed } from 'vue'
 import AppIcon from '../../../components/AppIcon.vue'
 import { shaped } from '../../../utils/props'
+import { t } from '../../../i18n'
 
 const props = defineProps({
   // The useRecipientPicker() return: refs and computeds, not plain data, so the
@@ -73,7 +74,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
         <button
           type="button"
           class="chip"
-          :data-tip="`Remove ${r.label}`"
+          :data-tip="$t('recipientPicker.removeTip', { name: r.label })"
           @click="picker.toggle(r.fingerprint)"
         >
           <span class="chip-name">{{ r.label }}</span>
@@ -86,7 +87,7 @@ const reservedRows = computed(() => Math.min(props.picker.total.value, MAX_VISIB
       <p v-if="!picker.visible.value.length" class="empty">
         {{
           picker.query.value
-            ? `No one matches “${picker.query.value}”.`
+            ? t('recipientPicker.noMatches', { query: picker.query.value })
             : $t('share.recipientPicker.noneHaveEmail')
         }}
       </p>

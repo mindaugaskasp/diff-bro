@@ -5,6 +5,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { diagramPaperFor, effectiveDiagramMode } from '../utils/mermaid'
 import { renderMermaid } from '../composables/useMermaid'
+import { t } from '../i18n'
 
 const props = defineProps({
   code: { type: String, default: '' },
@@ -54,7 +55,7 @@ async function doRender() {
     // Adopt the <svg> node; no string is ever assigned to innerHTML.
     const parsed = new DOMParser().parseFromString(svg, 'text/html')
     const svgEl = parsed.body.querySelector('svg')
-    if (!svgEl) throw new Error('No diagram was produced.')
+    if (!svgEl) throw new Error(t('mermaidDiagram.noDiagramProduced'))
     svgEl.removeAttribute('width') // let CSS own the width so it scales to fit
     svgEl.removeAttribute('height')
     host.value?.replaceChildren(document.importNode(svgEl, true))
@@ -78,7 +79,7 @@ function cleanError(e) {
     msg
       .replace(/^error:\s*/i, '')
       .trim()
-      .slice(0, 400) || 'Could not render this diagram.'
+      .slice(0, 400) || t('mermaidDiagram.renderFailed')
   )
 }
 

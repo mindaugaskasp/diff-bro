@@ -1,4 +1,5 @@
 <script setup>
+import { t } from '../i18n'
 import { computed, ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { TTL_OPTIONS } from '../stores/vaultStore'
@@ -67,9 +68,7 @@ async function save() {
   if (!id) {
     diff.replaceAfterSave = null
     diff.pickAfterSave = null
-    diff.showNotice(
-      'Couldn’t save: the saved-diff key couldn’t be unlocked (the OS keychain may be locked). Try again once it’s available.'
-    )
+    diff.showNotice(t('saveDiffDialog.keyLocked'))
     return
   }
   // The tab and the entry are now the same comparison, so the tab takes the
@@ -83,11 +82,11 @@ async function save() {
 
 // An update rewrites the diff this tab already is; a save makes a new one.
 const dialogTitle = computed(() => {
-  if (share.saveThenShare) return 'Share diff — step 1 of 2: save it'
-  return isUpdate.value ? 'Update diff' : 'Save diff'
+  if (share.saveThenShare) return t('saveDiffDialog.shareStepOne')
+  return isUpdate.value ? t('saveDiffDialog.updateDiff') : t('saveDiffDialog.saveDiff')
 })
 const submitLabel = computed(() => {
-  if (share.saveThenShare) return 'Next: choose recipient'
+  if (share.saveThenShare) return t('saveDiffDialog.nextChooseRecipient')
   return isUpdate.value ? 'Update' : 'Save'
 })
 

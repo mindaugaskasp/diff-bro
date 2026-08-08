@@ -84,7 +84,7 @@ function startImport() {
       <template #actions>
         <button
           class="btn btn-icon"
-          :data-tip="`Import (${MOD}+I)`"
+          :data-tip="$t('externalDiffsSection.importTip', { mod: MOD })"
           :aria-label="$t('externalDiffsSection.importASharedDiff')"
           @click.stop="startImport"
         >

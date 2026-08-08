@@ -31,6 +31,9 @@ export function useSidebarResize() {
   }
 
   function start(e) {
+    // The grip overlays the rows, and a row is draggable: without this the
+    // native drag's pointercancel kills the resize two moves in.
+    e.preventDefault?.()
     resizing.value = true
     from = width.value
     startX = e.clientX

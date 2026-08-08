@@ -6,6 +6,7 @@ import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import BaseDialog from './BaseDialog.vue'
 import { useUiStore } from '../stores/uiStore'
+import { t } from '../i18n'
 
 const store = useDiffStore()
 
@@ -27,7 +28,7 @@ const busy = ref(false)
 async function encrypt() {
   error.value = null
   if (!passphrase.value) {
-    error.value = 'Enter a passphrase first.'
+    error.value = t('encryptDecryptDialog.passphraseFirst')
     return
   }
   if (passphraseTooShort(passphrase.value)) {
@@ -46,7 +47,7 @@ async function decrypt() {
   error.value = null
   if (keyMode.value === 'rawkey') return decryptRaw()
   if (!passphrase.value) {
-    error.value = 'Enter a passphrase first.'
+    error.value = t('encryptDecryptDialog.passphraseFirst')
     return
   }
   await run(() => window.api.decryptText(input.value, passphrase.value))
@@ -54,7 +55,7 @@ async function decrypt() {
 
 async function decryptRaw() {
   if (!rawKey.value || !rawIv.value) {
-    error.value = 'Enter the key and IV.'
+    error.value = t('encryptDecryptDialog.keyAndIvNeeded')
     return
   }
   await run(() =>
@@ -84,7 +85,7 @@ function useOutputAsInput() {
 
 async function copyOutput() {
   await window.api.copyText(output.value)
-  store.showNotice('Copied to clipboard.')
+  store.showNotice(t('encryptDecryptDialog.copied'))
 }
 
 function close() {

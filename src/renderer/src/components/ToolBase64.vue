@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { t } from '../i18n'
 import { base64Decode, base64Encode, byteLength } from '../utils/base64'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
@@ -8,31 +9,31 @@ import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
-const MODES = [
-  { value: 'encode', label: 'Encode' },
-  { value: 'decode', label: 'Decode' }
-]
+const modes = computed(() => [
+  { value: 'encode', label: t('toolBase64.encode') },
+  { value: 'decode', label: t('toolBase64.decode') }
+])
 const input = ref('')
 const mode = ref('encode')
 const urlSafe = ref(false)
 const wrap = ref(false)
 
 const result = computed(() => {
-  const t = input.value
-  if (!t) return { output: '' }
+  const text = input.value
+  if (!text) return { output: '' }
   try {
     if (mode.value === 'encode')
-      return { output: base64Encode(t, { urlSafe: urlSafe.value, wrap: wrap.value }) }
-    return { output: base64Decode(t) }
+      return { output: base64Encode(text, { urlSafe: urlSafe.value, wrap: wrap.value }) }
+    return { output: base64Decode(text) }
   } catch {
-    return { error: 'Not valid Base64 (or not valid UTF-8 once decoded).' }
+    return { error: t('toolBase64.invalid') }
   }
 })
 const summary = computed(() => {
-  const t = input.value
+  const text = input.value
   const out = result.value.output || ''
   return mode.value === 'encode'
-    ? `${byteLength(t)} B → ${out.length} chars`
+    ? `${byteLength(text)} B → ${out.length} chars`
     : `${t.length} chars → ${byteLength(out)} B`
 })
 
@@ -53,7 +54,7 @@ offerToolOutput(
 
 <template>
   <div class="tb" :class="{ compact }">
-    <SegmentedControl v-model:value="mode" :options="MODES" />
+    <SegmentedControl v-model:value="mode" :options="modes" />
     <textarea
       v-model="input"
       class="tb-in"

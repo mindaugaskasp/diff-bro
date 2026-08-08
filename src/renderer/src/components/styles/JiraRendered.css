@@ -58,7 +58,7 @@ h6.ji-h {
   border-radius: var(--radius);
   background: var(--bg);
   overflow: auto;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   white-space: pre-wrap;
 }
