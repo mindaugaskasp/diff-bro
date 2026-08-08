@@ -519,7 +519,7 @@
     "reinstall": "Reinstall",
     "writeFailed": "Could not write the command.",
     "commands": "Commands",
-    "helpHint": "Run diffbro help <command> in a terminal for the long form of any of these.",
+    "helpHint": "Run {cmd} in a terminal for the long form of any of these.",
     "outOfDate": "This command was installed by an older build and needs reinstalling to work."
   },
   "commandPalette": {
@@ -1554,11 +1554,11 @@
     "noHelpFor": "No help for \"{topic}\".\n\n{usage}",
     "clipboard": {
       "summary": "save the clipboard as a snippet",
-      "detail": "Saves whatever is on the clipboard as a snippet named\n\"Clipboard - <date> <time>\", guesses the syntax from the content, and\nopens it in the editor so it can be renamed or tagged.\n\nAn empty clipboard saves nothing and says so."
+      "detail": "Saves whatever is on the clipboard as a snippet named\nafter the date and time it was saved, guesses the syntax from the content, and\nopens it in the editor so it can be renamed or tagged.\n\nAn empty clipboard saves nothing and says so."
     },
     "new": {
       "summary": "write a snippet without leaving the terminal",
-      "detail": "Asks for a name, a syntax and the body, then hands the snippet to Diff Bro tagged \"cli\" so it is findable as one afterwards.\n\nThe body takes as many lines as you like. Typing :q, :wq or :x saves it, :a abandons it, and Ctrl+C cancels — a line that merely contains one of those is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
+      "detail": "Asks for a name, a syntax and the body, then hands the snippet to Diff Bro tagged \"cli\" so it is findable as one afterwards.\n\nThe body takes as many lines as you like. Typing :q, :wq or :x saves it and :a abandons it — a line that merely contains one of those is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
     }
   }
 }

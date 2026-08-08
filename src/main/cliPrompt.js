@@ -39,8 +39,8 @@ export function syntaxFor(answer) {
 
 // End markers that cannot appear in a body by accident, matched only as the
 // WHOLE line. `:wq` and `:x` as well as `:q`, because the spelling invites vim
-// muscle memory and that is what it types; `:a` abandons, so giving up needs no
-// reach for Ctrl+C.
+// muscle memory and that is what it types; `:a` abandons, which is the ONLY way
+// out — a synchronous read cannot be interrupted by a signal handler.
 export const BODY_SAVE = [':q', ':wq', ':x']
 export const BODY_ABORT = ':a'
 
@@ -108,24 +108,30 @@ const nap = () => Atomics.wait(SLEEP, 0, 0, 15)
  * @param {() => void} wait
  * @returns {string|null} null at end of input
  */
-export function readLineFrom(read, wait) {
-  let out = ''
+// One byte, or null at end of input. EAGAIN is not an error here — a terminal
+// throws it whenever nobody has typed yet — so it waits and asks again.
+function nextByte(read, wait) {
   for (;;) {
-    let got
     try {
-      got = read(BUF)
+      return read(BUF) ? BUF[0] : null
     } catch (e) {
-      if (e?.code === 'EAGAIN') {
-        wait()
-        continue
-      }
-      // A closed stdin, or a pipe that went away mid-answer.
-      return out || null
+      // Anything but EAGAIN is a closed stdin, or a pipe that went away.
+      if (e?.code !== 'EAGAIN') return null
+      wait()
     }
-    if (!got) return out || null
-    const ch = BUF.toString('utf8')
-    if (ch === '\n') return out
-    if (ch !== '\r') out += ch
+  }
+}
+
+export function readLineFrom(read, wait) {
+  // BYTES, decoded once at the newline. Decoding each byte on its own turned
+  // every continuation byte of a multi-byte sequence into U+FFFD, so "Café" was
+  // saved as replacement characters — silently.
+  const bytes = []
+  for (;;) {
+    const byte = nextByte(read, wait)
+    if (byte === null) return bytes.length ? Buffer.from(bytes).toString('utf8') : null
+    if (byte === 0x0a) return Buffer.from(bytes).toString('utf8')
+    if (byte !== 0x0d) bytes.push(byte)
   }
 }
 
@@ -181,14 +187,16 @@ function collect(io, flags) {
   if (name === null) return null
   let syntax = flags.syntax
   if (syntax === undefined) {
-    syntax = ask(io, 'Syntax', `[1-${SYNTAXES.length}, name, or enter to detect]`)
+    // Before the question, not after it: ask() blocks, so writing the list
+    // afterwards asked the reader to pick from one they could not see yet.
     io.write(`${syntaxHelp(SYNTAXES, io.term.width, io.term).join('\n')}\n`)
+    syntax = ask(io, 'Syntax', `[1-${SYNTAXES.length}, name, or enter to detect]`)
   }
   return { name, syntax }
 }
 
 function readBody(io) {
-  const how = `— ${BODY_SAVE.join(' / ')} saves · ${BODY_ABORT} abandons · ^C cancels`
+  const how = `— ${BODY_SAVE.join(' / ')} saves · ${BODY_ABORT} abandons`
   io.write(`\n${paint('cyan', 'Content', io.term)} ${paint('dim', how, io.term)}\n`)
   const lines = []
   for (;;) {
@@ -228,5 +236,7 @@ export function promptSnippet(flags = {}, io = defaultIo()) {
   return null
 }
 
-/** What to print once the draft is on its way. */
-export const handoffLine = (draft) => handedOver(draft, termFrom())
+// Asked of STDOUT, because that is where it is written: judging by stderr meant
+// `diffbro new snippet > out.txt` from a terminal wrote escape codes into the
+// file — the exact noise the colour check exists to prevent.
+export const handoffLine = (draft) => handedOver(draft, termFrom(process.env, process.stdout))

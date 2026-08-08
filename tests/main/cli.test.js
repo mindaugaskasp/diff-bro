@@ -263,11 +263,16 @@ describe('parseCli — new snippet', () => {
 
   it('takes the name, syntax and tags as flags', () => {
     const { command } = parse(
-      'new', 'snippet',
-      '--name', 'Prod schema',
-      '--syntax', 'sql',
-      '--tag', 'db',
-      '--tag', 'ops'
+      'new',
+      'snippet',
+      '--name',
+      'Prod schema',
+      '--syntax',
+      'sql',
+      '--tag',
+      'db',
+      '--tag',
+      'ops'
     )
     expect(command.flags).toEqual({ name: 'Prod schema', syntax: 'sql', tag: ['db', 'ops'] })
   })
@@ -284,5 +289,47 @@ describe('parseCli — new snippet', () => {
 
   it('reports a flag given no value rather than swallowing the next word', () => {
     expect(parse('new', 'snippet', '--name').error).toMatch(/--name needs a value/)
+  })
+})
+
+// Carving our flags out of the GLOBAL switch strip changed every other verb.
+// A bare launch carrying any dash-prefixed argument used to be ignored; read as
+// a command it exits 1 before a window exists — the app refuses to start.
+describe('parseCli — our flags stay inside `new snippet`', () => {
+  // A switch our flag list happens to name must still be STRIPPED on a launch
+  // that is not `new snippet` — read as a verb it exits 1 before a window
+  // exists, so the app refuses to start.
+  it('a launch carrying one of our flag names is still a plain launch', () => {
+    expect(parseCli([...PACKAGED, '--name'])).toEqual({ command: null, error: null })
+    expect(parseCli([...PACKAGED, '--syntax', '--tag'])).toEqual({ command: null, error: null })
+  })
+
+  it('compare still strips them rather than counting them as files', () => {
+    const { command, error } = parseCli([...PACKAGED, 'compare', 'a.txt', '--name', 'b.txt'])
+    expect(error).toBeNull()
+    expect(command.files).toEqual(['a.txt', 'b.txt'])
+  })
+})
+
+// The docstring claimed a flag with no value errors; it swallowed the next word.
+describe('parseCli — new snippet, flags given no value', () => {
+  const parse = (...w) => parseCli([...PACKAGED, 'new', 'snippet', ...w])
+
+  it('refuses a flag followed by another flag instead of eating it', () => {
+    expect(parse('--name', '--syntax', 'sql').error).toMatch(/--name needs a value/)
+    expect(parse('--syntax', '--name', 'X').error).toMatch(/--syntax needs a value/)
+    expect(parse('--tag', '--tag', 'x').error).toMatch(/--tag needs a value/)
+  })
+
+  it('refuses an empty --name= rather than saving an unnamed snippet', () => {
+    expect(parse('--name=').error).toMatch(/--name needs a value/)
+  })
+
+  it('refuses the same flag twice rather than silently keeping the last', () => {
+    expect(parse('--name', 'a', '--name', 'b').error).toMatch(/--name given twice/)
+  })
+
+  it('still allows --tag more than once, which is the repeatable one', () => {
+    expect(parse('--tag', 'a', '--tag', 'b').command.flags.tag).toEqual(['a', 'b'])
   })
 })

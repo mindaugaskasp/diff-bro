@@ -17,6 +17,22 @@ const MAIN = join(ROOT, 'build', 'main', 'index.js')
 // on macOS, so it cannot be joined by hand.
 const ELECTRON = createRequire(import.meta.url)('electron')
 
+// Same, but run FROM a directory — the only way to exercise a relative path,
+// which is what a shell actually hands over.
+function runCliIn(userDataDir, args, cwd) {
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  return new Promise((resolve) => {
+    const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], {
+      env,
+      cwd,
+      stdio: 'ignore'
+    })
+    p.on('exit', resolve)
+    setTimeout(() => resolve(0), 8000)
+  })
+}
+
 function runCli(userDataDir, args) {
   // DELETE the key — assigning undefined leaves "undefined" in the child env,
   // which Electron reads as truthy and runs itself as plain Node (docs/standards.md).
@@ -163,7 +179,7 @@ test('`diffbro help` prints without opening a window', async () => {
     expect(out.code).toBe(0)
 
     const detail = await runCliCapture(userDataDir, ['help', 'clipboard'])
-    expect(detail.stdout).toContain('Clipboard - ')
+    expect(detail.stdout).toContain('after the date and time it was saved')
 
     const bad = await runCliCapture(userDataDir, ['frobnicate'])
     expect(bad.code).toBe(1)
@@ -327,5 +343,30 @@ test('`diffbro new snippet` takes a piped body and flags without asking', async 
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+// A relative path is resolved against the SHELL's cwd, never the running app's.
+// Every e2e passed absolute paths, so nothing noticed when the resolution was
+// skipped and `cd ~/work && diffbro compare a.json b.json` read `/a.json`.
+test('`diffbro compare` resolves relative paths against the shell, not the app', async () => {
+  const userDataDir = freshUserDataDir()
+  const work = mkdtempSync(join(tmpdir(), 'diffbro-rel-'))
+  writeFileSync(join(work, 'left.json'), '{"a":1}')
+  writeFileSync(join(work, 'right.json'), '{"a":2}')
+  const app = await launchApp(userDataDir)
+  try {
+    const page = await firstReadyPage(app)
+    // Bare filenames, run from `work` — the app's own cwd is somewhere else.
+    await runCliIn(userDataDir, ['compare', 'left.json', 'right.json'], work)
+    await expect(page.locator('.slot[data-side="left"]')).toContainText('left.json', {
+      timeout: 15000
+    })
+    await expect(page.locator('.slot[data-side="right"]')).toContainText('right.json')
+    await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
+  } finally {
+    await app.close()
+    rmSync(userDataDir, { recursive: true, force: true })
+    rmSync(work, { recursive: true, force: true })
   }
 })

@@ -45,10 +45,13 @@ if (cold.command?.name === 'help') {
 }
 
 // `new snippet` is asked for HERE, in the CLI process, before the lock decides
-// whether we are the app or a messenger for one already running. Ctrl+C during
-// the questions is a plain cancel, not a crash.
+// whether we are the app or a messenger for one already running.
+//
+// No SIGINT handler: registering one SUPPRESSES Node's default terminate, and
+// the callback could never run anyway — the prompt blocks the thread inside
+// Atomics.wait, which does not turn the event loop. Adding it made Ctrl+C do
+// nothing at all. The default disposition already is "a plain cancel".
 if (cold.command?.name === 'new-snippet') {
-  process.on('SIGINT', () => app.exit(130))
   cold.command.draft = promptSnippet(cold.command.flags)
   if (!cold.command.draft) {
     process.stderr.write('Nothing to save.\n')

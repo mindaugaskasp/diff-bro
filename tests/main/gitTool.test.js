@@ -287,3 +287,20 @@ describe('registerGitTool — failure paths', () => {
     expect(res.error).toMatch(/refused/i)
   })
 })
+
+// The same dev-run trap the CLI shim had: unpackaged, `app.getPath('exe')` is
+// Electron, so `exec .../Electron difftool …` makes Electron read `difftool` as
+// the path of an app to launch. The entry point has to travel with it.
+describe('gitToolScript — registered from a dev run', () => {
+  const ELECTRON = '/repo/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'
+
+  it('passes the app entry point so the verb is not read as one', () => {
+    expect(gitToolScript(ELECTRON, '/repo')).toContain(`exec '${ELECTRON}' '/repo' difftool`)
+  })
+
+  it('leaves a packaged script exactly as it was', () => {
+    const packaged = '/Applications/Diff Bro.app/Contents/MacOS/Diff Bro'
+    expect(gitToolScript(packaged)).toContain(`exec '${packaged}' difftool`)
+    expect(gitToolScript(packaged, null)).toContain(`exec '${packaged}' difftool`)
+  })
+})

@@ -64,7 +64,9 @@ async function run(fn) {
         <dd>{{ $t(c.summaryKey) }}</dd>
       </template>
     </dl>
-    <p class="hint">{{ $t('cliSettings.helpHint') }}</p>
+    <i18n-t keypath="cliSettings.helpHint" tag="p" class="hint">
+      <template #cmd><code>diffbro help &lt;command&gt;</code></template>
+    </i18n-t>
 
     <div class="dialog-actions">
       <button v-if="status?.installed" class="btn" :disabled="busy" @click="uninstall">

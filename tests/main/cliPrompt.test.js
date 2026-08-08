@@ -8,7 +8,8 @@ import {
   draftFrom,
   promptSnippet,
   readLineFrom,
-  syntaxFor
+  syntaxFor,
+  termFrom
 } from '../../src/main/cliPrompt'
 
 describe('syntaxFor', () => {
@@ -134,6 +135,16 @@ describe('promptSnippet — the conversation', () => {
     expect(transcript).toContain('Content')
   })
 
+  // The help was written AFTER ask() returned, so the reader was asked to pick
+  // from a list they could not see yet and it landed on the next prompt.
+  it('shows the syntax list before asking which one', () => {
+    const { io, written } = scripted(['n', 'sql', 'x', ':q'])
+    promptSnippet({}, io)
+    const t = written.join('')
+    expect(t.indexOf('plaintext')).toBeLessThan(t.indexOf('Syntax'))
+    expect(t.indexOf('plaintext')).toBeGreaterThan(t.indexOf('Name'))
+  })
+
   it('skips a question a flag already answered', () => {
     const { io, written } = scripted(['select 1;', ':q'])
     const draft = promptSnippet({ name: 'Prod', syntax: 'sql' }, io)
@@ -227,6 +238,20 @@ describe('readLineFrom — a terminal that has not been typed into yet', () => {
     expect(readLineFrom(read, () => {})).toBeNull()
   })
 
+  // A byte at a time meant every continuation byte of a multi-byte sequence
+  // decoded to U+FFFD on its own: "Café ✓ Привет" saved as replacement
+  // characters, silently, into the store.
+  it('keeps multi-byte characters intact', () => {
+    const bytes = Buffer.from('Café ✓ Привет — 日本\n', 'utf8')
+    let i = 0
+    const read = (buf) => {
+      if (i >= bytes.length) return 0
+      buf[0] = bytes[i++]
+      return 1
+    }
+    expect(readLineFrom(read, () => {})).toBe('Café ✓ Привет — 日本')
+  })
+
   it('keeps what was typed before the stream ended mid-line', () => {
     const script = ['a', 'b']
     let i = 0
@@ -252,5 +277,26 @@ describe('readLineFrom — a terminal that has not been typed into yet', () => {
     }
     readLineFrom(read, () => slept++)
     expect(slept).toBe(2)
+  })
+})
+
+// The confirmation is written to STDOUT, so whether to colour it is a question
+// about stdout. Asking stderr meant `… > out.txt` from a terminal (stdout a
+// file, stderr still a TTY) wrote escape codes into the file.
+describe('termFrom — which stream is being asked about', () => {
+  it('is colourless for a redirected stream even when the other is a terminal', () => {
+    expect(termFrom({}, { isTTY: false, columns: 80 }).colour).toBe(false)
+  })
+
+  it('colours a terminal', () => {
+    expect(termFrom({}, { isTTY: true, columns: 80 }).colour).toBe(true)
+  })
+
+  it('obeys NO_COLOR', () => {
+    expect(termFrom({ NO_COLOR: '1' }, { isTTY: true, columns: 80 }).colour).toBe(false)
+  })
+
+  it('falls back to 80 columns when the stream does not say', () => {
+    expect(termFrom({}, { isTTY: true }).width).toBe(80)
   })
 })

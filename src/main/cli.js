@@ -41,12 +41,15 @@ export function helpText(topic) {
 
 // Electron argv is not a stable shape: packaged it is [exe, ...args], from a dev
 // run it is [electron, ., ...args], and Chromium switches can appear anywhere.
-// Our own flags, known BY NAME — the one place a name rather than a shape
-// decides, because argv is shared with Chromium and its switch list is open
-// ended. Anything else dash-prefixed is still stripped as theirs.
+const isSwitch = (a) => a.startsWith('-')
+// `new snippet`'s own flags. They are read from the RAW tail after the verb,
+// never carved out of the global switch strip: argv is shared with Chromium,
+// whose switch list is open ended, and treating any `--x` as ours turned a
+// bare launch carrying one into "Unknown command" — which exits before a
+// window exists, so the app simply refused to start.
 const FLAGS = new Set(['--name', '--syntax', '--tag'])
-const isOurFlag = (a) => FLAGS.has(a.split('=')[0])
-const isSwitch = (a) => a.startsWith('-') && !isOurFlag(a)
+const REPEATABLE = new Set(['--tag'])
+const isOurFlag = (a) => FLAGS.has(String(a).split('=')[0])
 // Structural, not by name: an entry point is a PATH, and every command is a bare
 // word. Matching on names instead meant any clone directory not called exactly
 // `diffbro` was read as a command, which exits before a window exists.
@@ -76,20 +79,32 @@ export function cliWords(argv) {
 // A verb returns null when its own arguments are wrong, so the caller reports
 // the whole thing as unknown rather than half-accepting it.
 /**
- * `--name X`, `--name=X`, and `--tag` repeated. A flag with no value is an
- * error rather than a silent swallow of whatever word came next.
- * @param {string[]} words
+ * `--name X`, `--name=X`, and `--tag` repeated. A flag whose value is missing,
+ * empty, or another flag is an ERROR — swallowing the next word named a
+ * snippet `--syntax` and dropped the value that followed it.
+ * @param {string[]} words  the raw tail after `new snippet`
  */
-function newSnippet(words) {
+// The words after `new snippet` in the UNFILTERED argv — cliWords has already
+// stripped every dash-prefixed argument, ours included, by the time a verb runs.
+export function afterVerb(argv) {
+  const words = (argv ?? []).filter((a) => typeof a === 'string')
+  const at = words.findIndex((w, i) => w === 'new' && words[i + 1] === 'snippet')
+  return at === -1 ? [] : words.slice(at + 2)
+}
+
+export function parseNewSnippet(words) {
   const flags = {}
+  const fail = (m) => ({ command: null, error: m })
   for (let i = 0; i < words.length; i++) {
     const [flag, inline] = words[i].split(/=(.*)/s)
     if (!isOurFlag(flag)) continue
-    const value = inline ?? words[++i]
-    if (value === undefined) return { command: null, error: `${flag} needs a value.` }
+    const next = inline ?? words[i + 1]
+    if (inline === undefined) i++
+    if (!next || isOurFlag(next)) return fail(`${flag} needs a value.`)
     const key = flag.slice(2)
-    if (key === 'tag') (flags.tag ??= []).push(value)
-    else flags[key] = value
+    if (REPEATABLE.has(flag)) (flags.tag ??= []).push(next)
+    else if (key in flags) return fail(`${flag} given twice.`)
+    else flags[key] = next
   }
   return { command: { name: 'new-snippet', flags }, error: null }
 }
@@ -101,7 +116,7 @@ const VERBS = {
   backup: (rest, resolve) => parseBackup(rest, resolve),
   create: (rest) =>
     rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
-  new: (rest) => (rest[0] === 'snippet' ? newSnippet(rest.slice(1)) : null),
+  new: (rest, _resolve, argv) => (rest[0] === 'snippet' ? parseNewSnippet(afterVerb(argv)) : null),
   clipboard: (rest) =>
     rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })
@@ -145,6 +160,6 @@ export function parseCli(argv, resolve = (p) => p) {
   }
   const [verb, ...rest] = words
   if (!verb) return { command: null, error: null }
-  const parsed = VERBS[verb]?.(rest, resolve)
+  const parsed = VERBS[verb]?.(rest, resolve, argv)
   return parsed ?? { command: null, error: `Unknown command: ${[verb, ...rest].join(' ')}` }
 }

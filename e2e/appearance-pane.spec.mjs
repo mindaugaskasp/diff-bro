@@ -1,4 +1,5 @@
 import { test, expect, openMenu, openSettings } from './fixtures.mjs'
+import { COMMANDS } from '../src/shared/cliCommands.js'
 
 // The pane's two structural faults were both measurable, and neither was
 // caught by anything: fourteen chips that size to their labels wrapped 4·4·3·3
@@ -57,26 +58,32 @@ test('picking a theme selects exactly one cell and applies it', async ({ page })
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('nord')
 })
 
-// The pane scrolls, and where the platform draws an OVERLAY scrollbar it takes
-// no layout width — so the bar painted on top of the rightmost tile. Asserted
-// as the gap the content actually leaves at the right edge, which holds whether
-// the bar is an overlay or a classic one; `offsetWidth - clientWidth` would
-// only ever be non-zero on the classic platforms.
-const OVERLAY_BAR_PX = 10
-
+// Where the platform draws an OVERLAY scrollbar it takes no layout width, so
+// the bar painted over the rightmost tile. The padding is the fix — and it is
+// what this asserts, because a gap measurement alone cannot fail on Linux,
+// where a CLASSIC 10px bar (base.css) already supplies exactly the gap the
+// threshold looked for. Padding is the thing that differs on every platform.
 test('content stays clear of the pane scrollbar', async ({ page }) => {
   await openAppearance(page)
-  const seen = await page.locator('.settings-pane').evaluate((el, bar) => {
+  const seen = await page.locator('.settings-pane').evaluate((el) => {
+    const style = getComputedStyle(el)
     const pane = el.getBoundingClientRect()
     const rightmost = Math.max(
       ...[...el.querySelectorAll('.theme-tile, .row, h4')].map(
         (n) => n.getBoundingClientRect().right
       )
     )
-    return { scrolls: el.scrollHeight > el.clientHeight, clear: pane.right - rightmost, bar }
-  }, OVERLAY_BAR_PX)
+    return {
+      scrolls: el.scrollHeight > el.clientHeight,
+      padding: Number.parseFloat(style.paddingRight),
+      bar: el.offsetWidth - el.clientWidth,
+      clear: pane.right - rightmost
+    }
+  })
   expect(seen.scrolls).toBe(true)
-  expect(seen.clear).toBeGreaterThanOrEqual(OVERLAY_BAR_PX)
+  expect(seen.padding).toBeGreaterThanOrEqual(8)
+  // …and the content really does sit inside both the padding and any bar.
+  expect(seen.clear).toBeGreaterThanOrEqual(seen.padding + seen.bar)
 })
 
 // Terminal ▸ Commands & Setup lands on the pane that documents the CLI, not on
@@ -90,7 +97,7 @@ test('the Terminal menu opens Settings on the pane that documents the CLI', asyn
   const usages = await page.locator('.cli-list dt code').allTextContents()
   expect(usages).toContain('diffbro compare <file> [<file>]')
   expect(usages).toContain('diffbro clipboard save')
-  expect(usages.length).toBeGreaterThanOrEqual(7)
+  expect(usages).toHaveLength(COMMANDS.length)
   // Each one is explained, not just listed.
   expect(await page.locator('.cli-list dd').count()).toBe(usages.length)
 })

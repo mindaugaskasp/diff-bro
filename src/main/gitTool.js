@@ -50,7 +50,7 @@ export const TEMP_PREFIX = 'diffbro-git-'
  * @param {string} exePath  the installed app binary
  * @returns {string}
  */
-export function gitToolScript(exePath) {
+export function gitToolScript(exePath, entryPath = null) {
   return `#!/bin/sh
 ${MARK}
 name=\${3##*/}
@@ -59,7 +59,7 @@ dir=$(mktemp -d "\${TMPDIR:-/tmp}/${TEMP_PREFIX}XXXXXX") || exit 1
 mkdir -p "$dir/before" "$dir/after" || exit 1
 cp -- "$1" "$dir/before/$name" 2>/dev/null
 cp -- "$2" "$dir/after/$name" 2>/dev/null
-exec ${shQuote(exePath)} difftool "$dir/before/$name" "$dir/after/$name"
+exec ${shQuote(exePath)}${entryPath ? ` ${shQuote(entryPath)}` : ''} difftool "$dir/before/$name" "$dir/after/$name"
 `
 }
 
@@ -145,7 +145,8 @@ export async function gitToolStatus({ home, platform, localAppData, git = runGit
  *          git?: typeof runGit }} o
  * @returns {Promise<{ ok: boolean, error?: string }>}
  */
-export async function registerGitTool({ exePath, home, platform, localAppData, git = runGit }) {
+export async function registerGitTool({ exePath, home, platform, localAppData, entryPath, git }) {
+  git = git ?? runGit
   const target = gitToolTarget({ platform, home, localAppData })
   if (!(await git(['--version'])).ok) return { ok: false, error: 'git is not on your PATH.' }
   try {
@@ -153,7 +154,7 @@ export async function registerGitTool({ exePath, home, platform, localAppData, g
       return { ok: false, error: 'A different diffbro-git exists there.' }
     }
     mkdirSync(dirname(target), { recursive: true })
-    writeFileSync(target, gitToolScript(exePath), 'utf8')
+    writeFileSync(target, gitToolScript(exePath, entryPath), 'utf8')
     if (platform !== 'win32' && process.platform !== 'win32') chmodSync(target, 0o755)
   } catch (e) {
     return { ok: false, error: e.message }
