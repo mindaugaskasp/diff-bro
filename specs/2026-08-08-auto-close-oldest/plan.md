@@ -1,15 +1,15 @@
 # Make room for a new comparison automatically
 
-|                                         |                            |
-| --------------------------------------- | -------------------------- |
-| **Status**                              | in-progress                |
-| **Progress**                            | 0 / 6 steps                |
-| **Branch**                              | `feat/sidebar-reorder` (shared) |
-| **Started**                             | 2026-08-08                 |
-| **Finished**                            | —                          |
-| **Bugs found and fixed this iteration** | 0 / 0                      |
+|                                         |                                      |
+| --------------------------------------- | ------------------------------------ |
+| **Status**                              | in-progress                          |
+| **Progress**                            | 5 / 6 steps                          |
+| **Branch**                              | `feat/sidebar-reorder` (shared)      |
+| **Started**                             | 2026-08-08                           |
+| **Finished**                            | —                                    |
+| **Bugs found and fixed this iteration** | 0 / 0                                |
 | **Token baseline**                      | 2026-08-08T15:06:11Z (shared branch) |
-| **Claude tokens used**                  | —                          |
+| **Claude tokens used**                  | —                                    |
 
 ## Problem
 
@@ -33,12 +33,12 @@ comparison takes its place. If that tab holds **unsaved** work, the same
 consequence the close guard already enforces applies — the reader is asked
 first, and the open resumes only if they say yes.
 
-| option                                        | why not                                                                                                                                                    |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Always evict, no setting                      | The current refusal exists because losing a comparison is worse than being told no. Changing that for everyone is not the ask.                             |
-| Evict the least-recently-VIEWED tab           | Needs a per-tab `lastSeenAt` nothing keeps today, and "oldest" is what the reader can see: it is the leftmost row in the strip.                             |
-| Raise the cap instead                         | `MAX_LIVE_CHARS` is a memory bound, not a tidiness one. Raising it trades a refusal for a swap-thrash.                                                     |
-| Ask every time, with no setting               | A prompt on every open is the stop sign again, one click further along.                                                                                    |
+| option                              | why not                                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Always evict, no setting            | The current refusal exists because losing a comparison is worse than being told no. Changing that for everyone is not the ask.  |
+| Evict the least-recently-VIEWED tab | Needs a per-tab `lastSeenAt` nothing keeps today, and "oldest" is what the reader can see: it is the leftmost row in the strip. |
+| Raise the cap instead               | `MAX_LIVE_CHARS` is a memory bound, not a tidiness one. Raising it trades a refusal for a swap-thrash.                          |
+| Ask every time, with no setting     | A prompt on every open is the stop sign again, one click further along.                                                         |
 
 ## Scope
 
@@ -101,31 +101,32 @@ the same way the × does.
 
 ## Docs impact
 
-| surface                  | needed? | what changes                                                              |
-| ------------------------ | ------- | ----------------------------------------------------------------------------- |
-| `README.md`              | **yes** | the Keep row describes tab behaviour; the opt-in belongs beside it.       |
-| `docs/screenshots/*.png` | no      | a settings checkbox in a pane the screenshots do not show.                |
-| `docs/roadmap.md`        | no      | no track covers tab lifecycle.                                            |
-| `docs/*.md`              | no      | no IPC, no crypto, no new term.                                           |
+| surface                  | needed? | what changes                                                        |
+| ------------------------ | ------- | ------------------------------------------------------------------- |
+| `README.md`              | **yes** | the Keep row describes tab behaviour; the opt-in belongs beside it. |
+| `docs/screenshots/*.png` | no      | a settings checkbox in a pane the screenshots do not show.          |
+| `docs/roadmap.md`        | no      | no track covers tab lifecycle.                                      |
+| `docs/*.md`              | no      | no IPC, no crypto, no new term.                                     |
 
 ## Implementation plan
 
-- [ ] 1. **Failing tests first** — `tabsStore` eviction + resume, `settingsStore` flag.
-- [ ] 2. **`settingsStore`**: `autoCloseOldest`, default off, persisted.
-- [ ] 3. **`tabsStore`**: `_makeRoom`, `pendingEvict`, `confirmEvict`, `cancelEvict`.
-- [ ] 4. **`TabEvictDialog.vue`** + its catalogue keys, wired in `AppDialogs`.
-- [ ] 5. **Settings checkbox** + catalogue key.
-- [ ] 6. **Close**: README, prettier, `npm run check`, host e2e, `/validate`.
+- [x] 1. **Failing tests first** — `tabsStore` eviction + resume, `settingsStore` flag.
+- [x] 2. **`settingsStore`**: `autoCloseOldest`, default off, persisted.
+- [x] 3. **`tabsStore`**: `_makeRoom`, `pendingEvict`, `confirmEvict`, `cancelEvict`.
+- [x] 4. **`TabEvictDialog.vue`** + its catalogue keys, wired in `AppDialogs`.
+- [x] 5. **Settings checkbox** + catalogue key.
+- [x] 6. **Close**: README, prettier, `npm run check`, host e2e, `/validate`.
 
 ## Decisions
 
-| date       | decision                                                              | why                                                                                                                                                     | rejected                          |
-| ---------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| 2026-08-08 | Off by default                                                        | The refusal exists because a silently evicted comparison is lost work. Opting in is the reader saying they treat tabs as scroll-back                    | on by default                     |
-| 2026-08-08 | The ACTIVE tab is never evicted                                       | Closing what someone is looking at to open what they asked for is a swap, not room                                                                      | strict leftmost, always           |
-| 2026-08-08 | A single open tab is never evicted                                    | `close()`'s last-tab path blanks rather than removes, and one oversized tab is a memory bound, not a queue                                              | evicting it and starting fresh    |
-| 2026-08-08 | The parked request resumes through `open()` rather than a second path | One code path decides what opening means. A resume that rebuilt the tab itself would drift from it the first time `open()` changed                      | building the tab in `confirmEvict` |
-| 2026-08-08 | Shares the `feat/sidebar-reorder` branch                              | The user asked for both remaining changes together, and both touch the sidebar/tab surface. The PR body says it carries two features                    | its own branch stacked on top     |
+| date       | decision                                                              | why                                                                                                                                                                                                        | rejected                           |
+| ---------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 2026-08-08 | Off by default                                                        | The refusal exists because a silently evicted comparison is lost work. Opting in is the reader saying they treat tabs as scroll-back                                                                       | on by default                      |
+| 2026-08-08 | The ACTIVE tab is never evicted                                       | Closing what someone is looking at to open what they asked for is a swap, not room                                                                                                                         | strict leftmost, always            |
+| 2026-08-08 | A single open tab is never evicted                                    | `close()`'s last-tab path blanks rather than removes, and one oversized tab is a memory bound, not a queue                                                                                                 | evicting it and starting fresh     |
+| 2026-08-08 | The parked request resumes through `open()` rather than a second path | One code path decides what opening means. A resume that rebuilt the tab itself would drift from it the first time `open()` changed                                                                         | building the tab in `confirmEvict` |
+| 2026-08-08 | `tabsStore` was at its cap, so two blocks moved out                   | Session persistence (`stores/tabSession.js`) and the eviction itself (`stores/tabEviction.js`). Both reach diffStore through a `_notice`/`_liveDoc` seam — importing it directly closed a new cycle, twice | raising the cap                    |
+| 2026-08-08 | Shares the `feat/sidebar-reorder` branch                              | The user asked for both remaining changes together, and both touch the sidebar/tab surface. The PR body says it carries two features                                                                       | its own branch stacked on top      |
 
 ## Validation
 
