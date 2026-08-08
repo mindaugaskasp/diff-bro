@@ -4,9 +4,9 @@ import { useUiStore } from './uiStore'
 import { loadPersisted, savePersisted } from '../persist'
 import {
   MAX_TAGS,
+  dropTag,
   TAG_PALETTE,
   cleanTag,
-  dropTag,
   effectiveLanguage,
   migrate,
   nextColor,
@@ -18,6 +18,8 @@ import { parseSnippetImport } from '../utils/snippetImport'
 import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
+import { tagActions } from './snippetTags'
+import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
 
 // These snippets hold a link and are deliberately never shared.
 export const URL_LANGUAGE = 'url'
@@ -98,6 +100,14 @@ export function formatTagFor(language, content) {
   return lang && lang !== 'plaintext' ? lang : null
 }
 
+const byRecency = (a, b) => b.createdAt - a.createdAt
+const GROUPS = { favorites: true, listed: false }
+const group = (entries, name) =>
+  orderedBy(
+    entries.filter((e) => !!e.favorite === GROUPS[name]),
+    byRecency
+  )
+
 export const useSnippetStore = defineStore('snippets', {
   state: () => ({
     // tags: { name: { color, rank } };  entries: [{ id, aadSalt, name,
@@ -120,8 +130,8 @@ export const useSnippetStore = defineStore('snippets', {
     // Whether Mermaid's renderer is worth warming at idle: a library with no
     // diagram in it should not pay for a 2.8 MB chunk it will never render.
     hasDiagrams: (s) => s.entries.some((e) => languageOf(e) === 'mermaid'),
-    favorites: (s) => s.entries.filter((e) => e.favorite).sort((a, b) => b.createdAt - a.createdAt),
-    listed: (s) => s.entries.filter((e) => !e.favorite).sort((a, b) => b.createdAt - a.createdAt),
+    favorites: (s) => group(s.entries, 'favorites'),
+    listed: (s) => group(s.entries, 'listed'),
     // In-use tags, most-recent first; unused ones stay in the registry (keeping
     // their color) but off the shelf.
     tagList: (s) => {
@@ -227,6 +237,9 @@ export const useSnippetStore = defineStore('snippets', {
         detected,
         vars: promptVars(eff, content),
         favorite: false,
+        // Below every placed entry, so anything the reader has not arranged
+        // themselves leads its group.
+        order: NEW_ENTRY_ORDER,
         // Display-only: the contents are already encrypted at rest, so this
         // decides what gets drawn, never what gets stored (see secretSnippet.js).
         secret: secret === true,
@@ -322,36 +335,10 @@ export const useSnippetStore = defineStore('snippets', {
         this.persist()
       }
     },
-    // --- tag management ---
-    touchTag(name) {
-      const tag = this.tags[cleanTag(name)]
-      if (tag) {
-        tag.rank = nextRank(this.tags)
-        this.persist()
-      }
-    },
-    recolorTag(name, color) {
-      const tag = this.tags[cleanTag(name)]
-      if (tag && TAG_PALETTE.includes(color)) {
-        tag.color = color
-        this.persist()
-      }
-    },
-    renameTag(oldName, newName) {
-      const o = cleanTag(oldName)
-      const n = cleanTag(newName)
-      if (!this.tags[o] || !n || o === n) return
-      if (!this.tags[n]) this.tags[n] = { color: this.tags[o].color, rank: nextRank(this.tags) }
-      delete this.tags[o]
-      for (const e of this.entries) {
-        const i = e.tags.indexOf(o)
-        if (i > -1) {
-          e.tags.splice(i, 1)
-          if (!e.tags.includes(n) && e.tags.length < MAX_TAGS) e.tags.push(n)
-        }
-      }
-      this.persist()
-    },
+    // Favourites and the rest are separate lists, so a drag confined to its own
+    // list cannot cross the boundary — no guard needed, and none to drift.
+    reorder: reorderAction((s, name) => (name in GROUPS ? group(s.entries, name) : null)),
+    ...tagActions,
     /**
      * Remove a tag from the registry. By default the records keep living and
      * only lose the label; `withEntries` deletes everything carrying it.

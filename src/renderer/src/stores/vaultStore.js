@@ -6,6 +6,8 @@ import { sealableFromDraft, sealableFromEntry, ttlSpan } from '../utils/shareEnt
 import { diffFormatTag, readEntries } from '../utils/vaultEntries'
 import { useUiStore } from './uiStore'
 import { t } from '../i18n'
+import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
+import { confirmationActions } from './vaultConfirmations'
 
 // Content crypto runs in main (vault:*); only name/tags/timestamps are plaintext.
 // Re-exported: many modules import these from here; they live in
@@ -31,6 +33,11 @@ export { diffFormatTag }
 
 const storedEntries = () => readEntries(loadPersisted('vault'), t('vaultNotices.untitledDiff'))
 
+// `active` already sorts by recency, so an unordered group keeps the order it
+// has always been shown in.
+const ordered = (entries) => orderedBy(entries, () => 0)
+const GROUPS = ['favoritesOwn', 'ownActive', 'importedFavorites', 'importedOthers']
+
 export const useVaultStore = defineStore('vault', {
   state: () => ({
     entries: storedEntries(),
@@ -48,20 +55,23 @@ export const useVaultStore = defineStore('vault', {
         .filter((e) => e.expiresAt === null || e.expiresAt > s.now)
         .slice()
         .sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0)),
+    // Four groups, each arranged on its own. A drag is confined to the list it
+    // started in, so a plain diff can never be dropped above a favourite —
+    // the rule is the structure, not a guard that could drift from it.
     favoritesOwn() {
-      return this.active.filter((e) => !e.from && e.favorite)
+      return ordered(this.active.filter((e) => !e.from && e.favorite))
     },
     ownActive() {
-      return this.active.filter((e) => !e.from && !e.favorite)
+      return ordered(this.active.filter((e) => !e.from && !e.favorite))
     },
     importedActive() {
       return this.active.filter((e) => e.from)
     },
     importedFavorites() {
-      return this.importedActive.filter((e) => e.favorite)
+      return ordered(this.importedActive.filter((e) => e.favorite))
     },
     importedOthers() {
-      return this.importedActive.filter((e) => !e.favorite)
+      return ordered(this.importedActive.filter((e) => !e.favorite))
     },
     // Every diff sealed for a fingerprint, most recent first. Asked before a
     // trusted key is removed, so the answer to "what did I send this person"
@@ -137,6 +147,8 @@ export const useVaultStore = defineStore('vault', {
     async addShared(entry) {
       return this._add({ ...entry, tags: ['imported', ...(entry.tags || [])] })
     },
+    // One of the four groups; the other three are untouched.
+    reorder: reorderAction((s, name) => (GROUPS.includes(name) ? s[name] : null)),
     // `marks` — see snippetStore.add: restoring a backup is not a user create.
     async _add({ name, payload, createdAt, expiresAt, from, tags = [], marks = true }) {
       const id = crypto.randomUUID()
@@ -159,6 +171,8 @@ export const useVaultStore = defineStore('vault', {
         createdAt,
         expiresAt,
         from: from ?? null,
+        // Below every placed entry, so a diff nobody has arranged leads its group.
+        order: NEW_ENTRY_ORDER,
         // Plaintext metadata (not in the AAD): the compared files' format, so the
         // row can show a type monogram without decrypting the snapshot.
         format: diffFormatTag(payload),
@@ -193,25 +207,7 @@ export const useVaultStore = defineStore('vault', {
       entry.name = clean
       this.persist()
     },
-    requestRetag(id) {
-      const entry = this.entries.find((e) => e.id === id)
-      if (!entry) return
-      this.pendingRetag = { id, name: entry.name, tags: [...(entry.tags || [])] }
-    },
-    cancelRetag() {
-      this.pendingRetag = null
-    },
-    requestDelete(id, name) {
-      this.pendingDelete = { id, name }
-    },
-    confirmDelete() {
-      const pending = this.pendingDelete
-      this.pendingDelete = null
-      if (pending) this.remove(pending.id)
-    },
-    cancelDelete() {
-      this.pendingDelete = null
-    },
+    ...confirmationActions,
     // Null when the entry cannot be read (missing, or the vault key is locked).
     async entryForShare(id) {
       const entry = this.entries.find((e) => e.id === id)

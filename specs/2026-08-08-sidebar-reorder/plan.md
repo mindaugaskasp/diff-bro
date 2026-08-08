@@ -3,12 +3,12 @@
 |                                         |                                       |
 | --------------------------------------- | ------------------------------------- |
 | **Status**                              | in-progress                           |
-| **Progress**                            | 0 / 8 steps                           |
-| **Branch**                              | `feat/sidebar-reorder` (not yet cut)  |
+| **Progress**                            | 7 / 8 steps                           |
+| **Branch**                              | `feat/sidebar-reorder`                |
 | **Started**                             | 2026-08-08                            |
 | **Finished**                            | —                                     |
 | **Bugs found and fixed this iteration** | 0 / 0                                 |
-| **Token baseline**                      | 2026-08-08T09:29:17Z (shared branch)  |
+| **Token baseline**                      | 2026-08-08T15:06:11Z                  |
 | **Claude tokens used**                  | —                                     |
 
 ## Problem
@@ -139,14 +139,14 @@ like any other — its guarantee is about its body, not its position.
 
 ## Implementation plan
 
-- [ ] 1. **Failing e2e first** — `e2e/sidebar-reorder.spec.mjs`.
-- [ ] 2. **`utils/rowOrder.js`** + unit tests, red → green.
-- [ ] 3. **`composables/useRowReorder.js`** + unit tests.
-- [ ] 4. **Snippet store**: `order` on the entry, migration, a `reorder` action,
+- [x] 1. **Failing e2e first** — `e2e/sidebar-reorder.spec.mjs`.
+- [x] 2. **`utils/rowOrder.js`** + unit tests, red → green.
+- [x] 3. **`composables/useRowReorder.js`** + unit tests.
+- [x] 4. **Snippet store**: `order` on the entry, migration, a `reorder` action,
       group getters sorting by it.
-- [ ] 5. **Vault store**: the same for saved and external.
-- [ ] 6. **Rows + indicator CSS**, shared in `ui.css` since four lists use it.
-- [ ] 7. **README**.
+- [x] 5. **Vault store**: the same for saved and external.
+- [x] 6. **Rows + indicator CSS**, shared in `ui.css` since four lists use it.
+- [x] 7. **README**.
 - [ ] 8. **Close**: prettier on touched files, `npm run check`, host e2e,
       `/validate` — which now means fixing everything it finds, not listing it.
 
@@ -157,6 +157,10 @@ like any other — its guarantee is about its body, not its position.
 | 2026-08-08 | The favourite boundary is enforced by the EXISTING group split, not by a guard  | Both stores already render favourites as their own list; a drag confined to its list cannot cross. A guard would be a second expression of the same rule, and the two would drift        | a `canDrop` predicate comparing favourite flags       |
 | 2026-08-08 | Reindex the group on every drop, rather than a fractional rank                  | The lists are short, and an integer sequence stays readable in the store file. Fractional ranks drift into float precision and make the file hard to reason about                        | `tags.rank`-style fractional insert                   |
 | 2026-08-08 | A new entry takes order `-1` so it leads                                        | Preserves today's newest-first feel for anything the user has not deliberately placed                                                                                                     | appending new entries last                            |
+| 2026-08-08 | Both stores were AT their legacy caps, so the feature had to buy its room | `snippetStore` (496) and `vaultStore` (366) had no lines left. Rather than raise a number the standards forbid raising, two cohesive blocks moved out: the tag registry (`stores/snippetTags.js`) and the retag/delete confirmation flows (`stores/vaultConfirmations.js`). Both caps are now BELOW where they were — 483 and 362 | raising the caps; splitting `tabs.js` |
+| 2026-08-08 | `deleteTag` stayed behind in `snippetStore`                                     | It sweeps the vault too, so moving it closed a new import cycle `snippetStore → snippetTags → vaultStore → snippetStore`. `check-structure` caught it                                     | moving the whole tag block          |
+| 2026-08-08 | A row's index is its place in the FULL group, not the filtered view             | Dropping A in front of B has to mean the same thing whether or not a filter hides the rows between them. Indexing the visible list would silently reorder rows the reader cannot see       | disabling reorder while filtering   |
+| 2026-08-08 | Both drag payloads travel on ONE drag                                           | A row is already a compare drag source. Setting the reorder type alongside it lets where the drag LANDS decide which gesture it was, instead of a mode the reader has to know about       | a modifier key; a dedicated handle  |
 | 2026-08-08 | Its OWN branch after all                                                        | The plan shipped in a PR that contained none of its code, which makes a spec a claim rather than a record. It goes with the implementation                                                | sharing `fix/carried-audit-findings`                  |
 
 ## Validation

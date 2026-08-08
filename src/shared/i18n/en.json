@@ -272,7 +272,8 @@
       "lines": "Lines",
       "hash": "Checksum",
       "regex": "Regex"
-    }
+    },
+    "moreToolCount": "{n} more tool | {n} more tools"
   },
   "palette": {
     "searchTools": "Search tools…",
@@ -540,7 +541,8 @@
     "newComparison": "New comparison",
     "renameTab": "Rename {name}",
     "closeTab": "Close {name}",
-    "newComparisonTip": "New comparison ({mod}+Shift+T)"
+    "newComparisonTip": "New comparison ({mod}+Shift+T)",
+    "tabTip": "{name} — double-click to rename"
   },
   "diffViewer": {
     "noDifferencesBothSidesAre": "No differences — both sides are identical",
@@ -739,7 +741,10 @@
     "from": "from {who}",
     "expiredOrUndecryptable": "This saved diff has expired or could not be decrypted.",
     "formatTip": "Format: {format}",
-    "plainTextComparison": "Plain text comparison"
+    "plainTextComparison": "Plain text comparison",
+    "fromSender": " (from {who})",
+    "savedIn": "\nSaved in {dir}",
+    "openTip": "Open \"{name}\"{from}{loc}"
   },
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
@@ -831,7 +836,9 @@
     "deleteCarryingToo": "Delete the {carrying} too",
     "deleteTagAnd": "Delete tag and {total}",
     "delete": "Delete",
-    "deleteTitle": "Delete {name}?"
+    "deleteTitle": "Delete {name}?",
+    "snippetCount": "{n} snippet | {n} snippets",
+    "diffCount": "{n} saved diff | {n} saved diffs"
   },
   "snippetEditorActions": {
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
@@ -878,7 +885,8 @@
     "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
     "copyFilled": "Copy filled",
     "marker": "marker.",
-    "fillInTitle": "Fill in — {name}"
+    "fillInTitle": "Fill in — {name}",
+    "copied": "Copied \"{name}\""
   },
   "snippetPassphraseDialog": {
     "passphrase": "Passphrase",
@@ -890,7 +898,8 @@
     "exportAllTitle": "Export All Snippets",
     "exportTagTitle": "Export \"{tag}\" tag",
     "exportedTo": "Exported to {path}",
-    "exportFailed": "Export failed."
+    "exportFailed": "Export failed.",
+    "imported": "Snippets imported. {note}"
   },
   "snippetPreviewCard": {
     "viewThisDiagramFullScreen": "View this diagram full screen",
@@ -916,7 +925,8 @@
     "copyFailed": "Could not copy that snippet to the clipboard.",
     "noOpenableLink": "That snippet has no link Diff Bro can open.",
     "noClaudeLink": "No Claude link in this snippet.",
-    "languageTip": "Language: {lang}"
+    "languageTip": "Language: {lang}",
+    "placeholderTip": "{n} placeholder you're asked to fill when copying: {list} | {n} placeholders you're asked to fill when copying: {list}"
   },
   "snippetsPanel": {
     "snippets": "Snippets",
@@ -1446,7 +1456,9 @@
   },
   "sheetTabBar": {
     "onlyIn": "only {side}",
-    "hiddenSheetPrefix": "Hidden sheet — "
+    "hiddenSheetPrefix": "Hidden sheet — ",
+    "onlyInLeft": "{prefix}only in the left file",
+    "onlyInRight": "{prefix}only in the right file"
   },
   "tray": {
     "open": "Open Diff Bro",

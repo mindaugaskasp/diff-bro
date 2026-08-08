@@ -824,3 +824,75 @@ describe('marking the row a create just made', () => {
     expect(ui.lastCreatedRowId).toBeNull()
   })
 })
+
+// Manual order. The favourite boundary needs no guard: favourites and the rest
+// are separate lists, so a drag confined to its own list cannot cross.
+describe('snippetStore — the sidebar order the reader set', () => {
+  const seed = async (store, names) => {
+    for (const name of names) await store.add({ name, content: name })
+  }
+
+  it('shows a group in its own order, not by when things were captured', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b', 'c'])
+    const before = store.listed.map((e) => e.name)
+    store.reorder('listed', 0, 3)
+    expect(store.listed.map((e) => e.name)).toEqual([before[1], before[2], before[0]])
+  })
+
+  it('keeps favourites above the rest however the rest are arranged', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b', 'c'])
+    store.toggleFavorite(store.entries[0].id)
+    store.reorder('listed', 0, 2)
+    expect(store.favorites).toHaveLength(1)
+    expect(store.listed.every((e) => !e.favorite)).toBe(true)
+  })
+
+  it('leaves favorite and tags alone', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b'])
+    const id = store.listed[0].id
+    store.reorder('listed', 0, 2)
+    const moved = store.entries.find((e) => e.id === id)
+    expect(moved.favorite).toBe(false)
+    expect(moved.tags).toEqual([])
+  })
+
+  it('survives a reload', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b', 'c'])
+    store.reorder('listed', 0, 3)
+    const wanted = store.listed.map((e) => e.name)
+    const raw = JSON.parse(localStorage.getItem('diffbro.snippets'))
+    expect(raw.entries.map((e) => e.order).every(Number.isFinite)).toBe(true)
+    store.entries = raw.entries
+    expect(store.listed.map((e) => e.name)).toEqual(wanted)
+  })
+
+  // The migration has to be invisible: a library captured before ordering
+  // existed keeps the order it has always been shown in.
+  it('numbers entries that predate ordering without moving them', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b', 'c'])
+    const shown = store.listed.map((e) => e.name)
+    for (const e of store.entries) delete e.order
+    expect(store.listed.map((e) => e.name)).toEqual(shown)
+  })
+
+  it('leads the group with a snippet just created', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b'])
+    store.reorder('listed', 0, 2)
+    await store.add({ name: 'fresh', content: 'x' })
+    expect(store.listed[0].name).toBe('Fresh')
+  })
+
+  it('ignores a group it does not own', async () => {
+    const store = useSnippetStore()
+    await seed(store, ['a', 'b'])
+    const before = store.listed.map((e) => e.name)
+    store.reorder('nonsense', 0, 2)
+    expect(store.listed.map((e) => e.name)).toEqual(before)
+  })
+})

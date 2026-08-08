@@ -995,3 +995,24 @@ button.tag-chip:hover .usb-tct {
   color: var(--syn-comment);
   font-style: italic;
 }
+
+/* Where a dragged row will land. Four lists share it, so it lives here rather
+   than in one of their stylesheets.
+
+   A solid 2px accent RULE, never a glow: matrix (#00ff41), nyan (#ff2ecb) and
+   neon (#22d3ee) turn any accent-tinted shadow into a halo. Drawn with an inset
+   box-shadow rather than a border so the row cannot change height as the
+   pointer crosses it — a list that reflows under the cursor is unusable.
+   Measured against --bg-panel on all 14: weakest is solar at 3.21 (non-text
+   floor 3), strongest matrix at 13.92. Unqualified because the snippet rows are
+   `.row` and the diff rows are `.diff` — the class IS the contract. */
+.drop-above {
+  box-shadow: inset 0 2px 0 0 var(--accent);
+}
+.drop-below {
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+/* The row being carried, so the list says what is moving. */
+.dragging {
+  opacity: 0.45;
+}

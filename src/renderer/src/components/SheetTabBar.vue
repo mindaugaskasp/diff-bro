@@ -12,8 +12,8 @@ defineEmits(['select'])
 
 function tipFor(sheet) {
   const hidden = sheet.hidden ? t('sheetTabBar.hiddenSheetPrefix') : ''
-  if (sheet.present === 'left') return `${hidden}only in the left file`
-  if (sheet.present === 'right') return `${hidden}only in the right file`
+  if (sheet.present === 'left') return t('sheetTabBar.onlyInLeft', { prefix: hidden })
+  if (sheet.present === 'right') return t('sheetTabBar.onlyInRight', { prefix: hidden })
   const changes = `${sheet.changes} change${sheet.changes === 1 ? '' : 's'}`
   return hidden ? `${hidden}${changes}` : changes
 }

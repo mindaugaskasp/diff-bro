@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { matchesTags } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
+import { provideRowReorder } from '../composables/useRowReorder'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
 import AppIcon from './AppIcon.vue'
@@ -35,10 +36,19 @@ const vault = useVaultStore()
 const ui = useUiStore()
 const open = ref(true)
 
+// A row carries its place in the FULL group, not in the filtered view: dropping
+// A in front of B has to mean the same thing whether or not a filter is hiding
+// the rows between them.
+const placed = (group) =>
+  vault[group]
+    .filter(matches)
+    .map((entry) => ({ entry, group, index: vault[group].indexOf(entry) }))
 // One list, favorites first; the ★ filter keeps only them.
 const rows = computed(() =>
-  (props.favOnly ? vault.favoritesOwn : [...vault.favoritesOwn, ...vault.ownActive]).filter(matches)
+  props.favOnly ? placed('favoritesOwn') : [...placed('favoritesOwn'), ...placed('ownActive')]
 )
+
+provideRowReorder((group, from, to) => vault.reorder(group, from, to))
 const hasOwn = computed(() => vault.active.some((e) => !e.from))
 
 // This section owns a marked diff only if it is one of yours; an imported one
@@ -46,7 +56,7 @@ const hasOwn = computed(() => vault.active.some((e) => !e.from))
 useNewRowMarker({
   markedId: () => ui.lastCreatedRowId,
   locate: (id) => {
-    if (rows.value.some((e) => e.id === id)) return 'visible'
+    if (rows.value.some((r) => r.entry.id === id)) return 'visible'
     return vault.active.some((e) => e.id === id && !e.from) ? 'filtered' : 'elsewhere'
   },
   retire: () => ui.clearNewRow(ui.lastCreatedRowId),
@@ -104,7 +114,13 @@ useNewRowMarker({
         <li v-if="!rows.length" class="empty small">
           {{ $t('savedDiffsSection.noSavedDiffsMatchTry') }}
         </li>
-        <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
+        <SavedDiffRow
+          v-for="row in rows"
+          :key="row.entry.id"
+          :entry="row.entry"
+          :group="row.group"
+          :index="row.index"
+        />
       </ul>
     </div>
   </section>

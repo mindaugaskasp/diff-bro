@@ -11,6 +11,7 @@ import {
   useVaultStore
 } from '../../../src/renderer/src/stores/vaultStore'
 import { TAG_PALETTE, useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
+import { readEntries } from '../../../src/renderer/src/utils/vaultEntries'
 import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
 
 const KEY = randomBytes(32)
@@ -816,5 +817,87 @@ describe('marking the row a create just made', () => {
     await vault.save('my diff', 1, PAYLOAD)
     const snippetId = await snippets.add({ name: 'later', content: 'x' })
     expect(useUiStore().lastCreatedRowId).toBe(snippetId)
+  })
+})
+
+// Manual order, the same four-group shape the sidebar renders: own favourites,
+// own, imported favourites, imported. Each is its own list, so a drag confined
+// to its list cannot lift a plain diff above a favourite.
+describe('vaultStore — the sidebar order the reader set', () => {
+  const seed = async (vault, names) => {
+    for (const name of names) await vault.save(name, 1, PAYLOAD)
+  }
+
+  it('shows a group in its own order rather than by recency', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b', 'c'])
+    const before = vault.ownActive.map((e) => e.name)
+    vault.reorder('ownActive', 0, 3)
+    expect(vault.ownActive.map((e) => e.name)).toEqual([before[1], before[2], before[0]])
+  })
+
+  it('arranges each of the four groups independently', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b'])
+    vault.entries[0].favorite = true
+    const own = vault.ownActive.map((e) => e.name)
+    vault.reorder('favoritesOwn', 0, 1)
+    expect(vault.ownActive.map((e) => e.name)).toEqual(own)
+    expect(vault.favoritesOwn).toHaveLength(1)
+  })
+
+  it('leaves favorite, tags and expiry alone', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b'])
+    const before = { ...vault.ownActive[0] }
+    vault.reorder('ownActive', 0, 2)
+    const moved = vault.entries.find((e) => e.id === before.id)
+    expect(moved.favorite).toBe(before.favorite)
+    expect(moved.tags).toEqual(before.tags)
+    expect(moved.expiresAt).toBe(before.expiresAt)
+  })
+
+  it('numbers entries that predate ordering without moving them', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b', 'c'])
+    const shown = vault.ownActive.map((e) => e.name)
+    for (const e of vault.entries) delete e.order
+    expect(vault.ownActive.map((e) => e.name)).toEqual(shown)
+  })
+
+  it('leads the group with a diff just saved', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b'])
+    vault.reorder('ownActive', 0, 2)
+    await vault.save('fresh', 1, PAYLOAD)
+    expect(vault.ownActive[0].name).toBe('fresh')
+  })
+
+  it('ignores a group it does not own', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b'])
+    const before = vault.ownActive.map((e) => e.name)
+    vault.reorder('nonsense', 0, 2)
+    expect(vault.ownActive.map((e) => e.name)).toEqual(before)
+  })
+
+  // A different reader from the snippet store's, so it gets its own proof.
+  it('survives a reload', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b', 'c'])
+    vault.reorder('ownActive', 0, 3)
+    const wanted = vault.ownActive.map((e) => e.name)
+    vault.entries = readEntries(localStorage.getItem('diffbro.vault'), 'Untitled')
+    expect(vault.ownActive.map((e) => e.name)).toEqual(wanted)
+  })
+
+  // The store file is data on disk: a corrupted order must not scramble the
+  // list, it must fall back to the order the group is shown in.
+  it('ignores an order that is not a number', async () => {
+    const vault = useVaultStore()
+    await seed(vault, ['a', 'b', 'c'])
+    const shown = vault.ownActive.map((e) => e.name)
+    for (const e of vault.entries) e.order = 'nope'
+    expect(vault.ownActive.map((e) => e.name)).toEqual(shown)
   })
 })

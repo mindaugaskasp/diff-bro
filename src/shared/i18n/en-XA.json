@@ -272,7 +272,8 @@
       "lines": "[Łĩńéş ·ø]",
       "hash": "[Çĥéçķşūɱ ·øé·]",
       "regex": "[Řéğéẋ ·ø]"
-    }
+    },
+    "moreToolCount": "[{n} ɱōřé ţōōł | {n} ɱōřé ţōōłş ·øé·øé·ø]"
   },
   "palette": {
     "searchTools": "[Šéàřçĥ ţōōłş… ·øé·ø]",
@@ -540,7 +541,8 @@
     "newComparison": "[Ńéŵ çōɱƥàřĩşōń ·øé·øé]",
     "renameTab": "[Řéńàɱé {name} ·øé·]",
     "closeTab": "[Çłōşé {name} ·øé·]",
-    "newComparisonTip": "[Ńéŵ çōɱƥàřĩşōń ({mod}+Šĥĩƒţ+Ţ) ·øé·øé·øé]"
+    "newComparisonTip": "[Ńéŵ çōɱƥàřĩşōń ({mod}+Šĥĩƒţ+Ţ) ·øé·øé·øé]",
+    "tabTip": "[{name} — đōūƀłé-çłĩçķ ţō řéńàɱé ·øé·øé·øé·]"
   },
   "diffViewer": {
     "noDifferencesBothSidesAre": "[Ńō đĩƒƒéřéńçéş — ƀōţĥ şĩđéş àřé ĩđéńţĩçàł ·øé·øé·øé·øé·ø]",
@@ -739,7 +741,10 @@
     "from": "[ƒřōɱ {who} ·øé]",
     "expiredOrUndecryptable": "[Ţĥĩş şàṽéđ đĩƒƒ ĥàş éẋƥĩřéđ ōř çōūłđ ńōţ ƀé đéçřŷƥţéđ. ·øé·øé·øé·øé·øé·øé]",
     "formatTip": "[Ƒōřɱàţ: {format} ·øé·ø]",
-    "plainTextComparison": "[Ƥłàĩń ţéẋţ çōɱƥàřĩşōń ·øé·øé·ø]"
+    "plainTextComparison": "[Ƥłàĩń ţéẋţ çōɱƥàřĩşōń ·øé·øé·ø]",
+    "fromSender": "[ (ƒřōɱ {who}) ·øé]",
+    "savedIn": "[\nŠàṽéđ ĩń {dir} ·øé·]",
+    "openTip": "[Ōƥéń \"{name}\"{from}{loc} ·øé·øé]"
   },
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "[Šĥōŵ ōńłŷ şţàřřéđ đĩƒƒş àńđ şńĩƥƥéţş ·øé·øé·øé·øé·]",
@@ -831,7 +836,9 @@
     "deleteCarryingToo": "[Đéłéţé ţĥé {carrying} ţōō ·øé·øé·ø]",
     "deleteTagAnd": "[Đéłéţé ţàğ àńđ {total} ·øé·øé·]",
     "delete": "[Đéłéţé ·øé]",
-    "deleteTitle": "[Đéłéţé {name}? ·øé·]"
+    "deleteTitle": "[Đéłéţé {name}? ·øé·]",
+    "snippetCount": "[{n} şńĩƥƥéţ | {n} şńĩƥƥéţş ·øé·øé·]",
+    "diffCount": "[{n} şàṽéđ đĩƒƒ | {n} şàṽéđ đĩƒƒş ·øé·øé·øé]"
   },
   "snippetEditorActions": {
     "aPictureOfThisSnippet": "[À ƥĩçţūřé ōƒ ţĥĩş şńĩƥƥéţ, àş ţĥé àƥƥ đřàŵş ĩţ ·øé·øé·øé·øé·øé]",
@@ -878,7 +885,8 @@
     "thisPromptHasPlaceholdersFill": "[Ţĥĩş ƥřōɱƥţ ĥàş ƥłàçéĥōłđéřş. Ƒĩłł ţĥéɱ ĩń àńđ ĩţ'ş çōƥĩéđ řéàđŷ ţō ƥàşţé; łéàṽé ōńé ƀłàńķ ţō ķééƥ ĩţş ·øé·øé·øé·øé·øé·øé·øé·øé·øé·øé·øé]",
     "copyFilled": "[Çōƥŷ ƒĩłłéđ ·øé·]",
     "marker": "[ɱàřķéř. ·øé]",
-    "fillInTitle": "[Ƒĩłł ĩń — {name} ·øé·]"
+    "fillInTitle": "[Ƒĩłł ĩń — {name} ·øé·]",
+    "copied": "[Çōƥĩéđ \"{name}\" ·øé·]"
   },
   "snippetPassphraseDialog": {
     "passphrase": "[Ƥàşşƥĥřàşé ·øé·]",
@@ -890,7 +898,8 @@
     "exportAllTitle": "[Éẋƥōřţ Àłł Šńĩƥƥéţş ·øé·øé·]",
     "exportTagTitle": "[Éẋƥōřţ \"{tag}\" ţàğ ·øé·ø]",
     "exportedTo": "[Éẋƥōřţéđ ţō {path} ·øé·øé]",
-    "exportFailed": "[Éẋƥōřţ ƒàĩłéđ. ·øé·ø]"
+    "exportFailed": "[Éẋƥōřţ ƒàĩłéđ. ·øé·ø]",
+    "imported": "[Šńĩƥƥéţş ĩɱƥōřţéđ. {note} ·øé·øé·ø]"
   },
   "snippetPreviewCard": {
     "viewThisDiagramFullScreen": "[Ṽĩéŵ ţĥĩş đĩàğřàɱ ƒūłł şçřééń ·øé·øé·øé·]",
@@ -916,7 +925,8 @@
     "copyFailed": "[Çōūłđ ńōţ çōƥŷ ţĥàţ şńĩƥƥéţ ţō ţĥé çłĩƥƀōàřđ. ·øé·øé·øé·øé·øé]",
     "noOpenableLink": "[Ţĥàţ şńĩƥƥéţ ĥàş ńō łĩńķ Đĩƒƒ Ɓřō çàń ōƥéń. ·øé·øé·øé·øé·ø]",
     "noClaudeLink": "[Ńō Çłàūđé łĩńķ ĩń ţĥĩş şńĩƥƥéţ. ·øé·øé·øé·]",
-    "languageTip": "[Łàńğūàğé: {lang} ·øé·ø]"
+    "languageTip": "[Łàńğūàğé: {lang} ·øé·ø]",
+    "placeholderTip": "[{n} ƥłàçéĥōłđéř ŷōū'řé àşķéđ ţō ƒĩłł ŵĥéń çōƥŷĩńğ: {list} | {n} ƥłàçéĥōłđéřş ŷōū'řé àşķéđ ţō ƒĩłł ŵĥéń çōƥŷĩńğ: {list} ·øé·øé·øé·øé·øé·øé·øé·øé·øé·øé·øé·ø]"
   },
   "snippetsPanel": {
     "snippets": "[Šńĩƥƥéţş ·øé·]",
@@ -1446,7 +1456,9 @@
   },
   "sheetTabBar": {
     "onlyIn": "[ōńłŷ {side} ·øé·]",
-    "hiddenSheetPrefix": "[Ĥĩđđéń şĥééţ —  ·øé·ø]"
+    "hiddenSheetPrefix": "[Ĥĩđđéń şĥééţ —  ·øé·ø]",
+    "onlyInLeft": "[{prefix}ōńłŷ ĩń ţĥé łéƒţ ƒĩłé ·øé·øé·øé·]",
+    "onlyInRight": "[{prefix}ōńłŷ ĩń ţĥé řĩğĥţ ƒĩłé ·øé·øé·øé·]"
   },
   "tray": {
     "open": "[Ōƥéń Đĩƒƒ Ɓřō ·øé·ø]",
