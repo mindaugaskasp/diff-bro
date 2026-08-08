@@ -44,6 +44,24 @@
 .toolbar .group.actions {
   gap: 6px;
 }
+/* A row you can pick up says so before you try. Keyed on the ATTRIBUTE, not a
+   class, so it is right by construction: a secret snippet sets
+   draggable="false" (its body must not reach a diff pane) and correctly keeps
+   the ordinary cursor, and a diff row picks this up the moment it becomes
+   draggable without anyone remembering to add a class. */
+[draggable='true'] {
+  cursor: grab;
+}
+[draggable='true']:active {
+  cursor: grabbing;
+}
+/* The row's own controls are not handles — they are buttons. */
+[draggable='true'] button,
+[draggable='true'] a,
+[draggable='true'] input {
+  cursor: pointer;
+}
+
 /* The neutral workhorse — every action that is not its group's one affirmative
    choice. It must read as pressable AT REST, on three axes: face, keyline, lift.
    Flat + dim is the language :disabled speaks, which is why the toolbar looked

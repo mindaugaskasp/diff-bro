@@ -42,3 +42,31 @@ test('the editor never scrolls at its smallest allowed size', async ({ page }) =
   // And the code area is still worth typing into.
   expect(at.editorH).toBeGreaterThanOrEqual(180)
 })
+
+// The row is a handle, and it has to say so before you try to pick it up. A
+// SECRET snippet is not draggable at all — its body must never reach a diff
+// pane — so it must not offer the handle either.
+test('a draggable row shows a grab handle, a secret one does not', async ({ page }) => {
+  const ordinary = page.locator('.row[draggable="true"]').first()
+  await expect(ordinary).toBeVisible()
+  expect(await ordinary.evaluate((el) => getComputedStyle(el).cursor)).toBe('grab')
+  // Its own buttons stay buttons.
+  expect(
+    await ordinary
+      .locator('button')
+      .first()
+      .evaluate((el) => getComputedStyle(el).cursor)
+  ).toBe('pointer')
+
+  await page.getByRole('button', { name: 'New snippet' }).click()
+  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill('Vault token')
+  await editor.locator('.editor').click()
+  await page.keyboard.type('token=abc123')
+  await editor.getByRole('checkbox', { name: /secret/i }).check()
+  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+
+  const secret = page.locator('.row', { hasText: 'Vault token' }).first()
+  await expect(secret).toHaveAttribute('draggable', 'false')
+  expect(await secret.evaluate((el) => getComputedStyle(el).cursor)).not.toBe('grab')
+})

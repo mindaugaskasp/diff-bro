@@ -117,7 +117,12 @@ useSnippetDiffSync()
       <!-- The comparison column. The tab strip sits OUTSIDE .content so the
            image export, which photographs .content, still frames only the
            diff. -->
-      <div class="pane" data-drop-region="diff">
+      <div class="pane drop-anchor" data-drop-region="diff">
+        <transition name="fade">
+          <div v-if="dragActive && snippetDrag" class="drop-overlay in-pane">
+            <div class="drop-card">{{ $t('app.dropASnippetTo') }}</div>
+          </div>
+        </transition>
         <DiffTabBar />
         <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the
@@ -207,10 +212,8 @@ useSnippetDiffSync()
     <TourOverlay />
 
     <transition name="fade">
-      <div v-if="dragActive" class="drop-overlay">
-        <div class="drop-card">
-          {{ snippetDrag ? $t('app.dropASnippetTo') : $t('app.dropUpToTwo') }}
-        </div>
+      <div v-if="dragActive && !snippetDrag" class="drop-overlay">
+        <div class="drop-card">{{ $t('app.dropUpToTwo') }}</div>
       </div>
     </transition>
   </div>
