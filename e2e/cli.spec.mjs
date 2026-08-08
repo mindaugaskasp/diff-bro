@@ -282,7 +282,7 @@ test('`diffbro backup <path>` seals to the path the terminal named', async () =>
 // its IO handed in (tests/main/cliPrompt); what only a real launch proves is
 // that the draft crosses to the running app through the single-instance lock
 // rather than through argv, and comes out as a snippet.
-test('`diffbro new snippet` saves a piped body under the flags it was given', async () => {
+test('`diffbro create snippet -i` saves a piped body under the flags it was given', async () => {
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
   try {
@@ -291,7 +291,7 @@ test('`diffbro new snippet` saves a piped body under the flags it was given', as
 
     const out = await runCliAnswering(
       userDataDir,
-      ['new', 'snippet', '--name', 'Written from the shell', '--syntax', 'sql'],
+      ['create', 'snippet', '-i', '--name', 'Written from the shell', '--syntax', 'sql'],
       ['select 1;', 'select 2;']
     )
     // The prompts live on stderr; stdout carries the confirmation alone, so a
@@ -319,14 +319,14 @@ test('`diffbro new snippet` saves a piped body under the flags it was given', as
 // Piped in, nobody saw a prompt — so every byte is the body, not an answer.
 // Reading it as answers is how `cat f.sql | diffbro new snippet` used to save
 // the wrong thing under the wrong name.
-test('`diffbro new snippet` takes a piped body and flags without asking', async () => {
+test('`diffbro create snippet -i` takes a piped body and flags without asking', async () => {
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
     const out = await runCliAnswering(
       userDataDir,
-      ['new', 'snippet', '--name', 'Piped schema', '--syntax', 'sql', '--tag', 'db'],
+      ['create', 'snippet', '-i', '--name', 'Piped schema', '--syntax', 'sql', '--tag', 'db'],
       ['create table t (id int);', 'select 1;']
     )
     // No questions were asked, so nothing was written to stderr to ask them.

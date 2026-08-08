@@ -1,13 +1,14 @@
-// The interactive `diffbro new snippet`. The PROMPTING is glue — a synchronous
-// line reader, because the cold CLI path runs before the single-instance lock
-// and cannot await. What is testable is what it builds from the answers.
+// The interactive `diffbro new snippet`. The reading is glue; what is testable
+// is what it builds from the answers, and the shape of the conversation itself
+// — driven with its IO handed in, because a pipe is not a TTY and an e2e
+// feeding stdin can only ever reach the piped path.
 import { describe, expect, it } from 'vitest'
 import {
   SYNTAXES,
   bodyFrom,
+  cliSnippetName,
   draftFrom,
   promptSnippet,
-  readLineFrom,
   syntaxFor,
   termFrom
 } from '../../src/main/cliPrompt'
@@ -26,12 +27,47 @@ describe('syntaxFor', () => {
 
   // An empty answer is the common one — Enter past the question.
   it('falls back to auto-detection for anything it does not recognise', () => {
-    expect(syntaxFor('')).toBe('auto')
-    expect(syntaxFor('   ')).toBe('auto')
-    expect(syntaxFor('klingon')).toBe('auto')
-    expect(syntaxFor('0')).toBe('auto')
-    expect(syntaxFor(String(SYNTAXES.length + 1))).toBe('auto')
-    expect(syntaxFor(undefined)).toBe('auto')
+    for (const said of ['', '   ', 'klingon', '0', String(SYNTAXES.length + 1), undefined]) {
+      expect(syntaxFor(said)).toBe('auto')
+    }
+  })
+})
+
+// The body needs end markers that cannot appear in one by accident, matched
+// only as the WHOLE line. `:wq` and `:x` join `:q` because the spelling invites
+// vim fingers; `:a` abandons.
+describe('bodyFrom', () => {
+  it('collects every line until a save marker', () => {
+    for (const end of [':wq', ':x']) {
+      expect(bodyFrom(['one', 'two', end, 'after'])).toEqual({
+        content: 'one\ntwo',
+        cancelled: false
+      })
+    }
+  })
+
+  it('keeps blank lines, indentation and anything that merely contains :q', () => {
+    const lines = ['select 1;', '', '  indented', 'echo ":wq"', 'a:wq', ':wq']
+    expect(bodyFrom(lines).content).toBe('select 1;\n\n  indented\necho ":wq"\na:wq')
+  })
+
+  it('is not fooled by trailing whitespace around the marker', () => {
+    expect(bodyFrom(['x', '  :wq  ']).content).toBe('x')
+  })
+
+  it('finishes at end of input', () => {
+    expect(bodyFrom(['one', null])).toEqual({ content: 'one', cancelled: false })
+  })
+
+  it('takes an empty body as an empty body, not a cancel', () => {
+    expect(bodyFrom([':wq'])).toEqual({ content: '', cancelled: false })
+  })
+
+  // Vim's meanings: :q quits WITHOUT writing, so it discards here too.
+  it(':q and :a discard, and what was typed before them goes with it', () => {
+    for (const end of [':q', ':a']) {
+      expect(bodyFrom(['typed something', end])).toEqual({ content: '', cancelled: true })
+    }
   })
 })
 
@@ -53,9 +89,13 @@ describe('draftFrom', () => {
     expect(draftFrom({ ...answers, name: '' }).tags).toEqual(['cli'])
   })
 
-  it('trims the name and lets an empty one fall through to the store', () => {
+  it('adds the tags the reader gave, and drops the empty ones', () => {
+    expect(draftFrom({ ...answers, tags: ['db', '  ', 'ops'] }).tags).toEqual(['cli', 'db', 'ops'])
+  })
+
+  it('trims the name, and names an unnamed one after where it came from', () => {
     expect(draftFrom({ ...answers, name: '  spaced  ' }).name).toBe('spaced')
-    expect(draftFrom({ ...answers, name: '   ' }).name).toBe('')
+    expect(draftFrom({ ...answers, name: '   ' }).name).toMatch(/ - cli snippet$/)
   })
 
   // Content is the one thing worth refusing: a snippet with no body is not a
@@ -68,215 +108,6 @@ describe('draftFrom', () => {
   it('keeps the body verbatim, including its blank lines and indentation', () => {
     const content = 'line one\n\n    indented\nlast'
     expect(draftFrom({ ...answers, content }).content).toBe(content)
-  })
-})
-
-// The body is many lines, so it needs a terminator that cannot appear in one by
-// accident. `:q` is the vim spelling and finishes the snippet; Ctrl+C is the
-// universal cancel and is handled as a signal, not a line.
-describe('bodyFrom', () => {
-  it('collects every line until :q', () => {
-    expect(bodyFrom(['one', 'two', ':q', 'after'])).toEqual({
-      content: 'one\ntwo',
-      cancelled: false
-    })
-  })
-
-  it('keeps blank lines, indentation and anything that merely contains :q', () => {
-    const lines = ['select 1;', '', '  indented', 'echo ":q"', 'a:q', ':q']
-    expect(bodyFrom(lines).content).toBe('select 1;\n\n  indented\necho ":q"\na:q')
-  })
-
-  it('is not fooled by trailing whitespace around the terminator', () => {
-    expect(bodyFrom(['x', '  :q  ']).content).toBe('x')
-  })
-
-  // EOF (Ctrl+D) is the other conventional "that is all".
-  it('finishes at end of input', () => {
-    expect(bodyFrom(['one', null])).toEqual({ content: 'one', cancelled: false })
-  })
-
-  it('takes an empty body as an empty body, not a cancel', () => {
-    expect(bodyFrom([':q'])).toEqual({ content: '', cancelled: false })
-  })
-})
-
-// The whole conversation, driven without a terminal. A pipe is NOT a TTY, so an
-// e2e feeding stdin can only ever exercise the piped path — the interactive one
-// is reachable only by handing the IO in.
-describe('promptSnippet — the conversation', () => {
-  const scripted = (answers, { isTty = true } = {}) => {
-    const said = [...answers]
-    const written = []
-    return {
-      io: {
-        isTty,
-        readLine: () => (said.length ? said.shift() : null),
-        readAll: () => said.join('\n'),
-        write: (t) => written.push(t),
-        term: { colour: false, width: 80 }
-      },
-      written,
-      left: said
-    }
-  }
-
-  it('asks for a name, a syntax and a body, in that order', () => {
-    const { io, written } = scripted(['Deploy notes', 'sql', 'select 1;', ':q'])
-    expect(promptSnippet({}, io)).toEqual({
-      name: 'Deploy notes',
-      language: 'sql',
-      content: 'select 1;',
-      tags: ['cli']
-    })
-    const transcript = written.join('')
-    expect(transcript).toContain('Name')
-    expect(transcript).toContain('Syntax')
-    expect(transcript).toContain('Content')
-  })
-
-  // The help was written AFTER ask() returned, so the reader was asked to pick
-  // from a list they could not see yet and it landed on the next prompt.
-  it('shows the syntax list before asking which one', () => {
-    const { io, written } = scripted(['n', 'sql', 'x', ':q'])
-    promptSnippet({}, io)
-    const t = written.join('')
-    expect(t.indexOf('plaintext')).toBeLessThan(t.indexOf('Syntax'))
-    expect(t.indexOf('plaintext')).toBeGreaterThan(t.indexOf('Name'))
-  })
-
-  it('skips a question a flag already answered', () => {
-    const { io, written } = scripted(['select 1;', ':q'])
-    const draft = promptSnippet({ name: 'Prod', syntax: 'sql' }, io)
-    expect(draft.name).toBe('Prod')
-    expect(draft.language).toBe('sql')
-    expect(written.join('')).not.toContain('Name')
-  })
-
-  it('carries --tag alongside the cli tag', () => {
-    const { io } = scripted(['x', ':q'])
-    expect(promptSnippet({ name: 'n', syntax: 'sql', tag: ['db', 'ops'] }, io).tags).toEqual([
-      'cli',
-      'db',
-      'ops'
-    ])
-  })
-
-  // The old version exited on an empty body and took the name and syntax with
-  // it — the two things the reader had already answered.
-  it('asks again for an empty body instead of throwing the answers away', () => {
-    const { io, written } = scripted(['Deploy notes', 'sql', ':q', 'select 1;', ':q'])
-    const draft = promptSnippet({}, io)
-    expect(draft.name).toBe('Deploy notes')
-    expect(draft.content).toBe('select 1;')
-    expect(written.join('')).toContain('Nothing typed')
-  })
-
-  it('gives up after the second empty body rather than looping', () => {
-    const { io } = scripted(['n', 'sql', ':q', ':q'])
-    expect(promptSnippet({}, io)).toBeNull()
-  })
-
-  it(':a abandons it outright, without asking again', () => {
-    const { io, written } = scripted(['n', 'sql', 'typed something', ':a'])
-    expect(promptSnippet({}, io)).toBeNull()
-    expect(written.join('')).not.toContain('Nothing typed')
-  })
-
-  it('takes :wq and :x as well, because the spelling invites vim fingers', () => {
-    for (const end of [':wq', ':x']) {
-      const { io } = scripted(['n', 'sql', 'body', end])
-      expect(promptSnippet({}, io).content).toBe('body')
-    }
-  })
-
-  // Piped: nobody saw a prompt, so nothing is a reply to one.
-  it('reads the whole of stdin as the body when it is not a terminal', () => {
-    const { io, written } = scripted(['line one', 'line two'], { isTty: false })
-    const draft = promptSnippet({ name: 'Piped' }, io)
-    expect(draft.content).toBe('line one\nline two')
-    expect(written).toEqual([])
-  })
-
-  it('refuses an empty pipe rather than saving nothing', () => {
-    const { io } = scripted([''], { isTty: false })
-    expect(promptSnippet({ name: 'Piped' }, io)).toBeNull()
-  })
-})
-
-// A real terminal hands back EAGAIN when no key has been pressed yet — fd 0 is
-// non-blocking there. Treating that as end-of-input made every prompt return
-// instantly, so `diffbro new snippet` in an actual shell asked nothing and
-// exited "Nothing to save." Neither the injected-IO units nor the piped e2e
-// could see it: only a TTY produces EAGAIN.
-describe('readLineFrom — a terminal that has not been typed into yet', () => {
-  const eagain = () =>
-    Object.assign(new Error('resource temporarily unavailable'), { code: 'EAGAIN' })
-
-  it('waits through EAGAIN instead of reading it as end of input', () => {
-    const script = [eagain, eagain, 'h', 'i', '\n']
-    let i = 0
-    const read = (buf) => {
-      const next = script[i++]
-      if (typeof next === 'function') throw next()
-      if (next === undefined) return 0
-      buf.write(next)
-      return 1
-    }
-    expect(readLineFrom(read, () => {})).toBe('hi')
-  })
-
-  it('still treats a real end of input as the end', () => {
-    const read = () => 0
-    expect(readLineFrom(read, () => {})).toBeNull()
-  })
-
-  it('still treats an error that is not EAGAIN as the end', () => {
-    const read = () => {
-      throw Object.assign(new Error('bad fd'), { code: 'EBADF' })
-    }
-    expect(readLineFrom(read, () => {})).toBeNull()
-  })
-
-  // A byte at a time meant every continuation byte of a multi-byte sequence
-  // decoded to U+FFFD on its own: "Café ✓ Привет" saved as replacement
-  // characters, silently, into the store.
-  it('keeps multi-byte characters intact', () => {
-    const bytes = Buffer.from('Café ✓ Привет — 日本\n', 'utf8')
-    let i = 0
-    const read = (buf) => {
-      if (i >= bytes.length) return 0
-      buf[0] = bytes[i++]
-      return 1
-    }
-    expect(readLineFrom(read, () => {})).toBe('Café ✓ Привет — 日本')
-  })
-
-  it('keeps what was typed before the stream ended mid-line', () => {
-    const script = ['a', 'b']
-    let i = 0
-    const read = (buf) => {
-      if (i >= script.length) return 0
-      buf.write(script[i++])
-      return 1
-    }
-    expect(readLineFrom(read, () => {})).toBe('ab')
-  })
-
-  // Blocking the whole process in a tight loop would peg a core while someone
-  // decides what to type.
-  it('sleeps between retries rather than spinning', () => {
-    let slept = 0
-    const script = [eagain, eagain, '\n']
-    let i = 0
-    const read = (buf) => {
-      const next = script[i++]
-      if (typeof next === 'function') throw next()
-      buf.write(next)
-      return 1
-    }
-    readLineFrom(read, () => slept++)
-    expect(slept).toBe(2)
   })
 })
 
@@ -298,5 +129,139 @@ describe('termFrom — which stream is being asked about', () => {
 
   it('falls back to 80 columns when the stream does not say', () => {
     expect(termFrom({}, { isTTY: true }).width).toBe(80)
+  })
+})
+
+describe('promptSnippet — the conversation', () => {
+  const scripted = (answers, { isTty = true } = {}) => {
+    const said = [...answers]
+    const written = []
+    const state = { written, closed: false }
+    state.io = {
+      isTty,
+      ask: async (question) => {
+        written.push(question)
+        return said.length ? said.shift() : null
+      },
+      readAll: async () => said.join('\n'),
+      write: (text) => written.push(text),
+      close: () => (state.closed = true),
+      term: { colour: false, width: 80 }
+    }
+    return state
+  }
+
+  it('asks for a name, a syntax and a body, in that order', async () => {
+    const s = scripted(['Deploy notes', 'sql', 'select 1;', ':wq'])
+    expect(await promptSnippet({}, s.io)).toEqual({
+      name: 'Deploy notes',
+      language: 'sql',
+      content: 'select 1;',
+      tags: ['cli']
+    })
+    const t = s.written.join('')
+    expect(t).toContain('Name')
+    expect(t).toContain('Syntax')
+    expect(t).toContain('Content')
+  })
+
+  // The help was written AFTER the answer came back, so the reader was asked to
+  // pick from a list they could not see yet.
+  it('shows the syntax list before asking which one', async () => {
+    const s = scripted(['n', 'sql', 'x', ':wq'])
+    await promptSnippet({}, s.io)
+    const t = s.written.join('')
+    expect(t.indexOf('plaintext')).toBeLessThan(t.indexOf('Syntax'))
+    expect(t.indexOf('plaintext')).toBeGreaterThan(t.indexOf('Name'))
+  })
+
+  it('skips a question a flag already answered', async () => {
+    const s = scripted(['select 1;', ':wq'])
+    const draft = await promptSnippet({ name: 'Prod', syntax: 'sql' }, s.io)
+    expect(draft.name).toBe('Prod')
+    expect(draft.language).toBe('sql')
+    expect(s.written.join('')).not.toContain('Name')
+  })
+
+  it('carries --tag alongside the cli tag', async () => {
+    const s = scripted(['x', ':wq'])
+    const draft = await promptSnippet({ name: 'n', syntax: 'sql', tag: ['db', 'ops'] }, s.io)
+    expect(draft.tags).toEqual(['cli', 'db', 'ops'])
+  })
+
+  // Typed text is not ASCII. Decoding it a byte at a time turned every
+  // continuation byte into U+FFFD and saved mojibake, silently.
+  it('keeps multi-byte characters exactly as they were typed', async () => {
+    const s = scripted(['Café ✓ Привет', 'sql', 'select — 日本 🎉', ':wq'])
+    const draft = await promptSnippet({}, s.io)
+    expect(draft.name).toBe('Café ✓ Привет')
+    expect(draft.content).toBe('select — 日本 🎉')
+  })
+
+  // The old version exited on an empty body and took the name and syntax with
+  // it — the two things the reader had already answered.
+  it('asks again for an empty body instead of throwing the answers away', async () => {
+    const s = scripted(['Deploy notes', 'sql', ':wq', 'select 1;', ':wq'])
+    const draft = await promptSnippet({}, s.io)
+    expect(draft.name).toBe('Deploy notes')
+    expect(draft.content).toBe('select 1;')
+    expect(s.written.join('')).toContain('Nothing typed')
+  })
+
+  it('gives up after the second empty body rather than looping', async () => {
+    expect(await promptSnippet({}, scripted(['n', 'sql', ':wq', ':wq']).io)).toBeNull()
+  })
+
+  it(':q discards outright, without asking again', async () => {
+    const s = scripted(['n', 'sql', 'typed something', ':q'])
+    expect(await promptSnippet({}, s.io)).toBeNull()
+    expect(s.written.join('')).not.toContain('Nothing typed')
+  })
+
+  // Ctrl+C and end-of-input both surface as a null answer.
+  it('gives up when an answer comes back null', async () => {
+    expect(await promptSnippet({}, scripted([]).io)).toBeNull()
+    expect(await promptSnippet({}, scripted(['a name']).io)).toBeNull()
+  })
+
+  it('always closes the reader, however it ended', async () => {
+    const done = scripted(['n', 'sql', 'x', ':wq'])
+    await promptSnippet({}, done.io)
+    expect(done.closed).toBe(true)
+
+    const gaveUp = scripted([])
+    await promptSnippet({}, gaveUp.io)
+    expect(gaveUp.closed).toBe(true)
+  })
+
+  // Piped: nobody saw a prompt, so nothing is a reply to one.
+  it('reads the whole of stdin as the body when it is not a terminal', async () => {
+    const s = scripted(['line one', 'line two'], { isTty: false })
+    const draft = await promptSnippet({ name: 'Piped' }, s.io)
+    expect(draft.content).toBe('line one\nline two')
+    expect(s.written).toEqual([])
+  })
+
+  it('refuses an empty pipe rather than saving nothing', async () => {
+    expect(await promptSnippet({ name: 'Piped' }, scripted([''], { isTty: false }).io)).toBeNull()
+  })
+})
+
+// An unnamed snippet made from the terminal says so, and when. The store's own
+// fallback is "Untitled <date>", which loses where it came from.
+describe('cliSnippetName', () => {
+  const at = new Date(2026, 7, 8, 9, 5)
+
+  it('is a timestamp and where it came from', () => {
+    expect(cliSnippetName(at)).toBe('2026-08-08 09:05 - cli snippet')
+  })
+
+  it('is what an empty name falls back to', () => {
+    const draft = draftFrom({ name: '   ', content: 'x', now: at })
+    expect(draft.name).toBe('2026-08-08 09:05 - cli snippet')
+  })
+
+  it('never displaces a name that was given', () => {
+    expect(draftFrom({ name: 'Mine', content: 'x', now: at }).name).toBe('Mine')
   })
 })

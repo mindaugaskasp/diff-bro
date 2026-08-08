@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { isWindows } from '../keys'
 import BaseDialog from './BaseDialog.vue'
@@ -39,7 +39,16 @@ function toggleDailyTheme(on) {
   settings.setRotateThemeDaily(on)
   settings.resolveActiveTheme()
 }
-const tab = ref(TABS.some((t) => t.id === ui.settingsTab) ? ui.settingsTab : 'appearance')
+const known = (id) => TABS.some((t) => t.id === id)
+const tab = ref(known(ui.settingsTab) ? ui.settingsTab : 'appearance')
+// The dialog stays mounted while it is open, so reading the store once at setup
+// meant asking for a pane from an ALREADY OPEN Settings did nothing.
+watch(
+  () => ui.settingsTab,
+  (id) => {
+    if (known(id)) tab.value = id
+  }
+)
 
 function close() {
   ui.showSettingsDialog = false

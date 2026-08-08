@@ -88,9 +88,11 @@ export function cliWords(argv) {
 // stripped every dash-prefixed argument, ours included, by the time a verb runs.
 export function afterVerb(argv) {
   const words = (argv ?? []).filter((a) => typeof a === 'string')
-  const at = words.findIndex((w, i) => w === 'new' && words[i + 1] === 'snippet')
+  const at = words.findIndex((w, i) => w === 'create' && words[i + 1] === 'snippet')
   return at === -1 ? [] : words.slice(at + 2)
 }
+
+const isInteractive = (a) => a === '--interactive' || a === '-i'
 
 export function parseNewSnippet(words) {
   const flags = {}
@@ -114,9 +116,17 @@ const VERBS = {
   difftool: (rest, resolve) => parseCompare(rest, resolve, true),
   open: (rest, resolve) => parseOpen(rest, resolve),
   backup: (rest, resolve) => parseBackup(rest, resolve),
-  create: (rest) =>
-    rest[0] === 'snippet' ? { command: { name: 'create-snippet' }, error: null } : null,
-  new: (rest, _resolve, argv) => (rest[0] === 'snippet' ? parseNewSnippet(afterVerb(argv)) : null),
+  // One verb. `--interactive` asks in the terminal and saves; without it the
+  // empty editor opens, as it always did. Two near-identical verbs sitting
+  // side by side in --help read as a mistake.
+  create: (rest, _resolve, argv) => {
+    if (rest[0] !== 'snippet') return null
+    const tail = afterVerb(argv)
+    return tail.some(isInteractive)
+      ? parseNewSnippet(tail.filter((a) => !isInteractive(a)))
+      : { command: { name: 'create-snippet' }, error: null }
+  },
+
   clipboard: (rest) =>
     rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })

@@ -34,15 +34,9 @@ export const COMMANDS = [
   },
   {
     topic: 'create',
-    usage: 'diffbro create snippet',
+    usage: 'diffbro create snippet [--interactive]',
     summaryKey: 'cli.create.summary',
     detailKey: 'cli.create.detail'
-  },
-  {
-    topic: 'new',
-    usage: 'diffbro new snippet',
-    summaryKey: 'cli.new.summary',
-    detailKey: 'cli.new.detail'
   },
   {
     topic: 'clipboard',

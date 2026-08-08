@@ -1,13 +1,12 @@
 // `diffbro new snippet`, asked for a line at a time in the terminal.
 //
-// The reads are SYNCHRONOUS on purpose. This runs in the cold CLI path, before
-// `requestSingleInstanceLock` decides whether we are the app or a messenger for
-// one already running — the same slot `help` prints from — and that path cannot
-// await without restructuring the launch around it.
+// It runs in the cold CLI path, before `requestSingleInstanceLock` decides
+// whether we are the app or a messenger for one already running — the same slot
+// `help` prints from — so the launch is sequenced around it.
 //
 // Prompts go to STDERR. stdout is for output, so `diffbro new snippet > out`
 // must not capture the questions.
-import { readSync } from 'node:fs'
+import { createInterface } from 'node:readline/promises'
 import { handedOver, paint, syntaxHelp } from './cliTerm'
 
 // Offered by number as well as name, because typing "mermaid" correctly at a
@@ -37,12 +36,17 @@ export function syntaxFor(answer) {
   return Number.isInteger(n) && n >= 1 && n <= SYNTAXES.length ? SYNTAXES[n - 1] : 'auto'
 }
 
-// End markers that cannot appear in a body by accident, matched only as the
-// WHOLE line. `:wq` and `:x` as well as `:q`, because the spelling invites vim
-// muscle memory and that is what it types; `:a` abandons, which is the ONLY way
-// out — a synchronous read cannot be interrupted by a signal handler.
-export const BODY_SAVE = [':q', ':wq', ':x']
-export const BODY_ABORT = ':a'
+// Vim's own meanings, because the spelling borrows vim's muscle memory: :wq
+// and :x WRITE and quit, :q quits WITHOUT writing. Reading :q as save was
+// backwards for exactly the readers the notation was chosen for. Matched only
+// as a whole line, so `echo ":wq"` stays content.
+//
+// Ctrl+C is NOT offered:
+// Electron's main process swallows SIGINT, and neither a process handler nor
+// readline's own SIGINT event settles the pending question — the command hangs.
+// Ctrl+D (end of input) is the signal-free way out, and it works.
+export const BODY_SAVE = [':wq', ':x']
+export const BODY_ABORT = [':q', ':a']
 
 /**
  * @param {Array<string|null>} lines  as read; null is end of input
@@ -53,11 +57,21 @@ export function bodyFrom(lines) {
   for (const line of lines) {
     if (line === null) break
     const said = line.trim()
-    if (said === BODY_ABORT) return { content: '', cancelled: true }
+    if (BODY_ABORT.includes(said)) return { content: '', cancelled: true }
     if (BODY_SAVE.includes(said)) break
     out.push(line)
   }
   return { content: out.join('\n'), cancelled: false }
+}
+
+// An unnamed snippet from the terminal says so, and when. The store's own
+// fallback is "Untitled <date>", which loses where it came from.
+export const cliSnippetName = (now = new Date()) => {
+  const pad = (n) => String(n).padStart(2, '0')
+  const stamp =
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+    `${pad(now.getHours())}:${pad(now.getMinutes())}`
+  return `${stamp} - cli snippet`
 }
 
 /**
@@ -65,11 +79,11 @@ export function bodyFrom(lines) {
  * @param {{ name?: string, syntax?: string, content?: string, tags?: string[] }} answers
  * @returns {{ name: string, language: string, content: string, tags: string[] }|null}
  */
-export function draftFrom({ name, syntax, content, tags = [] }) {
+export function draftFrom({ name, syntax, content, tags = [], now = new Date() }) {
   const body = String(content ?? '')
   if (!body.trim()) return null
   return {
-    name: String(name ?? '').trim(),
+    name: String(name ?? '').trim() || cliSnippetName(now),
     language: syntaxFor(syntax),
     content: body,
     // The point of the ask: a snippet made from the terminal stays findable as
@@ -88,152 +102,126 @@ export const termFrom = (env = process.env, stream = process.stderr) => ({
   width: stream.columns || 80
 })
 
-const BUF = Buffer.alloc(1)
-
-// A real terminal leaves fd 0 NON-BLOCKING, so readSync throws EAGAIN whenever
-// nobody has typed anything yet. Reading that as end-of-input is what made
-// every prompt return instantly in an actual shell: the questions printed, the
-// answers were all null, and the command exited "Nothing to save."
-//
-// Waiting is therefore the normal case, not the exception. Atomics.wait is the
-// only true synchronous sleep — setTimeout cannot help a loop that never yields.
-const SLEEP = new Int32Array(new SharedArrayBuffer(4))
-const nap = () => Atomics.wait(SLEEP, 0, 0, 15)
-
 /**
- * One line, a byte at a time — the only way to stop at the newline without
- * swallowing what follows it, since the content prompt reads many lines from
- * the same stream.
- * @param {(buf: Buffer) => number} read  bytes into buf; throws EAGAIN when idle
- * @param {() => void} wait
- * @returns {string|null} null at end of input
+ * Everything the conversation touches outside itself, injectable for tests.
+ *
+ * `readline` rather than a synchronous read of fd 0. The sync version could not
+ * be interrupted: Electron installs its own SIGINT handler that posts to the UI
+ * thread, and that thread was the one blocked in the read — so Ctrl+C at a
+ * prompt hung the process until it was killed. readline turns the event loop,
+ * so the signal lands; it also brings the line editing the raw alternative
+ * would have cost.
+ * @returns {{ isTty: boolean, ask: (q: string) => Promise<string|null>,
+ *             readAll: () => Promise<string>, write: (t: string) => void,
+ *             close: () => void, term: { colour: boolean, width: number } }}
  */
-// One byte, or null at end of input. EAGAIN is not an error here — a terminal
-// throws it whenever nobody has typed yet — so it waits and asks again.
-function nextByte(read, wait) {
-  for (;;) {
-    try {
-      return read(BUF) ? BUF[0] : null
-    } catch (e) {
-      // Anything but EAGAIN is a closed stdin, or a pipe that went away.
-      if (e?.code !== 'EAGAIN') return null
-      wait()
-    }
+export function defaultIo() {
+  let rl = null
+  let cancelled = false
+  // Built on FIRST ASK, never up front: a piped run asks nothing, and an
+  // interface created there consumes stdin out from under readAll and keeps the
+  // event loop alive — the command never exited.
+  // An AbortController, not just rl.close(): a pending question() never settles
+  // when the interface closes under it, so Ctrl+C hung the command instead of
+  // cancelling it. Aborting is what rejects the promise we are waiting on.
+  const stop = new AbortController()
+  const reader = () => {
+    if (rl) return rl
+    rl = createInterface({ input: process.stdin, output: process.stderr, terminal: true })
+    rl.on('SIGINT', () => {
+      cancelled = true
+      stop.abort()
+      rl.close()
+    })
+    return rl
+  }
+  return {
+    isTty: !!process.stdin.isTTY,
+    // null means "give up" — end of input, or Ctrl+C.
+    ask: async (question) => {
+      if (cancelled) return null
+      const answer = await reader()
+        .question(question, { signal: stop.signal })
+        .catch(() => null)
+      return cancelled ? null : answer
+    },
+    readAll: async () => {
+      const chunks = []
+      for await (const chunk of process.stdin) chunks.push(chunk)
+      return Buffer.concat(chunks).toString('utf8').replace(/\n$/, '')
+    },
+    // stdout is for output, so the questions go to stderr — a redirect must
+    // capture the confirmation and not the conversation.
+    write: (text) => process.stderr.write(text),
+    close: () => rl?.close(),
+    term: termFrom()
   }
 }
 
-export function readLineFrom(read, wait) {
-  // BYTES, decoded once at the newline. Decoding each byte on its own turned
-  // every continuation byte of a multi-byte sequence into U+FFFD, so "Café" was
-  // saved as replacement characters — silently.
-  const bytes = []
-  for (;;) {
-    const byte = nextByte(read, wait)
-    if (byte === null) return bytes.length ? Buffer.from(bytes).toString('utf8') : null
-    if (byte === 0x0a) return Buffer.from(bytes).toString('utf8')
-    if (byte !== 0x0d) bytes.push(byte)
-  }
-}
-
-const readLine = () => readLineFrom((buf) => readSync(0, buf, 0, 1, null), nap)
-
-// Everything stdin has, for the piped case.
-function readAll() {
-  const chunks = []
-  for (;;) {
-    const buf = Buffer.alloc(65536)
-    let got
-    try {
-      got = readSync(0, buf, 0, buf.length, null)
-    } catch (e) {
-      if (e?.code === 'EAGAIN') {
-        nap()
-        continue
-      }
-      break
-    }
-    if (!got) break
-    chunks.push(buf.subarray(0, got))
-  }
-  return Buffer.concat(chunks).toString('utf8').replace(/\n$/, '')
-}
-
-/**
- * Everything the conversation touches outside itself. Injectable because a
- * pipe is not a TTY: an e2e driving stdin can only ever exercise the PIPED
- * path, so the interactive one is only testable if its IO can be handed in.
- * @returns {{ isTty: boolean, readLine: () => string|null, readAll: () => string,
- *             write: (text: string) => void, term: { colour: boolean, width: number } }}
- */
-export const defaultIo = () => ({
-  isTty: !!process.stdin.isTTY,
-  readLine,
-  readAll,
-  // stdout is for output, so the questions go to stderr — a redirect must
-  // capture the confirmation and not the conversation.
-  write: (text) => process.stderr.write(text),
-  term: termFrom()
-})
-
-function ask(io, label, hint) {
+async function ask(io, label, hint) {
   const { term } = io
-  io.write(`${paint('cyan', label, term)} ${paint('dim', hint, term)} ${paint('dim', '>', term)} `)
-  return io.readLine()
+  const q = `${paint('cyan', label, term)} ${paint('dim', hint, term)} ${paint('dim', '>', term)} `
+  return io.ask(q)
 }
 
 // Asked only for what the flags did not already answer.
-function collect(io, flags) {
-  const name = flags.name ?? ask(io, 'Name', '(optional)')
+async function collect(io, flags) {
+  const name = flags.name ?? (await ask(io, 'Name', '(optional)'))
   if (name === null) return null
   let syntax = flags.syntax
   if (syntax === undefined) {
-    // Before the question, not after it: ask() blocks, so writing the list
-    // afterwards asked the reader to pick from one they could not see yet.
+    // Before the question, not after it: the reader has to see the list they
+    // are being asked to pick from.
     io.write(`${syntaxHelp(SYNTAXES, io.term.width, io.term).join('\n')}\n`)
-    syntax = ask(io, 'Syntax', `[1-${SYNTAXES.length}, name, or enter to detect]`)
+    syntax = await ask(io, 'Syntax', `[1-${SYNTAXES.length}, name, or enter to detect]`)
+    if (syntax === null) return null
   }
   return { name, syntax }
 }
 
-function readBody(io) {
-  const how = `— ${BODY_SAVE.join(' / ')} saves · ${BODY_ABORT} abandons`
+async function readBody(io) {
+  const how = `— ${BODY_SAVE.join(' / ')} saves · ${BODY_ABORT.join(' / ')} discards · ^D quits`
   io.write(`\n${paint('cyan', 'Content', io.term)} ${paint('dim', how, io.term)}\n`)
   const lines = []
   for (;;) {
-    const line = io.readLine()
+    const line = await io.ask('')
     lines.push(line)
     const said = line?.trim()
-    if (line === null || said === BODY_ABORT || BODY_SAVE.includes(said)) break
+    if (line === null || BODY_ABORT.includes(said) || BODY_SAVE.includes(said)) break
   }
   return bodyFrom(lines)
 }
 
 /**
- * The whole interaction. Returns null when the reader abandoned it, or gave an
- * empty body twice.
+ * The whole interaction. Returns null when the reader abandoned it, cancelled
+ * with Ctrl+C, or gave an empty body twice.
  * @param {{ name?: string, syntax?: string, tag?: string[] }} [flags]
- * @returns {{ name: string, language: string, content: string, tags: string[] }|null}
+ * @returns {Promise<object|null>}
  */
-export function promptSnippet(flags = {}, io = defaultIo()) {
-  // Not a terminal: the whole of stdin is the body. Piped input has seen no
-  // prompt, so reading it as answers is how `cat f.sql | diffbro …` saved the
-  // wrong thing.
-  if (!io.isTty) return draftFrom({ ...flags, content: io.readAll(), tags: flags.tag })
+export async function promptSnippet(flags = {}, io = defaultIo()) {
+  try {
+    // Not a terminal: the whole of stdin is the body. Piped input has seen no
+    // prompt, so reading it as answers is how `cat f.sql | diffbro …` saved the
+    // wrong thing.
+    if (!io.isTty) return draftFrom({ ...flags, content: await io.readAll(), tags: flags.tag })
 
-  const asked = collect(io, flags)
-  if (!asked) return null
-  // Twice, then give up: an empty body used to exit and take the name and
-  // syntax already typed with it.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const { content, cancelled } = readBody(io)
-    if (cancelled) return null
-    const draft = draftFrom({ ...asked, content, tags: flags.tag })
-    if (draft) return draft
-    if (attempt === 0) {
-      io.write(paint('amber', '  Nothing typed — try again, or :a to abandon.\n', io.term))
+    const asked = await collect(io, flags)
+    if (!asked) return null
+    // Twice, then give up: an empty body used to exit and take the name and
+    // syntax already typed with it.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { content, cancelled } = await readBody(io)
+      if (cancelled) return null
+      const draft = draftFrom({ ...asked, content, tags: flags.tag })
+      if (draft) return draft
+      if (attempt === 0) {
+        io.write(paint('amber', '  Nothing typed — try again, or :q to discard.\n', io.term))
+      }
     }
+    return null
+  } finally {
+    io.close?.()
   }
-  return null
 }
 
 // Asked of STDOUT, because that is where it is written: judging by stderr meant

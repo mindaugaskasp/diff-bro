@@ -101,3 +101,17 @@ test('the Terminal menu opens Settings on the pane that documents the CLI', asyn
   // Each one is explained, not just listed.
   expect(await page.locator('.cli-list dd').count()).toBe(usages.length)
 })
+
+// The dialog stays mounted while it is open, so the pane was read into a ref
+// once at setup and never again — asking for the Terminal pane from an ALREADY
+// OPEN Settings did nothing at all. The branch's own test only covered opening
+// it from closed, which is the case that happened to work.
+test('the Terminal menu switches panes when Settings is already open', async ({ page }) => {
+  await openSettings(page)
+  await page.locator('.settings-nav .nav-item', { hasText: 'Storage' }).click()
+  await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Storage')
+
+  await openMenu(page, 'Terminal', 'Commands & Setup')
+  await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Terminal')
+  await expect(page.locator('.cli-list dt code').first()).toBeVisible()
+})

@@ -1544,8 +1544,8 @@
       "detail": "Backs up your snippets, saved diffs, settings and sharing\nidentity to a zip file at the path you name.\n\nDiff Bro asks for a passphrase first — the archive is encrypted with it,\nwhich is what makes the backup restorable on another machine. Lose the\npassphrase and the archive cannot be opened. Restore it from\nSecurity → Configuration → Restore."
     },
     "create": {
-      "summary": "open a new snippet in the editor",
-      "detail": "Raises the main window with an empty snippet in the editor.\n\nThis is the full editor, not the quick look-up bar, so it has the name\nfield, syntax picker and tags."
+      "summary": "open a new snippet, or write one at the prompt",
+      "detail": "Raises the main window with an empty snippet in the editor — the full one, with the name field, syntax picker and tags.\n\nWith --interactive (or -i) it asks instead, in the terminal: a name, a syntax and the body, then saves the snippet tagged \"cli\" so it is findable as one afterwards. An unnamed one is named after the time it was made.\n\nThe body takes as many lines as you like. :wq or :x writes it, :q or :a discards it, and Ctrl+D quits — vim's own meanings, and a line that merely contains one of them is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
     },
     "help": {
       "summary": "list the commands, or explain one",
@@ -1555,10 +1555,6 @@
     "clipboard": {
       "summary": "save the clipboard as a snippet",
       "detail": "Saves whatever is on the clipboard as a snippet named\nafter the date and time it was saved, guesses the syntax from the content, and\nopens it in the editor so it can be renamed or tagged.\n\nAn empty clipboard saves nothing and says so."
-    },
-    "new": {
-      "summary": "write a snippet without leaving the terminal",
-      "detail": "Asks for a name, a syntax and the body, then hands the snippet to Diff Bro tagged \"cli\" so it is findable as one afterwards.\n\nThe body takes as many lines as you like. Typing :q, :wq or :x saves it and :a abandons it — a line that merely contains one of those is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name or a number from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
     }
   }
 }
