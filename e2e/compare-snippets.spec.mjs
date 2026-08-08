@@ -137,6 +137,13 @@ test('one side loaded shows a filled slot and an empty one, in pane order', asyn
   expect(seen.name).toBe(DIAGRAM)
   expect(seen.rim).toBe('dashed')
   await expect(slots.locator('.wait-label')).toContainText('Right')
+
+  // The plus and the dashed rim advertise a click, so the slot has to accept
+  // one — and be reachable by keyboard, which the div it started as never was.
+  const open = slots.locator('.wait-slot.open')
+  expect(await open.evaluate((el) => el.tagName)).toBe('BUTTON')
+  expect(await open.evaluate((el) => getComputedStyle(el).cursor)).toBe('pointer')
+  await expect(open).toHaveAttribute('aria-label', /Choose the Right file/)
 })
 
 // The hover preview is anchored to the row you start the drag from, so it sat

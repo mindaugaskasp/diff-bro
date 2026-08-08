@@ -1332,9 +1332,12 @@
     "waiting": {
       "loaded": "Loaded",
       "dropSide": "Drop or choose the {side} file",
-      "hint": "Drag a file or a snippet here, or use the field above."
+      "hint": "Drag a file or a snippet here, or use the field above.",
+      "chooseSide": "Choose the {side} file"
     },
-    "dropADiffTo": "Drop to open this comparison"
+    "dropADiffTo": "Drop to open this comparison",
+    "swapTip": "Swap the left and right files ({mod}+Shift+S)",
+    "swapSides": "Swap sides"
   },
   "tabCloseDialog": {
     "closeComparisons": "Close comparisons?",

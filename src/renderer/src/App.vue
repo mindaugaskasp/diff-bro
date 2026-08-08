@@ -49,6 +49,8 @@ const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
 const showStatusBand = computed(() => hasStatusBand(store))
+// One side loaded: which one is still wanted.
+const missingSide = computed(() => (store.left ? 'right' : 'left'))
 const { runFromMenu, runCli } = useCommands()
 
 settings.initTheme()
@@ -154,8 +156,8 @@ useSnippetDiffSync()
             </div>
             <button
               class="btn swap"
-              :data-tip="`Swap the left and right files (${MOD}+Shift+S)`"
-              aria-label="Swap sides"
+              :data-tip="$t('app.swapTip', { mod: MOD })"
+              :aria-label="$t('app.swapSides')"
               :disabled="!store.ready"
               @click="store.swap"
             >
@@ -187,7 +189,7 @@ useSnippetDiffSync()
           <WaitingForSecond
             v-else-if="store.left || store.right"
             :name="(store.left || store.right).name"
-            :missing="store.left ? 'right' : 'left'"
+            :missing="missingSide"
           />
           <div v-else class="empty">
             <p class="empty-title">{{ $t('app.chooseTwoFiles') }}</p>

@@ -23,11 +23,23 @@
   background: var(--bg-raised);
   box-shadow: var(--shadow-1);
 }
-/* Dashed, because the slot is a place for something rather than a thing. */
+/* Dashed, because the slot is a place for something rather than a thing. It IS
+   clickable — the plus said so before it was, which is the whole complaint. */
 .wait-slot.open {
   border: 2px dashed var(--accent);
   background: none;
   color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+.wait-slot.open:hover,
+.wait-slot.open:focus-visible {
+  background: var(--btn-face);
+  color: var(--text);
+}
+.wait-slot.open:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 .wait-slot.open .app-icon {
   width: 20px;
