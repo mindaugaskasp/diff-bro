@@ -44,6 +44,25 @@
 .toolbar .group.actions {
   gap: 6px;
 }
+/* .btn-icon is flat by design for ROW actions — a plate on every one would make
+   the sidebar heavy. A section header's "+" is not a row action though; it is
+   the section's one affirmative action, and it inherited the row treatment by
+   sharing the class. At --text-dim it scored 2.82 on sepia and 2.92 on nord
+   against the header band, under the 3:1 floor. --text clears it on all 14
+   (worst 6.30, nord). Ink only: the flat shape is still right here. */
+.actions-slot .btn-icon {
+  color: var(--text);
+}
+/* An EMPTY section has no rows to compete with, so it can afford the real
+   button — which is the cold-start case: open the app, want to add something. */
+.empty-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3);
+}
+
 /* A row you can pick up says so before you try. Keyed on the ATTRIBUTE, not a
    class, so it is right by construction: a secret snippet sets
    draggable="false" (its body must not reach a diff pane) and correctly keeps

@@ -742,7 +742,10 @@
     "savedDiffs": "[Šàṽéđ đĩƒƒş ·øé·]",
     "newComparisonFromPastedText": "[Ńéŵ çōɱƥàřĩşōń ƒřōɱ ƥàşţéđ ţéẋţ ·øé·øé·øé·ø]",
     "empty": "[Éɱƥţŷ ·ø]",
-    "noSavedDiffsMatchTry": "[Ńō şàṽéđ đĩƒƒş ɱàţçĥ — ţřŷ řéɱōṽĩńğ à ƒĩłţéř. ·øé·øé·øé·øé·ø]"
+    "noSavedDiffsMatchTry": "[Ńō şàṽéđ đĩƒƒş ɱàţçĥ — ţřŷ řéɱōṽĩńğ à ƒĩłţéř. ·øé·øé·øé·øé·ø]",
+    "newComparisonCta": "[Ńéŵ çōɱƥàřĩşōń ·øé·øé]",
+    "newComparisonTip": "[Ńéŵ çōɱƥàřĩşōń, řéàđŷ ƒōř ƥàşţéđ ţéẋţ ·øé·øé·øé·øé·]",
+    "closeOneFirst": "[{reason} — çłōşé ōńé ƒĩřşţ ·øé·øé·ø]"
   },
   "settingsDialog": {
     "settings": "[Šéţţĩńğş ·øé·]",
@@ -883,7 +886,8 @@
     "export": "[Éẋƥōřţ ·øé]",
     "import": "[Ĩɱƥōřţ ·øé]",
     "empty": "[Éɱƥţŷ ·ø]",
-    "noSnippetsMatchTryRemoving": "[Ńō şńĩƥƥéţş ɱàţçĥ — ţřŷ řéɱōṽĩńğ à ƒĩłţéř. ·øé·øé·øé·øé·ø]"
+    "noSnippetsMatchTryRemoving": "[Ńō şńĩƥƥéţş ɱàţçĥ — ţřŷ řéɱōṽĩńğ à ƒĩłţéř. ·øé·øé·øé·øé·ø]",
+    "newSnippetCta": "[Ńéŵ şńĩƥƥéţ ·øé·]"
   },
   "spreadsheetDiffViewer": {
     "customTolerance": "[Çūşţōɱ ţōłéřàńçé ·øé·øé]",

@@ -742,7 +742,10 @@
     "savedDiffs": "Saved diffs",
     "newComparisonFromPastedText": "New comparison from pasted text",
     "empty": "Empty",
-    "noSavedDiffsMatchTry": "No saved diffs match — try removing a filter."
+    "noSavedDiffsMatchTry": "No saved diffs match — try removing a filter.",
+    "newComparisonCta": "New comparison",
+    "newComparisonTip": "New comparison, ready for pasted text",
+    "closeOneFirst": "{reason} — close one first"
   },
   "settingsDialog": {
     "settings": "Settings",
@@ -883,7 +886,8 @@
     "export": "Export",
     "import": "Import",
     "empty": "Empty",
-    "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter."
+    "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter.",
+    "newSnippetCta": "New snippet"
   },
   "spreadsheetDiffViewer": {
     "customTolerance": "Custom tolerance",

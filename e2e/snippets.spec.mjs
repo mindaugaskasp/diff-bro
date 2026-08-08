@@ -70,3 +70,29 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
   await expect(secret).toHaveAttribute('draggable', 'false')
   expect(await secret.evaluate((el) => getComputedStyle(el).cursor)).not.toBe('grab')
 })
+
+// The section header's "+" is the section's one affirmative action, but it
+// inherited .btn-icon's flat ROW treatment: at --text-dim it scored 2.82 on
+// sepia and 2.92 on nord against the header band, under the 3:1 floor. Row
+// actions stay dim — a plate on every one would make the sidebar heavy.
+test('the section add button is inked, and row actions are not', async ({ page }) => {
+  const add = page.locator('.actions-slot .btn-icon').first()
+  await expect(add).toBeVisible()
+  const [headerInk, rowInk] = await Promise.all([
+    add.evaluate((el) => getComputedStyle(el).color),
+    page
+      .locator('.row .row-btn')
+      .first()
+      .evaluate((el) => getComputedStyle(el).color)
+  ])
+  expect(headerInk).not.toBe(rowInk)
+})
+
+// An empty section has no rows to compete with, so it carries the real button —
+// the cold-start case: open the app, want to add something.
+test('an empty section offers a real button, a populated one does not', async ({ page }) => {
+  // Saved diffs starts empty; Snippets ships seeded examples.
+  await expect(page.locator('.empty-cta .btn-primary')).toHaveCount(1)
+  const snippets = page.locator('.sidebar-section', { hasText: 'Snippets' }).first()
+  await expect(snippets.locator('.empty-cta')).toHaveCount(0)
+})

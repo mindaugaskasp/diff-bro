@@ -118,9 +118,12 @@ function newSnippet() {
     </SectionHeader>
 
     <div v-show="sectionOpen" class="section-body">
-      <p v-if="!store.entries.length" class="empty">
-        <AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}
-      </p>
+      <div v-if="!store.entries.length" class="empty empty-cta">
+        <p><AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}</p>
+        <button class="btn btn-primary btn-sm" @click.stop="newSnippet">
+          <AppIcon name="plus" /> {{ $t('snippetsPanel.newSnippetCta') }}
+        </button>
+      </div>
 
       <ul v-if="store.entries.length" class="rows">
         <li v-if="!rows.length" class="empty small">
