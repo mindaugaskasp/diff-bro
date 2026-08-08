@@ -52,3 +52,48 @@ describe('useWindowFileDrop — where a snippet may be dropped', () => {
     expect(s.dropSnippets).not.toHaveBeenCalled()
   })
 })
+
+// Gating dragENTER was wrong twice over: every snippet drag starts in the
+// sidebar, so the enter never fired, while dragleave still decremented — the
+// depth counter went unbalanced and the overlay could never latch on. Where the
+// pointer IS belongs to dragover, which fires continuously.
+describe('useWindowFileDrop — the overlay follows the pointer', () => {
+  const fileDrag = (region) => ({ dataTransfer: { types: ['Files'] }, target: targetIn(region) })
+
+  it('lights up once a snippet reaches the comparison column', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    drop.onDragEnter(snippetDrop(false)) // entering over the sidebar
+    expect(drop.active.value).toBe(false)
+    drop.onDragOver(snippetDrop(true)) // now over the pane
+    expect(drop.active.value).toBe(true)
+    expect(drop.snippetDrag.value).toBe(true)
+  })
+
+  it('goes dark again when the snippet leaves the column', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    drop.onDragEnter(snippetDrop(false))
+    drop.onDragOver(snippetDrop(true))
+    drop.onDragOver(snippetDrop(false))
+    expect(drop.active.value).toBe(false)
+  })
+
+  it('keeps the depth counter balanced, so a second drag still works', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    for (const pass of [1, 2]) {
+      drop.onDragEnter(snippetDrop(false))
+      drop.onDragOver(snippetDrop(true))
+      expect(drop.active.value, `pass ${pass}`).toBe(true)
+      drop.onDragLeave()
+      expect(drop.active.value, `pass ${pass} after leave`).toBe(false)
+    }
+  })
+
+  // Files are a different gesture: dropping one on the app has always meant
+  // "compare this", wherever it lands.
+  it('lights up for a file anywhere in the window', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    drop.onDragEnter(fileDrag(false))
+    expect(drop.active.value).toBe(true)
+    expect(drop.snippetDrag.value).toBe(false)
+  })
+})

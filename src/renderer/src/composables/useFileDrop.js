@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { dragIdsFrom } from '../utils/snippetSource'
 import { isSnippetDragType } from './useSnippetDrag'
 import { useShareStore } from '../features/share'
@@ -34,30 +34,40 @@ const inDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
 // flicker; `suppressed` stands it down while a dialog handles its own drops.
 export function useWindowFileDrop(store, suppressed) {
   const depth = ref(0)
-  const active = ref(false)
+  const inWindow = ref(false)
   // Which flavour is in flight, so the overlay can say what will happen.
   const snippetDrag = ref(false)
+  const overDiff = ref(false)
+  // A file may land anywhere; a snippet only counts over the comparison column,
+  // so the overlay must not promise "drop to compare" outside it.
+  const active = computed(() => inWindow.value && (!snippetDrag.value || overDiff.value))
 
+  // Never gate this: a snippet drag STARTS in the sidebar, so an enter skipped
+  // there while dragleave still decremented unbalanced the counter.
   function onDragEnter(e) {
     if (!carries(e) || suppressed.value) return
-    // The overlay promises "drop to compare", so it must not light up where a
-    // drop would be refused.
-    if (isSnippetDragType(e.dataTransfer) && !inDiffRegion(e)) return
     depth.value += 1
-    active.value = true
+    inWindow.value = true
     snippetDrag.value = isSnippetDragType(e.dataTransfer)
+  }
+  // Where the pointer IS belongs to dragover: it fires continuously with the
+  // element actually under it, which dragenter does not.
+  const onDragOver = (e) => {
+    if (snippetDrag.value) overDiff.value = inDiffRegion(e)
   }
   function onDragLeave() {
     depth.value = Math.max(0, depth.value - 1)
     if (depth.value === 0) {
-      active.value = false
+      inWindow.value = false
       snippetDrag.value = false
+      overDiff.value = false
     }
   }
   async function onDrop(e) {
     depth.value = 0
-    active.value = false
+    inWindow.value = false
     snippetDrag.value = false
+    overDiff.value = false
     if (suppressed.value) return
     const ids = snippetIds(e)
     if (ids.length) {
@@ -80,5 +90,5 @@ export function useWindowFileDrop(store, suppressed) {
     return store.dropFiles(paths, targetSide)
   }
 
-  return { active, onDragEnter, onDragLeave, onDrop, snippetDrag }
+  return { active, onDragEnter, onDragOver, onDragLeave, onDrop, snippetDrag }
 }

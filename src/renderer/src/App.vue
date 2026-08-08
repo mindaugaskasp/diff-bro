@@ -91,6 +91,7 @@ const {
   active: dragActive,
   snippetDrag,
   onDragEnter,
+  onDragOver,
   onDragLeave,
   onDrop
 } = useWindowFileDrop(store, dropSuppressed)
@@ -101,7 +102,7 @@ useSnippetDiffSync()
   <div
     class="app"
     @dragenter.prevent="onDragEnter"
-    @dragover.prevent
+    @dragover.prevent="onDragOver"
     @dragleave="onDragLeave"
     @drop.prevent="onDrop"
   >
