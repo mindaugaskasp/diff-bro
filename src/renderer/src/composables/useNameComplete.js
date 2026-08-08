@@ -1,13 +1,10 @@
 import { computed, ref } from 'vue'
 import { completionFor } from '../utils/nameComplete'
 
-// Inline completion for a snippet name field. The ghost is NEVER part of the
-// input's value — it is drawn by an overlay behind the field — so selection,
-// copy and the saved name can only ever contain what was typed or accepted.
-//
-// Escape is deliberately not an accept or a dismiss key: it already closes the
-// compose panel, and one key with two meanings in one field is how the
-// launcher's keyboard bugs happened. The ghost clears itself as you type.
+// Inline completion for a snippet name. The ghost is NEVER part of the input's
+// value — an overlay behind the field draws it — so selection, copy and the
+// saved name can only contain what was typed or accepted. Escape is neither an
+// accept nor a dismiss: it already closes the compose panel.
 
 /**
  * @param {object} o

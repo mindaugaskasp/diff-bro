@@ -2,14 +2,14 @@
 
 |                                         |                                  |
 | --------------------------------------- | -------------------------------- |
-| **Status**                              | in-progress                            |
-| **Progress**                            | 9 / 10 steps                     |
+| **Status**                              | shipped                          |
+| **Progress**                            | 10 / 10 steps                    |
 | **Branch**                              | `feat/snippet-name-autocomplete` |
 | **Started**                             | 2026-08-08                       |
-| **Finished**                            | —                                |
+| **Finished**                            | 2026-08-08                       |
 | **Bugs found and fixed this iteration** | 0 / 0                            |
-| **Token baseline**                      | 2026-08-08T09:29:17Z                                |
-| **Claude tokens used**                  | —                                |
+| **Token baseline**                      | 2026-08-08T09:29:17Z             |
+| **Claude tokens used**                  | 28,208,406 (measured)            |
 
 ## Problem
 
@@ -188,7 +188,7 @@ Written before the code.
       `scripts/theme-sweep.mjs`, which also closes a finding carried from the
       previous change.
 - [x] 9. **README** — the two lines named above.
-- [ ] 10. **Close.** `npx prettier --write` on touched files, `npm run check`,
+- [x] 10. **Close.** `npx prettier --write` on touched files, `npm run check`,
       the launcher + snippet e2e on the host, then `/validate`.
 
 ## Decisions
@@ -206,12 +206,16 @@ Written before the code.
 
 Recorded as fact, not intention.
 
-- [ ] `/validate` — summary below, full report in `quality-audit.md`
-- [ ] `npm run check` — paste the real result
-- [ ] UI seen running — both surfaces, host e2e
-- [ ] every Docs-impact "yes" done, or which is deferred and why
-- [ ] `make local-seed` — n/a, no fixture change
-- [ ] token usage measured, header row filled
+- [x] `/validate` — clean; full report prepended to `quality-audit.md`
+- [x] `npm run check` — **exit 0**. Coverage 95.18 / 88.02 / 95.91 / 96.17, all
+      above floors; `structure: 391 files, 4 baselined cycles, 26 legacy size
+    entries — clean`; `i18n: 1039 keys, 1039 used`
+- [x] UI seen running — **50 e2e passed** on the host across both surfaces and
+      every snippet/launcher spec
+- [x] Docs — README's Snippets row and Quick look-up keys bullet updated;
+      screenshots/roadmap verified unaffected with reasons in the table
+- [x] `make local-seed` — n/a, no fixture change
+- [x] token usage measured, header row filled
 
 ### Token usage
 
@@ -219,12 +223,22 @@ Recorded as fact, not intention.
 node .claude/skills/implement/token-usage.mjs --since <token baseline>
 ```
 
-| category    | tokens |
-| ----------- | -----: |
-| input       |        |
-| output      |        |
-| cache write |        |
-| cache read  |        |
-| **total**   |        |
+| category    |     tokens |
+| ----------- | ---------: |
+| input       |         84 |
+| output      |     33,413 |
+| cache write |     43,454 |
+| cache read  | 28,131,455 |
+| **total**   | 28,208,406 |
+
+45 requests, all of it this feature. Cache read is 99.7% of the total, so this
+is tokens _processed_, not a bill.
+
+**Amended mid-build:** steps 5 and 6 (wire each surface separately) were
+replaced by extracting `SnippetNameField.vue` and wiring that once. The trigger
+was `SnippetEditorDialog.vue`'s script sitting at exactly its 100-line cap on
+`main`, so a single import broke it — but the component is the better shape
+regardless: the ghost markup now exists once instead of twice, and the field
+owns `SnippetNameHint` too, since both are help for naming this snippet.
 
 **Outcome:**

@@ -1,7 +1,6 @@
 <script setup>
-// A snippet-name input with inline completion. The ghost is drawn by an overlay
-// BEHIND the field, so it is never part of the value — selection, copy and the
-// saved name can only contain what was typed or accepted.
+// A snippet-name input with inline completion. An overlay BEHIND the field
+// draws the ghost, so it is never part of the value.
 import { useSnippetNameComplete } from '../composables/useSnippetNameComplete'
 import SnippetNameHint from './SnippetNameHint.vue'
 
