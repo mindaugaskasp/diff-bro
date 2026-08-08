@@ -2,12 +2,12 @@
 
 |                                         |                               |
 | --------------------------------------- | ----------------------------- |
-| **Status**                              | approved                      |
-| **Progress**                            | 0 / 6 steps                   |
+| **Status**                              | shipped                       |
+| **Progress**                            | 6 / 6 steps                   |
 | **Branch**                              | `improvement/appearance-pane` |
 | **Started**                             | 2026-08-08                    |
-| **Finished**                            | —                             |
-| **Bugs found and fixed this iteration** | 0 / 0                         |
+| **Finished**                            | 2026-08-08                    |
+| **Bugs found and fixed this iteration** | 4 / 4                         |
 | **Token baseline**                      | 2026-08-08T17:02:53Z          |
 | **Claude tokens used**                  | —                             |
 

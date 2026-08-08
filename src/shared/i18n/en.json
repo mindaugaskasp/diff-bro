@@ -802,7 +802,18 @@
     "keepRunningInTheTray": "Keep running in the notification area when the window is closed",
     "keepRunningHint": "Diff Bro stays in the notification area, so the quick look-up shortcut keeps working. Right-click its icon to exit.",
     "startWhenISignIn": "Start Diff Bro when I sign in",
-    "startWhenISignInHint": "Starts in the notification area with no window on screen."
+    "startWhenISignInHint": "Starts in the notification area with no window on screen.",
+    "tab": {
+      "appearance": "Appearance",
+      "shortcuts": "Shortcuts",
+      "desktop": "Desktop",
+      "storage": "Storage",
+      "limits": "Limits",
+      "logs": "Logs",
+      "email": "Email",
+      "cli": "Terminal",
+      "fun": "Fun"
+    }
   },
   "settingsLimits": {
     "limits": "Limits",

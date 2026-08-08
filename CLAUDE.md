@@ -45,6 +45,10 @@ file below is imported into context automatically.
     `electron --version` printing a Node version, or `Process failed to launch!`.
   - Add `E2E_WORKERS=1` for more than one spec: the display pool is X11-only, so
     a second worker off Linux throws rather than share the system clipboard.
+  - Add `E2E_HIDDEN=1` to stop windows flashing across the screen: every window
+    starts with `show: false`, Chromium still renders offscreen, so visibility
+    and geometry assertions are unaffected. Leave it OFF for
+    `quick-look-window-recovery.spec.mjs`, which manipulates real windows.
 
 - **A spec that skips off macOS proves nothing.** `window-all-closed` quits the
   app on Linux, so "alive with no main window" is unreachable there and

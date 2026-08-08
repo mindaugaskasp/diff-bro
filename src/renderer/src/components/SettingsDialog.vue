@@ -22,16 +22,18 @@ const tour = useOnboardingStore()
 
 // One pane at a time behind the left rail. Desktop needs a tray, so elsewhere it
 // would be two settings that do nothing. Filtered once — the platform is fixed.
+// Literal keys, so check:i18n can see the call sites; resolved in a computed
+// because a t() at module load freezes whatever locale the app started in.
 const TABS = [
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'shortcuts', label: 'Shortcuts' },
-  { id: 'desktop', label: 'Desktop', windowsOnly: true },
-  { id: 'storage', label: 'Storage' },
-  { id: 'limits', label: 'Limits' },
-  { id: 'logs', label: 'Logs' },
-  { id: 'email', label: 'Email' },
-  { id: 'cli', label: 'Terminal' },
-  { id: 'fun', label: 'Fun' }
+  { id: 'appearance', labelKey: 'settingsDialog.tab.appearance' },
+  { id: 'shortcuts', labelKey: 'settingsDialog.tab.shortcuts' },
+  { id: 'desktop', labelKey: 'settingsDialog.tab.desktop', windowsOnly: true },
+  { id: 'storage', labelKey: 'settingsDialog.tab.storage' },
+  { id: 'limits', labelKey: 'settingsDialog.tab.limits' },
+  { id: 'logs', labelKey: 'settingsDialog.tab.logs' },
+  { id: 'email', labelKey: 'settingsDialog.tab.email' },
+  { id: 'cli', labelKey: 'settingsDialog.tab.cli' },
+  { id: 'fun', labelKey: 'settingsDialog.tab.fun' }
 ].filter((t) => isWindows || !t.windowsOnly)
 
 // Re-resolve the active theme so the rotation toggle applies immediately.
@@ -71,7 +73,7 @@ function close() {
           :class="{ active: tab === t.id }"
           @click="tab = t.id"
         >
-          {{ t.label }}
+          {{ $t(t.labelKey) }}
         </button>
       </nav>
 

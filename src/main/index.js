@@ -73,7 +73,10 @@ async function askForDraft() {
 async function boot() {
   const draftPath = await askForDraft()
   if (!app.requestSingleInstanceLock({ version: app.getVersion(), draftPath })) {
-    app.quit()
+    // Quitting the instant the lock is lost raced the payload out of the door:
+    // the owner intermittently never saw `second-instance`, and the draft was
+    // dropped. A tick lets the singleton finish handing over before we go.
+    setTimeout(() => app.quit(), 150)
     return
   }
   // A `diffbro …` launch is a second instance: the lock hands us its argv and
