@@ -38,7 +38,7 @@
   border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-2xs);
   font-weight: 700;
 }
@@ -56,7 +56,7 @@
 }
 .lg-right {
   margin-left: auto;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
 }
 .dg-body {
@@ -179,7 +179,7 @@
   flex: 1;
 }
 .dg-ttl {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -210,7 +210,7 @@
   font-variant-numeric: tabular-nums;
 }
 .dg-type {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--text-dim);
 }

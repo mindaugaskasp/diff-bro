@@ -38,7 +38,7 @@
 .count {
   margin-left: auto;
   color: var(--text-dim);
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
@@ -64,7 +64,7 @@
 .rmark {
   flex: none;
   width: 0.75em;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   text-align: center;
 }

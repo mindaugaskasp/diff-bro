@@ -68,7 +68,7 @@ h4:not(:first-child) {
   margin-top: 2px;
 }
 .hint code {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
 }
 .actions {

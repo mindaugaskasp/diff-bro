@@ -103,7 +103,7 @@ function saveSnippet() {
     width="560px"
     tour="snippet-editor"
     resizable
-    :min-size="{ width: 420, height: 460 }"
+    :min-size="{ width: 420, height: 620 }"
     :initial-size="settings.dialogSize('snippet') ?? DEFAULT_SNIPPET_DIALOG_SIZE"
     :title="
       isNew

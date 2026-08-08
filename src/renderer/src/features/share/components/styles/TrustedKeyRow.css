@@ -105,7 +105,7 @@
   text-underline-offset: 3px;
 }
 .fp {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--text-hint);
 }

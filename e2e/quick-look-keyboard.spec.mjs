@@ -128,6 +128,14 @@ test('the compose body paints syntax roles as you type', async ({ app, page }) =
   ])
   expect(hl).toEqual(ta)
   expect(ta.font).toMatch(/mono/i)
+
+  // The overlay's tags are whitespace-jammed on purpose: a newline between them
+  // renders as text and shifts every line, while both boxes stay identical — so
+  // the geometry check above cannot see it. Read the runs back instead.
+  const painted = await ql
+    .locator('.ql-compose-hl')
+    .evaluate((el) => [...el.children].map((line) => line.textContent).join('\n'))
+  expect(painted).toBe(SQL)
 })
 
 // An explicit choice is a decision, not a hint: a later keystroke must not let
@@ -189,8 +197,22 @@ test('changing the language with an arrow key does not discard the draft', async
   await expect(ql.locator('.ql-compose-text')).toHaveValue('keep me')
 })
 
-// NOT covered here: a re-summon should land on the search band rather than last
-// time's draft. refresh() now cancels compose, but refresh() itself never runs
-// on a re-summon — the launcher's onMounted show-listener does not fire, which
-// reproduces on `main` (the search query survives too). Pre-existing launcher
-// lifecycle bug; see quality-audit.md.
+// The launcher hides on blur and is kept warm, so a summon must land on a fresh
+// search band. This could not pass until focusInput() stopped throwing: it runs
+// first in onMounted, so it took the quicklook:show registration down with it
+// and refresh() never ran at all.
+test("a re-summon starts fresh, not on last time's draft", async ({ app, page }) => {
+  const ql = await summon(app, page)
+
+  await ql.locator('.ql-input').fill('marker-query')
+  await ql.keyboard.press('ControlOrMeta+n')
+  await ql.locator('.ql-compose-text').fill('half-written thought')
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+
+  await page.evaluate(() => window.api.quickLookToggle())
+  await page.evaluate(() => window.api.quickLookToggle())
+
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+  await expect(ql.locator('.ql-input')).toBeVisible()
+  await expect(ql.locator('.ql-input')).toHaveValue('')
+})

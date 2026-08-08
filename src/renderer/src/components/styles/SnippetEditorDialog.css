@@ -68,7 +68,7 @@
   font-size: var(--font-md);
 }
 .lang-detected {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--text-hint);
 }

@@ -1,5 +1,5 @@
 .fp {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   overflow-wrap: anywhere;
 }

@@ -5,7 +5,7 @@
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--danger-bg) 12%, transparent);
   color: var(--text);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   word-break: break-word;
   max-height: 120px;

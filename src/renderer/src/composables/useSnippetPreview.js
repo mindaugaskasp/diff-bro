@@ -8,7 +8,9 @@ import { previewCardPosition } from '../utils/previewPlacement'
 // on costs a vault:decrypt), briefly cached. Renders via interpolation, never v-html.
 const HOVER_DELAY_MS = 180
 const MAX_PREVIEW_CHARS = 4000
-const CARD_WIDTH = 640
+// Twice the old 640: the preview is for READING a snippet, and the placement
+// util narrows it to whatever the row leaves rather than overlapping the list.
+const CARD = { width: 1280, minWidth: 360 }
 
 /**
  * @returns {{ preview: import('vue').Ref<import('../types').SnippetPreview|null>,
@@ -28,7 +30,7 @@ export function useSnippetPreview() {
     previewCardPosition({
       rect: row.getBoundingClientRect(),
       viewport: { width: window.innerWidth, height: window.innerHeight },
-      width: CARD_WIDTH
+      ...CARD
     })
 
   async function onRowEnter(entry, e) {

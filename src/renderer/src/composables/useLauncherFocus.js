@@ -14,10 +14,10 @@ import { nextTick, watch } from 'vue'
  * @returns {{ focusInput: () => void, reclaimKeyboard: (e: Event) => void }}
  */
 export function useLauncherFocus({ input, composeEl, composing, convertTool }) {
-  function focusInput() {
-    input.value?.focus()
-    input.value?.select()
-  }
+  // The band's own focus() already selects; calling select() on the COMPONENT
+  // threw, and this runs first in onMounted — so the throw took the
+  // quicklook:show registration with it and no summon ever refreshed.
+  const focusInput = () => input.value?.focus()
 
   // Hand the keyboard back once, here, rather than per path: a click lands on a
   // button, that button's own handler has already run, and the search box takes

@@ -35,7 +35,7 @@
   color: var(--text);
 }
 kbd {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--text-hint);
   background: var(--bg);

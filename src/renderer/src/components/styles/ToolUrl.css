@@ -12,7 +12,7 @@
   width: 100%;
   min-height: 56px;
   resize: vertical;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-md);
   color: var(--text);
   background: var(--bg);
@@ -37,7 +37,7 @@
 .tur-out-v {
   flex: 1;
   min-width: 0;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-md);
   color: var(--text);
   overflow-x: auto;
@@ -86,7 +86,7 @@
 .tur-cell {
   min-width: 0;
   height: var(--control-h);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--text);
   background: var(--bg);

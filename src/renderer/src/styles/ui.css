@@ -514,7 +514,7 @@
 /* Dialog textareas are all code-ish input: monospace, user-resizable, and tall
    enough to be worth typing into. */
 .dialog textarea {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   resize: vertical;
   height: 90px;
 }
@@ -541,7 +541,7 @@
   background: var(--bg-elevated);
   color: var(--text-hint);
   border-bottom: 2px solid var(--fam, var(--border));
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-2xs);
   font-weight: 700;
   line-height: 1;
@@ -653,7 +653,7 @@ button.tag-chip:hover .usb-tct {
 }
 .state-chip {
   flex: none;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-2xs);
   font-weight: 600;
   padding: 1px 8px;

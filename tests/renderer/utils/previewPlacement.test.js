@@ -28,7 +28,10 @@ describe('previewCardPosition', () => {
   it('is pushed to the far edge, not back over the row, when neither side fits', () => {
     const rect = at(0, 780) // a sidebar dragged wide
     const style = previewCardPosition({ rect, viewport, width: WIDTH })
-    expect(leftPx(style)).toBe(viewport.width - WIDTH - 8)
+    // The card now reports the width it actually took, so the far edge is
+    // measured against that rather than against what it asked for.
+    const took = Number.parseInt(style.width, 10)
+    expect(leftPx(style)).toBe(viewport.width - took - 8)
     expect(leftPx(style)).toBeGreaterThan(8) // what the old clamp produced
   })
 
@@ -42,7 +45,7 @@ describe('previewCardPosition', () => {
 
   it('stays inside the viewport on the right', () => {
     const style = previewCardPosition({ rect: at(0, 780), viewport, width: WIDTH })
-    expect(leftPx(style) + WIDTH).toBeLessThanOrEqual(viewport.width)
+    expect(leftPx(style) + Number.parseInt(style.width, 10)).toBeLessThanOrEqual(viewport.width)
   })
 
   it('keeps a tall card on screen rather than running off the bottom', () => {
@@ -66,5 +69,46 @@ describe('previewCardPosition', () => {
       width: WIDTH
     })
     expect(leftPx(style)).toBeGreaterThanOrEqual(8)
+  })
+})
+
+// The card is now twice as wide, which on a normal window no longer fits beside
+// a row. It must SHRINK into the space it has rather than take the space it
+// wants — the one thing it must never do is land on the sidebar it previews.
+describe('previewCardPosition — fitting a wide card', () => {
+  const sidebarRow = { left: 0, right: 300, top: 100 }
+  const viewport = { width: 1440, height: 900 }
+
+  it('narrows to the room right of the row instead of overlapping it', () => {
+    const p = previewCardPosition({ rect: sidebarRow, viewport, width: 1280, minWidth: 320 })
+    expect(Number.parseInt(p.left, 10)).toBeGreaterThanOrEqual(sidebarRow.right)
+    expect(Number.parseInt(p.left, 10) + Number.parseInt(p.width, 10)).toBeLessThanOrEqual(
+      viewport.width
+    )
+  })
+
+  it('keeps the full width when the window really has room', () => {
+    const p = previewCardPosition({
+      rect: sidebarRow,
+      viewport: { width: 2200, height: 900 },
+      width: 1280,
+      minWidth: 320
+    })
+    expect(p.width).toBe('1280px')
+  })
+
+  it('never narrows below the floor, even in a cramped window', () => {
+    const p = previewCardPosition({
+      rect: { left: 0, right: 300, top: 100 },
+      viewport: { width: 560, height: 900 },
+      width: 1280,
+      minWidth: 320
+    })
+    expect(Number.parseInt(p.width, 10)).toBeGreaterThanOrEqual(320)
+  })
+
+  it('still clears the row it was summoned from', () => {
+    const p = previewCardPosition({ rect: sidebarRow, viewport, width: 1280, minWidth: 320 })
+    expect(Number.parseInt(p.left, 10)).toBeGreaterThan(sidebarRow.right - 1)
   })
 })

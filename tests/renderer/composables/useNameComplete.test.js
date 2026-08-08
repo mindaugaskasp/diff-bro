@@ -123,3 +123,42 @@ describe('useNameComplete — keys that must not accept', () => {
     expect(name.value).toBe('Dep')
   })
 })
+
+// Writing straight to the model wipes Chromium's undo stack, so Cmd+Z after
+// accepting threw away the user's own typing too. insertText goes through the
+// editing pipeline, which keeps undo intact and fires input for v-model.
+describe('useNameComplete — accepting is undoable', () => {
+  it('inserts through the editing pipeline when the field can', () => {
+    const { name, hook } = setup('Dep')
+    const insert = vi.fn(() => true)
+    hook.inputEl.value = {
+      selectionStart: 3,
+      selectionEnd: 3,
+      focus: vi.fn(),
+      ownerDocument: { execCommand: insert }
+    }
+    press(hook, 'Tab')
+    expect(insert).toHaveBeenCalledWith('insertText', false, 'loy — ')
+    // The pipeline raises input, which drives v-model — the composable must not
+    // also write, or the text lands twice.
+    expect(name.value).toBe('Dep')
+  })
+
+  it('falls back to the model when the pipeline refuses', () => {
+    const { name, hook } = setup('Dep')
+    hook.inputEl.value = {
+      selectionStart: 3,
+      selectionEnd: 3,
+      focus: vi.fn(),
+      ownerDocument: { execCommand: () => false }
+    }
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+
+  it('still works with no document at all', () => {
+    const { name, hook } = setup('Dep')
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+})

@@ -5,7 +5,7 @@
   gap: var(--space-3);
 }
 .fill-name {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--text);
   overflow: hidden;
@@ -13,7 +13,7 @@
   white-space: nowrap;
 }
 .dialog-note code {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--text);
 }

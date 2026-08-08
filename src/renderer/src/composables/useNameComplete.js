@@ -29,8 +29,18 @@ export function useNameComplete({ name, names, readonly }) {
     return el.selectionStart === end && el.selectionEnd === end
   }
 
-  const accept = () => {
-    name.value += ghost.value
+  // insertText goes through the browser's editing pipeline, so the accept joins
+  // the undo stack and Cmd+Z gives back what was typed. Writing to the model
+  // directly clears that stack, taking the user's own typing with it. It also
+  // raises `input`, which drives v-model — so on success we must NOT write too.
+  function accept() {
+    const el = inputEl.value
+    const suffix = ghost.value
+    if (el?.ownerDocument?.execCommand) {
+      el.focus?.()
+      if (el.ownerDocument.execCommand('insertText', false, suffix)) return
+    }
+    name.value += suffix
   }
 
   // Tab accepts wherever the caret is; → only from the end, where it would
