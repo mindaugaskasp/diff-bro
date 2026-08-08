@@ -1,12 +1,12 @@
 <script setup>
 // Create/edit a snippet: Monaco + tag-field wiring over useSnippetDraft.
 import { computed, nextTick, ref, watch } from 'vue'
-import { JIRA_ACTIONS, applyJiraAction } from '../utils/jiraMarkup'
-import { MARKDOWN_ACTIONS, applyMarkdownAction } from '../utils/markdownMarkup'
 import { useSettingsStore } from '../stores/settingsStore'
 import { DEFAULT_SNIPPET_DIALOG_SIZE } from '../utils/settingsDefaults'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
+import { useFormatToolbar } from '../composables/useFormatToolbar'
 import SnippetNameField from './SnippetNameField.vue'
+import SnippetNameHint from './SnippetNameHint.vue'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import TagChipsField from './TagChipsField.vue'
@@ -66,17 +66,14 @@ const { reset, applySelectionEdit, layout } = useMonacoInput({
 // toggle, toolbar and rendered view.
 const plain = ref(editMode.value)
 const hasPreview = computed(() => isJira.value || isMarkdown.value)
-const toolbarActions = computed(() => (isMarkdown.value ? MARKDOWN_ACTIONS : JIRA_ACTIONS))
+const { actions: toolbarActions, applyAction } = useFormatToolbar({
+  isMarkdown,
+  applySelectionEdit
+})
 // Relayout Monaco once it becomes visible (it may have mounted hidden).
 watch(plain, (isPlain) => {
   if (isPlain) nextTick(layout)
 })
-
-// A toolbar button: apply its language-specific transform to the selection.
-function applyAction(id) {
-  const apply = isMarkdown.value ? applyMarkdownAction : applyJiraAction
-  applySelectionEdit((model) => apply(id, model))
-}
 
 // The action row owns its copy/clear feedback; this is its handle for the
 // "Copied" flash, which fires only once the clipboard write succeeded.
@@ -127,11 +124,11 @@ function saveSnippet() {
           v-model="name"
           :placeholder="$t('snippetEditorDialog.snippetName')"
           :readonly="readOnly"
-          :template-hint="editMode"
         />
         <span v-if="editMode && !name.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsAName') }}
         </span>
+        <SnippetNameHint v-if="editMode" :name="name" />
       </label>
     </div>
     <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />

@@ -85,50 +85,6 @@
   background: var(--btn-face-press);
   box-shadow: none;
 }
-/* --- Ghost-completion field -------------------------------------------
-   An inline name completion: an overlay BEHIND the input carries a transparent
-   copy of what was typed (to occupy its exact width) followed by the suggestion
-   in hint ink. The input stays opaque on top with a transparent background, so
-   native selection and caret rendering are untouched.
-
-   EVERY property that decides where a glyph lands is set on both layers here,
-   on one selector — change it on one alone and the ghost detaches from the
-   caret. Shared rather than scoped because two components need it, and the
-   second copy is what would drift. */
-.ghost-field {
-  position: relative;
-  display: flex;
-}
-.ghost-field > input,
-.ghost-field > .ghost-layer {
-  box-sizing: border-box;
-  width: 100%;
-  font: inherit;
-  letter-spacing: inherit;
-  white-space: pre;
-  overflow: hidden;
-}
-.ghost-field > .ghost-layer {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  color: var(--text-dim);
-  pointer-events: none;
-}
-/* Occupies the typed text's exact width so the ghost starts at the caret. */
-.ghost-field .ghost-typed {
-  color: transparent;
-  flex: none;
-}
-.ghost-field .ghost-rest {
-  flex: none;
-}
-.ghost-field > input {
-  position: relative;
-  background: none;
-}
-
 /* Keyboard focus had NO rule at all, so tabbing anywhere in the app fell back to
    Chromium's UA ring — the reason reaching the launcher's + felt broken. Offset
    outward so it reads against the surface rather than eating the keyline. */

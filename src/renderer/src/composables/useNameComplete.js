@@ -10,13 +10,17 @@ import { completionFor } from '../utils/nameComplete'
  * @param {object} o
  * @param {{ value: string }} o.name    the field's bound value
  * @param {{ value: string[] }} o.names names to complete against
+ * @param {{ value: boolean }} [o.readonly] when true there is nothing to offer
  * @returns {object}
  */
-export function useNameComplete({ name, names }) {
+export function useNameComplete({ name, names, readonly }) {
   const inputEl = ref(null)
   const overlayEl = ref(null)
 
-  const ghost = computed(() => completionFor(name.value, names.value))
+  // Emptied at the source, not hidden in the template: a read-only input is
+  // still focusable and still fires keydown, so a merely-hidden ghost would
+  // accept into the value.
+  const ghost = computed(() => (readonly?.value ? '' : completionFor(name.value, names.value)))
 
   const isCaretAtEnd = () => {
     const el = inputEl.value
@@ -25,18 +29,24 @@ export function useNameComplete({ name, names }) {
     return el.selectionStart === end && el.selectionEnd === end
   }
 
-  function accept() {
-    if (!ghost.value) return false
+  const accept = () => {
     name.value += ghost.value
-    return true
   }
 
   // Tab accepts wherever the caret is; → only from the end, where it would
-  // otherwise do nothing anyway.
-  const isAcceptKey = (e) => e.key === 'Tab' || (e.key === 'ArrowRight' && isCaretAtEnd())
+  // otherwise do nothing anyway. A modifier means the user meant something else
+  // — Shift+Tab is how they go BACK — and Tab is a candidate key in CJK IMEs,
+  // so a composition in flight owns it.
+  const isAcceptKey = (e) => {
+    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return false
+    if (e.isComposing || e.keyCode === 229) return false
+    return e.key === 'Tab' || (e.key === 'ArrowRight' && isCaretAtEnd())
+  }
 
   function onKeydown(e) {
-    if (ghost.value && isAcceptKey(e) && accept()) e.preventDefault()
+    if (!ghost.value || !isAcceptKey(e)) return
+    accept()
+    e.preventDefault()
   }
 
   // A single-line input scrolls horizontally once the text overflows; the
@@ -48,5 +58,5 @@ export function useNameComplete({ name, names }) {
     overlay.scrollLeft = el.scrollLeft
   }
 
-  return { inputEl, overlayEl, ghost, onKeydown, onScroll, accept }
+  return { inputEl, overlayEl, ghost, onKeydown, onScroll }
 }

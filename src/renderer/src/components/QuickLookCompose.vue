@@ -75,6 +75,7 @@ defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
         :placeholder="$t('quickLookCompose.nameOptional')"
       />
       <div class="ql-compose-field">
+        <!-- Whitespace between these tags RENDERS and shifts every line. -->
         <pre ref="overlayEl" class="ql-compose-hl" aria-hidden="true"><div
           v-for="(spans, i) in lines"
           :key="i"

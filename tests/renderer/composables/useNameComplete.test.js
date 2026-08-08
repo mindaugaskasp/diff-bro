@@ -85,3 +85,41 @@ describe('useNameComplete', () => {
     expect(() => press(hook, 'Tab')).not.toThrow()
   })
 })
+
+// Accepting must be a deliberate, unmodified keystroke. Shift+Tab is how a
+// keyboard user goes BACK, and Tab is a candidate key in CJK IMEs.
+describe('useNameComplete — keys that must not accept', () => {
+  it('leaves Shift+Tab to move focus backwards', () => {
+    const { name, hook } = setup('Dep')
+    const prevented = press(hook, 'Tab', { shiftKey: true })
+    expect(name.value).toBe('Dep')
+    expect(prevented).not.toHaveBeenCalled()
+  })
+
+  it('ignores Ctrl/Alt/Meta-modified accept keys', () => {
+    for (const mod of ['ctrlKey', 'altKey', 'metaKey']) {
+      const { name, hook } = setup('Dep')
+      press(hook, 'Tab', { [mod]: true })
+      press(hook, 'ArrowRight', { [mod]: true })
+      expect(name.value).toBe('Dep')
+    }
+  })
+
+  it('stands down mid-IME-composition', () => {
+    const { name, hook } = setup('Dep')
+    press(hook, 'Tab', { isComposing: true })
+    expect(name.value).toBe('Dep')
+    // Some IMEs report the legacy keyCode instead.
+    press(hook, 'Tab', { keyCode: 229 })
+    expect(name.value).toBe('Dep')
+  })
+
+  it('offers nothing at all while a read-only field is focused', () => {
+    const name = ref('Dep')
+    const hook = useNameComplete({ name, names: ref(NAMES), readonly: ref(true) })
+    hook.inputEl.value = { selectionStart: 3, selectionEnd: 3 }
+    expect(hook.ghost.value).toBe('')
+    press(hook, 'Tab')
+    expect(name.value).toBe('Dep')
+  })
+})

@@ -96,3 +96,61 @@ test('the editor completes too, and the template hint still shows', async ({ pag
   await expect(editor.locator('.name-templates')).toBeVisible()
   await expect(editor.getByPlaceholder('Snippet name…')).toHaveValue('Example — M')
 })
+
+// The ghost is drawn BEHIND the input, so "the text is there" proves nothing —
+// an opaque input hides it while toHaveText still passes. That is exactly what
+// shipped before review: the editor's input painted white over it, and the
+// launcher's scoped class never reached across the component boundary, so its
+// field fell back to an unstyled UA input. Assert the geometry instead.
+const fieldGeometry = (field) =>
+  field.evaluate((el) => {
+    const input = el.querySelector('input')
+    const layer = el.querySelector('.ghost-layer')
+    const cs = (n) => getComputedStyle(n)
+    const box = (n) => {
+      const r = n.getBoundingClientRect()
+      return { x: Math.round(r.x), w: Math.round(r.width) }
+    }
+    return {
+      inputBg: cs(input).backgroundColor,
+      sameFont: cs(input).fontSize === cs(layer).fontSize,
+      samePad: cs(input).padding === cs(layer).padding,
+      registered: box(input).x === box(layer).x && box(input).w === box(layer).w,
+      // The overlay must read back as exactly typed + ghost: a stray newline
+      // between those spans renders as a space and shifts the ghost one
+      // character right of the caret, with both boxes unchanged.
+      overlayText: layer.textContent
+    }
+  })
+
+test('the ghost is actually visible, on both surfaces', async ({ app, page }) => {
+  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await page.getByRole('button', { name: 'New snippet' }).click()
+  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill('Exam')
+
+  const inEditor = await fieldGeometry(editor.locator('.ghost-field'))
+  expect(inEditor.inputBg).toBe('rgba(0, 0, 0, 0)')
+  expect(inEditor).toMatchObject({ sameFont: true, samePad: true, registered: true })
+  expect(inEditor.overlayText).toBe('Exam' + 'ple — ')
+  await page.keyboard.press('Escape')
+
+  const ql = await summon(app, page)
+  await ql.keyboard.press('ControlOrMeta+n')
+  await ql.locator('.ql-compose-name').fill('Exam')
+
+  const inLauncher = await fieldGeometry(ql.locator('.ghost-field'))
+  expect(inLauncher.inputBg).toBe('rgba(0, 0, 0, 0)')
+  expect(inLauncher).toMatchObject({ sameFont: true, samePad: true, registered: true })
+  expect(inLauncher.overlayText).toBe('Exam' + 'ple — ')
+})
+
+// A read-only field has nothing to offer, and a read-only input still fires
+// keydown — so the ghost must be empty at the source, not merely hidden.
+test('a read-only name offers no completion', async ({ page }) => {
+  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await page.getByText(EXAMPLE).click()
+  const editor = page.getByRole('dialog').first()
+  await expect(editor.locator('.ghost-field.ro')).toBeVisible()
+  await expect(editor.locator('.name-ghost')).toHaveText('')
+})

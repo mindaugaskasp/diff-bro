@@ -1,28 +1,31 @@
 <script setup>
-// A snippet-name input with inline completion. An overlay BEHIND the field
-// draws the ghost, so it is never part of the value.
+// A snippet-name input with inline completion (see useNameComplete). The
+// WRAPPER carries the visible box and the input inside is bare — an input with
+// its own background paints over the ghost behind it, which is what shipped.
+import { toRef } from 'vue'
 import { useSnippetNameComplete } from '../composables/useSnippetNameComplete'
-import SnippetNameHint from './SnippetNameHint.vue'
 
-defineProps({
+const props = defineProps({
   placeholder: { type: String, default: '' },
   readonly: { type: Boolean, default: false },
-  inputClass: { type: String, default: '' },
-  /** Show the {{token}} reference under the field — editor only; the launcher
-      panel has no room and no template support. */
-  templateHint: { type: Boolean, default: false }
+  /** A selector hook for the surface; styling belongs to this component. */
+  inputClass: { type: String, default: '' }
 })
 const name = defineModel({ type: String, required: true })
 
-const { inputEl, overlayEl, ghost, onKeydown, onScroll } = useSnippetNameComplete(name)
-defineExpose({ focus: () => inputEl.value?.focus() })
+const { inputEl, overlayEl, ghost, onKeydown, onScroll } = useSnippetNameComplete(
+  name,
+  toRef(props, 'readonly')
+)
 </script>
 
 <template>
-  <div class="ghost-field">
+  <div class="ghost-field" :class="{ ro: readonly }">
+    <!-- prettier-ignore — whitespace between these tags RENDERS, shifting the
+         ghost off the caret. e2e asserts the overlay reads exactly typed+ghost. -->
     <span ref="overlayEl" class="ghost-layer" aria-hidden="true"
       ><span class="ghost-typed">{{ name }}</span
-      ><span class="ghost-rest name-ghost">{{ readonly ? '' : ghost }}</span></span
+      ><span class="ghost-rest name-ghost">{{ ghost }}</span></span
     >
     <input
       ref="inputEl"
@@ -37,5 +40,6 @@ defineExpose({ focus: () => inputEl.value?.focus() })
       @scroll="onScroll"
     />
   </div>
-  <SnippetNameHint v-if="templateHint" :name="name" />
 </template>
+
+<style scoped src="./styles/SnippetNameField.css"></style>

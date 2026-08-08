@@ -1,0 +1,58 @@
+/* The field's box lives on the WRAPPER, not the input: an opaque input paints
+   over the ghost behind it, and `.dialog input` beats any `.ghost-field > input`
+   rule on equal specificity anyway. Bare input, styled wrapper, no fight. */
+.ghost-field {
+  position: relative;
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: var(--font-md);
+}
+.ghost-field:focus-within {
+  border-color: var(--accent);
+}
+/* View mode: the same grey → white flip every other field in the dialog uses. */
+.ghost-field.ro {
+  background: var(--bg-elevated);
+}
+
+/* EVERY property that decides where a glyph lands is set on both layers here,
+   on one selector. Change it on one alone and the ghost leaves the caret. */
+.ghost-field > input,
+.ghost-field > .ghost-layer {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: pre;
+  overflow: hidden;
+}
+.ghost-field > input {
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--text);
+}
+.ghost-field.ro > input {
+  color: var(--text-dim);
+  cursor: default;
+}
+.ghost-field > .ghost-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+/* Occupies the typed text's exact width so the ghost starts at the caret. */
+.ghost-field .ghost-typed {
+  color: transparent;
+  flex: none;
+}
+.ghost-field .ghost-rest {
+  flex: none;
+}

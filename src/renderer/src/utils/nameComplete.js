@@ -1,5 +1,3 @@
-import { hasTemplate } from './snippetTemplates'
-
 // Inline completion for a snippet name, with shell semantics: complete to the
 // longest common prefix of every matching name, never past the point where the
 // library stops agreeing. A completion that guessed `Deploy — dev` when you
@@ -41,18 +39,27 @@ export function completionFor(typed, names) {
   const text = String(typed ?? '')
   // expandTemplates owns a name carrying a token; completing over a half-typed
   // `{{today}}` would produce a name the user never chose.
-  if (!text.trim() || hasTemplate(text) || text.includes('{{')) return ''
+  if (!text.trim() || text.includes('{{')) return ''
 
   const lower = text.toLowerCase()
-  const matches = (names ?? [])
-    .map((n) => String(n ?? '').trim())
-    .filter((n) => n.length > text.length && n.toLowerCase().startsWith(lower))
+  const all = (names ?? []).map((n) => String(n ?? '').trim())
+  // Typing a name in full is finishing, not the start of a longer one — and Tab
+  // is the only key that leaves the field, so a ghost here renames on the way
+  // out. A stored name carrying {{token}} is refused for the same reason the
+  // typed text is: the editor expands it on save, so accepting would store
+  // something the user never saw.
+  if (all.some((n) => n.toLowerCase() === lower)) return ''
+  const matches = all.filter(
+    (n) => n.length > text.length && n.toLowerCase().startsWith(lower) && !n.includes('{{')
+  )
   if (!matches.length) return ''
 
-  let shortest = matches[0]
-  for (const m of matches) {
-    const agreed = sharedLength(shortest, m)
-    if (agreed < shortest.length) shortest = shortest.slice(0, agreed)
-  }
-  return shortest.slice(text.length)
+  // Prefer a match whose casing agrees with what was typed; otherwise the ghost
+  // depends on store order and can show a casing no stored name has.
+  const ordered = [...matches].sort(
+    (a, b) => Number(b.startsWith(text)) - Number(a.startsWith(text))
+  )
+  let common = ordered[0]
+  for (const m of ordered) common = common.slice(0, sharedLength(common, m))
+  return common.slice(text.length)
 }

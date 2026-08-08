@@ -58,8 +58,13 @@ selection and caret rendering are untouched.
 
 - `utils/nameComplete.js` — the pure longest-common-prefix completion.
 - `composables/useNameComplete.js` — accept keys, scroll mirror, refs.
-- A shared `.ghost-field` overlay pair in `ui.css` (two surfaces need it).
+- `composables/useSnippetNameComplete.js` — the store binding _(added in build)_.
+- `components/SnippetNameField.vue` + its stylesheet — one field for both
+  surfaces _(added in build; replaces the planned per-surface wiring and the
+  `.ghost-field` block that was first put in `ui.css`)_.
 - Wiring in `QuickLookCompose.vue` and `SnippetEditorDialog.vue`.
+- `composables/useFormatToolbar.js` — extracted from `SnippetEditorDialog` to
+  buy back the script line the new import cost _(added post-review)_.
 - One launcher foot hint for the accept key.
 - A `theme-sweep` `SURFACES` probe for the ghost ink.
 
@@ -193,14 +198,17 @@ Written before the code.
 
 ## Decisions
 
-| date       | decision                                                   | why                                                                                                                                                                              | rejected                                               |
-| ---------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| 2026-08-08 | Complete to the longest common prefix, not to a best match | A completion must never invent the part that tells two snippets apart; LCP stops exactly where the library stops agreeing                                                        | most-recent match, frecency ranking, fuzzy `rank()`    |
-| 2026-08-08 | Ghost ink is `--text-dim`, no new token                    | It is hint ink, the same token both placeholders already use, and it is already held at 3.0 by `check-theme-depth.mjs:134` — a new token would invent a second ratchet           | a bespoke `--ghost-ink`                                |
-| 2026-08-08 | The input stays OPAQUE; only the ghost is drawn behind     | The body overlay makes its textarea transparent because it must colour runs. Here that would trade away native selection rendering for nothing                                   | mirroring the body overlay exactly                     |
-| 2026-08-08 | No Escape-to-dismiss                                       | Escape already closes the compose panel; a second meaning on the same key in the same field is how the launcher's key bugs happened. The ghost clears itself as you type         | Escape dismisses the ghost first                       |
-| 2026-08-08 | Secret snippets contribute no names                        | Not required — the guarantee is about contents — but a secret's NAME hints at what it is, and offering it inside an unrelated snippet leaks intent                               | indexing every name                                    |
-| 2026-08-08 | Branch stacks on `improvement/quicklook-keyboard-capture`  | Direct overlap: `QuickLookCompose.vue`, the launcher key model and `useCaretBackOut`'s control handling are all unmerged work this needs. PR #34 is green; rebase after it lands | branching from `main` and resolving the conflict later |
+| date       | decision                                                             | why                                                                                                                                                                                                                          | rejected                                                     |
+| ---------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 2026-08-08 | Complete to the longest common prefix, not to a best match           | A completion must never invent the part that tells two snippets apart; LCP stops exactly where the library stops agreeing                                                                                                    | most-recent match, frecency ranking, fuzzy `rank()`          |
+| 2026-08-08 | Ghost ink is `--text-dim`, no new token                              | It is hint ink, the same token both placeholders already use, and it is already held at 3.0 by `check-theme-depth.mjs:134` — a new token would invent a second ratchet                                                       | a bespoke `--ghost-ink`                                      |
+| 2026-08-08 | The input stays OPAQUE; only the ghost is drawn behind               | The body overlay makes its textarea transparent because it must colour runs. Here that would trade away native selection rendering for nothing                                                                               | mirroring the body overlay exactly                           |
+| 2026-08-08 | No Escape-to-dismiss                                                 | Escape already closes the compose panel; a second meaning on the same key in the same field is how the launcher's key bugs happened. The ghost clears itself as you type                                                     | Escape dismisses the ghost first                             |
+| 2026-08-08 | Secret snippets contribute no names                                  | Not required — the guarantee is about contents — but a secret's NAME hints at what it is, and offering it inside an unrelated snippet leaks intent                                                                           | indexing every name                                          |
+| 2026-08-08 | One `SnippetNameField.vue` for both surfaces, not per-surface wiring | The ghost markup would otherwise exist twice, and the second copy is what drifts. Post-review it also became the only place that can own the field's box, since a parent's scoped class cannot cross into a child's template | wiring each surface separately, as steps 5–6 originally read |
+| 2026-08-08 | Keep `useNameComplete` and `useSnippetNameComplete` as two files     | Merging them would make the tested half require Pinia, costing nine mount-free unit tests. The binding also now forwards `readonly`, so it is no longer a one-line pass-through                                              | folding the store lookup into `useNameComplete`              |
+| 2026-08-08 | The WRAPPER carries the field's box; the input is bare               | An input with its own background paints over the ghost — `.dialog input` beat `.ghost-field > input` on equal specificity and the ghost was invisible in the editor. Inverting it removes the fight rather than winning it   | raising specificity, or `z-index` on the overlay             |
+| 2026-08-08 | Branch stacks on `improvement/quicklook-keyboard-capture`            | Direct overlap: `QuickLookCompose.vue`, the launcher key model and `useCaretBackOut`'s control handling are all unmerged work this needs. PR #34 is green; rebase after it lands                                             | branching from `main` and resolving the conflict later       |
 
 ## Validation
 
@@ -209,7 +217,7 @@ Recorded as fact, not intention.
 - [x] `/validate` — clean; full report prepended to `quality-audit.md`
 - [x] `npm run check` — **exit 0**. Coverage 95.18 / 88.02 / 95.91 / 96.17, all
       above floors; `structure: 391 files, 4 baselined cycles, 26 legacy size
-    entries — clean`; `i18n: 1039 keys, 1039 used`
+  entries — clean`; `i18n: 1039 keys, 1039 used`
 - [x] UI seen running — **50 e2e passed** on the host across both surfaces and
       every snippet/launcher spec
 - [x] Docs — README's Snippets row and Quick look-up keys bullet updated;
@@ -234,7 +242,7 @@ node .claude/skills/implement/token-usage.mjs --since <token baseline>
 45 requests, all of it this feature. Cache read is 99.7% of the total, so this
 is tokens _processed_, not a bill.
 
-**Amended mid-build:** steps 5 and 6 (wire each surface separately) were
+**Amended mid-build (steps 5–6):** wire each surface separately was
 replaced by extracting `SnippetNameField.vue` and wiring that once. The trigger
 was `SnippetEditorDialog.vue`'s script sitting at exactly its 100-line cap on
 `main`, so a single import broke it — but the component is the better shape

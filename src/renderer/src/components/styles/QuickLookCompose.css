@@ -53,6 +53,10 @@
   gap: var(--space-2);
 }
 
+.ql-compose-body .ghost-field {
+  font-size: var(--font-sm);
+}
+
 .ql-compose-body {
   display: flex;
   flex: 1;
@@ -62,7 +66,6 @@
   padding: var(--space-3);
 }
 
-.ql-compose-name,
 .ql-compose-text {
   width: 100%;
   padding: var(--space-2);
@@ -73,7 +76,6 @@
   font-size: var(--font-sm);
 }
 
-.ql-compose-name:focus,
 .ql-compose-text:focus {
   border-color: var(--accent);
   outline: none;

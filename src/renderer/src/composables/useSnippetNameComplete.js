@@ -9,9 +9,11 @@ import { useNameComplete } from './useNameComplete'
 
 /**
  * @param {{ value: string }} name the field's bound value
+ * @param {{ value: boolean }} [readonly]
  * @returns {object} the same shape as useNameComplete
  */
-export function useSnippetNameComplete(name) {
+export function useSnippetNameComplete(name, readonly) {
   const snippets = useSnippetStore()
-  return useNameComplete({ name, names: computed(() => indexableNames(snippets.entries)) })
+  const names = computed(() => indexableNames(snippets.entries))
+  return useNameComplete({ name, names, readonly })
 }

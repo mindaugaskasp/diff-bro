@@ -71,3 +71,35 @@ describe('indexableNames', () => {
     expect(indexableNames([{ name: 'A' }, { name: 'A' }])).toEqual(['A'])
   })
 })
+
+describe('completionFor — traps found in QA', () => {
+  // Tab is the only key that leaves the field, so a ghost on a name the user
+  // has finished typing renames their snippet on the way out.
+  it('offers nothing once the typed text IS a stored name, even if a longer one exists', () => {
+    expect(completionFor('Deploy', ['Deploy', 'Deploy — prod'])).toBe('')
+    expect(completionFor('deploy', ['Deploy', 'Deploy — prod'])).toBe('')
+  })
+
+  // The editor expands {{tokens}} on save, so a ghost carrying one would store
+  // a name the user never accepted. The typed-text refusal is not enough on its
+  // own: the token can arrive from the LIBRARY.
+  it('never completes with a template token from a stored name', () => {
+    expect(completionFor('Stand', ['Standup {{today}}'])).toBe('')
+  })
+
+  it('still completes names that merely sit alongside a templated one', () => {
+    expect(completionFor('Stand', ['Standup {{today}}', 'Standup notes'])).toBe('up notes')
+  })
+
+  // Slicing the shared prefix out of whichever match came first made the ghost
+  // depend on store order, and could show a casing no stored name has.
+  it('prefers a match that agrees with the typed casing', () => {
+    const mixed = ['deploy — prodigy', 'Deploy — Prod']
+    expect(completionFor('Dep', mixed)).toBe('loy — Prod')
+    expect(completionFor('Dep', [...mixed].reverse())).toBe('loy — Prod')
+  })
+
+  it('falls back to the first match when no casing agrees', () => {
+    expect(completionFor('dep', ['Deploy — Prod'])).toBe('loy — Prod')
+  })
+})
