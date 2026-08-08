@@ -39,7 +39,7 @@ function toggleDailyTheme(on) {
   settings.setRotateThemeDaily(on)
   settings.resolveActiveTheme()
 }
-const tab = ref('appearance')
+const tab = ref(TABS.some((t) => t.id === ui.settingsTab) ? ui.settingsTab : 'appearance')
 
 function close() {
   ui.showSettingsDialog = false

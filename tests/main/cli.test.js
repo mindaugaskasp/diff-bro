@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { COMMANDS, cliWords, helpText, parseCli } from '../../src/main/cli'
+import { cliWords, helpText, parseCli } from '../../src/main/cli'
+import { COMMANDS } from '../../src/shared/cliCommands'
 
 // Argv reaches the app in three shapes — packaged, dev, and forwarded by
 // second-instance — and Chromium switches can be mixed in anywhere. Every case

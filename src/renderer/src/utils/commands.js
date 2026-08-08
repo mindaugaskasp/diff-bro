@@ -83,7 +83,8 @@ export const COMMANDS = {
   'manage-keys': ({ share }) => (share.showTrustedKeysDialog = true),
   'config-backup': ({ configBackup }) => configBackup.open('backup'),
   'config-restore': ({ configBackup }) => configBackup.open('restore'),
-  settings: ({ ui }) => (ui.showSettingsDialog = true),
+  settings: ({ ui }) => ui.openSettings(),
+  'settings-cli': ({ ui }) => ui.openSettings('cli'),
   'command-palette': ({ ui }) => {
     ui.paletteScope = 'all'
     ui.showCommandPalette = true

@@ -39,7 +39,7 @@ if (cold.command?.name === 'help') {
   process.stdout.write(`${text}\n`)
   app.exit(ok ? 0 : 1)
 } else if (cold.error) {
-  process.stderr.write(`${cold.error}\n\n${CLI_USAGE}\n`)
+  process.stderr.write(`${cold.error}\n\n${CLI_USAGE()}\n`)
   app.exit(1)
 }
 

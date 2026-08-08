@@ -159,3 +159,23 @@ h4:not(:first-child) {
   margin-left: auto;
   flex: none;
 }
+
+/* The `diffbro` subcommands. A definition list, not a table: the usage line is
+   the term and the summary defines it, which is what a reader is scanning for.
+   The syntax column is monospace and never wraps; the summary does. */
+.cli-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+  align-items: baseline;
+}
+.cli-list dt code {
+  white-space: nowrap;
+  font-size: var(--font-sm);
+}
+.cli-list dd {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-dim);
+}

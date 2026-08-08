@@ -27,6 +27,9 @@ const displayToggles = (run) => [
   { label: t('menu.view.toggleFocus'), run: () => run('toggle-focus') }
 ]
 
+// Mirrors the native Terminal menu (menuSections.terminalMenu).
+const terminalItems = (run) => [{ label: t('menu.terminal.info'), run: () => run('settings-cli') }]
+
 export function buildMenus(run) {
   return [
     {
@@ -143,11 +146,8 @@ export function buildMenus(run) {
         }
       ]
     },
-    {
-      id: 'security',
-      label: t('menu.security.title'),
-      items: securityItems(run)
-    },
+    { id: 'terminal', label: t('menu.terminal.title'), items: terminalItems(run) },
+    { id: 'security', label: t('menu.security.title'), items: securityItems(run) },
     {
       id: 'tools',
       label: t('menu.tools.title'),

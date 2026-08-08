@@ -2,7 +2,7 @@ import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } f
 import { homedir } from 'os'
 import { ISSUE_BASE, buildIssueUrl } from './issueUrl'
 import { isLauncher, toggleQuickLook } from './quickLook'
-import { editMenu, helpMenu, securityMenu, toolsMenu } from './menuSections'
+import { editMenu, helpMenu, securityMenu, terminalMenu, toolsMenu } from './menuSections'
 import { setLocale, t } from './i18n'
 import { refreshTrayMenu } from './tray'
 
@@ -95,6 +95,12 @@ function displayToggles(sendToFocused) {
   ]
 }
 
+const settingsItem = (send) => ({
+  label: t('menu.file.settings'),
+  accelerator: 'CmdOrCtrl+,',
+  click: () => send('settings')
+})
+
 export function installMenu() {
   const isMac = process.platform === 'darwin'
   disableInjectedMacMenuItems()
@@ -156,16 +162,13 @@ export function installMenu() {
         },
         { label: t('menu.file.importSnippets'), click: () => sendToFocused('import-snippets') },
         { type: 'separator' },
-        {
-          label: t('menu.file.settings'),
-          accelerator: 'CmdOrCtrl+,',
-          click: () => sendToFocused('settings')
-        },
+        settingsItem(sendToFocused),
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
     editMenu(sendToFocused, isMac),
+    terminalMenu(sendToFocused),
     {
       label: t('menu.view.title'),
       submenu: [

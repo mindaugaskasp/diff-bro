@@ -1,4 +1,4 @@
-import { test, expect, openSettings } from './fixtures.mjs'
+import { test, expect, openMenu, openSettings } from './fixtures.mjs'
 
 // The pane's two structural faults were both measurable, and neither was
 // caught by anything: fourteen chips that size to their labels wrapped 4·4·3·3
@@ -77,4 +77,20 @@ test('content stays clear of the pane scrollbar', async ({ page }) => {
   }, OVERLAY_BAR_PX)
   expect(seen.scrolls).toBe(true)
   expect(seen.clear).toBeGreaterThanOrEqual(OVERLAY_BAR_PX)
+})
+
+// Terminal ▸ Commands & Setup lands on the pane that documents the CLI, not on
+// wherever Settings happened to open last — and that pane lists every
+// subcommand `parseCli` accepts, from the shared list the terminal help reads.
+test('the Terminal menu opens Settings on the pane that documents the CLI', async ({ page }) => {
+  await openMenu(page, 'Terminal', 'Commands & Setup')
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+  await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Terminal')
+
+  const usages = await page.locator('.cli-list dt code').allTextContents()
+  expect(usages).toContain('diffbro compare <file> [<file>]')
+  expect(usages).toContain('diffbro cb save')
+  expect(usages.length).toBeGreaterThanOrEqual(7)
+  // Each one is explained, not just listed.
+  expect(await page.locator('.cli-list dd').count()).toBe(usages.length)
 })

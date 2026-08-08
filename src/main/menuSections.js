@@ -72,6 +72,13 @@ export const securityMenu = (send) => ({
 })
 
 /** @param {(action: string) => void} send */
+// Documents the `diffbro` command, so it lands on the Settings pane that lists
+// the subcommands rather than opening Settings wherever it left off.
+export const terminalMenu = (send) => ({
+  label: t('menu.terminal.title'),
+  submenu: [{ label: t('menu.terminal.info'), click: () => send('settings-cli') }]
+})
+
 export const toolsMenu = (send) => ({
   label: t('menu.tools.title'),
   submenu: [

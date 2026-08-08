@@ -4,6 +4,7 @@
 // silently later, so the status line reports it.
 import { onMounted, ref } from 'vue'
 import { t } from '../i18n'
+import { COMMANDS } from '../../../shared/cliCommands'
 
 const status = ref(null)
 const busy = ref(false)
@@ -52,6 +53,17 @@ async function run(fn) {
       <template #cmd><code>diffbro</code></template>
     </i18n-t>
     <p v-if="error" class="hint">{{ error }}</p>
+
+    <h4>{{ $t('cliSettings.commands') }}</h4>
+    <dl class="cli-list">
+      <template v-for="c in COMMANDS" :key="c.topic">
+        <dt>
+          <code>{{ c.usage }}</code>
+        </dt>
+        <dd>{{ $t(c.summaryKey) }}</dd>
+      </template>
+    </dl>
+    <p class="hint">{{ $t('cliSettings.helpHint') }}</p>
 
     <div class="dialog-actions">
       <button v-if="status?.installed" class="btn" :disabled="busy" @click="uninstall">
