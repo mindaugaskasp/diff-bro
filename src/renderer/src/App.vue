@@ -91,24 +91,15 @@ const dropSuppressed = computed(
 )
 const {
   active: dragActive,
-  snippetDrag,
+  needsDiffRegion,
   dragKind,
-  onDragEnter,
-  onDragOver,
-  onDragLeave,
-  onDrop
+  handlers: dropHandlers
 } = useWindowFileDrop(store, dropSuppressed)
 useSnippetDiffSync()
 </script>
 
 <template>
-  <div
-    class="app"
-    @dragenter.prevent="onDragEnter"
-    @dragover.prevent="onDragOver"
-    @dragleave="onDragLeave"
-    @drop.prevent="onDrop"
-  >
+  <div class="app" v-on="dropHandlers">
     <MenuBar v-if="!isMac" />
 
     <AppToolbar />
@@ -120,9 +111,9 @@ useSnippetDiffSync()
       <!-- The comparison column. The tab strip sits OUTSIDE .content so the
            image export, which photographs .content, still frames only the
            diff. -->
-      <div class="pane drop-anchor" data-drop-region="diff">
+      <div class="pane" data-drop-region="diff">
         <transition name="fade">
-          <div v-if="dragActive && snippetDrag" class="drop-overlay in-pane">
+          <div v-if="dragActive && needsDiffRegion" class="drop-overlay in-pane">
             <div class="drop-card">
               {{ dragKind === 'diff' ? $t('app.dropADiffTo') : $t('app.dropASnippetTo') }}
             </div>
@@ -190,6 +181,7 @@ useSnippetDiffSync()
             v-else-if="store.left || store.right"
             :name="(store.left || store.right).name"
             :missing="missingSide"
+            @pick="store.pick(missingSide)"
           />
           <div v-else class="empty">
             <p class="empty-title">{{ $t('app.chooseTwoFiles') }}</p>
@@ -217,7 +209,7 @@ useSnippetDiffSync()
     <TourOverlay />
 
     <transition name="fade">
-      <div v-if="dragActive && !snippetDrag" class="drop-overlay">
+      <div v-if="dragActive && !needsDiffRegion" class="drop-overlay">
         <div class="drop-card">{{ $t('app.dropUpToTwo') }}</div>
       </div>
     </transition>

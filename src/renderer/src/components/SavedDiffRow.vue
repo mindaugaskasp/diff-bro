@@ -97,7 +97,11 @@ function onDragStart(e) {
       <span
         class="monogram"
         :style="{ '--fam': mono.family }"
-        :data-tip="formatKey ? `Format: ${formatKey}` : 'Plain text comparison'"
+        :data-tip="
+          formatKey
+            ? $t('savedDiffRow.formatTip', { format: formatKey })
+            : $t('savedDiffRow.plainTextComparison')
+        "
         >{{ mono.label }}</span
       >
       <span class="lines">

@@ -87,24 +87,19 @@
   height: 18px;
   line-height: 1;
 }
-/* The whole header is the drag handle — the grab cursor is the only affordance
-   needed. A plain click still toggles the section collapsed. */
-.head.draggable {
-  cursor: grab;
-  /* The gesture is ours: without this a trackpad or touch drag scrolls the
-     sidebar out from under the header instead of moving it. */
+/* The cursor pair lives in ui.css with the attribute rule. This is the part
+   that is only true here: the gesture is ours, and without it a trackpad or
+   touch drag scrolls the sidebar out from under the header. */
+.head.reorderable {
   touch-action: none;
 }
 /* An inline <svg> is a native drag source in Chromium, so grabbing an icon
    would start an image-drag that fires pointercancel and kills the pointer
    reorder. Refuse it on the header AND every child (user-drag does not
    inherit). @dragstart.prevent is the belt; this is the braces. */
-.head.draggable,
-.head.draggable * {
+.head.reorderable,
+.head.reorderable * {
   -webkit-user-drag: none;
-}
-.head.draggable:active {
-  cursor: grabbing;
 }
 /* Only the header under the cursor gets marked (the drop lands ABOVE it): the
    whole header is boxed with a dashed accent outline plus a light accent tint,

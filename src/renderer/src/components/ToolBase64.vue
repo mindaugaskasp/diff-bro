@@ -25,7 +25,7 @@ const result = computed(() => {
       return { output: base64Encode(t, { urlSafe: urlSafe.value, wrap: wrap.value }) }
     return { output: base64Decode(t) }
   } catch {
-    return { error: 'Not valid Base64 (or not valid UTF-8 once decoded).' }
+    return { error: t('toolBase64.invalid') }
   }
 })
 const summary = computed(() => {

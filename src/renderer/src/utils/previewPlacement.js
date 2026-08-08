@@ -18,7 +18,7 @@ const MARGIN = 8
  * @param {{ rect: {left:number,right:number,top:number},
  *           viewport: {width:number,height:number},
  *           width: number, minWidth?: number, gap?: number, reserve?: number }} spec
- * @returns {{ left: string, top: string, width: string }} inline style for a fixed card
+ * @returns {{ left: string, top: string, maxWidth: string }} inline style for a fixed card
  */
 export function previewCardPosition({
   rect,
@@ -46,9 +46,10 @@ export function previewCardPosition({
   }
 
   const top = Math.min(rect.top, viewport.height - Math.min(reserve, viewport.height - 2 * MARGIN))
+  // maxWidth, not width: binding width made `.fit`'s `max-content` unreachable.
   return {
     left: `${Math.max(MARGIN, left)}px`,
     top: `${Math.max(MARGIN, top)}px`,
-    width: `${Math.round(fitted)}px`
+    maxWidth: `${Math.round(fitted)}px`
   }
 }

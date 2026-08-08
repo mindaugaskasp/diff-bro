@@ -314,9 +314,12 @@ test('closing back to one tab does not leave the old name behind', async ({ page
 
 // The sidebar offers the same new-comparison action, and says why when it cannot.
 test('the Saved diffs + opens a new paste comparison, and stops at the cap', async ({ page }) => {
-  const add = page.locator('.sidebar-section', { hasText: 'Saved diffs' }).getByRole('button', {
-    name: 'New comparison'
-  })
+  // Scoped to the header: the empty state carries a button for the same action,
+  // so an unscoped name matches both.
+  const add = page
+    .locator('.sidebar-section', { hasText: 'Saved diffs' })
+    .locator('.actions-slot')
+    .getByRole('button', { name: 'New comparison' })
   await add.click()
   await expect(tabs(page)).toHaveCount(2)
   await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()

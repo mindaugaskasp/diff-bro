@@ -1,7 +1,7 @@
 // What the open comparisons look like on disk, so a quit is not a loss. Pure:
 // the store owns the crypto and the writing, this owns WHAT is worth keeping
 // and hands back a shape restore can trust.
-import { MAX_TABS, blankSnapshot, cleanTabName, createTab, isBlank } from './tabs'
+import { MAX_TABS, cleanTabName, createTab, isBlank, isHalfLoaded, withoutFileSlots } from './tabs'
 
 // Bumped only when the stored shape changes meaning; an unrecognised version is
 // dropped rather than guessed at.
@@ -87,6 +87,10 @@ const packTab = (tab, snapshot, diffSaved) => ({
 // would otherwise leave its demo comparison behind on the next launch.
 const isSkipped = (tab, snapshot) => !!tab.ephemeral || isBlank({ snapshot })
 
+// Reset on the way OUT, so the writer cannot produce a tab the reader discards.
+const storedSnapshot = (snapshot) =>
+  isHalfLoaded({ snapshot }) ? withoutFileSlots(snapshot) : snapshot
+
 export function packSession(tabs, activeId, live) {
   const kept = []
   let budget = MAX_SESSION_BYTES
@@ -96,7 +100,7 @@ export function packSession(tabs, activeId, live) {
   let dropped = 0
   for (const tab of tabs ?? []) {
     const isLive = live && tab.id === activeId
-    const snapshot = isLive ? live.snapshot : tab.snapshot
+    const snapshot = storedSnapshot(isLive ? live.snapshot : tab.snapshot)
     if (isSkipped(tab, snapshot)) continue
     const packed = packTab(tab, snapshot, isLive ? live.diffSaved : tab.diffSaved)
     const size = JSON.stringify(packed).length
@@ -167,23 +171,13 @@ export const EMPTY_ENVELOPE = JSON.stringify({ version: SESSION_VERSION })
 // binds it to this store and shape, so a box lifted from anywhere else fails.
 export const SESSION_AAD = 'session|v1'
 
-// One side loaded and one empty. A real state to be IN — you dropped a file and
-// are choosing the other — but not one to come back to: after a restart the
-// waiting slot has no memory of what you were about to pick, so it restores a
-// half-finished sentence. Paste text is left alone; that is typing the user did.
-export const isHalfLoaded = (tab) => {
-  const s = tab?.snapshot
-  return !!s && !s.left !== !s.right
-}
-
 /**
- * A stored tab back into a live one, blanking a half-loaded snapshot.
+ * A stored tab back into a live one.
  * @param {object} stored
  * @returns {import('./tabs').DiffTab}
  */
 export function tabFromStored(stored) {
-  const snapshot = isHalfLoaded(stored) ? blankSnapshot(stored.snapshot?.view) : stored.snapshot
-  const tab = createTab(snapshot, { diffSaved: stored.diffSaved })
+  const tab = createTab(stored.snapshot, { diffSaved: stored.diffSaved })
   tab.entryId = stored.entryId
   tab.customTitle = cleanTabName(stored.customTitle)
   return tab

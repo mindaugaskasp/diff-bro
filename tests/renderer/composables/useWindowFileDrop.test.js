@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowFileDrop } from '../../../src/renderer/src/composables/useFileDrop'
-import { DRAG_TYPE } from '../../../src/renderer/src/utils/snippetSource'
+import { DIFF_DRAG_TYPE, DRAG_TYPE } from '../../../src/renderer/src/utils/snippetSource'
+import { openSavedDiff } from '../../../src/renderer/src/composables/useSavedDiffOpen'
+
+vi.mock('../../../src/renderer/src/composables/useSavedDiffOpen', () => ({
+  openSavedDiff: vi.fn()
+}))
+vi.mock('../../../src/renderer/src/i18n', () => ({ t: (k) => k }))
 
 const store = () => ({ dropSnippets: vi.fn(), dropFiles: vi.fn() })
 
@@ -39,10 +45,14 @@ describe('useWindowFileDrop — where a snippet may be dropped', () => {
 
   it('clears the overlay either way, so nothing is left lit', async () => {
     const drop = useWindowFileDrop(store(), ref(false))
-    drop.onDragEnter(snippetDrop(false))
+    // Light it FIRST: asserting false on something already false proved only
+    // that the composable had not turned it on.
+    drop.onDragEnter(snippetDrop(true))
+    drop.onDragOver(snippetDrop(true))
+    expect(drop.active.value).toBe(true)
     await drop.onDrop(snippetDrop(false))
     expect(drop.active.value).toBe(false)
-    expect(drop.snippetDrag.value).toBe(false)
+    expect(drop.needsDiffRegion.value).toBe(false)
   })
 
   it('still refuses everything while a dialog owns drops', async () => {
@@ -66,7 +76,7 @@ describe('useWindowFileDrop — the overlay follows the pointer', () => {
     expect(drop.active.value).toBe(false)
     drop.onDragOver(snippetDrop(true)) // now over the pane
     expect(drop.active.value).toBe(true)
-    expect(drop.snippetDrag.value).toBe(true)
+    expect(drop.needsDiffRegion.value).toBe(true)
   })
 
   it('goes dark again when the snippet leaves the column', () => {
@@ -94,6 +104,56 @@ describe('useWindowFileDrop — the overlay follows the pointer', () => {
     const drop = useWindowFileDrop(store(), ref(false))
     drop.onDragEnter(fileDrag(false))
     expect(drop.active.value).toBe(true)
-    expect(drop.snippetDrag.value).toBe(false)
+    expect(drop.needsDiffRegion.value).toBe(false)
+  })
+})
+
+// Escape cancels a drag. Chromium then fires dragend on the SOURCE and NOTHING
+// else — no dragleave, no drop — so every reset path hanging off those two left
+// the wash and the drop card on screen until the user dragged something again.
+describe('useWindowFileDrop — a cancelled drag', () => {
+  it('clears the overlay on dragend', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    drop.onDragEnter(snippetDrop(true))
+    drop.onDragOver(snippetDrop(true))
+    expect(drop.active.value).toBe(true)
+    drop.onDragEnd()
+    expect(drop.active.value).toBe(false)
+    expect(drop.needsDiffRegion.value).toBe(false)
+  })
+
+  it('clears it however deeply nested the drag had gone', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    drop.onDragEnter(snippetDrop(true))
+    drop.onDragEnter(snippetDrop(true))
+    drop.onDragEnter(snippetDrop(true))
+    drop.onDragEnd()
+    expect(drop.active.value).toBe(false)
+  })
+})
+
+// The row click explains an expired or undecryptable diff; the drop is the same
+// action by another gesture, so it cannot fail in silence.
+describe('useWindowFileDrop — a saved diff that will not open', () => {
+  const diffDrop = () => ({
+    dataTransfer: {
+      types: [DIFF_DRAG_TYPE],
+      getData: () => JSON.stringify(['gone-1'])
+    },
+    target: targetIn(true)
+  })
+
+  it('says so, exactly as clicking the row does', async () => {
+    openSavedDiff.mockResolvedValue(false)
+    const s = { ...store(), showNotice: vi.fn() }
+    await useWindowFileDrop(s, ref(false)).onDrop(diffDrop())
+    expect(s.showNotice).toHaveBeenCalledWith('savedDiffRow.expiredOrUndecryptable')
+  })
+
+  it('stays quiet when it opens', async () => {
+    openSavedDiff.mockResolvedValue(true)
+    const s = { ...store(), showNotice: vi.fn() }
+    await useWindowFileDrop(s, ref(false)).onDrop(diffDrop())
+    expect(s.showNotice).not.toHaveBeenCalled()
   })
 })

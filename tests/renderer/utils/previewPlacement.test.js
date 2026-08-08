@@ -30,7 +30,7 @@ describe('previewCardPosition', () => {
     const style = previewCardPosition({ rect, viewport, width: WIDTH })
     // The card now reports the width it actually took, so the far edge is
     // measured against that rather than against what it asked for.
-    const took = Number.parseInt(style.width, 10)
+    const took = Number.parseInt(style.maxWidth, 10)
     expect(leftPx(style)).toBe(viewport.width - took - 8)
     expect(leftPx(style)).toBeGreaterThan(8) // what the old clamp produced
   })
@@ -45,7 +45,7 @@ describe('previewCardPosition', () => {
 
   it('stays inside the viewport on the right', () => {
     const style = previewCardPosition({ rect: at(0, 780), viewport, width: WIDTH })
-    expect(leftPx(style) + Number.parseInt(style.width, 10)).toBeLessThanOrEqual(viewport.width)
+    expect(leftPx(style) + Number.parseInt(style.maxWidth, 10)).toBeLessThanOrEqual(viewport.width)
   })
 
   it('keeps a tall card on screen rather than running off the bottom', () => {
@@ -82,7 +82,7 @@ describe('previewCardPosition — fitting a wide card', () => {
   it('narrows to the room right of the row instead of overlapping it', () => {
     const p = previewCardPosition({ rect: sidebarRow, viewport, width: 1280, minWidth: 320 })
     expect(Number.parseInt(p.left, 10)).toBeGreaterThanOrEqual(sidebarRow.right)
-    expect(Number.parseInt(p.left, 10) + Number.parseInt(p.width, 10)).toBeLessThanOrEqual(
+    expect(Number.parseInt(p.left, 10) + Number.parseInt(p.maxWidth, 10)).toBeLessThanOrEqual(
       viewport.width
     )
   })
@@ -94,7 +94,7 @@ describe('previewCardPosition — fitting a wide card', () => {
       width: 1280,
       minWidth: 320
     })
-    expect(p.width).toBe('1280px')
+    expect(p.maxWidth).toBe('1280px')
   })
 
   it('never narrows below the floor, even in a cramped window', () => {
@@ -104,7 +104,7 @@ describe('previewCardPosition — fitting a wide card', () => {
       width: 1280,
       minWidth: 320
     })
-    expect(Number.parseInt(p.width, 10)).toBeGreaterThanOrEqual(320)
+    expect(Number.parseInt(p.maxWidth, 10)).toBeGreaterThanOrEqual(320)
   })
 
   it('still clears the row it was summoned from', () => {

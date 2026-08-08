@@ -3,6 +3,7 @@ import { DIFF_DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
 import { openSavedDiff } from './useSavedDiffOpen'
 import { isSnippetDragType } from './useSnippetDrag'
 import { useShareStore } from '../features/share'
+import { t } from '../i18n'
 
 // Load a dropped file's text into a tool input. getPathForFile registers the
 // path with main's read allowlist (src/main/files.js).
@@ -31,7 +32,7 @@ const dragKindOf = (e) => {
   return 'files'
 }
 const isRowDrag = (e) => dragKindOf(e) !== 'files'
-const carries = (e) => hasFiles(e) || isRowDrag(e)
+const hasDroppablePayload = (e) => hasFiles(e) || isRowDrag(e)
 // A drop released over a file slot targets that side.
 const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
 // A snippet BECOMES the comparison, so it has to be released on the thing it
@@ -39,7 +40,7 @@ const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
 // anywhere — over the sidebar, over the toolbar, or from a drag that never
 // really left the row — and silently replaced what was on screen. Files keep
 // the window-wide target: dropping a file on the app is its own gesture.
-const inDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
+const isInDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
 
 // A dropped key or sealed diff is not a comparison: each opens its own flow.
 async function dropPaths(store, paths, targetSide) {
@@ -56,12 +57,15 @@ async function dropPaths(store, paths, targetSide) {
 async function routeDrop(e, store) {
   const dropped = diffIds(e)
   if (dropped.length) {
-    if (inDiffRegion(e)) await openSavedDiff(dropped[0])
+    if (!isInDiffRegion(e)) return
+    // The same action by another gesture, so it cannot fail in silence.
+    if (!(await openSavedDiff(dropped[0])))
+      store.showNotice(t('savedDiffRow.expiredOrUndecryptable'))
     return
   }
   const ids = snippetIds(e)
   if (ids.length) {
-    if (inDiffRegion(e)) await store.dropSnippets(ids, sideUnder(e))
+    if (isInDiffRegion(e)) await store.dropSnippets(ids, sideUnder(e))
     return
   }
   if (!hasFiles(e)) return
@@ -71,6 +75,21 @@ async function routeDrop(e, store) {
   if (paths.length) await dropPaths(store, paths, sideUnder(e))
 }
 
+const preventing = (fn) => (e) => {
+  e.preventDefault()
+  return fn(e)
+}
+
+// One object the window binds with `v-on`: five separate attributes are five
+// chances to wire four of them, which is how dragend came to be missing.
+const windowDragHandlers = (on) => ({
+  dragenter: preventing(on.onDragEnter),
+  dragover: preventing(on.onDragOver),
+  dragleave: on.onDragLeave,
+  dragend: on.onDragEnd,
+  drop: preventing(on.onDrop)
+})
+
 // Window-level diff drop. A dragenter/leave depth counter avoids child-element
 // flicker; `suppressed` stands it down while a dialog handles its own drops.
 export function useWindowFileDrop(store, suppressed) {
@@ -79,16 +98,24 @@ export function useWindowFileDrop(store, suppressed) {
   // Which flavour is in flight, so the overlay can say what will happen.
   /** @type {import('vue').Ref<'files'|'snippet'|'diff'>} */
   const dragKind = ref('files')
-  const snippetDrag = computed(() => dragKind.value !== 'files')
+  // A file may land anywhere; a ROW — snippet or diff — becomes the comparison,
+  // so it only counts over the column that will host it and the overlay must
+  // not promise "drop to compare" outside it.
+  const needsDiffRegion = computed(() => dragKind.value !== 'files')
   const overDiff = ref(false)
-  // A file may land anywhere; a snippet only counts over the comparison column,
-  // so the overlay must not promise "drop to compare" outside it.
-  const active = computed(() => inWindow.value && (!snippetDrag.value || overDiff.value))
+  const active = computed(() => inWindow.value && (!needsDiffRegion.value || overDiff.value))
+
+  function reset() {
+    depth.value = 0
+    inWindow.value = false
+    dragKind.value = 'files'
+    overDiff.value = false
+  }
 
   // Never gate this: a snippet drag STARTS in the sidebar, so an enter skipped
   // there while dragleave still decremented unbalanced the counter.
   function onDragEnter(e) {
-    if (!carries(e) || suppressed.value) return
+    if (!hasDroppablePayload(e) || suppressed.value) return
     depth.value += 1
     inWindow.value = true
     dragKind.value = dragKindOf(e)
@@ -96,24 +123,20 @@ export function useWindowFileDrop(store, suppressed) {
   // Where the pointer IS belongs to dragover: it fires continuously with the
   // element actually under it, which dragenter does not.
   const onDragOver = (e) => {
-    if (snippetDrag.value) overDiff.value = inDiffRegion(e)
+    if (needsDiffRegion.value) overDiff.value = isInDiffRegion(e)
   }
   function onDragLeave() {
     depth.value = Math.max(0, depth.value - 1)
-    if (depth.value === 0) {
-      inWindow.value = false
-      dragKind.value = 'files'
-      overDiff.value = false
-    }
+    if (depth.value === 0) reset()
   }
+  // Escape cancels a drag: Chromium then fires dragend and nothing else.
+  const onDragEnd = reset
   async function onDrop(e) {
-    depth.value = 0
-    inWindow.value = false
-    dragKind.value = 'files'
-    overDiff.value = false
+    reset()
     if (suppressed.value) return
     await routeDrop(e, store)
   }
 
-  return { active, onDragEnter, onDragOver, onDragLeave, onDrop, dragKind, snippetDrag }
+  const on = { onDragEnter, onDragOver, onDragLeave, onDragEnd, onDrop }
+  return { active, handlers: windowDragHandlers(on), ...on, dragKind, needsDiffRegion }
 }

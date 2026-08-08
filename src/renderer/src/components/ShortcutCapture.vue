@@ -6,6 +6,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { DEFAULT_QUICKLOOK_SHORTCUT } from '../utils/settingsDefaults'
 import { acceleratorFromEvent, isValidAccelerator, acceleratorLabel } from '../utils/accelerator'
 import { isMac } from '../keys'
+import { t } from '../i18n'
 
 const settings = useSettingsStore()
 const capturing = ref(false)
@@ -27,15 +28,15 @@ async function apply(accel) {
   capturing.value = false
   if (res?.ok) {
     settings.setQuickLookShortcut(accel)
-    message.value = { type: 'ok', text: 'Shortcut updated.' }
+    message.value = { type: 'ok', text: t('shortcutCapture.updated') }
     return
   }
   message.value = {
     type: 'error',
     text:
       res?.error === 'unavailable'
-        ? 'That combination is already in use by another app — try another.'
-        : 'That shortcut can’t be used — try another.'
+        ? t('shortcutCapture.takenByAnotherApp')
+        : t('shortcutCapture.unusable')
   }
 }
 
@@ -47,7 +48,7 @@ function onKeydown(e) {
   if (!accel || !isValidAccelerator(accel)) {
     message.value = {
       type: 'error',
-      text: 'Hold a modifier (Ctrl/Cmd, Alt, or Shift) and press a key.'
+      text: t('shortcutCapture.holdAModifier')
     }
     return
   }

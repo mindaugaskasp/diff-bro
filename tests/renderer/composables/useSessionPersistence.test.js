@@ -84,7 +84,10 @@ describe('useSessionPersistence', () => {
     const diff = useDiffStore()
     const tabs = useTabsStore()
     start()
+    // Both sides: a half-loaded tab is reset on the way out, so a one-sided
+    // one would pack as blank and never carry the name at all.
     diff.left = { path: '/tmp/a.txt', name: 'a.txt', content: 'a' }
+    diff.right = { path: '/tmp/b.txt', name: 'b.txt', content: 'b' }
     await settle()
 
     tabs.rename(tabs.activeId, 'prod vs staging')

@@ -4,6 +4,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { PASSPHRASE_HINT, passphraseTooShort } from '../passphrase'
 import BaseDialog from './BaseDialog.vue'
+import { t } from '../i18n'
 
 const store = useSnippetStore()
 const diff = useDiffStore()
@@ -14,8 +15,10 @@ const mode = computed(() => (store.pendingImport ? 'import' : 'export'))
 const exportAll = computed(() => store.pendingExport?.all === true)
 const exportTagName = computed(() => store.pendingExport?.tag || 'Default')
 const title = computed(() => {
-  if (mode.value === 'import') return 'Import Snippets'
-  return exportAll.value ? 'Export All Snippets' : `Export "${exportTagName.value}" tag`
+  if (mode.value === 'import') return t('snippetPassphraseDialog.importTitle')
+  return exportAll.value
+    ? t('snippetPassphraseDialog.exportAllTitle')
+    : t('snippetPassphraseDialog.exportTagTitle', { tag: exportTagName.value })
 })
 
 async function runImport() {
@@ -29,7 +32,11 @@ async function runExport() {
     ? await store.exportAll(passphrase.value)
     : await store.exportTag(store.pendingExport.tag, passphrase.value)
   if (res.canceled) return
-  diff.showNotice(res.ok ? `Exported to ${res.path}` : 'Export failed.')
+  diff.showNotice(
+    res.ok
+      ? t('snippetPassphraseDialog.exportedTo', { path: res.path })
+      : t('snippetPassphraseDialog.exportFailed')
+  )
 }
 
 async function submit() {

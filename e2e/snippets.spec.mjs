@@ -92,7 +92,16 @@ test('the section add button is inked, and row actions are not', async ({ page }
 // the cold-start case: open the app, want to add something.
 test('an empty section offers a real button, a populated one does not', async ({ page }) => {
   // Saved diffs starts empty; Snippets ships seeded examples.
-  await expect(page.locator('.empty-cta .btn-primary')).toHaveCount(1)
+  const cta = page.locator('.empty-cta .btn-primary')
+  await expect(cta).toBeVisible()
   const snippets = page.locator('.sidebar-section', { hasText: 'Snippets' }).first()
+  await expect(snippets).toHaveCount(1)
   await expect(snippets.locator('.empty-cta')).toHaveCount(0)
+
+  // The whole point is that it is clickable at cold start, which a DOM count
+  // does not establish — a collapsed section still counts 1.
+  const tabsBefore = await page.locator('.tab').count()
+  await cta.click()
+  await expect(page.locator('.tab')).toHaveCount(tabsBefore + 1)
+  await expect(page.locator('.paste-pane, .paste-input, textarea').first()).toBeVisible()
 })

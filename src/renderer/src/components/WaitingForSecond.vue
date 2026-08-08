@@ -3,7 +3,7 @@
 // what was missing without SHOWING it. This mirrors the comparison instead: a
 // filled slot for what is loaded, an empty dashed one for what is not, in the
 // order the panes are in — so the shape of the screen is the instruction.
-import { useDiffStore } from '../stores/diffStore'
+import { computed } from 'vue'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -12,44 +12,37 @@ const props = defineProps({
   missing: { type: String, required: true }
 })
 
-// The slot knows which side it is; making the parent wire that back was one
-// more place for the two to disagree.
-const pick = () => useDiffStore().pick(props.missing)
-const emptyFirst = () => props.missing === 'left'
+const emit = defineEmits(['pick'])
+
+// A list, not two mirrored `v-if` branches: the separator sat at a fixed
+// position between them, so a missing LEFT put it after both.
+const slotOrder = computed(() =>
+  props.missing === 'left' ? ['open', 'filled'] : ['filled', 'open']
+)
 </script>
 
 <template>
   <div class="empty waiting">
     <div class="wait-slots">
-      <button
-        v-if="emptyFirst()"
-        type="button"
-        class="wait-slot open"
-        :aria-label="$t('app.waiting.chooseSide', { side: $t(`common.${missing}`) })"
-        @click="pick"
-      >
-        <AppIcon name="plus" />
-        <span class="wait-label">{{
-          $t('app.waiting.dropSide', { side: $t(`common.${missing}`) })
-        }}</span>
-      </button>
-      <div class="wait-slot filled">
-        <span class="wait-tag">{{ $t('app.waiting.loaded') }}</span>
-        <span class="wait-name">{{ name }}</span>
-      </div>
-      <span class="wait-vs" aria-hidden="true">↔</span>
-      <button
-        v-if="!emptyFirst()"
-        type="button"
-        class="wait-slot open"
-        :aria-label="$t('app.waiting.chooseSide', { side: $t(`common.${missing}`) })"
-        @click="pick"
-      >
-        <AppIcon name="plus" />
-        <span class="wait-label">{{
-          $t('app.waiting.dropSide', { side: $t(`common.${missing}`) })
-        }}</span>
-      </button>
+      <template v-for="(slot, i) in slotOrder" :key="slot">
+        <span v-if="i" class="wait-vs" aria-hidden="true">↔</span>
+        <button
+          v-if="slot === 'open'"
+          type="button"
+          class="wait-slot open"
+          :aria-label="$t('app.waiting.chooseSide', { side: $t(`common.${missing}`) })"
+          @click="emit('pick', missing)"
+        >
+          <AppIcon name="plus" />
+          <span class="wait-label">{{
+            $t('app.waiting.dropSide', { side: $t(`common.${missing}`) })
+          }}</span>
+        </button>
+        <div v-else class="wait-slot filled">
+          <span class="wait-tag">{{ $t('app.waiting.loaded') }}</span>
+          <span class="wait-name">{{ name }}</span>
+        </div>
+      </template>
     </div>
     <p class="wait-hint">{{ $t('app.waiting.hint') }}</p>
   </div>

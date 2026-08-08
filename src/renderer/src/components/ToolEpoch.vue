@@ -63,7 +63,13 @@ async function copy(text) {
       <span class="te-now-l"
         ><AppIcon name="clock" class="te-tick" /> {{ $t('toolEpoch.now') }}</span
       >
-      <button class="te-now-v" :data-tip="`Copy ${live}`" @click="copy(live)">{{ live }}</button>
+      <button
+        class="te-now-v"
+        :data-tip="$t('toolEpoch.copyValue', { value: live })"
+        @click="copy(live)"
+      >
+        {{ live }}
+      </button>
     </div>
 
     <div class="te-controls">

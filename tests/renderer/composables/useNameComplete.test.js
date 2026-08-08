@@ -162,3 +162,48 @@ describe('useNameComplete — accepting is undoable', () => {
     expect(name.value).toBe('Deploy — ')
   })
 })
+
+// The ghost is drawn at the END of the value, so accepting APPENDS — wherever
+// the caret happens to be. Letting insertText run at the caret spliced the
+// completion into the middle of the name and ate any selection with it.
+describe('useNameComplete — Tab appends, it never edits at the caret', () => {
+  const withRealInput = (typed, selStart, selEnd) => {
+    const name = ref(typed)
+    const el = document.createElement('input')
+    document.body.append(el)
+    el.value = typed
+    el.setSelectionRange(selStart, selEnd)
+    el.addEventListener('input', () => (name.value = el.value))
+    // jsdom has no execCommand, so the browser path would never run here. This
+    // is what Chromium does: splice at the caret, replacing any selection.
+    document.execCommand = (cmd, _ui, text) => {
+      if (cmd !== 'insertText') return false
+      const { selectionStart: a, selectionEnd: b } = el
+      el.value = el.value.slice(0, a) + text + el.value.slice(b)
+      el.setSelectionRange(a + text.length, a + text.length)
+      el.dispatchEvent(new Event('input'))
+      return true
+    }
+    const hook = useNameComplete({ name, names: ref(NAMES) })
+    hook.inputEl.value = el
+    return { name, el, hook }
+  }
+
+  it('appends when the caret sits in the middle of what was typed', () => {
+    const { name, hook } = withRealInput('Dep', 1, 1)
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+
+  it('does not swallow the selection', () => {
+    const { name, hook } = withRealInput('Dep', 0, 3)
+    press(hook, 'Tab')
+    expect(name.value).toBe('Deploy — ')
+  })
+
+  it('leaves the caret after the accepted text', () => {
+    const { el, hook } = withRealInput('Dep', 1, 1)
+    press(hook, 'Tab')
+    expect(el.selectionStart).toBe(el.value.length)
+  })
+})

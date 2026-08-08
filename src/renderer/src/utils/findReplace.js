@@ -14,7 +14,13 @@ function buildRegex(find, mode, caseInsensitive) {
  *           mode?: 'text'|'word'|'regex', caseInsensitive?: boolean }} opts
  * @returns {{ output: string, count: number, error?: string }}
  */
-export function replaceText({ text = '', find, replace = '', mode = 'text', caseInsensitive = false }) {
+export function replaceText({
+  text = '',
+  find,
+  replace = '',
+  mode = 'text',
+  caseInsensitive = false
+}) {
   if (!find) return { output: text, count: 0 }
   let re
   try {

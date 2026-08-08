@@ -19,6 +19,7 @@ import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
 import BaseDialog from './BaseDialog.vue'
+import { t } from '../i18n'
 
 const settings = useSettingsStore()
 const container = ref(null)
@@ -107,7 +108,7 @@ function saveSnippet() {
     :initial-size="settings.dialogSize('snippet') ?? DEFAULT_SNIPPET_DIALOG_SIZE"
     :title="
       isNew
-        ? 'New Snippet'
+        ? t('snippetEditorDialog.newSnippetTitle')
         : editMode
           ? $t('snippetEditorDialog.editSnippet')
           : $t('snippetEditorDialog.snippet')

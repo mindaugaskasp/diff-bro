@@ -2,14 +2,11 @@
 // the diffStore snapshot that IS the document (see diffStore.snapshot()), so
 // nothing here needs Vue, the store, or Monaco.
 
-// A rail, not the bound: past this the strip stops being navigable however
-// little it holds. The real ceiling is the budget below.
+// A rail, not the bound — the real ceiling is the budget below.
 export const MAX_TABS = 16
 
-// What every open tab may hold between them, in characters (UTF-16, so roughly
-// half this many bytes twice over). A tab keeps BOTH sides in full, which is
-// what the old count of six was really guarding — badly, since it charged a
-// streamed pair holding nothing the same as two 200 MB files.
+// What every open tab may hold between them, in characters. A plain count of
+// tabs charged a streamed pair holding nothing the same as two 200 MB files.
 export const MAX_LIVE_CHARS = 96_000_000
 
 let seq = 0
@@ -59,17 +56,14 @@ export const UNTITLED = 'Untitled'
 const sideName = (file, pasteFile) => file?.name || pasteFile?.name || ''
 const hasPastedText = (s) => s?.mode === 'paste' && !!(s.pasteLeft || s.pasteRight)
 
-// Comparing pasted text names BOTH sides with the same placeholder, so every
-// paste tab came out reading "Left (pasted) ↔ Right (…" — identical, truncated,
-// and useless for telling three of them apart. The first line of what was
-// pasted is the thing a reader actually recognises.
+// Both pasted sides carry the same placeholder, so every paste tab read
+// "Left (pasted) ↔ Right (…". The first line pasted is what a reader knows.
 const PASTED_PLACEHOLDER = /^(Left|Right) \(pasted\)$/
 const isPasted = (file) => !file?.path && PASTED_PLACEHOLDER.test(file?.name ?? '')
 const FIRST_LINE_MAX = 24
 
-// Pretty-printed JSON opens on "[" or "{" and YAML on "---", so "the first
-// non-empty line" titled the tab with a single bracket. A line has to carry a
-// letter or a digit before it can name anything.
+// "First non-empty line" titled a JSON tab with a single bracket: a line has
+// to carry a letter or a digit before it can name anything.
 const SAYS_SOMETHING = /[\p{L}\p{N}]/u
 
 export function firstLineOf(content) {
@@ -108,27 +102,17 @@ export function createTab(
 // Long enough for "prod vs staging", short enough not to overrun the bar.
 export const MAX_TAB_NAME = 40
 
-/**
- * A typed tab name, tidied — or '' to mean "go back to the derived one".
- * @param {string} [name]
- * @returns {string}
- */
+/** A typed tab name, tidied — or '' to mean "go back to the derived one". */
 export const cleanTabName = (name) =>
   String(name ?? '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_TAB_NAME)
 
-/**
- * What the bar shows. A name the reader typed outranks the one derived from the
- * files, which keeps following the snapshot underneath it.
- * @param {DiffTab} [tab]
- * @returns {string}
- */
+/** What the bar shows: a typed name outranks the one derived from the files. */
 export const tabLabel = (tab) => tab?.customTitle || tab?.title || UNTITLED
 
-// A streamed side is a path the viewer reads windows from, so it costs nothing
-// to hold; a grid costs its cells.
+// A streamed side is a path, so it costs nothing to hold; a grid costs cells.
 function sideCost(side) {
   if (!side || side.kind === 'streamed') return 0
   if (side.kind === 'spreadsheet') {
@@ -248,8 +232,19 @@ export function isBlank(tab) {
   )
 }
 
-// Defaults as an object rather than destructuring defaults: tabsStore.open()
-// sits right on the complexity limit and every `=` in a signature counts.
+// A real state to be IN, but not one to come back to: after a restart the
+// waiting slot has no memory of what you were about to pick.
+export const isHalfLoaded = (tab) => {
+  const s = tab?.snapshot
+  return !!s && !s.left !== !s.right
+}
+
+// The abandoned drop cleared and NOTHING else: paste text, the mode and the
+// view toggles are the user's own work, and blanking threw them away.
+export const withoutFileSlots = (snapshot) => ({ ...snapshot, left: null, right: null })
+
+// An object, not destructuring defaults: tabsStore.open() sits on the
+// complexity limit and every `=` in a signature counts.
 export const OPEN_DEFAULTS = {
   diffSaved: false,
   entryId: null,

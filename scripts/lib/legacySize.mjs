@@ -30,7 +30,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/stores/tabsStore.js': { file: 394 },
   'src/renderer/src/stores/vaultStore.js': { file: 366 },
   'src/renderer/src/utils/structuralDiff.js': { file: 279 },
-  'src/renderer/src/utils/tabs.js': { file: 259 }
+  'src/renderer/src/utils/tabs.js': { file: 254 }
 }
 
 /** Files whose length is a declaration list, where a cap fires on adding a row. */

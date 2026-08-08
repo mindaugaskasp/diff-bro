@@ -77,7 +77,7 @@ function cancel() {
         @click="start('email')"
       >
         <AppIcon name="mail" />
-        <span>{{ entry.email || 'Add email' }}</span>
+        <span>{{ entry.email || $t('trustedKeyRow.addEmail') }}</span>
       </button>
     </div>
 

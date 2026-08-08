@@ -31,7 +31,7 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
   <BaseDialog
     v-if="pending"
     width="380px"
-    :title="`Delete ${label}?`"
+    :title="$t('snippetDeleteDialog.deleteTitle', { name: label })"
     :closable="false"
     @close="store.cancelDelete()"
   >

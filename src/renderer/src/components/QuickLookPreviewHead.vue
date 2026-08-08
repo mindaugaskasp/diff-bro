@@ -38,7 +38,7 @@ defineEmits(['copy', 'edit'])
     <button
       v-if="current.kind === 'snippet'"
       class="btn btn-sm ql-pv-copy"
-      :data-tip="`Copy the contents to the clipboard (${copyKey})`"
+      :data-tip="$t('quickLookPreviewHead.copyContentsTip', { key: copyKey })"
       @click="$emit('copy')"
     >
       <AppIcon :name="copied ? 'check' : 'copy'" />

@@ -99,20 +99,21 @@ export const clickAppMenuItem = (app, label) =>
     // Exact first, then substring — the in-window path matches with `hasText`,
     // and the two must agree or a caller has to know which platform it is on.
     // The native labels are the longer ones ("Epoch / Date" for "Epoch").
-    const find = (items, match) => {
-      for (const item of items) {
-        if (match(item.label)) return item
-        const hit = item.submenu && find(item.submenu.items, match)
-        if (hit) return hit
-      }
-      return null
-    }
+    const findAll = (items, match) =>
+      items.flatMap((item) => [
+        ...(match(item.label) ? [item] : []),
+        ...(item.submenu ? findAll(item.submenu.items, match) : [])
+      ])
     const all = Menu.getApplicationMenu().items
-    const item =
-      find(all, (l) => l === wanted) ??
-      find(all, (l) => typeof l === 'string' && l.includes(wanted))
-    if (!item) throw new Error(`application menu item not found: ${wanted}`)
-    item.click()
+    const exact = findAll(all, (l) => l === wanted)
+    // A substring match that hits twice is a coin toss, and a silently wrong
+    // click is worse than a failure: say so instead.
+    const loose = exact.length ? exact : findAll(all, (l) => l?.includes?.(wanted))
+    if (loose.length > 1) {
+      throw new Error(`ambiguous application menu item "${wanted}": ${loose.map((i) => i.label)}`)
+    }
+    if (!loose.length) throw new Error(`application menu item not found: ${wanted}`)
+    loose[0].click()
   }, label)
 
 // macOS renders no in-window menu bar — App.vue mounts MenuBar only when

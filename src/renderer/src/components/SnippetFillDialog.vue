@@ -28,7 +28,7 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="440px" :title="`Fill in — ${name}`" @close="close">
+  <BaseDialog width="440px" :title="$t('snippetFillDialog.fillInTitle', { name })" @close="close">
     <form class="dialog-form" @submit.prevent="copyFilled">
       <p class="dialog-note">
         {{ $t('snippetFillDialog.thisPromptHasPlaceholdersFill') }}

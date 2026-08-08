@@ -3,6 +3,7 @@
 // on PATH for most shells — when it isn't, saying so is more use than failing
 // silently later, so the status line reports it.
 import { onMounted, ref } from 'vue'
+import { t } from '../i18n'
 
 const status = ref(null)
 const busy = ref(false)
@@ -21,7 +22,7 @@ async function run(fn) {
   busy.value = true
   error.value = ''
   const res = await fn()
-  if (res && res.ok === false) error.value = res.error || 'Could not write the command.'
+  if (res && res.ok === false) error.value = res.error || t('cliSettings.writeFailed')
   await refresh()
   busy.value = false
 }

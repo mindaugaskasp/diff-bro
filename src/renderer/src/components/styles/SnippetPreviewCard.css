@@ -3,8 +3,9 @@
 .preview {
   position: fixed;
   z-index: 30;
-  /* Width is an inline style from previewCardPosition, which shrinks it into
-     the room beside the row — a CSS cap here would fight that. */
+  /* The CAP is an inline max-width from previewCardPosition, which measures the
+     room beside the row. Width is the ambition; the cap is the constraint. */
+  width: 1280px;
   min-width: 0;
   /* Never taller than the screen; the body/diagram cap themselves in vh below. */
   max-height: 90vh;
@@ -26,8 +27,7 @@
 .preview.fit {
   width: max-content;
   min-width: 240px;
-  /* Hugs its content, but never past the room the placement measured. */
-  max-width: inherit;
+  /* Hugs its content; the inline cap still limits it. */
 }
 .pv-head {
   display: flex;

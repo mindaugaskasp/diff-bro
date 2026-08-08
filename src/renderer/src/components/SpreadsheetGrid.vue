@@ -79,7 +79,7 @@ function text(entry, col) {
       <tr v-for="(entry, r) in rows" :key="r" :class="rowClass(entry)">
         <th
           class="rownum"
-          :data-tip="hiddenRows.has(rowIndex(entry)) ? 'Hidden in the source file' : null"
+          :data-tip="hiddenRows.has(rowIndex(entry)) ? $t('spreadsheetGrid.hiddenInSource') : null"
         >
           {{ rowData(entry) === null ? '·' : rowIndex(entry) + 1 }}
         </th>

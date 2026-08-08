@@ -124,8 +124,10 @@ test('one side loaded shows a filled slot and an empty one, in pane order', asyn
   const slots = page.locator('.wait-slots')
   await expect(slots).toBeVisible()
   const seen = await slots.evaluate((el) => ({
-    order: [...el.querySelectorAll('.wait-slot')].map((s) =>
-      s.classList.contains('filled') ? 'filled' : 'open'
+    // Every child, not just the slots: the ↔ sat at a fixed position between
+    // two mirrored branches, so a missing LEFT rendered it after both of them.
+    order: [...el.children].map((s) =>
+      s.classList.contains('wait-vs') ? 'vs' : s.classList.contains('filled') ? 'filled' : 'open'
     ),
     name: el.querySelector('.wait-name').textContent,
     // The accent is on the RIM, never the label — as ink it is under the
@@ -133,7 +135,7 @@ test('one side loaded shows a filled slot and an empty one, in pane order', asyn
     rim: getComputedStyle(el.querySelector('.wait-slot.open')).borderStyle
   }))
   // The snippet filled the LEFT, so the empty slot is second.
-  expect(seen.order).toEqual(['filled', 'open'])
+  expect(seen.order).toEqual(['filled', 'vs', 'open'])
   expect(seen.name).toBe(DIAGRAM)
   expect(seen.rim).toBe('dashed')
   await expect(slots.locator('.wait-label')).toContainText('Right')
@@ -146,6 +148,30 @@ test('one side loaded shows a filled slot and an empty one, in pane order', asyn
   await expect(open).toHaveAttribute('aria-label', /Choose the Right file/)
 })
 
+// The mirror case. Only the left-filled orientation was ever driven, and it is
+// the one where the separator happens to land right.
+test('the separator still sits between the slots when the LEFT side is missing', async ({
+  page
+}) => {
+  const row = page.locator('.row', { hasText: DIAGRAM }).first()
+  const rb = await row.boundingBox()
+  const right = await page.locator('[data-side="right"]').first().boundingBox()
+  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(right.x + right.width / 2, right.y + right.height / 2, { steps: 10 })
+  await page.mouse.up()
+
+  const slots = page.locator('.wait-slots')
+  await expect(slots).toBeVisible()
+  await expect(slots.locator('.wait-label')).toContainText('Left')
+  const order = await slots.evaluate((el) =>
+    [...el.children].map((s) =>
+      s.classList.contains('wait-vs') ? 'vs' : s.classList.contains('filled') ? 'filled' : 'open'
+    )
+  )
+  expect(order).toEqual(['open', 'vs', 'filled'])
+})
+
 // The hover preview is anchored to the row you start the drag from, so it sat
 // directly over the area being dragged TO. Nothing else closed it: the pointer
 // never leaves the row before the drag takes over.
@@ -155,11 +181,10 @@ test('the hover preview gets out of the way once a drag starts', async ({ page }
   await ((await anchor.count()) ? anchor : row).hover()
   await expect(page.locator('.preview')).toBeVisible({ timeout: 5000 })
 
-  const rb = await row.boundingBox()
-  const pb = await page.locator('.pane').boundingBox()
-  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2, { steps: 10 })
-  await expect(page.locator('.preview')).toHaveCount(0)
-  await page.mouse.up()
+  // dragstart with the pointer STILL on the row: no hover-out fires, so the
+  // @dragging wiring is the only thing that can close the card. Moving the
+  // mouse away first made this pass with the feature deleted.
+  await row.dispatchEvent('dragstart')
+  await expect(page.locator('.preview')).toHaveCount(0, { timeout: 1000 })
+  expect(await row.evaluate((el) => el.matches(':hover'))).toBe(true)
 })

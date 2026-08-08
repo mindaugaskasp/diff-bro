@@ -40,7 +40,10 @@ function matchEmphasis(text, i) {
   if (before !== undefined && WORD.test(before)) return null
   const close = findClose(text, i, text[i])
   if (close === -1) return null
-  return { length: close - i + 1, node: { type: kind, inlines: parseInline(text.slice(i + 1, close)) } }
+  return {
+    length: close - i + 1,
+    node: { type: kind, inlines: parseInline(text.slice(i + 1, close)) }
+  }
 }
 
 function matchInline(text, i) {
@@ -76,8 +79,7 @@ export function parseInline(text) {
 }
 
 // --- blocks -------------------------------------------------------------
-const isSpecial = (line) =>
-  HEADING.test(line) || QUOTE_LINE.test(line) || LIST_LINE.test(line)
+const isSpecial = (line) => HEADING.test(line) || QUOTE_LINE.test(line) || LIST_LINE.test(line)
 const isFenceOpen = (t) => CODE_OPEN.test(t) || QUOTE_OPEN.test(t)
 
 function consumeFence(lines, i, blocks) {
@@ -117,7 +119,12 @@ function consumeList(lines, i, blocks) {
 
 function consumeParagraph(lines, i, blocks) {
   const para = []
-  while (i < lines.length && lines[i].trim() !== '' && !isSpecial(lines[i]) && !isFenceOpen(lines[i].trim())) {
+  while (
+    i < lines.length &&
+    lines[i].trim() !== '' &&
+    !isSpecial(lines[i]) &&
+    !isFenceOpen(lines[i].trim())
+  ) {
     para.push(parseInline(lines[i]))
     i++
   }
@@ -141,7 +148,9 @@ function consumeBlock(lines, i, blocks) {
 }
 
 export function parseJira(src) {
-  const lines = String(src ?? '').replace(/\r\n?/g, '\n').split('\n')
+  const lines = String(src ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
   const blocks = []
   let i = 0
   while (i < lines.length) i = consumeBlock(lines, i, blocks)

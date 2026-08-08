@@ -45,7 +45,7 @@ const settling = computed(() => isSettling(props.sectionId))
 
 <template>
   <div
-    class="head section-head band band-row draggable"
+    class="head section-head band band-row reorderable"
     :class="{
       first,
       unified,
@@ -54,7 +54,7 @@ const settling = computed(() => isSettling(props.sectionId))
       settling
     }"
     :data-section="sectionId"
-    data-tip="Drag to reorder"
+    :data-tip="$t('sectionHeader.dragToReorder')"
     @click="onClick"
     @dragstart.prevent
     @pointerdown="onPointerDown(sectionId, $event)"

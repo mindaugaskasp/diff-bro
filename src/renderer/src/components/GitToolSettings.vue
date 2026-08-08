@@ -3,6 +3,7 @@
 // registration — unticking it removes the launcher and the git config again.
 import { onMounted, ref } from 'vue'
 import SettingToggle from './SettingToggle.vue'
+import { t } from '../i18n'
 
 const status = ref(null)
 const busy = ref(false)
@@ -15,7 +16,7 @@ async function toggle(on) {
   busy.value = true
   error.value = ''
   const res = on ? await window.api.gitToolRegister() : await window.api.gitToolUnregister()
-  if (res && res.ok === false) error.value = res.error || 'Could not change the git configuration.'
+  if (res && res.ok === false) error.value = res.error || t('gitToolSettings.configFailed')
   await refresh()
   busy.value = false
 }

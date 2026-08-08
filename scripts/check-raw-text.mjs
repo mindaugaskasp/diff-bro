@@ -38,11 +38,18 @@ try {
   report = JSON.parse(err.stdout)
 }
 
-// eslint-plugin-vue-i18n's no-raw-text only looks at TEMPLATES, so UI copy
-// living in a <script setup> label table slipped through it entirely — eight
-// strings did, and the pseudolocale run could never reveal them because they
-// are not extracted at all. Second scan, its own ratchet, held at zero.
-const SENTENCE = /'([A-Z][a-z]+(?: [a-z]+){1,8})'/g
+// eslint-plugin-vue-i18n's no-raw-text only sees TEMPLATE TEXT. Two whole
+// classes of UI copy sit outside it: a string in <script setup>, and a string
+// inside an ATTRIBUTE EXPRESSION (`:data-tip="`Format: ${x}`"`). The first
+// version of this scan looked for `'Capital word followed by lowercase ones'`
+// in the script block alone and reported zero while 65 strings were live — a
+// ratchet whose blind spot is unmeasured is not a ratchet. This one reads the
+// whole file.
+const COPY = /(['"`])([A-Z][^'"`\n\\]*?)\1/g
+// The one thing that starts with a capital, holds a space and is not prose.
+const SVG_PATH = /^[MmLlHhVvCcSsQqTtAaZz][\d\s.,-]/
+const isCopy = (v) => /\s/.test(v) && !SVG_PATH.test(v)
+
 function vueFiles(dir) {
   const out = []
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -53,13 +60,19 @@ function vueFiles(dir) {
   return out
 }
 
+const isComment = (line) => /^(\/\/|\*|<!--)/.test(line.trimStart())
+
 function copyInScript(file) {
-  const block = /<script setup>([\s\S]*?)<\/script>/.exec(readFileSync(file, 'utf8'))
-  if (!block) return []
-  return block[1]
+  return readFileSync(file, 'utf8')
     .split('\n')
-    .filter((line) => !line.trimStart().startsWith('//'))
-    .flatMap((line) => [...line.matchAll(SENTENCE)].map((m) => `${relative(root, file)}: ${m[1]}`))
+    .flatMap((line, i) =>
+      isComment(line)
+        ? []
+        : [...line.matchAll(COPY)]
+            .map((m) => m[2])
+            .filter(isCopy)
+            .map((v) => `${relative(root, file)}:${i + 1}  ${v}`)
+    )
 }
 
 const scriptRawText = () => vueFiles(join(root, 'src/renderer/src')).flatMap(copyInScript)

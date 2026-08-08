@@ -4,7 +4,7 @@
 | --------------------------------------- | ------------------------------------- |
 | **Status**                              | in-progress                           |
 | **Progress**                            | 0 / 8 steps                           |
-| **Branch**                              | `fix/carried-audit-findings` (shared) |
+| **Branch**                              | `feat/sidebar-reorder` (not yet cut)  |
 | **Started**                             | 2026-08-08                            |
 | **Finished**                            | —                                     |
 | **Bugs found and fixed this iteration** | 0 / 0                                 |
@@ -157,7 +157,7 @@ like any other — its guarantee is about its body, not its position.
 | 2026-08-08 | The favourite boundary is enforced by the EXISTING group split, not by a guard  | Both stores already render favourites as their own list; a drag confined to its list cannot cross. A guard would be a second expression of the same rule, and the two would drift        | a `canDrop` predicate comparing favourite flags       |
 | 2026-08-08 | Reindex the group on every drop, rather than a fractional rank                  | The lists are short, and an integer sequence stays readable in the store file. Fractional ranks drift into float precision and make the file hard to reason about                        | `tags.rank`-style fractional insert                   |
 | 2026-08-08 | A new entry takes order `-1` so it leads                                        | Preserves today's newest-first feel for anything the user has not deliberately placed                                                                                                     | appending new entries last                            |
-| 2026-08-08 | Shares the `fix/carried-audit-findings` branch                                  | The user asked for it combined. The branch is otherwise fixes, so the PR will need a body that says it carries a feature too                                                              | its own branch stacked on top                         |
+| 2026-08-08 | Its OWN branch after all                                                        | The plan shipped in a PR that contained none of its code, which makes a spec a claim rather than a record. It goes with the implementation                                                | sharing `fix/carried-audit-findings`                  |
 
 ## Validation
 

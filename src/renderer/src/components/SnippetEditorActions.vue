@@ -40,7 +40,7 @@ async function copyAsFile() {
 const copyFileTip = computed(() =>
   props.secret
     ? "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk"
-    : 'Put the snippet on the clipboard AS A FILE, to paste into a message or a folder'
+    : t('snippetEditorActions.copyAsFileTip')
 )
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
@@ -49,9 +49,9 @@ const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('
 const isRepair = computed(() => props.language === 'mermaid')
 const formatLabel = computed(() => (isRepair.value ? 'Repair' : 'Format'))
 const formatTip = computed(() => {
-  if (!props.canFormat) return 'Formatting is available for JSON, XML, SQL or Mermaid'
+  if (!props.canFormat) return t('snippetEditorActions.formatUnavailable')
   return isRepair.value
-    ? 'Put back the arrows, quotes and spaces a paste broke'
+    ? t('snippetEditorActions.unmangleTip')
     : t('snippetEditorActions.prettyPrintAs', { format: props.language.toUpperCase() })
 })
 const clearTip = computed(() =>

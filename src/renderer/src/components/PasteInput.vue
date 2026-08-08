@@ -42,8 +42,8 @@ const rightDrop = useFileTextDrop((content, name, path) =>
               spellcheck="false"
               :maxlength="MAX_SIDE_NAME"
               :placeholder="$t('pasteInput.nameThisSide')"
-              :data-tip="`What to call this side — defaults to &quot;Left (pasted)&quot;`"
-              :aria-label="`Name for the left side`"
+              :data-tip="$t('pasteInput.sideNameTipLeft')"
+              :aria-label="$t('pasteInput.nameLeftSide')"
             />
             <button class="link" @click="store.pastePickFile('left')">
               {{ $t('pasteInput.loadFile') }}
@@ -83,8 +83,8 @@ const rightDrop = useFileTextDrop((content, name, path) =>
               spellcheck="false"
               :maxlength="MAX_SIDE_NAME"
               :placeholder="$t('pasteInput.nameThisSide')"
-              :data-tip="`What to call this side — defaults to &quot;Right (pasted)&quot;`"
-              :aria-label="`Name for the right side`"
+              :data-tip="$t('pasteInput.sideNameTipRight')"
+              :aria-label="$t('pasteInput.nameRightSide')"
             />
             <button class="link" @click="store.pastePickFile('right')">
               {{ $t('pasteInput.loadFile') }}
