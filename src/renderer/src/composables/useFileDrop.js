@@ -17,6 +17,19 @@ export function useFileTextDrop(apply) {
   return { onDropFile }
 }
 
+const hasFiles = (e) => Array.from(e.dataTransfer?.types ?? []).includes('Files')
+const snippetIds = (e) => dragIdsFrom(e.dataTransfer)
+// Types only: the payload is unreadable until drop.
+const carries = (e) => hasFiles(e) || isSnippetDragType(e.dataTransfer)
+// A drop released over a file slot targets that side.
+const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
+// A snippet BECOMES the comparison, so it has to be released on the thing it
+// will be compared in. Bound to the window, this handler accepted one dropped
+// anywhere — over the sidebar, over the toolbar, or from a drag that never
+// really left the row — and silently replaced what was on screen. Files keep
+// the window-wide target: dropping a file on the app is its own gesture.
+const inDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
+
 // Window-level diff drop. A dragenter/leave depth counter avoids child-element
 // flicker; `suppressed` stands it down while a dialog handles its own drops.
 export function useWindowFileDrop(store, suppressed) {
@@ -24,19 +37,6 @@ export function useWindowFileDrop(store, suppressed) {
   const active = ref(false)
   // Which flavour is in flight, so the overlay can say what will happen.
   const snippetDrag = ref(false)
-
-  const hasFiles = (e) => Array.from(e.dataTransfer?.types ?? []).includes('Files')
-  const snippetIds = (e) => dragIdsFrom(e.dataTransfer)
-  // Types only: the payload is unreadable until drop.
-  const carries = (e) => hasFiles(e) || isSnippetDragType(e.dataTransfer)
-  // A drop released over a file slot targets that side.
-  const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
-  // A snippet BECOMES the comparison, so it has to be released on the thing it
-  // will be compared in. Bound to the window, this handler accepted one dropped
-  // anywhere — over the sidebar, over the toolbar, or from a drag that never
-  // really left the row — and silently replaced what was on screen. Files keep
-  // the window-wide target: dropping a file on the app is its own gesture.
-  const inDiffRegion = (e) => !!e.target?.closest?.('[data-drop-region="diff"]')
 
   function onDragEnter(e) {
     if (!carries(e) || suppressed.value) return
