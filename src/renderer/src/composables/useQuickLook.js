@@ -1,13 +1,13 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
-import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
-import { previewHints, rank } from '../utils/quickLook'
+import { SECRET_MASK } from '../utils/secretSnippet'
+import { rank, resultRows, snippetRows } from '../utils/quickLook'
+import { composeHints, copyKeyLabel, listHints, previewHints } from '../utils/quickLookHints'
 import { convertItems } from '../utils/quickLookCommands'
-import { isMac } from '../keys'
 import { useQuickLookKeys } from './useQuickLookKeys'
 import { useQuickLookCompose } from './useQuickLookCompose'
 import { usePreviewLines } from './usePreviewLines'
-import { useCopyFeedback } from './useCopyFeedback'
+import { useQuickLookHandoff } from './useQuickLookHandoff'
 import { t } from '../i18n'
 
 // State for the floating quick look-up. The launcher stays lightweight (no
@@ -25,34 +25,20 @@ export function useQuickLook() {
   const zone = ref('list')
   const previewEl = ref(null)
 
-  const snippetItems = computed(() =>
-    snippets.entries
-      .slice()
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .map((e) => {
-        const lang = languageOf(e)
-        return {
-          kind: 'snippet',
-          id: e.id,
-          name: e.name,
-          tags: e.tags ?? [],
-          secret: isSecret(e),
-          lang: lang === 'plaintext' ? '' : lang
-        }
-      })
-  )
+  const snippetItems = computed(() => snippetRows(snippets.entries, languageOf))
 
   const toolItems = computed(() => rank(query.value, convertItems(t)))
   // Tools lead the list under one collapsed row, or a long snippet library
   // buries them. A matching query opens the section so search still finds them.
   const toolsOpen = ref(false)
-  const results = computed(() => {
-    const snips = rank(query.value, snippetItems.value)
-    const tools = toolItems.value
-    if (!tools.length) return snips
-    const header = { kind: 'tools', id: '__tools__', name: 'Tools', count: tools.length }
-    return toolsOpen.value ? [header, ...tools, ...snips] : [header, ...snips]
-  })
+  const results = computed(() =>
+    resultRows({
+      query: query.value,
+      matchedTools: toolItems.value,
+      snippets: snippetItems.value,
+      toolsOpen: toolsOpen.value
+    })
+  )
   const current = computed(() => results.value[selected.value] ?? null)
   const toolsIndex = () => results.value.findIndex((r) => r.kind === 'tools')
 
@@ -111,10 +97,16 @@ export function useQuickLook() {
     convertTool.value = null
   }
 
+  // add() pushes onto this window's own entries, so the list updates without a
+  // reload; the main window picks it up on its next reload().
+  const compose = useQuickLookCompose({ snippets })
+  const startCompose = () => compose.open({ name: query.value.trim() })
+
   function choose(i) {
     const it = results.value[i]
     if (!it) return
     if (it.kind === 'tools') return toggleTools()
+    if (it.kind === 'create') return startCompose()
     if (it.kind === 'command') {
       convertTool.value = { id: it.id, name: it.name, panel: it.panel }
       lastTool.value = convertTool.value
@@ -123,54 +115,17 @@ export function useQuickLook() {
     window.api.quickLookOpen({ kind: it.kind, id: it.id })
   }
 
-  // Fade the card out (the window is transparent) before the OS hide, so the
-  // launcher vanishes smoothly rather than blinking out.
-  const CLOSE_ANIM_MS = 160
-  const closing = ref(false)
-  function animateOut() {
-    if (closing.value) return
-    closing.value = true
-    setTimeout(() => {
-      window.api.quickLookHide()
-      closing.value = false
-    }, CLOSE_ANIM_MS)
-  }
-  const dismiss = () => animateOut()
-
-  // Full contents (the preview is truncated), via the main process —
-  // navigator.clipboard is blocked by the deny-all permission handler.
-  const HIDE_AFTER_COPY_MS = 900
-  const { copied, flash } = useCopyFeedback()
-  // The just-copied snippet's name + its row index, so the confirmation names
-  // what was taken and the "Copied" cue can animate on that exact row.
-  const copiedName = ref('')
-  const copiedIndex = ref(-1)
-  async function copy(i) {
-    const it = results.value[i]
-    if (it?.kind !== 'snippet') return
-    const text = await snippets.load(it.id)
-    if (typeof text !== 'string') return
-    const res = await window.api.copyText(text)
-    if (!res?.ok) return
-    copiedName.value = it.name
-    copiedIndex.value = i
-    flash()
-    setTimeout(animateOut, HIDE_AFTER_COPY_MS)
-  }
+  const handoff = useQuickLookHandoff({ snippets, results })
+  const { closing, copied, copiedName, copiedIndex, copy } = handoff
+  const dismiss = () => handoff.animateOut()
 
   // The preview-line concern (↑/↓ stepping, hover, single-line Shift+Cmd+C copy).
-  // onCopied reuses the same copy feedback the whole-snippet copy shows.
   const preview = usePreviewLines({
     snippetText,
     zone,
     previewEl,
     current,
-    onCopied: (name) => {
-      copiedName.value = name
-      copiedIndex.value = -1
-      flash()
-      setTimeout(animateOut, HIDE_AFTER_COPY_MS)
-    }
+    onCopied: handoff.confirmLine
   })
 
   // Separate Pinia instance from the main window — re-read the snippet library on
@@ -183,19 +138,19 @@ export function useQuickLook() {
     zone.value = 'list'
     toolsOpen.value = false
     preview.reset()
-    copiedName.value = ''
-    copiedIndex.value = -1
-    closing.value = false
+    handoff.reset()
     convertTool.value = null
+    compose.cancel()
   }
 
-  // add() pushes onto this window's own entries, so the list updates without a
-  // reload; the main window picks it up on its next reload().
-  const compose = useQuickLookCompose({ snippets })
-
-  // Only plaintext snippets edit inline: the panel is a bare textarea, so a
-  // snippet with a language belongs in the main editor where its tooling is.
-  const canEditInline = computed(() => current.value?.kind === 'snippet' && !current.value?.lang)
+  // A textarea handles any text, so the language is not the gate — only tooling
+  // the launcher lacks is. A secret is refused because its guarantee is that the
+  // contents never render where they can be read.
+  const NEEDS_MAIN_WINDOW = new Set(['mermaid', 'claude'])
+  const canEditInline = computed(() => {
+    const it = current.value
+    return it?.kind === 'snippet' && !it.secret && !NEEDS_MAIN_WINDOW.has(it.lang)
+  })
   // Loads the FULL body — snippetText here is truncated for preview, and saving
   // that back would amputate anything past MAX_PREVIEW_CHARS.
   async function editCurrent() {
@@ -203,29 +158,18 @@ export function useQuickLook() {
     if (!canEditInline.value) return
     const text = await snippets.load(it.id)
     if (typeof text !== 'string') return
-    compose.startEdit({ id: it.id, name: it.name, content: text, tags: it.tags })
+    const { id, name, tags, language } = it
+    compose.open({ id, name, tags, content: text, language })
   }
 
-  const copyKey = isMac ? '⌘C' : 'Ctrl+C'
-  const copyLineKey = isMac ? '⇧⌘C' : 'Ctrl+Shift+C'
-  const saveKey = isMac ? '⌘↵' : 'Ctrl+↵'
+  // Rows are [glyph, message id]; utils/ cannot translate, so t() runs here.
   const footHints = computed(() => {
-    if (compose.composing.value) {
-      return [
-        [saveKey, 'save'],
-        ['←/Esc', 'cancel']
-      ]
-    }
-    if (zone.value === 'preview') return previewHints(copyLineKey)
-    const hints = [['↑↓', 'navigate']]
-    const kind = current.value?.kind
-    if (kind === 'snippet') hints.push(['→', 'scroll preview'])
-    else if (kind === 'command') hints.push(['→', 'open tool'])
-    else if (kind === 'tools') hints.push(['→', 'browse tools'])
-    // ← and Esc walk the same ladder here, so they share one hint rather than
-    // spending two chips (and two identical labels) on the same action.
-    hints.push(['↵', 'open'], [copyKey, 'copy'], ['←/Esc', toolsOpen.value ? 'collapse' : 'close'])
-    return hints
+    const rows = compose.composing.value
+      ? composeHints()
+      : zone.value === 'preview'
+        ? previewHints()
+        : listHints({ kind: current.value?.kind, toolsOpen: toolsOpen.value })
+    return rows.map(([glyph, id]) => [glyph, t(id)])
   })
 
   const { onKeydown } = useQuickLookKeys({
@@ -238,6 +182,7 @@ export function useQuickLook() {
     onDismiss: dismiss,
     onCopy: copy,
     onCopyLine: preview.copyLine,
+    onNew: startCompose,
     onCollapse: collapseTools,
     // → drills in, mirroring → into a snippet preview.
     onExpand: () => {
@@ -266,7 +211,7 @@ export function useQuickLook() {
     lineClass: preview.lineClass,
     hoverLine: preview.hoverLine,
     footHints,
-    copyKey,
+    copyKey: copyKeyLabel,
     zone,
     previewEl,
     choose,

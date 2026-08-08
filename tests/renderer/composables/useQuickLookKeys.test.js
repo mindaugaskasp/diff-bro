@@ -19,15 +19,17 @@ function harness(n = 3, start = 0) {
   const onDismiss = vi.fn()
   const onCopy = vi.fn()
   const onCopyLine = vi.fn()
+  const onNew = vi.fn()
   const { onKeydown } = useQuickLookKeys({
     count: () => n,
     selected,
     onChoose,
     onDismiss,
     onCopy,
-    onCopyLine
+    onCopyLine,
+    onNew
   })
-  return { selected, onChoose, onDismiss, onCopy, onCopyLine, press: presser(onKeydown) }
+  return { selected, onChoose, onDismiss, onCopy, onCopyLine, onNew, press: presser(onKeydown) }
 }
 
 describe('useQuickLookKeys', () => {
@@ -329,5 +331,49 @@ describe('useQuickLookKeys — Shift+Arrow', () => {
     h.press('ArrowDown', { shiftKey: true })
     expect(h.selected.value).toBe(before + 1)
     expect(h.movePreview).not.toHaveBeenCalled()
+  })
+})
+
+// The launcher had no key for "create a snippet" at all — startCompose's only
+// caller was the + button's @click, which Tab reaches at the cost of killing
+// every other key (the driver hangs off the search box's @keydown).
+describe('useQuickLookKeys — Cmd/Ctrl+N', () => {
+  it('opens compose and swallows the key', () => {
+    for (const mod of ['metaKey', 'ctrlKey']) {
+      const h = harness()
+      const prevented = h.press('n', { [mod]: true })
+      expect(h.onNew).toHaveBeenCalledTimes(1)
+      expect(prevented).toHaveBeenCalled()
+    }
+  })
+
+  it('accepts a capital N, so Shift or caps lock still creates', () => {
+    const h = harness()
+    h.press('N', { metaKey: true })
+    expect(h.onNew).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves an unmodified n to the search box', () => {
+    const h = harness()
+    const prevented = h.press('n')
+    expect(h.onNew).not.toHaveBeenCalled()
+    expect(prevented).not.toHaveBeenCalled()
+  })
+
+  it('does not fire on an empty list — creating needs no results', () => {
+    const h = harness(0)
+    h.press('n', { ctrlKey: true })
+    expect(h.onNew).toHaveBeenCalledTimes(1)
+  })
+})
+
+// AltGr reports as Ctrl+Alt on European keyboard layouts, so an unguarded chord
+// swallows AltGr+N instead of letting it type into the search box.
+describe('useQuickLookKeys — AltGr', () => {
+  it('leaves Ctrl+Alt+N alone', () => {
+    const h = harness()
+    const prevented = h.press('n', { ctrlKey: true, altKey: true })
+    expect(h.onNew).not.toHaveBeenCalled()
+    expect(prevented).not.toHaveBeenCalled()
   })
 })

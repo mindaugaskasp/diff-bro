@@ -85,6 +85,14 @@
   background: var(--btn-face-press);
   box-shadow: none;
 }
+/* Keyboard focus had NO rule at all, so tabbing anywhere in the app fell back to
+   Chromium's UA ring — the reason reaching the launcher's + felt broken. Offset
+   outward so it reads against the surface rather than eating the keyline. */
+.btn:focus-visible,
+.focus-ring:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
 /* A toggle that is ON — AppToolbar bound .active for a long time with no rule.
    The face steps to --btn-face-hover, NOT --btn-face-press: press is --text at
    30%, which on nord lands close enough to the ink that the label itself scores

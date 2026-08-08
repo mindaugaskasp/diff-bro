@@ -4,6 +4,10 @@
 
 const isTextField = (el) =>
   !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.selectionStart != null
+// A select uses ArrowLeft to change value (natively so on Windows and Linux) and
+// a button is simply not a place to leave from — backing out of either threw the
+// whole draft away.
+const OWNS_ARROW = new Set(['SELECT', 'BUTTON', 'OPTION'])
 
 /**
  * @param {() => void} onBack
@@ -13,6 +17,7 @@ export function useCaretBackOut(onBack) {
   function onKeydown(e) {
     if (e.key !== 'ArrowLeft' || e.metaKey || e.ctrlKey || e.altKey) return
     const el = e.target
+    if (el && OWNS_ARROW.has(el.tagName)) return
     if (isTextField(el) && !(el.selectionStart === 0 && el.selectionEnd === 0)) return
     e.preventDefault()
     onBack()

@@ -19,6 +19,9 @@
   --font-lg: 14px;
   --font-xl: 16px;
   --font-2xl: 20px;
+  /* Two layers of a highlighted input must resolve to the SAME face, or glyph
+     advances drift and the colour sits under the wrong characters. */
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
   /* Control heights: sidebar/toolbar controls, then dialog buttons. */
   --control-h-sm: 26px;
   /* Hint chips (kbd glyphs). Predefined so a font-size change can never
@@ -86,6 +89,11 @@
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
   --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+  /* Keyboard focus. A bare --accent ring scores 2.58 on solar and 2.98 on
+     meridian against --bg-elevated, under the 3:1 non-text floor; mixing toward
+     the ink lifts the worst case to 3.34 and keeps the hue. Same trick as
+     --btn-edge and --pin-ink. */
+  --focus-ring: color-mix(in srgb, var(--accent) 80%, var(--text));
   /* Pinned-row ink — the star and the 3px bar on a favourited diff, snippet or
      tool. Raw --favorite is a gold tuned for the dark grounds and scores
      2.23–3.00 against the panel on light/solar/sepia/bloom, under the 3:1

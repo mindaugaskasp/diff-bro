@@ -1,21 +1,39 @@
 <script setup>
 // The launcher's new-snippet panel: it fills the preview pane while composing.
-// Plaintext only, so there is no language picker and no Monaco here.
-import { nextTick, ref } from 'vue'
+// The body is a transparent-text textarea over a <pre> of tokenized runs
+// (useHighlightedInput) — never Monaco, which would cost the instant summon.
+import { computed, nextTick, ref, toRef } from 'vue'
 import { useCaretBackOut } from '../composables/useCaretBackOut'
+import { useHighlightedInput } from '../composables/useHighlightedInput'
+import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
+import { t } from '../i18n'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   editing: { type: Boolean, default: false },
   canSave: { type: Boolean, default: false },
-  saving: { type: Boolean, default: false }
+  saving: { type: Boolean, default: false },
+  resolvedLanguage: { type: String, default: 'plaintext' }
 })
 const name = defineModel('name', { type: String, required: true })
 const body = defineModel('body', { type: String, required: true })
+const language = defineModel('language', { type: String, required: true })
 const emit = defineEmits(['save', 'cancel'])
 
 const nameEl = ref(null)
-const bodyEl = ref(null)
+const { textareaEl, overlayEl, lines, isPlain, onScroll, onCompositionStart, onCompositionEnd } =
+  useHighlightedInput({ text: body, language: toRef(props, 'resolvedLanguage') })
+
+// Auto carries what it resolved to, so the picker doubles as the readout and
+// there is no second chip saying the same thing.
+const labelOf = (id) =>
+  t(SNIPPET_LANGUAGES.find((l) => l.id === id)?.labelKey ?? 'language.plaintext')
+const options = computed(() =>
+  SNIPPET_LANGUAGES.map(({ id, labelKey }) => ({
+    id,
+    label: id === 'auto' ? `${t(labelKey)} · ${labelOf(props.resolvedLanguage)}` : t(labelKey)
+  }))
+)
 
 // Escape and ← back out, matching the list's ladder; ← defers to the caret.
 const { onKeydown: backOut } = useCaretBackOut(() => emit('cancel'))
@@ -31,8 +49,8 @@ function onKeydown(e) {
 }
 
 // The body is what makes a snippet and the name is optional, so typing starts
-// where the content goes; Shift+Tab reaches the name.
-defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
+// where the content goes; Shift+Tab reaches the name, then the language.
+defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
 </script>
 
 <template>
@@ -41,7 +59,13 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
       <span class="ql-compose-title">{{
         editing ? $t('quickLookCompose.editSnippet') : $t('quickLookCompose.newSnippet')
       }}</span>
-      <span class="ql-compose-lang">{{ $t('language.plaintext') }}</span>
+      <select
+        v-model="language"
+        class="ql-compose-lang focus-ring"
+        :aria-label="$t('quickLookCompose.language')"
+      >
+        <option v-for="o in options" :key="o.id" :value="o.id">{{ o.label }}</option>
+      </select>
     </div>
 
     <div class="ql-compose-body">
@@ -54,13 +78,28 @@ defineExpose({ focus: () => nextTick(() => bodyEl.value?.focus()) })
         autocomplete="off"
         spellcheck="false"
       />
-      <textarea
-        ref="bodyEl"
-        v-model="body"
-        class="ql-compose-text"
-        :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
-        spellcheck="false"
-      ></textarea>
+      <div class="ql-compose-field">
+        <pre ref="overlayEl" class="ql-compose-hl" aria-hidden="true"><div
+          v-for="(spans, i) in lines"
+          :key="i"
+          class="ql-compose-line"
+        ><span
+          v-for="(span, j) in spans"
+          :key="j"
+          :class="span.role && `syn-${span.role}`"
+        >{{ span.text }}</span></div></pre>
+        <textarea
+          ref="textareaEl"
+          v-model="body"
+          class="ql-compose-text"
+          :class="{ plain: isPlain }"
+          :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
+          spellcheck="false"
+          @scroll="onScroll"
+          @compositionstart="onCompositionStart"
+          @compositionend="onCompositionEnd"
+        ></textarea>
+      </div>
     </div>
 
     <div class="ql-compose-foot band">
