@@ -116,6 +116,31 @@
 .drop-overlay.in-pane {
   position: absolute;
 }
+/* The card said what would happen; nothing said WHERE. A dashed accent rim
+   inset from the pane's edge draws the landing area itself, so the answer to
+   "does releasing here work?" is the shape under the pointer rather than a
+   sentence in the middle of the screen. Inset via `inset`, not a margin, so it
+   cannot change the pane's box; a rim, never a glow — matrix, nyan and neon
+   halo any accent-tinted shadow. */
+.drop-overlay.in-pane::before {
+  content: '';
+  position: absolute;
+  inset: var(--space-2);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  animation: drop-zone-in 140ms ease-out;
+}
+@keyframes drop-zone-in {
+  from {
+    opacity: 0;
+    transform: scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 .drop-card {
   border: 2px dashed var(--accent);
   border-radius: var(--radius-xl);

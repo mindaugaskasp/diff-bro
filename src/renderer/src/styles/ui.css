@@ -995,3 +995,54 @@ button.tag-chip:hover .usb-tct {
   color: var(--syn-comment);
   font-style: italic;
 }
+
+/* Where a dragged row will land. Four lists share it, so it lives here rather
+   than in one of their stylesheets.
+
+   A solid 2px accent RULE, never a glow: matrix (#00ff41), nyan (#ff2ecb) and
+   neon (#22d3ee) turn any accent-tinted shadow into a halo. Drawn with an inset
+   box-shadow rather than a border so the row cannot change height as the
+   pointer crosses it — a list that reflows under the cursor is unusable.
+   Measured against --bg-panel on all 14: weakest is solar at 3.21 (non-text
+   floor 3), strongest matrix at 13.92. Unqualified because the snippet rows are
+   `.row` and the diff rows are `.diff` — the class IS the contract. */
+.drop-above {
+  box-shadow: inset 0 2px 0 0 var(--accent);
+}
+.drop-below {
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+/* While a row is carried, the REST of the list recedes — the one in flight has
+   to read against its next position, and dimming the carried row instead (the
+   first version) hid the very thing being placed. A tint, not a blur: blur
+   forces a repaint of every row on each dragover and the list stutters. */
+.rows.reordering > .row:not(.is-dragging),
+.rows.reordering > .diff:not(.is-dragging) {
+  opacity: 0.45;
+  transition: opacity 120ms ease-out;
+}
+
+/* The section body indents its rows under the header's chevron. The row's own
+   wash — hover, favourite, the just-created tint — has to reach the sidebar
+   edge anyway, or it reads as a stripe with a bite out of its left side. The
+   row takes the indent back as padding, so its CONTENT does not move. */
+.section-body > .rows > .row,
+.section-body > .rows > .diff {
+  margin-left: calc(-1 * var(--space-4));
+  padding-left: var(--space-4);
+}
+
+/* The row a reorder just moved. Deliberately NOT `.is-new`: that one announces
+   a row that did not exist a moment ago, with a badge and a rail. This says
+   "here it is now" and nothing more — the same wash, no badge, no rail, so the
+   two read as one language without one claiming to be the other. */
+.is-moved {
+  position: relative;
+}
+.is-moved::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: new-wash 4s ease-in;
+}

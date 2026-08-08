@@ -57,3 +57,13 @@ export function dragIdsFrom(transfer, type = DRAG_TYPE) {
     .filter((id) => typeof id === 'string' && id.length > 0 && id.length <= MAX_ID_CHARS)
     .slice(0, MAX_IDS)
 }
+
+// A sidebar row's drag carries TWO payloads — drop it in the pane to compare,
+// or on a sibling to reorder — so it must allow BOTH effects. One writer, here,
+// because the bug was two: the row set 'copy' after the reorder set 'move',
+// Chromium forced dropEffect to none, and the drop event never fired at all.
+export function setRowDragPayload(dataTransfer, type, ids) {
+  if (!dataTransfer) return
+  dataTransfer.setData(type, JSON.stringify(ids))
+  dataTransfer.effectAllowed = 'copyMove'
+}

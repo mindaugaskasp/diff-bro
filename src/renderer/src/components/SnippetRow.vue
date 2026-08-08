@@ -14,13 +14,17 @@ import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 import { useSnippetDrag } from '../composables/useSnippetDrag'
+import { injectRowReorder } from '../composables/useRowReorder'
 import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
   entry: { type: Object, required: true, validator: shaped('id', 'name', 'tags', 'createdAt') },
-  favorite: { type: Boolean, default: false }
+  favorite: { type: Boolean, default: false },
+  /** Which reorderable list this row is in, and where in the FULL group. */
+  group: { type: String, default: '' },
+  index: { type: Number, default: -1 }
 })
 
 const store = useSnippetStore()
@@ -30,6 +34,12 @@ const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 const { startDrag } = useSnippetDrag()
+const reorder = injectRowReorder()
+const rowState = computed(() => ({
+  favorite: props.favorite,
+  'is-new': isNew.value,
+  'is-moved': ui.lastMovedRowId === props.entry.id
+}))
 
 const isNew = computed(() => ui.lastCreatedRowId === props.entry.id)
 const lang = computed(() => languageOf(props.entry))
@@ -80,21 +90,25 @@ const emit = defineEmits(['hoverTitle', 'leaveTitle', 'dragging'])
 
 // The preview is anchored to this row, so it sits over the area the drag is
 // heading for. Nothing else closes it — the pointer never leaves the row.
+// Both payloads on one drag: the pane reads the compare type, a sibling row
+// reads the reorder one. Which gesture it was is decided by where it lands.
 function onDragStart(e) {
   emit('dragging')
   startDrag(e, props.entry)
+  reorder.onDragStart(e, { group: props.group, index: props.index })
 }
 </script>
 
 <template>
   <li
     class="row"
-    :class="{ favorite, 'is-new': isNew }"
+    :class="[rowState, reorder.classFor(group, index)]"
     :data-new-row="isNew ? entry.id : null"
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"
     @dragstart="onDragStart($event)"
+    v-on="reorder.handlersFor(group, index)"
   >
     <Transition name="flash">
       <span v-if="copied" class="copied-flash" aria-live="polite">{{ $t('common.copied') }}</span>
@@ -128,7 +142,11 @@ function onDragStart(e) {
       <span
         v-if="entry.vars?.length"
         class="varchip"
-        :data-tip="`${entry.vars.length} placeholder${entry.vars.length > 1 ? 's' : ''} you're asked to fill when copying: ${entry.vars.join(', ')}`"
+        :data-tip="
+          $t('snippetRow.placeholderTip', entry.vars.length, {
+            named: { n: entry.vars.length, list: entry.vars.join(', ') }
+          })
+        "
       >
         <AppIcon name="braces" />{{ entry.vars.length }}
       </span>

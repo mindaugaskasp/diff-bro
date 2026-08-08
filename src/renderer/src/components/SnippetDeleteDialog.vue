@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import BaseDialog from './BaseDialog.vue'
+import { t } from '../i18n'
 
 const store = useSnippetStore()
 const pending = computed(() => store.pendingDelete)
@@ -14,8 +15,9 @@ const total = computed(() => (held.value?.snippets ?? 0) + (held.value?.diffs ??
 const carrying = computed(() => {
   const parts = []
   const { snippets, diffs } = held.value ?? {}
-  if (snippets) parts.push(`${snippets} snippet${snippets === 1 ? '' : 's'}`)
-  if (diffs) parts.push(`${diffs} saved diff${diffs === 1 ? '' : 's'}`)
+  if (snippets)
+    parts.push(t('snippetDeleteDialog.snippetCount', snippets, { named: { n: snippets } }))
+  if (diffs) parts.push(t('snippetDeleteDialog.diffCount', diffs, { named: { n: diffs } }))
   return parts.join(' and ')
 })
 

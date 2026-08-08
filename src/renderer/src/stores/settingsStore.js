@@ -6,12 +6,8 @@ import { noteRecent } from '../utils/tools'
 import { applyTheme, isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
 import { normalizeLocale } from '../../../shared/i18n'
 import {
-  DEFAULT_MAX_EXPORT_HEIGHT_PX,
-  DEFAULT_MAX_SNIPPET_SIZE_KB,
   FILE_TYPE_LIMITS,
-  MAX_EXPORT_HEIGHT_PX_CAP,
-  MAX_SNIPPET_SIZE_KB_CAP,
-  MIN_EXPORT_HEIGHT_PX,
+  NUMERIC_LIMITS,
   clampBackupHours,
   clampNumber,
   sanitizeSize,
@@ -96,6 +92,7 @@ export const useSettingsStore = defineStore('settings', {
           maxComparisonFileMb: this.fileSizeLimitsMb.text,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           maxExportHeightPx: this.maxExportHeightPx,
+          tagShelfRows: this.tagShelfRows,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           locale: this.locale,
@@ -108,7 +105,8 @@ export const useSettingsStore = defineStore('settings', {
           recentTools: this.recentTools,
           quickLookShortcut: this.quickLookShortcut,
           quickLookShortcutMigrated: this.quickLookShortcutMigrated,
-          closeToTray: this.closeToTray
+          closeToTray: this.closeToTray,
+          autoCloseOldest: this.autoCloseOldest
         })
       )
     },
@@ -172,6 +170,10 @@ export const useSettingsStore = defineStore('settings', {
       this.shutterSound = !!value
       this.persist()
     },
+    setAutoCloseOldest(value) {
+      this.autoCloseOldest = value === true
+      this.persist()
+    },
     setAutoBackup(value) {
       this.autoBackup = value === true
       this.persist()
@@ -209,22 +211,12 @@ export const useSettingsStore = defineStore('settings', {
       this.dialogSizes = { ...this.dialogSizes, [key]: clamped }
       this.persist()
     },
-    setMaxSnippetSizeKb(value) {
-      this.maxSnippetSizeKb = clampNumber(
-        value,
-        DEFAULT_MAX_SNIPPET_SIZE_KB,
-        16,
-        MAX_SNIPPET_SIZE_KB_CAP
-      )
-      this.persist()
-    },
-    setMaxExportHeightPx(value) {
-      this.maxExportHeightPx = clampNumber(
-        value,
-        DEFAULT_MAX_EXPORT_HEIGHT_PX,
-        MIN_EXPORT_HEIGHT_PX,
-        MAX_EXPORT_HEIGHT_PX_CAP
-      )
+    // Three numbers with the same shape — value, default, floor, cap — so they
+    // are one setter over a table rather than three that drift apart.
+    setLimit(name, value) {
+      const spec = NUMERIC_LIMITS[name]
+      if (!spec) return
+      this[name] = clampNumber(value, spec.default, spec.min, spec.max)
       this.persist()
     },
     // Read by main at the moment of a close (tray.js) — nothing to push live.

@@ -90,7 +90,7 @@ const hidden = computed(() => matches.value.length - shown.value.length)
               {{
                 expanded
                   ? $t('tools.section.showFewer')
-                  : `${hidden} more tool${hidden === 1 ? '' : 's'}`
+                  : $t('tools.moreToolCount', hidden, { named: { n: hidden } })
               }}
             </span>
           </button>

@@ -132,7 +132,7 @@ function onTabKey(e, tab) {
           class="tab-open"
           role="tab"
           :aria-selected="tab.id === tabs.activeId"
-          :data-tip="`${tabLabel(tab)} — double-click to rename`"
+          :data-tip="$t('diffTabBar.tabTip', { name: tabLabel(tab) })"
           @click="tabs.activate(tab.id)"
           @dblclick="startRename(tab)"
           @auxclick.middle.prevent="tabs.requestClose(tab.id)"

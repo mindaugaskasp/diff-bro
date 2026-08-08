@@ -4,6 +4,11 @@
 import { defineStore } from 'pinia'
 import { ZOOM_DEFAULT, steppedZoom } from '../utils/diffZoom'
 
+// How long a moved row stays washed. Matches the created-row wash so the two
+// read as one language.
+export const MOVED_ROW_MS = 4000
+let movedTimer = null
+
 export const useUiStore = defineStore('ui', {
   state: () => ({
     // Which tool panel is open (a registry id), null when none.
@@ -36,9 +41,21 @@ export const useUiStore = defineStore('ui', {
     // a diff and then adding a snippet must leave one mark, not two. Never
     // persisted — a mark surviving a relaunch would be a second pinned-like
     // row state.
-    lastCreatedRowId: null
+    lastCreatedRowId: null,
+    // The row a reorder just moved. Its own key, not the one above: "created"
+    // and "moved" carry different badges, and a move must not claim a row is
+    // new. Self-clearing, because a move has no follow-up gesture to retire it
+    // the way a create's does.
+    lastMovedRowId: null
   }),
   actions: {
+    markMovedRow(id) {
+      clearTimeout(movedTimer)
+      this.lastMovedRowId = id
+      movedTimer = setTimeout(() => {
+        if (this.lastMovedRowId === id) this.lastMovedRowId = null
+      }, MOVED_ROW_MS)
+    },
     markNewRow(id) {
       this.lastCreatedRowId = id
     },

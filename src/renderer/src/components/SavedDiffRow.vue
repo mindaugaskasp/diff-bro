@@ -11,7 +11,8 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { openSavedDiff } from '../composables/useSavedDiffOpen'
 import { useDataDir } from '../composables/useDataDir'
 import { languageMonogram } from '../utils/languageMonogram'
-import { DIFF_DRAG_TYPE } from '../utils/snippetSource'
+import { DIFF_DRAG_TYPE, setRowDragPayload } from '../utils/snippetSource'
+import { injectRowReorder } from '../composables/useRowReorder'
 import { t } from '../i18n'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
@@ -21,10 +22,14 @@ import { useUiStore } from '../stores/uiStore'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').VaultEntry>} */
-  entry: { type: Object, required: true, validator: shaped('id', 'name', 'expiresAt', 'from') }
+  entry: { type: Object, required: true, validator: shaped('id', 'name', 'expiresAt', 'from') },
+  /** Which reorderable list this row is in, and where in the FULL group. */
+  group: { type: String, default: '' },
+  index: { type: Number, default: -1 }
 })
 
 const vault = useVaultStore()
+const reorder = injectRowReorder()
 const ui = useUiStore()
 const share = useShareStore()
 const imageExport = useImageExportStore()
@@ -40,9 +45,9 @@ const shownTags = computed(() => rowTags(props.entry))
 const tagColor = (t) => snippets.colorOf(t) || 'var(--text-dim)'
 
 const title = computed(() => {
-  const from = props.entry.from ? ` (from ${props.entry.from})` : ''
-  const loc = dataDir.value ? `\nSaved in ${dataDir.value}` : ''
-  return `Open "${props.entry.name}"${from}${loc}`
+  const from = props.entry.from ? t('savedDiffRow.fromSender', { who: props.entry.from }) : ''
+  const loc = dataDir.value ? t('savedDiffRow.savedIn', { dir: dataDir.value }) : ''
+  return t('savedDiffRow.openTip', { name: props.entry.name, from, loc })
 })
 
 // Live lifetime (vault.now ticks each second): kept, a countdown warming to
@@ -65,19 +70,30 @@ async function open() {
 
 // A row is also a handle: drop it in the comparison column to open it there.
 // Only the id travels, exactly as a snippet drag does.
+// Both payloads on one drag: the pane reads the compare type, a sibling row
+// reads the reorder one. Where it lands decides which gesture it was.
 function onDragStart(e) {
-  e.dataTransfer?.setData(DIFF_DRAG_TYPE, JSON.stringify([props.entry.id]))
-  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy'
+  setRowDragPayload(e.dataTransfer, DIFF_DRAG_TYPE, [props.entry.id])
+  reorder.onDragStart(e, { group: props.group, index: props.index })
 }
 </script>
 
 <template>
   <li
     class="diff"
-    :class="{ favorite: entry.favorite, external: entry.from, 'is-new': isNew }"
+    :class="[
+      {
+        favorite: entry.favorite,
+        external: entry.from,
+        'is-new': isNew,
+        'is-moved': ui.lastMovedRowId === entry.id
+      },
+      reorder.classFor(group, index)
+    ]"
     :data-new-row="isNew ? entry.id : null"
     draggable="true"
     @dragstart="onDragStart"
+    v-on="reorder.handlersFor(group, index)"
   >
     <button
       class="star"

@@ -45,10 +45,18 @@ try {
 // in the script block alone and reported zero while 65 strings were live — a
 // ratchet whose blind spot is unmeasured is not a ratchet. This one reads the
 // whole file.
-const COPY = /(['"`])([A-Z][^'"`\n\\]*?)\1/g
+const COPY = /(['"])((?:[A-Z]|\$\{)[^'"`\n\\]*?)\1/g
+// Backticks get their own pass: a template literal may legitimately contain a
+// quote (`${xs.join(', ')}`), and stopping at one hid the longest strings here.
+const TEMPLATE = /`((?:[A-Z]|\$\{)[^`\n]*?)`/g
 // The one thing that starts with a capital, holds a space and is not prose.
 const SVG_PATH = /^[MmLlHhVvCcSsQqTtAaZz][\d\s.,-]/
-const isCopy = (v) => /\s/.test(v) && !SVG_PATH.test(v)
+// A template literal can open on its interpolation and still be prose — the
+// `${n} placeholders you're asked to fill` in SnippetRow survived the first
+// version of this check for exactly that reason. Two prose words is the bar.
+const PROSE_AFTER_SLOT = /\}[^${]*[a-z]{2,}\s+[a-z]{2,}/
+const isCopy = (v) =>
+  /\s/.test(v) && !SVG_PATH.test(v) && (!v.startsWith('${') || PROSE_AFTER_SLOT.test(v))
 
 function vueFiles(dir) {
   const out = []
@@ -68,8 +76,8 @@ function copyInScript(file) {
     .flatMap((line, i) =>
       isComment(line)
         ? []
-        : [...line.matchAll(COPY)]
-            .map((m) => m[2])
+        : [...line.matchAll(COPY), ...line.matchAll(TEMPLATE)]
+            .map((m) => m[m.length - 1])
             .filter(isCopy)
             .map((v) => `${relative(root, file)}:${i + 1}  ${v}`)
     )

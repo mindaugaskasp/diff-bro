@@ -14,6 +14,19 @@
   border-style: solid;
   color: var(--text);
 }
+/* `.hover` is the DRAG-over state (set from JS). This is the pointer one: the
+   slot is a button that opens a file dialog, and at rest it reads as a field.
+   Same three cues the .btn ladder uses — face, keyline, lift — so it says
+   "pressable" in the language the rest of the app already speaks. */
+.slot:hover:not(.hover) {
+  background: var(--btn-face-hover);
+  border-color: var(--btn-edge);
+  box-shadow: var(--shadow-1);
+}
+.slot:active:not(.hover) {
+  background: var(--btn-face-press);
+  box-shadow: none;
+}
 .slot.hover {
   border-color: var(--accent);
 }

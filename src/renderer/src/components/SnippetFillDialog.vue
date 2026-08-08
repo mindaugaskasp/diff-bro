@@ -7,6 +7,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { parseTemplateVars, fillTemplate } from '../utils/templateVars'
 import BaseDialog from './BaseDialog.vue'
+import { t } from '../i18n'
 
 const store = useSnippetStore()
 const diff = useDiffStore()
@@ -19,7 +20,7 @@ const marker = '{{…}}'
 
 async function copyFilled() {
   await window.api.copyText(fillTemplate(content, values.value))
-  diff.showNotice(`Copied "${name}"`)
+  diff.showNotice(t('snippetFillDialog.copied', { name }))
   close()
 }
 function close() {

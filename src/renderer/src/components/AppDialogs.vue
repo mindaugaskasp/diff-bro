@@ -20,6 +20,7 @@ import SnippetFillDialog from './SnippetFillDialog.vue'
 import VaultCategoryDeleteDialog from './VaultCategoryDeleteDialog.vue'
 import RetagDiffDialog from './RetagDiffDialog.vue'
 import TabCloseDialog from './TabCloseDialog.vue'
+import TabEvictDialog from './TabEvictDialog.vue'
 import { ConfigBackupDialog, useConfigBackupStore } from '../features/configBackup'
 import SettingsDialog from './SettingsDialog.vue'
 import KeyboardShortcutsDialog from './KeyboardShortcutsDialog.vue'
@@ -76,6 +77,7 @@ const errors = useErrorStore()
   <VaultCategoryDeleteDialog v-if="vault.pendingDelete" />
   <RetagDiffDialog v-if="vault.pendingRetag" />
   <TabCloseDialog v-if="tabs.pendingClose" />
+  <TabEvictDialog v-if="tabs.pendingEvict" />
   <ErrorReportDialog v-if="errors.visible" />
   <PasteConfirmDialog v-if="paste.prompt" />
   <CliBlockedDialog v-if="store.cliBlocked" />

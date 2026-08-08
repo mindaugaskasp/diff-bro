@@ -98,23 +98,23 @@ describe('settingsStore', () => {
 
   it('clamps the snippet size guard to its safe range', () => {
     const s = useSettingsStore()
-    s.setMaxSnippetSizeKb('not a number')
+    s.setLimit('maxSnippetSizeKb', 'not a number')
     expect(s.maxSnippetSizeKb).toBeGreaterThan(0)
-    s.setMaxSnippetSizeKb(10_000_000)
+    s.setLimit('maxSnippetSizeKb', 10_000_000)
     expect(s.maxSnippetSizeKb).toBe(MAX_SNIPPET_SIZE_KB_CAP)
   })
 
   it('clamps the diff-image height to its safe range, and survives a reload', () => {
     const s = useSettingsStore()
     expect(s.maxExportHeightPx).toBe(DEFAULT_MAX_EXPORT_HEIGHT_PX)
-    s.setMaxExportHeightPx('not a number')
+    s.setLimit('maxExportHeightPx', 'not a number')
     expect(s.maxExportHeightPx).toBe(DEFAULT_MAX_EXPORT_HEIGHT_PX)
-    s.setMaxExportHeightPx(999_999)
+    s.setLimit('maxExportHeightPx', 999_999)
     expect(s.maxExportHeightPx).toBe(MAX_EXPORT_HEIGHT_PX_CAP)
-    s.setMaxExportHeightPx(1)
+    s.setLimit('maxExportHeightPx', 1)
     expect(s.maxExportHeightPx).toBe(MIN_EXPORT_HEIGHT_PX)
 
-    s.setMaxExportHeightPx(6500)
+    s.setLimit('maxExportHeightPx', 6500)
     setActivePinia(createPinia())
     expect(useSettingsStore().maxExportHeightPx).toBe(6500)
   })

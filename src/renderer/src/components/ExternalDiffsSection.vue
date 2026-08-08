@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { matchesTags } from '../utils/tagFilter'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
+import { provideRowReorder } from '../composables/useRowReorder'
 import SectionHeader from './SectionHeader.vue'
 import { MOD } from '../keys'
 import AppIcon from './AppIcon.vue'
@@ -34,12 +35,22 @@ const filtering = computed(() => !!q.value || props.tags.length > 0)
 const matches = (e) =>
   (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
   matchesTags(e.tags, props.tags)
+// A row carries its place in the FULL group, not in the filtered view: dropping
+// A in front of B has to mean the same thing whether or not a filter is hiding
+// the rows between them.
+const placed = (group) =>
+  vault[group]
+    .filter(matches)
+    .map((entry) => ({ entry, group, index: vault[group].indexOf(entry) }))
 // One list, favorited (starred) shared diffs first — no separate Favorites shelf.
 const rows = computed(() =>
-  (props.favOnly
-    ? vault.importedFavorites
-    : [...vault.importedFavorites, ...vault.importedOthers]
-  ).filter(matches)
+  props.favOnly
+    ? placed('importedFavorites')
+    : [...placed('importedFavorites'), ...placed('importedOthers')]
+)
+
+const reorder = provideRowReorder((group, from, to) =>
+  ui.markMovedRow(vault.reorder(group, from, to))
 )
 const hasImported = computed(() => vault.importedActive.length > 0)
 
@@ -48,7 +59,7 @@ const hasImported = computed(() => vault.importedActive.length > 0)
 useNewRowMarker({
   markedId: () => ui.lastCreatedRowId,
   locate: (id) => {
-    if (rows.value.some((e) => e.id === id)) return 'visible'
+    if (rows.value.some((r) => r.entry.id === id)) return 'visible'
     return vault.importedActive.some((e) => e.id === id) ? 'filtered' : 'elsewhere'
   },
   retire: () => ui.clearNewRow(ui.lastCreatedRowId),
@@ -97,12 +108,18 @@ function startImport() {
         <AppIcon name="inbox" /> {{ $t('externalDiffsSection.empty') }}
       </p>
 
-      <ul v-else class="rows">
+      <ul v-else class="rows" :class="{ reordering: reorder.isReordering.value }">
         <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
         <li v-if="!rows.length" class="empty small">
           {{ $t('externalDiffsSection.noSharedDiffsMatchTry') }}
         </li>
-        <SavedDiffRow v-for="entry in rows" :key="entry.id" :entry="entry" />
+        <SavedDiffRow
+          v-for="row in rows"
+          :key="row.entry.id"
+          :entry="row.entry"
+          :group="row.group"
+          :index="row.index"
+        />
       </ul>
     </div>
   </section>

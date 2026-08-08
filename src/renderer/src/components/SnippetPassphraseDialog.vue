@@ -24,7 +24,11 @@ const title = computed(() => {
 async function runImport() {
   const res = await store.importSnippets(passphrase.value)
   if (res.canceled) return
-  diff.showNotice(res.ok ? `Snippets imported. ${res.signerNote ?? ''}`.trim() : res.message)
+  diff.showNotice(
+    res.ok
+      ? t('snippetPassphraseDialog.imported', { note: res.signerNote ?? '' }).trim()
+      : res.message
+  )
 }
 
 async function runExport() {

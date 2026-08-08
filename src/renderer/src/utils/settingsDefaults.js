@@ -32,6 +32,13 @@ export const FILE_TYPE_LIMITS = {
 }
 
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
+// The sidebar tag shelf's depth. Two rows is the FLOOR as well as the default:
+// diffs and snippets are what the sidebar is for, and an unbounded tag wall
+// pushed them into a sliver. A tall screen may spend up to twelve.
+export const TAGS_PER_ROW = 4
+export const MIN_TAG_ROWS = 2
+export const MAX_TAG_ROWS = 12
+
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 
 // How much diff a stitched export may cover, in SCREEN pixels of content — the
@@ -145,6 +152,26 @@ export function readDialogSizes(parsed) {
  * @param {{ showShortcutBar: boolean, theme: unknown }} outside values kept
  *   under their own store keys rather than inside settings.json
  */
+// One table, read on load and written by settingsStore.setLimit — three numbers
+// with the same shape, so they cannot drift apart.
+export const NUMERIC_LIMITS = {
+  maxSnippetSizeKb: { default: DEFAULT_MAX_SNIPPET_SIZE_KB, min: 16, max: MAX_SNIPPET_SIZE_KB_CAP },
+  maxExportHeightPx: {
+    default: DEFAULT_MAX_EXPORT_HEIGHT_PX,
+    min: MIN_EXPORT_HEIGHT_PX,
+    max: MAX_EXPORT_HEIGHT_PX_CAP
+  },
+  tagShelfRows: { default: MIN_TAG_ROWS, min: MIN_TAG_ROWS, max: MAX_TAG_ROWS }
+}
+
+const readNumericLimits = (parsed) =>
+  Object.fromEntries(
+    Object.entries(NUMERIC_LIMITS).map(([name, spec]) => [
+      name,
+      clampNumber(parsed[name], spec.default, spec.min, spec.max)
+    ])
+  )
+
 export function settingsStateFrom(parsed, outside) {
   return {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
@@ -153,18 +180,7 @@ export function settingsStateFrom(parsed, outside) {
     showShortcutBar: outside.showShortcutBar,
     rotateThemeDaily: parsed.rotateThemeDaily === true,
     fileSizeLimitsMb: readFileLimits(parsed),
-    maxSnippetSizeKb: clampNumber(
-      parsed.maxSnippetSizeKb,
-      DEFAULT_MAX_SNIPPET_SIZE_KB,
-      16,
-      MAX_SNIPPET_SIZE_KB_CAP
-    ),
-    maxExportHeightPx: clampNumber(
-      parsed.maxExportHeightPx,
-      DEFAULT_MAX_EXPORT_HEIGHT_PX,
-      MIN_EXPORT_HEIGHT_PX,
-      MAX_EXPORT_HEIGHT_PX_CAP
-    ),
+    ...readNumericLimits(parsed),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
     // NULL until the user picks one: persist() writes every key, so defaulting
@@ -173,6 +189,10 @@ export function settingsStateFrom(parsed, outside) {
     locale: isLocale(parsed.locale) ? parsed.locale : null,
     // A sound the app makes on its own, so it is escapable; default on.
     shutterSound: parsed.shutterSound !== false,
+    // Make room on a full tab strip by closing the oldest comparison. OFF by
+    // default: the refusal it replaces exists because a comparison evicted
+    // without being asked is work silently lost.
+    autoCloseOldest: parsed.autoCloseOldest === true,
     // Reopen the comparisons that were open at quit. On by default; turning it
     // off forgets the stored one too (see tabsStore.setRestoreSession).
     restoreSession: parsed.restoreSession !== false,

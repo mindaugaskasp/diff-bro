@@ -7,6 +7,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
 import { useSnippetPreview } from '../composables/useSnippetPreview'
 import { useNewRowMarker } from '../composables/useNewRowMarker'
+import { provideRowReorder } from '../composables/useRowReorder'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
@@ -40,11 +41,20 @@ watch(
   { immediate: true }
 )
 const byTag = (list) => list.filter((e) => matchesTags(e.tags, props.tags))
+// A row carries its place in the FULL group, not in the filtered view: dropping
+// A in front of B has to mean the same thing whether or not a filter is hiding
+// the rows between them.
+const placed = (list, group) =>
+  byTag(list).map((entry) => ({ entry, group, index: store[group].indexOf(entry) }))
 // One list, favorites first; the ★ filter keeps only them.
 const rows = computed(() => {
-  const favs = byTag(visibleFavorites.value)
-  return props.favOnly ? favs : [...favs, ...byTag(visibleListed.value)]
+  const favs = placed(visibleFavorites.value, 'favorites')
+  return props.favOnly ? favs : [...favs, ...placed(visibleListed.value, 'listed')]
 })
+
+const reorder = provideRowReorder((group, from, to) =>
+  ui.markMovedRow(store.reorder(group, from, to))
+)
 
 // A filter is on when there is a search term or a tag selected — the only time
 // a per-section count is worth the space.
@@ -55,7 +65,7 @@ const filtering = computed(() => !!props.search.trim() || props.tags.length > 0)
 useNewRowMarker({
   markedId: () => ui.lastCreatedRowId,
   locate: (id) =>
-    rows.value.some((e) => e.id === id)
+    rows.value.some((r) => r.entry.id === id)
       ? 'visible'
       : store.entries.some((e) => e.id === id)
         ? 'filtered'
@@ -125,16 +135,22 @@ function newSnippet() {
         </button>
       </div>
 
-      <ul v-if="store.entries.length" class="rows">
+      <ul
+        v-if="store.entries.length"
+        class="rows"
+        :class="{ reordering: reorder.isReordering.value }"
+      >
         <li v-if="!rows.length" class="empty small">
           {{ $t('snippetsPanel.noSnippetsMatchTryRemoving') }}
         </li>
         <SnippetRow
-          v-for="entry in rows"
-          :key="entry.id"
-          :entry="entry"
-          :favorite="entry.favorite"
-          @hover-title="onRowEnter(entry, $event)"
+          v-for="row in rows"
+          :key="row.entry.id"
+          :entry="row.entry"
+          :favorite="row.entry.favorite"
+          :group="row.group"
+          :index="row.index"
+          @hover-title="onRowEnter(row.entry, $event)"
           @leave-title="onRowLeave"
           @dragging="dismiss"
         />
