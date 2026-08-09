@@ -99,3 +99,89 @@ describe('a tolerance of your own', () => {
     expect(tolerance.value).toBeNull()
   })
 })
+
+describe('useSpreadsheetDiff — key columns', () => {
+  const ledger = (rows) => [{ name: 'Ledger', rows }]
+  const header = ['Account', 'Centre', 'Amount']
+  const left = ledger([header, ['1001', 'EMEA', 500], ['1002', 'APAC', 300]])
+  const right = ledger([header, ['1002', 'APAC', 300], ['1001', 'EMEA', 500]])
+
+  const loaded = () => {
+    const store = useDiffStore()
+    store.left = book(left)
+    store.right = book(right)
+    return useSpreadsheetDiff()
+  }
+
+  it('reads a re-sorted sheet as changed until a key column is named', () => {
+    const diff = loaded()
+    expect(diff.identical.value).toBe(false)
+    diff.toggleKeyColumn(0)
+    expect(diff.activeKeyColumns.value).toEqual([0])
+    expect(diff.identical.value).toBe(true)
+  })
+
+  it('toggles a column back off and returns to Auto', () => {
+    const diff = loaded()
+    diff.toggleKeyColumn(0)
+    diff.toggleKeyColumn(0)
+    expect(diff.activeKeyColumns.value).toEqual([])
+    expect(diff.identical.value).toBe(false)
+  })
+
+  it('keeps the columns in ascending order however they were picked', () => {
+    const diff = loaded()
+    diff.toggleKeyColumn(1)
+    diff.toggleKeyColumn(0)
+    expect(diff.activeKeyColumns.value).toEqual([0, 1])
+  })
+
+  it('holds a choice per sheet', () => {
+    const store = useDiffStore()
+    const rows = [header, ['1001', 'EMEA', 500]]
+    store.left = book([
+      { name: 'Ledger', rows },
+      { name: 'Other', rows }
+    ])
+    store.right = book([
+      { name: 'Ledger', rows },
+      { name: 'Other', rows }
+    ])
+    const diff = useSpreadsheetDiff()
+    diff.toggleKeyColumn(0)
+    diff.select(1)
+    expect(diff.activeKeyColumns.value).toEqual([])
+    diff.select(0)
+    expect(diff.activeKeyColumns.value).toEqual([0])
+  })
+
+  it('clears the active sheet’s keys', () => {
+    const diff = loaded()
+    diff.toggleKeyColumn(0)
+    diff.clearKeyColumns()
+    expect(diff.activeKeyColumns.value).toEqual([])
+  })
+
+  // Two workbooks routinely share a sheet name, so a key held by name would
+  // otherwise carry silently into the next comparison.
+  it('starts a new pair of files on Auto', async () => {
+    const store = useDiffStore()
+    const diff = loaded()
+    diff.toggleKeyColumn(0)
+    store.left = book(ledger([header, ['9001', 'EMEA', 1]]))
+    await Promise.resolve()
+    expect(diff.activeKeyColumns.value).toEqual([])
+  })
+
+  it('reports the duplicate keys the choice leaves ambiguous', () => {
+    const store = useDiffStore()
+    const rows = [header, ['1001', 'EMEA', 500], ['1001', 'APAC', 300]]
+    store.left = book([{ name: 'Ledger', rows }])
+    store.right = book([{ name: 'Ledger', rows }])
+    const diff = useSpreadsheetDiff()
+    diff.toggleKeyColumn(0)
+    expect(diff.activeSheet.value.duplicateKeys).toBe(1)
+    diff.toggleKeyColumn(1)
+    expect(diff.activeSheet.value.duplicateKeys).toBe(0)
+  })
+})

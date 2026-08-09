@@ -60,7 +60,7 @@ export function readSnapshot(raw) {
     pasteRightName: str(raw.pasteRightName),
     renderSideBySide: raw.renderSideBySide !== false,
     ignoreTrimWhitespace: raw.ignoreTrimWhitespace === true,
-    semanticView: raw.semanticView === true
+    semanticView: typeof raw.semanticView === 'boolean' ? raw.semanticView : undefined
   }
 }
 

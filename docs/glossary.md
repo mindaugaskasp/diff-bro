@@ -83,7 +83,15 @@ where the concept lives in this repo.
 - **Shared strings** — an `.xlsx` de-duplicated text table (`sharedStrings.xml`)
   that cells reference by index.
 - **LCS** — _Longest Common Subsequence_, the classic diff algorithm; used to
-  align spreadsheet rows and to build the copy-as-patch output.
+  align spreadsheet rows by default and to build the copy-as-patch output.
+- **Key column** — a column whose value names a row, so the two sides pair by
+  identity rather than by position or whole-row contents; several together make
+  a **composite key** (an account plus a cost centre). Chosen per sheet in the
+  grid's Match-rows panel and applied by `utils/matchRowsByKey.js`. It is what
+  lets the same export, sorted differently, read as the figures that moved.
+- **Header row** — the row whose labels name the columns. Found by scanning the
+  first few rows (`headerPairing`), because an exported pack opens with a title
+  and a date before it; without one, columns pair by position.
 - **Monaco** — the VS Code editor component, used for the text diff view.
 - **Mermaid** — the text-to-diagram library used to render `mermaid` snippets.
 

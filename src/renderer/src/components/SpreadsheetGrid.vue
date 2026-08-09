@@ -13,11 +13,14 @@ const props = defineProps({
   /** @type {import('vue').PropType<Set<number>>} */
   hiddenRows: { type: Set, required: true },
   showFormulas: { type: Boolean, default: false },
+  // The viewer holds the index; see .grid tr.hover for why it is not :hover.
+  hoveredRow: { type: Number, default: -1 },
   // The rows above and below the window, as height. The list is virtualized;
   // these keep the scrollbar measuring the whole sheet.
   padTop: { type: Number, default: 0 },
   padBottom: { type: Number, default: 0 }
 })
+const emit = defineEmits(['hover'])
 
 const rowData = (entry) => (props.side === 'left' ? entry.left : entry.right)
 const rowIndex = (entry) => (props.side === 'left' ? entry.leftIndex : entry.rightIndex)
@@ -76,7 +79,12 @@ function text(entry, col) {
     </thead>
     <tbody>
       <tr v-if="padTop" class="pad" :style="{ height: `${padTop}px` }" aria-hidden="true"></tr>
-      <tr v-for="(entry, r) in rows" :key="r" :class="rowClass(entry)">
+      <tr
+        v-for="(entry, r) in rows"
+        :key="r"
+        :class="[rowClass(entry), { hover: r === hoveredRow }]"
+        @mouseenter="emit('hover', r)"
+      >
         <th
           class="rownum"
           :data-tip="hiddenRows.has(rowIndex(entry)) ? $t('spreadsheetGrid.hiddenInSource') : null"

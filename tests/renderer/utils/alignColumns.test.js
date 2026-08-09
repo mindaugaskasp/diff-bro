@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { alignColumns, pairedColumns } from '../../../src/renderer/src/utils/alignColumns'
+import {
+  alignColumns,
+  headerPairing,
+  pairedColumns
+} from '../../../src/renderer/src/utils/alignColumns'
 
 const pairs = (cols) => cols.map((c) => [c.left, c.right])
 
@@ -140,6 +144,124 @@ describe('alignColumns — positional fallback', () => {
   // The header row can be narrower than the data under it.
   it('measures width from the widest row, not the header', () => {
     expect(alignColumns([['A'], [1, 2, 3]], [['A'], [1, 2, 3]])).toHaveLength(3)
+  })
+})
+
+// A title row above the header is the shape every exported pack has, and it used
+// to drop the whole sheet to positional pairing — the exact failure header
+// pairing exists to prevent.
+describe('alignColumns — header below a title row', () => {
+  const left = [
+    ['Trial balance as at 31 Dec 2024'],
+    ['Account', 'Debit', 'Credit'],
+    ['1001', 500, 0],
+    ['1002', 0, 300]
+  ]
+
+  it('finds the header under a title row and keeps an insert from shifting', () => {
+    const right = [
+      ['Trial balance as at 31 Dec 2025'],
+      ['Account', 'Debit', 'Note', 'Credit'],
+      ['1001', 500, '', 0],
+      ['1002', 0, '', 300]
+    ]
+    expect(pairs(alignColumns(left, right))).toEqual([
+      [0, 0],
+      [1, 1],
+      [null, 2],
+      [2, 3]
+    ])
+  })
+
+  // Each of these inserts a column, so header pairing and positional pairing
+  // give different answers and the assertion can tell them apart.
+  it('pairs when only one side carries the title row', () => {
+    const right = [
+      ['Account', 'Debit', 'Note', 'Credit'],
+      ['1001', 500, '', 0],
+      ['1002', 0, '', 300]
+    ]
+    expect(pairs(alignColumns(left, right))).toEqual([
+      [0, 0],
+      [1, 1],
+      [null, 2],
+      [2, 3]
+    ])
+  })
+
+  it('skips blank rows on the way down', () => {
+    const l = [['Q3 pack'], [], ['Region', 'Q1', 'Q2'], ['North', 1, 2], ['South', 3, 4]]
+    const r = [
+      ['Region', 'New', 'Q1', 'Q2'],
+      ['North', 9, 1, 2],
+      ['South', 9, 3, 4]
+    ]
+    expect(pairs(alignColumns(l, r))).toEqual([
+      [0, 0],
+      [null, 1],
+      [1, 2],
+      [2, 3]
+    ])
+  })
+
+  it('gives up rather than scanning an unbounded preamble', () => {
+    const preamble = Array.from({ length: 12 }, (_, i) => [`note ${i}`])
+    const l = [...preamble, ['Region', 'Q1', 'Q2'], ['North', 1, 2]]
+    const r = [...preamble, ['Region', 'New', 'Q1', 'Q2'], ['North', 9, 1, 2]]
+    expect(pairs(alignColumns(l, r))).toEqual([
+      [0, 0],
+      [1, 1],
+      [2, 2],
+      [null, 3]
+    ])
+  })
+
+  it('names the columns from the header it found, not from the title row', () => {
+    const right = [
+      ['Trial balance as at 31 Dec 2025'],
+      ['Account', 'Debit', 'Credit'],
+      ['1001', 500, 0],
+      ['1002', 0, 300]
+    ]
+    expect(alignColumns(left, right).map((c) => c.name)).toEqual(['Account', 'Debit', 'Credit'])
+  })
+})
+
+describe('headerPairing', () => {
+  it('reports the row each side was read from', () => {
+    const l = [['Pack'], ['Region', 'Q1'], ['North', 1], ['South', 2]]
+    const r = [
+      ['Region', 'Q1'],
+      ['North', 1],
+      ['South', 2]
+    ]
+    expect(headerPairing(l, r).headerRows).toEqual({ left: 1, right: 0 })
+  })
+
+  // Naming a header row the pairing did not use would tell the reader the
+  // columns were matched by name when they were matched by position.
+  it('reports no header row when the pairing fell back to position', () => {
+    const l = [
+      ['row-0', 'v0'],
+      ['row-1', 'v1']
+    ]
+    const r = [
+      ['row-0', 'w0'],
+      ['row-1', 'w1']
+    ]
+    expect(headerPairing(l, r).headerRows).toBeNull()
+  })
+
+  it('returns the same columns alignColumns does', () => {
+    const l = [
+      ['Region', 'Q1'],
+      ['North', 1]
+    ]
+    const r = [
+      ['Region', 'Q2'],
+      ['North', 2]
+    ]
+    expect(headerPairing(l, r).columns).toEqual(alignColumns(l, r))
   })
 })
 

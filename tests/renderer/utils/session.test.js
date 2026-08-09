@@ -318,3 +318,28 @@ describe('packSession — a half-loaded tab is reset, not blanked', () => {
     expect(packed.tabs[0].customTitle).toBe('prod vs staging')
   })
 })
+
+// A stored session says what the reader chose; a session that predates the
+// choice must stay SILENT about it, so the store can take the view from the
+// files rather than being told "text" by a field that was never written.
+describe('readSession — the view a snapshot never recorded', () => {
+  const withView = (view) => {
+    const raw = JSON.parse(JSON.stringify(packSession([tab('tab-1')], 'tab-1')))
+    if (view === undefined) delete raw.tabs[0].snapshot.semanticView
+    else raw.tabs[0].snapshot.semanticView = view
+    return readSession(JSON.stringify(raw)).tabs[0].snapshot.semanticView
+  }
+
+  it('leaves an unrecorded view undefined, not false', () => {
+    expect(withView(undefined)).toBeUndefined()
+  })
+
+  it('keeps a recorded view, either way', () => {
+    expect(withView(true)).toBe(true)
+    expect(withView(false)).toBe(false)
+  })
+
+  it('still refuses a value that is not a boolean', () => {
+    expect(withView('yes')).toBeUndefined()
+  })
+})

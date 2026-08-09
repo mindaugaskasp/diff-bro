@@ -262,6 +262,24 @@
   color: var(--danger-text);
   filter: brightness(1.08);
 }
+/* How many of the things behind this button are set — the View options a reader
+   has changed, the columns keying the grid's rows. Height comes from --chip-h,
+   never from padding: that is how the Esc chip drifted to 19px beside a 26px
+   button. Face is the theme's own ink at 30%, the same step .btn.active takes —
+   --accent as a fill under a label scores under 4.5:1 on five themes. */
+.btn-count {
+  min-width: var(--chip-h);
+  height: var(--chip-h);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--btn-face-press);
+  color: var(--text);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 /* --- Popover layer ------------------------------------------------------
    A panel anchored to a button, dismissed by Escape or a press outside — the
    View options and the toolbar's overflow menu. Shared because there were

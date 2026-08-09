@@ -50,3 +50,11 @@ export const showsWhitespaceToggle = (store) =>
  * @returns {boolean}
  */
 export const shouldOpenSemantic = (store) => !!store?.canCompareDiagram || !!store?.delimitedFormat
+
+/**
+ * The view a restored snapshot opens in: the one it recorded, or — where it
+ * recorded none, having been saved before the diagram view or by a bundle that
+ * never wrote it — whatever the files themselves ask for.
+ */
+export const restoredSemanticView = (payload, store) =>
+  typeof payload?.semanticView === 'boolean' ? payload.semanticView : shouldOpenSemantic(store)

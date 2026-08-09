@@ -973,6 +973,14 @@
     "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter.",
     "newSnippetCta": "New snippet"
   },
+  "rowMatchMenu": {
+    "matchRows": "Match rows",
+    "tip": "Choose the columns that name a row",
+    "byWholeRow": "Rows pair by their whole contents. Re-sorting the file defeats that.",
+    "byKey": "Rows pair by the ticked columns, wherever they sit in the file.",
+    "duplicates": "{n} key appears more than once — those rows pair in the order they appear | {n} keys appear more than once — those rows pair in the order they appear",
+    "useAuto": "Back to whole-row matching"
+  },
   "spreadsheetDiffViewer": {
     "customTolerance": "Custom tolerance",
     "numbersCloserThanThisCount": "Numbers closer than this count as the same figure",
@@ -988,7 +996,9 @@
     "columns": "Columns",
     "backToTheValues": "Back to the values each formula produced",
     "showFormulasNotResults": "Show formulas, not results",
-    "sheetOnlyIn": "“{name}” is only in the {side} file"
+    "sheetOnlyIn": "“{name}” is only in the {side} file",
+    "headerRow": "Header row {row}",
+    "headerRowEachSide": "Header row {left} · {right}"
   },
   "storageSettings": {
     "dataFolder": "Data folder",

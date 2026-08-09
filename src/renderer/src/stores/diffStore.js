@@ -4,7 +4,7 @@ import { structureAdapter } from '../adapters/structureAdapter'
 import { csvAdapter } from '../adapters/csvAdapter'
 import { diffStructures, structuredKind } from '../utils/structuralDiff'
 import { delimitedKind } from '../utils/csv'
-import { shouldOpenSemantic } from '../utils/viewChrome'
+import { restoredSemanticView, shouldOpenSemantic } from '../utils/viewChrome'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { isSecret } from '../utils/secretSnippet'
@@ -669,7 +669,7 @@ export const useDiffStore = defineStore('diff', {
       this.pasteRightName = payload.pasteRightName ?? ''
       this.renderSideBySide = payload.renderSideBySide ?? true
       this.ignoreTrimWhitespace = payload.ignoreTrimWhitespace ?? false
-      this.semanticView = payload.semanticView === true
+      this.semanticView = restoredSemanticView(payload, this)
       this.mode = payload.mode ?? 'files'
       // Opened from a saved diff: it already exists in the vault, so replacing
       // it later needs no "you'll lose it" prompt.

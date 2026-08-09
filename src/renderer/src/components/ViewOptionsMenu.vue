@@ -72,7 +72,7 @@ defineExpose({ close })
       @click="toggle"
     >
       {{ $t('appToolbar.view') }}
-      <span v-if="changedCount" class="count">{{ changedCount }}</span>
+      <span v-if="changedCount" class="btn-count">{{ changedCount }}</span>
       <AppIcon name="chevron-down" />
     </button>
     <div v-if="open" class="popover" role="group" :aria-label="$t('appToolbar.view')">
