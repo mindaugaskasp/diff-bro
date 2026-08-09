@@ -1,0 +1,109 @@
+/* The dependency comparison. Every colour is a role the diff panes already use,
+   so it reads the same on all twenty themes and keeps the hard keyline the
+   contrast/beacon palettes rely on. The band itself is .status-band in ui.css. */
+.deps-diff {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+.deps-bar {
+  flex: none;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  min-height: var(--control-h);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.deps-title {
+  color: var(--text-dim);
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+.deps-bar .btn {
+  margin-left: auto;
+}
+.identical-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-dim);
+}
+.identical-row .ok {
+  color: var(--success-text);
+}
+.deps-rows {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+/* A row is a band: its height comes from the control scale, never from padding,
+   so a longer package name cannot make one row taller than its neighbours. */
+.deps-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-md);
+}
+.deps-row:last-child {
+  border-bottom: 0;
+}
+/* Status is on the LEFT EDGE rather than as a wash: a row already carries two
+   coloured versions, and a third tint behind them reads as neither. */
+.deps-row.added {
+  box-shadow: inset 3px 0 0 var(--success-text);
+}
+.deps-row.removed {
+  box-shadow: inset 3px 0 0 var(--danger-border);
+}
+.deps-row.bumped,
+.deps-row.downgraded {
+  box-shadow: inset 3px 0 0 var(--warning-bg);
+}
+.deps-name {
+  font-family: var(--font-mono);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.deps-move {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  white-space: nowrap;
+}
+.deps-move .add {
+  color: var(--success-text);
+}
+.deps-move .del {
+  color: var(--danger-border);
+}
+/* Height from --chip-h, never from padding — the rule the Esc chip broke. */
+.deps-tag {
+  height: var(--chip-h);
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--btn-face);
+  color: var(--text-hint);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+}
+.deps-step {
+  flex: none;
+}
+.deps-license {
+  color: var(--text-hint);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+}

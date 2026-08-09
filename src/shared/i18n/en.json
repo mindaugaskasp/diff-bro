@@ -558,6 +558,23 @@
     "showTheChangeList": "Show the change list",
     "notComparableAsPicture": "This diagram type can’t be compared as a picture yet."
   },
+  "depsDiffViewer": {
+    "packages": "Packages",
+    "changed": "Changed",
+    "askedFor": "Asked for",
+    "direct": "asked for",
+    "dev": "dev",
+    "noDependencyChanged": "No dependency changed — the same versions, either side",
+    "showCarried": "Show {n} carried package | Show {n} carried packages",
+    "askedForOnly": "Only what you asked for",
+    "countBumped": "{n} bumped",
+    "countDowngraded": "{n} downgraded",
+    "step": {
+      "major": "major",
+      "minor": "minor",
+      "patch": "patch"
+    }
+  },
   "diffTabBar": {
     "previousComparison": "Previous comparison",
     "openComparisons": "Open comparisons",
@@ -1507,7 +1524,8 @@
     "moved": "{n} moved",
     "sheets": "{n} sheet | {n} sheets",
     "matches": "{n} match | {n} matches",
-    "unchangedHidden": "{n} unchanged hidden"
+    "unchangedHidden": "{n} unchanged hidden",
+    "packages": "{n} package | {n} packages"
   },
   "sheetTabBar": {
     "onlyIn": "only {side}",
