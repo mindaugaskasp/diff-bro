@@ -11,6 +11,8 @@ import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from 
 import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
 import { fileAtRevision, isRevisionSide, REVISION_ERROR_KEYS } from './gitCliFiles'
+import { beginMerge, writeMerged } from './mergeSession'
+import { readFileSync } from 'node:fs'
 import { t } from './i18n'
 
 // A command can arrive before any window exists (a cold `diffbro compare …`),
@@ -77,17 +79,36 @@ function deliverResolved(command, cwd) {
 
 const needsGit = (command) => command?.name === 'compare' && command.files.some(isRevisionSide)
 
-function routeCommand(command, cwd) {
+// A mergetool launch: main REMEMBERS the path git wants written and sends the
+// renderer the conflicted text, never the path. What comes back is text.
+function routeMerge(command) {
+  let content
+  try {
+    content = readFileSync(command.merged, 'utf8')
+  } catch {
+    process.stderr.write(`${t('cliErrors.not-in-revision')}\n`)
+    return
+  }
+  beginMerge(command)
+  deliver({ name: 'merge', local: command.local, remote: command.remote, content })
+}
+
+// The verbs that need something done before the renderer hears about them.
+const SPECIAL = {
   // `open` with no file has nothing to tell the renderer — the window IS the
   // answer, so it never reaches deliver's pending queue.
-  if (command?.name === 'raise') return void ensureMainWindow()?.focus()
+  raise: () => void ensureMainWindow()?.focus(),
+  merge: (command) => routeMerge(command),
+  'clipboard-save': (command) => deliver({ ...command, text: clipboard.readText() })
+}
+
+function routeCommand(command, cwd) {
   if (needsGit(command)) return void deliverResolved(command, cwd)
+  const special = SPECIAL[command?.name]
+  if (special) return void special(command)
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
   if (command?.name === 'compare') command.files.forEach(allowCliPath)
-  if (command?.name === 'clipboard-save') {
-    return void deliver({ ...command, text: clipboard.readText() })
-  }
   deliver(command)
 }
 
@@ -124,6 +145,9 @@ export function registerCliIpc() {
       })
     ).response === 1
 
+  // The renderer's ONLY say in the merge is the text. It cannot name a file:
+  // main has held that path since the launch.
+  ipcMain.handle('merge:write', (e, text) => writeMerged(text))
   ipcMain.handle('cli:status', () => shimStatus(where()))
   ipcMain.handle('cli:install', async () =>
     (await confirmed(t('dialog.cliInstall.message'), t('dialog.cliInstall.detail')))

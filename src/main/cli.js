@@ -115,6 +115,15 @@ export function parseNewSnippet(words) {
 const VERBS = {
   compare: (rest, resolve) => parseCompare(rest, resolve),
   difftool: (rest, resolve) => parseCompare(rest, resolve, true),
+  // git hands a mergetool four paths in a fixed order: LOCAL REMOTE MERGED
+  // BASE. MERGED is the file in the repo — the one with the markers in it, and
+  // the one this run may write back.
+  mergetool: (rest, resolve) => {
+    const paths = rest.filter((p) => p.trim()).map(resolve)
+    if (paths.length < 3) return { command: null, error: 'mergetool needs LOCAL REMOTE MERGED.' }
+    const [local, remote, merged] = paths
+    return { command: { name: 'merge', local, remote, merged }, error: null }
+  },
   open: (rest, resolve) => parseOpen(rest, resolve),
   backup: (rest, resolve) => parseBackup(rest, resolve),
   // One verb. `--interactive` asks in the terminal and saves; without it the

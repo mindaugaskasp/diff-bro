@@ -1602,6 +1602,10 @@
       "summary": "open a comparison git handed over",
       "detail": "What `git difftool` and `git mergetool` run. Same as compare,\nexcept the two files are known to be throwaway copies git made.\n\nBecause they are throwaway, a merge with more conflicts than there are\ntabs reuses the oldest of them instead of running out — `git mergetool`\nwalks the whole conflict list without waiting for anyone."
     },
+    "mergetool": {
+      "summary": "Resolve a merge conflict git handed over",
+      "detail": "Called by `git mergetool`, not usually by hand. Opens the two conflicting versions, takes a choice per conflict, and writes the merged file back."
+    },
     "open": {
       "summary": "raise the app, optionally on a file",
       "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, that file fills the left side and waits for the right — the\nsame as `compare` with one path, under a name that reads like opening.\nFor two files at once, use `compare`."
