@@ -479,6 +479,7 @@
     "structure": "Structure",
     "structureGrid": "Grid",
     "structureDiagram": "Diagram",
+    "structureDeps": "Dependencies",
     "tips": {
       "view": "Split view, structure and whitespace — everything that changes how the comparison is drawn",
       "more": "Actions the bar has no room for",
