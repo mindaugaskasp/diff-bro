@@ -40,7 +40,7 @@
 }
 .sheet-tabs .tab .badge.only {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .sheet-tabs .tab.missing .name {
   font-style: italic;

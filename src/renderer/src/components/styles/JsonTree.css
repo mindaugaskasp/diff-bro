@@ -31,7 +31,7 @@
   height: 12px;
 }
 .jt-key {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .jt-colon {
   color: var(--text-dim);

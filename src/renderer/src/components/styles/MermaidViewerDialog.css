@@ -92,7 +92,7 @@
 }
 .tbtn:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .tbtn.wide {
   font-size: var(--font-sm);
@@ -110,7 +110,7 @@
   user-select: none;
 }
 .pct:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .stage {
   flex: 1;

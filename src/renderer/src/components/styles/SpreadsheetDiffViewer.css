@@ -58,7 +58,7 @@
   gap: var(--space-1);
 }
 .grid-tools .btn.active {
-  color: var(--accent);
+  color: var(--accent-ink);
   border-color: var(--accent);
 }
 

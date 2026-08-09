@@ -64,7 +64,7 @@
   text-transform: none;
   font-size: var(--font-2xs);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   border-radius: var(--radius-sm);
@@ -146,6 +146,6 @@
   place-items: center;
 }
 .tu-copy:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }

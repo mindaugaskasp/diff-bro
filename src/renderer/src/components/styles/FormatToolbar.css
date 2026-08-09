@@ -27,7 +27,7 @@
 }
 .fmt-btn:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-ink);
   background: var(--bg-hover);
 }
 /* Heading buttons carry a short label (H1/H2/H3) instead of an icon. */

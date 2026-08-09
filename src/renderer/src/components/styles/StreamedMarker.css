@@ -15,7 +15,7 @@
 }
 .mark-icon {
   flex: none;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .mark-title {
   flex: none;

@@ -25,7 +25,7 @@
   background: var(--bg-hover, var(--bg-hover));
 }
 .top.open {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .dropdown {
   position: absolute;

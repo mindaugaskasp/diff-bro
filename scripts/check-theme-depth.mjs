@@ -170,6 +170,10 @@ const RULES = [
   // what shipped on all fourteen themes before the app defined a theme at all:
   // its weakest band is 1.15 (the light added row on white). A band that reads
   // less clearly than the stock one nobody chose would be a regression.
+  // Accent painted AS TEXT. 43 rules do it, and 28 of them declare no ground of
+  // their own, so the component pass below cannot judge those at all — the
+  // token is where the guarantee has to live.
+  { key: 'accent-ink/panel', a: 'accent-ink', b: 'bg-panel', min: 4.5, kind: 'text' },
   { key: 'add-line/bg', a: 'diff-add-line', b: 'bg', min: 1.2, kind: 'surface' },
   { key: 'del-line/bg', a: 'diff-del-line', b: 'bg', min: 1.2, kind: 'surface' },
   // …and the text still has to be readable ON the band, which is where a tint

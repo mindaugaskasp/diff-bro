@@ -26,7 +26,7 @@
 .te-tick {
   width: 15px;
   height: 15px;
-  color: var(--accent);
+  color: var(--accent-ink);
   animation: te-tick 2s steps(1, end) infinite;
 }
 @keyframes te-tick {
@@ -45,7 +45,7 @@
   color: var(--text);
 }
 .te-now-v:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .te-controls {
   display: flex;
@@ -76,7 +76,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .te-lane-k .app-icon {
   width: 13px;
@@ -127,7 +127,7 @@
   cursor: pointer;
 }
 .te-cal:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
   border-color: var(--accent);
 }
 .te-cal-ico {
@@ -213,7 +213,7 @@
   place-items: center;
 }
 .te-copy:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .te-hint {

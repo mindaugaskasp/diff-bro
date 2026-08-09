@@ -9,6 +9,6 @@
 }
 /* A link is shown styled but inert — the app never navigates (offline). */
 .ji-link {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: underline;
 }
