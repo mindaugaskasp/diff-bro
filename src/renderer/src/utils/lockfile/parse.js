@@ -7,6 +7,7 @@ import { parseNpmLock } from './npm'
 import { parsePnpmLock } from './pnpm'
 import { parseYarnLock } from './yarn'
 import { parseGoSum } from './go'
+import { parseComposerLock } from './composer'
 
 /**
  * A lockfile is untrusted input. Past this many entries the reader is not
@@ -20,7 +21,8 @@ export const LOCKFILE_KINDS = [
   { name: 'npm-shrinkwrap.json', kind: 'npm', parse: parseNpmLock },
   { name: 'pnpm-lock.yaml', kind: 'pnpm', parse: parsePnpmLock },
   { name: 'yarn.lock', kind: 'yarn', parse: parseYarnLock },
-  { name: 'go.sum', kind: 'go', parse: parseGoSum }
+  { name: 'go.sum', kind: 'go', parse: parseGoSum },
+  { name: 'composer.lock', kind: 'composer', parse: parseComposerLock }
 ]
 
 const baseName = (name) =>

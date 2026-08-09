@@ -18,6 +18,18 @@ function directNames(root) {
   return names
 }
 
+// Only the ROOT copy can be the one the manifest asked for. A package installed
+// twice — once at the top and once nested under a dependency wanting another
+// version — matches by name at both paths.
+const packageAt = (path, name, entry, direct) => ({
+  name,
+  version: entry.version,
+  direct: path === `node_modules/${name}` && direct.has(name),
+  dev: entry.dev === true,
+  license: typeof entry.license === 'string' ? entry.license : '',
+  resolved: typeof entry.resolved === 'string' ? entry.resolved : ''
+})
+
 function fromPackages(doc) {
   const direct = directNames(doc.packages[''])
   const out = []
@@ -26,18 +38,7 @@ function fromPackages(doc) {
     // pointer whose real entry appears under its own path.
     if (!path || entry?.link || typeof entry?.version !== 'string') continue
     const name = nameFromPath(path)
-    if (!name) continue
-    out.push({
-      name,
-      version: entry.version,
-      // Only the ROOT copy can be the one the manifest asked for. A package
-      // installed twice — once at the top and once nested under a dependency
-      // wanting another version — matches by name at both paths.
-      direct: path === `node_modules/${name}` && direct.has(name),
-      dev: entry.dev === true,
-      license: typeof entry.license === 'string' ? entry.license : '',
-      resolved: typeof entry.resolved === 'string' ? entry.resolved : ''
-    })
+    if (name) out.push(packageAt(path, name, entry, direct))
   }
   return out
 }
