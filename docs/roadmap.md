@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Diagrams: readable at rest, the other diagram types, click a change to pan to it. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Onboarding (done): sample comparison, coach marks, what's new on upgrade. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — four tracks. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs, three-way merge — a decision first. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -128,6 +128,8 @@ paired on label), and one union source carrying both revisions renders once
 (`diagramUnion.js`) so a single layout means an unchanged node cannot drift.
 Focus keeps the changes plus a ring of context and says what it hid
 (`diagramFocus.js`). Split view lays the two revisions side by side instead.
+The union renders at its own size and the stage pans, zooms and fits around it
+(`useZoomPan`) — a 35-node map opens legible instead of shrunk to the pane.
 
 ```mermaid
 flowchart LR
@@ -139,7 +141,7 @@ flowchart LR
 ```
 
 - Status is encoded twice — colour AND stroke pattern — and the three tokens are
-  held to a contrast floor and a pairwise ΔE floor on all 14 by
+  held to a contrast floor and a pairwise ΔE floor on all 20 themes by
   `check-theme-depth.mjs`
 - Labels come from the compared files, so the union emitter strips the
   characters that would open a directive or a statement (rule 6)
@@ -149,18 +151,14 @@ flowchart LR
 ```mermaid
 flowchart LR
   subgraph now["now"]
-    r["readable at rest<br>fit-width shrinks a large map"]
+    s["sequence · gantt · pie<br>each needs its own extractor"]
   end
   subgraph next["next"]
-    s["sequence · gantt · pie<br>each needs its own extractor"]
     c["click a change to pan to it"]
   end
   now --> next
 ```
 
-- **readable at rest** — mermaid gives its svg no intrinsic width, so a 35-node
-  map fits the pane and nothing is legible without zooming. Pan and zoom exist;
-  a sensible resting scale does not
 - **the other diagram types** — `sequence`, `gantt`, `pie`, `journey`,
   `gitGraph`, `mindmap` and the rest expose a bespoke db (`getActors`,
   `getSections`, `getCommits`) with no shared shape, so each is its own
@@ -168,6 +166,33 @@ flowchart LR
 - **the register is read-only** — a row names a change you then hunt for by eye;
   clicking one should pan the diagram to it
 - Still out of scope: editing a diagram from the diff view, three-way merge
+
+---
+
+## Comparing more
+
+**Open — and gated on a decision, not a build.** Each of these is its own
+engine; the track starts by choosing which of them Diff Bro wants to be.
+
+```mermaid
+flowchart LR
+  subgraph decide["decision first"]
+    direction TB
+    f["folder compare<br>two trees aligned by path"]
+    i["image pairs<br>side-by-side · onion-skin · pixel Δ"]
+    t["three-way merge<br>an EDITOR, not a viewer"]
+  end
+```
+
+- **folder compare** — two directory trees aligned by relative path, any pair
+  drilling into the existing viewers. Needs a recursive-read IPC surface with
+  caps (rule 6) before any UI exists
+- **image pairs** — the adapter registry already takes a `{ kind }` comparable,
+  so the seam exists; which diff to draw (side-by-side, onion-skin, pixel
+  delta) is the decision
+- **three-way merge** — WRITES files, which Diff Bro deliberately never does
+  today; the same line the Diagrams track holds ("editing a diagram from the
+  diff view" is out of scope). Crossing it is the decision, not the code
 
 ---
 
