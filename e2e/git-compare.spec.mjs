@@ -61,7 +61,8 @@ test('compares a file against the revision it names', async () => {
     await runCli(userDataDir, repo, ['compare', 'HEAD~1:app.json', 'app.json'])
 
     // Both sides arrived: the old one out of git, the new one off disk.
-    await expect(page.locator('.slot[data-side="left"] .name')).toContainText('app.json', {
+    // Named for the revision it came from, so the two sides are told apart.
+    await expect(page.locator('.slot[data-side="left"] .name')).toContainText('HEAD~1', {
       timeout: 20000
     })
     await expect(page.locator('.slot[data-side="right"] .name')).toContainText('app.json')

@@ -1,19 +1,17 @@
-// A `revision:path` side of a `diffbro compare`, staged as a real file. The
-// copies take gitTool's temp prefix so its sweep clears them too.
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+// A `revision:path` side of a `diffbro compare`, read straight out of the
+// repository. Only MAIN talks to git.
+//
+// The content is handed over as a loaded FILE, not staged on disk: a temp copy
+// has to live somewhere the renderer is allowed to read, which `file:read`
+// refuses under userData — and it would then outlive the comparison with
+// nothing to tell it the tab had closed.
+import { basename } from 'node:path'
 import { readBlobArgs, resolveRevisionArgs, repoRootArgs, runGitIn } from './gitRepo'
-import { TEMP_PREFIX } from './gitTool'
-
-// A revision is not a filename: `origin/main` and `HEAD~1` both have to become
-// one directory that a reader recognises in a tab title.
-const asFolder = (revision) => revision.replace(/[^A-Za-z0-9._-]+/g, '-').slice(0, 40) || 'rev'
 
 /**
  * @param {{revision: string, relPath: string}} side
  * @param {string} cwd  the shell's working directory
- * @returns {Promise<{path: string}|{error: string}>}
+ * @returns {Promise<{file: {path: null, name: string, content: string}}|{error: string}>}
  */
 export async function fileAtRevision(side, cwd) {
   const root = await runGitIn(repoRootArgs(), cwd)
@@ -23,13 +21,15 @@ export async function fileAtRevision(side, cwd) {
   if (!resolved.ok) return { error: 'no-such-revision' }
   const blob = await runGitIn(readBlobArgs(side.revision, side.relPath), dir)
   if (!blob.ok) return { error: 'not-in-revision' }
-
-  const stage = mkdtempSync(join(tmpdir(), TEMP_PREFIX))
-  const folder = join(stage, asFolder(side.revision))
-  mkdirSync(folder, { recursive: true })
-  const path = join(folder, basename(side.relPath) || 'file')
-  writeFileSync(path, blob.stdout, 'utf8')
-  return { path }
+  return {
+    // Named for the revision it came from, so two sides of the same file are
+    // told apart in the slot and the tab title.
+    file: {
+      path: null,
+      name: `${basename(side.relPath) || 'file'} @ ${side.revision}`,
+      content: blob.stdout
+    }
+  }
 }
 
 /**

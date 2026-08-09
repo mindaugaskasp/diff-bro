@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, setViewOption, stubOpenDialog } from './fixtures.mjs'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,7 +13,11 @@ const lockfile = (entries) =>
       lockfileVersion: 3,
       name: 'demo',
       packages: {
-        '': { name: 'demo', dependencies: { vue: '^3.4.0' }, devDependencies: { vitest: '^4.0.0' } },
+        '': {
+          name: 'demo',
+          dependencies: { vue: '^3.4.0' },
+          devDependencies: { vitest: '^4.0.0' }
+        },
         ...Object.fromEntries(
           entries.map(([name, version, dev]) => [
             `node_modules/${name}`,
@@ -97,10 +101,10 @@ test('the carried packages are one press away, and the text is one toggle away',
     await expect(page.locator('.deps-row')).toHaveCount(3)
     await expect(page.locator('.deps-row', { hasText: 'gone' })).toBeVisible()
 
-    // The lockfile is still a file: the toggle gives its text back.
-    await page.getByRole('button', { name: /^View/ }).click()
-    await page.getByRole('checkbox', { name: 'Dependencies' }).uncheck()
-    await page.keyboard.press('Escape')
+    // The lockfile is still a file: the toggle gives its text back. Through the
+    // fixture helper, because the toolbar folds View into the overflow at a
+    // narrow window and hand-rolling the click missed it there.
+    await setViewOption(page, 'Dependencies', false)
     await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 20000 })
     await expect(page.locator('.deps-diff')).toHaveCount(0)
   } finally {

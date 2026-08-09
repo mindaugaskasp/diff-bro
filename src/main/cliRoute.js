@@ -65,7 +65,7 @@ async function withRevisionsResolved(command, cwd) {
       process.stderr.write(`${t(REVISION_ERROR_KEYS[res.error] ?? 'cliErrors.not-a-repo')}\n`)
       return null
     }
-    files.push(res.path)
+    files.push(res.file)
   }
   return { ...command, files }
 }
