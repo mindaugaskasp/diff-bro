@@ -106,6 +106,16 @@ describe('diffLocks', () => {
     expect(rows[0].to).toBe('2.0.0')
   })
 
+  // Sorting the leftovers as STRINGS paired 1.10.0 with 1.9.0 and called it a
+  // downgrade — the same trap moveOf already avoids by comparing triples.
+  it('pairs multiple versions in version order, not string order', () => {
+    const left = lock([pkg('dup', '1.9.0'), pkg('dup', '1.10.0')])
+    const right = lock([pkg('dup', '1.9.1'), pkg('dup', '1.10.1')])
+    const rows = diffLocks(left, right).rows
+    expect(rows.map((r) => `${r.from}->${r.to}`)).toEqual(['1.9.0->1.9.1', '1.10.0->1.10.1'])
+    expect(rows.every((r) => r.status === 'bumped')).toBe(true)
+  })
+
   it('sorts what the reader asked for above what came along', () => {
     const left = lock([pkg('zzz', '1.0.0', { direct: true }), pkg('aaa', '1.0.0')])
     const right = lock([pkg('zzz', '2.0.0', { direct: true }), pkg('aaa', '2.0.0')])

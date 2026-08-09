@@ -1,9 +1,5 @@
-// A `revision:path` side of a `diffbro compare`, turned into a real file the
-// rest of the app can open. Only MAIN talks to git, and only main writes these
-// copies — the renderer receives a path like any other.
-//
-// The copies live in a temp directory named the way gitTool's do, so the same
-// sweep clears both.
+// A `revision:path` side of a `diffbro compare`, staged as a real file. The
+// copies take gitTool's temp prefix so its sweep clears them too.
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'

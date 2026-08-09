@@ -1,60 +1,72 @@
 // A file as git left it mid-merge: stable text with conflict regions between,
 // each carrying both sides and — in diff3 style — the ancestor they came from.
 // Pure, and it composes the resolved file back rather than editing in place.
+//
+// Every line keeps the ending it arrived with. git writes its markers with LF
+// even into a CRLF file, so a single file-wide line ending found no conflicts in
+// a genuinely mixed file — and writing that back put the markers on disk.
 
-const OURS = /^<<<<<<< ?(.*)$/
-const BASE = /^\|\|\|\|\|\|\| ?(.*)$/
-const SPLIT = /^=======\s*$/
-const THEIRS = /^>>>>>>> ?(.*)$/
+// Exactly seven characters, then end-of-line or a space before the label. A
+// line merely STARTING with them is ordinary text.
+const OURS = /^<<<<<<<(?: (.*))?$/
+const BASE = /^\|\|\|\|\|\|\|(?: (.*))?$/
+const SPLIT = /^=======$/
+const THEIRS = /^>>>>>>>(?: (.*))?$/
 
-const stable = (lines) => ({ type: 'stable', lines })
+const textOf = (raw) => raw.replace(/\r?\n$/, '')
+const label = (match) => (match?.[1] ?? '').trim()
+
+const stable = (raw) => ({ type: 'stable', raw, lines: raw.map(textOf) })
 
 // A conflict git wrote always closes. One that does not is a file someone was
 // editing by hand, and guessing which side the rest belongs to would silently
 // drop the other.
-function conflictAt(lines, start) {
-  const conflict = {
-    type: 'conflict',
-    oursLabel: OURS.exec(lines[start])[1].trim(),
-    theirsLabel: '',
-    ours: [],
-    base: null,
-    theirs: []
-  }
+function conflictAt(raw, start) {
+  const sides = { ours: [], base: null, theirs: [] }
   let side = 'ours'
-  for (let i = start + 1; i < lines.length; i++) {
-    const line = lines[i]
+  for (let i = start + 1; i < raw.length; i++) {
+    const line = textOf(raw[i])
+    const closing = THEIRS.exec(line)
+    if (closing) {
+      return {
+        conflict: {
+          type: 'conflict',
+          oursLabel: label(OURS.exec(textOf(raw[start]))),
+          theirsLabel: label(closing),
+          ours: sides.ours.map(textOf),
+          theirs: sides.theirs.map(textOf),
+          base: sides.base ? sides.base.map(textOf) : null,
+          oursRaw: sides.ours,
+          theirsRaw: sides.theirs
+        },
+        end: i
+      }
+    }
     if (BASE.test(line)) {
-      conflict.base = []
+      sides.base = []
       side = 'base'
     } else if (SPLIT.test(line)) side = 'theirs'
-    else if (THEIRS.test(line)) {
-      conflict.theirsLabel = THEIRS.exec(line)[1].trim()
-      return { conflict, end: i }
-    } else conflict[side].push(line)
+    else sides[side].push(raw[i])
   }
   return null
 }
 
 /**
  * @param {string} text
- * @returns {{segments: Array, eol: string, trailingEol: boolean}|null} null when
- *   the file's markers do not close.
+ * @returns {{segments: Array}|null} null when the file's markers do not close.
  */
 export function parseConflicts(text) {
-  const source = String(text ?? '')
-  const eol = source.includes('\r\n') ? '\r\n' : '\n'
-  const trailingEol = source.endsWith(eol)
-  const lines = (trailingEol ? source.slice(0, -eol.length) : source).split(eol)
-
+  // Split AFTER each newline, so a line carries its own ending and a mixed file
+  // survives the round trip byte for byte.
+  const raw = String(text ?? '').split(/(?<=\n)/)
   const segments = []
   let held = []
-  for (let i = 0; i < lines.length; i++) {
-    if (!OURS.test(lines[i])) {
-      held.push(lines[i])
+  for (let i = 0; i < raw.length; i++) {
+    if (!OURS.test(textOf(raw[i]))) {
+      held.push(raw[i])
       continue
     }
-    const found = conflictAt(lines, i)
+    const found = conflictAt(raw, i)
     if (!found) return null
     // An empty run between two conflicts, or before the first, is not a segment
     // anyone renders — a file that opens on a conflict has nothing above it.
@@ -64,7 +76,7 @@ export function parseConflicts(text) {
     i = found.end
   }
   if (held.length) segments.push(stable(held))
-  return { segments, eol, trailingEol }
+  return { segments }
 }
 
 const conflicts = (parsed) => (parsed?.segments ?? []).filter((s) => s.type === 'conflict')
@@ -81,9 +93,9 @@ export function unresolvedCount(parsed, choices = []) {
 
 // Both keeps the file's own order — ours came first in it.
 const CHOICES = {
-  ours: (c) => c.ours,
-  theirs: (c) => c.theirs,
-  both: (c) => [...c.ours, ...c.theirs],
+  ours: (c) => c.oursRaw,
+  theirs: (c) => c.theirsRaw,
+  both: (c) => [...c.oursRaw, ...c.theirsRaw],
   neither: () => []
 }
 
@@ -99,8 +111,8 @@ export function composeMerge(parsed, choices = []) {
   const out = []
   let at = 0
   for (const segment of parsed.segments) {
-    if (segment.type === 'stable') out.push(...segment.lines)
+    if (segment.type === 'stable') out.push(...segment.raw)
     else out.push(...CHOICES[choices[at++]](segment))
   }
-  return out.join(parsed.eol) + (parsed.trailingEol ? parsed.eol : '')
+  return out.join('')
 }

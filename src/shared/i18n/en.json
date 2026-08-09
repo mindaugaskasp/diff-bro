@@ -542,7 +542,11 @@
   "cliErrors": {
     "not-a-repo": "That folder is not inside a git repository.",
     "no-such-revision": "git does not know that revision.",
-    "not-in-revision": "That file is not in that revision."
+    "not-in-revision": "That file is not in that revision.",
+    "merge-unreadable": "That file could not be read.",
+    "merge-binary": "That is a binary file — resolve it with `git checkout --ours/--theirs`.",
+    "merge-no-conflicts": "That file has no conflict markers, so there is nothing to resolve.",
+    "refused": "That revision or path was refused."
   },
   "cliSettings": {
     "terminalCommand": "Terminal command",

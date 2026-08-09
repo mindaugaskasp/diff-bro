@@ -15,7 +15,6 @@ import { registerHashIpc } from './hashTools'
 import { backupIfDue, registerBackupIpc } from './backupRoute'
 import { readSettings, readSnippetStore, setBackupHook } from './appData'
 import { registerShareIpc } from './share'
-import { registerGitIpc } from './gitRoute'
 import { registerMailIpc } from './mail'
 import { registerKeyExchangeIpc } from './keyExchange'
 import { registerClipboardCopyIpc } from './clipboardCopy'
@@ -107,7 +106,6 @@ async function boot() {
 function startApp(draftPath) {
   installNetworkKillSwitch()
   registerAppDataIpc()
-  registerGitIpc()
   registerDemoIpc()
   registerQuickLookFocusIpc()
   loadLocale(readSettings().locale) // before installMenu: it builds from this

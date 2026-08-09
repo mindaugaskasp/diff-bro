@@ -125,3 +125,28 @@ describe('composeMerge', () => {
     expect(composeMerge(crlf, ['ours'])).toBe('top\r\nours one\r\nours two\r\nbottom')
   })
 })
+
+// git genuinely produces files whose markers do not use the file's dominant
+// line ending — a CRLF file gets LF markers. Picking one EOL for the whole file
+// found ZERO conflicts in one, so the dialog said "nothing left to decide" and
+// writing it back put the markers straight back on disk.
+describe('parseConflicts — a file whose line endings are mixed', () => {
+  const MIXED = 'header\r\none\n<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> feature\ntail\n'
+
+  it('finds the conflict whatever the surrounding line endings are', () => {
+    const parsed = parseConflicts(MIXED)
+    expect(conflictCount(parsed)).toBe(1)
+    expect(parsed.segments[1].ours).toEqual(['ours'])
+    expect(parsed.segments[1].theirs).toEqual(['theirs'])
+  })
+
+  it('gives every line back exactly the ending it had', () => {
+    const parsed = parseConflicts(MIXED)
+    expect(composeMerge(parsed, ['ours'])).toBe('header\r\none\nours\ntail\n')
+  })
+
+  it('round-trips a file it changes nothing in', () => {
+    const plain = 'a\r\nb\nc'
+    expect(composeMerge(parseConflicts(plain), [])).toBe(plain)
+  })
+})

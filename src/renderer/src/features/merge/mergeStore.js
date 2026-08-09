@@ -24,7 +24,11 @@ export const useMergeStore = defineStore('merge', {
     conflicts: (s) => (s.parsed?.segments ?? []).filter((seg) => seg.type === 'conflict'),
     total: (s) => conflictCount(s.parsed),
     remaining: (s) => unresolvedCount(s.parsed, s.choices),
-    resolvedText: (s) => composeMerge(s.parsed, s.choices)
+    resolvedText: (s) => composeMerge(s.parsed, s.choices),
+    // Nothing to decide is not the same as resolved: a file with no conflicts
+    // is one this tool has no business writing back.
+    canSave: (s) =>
+      !s.error && conflictCount(s.parsed) > 0 && unresolvedCount(s.parsed, s.choices) === 0
   },
   actions: {
     /** @param {string} content  the file as git left it, markers and all */
@@ -56,8 +60,11 @@ export const useMergeStore = defineStore('merge', {
       this.open = false
       return true
     },
-    close() {
+    // Declining tells main, or the launcher waits on a decision that is not
+    // coming and the write stays armed for the life of the process.
+    async close() {
       this.open = false
+      if (!this.saved) await window.api.cancelMerge()
     }
   }
 })

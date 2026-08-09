@@ -86,12 +86,22 @@ function rowFor(name, from, to) {
   }
 }
 
+// Ordered the way versions order, not the way strings do: sorting `1.10.0`
+// before `1.9.0` paired the wrong two and reported a downgrade that never
+// happened.
+function byVersion(a, b) {
+  const x = triple(a)
+  const y = triple(b)
+  if (!x || !y) return a < b ? -1 : 1
+  return x.major - y.major || x.minor - y.minor || x.patch - y.patch
+}
+
 // The versions of one name that only one side has. What both sides hold did not
 // move, whatever else did.
 function moved(leftVersions, rightVersions) {
   const common = new Set([...leftVersions.keys()].filter((v) => rightVersions.has(v)))
-  const gone = [...leftVersions.keys()].filter((v) => !common.has(v)).sort()
-  const came = [...rightVersions.keys()].filter((v) => !common.has(v)).sort()
+  const gone = [...leftVersions.keys()].filter((v) => !common.has(v)).sort(byVersion)
+  const came = [...rightVersions.keys()].filter((v) => !common.has(v)).sort(byVersion)
   return { gone, came }
 }
 

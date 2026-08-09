@@ -59,14 +59,17 @@
 /* Status is on the LEFT EDGE rather than as a wash: a row already carries two
    coloured versions, and a third tint behind them reads as neither. */
 .deps-row.added {
-  box-shadow: inset 3px 0 0 var(--success-text);
+  box-shadow: inset 3px 0 0 var(--dg-add);
 }
 .deps-row.removed {
-  box-shadow: inset 3px 0 0 var(--danger-border);
+  box-shadow: inset 3px 0 0 var(--dg-del);
 }
+/* --warning-bg is a BACKGROUND role: as a keyline it fell to 1.35 on contrast
+   and under the 3.0 non-text floor on every light ground. --dg-chg is the
+   change role the diff panes use, and it is held to a floor on all 20. */
 .deps-row.bumped,
 .deps-row.downgraded {
-  box-shadow: inset 3px 0 0 var(--warning-bg);
+  box-shadow: inset 3px 0 0 var(--dg-chg);
 }
 .deps-name {
   font-family: var(--font-mono);
@@ -81,11 +84,16 @@
   font-size: var(--font-sm);
   white-space: nowrap;
 }
+/* A version is TEXT a reader reads, so it needs the 4.5 floor — the raw status
+   tokens are 3:1 non-text roles and fell to 1.80 on nord. Mixing toward the
+   theme's own ink is what .status-band already does, for exactly this reason. */
 .deps-move .add {
-  color: var(--success-text);
+  color: color-mix(in srgb, var(--dg-add) 55%, var(--text));
+  font-weight: 600;
 }
 .deps-move .del {
-  color: var(--danger-border);
+  color: color-mix(in srgb, var(--dg-del) 55%, var(--text));
+  font-weight: 600;
 }
 /* Height from --chip-h, never from padding — the rule the Esc chip broke. */
 .deps-tag {

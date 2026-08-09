@@ -68,13 +68,6 @@ exec ${shQuote(exePath)}${entryPath ? ` ${shQuote(entryPath)}` : ''} difftool "$
 // so the copies keep the real filename.
 const invocation = (script) => `"${script}" "$LOCAL" "$REMOTE" "$MERGED"`
 
-// A mergetool has to WAIT. The app is single-instance, so the launch returns as
-// soon as the running window has been told — if the script exited there, git
-// would read the merge as finished before the reader had chosen anything, and
-// trustExitCode would be a lie. So it polls $MERGED's modification time and only
-// then reports success.
-const mergeInvocation = (script) => `"${script}" "$LOCAL" "$REMOTE" "$MERGED"`
-
 /**
  * The registration, as git config argument vectors.
  *
@@ -87,7 +80,7 @@ export function registerArgs(script, mergeScript = script) {
   const cmd = invocation(script)
   return [
     ['config', '--global', `difftool.${GIT_TOOL_NAME}.cmd`, cmd],
-    ['config', '--global', `mergetool.${GIT_TOOL_NAME}.cmd`, mergeInvocation(mergeScript)],
+    ['config', '--global', `mergetool.${GIT_TOOL_NAME}.cmd`, invocation(mergeScript)],
     // The merge script waits for $MERGED to change before it exits, so a clean
     // exit now MEANS resolved and git can be told to believe it.
     ['config', '--global', `mergetool.${GIT_TOOL_NAME}.trustExitCode`, 'true'],
@@ -126,6 +119,9 @@ export function runGit(args) {
   })
 }
 
+// Somebody else's file of the same name — theirs to keep.
+const occupied = (file) => existsSync(file) && !looksLikeOurs(file)
+
 const looksLikeOurs = (file) => {
   try {
     return readFileSync(file, 'utf8').includes(MARK)
@@ -160,7 +156,7 @@ export async function registerGitTool({ exePath, home, platform, localAppData, e
   const mergeTarget = gitMergeTarget(gitToolTarget({ platform, home, localAppData }))
   if (!(await git(['--version'])).ok) return { ok: false, error: 'git is not on your PATH.' }
   try {
-    if (existsSync(target) && !looksLikeOurs(target)) {
+    if (occupied(target) || occupied(mergeTarget)) {
       return { ok: false, error: 'A different diffbro-git exists there.' }
     }
     mkdirSync(dirname(target), { recursive: true })

@@ -6,7 +6,7 @@ defineProps({
   result: {
     type: Object,
     required: true,
-    validator: shaped('stats', 'directCount', 'knowsDirect')
+    validator: shaped('stats', 'rows', 'directCount', 'knowsDirect')
   }
 })
 </script>
@@ -22,8 +22,6 @@ defineProps({
     <span v-if="result.stats.downgraded" class="del">
       {{ $t('depsDiffViewer.countDowngraded', result.stats.downgraded) }}
     </span>
-    <!-- The headline: of everything that moved, how much did I ask for? Only
-         claimed where the lockfile format records it. -->
     <span v-if="result.knowsDirect">
       {{ $t('depsDiffViewer.askedFor') }}
       <span class="chg">{{ result.directCount }}</span>

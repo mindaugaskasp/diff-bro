@@ -8,6 +8,10 @@
 import { MARK } from './gitToolMark'
 import { shQuote } from './shellQuote'
 
+// Two hours: longer than any real conflict takes, short enough that a window
+// closed and forgotten does not hold a terminal for ever.
+const WAIT_SECONDS = 7200
+
 /** Beside the difftool launcher, so removing either leaves the other alone. */
 export function gitMergeTarget(target) {
   return `${target}-merge`
@@ -17,13 +21,21 @@ export function gitMergeTarget(target) {
 export function gitMergeScript(exePath, entryPath = null) {
   return `#!/bin/sh
 ${MARK}
-before=$(ls -l "$3" 2>/dev/null)
+done_file="$3.diffbro-merge-done"
+rm -f "$done_file"
 ${shQuote(exePath)}${entryPath ? ` ${shQuote(entryPath)}` : ''} mergetool "$1" "$2" "$3" || exit 1
 # Wait for the reader. Exiting here would tell git the merge was resolved before
-# anyone had looked at it.
-while [ "$(ls -l "$3" 2>/dev/null)" = "$before" ]; do
+# anyone had looked at it. The bound is what stops a closed window hanging the
+# terminal for ever.
+waited=0
+while [ ! -f "$done_file" ] && [ "$waited" -lt ${WAIT_SECONDS} ]; do
   sleep 1
+  waited=$((waited + 1))
 done
+if [ ! -f "$done_file" ]; then exit 1; fi
+verdict=$(cat "$done_file" 2>/dev/null)
+rm -f "$done_file"
+[ "$verdict" = "written" ] || exit 1
 exit 0
 `
 }

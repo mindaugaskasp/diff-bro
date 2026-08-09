@@ -1,4 +1,5 @@
 import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import { workerEnv } from './workerEnv.mjs'
 import { execFileSync } from 'node:child_process'
 import { spawn } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
@@ -19,7 +20,13 @@ function makeRepo() {
   const git = (...args) =>
     execFileSync('git', args, {
       cwd: dir,
-      env: { ...process.env, GIT_AUTHOR_NAME: 'T', GIT_AUTHOR_EMAIL: 't@e', GIT_COMMITTER_NAME: 'T', GIT_COMMITTER_EMAIL: 't@e' }
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: 'T',
+        GIT_AUTHOR_EMAIL: 't@e',
+        GIT_COMMITTER_NAME: 'T',
+        GIT_COMMITTER_EMAIL: 't@e'
+      }
     })
   git('init', '-q', '-b', 'main')
   writeFileSync(join(dir, 'app.json'), '{\n  "replicas": 3\n}\n')
@@ -32,7 +39,7 @@ function makeRepo() {
 }
 
 function runCli(userDataDir, cwd, args) {
-  const env = { ...process.env }
+  const env = { ...workerEnv(userDataDir) }
   delete env.ELECTRON_RUN_AS_NODE
   return new Promise((resolve) => {
     const p = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, ...args], {

@@ -132,12 +132,25 @@ describe('registerArgs', () => {
   })
 
   // The wait is the whole reason trustExitCode may be true; a launcher that
-  // returned straight away would hand git a lie.
-  it('waits for $MERGED to change before reporting success', () => {
+  // returned straight away would hand git a lie. It watches a SENTINEL rather
+  // than $MERGED itself: a resolution that writes the same bytes back changes
+  // neither size nor timestamp, and `ls -l` only resolves to the minute.
+  it('waits for the app to say what it did', () => {
     const script = gitMergeScript('/Applications/Diff Bro.app/x')
     expect(script).toContain('mergetool')
-    expect(script).toMatch(/while \[ "\$\(ls -l "\$3" 2>\/dev\/null\)" = "\$before" \]/)
-    expect(script.trimEnd().endsWith('exit 0')).toBe(true)
+    expect(script).toContain('done_file="$3.diffbro-merge-done"')
+    expect(script).toContain('while [ ! -f "$done_file" ]')
+  })
+
+  // Declining is an answer, and it must not be read as a resolution.
+  it('fails when the reader cancelled, and succeeds only on a write', () => {
+    const script = gitMergeScript('/x')
+    expect(script).toContain('[ "$verdict" = "written" ] || exit 1')
+  })
+
+  // A window closed and forgotten must not hold the terminal for ever.
+  it('gives up rather than waiting without end', () => {
+    expect(gitMergeScript('/x')).toMatch(/waited" -lt \d+/)
   })
 })
 

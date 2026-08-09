@@ -1,20 +1,8 @@
-// Reading a file out of a git revision, so a comparison can start from the
-// repository rather than from two files someone had to produce first.
+// Reading a file out of a git revision. READ ONLY: `rev-parse` and `show` are
+// the whole vocabulary, so nothing here can ask git to reach the network.
 //
-// READ ONLY. Nothing here writes, stages or commits, and no subcommand that can
-// reach the network is reachable from it — `show` and `rev-parse` are the whole
-// vocabulary (rule 1: the offline guarantee is not weakened by a subprocess that
-// opens no socket, but only because nothing here can ask git to open one).
-//
-// The fence, and why each part of it is there (rule 7):
-//   * execFile with a FIXED argv, never a shell — the app already spawns git
-//     this way in gitTool.js
-//   * the repo root is computed HERE and never accepted from the renderer
-//   * a revision is validated before it reaches argv, and can never begin `-`
-//   * --end-of-options, so even a revision that slipped through cannot be read
-//     as a flag
-//   * the HARDENING below, because a repository someone cloned is untrusted
-//     input and repo-local config has been an execution vector before
+// The fence is in docs/security.md; what is not obvious from the code is why
+// each hardening flag is there, so those are noted at the constant itself.
 import { execFile } from 'node:child_process'
 
 /**

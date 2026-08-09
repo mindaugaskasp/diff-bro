@@ -78,7 +78,7 @@ const preview = (lines) => lines.join('\n')
       <button
         class="btn btn-primary"
         data-testid="merge-save"
-        :disabled="merge.remaining > 0 || !!merge.error"
+        :disabled="!merge.canSave"
         @click="merge.save()"
       >
         {{ $t('merge.save') }}

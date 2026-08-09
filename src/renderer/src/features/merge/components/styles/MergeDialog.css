@@ -19,14 +19,16 @@
 /* Answered: a keyline down the edge rather than a wash, so the two coloured
    sides inside keep their own meaning. */
 .merge-conflict.done {
-  box-shadow: inset 3px 0 0 var(--success-text);
+  box-shadow: inset 3px 0 0 var(--dg-add);
 }
 .merge-head {
   gap: var(--space-2);
   min-height: var(--control-h);
   padding: 0 var(--space-3);
   border-bottom: 1px solid var(--border);
-  color: var(--text-dim);
+  /* --text-hint, not --text-dim: this carries words a reader reads, and dim's
+     3.0 floor is held against --bg-panel while this sits on --bg-elevated. */
+  color: var(--text-hint);
   font-size: var(--font-sm);
 }
 .merge-choices {
@@ -48,9 +50,9 @@
   color: var(--text);
 }
 .merge-side.ours {
-  background: color-mix(in srgb, var(--danger-border) 12%, transparent);
+  background: color-mix(in srgb, var(--dg-del) 14%, transparent);
   border-right: 1px solid var(--border);
 }
 .merge-side.theirs {
-  background: color-mix(in srgb, var(--success-text) 12%, transparent);
+  background: color-mix(in srgb, var(--dg-add) 14%, transparent);
 }

@@ -31,9 +31,12 @@ The fence around it, because a repository someone cloned is untrusted input and
 repo-local config has been an execution vector before:
 
 - `execFile` with a FIXED argv, never a shell.
-- The repository root is computed in MAIN, from a path the app already holds. A
-  renderer names a revision and a repo-relative path — never a directory, a
-  command, or a git argument.
+- **No renderer reaches git at all.** There is no `git:*` IPC handler: the only
+  caller is the CLI, whose arguments main parsed itself, and the file it reads
+  out of a revision is staged and vouched for through `allowCliPath` like any
+  other path. An IPC that took a path from the renderer would be an
+  arbitrary-file-read primitive for anything committed in any repository on the
+  machine, which is exactly what `files.js`'s allowlist exists to prevent.
 - A revision is validated against a narrow pattern, may never begin with `-`,
   and is followed by `--end-of-options`; a path may not be absolute and may not
   contain `..`.

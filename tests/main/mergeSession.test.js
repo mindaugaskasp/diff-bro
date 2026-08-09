@@ -1,8 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { beginMerge, endMerge, mergeInProgress, writeMerged } from '../../src/main/mergeSession'
+import {
+  beginMerge,
+  cancelMerge,
+  doneSentinel,
+  endMerge,
+  mergeInProgress,
+  writeMerged
+} from '../../src/main/mergeSession'
 
 const dirs = []
 const scratch = () => {
@@ -63,5 +70,64 @@ describe('writeMerged', () => {
     expect(mergeInProgress().merged).toBe('/tmp/a')
     endMerge()
     expect(mergeInProgress()).toBeNull()
+  })
+})
+
+// The reader declining is an answer. Without it the launcher waited on a
+// decision that was never coming, and the path stayed armed for the life of the
+// process — so a later writeMerged still overwrote the file.
+describe('cancelMerge', () => {
+  it('spends the session, so a later write does nothing', () => {
+    const dir = scratch()
+    const merged = join(dir, 'app.js')
+    writeFileSync(merged, 'original\n')
+    beginMerge({ merged, local: '', remote: '' })
+    expect(cancelMerge()).toEqual({ ok: true })
+    expect(writeMerged('OVERWRITE')).toEqual({ ok: false, error: 'no-merge' })
+    expect(readFileSync(merged, 'utf8')).toBe('original\n')
+  })
+
+  it('leaves the file itself untouched', () => {
+    const dir = scratch()
+    const merged = join(dir, 'app.js')
+    writeFileSync(merged, '<<<<<<< HEAD\n')
+    beginMerge({ merged, local: '', remote: '' })
+    cancelMerge()
+    expect(readFileSync(merged, 'utf8')).toBe('<<<<<<< HEAD\n')
+  })
+
+  // The launcher is blocked on this file; without it `git mergetool` hangs.
+  it('releases the launcher, saying which answer it was', () => {
+    const dir = scratch()
+    const merged = join(dir, 'app.js')
+    beginMerge({ merged, local: '', remote: '' })
+    cancelMerge()
+    expect(readFileSync(doneSentinel(merged), 'utf8')).toBe('cancelled')
+  })
+
+  it('is a no-op when nothing is in progress', () => {
+    expect(cancelMerge()).toEqual({ ok: false })
+  })
+})
+
+describe('the sentinel a successful write leaves', () => {
+  it('tells the launcher the merge really was written', () => {
+    const dir = scratch()
+    const merged = join(dir, 'app.js')
+    beginMerge({ merged, local: '', remote: '' })
+    writeMerged('resolved\n')
+    expect(readFileSync(doneSentinel(merged), 'utf8')).toBe('written')
+  })
+
+  // A resolution that happens to write the SAME bytes back changes neither size
+  // nor timestamp — which is why the launcher watches a sentinel and not the
+  // file itself.
+  it('appears even when the resolved text is identical to the original', () => {
+    const dir = scratch()
+    const merged = join(dir, 'app.js')
+    writeFileSync(merged, 'same\n')
+    beginMerge({ merged, local: '', remote: '' })
+    writeMerged('same\n')
+    expect(existsSync(doneSentinel(merged))).toBe(true)
   })
 })
