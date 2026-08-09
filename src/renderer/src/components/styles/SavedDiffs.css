@@ -62,53 +62,34 @@
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
    set slightly apart with a divider. */
-.usb-seg {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
+/* The search field and its one modifier share a row, so the band keeps the
+   height the rail lines up against. */
+.usb-find {
+  gap: var(--space-2);
 }
-/* Same radius as every other control in the app. Fully-rounded lozenges at this
-   width read as chunky, and every section is ON by default — so with the old
-   accent fill the whole row arrived as a wall of accent. */
-.usb-seg button {
+.usb-find > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* ★ narrows the list to favourites. A real control on the search band rather
+   than a bespoke chip: the row it used to sit in mixed three control semantics
+   in one costume — a command (All), an independent boolean (this) and four
+   multi-select toggles — wrapped to two rows at the resting sidebar width, sized
+   its chips 19px and 20px against a --chip-h of 20 and a --control-h-sm of 26,
+   and its four section toggles duplicated the collapse chevron every section
+   header already carries. */
+.usb-star {
   flex: 0 0 auto;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-dim);
-  cursor: pointer;
-  padding: 2px 9px;
-  font-size: var(--font-sm);
-  font-weight: 500;
-  font-family: inherit;
+  /* .btn-icon is flat by design for ROW actions; this one is a persistent
+     filter beside an input, so it takes the neutral control's resting face and
+     keyline back. */
+  background: var(--btn-face);
+  border-color: var(--btn-edge);
 }
-.usb-seg button:hover:not(.on) {
-  color: var(--text);
-  border-color: var(--text-dim);
+.usb-star.on {
+  color: var(--pin-ink);
+  border-color: color-mix(in srgb, var(--favorite) 40%, var(--border));
 }
-/* "Showing" is the resting state of every section, so it is the quiet one: a
-   normal control on the panel. The accent marks the edge, not the whole chip. */
-.usb-seg button.on {
-  background: var(--bg);
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-  color: var(--text);
-  font-weight: 600;
-}
-/* ★ favorites: a compact gold toggle, sat next to All ahead of the sections. */
-.usb-seg .star {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  margin-right: 3px;
-}
-.usb-seg .star.on {
-  background: color-mix(in srgb, var(--favorite) 18%, transparent);
-  border-color: var(--favorite);
-  color: var(--favorite);
-}
-/* Unified tag filter — a wrapping chip row under the segmented control, set off
-   from the section toggles by a light divider so the two filter axes read apart. */
 .usb-tags {
   display: flex;
   flex-wrap: wrap;

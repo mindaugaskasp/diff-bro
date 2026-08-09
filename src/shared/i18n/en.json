@@ -756,21 +756,13 @@
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
     "dragToWidenTheSidebar": "Drag to widen the sidebar",
-    "showEverySidebarSection": "Show every sidebar section",
     "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
     "everyTagSearchable": "Every tag, searchable",
     "dropEveryTagFilter": "Drop every tag filter",
-    "all": "All",
     "clear": "Clear",
     "plusMore": "+{n} more",
     "tagsSelected": "{n} tag selected | {n} tags selected",
-    "filterByTag": "Filter by {name} · right-click to manage",
-    "sections": {
-      "saved": "Saved",
-      "external": "External",
-      "snippets": "Snippets",
-      "tools": "Tools"
-    }
+    "filterByTag": "Filter by {name} · right-click to manage"
   },
   "savedDiffsSection": {
     "savedDiffs": "Saved diffs",

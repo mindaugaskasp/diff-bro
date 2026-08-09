@@ -756,21 +756,13 @@
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "[Šĥōŵ ōńłŷ şţàřřéđ đĩƒƒş àńđ şńĩƥƥéţş ·øé·øé·øé·øé·]",
     "dragToWidenTheSidebar": "[Đřàğ ţō ŵĩđéń ţĥé şĩđéƀàř ·øé·øé·øé]",
-    "showEverySidebarSection": "[Šĥōŵ éṽéřŷ şĩđéƀàř şéçţĩōń ·øé·øé·øé·]",
     "showOnlyDiffsAndSnippets": "[Šĥōŵ ōńłŷ đĩƒƒş àńđ şńĩƥƥéţş ŷōū şţàřřéđ ·øé·øé·øé·øé·ø]",
     "everyTagSearchable": "[Éṽéřŷ ţàğ, şéàřçĥàƀłé ·øé·øé·ø]",
     "dropEveryTagFilter": "[Đřōƥ éṽéřŷ ţàğ ƒĩłţéř ·øé·øé·ø]",
-    "all": "[Àłł ·ø]",
     "clear": "[Çłéàř ·ø]",
     "plusMore": "[+{n} ɱōřé ·ø]",
     "tagsSelected": "[{n} ţàğ şéłéçţéđ | {n} ţàğş şéłéçţéđ ·øé·øé·øé·]",
-    "filterByTag": "[Ƒĩłţéř ƀŷ {name} · řĩğĥţ-çłĩçķ ţō ɱàńàğé ·øé·øé·øé·øé]",
-    "sections": {
-      "saved": "[Šàṽéđ ·ø]",
-      "external": "[Éẋţéřńàł ·øé·]",
-      "snippets": "[Šńĩƥƥéţş ·øé·]",
-      "tools": "[Ţōōłş ·ø]"
-    }
+    "filterByTag": "[Ƒĩłţéř ƀŷ {name} · řĩğĥţ-çłĩçķ ţō ɱàńàğé ·øé·øé·øé·øé]"
   },
   "savedDiffsSection": {
     "savedDiffs": "[Šàṽéđ đĩƒƒş ·øé·]",
