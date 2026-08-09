@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 0 / 13 steps |
+| **Progress** | 5 / 13 steps — phase 1 shipped |
 | **Branch** | `feat/developer-workflow` |
 | **Started** | 2026-08-09 |
 | **Finished** | — |
@@ -207,11 +207,11 @@ rather than throwing.
 
 **Phase 1 — dependencies**
 
-- [ ] 1. `utils/lockfile/` — npm v1/v2/v3, pnpm, yarn v1, `go.sum` → one shape
-- [ ] 2. `utils/lockDiff.js` — classify each change; direct vs transitive
-- [ ] 3. `canCompareDeps`, `semanticKind() === 'deps'`, `shouldOpenSemantic`
-- [ ] 4. The viewer + its stylesheet + i18n
-- [ ] 5. Seed pair, e2e, README/glossary
+- [x] 1. `utils/lockfile/` — npm v1/v2/v3, pnpm, yarn v1, `go.sum` → one shape
+- [x] 2. `utils/lockDiff.js` — classify each change; direct vs transitive
+- [x] 3. `canCompareDeps`, `semanticKind() === 'deps'`, `shouldOpenSemantic`
+- [x] 4. The viewer + its stylesheet + i18n
+- [x] 5. Seed pair, e2e, README/glossary
 
 **Phase 2 — git-native comparison**
 
