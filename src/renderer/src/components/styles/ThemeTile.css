@@ -22,10 +22,12 @@
   text-align: left;
   box-shadow: var(--shadow-1);
 }
-/* beacon (#e0e0e0) and contrast (#111111) build on a HARD keyline by contract,
-   so theirs is the theme's own border rather than the softer edge. */
+/* beacon (#e0e0e0), contrast (#111111) and volcano (#ffc9a4) build on a HARD
+   keyline by contract, so theirs is the theme's own border rather than the
+   softer edge. */
 :root[data-theme='beacon'] .theme-tile,
-:root[data-theme='contrast'] .theme-tile {
+:root[data-theme='contrast'] .theme-tile,
+:root[data-theme='volcano'] .theme-tile {
   border-color: var(--border);
 }
 .theme-tile:hover {
