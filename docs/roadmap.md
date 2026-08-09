@@ -143,6 +143,9 @@ flowchart LR
   u --> v["DiagramDiffViewer.vue<br>+ change rail"]
 ```
 
+- A `.mmd` pair opens AS a picture — every load path takes the view from the
+  files, and a restored snapshot that recorded none does too rather than
+  falling back to text (`viewChrome.js` `restoredSemanticView`)
 - Status is encoded twice — colour AND stroke pattern — and the three tokens are
   held to a contrast floor and a pairwise ΔE floor on all 20 themes by
   `check-theme-depth.mjs`
