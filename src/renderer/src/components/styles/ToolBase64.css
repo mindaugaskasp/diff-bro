@@ -64,7 +64,7 @@
   color: var(--text-dim);
 }
 .tb-count {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -79,7 +79,7 @@
   place-items: center;
 }
 .tb-copy:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .tb-copy .app-icon {

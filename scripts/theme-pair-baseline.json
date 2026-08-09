@@ -65,39 +65,14 @@
     "ratio": 3.55
   },
   {
-    "theme": "bloom",
-    "where": "FormatToolbar.css .fmt-btn:hover",
-    "ratio": 3.92
-  },
-  {
-    "theme": "dark",
-    "where": "FormatToolbar.css .fmt-btn:hover",
-    "ratio": 4.06
-  },
-  {
-    "theme": "light",
-    "where": "FormatToolbar.css .fmt-btn:hover",
-    "ratio": 4.06
-  },
-  {
     "theme": "meridian",
     "where": "FormatToolbar.css .fmt-btn:hover",
     "ratio": 3.36
   },
   {
-    "theme": "nord",
-    "where": "FormatToolbar.css .fmt-btn:hover",
-    "ratio": 4.31
-  },
-  {
     "theme": "sepia",
     "where": "FormatToolbar.css .fmt-btn:hover",
     "ratio": 3.27
-  },
-  {
-    "theme": "solar",
-    "where": "FormatToolbar.css .fmt-btn:hover",
-    "ratio": 2.89
   },
   {
     "theme": "sepia",

@@ -110,6 +110,6 @@
   font-weight: 600;
 }
 .tile-check {
-  color: var(--accent);
+  color: var(--accent-ink);
   flex: none;
 }

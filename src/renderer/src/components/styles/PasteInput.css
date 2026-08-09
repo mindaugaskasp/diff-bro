@@ -67,7 +67,7 @@
   margin-left: auto;
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--accent-ink);
   cursor: pointer;
   font-size: var(--font-sm);
   padding: 0;

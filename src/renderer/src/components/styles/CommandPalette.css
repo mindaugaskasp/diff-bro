@@ -109,7 +109,7 @@
   color: var(--text-dim);
 }
 .cp-row.sel .cp-tool-ico {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .cp-kind {
   flex: none;

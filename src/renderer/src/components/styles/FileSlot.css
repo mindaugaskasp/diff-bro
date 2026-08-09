@@ -33,7 +33,7 @@
 /* The still-needed side: accent dashed border + a gentle pulse to draw the eye. */
 .slot.awaiting {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-ink);
   animation: awaiting-pulse 1.6s ease-in-out infinite;
 }
 @keyframes awaiting-pulse {

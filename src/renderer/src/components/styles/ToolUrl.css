@@ -54,7 +54,7 @@
   place-items: center;
 }
 .tur-copy:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .tur-copy .app-icon {
@@ -75,7 +75,7 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 640;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .tur-row {
   display: grid;

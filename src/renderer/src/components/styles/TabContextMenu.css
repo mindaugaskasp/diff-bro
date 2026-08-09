@@ -45,7 +45,7 @@
   cursor: default;
 }
 .ctx-item.danger:not(:disabled) {
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
 }
 .ctx-item:focus-visible {

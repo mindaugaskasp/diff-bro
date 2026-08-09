@@ -109,7 +109,7 @@
   font-size: var(--font-lg);
 }
 .row-btn:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .row-btn.delete:hover {
   color: var(--danger-bg);

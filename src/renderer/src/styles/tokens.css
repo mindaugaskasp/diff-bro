@@ -98,6 +98,14 @@
      — 1.04 against its own fill, under even the neutral button's 1.16 step. */
   --btn-primary-edge: color-mix(in srgb, var(--accent) 60%, var(--bg));
   --btn-primary-edge-press: color-mix(in srgb, var(--accent) 40%, var(--bg));
+  /* Accent as INK — link text, an active marker, a highlighted label. The raw
+     accent cannot do this job and the fill job at once: as a fill it must sit
+     far from --text-on-accent, as ink far from the ground, and on a dark theme
+     those are opposite directions. Raw, it lands under the 4.5 text floor on
+     five palettes (sepia 3.81 … light 4.49); mixed a fifth of the way to the
+     ink it clears all twenty (worst 4.52, sepia) and keeps the hue.
+     NEVER for a keyline or a fill — --accent itself is right there. */
+  --accent-ink: color-mix(in srgb, var(--accent) 80%, var(--text));
   /* Keyboard focus. A bare --accent ring scores 2.58 on solar and 2.98 on
      meridian against --bg-elevated, under the 3:1 non-text floor; mixing toward
      the ink lifts the worst case to 3.34 and keeps the hue. Same trick as

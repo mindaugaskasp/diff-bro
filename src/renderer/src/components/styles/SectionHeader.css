@@ -64,7 +64,7 @@
   width: 18px;
   height: 18px;
   border-radius: var(--radius-sm);
-  color: var(--accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   font-size: var(--font-sm);
   flex: none;

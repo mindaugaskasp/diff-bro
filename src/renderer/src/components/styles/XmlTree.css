@@ -31,7 +31,7 @@
   height: 12px;
 }
 .xt-tag {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .xt-punct {
   color: var(--text-dim);

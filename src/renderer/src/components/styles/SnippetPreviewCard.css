@@ -136,7 +136,7 @@
   font-family: inherit;
 }
 .pv-open:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
   border-color: var(--accent);
 }
 .pv-tag {

@@ -80,7 +80,7 @@
   color: var(--danger-border);
 }
 .sd-row.changed .sd-mark {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .sd-key {
   color: var(--text);
