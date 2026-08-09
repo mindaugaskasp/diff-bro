@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('api', {
   openFile: (side, format) => ipcRenderer.invoke('file:open', side, format),
   readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
+  gitRoot: (path) => ipcRenderer.invoke('git:root', path),
+  gitShow: (payload) => ipcRenderer.invoke('git:show', payload),
   // `format` names a row of main's own export table; never an extension.
   exportDiffFile: (payload) => ipcRenderer.invoke('diff:exportFile', payload),
   // Streamed comparison: files too large to hold are indexed by line in main
