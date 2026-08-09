@@ -88,6 +88,9 @@ linux:
   target:
     - AppImage
     - deb
+  # Match the mac convention (diff-bro-v<version>.<ext>) — the default embeds
+  # the space from productName, which makes a miserable download name.
+  artifactName: diff-bro-v${version}.${ext}
   category: Development
   # Deliberately no `executableArgs: --no-sandbox` here: the .deb ships
   # chrome-sandbox SUID and the AppImage falls back to Electron's namespace

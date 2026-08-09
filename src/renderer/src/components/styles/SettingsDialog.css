@@ -63,9 +63,33 @@
   /* The pane scrolls, so keep content out from under its scrollbar. `stable`
      alone is not enough: it is specified to do NOTHING where the platform draws
      OVERLAY bars (macOS), and an overlay bar takes no layout width — it painted
-     straight over the rightmost tile. The padding is what actually holds. */
+     straight over the rightmost tile. The padding is what actually holds —
+     --space-4, so the right-aligned controls get real air before the bar. */
   scrollbar-gutter: stable;
-  padding-right: var(--space-3);
+  padding-right: var(--space-4);
+  /* Louder than the app-wide bar, and only here: a Settings pane with more
+     below the fold has to SAY so at rest. The standard properties are RESET —
+     set (as base.css sets them on *), they disable ::-webkit-scrollbar
+     styling, and the standard path renders macOS an overlay bar that takes no
+     width and only paints mid-scroll. The webkit route draws always and
+     occupies layout. Thumb and track derive from --text — the one token
+     guaranteed to read against the panel on every theme. */
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+.settings-pane::-webkit-scrollbar {
+  width: 10px;
+}
+.settings-pane::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-radius: var(--radius-pill);
+}
+.settings-pane::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text) 28%, transparent);
+  border-radius: var(--radius-pill);
+}
+.settings-pane::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text) 45%, transparent);
 }
 h4 {
   margin: 0 0 8px;

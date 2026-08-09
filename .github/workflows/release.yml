@@ -112,6 +112,15 @@ jobs:
           - os: macos-latest
             build-script: build:mac
             installer-glob: dist/*.dmg
+          # electron-builder.yml has carried the AppImage + deb config (with
+          # its SUID-sandbox notes) since it was written — this row is what
+          # actually builds it. Native runner: cross-building the deb from
+          # another OS is unsupported.
+          - os: ubuntu-latest
+            build-script: build:linux
+            installer-glob: |
+              dist/*.AppImage
+              dist/*.deb
     runs-on: ${{ matrix.os }}
     # Both default to a per-OS location under the home directory; pinning them
     # into the workspace gives actions/cache ONE path that means the same thing
@@ -153,10 +162,10 @@ jobs:
         run: node scripts/check-install-warnings.mjs npm-ci.log
 
       # Make the git tag authoritative for the app's reported version (About /
-      # package.json) by writing it in before packaging. The installer FILENAME
-      # is intentionally version-less (see electron-builder.yml artifactName) so
-      # the "download latest" URLs stay stable, so this only affects the version
-      # the app reports, not the filename. No commit here — this checkout is
+      # package.json) by writing it in before packaging. Installer FILENAMES are
+      # version-stamped from the same value (electron-builder.yml artifactName),
+      # which is why the README links the releases page rather than a
+      # /releases/latest/download shortcut. No commit here — this checkout is
       # disposable; the persistent bump back to the repo is the sync-version job.
       - name: Sync version to the release tag
         shell: bash

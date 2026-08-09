@@ -488,6 +488,22 @@ const SURFACES = [
       'loaded name': ['.wait-slot.filled .wait-name', TEXT],
       'waiting hint': ['.wait-hint', DIM]
     }
+  },
+  {
+    name: 'tool-dialog',
+    // The description line is the one sentence a first-time user gets before
+    // the input box. It is a read sentence, so it takes the reading floor —
+    // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Tools', exact: true }).click()
+      // Scoped to the open dropdown: the loaded diff can also say "JSON".
+      await page.locator('.dropdown').getByText('JSON', { exact: true }).click()
+      await page.locator('.tt-desc').waitFor()
+    },
+    close: (page) => page.keyboard.press('Escape'),
+    probes: {
+      'tool description': ['.tt-desc', TEXT]
+    }
   }
 ]
 

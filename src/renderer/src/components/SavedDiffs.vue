@@ -5,6 +5,7 @@ import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSidebarResize } from '../composables/useSidebarResize'
 import { useSidebarTags } from '../composables/useSidebarTags'
+import { useTagShelfResize } from '../composables/useTagShelfResize'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
@@ -22,6 +23,8 @@ const settings = useSettingsStore()
 const ui = useUiStore()
 const tags = useSidebarTags()
 const size = useSidebarResize()
+const shelf = ref(null)
+const shelfSize = useTagShelfResize(shelf)
 
 const searchBox = ref(null)
 const aside = ref(null)
@@ -101,7 +104,7 @@ const showAllTags = ref(false)
             <AppIcon name="star-filled" />
           </button>
         </div>
-        <div v-if="tags.all.value.length" class="usb-tags">
+        <div v-if="tags.all.value.length" ref="shelf" class="usb-tags">
           <button
             v-for="t in tags.bar.value"
             :key="t.name"
@@ -118,12 +121,21 @@ const showAllTags = ref(false)
           <button
             v-if="tags.overflow.value > 0"
             class="tag-chip usb-more"
-            :data-tip="$t('savedDiffs.everyTagSearchable')"
+            :data-tip="$t('savedDiffs.collapsedTagsSearchable')"
             @click="showAllTags = true"
           >
             {{ $t('savedDiffs.plusMore', { n: tags.overflow.value }) }}
           </button>
         </div>
+        <div
+          v-if="tags.all.value.length"
+          class="usb-shelf-grip"
+          :class="{ resizing: shelfSize.resizing.value }"
+          role="separator"
+          aria-orientation="horizontal"
+          :aria-label="$t('savedDiffs.dragToDeepenTheTag')"
+          @pointerdown="shelfSize.start"
+        ></div>
         <div v-if="tags.active.value.length" class="usb-filtering">
           <span>
             {{ $t('savedDiffs.tagsSelected', tags.active.value.length) }}
@@ -140,7 +152,7 @@ const showAllTags = ref(false)
       <TagManagePopover v-if="managing" :name="managing" @close="managing = ''" />
       <TagPickerPopover
         v-if="showAllTags"
-        :tags="tags.all.value"
+        :tags="tags.hidden.value"
         :active="tags.active.value"
         @pick="tags.pick"
         @close="showAllTags = false"

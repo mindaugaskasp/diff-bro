@@ -1,7 +1,7 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
-import { useUiStore } from '../stores/uiStore'
+import { useSnippetPreviewActions } from './useSnippetPreviewActions'
 import { previewCardPosition } from '../utils/previewPlacement'
 
 // Hover preview: decrypt on demand, debounced (only the row the pointer settles
@@ -44,7 +44,6 @@ async function cardFor(entry, store, cache) {
 
 export function useSnippetPreview() {
   const store = useSnippetStore()
-  const ui = useUiStore()
   const preview = ref(null) // { id, name, tags, lang, text, style }
   const cache = new Map()
   let hoverTimer = null
@@ -93,20 +92,6 @@ export function useSnippetPreview() {
   const onCardEnter = () => clearTimeout(closeTimer)
   const onCardLeave = () => closeAfter(90)
 
-  // Open the hovered snippet in the full editor (its enlarged, editable window).
-  function openEditor() {
-    if (preview.value) store.editingSnippet = { id: preview.value.id }
-    dismiss()
-  }
-  // Reload the full source (the preview text is truncated) for the viewer.
-  async function openDiagram() {
-    if (!preview.value || preview.value.secret) return
-    const { id, name } = preview.value
-    dismiss()
-    const code = await store.load(id)
-    if (code != null) ui.openMermaid(name, code)
-  }
-
   // The editor is the only path that mutates content, so dropping the cache when
   // it closes is sufficient invalidation.
   watch(
@@ -127,7 +112,6 @@ export function useSnippetPreview() {
     onCardEnter,
     onCardLeave,
     dismiss,
-    openEditor,
-    openDiagram
+    ...useSnippetPreviewActions({ preview, dismiss })
   }
 }

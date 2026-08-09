@@ -7,6 +7,7 @@
  * @property {string} nameKey catalogue key for its proper-case label
  * @property {string} icon    an ICONS key (src/renderer/src/icons.js)
  * @property {string} kindKey catalogue key for its one-word action
+ * @property {string} descKey catalogue key for its one-line description
  * @property {string} action  menu action that opens it
  */
 
@@ -17,6 +18,7 @@ export const TOOLS = [
     nameKey: 'tools.base64.name',
     icon: 'binary',
     kindKey: 'tools.base64.kind',
+    descKey: 'tools.base64.desc',
     action: 'tools-base64'
   },
   {
@@ -24,6 +26,7 @@ export const TOOLS = [
     nameKey: 'tools.json.name',
     icon: 'braces',
     kindKey: 'tools.json.kind',
+    descKey: 'tools.json.desc',
     action: 'tools-json'
   },
   {
@@ -31,6 +34,7 @@ export const TOOLS = [
     nameKey: 'tools.xml.name',
     icon: 'code',
     kindKey: 'tools.xml.kind',
+    descKey: 'tools.xml.desc',
     action: 'tools-xml'
   },
   {
@@ -38,6 +42,7 @@ export const TOOLS = [
     nameKey: 'tools.uuid.name',
     icon: 'hash',
     kindKey: 'tools.uuid.kind',
+    descKey: 'tools.uuid.desc',
     action: 'tools-uuid'
   },
   {
@@ -45,6 +50,7 @@ export const TOOLS = [
     nameKey: 'tools.jwt.name',
     icon: 'shield-check',
     kindKey: 'tools.jwt.kind',
+    descKey: 'tools.jwt.desc',
     action: 'tools-jwt'
   },
   {
@@ -52,6 +58,7 @@ export const TOOLS = [
     nameKey: 'tools.epoch.name',
     icon: 'clock',
     kindKey: 'tools.epoch.kind',
+    descKey: 'tools.epoch.desc',
     action: 'tools-epoch'
   },
   {
@@ -59,6 +66,7 @@ export const TOOLS = [
     nameKey: 'tools.url.name',
     icon: 'link',
     kindKey: 'tools.url.kind',
+    descKey: 'tools.url.desc',
     action: 'tools-url'
   },
   {
@@ -66,6 +74,7 @@ export const TOOLS = [
     nameKey: 'tools.lines.name',
     icon: 'list',
     kindKey: 'tools.lines.kind',
+    descKey: 'tools.lines.desc',
     action: 'tools-lines'
   },
   {
@@ -73,6 +82,7 @@ export const TOOLS = [
     nameKey: 'tools.hash.name',
     icon: 'fingerprint',
     kindKey: 'tools.hash.kind',
+    descKey: 'tools.hash.desc',
     action: 'tools-hash'
   },
   {
@@ -80,6 +90,7 @@ export const TOOLS = [
     nameKey: 'tools.regex.name',
     icon: 'regex',
     kindKey: 'tools.regex.kind',
+    descKey: 'tools.regex.desc',
     action: 'tools-regex'
   },
   {
@@ -87,6 +98,7 @@ export const TOOLS = [
     nameKey: 'tools.crypt.name',
     icon: 'lock',
     kindKey: 'tools.crypt.kind',
+    descKey: 'tools.crypt.desc',
     action: 'tools-crypt'
   },
   {
@@ -94,6 +106,7 @@ export const TOOLS = [
     nameKey: 'tools.patch.name',
     icon: 'file',
     kindKey: 'tools.patch.kind',
+    descKey: 'tools.patch.desc',
     action: 'apply-patch'
   }
 ]

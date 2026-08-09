@@ -30,6 +30,8 @@ const ui = useUiStore()
 const snippets = useSnippetStore()
 const nameKey = computed(() => toolById(props.tool)?.nameKey)
 const title = computed(() => (nameKey.value ? t(nameKey.value) : t('tools.fallbackTitle')))
+// "Paste JSON" alone tells a first-time user nothing about what pasting buys.
+const descKey = computed(() => toolById(props.tool)?.descKey)
 
 // Re-read on every render rather than once: a panel's output changes as it is
 // typed into, and an empty tool has nothing worth keeping.
@@ -56,6 +58,7 @@ function close() {
 
 <template>
   <BaseDialog width="460px" :close-on-backdrop="false" :title="title" @close="close">
+    <p v-if="descKey" class="tt-desc">{{ t(descKey) }}</p>
     <div ref="body" class="tt-body">
       <ToolEpoch v-if="tool === 'epoch'" />
       <ToolUuid v-else-if="tool === 'uuid'" />

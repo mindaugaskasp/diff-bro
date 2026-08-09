@@ -6,9 +6,7 @@ import {
   FILE_TYPE_LIMITS,
   MAX_SNIPPET_SIZE_KB_CAP,
   MAX_EXPORT_HEIGHT_PX_CAP,
-  MAX_TAG_ROWS,
-  MIN_EXPORT_HEIGHT_PX,
-  MIN_TAG_ROWS
+  MIN_EXPORT_HEIGHT_PX
 } from '../utils/settingsDefaults'
 
 const settings = useSettingsStore()
@@ -46,16 +44,6 @@ const settings = useSettingsStore()
         step="500"
         :value="settings.maxExportHeightPx"
         @change="settings.setLimit('maxExportHeightPx', $event.target.value)"
-      />
-    </label>
-    <label class="row">
-      <span>{{ $t('settingsLimits.tagShelfRows') }}</span>
-      <input
-        type="number"
-        :min="MIN_TAG_ROWS"
-        :max="MAX_TAG_ROWS"
-        :value="settings.tagShelfRows"
-        @change="settings.setLimit('tagShelfRows', $event.target.value)"
       />
     </label>
     <p class="hint">

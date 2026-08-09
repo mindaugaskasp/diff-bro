@@ -25,6 +25,8 @@ export const useUiStore = defineStore('ui', {
     paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
+    // Snippet version history: { id } while open, null when closed.
+    snippetHistory: null,
     // The sidebar's two filters. Core rather than local to the sidebar because
     // the tour drives both — it types into the search, and it clears a tag
     // filter that would hide the very snippet a step points at — and the core
@@ -80,6 +82,12 @@ export const useUiStore = defineStore('ui', {
     },
     closeMermaid() {
       this.mermaidView = null
+    },
+    openSnippetHistory(id) {
+      this.snippetHistory = { id }
+    },
+    closeSnippetHistory() {
+      this.snippetHistory = null
     },
     // The command palette, scoped to tools (the shelf's "Browse all tools").
     openToolsPalette() {

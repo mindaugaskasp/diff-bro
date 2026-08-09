@@ -45,13 +45,23 @@ export function useSidebarTags() {
   const bar = computed(() => {
     const chosen = all.value.filter((t) => active.value.includes(t.name))
     const rest = all.value.filter((t) => !active.value.includes(t.name))
-    return [...chosen, ...rest].slice(0, Math.max(limit.value, chosen.length))
+    const ordered = [...chosen, ...rest]
+    const cap = Math.max(limit.value, chosen.length)
+    // "+1 more" would occupy the very slot the one hidden tag could fill.
+    return ordered.length === cap + 1 ? ordered : ordered.slice(0, cap)
+  })
+
+  // What the "+N more" picker holds: exactly the tags the bar could not show.
+  const hidden = computed(() => {
+    const shown = new Set(bar.value.map((t) => t.name))
+    return all.value.filter((t) => !shown.has(t.name))
   })
 
   return {
     active,
     all,
     bar,
+    hidden,
     overflow: computed(() => all.value.length - bar.value.length),
     pick: (name) => (ui.sidebarTags = toggleTag(ui.sidebarTags, name)),
     clear: () => (ui.sidebarTags = [])

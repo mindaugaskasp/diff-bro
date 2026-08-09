@@ -43,3 +43,47 @@ describe('useSidebarTags — how tall the shelf may be', () => {
     expect(tags.overflow.value).toBe(40 - TAGS_PER_ROW * 4)
   })
 })
+
+// "+1 more" costs the same slot the one hidden tag would fill — a chip that
+// says "there is one more" where the one more could simply BE is a puzzle.
+describe('useSidebarTags — the last-slot rule', () => {
+  const manyTags = (n) =>
+    Array.from({ length: n }, (_, i) => ({ id: `s${i}`, tags: [`tag-${i}`], name: `s${i}` }))
+
+  it('one tag over the limit shows the tag itself, not "+1 more"', () => {
+    useSnippetStore().entries = manyTags(TAGS_PER_ROW * 2 + 1)
+    const tags = useSidebarTags()
+    expect(tags.bar.value).toHaveLength(TAGS_PER_ROW * 2 + 1)
+    expect(tags.overflow.value).toBe(0)
+  })
+
+  it('two tags over still collapses — the chip now earns its slot', () => {
+    useSnippetStore().entries = manyTags(TAGS_PER_ROW * 2 + 2)
+    const tags = useSidebarTags()
+    expect(tags.bar.value).toHaveLength(TAGS_PER_ROW * 2)
+    expect(tags.overflow.value).toBe(2)
+  })
+})
+
+// The picker exists for what the shelf could not show — feeding it every tag
+// made "+5 more" open a wall of 40, with the five it promised lost inside.
+describe('useSidebarTags — what the picker holds', () => {
+  const manyTags = (n) =>
+    Array.from({ length: n }, (_, i) => ({ id: `s${i}`, tags: [`tag-${i}`], name: `s${i}` }))
+
+  it('hidden is exactly the overflow — the bar and it partition the registry', () => {
+    useSnippetStore().entries = manyTags(12)
+    const tags = useSidebarTags()
+    expect(tags.hidden.value).toHaveLength(tags.overflow.value)
+    const shown = new Set(tags.bar.value.map((t) => t.name))
+    for (const t of tags.hidden.value) expect(shown.has(t.name)).toBe(false)
+    expect(tags.bar.value.length + tags.hidden.value.length).toBe(tags.all.value.length)
+  })
+
+  it('a selected tag is never hidden, however low it ranks', () => {
+    useSnippetStore().entries = manyTags(12)
+    const tags = useSidebarTags()
+    tags.pick('tag-11')
+    expect(tags.hidden.value.map((t) => t.name)).not.toContain('tag-11')
+  })
+})

@@ -9,10 +9,13 @@ import { focusEditor } from './monaco.mjs'
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const DIAGRAM = 'Example — Mermaid diagram'
 
+// Capture lives in the snippet's view window — the row's hover actions carry
+// copy/delete only, so the shot starts from where the contents are shown.
 async function shoot(page, name) {
-  const row = page.locator('.snippets-section .row', { hasText: name })
-  await row.hover()
-  await row.getByRole('button', { name: 'Export as image' }).click()
+  await page.locator('.snippets-section .row', { hasText: name }).click()
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await view.getByRole('button', { name: 'Capture', exact: true }).click()
+  await expect(view).toHaveCount(0)
   return page.getByRole('dialog', { name: 'Export as image' })
 }
 
@@ -152,7 +155,7 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
 })
 
 // A masked secret has nothing worth photographing and everything to lose.
-test('a secret snippet offers no image button', async ({ page }) => {
+test('a secret snippet offers no capture action', async ({ page }) => {
   await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
@@ -162,13 +165,28 @@ test('a secret snippet offers no image button', async ({ page }) => {
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
-  const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
-  await secret.hover()
-  await expect(secret.getByRole('button', { name: 'Export as image' })).toHaveCount(0)
-  // ...while an ordinary row beside it has one.
-  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM })
-  await ordinary.hover()
-  await expect(ordinary.getByRole('button', { name: 'Export as image' })).toBeVisible()
+  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
+  await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+  // ...while an ordinary snippet's view offers it. The ghost Close by its
+  // text — the header × carries the same accessible name.
+  await view.getByText('Close', { exact: true }).click()
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Snippet', exact: true })
+      .getByRole('button', { name: 'Capture', exact: true })
+  ).toBeVisible()
+})
+
+// Capture moved into the view window; the hover row keeps copy/delete only, so
+// the common action never shares a narrow strip with the rare one.
+test('the row hover actions carry no capture button', async ({ page }) => {
+  const row = page.locator('.snippets-section .row', { hasText: DIAGRAM })
+  await row.hover()
+  await expect(row.getByRole('button', { name: 'Copy to clipboard' })).toBeVisible()
+  await expect(row.getByRole('button', { name: 'Export as image' })).toHaveCount(0)
 })
 
 // Mermaid keeps the whole diagram in the DOM, but capturePage only ever sees
@@ -189,23 +207,12 @@ test('a diagram taller than the pane is stitched, not cut at the fold', async ({
   expect(h).toBeGreaterThan(paneHeight * dpr * 1.5)
 })
 
-// The row icon is hover-only and shares a narrow row with three others, which is
-// a thin way to reach a feature. Viewing a snippet is when you are actually
-// looking at the thing you want a picture of, so the action is explicit there.
+// Viewing a snippet is when you are actually looking at the thing you want a
+// picture of — the view window is capture's only home now the row button is
+// gone. The view gets out of the way before the shot: a dialog over the diff
+// column would be photographed with it (shoot() asserts it closed).
 test('a snippet is captured from the view its contents are shown in', async ({ page }) => {
-  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
-  await expect(view).toBeVisible()
-
-  const capture = view.getByRole('button', { name: 'Capture', exact: true })
-  await expect(capture).toBeVisible()
-  await capture.click()
-
-  // The editor gets out of the way first — a dialog over the diff column would
-  // be photographed with it.
-  await expect(view).toHaveCount(0)
-
-  const dialog = page.getByRole('dialog', { name: 'Export as image' })
+  const dialog = await shoot(page, DIAGRAM)
   const preview = dialog.locator('.shot img')
   await expect(preview).toBeVisible()
   await expect(preview).toHaveAttribute('alt', `Diagram: ${DIAGRAM}`)

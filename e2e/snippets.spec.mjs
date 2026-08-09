@@ -105,3 +105,25 @@ test('an empty section offers a real button, a populated one does not', async ({
   await expect(page.locator('.tab')).toHaveCount(tabsBefore + 1)
   await expect(page.locator('.paste-pane, .paste-input, textarea').first()).toBeVisible()
 })
+
+// The hover card is where "is this the one?" gets answered — Copy finishes the
+// thought there, with the FULL contents (the card's text is truncated).
+test('the preview card copies the snippet without a trip back to the row', async ({
+  app,
+  page
+}) => {
+  await page.locator('.snippets-section .row', { hasText: 'Example — Mermaid diagram' }).hover()
+  const card = page.locator('.preview')
+  await expect(card).toBeVisible()
+
+  await app.evaluate(({ clipboard }) => clipboard.clear())
+  const copy = card.getByRole('button', { name: 'Copy', exact: true })
+  await copy.click()
+  // aria-label pins the accessible name to "Copy" (the stable-name pattern the
+  // editor's copy buttons follow), so the flash is asserted on the visible text.
+  await expect(copy).toHaveText(/Copied/)
+
+  const copied = await app.evaluate(({ clipboard }) => clipboard.readText())
+  expect(copied).toContain('flowchart TD')
+  expect(copied.length).toBeGreaterThan(0)
+})

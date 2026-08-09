@@ -35,7 +35,9 @@ const { run } = useCommands()
 
     <button
       class="entry"
-      :data-tip="$t('toolRow.tip', { kind: tool.kind, name: tool.name })"
+      :data-tip="
+        tool.descKey ? $t(tool.descKey) : $t('toolRow.tip', { kind: tool.kind, name: tool.name })
+      "
       @click="run(tool.action)"
     >
       <span class="monogram glyph"><AppIcon :name="tool.icon" /></span>

@@ -9,17 +9,20 @@ import {
   cleanTag,
   derivedFrom,
   effectiveLanguage,
+  entryAad,
   migrate,
   nextColor,
   nextRank,
   promptVars
 } from '../utils/snippetState'
+import { recordVersion } from '../utils/snippetHistory'
 import { detectSnippetLanguage } from '../utils/detectLanguage'
 import { parseSnippetImport } from '../utils/snippetImport'
 import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
 import { tagActions } from './snippetTags'
+import { historyActions } from './snippetHistory'
 import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
 
 // These snippets hold a link and are deliberately never shared.
@@ -49,10 +52,6 @@ function readState() {
   savePersisted('snippets', JSON.stringify(state)) // write the migrated shape back
   return state
 }
-
-// Binds the ciphertext to immutable per-snippet values; aadSalt never changes,
-// so tags stay free metadata.
-const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
 
 // Seeded into an empty library so a first-time user sees a real snippet.
 export const EXAMPLE_SNIPPET = {
@@ -225,8 +224,7 @@ export const useSnippetStore = defineStore('snippets', {
         aadSalt,
         name: cleanName(name),
         createdAt,
-        // Free metadata beside createdAt — deliberately NOT in the AAD, so an
-        // edit never has to re-key the entry. Groundwork for snippet history.
+        // NOT in the AAD — an edit never re-keys, and old boxes stay decryptable.
         updatedAt: createdAt,
         language: language || 'auto',
         detected,
@@ -286,9 +284,8 @@ export const useSnippetStore = defineStore('snippets', {
       }
       return content
     },
-    // tags optional; the AAD is unchanged, so this is a metadata + content
-    // update, no re-key.
-    async update(id, { name, content, language, tags, tagColors = {}, secret }) {
+    // AAD unchanged — a metadata + content update never re-keys.
+    async update(id, { name, content, language, tags, tagColors = {}, secret, contentChanged }) {
       const entry = this.entries.find((e) => e.id === id)
       if (!entry) return
       const box = await window.api.vaultEncrypt(
@@ -300,6 +297,7 @@ export const useSnippetStore = defineStore('snippets', {
         this.keyError = box.error
         return
       }
+      if (contentChanged) recordVersion(entry)
       entry.name = cleanName(name, entry.name)
       entry.detected = detectSnippetLanguage(content)
       if (language) entry.language = language
@@ -327,6 +325,7 @@ export const useSnippetStore = defineStore('snippets', {
     // list cannot cross the boundary — no guard needed, and none to drift.
     reorder: reorderAction((s, name) => (name in GROUPS ? group(s.entries, name) : null)),
     ...tagActions,
+    ...historyActions,
     /**
      * Remove a tag from the registry. By default the records keep living and
      * only lose the label; `withEntries` deletes everything carrying it.

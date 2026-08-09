@@ -209,51 +209,63 @@
   "tools": {
     "base64": {
       "name": "Base64",
-      "kind": "Encode"
+      "kind": "Encode",
+      "desc": "Encode text as Base64, or paste Base64 to read what it holds."
     },
     "json": {
       "name": "JSON",
-      "kind": "Format"
+      "kind": "Format",
+      "desc": "Validate, pretty-print, minify or sort JSON — and filter it with a JSONPath."
     },
     "xml": {
       "name": "XML",
-      "kind": "Format"
+      "kind": "Format",
+      "desc": "Validate and pretty-print or minify XML — filter it with an XPath."
     },
     "uuid": {
       "name": "UUID",
-      "kind": "Generate"
+      "kind": "Generate",
+      "desc": "Generate fresh UUIDs, ready to paste."
     },
     "jwt": {
       "name": "JWT",
-      "kind": "Decode"
+      "kind": "Decode",
+      "desc": "Paste a JWT to read its header and claims. Decode only — the signature is never verified."
     },
     "epoch": {
       "name": "Epoch",
-      "kind": "Convert"
+      "kind": "Convert",
+      "desc": "Turn an epoch timestamp into a readable date, or a date into epoch."
     },
     "url": {
       "name": "URL",
-      "kind": "Encode"
+      "kind": "Encode",
+      "desc": "Percent-encode text for use in a URL, or decode an encoded one back."
     },
     "lines": {
       "name": "Lines",
-      "kind": "Transform"
+      "kind": "Transform",
+      "desc": "Split pasted text into lines — by delimiter, word or regex — and sort them."
     },
     "hash": {
       "name": "Checksum",
-      "kind": "Verify"
+      "kind": "Verify",
+      "desc": "Every checksum of the pasted text at once — paste an expected digest to verify a match."
     },
     "regex": {
       "name": "Regex",
-      "kind": "Test"
+      "kind": "Test",
+      "desc": "Try a regular expression against sample text and see the matches live."
     },
     "crypt": {
       "name": "Encrypt",
-      "kind": "Encrypt"
+      "kind": "Encrypt",
+      "desc": "Encrypt text with a passphrase, or decrypt a message you were given."
     },
     "patch": {
       "name": "Patch",
-      "kind": "Apply"
+      "kind": "Apply",
+      "desc": "Apply a unified diff (.patch) and review the result as a comparison."
     },
     "section": {
       "all": "All tools",
@@ -756,8 +768,9 @@
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
     "dragToWidenTheSidebar": "Drag to widen the sidebar",
+    "dragToDeepenTheTag": "Drag to show more or fewer tag rows",
     "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
-    "everyTagSearchable": "Every tag, searchable",
+    "collapsedTagsSearchable": "Collapsed tags, searchable",
     "dropEveryTagFilter": "Drop every tag filter",
     "clear": "Clear",
     "plusMore": "+{n} more",
@@ -812,8 +825,7 @@
     "maxSnippetSizeKB": "Max snippet size (KB)",
     "maxDiffImageHeightPx": "Max diff image height (px)",
     "higherLimitsLetYouDiff": "Higher limits let you diff or store bigger content, at the cost of speed — raise them only if you need to. The image height is how much of a long diff one exported picture covers, measured on screen, so it captures the same amount whatever your display's scaling; a longer diff is cut short and says so.",
-    "maxFileMb": "Max {kind} file (MB)",
-    "tagShelfRows": "Rows of tag filters in the sidebar"
+    "maxFileMb": "Max {kind} file (MB)"
   },
   "shortcutCapture": {
     "pressAKeyCombination": "Press a key combination…",
@@ -869,7 +881,15 @@
     "prettyPrintAs": "Pretty-print as {format}",
     "copyAsFileTip": "Put the snippet on the clipboard AS A FILE, to paste into a message or a folder",
     "formatUnavailable": "Formatting is available for JSON, XML, SQL or Mermaid",
-    "unmangleTip": "Put back the arrows, quotes and spaces a paste broke"
+    "unmangleTip": "Put back the arrows, quotes and spaces a paste broke",
+    "history": "History",
+    "historyTip": "Every past edit, each diffed against the one before it"
+  },
+  "snippetHistoryDialog": {
+    "title": "History — {name}",
+    "current": "Current",
+    "copyVersion": "Copy this version",
+    "copyTip": "Copy the selected version's contents"
   },
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",
@@ -917,13 +937,13 @@
     "viewFullScreen": "View full screen",
     "openInEditor": "Open in editor",
     "title": "Title",
-    "untagged": "Untagged"
+    "untagged": "Untagged",
+    "copyTip": "Copy the snippet's full contents"
   },
   "snippetRow": {
     "viewDiagram": "View diagram",
     "openLinkInBrowser": "Open link in browser",
     "openClaudeLink": "Open Claude link",
-    "exportAsImage": "Export as image",
     "copyToClipboard": "Copy to clipboard",
     "delete": "Delete",
     "diagram": "Diagram",
@@ -931,8 +951,6 @@
     "unfavorite": "Unfavorite",
     "favorite": "Favorite",
     "favoritePinToTop": "Favorite (pin to top)",
-    "captureTheDiagram": "Capture the diagram",
-    "capture": "Capture",
     "copyFailed": "Could not copy that snippet to the clipboard.",
     "noOpenableLink": "That snippet has no link Diff Bro can open.",
     "noClaudeLink": "No Claude link in this snippet.",
@@ -1035,7 +1053,7 @@
   },
   "tagPickerPopover": {
     "findATag": "Find a tag…",
-    "allTags": "All tags",
+    "collapsedTags": "Collapsed tags",
     "findATag2": "Find a tag",
     "noTagMatches": "No tag matches “{q}”"
   },

@@ -64,7 +64,7 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSig
 
 ## Windows: the login item is set at runtime, not by the installer
 
-Settings ▸ Desktop ▸ *Start Diff Bro when I sign in* calls
+Settings ▸ Desktop ▸ _Start Diff Bro when I sign in_ calls
 `app.setLoginItemSettings` (`src/main/tray.js`), which writes an
 `HKCU\…\Run` entry pointing at `process.execPath` with a `--hidden` argument.
 The installer does not create one and the setting is **off** by default, so a
@@ -86,15 +86,16 @@ Two consequences worth knowing when packaging:
 Pushing a tag matching `v*.*.*` runs
 [`.github/workflows/release.yml`](../.github/workflows/release.yml): it audits
 dependencies, lints + tests, syncs `package.json`'s version to the tag (so the
-app reports the right version), builds Windows and macOS installers in parallel,
-and attaches them to a GitHub Release.
+app reports the right version), builds Windows, macOS and Linux installers in
+parallel, and attaches them to a GitHub Release.
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
 Installers are **version-stamped** (`diff-bro-Setup-v0.1.8.exe`,
-`diff-bro-v0.1.8.dmg` — see `artifactName` in `electron-builder.yml`), so a
+`diff-bro-v0.1.8.dmg`, `diff-bro-v0.1.8.deb` / `.AppImage` — see `artifactName`
+in `electron-builder.yml`), so a
 downloaded file stays identifiable once it's away from the release page.
 `${version}` resolves from `package.json`, which the _Sync version to the
 release tag_ step rewrites from the tag before packaging.
@@ -117,6 +118,13 @@ xattr -dr com.apple.quarantine "/Applications/Diff Bro.app"
 
 (or right-click → **Open** on first launch). There is deliberately no
 auto-update — installers are the only distribution path.
+
+The Linux artifacts are unsigned too, and deliberately keep the OS sandbox on:
+the `.deb` ships `chrome-sandbox` SUID and the AppImage falls back to
+Electron's namespace sandbox, so there is no `--no-sandbox` anywhere in the
+packaging (`electron-builder.yml` documents this beside the `linux` target).
+Install with `sudo apt install ./diff-bro-v<version>.deb`, or
+`chmod +x` the AppImage and run it.
 
 ## Homebrew (macOS)
 

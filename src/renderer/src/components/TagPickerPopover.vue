@@ -23,9 +23,14 @@ const shown = computed(() => {
 
 <template>
   <div class="picker-backdrop" @click="emit('close')">
-    <div class="picker" role="dialog" :aria-label="$t('tagPickerPopover.allTags')" @click.stop>
+    <div
+      class="picker"
+      role="dialog"
+      :aria-label="$t('tagPickerPopover.collapsedTags')"
+      @click.stop
+    >
       <div class="picker-head">
-        <span>{{ $t('tagPickerPopover.allTags') }}</span>
+        <span>{{ $t('tagPickerPopover.collapsedTags') }}</span>
         <button
           class="dialog-close"
           :data-tip="$t('common.close')"

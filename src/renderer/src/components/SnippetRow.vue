@@ -3,7 +3,6 @@
 // with a language monogram so the row is recognizable before the name is read.
 import { computed } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
-import { useImageExportStore } from '../features/imageExport'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { languageMonogram } from '../utils/languageMonogram'
@@ -30,7 +29,6 @@ const props = defineProps({
 const store = useSnippetStore()
 
 const ui = useUiStore()
-const imageExport = useImageExportStore()
 const diff = useDiffStore()
 const { copied, flash } = useCopyFeedback()
 const { startDrag } = useSnippetDrag()
@@ -191,16 +189,6 @@ function onDragStart(e) {
         @click="openLink"
       >
         <AppIcon name="link" />
-      </button>
-      <!-- Never for a secret — the store refuses it too, so this is the affordance. -->
-      <button
-        v-if="!isSecret(entry)"
-        class="row-btn"
-        :data-tip="isDiagram ? $t('snippetRow.captureTheDiagram') : $t('snippetRow.capture')"
-        :aria-label="$t('snippetRow.exportAsImage')"
-        @click="imageExport.exportSnippetImage(entry.id)"
-      >
-        <AppIcon name="image" />
       </button>
       <button
         class="row-btn"

@@ -33,7 +33,7 @@ const sectionOpen = ref(true)
 const { query, visibleFavorites, visibleListed } = useSnippetFilters()
 const snippetPreview = useSnippetPreview()
 const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, dismiss } = snippetPreview
-const { openEditor, openDiagram } = snippetPreview
+const { openEditor, openDiagram, copyPreview, copied } = snippetPreview
 
 watch(
   () => props.search,
@@ -162,10 +162,12 @@ function newSnippet() {
     <SnippetPreviewCard
       v-if="preview"
       :preview="preview"
+      :copied="!!copied"
       @mouseenter="onCardEnter"
       @mouseleave="onCardLeave"
       @edit="openEditor"
       @view="openDiagram"
+      @copy="copyPreview"
     />
   </section>
 </template>
