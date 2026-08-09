@@ -13,7 +13,7 @@
   padding: 0 10px;
   font-size: var(--font-sm);
   font-weight: 700;
-  color: var(--text-dim);
+  color: var(--text-hint);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   /* An elevated fill lifts the header off the panel-grey body so each section

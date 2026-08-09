@@ -51,21 +51,6 @@
   },
   {
     "theme": "dark",
-    "where": "FormatHintBanner.css .format",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "FormatHintBanner.css .format",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "FormatHintBanner.css .format",
-    "ratio": 3.58
-  },
-  {
-    "theme": "dark",
     "where": "FormatHintBanner.css .hint.invalid .format",
     "ratio": 3.35
   },
@@ -115,21 +100,6 @@
     "ratio": 2.89
   },
   {
-    "theme": "dark",
-    "where": "MenuBar.css .item:hover",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "MenuBar.css .item:hover",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "MenuBar.css .item:hover",
-    "ratio": 3.58
-  },
-  {
     "theme": "sepia",
     "where": "MermaidPreview.css .mmd-preview-head",
     "ratio": 3.93
@@ -138,81 +108,6 @@
     "theme": "solar",
     "where": "MermaidPreview.css .mmd-preview-head",
     "ratio": 4.36
-  },
-  {
-    "theme": "dark",
-    "where": "QuickLook.css .ql-res-copied",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "QuickLook.css .ql-res-copied",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "QuickLook.css .ql-res-copied",
-    "ratio": 3.58
-  },
-  {
-    "theme": "bloom",
-    "where": "SectionHeader.css .head",
-    "ratio": 3.43
-  },
-  {
-    "theme": "dark",
-    "where": "SectionHeader.css .head",
-    "ratio": 4.08
-  },
-  {
-    "theme": "dim",
-    "where": "SectionHeader.css .head",
-    "ratio": 3.68
-  },
-  {
-    "theme": "linen",
-    "where": "SectionHeader.css .head",
-    "ratio": 3.62
-  },
-  {
-    "theme": "meridian",
-    "where": "SectionHeader.css .head",
-    "ratio": 3.95
-  },
-  {
-    "theme": "neon",
-    "where": "SectionHeader.css .head",
-    "ratio": 4.37
-  },
-  {
-    "theme": "nord",
-    "where": "SectionHeader.css .head",
-    "ratio": 2.92
-  },
-  {
-    "theme": "sepia",
-    "where": "SectionHeader.css .head",
-    "ratio": 2.82
-  },
-  {
-    "theme": "solar",
-    "where": "SectionHeader.css .head",
-    "ratio": 3.2
-  },
-  {
-    "theme": "dark",
-    "where": "SegmentedControl.css .seg-opt.on",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "SegmentedControl.css .seg-opt.on",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "SegmentedControl.css .seg-opt.on",
-    "ratio": 3.58
   },
   {
     "theme": "meridian",
@@ -230,51 +125,6 @@
     "ratio": 3.52
   },
   {
-    "theme": "bloom",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 3.43
-  },
-  {
-    "theme": "dark",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 4.08
-  },
-  {
-    "theme": "dim",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 3.68
-  },
-  {
-    "theme": "linen",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 3.62
-  },
-  {
-    "theme": "meridian",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 3.95
-  },
-  {
-    "theme": "neon",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 4.37
-  },
-  {
-    "theme": "nord",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 2.92
-  },
-  {
-    "theme": "sepia",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 2.82
-  },
-  {
-    "theme": "solar",
-    "where": "SnippetEditorDialog.css .fields input:read-only",
-    "ratio": 3.2
-  },
-  {
     "theme": "sepia",
     "where": "SnippetEditorDialog.css .view-toggle button",
     "ratio": 3.93
@@ -283,36 +133,6 @@
     "theme": "solar",
     "where": "SnippetEditorDialog.css .view-toggle button",
     "ratio": 4.36
-  },
-  {
-    "theme": "dark",
-    "where": "SnippetEditorDialog.css .view-toggle button.active",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "SnippetEditorDialog.css .view-toggle button.active",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "SnippetEditorDialog.css .view-toggle button.active",
-    "ratio": 3.58
-  },
-  {
-    "theme": "dark",
-    "where": "SnippetRow.css .copied-flash",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "SnippetRow.css .copied-flash",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "SnippetRow.css .copied-flash",
-    "ratio": 3.58
   },
   {
     "theme": "bloom",
@@ -333,26 +153,6 @@
     "theme": "solar",
     "where": "SpreadsheetDiffViewer.css .identical-row",
     "ratio": 3.09
-  },
-  {
-    "theme": "bloom",
-    "where": "SpreadsheetDiffViewer.css .status",
-    "ratio": 4.31
-  },
-  {
-    "theme": "nord",
-    "where": "SpreadsheetDiffViewer.css .status",
-    "ratio": 4.05
-  },
-  {
-    "theme": "sepia",
-    "where": "SpreadsheetDiffViewer.css .status",
-    "ratio": 3.44
-  },
-  {
-    "theme": "solar",
-    "where": "SpreadsheetDiffViewer.css .status",
-    "ratio": 3.99
   },
   {
     "theme": "bloom",
@@ -435,71 +235,6 @@
     "ratio": 3.99
   },
   {
-    "theme": "bloom",
-    "where": "StreamedDiffViewer.css .status",
-    "ratio": 4.31
-  },
-  {
-    "theme": "nord",
-    "where": "StreamedDiffViewer.css .status",
-    "ratio": 4.05
-  },
-  {
-    "theme": "sepia",
-    "where": "StreamedDiffViewer.css .status",
-    "ratio": 3.44
-  },
-  {
-    "theme": "solar",
-    "where": "StreamedDiffViewer.css .status",
-    "ratio": 3.99
-  },
-  {
-    "theme": "bloom",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 3.43
-  },
-  {
-    "theme": "dark",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 4.08
-  },
-  {
-    "theme": "dim",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 3.68
-  },
-  {
-    "theme": "linen",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 3.62
-  },
-  {
-    "theme": "meridian",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 3.95
-  },
-  {
-    "theme": "neon",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 4.37
-  },
-  {
-    "theme": "nord",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 2.92
-  },
-  {
-    "theme": "sepia",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 2.82
-  },
-  {
-    "theme": "solar",
-    "where": "ToolEpoch.css .te-cal",
-    "ratio": 3.2
-  },
-  {
     "theme": "sepia",
     "where": "ToolRegex.css .tre-flag",
     "ratio": 3.93
@@ -508,21 +243,6 @@
     "theme": "solar",
     "where": "ToolRegex.css .tre-flag",
     "ratio": 4.36
-  },
-  {
-    "theme": "dark",
-    "where": "ToolRegex.css .tre-flag.on",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "ToolRegex.css .tre-flag.on",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "ToolRegex.css .tre-flag.on",
-    "ratio": 3.58
   },
   {
     "theme": "sepia",
@@ -543,21 +263,6 @@
     "theme": "solar",
     "where": "ToolUuid.css .tu-chip",
     "ratio": 4.36
-  },
-  {
-    "theme": "dark",
-    "where": "ToolUuid.css .tu-chip.on",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "ToolUuid.css .tu-chip.on",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "ToolUuid.css .tu-chip.on",
-    "ratio": 3.58
   },
   {
     "theme": "bloom",
@@ -576,21 +281,6 @@
   },
   {
     "theme": "dark",
-    "where": "TrustedKeysDialog.css .added-badge",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "TrustedKeysDialog.css .added-badge",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "TrustedKeysDialog.css .added-badge",
-    "ratio": 3.58
-  },
-  {
-    "theme": "dark",
     "where": "ui.css .btn-destructive",
     "ratio": 3.35
   },
@@ -618,136 +308,6 @@
     "theme": "nord",
     "where": "ui.css .btn-destructive:hover:not(:disabled)",
     "ratio": 3.55
-  },
-  {
-    "theme": "dark",
-    "where": "ui.css .btn-primary",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "ui.css .btn-primary",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "ui.css .btn-primary",
-    "ratio": 3.58
-  },
-  {
-    "theme": "dark",
-    "where": "ui.css .btn-primary:disabled",
-    "ratio": 3.75
-  },
-  {
-    "theme": "meridian",
-    "where": "ui.css .btn-primary:disabled",
-    "ratio": 4.18
-  },
-  {
-    "theme": "solar",
-    "where": "ui.css .btn-primary:disabled",
-    "ratio": 3.58
-  },
-  {
-    "theme": "bloom",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 2.98
-  },
-  {
-    "theme": "contrast",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 4.11
-  },
-  {
-    "theme": "dark",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 2.39
-  },
-  {
-    "theme": "dim",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 4.26
-  },
-  {
-    "theme": "light",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 3
-  },
-  {
-    "theme": "linen",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 3.28
-  },
-  {
-    "theme": "meridian",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 2.56
-  },
-  {
-    "theme": "nord",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 3.76
-  },
-  {
-    "theme": "nyan",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 3.37
-  },
-  {
-    "theme": "sepia",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 3.09
-  },
-  {
-    "theme": "solar",
-    "where": "ui.css .btn-primary:hover:not(:disabled)",
-    "ratio": 2.42
-  },
-  {
-    "theme": "bloom",
-    "where": "ui.css .ql-kbd",
-    "ratio": 3.43
-  },
-  {
-    "theme": "dark",
-    "where": "ui.css .ql-kbd",
-    "ratio": 4.08
-  },
-  {
-    "theme": "dim",
-    "where": "ui.css .ql-kbd",
-    "ratio": 3.68
-  },
-  {
-    "theme": "linen",
-    "where": "ui.css .ql-kbd",
-    "ratio": 3.62
-  },
-  {
-    "theme": "meridian",
-    "where": "ui.css .ql-kbd",
-    "ratio": 3.95
-  },
-  {
-    "theme": "neon",
-    "where": "ui.css .ql-kbd",
-    "ratio": 4.37
-  },
-  {
-    "theme": "nord",
-    "where": "ui.css .ql-kbd",
-    "ratio": 2.92
-  },
-  {
-    "theme": "sepia",
-    "where": "ui.css .ql-kbd",
-    "ratio": 2.82
-  },
-  {
-    "theme": "solar",
-    "where": "ui.css .ql-kbd",
-    "ratio": 3.2
   },
   {
     "theme": "sepia",

@@ -173,14 +173,14 @@
      painted onto it — the cue reads on the flat light ground especially. */
   box-shadow: var(--shadow-1);
 }
-/* Hover shifts the accent toward its own text colour, so the change is clearly
-   visible on EVERY theme's accent — darkens on a light-text accent (Nyan's hot
-   pink), lightens on a dark-text one — where a flat brightness() filter was
-   nearly invisible on already-bright accents. */
+/* The ladder is in tokens.css; the fill never moves. It is RESTATED rather than
+   left to inherit because `.btn:hover` is more specific than `.btn-primary`, so
+   dropping this line hands the primary the neutral hover face — the same trap
+   the note below the :active rules describes. */
 .btn-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
-  border-color: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
-  color: var(--text-on-accent);
+  background: var(--accent);
+  border-color: var(--btn-primary-edge);
+  box-shadow: var(--shadow-2);
 }
 /* A filled variant keeps its fill when pressed or unavailable; .btn's neutral
    faces are more specific and would otherwise strip its identity. */
@@ -189,7 +189,8 @@
   box-shadow: none;
 }
 .btn-primary:active:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 68%, var(--text-on-accent));
+  background: var(--accent);
+  border-color: var(--btn-primary-edge-press);
 }
 .btn-primary:disabled {
   background: var(--accent);
@@ -851,7 +852,7 @@ button.tag-chip:hover .usb-tct {
   height: var(--chip-h);
   padding: 0 var(--space-1);
   font-size: var(--font-2xs);
-  color: var(--text-dim);
+  color: var(--text-hint);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);

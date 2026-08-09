@@ -18,7 +18,7 @@ export const THEMES = [
     id: 'solar',
     label: 'Solar',
     dark: false,
-    swatch: { bg: '#fbf2dd', accent: '#e8590c', add: '#2f9e44', del: '#e03131' }
+    swatch: { bg: '#fbf2dd', accent: '#cb4e0a', add: '#2f9e44', del: '#e03131' }
   },
   {
     id: 'neon',
@@ -60,7 +60,7 @@ export const THEMES = [
     id: 'meridian',
     label: 'Meridian',
     dark: false,
-    swatch: { bg: '#eef2ee', accent: '#0e8a8a', add: '#2f9e44', del: '#c0392b' }
+    swatch: { bg: '#eef2ee', accent: '#0d8484', add: '#2f9e44', del: '#c0392b' }
   },
   {
     id: 'linen',
