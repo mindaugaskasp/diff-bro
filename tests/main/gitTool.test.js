@@ -24,6 +24,7 @@ import {
   unregisterArgs,
   unregisterGitTool
 } from '../../src/main/gitTool'
+import { gitMergeScript } from '../../src/main/gitMergeTool'
 
 const APP = '/Applications/Diff Bro.app/Contents/MacOS/Diff Bro'
 // Windows has no exec bit to set or read — registerGitTool already skips the
@@ -115,11 +116,28 @@ describe('registerArgs', () => {
     expect(cmd).toBe('"/bin/diffbro-git" "$LOCAL" "$REMOTE" "$MERGED"')
   })
 
-  // Diff Bro never writes $MERGED. A trusted exit code would let git mark a
-  // conflict resolved because the viewer closed cleanly.
-  it('never lets git trust the exit code of a merge', () => {
-    const trust = registerArgs('/x').find((a) => a[2].endsWith('trustExitCode'))
-    expect(trust[3]).toBe('false')
+  // This USED to be false, because Diff Bro never wrote $MERGED and a trusted
+  // exit code would have marked a conflict resolved just because the viewer
+  // closed. It writes the file now, and the merge launcher WAITS for that write
+  // before exiting — so a clean exit means resolved, and git may believe it.
+  it('lets git trust the exit code, because the merge launcher waits', () => {
+    const trust = registerArgs('/x', '/x-merge').find((a) => a[2].endsWith('trustExitCode'))
+    expect(trust[3]).toBe('true')
+  })
+
+  it('points the mergetool at the waiting launcher, not the difftool one', () => {
+    const args = registerArgs('/bin/diffbro-git', '/bin/diffbro-git-merge')
+    const merge = args.find((a) => a[2] === `mergetool.${GIT_TOOL_NAME}.cmd`)
+    expect(merge[3]).toBe('"/bin/diffbro-git-merge" "$LOCAL" "$REMOTE" "$MERGED"')
+  })
+
+  // The wait is the whole reason trustExitCode may be true; a launcher that
+  // returned straight away would hand git a lie.
+  it('waits for $MERGED to change before reporting success', () => {
+    const script = gitMergeScript('/Applications/Diff Bro.app/x')
+    expect(script).toContain('mergetool')
+    expect(script).toMatch(/while \[ "\$\(ls -l "\$3" 2>\/dev\/null\)" = "\$before" \]/)
+    expect(script.trimEnd().endsWith('exit 0')).toBe(true)
   })
 })
 

@@ -16,6 +16,18 @@
       "hint": "Menus and app text. Restart is not needed."
     }
   },
+  "merge": {
+    "title": "Resolve merge conflicts",
+    "remaining": "Nothing left to decide | {n} conflict still to decide | {n} conflicts still to decide",
+    "conflictN": "Conflict {n}",
+    "takeOurs": "Ours",
+    "takeTheirs": "Theirs",
+    "takeBoth": "Both",
+    "takeNeither": "Neither",
+    "allOf": "{side} everywhere",
+    "save": "Save the merge",
+    "unreadable": "That file’s conflict markers do not close, so there is nothing safe to resolve. Finish it by hand."
+  },
   "menu": {
     "file": {
       "title": "File",
