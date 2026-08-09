@@ -110,6 +110,23 @@
      the same trick --btn-edge and --dg-del use. */
   --pin-ink: color-mix(in srgb, var(--favorite) 70%, var(--text));
 
+  /* The diff itself. Monaco paints these, but they are DERIVED here like every
+     other role rather than picked in JS: the app defined no Monaco theme at all,
+     so all seven dark themes rendered its stock #1e1e1e ground with the stock
+     olive and maroon bands and all seven light ones the stock white — fourteen
+     themes, two appearances, on the one surface a diff tool is judged by.
+     Mixed INTO --bg rather than set as a low alpha, so the value is opaque and
+     check-theme-depth can measure it. --danger-bg, not --danger-border, for the
+     removed band: the border tone is close enough to the ground on the dark
+     themes that the band fell under the floor on six of them. 22/40 is the pair
+     that clears both floors at once — the line has to read against the ground
+     (worst 1.25, nord) and the body text has to stay readable ON the char band
+     (worst 4.88, nord), and 45% put that at 4.43. */
+  --diff-add-line: color-mix(in srgb, var(--success-text) 22%, var(--bg));
+  --diff-del-line: color-mix(in srgb, var(--danger-bg) 22%, var(--bg));
+  --diff-add-text: color-mix(in srgb, var(--success-text) 40%, var(--bg));
+  --diff-del-text: color-mix(in srgb, var(--danger-bg) 40%, var(--bg));
+
   /* Diagram-diff status. Encoded twice — colour AND stroke/badge — so the
      comparison survives greyscale and colour-blind readers.
      --dg-del mixes toward --text because nord's own --danger-border scores

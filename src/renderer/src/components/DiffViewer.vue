@@ -6,11 +6,11 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
-import { isDarkTheme } from '../utils/themes'
 import { diffEditorOptions } from '../utils/diffEditorOptions'
 import { zoomedPx } from '../utils/diffZoom'
 import { diffLineStats } from '../utils/diffStats'
 import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
+import { applyMonacoTheme } from '../composables/useMonacoTheme'
 import AppIcon from './AppIcon.vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useUiStore } from '../stores/uiStore'
@@ -44,10 +44,12 @@ function setModels() {
 }
 
 onMounted(() => {
+  // Defined BEFORE the editor exists: `theme` in the options names it, and an
+  // undefined name silently leaves Monaco on its stock palette.
+  applyMonacoTheme(settings.theme)
   editor = monaco.editor.createDiffEditor(
     container.value,
     diffEditorOptions({
-      dark: isDarkTheme(settings.theme),
       renderSideBySide: store.renderSideBySide,
       ignoreTrimWhitespace: store.ignoreTrimWhitespace
     })
@@ -74,10 +76,9 @@ watch(
     editor?.updateOptions({ renderSideBySide: split, ignoreTrimWhitespace: ignoreWs })
   }
 )
-watch(
-  () => settings.theme,
-  (theme) => monaco.editor.setTheme(isDarkTheme(theme) ? 'vs-dark' : 'vs')
-)
+// post-flush: the probe in applyMonacoTheme reads the LIVE palette, so it has
+// to run after data-theme has been stamped on the document.
+watch(() => settings.theme, applyMonacoTheme, { flush: 'post' })
 watch(() => ui.diffZoom, applyZoom)
 
 onBeforeUnmount(() => {

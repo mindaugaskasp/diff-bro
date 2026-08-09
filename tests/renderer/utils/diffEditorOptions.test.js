@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { diffEditorOptions } from '../../../src/renderer/src/utils/diffEditorOptions'
+import { MONACO_THEME } from '../../../src/renderer/src/composables/useMonacoTheme'
 
 const view = (over = {}) => ({
-  dark: false,
   renderSideBySide: true,
   ignoreTrimWhitespace: false,
   ...over
@@ -13,8 +13,15 @@ describe('diffEditorOptions', () => {
     const opts = diffEditorOptions(view({ renderSideBySide: false, ignoreTrimWhitespace: true }))
     expect(opts.renderSideBySide).toBe(false)
     expect(opts.ignoreTrimWhitespace).toBe(true)
-    expect(opts.theme).toBe('vs')
-    expect(diffEditorOptions(view({ dark: true })).theme).toBe('vs-dark')
+  })
+
+  // It used to name a STOCK theme, dark or light, which is why all seven dark
+  // themes drew the same #1e1e1e ground and the same olive/maroon bands. The
+  // options only name the theme; useMonacoTheme defines it from the live
+  // palette before the editor is built.
+  it('names the app’s own theme rather than a stock one', () => {
+    expect(diffEditorOptions(view()).theme).toBe(MONACO_THEME)
+    expect(['vs', 'vs-dark']).not.toContain(diffEditorOptions(view()).theme)
   })
 
   // Monaco renders INLINE whenever the diff editor is narrower than

@@ -1,5 +1,6 @@
 // Monaco diff-editor options, kept out of the component so the reasoning has
 // room and the SFC stays inside its script budget.
+import { MONACO_THEME } from '../composables/useMonacoTheme'
 
 /**
  * No fontSize here on purpose: Monaco's own default is PLATFORM-SPECIFIC (12 on
@@ -7,11 +8,13 @@
  * Linux and Windows. DiffViewer reads the resolved size back once and zooms from
  * whatever this platform actually chose.
  *
- * @param {{ dark: boolean, renderSideBySide: boolean, ignoreTrimWhitespace: boolean }} view
+ * @param {{ renderSideBySide: boolean, ignoreTrimWhitespace: boolean }} view
  * @returns {object} options for monaco.editor.createDiffEditor
  */
-export const diffEditorOptions = ({ dark, renderSideBySide, ignoreTrimWhitespace }) => ({
-  theme: dark ? 'vs-dark' : 'vs',
+export const diffEditorOptions = ({ renderSideBySide, ignoreTrimWhitespace }) => ({
+  // The app's own theme, defined from the live palette before the editor is
+  // built (see useMonacoTheme). Stock vs/vs-dark ignored the palette entirely.
+  theme: MONACO_THEME,
   automaticLayout: true,
   readOnly: true,
   originalEditable: false,
