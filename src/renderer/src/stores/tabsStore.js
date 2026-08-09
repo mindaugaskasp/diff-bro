@@ -114,15 +114,15 @@ export const useTabsStore = defineStore('tabs', {
       this._capture()
       this._show(next)
     },
-    // A snapshot that says nothing about the view keeps the one in use: only a
-    // saved diff, which recorded its own, should change how the panes are set.
+    // A snapshot that says nothing about the PANES keeps the ones in use. NOT
+    // semanticView: it belongs to the comparison, not to the last tab, so an
+    // unrecorded one is left for restore() to take from the files.
     _withCurrentView(snapshot) {
       const diff = useDiffStore()
       return {
         ...snapshot,
         renderSideBySide: snapshot.renderSideBySide ?? diff.renderSideBySide,
-        ignoreTrimWhitespace: snapshot.ignoreTrimWhitespace ?? diff.ignoreTrimWhitespace,
-        semanticView: snapshot.semanticView === true
+        ignoreTrimWhitespace: snapshot.ignoreTrimWhitespace ?? diff.ignoreTrimWhitespace
       }
     },
     _fill(tab, snapshot, { diffSaved, entryId, name }) {

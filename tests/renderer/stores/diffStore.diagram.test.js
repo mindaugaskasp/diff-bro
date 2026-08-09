@@ -65,3 +65,47 @@ describe('diagram comparison from pasted text', () => {
     expect(diff.comparableKind).toBe('diagram')
   })
 })
+
+// A saved or shared diff carries the view it was saved in. One that carries
+// NOTHING — written before the diagram view existed, or by a bundle that never
+// recorded it — used to come back as text, which is the one place a Mermaid
+// pair did not open as a picture.
+describe('restoring a diagram comparison', () => {
+  const mmd = (body) => `flowchart TD\n${body}\n`
+  const payload = (extra) => ({
+    left: { path: null, name: 'a.mmd', content: mmd('  A --> B') },
+    right: { path: null, name: 'b.mmd', content: mmd('  A --> C') },
+    mode: 'files',
+    ...extra
+  })
+
+  it('opens the picture when the snapshot says nothing about the view', () => {
+    const diff = useDiffStore()
+    diff.restore(payload())
+    expect(diff.semanticView).toBe(true)
+    expect(diff.comparableKind).toBe('diagram')
+  })
+
+  it('honours a snapshot that explicitly recorded text', () => {
+    const diff = useDiffStore()
+    diff.restore(payload({ semanticView: false }))
+    expect(diff.semanticView).toBe(false)
+    expect(diff.comparableKind).toBe('text')
+  })
+
+  it('keeps the picture when the snapshot recorded it', () => {
+    const diff = useDiffStore()
+    diff.restore(payload({ semanticView: true }))
+    expect(diff.semanticView).toBe(true)
+  })
+
+  it('leaves a plain-text pair alone', () => {
+    const diff = useDiffStore()
+    diff.restore({
+      left: { path: null, name: 'a.txt', content: 'one' },
+      right: { path: null, name: 'b.txt', content: 'two' },
+      mode: 'files'
+    })
+    expect(diff.semanticView).toBe(false)
+  })
+})

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  restoredSemanticView,
   shouldOpenSemantic,
   hasStatusBand,
   showsSplitView,
@@ -122,5 +123,25 @@ describe('shouldOpenSemantic', () => {
   it('is safe on a missing store', () => {
     expect(shouldOpenSemantic(null)).toBe(false)
     expect(shouldOpenSemantic(undefined)).toBe(false)
+  })
+})
+
+describe('restoredSemanticView', () => {
+  const diagram = { canCompareDiagram: true }
+
+  it('keeps the view the snapshot recorded, either way', () => {
+    expect(restoredSemanticView({ semanticView: false }, diagram)).toBe(false)
+    expect(restoredSemanticView({ semanticView: true }, {})).toBe(true)
+  })
+
+  it('takes it from the files when the snapshot recorded none', () => {
+    expect(restoredSemanticView({}, diagram)).toBe(true)
+    expect(restoredSemanticView({}, { delimitedFormat: 'csv' })).toBe(true)
+    expect(restoredSemanticView({}, { structuredFormat: 'json' })).toBe(false)
+  })
+
+  it('treats a non-boolean as no record at all', () => {
+    expect(restoredSemanticView({ semanticView: 'yes' }, diagram)).toBe(true)
+    expect(restoredSemanticView(null, diagram)).toBe(true)
   })
 })

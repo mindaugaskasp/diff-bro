@@ -785,6 +785,25 @@ describe('the structure toggle belongs to its comparison', () => {
     expect(diff.semanticView).toBe(true)
   })
 
+  // ...and a comparison that IS a picture opens as one, in a new tab as much as
+  // in the first: the toggle is taken from the files, never from the tab before.
+  it('opens a Mermaid pair as a diagram in a fresh tab', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    const mmd = (body) => ({
+      mode: 'files',
+      left: { path: '/tmp/a.mmd', name: 'a.mmd', content: `flowchart TD\n${body}` },
+      right: { path: '/tmp/b.mmd', name: 'b.mmd', content: 'flowchart TD\n  A --> C' }
+    })
+    tabs.init()
+    tabs.open(json('{"a":1}', '{"a":2}'))
+    expect(diff.semanticView).toBe(false)
+
+    tabs.open(mmd('  A --> B'))
+    expect(diff.semanticView).toBe(true)
+    expect(diff.comparableKind).toBe('diagram')
+  })
+
   it('comes back with a restored session, like the other view toggles', async () => {
     window.api = {
       vaultEncrypt: async (text, aad) => vaultEncrypt(SESSION_KEY, text, aad),
