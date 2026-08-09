@@ -1,37 +1,12 @@
 // Cheap best-effort language guess for snippet highlighting: each signal fires
-// only on something distinctive (a false positive mis-colors a whole snippet; a
-// miss just lands on plaintext), ordered most-distinctive-first.
+// only on something distinctive (a false positive mis-colors a whole snippet, a
+// miss only lands on plaintext), ordered most-distinctive-first, and bounded —
+// the content can come from a snippet somebody else sealed.
 import { validateJson } from './textFormats'
 import { looksLikeMermaid } from './mermaid'
 
-// Syntaxes in the language picker (Monaco ids).
-// Every option carries a key, including the ones whose English is a proper noun
-// ("Python", "Go"). Uniform beats clever: nobody has to decide per row whether a
-// name is translatable, and a locale that DOES localise a format name can.
-export const SNIPPET_LANGUAGES = [
-  { id: 'auto', labelKey: 'language.auto' },
-  { id: 'plaintext', labelKey: 'language.plaintext' },
-  { id: 'claude', labelKey: 'language.claude' },
-  { id: 'url', labelKey: 'language.url' },
-  { id: 'mermaid', labelKey: 'language.mermaid' },
-  { id: 'json', labelKey: 'language.json' },
-  { id: 'sql', labelKey: 'language.sql' },
-  { id: 'markdown', labelKey: 'language.markdown' },
-  { id: 'jira', labelKey: 'language.jira' },
-  { id: 'yaml', labelKey: 'language.yaml' },
-  { id: 'python', labelKey: 'language.python' },
-  { id: 'shell', labelKey: 'language.shell' },
-  { id: 'php', labelKey: 'language.php' },
-  { id: 'javascript', labelKey: 'language.javascript' },
-  { id: 'typescript', labelKey: 'language.typescript' },
-  { id: 'xml', labelKey: 'language.xml' },
-  { id: 'html', labelKey: 'language.html' },
-  { id: 'css', labelKey: 'language.css' },
-  { id: 'dockerfile', labelKey: 'language.dockerfile' },
-  { id: 'go', labelKey: 'language.go' },
-  { id: 'rust', labelKey: 'language.rust' },
-  { id: 'java', labelKey: 'language.java' }
-]
+// The picker's options live in src/shared so the CLI prompt offers the same set.
+export { SNIPPET_LANGUAGES } from '../../../shared/snippetLanguages'
 
 const firstLine = (t) => {
   const nl = t.indexOf('\n')
@@ -49,7 +24,35 @@ function detectShebang(t) {
   return 'shell'
 }
 
+const DETECT_LIMIT = 50_000
 const PHP_RE = /<\?(php\b|=)/i
+
+// PHP without an open tag. Split in two because a `$` sigil alone is NOT
+// distinctive — it is a shell expansion, an f-string field and a jQuery
+// identifier too — so the weak half runs last, behind markdown.
+const PHP_STRONG = [
+  // UNSPACED, on a line that ENDS like a statement: ` -> ` with room around it
+  // claimed shell strings, f-strings, Go comments and markdown prose.
+  /\$[A-Za-z_]\w*->\s*\w[^\n]*[;{,)]\s*$/m,
+  // Column 0 — an indented copy is a markdown code block quoting PHP.
+  /^namespace\s+[\w\\]+\s*;/m,
+  /^use\s+\w+\\[\w\\]*(\s+as\s+\w+)?\s*;/m,
+  // ONE split of each whitespace run can match: `\s+` beside a nullable group
+  // beside `\s*` is quadratic, and 64k spaces took two seconds. Declaration
+  // only — `private $q = makeQ()` is equally TypeScript.
+  /\b(public|private|protected)(\s+(static|readonly))*\s+(function\b|[\w|?\\]*\$[A-Za-z_]\w*\s*;)/,
+  // A whole statement: `require_once` in backticks is a changelog ABOUT PHP.
+  /^[ \t]*(require|include)_once\b[^\n]*;/m,
+  // PHP's array syntax; the same line is a syntax error in JS.
+  /^[ \t]*(['"]).*?\1\s*=>/m
+]
+// jQuery wrote `$x = …;` for years, so it needs a SECOND at column 0 — and `.`
+// concatenates in PHP, so a dotted call on a sigil variable rules it out.
+const PHP_ASSIGN = /^\$[A-Za-z_]\w*\s*(\[[^\]]*\]\s*)?\??=[^=][^\n]*;[ \t]*$/gm
+const JS_SIGIL_MEMBER = /\$[A-Za-z_]\w*\.[A-Za-z_]\w*\s*[(.]/
+const looksLikePhp = (t) => PHP_STRONG.some((re) => re.test(t))
+const maybePhp = (t) => (t.match(PHP_ASSIGN) ?? []).length >= 2 && !JS_SIGIL_MEMBER.test(t)
+
 const XML_DECL_RE = /^<\?xml\b/i
 // HTML-only tags (a generic <tag> is left to the XML detector below).
 const HTML_RE =
@@ -123,7 +126,9 @@ function looksLikeTypeScript(t) {
     // A type annotation followed by code punctuation — not prose like "count: number of files".
     /:\s*(string|number|boolean|any|unknown|never|void)\s*[;,)\]}=|&>]/.test(t) ||
     /\bas\s+(const|string|number|boolean|\w+(\[\]|<[^>]*>))/.test(t) ||
-    /\b(readonly|public|private|protected)\s+\w+\s*[:?]/.test(t)
+    // `$` is a legal identifier start, and a `$name` here is annotated, not a
+    // PHP sigil — PHP's own form (`private string $x;`) has no colon.
+    /\b(readonly|public|private|protected)\s+[\w$]+\s*[:?]/.test(t)
   )
 }
 
@@ -178,7 +183,9 @@ const DETECTORS = [
   (t) => (SQL_START.test(t) ? 'sql' : null),
   (t) => (looksLikeGo(t) ? 'go' : null),
   (t) => (looksLikeRust(t) ? 'rust' : null),
+  // Java first: a field named `$amount` reads as a PHP property.
   (t) => (looksLikeJava(t) ? 'java' : null),
+  (t) => (looksLikePhp(t) ? 'php' : null),
   (t) => (looksLikeTypeScript(t) ? 'typescript' : null),
   (t) => (looksLikePython(t) ? 'python' : null),
   (t) => (looksLikeJavaScript(t) ? 'javascript' : null),
@@ -213,8 +220,19 @@ function isMarkdownProse(t) {
   return strongHit || weakHits >= 2
 }
 
+// The weak PHP rule sits behind markdown: a `$name = …;` in an indented code
+// block is a note ABOUT PHP, and relabelled the whole document.
+function fallbackFor(t) {
+  if (isMarkdownProse(t)) return 'markdown'
+  return maybePhp(t) ? 'php' : 'plaintext'
+}
+
 export function detectSnippetLanguage(content) {
-  const t = content.trim()
+  // Bounded because restoreBundle feeds an imported .diffbro straight through
+  // add(), and a snippet may be 8 MB.
+  const t = String(content ?? '')
+    .slice(0, DETECT_LIMIT)
+    .trim()
   if (!t) return 'plaintext'
   if (isClaudeLink(t)) return 'claude'
   if (isJson(t)) return 'json'
@@ -228,6 +246,5 @@ export function detectSnippetLanguage(content) {
     if (lang) return lang
   }
 
-  if (isMarkdownProse(t)) return 'markdown'
-  return 'plaintext'
+  return fallbackFor(t)
 }

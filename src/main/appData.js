@@ -65,6 +65,11 @@ function readStore(name) {
   }
 }
 
+// Named rather than a generic reader: the IPC path validates with isStoreName,
+// and exporting readStore itself would let a later caller reach vault.json past
+// that check.
+export const readSnippetStore = () => readStore('snippets')
+
 // Main reads the renderer's settings.json fresh for the few limits it enforces
 // (e.g. the large-file threshold).
 export function readSettings() {

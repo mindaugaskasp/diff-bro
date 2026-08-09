@@ -1,6 +1,9 @@
-// The pure half of the snippet library: the tag registry's arithmetic and the
-// migration from the legacy categories shape. No Vue, no Pinia, no persistence —
-// so the migration can be unit-tested against a literal, which is what it is.
+// The pure half of the snippet library: the tag registry's arithmetic, the
+// fields derived from a snippet's plaintext, and the migration from the legacy
+// categories shape. No Vue, no Pinia, no persistence — so the migration can be
+// unit-tested against a literal, which is what it is.
+import { detectSnippetLanguage } from './detectLanguage'
+import { parseTemplateVars } from './templateVars'
 
 // 20 colours, evenly spaced around the OKLCH hue wheel at one lightness and
 // chroma, interleaved so two tags made in a row land on opposite sides.
@@ -65,6 +68,37 @@ export const dropTag = (entries, name) => {
 // detect, not a language. Shared by languageOf, formatTagFor and add().
 export const effectiveLanguage = (language, detected) =>
   language && language !== 'auto' ? language : detected
+
+// Distinct {{variables}} in a claude prompt, stored as plaintext metadata so the
+// sidebar row can flag "fillable on copy" without decrypting. Empty for every
+// other language (where {{ }} is template code, not a fill placeholder).
+export const promptVars = (effectiveLang, content) =>
+  effectiveLang === 'claude' ? parseTemplateVars(content) : []
+
+const defersToDetection = (entry) => !entry.language || entry.language === 'auto'
+
+/**
+ * The two fields derived from a snippet's plaintext, which is only in hand while
+ * it is being decrypted. An auto snippet is RE-detected, not merely backfilled:
+ * one saved before the detector could read its language kept that verdict until
+ * somebody edited and re-saved it.
+ * @param {import('../types').SnippetEntry} entry
+ * @param {string} content
+ * @returns {{ detected: string, vars: string[] }}
+ */
+export function derivedFrom(entry, content) {
+  const detected =
+    defersToDetection(entry) || entry.detected === undefined
+      ? detectSnippetLanguage(content)
+      : entry.detected
+  // Both answer the same question, so a re-detection that moves one must move
+  // the other — `vars` only ever meant anything for `claude`.
+  const settled = entry.vars !== undefined && detected === entry.detected
+  return {
+    detected,
+    vars: settled ? entry.vars : promptVars(effectiveLanguage(entry.language, detected), content)
+  }
+}
 
 const isTagShape = (parsed) =>
   !!parsed && !!parsed.tags && Array.isArray(parsed.entries) && !parsed.categories

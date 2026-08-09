@@ -110,6 +110,26 @@ describe('snippetStore — effective language', () => {
     expect(languageOf(store.entries[0])).toBe('mermaid')
   })
 
+  // A snippet saved under a detector that could not see its language keeps that
+  // verdict for ever otherwise — the PHP snippets written before the detector
+  // learned PHP stayed plaintext until someone edited and re-saved them.
+  it('re-detects a stale verdict for an auto snippet the next time it is opened', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'legacy', content: DIAGRAM, language: 'auto', tags: [] })
+    store.entries[0].detected = 'plaintext' // as an older detector recorded it
+    await store.load(id)
+    expect(languageOf(store.entries[0])).toBe('mermaid')
+  })
+
+  it('leaves an explicit choice alone however the content reads', async () => {
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'as text', content: DIAGRAM, language: 'plaintext' })
+    store.entries[0].detected = 'plaintext'
+    await store.load(id)
+    expect(store.entries[0].detected).toBe('plaintext')
+    expect(languageOf(store.entries[0])).toBe('plaintext')
+  })
+
   it('falls back to plaintext for entries saved before detection was recorded', () => {
     expect(languageOf({ language: 'auto' })).toBe('plaintext')
     expect(languageOf({ language: 'json' })).toBe('json')

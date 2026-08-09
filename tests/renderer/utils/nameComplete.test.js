@@ -70,6 +70,17 @@ describe('indexableNames', () => {
   it('de-duplicates, so one name cannot outvote itself', () => {
     expect(indexableNames([{ name: 'A' }, { name: 'A' }])).toEqual(['A'])
   })
+
+  // A name arrives from whoever sent a .diffbro (restoreBundle takes it as
+  // written) and now reaches a TERMINAL, where an escape sequence is not text.
+  // Listing candidates cleared the screen and homed the cursor.
+  it('strips control characters, so an imported name cannot drive the terminal', () => {
+    const clearScreen = 'Report \u001b[2J\u001b[1;1H owned'
+    expect(indexableNames([{ name: clearScreen }])).toEqual(['Report [2J[1;1H owned'])
+    expect(indexableNames([{ name: 'ab\u0000cd' }])).toEqual(['abcd'])
+    expect(indexableNames([{ name: 'tab\there' }])).toEqual(['tabhere'])
+    expect(indexableNames([{ name: 'bell\u0007 and \u009bcsi' }])).toEqual(['bell and csi'])
+  })
 })
 
 describe('completionFor — traps found in QA', () => {
