@@ -47,6 +47,37 @@ describe('cliWords', () => {
   })
 })
 
+describe('parseCli — compare from a revision', () => {
+  const parse = (...words) => parseCli([...PACKAGED, ...words], (p) => `/cwd/${p}`).command
+
+  // `diffbro compare HEAD~1:src/a.js src/a.js` — the shape git itself uses, so
+  // the reader does not have to produce a copy of the old file first.
+  it('keeps a revision argument unresolved, as the pair it names', () => {
+    expect(parse('compare', 'HEAD~1:src/a.js', 'src/a.js')).toEqual({
+      name: 'compare',
+      files: [{ revision: 'HEAD~1', relPath: 'src/a.js' }, '/cwd/src/a.js'],
+      transient: false
+    })
+  })
+
+  it('takes a revision on either side, or both', () => {
+    expect(parse('compare', 'v1.0.0:a.js', 'HEAD:a.js').files).toEqual([
+      { revision: 'v1.0.0', relPath: 'a.js' },
+      { revision: 'HEAD', relPath: 'a.js' }
+    ])
+  })
+
+  // A path is still a path: the feature must not capture every argument that
+  // happens to contain a colon.
+  it('leaves an ordinary path alone', () => {
+    expect(parse('compare', 'a.json').files).toEqual(['/cwd/a.json'])
+  })
+
+  it('leaves a Windows absolute path alone', () => {
+    expect(parse('compare', 'C:/Users/x/a.js').files).toEqual(['/cwd/C:/Users/x/a.js'])
+  })
+})
+
 describe('parseCli — compare', () => {
   it('takes one file', () => {
     const { command } = parseCli([...PACKAGED, 'compare', 'a.json'])

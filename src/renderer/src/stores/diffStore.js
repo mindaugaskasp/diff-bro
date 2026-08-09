@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { resolveAdapter } from '../adapters'
-import { structureAdapter } from '../adapters/structureAdapter'
 import { csvAdapter } from '../adapters/csvAdapter'
-import { diffStructures, structuredKind } from '../utils/structuralDiff'
+import { structuredKind } from '../utils/structuralDiff'
 import { delimitedKind } from '../utils/csv'
 import { restoredSemanticView, shouldOpenSemantic } from '../utils/viewChrome'
+import { lockPairOf } from '../utils/lockfile/lockPair'
+import { structurePairDiff } from '../utils/structurePair'
 import { useVaultStore } from './vaultStore'
 import { useSnippetStore } from './snippetStore'
 import { isSecret } from '../utils/secretSnippet'
@@ -185,30 +186,29 @@ export const useDiffStore = defineStore('diff', {
     // else a tree. A KEY — as a word it stayed English in every locale.
     structureLabelKey() {
       if (this.canCompareDiagram) return 'appToolbar.structureDiagram'
+      if (this.canCompareDeps) return 'appToolbar.structureDeps'
       return this.delimitedFormat ? 'appToolbar.structureGrid' : 'appToolbar.structure'
     },
     structureDiff() {
-      const kind = this.structuredFormat
-      if (!kind) return null
-      const left = structureAdapter.toComparable(this.left, kind)
-      const right = structureAdapter.toComparable(this.right, kind)
-      if (left.error || right.error) return null
-      return diffStructures(left.value, right.value)
+      return structurePairDiff(this.left, this.right, this.structuredFormat)
     },
-    // Which viewer the loaded comparison needs: 'text' (Monaco), 'spreadsheet'
-    // (grid), 'tree' (structure) or 'streamed' (virtualized rows). Text is the
-    // default so an empty/paste state routes to Monaco. Streamed wins over the
-    // other side's kind: one file too large to hold makes the whole comparison
-    // streamed — and a streamed side has no content in memory, so the structure
-    // toggle above it can never be on.
-    // Which viewer the semantic toggle asks for, or null when it is off. Split
-    // out so comparableKind stays one question: semantic, or the file's own kind.
+    lockPair() {
+      return lockPairOf(this.left, this.right)
+    },
+    canCompareDeps() {
+      return this.lockPair !== null
+    },
+    // Deps outranks tree: a lockfile IS json, and a 780-key tree is not what
+    // the reader opened it for.
     semanticKind() {
       if (!this.semanticView) return null
       if (this.canCompareDiagram) return 'diagram'
+      if (this.canCompareDeps) return 'deps'
       if (this.delimitedFormat) return 'spreadsheet'
       return this.canCompareStructure ? 'tree' : null
     },
+    // Text is the default so an empty/paste state routes to Monaco; streamed
+    // wins, because a file too large to hold has no content to compare.
     comparableKind() {
       const semantic = this.semanticKind
       if (semantic) return semantic

@@ -11,7 +11,7 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeXlsx } from './lib/makeXlsx.mjs'
 import { createIdentityKeys } from '../src/main/sealing.js'
@@ -209,7 +209,58 @@ const FILES = {
   ])
 }
 
+// A lockfile pair: thousands of lines of text saying one direct bump, two
+// carried packages and one dropped. The dependency view is the only way to see
+// that without reading all of it.
+const lockPackages = (entries) => ({
+  lockfileVersion: 3,
+  name: 'demo-app',
+  packages: {
+    '': {
+      name: 'demo-app',
+      dependencies: { vue: '^3.4.0', pinia: '^2.1.0' },
+      devDependencies: { vitest: '^4.0.0' }
+    },
+    ...Object.fromEntries(
+      entries.map(([name, version, dev]) => [
+        `node_modules/${name}`,
+        {
+          version,
+          resolved: `https://registry.npmjs.org/${name}/-/${name}-${version}.tgz`,
+          license: 'MIT',
+          ...(dev ? { dev: true } : {})
+        }
+      ])
+    )
+  }
+})
+
 const TEXT_FILES = {
+  'lock-before/package-lock.json': JSON.stringify(
+    lockPackages([
+      ['vue', '3.4.21'],
+      ['pinia', '2.1.7'],
+      ['vitest', '4.1.9', true],
+      ['@vue/shared', '3.4.21'],
+      ['@vue/reactivity', '3.4.21'],
+      ['nanoid', '3.3.7'],
+      ['tinybench', '2.9.0', true]
+    ]),
+    null,
+    2
+  ),
+  'lock-after/package-lock.json': JSON.stringify(
+    lockPackages([
+      ['vue', '3.5.13'],
+      ['pinia', '2.1.7'],
+      ['vitest', '4.1.10', true],
+      ['@vue/shared', '3.5.13'],
+      ['@vue/reactivity', '3.5.13'],
+      ['tinybench', '2.9.0', true]
+    ]),
+    null,
+    2
+  ),
   'service-before.yaml': 'service:\n  name: diff-engine\n  replicas: 3\n  features: [a, b]\n',
   'service-after.yaml': 'service:\n  replicas: 6\n  name: diff-engine\n  features: [b, a, c]\n',
   // Two .csv files on disk: the Grid toggle only appears when BOTH sides are
@@ -262,7 +313,11 @@ function writeFixtures() {
   mkdirSync(SEED_DIR, { recursive: true })
   for (const [name, bytes] of Object.entries(FILES)) writeFileSync(join(SEED_DIR, name), bytes)
   for (const [name, text] of Object.entries(TEXT_FILES)) {
-    writeFileSync(join(SEED_DIR, name), text, 'utf8')
+    const path = join(SEED_DIR, name)
+    // A lockfile is recognised by its exact NAME, so the pair has to live in two
+    // directories the way two checkouts do.
+    if (name.includes('/')) mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, text, 'utf8')
   }
 }
 

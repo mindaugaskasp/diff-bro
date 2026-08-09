@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs, three-way merge — a decision first. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — five tracks. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, resolve a merge. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs, three-way merge — a decision first. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -175,6 +175,47 @@ flowchart LR
 
 ---
 
+## Developer workflow
+
+**Built.** The three artifacts a developer spends the day on, read the way the
+rest of the app reads a spreadsheet: as meaning, not as lines.
+
+```mermaid
+flowchart LR
+  subgraph deps["dependencies"]
+    l["utils/lockfile/ — npm · pnpm · yarn · go · composer"]
+    d["lockDiff.js — added · removed · bumped<br>direct vs carried"]
+    l --> d
+  end
+  subgraph git["revisions"]
+    g["main/gitRepo.js — fenced rev-parse + show"]
+    c["compare HEAD~1:path"]
+    g --> c
+  end
+  subgraph merge["merge"]
+    m["mergeConflicts.js — regions + four resolutions"]
+    w["mergeSession.js — the one write"]
+    m --> w
+  end
+```
+
+- **Dependencies** — a lockfile pair reads as the packages that moved and which
+  of them you asked for. Nothing is fetched; every fact is in the file
+- **Revisions** — `diffbro compare HEAD~1:src/app.js src/app.js`. `git show`
+  behind a fence: fixed argv, no shell, the repo root computed in main, hooks
+  and the fsmonitor disabled, every inherited `GIT_*` dropped
+- **Merge** — `git mergetool` now finishes. This CROSSES "Diff Bro never writes
+  files", deliberately: the app had already registered for the job. Main writes
+  only the `$MERGED` path it was launched with, the renderer sends text and
+  never a path, and the launcher waits so `trustExitCode` is honest
+
+**Open.** TOML lockfiles (`Cargo.lock`, `poetry.lock`) need a parser this repo
+does not have. A revision PICKER — the app takes a revision, it is not a git
+client. Breaking-change classification for OpenAPI and GraphQL, which is the
+same thesis pointed at a contract.
+
+---
+
 ## Comparing more
 
 **Open — and gated on a decision, not a build.** Each of these is its own
@@ -186,7 +227,6 @@ flowchart LR
     direction TB
     f["folder compare<br>two trees aligned by path"]
     i["image pairs<br>side-by-side · onion-skin · pixel Δ"]
-    t["three-way merge<br>an EDITOR, not a viewer"]
   end
 ```
 
@@ -196,9 +236,6 @@ flowchart LR
 - **image pairs** — the adapter registry already takes a `{ kind }` comparable,
   so the seam exists; which diff to draw (side-by-side, onion-skin, pixel
   delta) is the decision
-- **three-way merge** — WRITES files, which Diff Bro deliberately never does
-  today; the same line the Diagrams track holds ("editing a diagram from the
-  diff view" is out of scope). Crossing it is the decision, not the code
 
 ---
 

@@ -51,6 +51,7 @@ const paste = usePasteToCompareStore()
 const snippets = useSnippetStore()
 const vault = useVaultStore()
 const errors = useErrorStore()
+import { MergeDialog } from '../features/merge'
 </script>
 
 <template>
@@ -83,4 +84,5 @@ const errors = useErrorStore()
   <ErrorReportDialog v-if="errors.visible" />
   <PasteConfirmDialog v-if="paste.prompt" />
   <CliBlockedDialog v-if="store.cliBlocked" />
+  <MergeDialog />
 </template>

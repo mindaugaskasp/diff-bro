@@ -142,6 +142,12 @@ export const CLI_COMMANDS = {
   // Typed in the terminal, so it is saved outright rather than opened in the
   // editor — the reader has already answered every question the editor asks.
   'new-snippet': ({ snippets }, command) => snippets.add(command.draft),
+  // git hands over the two conflicting versions AND the file it wants written;
+  // the sides open as an ordinary comparison, the conflicts open over them.
+  merge: async ({ diff, tabs, merge }, command) => {
+    await compareFromCli({ diff, tabs }, [command.local, command.remote], true)
+    merge.begin(command.content)
+  },
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
   // The passphrase is asked for here, not in the terminal: the bundle is
@@ -176,6 +182,13 @@ async function compareFromCli({ diff, tabs }, files, transient) {
   tabs.markActiveTransient(transient)
   const sides = ['left', 'right']
   for (const [i, path] of (files ?? []).entries()) {
+    // A side main already read — a file out of a git revision — arrives whole,
+    // because a temp copy would have to live somewhere file:read is allowed to
+    // reach and there is nowhere it both may and should.
+    if (path && typeof path === 'object') {
+      diff.receive(sides[i], path)
+      continue
+    }
     // A path from a shell is not one the app chose, so the read is allowed
     // to fail outright rather than answer with an error shape.
     try {

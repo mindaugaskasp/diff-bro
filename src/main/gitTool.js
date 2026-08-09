@@ -19,9 +19,10 @@ import {
 import { dirname, join, posix, win32 } from 'node:path'
 import { execFile } from 'node:child_process'
 import { shQuote } from './shellQuote'
+import { gitMergeScript, gitMergeTarget } from './gitMergeTool'
+import { MARK } from './gitToolMark'
 
 export const GIT_TOOL_NAME = 'diffbro'
-const MARK = '# diff-bro git tool'
 
 /**
  * Where the launcher lives — beside the `diffbro` shim, so removing either
@@ -70,18 +71,19 @@ const invocation = (script) => `"${script}" "$LOCAL" "$REMOTE" "$MERGED"`
 /**
  * The registration, as git config argument vectors.
  *
- * Diff Bro shows a merge's two conflicting sides for READING; it never writes
- * $MERGED. trustExitCode=false is what keeps that honest — git asks whether the
- * merge succeeded instead of taking a clean exit as "resolved".
+ * Diff Bro shows a merge's two conflicting sides AND resolves them: the merge
+ * launcher waits for $MERGED to be written, so trustExitCode=true is honest.
  * @param {string} script
  * @returns {string[][]}
  */
-export function registerArgs(script) {
+export function registerArgs(script, mergeScript = script) {
   const cmd = invocation(script)
   return [
     ['config', '--global', `difftool.${GIT_TOOL_NAME}.cmd`, cmd],
-    ['config', '--global', `mergetool.${GIT_TOOL_NAME}.cmd`, cmd],
-    ['config', '--global', `mergetool.${GIT_TOOL_NAME}.trustExitCode`, 'false'],
+    ['config', '--global', `mergetool.${GIT_TOOL_NAME}.cmd`, invocation(mergeScript)],
+    // The merge script waits for $MERGED to change before it exits, so a clean
+    // exit now MEANS resolved and git can be told to believe it.
+    ['config', '--global', `mergetool.${GIT_TOOL_NAME}.trustExitCode`, 'true'],
     ['config', '--global', 'diff.tool', GIT_TOOL_NAME],
     ['config', '--global', 'merge.tool', GIT_TOOL_NAME]
   ]
@@ -117,6 +119,9 @@ export function runGit(args) {
   })
 }
 
+// Somebody else's file of the same name — theirs to keep.
+const occupied = (file) => existsSync(file) && !looksLikeOurs(file)
+
 const looksLikeOurs = (file) => {
   try {
     return readFileSync(file, 'utf8').includes(MARK)
@@ -148,18 +153,23 @@ export async function gitToolStatus({ home, platform, localAppData, git = runGit
 export async function registerGitTool({ exePath, home, platform, localAppData, entryPath, git }) {
   git = git ?? runGit
   const target = gitToolTarget({ platform, home, localAppData })
+  const mergeTarget = gitMergeTarget(gitToolTarget({ platform, home, localAppData }))
   if (!(await git(['--version'])).ok) return { ok: false, error: 'git is not on your PATH.' }
   try {
-    if (existsSync(target) && !looksLikeOurs(target)) {
+    if (occupied(target) || occupied(mergeTarget)) {
       return { ok: false, error: 'A different diffbro-git exists there.' }
     }
     mkdirSync(dirname(target), { recursive: true })
     writeFileSync(target, gitToolScript(exePath, entryPath), 'utf8')
-    if (platform !== 'win32' && process.platform !== 'win32') chmodSync(target, 0o755)
+    writeFileSync(mergeTarget, gitMergeScript(exePath, entryPath), 'utf8')
+    if (platform !== 'win32' && process.platform !== 'win32') {
+      chmodSync(target, 0o755)
+      chmodSync(mergeTarget, 0o755)
+    }
   } catch (e) {
     return { ok: false, error: e.message }
   }
-  for (const args of registerArgs(target)) {
+  for (const args of registerArgs(target, mergeTarget)) {
     const res = await git(args)
     if (!res.ok) return { ok: false, error: 'git refused the configuration.' }
   }
@@ -177,8 +187,10 @@ export async function unregisterGitTool({ home, platform, localAppData, git = ru
     await git(args)
   }
   const target = gitToolTarget({ platform, home, localAppData })
+  const mergeTarget = gitMergeTarget(gitToolTarget({ platform, home, localAppData }))
   try {
     if (!existsSync(target) || looksLikeOurs(target)) rmSync(target, { force: true })
+    if (!existsSync(mergeTarget) || looksLikeOurs(mergeTarget)) rmSync(mergeTarget, { force: true })
   } catch (e) {
     return { ok: false, error: e.message }
   }

@@ -20,6 +20,55 @@ rejected rather than shipped, because the kill switch would not have caught it:
 it filters `session.defaultSession.webRequest`, which is Chromium traffic only,
 so a main-process `tls.connect` would have been invisible to it.
 
+**Reading a file out of git does not change it either.** `src/main/gitRepo.js`
+spawns `git` to answer two questions — where the repository begins, and what a
+file looked like at a revision — the same way `gitTool.js` already spawns it to
+register the difftool. A subprocess is not a network client, and the vocabulary
+is `rev-parse` and `show`: nothing that can fetch, pull, clone or `ls-remote` is
+reachable, so git cannot be asked to open a socket on the app's behalf.
+
+The fence around it, because a repository someone cloned is untrusted input and
+repo-local config has been an execution vector before:
+
+- `execFile` with a FIXED argv, never a shell.
+- **No renderer reaches git at all.** There is no `git:*` IPC handler: the only
+  caller is the CLI, whose arguments main parsed itself, and the file it reads
+  out of a revision is staged and vouched for through `allowCliPath` like any
+  other path. An IPC that took a path from the renderer would be an
+  arbitrary-file-read primitive for anything committed in any repository on the
+  machine, which is exactly what `files.js`'s allowlist exists to prevent.
+- A revision is validated against a narrow pattern, may never begin with `-`,
+  and is followed by `--end-of-options`; a path may not be absolute and may not
+  contain `..`.
+- Every invocation carries `core.hooksPath=`, `core.fsmonitor=` (a command git
+  will otherwise SPAWN), `core.editor=true` and `protocol.ext.allow=never`.
+- The environment is rebuilt rather than inherited: every `GIT_*` variable is
+  dropped, because `GIT_DIR`, `GIT_INDEX_FILE` and
+  `GIT_ALTERNATE_OBJECT_DIRECTORIES` each redirect git at something other than
+  the repository main chose. `GIT_CONFIG_NOSYSTEM=1` and
+  `GIT_TERMINAL_PROMPT=0` are then set.
+- A blob is capped at 32 MB — past that the streamed reader is the right tool,
+  and a revision is no reason to hold more in memory than a file would be.
+
+## Writing a merged file
+
+Diff Bro writes over a file you already had in exactly one situation: a
+`git mergetool` run it was invoked for. Everything else it produces is a NEW
+file you chose the location of.
+
+The fence is the shape of the surface rather than a check inside it. Main
+remembers the `$MERGED` path from the LAUNCH argv; `merge:write` takes the
+resolved **text** and nothing else, so there is no argument through which the
+renderer could name a file — the same shape as `clipboard:writeFile`, which
+takes bytes and a display name. With no mergetool launch there is no path held,
+so the handler writes nothing at all whatever arrives, and a session is spent
+once used.
+
+`mergetool.diffbro.trustExitCode` is `true`, which is only honest because the
+merge launcher WAITS for `$MERGED` to change before it exits. The app is
+single-instance, so the launch itself returns immediately; a script that exited
+there would tell git the conflict was resolved before anyone had looked at it.
+
 ## File access (compromised-renderer threat model)
 
 All filesystem access lives in the main process; the renderer only asks. Because

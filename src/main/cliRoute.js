@@ -10,6 +10,10 @@ import { installShim, removeShim, shimStatus } from './cliShim'
 import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from './gitTool'
 import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
+import { fileAtRevision, isRevisionSide, REVISION_ERROR_KEYS } from './gitCliFiles'
+import { beginMerge, cancelMerge, writeMerged } from './mergeSession'
+import { readFileSync } from 'node:fs'
+import { hasConflictMarkers, isBinaryBuffer } from './mergeGuards'
 import { t } from './i18n'
 
 // A command can arrive before any window exists (a cold `diffbro compare …`),
@@ -43,19 +47,91 @@ export function routeCliArgv(argv, cwd, carried = null) {
     process.stderr.write(`${parsed.error}\n`)
     return
   }
-  routeCommand(parsed.command)
+  routeCommand(parsed.command, cwd)
 }
 
-function routeCommand(command) {
+// Each `revision:path` side becomes a real file before the renderer hears about
+// the command at all, so everything downstream sees paths and nothing else has
+// to know git was involved.
+async function withRevisionsResolved(command, cwd) {
+  const files = []
+  for (const side of command.files) {
+    if (!isRevisionSide(side)) {
+      files.push(side)
+      continue
+    }
+    const res = await fileAtRevision(side, cwd || process.cwd())
+    if (res.error) {
+      process.stderr.write(`${t(REVISION_ERROR_KEYS[res.error] ?? 'cliErrors.not-a-repo')}\n`)
+      return null
+    }
+    files.push(res.file)
+  }
+  return { ...command, files }
+}
+
+function deliverResolved(command, cwd) {
+  withRevisionsResolved(command, cwd)
+    .then((ready) => {
+      if (!ready) return
+      ready.files.forEach(allowCliPath)
+      deliver(ready)
+    })
+    // A path the fence refuses THROWS. Without this it opened nothing, said
+    // nothing, and landed in the crash log instead.
+    .catch(() => process.stderr.write(`${t('cliErrors.refused')}\n`))
+}
+
+const needsGit = (command) => command?.name === 'compare' && command.files.some(isRevisionSide)
+
+// A mergetool launch: main REMEMBERS the path git wants written and sends the
+// renderer the conflicted text, never the path. What comes back is text.
+function routeMerge(command) {
+  let buffer
+  try {
+    buffer = readFileSync(command.merged)
+  } catch {
+    process.stderr.write(`${t('cliErrors.merge-unreadable')}\n`)
+    return
+  }
+  // git calls the mergetool for a BINARY conflict too, and leaves it with no
+  // markers. Decoding one as text turns every invalid byte into U+FFFD, and
+  // writing that back destroys the file — so it never reaches the renderer.
+  if (isBinaryBuffer(buffer)) {
+    process.stderr.write(`${t('cliErrors.merge-binary')}\n`)
+    return
+  }
+  const content = buffer.toString('utf8')
+  // Nothing to decide is not the same as "resolved": a file with no markers is
+  // one this tool has no business rewriting.
+  if (!hasConflictMarkers(content)) {
+    process.stderr.write(`${t('cliErrors.merge-no-conflicts')}\n`)
+    return
+  }
+  beginMerge(command)
+  // Both sides are files main just vouched for; without this file:read refuses
+  // them and the two panes open empty.
+  allowCliPath(command.local)
+  allowCliPath(command.remote)
+  deliver({ name: 'merge', local: command.local, remote: command.remote, content })
+}
+
+// The verbs that need something done before the renderer hears about them.
+const SPECIAL = {
   // `open` with no file has nothing to tell the renderer — the window IS the
   // answer, so it never reaches deliver's pending queue.
-  if (command?.name === 'raise') return void ensureMainWindow()?.focus()
+  raise: () => void ensureMainWindow()?.focus(),
+  merge: (command) => routeMerge(command),
+  'clipboard-save': (command) => deliver({ ...command, text: clipboard.readText() })
+}
+
+function routeCommand(command, cwd) {
+  if (needsGit(command)) return void deliverResolved(command, cwd)
+  const special = SPECIAL[command?.name]
+  if (special) return void special(command)
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
   if (command?.name === 'compare') command.files.forEach(allowCliPath)
-  if (command?.name === 'clipboard-save') {
-    return void deliver({ ...command, text: clipboard.readText() })
-  }
   deliver(command)
 }
 
@@ -92,6 +168,11 @@ export function registerCliIpc() {
       })
     ).response === 1
 
+  // The renderer's ONLY say in the merge is the text. It cannot name a file:
+  // main has held that path since the launch.
+  ipcMain.handle('merge:write', (e, text) => writeMerged(text))
+  // Declining is an answer too: it releases the launcher and spends the session.
+  ipcMain.handle('merge:cancel', () => cancelMerge())
   ipcMain.handle('cli:status', () => shimStatus(where()))
   ipcMain.handle('cli:install', async () =>
     (await confirmed(t('dialog.cliInstall.message'), t('dialog.cliInstall.detail')))

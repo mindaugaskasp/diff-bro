@@ -170,7 +170,46 @@ async function clearComparison(page) {
 }
 
 // Each surface: how to open it, and the pairs that carry meaning once open.
+const LOCKFILE = (version) =>
+  JSON.stringify(
+    {
+      lockfileVersion: 3,
+      packages: {
+        '': { dependencies: { vue: '^3.4.0' } },
+        'node_modules/vue': { version, license: 'MIT' },
+        'node_modules/@vue/shared': { version }
+      }
+    },
+    null,
+    2
+  )
+
 const SURFACES = [
+  {
+    name: 'deps-diff',
+    // Reached through PASTE mode, because a lockfile is recognised by its NAME
+    // and paste lets a side be named. Three inks a table cannot settle: the two
+    // versions are text at the reading floor (the raw --dg-* roles are 3:1
+    // non-text and fell to 1.80 on nord), and the row's status keyline is the
+    // only thing separating a bump from an addition.
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Paste mode' }).click()
+      const names = page.getByPlaceholder('Name this side')
+      await names.first().fill('package-lock.json')
+      await names.nth(1).fill('package-lock.json')
+      await page.getByPlaceholder('Paste original text here').fill(LOCKFILE('3.4.21'))
+      await page.getByPlaceholder('Paste changed text here').fill(LOCKFILE('3.5.13'))
+      await page.getByRole('button', { name: 'Compare', exact: true }).click()
+      await page.locator('.deps-row').first().waitFor()
+    },
+    close: (page) => page.getByRole('button', { name: 'Clear', exact: true }).click(),
+    probes: {
+      'package name': ['.deps-name', TEXT],
+      'old version': ['.deps-move .del', TEXT],
+      'new version': ['.deps-move .add', TEXT],
+      'asked-for tag': ['.deps-tag', DIM]
+    }
+  },
   {
     name: 'launcher-compose',
     window: 'launcher',

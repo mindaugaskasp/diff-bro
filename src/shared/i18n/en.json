@@ -16,6 +16,18 @@
       "hint": "Menus and app text. Restart is not needed."
     }
   },
+  "merge": {
+    "title": "Resolve merge conflicts",
+    "remaining": "Nothing left to decide | {n} conflict still to decide | {n} conflicts still to decide",
+    "conflictN": "Conflict {n}",
+    "takeOurs": "Ours",
+    "takeTheirs": "Theirs",
+    "takeBoth": "Both",
+    "takeNeither": "Neither",
+    "allOf": "{side} everywhere",
+    "save": "Save the merge",
+    "unreadable": "That file’s conflict markers do not close, so there is nothing safe to resolve. Finish it by hand."
+  },
   "menu": {
     "file": {
       "title": "File",
@@ -479,6 +491,7 @@
     "structure": "Structure",
     "structureGrid": "Grid",
     "structureDiagram": "Diagram",
+    "structureDeps": "Dependencies",
     "tips": {
       "view": "Split view, structure and whitespace — everything that changes how the comparison is drawn",
       "more": "Actions the bar has no room for",
@@ -526,6 +539,15 @@
     "noFreeTab": "No free tab",
     "gotIt": "Got it"
   },
+  "cliErrors": {
+    "not-a-repo": "That folder is not inside a git repository.",
+    "no-such-revision": "git does not know that revision.",
+    "not-in-revision": "That file is not in that revision.",
+    "merge-unreadable": "That file could not be read.",
+    "merge-binary": "That is a binary file — resolve it with `git checkout --ours/--theirs`.",
+    "merge-no-conflicts": "That file has no conflict markers, so there is nothing to resolve.",
+    "refused": "That revision or path was refused."
+  },
   "cliSettings": {
     "terminalCommand": "Terminal command",
     "intro": "Adds a {cmd} command so a comparison can start from a terminal: {compare}, {create}, or {save} to keep what you just copied.",
@@ -556,6 +578,23 @@
     "hideTheChangeList": "Hide the change list",
     "showTheChangeList": "Show the change list",
     "notComparableAsPicture": "This diagram type can’t be compared as a picture yet."
+  },
+  "depsDiffViewer": {
+    "packages": "Packages",
+    "changed": "Changed",
+    "askedFor": "Asked for",
+    "direct": "asked for",
+    "dev": "dev",
+    "noDependencyChanged": "No dependency changed — the same versions, either side",
+    "showCarried": "Show {n} carried package | Show {n} carried packages",
+    "askedForOnly": "Only what you asked for",
+    "countBumped": "{n} bumped",
+    "countDowngraded": "{n} downgraded",
+    "step": {
+      "major": "major",
+      "minor": "minor",
+      "patch": "patch"
+    }
   },
   "diffTabBar": {
     "previousComparison": "Previous comparison",
@@ -623,7 +662,7 @@
   "gitToolSettings": {
     "git": "Git",
     "openGitComparisonsInDiff": "Open git comparisons in Diff Bro",
-    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the merged file, so git still asks you whether the merge worked.",
+    "aMergeOpensItsTwo": "A merge opens its two conflicting versions, takes a choice per conflict, and writes the merged file back — so git is told the merge is done rather than asking you.",
     "intro": "Makes {difftool} and {mergetool} open the comparison here instead of in the terminal.",
     "notOnPath": "git isn’t on your PATH, so there is nothing to register.",
     "configFailed": "Could not change the git configuration."
@@ -1506,7 +1545,8 @@
     "moved": "{n} moved",
     "sheets": "{n} sheet | {n} sheets",
     "matches": "{n} match | {n} matches",
-    "unchangedHidden": "{n} unchanged hidden"
+    "unchangedHidden": "{n} unchanged hidden",
+    "packages": "{n} package | {n} packages"
   },
   "sheetTabBar": {
     "onlyIn": "only {side}",
@@ -1577,6 +1617,10 @@
     "difftool": {
       "summary": "open a comparison git handed over",
       "detail": "What `git difftool` and `git mergetool` run. Same as compare,\nexcept the two files are known to be throwaway copies git made.\n\nBecause they are throwaway, a merge with more conflicts than there are\ntabs reuses the oldest of them instead of running out — `git mergetool`\nwalks the whole conflict list without waiting for anyone."
+    },
+    "mergetool": {
+      "summary": "Resolve a merge conflict git handed over",
+      "detail": "Called by `git mergetool`, not usually by hand. Opens the two conflicting versions, takes a choice per conflict, and writes the merged file back."
     },
     "open": {
       "summary": "raise the app, optionally on a file",

@@ -21,6 +21,12 @@ export const COMMANDS = [
     detailKey: 'cli.difftool.detail'
   },
   {
+    topic: 'mergetool',
+    usage: 'diffbro mergetool <local> <remote> <merged>',
+    summaryKey: 'cli.mergetool.summary',
+    detailKey: 'cli.mergetool.detail'
+  },
+  {
     topic: 'open',
     usage: 'diffbro open [<file>]',
     summaryKey: 'cli.open.summary',

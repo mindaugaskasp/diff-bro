@@ -49,7 +49,8 @@ export const showsWhitespaceToggle = (store) =>
  * @param {object} store
  * @returns {boolean}
  */
-export const shouldOpenSemantic = (store) => !!store?.canCompareDiagram || !!store?.delimitedFormat
+export const shouldOpenSemantic = (store) =>
+  !!store?.canCompareDiagram || !!store?.canCompareDeps || !!store?.delimitedFormat
 
 /**
  * The view a restored snapshot opens in: the one it recorded, or — where it
