@@ -1,13 +1,20 @@
 import { rmSync } from 'node:fs'
 
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  newSnippetButton
+} from './fixtures.mjs'
 
 // Highlighting is only real in a launched app: Monaco does the tokenising, it
 // cannot be imported under vitest, and JSON in particular only tokenises once a
 // model of that language has existed. jsdom can answer none of that.
 
 async function addSnippet(page, { name, language, body, secret = false }) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.lang-picker select').selectOption(language)

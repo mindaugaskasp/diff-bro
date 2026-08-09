@@ -1,10 +1,10 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Cancelling (or ×-ing) a new snippet that has typed/pasted content must not
 // silently throw it away — a real bug only a launch reproduces, since the guard
 // lives on the dialog's close paths and Monaco feeds the "dirty" state.
 test('cancelling a new snippet with typed content asks before discarding', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 
@@ -30,7 +30,7 @@ test('cancelling a new snippet with typed content asks before discarding', async
 
 // An untouched new snippet has nothing to protect, so Cancel closes at once.
 test('cancelling an empty new snippet closes without a prompt', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 

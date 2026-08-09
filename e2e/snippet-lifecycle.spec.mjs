@@ -1,11 +1,11 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Full snippet CRUD through the real vault: create (encrypt + store), see it in
 // the list, edit (decrypt → update), and delete (with its confirm dialog). The
 // unit tests cover the store; this proves the UI round-trip end to end.
 test('a snippet can be created, edited, and deleted', async ({ page }) => {
   // --- create ---
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(editor).toBeVisible()
 

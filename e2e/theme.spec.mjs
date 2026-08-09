@@ -57,7 +57,18 @@ test('the diff editor is painted by the theme, not by Monaco stock', async ({ pa
       const bg = getComputedStyle(probe).color
       probe.remove()
       const editor = document.querySelector('.monaco-diff-editor .monaco-editor-background')
-      return { bg, editor: editor && getComputedStyle(editor).backgroundColor }
+      // The BAND, read off the painted pixel: Monaco draws it as a decoration
+      // whose colour comes from the theme, and asserting only the ground let a
+      // build ship where all four --diff-* tokens were dropped and the stock
+      // green and red survived underneath a themed background.
+      const band = document.querySelector(
+        '.monaco-diff-editor .line-insert, .monaco-diff-editor .char-insert'
+      )
+      return {
+        bg,
+        editor: editor && getComputedStyle(editor).backgroundColor,
+        band: band && getComputedStyle(band).backgroundColor
+      }
     })
 
   await openSettings(page)
@@ -78,4 +89,15 @@ test('the diff editor is painted by the theme, not by Monaco stock', async ({ pa
   expect(nyan.editor).toBe(nyan.bg)
   // Two dark themes used to be pixel-identical here.
   expect(nyan.editor, 'two themes must not paint the same editor').not.toBe(matrix.editor)
+
+  // And the band itself must come from the palette, not from vs-dark. Monaco's
+  // stock inserted band is a green at 20% alpha; a themed one is opaque.
+  for (const [name, s] of [
+    ['matrix', matrix],
+    ['nyan', nyan]
+  ]) {
+    expect(s.band, `${name} must paint a diff band`).toBeTruthy()
+    expect(s.band, `${name} band must not be Monaco stock`).not.toMatch(/155,\s*185,\s*85/)
+  }
+  expect(nyan.band, 'two themes must not paint the same band').not.toBe(matrix.band)
 })

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Copying a snippet shows a transient "Copied" flash at the row. Playwright's
 // clicks are trusted (they carry the user activation the async clipboard API
@@ -22,7 +22,7 @@ test('copying a snippet flashes "Copied" and then clears', async ({ page }) => {
 // At its old 460px minimum the editor needed 578px of content, so it scrolled
 // the moment it was dragged small — with the code area squeezed to 160px.
 test('the editor never scrolls at its smallest allowed size', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const dlg = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dlg).toBeVisible()
 
@@ -58,7 +58,7 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
       .evaluate((el) => getComputedStyle(el).cursor)
   ).toBe('pointer')
 
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Vault token')
   await editor.locator('.editor').click()

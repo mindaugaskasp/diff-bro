@@ -227,3 +227,10 @@ export async function stubOpenDialog(app, filePaths) {
 }
 
 export { expect }
+
+// The sidebar's New-snippet control. NOT getByRole('button', { name: 'New
+// snippet' }): the Snippets section renders an empty-state CTA with the same
+// accessible name while the seeded examples are still being encrypted, so that
+// locator is a strict-mode violation waiting for a slow enough machine — it
+// took until a CI runner to fire.
+export const newSnippetButton = (page) => page.locator('[data-tour="snippet-new"]')

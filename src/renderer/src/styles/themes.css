@@ -544,3 +544,158 @@
   --syn-comment: #b0a096;
   color-scheme: dark;
 }
+
+/* Amber — the MONOCHROME phosphor terminal, and deliberately not Volcano.
+   Volcano is achromatic (black ground, white ink) with one saturated accent and
+   an accessibility-grade keyline; this is the opposite discipline — every piece
+   of chrome, INCLUDING the body text, is one amber hue at low glare, the way a
+   P3 tube actually looked. White ink is what makes Volcano readable; amber ink
+   is what makes this a phosphor. Only the diff and the status colours stay
+   chromatic, because a comparison you cannot read is not a theme choice. */
+:root[data-theme='amber'] {
+  --tag-l: 0.8;
+  --bg: #0f0a02;
+  --bg-panel: #191106;
+  --bg-hover: #26190a;
+  --border: #6d4d14;
+  --text: #ffc95e;
+  --text-dim: #b3833a;
+  --text-hint: #e3ac52;
+  --accent: #ffb000;
+  --warning-bg: #ffd23f;
+  --warning-border: #c08a00;
+  --warning-text: #1a1200;
+  --danger-bg: #ff5545;
+  --danger-border: #d62c22;
+  --danger-text: #150500;
+  --success-text: #b8d94a;
+  --scrim: rgba(8, 5, 0, 0.62);
+  --favorite: #ffd23f;
+  --text-on-accent: #241600;
+  --syn-keyword: #e0a0c8;
+  --syn-string: #9cc63f;
+  --syn-number: #e8a84a;
+  --syn-property: #8ab8b0;
+  --syn-comment: #9b8560;
+  color-scheme: dark;
+}
+/* Tide — deep ocean: a cool blue-green dark that is neither Nord's slate nor
+   Neon's navy; low-chroma seafoam accent. */
+:root[data-theme='tide'] {
+  --tag-l: 0.8;
+  --bg: #0b1a1e;
+  --bg-panel: #12262c;
+  --bg-hover: #1b343c;
+  --border: #2f4c55;
+  --text: #e2f1f2;
+  --text-dim: #8fa9ae;
+  --text-hint: #c2d9dc;
+  --accent: #6ed2c0;
+  --warning-bg: #e3b341;
+  --warning-border: #b8860b;
+  --warning-text: #1a1400;
+  --danger-bg: #f07a72;
+  --danger-border: #d1564d;
+  --danger-text: #12070a;
+  --success-text: #5fd08a;
+  --scrim: rgba(0, 10, 12, 0.58);
+  --favorite: #e3b341;
+  --text-on-accent: #04231e;
+  --syn-keyword: #b47fd6;
+  --syn-string: #34a86a;
+  --syn-number: #cf8340;
+  --syn-property: #3fa2c4;
+  --syn-comment: #8b9497;
+  color-scheme: dark;
+}
+
+/* Ember — the dark sibling of Bloom: warm wine ground, coral accent. */
+:root[data-theme='ember'] {
+  --tag-l: 0.8;
+  --bg: #1a1013;
+  --bg-panel: #251a1e;
+  --bg-hover: #33242a;
+  --border: #4a3339;
+  --text: #f3e7e9;
+  --text-dim: #baa3a9;
+  --text-hint: #d9c4c9;
+  --accent: #ffa285;
+  --warning-bg: #e0a52e;
+  --warning-border: #b07d18;
+  --warning-text: #201700;
+  --danger-bg: #f2617a;
+  --danger-border: #d34760;
+  --danger-text: #1a0610;
+  --success-text: #7fd18f;
+  --scrim: rgba(14, 6, 8, 0.58);
+  --favorite: #e6b34d;
+  --text-on-accent: #1c0703;
+  --syn-keyword: #d489dd;
+  --syn-string: #4bb072;
+  --syn-number: #d98a4e;
+  --syn-property: #66a6d4;
+  --syn-comment: #9a8e91;
+  color-scheme: dark;
+}
+
+/* Graphite — achromatic: the whole UI is neutral grey, so the ONLY colour on
+   screen is the diff itself. */
+:root[data-theme='graphite'] {
+  --tag-l: 0.8;
+  --bg: #161616;
+  --bg-panel: #1f1f1f;
+  --bg-hover: #2b2b2b;
+  --border: #3d3d3d;
+  --text: #ededed;
+  --text-dim: #ababab;
+  --text-hint: #cccccc;
+  --accent: #d4d4d4;
+  --warning-bg: #d9a441;
+  --warning-border: #a87a18;
+  --warning-text: #1a1200;
+  --danger-bg: #e0705f;
+  --danger-border: #c25445;
+  --danger-text: #14090a;
+  --success-text: #7cc98f;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --favorite: #cfcfcf;
+  --text-on-accent: #101010;
+  --syn-keyword: #b9b9b9;
+  --syn-string: #8fbf9c;
+  --syn-number: #c8a06a;
+  --syn-property: #8fb0c8;
+  --syn-comment: #868686;
+  color-scheme: dark;
+}
+
+/* Vector — colour-vision-deficiency safe: blue vs orange carry add/remove
+   rather than green vs red, on a neutral light ground. */
+:root[data-theme='vector'] {
+  --bg: #ffffff;
+  --bg-panel: #eef1f4;
+  --bg-hover: #e0e5ea;
+  --border: #b6bfc9;
+  --text: #12181f;
+  --text-dim: #525c67;
+  --text-hint: #2e3740;
+  --accent: #0b57a4;
+  --warning-bg: #e8a33d;
+  --warning-border: #8a5a00;
+  --warning-text: #2a1c00;
+  --danger-bg: #9e3f08;
+  --danger-border: #8a3606;
+  --danger-text: #ffffff;
+  --success-text: #14568f;
+  --scrim: rgba(10, 20, 30, 0.45);
+  --favorite: #8a5a00;
+  --text-on-accent: #ffffff;
+  --dg-chg: #6a3fa0;
+  --shadow-rgb: 10 20 30;
+  --syn-keyword: #6a3fa0;
+  --syn-string: #14568f;
+  --syn-number: #8a4a08;
+  --syn-property: #0f5f78;
+  --syn-comment: #5a6068;
+  color-scheme: light;
+}
+

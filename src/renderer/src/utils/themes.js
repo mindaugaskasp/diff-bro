@@ -91,6 +91,36 @@ export const THEMES = [
     label: 'Volcano',
     dark: true,
     swatch: { bg: '#0e0705', accent: '#ff5c33', add: '#58e08a', del: '#ff4d70' }
+  },
+  {
+    id: 'amber',
+    label: 'Amber',
+    dark: true,
+    swatch: { bg: '#191106', accent: '#ffb000', add: '#b8d94a', del: '#ff5545' }
+  },
+  {
+    id: 'tide',
+    label: 'Tide',
+    dark: true,
+    swatch: { bg: '#12262c', accent: '#6ed2c0', add: '#5fd08a', del: '#f07a72' }
+  },
+  {
+    id: 'ember',
+    label: 'Ember',
+    dark: true,
+    swatch: { bg: '#251a1e', accent: '#ffa285', add: '#7fd18f', del: '#f2617a' }
+  },
+  {
+    id: 'graphite',
+    label: 'Graphite',
+    dark: true,
+    swatch: { bg: '#1f1f1f', accent: '#d4d4d4', add: '#7cc98f', del: '#e0705f' }
+  },
+  {
+    id: 'vector',
+    label: 'Vector',
+    dark: false,
+    swatch: { bg: '#eef1f4', accent: '#0b57a4', add: '#14568f', del: '#9e3f08' }
   }
 ]
 

@@ -21,9 +21,18 @@ export const MONACO_TOKENS = [
 
 const RGB = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
+// What Chromium returns for a resolved color-mix(), 0–1 per channel. Every
+// --diff-* token is a color-mix, so without this the four colours this theme
+// exists to set are dropped and Monaco keeps its stock green and red.
+const SRGB = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i
 
 // Monaco throws out of defineTheme on a colour it cannot parse, which would
 // take the viewer down with it — so anything unreadable is left out instead.
+const channels = (parts) =>
+  `#${parts
+    .map((n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'))
+    .join('')}`
+
 function hexOf(value) {
   const said = String(value ?? '').trim()
   const hex = said.match(HEX)
@@ -31,12 +40,10 @@ function hexOf(value) {
     const d = hex[1]
     return `#${(d.length === 3 ? [...d].map((c) => c + c).join('') : d).toLowerCase()}`
   }
+  const srgb = said.match(SRGB)
+  if (srgb) return channels(srgb.slice(1, 4).map((n) => Number(n) * 255))
   const rgb = said.match(RGB)
-  if (!rgb) return null
-  return `#${rgb
-    .slice(1, 4)
-    .map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, '0'))
-    .join('')}`
+  return rgb ? channels(rgb.slice(1, 4).map(Number)) : null
 }
 
 /**

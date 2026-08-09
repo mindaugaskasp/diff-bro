@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // A snippet you just made lands below every starred row, in a panel that is
 // usually scrolled, and nothing marked it. The marker is four channels; three of
@@ -26,7 +26,7 @@ const rail = (row) =>
   })
 
 async function addSnippet(page, name) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()

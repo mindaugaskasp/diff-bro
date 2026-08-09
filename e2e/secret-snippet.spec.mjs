@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // A secret snippet is a claim about what is DRAWN, so it can only be checked in
 // a launched app: the contents must be absent from the editor, the hover card
@@ -8,7 +8,7 @@ import { test, expect } from './fixtures.mjs'
 const SECRET = 'sk-live-DEADBEEF-0123456789'
 
 async function createSecret(page, name = 'Prod API key') {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
@@ -89,7 +89,7 @@ test('the hover card masks a secret and never decrypts it', async ({ page }) => 
 })
 
 test('an ordinary snippet is untouched by the feature', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Plain note')
   await editor.locator('.editor').click()

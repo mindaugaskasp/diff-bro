@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Dragging is only real in a launched app: the payload rides a DataTransfer the
 // browser owns, the drop is a window-level handler, and the content comes back
@@ -42,7 +42,7 @@ test('two dropped snippets open as an ordinary comparison', async ({ page }) => 
 // moved on. Plaintext on purpose — a snippet with a preview (claude, mermaid)
 // renders no raw editor to type into.
 test('editing a compared snippet updates the diff without a reload', async ({ app, page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const make = page.getByRole('dialog', { name: 'New Snippet' })
   await make.getByPlaceholder('Snippet name…').fill('Live target')
   // Typed rather than pasted: routing this through the OS clipboard sometimes
@@ -94,7 +94,7 @@ test('clearing the comparison leaves both snippets alone', async ({ page }) => {
 })
 
 test('a secret snippet is not draggable', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // A favourited row marks itself the same way in every section. Snippets lost
 // their mark silently: the only rule that drew it was `.shelf.fav .row` in
@@ -19,7 +19,7 @@ const drawn = (m) =>
   m.shadow !== 'none' && m.shadow !== '' && !/rgba\(0, 0, 0, 0\)/.test(m.background)
 
 async function addSnippet(page, name) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
