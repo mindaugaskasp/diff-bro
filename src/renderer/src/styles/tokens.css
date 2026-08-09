@@ -89,6 +89,15 @@
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
   --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+  /* The primary button's hover/press ladder. It steps the KEYLINE, never the
+     fill: moving a filled button's background toward the label printed on it
+     can only close the gap between them, which is how .btn-primary:hover came
+     to hold the worst contrast pair in the app (2.39 on dark, floor 4.5).
+     Stepped toward --bg, not --text: on matrix the accent (#00ff41) and the ink
+     (#c6ffd2) are both bright green, so a rim mixed from those two is invisible
+     — 1.04 against its own fill, under even the neutral button's 1.16 step. */
+  --btn-primary-edge: color-mix(in srgb, var(--accent) 60%, var(--bg));
+  --btn-primary-edge-press: color-mix(in srgb, var(--accent) 40%, var(--bg));
   /* Keyboard focus. A bare --accent ring scores 2.58 on solar and 2.98 on
      meridian against --bg-elevated, under the 3:1 non-text floor; mixing toward
      the ink lifts the worst case to 3.34 and keeps the hue. Same trick as

@@ -12,7 +12,7 @@
 //   * BORDER delineation — the divider is visible against the chrome it edges.
 // Thresholds are floors calibrated to the shipping themes; raise them as the
 // palettes improve, never lower them to make a flat theme pass.
-import { readFileSync, readdirSync } from 'fs'
+import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { featureStyleDirs } from './lib/featureDirs.mjs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
@@ -132,7 +132,11 @@ const RULES = [
   { key: 'text/bg', a: 'text', b: 'bg', min: 4.5, kind: 'text' },
   { key: 'text/panel', a: 'text', b: 'bg-panel', min: 4.5, kind: 'text' },
   { key: 'dim/panel', a: 'text-dim', b: 'bg-panel', min: 3.0, kind: 'text' },
-  { key: 'onAccent/accent', a: 'text-on-accent', b: 'accent', min: 3.0, kind: 'text' },
+  // 4.5, not the non-text 3.0 it used to carry: this pair IS a button label
+  // (.btn-primary, every `.on` chip), 11.5px at weight 600, which is not large
+  // text by WCAG. The component-pair pass below already held it to 4.5, so the
+  // two disagreed and 41 entries sat in the baseline because of it.
+  { key: 'onAccent/accent', a: 'text-on-accent', b: 'accent', min: 4.5, kind: 'text' },
   // Surfaces: the raised card must lift off the canvas, chrome off the base.
   { key: 'raised/canvas', a: 'bg-raised', b: 'bg-canvas', min: 1.04, kind: 'surface' },
   { key: 'panel/bg', a: 'bg-panel', b: 'bg', min: 1.03, kind: 'surface' },
@@ -148,7 +152,14 @@ const RULES = [
   // on the chrome. Raw --favorite is a gold tuned to read on the dark grounds
   // and scores 2.23–3.00 on light/solar/sepia/bloom, so this shipped below the
   // non-text floor in four themes with nothing measuring it.
-  { key: 'pin-ink/panel', a: 'pin-ink', b: 'bg-panel', min: 3.0, kind: 'control' }
+  { key: 'pin-ink/panel', a: 'pin-ink', b: 'bg-panel', min: 3.0, kind: 'control' },
+  // The primary's hover keyline against its own fill. Not the 3.0 non-text
+  // floor — that is for a boundary at REST, and no 1px rim mixed from the
+  // accent reaches it on every theme. The bar is the neutral .btn's own shipped
+  // hover step (1.16 at worst, on sepia): a primary must move at least as
+  // visibly as the quiet button beside it. Nothing measured this before, and
+  // the first rewrite of the hover shipped at 1.04 on matrix because of it.
+  { key: 'pri-edge/accent', a: 'btn-primary-edge', b: 'accent', min: 1.5, kind: 'control' }
 ]
 const tok = (n) => `--${n}`
 
@@ -471,13 +482,16 @@ function pxOf(value, map) {
   return px ? Number(px[1]) : null
 }
 
-// Pairs already below the floor when this check was introduced. A ratchet, not
-// an amnesty: a pair may only get BETTER, a new one must clear the floor
-// outright, and removing a line here is the only way an entry leaves. The
-// alternative was 168 failures on day one, which would have meant either a
+// Pairs already below the floor when this check was introduced. A ratchet in
+// BOTH directions, like legacySize.mjs and structure-baseline.json: a listed
+// pair may only get better, a new one must clear the floor outright, and a
+// pair that now CLEARS its floor fails until its line is deleted — an entry
+// nobody has to remove is how an allowlist becomes permanent permission. The
+// alternative on day one was 168 failures, which would have meant either a
 // cleanup nobody asked for or a floor quietly set to whatever passed.
+const baselinePath = join(root, 'scripts/theme-pair-baseline.json')
 const BASELINE = new Map(
-  JSON.parse(readFileSync(join(root, 'scripts/theme-pair-baseline.json'), 'utf8')).map((e) => [
+  JSON.parse(readFileSync(baselinePath, 'utf8')).map((e) => [
     `${e.theme}|${e.where}`,
     e.ratio
   ])
@@ -487,6 +501,10 @@ const pairs = componentRules()
 let pairWorst = { ratio: Infinity }
 let skipped = 0
 let baselined = 0
+// Every pair this run actually judged, so a baseline line that no longer
+// describes a real below-floor pair can be told from one that does.
+const measured = new Set()
+const held = new Set()
 
 // One pair, one theme: the verdict, so the loop below stays a loop.
 function judgePair(rule, theme) {
@@ -518,8 +536,10 @@ for (const rule of pairs) {
       break
     }
     if (ratio < pairWorst.ratio) pairWorst = { ratio, theme, where: rule.where, min }
+    const key = `${theme}|${rule.where}`
+    measured.add(key)
     if (ratio >= min) continue
-    const known = BASELINE.get(`${theme}|${rule.where}`)
+    const known = BASELINE.get(key)
     if (known === undefined) {
       failures.push(
         `${theme}: ${rule.where} — text ${ratio.toFixed(2)} < ${min} on its own background`
@@ -531,7 +551,32 @@ for (const rule of pairs) {
       )
     } else {
       baselined++
+      held.add(key)
     }
+  }
+}
+
+// A line that no longer holds anything back. Either the pair now clears its
+// floor, or the rule it names is gone — both mean the entry is permission
+// nobody is using, and permission nobody is using is how 155 of these
+// accumulated. `--prune` rewrites the file rather than making you find them.
+const stale = [...BASELINE.keys()].filter((key) => !held.has(key))
+if (stale.length) {
+  const [passing, vanished] = [
+    stale.filter((k) => measured.has(k)),
+    stale.filter((k) => !measured.has(k))
+  ]
+  if (process.argv.includes('--prune')) {
+    const kept = JSON.parse(readFileSync(baselinePath, 'utf8')).filter((e) =>
+      held.has(`${e.theme}|${e.where}`)
+    )
+    writeFileSync(baselinePath, `${JSON.stringify(kept, null, 2)}\n`)
+    console.log(`pruned ${stale.length} stale baseline entries — ${kept.length} remain\n`)
+  } else {
+    failures.push(
+      ...passing.map((k) => `${k.replace('|', ': ')} — now CLEARS its floor; delete its baseline line`),
+      ...vanished.map((k) => `${k.replace('|', ': ')} — baselined pair no longer exists; delete its line`)
+    )
   }
 }
 if (Number.isFinite(pairWorst.ratio)) {

@@ -12,7 +12,7 @@
    input stays plainly white like every other input — no muddy tint. */
 .fields input:read-only {
   background: var(--bg-elevated);
-  color: var(--text-dim);
+  color: var(--text-hint);
   /* View mode is not editable, so don't tease a text caret on hover. */
   cursor: default;
 }

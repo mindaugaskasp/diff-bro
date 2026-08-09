@@ -34,7 +34,10 @@
   --border: #bcc0c0;
   --text: #141414;
   --text-dim: #565a5a;
-  /* between --text and --text-dim: for hint text that must stay readable */
+  /* Between --text and --text-dim, and the ONLY ink for anything sitting on
+     --bg-elevated: that surface is the panel mixed 12% toward the text, so dim
+     ink loses its margin on the way up and lands under the floor on nine of the
+     fourteen (sepia 2.82 at worst). Four rules paired it with dim anyway. */
   --text-hint: #363939;
   --accent: #c2410c;
   /* Attention-grabbing banners (format-suggestion hint, parse-error hint) —
@@ -130,7 +133,7 @@
   --success-text: #3fb950;
   --scrim: rgba(0, 0, 0, 0.5);
   --favorite: #d29922;
-  --text-on-accent: #ffffff;
+  --text-on-accent: #0d1117;
   --syn-keyword: #ba7dd9;
   --syn-string: #38a867;
   --syn-number: #da7c2b;
@@ -148,7 +151,7 @@
   --text: #3a2c0f;
   --text-dim: #8a7638;
   --text-hint: #6b5620;
-  --accent: #e8590c;
+  --accent: #cb4e0a;
   --warning-bg: #f59f00;
   --warning-border: #c77800;
   --warning-text: #3a2400;
@@ -332,7 +335,7 @@
   --text: #263238;
   --text-dim: #5c6b70;
   --text-hint: #3d4a4f;
-  --accent: #0e8a8a;
+  --accent: #0d8484;
   --warning-bg: #e8a317;
   --warning-border: #b3790a;
   --warning-text: #2a1c00;

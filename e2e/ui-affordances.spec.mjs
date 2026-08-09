@@ -294,3 +294,65 @@ test('the paste-mode toggle shows an on-state', async ({ page }) => {
     'the pressed toggle must read differently from a resting button'
   ).toBeGreaterThan(before.contrast * 1.15)
 })
+
+// Reads the primary's fill, keyline and label contrast in one go — the three
+// things the hover rewrite moved between them.
+const PRIMARY = `(() => {
+  const parse = (s) => {
+    const rgb = s.match(/^rgba?\\(([^)]+)\\)$/)
+    if (rgb) {
+      const p = rgb[1].split(/[\\s,/]+/).filter(Boolean).map(Number)
+      return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }
+    }
+    const srgb = s.match(/^color\\(srgb ([^)]+)\\)$/)
+    if (srgb) {
+      const p = srgb[1].split(/[\\s/]+/).filter(Boolean).map(Number)
+      return { r: p[0] * 255, g: p[1] * 255, b: p[2] * 255, a: p.length > 3 ? p[3] : 1 }
+    }
+    throw new Error('cannot parse colour: ' + s)
+  }
+  const chan = (c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
+  const lum = (c) => 0.2126 * chan(c.r) + 0.7152 * chan(c.g) + 0.0722 * chan(c.b)
+  const ratio = (a, b) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+    return (hi + 0.05) / (lo + 0.05)
+  }
+  const el = document.querySelector('.empty-cta .btn-primary')
+  const cs = getComputedStyle(el)
+  const fill = parse(cs.backgroundColor)
+  return {
+    fill: cs.backgroundColor,
+    edge: cs.borderTopColor,
+    edgeVsFill: ratio(parse(cs.borderTopColor), fill),
+    labelVsFill: ratio(parse(cs.color), fill)
+  }
+})()`
+
+// The hover used to mix the fill 68% toward --text-on-accent — toward the label
+// printed on it — so pointing at Save made Save harder to read: 2.39 on dark,
+// against a 4.5 floor, the worst pair in the app. The fill must now stay put and
+// the keyline must carry the change.
+test('hovering the primary button moves its keyline, not its fill', async ({ page }) => {
+  const cta = page.locator('.empty-cta .btn-primary')
+  await expect(cta).toBeVisible()
+
+  await page.mouse.move(0, 0)
+  const rest = await page.evaluate(PRIMARY)
+  expect(rest.labelVsFill, 'a resting primary must be readable').toBeGreaterThanOrEqual(4.5)
+
+  await cta.hover()
+  // Mid-transition the computed value is an interpolated oklab(), not the
+  // declared colour — the same wait the paste-mode toggle needs.
+  await page.waitForTimeout(250)
+  const hover = await page.evaluate(PRIMARY)
+
+  expect(hover.fill, 'the fill must not move on hover').toBe(rest.fill)
+  expect(hover.labelVsFill, 'so the label keeps exactly its resting contrast').toBeCloseTo(
+    rest.labelVsFill,
+    2
+  )
+  expect(hover.edge, 'the keyline is what changes').not.toBe(rest.edge)
+  // The bar is the neutral .btn's own shipped hover step (1.16 at worst): a
+  // primary must move at least as visibly as the quiet button beside it.
+  expect(hover.edgeVsFill, `keyline ${hover.edge} on fill ${hover.fill}`).toBeGreaterThan(1.16)
+})
