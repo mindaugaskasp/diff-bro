@@ -85,6 +85,12 @@ export const THEMES = [
     label: 'Matrix',
     dark: true,
     swatch: { bg: '#020a04', accent: '#00ff41', add: '#00ff41', del: '#ff5470' }
+  },
+  {
+    id: 'volcano',
+    label: 'Volcano',
+    dark: true,
+    swatch: { bg: '#0e0705', accent: '#ff5c33', add: '#58e08a', del: '#ff4d70' }
   }
 ]
 

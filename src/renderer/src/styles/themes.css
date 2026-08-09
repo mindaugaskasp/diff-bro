@@ -510,3 +510,37 @@
   --syn-comment: #494b50;
   color-scheme: light;
 }
+
+/* Volcano — Beacon's warm twin. The same accessibility-grade contract: a pure
+   black ground, pure white ink, a hard bright keyline, a saturated accent. The
+   only thing swapped is the temperature — the cold sky blue becomes molten
+   amber-red, for readers who find a blue accent glaring at night. The warmth
+   lives in the accent, the keyline and the faint cast on the panel; the INK
+   stays pure white, because that is where the contrast comes from. */
+:root[data-theme='volcano'] {
+  --tag-l: 0.8;
+  --bg: #000000;
+  --bg-panel: #0e0705;
+  --bg-hover: #241109;
+  --border: #ffc9a4;
+  --text: #ffffff;
+  --text-dim: #e2cbba;
+  --text-hint: #f7e9dd;
+  --accent: #ff5c33;
+  --warning-bg: #ffc247;
+  --warning-border: #c98a00;
+  --warning-text: #000000;
+  --danger-bg: #ff4d70;
+  --danger-border: #e0304f;
+  --danger-text: #000000;
+  --success-text: #58e08a;
+  --scrim: rgba(0, 0, 0, 0.65);
+  --favorite: #ffc247;
+  --text-on-accent: #000000;
+  --syn-keyword: #f79ad6;
+  --syn-string: #58c47a;
+  --syn-number: #e8ab52;
+  --syn-property: #86bfe0;
+  --syn-comment: #b0a096;
+  color-scheme: dark;
+}
