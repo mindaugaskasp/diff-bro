@@ -1,0 +1,24 @@
+/* The Match-rows button and its panel (RowMatchMenu.vue). The shell — surface,
+   keyline, rows, the hint ink — is the shared .popover layer in ui.css; only
+   what is genuinely local lives here. */
+
+.popover {
+  min-width: 240px;
+}
+/* A sheet can carry more columns than a panel can be tall, so the list scrolls
+   rather than the panel growing past the window. */
+.key-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+/* The two hint lines are direct children of the panel, so they take the row's
+   own inline padding to line up with the checkboxes. */
+.popover-why {
+  padding: var(--space-1) var(--space-3);
+}
+.lead {
+  padding-top: 0;
+}
+.clear {
+  color: var(--text-hint);
+}

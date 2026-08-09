@@ -1,7 +1,9 @@
-// Workbook diff: pair sheets by name, pair their columns (alignColumns), align
-// each pair's rows (alignRows), roll up per-sheet stats. Pure.
+// Workbook diff: pair sheets by name, pair their columns (headerPairing), align
+// each pair's rows — by key where the reader named one, otherwise by whole-row
+// signature (alignRows) — and roll up per-sheet stats. Pure.
 import { alignRows, rowKeys, valuesEqual } from './alignRows'
-import { alignColumns, pairedColumns } from './alignColumns'
+import { headerPairing, pairedColumns } from './alignColumns'
+import { compositeKeys, matchRowsByKey } from './matchRowsByKey'
 import { comparableCell, comparableRows, metaAt, metaIndex } from './sheetCells'
 
 // 0 -> "A", 25 -> "Z", 26 -> "AA" (bijective base-26), for the grid's column
@@ -73,30 +75,76 @@ function project(rows, indices) {
   return rows.map((row) => indices.map((i) => row[i]))
 }
 
-function alignedRows(left, right, columns, opts) {
-  const pairs = pairedColumns(columns)
-  const keyColumn = opts.keyColumn ?? 0
-  return alignRows(
-    project(
+// Keys are chosen per sheet, because the columns are. A Map rather than an
+// object: the sheet name comes from the file, and `__proto__` must not resolve
+// to anything.
+const keyColumnsFor = (keyColumns, name) =>
+  keyColumns instanceof Map ? (keyColumns.get(name) ?? []) : []
+
+// The columns a reader chose as the row's identity, as each side's own indices.
+// A column only one side has cannot key both, so it is dropped rather than
+// keying one side off a column the other does not have.
+function keyColumnsOf(columns, chosen) {
+  const picked = (chosen ?? [])
+    .map((i) => columns[i])
+    .filter((c) => c && c.left !== null && c.right !== null)
+  return { left: picked.map((c) => c.left), right: picked.map((c) => c.right) }
+}
+
+function projected(left, right, pairs) {
+  return {
+    left: project(
       comparableRows(left),
       pairs.map((c) => c.left)
     ),
-    project(
+    right: project(
       comparableRows(right),
       pairs.map((c) => c.right)
-    ),
-    {
-      ...opts,
-      leftKeys: rowKeys(left.rows ?? [], pairs[keyColumn]?.left ?? 0),
-      rightKeys: rowKeys(right.rows ?? [], pairs[keyColumn]?.right ?? 0)
-    }
-  )
+    )
+  }
+}
+
+function keyedRows(rows, keys, ctx) {
+  return matchRowsByKey(rows.left, rows.right, {
+    leftKeys: compositeKeys(ctx.leftRows, keys.left),
+    rightKeys: compositeKeys(ctx.rightRows, keys.right),
+    tolerance: ctx.tolerance
+  })
+}
+
+function signatureRows(rows, pairs, ctx) {
+  const keyColumn = ctx.opts.keyColumn ?? 0
+  return {
+    rows: alignRows(rows.left, rows.right, {
+      ...ctx.opts,
+      leftKeys: rowKeys(ctx.leftRows, pairs[keyColumn]?.left ?? 0),
+      rightKeys: rowKeys(ctx.rightRows, pairs[keyColumn]?.right ?? 0)
+    }),
+    duplicateKeys: 0
+  }
+}
+
+function alignedRows(left, right, columns, opts) {
+  const pairs = pairedColumns(columns)
+  const rows = projected(left, right, pairs)
+  const ctx = {
+    leftRows: left.rows ?? [],
+    rightRows: right.rows ?? [],
+    tolerance: opts.tolerance ?? null,
+    opts
+  }
+  const keys = keyColumnsOf(columns, opts.keyColumns)
+  return keys.left.length ? keyedRows(rows, keys, ctx) : signatureRows(rows, pairs, ctx)
 }
 
 function bothSides(name, left, right, opts) {
-  const columns = alignColumns(left.rows ?? [], right.rows ?? [])
+  const { columns, headerRows } = headerPairing(left.rows ?? [], right.rows ?? [])
   const tolerance = opts.tolerance ?? null
-  const rows = alignedRows(left, right, columns, { ...opts, tolerance })
+  const { rows, duplicateKeys } = alignedRows(left, right, columns, {
+    ...opts,
+    tolerance,
+    keyColumns: keyColumnsFor(opts.keyColumns, name)
+  })
   // Where each paired column sits in the DISPLAY order, so a changed cell is
   // reported at the index the grid actually renders.
   const pairAt = columns.reduce((acc, c, i) => {
@@ -122,6 +170,8 @@ function bothSides(name, left, right, opts) {
     columnsAdded: columns.filter((c) => c.left === null).length,
     columnsRemoved: columns.filter((c) => c.right === null).length,
     changes: total(stats),
+    headerRows,
+    duplicateKeys,
     ...state
   }
 }
@@ -138,7 +188,7 @@ function oneSide(name, sheet, side) {
     formulaChanged: []
   }))
   const own = sheet.rows ?? []
-  const columns = side === 'left' ? alignColumns(own, []) : alignColumns([], own)
+  const { columns } = side === 'left' ? headerPairing(own, []) : headerPairing([], own)
   const stats = statsOf(rows)
   const state = side === 'left' ? sheetState(sheet, null) : sheetState(null, sheet)
   return {
@@ -150,6 +200,8 @@ function oneSide(name, sheet, side) {
     columnsAdded: 0,
     columnsRemoved: 0,
     changes: total(stats),
+    headerRows: null,
+    duplicateKeys: 0,
     ...state
   }
 }
@@ -163,6 +215,7 @@ function total(stats) {
  *   stats:{changed:number,added:number,removed:number},
  *   columns:Array<{left:number|null,right:number|null,name:string}>,
  *   columnsAdded:number, columnsRemoved:number, changes:number,
+ *   headerRows:{left:number,right:number}|null, duplicateKeys:number,
  *   hidden:boolean, hasFormulas:boolean, leftMeta:Map, rightMeta:Map,
  *   leftHidden:Set<number>, rightHidden:Set<number>}>}
  */

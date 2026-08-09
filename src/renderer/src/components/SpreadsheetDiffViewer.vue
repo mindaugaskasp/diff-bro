@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
-import { TOLERANCES, TOLERANCE_UNITS, useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
+import { useSpreadsheetDiff } from '../composables/useSpreadsheetDiff'
+import { TOLERANCES, TOLERANCE_UNITS } from '../composables/useToleranceChoice'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { useVirtualRows } from '../composables/useVirtualRows'
 import { GRID_ROW_H } from '../utils/virtualRows'
@@ -10,6 +11,8 @@ import { useUiStore } from '../stores/uiStore'
 import SheetTabBar from './SheetTabBar.vue'
 import SpreadsheetGrid from './SpreadsheetGrid.vue'
 import SegmentedControl from './SegmentedControl.vue'
+import RowMatchMenu from './RowMatchMenu.vue'
+import SpreadsheetStatusBand from './SpreadsheetStatusBand.vue'
 import AppIcon from './AppIcon.vue'
 
 const store = useDiffStore()
@@ -24,7 +27,10 @@ const {
   hasFormulas,
   toleranceId,
   customValue,
-  customUnit
+  customUnit,
+  activeKeyColumns,
+  toggleKeyColumn,
+  clearKeyColumns
 } = useSpreadsheetDiff()
 
 const allRows = computed(() => activeSheet.value?.rows ?? [])
@@ -38,6 +44,9 @@ const ui = useUiStore()
 const rowH = computed(() => zoomedPx(GRID_ROW_H, ui.diffZoom))
 const win = useVirtualRows(grids, () => allRows.value.length, rowH)
 const windowed = computed(() => allRows.value.slice(win.value.start, win.value.end))
+
+// Two tables, so :hover in one cannot reach the row aligned with it in the other.
+const hoveredRow = ref(-1)
 
 // Clear the Monaco +/− stat; the grid shows its own changed/added/removed strip.
 onMounted(() => {
@@ -80,6 +89,14 @@ onMounted(() => {
             :options="TOLERANCE_UNITS"
           />
         </template>
+        <RowMatchMenu
+          v-if="activeSheet && activeSheet.present === 'both'"
+          :columns="activeSheet.columns"
+          :key-columns="activeKeyColumns"
+          :duplicate-keys="activeSheet.duplicateKeys"
+          @toggle="toggleKeyColumn"
+          @clear="clearKeyColumns"
+        />
         <button
           v-if="hasFormulas"
           class="btn btn-sm"
@@ -111,7 +128,13 @@ onMounted(() => {
       <span>{{ $t('spreadsheetDiffViewer.noDifferencesEverySheetMatches') }}</span>
     </div>
 
-    <div v-if="activeSheet" ref="grids" class="grids" :style="{ '--grid-row-h': `${rowH}px` }">
+    <div
+      v-if="activeSheet"
+      ref="grids"
+      class="grids"
+      :style="{ '--grid-row-h': `${rowH}px` }"
+      @mouseleave="hoveredRow = -1"
+    >
       <SpreadsheetGrid
         v-for="side in ['left', 'right']"
         :key="side"
@@ -121,40 +144,19 @@ onMounted(() => {
         :meta="side === 'left' ? activeSheet.leftMeta : activeSheet.rightMeta"
         :hidden-rows="side === 'left' ? activeSheet.leftHidden : activeSheet.rightHidden"
         :show-formulas="showFormulas"
+        :hovered-row="hoveredRow"
         :pad-top="win.padTop"
         :pad-bottom="win.padBottom"
+        @hover="hoveredRow = $event"
       />
     </div>
 
-    <div class="status-band">
-      <span v-if="activeSheet && activeSheet.present !== 'both'" class="only">
-        {{
-          $t('spreadsheetDiffViewer.sheetOnlyIn', {
-            name: activeSheet.name,
-            side: activeSheet.present
-          })
-        }}
-      </span>
-      <template v-else>
-        <span>
-          {{ $t('spreadsheetDiffViewer.cells') }}
-          <span class="chg cells">{{ $t('count.changed', totals.changed) }}</span>
-        </span>
-        <span>
-          {{ $t('spreadsheetDiffViewer.rows') }}
-          <span class="add">{{ $t('count.added', totals.added) }}</span> ·
-          <span class="del">{{ $t('count.removed', totals.removed) }}</span>
-        </span>
-        <span v-if="totals.columns">
-          {{ $t('spreadsheetDiffViewer.columns') }}
-          <span class="chg cols">{{ $t('count.moved', totals.columns) }}</span>
-        </span>
-      </template>
-      <span class="band-end">
-        <span>{{ $t('count.rows', allRows.length) }}</span>
-        <span>{{ $t('count.sheets', sheets.length) }}</span>
-      </span>
-    </div>
+    <SpreadsheetStatusBand
+      :sheet="activeSheet"
+      :totals="totals"
+      :row-count="allRows.length"
+      :sheet-count="sheets.length"
+    />
   </div>
 </template>
 

@@ -51,7 +51,7 @@ test('an unavailable option is disabled and says why', async ({ page }) => {
 // untouched comparison and mean nothing.
 test('the count chip tracks changed options, not enabled ones', async ({ page }) => {
   await pasteCompare(page, 'a\nb', 'a\nc')
-  const chip = page.locator('.count')
+  const chip = page.locator('.btn-count')
   await expect(chip).toBeHidden() // nothing changed yet, though Split view is on
 
   await openViewMenu(page)

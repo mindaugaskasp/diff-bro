@@ -5,7 +5,7 @@
      sidebar. Track hues are real theme accents from src/renderer/src/utils/themes.js
      (Dim, Bloom, Neon, Beacon) — colour depth encodes sequence: solid now, faded
      later. Keep this in step with the items in docs/roadmap.md. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" width="1200" height="580" role="img" aria-label="Diff Bro roadmap — four tracks: spreadsheet, diagrams, comparing more, signing">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" width="1200" height="580" role="img" aria-label="Diff Bro roadmap — four tracks: spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing">
   <defs>
     <linearGradient id="field" x1="0" y1="0" x2="0.55" y2="1">
       <stop offset="0" stop-color="#2f2a1c"/>
@@ -34,32 +34,26 @@
           font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#a99a7f">V0.4.27 · PLANNED</text>
 
     <!-- ============ card 1 · spreadsheet ============ -->
-    <rect x="30" y="150" width="273" height="334" rx="12" fill="#f6f0e4"/>
+    <rect x="30" y="150" width="273" height="260" rx="12" fill="#f6f0e4"/>
     <text x="45" y="188" font-size="15" font-weight="600" letter-spacing="-0.15" fill="#221e16">Spreadsheet · finance</text>
     <text x="288" y="188" font-size="12" text-anchor="end"
-          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">6</text>
+          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">4</text>
     <rect x="45" y="202" width="243" height="2" fill="#d9a441"/>
 
     <rect x="45" y="213" width="243" height="30" rx="5" fill="#d9a441"/>
-    <text x="55" y="232" font-size="12.5" fill="#1c1710">Row identity · key columns</text>
+    <text x="55" y="232" font-size="12.5" fill="#1c1710">Amounts read as amounts</text>
 
     <rect x="45" y="250" width="243" height="30" rx="5" fill="#d9a441"/>
-    <text x="55" y="269" font-size="12.5" fill="#1c1710">Header row offset</text>
+    <text x="55" y="269" font-size="12.5" fill="#1c1710">Δ and net variance</text>
 
     <rect x="45" y="287" width="243" height="30" rx="5" fill="#e9ce9b"/>
-    <text x="55" y="306" font-size="12.5" fill="#1c1710">Amounts read as amounts</text>
+    <text x="55" y="306" font-size="12.5" fill="#1c1710">Reading a big diff</text>
 
     <rect x="45" y="324" width="243" height="30" rx="5" fill="#e9ce9b"/>
-    <text x="55" y="343" font-size="12.5" fill="#1c1710">Δ and net variance</text>
+    <text x="55" y="343" font-size="12.5" fill="#1c1710">Caps that announce themselves</text>
 
-    <rect x="45" y="361" width="243" height="30" rx="5" fill="#f0dfc0"/>
-    <text x="55" y="380" font-size="12.5" fill="#4f4634">Reading a big diff</text>
-
-    <rect x="45" y="398" width="243" height="30" rx="5" fill="#f0dfc0"/>
-    <text x="55" y="417" font-size="12.5" fill="#4f4634">Caps that announce themselves</text>
-
-    <line x1="45" y1="446" x2="288" y2="446" stroke="#ddd0b6" stroke-dasharray="3 3"/>
-    <text x="45" y="465" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">alignRows.js:72</text>
+    <line x1="45" y1="372" x2="288" y2="372" stroke="#ddd0b6" stroke-dasharray="3 3"/>
+    <text x="45" y="391" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">numfmt.js</text>
 
     <!-- ============ card 2 · diagrams ============ -->
     <rect x="319" y="150" width="273" height="186" rx="12" fill="#f6f0e4"/>

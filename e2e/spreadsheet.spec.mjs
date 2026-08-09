@@ -333,3 +333,104 @@ test('exports the spreadsheet grid as a stitched picture', async ({ app, page })
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// A ledger with a title row above its header, re-sorted between the two files:
+// changed almost end to end under whole-row matching, one moved amount and one
+// dropped line when keyed on Account + Centre.
+const ledgerRow = (r, account, centre, amount) =>
+  `<row r="${r}">${inlineStr(`A${r}`, account)}${inlineStr(`B${r}`, centre)}` +
+  `${num(`C${r}`, amount)}</row>`
+const LEDGER_HEAD =
+  `<row r="1">${inlineStr('A1', 'Trial balance as at 30 Jun 2025')}</row>` +
+  `<row r="2">${inlineStr('A2', 'Account')}${inlineStr('B2', 'Centre')}` +
+  `${inlineStr('C2', 'Amount')}</row>`
+const LEDGER_LEFT = buildXlsx(
+  LEDGER_HEAD +
+    ledgerRow(3, '1001', 'EMEA', 500) +
+    ledgerRow(4, '1001', 'APAC', 300) +
+    ledgerRow(5, '1200', 'EMEA', 120) +
+    ledgerRow(6, '4000', 'EMEA', 900)
+)
+const LEDGER_RIGHT = buildXlsx(
+  LEDGER_HEAD +
+    ledgerRow(3, '4000', 'EMEA', 900) +
+    ledgerRow(4, '1200', 'EMEA', 155) +
+    ledgerRow(5, '1001', 'APAC', 300)
+)
+
+async function openLedger(app, page, dir) {
+  const leftPath = join(dir, 'ledger-before.xlsx')
+  const rightPath = join(dir, 'ledger-after.xlsx')
+  writeFileSync(leftPath, LEDGER_LEFT)
+  writeFileSync(rightPath, LEDGER_RIGHT)
+  await stubOpenDialog(app, [leftPath])
+  await page.locator('.slot[data-side="left"]').click()
+  await stubOpenDialog(app, [rightPath])
+  await page.locator('.slot[data-side="right"]').click()
+  await expect(page.locator('.grids')).toBeVisible()
+}
+
+test('pairs re-sorted rows once the key columns are named', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-key-'))
+  try {
+    await openLedger(app, page, dir)
+
+    await expect(page.locator('.status-band')).toContainText('Header row 2')
+
+    // Whole-row matching cannot see past the re-sort.
+    const band = page.locator('.status-band')
+    await expect(band).toContainText('3 removed')
+
+    await page.getByTestId('row-match').click()
+    const panel = page.locator('.popover')
+    await expect(panel).toContainText('Rows pair by their whole contents')
+    // Account alone leaves two rows sharing a key, and the panel says so.
+    await panel.getByRole('checkbox').nth(0).check()
+    await expect(panel).toContainText('appears more than once')
+
+    await panel.getByRole('checkbox').nth(1).check()
+    await expect(panel).not.toContainText('appears more than once')
+    await expect(panel).toContainText('Rows pair by the ticked columns')
+    await expect(page.getByTestId('row-match').locator('.btn-count')).toHaveText('2')
+
+    await page.keyboard.press('Escape')
+    // One amount moved, one line gone — not a wholesale rewrite.
+    await expect(band).toContainText('1 changed')
+    await expect(band).toContainText('1 removed')
+    await expect(band).toContainText('0 added')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The two grids are two <table>s: :hover in one cannot reach the row aligned
+// with it in the other, so the mark has to be driven from the viewer.
+test('hovering a row marks the same row in both grids', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-xlsx-hover-'))
+  try {
+    await openLedger(app, page, dir)
+
+    const leftRows = page.locator('.grids > :first-child tbody tr')
+    const rightRows = page.locator('.grids > :nth-child(2) tbody tr')
+    await expect(page.locator('tbody tr.hover')).toHaveCount(0)
+
+    await leftRows.nth(2).hover()
+    await expect(leftRows.nth(2)).toHaveClass(/hover/)
+    await expect(rightRows.nth(2)).toHaveClass(/hover/)
+    await expect(page.locator('tbody tr.hover')).toHaveCount(2)
+
+    // Same height on both sides — carrying a figure across the divider is the point.
+    const l = await leftRows.nth(2).boundingBox()
+    const r = await rightRows.nth(2).boundingBox()
+    expect(Math.abs(l.y - r.y)).toBeLessThan(1)
+
+    // The cue is painted, not merely classed.
+    const outline = await rightRows.nth(2).evaluate((el) => getComputedStyle(el).outlineWidth)
+    expect(parseFloat(outline)).toBeGreaterThan(0)
+
+    await page.locator('.sheet-bar').hover()
+    await expect(page.locator('tbody tr.hover')).toHaveCount(0)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

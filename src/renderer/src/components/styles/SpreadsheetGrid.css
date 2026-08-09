@@ -102,6 +102,24 @@
   box-shadow: inset 2px 0 0 color-mix(in srgb, var(--text-dim) 70%, transparent);
 }
 
+/* The row under the pointer, marked in BOTH grids — they are two tables, so
+   :hover in one cannot reach the row opposite it. Neither cue touches layout or
+   the row's own background: every row and cell state here is ALREADY a
+   background, so a veil would replace the ghost's stripes rather than sit over
+   them, and a wider border would move the rows the virtualization measures. */
+.grid tr.hover {
+  outline: 2px solid var(--accent);
+  /* Fully INSIDE the row, so the mark sits beside the cell keyline rather than
+     on top of it — beacon and contrast carry a hard --border by contract, and a
+     hairline sharing that edge was the one theme pair where the mark read as a
+     slightly different border rather than as a mark. */
+  outline-offset: -2px;
+}
+.grid tr.hover .rownum {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
 /* Ghost: the aligned gap opposite an added/removed row or column, striped so it
    reads as "nothing here" while keeping both grids cell-for-cell aligned. */
 .grid tr.ghost td,

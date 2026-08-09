@@ -37,6 +37,15 @@
  */
 
 /**
+ * One column of the grid's display order. `left`/`right` index into that side's
+ * own rows; null means the column is absent there and renders as a ghost.
+ * @typedef {object} AlignedColumn
+ * @property {number|null} left
+ * @property {number|null} right
+ * @property {string} name  the header label, or '' where the pairing was positional
+ */
+
+/**
  * What one cell carries beyond its value. Absent fields mean "nothing to say".
  * @typedef {object} CellMeta
  * @property {string} [f]  formula in A1 notation, without the leading `=`

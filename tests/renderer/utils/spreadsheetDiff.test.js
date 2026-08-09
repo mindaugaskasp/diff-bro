@@ -208,3 +208,133 @@ describe('diffWorkbooks — sheet state', () => {
     expect(s.rightHidden.has(1)).toBe(false)
   })
 })
+
+describe('diffWorkbooks — row identity by key columns', () => {
+  // Keys are named per sheet, so the option is keyed by sheet name.
+  const keys = (columns) => new Map([['Ledger', columns]])
+
+  // The same ledger, re-sorted, with one amount moved and one line dropped.
+  const left = [
+    sheet('Ledger', [
+      ['Account', 'Cost centre', 'Amount'],
+      ['1001', 'EMEA', 500],
+      ['1002', 'EMEA', 300],
+      ['1002', 'APAC', 120],
+      ['1003', 'APAC', 80]
+    ])
+  ]
+  const right = [
+    sheet('Ledger', [
+      ['Account', 'Cost centre', 'Amount'],
+      ['1002', 'APAC', 120],
+      ['1003', 'APAC', 999],
+      ['1001', 'EMEA', 500]
+    ])
+  ]
+
+  it('reads a re-sorted export as changed when no key is named', () => {
+    const [s] = diffWorkbooks(left, right)
+    expect(s.stats.changed + s.stats.added + s.stats.removed).toBeGreaterThan(1)
+  })
+
+  it('pairs by the named key columns instead', () => {
+    const [s] = diffWorkbooks(left, right, { keyColumns: keys([0, 1]) })
+    expect(s.stats).toEqual({ changed: 1, added: 0, removed: 1 })
+  })
+
+  // The grid renders the display order, so a changed cell reported in paired
+  // space would point at the wrong column the moment a column is one-sided.
+  it('reports the changed cell in DISPLAY column space', () => {
+    const withGap = [
+      sheet('Ledger', [
+        ['Account', 'Note', 'Amount'],
+        ['1001', 'x', 500]
+      ])
+    ]
+    const noGap = [
+      sheet('Ledger', [
+        ['Account', 'Amount'],
+        ['1001', 900]
+      ])
+    ]
+    const [s] = diffWorkbooks(withGap, noGap, { keyColumns: keys([0]) })
+    expect(s.columns.map((c) => c.name)).toEqual(['Account', 'Note', 'Amount'])
+    expect(s.rows[1].changed).toEqual([2])
+  })
+
+  it('ignores a key column only one side has', () => {
+    const [s] = diffWorkbooks(left, right, { keyColumns: keys([0, 1, 9]) })
+    expect(s.stats).toEqual({ changed: 1, added: 0, removed: 1 })
+  })
+
+  it('counts duplicate keys rather than hiding the ambiguity', () => {
+    const [s] = diffWorkbooks(left, right, { keyColumns: keys([0]) })
+    expect(s.duplicateKeys).toBe(1)
+    const [exact] = diffWorkbooks(left, right, { keyColumns: keys([0, 1]) })
+    expect(exact.duplicateKeys).toBe(0)
+  })
+
+  it('leaves the tolerance working through the key path', () => {
+    const near = [
+      sheet('Ledger', [
+        ['Account', 'Amount'],
+        ['1001', 500.004]
+      ])
+    ]
+    const base = [
+      sheet('Ledger', [
+        ['Account', 'Amount'],
+        ['1001', 500]
+      ])
+    ]
+    expect(diffWorkbooks(base, near, { keyColumns: keys([0]) })[0].stats.changed).toBe(1)
+    const forgiving = diffWorkbooks(base, near, {
+      keyColumns: keys([0]),
+      tolerance: { abs: 0.01 }
+    })
+    expect(forgiving[0].stats.changed).toBe(0)
+  })
+})
+
+describe('diffWorkbooks — header row', () => {
+  const withTitle = (note) =>
+    sheet('S', [[note], ['Region', 'Q1', 'Q2'], ['North', 1, 2], ['South', 3, 4]])
+
+  it('reports the row each side’s headers came from', () => {
+    const [s] = diffWorkbooks(
+      [withTitle('Pack')],
+      [
+        sheet('S', [
+          ['Region', 'Q1', 'Q2'],
+          ['North', 1, 2],
+          ['South', 3, 4]
+        ])
+      ]
+    )
+    expect(s.headerRows).toEqual({ left: 1, right: 0 })
+  })
+
+  it('reports none when the columns fell back to positional pairing', () => {
+    const [s] = diffWorkbooks(
+      [
+        sheet('S', [
+          ['row-0', 'v0'],
+          ['row-1', 'v1']
+        ])
+      ],
+      [
+        sheet('S', [
+          ['row-0', 'w0'],
+          ['row-1', 'w1']
+        ])
+      ]
+    )
+    expect(s.headerRows).toBeNull()
+  })
+
+  it('leaves a one-sided sheet without a header claim', () => {
+    const [s] = diffWorkbooks([sheet('Gone', [['a'], ['b']])], [])
+    expect(s.headerRows).toBeNull()
+    expect(s.duplicateKeys).toBe(0)
+  })
+})

@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — four tracks. Spreadsheet · finance: row identity by key columns, header row offset, amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs, three-way merge — a decision first. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — four tracks. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs, three-way merge — a decision first. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -12,7 +12,9 @@ sections below.</sup>
 
 **Built** — formulas captured and normalised to R1C1 (`r1c1.js`), number formats
 (`numfmt.js`), materiality tolerance, change register, hidden state + error
-cells, columns paired by header, `.csv`/`.tsv` through the same grid.
+cells, columns paired by header — found under a title row, not assumed to be
+row 1 — rows paired by the columns that name them, `.csv`/`.tsv` through the
+same grid.
 
 ```mermaid
 flowchart TB
@@ -27,9 +29,9 @@ flowchart TB
   sh --> ad["adapters/xlsxAdapter.js<br>adapters/csvAdapter.js — delimited text"]
   subgraph rend["renderer"]
     direction TB
-    ad --> ac["utils/alignColumns.js — pair columns by header"]
+    ad --> ac["utils/alignColumns.js — headerPairing<br>scans past a title row"]
     ac --> dw["utils/spreadsheetDiff.js — diffWorkbooks<br>utils/sheetCells.js — cell identity"]
-    dw --> al["utils/alignRows.js — rows + tolerance"]
+    dw --> al["utils/alignRows.js — signatures + tolerance<br>utils/matchRowsByKey.js — key columns"]
     al --> g["SpreadsheetGrid.vue"]
     al --> cr["utils/changeRegister.js --> diff:exportFile"]
   end
@@ -45,29 +47,30 @@ trial balance, a GL export, a board pack — hits the gaps below.
 flowchart LR
   subgraph now["now"]
     direction TB
-    a["1 · row identity<br>key columns · re-sorted rows"]
-    b["2 · header row offset"]
-  end
-  subgraph next["next"]
-    direction TB
     c["3 · amounts read as amounts"]
     d["4 · Δ and net variance"]
   end
-  subgraph later["later"]
+  subgraph next["next"]
     direction TB
     e["5 · reading a big diff"]
     f["6 · caps that announce themselves"]
   end
-  now --> next --> later
+  now --> next
 ```
 
-- **1 · row identity** — `opts.keyColumn` exists (`spreadsheetDiff.js:78`) with
-  no UI, takes one column, and rows pair by LCS over row signatures: the same
-  export sorted differently reads as 100% changed. Key-based matching,
-  composite keys, duplicate-key detection
-- **2 · header row offset** — `alignColumns.js:16` reads `rows[0]`. A title row
-  above the header fails `usable()` and drops silently to positional pairing,
-  which is the failure it was written to prevent
+**1 · row identity** and **2 · header row offset** are done.
+
+- `matchRowsByKey.js` pairs rows by one column or several, wherever they sit, so
+  a re-sorted export reads as the figures that moved. Duplicate keys pair in
+  order of occurrence and are COUNTED, never hidden — the panel says so
+- `headerPairing` scans for the first row that reads as a header (capped at 10)
+  instead of reading `rows[0]` and dropping to positional pairing; the band
+  names the row it used when it was not the first
+- The hovered row is marked in BOTH grids — they are two `<table>`s, so `:hover`
+  in one cannot reach the row aligned with it in the other
+
+**Open.**
+
 - **3 · amounts read as amounts** — `numfmt.js` renders date, time and percent;
   everything else falls through to the raw float, so a P&L shows `1234567.891`
   and never `(1,234)`. A currency or rounding change is invisible today
@@ -79,7 +82,7 @@ flowchart LR
   formulas sharing a prefix compare EQUAL; `maxMetaCells` (`sheet.js:137`) drops
   formula and format comparison past 100k cells; `csvAdapter` sets `truncated`
   and nothing renders it. A cap that hides is worse than a cap
-- **Tolerance** takes a threshold of your own now (`useSpreadsheetDiff.js:7`,
+- **Tolerance** takes a threshold of your own now (`useToleranceChoice.js`,
   percentage or raw), but it is still global and still `abs` OR `pct`
   (`alignRows.js:39-40`); materiality is "under €100 AND under 0.5%", per
   column. Date serials are now exempt (`meta.dt` — a percentage of 45870 is

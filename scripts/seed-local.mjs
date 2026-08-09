@@ -147,6 +147,44 @@ const FILES = {
       ]
     }
   ]),
+  // A title row above the header and the same ledger re-sorted: nearly all
+  // "changed" under Auto, one moved amount and one dropped line when keyed on
+  // Account + Centre. Account alone is a duplicate key, which the panel says.
+  'ledger-before.xlsx': makeXlsx([
+    {
+      name: 'Ledger',
+      rows: [
+        ['Trial balance as at 30 Jun 2025'],
+        ['Account', 'Centre', 'Description', 'Amount'],
+        ['1001', 'EMEA', 'Bank', 128400.5],
+        ['1001', 'APAC', 'Bank', 41200],
+        ['1200', 'EMEA', 'Receivables', 96750.25],
+        ['1200', 'APAC', 'Receivables', 30110],
+        ['2100', 'EMEA', 'Payables', -74300],
+        ['4000', 'EMEA', 'Revenue', -412900],
+        ['5000', 'EMEA', 'Cost of sales', 233150.75],
+        ['6100', 'EMEA', 'Payroll', 118000],
+        ['6200', 'APAC', 'Travel', 9430.4]
+      ]
+    }
+  ]),
+  'ledger-after.xlsx': makeXlsx([
+    {
+      name: 'Ledger',
+      rows: [
+        ['Trial balance as at 31 Jul 2025'],
+        ['Account', 'Centre', 'Description', 'Amount'],
+        ['6200', 'APAC', 'Travel', 9430.4],
+        ['4000', 'EMEA', 'Revenue', -412900],
+        ['1200', 'APAC', 'Receivables', 30110],
+        ['1001', 'APAC', 'Bank', 41200],
+        ['5000', 'EMEA', 'Cost of sales', 233150.75],
+        ['1200', 'EMEA', 'Receivables', 91020.25],
+        ['1001', 'EMEA', 'Bank', 128400.5],
+        ['2100', 'EMEA', 'Payables', -74300]
+      ]
+    }
+  ]),
   // A workbook wide enough that the grid scrolls sideways — what the image
   // export reports as columns it cannot reach.
   'wide-metrics-a.xlsx': makeXlsx([
