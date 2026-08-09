@@ -75,7 +75,8 @@ const THEMES = [
   'bloom',
   'nyan',
   'matrix',
-  'contrast'
+  'contrast',
+  'volcano'
 ]
 
 // Effective token map for a theme: structural defaults (tokens.css) < the light

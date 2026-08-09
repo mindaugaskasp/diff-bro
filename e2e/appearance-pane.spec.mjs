@@ -1,4 +1,5 @@
 import { test, expect, openMenu, openSettings } from './fixtures.mjs'
+import { THEMES } from '../src/renderer/src/utils/themes.js'
 import { COMMANDS } from '../src/shared/cliCommands.js'
 
 // The pane's two structural faults were both measurable, and neither was
@@ -13,12 +14,15 @@ const openAppearance = async (page) => {
   await page.locator('.theme-tile').first().waitFor()
 }
 
+// Counted from the REGISTRY, not pinned at 14: the invariant is that every
+// theme shipped gets a cell and every cell is the same width, and a literal
+// turns adding a theme into an unrelated e2e failure.
 test('every theme cell is the same width', async ({ page }) => {
   await openAppearance(page)
   const widths = await page
     .locator('.theme-tile')
     .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
-  expect(widths.length).toBe(14)
+  expect(widths.length).toBe(THEMES.length)
   expect(new Set(widths).size).toBe(1)
 })
 
