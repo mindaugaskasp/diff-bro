@@ -48,13 +48,14 @@ test('a long tag list stays bounded and the rest go behind a picker', async ({ p
   await expect(more).toBeVisible()
   await expect(more).toContainText(/^\s*\+\d+ more\s*$/)
 
-  // The picker holds every tag, and is searchable — better at fifty than the
-  // flat wall it replaced.
+  // The picker holds exactly what the bar could not — the "+N more" chip's own
+  // N — and is searchable. Feeding it the whole registry buried the N it
+  // promised inside a wall of tags already on screen.
+  const overflow = Number((await more.innerText()).match(/\+(\d+)/)[1])
   await more.click()
-  const picker = page.getByRole('dialog', { name: 'All tags' })
-  const total = await picker.locator('.usb-tag').count()
-  expect(total).toBeGreaterThan(shown)
-  expect(total).toBeGreaterThanOrEqual(TAGS.length)
+  const picker = page.getByRole('dialog', { name: 'Collapsed tags' })
+  await expect(picker.locator('.usb-tag')).toHaveCount(overflow)
+  expect(overflow).toBeLessThan(TAGS.length)
   await picker.getByLabel('Find a tag').fill('juli')
   await expect(picker.locator('.usb-tag')).toHaveCount(1)
 
