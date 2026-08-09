@@ -47,6 +47,25 @@ repo-local config has been an execution vector before:
 - A blob is capped at 32 MB — past that the streamed reader is the right tool,
   and a revision is no reason to hold more in memory than a file would be.
 
+## Writing a merged file
+
+Diff Bro writes over a file you already had in exactly one situation: a
+`git mergetool` run it was invoked for. Everything else it produces is a NEW
+file you chose the location of.
+
+The fence is the shape of the surface rather than a check inside it. Main
+remembers the `$MERGED` path from the LAUNCH argv; `merge:write` takes the
+resolved **text** and nothing else, so there is no argument through which the
+renderer could name a file — the same shape as `clipboard:writeFile`, which
+takes bytes and a display name. With no mergetool launch there is no path held,
+so the handler writes nothing at all whatever arrives, and a session is spent
+once used.
+
+`mergetool.diffbro.trustExitCode` is `true`, which is only honest because the
+merge launcher WAITS for `$MERGED` to change before it exits. The app is
+single-instance, so the launch itself returns immediately; a script that exited
+there would tell git the conflict was resolved before anyone had looked at it.
+
 ## File access (compromised-renderer threat model)
 
 All filesystem access lives in the main process; the renderer only asks. Because

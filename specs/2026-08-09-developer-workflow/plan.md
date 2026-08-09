@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 9 / 13 — phases 1 and 2 shipped |
+| **Progress** | 13 / 13 — all three phases shipped |
 | **Branch** | `feat/developer-workflow` |
 | **Started** | 2026-08-09 |
 | **Finished** | — |
@@ -222,10 +222,10 @@ rather than throwing.
 
 **Phase 3 — finishing the merge**
 
-- [ ] 10. `utils/mergeConflicts.js` — regions and the four resolutions
-- [ ] 11. The merge view
-- [ ] 12. `mergetool` registration writing `$MERGED`, `trustExitCode=true`
-- [ ] 13. e2e through a real `git mergetool`, docs, roadmap + SVG
+- [x] 10. `utils/mergeConflicts.js` — regions and the four resolutions
+- [x] 11. The merge view
+- [x] 12. `mergetool` registration writing `$MERGED`, `trustExitCode=true`
+- [x] 13. e2e through a real `git mergetool`, docs, roadmap + SVG
 
 ## Decisions
 

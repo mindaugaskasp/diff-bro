@@ -658,7 +658,7 @@
   "gitToolSettings": {
     "git": "Git",
     "openGitComparisonsInDiff": "Open git comparisons in Diff Bro",
-    "aMergeOpensItsTwo": "A merge opens its two conflicting versions side by side to read. Diff Bro doesn’t write the merged file, so git still asks you whether the merge worked.",
+    "aMergeOpensItsTwo": "A merge opens its two conflicting versions, takes a choice per conflict, and writes the merged file back — so git is told the merge is done rather than asking you.",
     "intro": "Makes {difftool} and {mergetool} open the comparison here instead of in the terminal.",
     "notOnPath": "git isn’t on your PATH, so there is nothing to register.",
     "configFailed": "Could not change the git configuration."
