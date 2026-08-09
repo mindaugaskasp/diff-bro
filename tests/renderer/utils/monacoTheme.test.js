@@ -59,6 +59,18 @@ describe('monacoThemeData', () => {
     expect(monacoThemeData(tide, { dark: true }).inherit).toBe(true)
   })
 
+  // What Chromium ACTUALLY hands back for a color-mix() custom property — and
+  // the reason the diff bands silently kept Monaco's stock green and red after
+  // the theme was wired up: every --diff-* token is a color-mix, so all four
+  // were dropped by the guard that exists to skip colours Monaco cannot parse.
+  it('reads the color(srgb …) form a color-mix resolves to', () => {
+    const { colors } = monacoThemeData(
+      { ...tide, '--diff-add-line': 'color(srgb 0.797255 0.854196 0.903373)' },
+      { dark: false }
+    )
+    expect(colors['diffEditor.insertedLineBackground']).toBe('#cbdae6')
+  })
+
   it('accepts a hex token as readily as an rgb() one', () => {
     const { colors } = monacoThemeData({ ...tide, '--bg': '#0b1a1e' }, { dark: true })
     expect(colors['editor.background']).toBe('#0b1a1e')
