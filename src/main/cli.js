@@ -1,4 +1,5 @@
 import { COMMANDS } from '../shared/cliCommands'
+import { splitRevisionArg } from './gitRevisionArg'
 import { t } from './i18n'
 // The `diffbro` terminal command. A second launch never becomes a second app:
 // Electron's single-instance lock hands its argv to the running one, which is
@@ -148,12 +149,20 @@ function parseBackup(rest, resolve) {
   return { command: { name: 'backup', path: resolve(paths[0]) }, error: null }
 }
 
+// A side is either a path to resolve against the shell's cwd, or the
+// `revision:path` pair naming a file inside the repository as it stood then —
+// which main reads later, because only main may talk to git.
+const sideOf = (word, resolve) => splitRevisionArg(word) ?? resolve(word)
+
 function parseCompare(rest, resolve, transient = false) {
   // An empty word is not a path — resolving it would silently mean the cwd.
   const paths = rest.filter((p) => p.trim())
   if (!paths.length) return { command: null, error: 'compare needs a file path.' }
   if (paths.length > 2) return { command: null, error: 'compare takes at most two files.' }
-  return { command: { name: 'compare', files: paths.map(resolve), transient }, error: null }
+  return {
+    command: { name: 'compare', files: paths.map((p) => sideOf(p, resolve)), transient },
+    error: null
+  }
 }
 
 /**

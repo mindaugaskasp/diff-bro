@@ -527,6 +527,11 @@
     "noFreeTab": "No free tab",
     "gotIt": "Got it"
   },
+  "cliErrors": {
+    "not-a-repo": "That folder is not inside a git repository.",
+    "no-such-revision": "git does not know that revision.",
+    "not-in-revision": "That file is not in that revision."
+  },
   "cliSettings": {
     "terminalCommand": "Terminal command",
     "intro": "Adds a {cmd} command so a comparison can start from a terminal: {compare}, {create}, or {save} to keep what you just copied.",

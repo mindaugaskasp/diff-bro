@@ -10,6 +10,7 @@ import { installShim, removeShim, shimStatus } from './cliShim'
 import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from './gitTool'
 import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
+import { fileAtRevision, isRevisionSide, REVISION_ERROR_KEYS } from './gitCliFiles'
 import { t } from './i18n'
 
 // A command can arrive before any window exists (a cold `diffbro compare …`),
@@ -43,13 +44,44 @@ export function routeCliArgv(argv, cwd, carried = null) {
     process.stderr.write(`${parsed.error}\n`)
     return
   }
-  routeCommand(parsed.command)
+  routeCommand(parsed.command, cwd)
 }
 
-function routeCommand(command) {
+// Each `revision:path` side becomes a real file before the renderer hears about
+// the command at all, so everything downstream sees paths and nothing else has
+// to know git was involved.
+async function withRevisionsResolved(command, cwd) {
+  const files = []
+  for (const side of command.files) {
+    if (!isRevisionSide(side)) {
+      files.push(side)
+      continue
+    }
+    const res = await fileAtRevision(side, cwd || process.cwd())
+    if (res.error) {
+      process.stderr.write(`${t(REVISION_ERROR_KEYS[res.error] ?? 'cliErrors.not-a-repo')}\n`)
+      return null
+    }
+    files.push(res.path)
+  }
+  return { ...command, files }
+}
+
+function deliverResolved(command, cwd) {
+  withRevisionsResolved(command, cwd).then((ready) => {
+    if (!ready) return
+    ready.files.forEach(allowCliPath)
+    deliver(ready)
+  })
+}
+
+const needsGit = (command) => command?.name === 'compare' && command.files.some(isRevisionSide)
+
+function routeCommand(command, cwd) {
   // `open` with no file has nothing to tell the renderer — the window IS the
   // answer, so it never reaches deliver's pending queue.
   if (command?.name === 'raise') return void ensureMainWindow()?.focus()
+  if (needsGit(command)) return void deliverResolved(command, cwd)
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
   if (command?.name === 'compare') command.files.forEach(allowCliPath)
