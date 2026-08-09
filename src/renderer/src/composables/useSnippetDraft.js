@@ -59,9 +59,7 @@ export function useSnippetDraft() {
 
   // Existing snippets open read-only so a glance can't become an accidental edit.
   const editMode = ref(isNew.value)
-  const startEditing = () => {
-    editMode.value = true
-  }
+  const startEditing = () => (editMode.value = true)
 
   // Dirty-guard baseline; for an existing snippet it updates when the decrypted
   // content lands, so an untouched snippet is never "dirty".
@@ -125,6 +123,7 @@ export function useSnippetDraft() {
       content: content.value,
       language: chosenLanguage.value,
       secret: secret.value,
+      contentChanged: content.value !== baselineContent.value,
       tags,
       tagColors
     }

@@ -126,6 +126,8 @@
  * @property {string[]} tags       up to MAX_TAGS names; empty means Default
  * @property {string} iv
  * @property {string} data
+ * @property {{ savedAt: number, iv: string, data: string }[]} [history]  superseded
+ *                                 boxes under the same AAD, oldest first, capped
  */
 
 /**

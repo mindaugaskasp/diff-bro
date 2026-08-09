@@ -1,3 +1,11 @@
+/* What the tool does, in one line above its panel. --text-hint is the token
+   every theme holds to the hint-contrast floor. */
+.tt-desc {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+
 /* Fills the panel's height so dragging the dialog taller grows the editor
    (Monaco's automaticLayout follows); 280px is the default basis. */
 .editor {

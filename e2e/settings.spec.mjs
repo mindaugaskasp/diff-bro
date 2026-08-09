@@ -82,3 +82,27 @@ test('the dialog keeps one height across every pane', async ({ page }) => {
     )
   expect(scrolls).toBe(true)
 })
+
+// Two scroll-affordance defects, fixed together: the right-aligned controls
+// crowded the bar (padding-right was --space-3), and the thumb was border-grey
+// on a transparent track — invisible exactly when a pane had more below the
+// fold. The pane's own scrollbar derives from --text, the one token guaranteed
+// to read against the panel on every theme.
+test('the pane that scrolls says so: a real gutter and a visible bar', async ({ page }) => {
+  await openSettings(page)
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  await dialog.getByRole('button', { name: 'Storage', exact: true }).click()
+
+  const metrics = await dialog.locator('.settings-pane').evaluate((el) => ({
+    overflows: el.scrollHeight > el.clientHeight,
+    paddingRight: parseFloat(getComputedStyle(el).paddingRight),
+    barWidth: el.offsetWidth - el.clientWidth
+  }))
+
+  expect(metrics.overflows).toBe(true)
+  expect(metrics.paddingRight).toBeGreaterThanOrEqual(16)
+  // A bar that OCCUPIES width is the whole point: macOS overlay bars take no
+  // layout space and only paint mid-scroll, which is exactly the "nothing says
+  // there is more below" this test exists to prevent.
+  expect(metrics.barWidth).toBeGreaterThanOrEqual(6)
+})

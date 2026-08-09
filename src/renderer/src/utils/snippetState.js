@@ -4,6 +4,11 @@
 // unit-tested against a literal, which is what it is.
 import { detectSnippetLanguage } from './detectLanguage'
 import { parseTemplateVars } from './templateVars'
+import { validHistory } from './snippetHistory'
+
+// Binds ciphertext to immutable per-entry values; aadSalt never changes, so
+// tags stay free metadata and history boxes stay decryptable.
+export const entryAad = (id, aadSalt, createdAt) => [id, aadSalt, createdAt].join('|')
 
 // 20 colours, evenly spaced around the OKLCH hue wheel at one lightness and
 // chroma, interleaved so two tags made in a row land on opposite sides.
@@ -130,7 +135,8 @@ function normalizeEntry(e, untitled) {
     // Only a real `true` masks: a hand-edited store must not be able to unmask a
     // secret with a missing field, nor mask one with a stray truthy value.
     secret: e?.secret === true,
-    tags: entryTags(e)
+    tags: entryTags(e),
+    history: validHistory(e?.history)
   }
 }
 

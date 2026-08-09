@@ -24,6 +24,9 @@ describe('TOOLS registry', () => {
       expect(typeof tool.id).toBe('string')
       expect(t(tool.nameKey)).not.toBe(tool.nameKey)
       expect(t(tool.kindKey)).not.toBe(tool.kindKey)
+      // The one-line description every surface (dialog, tooltip) reads — a
+      // tool without one greets a first-time user with a bare input box.
+      expect(t(tool.descKey)).not.toBe(tool.descKey)
       expect(tool.action.length).toBeGreaterThan(0)
     }
   })

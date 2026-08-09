@@ -96,14 +96,24 @@ describe('useQuickLookCompose', () => {
       c.name.value = 'Auth token'
       await c.save()
       expect(add).not.toHaveBeenCalled()
+      // A rename with untouched content must not record a history version.
       expect(update).toHaveBeenCalledWith('abc', {
         name: 'Auth token',
         content: 'token=1',
         language: 'auto',
+        contentChanged: false,
         tags: []
       })
       expect(c.composing.value).toBe(false)
       expect(onSaved).toHaveBeenCalledWith('Auth token')
+    })
+
+    it('a content edit says so, so the store records the superseded version', async () => {
+      const { update, c } = harness()
+      c.open({ id: 'abc', name: 'N', content: 'token=1' })
+      c.body.value = 'token=2'
+      await c.save()
+      expect(update).toHaveBeenCalledWith('abc', expect.objectContaining({ contentChanged: true }))
     })
 
     it('preserves the tags an existing snippet already carries', async () => {

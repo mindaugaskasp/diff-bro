@@ -8,6 +8,8 @@ import { useArmedAction } from '../composables/useArmedAction'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { useCopyAsFile } from '../composables/useCopyAsFile'
 import { snippetFile } from '../utils/copyAsFile'
+import { useSnippetStore } from '../stores/snippetStore'
+import { useUiStore } from '../stores/uiStore'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -43,6 +45,23 @@ const copyFileTip = computed(() =>
     : t('snippetEditorActions.copyAsFileTip')
 )
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
+
+// Wired here rather than through the parent: the row reads the store the way
+// its copy-as-file half does, and the editor dialog stays inside its budget.
+const store = useSnippetStore()
+const ui = useUiStore()
+const viewedEntry = computed(() =>
+  store.entries.find((entry) => entry.id === store.editingSnippet?.id)
+)
+const hasHistory = computed(() => (viewedEntry.value?.history?.length ?? 0) > 0)
+// The editor closes FIRST — two stacked dialogs is what the diagram expander
+// and the tools' save-as-snippet already avoid.
+function openHistory() {
+  const id = viewedEntry.value?.id
+  if (!id) return
+  store.editingSnippet = null
+  ui.openSnippetHistory(id)
+}
 
 // Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
 // control says which of the two it is about to do.
@@ -130,6 +149,14 @@ defineExpose({ flash: () => flash('text') })
     {{ clearArmed ? $t('snippetEditorActions.confirmClear') : $t('snippetEditorActions.clear') }}
   </button>
   <span class="spacer" />
+  <button
+    v-if="!editMode && hasHistory"
+    class="btn"
+    :data-tip="$t('snippetEditorActions.historyTip')"
+    @click="openHistory"
+  >
+    <AppIcon name="clock" /> {{ $t('snippetEditorActions.history') }}
+  </button>
   <!-- Viewing is when you are looking at the thing you want a picture of. Never
        for a secret: the store refuses it too. -->
   <button

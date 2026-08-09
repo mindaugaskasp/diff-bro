@@ -11,9 +11,11 @@ import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
   /** From useSnippetPreview. @type {import('vue').PropType<import('../types').SnippetPreview>} */
-  preview: { type: Object, required: true, validator: shaped('name', 'tags', 'text', 'style') }
+  preview: { type: Object, required: true, validator: shaped('name', 'tags', 'text', 'style') },
+  // The composable owns the copy (and its flash) — the card only shows it.
+  copied: { type: Boolean, default: false }
 })
-defineEmits(['edit', 'view'])
+defineEmits(['edit', 'view', 'copy'])
 const store = useSnippetStore()
 // A secret never previews as a diagram — that would render its contents.
 const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.preview.secret)
@@ -57,6 +59,15 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
           $t('snippetPreviewCard.untagged')
         }}</span>
       </span>
+      <button
+        class="pv-open"
+        :data-tip="$t('snippetPreviewCard.copyTip')"
+        :aria-label="$t('common.copy')"
+        @click="$emit('copy')"
+      >
+        <AppIcon :name="copied ? 'check' : 'copy'" />
+        {{ copied ? $t('common.copied') : $t('common.copy') }}
+      </button>
       <button v-if="isMermaid" class="pv-open" @click="$emit('view')">
         <AppIcon name="diagram" /> {{ $t('snippetPreviewCard.viewFullScreen') }}
       </button>

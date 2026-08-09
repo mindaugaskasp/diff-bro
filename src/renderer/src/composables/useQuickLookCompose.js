@@ -38,6 +38,9 @@ function useDraftFields() {
   const body = ref('')
   const editingId = ref(null)
   const editingTags = ref([])
+  // The opened content, so save() can tell an edit from a rename — the store
+  // records a history version only when the content itself moved.
+  const baseline = ref('')
   const editing = computed(() => editingId.value !== null)
   // `content` must be the FULL body: the launcher's preview is truncated, and
   // saving that back would amputate the snippet.
@@ -46,14 +49,17 @@ function useDraftFields() {
     editingTags.value = tags
     name.value = as
     body.value = content
+    baseline.value = content
   }
-  return { name, body, editingId, editingTags, editing, fill }
+  return { name, body, editingId, editingTags, baseline, editing, fill }
 }
 
 /** @returns {Promise<string|null>} the stored id, or null when the vault refused */
 async function persist(snippets, editingId, draft) {
-  if (!editingId) return snippets.add({ ...draft, tags: [] })
-  await snippets.update(editingId, draft)
+  // A creation has no past to record, so the change flag stays off its draft.
+  const { contentChanged, ...fields } = draft
+  if (!editingId) return snippets.add({ ...fields, tags: [] })
+  await snippets.update(editingId, { ...fields, contentChanged })
   return editingId
 }
 
@@ -66,7 +72,7 @@ async function persist(snippets, editingId, draft) {
 export function useQuickLookCompose({ snippets, onSaved = () => {} }) {
   const composing = ref(false)
   const saving = ref(false)
-  const { name, body, editingId, editingTags, editing, fill } = useDraftFields()
+  const { name, body, editingId, editingTags, baseline, editing, fill } = useDraftFields()
   const lang = useDraftLanguage(body)
 
   // The body is what makes a snippet; an empty name falls back to a placeholder
@@ -93,6 +99,7 @@ export function useQuickLookCompose({ snippets, onSaved = () => {} }) {
       name: name.value,
       content: body.value,
       language: lang.language.value,
+      contentChanged: body.value !== baseline.value,
       tags: editingTags.value
     })
     saving.value = false

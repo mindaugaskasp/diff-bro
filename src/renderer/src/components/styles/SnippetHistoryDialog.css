@@ -1,0 +1,56 @@
+.hist-body {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 380px;
+}
+.hist-rail {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+.hist-version {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.hist-version:hover {
+  background: var(--bg-hover);
+}
+.hist-version.on {
+  background: var(--bg-hover);
+  border-left-color: var(--accent);
+}
+.hv-when {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hv-meta {
+  font-size: var(--font-xs);
+  color: var(--text-dim);
+}
+.hist-diff {
+  min-width: 0;
+  background: var(--bg);
+}
+.hist-masked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
