@@ -84,6 +84,14 @@ where the concept lives in this repo.
   that cells reference by index.
 - **LCS** — _Longest Common Subsequence_, the classic diff algorithm; used to
   align spreadsheet rows by default and to build the copy-as-patch output.
+- **Lockfile** — the file a package manager writes to pin the exact version of
+  every dependency actually installed (`package-lock.json`, `pnpm-lock.yaml`,
+  `yarn.lock`, `go.sum`, `composer.lock`). Diff Bro reads five of them as
+  dependency SETS rather than as text (`utils/lockfile/`).
+- **Direct vs transitive** — a direct (or "asked for") dependency is one the
+  project's own manifest names; a transitive one was pulled in by something else.
+  Only some lockfile formats record the difference, and the ones that do not say
+  so rather than guessing.
 - **Key column** — a column whose value names a row, so the two sides pair by
   identity rather than by position or whole-row contents; several together make
   a **composite key** (an account plus a cost centre). Chosen per sheet in the
