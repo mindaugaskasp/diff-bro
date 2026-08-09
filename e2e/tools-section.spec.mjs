@@ -89,14 +89,10 @@ test('the sidebar search filters tools alongside everything else', async ({ page
   await expect(section(page).locator('.empty')).toContainText('No tools match')
 })
 
-test('the section collapses and the Tools pill hides it', async ({ page }) => {
+test('the section collapses from its own header', async ({ page }) => {
   // v-show, so the rows stay in the DOM — visibility is the assertion, not count.
   await section(page).locator('.section-head').click()
   await expect(names(page).first()).toBeHidden()
   await section(page).locator('.section-head').click()
   await expect(names(page).first()).toBeVisible()
-
-  // The sidebar's own pill, not the menu bar's Tools menu.
-  await page.locator('.usb-seg').getByRole('button', { name: 'Tools', exact: true }).click()
-  await expect(section(page)).toBeHidden()
 })

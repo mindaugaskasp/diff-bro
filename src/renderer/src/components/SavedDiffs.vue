@@ -1,7 +1,7 @@
 <script setup>
 // The sidebar shell: a search + a segmented filter (All / Saved / External /
 // Snippets) over one scroll; each group is its own component.
-import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
+import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSidebarResize } from '../composables/useSidebarResize'
 import { useSidebarTags } from '../composables/useSidebarTags'
@@ -37,12 +37,15 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 // Opening from a rail icon lands on what was asked for: the search box focused,
-// or that section shown on its own.
+// or that section scrolled into view. It used to HIDE the other three, which is
+// a strange price for "take me to Snippets" — and the row of toggles that undid
+// it duplicated the collapse chevron every section header already carries.
 function expandTo(what) {
   settings.setSidebarCollapsed(false)
   if (what === 'search') return nextTick(() => searchBox.value?.focus())
-  if (SECTIONS.some((sec) => sec.id === what)) visible.value = new Set([what])
+  nextTick(() => sectionEl(what)?.scrollIntoView({ block: 'start', behavior: 'smooth' }))
 }
+const sectionEl = (id) => aside.value?.querySelector(`[data-section='${id}']`)
 
 let timer = null
 onMounted(() => {
@@ -52,15 +55,6 @@ onMounted(() => {
 })
 onBeforeUnmount(() => clearInterval(timer))
 
-// Section toggles are multi-select; "All" shows all, "★" narrows to favorites.
-// The ids are settingsDefaults' SECTIONS, so the filter, the rail and the stored
-// drag order all name the same four things.
-const SECTIONS = [
-  { id: 'saved', labelKey: 'savedDiffs.sections.saved' },
-  { id: 'external', labelKey: 'savedDiffs.sections.external' },
-  { id: 'snippets', labelKey: 'savedDiffs.sections.snippets' },
-  { id: 'tools', labelKey: 'savedDiffs.sections.tools' }
-]
 // Which component renders each, so the scroll can follow the stored order
 // rather than the order they happen to be written in.
 const SECTION_VIEW = {
@@ -69,23 +63,7 @@ const SECTION_VIEW = {
   snippets: SnippetsPanel,
   tools: ToolsSection
 }
-const visible = ref(new Set(SECTIONS.map((s) => s.id)))
 const favOnly = ref(false)
-const allOn = computed(() => visible.value.size === SECTIONS.length)
-const shows = (id) => visible.value.has(id)
-function toggleSection(id) {
-  const next = new Set(visible.value)
-  if (next.has(id)) {
-    if (next.size === 1) return // at least one section must stay shown
-    next.delete(id)
-  } else {
-    next.add(id)
-  }
-  visible.value = next
-}
-function showAll() {
-  visible.value = new Set(SECTIONS.map((s) => s.id))
-}
 
 // Right-click is the only way in: a tag chip's primary job is filtering, and a
 // second visible control on every chip would crowd the bar.
@@ -104,21 +82,16 @@ const showAllTags = ref(false)
     <SidebarRail v-if="settings.sidebarCollapsed" @expand="expandTo" />
     <template v-else>
       <div class="usb-controls band">
-        <SidebarSearch
-          ref="searchBox"
-          v-model="ui.sidebarQuery"
-          @collapse="settings.setSidebarCollapsed(true)"
-        />
-        <div class="usb-seg">
+        <div class="usb-find band">
+          <SidebarSearch
+            ref="searchBox"
+            v-model="ui.sidebarQuery"
+            @collapse="settings.setSidebarCollapsed(true)"
+          />
+          <!-- Beside the field it modifies: it narrows what the search returns,
+               not which sections exist. -->
           <button
-            :class="{ on: allOn }"
-            :data-tip="$t('savedDiffs.showEverySidebarSection')"
-            @click="showAll"
-          >
-            {{ $t('savedDiffs.all') }}
-          </button>
-          <button
-            class="star"
+            class="btn btn-icon usb-star"
             :class="{ on: favOnly }"
             :data-tip="$t('savedDiffs.showOnlyDiffsAndSnippets')"
             :aria-label="$t('savedDiffs.showOnlyStarredDiffsAnd')"
@@ -126,14 +99,6 @@ const showAllTags = ref(false)
             @click="favOnly = !favOnly"
           >
             <AppIcon name="star-filled" />
-          </button>
-          <button
-            v-for="s in SECTIONS"
-            :key="s.id"
-            :class="{ on: shows(s.id) }"
-            @click="toggleSection(s.id)"
-          >
-            {{ $t(s.labelKey) }}
           </button>
         </div>
         <div v-if="tags.all.value.length" class="usb-tags">
@@ -185,8 +150,8 @@ const showAllTags = ref(false)
         <component
           :is="SECTION_VIEW[id]"
           v-for="id in settings.orderedSections"
-          v-show="shows(id)"
           :key="id"
+          :data-section="id"
           unified
           :search="ui.sidebarQuery"
           :tags="tags.active.value"
