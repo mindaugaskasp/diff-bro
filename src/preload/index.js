@@ -116,6 +116,8 @@ contextBridge.exposeInMainWorld('api', {
   canCopyAsFile: () => ipcRenderer.invoke('clipboard:canWriteFile'),
   // Seal, then hand off to the OS mail client. No path and no URL crosses here.
   mailHandoff: (args) => ipcRenderer.invoke('mail:handoff', args),
+  emailKey: (args) => ipcRenderer.invoke('mail:keyHandoff', args),
+  peekClipboardKey: () => ipcRenderer.invoke('share:peekClipboardKey'),
   // Opens a stored link ONLY if main validates it as a claude.ai URL, after a
   // confirm dialog; any other URL is refused (see src/main/links.js).
   openLink: (url) => ipcRenderer.invoke('link:open', url),

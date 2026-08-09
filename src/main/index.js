@@ -16,6 +16,7 @@ import { backupIfDue, registerBackupIpc } from './backupRoute'
 import { readSettings, readSnippetStore, setBackupHook } from './appData'
 import { registerShareIpc } from './share'
 import { registerMailIpc } from './mail'
+import { registerKeyExchangeIpc } from './keyExchange'
 import { registerClipboardCopyIpc } from './clipboardCopy'
 import { registerSnippetIpc } from './snippets'
 import { ensureMainWindow, registerQuickLook, destroyQuickLook, toggleQuickLook } from './quickLook'
@@ -121,6 +122,7 @@ function startApp(draftPath) {
   setBackupHook(backupIfDue)
   registerShareIpc()
   registerMailIpc()
+  registerKeyExchangeIpc()
   registerClipboardCopyIpc()
   registerSnippetIpc()
   registerLoggerIpc()

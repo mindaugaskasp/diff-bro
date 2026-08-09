@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_MAILTO_LENGTH, buildMailto, fillTemplate } from '../../src/main/mailto'
+import { MAX_MAILTO_LENGTH, buildMailto, fillTemplate, keyMessage } from '../../src/main/mailto'
 import { isSafeMailtoUrl } from '../../src/main/linkPolicy'
 
 const ok = (m) => {
@@ -83,5 +83,54 @@ describe('fillTemplate', () => {
 
   it('strips control characters a diff name could carry', () => {
     expect(fillTemplate({ template: '{name}', name: 'a\r\nBcc: x@y.co' })).toBe('a Bcc: x@y.co')
+  })
+})
+
+// The key hand-off opens an UNADDRESSED draft: the key goes precisely to
+// someone not yet in the trust store, so there is no address to resolve.
+describe('buildMailto — recipient-less', () => {
+  it('refuses an empty recipient list by default, as ever', () => {
+    expect(buildMailto({ to: [], subject: 'x' })).toEqual({ error: 'bad-address' })
+  })
+
+  it('builds an address-less draft only on explicit opt-in', () => {
+    const built = buildMailto({ to: [], subject: 'My key', allowEmptyTo: true })
+    expect(built.ok).toBe(true)
+    expect(built.url).toBe('mailto:?subject=My%20key')
+  })
+
+  it('a recipient still rides along when one is given', () => {
+    const built = buildMailto({ to: ['ana@example.com'], subject: 'k', allowEmptyTo: true })
+    expect(built.url.startsWith('mailto:ana@example.com?')).toBe(true)
+  })
+
+  it('a malformed address is refused even with the opt-in', () => {
+    expect(buildMailto({ to: ['not-an-email'], allowEmptyTo: true })).toEqual({
+      error: 'bad-address'
+    })
+  })
+})
+
+describe('keyMessage', () => {
+  it('carries the label in the subject and the fingerprint + import path in the body', () => {
+    const msg = keyMessage({ label: 'Ana laptop', fingerprint: 'ab12cd34' })
+    expect(msg.subject).toContain('Ana laptop')
+    expect(msg.body).toContain('ab12cd34')
+    expect(msg.body).toMatch(/Add Trusted Key/i)
+  })
+
+  it('a hostile label cannot smuggle headers into the subject', () => {
+    // headerText flattens the CRLF a header injection needs; the leftover
+    // words are inert text inside an encoded subject value.
+    const msg = keyMessage({ label: 'x\r\nBcc: a@b.c', fingerprint: 'f' })
+    expect(msg.subject).not.toMatch(/[\r\n\u0000-\u001f]/) // eslint-disable-line no-control-regex
+    const built = buildMailto({ to: [], subject: msg.subject, allowEmptyTo: true })
+    expect(built.url).not.toMatch(/%0d|%0a/i)
+  })
+
+  it('stays sane without a label', () => {
+    const msg = keyMessage({ label: '', fingerprint: 'ab12' })
+    expect(msg.subject.length).toBeGreaterThan(0)
+    expect(msg.body).toContain('ab12')
   })
 })

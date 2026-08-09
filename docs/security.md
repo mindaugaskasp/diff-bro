@@ -143,6 +143,16 @@ attached to an identity, never a substitute for one:
 - **What you attach is the same sealed file** — sign-then-encrypt, bound to the
   audience, filename forced to a hash of its own ciphertext. Your mail provider
   holds ciphertext addressed to a key it does not have.
+
+The key swap rides the same fence. **Email my key** opens an UNADDRESSED
+`mailto:` (the key goes to someone not yet in your trust store) with the public
+key staged on the clipboard as a file — the `attach` parameter stays refused,
+and the draft's body carries the fingerprint for out-of-band verification.
+Adding a key **from the clipboard** reads and validates it in the main process
+(size-capped, shape-checked, fingerprint recomputed from the material) and
+always lands in the same confirm dialog a picked file does — there is no
+silent-trust path.
+
 - **The recipient must still be a trusted key.** There is no route that mails a
   diff to an address you have not tied to one.
 

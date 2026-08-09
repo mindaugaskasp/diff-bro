@@ -10,11 +10,13 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { basename } from 'path'
 import { isSafeMailtoUrl } from './linkPolicy'
-import { buildMailto, fillTemplate } from './mailto'
+import { buildMailto, fillTemplate, keyMessage } from './mailto'
 import { addressesFor } from './trustedKeys'
 import { sealAndWrite } from './shareExport'
 import { copyPathToClipboard } from './clipboardCopy'
-import { getIdentity } from './share'
+import { stageFile } from './clipboardStage'
+import { encodePublicKey } from './sealing'
+import { getIdentity, keyFileBasename, pubWithLabel } from './share'
 import { guardIdentity } from './shareCore'
 import { t } from './i18n'
 
@@ -110,11 +112,49 @@ async function deliver(path, { url, reveal, to }) {
   }
 }
 
+// The key hand-off: the same walk, but the draft is UNADDRESSED — the key goes
+// to someone not yet in the trust store, so the user addresses it themselves —
+// and the staged file is the public key, ready to paste into the message.
+async function keyHandoff(sender, { label, reveal }) {
+  const pub = await pubWithLabel(typeof label === 'string' ? label : null)
+  const staged = await stageFile({
+    name: keyFileBasename(pub.label ?? '', pub.fingerprint),
+    bytes: encodePublicKey(pub)
+  })
+  if (!staged.ok) return staged
+  const msg = keyMessage({ label: pub.label, fingerprint: pub.fingerprint })
+  const built = buildMailto({ to: [], subject: msg.subject, body: msg.body, allowEmptyTo: true })
+  if (!built.ok || !isSafeMailtoUrl(built.url, { allowEmptyAddressee: true })) {
+    return { error: 'bad-address', path: staged.path }
+  }
+  if (!(await confirmKeyHandoff(sender, staged.path))) {
+    return { canceled: true, path: staged.path }
+  }
+  return deliver(staged.path, { url: built.url, reveal, to: [] })
+}
+
+async function confirmKeyHandoff(sender, path) {
+  const parent = BrowserWindow.fromWebContents(sender) ?? undefined
+  const { response } = await dialog.showMessageBox(parent, {
+    type: 'question',
+    buttons: [t('dialog.mail.openMailApp'), t('common.cancel')],
+    defaultId: 0,
+    cancelId: 1,
+    message: t('dialog.keyMail.message'),
+    detail: t('dialog.keyMail.detail', { file: basename(path) })
+  })
+  return response === 0
+}
+
 export function registerMailIpc() {
-  // The only handler here, and it takes no path: fingerprints and text in, a
-  // description of what happened out.
+  // Both handlers take no path: fingerprints and text in, a description of
+  // what happened out.
   ipcMain.handle(
     'mail:handoff',
     guardIdentity(async (e, args) => handoff(e.sender, args ?? {}))
+  )
+  ipcMain.handle(
+    'mail:keyHandoff',
+    guardIdentity(async (e, args) => keyHandoff(e.sender, args ?? {}))
   )
 }

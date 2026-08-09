@@ -11,7 +11,7 @@ export const LEGACY_SIZE = {
   'src/main/menu.js': { fn: 111 },
   'src/main/quickLook.js': { file: 253 },
   'src/main/sealing.js': { file: 388 },
-  'src/main/share.js': { fn: 224, file: 510 },
+  'src/main/share.js': { fn: 205, file: 510 },
   'src/main/window.js': { fn: 69 },
   'src/renderer/src/composables/useMatrixRain.js': { fn: 96 },
   'src/renderer/src/composables/useMonacoInput.js': { fn: 96 },

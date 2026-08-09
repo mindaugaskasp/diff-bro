@@ -13,6 +13,12 @@ async function add() {
   adding.value = true
   await share.confirmTrustedKey(label.value)
 }
+// The clipboard offer declined — back to the picker, with the peek skipped so
+// the same clipboard cannot re-offer itself.
+function chooseFileInstead() {
+  share.pendingTrustedKey = null
+  share.addTrustedKey({ skipPeek: true })
+}
 </script>
 
 <template>
@@ -40,6 +46,12 @@ async function add() {
           ><strong>{{ share.pendingTrustedKey.vouchedBy }}</strong></template
         >
       </i18n-t>
+      <p v-if="share.pendingTrustedKey?.source === 'clipboard'" class="dialog-note clip-source">
+        {{ $t('share.addTrustedKeyDialog.fromYourClipboard') }}
+        <button type="button" class="btn btn-sm" @click="chooseFileInstead">
+          {{ $t('share.addTrustedKeyDialog.chooseAFileInstead') }}
+        </button>
+      </p>
       <label>
         {{ $t('share.addTrustedKeyDialog.name') }}
         <input
