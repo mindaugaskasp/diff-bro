@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 5 / 13 steps — phase 1 shipped |
+| **Progress** | 7 / 13 — phase 1 shipped; phase 2 at the fence + IPC + grammar |
 | **Branch** | `feat/developer-workflow` |
 | **Started** | 2026-08-09 |
 | **Finished** | — |
@@ -215,8 +215,9 @@ rather than throwing.
 
 **Phase 2 — git-native comparison**
 
-- [ ] 6. `src/main/gitRepo.js` — the fence, argv builders, revision validation
-- [ ] 7. IPC + CLI grammar (`compare <rev>:<path>`, `<revA>..<revB> <path>`)
+- [x] 6. `src/main/gitRepo.js` — the fence, argv builders, revision validation
+- [x] 7. IPC + the `revision:path` grammar (`splitRevisionArg`). **NOT YET WIRED
+      into `parseCompare`** — the grammar parses, the launch path does not use it
 - [ ] 8. UI entry point + `docs/security.md` / `docs/ipc-security.md`
 - [ ] 9. e2e against a temp repo
 
