@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
-import { isDarkTheme } from '../utils/themes'
 import { useSettingsStore } from '../stores/settingsStore'
+import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
 
 // A Monaco editor bound to a `content` ref: two-way sync, live language switching,
 // theme mirrored in.
@@ -18,7 +18,6 @@ export function useMonacoInput({ container, content, language, readOnly, options
   const ready = ref(false)
   let editor = null
 
-  const monacoTheme = () => (isDarkTheme(settings.theme) ? 'vs-dark' : 'vs')
   // `readOnly` may be a ref (view/edit mode) or absent; read it either way.
   const isReadOnly = () => (readOnly ? !!readOnly.value : false)
 
@@ -27,10 +26,12 @@ export function useMonacoInput({ container, content, language, readOnly, options
   // so the plaintext is not sitting in the DOM behind a display:none.
   function createEditor() {
     if (editor || !container.value) return
+    // Defined before the editor exists: the option below only NAMES it.
+    applyMonacoTheme(settings.theme)
     editor = monaco.editor.create(container.value, {
       value: content.value,
       language: language.value,
-      theme: monacoTheme(),
+      theme: MONACO_THEME,
       automaticLayout: true,
       minimap: { enabled: false },
       // No right-hand overview-ruler lane: with the minimap off it only paints a
@@ -67,10 +68,9 @@ export function useMonacoInput({ container, content, language, readOnly, options
     if (editor) monaco.editor.setModelLanguage(editor.getModel(), lang)
   })
   if (readOnly) watch(readOnly, (ro) => editor?.updateOptions({ readOnly: !!ro }))
-  watch(
-    () => settings.theme,
-    () => monaco.editor.setTheme(monacoTheme())
-  )
+  // post-flush, because applyMonacoTheme probes the LIVE palette off the
+  // document — a pre-flush watcher reads the theme the app is leaving.
+  watch(() => settings.theme, applyMonacoTheme, { flush: 'post' })
   onBeforeUnmount(destroyEditor)
 
   // Replace the content and put the caret back where the user is working.

@@ -159,7 +159,17 @@ const RULES = [
   // hover step (1.16 at worst, on sepia): a primary must move at least as
   // visibly as the quiet button beside it. Nothing measured this before, and
   // the first rewrite of the hover shipped at 1.04 on matrix because of it.
-  { key: 'pri-edge/accent', a: 'btn-primary-edge', b: 'accent', min: 1.5, kind: 'control' }
+  { key: 'pri-edge/accent', a: 'btn-primary-edge', b: 'accent', min: 1.5, kind: 'control' },
+  // The diff bands against the editor ground. The bar is MONACO'S OWN, which is
+  // what shipped on all fourteen themes before the app defined a theme at all:
+  // its weakest band is 1.15 (the light added row on white). A band that reads
+  // less clearly than the stock one nobody chose would be a regression.
+  { key: 'add-line/bg', a: 'diff-add-line', b: 'bg', min: 1.2, kind: 'surface' },
+  { key: 'del-line/bg', a: 'diff-del-line', b: 'bg', min: 1.2, kind: 'surface' },
+  // …and the text still has to be readable ON the band, which is where a tint
+  // chosen only for visibility goes wrong.
+  { key: 'text/add-line', a: 'text', b: 'diff-add-line', min: 4.5, kind: 'text' },
+  { key: 'text/del-line', a: 'text', b: 'diff-del-line', min: 4.5, kind: 'text' }
 ]
 const tok = (n) => `--${n}`
 
