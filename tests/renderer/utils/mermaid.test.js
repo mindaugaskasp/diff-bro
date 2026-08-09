@@ -84,7 +84,8 @@ describe('effectiveDiagramMode', () => {
     ['nyan', 'dark'],
     ['matrix', 'dark'],
     ['contrast', 'light'],
-    ['volcano', 'dark']
+    ['volcano', 'dark'],
+    ['amber', 'dark']
   ]
 
   it('follows the app theme on auto, for every theme', () => {

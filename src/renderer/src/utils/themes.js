@@ -91,6 +91,12 @@ export const THEMES = [
     label: 'Volcano',
     dark: true,
     swatch: { bg: '#0e0705', accent: '#ff5c33', add: '#58e08a', del: '#ff4d70' }
+  },
+  {
+    id: 'amber',
+    label: 'Amber',
+    dark: true,
+    swatch: { bg: '#191106', accent: '#ffb000', add: '#b8d94a', del: '#ff5545' }
   }
 ]
 

@@ -544,3 +544,38 @@
   --syn-comment: #b0a096;
   color-scheme: dark;
 }
+
+/* Amber — the MONOCHROME phosphor terminal, and deliberately not Volcano.
+   Volcano is achromatic (black ground, white ink) with one saturated accent and
+   an accessibility-grade keyline; this is the opposite discipline — every piece
+   of chrome, INCLUDING the body text, is one amber hue at low glare, the way a
+   P3 tube actually looked. White ink is what makes Volcano readable; amber ink
+   is what makes this a phosphor. Only the diff and the status colours stay
+   chromatic, because a comparison you cannot read is not a theme choice. */
+:root[data-theme='amber'] {
+  --tag-l: 0.8;
+  --bg: #0f0a02;
+  --bg-panel: #191106;
+  --bg-hover: #26190a;
+  --border: #6d4d14;
+  --text: #ffc95e;
+  --text-dim: #b3833a;
+  --text-hint: #e3ac52;
+  --accent: #ffb000;
+  --warning-bg: #ffd23f;
+  --warning-border: #c08a00;
+  --warning-text: #1a1200;
+  --danger-bg: #ff5545;
+  --danger-border: #d62c22;
+  --danger-text: #150500;
+  --success-text: #b8d94a;
+  --scrim: rgba(8, 5, 0, 0.62);
+  --favorite: #ffd23f;
+  --text-on-accent: #241600;
+  --syn-keyword: #e0a0c8;
+  --syn-string: #9cc63f;
+  --syn-number: #e8a84a;
+  --syn-property: #8ab8b0;
+  --syn-comment: #9b8560;
+  color-scheme: dark;
+}
