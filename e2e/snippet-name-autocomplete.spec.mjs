@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Inline ghost text for the snippet NAME. The rule under test is
 // shell-completion: complete to the longest common prefix of every matching
@@ -81,7 +81,7 @@ test('offers nothing for a name nothing matches', async ({ app, page }) => {
 // The editor has its own name field, and SnippetNameHint already sits under it.
 test('the editor completes too, and the template hint still shows', async ({ page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
 
   // Two seeded snippets are named `Example — …`, so the same LCP rule applies
@@ -125,7 +125,7 @@ const fieldGeometry = (field) =>
 
 test('the ghost is actually visible, on both surfaces', async ({ app, page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Exam')
 

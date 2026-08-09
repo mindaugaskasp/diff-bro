@@ -77,6 +77,8 @@ test('the dialog keeps one height across every pane', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Storage', exact: true }).click()
   const scrolls = await dialog
     .locator('.settings-pane')
-    .evaluate((el) => el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'auto')
+    .evaluate(
+      (el) => el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'auto'
+    )
   expect(scrolls).toBe(true)
 })

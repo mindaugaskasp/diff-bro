@@ -1,5 +1,13 @@
 import { rmSync } from 'node:fs'
-import { test, expect, firstReadyPage, freshUserDataDir, launchApp, openMenu } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  firstReadyPage,
+  freshUserDataDir,
+  launchApp,
+  openMenu,
+  newSnippetButton
+} from './fixtures.mjs'
 
 // Sidebar rows rearrange by dragging one onto another. The lists were ordered
 // by an accident of when things were captured, and the only lever was the star.
@@ -32,7 +40,7 @@ const names = (page) => page.locator(`${SNIPPETS} .nm`).allTextContents()
 // fixture happened to ship two snippets proves nothing at all.
 async function seedSnippets(page, labels) {
   for (const label of labels) {
-    await page.getByRole('button', { name: 'New snippet' }).click()
+    await newSnippetButton(page).click()
     const editor = page.getByRole('dialog', { name: 'New Snippet' })
     await editor.getByPlaceholder('Snippet name…').fill(label)
     await editor.locator('.editor').click()

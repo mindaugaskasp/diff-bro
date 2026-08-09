@@ -1,6 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { test, expect, openMenu, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openMenu,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  newSnippetButton
+} from './fixtures.mjs'
 
 // Read the clipboard the way the Windows shell does — the predefined FileDropList
 // that Explorer and mail clients paste. This is the format Electron cannot write
@@ -89,7 +97,7 @@ const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
 // Mirrors e2e/secret-snippet.spec.mjs — Monaco needs typed input, not fill().
 // Saving lands on the read-only VIEW, which is where the copy pair lives.
 async function addSnippet(page, { name, body, secret = false }) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()

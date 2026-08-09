@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Deleting a tag reaches two stores at once: snippets and saved diffs share one
 // tag registry. Whether the records go with it is a choice made in the confirm,
@@ -20,7 +20,7 @@ async function saveTaggedDiff(page, name, tag) {
 }
 
 async function saveTaggedSnippet(page, name, tag) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()

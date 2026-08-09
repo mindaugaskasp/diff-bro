@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
 // Photographing a snippet is only real in a launched app: the picture is taken
@@ -25,7 +25,7 @@ const reportedSize = async (dialog) =>
 // Pasted, not typed: Monaco auto-indents every Enter and at this length drops a
 // keystroke outright, merging two statements into unparseable Mermaid.
 async function createSnippet({ page, app }, name, body) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)
@@ -153,7 +153,7 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
 
 // A masked secret has nothing worth photographing and everything to lose.
 test('a secret snippet offers no image button', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()

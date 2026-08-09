@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Only a real launch has Mermaid's parser, so "the diagram was broken and now
 // renders" can only be answered here. The input is exactly what Word and
@@ -7,7 +7,7 @@ import { test, expect } from './fixtures.mjs'
 const BROKEN = 'flowchart TD\n \u00a0A[Start] \u2014> B[End]\n  B --> C[Done]'
 
 test('a diagram broken by a paste is repaired by its own button', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Pasted flow')
   await editor.locator('.editor').click()
@@ -35,7 +35,7 @@ test('a diagram broken by a paste is repaired by its own button', async ({ page 
 // The repair must reach the STORED source, not just the picture — what gets
 // pasted into a ticket is the text.
 test('the repair is what gets saved', async ({ app, page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Saved flow')
   await editor.locator('.editor').click()

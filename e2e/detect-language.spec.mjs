@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Auto-detect drives the snippet editor's syntax indicator live as you type: on
 // 'Auto-detect', the picker shows "→ <detected>" recomputed from the Monaco
@@ -6,7 +6,7 @@ import { test, expect } from './fixtures.mjs'
 // the detector feeding the reactive label — so this guards the wiring the unit
 // tests can't (they call the pure detector directly, never through the editor).
 test('the editor shows and updates the auto-detected syntax as you type', async ({ page }) => {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // A {{today}} in a snippet name is resolved ONCE, at save. The unit tests own
 // the token table; what only a launched app can show is that the resolved name
@@ -17,7 +17,7 @@ const today = () => {
 // until the test timed out — reported as "page has been closed", which names
 // nothing. Bracket-free text, so Monaco's auto-closing cannot perturb it.
 async function newSnippet(page, name) {
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const dialog = page.getByRole('dialog', { name: 'New Snippet' })
   await dialog.getByPlaceholder('Snippet name…').fill(name)
   await dialog.locator('.editor').click()

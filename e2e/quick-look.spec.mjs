@@ -1,4 +1,4 @@
-import { test, expect, clickAppMenuItem } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, newSnippetButton } from './fixtures.mjs'
 
 // The quick look-up is a SECOND BrowserWindow (quicklook.html), summoned by a
 // global shortcut in real use. Global shortcuts and OS focus are unreliable
@@ -44,7 +44,7 @@ test('summons the launcher with the seeded snippet and previews it', async ({ ap
 // and claude, neither of which Prism has a grammar for, so this brings its own.
 test('paints the preview with the syntax roles it tokenizes', async ({ app, page }) => {
   await seededReady(page)
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Highlight probe')
   await editor.locator('.lang-picker select').selectOption('json')

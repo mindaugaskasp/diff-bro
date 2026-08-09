@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, newSnippetButton } from './fixtures.mjs'
 
 // Regression cover for UI defects found by eye. Each of these shipped once, so
 // each gets a test that fails if it comes back.
@@ -117,7 +117,7 @@ test('the palette section label has room above its first row', async ({ page }) 
 // Native `title` tooltips are drawn by the OS, so they are invisible to the app,
 // unstyleable and slow. This asserts a tooltip the page actually renders.
 test('hovering an icon button shows a visible tooltip', async ({ page }) => {
-  const button = page.getByRole('button', { name: 'New snippet' })
+  const button = newSnippetButton(page)
   await button.hover()
 
   const tip = page.locator('.tip-bubble')
@@ -173,7 +173,7 @@ test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
 // button that carries no aria-label has no name at all.
 test('every icon-only button carries an accessible name', async ({ page }) => {
   // Reach the ones that only exist once something is open.
-  await page.getByRole('button', { name: 'New snippet' }).click()
+  await newSnippetButton(page).click()
   const editor = page.getByRole('dialog').first()
   await expect(editor).toBeVisible()
 
