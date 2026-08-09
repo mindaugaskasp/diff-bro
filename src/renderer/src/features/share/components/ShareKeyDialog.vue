@@ -32,6 +32,15 @@ async function copy() {
     busy.value = false
   }
 }
+async function email() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    await share.runEmailKey(label.value)
+  } finally {
+    busy.value = false
+  }
+}
 function close() {
   share.showShareKeyDialog = false
 }
@@ -80,6 +89,14 @@ function close() {
       </button>
       <button class="btn" :disabled="busy" @click="copy">
         {{ $t('share.keyDialog.copyToClipboard') }}
+      </button>
+      <button
+        class="btn"
+        :disabled="busy"
+        :data-tip="$t('share.keyDialog.emailItTip')"
+        @click="email"
+      >
+        {{ $t('share.keyDialog.emailIt') }}
       </button>
       <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
     </template>

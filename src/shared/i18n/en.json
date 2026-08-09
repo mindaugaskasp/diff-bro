@@ -119,6 +119,10 @@
       "message": "Open a new message in your mail app?",
       "detail": "To: {to}\n\n{file} is already saved. Diff Bro will copy it to the clipboard so you can paste it into the message — it does not send anything itself."
     },
+    "keyMail": {
+      "message": "Open a new message with your key ready to paste?",
+      "detail": "{file} is already on the clipboard as a file — paste it into the message and address it yourself. The draft includes your fingerprint so the other person can verify it with you."
+    },
     "cliInstall": {
       "message": "Add the diffbro command to your terminal?",
       "detail": "This writes a small launcher script into ~/.local/bin."
@@ -1256,7 +1260,9 @@
       "name": "Name",
       "intro": "Adding {whose} public key so you can receive diffs they share. The name is prefilled from what they called their key — keep it or rename it. Fingerprint {fp}.",
       "someoneElses": "someone else's",
-      "vouch": "This key says it replaces {who}, and that key signed the claim. Check the fingerprint with them anyway — anyone holding their old key could have signed it."
+      "vouch": "This key says it replaces {who}, and that key signed the claim. Check the fingerprint with them anyway — anyone holding their old key could have signed it.",
+      "fromYourClipboard": "Read from your clipboard — check the fingerprint with the sender before adding.",
+      "chooseAFileInstead": "Choose a file instead…"
     },
     "recipientPicker": {
       "searchRecipients": "Search recipients…",
@@ -1317,7 +1323,9 @@
       "intro": "This is {your} public key — hand it to the other person so they can receive diffs you share. To receive {their} diffs, use {menu} on the file {they} send you. You never import your own key.",
       "your": "your",
       "their": "their",
-      "they": "they"
+      "they": "they",
+      "emailIt": "Email it",
+      "emailItTip": "Open your mail app with the key file on the clipboard, ready to paste"
     },
     "trustedKeyRow": {
       "nameExampleCom": "name{'@'}example.com",
@@ -1407,7 +1415,11 @@
     "thatDiffCouldNotBe": "That diff could not be read — nothing was sealed.",
     "thatFileIsNotA": "That file is not a valid public key.",
     "thatFileIsNotA2": "That file is not a valid Diff Bro public key.",
-    "couldNotAddThatKey": "Could not add that key."
+    "couldNotAddThatKey": "Could not add that key.",
+    "keyEmailOpened": "Your mail app is opening — the key file is on the clipboard, paste it into the message.",
+    "keyEmailNoMailApp": "No mail app answered. The key file is on the clipboard and revealed — attach it to a message yourself.",
+    "keyEmailFailed": "Couldn't prepare the key email.",
+    "thatsYourOwnKey": "That's your own public key — you don't need to trust yourself."
   },
   "formatBanner": {
     "looksLike": "{side} looks like {kind} — pretty-print?",

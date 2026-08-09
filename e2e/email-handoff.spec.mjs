@@ -1,5 +1,5 @@
 import { generateKeyPairSync } from 'node:crypto'
-import { fingerprint } from '../src/main/sealing.js'
+import { KEY_FORMAT, decodePublicKey, encodePublicKey, fingerprint } from '../src/main/sealing.js'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -316,6 +316,102 @@ test('the picker holds thirty keys and a filter cannot hide a selection', async 
     // Still ticked, still on screen, still the answer.
     await expect(share.locator('.picked .chip')).toHaveCount(1)
     await expect(share.locator('.picked .chip').first()).toContainText('Teammate 01')
+  } finally {
+    await app.close()
+  }
+})
+
+// ——— The key swap's own hand-offs (specs/2026-08-09-email-my-key) ———
+
+test('Email it opens an UNADDRESSED draft carrying the fingerprint, key staged for pasting', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+
+  try {
+    await captureOsCalls(app)
+    await page.getByRole('button', { name: 'My key' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Share my public key' })
+    await dialog.getByPlaceholder('e.g. Alice — laptop').fill('E2E mailer')
+    const shownFp = (await dialog.locator('.fp code').innerText()).trim()
+
+    await dialog.getByRole('button', { name: 'Email it' }).click()
+    await expect(dialog).toBeHidden()
+
+    const { opened, revealed } = await osCalls(app)
+    expect(opened).toHaveLength(1)
+    const url = new URL(opened[0])
+    expect(url.protocol).toBe('mailto:')
+    // No addressee — the key goes to someone not yet in the trust store.
+    expect(url.pathname).toBe('')
+    expect(url.searchParams.get('body')).toContain(shownFp)
+    expect([...url.searchParams.keys()]).not.toContain('attach')
+
+    // The revealed path is the STAGED key file main wrote — a real, parseable
+    // public key whose material matches the fingerprint the dialog showed.
+    expect(revealed).toHaveLength(1)
+    const key = decodePublicKey(readFileSync(revealed[0], 'utf-8'))
+    expect(fingerprint(key.sign, key.box)).toBe(shownFp)
+  } finally {
+    await app.close()
+  }
+})
+
+// A key that arrived through a chat app is text on the clipboard. It must be
+// OFFERED through the same naming dialog a picked file gets — never silently
+// added — and junk must fall through to the picker without a word.
+test('a clipboard key is offered for verification; junk falls through to the picker', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+
+  try {
+    await app.evaluate(({ dialog }) => {
+      globalThis.__pickers = 0
+      dialog.showOpenDialog = async () => {
+        globalThis.__pickers++
+        return { canceled: true, filePaths: [] }
+      }
+    })
+
+    // Junk on the clipboard: straight to the picker, no dialog, no notice.
+    await app.evaluate(({ clipboard }) => clipboard.writeText('not a key at all'))
+    await page.getByRole('button', { name: 'Trusted key' }).click()
+    await expect(page.getByRole('dialog', { name: 'Add Trusted Key' })).toHaveCount(0)
+    expect(await app.evaluate(() => globalThis.__pickers)).toBe(1)
+
+    // A real key, wrapped the way Slack pastes it.
+    const peer = realKey()
+    const text =
+      '```\n' + encodePublicKey({ ...peer, format: KEY_FORMAT, label: 'Rūta phone' }) + '\n```'
+    await app.evaluate(({ clipboard }, t) => clipboard.writeText(t), text)
+    await page.getByRole('button', { name: 'Trusted key' }).click()
+
+    const confirm = page.getByRole('dialog', { name: 'Add Trusted Key' })
+    await expect(confirm).toBeVisible()
+    await expect(confirm.getByText('Read from your clipboard')).toBeVisible()
+    // The fingerprint shown is RECOMPUTED from the material.
+    await expect(confirm.locator('code').first()).toHaveText(fingerprint(peer.sign, peer.box))
+
+    // The way out: Choose a file instead skips the peek and opens the picker.
+    await confirm.getByRole('button', { name: 'Choose a file instead…' }).click()
+    await expect(confirm).toBeHidden()
+    expect(await app.evaluate(() => globalThis.__pickers)).toBe(2)
+
+    // Round two, this time trusting it: the name field prefills from the key's
+    // own label and Add lands it in the sidebar's trusted keys.
+    await page.getByRole('button', { name: 'Trusted key' }).click()
+    await expect(confirm).toBeVisible()
+    await expect(confirm.getByPlaceholder('e.g. Alice — laptop')).toHaveValue('Rūta phone')
+    await confirm.getByRole('button', { name: 'Add', exact: true }).click()
+    await expect(confirm).toBeHidden()
+
+    const stored = JSON.parse(readFileSync(join(dir, 'trusted-keys.json'), 'utf-8'))
+    expect(stored).toHaveLength(1)
+    expect(stored[0].fingerprint).toBe(fingerprint(peer.sign, peer.box))
+    expect(stored[0].label).toBe('Rūta phone')
   } finally {
     await app.close()
   }

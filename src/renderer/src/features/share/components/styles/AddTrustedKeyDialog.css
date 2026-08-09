@@ -15,3 +15,15 @@ code {
   color: var(--warning-text);
   border-radius: var(--radius-sm);
 }
+
+/* The clipboard-source note and its escape hatch share a line: the offer and
+   the way out of it read as one sentence. */
+.clip-source {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.clip-source .btn {
+  margin-left: auto;
+  flex: none;
+}

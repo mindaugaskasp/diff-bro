@@ -95,3 +95,27 @@ describe('isSafeMailtoUrl — the mail hand-off fence', () => {
     expect(isSafeMailtoUrl(`mailto:a@b.co?body=${'x'.repeat(5000)}`)).toBe(false)
   })
 })
+
+// The key hand-off's draft has no addressee at all — allowed only on the
+// caller's explicit say-so, and none of the other refusals soften with it.
+describe('isSafeMailtoUrl — recipient-less opt-in', () => {
+  it('refuses an address-less mailto by default', () => {
+    expect(isSafeMailtoUrl('mailto:?subject=Key')).toBe(false)
+  })
+
+  it('accepts one only with allowEmptyAddressee', () => {
+    expect(isSafeMailtoUrl('mailto:?subject=Key', { allowEmptyAddressee: true })).toBe(true)
+  })
+
+  it('still refuses attach with the opt-in', () => {
+    expect(isSafeMailtoUrl('mailto:?attach=/etc/passwd', { allowEmptyAddressee: true })).toBe(false)
+  })
+
+  it('a non-empty, non-address path stays refused with the opt-in', () => {
+    expect(isSafeMailtoUrl('mailto:garbage?subject=k', { allowEmptyAddressee: true })).toBe(false)
+  })
+
+  it('an addressed url passes with the flag exactly as without', () => {
+    expect(isSafeMailtoUrl('mailto:a@b.se?subject=k', { allowEmptyAddressee: true })).toBe(true)
+  })
+})

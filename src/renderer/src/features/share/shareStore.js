@@ -10,6 +10,7 @@ import { useVaultStore } from '../../stores/vaultStore'
 import { useEmailStore } from '../email'
 import { errorMessage } from '../../utils/shareErrors'
 import { t } from '../../i18n'
+import { keyExchangeActions } from './keyExchangeActions'
 
 export const useShareStore = defineStore('share', {
   state: () => ({
@@ -27,6 +28,7 @@ export const useShareStore = defineStore('share', {
     showRotateKeyDialog: false
   }),
   actions: {
+    ...keyExchangeActions,
     // Save first (a share file needs a name + expiry), then the recipient picker.
     shareCurrent() {
       const diff = useDiffStore()
@@ -178,23 +180,6 @@ export const useShareStore = defineStore('share', {
         )
       }
     },
-    // Pick a key file, then require a name before adding.
-    async addTrustedKey() {
-      const diff = useDiffStore()
-      const res = await window.api.addTrustedKey()
-      if (res.ok) {
-        this.pendingTrustedKey = {
-          key: res.key,
-          fingerprint: res.fingerprint,
-          label: res.defaultLabel,
-          vouchedBy: res.vouchedBy ?? null
-        }
-      } else if (res.error === 'own-key') {
-        diff.showNotice("That's your own public key — you don't need to trust yourself.")
-      } else if (res.error) {
-        diff.showNotice(t('shareNotices.thatFileIsNotA'))
-      }
-    },
     // A dropped .diffbrokey: validate, then open the naming dialog before adding.
     async receiveDroppedKey(path) {
       const diff = useDiffStore()
@@ -207,7 +192,7 @@ export const useShareStore = defineStore('share', {
           vouchedBy: res.vouchedBy ?? null
         }
       } else if (res.error === 'own-key') {
-        diff.showNotice("That's your own public key — you don't need to trust yourself.")
+        diff.showNotice(t('shareNotices.thatsYourOwnKey'))
       } else {
         diff.showNotice(t('shareNotices.thatFileIsNotA2'))
       }

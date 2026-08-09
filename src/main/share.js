@@ -173,7 +173,7 @@ async function persistIdentity(priv, pub) {
 
 // Set/refresh the cosmetic display label (never part of the fingerprint or any
 // trust check) and return the pub with it embedded.
-async function pubWithLabel(rawLabel) {
+export async function pubWithLabel(rawLabel) {
   const { priv, pub } = await getIdentity()
   // null/undefined keeps the existing label; a string (even '') sets it.
   if (rawLabel == null) return pub
@@ -187,7 +187,7 @@ async function pubWithLabel(rawLabel) {
 
 // A recognizable filename for an exported key: "Alice-laptop-diffbro-key.diffbrokey"
 // when labeled, else a fingerprint-tagged fallback.
-function keyFileBasename(label, fp) {
+export function keyFileBasename(label, fp) {
   const slug = label.replace(/[^\w.-]+/g, '-').replace(/^-+|-+$/g, '')
   return (slug ? `${slug}-diffbro-key` : `diffbro-public-key-${fp}`) + '.diffbrokey'
 }
@@ -223,6 +223,25 @@ async function openSharedFileAt(path) {
     return { error: 'renamed' }
   }
   return openSealedWith(file, await decryptionIdentities(), await readTrusted())
+}
+
+/**
+ * The label of an ALREADY-TRUSTED key that signed this one's rotation record —
+ * or null. The predecessor's signing key is read from the trust store, never
+ * from the file, or the record would be vouching for itself.
+ *
+ * Advisory by construction: whoever holds a leaked private key can sign a
+ * rotation to a key of their own, so this downgrades the out-of-band check and
+ * never replaces it. The UI must say WHICH key vouched.
+ * @param {object} key
+ * @returns {Promise<string|null>}
+ */
+export async function vouchedBy(key) {
+  const record = key?.rotation
+  if (!record?.from) return null
+  const previous = (await readTrusted()).find((t) => t.fingerprint === record.from)
+  if (!previous?.sign) return null
+  return verifyRotation(record, previous.sign, key) ? previous.label || record.from : null
 }
 
 export function registerShareIpc() {
@@ -368,25 +387,6 @@ export function registerShareIpc() {
       }
     })
   )
-
-  /**
-   * The label of an ALREADY-TRUSTED key that signed this one's rotation record —
-   * or null. The predecessor's signing key is read from the trust store, never
-   * from the file, or the record would be vouching for itself.
-   *
-   * Advisory by construction: whoever holds a leaked private key can sign a
-   * rotation to a key of their own, so this downgrades the out-of-band check and
-   * never replaces it. The UI must say WHICH key vouched.
-   * @param {object} key
-   * @returns {Promise<string|null>}
-   */
-  async function vouchedBy(key) {
-    const record = key?.rotation
-    if (!record?.from) return null
-    const previous = (await readTrusted()).find((t) => t.fingerprint === record.from)
-    if (!previous?.sign) return null
-    return verifyRotation(record, previous.sign, key) ? previous.label || record.from : null
-  }
 
   // Fingerprint recomputed from the key material — the renderer's is never trusted.
   ipcMain.handle(

@@ -11,12 +11,21 @@ import { bodyText, headerText, isValidEmail } from './mailAddress'
 export const MAX_MAILTO_LENGTH = 4000
 
 /**
- * @param {{ to: string[], subject?: string, body?: string }} message
+ * `allowEmptyTo` is the key hand-off's explicit opt-in: that draft goes to
+ * someone not yet in the trust store, so the user addresses it themselves.
+ * @param {{ to: string[], subject?: string, body?: string, allowEmptyTo?: boolean }} message
  * @returns {{ ok: true, url: string } | { error: string }}
  */
-export function buildMailto({ to, subject, body } = {}) {
-  const recipients = (Array.isArray(to) ? to : [to]).map((a) => String(a ?? '').trim())
-  if (!recipients.length || !recipients.every(isValidEmail)) return { error: 'bad-address' }
+const cleanRecipients = (to, allowEmptyTo) =>
+  (Array.isArray(to) ? to : [to])
+    .map((a) => String(a ?? '').trim())
+    .filter((a) => a || !allowEmptyTo)
+
+export function buildMailto({ to, subject, body, allowEmptyTo = false } = {}) {
+  const recipients = cleanRecipients(to, allowEmptyTo)
+  if ((!recipients.length && !allowEmptyTo) || !recipients.every(isValidEmail)) {
+    return { error: 'bad-address' }
+  }
 
   // The recipient list is path, not query: encodeURIComponent each address so a
   // comma can only ever be our separator. `@` is put back — RFC 6068 allows it
@@ -35,6 +44,25 @@ export function buildMailto({ to, subject, body } = {}) {
   const url = `mailto:${path}${query ? `?${query}` : ''}`
   if (url.length > MAX_MAILTO_LENGTH) return { error: 'too-long' }
   return { ok: true, url }
+}
+
+/**
+ * The message wrapped around an emailed public key. The fingerprint in the
+ * body IS the point: it gives the recipient the out-of-band check before they
+ * trust anything. Built here so the label passes headerText like any subject.
+ * @param {{ label?: string, fingerprint?: string }} parts
+ * @returns {{ subject: string, body: string }}
+ */
+export function keyMessage({ label, fingerprint } = {}) {
+  const clean = headerText(label)
+  return {
+    subject: clean ? `My Diff Bro key — ${clean}` : 'My Diff Bro key',
+    body: bodyText(
+      `My Diff Bro public key is attached — paste it from the clipboard if it is not.\n\n` +
+        `Import it in Diff Bro via Security → Add Trusted Key.\n\n` +
+        `Verify the fingerprint with me before trusting it: ${String(fingerprint ?? '')}`
+    )
+  }
 }
 
 /**

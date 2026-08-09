@@ -70,7 +70,7 @@ const carriesBannedParam = (url) => {
   return BANNED_MAILTO_PARAMS.some((p) => hash.includes(p))
 }
 
-export function isSafeMailtoUrl(raw) {
+export function isSafeMailtoUrl(raw, { allowEmptyAddressee = false } = {}) {
   if (typeof raw !== 'string') return false
   // Tested BEFORE the trim: the caller holds the untrimmed string, so a verdict
   // about a trimmed one is a verdict about a different value.
@@ -83,5 +83,12 @@ export function isSafeMailtoUrl(raw) {
   } catch {
     return false
   }
-  return url.protocol === 'mailto:' && hasAddressee(url) && !carriesBannedParam(url)
+  return (
+    url.protocol === 'mailto:' && isAddressed(url, allowEmptyAddressee) && !carriesBannedParam(url)
+  )
 }
+
+// Empty is allowed only on the caller's say-so (the key hand-off's unaddressed
+// draft); a non-empty path still has to be a real addressee.
+const isAddressed = (url, allowEmptyAddressee) =>
+  hasAddressee(url) || (allowEmptyAddressee === true && url.pathname === '')

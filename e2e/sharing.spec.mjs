@@ -30,8 +30,11 @@ async function exportKey(app, page, name, path) {
   await expect(dlg).toBeHidden()
 }
 
-// Import a peer's key file and commit it under its prefilled name.
+// Import a peer's key file and commit it under its prefilled name. The
+// clipboard is cleared first: Add Trusted Key now peeks it for a copied key,
+// and these tests are about the FILE path.
 async function addTrusted(app, page, keyPath) {
+  await app.evaluate(({ clipboard }) => clipboard.clear())
   await stubOpenDialog(app, keyPath)
   await openMenu(page, 'Security', 'Add Trusted Key')
   const add = page.getByRole('dialog', { name: 'Add trusted key' })
@@ -135,6 +138,7 @@ test('adding your own key is refused', async ({ app, page }) => {
     await dlg.getByRole('button', { name: /Save to file/ }).click()
     await expect(page.getByText(/public key was saved/i)).toBeVisible()
 
+    await app.evaluate(({ clipboard }) => clipboard.clear())
     await stubOpenDialog(app, keyPath)
     await openMenu(page, 'Security', 'Add Trusted Key')
     await expect(page.getByText(/your own public key/i)).toBeVisible()
@@ -150,6 +154,7 @@ test('a file that is not a public key is rejected', async ({ app, page }) => {
   const bad = join(dir, 'bad.diffbrokey')
   writeFileSync(bad, 'this is not a key')
   try {
+    await app.evaluate(({ clipboard }) => clipboard.clear())
     await stubOpenDialog(app, bad)
     await openMenu(page, 'Security', 'Add Trusted Key')
     await expect(page.getByText(/not a valid public key/i)).toBeVisible()

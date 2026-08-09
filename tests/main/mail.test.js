@@ -5,7 +5,9 @@ const state = {
   addresses: { ok: true, to: [{ label: 'Ana', email: 'ana@example.com' }] },
   sealed: { ok: true, path: '/tmp/diffbro/3f9c1ab27de40852.diffbro' },
   confirmResponse: 0,
-  copied: { ok: true }
+  copied: { ok: true },
+  staged: '/tmp/diffbro-clipboard/Ana-laptop.diffbrokey',
+  stagedNames: []
 }
 const opened = []
 const revealed = []
@@ -36,7 +38,21 @@ vi.mock('../../src/main/clipboardCopy', () => ({
   }
 }))
 vi.mock('../../src/main/share', () => ({
-  getIdentity: () => Promise.resolve({ priv: {}, pub: { fingerprint: 'me' } })
+  getIdentity: () => Promise.resolve({ priv: {}, pub: { fingerprint: 'me' } }),
+  pubWithLabel: (label) =>
+    Promise.resolve({
+      sign: 'SIGN',
+      box: 'BOX',
+      label: label ?? 'Ana laptop',
+      fingerprint: 'fp1234abcd'
+    }),
+  keyFileBasename: (label) => `${label || 'diffbro-public-key'}.diffbrokey`
+}))
+vi.mock('../../src/main/clipboardStage', () => ({
+  stageFile: ({ name }) => {
+    state.stagedNames.push(name)
+    return Promise.resolve({ ok: true, path: state.staged })
+  }
 }))
 
 const { registerMailIpc, setOsHooksForTests } = await import('../../src/main/mail')
@@ -55,6 +71,7 @@ beforeEach(() => {
   state.sealed = { ok: true, path: '/tmp/diffbro/3f9c1ab27de40852.diffbro' }
   state.confirmResponse = 0
   state.copied = { ok: true }
+  state.stagedNames = []
   setOsHooksForTests({
     openExternal: (url) => opened.push(url),
     showItemInFolder: (path) => revealed.push(path)
@@ -215,5 +232,50 @@ describe('mail:handoff', () => {
     walk('src/main/mail.js')
     // Proof the walk actually reached past the entry file.
     expect(seen.size).toBeGreaterThan(5)
+  })
+})
+
+// The key hand-off: same walk as the diff's, but the draft is UNADDRESSED (the
+// key goes to someone not yet in the trust store) and the file is the staged
+// public key, never a renderer-named path.
+describe('mail:keyHandoff', () => {
+  const keyHandoff = (args = {}) => handlers.get('mail:keyHandoff')({ sender: {} }, args)
+
+  it('stages the key, copies it, and opens a recipient-less draft carrying the fingerprint', async () => {
+    const res = await keyHandoff({ label: 'Ana laptop' })
+
+    expect(res.ok).toBe(true)
+    expect(state.stagedNames).toEqual(['Ana laptop.diffbrokey'])
+    expect(copies).toEqual([state.staged])
+    expect(opened).toHaveLength(1)
+    const url = new URL(opened[0])
+    expect(url.protocol).toBe('mailto:')
+    expect(url.pathname).toBe('')
+    expect(url.searchParams.get('body')).toContain('fp1234abcd')
+    expect([...url.searchParams.keys()].sort()).toEqual(['body', 'subject'])
+  })
+
+  it('cancelling keeps the staged file and says where it is', async () => {
+    state.confirmResponse = 1
+    const res = await keyHandoff({ label: 'x' })
+    expect(res.canceled).toBe(true)
+    expect(res.path).toBe(state.staged)
+    expect(opened).toHaveLength(0)
+  })
+
+  it('degrades to clipboard + reveal when no mail app answers', async () => {
+    setOsHooksForTests({
+      openExternal: () => Promise.reject(new Error('no handler')),
+      showItemInFolder: (path) => revealed.push(path)
+    })
+    const res = await keyHandoff({ label: 'x' })
+    expect(res.error).toBe('no-mail-app')
+    expect(res.copied).toBe(true)
+    expect(revealed).toEqual([state.staged])
+  })
+
+  it('honours reveal: false the way the diff flow does', async () => {
+    await keyHandoff({ label: 'x', reveal: false })
+    expect(revealed).toHaveLength(0)
   })
 })
