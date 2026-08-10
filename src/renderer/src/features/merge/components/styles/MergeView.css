@@ -1,0 +1,143 @@
+/* Three panes: the two commits either side, the file being produced in the
+   middle. The panes are Monaco surfaces, themed through applyMonacoTheme like
+   the diff view, so only the chrome is tokens here. */
+.merge-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.merge-bar {
+  flex: none;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  min-height: var(--band-row);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.merge-file {
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  color: var(--text);
+  white-space: nowrap;
+}
+/* Height from --chip-h, never from padding. */
+.merge-walk {
+  height: var(--chip-h);
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--btn-face);
+  color: var(--text);
+  font-size: var(--font-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.merge-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-3);
+}
+.merge-count {
+  padding: 0 var(--space-2);
+  color: var(--text-hint);
+  font-size: var(--font-sm);
+  white-space: nowrap;
+}
+.merge-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+.merge-note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-hint);
+  font-size: var(--font-sm);
+}
+.merge-panes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  /* Columns come from the drag, as fractions, so the split survives a window
+     resize. Five tracks: the grips are grid children and need one each, or the
+     last pane wraps onto a row of its own. */
+  grid-template-columns: 1fr 0 1fr 0 1fr;
+  position: relative;
+}
+/* While dragging, the editors must not eat the pointer. */
+.merge-panes.resizing .merge-editor {
+  pointer-events: none;
+}
+/* Sits ON the divider the panes already draw, so widening it does not move
+   anything: the hit area is wider than the line. */
+.merge-grip {
+  position: relative;
+  width: 0;
+  z-index: 2;
+  cursor: col-resize;
+}
+.merge-grip::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -3px;
+  width: 7px;
+}
+.merge-grip:hover::after,
+.merge-panes.resizing .merge-grip::after {
+  background: var(--accent);
+  opacity: 0.35;
+}
+.merge-pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+.merge-pane:last-child {
+  border-right: 0;
+}
+/* The middle pane is the one being produced, so it is the raised surface and
+   the two sources sit either side of it. */
+.merge-pane.result .merge-head {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+.merge-head {
+  flex: none;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  /* --text-hint, not --text-dim: these are words a reader reads, and dim's 3.0
+     floor is held against --bg-panel with no margin left over. */
+  color: var(--text-hint);
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+.merge-hint {
+  margin-left: auto;
+  font-weight: 400;
+}
+/* The branch a side comes from. Same ink as the label it follows — a quieter
+   one would fall through the reading floor on the light-ground themes. */
+.merge-rev {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.merge-editor {
+  flex: 1;
+  min-height: 0;
+}

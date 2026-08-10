@@ -67,23 +67,19 @@ test('resolves a real conflict and writes the merged file back', async () => {
   try {
     await runMergetool(userDataDir, dir, file)
 
-    const dialog = page.getByRole('dialog', { name: 'Resolve merge conflicts' })
-    await expect(dialog).toBeVisible({ timeout: 20000 })
+    const view = page.locator('.merge-view')
+    await expect(view).toBeVisible({ timeout: 20000 })
+    // Three panes: the two commits either side of the file being produced.
+    await expect(page.locator('.merge-pane')).toHaveCount(3)
 
-    // The two conflicting versions are what the README promises and what the
-    // dialog sits over — they used to open EMPTY, because the merge route
-    // returned before vouching for either path.
-    await expect(page.locator('.slot[data-side="left"] .name')).toContainText('app.txt')
-    await expect(page.locator('.slot[data-side="right"] .name')).toContainText('app.txt')
-
-    // Nothing may be written while a conflict is undecided.
+    // Nothing may be written while a region is still undecided.
     const save = page.getByTestId('merge-save')
     await expect(save).toBeDisabled()
 
-    await page.getByTestId('merge-theirs-0').click()
+    await page.getByTestId('merge-take-theirs').click()
     await expect(save).toBeEnabled()
     await save.click()
-    await expect(dialog).toHaveCount(0, { timeout: 10000 })
+    await expect(view).toHaveCount(0, { timeout: 10000 })
 
     // The file git is left holding: their side, no markers.
     const merged = readFileSync(file, 'utf8')
@@ -103,10 +99,9 @@ test('declining leaves the file exactly as git left it', async () => {
   const page = await firstReadyPage(app)
   try {
     await runMergetool(userDataDir, dir, file)
-    const dialog = page.getByRole('dialog', { name: 'Resolve merge conflicts' })
-    await expect(dialog).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
     await page.getByRole('button', { name: 'Cancel' }).click()
-    await expect(dialog).toHaveCount(0)
+    await expect(page.locator('.merge-view')).toHaveCount(0)
 
     // Untouched, markers and all — the reader said no.
     expect(readFileSync(file).equals(before)).toBe(true)
@@ -130,7 +125,7 @@ test('refuses a binary conflict instead of destroying it', async () => {
   try {
     await runMergetool(userDataDir, dir, file)
     await page.waitForTimeout(1500)
-    await expect(page.getByRole('dialog', { name: 'Resolve merge conflicts' })).toHaveCount(0)
+    await expect(page.locator('.merge-view')).toHaveCount(0)
     expect(readFileSync(file).equals(bytes)).toBe(true)
   } finally {
     await app.close().catch(() => {})
@@ -150,8 +145,238 @@ test('refuses a file with no conflict markers', async () => {
   try {
     await runMergetool(userDataDir, dir, file)
     await page.waitForTimeout(1500)
-    await expect(page.getByRole('dialog', { name: 'Resolve merge conflicts' })).toHaveCount(0)
+    await expect(page.locator('.merge-view')).toHaveCount(0)
     expect(readFileSync(file, 'utf8')).toBe('nothing to resolve\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The whole reason for the rebuild: neither side is always right, and the
+// result is a real editor.
+test('takes a side, then lets the reader type the answer neither side had', async () => {
+  const { dir, file } = conflictedRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    // The sides come out of git's index, so they are whole files with no
+    // markers in them — not the fragments the old dialog showed.
+    const ours = page.locator('.merge-pane').first()
+    await expect(ours).toContainText('ours')
+    await expect(ours).not.toContainText('<<<<<<<')
+
+    await page.getByTestId('merge-take-ours').click()
+    await expect(page.getByTestId('merge-save')).toBeEnabled()
+
+    // Now edit the result by hand, which the resolver could not express.
+    const result = page.locator('.merge-pane.result .merge-editor')
+    await result.click()
+    await page.locator('.merge-pane.result textarea').waitFor()
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.type('one\nhand written\nthree\n')
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    expect(readFileSync(file, 'utf8')).toBe('one\nhand written\nthree\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The gutter chevrons are the interaction a merge tool is judged on: the side
+// you want, moved into the result from where it sits.
+test('a gutter chevron moves that side into the result', async () => {
+  const { dir, file } = conflictedRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    // The result opens as a valid FILE — no markers anywhere in the view.
+    const result = page.locator('.merge-pane.result')
+    await expect(result).not.toContainText('<<<<<<<')
+    await expect(result).not.toContainText('=======')
+
+    const theirChevron = page.locator('.merge-pane').last().locator('.merge-take-theirs')
+    await expect(theirChevron).toHaveCount(1)
+    await theirChevron.click()
+
+    await expect(page.getByTestId('merge-save')).toBeEnabled()
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+    expect(readFileSync(file, 'utf8')).toBe('one\ntheirs\nthree\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The sides come out of git's INDEX, not from re-reading the markers. The
+// difference shows where git auto-merged a hunk: the reconstruction carries the
+// merged line into both sides, the index does not. This was silently falling
+// back on macOS, where git reports /private/var for a repo under /var and the
+// relative path came out full of `..`.
+test('reads both sides from the index, not from the markers', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-merge-idx-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const file = join(dir, 'app.txt')
+  git('init', '-q', '-b', 'main')
+  // `mode` is changed by THEM alone and git merges it without asking; `value`
+  // is changed by both and conflicts. The unchanged lines between them matter:
+  // git folds ADJACENT changes into one hunk, and then nothing is auto-merged.
+  writeFileSync(file, 'value: base\nkeep one\nkeep two\nkeep three\nmode: fast\n')
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  writeFileSync(file, 'value: theirs\nkeep one\nkeep two\nkeep three\nmode: safe\n')
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  writeFileSync(file, 'value: ours\nkeep one\nkeep two\nkeep three\nmode: fast\n')
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected.
+  }
+
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    // Our side still says `fast`; only the auto-merged RESULT says `safe`.
+    await expect(page.locator('.merge-pane').first()).toContainText('mode: fast')
+    await expect(page.locator('.merge-pane').last()).toContainText('mode: safe')
+    await expect(page.locator('.merge-pane.result')).toContainText('mode: safe')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The answer neither side had, typed straight in — with no button pressed after
+// it. A resolver that still demands a click has not accepted the edit.
+test('typing in a conflict is itself the answer to it', async () => {
+  const { dir, file } = conflictedRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    const save = page.getByTestId('merge-save')
+    await expect(save).toBeDisabled()
+
+    const result = page.locator('.merge-pane.result .merge-editor')
+    await result.click()
+    await page.locator('.merge-pane.result textarea').waitFor()
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.type('one\nboth of us were wrong\nthree\n')
+
+    await expect(save).toBeEnabled()
+    await save.click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+    expect(readFileSync(file, 'utf8')).toBe('one\nboth of us were wrong\nthree\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Which branch a side IS, read out of git rather than guessed. The panes said
+// only "Ours" and "Theirs", which names neither commit.
+test('names the branches the two sides come from', async () => {
+  const { dir, file } = conflictedRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.merge-pane').first()).toContainText('main')
+    await expect(page.locator('.merge-pane').last()).toContainText('feature')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// The grips are grid children too. Left to take column tracks of their own they
+// wrapped Theirs onto a second row and cut the result pane to half the height.
+test('the three panes fill one full-height row', async () => {
+  const { dir, file } = conflictedRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    const row = await page.locator('.merge-panes').boundingBox()
+    const panes = await page.locator('.merge-pane').all()
+    let spanned = 0
+    for (const pane of panes) {
+      const box = await pane.boundingBox()
+      expect(Math.abs(box.y - row.y)).toBeLessThan(2)
+      expect(Math.abs(box.height - row.height)).toBeLessThan(2)
+      spanned += box.width
+    }
+    // Side by side across the whole row, with no track spent on a grip.
+    expect(Math.abs(spanned - row.width)).toBeLessThan(4)
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Three fixed thirds is not enough to read a wide file in; the dividers move.
+test('the panes can be widened, and the split is remembered', async () => {
+  const { dir, file } = conflictedRepo()
+  const userDataDir = freshUserDataDir()
+  let app = await launchApp(userDataDir)
+  let page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    const ours = page.locator('.merge-pane').first()
+    const before = (await ours.boundingBox()).width
+    const grip = page.locator('.merge-grip').first()
+    const box = await grip.boundingBox()
+    await page.mouse.move(box.x, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 220, box.y + box.height / 2, { steps: 8 })
+    await page.mouse.up()
+
+    const after = (await ours.boundingBox()).width
+    expect(after).toBeGreaterThan(before + 100)
+
+    // A drag is a decision, so it outlives the window it was made in.
+    await app.close()
+    app = await launchApp(userDataDir)
+    page = await firstReadyPage(app)
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+    const restored = (await page.locator('.merge-pane').first().boundingBox()).width
+    expect(Math.abs(restored - after)).toBeLessThan(24)
   } finally {
     await app.close().catch(() => {})
     rmSync(dir, { recursive: true, force: true })

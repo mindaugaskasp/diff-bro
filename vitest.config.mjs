@@ -43,10 +43,10 @@ export default defineConfig({
       // floor, which this ratchet forbids. They need tests of their own first —
       // then they join the set and the floors go up again.
       thresholds: {
-        statements: 94,
-        branches: 87,
+        statements: 95,
+        branches: 88,
         functions: 95,
-        lines: 95
+        lines: 96
       },
       include: [
         'src/main/sealing.js',

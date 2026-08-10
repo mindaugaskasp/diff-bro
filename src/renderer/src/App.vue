@@ -16,6 +16,7 @@ import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
 import DiagramDiffViewer from './components/DiagramDiffViewer.vue'
 import DepsDiffViewer from './components/DepsDiffViewer.vue'
+import { MergeView, useMergeStore } from './features/merge'
 import StructureDiffViewer from './components/StructureDiffViewer.vue'
 import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
@@ -42,6 +43,7 @@ import { useUiStore } from './stores/uiStore'
 import { hasStatusBand } from './utils/viewChrome'
 
 const store = useDiffStore()
+const merge = useMergeStore()
 const ui = useUiStore()
 const imageExport = useImageExportStore()
 const tabs = useTabsStore()
@@ -165,7 +167,11 @@ useSnippetDiffSync()
             </div>
           </div>
 
-          <PasteInput v-if="store.mode === 'paste'" />
+          <!-- A merge is not a comparison and does not wait for one: it takes
+               the area outright, ahead of the empty state, because the file
+               being produced is the point and it needs the width. -->
+          <MergeView v-if="merge.open" />
+          <PasteInput v-else-if="store.mode === 'paste'" />
           <!-- Content router: pick the viewer by comparable kind. -->
           <template v-else-if="store.ready">
             <template v-if="store.comparableKind === 'text'">
@@ -197,7 +203,7 @@ useSnippetDiffSync()
 
           <DiskChangeNotice />
 
-          <ShortcutBar />
+          <ShortcutBar v-if="!merge.open" />
 
           <!-- The photo studio: covers this column while a snippet is shot. -->
           <SnippetShot v-if="imageExport.snippetShot" :shot="imageExport.snippetShot" />

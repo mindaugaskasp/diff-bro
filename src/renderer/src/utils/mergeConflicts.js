@@ -31,6 +31,10 @@ function conflictAt(raw, start) {
       return {
         conflict: {
           type: 'conflict',
+          // 1-based and inclusive of both markers — the range an edit replaces
+          // and a decoration paints.
+          startLine: start + 1,
+          endLine: i + 1,
           oursLabel: label(OURS.exec(textOf(raw[start]))),
           theirsLabel: label(closing),
           ours: sides.ours.map(textOf),

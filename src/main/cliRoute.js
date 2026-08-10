@@ -12,7 +12,9 @@ import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
 import { fileAtRevision, isRevisionSide, REVISION_ERROR_KEYS } from './gitCliFiles'
 import { beginMerge, cancelMerge, writeMerged } from './mergeSession'
+import { mergeInputsFor } from './mergeInputs'
 import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
 import { hasConflictMarkers, isBinaryBuffer } from './mergeGuards'
 import { t } from './i18n'
 
@@ -109,11 +111,18 @@ function routeMerge(command) {
     return
   }
   beginMerge(command)
-  // Both sides are files main just vouched for; without this file:read refuses
-  // them and the two panes open empty.
-  allowCliPath(command.local)
-  allowCliPath(command.remote)
-  deliver({ name: 'merge', local: command.local, remote: command.remote, content })
+  mergeInputsFor(command.merged).then((inputs) => {
+    deliver({
+      name: 'merge',
+      local: command.local,
+      remote: command.remote,
+      // A NAME for the band, never the path: the renderer must not be able to
+      // learn, or name, the file main is going to write.
+      fileName: basename(command.merged),
+      content,
+      ...inputs
+    })
+  })
 }
 
 // The verbs that need something done before the renderer hears about them.

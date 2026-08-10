@@ -17,6 +17,7 @@ export const STORE_NAMES = [
   'email', // mail hand-off defaults — features/email/emailStore.js
   'onboarding', // tour progress — features/onboarding/onboardingStore.js
   'sidebar', // sidebar width — composables/useSidebarResize.js
+  'mergePanes', // merge pane split — features/merge/useMergePaneSizes.js
   'tools' // pinned tools — features/tools/toolsStore.js
 ]
 

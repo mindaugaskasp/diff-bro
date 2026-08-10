@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   gitEnv,
   HARDENING,
+  readStageArgs,
+  revisionNameArgs,
   isSafeRevision,
   readBlobArgs,
   repoRootArgs,
@@ -123,5 +125,49 @@ describe('the environment a git invocation inherits', () => {
     const env = gitEnv({})
     expect(env.GIT_CONFIG_NOSYSTEM).toBe('1')
     expect(env.GIT_TERMINAL_PROMPT).toBe('0')
+  })
+})
+
+// A conflicted file sits in the index three times: stage 1 is the ancestor,
+// 2 is ours, 3 is theirs. Reading those beats scraping markers out of the
+// working copy, and it is the only way to get the ancestor at all.
+describe('readStageArgs', () => {
+  it('reads a stage out of the index, hardened and fenced', () => {
+    expect(readStageArgs(2, 'src/app.js')).toEqual([
+      ...HARDENING,
+      'show',
+      '--end-of-options',
+      ':2:src/app.js'
+    ])
+  })
+
+  it('takes all three stages and nothing else', () => {
+    for (const stage of [1, 2, 3]) expect(readStageArgs(stage, 'a.js')).toContain(`:${stage}:a.js`)
+    for (const bad of [0, 4, -1, 1.5, '2', null, undefined]) {
+      expect(() => readStageArgs(bad, 'a.js'), String(bad)).toThrow()
+    }
+  })
+
+  it('fences the path exactly as reading a revision does', () => {
+    expect(() => readStageArgs(2, '../../etc/passwd')).toThrow()
+    expect(() => readStageArgs(2, '/etc/passwd')).toThrow()
+    expect(readStageArgs(2, 'src\\app.js')).toContain(':2:src/app.js')
+  })
+})
+
+describe('revisionNameArgs', () => {
+  it('names only the two refs a merge in progress puts on disk', () => {
+    expect(revisionNameArgs('MERGE_HEAD')).toEqual([
+      ...HARDENING,
+      'name-rev',
+      '--name-only',
+      '--refs=refs/heads/*',
+      '--no-undefined',
+      '--end-of-options',
+      'MERGE_HEAD'
+    ])
+    for (const bad of ['origin/main', '--upload-pack=x', 'HEAD^', '', null]) {
+      expect(() => revisionNameArgs(bad), String(bad)).toThrow()
+    }
   })
 })

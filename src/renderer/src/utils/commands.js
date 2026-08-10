@@ -144,10 +144,11 @@ export const CLI_COMMANDS = {
   'new-snippet': ({ snippets }, command) => snippets.add(command.draft),
   // git hands over the two conflicting versions AND the file it wants written;
   // the sides open as an ordinary comparison, the conflicts open over them.
-  merge: async ({ diff, tabs, merge }, command) => {
-    await compareFromCli({ diff, tabs }, [command.local, command.remote], true)
-    merge.begin(command.content)
-  },
+  // The merge view is self-contained: it holds the conflicted text and both
+  // sides itself. It used to ALSO open the two files as a comparison, which the
+  // view never read — thirty conflicted files meant sixty pointless reads and
+  // thirty tabs against a cap of sixteen.
+  merge: ({ merge }, command) => merge.begin(command),
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
   // The passphrase is asked for here, not in the terminal: the bundle is

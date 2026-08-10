@@ -1,2 +1,2 @@
 export { useMergeStore } from './mergeStore'
-export { default as MergeDialog } from './components/MergeDialog.vue'
+export { default as MergeView } from './components/MergeView.vue'

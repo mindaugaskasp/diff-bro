@@ -17,16 +17,25 @@
     }
   },
   "merge": {
-    "title": "Resolve merge conflicts",
-    "remaining": "Nothing left to decide | {n} conflict still to decide | {n} conflicts still to decide",
-    "conflictN": "Conflict {n}",
+    "remaining": "Nothing left to resolve | {n} conflict left | {n} conflicts left",
     "takeOurs": "Ours",
     "takeTheirs": "Theirs",
     "takeBoth": "Both",
     "takeNeither": "Neither",
-    "allOf": "{side} everywhere",
     "save": "Save the merge",
-    "unreadable": "That file’s conflict markers do not close, so there is nothing safe to resolve. Finish it by hand."
+    "unreadable": "That file’s conflict markers do not close, so there is nothing safe to resolve. Finish it by hand.",
+    "ours": "Ours",
+    "theirs": "Theirs",
+    "result": "Result",
+    "editable": "yours to edit",
+    "allOurs": "All ours",
+    "allTheirs": "All theirs",
+    "fileOf": "{n} of {total}",
+    "takeOursTip": "Take ours",
+    "takeTheirsTip": "Take theirs",
+    "prevTip": "Previous conflict · Shift+F7",
+    "nextTip": "Next conflict · F7",
+    "fromBranch": "from {name}"
   },
   "menu": {
     "file": {

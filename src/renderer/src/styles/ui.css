@@ -1065,3 +1065,83 @@ button.tag-chip:hover .usb-tct {
   pointer-events: none;
   animation: new-wash 4s ease-in;
 }
+
+/* --- Merge regions ------------------------------------------------------
+   Painted INTO Monaco, so these are global: a scoped stylesheet cannot reach
+   the editor's own DOM.
+
+   Each pane carries its OWN role, so three tints of one colour never have to be
+   told apart. The sides say which side they are; the middle says whether the
+   place still needs an answer. Every colour is a --dg-* role, which
+   check-theme-depth holds to a contrast floor and a pairwise ΔE floor on all
+   twenty themes. */
+.merge-side-ours {
+  background: color-mix(in srgb, var(--dg-del) 13%, transparent);
+}
+.merge-edge-ours {
+  box-shadow: inset 3px 0 0 var(--dg-del);
+}
+.merge-side-theirs {
+  background: color-mix(in srgb, var(--dg-add) 13%, transparent);
+}
+.merge-edge-theirs {
+  box-shadow: inset 3px 0 0 var(--dg-add);
+}
+/* Inside a conflicted line, the characters that actually differ. A band tinted
+   whole says two versions exist; this says the change is one digit. Stronger
+   than the band it sits in, so the band stays context. */
+.merge-word {
+  border-radius: var(--radius-sm);
+}
+.merge-word-ours {
+  background: color-mix(in srgb, var(--dg-del) 34%, transparent);
+}
+.merge-word-theirs {
+  background: color-mix(in srgb, var(--dg-add) 34%, transparent);
+}
+/* Still to decide. The one being worked on is stronger, so next/previous has
+   somewhere visible to land. */
+.merge-region {
+  background: color-mix(in srgb, var(--dg-chg) 16%, transparent);
+}
+.merge-region.current {
+  background: color-mix(in srgb, var(--dg-chg) 30%, transparent);
+}
+.merge-region-edge {
+  box-shadow: inset 3px 0 0 var(--dg-chg);
+}
+/* Settled: it reads as done rather than still asking, and quieter than either
+   side so the eye goes to what is left. */
+.merge-region.resolved {
+  background: color-mix(in srgb, var(--dg-add) 10%, transparent);
+}
+.merge-region-done {
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--dg-add) 60%, transparent);
+}
+
+/* The chevron in a side pane's glyph margin: click it and that side moves into
+   the result. An SVG mask, never a glyph character — a » or « tofus on any font
+   that lacks it, which is the rule icons.js exists to enforce. The mask takes
+   its colour from the side it belongs to. */
+.merge-take {
+  cursor: pointer;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: 13px 13px;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 13px 13px;
+}
+.merge-take:hover {
+  background-color: var(--accent);
+}
+.merge-take-ours {
+  background-color: var(--dg-del);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+}
+.merge-take-theirs {
+  background-color: var(--dg-add);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+}

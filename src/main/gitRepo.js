@@ -64,6 +64,45 @@ export function resolveRevisionArgs(rev) {
   ]
 }
 
+// A conflicted file is in the index three times. The stage is one of three
+// integers the app chooses — never a string from anywhere — so it needs no
+// pattern, only a range.
+const STAGES = [1, 2, 3]
+
+/** Every file still conflicted, in git's own order. */
+export function unmergedArgs() {
+  return [...HARDENING, 'diff', '--name-only', '--diff-filter=U', '--no-color']
+}
+
+/**
+ * Read one stage of a conflicted file out of the index: 1 ancestor, 2 ours,
+ * 3 theirs. Cleaner than scraping markers, and the only way to the ancestor.
+ */
+export function readStageArgs(stage, path) {
+  if (!STAGES.includes(stage)) throw new Error('unsafe-stage')
+  const safe = repoPath(path)
+  if (!safe) throw new Error('unsafe-path')
+  return [...HARDENING, 'show', '--end-of-options', `:${stage}:${safe}`]
+}
+
+// The two refs a merge in progress puts on disk. Literals the app chooses, so
+// the allowlist is the whole check.
+const MERGE_REFS = ['HEAD', 'MERGE_HEAD']
+
+/** What branch a ref names, so a pane can say `Ours · main` rather than `Ours`. */
+export function revisionNameArgs(ref) {
+  if (!MERGE_REFS.includes(ref)) throw new Error('unsafe-ref')
+  return [
+    ...HARDENING,
+    'name-rev',
+    '--name-only',
+    '--refs=refs/heads/*',
+    '--no-undefined',
+    '--end-of-options',
+    ref
+  ]
+}
+
 /** Read one file as it stood at a revision. */
 export function readBlobArgs(rev, path) {
   const safe = repoPath(path)
