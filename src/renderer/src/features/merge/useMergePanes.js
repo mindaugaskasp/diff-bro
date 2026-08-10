@@ -73,24 +73,25 @@ export function useMergePanes(containers, merge) {
   const sync = { busy: false }
   const anchors = { ours: [], theirs: [] }
   const settled = []
+  const empties = []
   let ids = {}
 
   function create() {
     if (editors.result || !containers.result.value) return
     applyMonacoTheme(settings.theme)
     build({ containers, merge, editors, sync, onGlyph, onEdit })
-    seedRegions({ editors, merge, ids, settled })
+    seedRegions({ editors, merge, ids, settled, empties })
     paint()
   }
 
   const paint = () => repaint({ editors, merge, ids, anchors })
   const onGlyph = (key, event) => takeFromGutter({ anchors, key, event, take })
-  const onEdit = () => resolveTouched({ editors, merge, ids, settled })
+  const onEdit = () => resolveTouched({ editors, merge, ids, settled, empties })
   const reveal = (index) => revealRegion({ editors, ids, index })
 
   const take = (index, choice) => {
-    writeChoice({ editors, merge, ids, index, choice })
-    remember({ editors, ids, settled })
+    writeChoice({ editors, merge, ids, index, choice, empties })
+    remember({ editors, ids, settled, empties })
     paint()
   }
 

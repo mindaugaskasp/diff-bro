@@ -27,9 +27,16 @@ describe('wholeLines', () => {
   })
 
   // A side that deleted the lines has nothing to cover: it is a place to insert.
-  it('collapses an empty region to an insertion point', () => {
-    const range = wholeLines(model(['a', 'b']), { startLineNumber: 2, endLineNumber: 1 })
-    expect(range).toMatchObject({ startLineNumber: 2, endLineNumber: 2, endColumn: 1 })
+  // Its range is indistinguishable from a one-line region's, so only the flag
+  // can say — and reading it as a line overwrote the stable line sitting there.
+  it('collapses an emptied region to an insertion point', () => {
+    const at = { startLineNumber: 2, endLineNumber: 2 }
+    expect(wholeLines(model(['a', 'b', 'c']), at, true)).toMatchObject({
+      startLineNumber: 2,
+      endLineNumber: 2,
+      endColumn: 1
+    })
+    expect(wholeLines(model(['a', 'b', 'c']), at, false)).toMatchObject({ endLineNumber: 3 })
   })
 })
 

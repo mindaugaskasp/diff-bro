@@ -382,3 +382,210 @@ test('the panes can be widened, and the split is remembered', async () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// A conflict where OUR side DELETED the lines is an insertion point, not a
+// one-line region — and Monaco cannot tell the two ranges apart. Read as a line,
+// taking theirs wrote over the first stable line after the conflict and that
+// line was gone from the file git was handed.
+function deletedSideRepo() {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-merge-del-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const file = join(dir, 'app.txt')
+  git('init', '-q', '-b', 'main')
+  writeFileSync(file, 'head\nmiddle\ntail\n')
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  writeFileSync(file, 'head\nthey rewrote it\ntail\n')
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  // We DELETED the line they rewrote: our side of the conflict is empty.
+  writeFileSync(file, 'head\ntail\n')
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected.
+  }
+  return { dir, file }
+}
+
+test('takes their side into a region ours emptied without eating the next line', async () => {
+  const { dir, file } = deletedSideRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    await page.getByTestId('merge-take-theirs').click()
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    expect(readFileSync(file, 'utf8')).toBe('head\nthey rewrote it\ntail\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Answered once it is no longer an insertion point, so changing your mind must
+// REPLACE what the first answer wrote rather than leave both in the file.
+test('lets the reader change their mind about a region ours emptied', async () => {
+  const { dir, file } = deletedSideRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    await page.getByTestId('merge-take-theirs').click()
+    await page.getByTestId('merge-take-ours').click()
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    expect(readFileSync(file, 'utf8')).toBe('head\ntail\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Enough unchanged lines between the two changes that git keeps them as SEPARATE
+// conflicts: with only three it folds them into one hunk and the test proves
+// nothing about ordering.
+const KEEP = Array.from({ length: 9 }, (_, i) => `keep ${i + 1}`).join('\n')
+
+// Resolving the SECOND conflict first is the ordinary way a reader works, and it
+// is where a stale line number would show: the earlier region must still be
+// where it was, and answering it must not disturb the one already settled.
+test('resolves two conflicts out of order without disturbing either', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-merge-two-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const file = join(dir, 'app.txt')
+  git('init', '-q', '-b', 'main')
+  writeFileSync(file, `top\nA base\n${KEEP}\nB base\nbottom\n`)
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  writeFileSync(file, `top\nA theirs\n${KEEP}\nB theirs\nbottom\n`)
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  writeFileSync(file, `top\nA ours\n${KEEP}\nB ours\nbottom\n`)
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected.
+  }
+
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    // Second conflict first: step to it, take theirs, then come back for the first.
+    await page.getByTestId('merge-next').click()
+    await page.getByTestId('merge-take-theirs').click()
+    await page.getByTestId('merge-prev').click()
+    await page.getByTestId('merge-take-ours').click()
+
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+    expect(readFileSync(file, 'utf8')).toBe(`top\nA ours\n${KEEP}\nB theirs\nbottom\n`)
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// A merge tool that reformats the file it resolves is one nobody trusts twice.
+// Both of these are invisible on screen and only the bytes can say.
+function endingsRepo(body) {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-merge-eol-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const file = join(dir, 'app.txt')
+  git('init', '-q', '-b', 'main')
+  // core.autocrlf off, so what is written is what git stores and hands back.
+  git('config', 'core.autocrlf', 'false')
+  writeFileSync(file, body('base'))
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  writeFileSync(file, body('theirs'))
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  writeFileSync(file, body('ours'))
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected.
+  }
+  return { dir, file }
+}
+
+test('writes a CRLF file back with CRLF', async () => {
+  const { dir, file } = endingsRepo((v) => `one\r\n${v}\r\nthree\r\n`)
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+    await page.getByTestId('merge-take-theirs').click()
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    const merged = readFileSync(file, 'utf8')
+    expect(merged).toBe('one\r\ntheirs\r\nthree\r\n')
+    expect(merged).not.toMatch(/[^\r]\n/)
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('leaves a file that ended without a newline ending without one', async () => {
+  const { dir, file } = endingsRepo((v) => `one\n${v}\nthree`)
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+    await page.getByTestId('merge-take-theirs').click()
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    expect(readFileSync(file, 'utf8')).toBe('one\ntheirs\nthree')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

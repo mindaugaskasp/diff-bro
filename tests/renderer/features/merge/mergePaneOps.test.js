@@ -32,8 +32,9 @@ function scene() {
   }
   const ids = {}
   const settled = []
-  seedRegions({ editors, merge, ids, settled })
-  return { merge, editors, ids, settled, anchors: { ours: [], theirs: [] } }
+  const empties = []
+  seedRegions({ editors, merge, ids, settled, empties })
+  return { merge, editors, ids, settled, empties, anchors: { ours: [], theirs: [] } }
 }
 
 describe('seedRegions', () => {
@@ -152,5 +153,52 @@ describe('reveal', () => {
     const s = scene()
     reveal({ editors: s.editors, ids: s.ids, index: 4 })
     expect(s.editors.result.revealLineInCenter).not.toHaveBeenCalled()
+  })
+})
+
+// A conflict where OUR side deleted the lines is an INSERTION POINT, not a
+// one-line region — and the two produced the same Monaco range, so taking
+// theirs replaced the first stable line after the conflict with it. The line
+// was gone from the file git was then handed.
+describe('a region one side emptied', () => {
+  const RAW_EMPTY = `head\n<<<<<<< HEAD\n=======\nthey added this\n>>>>>>> feature\ntail\n`
+
+  function emptyScene() {
+    const merge = {
+      at: 0,
+      ours: 'head\ntail\n',
+      theirs: 'head\nthey added this\ntail\n',
+      rawContent: RAW_EMPTY,
+      result: 'head\ntail\n',
+      regions: [{ ours: [], theirs: ['they added this'], resolved: false }],
+      markResolved(i) {
+        this.regions[i].resolved = true
+      }
+    }
+    const editors = {
+      ours: fakeEditor(merge.ours),
+      result: fakeEditor(merge.result),
+      theirs: fakeEditor(merge.theirs)
+    }
+    const ids = {}
+    const settled = []
+    const empties = []
+    seedRegions({ editors, merge, ids, settled, empties })
+    return { merge, editors, ids, settled, empties, anchors: { ours: [], theirs: [] } }
+  }
+
+  it('inserts their side instead of overwriting the line after it', () => {
+    const s = emptyScene()
+    writeChoice({ ...s, index: 0, choice: 'theirs' })
+    expect(s.editors.result.__lines()).toEqual(['head', 'they added this', 'tail', ''])
+  })
+
+  // Answered once, it is no longer an insertion point: taking the other side
+  // must REPLACE what the first answer wrote, not sit beside it.
+  it('replaces its own first answer when the reader changes their mind', () => {
+    const s = emptyScene()
+    writeChoice({ ...s, index: 0, choice: 'theirs' })
+    writeChoice({ ...s, index: 0, choice: 'ours' })
+    expect(s.editors.result.__lines()).toEqual(['head', 'tail', ''])
   })
 })
