@@ -64,6 +64,18 @@ takes bytes and a display name. With no mergetool launch there is no path held,
 so the handler writes nothing at all whatever arrives, and a session is spent
 once used.
 
+The middle pane is a full editor, and that costs nothing here: `merge:write`
+already took arbitrary text, so a renderer that wanted to write something
+neither side said could always do it. Editing widens what the READER can
+express, not what the surface accepts.
+
+The three inputs are read out of git's index (`:1:`/`:2:`/`:3:`) through the
+same argv fence as any other git call — fixed vectors, `--end-of-options`, the
+path checked as `readBlobArgs` checks it, and the stage one of three integers
+the app chooses. `name-rev` labels the panes with the branches, and takes only
+`HEAD` or `MERGE_HEAD`: literals, never a string from anywhere. All of it is
+still untrusted input, so the binary refusal applies to each.
+
 `mergetool.diffbro.trustExitCode` is `true`, which is only honest because the
 merge launcher WAITS for `$MERGED` to change before it exits. The app is
 single-instance, so the launch itself returns immediately; a script that exited

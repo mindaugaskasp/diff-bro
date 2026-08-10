@@ -298,7 +298,7 @@ directory move passes CI while silently removing enforcement.
   genuinely right. New UI must be checked in EVERY theme — see the
   design-proposal rule below, not just the two you happen to have open.
   `make theme-sweep` (scripts/theme-sweep.mjs) is how a NEW surface is checked:
-  it drives the app through all 14, reads the COMPUTED colours off the live DOM
+  it drives the app through all 20, reads the COMPUTED colours off the live DOM
   and holds each pair to a floor declared per probe. `check:themes` holds the
   tokens; this holds what they compose into — a label on a `color-mix` chip, a
   control in its unset state. Add a surface to `SURFACES` when you build one.
@@ -315,16 +315,16 @@ directory move passes CI while silently removing enforcement.
   keyline and NEVER on the label, which scores below 4.5:1 on five themes. Off
   is the opposite language — flat, no lift, weak keyline — never the same
   properties at a lower opacity. `npm run check:themes` holds the resting face,
-  its label and its edge to floors on all 14; that check exists because nothing
+  its label and its edge to floors on all 20; that check exists because nothing
   measured the affordance the first time and a whole toolbar shipped looking
   disabled.
 - **A UI/UX proposal is not a proposal until it has been checked against every
-  supported theme.** `themes.css` ships 14 — light, dark, solar, neon, nord,
-  sepia, dim, beacon, meridian, linen, bloom, nyan, matrix, contrast — and seven
-  are light-ground. A design validated on one or two is a redesign waiting to
+  supported theme.** `themes.css` ships 20 — light, dark, solar, neon, nord,
+  sepia, dim, beacon, meridian, linen, bloom, nyan, matrix, contrast, volcano,
+  amber, tide, ember, graphite, vector — and eight are light-ground. A design validated on one or two is a redesign waiting to
   happen, and redoing it costs far more than checking it would have. Before
   proposing OR building any visual change: read the real token values out of
-  `themes.css` (parse them, never guess), render the idea against all 14, and
+  `themes.css` (parse them, never guess), render the idea against all 20, and
   say per theme where it breaks and why. Hardcoded colour is the usual culprit —
   a black rim plus a white top highlight is a dark-panel idiom that dies on
   every light theme; express it through `--border` / `--text` / `--shadow-rgb` /
