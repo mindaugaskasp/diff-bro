@@ -111,18 +111,15 @@ function routeMerge(command) {
     return
   }
   beginMerge(command)
-  mergeInputsFor(command.merged).then((inputs) => {
-    deliver({
-      name: 'merge',
-      local: command.local,
-      remote: command.remote,
-      // A NAME for the band, never the path: the renderer must not be able to
-      // learn, or name, the file main is going to write.
-      fileName: basename(command.merged),
-      content,
-      ...inputs
-    })
-  })
+  // A NAME for the band, never a path: the renderer must not be able to learn,
+  // or name, the file main is going to write.
+  const base = { name: 'merge', fileName: basename(command.merged), content }
+  mergeInputsFor(command.merged)
+    .then((inputs) => deliver({ ...base, ...inputs }))
+    // Without this the renderer is never told, no sentinel is written, and the
+    // terminal that ran `git mergetool` waits forever on a decision nobody was
+    // asked for. The markers alone are enough to resolve it.
+    .catch(() => deliver(base))
 }
 
 // The verbs that need something done before the renderer hears about them.

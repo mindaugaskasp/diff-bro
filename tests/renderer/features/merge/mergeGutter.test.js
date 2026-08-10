@@ -38,3 +38,24 @@ describe('gutterAnchors', () => {
     expect(gutterAnchors('nothing here', regions, 'ours')).toEqual([null, null])
   })
 })
+
+// The side texts arrive from git exactly as the file is stored, but a region's
+// lines came through a parser that stripped the ending. Splitting the haystack
+// on \n alone leaves a \r on every line of a CRLF file, so nothing ever matched
+// and a Windows repo got no chevrons and no word tints at all.
+describe('a CRLF side text', () => {
+  const crlf = 'one\r\nreplicas: 5\r\nthree\r\n'
+
+  it('finds a region whose lines were parsed without the ending', () => {
+    expect(findLines(crlf, ['replicas: 5'])).toBe(2)
+  })
+
+  it('anchors the region so the chevron has somewhere to hang', () => {
+    const anchors = gutterAnchors(
+      crlf,
+      [{ ours: ['replicas: 5'], theirs: ['replicas: 9'] }],
+      'ours'
+    )
+    expect(anchors[0]).toEqual({ line: 2, count: 1 })
+  })
+})

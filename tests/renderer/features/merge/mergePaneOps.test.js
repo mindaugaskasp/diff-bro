@@ -32,9 +32,8 @@ function scene() {
   }
   const ids = {}
   const settled = []
-  const empties = []
-  seedRegions({ editors, merge, ids, settled, empties })
-  return { merge, editors, ids, settled, empties, anchors: { ours: [], theirs: [] } }
+  seedRegions({ editors, merge, ids, settled })
+  return { merge, editors, ids, settled, anchors: { ours: [], theirs: [] } }
 }
 
 describe('seedRegions', () => {
@@ -182,9 +181,8 @@ describe('a region one side emptied', () => {
     }
     const ids = {}
     const settled = []
-    const empties = []
-    seedRegions({ editors, merge, ids, settled, empties })
-    return { merge, editors, ids, settled, empties, anchors: { ours: [], theirs: [] } }
+    seedRegions({ editors, merge, ids, settled })
+    return { merge, editors, ids, settled, anchors: { ours: [], theirs: [] } }
   }
 
   it('inserts their side instead of overwriting the line after it', () => {

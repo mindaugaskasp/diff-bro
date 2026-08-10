@@ -18,7 +18,9 @@ export function stepFromKey(event) {
 export function bindMergeKeys(step) {
   const onKey = (event) => {
     const delta = stepFromKey(event)
-    if (!delta) return
+    // The view is full-area, so a dialog over it owns the keyboard: stepping the
+    // merge underneath would also pull focus back out of the dialog.
+    if (!delta || event.target?.closest?.('[role="dialog"]')) return
     event.preventDefault()
     step(delta)
   }

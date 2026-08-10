@@ -13,7 +13,10 @@
  */
 export function findLines(haystack, lines, from = 1) {
   if (!lines.length) return null
-  const hay = haystack.split('\n')
+  // The side text is the file as git stores it; a region's lines came through a
+  // parser that stripped the ending. Splitting on \n alone leaves a \r on every
+  // line of a CRLF file, and nothing ever matches.
+  const hay = haystack.split(/\r?\n/)
   for (let i = Math.max(from - 1, 0); i <= hay.length - lines.length; i++) {
     if (lines.every((line, k) => hay[i + k] === line)) return i + 1
   }

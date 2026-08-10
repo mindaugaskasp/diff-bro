@@ -5,6 +5,19 @@ import { realpathSync } from 'node:fs'
 import { dirname, relative } from 'node:path'
 import { readStageArgs, repoRootArgs, revisionNameArgs, runGitIn, unmergedArgs } from './gitRepo'
 import { walkPosition } from './mergeSession'
+import { isBinaryBuffer } from './mergeGuards'
+
+// The same ceiling an opened file gets. A stage read has no other bound —
+// execFile's maxBuffer is 64 MB — and three of them are decoded, sent over IPC
+// and set as Monaco models, with the launcher already waiting on a decision.
+const MAX_STAGE_BYTES = 32 * 1024 * 1024
+
+// A stage that is too big, or not text, sends the view back to reconstructing
+// the sides from the markers — which is the designed fallback, not a failure.
+const usableStage = (res) =>
+  res.ok &&
+  Buffer.byteLength(res.stdout, 'utf8') <= MAX_STAGE_BYTES &&
+  !isBinaryBuffer(Buffer.from(res.stdout, 'utf8'))
 
 // A branch name and nothing else: `name-rev` answers `main~2` for a commit that
 // is not a branch tip, which names no side and is worse than saying nothing.
@@ -56,13 +69,13 @@ export async function mergeInputsFor(merged) {
     const [base, ours, theirs] = await Promise.all(
       [1, 2, 3].map((stage) => runGitIn(readStageArgs(stage, rel), dir))
     )
-    if (!ours.ok || !theirs.ok) return {}
+    if (!usableStage(ours) || !usableStage(theirs)) return {}
     const [unmerged, names] = await Promise.all([runGitIn(unmergedArgs(), dir), revisionNames(dir)])
     const files = unmerged.ok ? unmerged.stdout.split('\n').filter(Boolean).length : 0
     return {
       ours: ours.stdout,
       theirs: theirs.stdout,
-      base: base.ok ? base.stdout : null,
+      base: usableStage(base) ? base.stdout : null,
       ...names,
       ...walkPosition(files, merged)
     }

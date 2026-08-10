@@ -2,20 +2,10 @@ import { defineStore } from 'pinia'
 import { parseConflicts } from '../../utils/mergeConflicts'
 import { sidesFromConflicts } from './threeWay'
 
-/**
- * A `git mergetool` run.
- *
- * The result pane NEVER shows conflict markers. `<<<<<<<` is a file format, not
- * a user interface — a merge tool that shows it is showing its storage. The
- * result opens as a valid file with our side in each conflicted place, every
- * such place marked unresolved until the reader says what it should be.
- *
- * Because there are no markers to count, resolution is explicit state rather
- * than something re-derived from the text: a hand-edited region has nothing in
- * it for a parser to find.
- */
-// Where this file sits in `git mergetool`'s walk, defaulted so a single-file
-// merge needs no special case.
+// With no markers left in the result there is nothing for a parser to count, so
+// resolution is state rather than something re-derived from the text.
+
+// Defaulted so a single-file merge needs no special case.
 const walkOf = (payload) => ({
   fileName: payload.fileName ?? '',
   position: payload.position ?? 1,

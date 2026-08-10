@@ -589,3 +589,64 @@ test('leaves a file that ended without a newline ending without one', async () =
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// The headline promise, on the region that could not keep it: our side deleted
+// the lines, so there is no chevron to click and the reader types the answer.
+// It stayed unresolved and Save stayed locked with the conflict visibly answered.
+test('takes a typed answer in a region ours emptied', async () => {
+  const { dir, file } = deletedSideRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    const save = page.getByTestId('merge-save')
+    await expect(save).toBeDisabled()
+
+    const result = page.locator('.merge-pane.result .merge-editor')
+    await result.click()
+    await page.locator('.merge-pane.result textarea').waitFor()
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.type('head\nneither of you\ntail\n')
+
+    await expect(save).toBeEnabled()
+    await save.click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+    expect(readFileSync(file, 'utf8')).toBe('head\nneither of you\ntail\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Undo puts back the lines "Neither" removed, so the region holds them again.
+// Left cached as an insertion point, the next answer was INSERTED above them and
+// the file went out holding both sides.
+test('answers a region again after undoing a Neither', async () => {
+  const { dir, file } = deletedSideRepo()
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    await page.getByTestId('merge-take-theirs').click()
+    const result = page.locator('.merge-pane.result .merge-editor')
+    await result.click()
+    await page.locator('.merge-pane.result textarea').waitFor()
+    await page.keyboard.press('ControlOrMeta+z')
+    await page.getByTestId('merge-take-theirs').click()
+
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    const merged = readFileSync(file, 'utf8')
+    expect(merged).toBe('head\nthey rewrote it\ntail\n')
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

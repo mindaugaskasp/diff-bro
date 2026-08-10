@@ -142,12 +142,6 @@ export const CLI_COMMANDS = {
   // Typed in the terminal, so it is saved outright rather than opened in the
   // editor — the reader has already answered every question the editor asks.
   'new-snippet': ({ snippets }, command) => snippets.add(command.draft),
-  // git hands over the two conflicting versions AND the file it wants written;
-  // the sides open as an ordinary comparison, the conflicts open over them.
-  // The merge view is self-contained: it holds the conflicted text and both
-  // sides itself. It used to ALSO open the two files as a comparison, which the
-  // view never read — thirty conflicted files meant sixty pointless reads and
-  // thirty tabs against a cap of sixteen.
   merge: ({ merge }, command) => merge.begin(command),
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),

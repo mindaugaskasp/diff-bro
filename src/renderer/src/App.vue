@@ -167,10 +167,9 @@ useSnippetDiffSync()
             </div>
           </div>
 
-          <!-- A merge is not a comparison and does not wait for one: it takes
-               the area outright, ahead of the empty state, because the file
-               being produced is the point and it needs the width. -->
-          <MergeView v-if="merge.open" />
+          <!-- Keyed by file: a second launch arriving while this is open must
+               re-seed, not set new text under decorations anchored to the old. -->
+          <MergeView v-if="merge.open" :key="merge.fileName" />
           <PasteInput v-else-if="store.mode === 'paste'" />
           <!-- Content router: pick the viewer by comparable kind. -->
           <template v-else-if="store.ready">
