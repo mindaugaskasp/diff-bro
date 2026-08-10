@@ -139,7 +139,13 @@ useSnippetDiffSync()
             v-if="settings.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
             fill
           />
-          <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row" data-tour="slots">
+          <!-- A merge produces a file rather than comparing two, so the slots
+               have nothing to name and every control above them is disabled. -->
+          <div
+            v-if="store.mode !== 'paste' && !merge.open"
+            class="file-slots-row band band-row"
+            data-tour="slots"
+          >
             <div class="slot-half">
               <FileSlot
                 side="left"

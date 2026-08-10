@@ -5,6 +5,11 @@ import { sidesFromConflicts } from './threeWay'
 // With no markers left in the result there is nothing for a parser to count, so
 // resolution is state rather than something re-derived from the text.
 
+// Monaco keeps ONE ending per model, so a file that mixes them comes back out of
+// the editor normalised — including on lines the reader never touched. It cannot
+// be prevented here, so it is said out loud before anything is written.
+const hasMixedEndings = (text) => /\r\n/.test(text) && /(^|[^\r])\n/.test(text)
+
 // Defaulted so a single-file merge needs no special case.
 const walkOf = (payload) => ({
   fileName: payload.fileName ?? '',
@@ -33,6 +38,7 @@ export const useMergeStore = defineStore('merge', {
     /** @type {Array<{ours: string[], theirs: string[], resolved: boolean}>} */
     regions: [],
     error: '',
+    mixedEndings: false,
     saved: false,
     at: 0
   }),
@@ -54,6 +60,7 @@ export const useMergeStore = defineStore('merge', {
       // start; the region is tinted unresolved until the reader confirms it.
       this.result = parsed ? sidesFromConflicts(parsed).ours : payload.content
       this.rawContent = payload.content
+      this.mixedEndings = hasMixedEndings(payload.content)
       const fallback = sidesFromConflicts(parsed)
       this.ours = payload.ours ?? fallback.ours
       this.theirs = payload.theirs ?? fallback.theirs

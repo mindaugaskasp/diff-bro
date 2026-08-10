@@ -63,6 +63,9 @@ useMergeKeys(go)
     </div>
 
     <p v-if="merge.error" class="merge-note">{{ $t('merge.unreadable') }}</p>
+    <p v-else-if="merge.mixedEndings" class="merge-note" data-testid="merge-endings">
+      {{ $t('merge.mixedEndings') }}
+    </p>
 
     <div
       class="merge-panes"

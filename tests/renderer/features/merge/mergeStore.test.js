@@ -131,3 +131,24 @@ describe('mergeStore — saving', () => {
     expect(window.api.cancelMerge).not.toHaveBeenCalled()
   })
 })
+
+// Monaco keeps one ending per model, so a mixed file comes back out normalised —
+// including on lines nobody touched. The tool cannot stop that, so it says so.
+describe('a file that mixes line endings', () => {
+  const begin = (content) => {
+    const merge = useMergeStore()
+    merge.begin({ content })
+    return merge
+  }
+  const joined = (eol) =>
+    ['a', '<<<<<<< HEAD', 'ours', '=======', 'theirs', '>>>>>>> f', 'b'].join(eol) + eol
+
+  it('says so before anything is written', () => {
+    expect(begin(joined('\r\n').replace('a\r\n', 'a\n')).mixedEndings).toBe(true)
+  })
+
+  it('stays quiet for a file that is consistent either way', () => {
+    expect(begin(joined('\n')).mixedEndings).toBe(false)
+    expect(begin(joined('\r\n')).mixedEndings).toBe(false)
+  })
+})

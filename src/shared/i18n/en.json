@@ -35,7 +35,8 @@
     "takeTheirsTip": "Take theirs",
     "prevTip": "Previous conflict · Shift+F7",
     "nextTip": "Next conflict · F7",
-    "fromBranch": "from {name}"
+    "fromBranch": "from {name}",
+    "mixedEndings": "This file mixes CRLF and LF line endings. Saving writes every line with the same one."
   },
   "menu": {
     "file": {
