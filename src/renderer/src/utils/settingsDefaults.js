@@ -34,10 +34,12 @@ export const FILE_TYPE_LIMITS = {
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
 // The sidebar tag shelf's depth. Two rows is the FLOOR as well as the default:
 // diffs and snippets are what the sidebar is for, and an unbounded tag wall
-// pushed them into a sliver. A tall screen may spend up to twelve.
+// pushed them into a sliver. The ceiling can afford to be this generous because
+// the strip's max-height (SavedDiffs.css) keeps the sections a slice of the
+// column whatever is asked for — past it the chips scroll.
 export const TAGS_PER_ROW = 4
 export const MIN_TAG_ROWS = 2
-export const MAX_TAG_ROWS = 12
+export const MAX_TAG_ROWS = 24
 
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 

@@ -49,6 +49,7 @@
 
 /* Fixed control strip: search + the segmented group filter. */
 .usb-controls {
+  position: relative; /* the shelf grip pins to its bottom edge */
   flex: none;
   flex-direction: column;
   align-items: stretch;
@@ -58,6 +59,11 @@
   padding: 0 var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
+  /* The sections keep this much of the column whatever the shelf is dragged to,
+     and whatever the window is resized to afterwards. Squeezed out they take
+     the grip off the bottom edge with them, and a shelf with no reachable grip
+     cannot be made small again. Past the cap the chips scroll instead. */
+  max-height: calc(100% - 150px);
 }
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
@@ -65,6 +71,7 @@
 /* The search field and its one modifier share a row, so the band keeps the
    height the rail lines up against. */
 .usb-find {
+  flex: none;
   gap: var(--space-2);
 }
 .usb-find > :first-child {
@@ -90,10 +97,14 @@
   color: var(--pin-ink);
   border-color: color-mix(in srgb, var(--favorite) 40%, var(--border));
 }
+/* The one part of the strip that gives way when the shelf is deeper than the
+   column can hold: the chips scroll rather than pushing the sections out. */
 .usb-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
   margin-top: var(--space-1);
   margin-bottom: var(--space-1);
 }
@@ -138,16 +149,21 @@
   padding-bottom: var(--space-4);
 }
 
-/* Drag-to-deepen: the width grip's horizontal twin, on the shelf's bottom
-   edge. Unmarked at rest; the depth's only affordance, persisted as
-   tagShelfRows. Full-bleed across the control strip so the seam is the
-   target, not a sliver of it. */
+/* Drag-to-deepen: the width grip's horizontal twin, straddling the strip's own
+   border. Unmarked at rest; the depth's only affordance, persisted as
+   tagShelfRows. Full-bleed so the seam is the target, not a sliver of it.
+
+   OUT of the flow, which is the whole trick: in it, the handle can either hang
+   off the chips or sit on the border, and each attempt at one broke the other —
+   held to the chips it lights up in mid-air well above the divider, and welded
+   to the border it glues the last chip row to the edge. Pinned here it is the
+   divider, and the strip's bottom padding is free to be the air above it. */
 .usb-shelf-grip {
-  height: 4px;
-  /* Pulled up over the column gap + the shelf's own margin so the handle sits
-     ON the chips' bottom edge — floating 10px below, it read as some other
-     divider's handle. */
-  margin: calc(-1 * (var(--space-2) + var(--space-1))) calc(-1 * var(--space-3)) 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px; /* centres the 5px band on the 1px border */
+  height: 5px;
   cursor: row-resize;
   user-select: none;
   touch-action: none;
@@ -155,11 +171,6 @@
 .usb-shelf-grip:hover,
 .usb-shelf-grip.resizing {
   background: color-mix(in srgb, var(--accent) 45%, transparent);
-}
-/* With no filter row after it, the grip IS the strip's boundary — it rides
-   down over the strip's bottom padding to sit on the border itself. */
-.usb-shelf-grip:last-child {
-  margin-bottom: calc(-1 * var(--space-2));
 }
 
 /* The overflow keeps the chip shape — it stands in for tags, so it belongs in
@@ -177,6 +188,7 @@
    selected tag whatever shape it took. It belongs on its own line, beside the
    thing it undoes: how many tags are on. */
 .usb-filtering {
+  flex: none;
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
