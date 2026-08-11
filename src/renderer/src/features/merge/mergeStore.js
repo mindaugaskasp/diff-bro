@@ -1,57 +1,85 @@
 import { defineStore } from 'pinia'
-import {
-  composeMerge,
-  conflictCount,
-  parseConflicts,
-  unresolvedCount
-} from '../../utils/mergeConflicts'
+import { parseConflicts } from '../../utils/mergeConflicts'
+import { sidesFromConflicts } from './threeWay'
 
-/**
- * A `git mergetool` run, from the moment main hands over the conflicted text to
- * the moment the resolved file goes back. The renderer never learns the path it
- * is resolving — main has held that since the launch.
- */
+// With no markers left in the result there is nothing for a parser to count, so
+// resolution is state rather than something re-derived from the text.
+
+// Monaco keeps ONE ending per model, so a file that mixes them comes back out of
+// the editor normalised — including on lines the reader never touched. It cannot
+// be prevented here, so it is said out loud before anything is written.
+const hasMixedEndings = (text) => /\r\n/.test(text) && /(^|[^\r])\n/.test(text)
+
+// Defaulted so a single-file merge needs no special case.
+const walkOf = (payload) => ({
+  fileName: payload.fileName ?? '',
+  position: payload.position ?? 1,
+  total: payload.total ?? 1,
+  oursName: payload.oursName ?? '',
+  theirsName: payload.theirsName ?? ''
+})
+
 export const useMergeStore = defineStore('merge', {
   state: () => ({
     open: false,
-    parsed: null,
-    /** @type {Array<'ours'|'theirs'|'both'|'neither'|null>} */
-    choices: [],
+    fileName: '',
+    position: 1,
+    total: 1,
+    /** The branches the two sides come from, empty when git cannot name them. */
+    oursName: '',
+    theirsName: '',
+    /** The editable middle pane, marker-free from the moment it opens. */
+    result: '',
+    /** What git left, kept only to seed the regions' first positions. */
+    rawContent: '',
+    ours: '',
+    theirs: '',
+    base: null,
+    /** @type {Array<{ours: string[], theirs: string[], resolved: boolean}>} */
+    regions: [],
     error: '',
-    saved: false
+    mixedEndings: false,
+    saved: false,
+    at: 0
   }),
   getters: {
-    conflicts: (s) => (s.parsed?.segments ?? []).filter((seg) => seg.type === 'conflict'),
-    total: (s) => conflictCount(s.parsed),
-    remaining: (s) => unresolvedCount(s.parsed, s.choices),
-    resolvedText: (s) => composeMerge(s.parsed, s.choices),
-    // Nothing to decide is not the same as resolved: a file with no conflicts
-    // is one this tool has no business writing back.
-    canSave: (s) =>
-      !s.error && conflictCount(s.parsed) > 0 && unresolvedCount(s.parsed, s.choices) === 0
+    remaining: (s) => s.regions.filter((r) => !r.resolved).length,
+    canSave: (s) => !s.error && s.regions.every((r) => r.resolved),
+    // Worth showing only when there is a walk to be part of.
+    showsWalk: (s) => s.total > 1
   },
   actions: {
-    /** @param {string} content  the file as git left it, markers and all */
-    begin(content) {
-      this.parsed = parseConflicts(content)
-      this.choices = new Array(conflictCount(this.parsed)).fill(null)
-      this.error = this.parsed ? '' : 'unreadable'
+    /** @param {object} payload from main: the conflicted text and both sides */
+    begin(payload) {
+      const parsed = parseConflicts(payload.content)
+      this.error = parsed ? '' : 'unreadable'
+      this.regions = (parsed?.segments ?? [])
+        .filter((seg) => seg.type === 'conflict')
+        .map((seg) => ({ ours: seg.ours, theirs: seg.theirs, resolved: false }))
+      // Our side stands in each conflicted place so the file is valid from the
+      // start; the region is tinted unresolved until the reader confirms it.
+      this.result = parsed ? sidesFromConflicts(parsed).ours : payload.content
+      this.rawContent = payload.content
+      this.mixedEndings = hasMixedEndings(payload.content)
+      const fallback = sidesFromConflicts(parsed)
+      this.ours = payload.ours ?? fallback.ours
+      this.theirs = payload.theirs ?? fallback.theirs
+      this.base = payload.base ?? null
+      Object.assign(this, walkOf(payload))
       this.saved = false
+      this.at = 0
       this.open = true
     },
-    choose(index, choice) {
-      if (index < 0 || index >= this.choices.length) return
-      this.choices[index] = this.choices[index] === choice ? null : choice
+    markResolved(index) {
+      if (this.regions[index]) this.regions[index].resolved = true
     },
-    takeAll(choice) {
-      this.choices = this.choices.map(() => choice)
+    step(delta) {
+      const total = this.regions.length
+      if (total) this.at = (this.at + delta + total) % total
     },
     async save() {
-      const text = this.resolvedText
-      // composeMerge already refuses a half-resolved file; this is the guard
-      // that keeps a UI mistake from reaching the write.
-      if (text === null) return false
-      const res = await window.api.writeMerged(text)
+      if (!this.canSave) return false
+      const res = await window.api.writeMerged(this.result)
       if (!res?.ok) {
         this.error = 'write-failed'
         return false

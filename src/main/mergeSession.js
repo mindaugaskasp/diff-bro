@@ -5,6 +5,31 @@ import { writeFileSync } from 'node:fs'
 
 let pending = null
 
+// `git mergetool` walks the conflicted files one at a time, in separate
+// launches. Only main survives between them, so the walk is remembered here.
+//
+// Counting the files main has SEEN, rather than what git still calls
+// unmerged: a file the reader declined stays unmerged, and a tool invoked
+// directly never stages anything, so the remaining count is not a position.
+let walk = { total: 0, seen: new Set() }
+
+/**
+ * Where this file sits in the walk. A file arriving twice means a new walk over
+ * the same conflicts.
+ * @param {number} unmerged how many files git still calls conflicted
+ * @param {string} merged the file this launch is for
+ */
+export function walkPosition(unmerged, merged) {
+  if (!walk.total || walk.seen.has(merged)) walk = { total: unmerged || 1, seen: new Set() }
+  walk.seen.add(merged)
+  return { position: walk.seen.size, total: Math.max(walk.total, walk.seen.size) }
+}
+
+/** A fresh walk next time — used when a run ends. */
+export function walkReset() {
+  walk = { total: 0, seen: new Set() }
+}
+
 /**
  * The file the launcher watches. Comparing $MERGED's own size and timestamp was
  * not enough: a resolution that writes the same bytes back changes neither, and

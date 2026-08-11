@@ -150,3 +150,26 @@ describe('parseConflicts — a file whose line endings are mixed', () => {
     expect(composeMerge(parseConflicts(plain), [])).toBe(plain)
   })
 })
+
+// A decoration and an edit both need to know WHERE a region is, in the lines
+// Monaco counts from 1.
+describe('parseConflicts — where each region sits', () => {
+  it('gives each conflict its line range, markers included', () => {
+    const [, conflict] = parseConflicts(FILE).segments
+    // 1 top · 2 <<<<<<< · 3-4 ours · 5 ======= · 6 theirs · 7 >>>>>>> · 8 bottom
+    expect(conflict.startLine).toBe(2)
+    expect(conflict.endLine).toBe(7)
+  })
+
+  it('counts a second conflict from where the first ended', () => {
+    const two = parseConflicts([FILE, FILE].join('\n'))
+    const conflicts = two.segments.filter((s) => s.type === 'conflict')
+    expect(conflicts[0].startLine).toBe(2)
+    expect(conflicts[1].startLine).toBe(10)
+    expect(conflicts[1].endLine).toBe(15)
+  })
+
+  it('starts at line 1 when the file opens on a conflict', () => {
+    expect(parseConflicts(DIFF3).segments[0].startLine).toBe(1)
+  })
+})

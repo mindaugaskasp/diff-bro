@@ -19,9 +19,14 @@ registerJiraLanguage(monaco)
 // never uses it and it exposes internal editor commands we don't want reachable
 // in the packaged build. Unbinding globally is simpler and safer than doing it
 // per editor. (contextmenu is also turned off where editors are created.)
+// F7 is the merge view's next/previous conflict. Monaco binds the same pair to
+// wordHighlight.next/prev and stops propagation when it wins, so the window
+// listener never sees them once the caret is in the result pane.
 monaco.editor.addKeybindingRules?.([
   { keybinding: monaco.KeyCode.F1, command: null },
-  { keybinding: monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP, command: null }
+  { keybinding: monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP, command: null },
+  { keybinding: monaco.KeyCode.F7, command: null },
+  { keybinding: monaco.KeyMod.Shift | monaco.KeyCode.F7, command: null }
 ])
 
 self.MonacoEnvironment = {

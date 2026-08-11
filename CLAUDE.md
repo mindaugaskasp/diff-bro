@@ -20,7 +20,7 @@ file below is imported into context automatically.
     nothing.
   - **The offline guarantee, the renderer/main split and the crypto
     invariants are non-negotiable.** See the hard security rules.
-  - **A UI change is checked against all 14 themes** before it is proposed,
+  - **A UI change is checked against all 20 themes** before it is proposed,
     not after it is built.
   - prose / overly verbose comments must be removed / trimmed before stating feature is done. Code must be self describing.
 

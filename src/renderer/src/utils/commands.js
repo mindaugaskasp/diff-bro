@@ -142,12 +142,7 @@ export const CLI_COMMANDS = {
   // Typed in the terminal, so it is saved outright rather than opened in the
   // editor — the reader has already answered every question the editor asks.
   'new-snippet': ({ snippets }, command) => snippets.add(command.draft),
-  // git hands over the two conflicting versions AND the file it wants written;
-  // the sides open as an ordinary comparison, the conflicts open over them.
-  merge: async ({ diff, tabs, merge }, command) => {
-    await compareFromCli({ diff, tabs }, [command.local, command.remote], true)
-    merge.begin(command.content)
-  },
+  merge: ({ merge }, command) => merge.begin(command),
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
   // The passphrase is asked for here, not in the terminal: the bundle is

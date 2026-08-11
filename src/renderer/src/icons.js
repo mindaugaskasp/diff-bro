@@ -74,6 +74,11 @@ export const ICONS = {
   'chevron-right': [{ t: 'path', d: 'm9 6 6 6-6 6' }],
   'chevron-left': [{ t: 'path', d: 'm15 6-6 6 6 6' }],
   'chevron-up': [{ t: 'path', d: 'm6 15 6-6 6 6' }],
+  'git-merge': [
+    { t: 'circle', cx: '18', cy: '18', r: '3' },
+    { t: 'circle', cx: '6', cy: '6', r: '3' },
+    { t: 'path', d: 'M6 21V9a9 9 0 0 0 9 9' }
+  ],
   'chevron-down': [{ t: 'path', d: 'm6 9 6 6 6-6' }],
   'arrow-up': [
     { t: 'path', d: 'M12 19V5' },

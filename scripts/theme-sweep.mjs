@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Walks a surface through all 14 themes and MEASURES it, rather than leaving a
+// Walks a surface through every theme and MEASURES it, rather than leaving a
 // reviewer to eyeball fourteen pictures. For every theme it reads the COMPUTED
 // colours off the live DOM and reports the contrast of each pair that carries
 // meaning — which is the check docs/standards.md asks for ("assert the
@@ -17,10 +17,12 @@
 // still look; the exit code is what gates.
 
 import { mkdtempSync, mkdirSync, existsSync, writeFileSync } from 'node:fs'
+import { execFileSync, spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { generateKeyPairSync } from 'node:crypto'
+import { createRequire } from 'node:module'
 import { _electron as electron } from '@playwright/test'
 
 /* global document, getComputedStyle -- inside page.evaluate only */
@@ -28,6 +30,9 @@ import { _electron as electron } from '@playwright/test'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
 const OUT = join(ROOT, 'docs/screenshots/themes')
+// The app's OWN Electron, the way the launcher would reach it — process.execPath
+// here is node, which would run the main bundle as a plain script.
+const ELECTRON = createRequire(import.meta.url)('electron')
 
 const THEMES = [
   'Light',
@@ -43,7 +48,13 @@ const THEMES = [
   'Bloom',
   'Nyan',
   'Matrix',
-  'Contrast'
+  'Contrast',
+  'Volcano',
+  'Amber',
+  'Tide',
+  'Ember',
+  'Graphite',
+  'Vector'
 ]
 
 // The floors the repo already runs on. Declared PER PROBE rather than guessed
@@ -184,7 +195,88 @@ const LOCKFILE = (version) =>
     2
   )
 
+// The merge view has no entry point inside the app: it exists because git
+// launched the tool. So the sweep makes a real conflict once and drives a real
+// `git mergetool` at it for each theme, cancelling out again so the file — and
+// the repo — are left exactly as git wrote them.
+let conflicted = null
+
+function mergeConflictRepo() {
+  if (conflicted) return conflicted
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-sweep-merge-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const file = join(dir, 'config.yml')
+  git('init', '-q', '-b', 'main')
+  writeFileSync(file, 'service: diff-engine\nreplicas: 3\nregion: eu-west-1\nkeep: yes\n')
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  writeFileSync(file, 'service: diff-engine\nreplicas: 9\nregion: eu-west-1\nkeep: yes\n')
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  writeFileSync(file, 'service: diff-engine\nreplicas: 5\nregion: us-east-1\nkeep: yes\n')
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected: this is the conflict the surface is for.
+  }
+  conflicted = { dir, file }
+  return conflicted
+}
+
+async function openMerge(page, userDataDir) {
+  const { dir, file } = mergeConflictRepo()
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  await new Promise((resolve) => {
+    const child = spawn(
+      ELECTRON,
+      [MAIN, `--user-data-dir=${userDataDir}`, 'mergetool', file, file, file],
+      { cwd: dir, env, stdio: 'ignore' }
+    )
+    child.on('exit', resolve)
+    setTimeout(resolve, 8000)
+  })
+  // The launcher window has been up by now, and the merge arrives through a
+  // SECOND process whose focus() does not reliably raise the main window under
+  // the container's window manager — leaving it occluded, producing no frames,
+  // and hanging the screenshot rather than failing it.
+  await page.bringToFront()
+  await page.locator('.merge-view').waitFor({ timeout: 20000 })
+  await page.locator('.merge-word-theirs').first().waitFor({ timeout: 10000 })
+}
+
 const SURFACES = [
+  {
+    name: 'merge-view',
+    // The chrome only. The bands and the intra-line tints inside the panes are
+    // Monaco decorations built from --dg-add / --dg-del / --dg-chg alone, and
+    // check-theme-depth already holds those three to a contrast floor AND a
+    // pairwise deltaE floor on every theme — measuring an overlay div that
+    // carries no text of its own would report a number nothing depends on.
+    open: (page, { userDataDir }) => openMerge(page, userDataDir),
+    close: async (page) => {
+      await page.getByRole('button', { name: 'Cancel' }).click()
+      await page.locator('.merge-view').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'pane label': ['.merge-pane.result .merge-head', TEXT],
+      // The branch a side comes from: words a reader reads, so the reading floor
+      // and not the hint one.
+      'branch name': ['.merge-rev', TEXT],
+      'conflicts left': ['.merge-count', TEXT],
+      'file name': ['.merge-file', TEXT],
+      "result pane's own head": ['.merge-pane.result .merge-hint', TEXT]
+    }
+  },
   {
     name: 'deps-diff',
     // Reached through PASTE mode, because a lockfile is recognised by its NAME
@@ -309,8 +401,13 @@ const SURFACES = [
   },
   {
     name: 'status-band',
-    // Already on screen — the sweep leaves a structure diff loaded.
-    open: async (page) => page.locator('.status-band').waitFor(),
+    // The startup diff is gone by now: deps-diff runs first and its close is a
+    // Clear. Reload rather than assume — assuming is what left this surface
+    // timing out on every run since deps-diff was added.
+    open: async (page) => {
+      if (!(await page.locator('.status-band').count())) await loadStructureDiff(page)
+      await page.locator('.status-band').waitFor()
+    },
     close: async () => {},
     probes: {
       // These carry the numbers a reader reads, so they take the reading floor —
@@ -549,8 +646,24 @@ const SURFACES = [
 // The launcher is a SECOND BrowserWindow with its own card surface, and no
 // surface here ever opened it — so its compose panel, body overlay and name
 // ghost were only ever measured against the main window's ground.
+// Asked of MAIN, not of the page: a hidden BrowserWindow keeps reporting its
+// document as visible, so only the window itself knows.
+const launcherShown = (app) =>
+  app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows().some(
+      (w) => w.webContents.getURL().includes('quicklook') && w.isVisible()
+    )
+  )
+
 async function launcherPage(app, page) {
   const open = app.windows().find((w) => w.url().includes('quicklook'))
+  // The launcher hides itself whenever something else takes focus — which the
+  // merge does, arriving in the main window from a second process. A hidden
+  // window produces no frames, so screenshotting it HANGS rather than fails.
+  if (open && !(await launcherShown(app))) {
+    await page.evaluate(() => globalThis.api.quickLookToggle())
+    for (let i = 0; i < 50 && !(await launcherShown(app)); i++) await page.waitForTimeout(100)
+  }
   if (open) return open
   const [ql] = await Promise.all([
     app.waitForEvent('window'),
@@ -561,9 +674,16 @@ async function launcherPage(app, page) {
   return ql
 }
 
-async function sweepSurface({ app, main, surface, theme, findings }) {
+// A named subset while a new surface is being built: the full walk is 20 themes
+// across every surface, which is a slow way to find out a selector moved.
+const chosenSurfaces = () => {
+  const only = process.env.SWEEP_ONLY?.split(',').filter(Boolean)
+  return only?.length ? SURFACES.filter((s) => only.includes(s.name)) : SURFACES
+}
+
+async function sweepSurface({ app, main, surface, theme, findings, userDataDir }) {
   const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
-  await surface.open(page)
+  await surface.open(page, { userDataDir })
   await page.waitForTimeout(120)
   await page.screenshot({ path: join(OUT, `${surface.name}-${theme.toLowerCase()}.png`) })
 
@@ -619,8 +739,8 @@ async function main() {
 
     for (const theme of THEMES) {
       await setTheme(page, theme)
-      for (const surface of SURFACES) {
-        await sweepSurface({ app, main: page, surface, theme, findings })
+      for (const surface of chosenSurfaces()) {
+        await sweepSurface({ app, main: page, surface, theme, findings, userDataDir })
       }
       process.stdout.write(`  ${theme.padEnd(9)} ✓\n`)
     }

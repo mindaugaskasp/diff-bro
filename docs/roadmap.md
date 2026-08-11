@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — five tracks. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, resolve a merge. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs, three-way merge — a decision first. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — five tracks. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -171,7 +171,7 @@ flowchart LR
   extractor. They keep the text diff and the toggle stays hidden
 - **the register is read-only** — a row names a change you then hunt for by eye;
   clicking one should pan the diagram to it
-- Still out of scope: editing a diagram from the diff view, three-way merge
+- Still out of scope: editing a diagram from the diff view
 
 ---
 
@@ -192,10 +192,11 @@ flowchart LR
     c["compare HEAD~1:path"]
     g --> c
   end
-  subgraph merge["merge"]
-    m["mergeConflicts.js — regions + four resolutions"]
+  subgraph merge["three-way merge"]
+    m["index :1: :2: :3: — no markers on screen"]
+    v["MergeView — ours │ result │ theirs, middle editable"]
     w["mergeSession.js — the one write"]
-    m --> w
+    m --> v --> w
   end
 ```
 
@@ -204,10 +205,14 @@ flowchart LR
 - **Revisions** — `diffbro compare HEAD~1:src/app.js src/app.js`. `git show`
   behind a fence: fixed argv, no shell, the repo root computed in main, hooks
   and the fsmonitor disabled, every inherited `GIT_*` dropped
-- **Merge** — `git mergetool` now finishes. This CROSSES "Diff Bro never writes
-  files", deliberately: the app had already registered for the job. Main writes
-  only the `$MERGED` path it was launched with, the renderer sends text and
-  never a path, and the launcher waits so `trustExitCode` is honest
+- **Merge** — `git mergetool` now finishes, in a three-pane view: the two
+  branches either side, named by branch, and the file you are producing in the
+  middle as a real editor. Sides come from the index, so no `<<<<<<<` reaches
+  the screen; gutter chevrons move a side across, F7 walks the conflicts, and
+  typing IS the answer where neither side was right. This CROSSES "Diff Bro
+  never writes files", deliberately: the app had already registered for the job.
+  Main writes only the `$MERGED` path it was launched with, the renderer sends
+  text and never a path, and the launcher waits so `trustExitCode` is honest
 
 **Open.** TOML lockfiles (`Cargo.lock`, `poetry.lock`) need a parser this repo
 does not have. A revision PICKER — the app takes a revision, it is not a git

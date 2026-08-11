@@ -1,0 +1,21 @@
+/* Layout + skin only — display/align/height come from .band .band-row so this
+   row and the first sidebar header stay the same height (see ui.css). Vertical
+   padding is deliberately absent: the band height centers the slots. */
+.file-slots-row {
+  gap: 12px;
+  padding: 0 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  /* A resting lift over the diff body, so the toolbar reads as chrome sitting
+     above the content rather than a flat strip sharing its plane. Above the
+     content in z-order so the drop lands on it. */
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-1);
+}
+.slot-half {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}

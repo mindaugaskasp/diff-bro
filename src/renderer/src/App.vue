@@ -11,11 +11,12 @@ import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
 import { usePasteShortcut } from './composables/usePasteShortcut'
 import { useSessionPersistence } from './composables/useSessionPersistence'
 import { useTourCommands } from './composables/useTourCommands'
-import FileSlot from './components/FileSlot.vue'
+import FileSlotsRow from './components/FileSlotsRow.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
 import DiagramDiffViewer from './components/DiagramDiffViewer.vue'
 import DepsDiffViewer from './components/DepsDiffViewer.vue'
+import { MergeView, useMergeStore } from './features/merge'
 import StructureDiffViewer from './components/StructureDiffViewer.vue'
 import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
 import SupportedFormats from './components/SupportedFormats.vue'
@@ -33,15 +34,15 @@ import SavedDiffs from './components/SavedDiffs.vue'
 import DiffTabBar from './components/DiffTabBar.vue'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
-import AppIcon from './components/AppIcon.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
-import { MOD, isMac } from './keys'
+import { isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
 import { hasStatusBand } from './utils/viewChrome'
 
 const store = useDiffStore()
+const merge = useMergeStore()
 const ui = useUiStore()
 const imageExport = useImageExportStore()
 const tabs = useTabsStore()
@@ -137,35 +138,14 @@ useSnippetDiffSync()
             v-if="settings.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
             fill
           />
-          <div v-if="store.mode !== 'paste'" class="file-slots-row band band-row" data-tour="slots">
-            <div class="slot-half">
-              <FileSlot
-                side="left"
-                :file="store.left"
-                :awaiting="!store.left && !!store.right"
-                @pick="store.pick('left')"
-              />
-            </div>
-            <button
-              class="btn swap"
-              :data-tip="$t('app.swapTip', { mod: MOD })"
-              :aria-label="$t('app.swapSides')"
-              :disabled="!store.ready"
-              @click="store.swap"
-            >
-              <AppIcon name="swap" />
-            </button>
-            <div class="slot-half">
-              <FileSlot
-                side="right"
-                :file="store.right"
-                :awaiting="!store.right && !!store.left"
-                @pick="store.pick('right')"
-              />
-            </div>
-          </div>
+          <!-- A merge produces a file rather than comparing two, so the slots
+               have nothing to name and every control above them is disabled. -->
+          <FileSlotsRow v-if="store.mode !== 'paste' && !merge.open" />
 
-          <PasteInput v-if="store.mode === 'paste'" />
+          <!-- Keyed by file: a second launch arriving while this is open must
+               re-seed, not set new text under decorations anchored to the old. -->
+          <MergeView v-if="merge.open" :key="merge.fileName" />
+          <PasteInput v-else-if="store.mode === 'paste'" />
           <!-- Content router: pick the viewer by comparable kind. -->
           <template v-else-if="store.ready">
             <template v-if="store.comparableKind === 'text'">
@@ -197,7 +177,7 @@ useSnippetDiffSync()
 
           <DiskChangeNotice />
 
-          <ShortcutBar />
+          <ShortcutBar v-if="!merge.open" />
 
           <!-- The photo studio: covers this column while a snippet is shot. -->
           <SnippetShot v-if="imageExport.snippetShot" :shot="imageExport.snippetShot" />
