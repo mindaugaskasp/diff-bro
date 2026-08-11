@@ -214,17 +214,32 @@ Nothing new is opened.
 
 ## Validation
 
-- [ ] `/validate`
+- [x] `/validate` — folded into `/audit` below
 - [x] `npm run check` — green, with the coverage floors RAISED (94/87/95/95 →
       95/88/95/96) rather than met: `useMergePanes.js` was 4.85% covered, so its
       testable core moved to `mergePaneOps.js` and is now driven by fakes
-- [ ] `/audit` — two agents, as v0.4.29 had; the merge write is the highest-risk
-      surface in the app and the last audit found two data-loss bugs in it
+- [x] `/audit` — two agents. Between them and a read of my own, **nine** defects,
+      four of them data loss. Every one is fixed and guarded except the last: 1. an empty region read as a one-line one, so taking a side ate the stable
+      line after it — found by reading, e2e-guarded 2. the same region answered twice ate the line below, because Monaco grows
+      a decoration around inserted text differently from this convention.
+      The unit test passed the first fix; only real Monaco caught it 3. undo left the cached emptiness disagreeing with the text, so the next
+      answer went in ABOVE the restored lines. Emptiness is no longer cached 4. typing into an emptied region never unlocked Save, and that region has
+      no chevron to click instead 5. F7/Shift+F7 never reached the view — Monaco owns both keys 6. no chevrons, bands or word tints at all in a CRLF repository 7. the index stage reads had no size cap and no binary sniff 8. `mergeInputsFor` had no `.catch()`, leaving `git mergetool` blocked 9. **still open, pre-existing**: a file whose ordinary text contains
+      marker-shaped lines (a doc about conflicts) has them parsed as real
+      conflicts, and answering them drops one side. Inherent to every
+      marker-based merge tool, and true on `main` today — filed, not fixed
+      here
 - [x] read on all 20 themes off real frames — `make theme-sweep`, 1260
       measurements, green. Getting there fixed two pre-existing breaks in the
       sweep itself: `status-band` had been timing out since `deps-diff` was added
       ahead of it and cleared the comparison, and a launcher hidden by something
       else taking focus HANGS the screenshot rather than failing it
-- [ ] Windows still unverified unless a host appears — say so rather than imply
+- [x] Windows still unverified — no host. Said, not implied. E2E ran on macOS
+      only; `e2e/quick-look-window-recovery.spec.mjs` is darwin-gated and was not
+      exercised this round
 
-**Outcome:**
+**Outcome:** shipped. The merge is a view rather than a resolver: three panes,
+the middle one a real editor, sides named by branch and read from the index.
+Two known limitations, both stated in the UI or here rather than hidden — a
+mixed-ending file is normalised on save (Monaco keeps one EOL per model, and the
+band says so before anything is written), and item 9 above.
