@@ -80,6 +80,21 @@ export function unmergedArgs() {
   return [...HARDENING, 'diff', '--name-only', '--diff-filter=U', '--no-color', '-z']
 }
 
+/**
+ * Where a file sits inside its repository, spelled by git rather than computed.
+ *
+ * Deriving it from `path.relative` needs both ends in the same form, and they
+ * are not: Windows hands out an 8.3 temp path (`RUNNER~1`) where git answers
+ * with the long one, and macOS reports `/private/var` for a repo under `/var`.
+ * Either mismatch yields a `..`-laden path the fence then rejects — which on
+ * Windows meant the conflicts list never opened at all.
+ *
+ * The path is one main has held since the launch argv, and it goes after `--`.
+ */
+export function repoPathOfArgs(file) {
+  return [...HARDENING, 'ls-files', '--full-name', '-z', '--error-unmatch', '--', file]
+}
+
 /** git's `-z` output: NUL-terminated, so the last field is empty. */
 export const splitNulPaths = (stdout) =>
   String(stdout ?? '')

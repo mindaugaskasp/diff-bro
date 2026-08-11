@@ -4,9 +4,9 @@
 // that wrote the right file but never released git.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import {
   conflictRows,
   endConflictSession,
@@ -34,7 +34,10 @@ function conflictedRepo(names = ['alpha.txt', 'beta.txt']) {
   dirs.push(dir)
   const git = (...args) =>
     execFileSync('git', args, { cwd: dir, env: { ...process.env, ...GIT_ENV } })
-  const write = (name, body) => writeFileSync(join(dir, name), body)
+  const write = (name, body) => {
+    mkdirSync(dirname(join(dir, name)), { recursive: true })
+    writeFileSync(join(dir, name), body)
+  }
   git('init', '-q', '-b', 'main')
   for (const name of names) write(name, 'top\nbase\nbottom\n')
   git('add', '.')
@@ -61,12 +64,21 @@ afterEach(() => {
 })
 
 describe('locate', () => {
+  // The rel is what everything downstream is addressed by, and it must be git's
+  // own spelling: Windows hands out an 8.3 temp path where git answers with the
+  // long one, and deriving it from path.relative produced a `..` the fence then
+  // rejected — so the list never opened there at all.
   it('finds the repository holding a mergetool’s file, and where it sits', async () => {
     const repo = conflictedRepo()
-    expect(await locate(repo.path('alpha.txt'))).toEqual({
-      root: expect.stringContaining('diffbro-session-'),
-      rel: 'alpha.txt'
-    })
+    const found = await locate(repo.path('alpha.txt'))
+    expect(found).toMatchObject({ rel: 'alpha.txt' })
+    expect(found.root).toBeTruthy()
+  })
+
+  it('spells a file in a subdirectory the way git does', async () => {
+    const repo = conflictedRepo(['nested/deep/gamma.txt'])
+    const found = await locate(repo.path(join('nested', 'deep', 'gamma.txt')))
+    expect(found).toMatchObject({ rel: 'nested/deep/gamma.txt' })
   })
 
   it('answers null for a file outside any repository', async () => {

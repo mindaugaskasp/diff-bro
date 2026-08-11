@@ -10,6 +10,7 @@ import { dirname, join, relative, sep } from 'node:path'
 import { pickEntry, isRepoRelative, visibleEntries } from './conflictList'
 import {
   readStageArgs,
+  repoPathOfArgs,
   repoRootArgs,
   runGitBytesIn,
   runGitIn,
@@ -36,12 +37,20 @@ const real = (path) => {
  * The repository holding a mergetool's `$MERGED`, and where that file sits in
  * it. Null when git will not claim it — a tool invoked by hand, a file outside
  * any repo — which leaves the single-file path exactly as it was.
+ *
+ * git names the file itself (`ls-files --full-name`); computing it from
+ * `path.relative` needs both ends in the same form and they are not. The
+ * computation stays only as a fallback for a file git does not track.
  */
 export async function locate(merged) {
-  const res = await runGitIn(repoRootArgs(), dirname(merged))
+  const where = dirname(merged)
+  const res = await runGitIn(repoRootArgs(), where)
   const root = res.ok ? res.stdout.trim() : ''
   if (!root) return null
-  const rel = relative(real(root), real(merged)).split(sep).join('/')
+  const named = await runGitIn(repoPathOfArgs(merged), where)
+  const rel = named.ok
+    ? (splitNulPaths(named.stdout)[0] ?? '')
+    : relative(real(root), real(merged)).split(sep).join('/')
   return isRepoRelative(rel) ? { root, rel } : null
 }
 
