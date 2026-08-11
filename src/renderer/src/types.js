@@ -380,4 +380,16 @@
  * @property {() => void} [open]               expand a collapsed section
  */
 
+/**
+ * One row of the merge-conflicts list, as main hands it over. It carries NO
+ * path: a row is acted on by its index into the list main built.
+ * @typedef {object} ConflictRowData
+ * @property {string} name   the file's own name
+ * @property {string} dir    repo-relative directory, empty at the root
+ * @property {number} tally  conflict regions still in the working copy
+ * @property {'open'|'done'|'blocked'} state
+ *   'blocked' is binary, oversized, unreadable or marker-free — answerable
+ *   whole-file from the index, never opened as text
+ */
+
 export {}

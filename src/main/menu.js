@@ -101,6 +101,45 @@ const settingsItem = (send) => ({
   click: () => send('settings')
 })
 
+const viewMenu = (send, isDev) => ({
+  label: t('menu.view.title'),
+  submenu: [
+    {
+      label: t('menu.view.commandPalette'),
+      accelerator: 'CmdOrCtrl+Shift+P',
+      click: () => send('command-palette')
+    },
+    {
+      label: t('menu.view.toggleSidebar'),
+      accelerator: 'CmdOrCtrl+B',
+      click: () => send('toggle-sidebar')
+    },
+    { type: 'separator' },
+    ...displayToggles(send),
+    {
+      label: t('menu.view.toggleTheme'),
+      accelerator: 'CmdOrCtrl+D',
+      click: () => send('toggle-theme')
+    },
+    { type: 'separator' },
+    {
+      label: t('menu.view.quickLook'),
+      // User-configurable global shortcut (Settings), so no fixed hint here.
+      click: () => toggleQuickLook()
+    },
+    {
+      label: t('menu.view.mergeConflicts'),
+      accelerator: 'CmdOrCtrl+Shift+K',
+      click: () => send('merge-conflicts')
+    },
+    { type: 'separator' },
+    zoomItem('zoomIn', 'CmdOrCtrl+=', 'zoom-in'),
+    zoomItem('zoomOut', 'CmdOrCtrl+-', 'zoom-out'),
+    zoomItem('resetZoom', 'CmdOrCtrl+0', 'zoom-reset'),
+    ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : [])
+  ]
+})
+
 export function installMenu() {
   const isMac = process.platform === 'darwin'
   disableInjectedMacMenuItems()
@@ -169,39 +208,7 @@ export function installMenu() {
     },
     editMenu(sendToFocused, isMac),
     terminalMenu(sendToFocused),
-    {
-      label: t('menu.view.title'),
-      submenu: [
-        {
-          label: t('menu.view.commandPalette'),
-          accelerator: 'CmdOrCtrl+Shift+P',
-          click: () => sendToFocused('command-palette')
-        },
-        {
-          label: t('menu.view.toggleSidebar'),
-          accelerator: 'CmdOrCtrl+B',
-          click: () => sendToFocused('toggle-sidebar')
-        },
-        { type: 'separator' },
-        ...displayToggles(sendToFocused),
-        {
-          label: t('menu.view.toggleTheme'),
-          accelerator: 'CmdOrCtrl+D',
-          click: () => sendToFocused('toggle-theme')
-        },
-        { type: 'separator' },
-        {
-          label: t('menu.view.quickLook'),
-          // User-configurable global shortcut (Settings), so no fixed hint here.
-          click: () => toggleQuickLook()
-        },
-        { type: 'separator' },
-        zoomItem('zoomIn', 'CmdOrCtrl+=', 'zoom-in'),
-        zoomItem('zoomOut', 'CmdOrCtrl+-', 'zoom-out'),
-        zoomItem('resetZoom', 'CmdOrCtrl+0', 'zoom-reset'),
-        ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : [])
-      ]
-    },
+    viewMenu(sendToFocused, isDev),
     securityMenu(sendToFocused),
     toolsMenu(sendToFocused),
     helpMenu({

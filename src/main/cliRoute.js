@@ -11,11 +11,7 @@ import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from 
 import { ensureMainWindow } from './quickLook'
 import { allowCliPath } from './files'
 import { fileAtRevision, isRevisionSide, REVISION_ERROR_KEYS } from './gitCliFiles'
-import { beginMerge, cancelMerge, writeMerged } from './mergeSession'
-import { mergeInputsFor } from './mergeInputs'
-import { readFileSync } from 'node:fs'
-import { basename } from 'node:path'
-import { hasConflictMarkers, isBinaryBuffer } from './mergeGuards'
+import { registerMergeIpc, routeMerge } from './mergeRoute'
 import { t } from './i18n'
 
 // A command can arrive before any window exists (a cold `diffbro compare …`),
@@ -86,48 +82,12 @@ function deliverResolved(command, cwd) {
 
 const needsGit = (command) => command?.name === 'compare' && command.files.some(isRevisionSide)
 
-// A mergetool launch: main REMEMBERS the path git wants written and sends the
-// renderer the conflicted text, never the path. What comes back is text.
-function routeMerge(command) {
-  let buffer
-  try {
-    buffer = readFileSync(command.merged)
-  } catch {
-    process.stderr.write(`${t('cliErrors.merge-unreadable')}\n`)
-    return
-  }
-  // git calls the mergetool for a BINARY conflict too, and leaves it with no
-  // markers. Decoding one as text turns every invalid byte into U+FFFD, and
-  // writing that back destroys the file — so it never reaches the renderer.
-  if (isBinaryBuffer(buffer)) {
-    process.stderr.write(`${t('cliErrors.merge-binary')}\n`)
-    return
-  }
-  const content = buffer.toString('utf8')
-  // Nothing to decide is not the same as "resolved": a file with no markers is
-  // one this tool has no business rewriting.
-  if (!hasConflictMarkers(content)) {
-    process.stderr.write(`${t('cliErrors.merge-no-conflicts')}\n`)
-    return
-  }
-  beginMerge(command)
-  // A NAME for the band, never a path: the renderer must not be able to learn,
-  // or name, the file main is going to write.
-  const base = { name: 'merge', fileName: basename(command.merged), content }
-  mergeInputsFor(command.merged)
-    .then((inputs) => deliver({ ...base, ...inputs }))
-    // Without this the renderer is never told, no sentinel is written, and the
-    // terminal that ran `git mergetool` waits forever on a decision nobody was
-    // asked for. The markers alone are enough to resolve it.
-    .catch(() => deliver(base))
-}
-
 // The verbs that need something done before the renderer hears about them.
 const SPECIAL = {
   // `open` with no file has nothing to tell the renderer — the window IS the
   // answer, so it never reaches deliver's pending queue.
   raise: () => void ensureMainWindow()?.focus(),
-  merge: (command) => routeMerge(command),
+  merge: (command) => routeMerge(command, deliver),
   'clipboard-save': (command) => deliver({ ...command, text: clipboard.readText() })
 }
 
@@ -174,11 +134,7 @@ export function registerCliIpc() {
       })
     ).response === 1
 
-  // The renderer's ONLY say in the merge is the text. It cannot name a file:
-  // main has held that path since the launch.
-  ipcMain.handle('merge:write', (e, text) => writeMerged(text))
-  // Declining is an answer too: it releases the launcher and spends the session.
-  ipcMain.handle('merge:cancel', () => cancelMerge())
+  registerMergeIpc()
   ipcMain.handle('cli:status', () => shimStatus(where()))
   ipcMain.handle('cli:install', async () =>
     (await confirmed(t('dialog.cliInstall.message'), t('dialog.cliInstall.detail')))

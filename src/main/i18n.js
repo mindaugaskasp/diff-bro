@@ -5,7 +5,12 @@
 // verb-or-noun phrase: it appears hundreds of times inside menu templates, and
 // every reader of any i18n codebase already knows what it returns.
 import { app } from 'electron'
-import { DEFAULT_LOCALE, createTranslator, normalizeLocale, preferredLocale } from '../shared/i18n/index.js'
+import {
+  DEFAULT_LOCALE,
+  createTranslator,
+  normalizeLocale,
+  preferredLocale
+} from '../shared/i18n/index.js'
 
 let active = DEFAULT_LOCALE
 let translate = createTranslator(active)

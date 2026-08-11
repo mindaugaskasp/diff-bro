@@ -109,3 +109,24 @@ describe('the shortcuts dialog against the menus that bind the keys', () => {
     expect(stale, 'advertised in the dialog but bound by nothing').toEqual([])
   })
 })
+
+// The collision that shipped: Cmd+Shift+M was bound by Tools ▸ XML and then
+// bound AGAIN by a new View item. Electron gives the first registration the
+// key, so the second menu item silently stopped working — and the walker above
+// de-dupes into a Map, so nothing failed. This is what would have caught it.
+describe('no two menu items claim the same key', () => {
+  it('binds each accelerator exactly once', () => {
+    const claims = new Map()
+    const walk = (items) => {
+      for (const item of items ?? []) {
+        if (item.keys) claims.set(item.keys, [...(claims.get(item.keys) ?? []), item.label])
+        walk(item.items ?? item.children)
+      }
+    }
+    walk(buildMenus(() => {}))
+    const doubled = [...claims]
+      .filter(([, labels]) => labels.length > 1)
+      .map(([keys, labels]) => `${keys} → ${labels.join(' AND ')}`)
+    expect(doubled, 'two menu items bound to one key').toEqual([])
+  })
+})

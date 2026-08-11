@@ -39,7 +39,14 @@ export function fakeEditor(text = '') {
     onDidScrollChange: on('scroll'),
     onMouseDown: on('mouse'),
     onDidChangeModelContent: on('change'),
-    getScrollTop: () => 120,
+    // 20px lines and a fixed viewport, so the take buttons' arithmetic has
+    // something to land on. `top` is writable: a test scrolls by setting it.
+    getTopForLineNumber: (line) => (line - 1) * 20,
+    getLayoutInfo: () => ({ height: 400 }),
+    top: 0,
+    getScrollTop() {
+      return this.top
+    },
     setScrollTop: vi.fn(),
     revealLineInCenter: vi.fn(),
     setPosition: vi.fn(),

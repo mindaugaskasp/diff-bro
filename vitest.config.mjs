@@ -81,6 +81,8 @@ export default defineConfig({
         'src/main/clipboardStage.js',
         'src/main/clipboardFiles.js',
         'src/main/demoContent.js',
+        'src/main/conflictList.js',
+        'src/main/conflictSession.js',
         'src/main/xlsx/**',
         'src/shared/**',
         'src/renderer/src/stores/**',

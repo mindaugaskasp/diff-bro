@@ -3,20 +3,22 @@
 // the two sides go by, and where this file sits in the walk.
 import { realpathSync } from 'node:fs'
 import { dirname, relative } from 'node:path'
-import { readStageArgs, repoRootArgs, revisionNameArgs, runGitIn, unmergedArgs } from './gitRepo'
+import {
+  readStageArgs,
+  repoRootArgs,
+  revisionNameArgs,
+  runGitIn,
+  splitNulPaths,
+  unmergedArgs
+} from './gitRepo'
 import { walkPosition } from './mergeSession'
-import { isBinaryBuffer } from './mergeGuards'
-
-// The same ceiling an opened file gets. A stage read has no other bound —
-// execFile's maxBuffer is 64 MB — and three of them are decoded, sent over IPC
-// and set as Monaco models, with the launcher already waiting on a decision.
-const MAX_STAGE_BYTES = 32 * 1024 * 1024
+import { isBinaryBuffer, MAX_MERGE_BYTES } from './mergeGuards'
 
 // A stage that is too big, or not text, sends the view back to reconstructing
 // the sides from the markers — which is the designed fallback, not a failure.
 const usableStage = (res) =>
   res.ok &&
-  Buffer.byteLength(res.stdout, 'utf8') <= MAX_STAGE_BYTES &&
+  Buffer.byteLength(res.stdout, 'utf8') <= MAX_MERGE_BYTES &&
   !isBinaryBuffer(Buffer.from(res.stdout, 'utf8'))
 
 // A branch name and nothing else: `name-rev` answers `main~2` for a commit that
@@ -51,9 +53,32 @@ async function revisionNames(dir) {
 }
 
 /**
- * The three inputs git already holds. Absent — a mergetool invoked by hand, a
- * file with no index entry — the view falls back to reconstructing the sides
- * from the markers themselves.
+ * The three stages and the two branch names, for a file named by the repository
+ * that holds it. Empty when git cannot give both sides — the view then falls
+ * back to reconstructing them from the markers, which is the designed fallback.
+ * @param {string} dir  the repository root, computed in main
+ * @param {string} rel  repo-relative, posix
+ */
+export async function stagesFor(dir, rel) {
+  try {
+    const [base, ours, theirs] = await Promise.all(
+      [1, 2, 3].map((stage) => runGitIn(readStageArgs(stage, rel), dir))
+    )
+    if (!usableStage(ours) || !usableStage(theirs)) return {}
+    return {
+      ours: ours.stdout,
+      theirs: theirs.stdout,
+      base: usableStage(base) ? base.stdout : null,
+      ...(await revisionNames(dir))
+    }
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * The three inputs git already holds, for the file THIS launch was given, plus
+ * where it sits in the walk.
  * @returns {Promise<object>} merged into the renderer's payload
  */
 export async function mergeInputsFor(merged) {
@@ -64,22 +89,9 @@ export async function mergeInputsFor(merged) {
   // /private/var, and relative() between the two forms yields a path full of
   // `..` that the fence then rejects — the index read failed silently and the
   // view fell back to reconstructing the sides from the markers.
-  const rel = relative(real(dir), real(merged))
-  try {
-    const [base, ours, theirs] = await Promise.all(
-      [1, 2, 3].map((stage) => runGitIn(readStageArgs(stage, rel), dir))
-    )
-    if (!usableStage(ours) || !usableStage(theirs)) return {}
-    const [unmerged, names] = await Promise.all([runGitIn(unmergedArgs(), dir), revisionNames(dir)])
-    const files = unmerged.ok ? unmerged.stdout.split('\n').filter(Boolean).length : 0
-    return {
-      ours: ours.stdout,
-      theirs: theirs.stdout,
-      base: usableStage(base) ? base.stdout : null,
-      ...names,
-      ...walkPosition(files, merged)
-    }
-  } catch {
-    return {}
-  }
+  const stages = await stagesFor(dir, relative(real(dir), real(merged)))
+  if (!stages.ours) return {}
+  const unmerged = await runGitIn(unmergedArgs(), dir)
+  const files = unmerged.ok ? splitNulPaths(unmerged.stdout).length : 0
+  return { ...stages, ...walkPosition(files, merged) }
 }

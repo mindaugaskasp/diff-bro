@@ -18,6 +18,7 @@ import { tabsFullMessage } from './cliCommand'
  * @property {object} [imageExport]
  * @property {object} [configBackup]
  * @property {object} [share]
+ * @property {object} [conflicts]  the merge walk's file list
  */
 
 const openTool = (tool) => (s) => (s.ui.textTool = tool)
@@ -44,6 +45,12 @@ export const COMMANDS = {
   'tab-prev': ({ tabs }) => tabs.step(-1),
   'tab-close': ({ tabs }) => tabs.requestActiveClose(),
   'import-snippets': ({ diff }) => diff.importSnippets(),
+  // Reopening the list is the way back after dismissing it. Guarded on `live`:
+  // once git stops walking there is no session to show, and offering one would
+  // mean reconstructing a merge git has finished with.
+  'merge-conflicts': ({ conflicts }) => {
+    if (conflicts?.live) conflicts.show()
+  },
   // Hiding the toolbar button was not enough: the shortcut, the menu item and
   // the palette all reach the same action, and on a saved diff it would replace
   // what the reader opened. The guard belongs HERE, where every surface meets.
@@ -142,7 +149,10 @@ export const CLI_COMMANDS = {
   // Typed in the terminal, so it is saved outright rather than opened in the
   // editor — the reader has already answered every question the editor asks.
   'new-snippet': ({ snippets }, command) => snippets.add(command.draft),
-  merge: ({ merge }, command) => merge.begin(command),
+  merge: ({ merge, conflicts }, command) => {
+    conflicts.begin(command)
+    merge.begin(command)
+  },
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
   // The passphrase is asked for here, not in the terminal: the bundle is

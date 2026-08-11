@@ -45,9 +45,9 @@ describe('derivedFrom — prompt variables', () => {
 
   it('keeps a list it already has rather than recomputing it', () => {
     const vars = ['kept']
-    expect(derivedFrom({ language: 'claude', detected: 'claude', vars }, 'Review {{file}}').vars).toBe(
-      vars
-    )
+    expect(
+      derivedFrom({ language: 'claude', detected: 'claude', vars }, 'Review {{file}}').vars
+    ).toBe(vars)
   })
 
   // The two fields answer the same question, so a re-detection that moves one

@@ -194,9 +194,10 @@ flowchart LR
   end
   subgraph merge["three-way merge"]
     m["index :1: :2: :3: — no markers on screen"]
+    f["conflicts list — every file, any order"]
     v["MergeView — ours │ result │ theirs, middle editable"]
-    w["mergeSession.js — the one write"]
-    m --> v --> w
+    w["conflictSession.js — every write verified"]
+    m --> f --> v --> w
   end
 ```
 
@@ -205,14 +206,17 @@ flowchart LR
 - **Revisions** — `diffbro compare HEAD~1:src/app.js src/app.js`. `git show`
   behind a fence: fixed argv, no shell, the repo root computed in main, hooks
   and the fsmonitor disabled, every inherited `GIT_*` dropped
-- **Merge** — `git mergetool` now finishes, in a three-pane view: the two
-  branches either side, named by branch, and the file you are producing in the
-  middle as a real editor. Sides come from the index, so no `<<<<<<<` reaches
-  the screen; gutter chevrons move a side across, F7 walks the conflicts, and
-  typing IS the answer where neither side was right. This CROSSES "Diff Bro
-  never writes files", deliberately: the app had already registered for the job.
-  Main writes only the `$MERGED` path it was launched with, the renderer sends
-  text and never a path, and the launcher waits so `trustExitCode` is honest
+- **Merge** — `git mergetool` now finishes, and opens on the LIST: every
+  conflicted file, what is left and what is done. Take a whole side from a row,
+  or open one in the three-pane view — the two branches either side, named by
+  branch, and the file you are producing in the middle as a real editor. Sides
+  come from the index, so no `<<<<<<<` reaches the screen; a button on each
+  pane's inner edge moves that side across, F7 walks the conflicts, and typing
+  IS the answer where neither side was right. Files are answered in any order.
+  This CROSSES "Diff Bro never writes files", deliberately: the app had already
+  registered for the job. The renderer names a row by INDEX and never a path,
+  every write is re-verified against git's unmerged list on the way in, and the
+  launcher waits so `trustExitCode` is honest
 
 **Open.** TOML lockfiles (`Cargo.lock`, `poetry.lock`) need a parser this repo
 does not have. A revision PICKER — the app takes a revision, it is not a git

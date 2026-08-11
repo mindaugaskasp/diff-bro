@@ -6,6 +6,14 @@ contextBridge.exposeInMainWorld('api', {
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   writeMerged: (text) => ipcRenderer.invoke('merge:write', text),
   cancelMerge: () => ipcRenderer.invoke('merge:cancel'),
+  // The conflicted files of the merge git is walking. A row is addressed by its
+  // INDEX into the list main built — the renderer never learns, or names, a
+  // path, which is what keeps the one write the app makes outside its own files
+  // fenced in main.
+  conflictList: () => ipcRenderer.invoke('merge:list'),
+  takeConflictSide: (index, side) => ipcRenderer.invoke('merge:take', index, side),
+  openConflict: (index) => ipcRenderer.invoke('merge:open', index),
+  endMergeWalk: () => ipcRenderer.invoke('merge:endWalk'),
   // `format` names a row of main's own export table; never an extension.
   exportDiffFile: (payload) => ipcRenderer.invoke('diff:exportFile', payload),
   // Streamed comparison: files too large to hold are indexed by line in main

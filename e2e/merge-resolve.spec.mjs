@@ -189,9 +189,9 @@ test('takes a side, then lets the reader type the answer neither side had', asyn
   }
 })
 
-// The gutter chevrons are the interaction a merge tool is judged on: the side
-// you want, moved into the result from where it sits.
-test('a gutter chevron moves that side into the result', async () => {
+// The take buttons are the interaction a merge tool is judged on: the side you
+// want, moved into the result from where it sits.
+test('a take button moves that side into the result', async () => {
   const { dir, file } = conflictedRepo()
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
@@ -205,9 +205,9 @@ test('a gutter chevron moves that side into the result', async () => {
     await expect(result).not.toContainText('<<<<<<<')
     await expect(result).not.toContainText('=======')
 
-    const theirChevron = page.locator('.merge-pane').last().locator('.merge-take-theirs')
-    await expect(theirChevron).toHaveCount(1)
-    await theirChevron.click()
+    const theirButton = page.getByTestId('merge-take-theirs-0')
+    await expect(theirButton).toHaveCount(1)
+    await theirButton.click()
 
     await expect(page.getByTestId('merge-save')).toBeEnabled()
     await page.getByTestId('merge-save').click()

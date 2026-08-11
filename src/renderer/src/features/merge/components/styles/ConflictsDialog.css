@@ -1,0 +1,33 @@
+/* The list is a reading surface inside the dialog's chrome, so it is --bg (the
+   base surface) within the --bg-panel dialog — the same relationship an input
+   has to the panel around it. */
+.cf-band {
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--chip-h);
+  font-size: var(--font-sm);
+  color: var(--text-hint);
+}
+.cf-tally b {
+  color: var(--text);
+  font-weight: 600;
+}
+.cf-revs {
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cf-well {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden auto;
+  max-height: 52vh;
+}
+.cf-hint {
+  flex: 1;
+  font-size: var(--font-xs);
+  color: var(--text-hint);
+}

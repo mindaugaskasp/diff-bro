@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeEditor } from './fakeEditor'
 import {
   remember,
@@ -7,9 +7,10 @@ import {
   reveal,
   seedRegions,
   syncScroll,
-  takeFromGutter,
+  takeLayout,
   writeChoice
 } from '../../../../src/renderer/src/features/merge/mergePaneOps'
+import * as ops from '../../../../src/renderer/src/features/merge/mergePaneOps'
 
 function scene() {
   const merge = {
@@ -105,23 +106,33 @@ describe('resolveTouched', () => {
   })
 })
 
-describe('takeFromGutter', () => {
-  const anchors = { ours: [{ line: 2, count: 1 }] }
-  const glyph = (lineNumber) => ({
-    target: { type: 2, position: { lineNumber } }
+describe('takeLayout', () => {
+  const anchors = { ours: [{ line: 2, count: 1 }], theirs: [{ line: 2, count: 1 }] }
+  const merge = { at: 0 }
+
+  // Geometry comes off the live editor, which is why only the mapping is
+  // testable here; where the buttons actually land is proven in e2e.
+  const editorAt = (top) => ({
+    getTopForLineNumber: (line) => (line - 1) * 20,
+    getScrollTop: () => top,
+    getLayoutInfo: () => ({ height: 400 })
   })
 
-  it('answers the region the click sits on', () => {
-    const take = vi.fn()
-    takeFromGutter({ anchors, key: 'ours', event: glyph(2), take })
-    expect(take).toHaveBeenCalledWith(0, 'ours')
+  it('places one button per region the side contains', () => {
+    const editors = { ours: editorAt(0) }
+    expect(takeLayout({ editors, anchors, merge, key: 'ours' })).toEqual([
+      { index: 0, top: 20, dim: false }
+    ])
   })
 
-  it('ignores a click on a line no region covers, and one outside the margin', () => {
-    const take = vi.fn()
-    takeFromGutter({ anchors, key: 'ours', event: glyph(9), take })
-    takeFromGutter({ anchors, key: 'ours', event: { target: { type: 6 } }, take })
-    expect(take).not.toHaveBeenCalled()
+  it('answers nothing before the editors exist', () => {
+    expect(takeLayout({ editors: {}, anchors, merge, key: 'ours' })).toEqual([])
+  })
+
+  // The glyph margin this replaced could not be reached from the keyboard, and
+  // only existed on an editor's left edge. Nothing may go back to it.
+  it('no longer reads a glyph-margin click', () => {
+    expect(ops.takeFromGutter).toBeUndefined()
   })
 })
 
@@ -129,6 +140,7 @@ describe('syncScroll', () => {
   it('moves the other two panes and does not echo back', () => {
     const s = scene()
     const sync = { busy: false }
+    s.editors.result.top = 120
     syncScroll(s.editors, 'result', sync)
     expect(s.editors.ours.setScrollTop).toHaveBeenCalledWith(120)
     expect(s.editors.theirs.setScrollTop).toHaveBeenCalledWith(120)

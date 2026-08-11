@@ -36,7 +36,23 @@
     "prevTip": "Previous conflict · Shift+F7",
     "nextTip": "Next conflict · F7",
     "fromBranch": "from {name}",
-    "mixedEndings": "This file mixes CRLF and LF line endings. Saving writes every line with the same one."
+    "mixedEndings": "This file mixes CRLF and LF line endings. Saving writes every line with the same one.",
+    "conflictsTitle": "Merge conflicts",
+    "fileCount": "{n} file | {n} files",
+    "filesResolved": "{files} · {done} resolved",
+    "repoRoot": "repository root",
+    "rowConflicts": "{n} conflict | {n} conflicts",
+    "rowResolved": "Resolved",
+    "rowBlocked": "Binary — pick a side",
+    "resolveRow": "Resolve",
+    "listHint": "Esc closes the list — the toolbar chip brings it back",
+    "reopenTip": "Show the conflicted files",
+    "conflictsLeft": "{n} conflict left | {n} conflicts left",
+    "error": {
+      "gone": "git no longer calls that file conflicted, so nothing was written.",
+      "take-failed": "That side could not be read out of the index.",
+      "blocked": "That file cannot be opened as text. Answer it with Ours or Theirs."
+    }
   },
   "menu": {
     "file": {
@@ -73,6 +89,7 @@
       "toggleSplit": "Toggle Split View",
       "toggleTheme": "Toggle Light/Dark Theme",
       "quickLook": "Quick Look-up",
+      "mergeConflicts": "Merge conflicts…",
       "zoomIn": "Zoom In",
       "zoomOut": "Zoom Out",
       "resetZoom": "Reset Zoom",
@@ -204,6 +221,7 @@
     "toggleSplit": "Toggle split view",
     "toggleSidebar": "Toggle sidebar",
     "toggleStructure": "Toggle structure view",
+    "mergeConflicts": "Merge conflicts",
     "toggleTheme": "Toggle light/dark theme",
     "zoomIn": "Zoom the diff in",
     "zoomOut": "Zoom the diff out",

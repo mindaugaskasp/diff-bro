@@ -30,6 +30,65 @@ const displayToggles = (run) => [
 // Mirrors the native Terminal menu (menuSections.terminalMenu).
 const terminalItems = (run) => [{ label: t('menu.terminal.info'), run: () => run('settings-cli') }]
 
+const viewSection = (run) => ({
+  id: 'view',
+  label: t('menu.view.title'),
+  items: [
+    {
+      label: t('menu.view.commandPalette'),
+      keys: `${MOD}+Shift+P`,
+      paletteHidden: true,
+      run: () => run('command-palette')
+    },
+    { sep: true },
+    ...displayToggles(run),
+    {
+      label: t('menu.view.toggleSidebar'),
+      keys: `${MOD}+B`,
+      run: () => run('toggle-sidebar')
+    },
+    { label: t('menu.view.toggleTheme'), keys: `${MOD}+D`, run: () => run('toggle-theme') },
+    { sep: true },
+    {
+      // No key hint: the binding is user-configurable (Settings →
+      // Shortcuts), so a fixed label here would go stale once rebound.
+      label: t('menu.view.quickLook'),
+      run: () => window.api.quickLookToggle()
+    },
+    {
+      label: t('menu.view.mergeConflicts'),
+      keys: `${MOD}+Shift+K`,
+      run: () => run('merge-conflicts')
+    },
+    { sep: true },
+    {
+      label: t('menu.view.zoomIn'),
+      keys: `${MOD}++`,
+      paletteHidden: true,
+      run: () => run('zoom-in')
+    },
+    {
+      label: t('menu.view.zoomOut'),
+      keys: `${MOD}+-`,
+      paletteHidden: true,
+      run: () => run('zoom-out')
+    },
+    {
+      label: t('menu.view.resetZoom'),
+      keys: `${MOD}+0`,
+      paletteHidden: true,
+      run: () => run('zoom-reset')
+    },
+    { sep: true, devOnly: true },
+    {
+      label: t('menu.view.devTools'),
+      devOnly: true,
+      paletteHidden: true,
+      run: () => window.api.toggleDevTools()
+    }
+  ]
+})
+
 export function buildMenus(run) {
   return [
     {
@@ -93,59 +152,7 @@ export function buildMenus(run) {
         { label: t('menu.edit.pasteTextMode'), keys: `${MOD}+T`, run: () => run('toggle-paste') }
       ]
     },
-    {
-      id: 'view',
-      label: t('menu.view.title'),
-      items: [
-        {
-          label: t('menu.view.commandPalette'),
-          keys: `${MOD}+Shift+P`,
-          paletteHidden: true,
-          run: () => run('command-palette')
-        },
-        { sep: true },
-        ...displayToggles(run),
-        {
-          label: t('menu.view.toggleSidebar'),
-          keys: `${MOD}+B`,
-          run: () => run('toggle-sidebar')
-        },
-        { label: t('menu.view.toggleTheme'), keys: `${MOD}+D`, run: () => run('toggle-theme') },
-        { sep: true },
-        {
-          // No key hint: the binding is user-configurable (Settings →
-          // Shortcuts), so a fixed label here would go stale once rebound.
-          label: t('menu.view.quickLook'),
-          run: () => window.api.quickLookToggle()
-        },
-        { sep: true },
-        {
-          label: t('menu.view.zoomIn'),
-          keys: `${MOD}++`,
-          paletteHidden: true,
-          run: () => run('zoom-in')
-        },
-        {
-          label: t('menu.view.zoomOut'),
-          keys: `${MOD}+-`,
-          paletteHidden: true,
-          run: () => run('zoom-out')
-        },
-        {
-          label: t('menu.view.resetZoom'),
-          keys: `${MOD}+0`,
-          paletteHidden: true,
-          run: () => run('zoom-reset')
-        },
-        { sep: true, devOnly: true },
-        {
-          label: t('menu.view.devTools'),
-          devOnly: true,
-          paletteHidden: true,
-          run: () => window.api.toggleDevTools()
-        }
-      ]
-    },
+    viewSection(run),
     { id: 'terminal', label: t('menu.terminal.title'), items: terminalItems(run) },
     { id: 'security', label: t('menu.security.title'), items: securityItems(run) },
     {

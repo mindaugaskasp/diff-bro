@@ -96,6 +96,13 @@ export const useMergeStore = defineStore('merge', {
     async close() {
       this.open = false
       if (!this.saved) await window.api.cancelMerge()
+    },
+    // The file was answered elsewhere — from its row in the conflicts list —
+    // so main has already written it and released the launcher. Telling main
+    // again would cancel a session that no longer exists.
+    dismiss() {
+      this.saved = true
+      this.open = false
     }
   }
 })

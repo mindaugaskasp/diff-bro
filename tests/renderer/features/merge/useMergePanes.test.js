@@ -68,14 +68,28 @@ describe('useMergePanes', () => {
     expect(merge.remaining).toBe(0)
   })
 
-  it('follows a chevron clicked in a side pane', () => {
-    const { merge, ours } = scene()
-    ours.fire('mouse', { target: { type: 2, position: { lineNumber: 2 } } })
+  // The take control is a button the view renders over the pane, so what the
+  // composable owes it is a position per region — and a fresh one after a
+  // scroll, since the buttons move with the text.
+  it('offers a take button for each side, and re-places them on scroll', () => {
+    const { panes, ours } = scene()
+    expect(panes.takes.value.ours).toEqual([{ index: 0, top: 20, dim: false }])
+    expect(panes.takes.value.theirs).toEqual([{ index: 0, top: 20, dim: false }])
+    ours.top = 20
+    ours.fire('scroll')
+    expect(panes.takes.value.ours).toEqual([{ index: 0, top: 0, dim: false }])
+  })
+
+  it('takes that side when the view reports its button pressed', () => {
+    const { panes, merge, result } = scene()
+    panes.take(panes.takes.value.theirs[0].index, 'theirs')
+    expect(result.__lines().join('\n')).toContain('replicas: 9')
     expect(merge.regions[0].resolved).toBe(true)
   })
 
   it('carries a scroll in one pane to the other two', () => {
     const { ours, result, theirs } = scene()
+    ours.top = 120
     ours.fire('scroll')
     expect(result.setScrollTop).toHaveBeenCalledWith(120)
     expect(theirs.setScrollTop).toHaveBeenCalledWith(120)

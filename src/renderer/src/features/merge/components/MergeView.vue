@@ -3,18 +3,21 @@
 // file you are producing in the middle, and that middle one is yours to type in.
 import { onMounted, ref } from 'vue'
 import { useMergeStore } from '../mergeStore'
+import { useConflictsStore } from '../conflictsStore'
 import { useMergePanes } from '../useMergePanes'
 import { useMergePaneSizes } from '../useMergePaneSizes'
 import { useMergeKeys } from '../useMergeKeys'
 import MergeActions from './MergeActions.vue'
+import MergeTakeOverlay from './MergeTakeOverlay.vue'
 import AppIcon from '../../../components/AppIcon.vue'
 
 const merge = useMergeStore()
+const conflicts = useConflictsStore()
 const sizes = useMergePaneSizes()
 const oursEl = ref(null)
 const resultEl = ref(null)
 const theirsEl = ref(null)
-const { create, reveal, take, takeAll } = useMergePanes(
+const { create, reveal, take, takeAll, takes } = useMergePanes(
   { ours: oursEl, result: resultEl, theirs: theirsEl },
   merge
 )
@@ -29,6 +32,23 @@ const answer = (choice) => {
   take(merge.at, choice)
   reveal(merge.at)
 }
+// Saving hands one file back and returns the reader to the list rather than to
+// whatever git asks for next — the list is where the remaining work is. With
+// nothing left, the walk is over: the list goes, and main forgets it.
+async function onSave() {
+  if (!(await merge.save())) return
+  if (!conflicts.live) return
+  await conflicts.refresh()
+  if (conflicts.remaining) conflicts.reveal()
+  else await conflicts.end()
+}
+
+// Declining the file git asked about abandons the walk, so nothing may be left
+// pointing at that repository.
+async function onCancel() {
+  await merge.close()
+  if (conflicts.live) await conflicts.end()
+}
 useMergeKeys(go)
 </script>
 
@@ -38,10 +58,19 @@ useMergeKeys(go)
       <AppIcon name="git-merge" />
       <span class="merge-file">{{ merge.fileName }}</span>
       <!-- git walks the conflicted files one launch at a time, so without this
-           there is no telling the third of thirty from the last. -->
-      <span v-if="merge.showsWalk" class="merge-walk" data-testid="merge-walk">
+           there is no telling the third of thirty from the last. It is also the
+           way back to the list once that has been dismissed. -->
+      <button
+        v-if="merge.showsWalk"
+        class="merge-walk"
+        :disabled="!conflicts.live"
+        :data-tip="$t('merge.reopenTip')"
+        data-testid="merge-walk"
+        @click="conflicts.show()"
+      >
+        <AppIcon name="chevron-left" />
         {{ $t('merge.fileOf', { n: merge.position, total: merge.total }) }}
-      </span>
+      </button>
       <MergeActions
         :remaining="merge.remaining"
         :disabled="!merge.regions.length"
@@ -50,12 +79,12 @@ useMergeKeys(go)
         @all="takeAll"
       />
       <span class="merge-end">
-        <button class="btn btn-sm" @click="merge.close()">{{ $t('common.cancel') }}</button>
+        <button class="btn btn-sm" @click="onCancel">{{ $t('common.cancel') }}</button>
         <button
           class="btn btn-sm btn-primary"
           data-testid="merge-save"
           :disabled="!merge.canSave"
-          @click="merge.save()"
+          @click="onSave"
         >
           {{ $t('merge.save') }}
         </button>
@@ -82,7 +111,10 @@ useMergeKeys(go)
             {{ $t('merge.fromBranch', { name: merge.oursName }) }}
           </span>
         </header>
-        <div ref="oursEl" class="merge-editor"></div>
+        <div class="merge-editor-area">
+          <div ref="oursEl" class="merge-editor"></div>
+          <MergeTakeOverlay side="ours" :buttons="takes.ours" @take="take($event, 'ours')" />
+        </div>
       </section>
       <div class="merge-grip" @pointerdown="sizes.start('ours', $event)"></div>
       <section class="merge-pane result">
@@ -90,7 +122,9 @@ useMergeKeys(go)
           {{ $t('merge.result') }}
           <span class="merge-hint">{{ $t('merge.editable') }}</span>
         </header>
-        <div ref="resultEl" class="merge-editor"></div>
+        <div class="merge-editor-area">
+          <div ref="resultEl" class="merge-editor"></div>
+        </div>
       </section>
       <div class="merge-grip" @pointerdown="sizes.start('result', $event)"></div>
       <section class="merge-pane">
@@ -100,7 +134,10 @@ useMergeKeys(go)
             {{ $t('merge.fromBranch', { name: merge.theirsName }) }}
           </span>
         </header>
-        <div ref="theirsEl" class="merge-editor"></div>
+        <div class="merge-editor-area">
+          <div ref="theirsEl" class="merge-editor"></div>
+          <MergeTakeOverlay side="theirs" :buttons="takes.theirs" @take="take($event, 'theirs')" />
+        </div>
       </section>
     </div>
   </div>

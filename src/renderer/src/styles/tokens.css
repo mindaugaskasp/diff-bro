@@ -89,6 +89,12 @@
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
   --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+  /* A control that floats ON a tinted band rather than on a surface — the merge
+     view's take buttons, which sit over a conflict band. The band closes the
+     gap --btn-edge was tuned for: it lands at 2.99 on sepia and exactly 3.00 on
+     meridian, at or under the 3:1 non-text floor. A quarter of the way from the
+     border to the ink clears every band tint on all 20 (worst 4.88, sepia). */
+  --btn-edge-strong: color-mix(in srgb, var(--border) 25%, var(--text));
   /* The primary button's hover/press ladder. It steps the KEYLINE, never the
      fill: moving a filled button's background toward the label printed on it
      can only close the gap between them, which is how .btn-primary:hover came
@@ -144,4 +150,16 @@
   --dg-add: var(--success-text);
   --dg-del: color-mix(in srgb, var(--danger-border) 70%, var(--text));
   --dg-chg: var(--warning-border);
+
+  /* Merge-conflict status, as INK on a row of the conflicts list. The --dg-*
+     roles above are tuned for the 3:1 non-text floor — a band, a stroke, a
+     badge — and a row's state is a WORD, so it answers to 4.5 instead. Raw,
+     --warning-border scores 2.73 on light and 2.74 on contrast; each is mixed
+     toward the theme's own ink until the worst of the twenty clears the floor
+     (open 4.67, done 4.59, blocked 4.60 — sepia, sepia, nord). The percentages
+     differ because the three source roles do not start from the same place:
+     --danger-border is the weakest, so its mix stops at 35%. */
+  --mg-open: color-mix(in srgb, var(--warning-border) 45%, var(--text));
+  --mg-done: color-mix(in srgb, var(--success-text) 55%, var(--text));
+  --mg-blocked: color-mix(in srgb, var(--danger-border) 35%, var(--text));
 }

@@ -53,6 +53,7 @@ export const SHORTCUT_GROUPS = [
       { keys: `${MOD}+\\`, labelKey: 'shortcuts.toggleSplit' },
       { keys: `${MOD}+B`, labelKey: 'shortcuts.toggleSidebar' },
       { keys: `${MOD}+Shift+D`, labelKey: 'shortcuts.toggleStructure' },
+      { keys: `${MOD}+Shift+K`, labelKey: 'shortcuts.mergeConflicts' },
       { keys: `${MOD}+D`, labelKey: 'shortcuts.toggleTheme' },
       { keys: `${MOD}++`, labelKey: 'shortcuts.zoomIn' },
       { keys: `${MOD}+-`, labelKey: 'shortcuts.zoomOut' },

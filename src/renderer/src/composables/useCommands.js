@@ -12,7 +12,7 @@ import { useConfigBackupStore } from '../features/configBackup'
 import { useImageExportStore } from '../features/imageExport'
 import { useShareStore } from '../features/share'
 import { useOnboardingStore } from '../features/onboarding'
-import { useMergeStore } from '../features/merge'
+import { useConflictsStore, useMergeStore } from '../features/merge'
 
 const bundle = () => ({
   diff: useDiffStore(),
@@ -24,7 +24,8 @@ const bundle = () => ({
   imageExport: useImageExportStore(),
   share: useShareStore(),
   onboarding: useOnboardingStore(),
-  merge: useMergeStore()
+  merge: useMergeStore(),
+  conflicts: useConflictsStore()
 })
 
 export function useCommands() {

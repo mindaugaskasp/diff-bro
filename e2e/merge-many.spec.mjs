@@ -75,6 +75,15 @@ test('walks thirty conflicted files without running out of room', async () => {
       await mergetool(userDataDir, dir, join(dir, name))
       const view = page.locator('.merge-view')
       await expect(view, `file ${i} (${name}) never opened`).toBeVisible({ timeout: 20000 })
+      // The list is offered ONCE. A reader working the walk git's own way puts
+      // it away on the first file, and it stays away — thirty launches must not
+      // mean thirty modals.
+      const list = page.getByTestId('conflicts-dialog')
+      if (i === 0) {
+        await expect(list, 'the list never opened').toBeVisible({ timeout: 20000 })
+        await page.keyboard.press('Escape')
+      }
+      await expect(list, `file ${i} (${name}) pushed the list back`).toHaveCount(0)
       await expect(page.locator('.merge-file')).toHaveText(name)
       // git walks one launch at a time, so the band has to say where you are.
       await expect(page.getByTestId('merge-walk')).toHaveText(`${i + 1} of ${FILES}`)
