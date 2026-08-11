@@ -60,6 +60,9 @@ function mergetool(userDataDir, dir, file) {
 }
 
 test('walks thirty conflicted files without running out of room', async () => {
+  // Thirty Electron launches, one after another, because that is what git does.
+  // The default 30s is a per-test budget written for a test that drives one.
+  test.setTimeout(180_000)
   const { dir, names, git } = bigConflict()
   const userDataDir = freshUserDataDir()
   const app = await launchApp(userDataDir)
