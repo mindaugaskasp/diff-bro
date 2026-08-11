@@ -650,3 +650,69 @@ test('answers a region again after undoing a Neither', async () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// A document ABOUT merge conflicts carries marker-shaped lines of its own. The
+// parser cannot tell them from git's, so the view offered them as a decision and
+// answering it dropped half the document — silently, because the result pane
+// shows no markers to notice by. git never writes markers into the index, so the
+// pristine sides settle which blocks it actually wrote.
+test('leaves marker-shaped prose alone and offers only the real conflict', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-merge-prose-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const file = join(dir, 'doc.md')
+  // The markers are BUILT here rather than written literally, so this spec is
+  // not itself a file full of conflict markers.
+  const example = [
+    '<'.repeat(7) + ' HEAD',
+    'the left side',
+    '='.repeat(7),
+    'the right side',
+    '>'.repeat(7) + ' other'
+  ]
+  const doc = (setting) =>
+    ['# how a conflict looks', '', ...example, '', `setting = ${setting}`, 'trailer', ''].join('\n')
+
+  git('init', '-q', '-b', 'main')
+  writeFileSync(file, doc('base'))
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  writeFileSync(file, doc('theirs'))
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  writeFileSync(file, doc('ours'))
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected.
+  }
+
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  try {
+    await runMergetool(userDataDir, dir, file)
+    await expect(page.locator('.merge-view')).toBeVisible({ timeout: 20000 })
+
+    // One decision, not two: the document's own example is not one.
+    await expect(page.locator('.merge-count')).toHaveText('1 conflict left')
+
+    await page.getByTestId('merge-take-theirs').click()
+    await page.getByTestId('merge-save').click()
+    await expect(page.locator('.merge-view')).toHaveCount(0, { timeout: 10000 })
+
+    // The document survives intact, markers and both of its sides.
+    expect(readFileSync(file, 'utf8')).toBe(doc('theirs'))
+  } finally {
+    await app.close().catch(() => {})
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

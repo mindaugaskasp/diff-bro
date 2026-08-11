@@ -6,8 +6,6 @@ import * as monaco from 'monaco-editor'
 import { gutterAnchors } from './mergeGutter'
 import { applyChoice, touchedIndexes, wholeLines } from './mergeEdits'
 import { regionOptions, rulerColors, sideDecorations } from './mergeDecorations'
-import { initialRanges } from './threeWay'
-import { parseConflicts } from '../../utils/mergeConflicts'
 
 export const SIDES = ['ours', 'result', 'theirs']
 
@@ -69,7 +67,7 @@ export function repaint({ editors, merge, ids, anchors }) {
 // The regions start where our side put them; from here the editor keeps the
 // ranges right and nothing re-parses the text.
 export function seedRegions({ editors, merge, ids, settled }) {
-  const ranges = initialRanges(parseConflicts(merge.rawContent))
+  const ranges = merge.regionLines
   const colors = rulerColors()
   const model = editors.result.getModel()
   ids.result = editors.result.deltaDecorations(

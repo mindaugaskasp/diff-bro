@@ -83,6 +83,48 @@ export function parseConflicts(text) {
   return { segments }
 }
 
+/**
+ * The parse with marker-shaped PROSE put back where it belongs.
+ *
+ * A document about merge conflicts contains marker lines, and the parser cannot
+ * tell them from the ones git wrote — so answering that "conflict" dropped half
+ * of it, silently, since the result pane shows no markers to notice by.
+ *
+ * git never writes markers into the index, so a block that appears verbatim in
+ * one of the pristine sides was already in the file. That is the whole test.
+ * With no sides — a mergetool run by hand — nothing is demoted: guessing here
+ * would drop a real conflict.
+ *
+ * @param {object|null} parsed from parseConflicts
+ * @param {string} text the same text it was given
+ * @param {{ours?: string, theirs?: string}} sides stages 2 and 3
+ */
+export function withoutProseConflicts(parsed, text, sides) {
+  const pristine = [sides?.ours, sides?.theirs].filter(Boolean)
+  if (!parsed || !pristine.length) return parsed
+  const raw = String(text ?? '').split(/(?<=\n)/)
+  const blockOf = (seg) => raw.slice(seg.startLine - 1, seg.endLine)
+  const isProse = (seg) =>
+    seg.type === 'conflict' && pristine.some((side) => side.includes(blockOf(seg).join('')))
+  return {
+    segments: parsed.segments.reduce((out, segment) => {
+      appendSegment(out, isProse(segment) ? stable(blockOf(segment)) : segment)
+      return out
+    }, [])
+  }
+}
+
+// Two stable runs either side of demoted prose are one run.
+function appendSegment(segments, next) {
+  const last = segments[segments.length - 1]
+  if (next.type !== 'stable' || last?.type !== 'stable') {
+    segments.push(next)
+    return
+  }
+  last.raw.push(...next.raw)
+  last.lines.push(...next.lines)
+}
+
 const conflicts = (parsed) => (parsed?.segments ?? []).filter((s) => s.type === 'conflict')
 
 /** How many regions the reader has to decide. */
