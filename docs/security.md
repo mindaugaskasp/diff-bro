@@ -64,6 +64,32 @@ takes bytes and a display name. With no mergetool launch there is no path held,
 so the handler writes nothing at all whatever arrives, and a session is spent
 once used.
 
+### The conflicts list widens that to the whole walk
+
+`git mergetool` walks the conflicted files one launch at a time, and the list
+lets a reader answer them in their own order — so main writes files this
+launch's argv did not name. That is a real widening of the most sensitive
+surface in the app, and it is fenced the same way rather than differently:
+
+- The renderer addresses a row by its **index** into the list main built
+  (`merge:take`, `merge:open`). It never sees a path — a row carries a display
+  name and a directory label — and there is no handler that takes one.
+- Every path is recomputed in main from the repository root plus that row's
+  entry, and `isRepoRelative` refuses anything absolute, option-shaped, or
+  climbing out with `..`.
+- Verification happens at **use** time, never at list time. A row can stop being
+  unmerged between the dialog opening and the click, so each write re-runs
+  `git diff --name-only --diff-filter=U` and refuses a row that is no longer in
+  it. A stale list fails closed.
+- A file answered out of order still gets a launch of its own later. It no
+  longer has markers, so it is short-circuited **before** the marker guard and
+  released with a `written` sentinel; refused there instead, it would write no
+  sentinel and hang the terminal for the launcher's full two hours.
+- The list itself is built from a size-capped, binary-sniffed read of each
+  working copy. A file that cannot be opened as text is listed as `blocked` and
+  can only be answered whole-file from the index — never decoded and written
+  back.
+
 The middle pane is a full editor, and that costs nothing here: `merge:write`
 already took arbitrary text, so a renderer that wanted to write something
 neither side said could always do it. Editing widens what the READER can

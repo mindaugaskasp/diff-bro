@@ -21,18 +21,37 @@
   color: var(--text);
   white-space: nowrap;
 }
-/* Height from --chip-h, never from padding. */
+/* Height from --chip-h, never from padding. It reads as a chip and behaves as a
+   button: this is the way back to the conflicts list once it is dismissed. */
 .merge-walk {
   height: var(--chip-h);
   padding: 0 var(--space-2);
   display: inline-flex;
   align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--btn-edge);
   border-radius: var(--radius-pill);
   background: var(--btn-face);
   color: var(--text);
+  font: inherit;
   font-size: var(--font-xs);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  cursor: pointer;
+}
+.merge-walk:hover:not(:disabled) {
+  background: var(--btn-face-hover);
+}
+.merge-walk:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+/* No live walk to go back to — flat, not the same control at a lower opacity. */
+.merge-walk:disabled {
+  border-color: var(--border);
+  background: none;
+  color: var(--text-hint);
+  cursor: default;
 }
 .merge-actions {
   display: flex;
@@ -137,7 +156,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.merge-editor {
+/* Positioning context for the take buttons, which sit ON the divider — so the
+   overflow stays visible where a pane would otherwise clip them. */
+.merge-editor-area {
+  position: relative;
   flex: 1;
   min-height: 0;
+}
+.merge-editor {
+  position: absolute;
+  inset: 0;
 }

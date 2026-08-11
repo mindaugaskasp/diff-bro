@@ -69,10 +69,22 @@ export function resolveRevisionArgs(rev) {
 // pattern, only a range.
 const STAGES = [1, 2, 3]
 
-/** Every file still conflicted, in git's own order. */
+/**
+ * Every file still conflicted, in git's own order.
+ *
+ * `-z` is not a nicety: without it git QUOTES a path holding a non-ASCII byte
+ * (`"\303\274..."`), and that octal string then travels as if it were the name —
+ * listed as a row nothing matches, and never found again in the index.
+ */
 export function unmergedArgs() {
-  return [...HARDENING, 'diff', '--name-only', '--diff-filter=U', '--no-color']
+  return [...HARDENING, 'diff', '--name-only', '--diff-filter=U', '--no-color', '-z']
 }
+
+/** git's `-z` output: NUL-terminated, so the last field is empty. */
+export const splitNulPaths = (stdout) =>
+  String(stdout ?? '')
+    .split('\0')
+    .filter(Boolean)
 
 /**
  * Read one stage of a conflicted file out of the index: 1 ancestor, 2 ours,
@@ -152,6 +164,25 @@ export function runGitIn(args, cwd) {
           error: err ? String(stderr ?? err.message).trim() : ''
         })
       }
+    )
+  })
+}
+
+/**
+ * The same invocation, with stdout as BYTES. A blob read back through the
+ * string form above is already a lossy UTF-8 decode — every invalid byte
+ * replaced — so writing it back would destroy the file it came from. Anything
+ * that lands on disk unchanged has to come through here.
+ * @returns {Promise<{ok: boolean, stdout: Buffer}>}
+ */
+export function runGitBytesIn(args, cwd) {
+  return new Promise((resolve) => {
+    execFile(
+      'git',
+      args,
+      { cwd, windowsHide: true, maxBuffer: 64 * 1024 * 1024, encoding: 'buffer', env: gitEnv() },
+      (err, stdout) =>
+        resolve({ ok: !err, stdout: Buffer.isBuffer(stdout) ? stdout : Buffer.alloc(0) })
     )
   })
 }

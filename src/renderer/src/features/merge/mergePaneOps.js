@@ -6,6 +6,7 @@ import * as monaco from 'monaco-editor'
 import { gutterAnchors } from './mergeGutter'
 import { applyChoice, touchedIndexes, wholeLines } from './mergeEdits'
 import { regionOptions, rulerColors, sideDecorations } from './mergeDecorations'
+import { takeButtons } from './mergeTakeOverlay'
 
 export const SIDES = ['ours', 'result', 'theirs']
 
@@ -139,12 +140,21 @@ function reanchor({ editors, merge, ids, index, start, written }) {
   )[0]
 }
 
-// A click in a side's glyph margin answers the region that sits there.
-export function takeFromGutter({ anchors, key, event, take }) {
-  if (event.target?.type !== monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) return
-  const line = event.target.position?.lineNumber
-  const index = anchors[key].findIndex((a) => a && line >= a.line && line <= a.line + a.count - 1)
-  if (index >= 0) take(index, key)
+/**
+ * Where each side's take buttons go, read off the live editor. Called on every
+ * repaint and every scroll — the geometry is Monaco's, the arithmetic is
+ * mergeTakeOverlay's.
+ */
+export function takeLayout({ editors, anchors, merge, key }) {
+  const editor = editors[key]
+  if (!editor?.getTopForLineNumber) return []
+  return takeButtons({
+    anchors: anchors[key],
+    topOf: (line) => editor.getTopForLineNumber(line),
+    scrollTop: editor.getScrollTop(),
+    height: editor.getLayoutInfo?.().height ?? 0,
+    current: merge.at
+  })
 }
 
 /** Bring a region into view and put the caret on it. */

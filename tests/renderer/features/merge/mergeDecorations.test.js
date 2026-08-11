@@ -25,13 +25,21 @@ describe('regionOptions', () => {
 describe('sideDecorations', () => {
   const regions = [{ ours: ['replicas: 5'], theirs: ['replicas: 9'] }]
 
-  it('bands the region and hangs the chevron in the glyph margin', () => {
+  it('bands the region', () => {
     const [band] = sideDecorations([{ line: 4, count: 1 }], regions, 'ours', COLORS)
     expect(band.range.startLineNumber).toBe(4)
-    expect(band.options.glyphMarginClassName).toContain('merge-take-ours')
     // Its own colour, not the middle pane's: that one is about state.
     expect(band.options.className).toBe('merge-side-ours')
     expect(band.options.overviewRuler.color).toBe(COLORS.ours)
+  })
+
+  // The take control is a real button on the pane's INNER edge
+  // (MergeTakeOverlay), because a glyph margin only exists on an editor's left
+  // edge and cannot be reached from the keyboard. Nothing may put one back.
+  it('hangs nothing in the glyph margin', () => {
+    const [band] = sideDecorations([{ line: 4, count: 1 }], regions, 'ours', COLORS)
+    expect(band.options.glyphMarginClassName).toBeUndefined()
+    expect(band.options.glyphMarginHoverMessage).toBeUndefined()
   })
 
   it('tints only the columns that differ, at the side pane’s own line numbers', () => {

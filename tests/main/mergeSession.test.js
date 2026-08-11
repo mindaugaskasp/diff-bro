@@ -8,6 +8,7 @@ import {
   doneSentinel,
   endMerge,
   mergeInProgress,
+  releaseLauncher,
   writeMerged
 } from '../../src/main/mergeSession'
 
@@ -129,5 +130,23 @@ describe('the sentinel a successful write leaves', () => {
     beginMerge({ merged, local: '', remote: '' })
     writeMerged('same\n')
     expect(existsSync(doneSentinel(merged))).toBe(true)
+  })
+})
+
+describe('releaseLauncher', () => {
+  // A file answered OUT OF ORDER still gets a launch of its own later, and that
+  // launch has no session to spend: it is released before any window is shown.
+  // Without this the terminal running `git mergetool` waits out the launcher's
+  // two hours on a decision that was already made.
+  it('releases a launch that has no session behind it', () => {
+    const dir = scratch()
+    const merged = join(dir, 'already-done.js')
+    expect(mergeInProgress()).toBe(null)
+    expect(releaseLauncher(merged, 'written')).toBe(true)
+    expect(readFileSync(doneSentinel(merged), 'utf8')).toBe('written')
+  })
+
+  it('reports a sentinel it could not write rather than throwing', () => {
+    expect(releaseLauncher(join(scratch(), 'no', 'such', 'dir', 'f.js'), 'written')).toBe(false)
   })
 })

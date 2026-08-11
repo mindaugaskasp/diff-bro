@@ -12,6 +12,8 @@ import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { useImageExportStore } from '../features/imageExport'
 import { ZOOM_DEFAULT, zoomLabel } from '../utils/diffZoom'
+import { useConflictsStore } from '../features/merge'
+import AppIcon from './AppIcon.vue'
 import KeyActions from './KeyActions.vue'
 import ToolbarOverflow from './ToolbarOverflow.vue'
 import ViewOptionsMenu from './ViewOptionsMenu.vue'
@@ -19,6 +21,7 @@ import ViewOptionsMenu from './ViewOptionsMenu.vue'
 const store = useDiffStore()
 const ui = useUiStore()
 const imageExport = useImageExportStore()
+const conflicts = useConflictsStore()
 
 // Only while the comparison is NOT at its resting size: an unzoomed diff has
 // nothing to say, and a permanent "100%" would spend width the bar does not have
@@ -50,6 +53,18 @@ const actionState = computed(() => ({
          the same words the diagram diff uses. -->
     <div class="options">
       <div class="group">
+        <!-- The way back to the conflicts list while git is still walking, for
+             when there is no merge view on screen carrying its own chip. -->
+        <button
+          v-if="conflicts.live && conflicts.isWalk"
+          class="btn btn-sm"
+          :data-tip="$t('merge.reopenTip')"
+          data-testid="toolbar-conflicts"
+          @click="conflicts.show()"
+        >
+          <AppIcon name="git-merge" />
+          {{ $t('merge.conflictsLeft', conflicts.remaining) }}
+        </button>
         <button
           v-if="zoomed"
           class="btn btn-sm zoom-level"

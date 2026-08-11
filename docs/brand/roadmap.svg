@@ -5,7 +5,7 @@
      sidebar. Track hues are real theme accents from src/renderer/src/utils/themes.js
      (Dim, Bloom, Neon, Beacon) — colour depth encodes sequence: solid now, faded
      later. Keep this in step with the items in docs/roadmap.md. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-label="Diff Bro roadmap — five tracks: developer workflow (dependencies, compare a git revision, a three-way merge view) shipped, spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-label="Diff Bro roadmap — five tracks: developer workflow (dependencies, compare a git revision, a conflicts list and three-way merge) shipped, spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing">
   <defs>
     <linearGradient id="field" x1="0" y1="0" x2="0.55" y2="1">
       <stop offset="0" stop-color="#2f2a1c"/>
@@ -117,7 +117,7 @@
     <text x="344" y="479" font-size="12.5" fill="#1c1710">Compare a git revision</text>
 
     <rect x="334" y="497" width="243" height="30" rx="5" fill="#6ed2c0"/>
-    <text x="344" y="516" font-size="12.5" fill="#1c1710">Three-way merge view</text>
+    <text x="344" y="516" font-size="12.5" fill="#1c1710">Merge: conflicts list + three-way</text>
 
     <line x1="334" y1="545" x2="577" y2="545" stroke="#ddd0b6" stroke-dasharray="3 3"/>
     <text x="334" y="564" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">utils/lockfile/</text>

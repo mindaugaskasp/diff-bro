@@ -9,7 +9,6 @@ export class Range {
 
 export const editor = {
   OverviewRulerLane: { Left: 1, Center: 2, Right: 4, Full: 7 },
-  MouseTargetType: { GUTTER_GLYPH_MARGIN: 2 },
   create: () => ({ dispose: () => {} }),
   createDiffEditor: () => ({ dispose: () => {} }),
   colorizeElement: async () => {},

@@ -1,10 +1,9 @@
-// What the three panes draw: the region bands, the gutter chevrons, the marks
-// in the scrollbar that say where the rest of the conflicts are, and the
-// intra-line tint that narrows a whole band down to the words that differ.
+// What the three panes draw: the region bands, the marks in the scrollbar that
+// say where the rest of the conflicts are, and the intra-line tint that narrows
+// a whole band down to the words that differ.
 //
 // Pure builders — they take positions and colours and give back decorations.
 import * as monaco from 'monaco-editor'
-import { t } from '../../i18n'
 import { wordSpans } from './mergeWords'
 
 const FULL = monaco.editor.OverviewRulerLane.Full
@@ -48,15 +47,14 @@ export const regionOptions = (region, isCurrent, colors) => ({
 
 // Each side keeps its own colour rather than borrowing the middle's: three tints
 // of the same one would have to be told apart, and the middle's is about state.
+//
+// No glyph-margin chevron: the take control is a real button on the pane's
+// INNER edge (MergeTakeOverlay), because a glyph margin only exists on an
+// editor's left edge and is not reachable from the keyboard.
 const bandOptions = (key, colors) => ({
   isWholeLine: true,
   className: `merge-side-${key}`,
   linesDecorationsClassName: `merge-edge-${key}`,
-  // Pointing INWARD, so the direction of the chevron is the direction of the move.
-  glyphMarginClassName: `merge-take merge-take-${key}`,
-  glyphMarginHoverMessage: {
-    value: t(key === 'ours' ? 'merge.takeOursTip' : 'merge.takeTheirsTip')
-  },
   overviewRuler: ruler(colors[key])
 })
 

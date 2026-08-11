@@ -38,6 +38,22 @@ export function walkReset() {
  */
 export const doneSentinel = (merged) => `${merged}.diffbro-merge-done`
 
+/**
+ * Release the launcher. Exported because a file the reader already answered
+ * OUT OF ORDER gets a launch of its own later, and that launch has no session
+ * to spend — it is answered before any window is shown.
+ * @param {'written'|'cancelled'} verdict
+ */
+export function releaseLauncher(merged, verdict) {
+  try {
+    writeFileSync(doneSentinel(merged), verdict, 'utf8')
+    return true
+  } catch {
+    // The launcher times out on its own; a sentinel it cannot read is not fatal.
+    return false
+  }
+}
+
 /** Remembered from the launch argv, never from a message. */
 export function beginMerge({ merged, local, remote }) {
   pending = { merged, local, remote }
@@ -57,11 +73,7 @@ export function cancelMerge() {
   if (!pending) return { ok: false }
   const { merged } = pending
   pending = null
-  try {
-    writeFileSync(doneSentinel(merged), 'cancelled', 'utf8')
-  } catch {
-    // The launcher times out on its own; a sentinel it cannot read is not fatal.
-  }
+  releaseLauncher(merged, 'cancelled')
   return { ok: true }
 }
 
@@ -84,11 +96,8 @@ export function writeMerged(text) {
   }
   const path = pending.merged
   endMerge()
-  try {
-    writeFileSync(doneSentinel(path), 'written', 'utf8')
-  } catch {
-    // Falling back to the launcher's own timeout is better than failing a write
-    // that already landed.
-  }
+  // Falling back to the launcher's own timeout is better than failing a write
+  // that already landed.
+  releaseLauncher(path, 'written')
   return { ok: true, path }
 }

@@ -1,0 +1,58 @@
+/* Buttons over the editor, straddling the divider on the side that faces the
+   result. The layer takes no pointer events so the editor beneath keeps its
+   selection and caret; only the buttons do. */
+.merge-takes {
+  position: absolute;
+  inset-block: 0;
+  width: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.merge-takes.ours {
+  inset-inline-end: 0;
+}
+.merge-takes.theirs {
+  inset-inline-start: 0;
+}
+.merge-take-btn {
+  position: absolute;
+  width: var(--chip-h);
+  height: var(--chip-h);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  /* --btn-edge-strong, not --btn-edge: this floats on a tinted conflict band,
+     where the ordinary keyline lands at 2.99 (sepia) and 3.00 (meridian). */
+  border: 1px solid var(--btn-edge-strong);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  pointer-events: auto;
+  font-size: var(--font-sm);
+}
+.merge-takes.ours .merge-take-btn {
+  inset-inline-end: calc(var(--chip-h) / -2);
+  color: var(--dg-del);
+}
+.merge-takes.theirs .merge-take-btn {
+  inset-inline-start: calc(var(--chip-h) / -2);
+  color: var(--dg-add);
+}
+.merge-take-btn:hover {
+  background: var(--bg-hover);
+}
+.merge-take-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+/* A region the reader is not on stays drawn but recedes, so the file's shape is
+   visible without every button competing for the eye. */
+.merge-take-btn.dim {
+  opacity: 0.45;
+}
+.merge-take-btn.dim:hover,
+.merge-take-btn.dim:focus-visible {
+  opacity: 1;
+}

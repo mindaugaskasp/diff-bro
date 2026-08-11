@@ -16,7 +16,7 @@
 // PNGs land in docs/screenshots/themes/<surface>-<theme>.png so a human can
 // still look; the exit code is what gates.
 
-import { mkdtempSync, mkdirSync, existsSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, existsSync, rmSync, writeFileSync } from 'node:fs'
 import { execFileSync, spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -254,7 +254,98 @@ async function openMerge(page, userDataDir) {
   await page.locator('.merge-word-theirs').first().waitFor({ timeout: 10000 })
 }
 
+// A SECOND repository, with three text conflicts and one binary, so the
+// conflicts list has a row in each of its three states to measure.
+//
+// A FRESH one per theme, unlike mergeConflictRepo's single cached tree: this
+// surface ANSWERS a row to produce the settled state, and main keeps its
+// resolved set per repository root — so a reused tree would open the second
+// theme with that row already done and no button left to press.
+const walked = []
+function mergeWalkRepo() {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-sweep-walk-'))
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'T',
+    GIT_AUTHOR_EMAIL: 't@e',
+    GIT_COMMITTER_NAME: 'T',
+    GIT_COMMITTER_EMAIL: 't@e'
+  }
+  const git = (...args) => execFileSync('git', args, { cwd: dir, env })
+  const names = ['config.yml', 'deploy.yml', 'values.yml']
+  const write = (name, replicas) =>
+    writeFileSync(join(dir, name), `service: diff-engine\nreplicas: ${replicas}\n`)
+  const blob = (byte) => writeFileSync(join(dir, 'logo.png'), Buffer.from([0x89, 0x50, 0x00, byte]))
+  git('init', '-q', '-b', 'main')
+  for (const name of names) write(name, 3)
+  blob(1)
+  git('add', '.')
+  git('commit', '-qm', 'base')
+  git('checkout', '-qb', 'feature')
+  for (const name of names) write(name, 9)
+  blob(2)
+  git('commit', '-qam', 'theirs')
+  git('checkout', '-q', 'main')
+  for (const name of names) write(name, 5)
+  blob(3)
+  git('commit', '-qam', 'ours')
+  try {
+    git('merge', 'feature')
+  } catch {
+    // Expected: this is the conflict the surface is for.
+  }
+  walked.push(dir)
+  return { dir, file: join(dir, 'config.yml') }
+}
+
+async function openConflictList(page, userDataDir) {
+  const { dir, file } = mergeWalkRepo()
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  await new Promise((resolve) => {
+    const child = spawn(
+      ELECTRON,
+      [MAIN, `--user-data-dir=${userDataDir}`, 'mergetool', file, file, file],
+      { cwd: dir, env, stdio: 'ignore' }
+    )
+    child.on('exit', resolve)
+    setTimeout(resolve, 8000)
+  })
+  await page.bringToFront()
+  await page.getByTestId('conflicts-dialog').waitFor({ timeout: 20000 })
+  // One row settled, so the done ink has something to measure.
+  await page.getByTestId('conflict-row-values.yml').hover()
+  await page.getByTestId('conflict-theirs-values.yml').click()
+  await page.locator('.cf-row.done').first().waitFor({ timeout: 10000 })
+}
+
 const SURFACES = [
+  {
+    name: 'conflict-list',
+    // The row's three status inks are NEW roles (--mg-open / --mg-done /
+    // --mg-blocked) and each is a WORD, so every one answers to the reading
+    // floor rather than the 3:1 the --dg-* roles it derives from carry.
+    open: (page, { userDataDir }) => openConflictList(page, userDataDir),
+    // The whole merge, not just the dialog: closing the list marks it put away
+    // for the rest of the walk, so a theme that left one open would find no
+    // dialog on the next launch. Cancelling ends the walk and resets that.
+    close: async (page) => {
+      await page.getByTestId('conflicts-close').click()
+      await page.getByTestId('conflicts-dialog').waitFor({ state: 'detached' })
+      await page.getByRole('button', { name: 'Cancel' }).click()
+      await page.locator('.merge-view').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'file name': ['.cf-row.open .cf-name', TEXT],
+      // The directory gives way first, but it is still read: --text-hint, never
+      // --text-dim, which falls to 2.96 on a hovered row.
+      directory: ['.cf-row.open .cf-dir', TEXT],
+      'still to answer': ['.cf-row.open .cf-state', TEXT],
+      answered: ['.cf-row.done .cf-state', TEXT],
+      'cannot be opened': ['.cf-row.blocked .cf-state', TEXT],
+      'files and progress': ['.cf-tally', TEXT]
+    }
+  },
   {
     name: 'merge-view',
     // The chrome only. The bands and the intra-line tints inside the panes are
@@ -746,6 +837,11 @@ async function main() {
     }
   } finally {
     await app.close()
+    // The two scratch repositories the merge surfaces build, which are real
+    // working trees and not worth leaving in the temp dir.
+    for (const dir of [conflicted?.dir, ...walked]) {
+      if (dir) rmSync(dir, { recursive: true, force: true })
+    }
   }
 
   report(findings)

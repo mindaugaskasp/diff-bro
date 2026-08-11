@@ -147,9 +147,9 @@ describe('detectSnippetLanguage — programming languages', () => {
       )
     ).toBe('php')
     expect(detect('$appId = "ABCD";\n$apiToken = "EFGH";')).toBe('php')
-    expect(detect("$payload = [\n    'user_ids' => $userIds,\n    'is_distinct' => true,\n];")).toBe(
-      'php'
-    )
+    expect(
+      detect("$payload = [\n    'user_ids' => $userIds,\n    'is_distinct' => true,\n];")
+    ).toBe('php')
     expect(detect("require_once __DIR__ . '/vendor/autoload.php';")).toBe('php')
   })
 
@@ -158,15 +158,17 @@ describe('detectSnippetLanguage — programming languages', () => {
   // spaces around it is prose. Every case here detected as PHP once.
   it('does not claim other languages for PHP', () => {
     expect(detect('use std::io;\n\nfn main() {\n    println!("hi");\n}')).toBe('rust')
-    expect(detect('const $el = document.querySelector("#app")\nconsole.log($el)')).toBe('javascript')
+    expect(detect('const $el = document.querySelector("#app")\nconsole.log($el)')).toBe(
+      'javascript'
+    )
     expect(detect('name=diffbro\necho "building $name"\nexport OUT=$name.zip')).toBe('shell')
     // PHP writes the type BEFORE the sigil (`private string $x;`); a `$name`
     // followed by a colon is a TypeScript annotation, not a PHP property.
     expect(detect('class Widget {\n  private $el: JQuery\n  show() {}\n}')).toBe('typescript')
     // A jQuery-flavoured parameter name does not make a function PHP.
-    expect(
-      detect("function bindTabs($root) {\n  $root.find('.tab').on('click', toggle)\n}")
-    ).toBe('javascript')
+    expect(detect("function bindTabs($root) {\n  $root.find('.tab').on('click', toggle)\n}")).toBe(
+      'javascript'
+    )
     expect(detect('export function render($el: HTMLElement): void {\n  $el.remove()\n}')).toBe(
       'javascript'
     )
@@ -188,9 +190,9 @@ describe('detectSnippetLanguage — programming languages', () => {
   // case here was mislabelled php — which then stuck, because an auto snippet
   // records its verdict on save.
   it('does not claim prose and release notes that mention PHP', () => {
-    expect(
-      detect('# 2.1.0\n\n- Dropped the `require_once` bootstrap.\n- Bumped minimums.')
-    ).toBe('markdown')
+    expect(detect('# 2.1.0\n\n- Dropped the `require_once` bootstrap.\n- Bumped minimums.')).toBe(
+      'markdown'
+    )
     expect(detect('fix: drop the require_once shim\n\nCloses #12')).toBe('plaintext')
     expect(detect("# Config\n\nSet it:\n\n    $config['url'] = 'https://x';\n\nDone.")).toBe(
       'markdown'

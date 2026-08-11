@@ -37,9 +37,7 @@ describe('monacoThemeData', () => {
   it('gives two themes two different diffs', () => {
     const a = monacoThemeData(tide, { dark: true }).colors
     const b = monacoThemeData(amber, { dark: true }).colors
-    expect(a['diffEditor.insertedLineBackground']).not.toBe(
-      b['diffEditor.insertedLineBackground']
-    )
+    expect(a['diffEditor.insertedLineBackground']).not.toBe(b['diffEditor.insertedLineBackground'])
     expect(a['editor.background']).not.toBe(b['editor.background'])
   })
 
