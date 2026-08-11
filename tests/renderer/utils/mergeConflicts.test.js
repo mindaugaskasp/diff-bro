@@ -3,8 +3,10 @@ import {
   composeMerge,
   conflictCount,
   parseConflicts,
-  unresolvedCount
+  unresolvedCount,
+  withoutProseConflicts
 } from '../../../src/renderer/src/utils/mergeConflicts'
+import { sidesFromConflicts } from '../../../src/renderer/src/features/merge/threeWay'
 
 const FILE = [
   'top',
@@ -171,5 +173,48 @@ describe('parseConflicts — where each region sits', () => {
 
   it('starts at line 1 when the file opens on a conflict', () => {
     expect(parseConflicts(DIFF3).segments[0].startLine).toBe(1)
+  })
+})
+
+// A document ABOUT merge conflicts contains marker-shaped lines, and the parser
+// cannot tell them from the ones git wrote. Answering the prose "conflict" drops
+// half of it — silently, because the result pane shows no markers to notice.
+//
+// git never writes markers into the index, so the pristine sides settle it.
+describe('withoutProseConflicts', () => {
+  const example = ['<<<<<<< HEAD', 'the left side', '=======', 'the right side', '>>>>>>> other']
+  const real = ['<<<<<<< HEAD', 'setting = ours', '=======', 'setting = theirs', '>>>>>>> feature']
+  const merged = ['# how a conflict looks', '', ...example, '', ...real, 'trailer', ''].join('\n')
+  const ours = ['# how a conflict looks', '', ...example, '', 'setting = ours', 'trailer', ''].join(
+    '\n'
+  )
+  const theirs = ours.replace('setting = ours', 'setting = theirs')
+
+  const kept = (sides) => {
+    const parsed = withoutProseConflicts(parseConflicts(merged), merged, sides)
+    return parsed.segments.filter((s) => s.type === 'conflict')
+  }
+
+  it('keeps only the conflict git actually wrote', () => {
+    const conflicts = kept({ ours, theirs })
+    expect(conflicts).toHaveLength(1)
+    expect(conflicts[0].ours).toEqual(['setting = ours'])
+  })
+
+  it('leaves the prose block in the file, markers and all', () => {
+    const parsed = withoutProseConflicts(parseConflicts(merged), merged, { ours, theirs })
+    expect(sidesFromConflicts(parsed).ours).toBe(ours)
+  })
+
+  // No index — a mergetool run by hand — means nothing to check against, and a
+  // guess here would drop a real conflict.
+  it('changes nothing when the sides are not available', () => {
+    expect(kept({ ours: '', theirs: '' })).toHaveLength(2)
+    expect(kept({})).toHaveLength(2)
+  })
+
+  // Only THEIR side has the document; ours never had it. Still prose.
+  it('accepts a block that only one side carries', () => {
+    expect(kept({ ours: 'unrelated\n', theirs })).toHaveLength(1)
   })
 })

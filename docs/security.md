@@ -69,6 +69,13 @@ already took arbitrary text, so a renderer that wanted to write something
 neither side said could always do it. Editing widens what the READER can
 express, not what the surface accepts.
 
+The index also decides which marker blocks are REAL. A document about merge
+conflicts carries marker-shaped lines of its own, and the parser cannot tell
+them from git's — offering one as a decision dropped half the document. git
+never writes markers into the index, so a block that appears verbatim in a
+pristine side is prose and stays put. With no index there is nothing to check
+against and nothing is demoted: guessing would drop a real conflict.
+
 The three inputs are read out of git's index (`:1:`/`:2:`/`:3:`) through the
 same argv fence as any other git call — fixed vectors, `--end-of-options`, the
 path checked as `readBlobArgs` checks it, and the stage one of three integers

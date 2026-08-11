@@ -11,14 +11,12 @@ import {
   writeChoice
 } from '../../../../src/renderer/src/features/merge/mergePaneOps'
 
-const RAW = `head\n<<<<<<< HEAD\nreplicas: 5\n=======\nreplicas: 9\n>>>>>>> feature\ntail\n`
-
 function scene() {
   const merge = {
     at: 0,
     ours: 'head\nreplicas: 5\ntail\n',
     theirs: 'head\nreplicas: 9\ntail\n',
-    rawContent: RAW,
+    regionLines: [{ line: 2, count: 1 }],
     result: 'head\nreplicas: 5\ntail\n',
     regions: [{ ours: ['replicas: 5'], theirs: ['replicas: 9'], resolved: false }],
     markResolved(i) {
@@ -160,14 +158,12 @@ describe('reveal', () => {
 // theirs replaced the first stable line after the conflict with it. The line
 // was gone from the file git was then handed.
 describe('a region one side emptied', () => {
-  const RAW_EMPTY = `head\n<<<<<<< HEAD\n=======\nthey added this\n>>>>>>> feature\ntail\n`
-
   function emptyScene() {
     const merge = {
       at: 0,
       ours: 'head\ntail\n',
       theirs: 'head\nthey added this\ntail\n',
-      rawContent: RAW_EMPTY,
+      regionLines: [{ line: 2, count: 0 }],
       result: 'head\ntail\n',
       regions: [{ ours: [], theirs: ['they added this'], resolved: false }],
       markResolved(i) {

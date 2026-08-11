@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { parseConflicts } from '../../utils/mergeConflicts'
-import { sidesFromConflicts } from './threeWay'
+import { parseConflicts, withoutProseConflicts } from '../../utils/mergeConflicts'
+import { initialRanges, sidesFromConflicts } from './threeWay'
 
 // With no markers left in the result there is nothing for a parser to count, so
 // resolution is state rather than something re-derived from the text.
@@ -30,8 +30,8 @@ export const useMergeStore = defineStore('merge', {
     theirsName: '',
     /** The editable middle pane, marker-free from the moment it opens. */
     result: '',
-    /** What git left, kept only to seed the regions' first positions. */
-    rawContent: '',
+    /** Where each region opens, 1-based: the panes anchor their decorations here. */
+    regionLines: [],
     ours: '',
     theirs: '',
     base: null,
@@ -51,15 +51,18 @@ export const useMergeStore = defineStore('merge', {
   actions: {
     /** @param {object} payload from main: the conflicted text and both sides */
     begin(payload) {
-      const parsed = parseConflicts(payload.content)
-      this.error = parsed ? '' : 'unreadable'
+      const read = parseConflicts(payload.content)
+      this.error = read ? '' : 'unreadable'
+      // The index has the last word on which marker blocks git wrote: a document
+      // ABOUT conflicts carries its own, and they are prose, not a decision.
+      const parsed = withoutProseConflicts(read, payload.content, payload)
       this.regions = (parsed?.segments ?? [])
         .filter((seg) => seg.type === 'conflict')
         .map((seg) => ({ ours: seg.ours, theirs: seg.theirs, resolved: false }))
       // Our side stands in each conflicted place so the file is valid from the
       // start; the region is tinted unresolved until the reader confirms it.
       this.result = parsed ? sidesFromConflicts(parsed).ours : payload.content
-      this.rawContent = payload.content
+      this.regionLines = initialRanges(parsed)
       this.mixedEndings = hasMixedEndings(payload.content)
       const fallback = sidesFromConflicts(parsed)
       this.ours = payload.ours ?? fallback.ours
