@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { parseJira } from '../utils/jiraRender'
 import { arrayOfShape } from '../utils/props'
 import JiraInline from './JiraInline.vue'
+import JiraTable from './JiraTable.vue'
 
 const props = defineProps({
   content: { type: String, default: null },
@@ -30,11 +31,13 @@ const indent = (depth) => (depth > 1 ? { marginInlineStart: `${(depth - 1) * 16}
           <JiraInline :nodes="it.inlines" />
         </li>
       </ol>
-      <ul v-else-if="b.type === 'list'" class="ji-list">
-        <li v-for="(it, k) in b.items" :key="k" :style="indent(it.depth)">
+      <ul v-else-if="b.type === 'list'" class="ji-list" :class="{ 'ji-tasks': b.items[0]?.task }">
+        <li v-for="(it, k) in b.items" :key="k" :style="indent(it.depth)" :class="{ 'ji-task': it.task }">
+          <input v-if="it.task" type="checkbox" :checked="it.checked" disabled tabindex="-1" />
           <JiraInline :nodes="it.inlines" />
         </li>
       </ul>
+      <JiraTable v-else-if="b.type === 'table'" :block="b" />
       <blockquote v-else-if="b.type === 'quote'" class="ji-quote">
         <JiraRendered :blocks="b.children" />
       </blockquote>

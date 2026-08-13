@@ -7,6 +7,12 @@ import { isValidAccelerator } from './accelerator'
 import { platformId } from '../keys'
 import { MAX_RECENT_TOOLS } from './tools'
 import { normalizeTheme } from './themes'
+import {
+  DEFAULT_TAG_SHELF_PX,
+  MAX_TAG_SHELF_PX,
+  MIN_TAG_SHELF_PX,
+  migratedShelfHeight
+} from './tagShelf'
 
 export const DEFAULT_QUICKLOOK_SHORTCUT = defaultQuickLookShortcut(platformId)
 
@@ -32,15 +38,6 @@ export const FILE_TYPE_LIMITS = {
 }
 
 export const DEFAULT_MAX_SNIPPET_SIZE_KB = 512
-// The sidebar tag shelf's depth. Two rows is the FLOOR as well as the default:
-// diffs and snippets are what the sidebar is for, and an unbounded tag wall
-// pushed them into a sliver. The ceiling can afford to be this generous because
-// the strip's max-height (SavedDiffs.css) keeps the sections a slice of the
-// column whatever is asked for — past it the chips scroll.
-export const TAGS_PER_ROW = 4
-export const MIN_TAG_ROWS = 2
-export const MAX_TAG_ROWS = 24
-
 export const MAX_SNIPPET_SIZE_KB_CAP = 8192
 
 // How much diff a stitched export may cover, in SCREEN pixels of content — the
@@ -73,6 +70,7 @@ export const DEFAULT_SETTINGS = {
   sectionOrder: [...SECTIONS],
   shelfOrder: {}, // { [sectionId]: [shelfId, …] }
   showShortcutBar: true,
+  showRowTags: true,
   rotateThemeDaily: false,
   fileSizeLimitsMb: defaultFileLimits(),
   maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
@@ -163,7 +161,11 @@ export const NUMERIC_LIMITS = {
     min: MIN_EXPORT_HEIGHT_PX,
     max: MAX_EXPORT_HEIGHT_PX_CAP
   },
-  tagShelfRows: { default: MIN_TAG_ROWS, min: MIN_TAG_ROWS, max: MAX_TAG_ROWS }
+  tagShelfHeight: {
+    default: DEFAULT_TAG_SHELF_PX,
+    min: MIN_TAG_SHELF_PX,
+    max: MAX_TAG_SHELF_PX
+  }
 }
 
 const readNumericLimits = (parsed) =>
@@ -180,9 +182,13 @@ export function settingsStateFrom(parsed, outside) {
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     showShortcutBar: outside.showShortcutBar,
+    // The tag word beside a name on every sidebar row. On by default; off is for
+    // a library where nearly everything carries the same tags, and it hides the
+    // WORD only — the shelf and the search still filter by them.
+    showRowTags: parsed.showRowTags !== false,
     rotateThemeDaily: parsed.rotateThemeDaily === true,
     fileSizeLimitsMb: readFileLimits(parsed),
-    ...readNumericLimits(parsed),
+    ...readNumericLimits({ ...parsed, tagShelfHeight: migratedShelfHeight(parsed) }),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
     // NULL until the user picks one: persist() writes every key, so defaulting

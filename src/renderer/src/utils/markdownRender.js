@@ -8,6 +8,13 @@ const QUOTE_LINE = /^>\s?(.*)$/
 const UL_LINE = /^(\s*)[-*+]\s+(.*)$/
 const OL_LINE = /^(\s*)\d+[.)]\s+(.*)$/
 const FENCE = /^(```|~~~)/
+// A table needs its separator row to BE a table — `| a | b |` on its own is a
+// paragraph that happens to contain pipes, which is how prose about shell
+// pipelines used to turn into a one-row table.
+const TABLE_ROW = /^\s*\|.*\|\s*$/
+const TABLE_RULE = /^\s*\|(?:\s*:?-{1,}:?\s*\|)+\s*$/
+// `- [ ] item` / `- [x] item`
+const TASK = /^\[([ xX])\]\s+(.*)$/
 
 // --- inline -------------------------------------------------------------
 function matchInline(text, i) {
@@ -21,6 +28,10 @@ function matchInline(text, i) {
     return { length: strong[0].length, node: { type: 'strong', inlines: parseInline(strong[1]) } }
   const em = /^\*(.+?)\*/.exec(rest) || /^_(.+?)_/.exec(rest)
   if (em) return { length: em[0].length, node: { type: 'em', inlines: parseInline(em[1]) } }
+  // GFM strikethrough. `del` is the node the shared inline renderer already
+  // draws for Jira's -text-, so both languages cross out the same way.
+  const del = /^~~(.+?)~~/.exec(rest)
+  if (del) return { length: del[0].length, node: { type: 'del', inlines: parseInline(del[1]) } }
   return null
 }
 
@@ -73,15 +84,53 @@ function consumeQuote(lines, i, blocks) {
   return i
 }
 
+// A bullet whose text opens with a checkbox is a task, and carries its state.
+function listItem(indent, text) {
+  const task = TASK.exec(text)
+  const body = task ? task[2] : text
+  const item = { depth: depthOf(indent), inlines: parseInline(body) }
+  return task ? { ...item, task: true, checked: task[1] !== ' ' } : item
+}
+
 function consumeList(lines, i, blocks, ordered) {
   const re = ordered ? OL_LINE : UL_LINE
   const items = []
   let m
   while (i < lines.length && (m = re.exec(lines[i]))) {
-    items.push({ depth: depthOf(m[1]), inlines: parseInline(m[2]) })
+    items.push(listItem(m[1], m[2]))
     i++
   }
   blocks.push({ type: 'list', ordered, items })
+  return i
+}
+
+// `| a | b |` split on the pipes, with the outer pair dropped.
+const cells = (line) =>
+  line
+    .trim()
+    .replace(/^\||\|$/g, '')
+    .split('|')
+    .map((c) => c.trim())
+
+// Alignment is the separator's own colons — the one piece of a Markdown table
+// that carries meaning rather than shape.
+const alignOf = (cell) => {
+  const left = cell.startsWith(':')
+  const right = cell.endsWith(':')
+  if (left && right) return 'center'
+  return right ? 'right' : left ? 'left' : null
+}
+
+function consumeTable(lines, i, blocks) {
+  const head = cells(lines[i]).map((c) => parseInline(c))
+  const align = cells(lines[i + 1]).map(alignOf)
+  i += 2
+  const rows = []
+  while (i < lines.length && TABLE_ROW.test(lines[i]) && !TABLE_RULE.test(lines[i])) {
+    rows.push(cells(lines[i]).map((c) => parseInline(c)))
+    i++
+  }
+  blocks.push({ type: 'table', align, head, rows })
   return i
 }
 
@@ -111,6 +160,9 @@ function consumeBlock(lines, i, blocks) {
     return i + 1
   }
   if (QUOTE_LINE.test(line)) return consumeQuote(lines, i, blocks)
+  if (TABLE_ROW.test(line) && TABLE_RULE.test(lines[i + 1] ?? '')) {
+    return consumeTable(lines, i, blocks)
+  }
   if (OL_LINE.test(line)) return consumeList(lines, i, blocks, true)
   if (UL_LINE.test(line)) return consumeList(lines, i, blocks, false)
   return consumeParagraph(lines, i, blocks)

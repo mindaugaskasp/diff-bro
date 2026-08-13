@@ -4,6 +4,7 @@
 import { ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { languageMonogram } from '../utils/languageMonogram'
+import { rowColorHex, rowColorId } from '../utils/rowColor'
 import { isMac } from '../keys'
 import AppIcon from './AppIcon.vue'
 
@@ -14,7 +15,20 @@ const props = defineProps({
   toolsOpen: { type: Boolean, default: false }
 })
 const selected = defineModel('selected', { type: Number, required: true })
-defineEmits(['choose'])
+const emit = defineEmits(['choose'])
+
+// One click does exactly what ↵ does on that row. Selecting without activating
+// left a tool, the Tools header and the create row looking dead to the pointer —
+// nothing on them says a second click is what opens them.
+//
+// The REPEAT is dropped: double-click was the activator until this changed, so
+// it is the gesture most likely to arrive out of habit, and acting on both
+// clicks opened the Tools section and shut it again in one gesture.
+function activate(i, e) {
+  if (e.detail > 1) return
+  selected.value = i
+  emit('choose', i)
+}
 
 const store = useSnippetStore()
 const listEl = ref(null)
@@ -24,6 +38,11 @@ const mono = (lang) => languageMonogram(lang)
 const monoStyle = (it) => ({ '--fam': it.kind === 'snippet' ? mono(it.lang).family : '' })
 const monoText = (it) => (it.kind === 'snippet' ? mono(it.lang).label : '')
 const tagStyle = (it) => ({ '--tc': store.colorOf(it.tags?.[0]) })
+// The snippet's own colour, painted the way the sidebar row paints it.
+const colorStyle = (it) => {
+  const hex = rowColorHex(it.color)
+  return hex ? { '--snip-color': hex } : null
+}
 const rowIcon = () => (props.toolsOpen ? 'chevron-down' : 'chevron-right')
 const NEW_KEY = isMac ? '⌘N' : 'Ctrl+N'
 const KIND_LABEL = {
@@ -59,8 +78,9 @@ const resClass = (i) => ({
       :key="it.kind + it.id"
       class="ql-res"
       :class="resClass(i)"
-      @click="selected = i"
-      @dblclick="$emit('choose', i)"
+      :data-color="rowColorId(it.color)"
+      :style="colorStyle(it)"
+      @click="activate(i, $event)"
     >
       <span v-if="it.kind === 'command'" class="monogram cmd"><AppIcon :name="it.icon" /></span>
       <span v-else-if="it.kind === 'create'" class="monogram cmd"><AppIcon name="plus" /></span>

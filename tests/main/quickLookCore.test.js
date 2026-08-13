@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  keepOnScreen,
+  launcherSize,
   placeWindow,
   displayForPoint,
   displayIndexForPoint,
@@ -32,6 +34,76 @@ describe('placeWindow', () => {
     const { x, y } = placeWindow({ x: 10, y: 20, width: 400, height: 300 }, win)
     expect(x).toBe(10)
     expect(y).toBe(20)
+  })
+})
+
+// Growing for a job moves the card's edges, never its origin. Re-centring slid
+// every row sideways out from under the pointer that had just clicked one, which
+// is how two clicks on Edit went missing.
+describe('keepOnScreen', () => {
+  const work = { x: 0, y: 0, width: 1920, height: 1080 }
+
+  it('leaves the origin alone when the bigger card still fits', () => {
+    expect(keepOnScreen({ x: 600, y: 168 }, { width: 960, height: 720 }, work)).toEqual({
+      x: 600,
+      y: 168
+    })
+  })
+
+  it('pulls it back just far enough when growing would run off an edge', () => {
+    expect(keepOnScreen({ x: 1400, y: 900 }, { width: 960, height: 720 }, work)).toEqual({
+      x: 960,
+      y: 360
+    })
+  })
+
+  it('offsets by the display origin on a secondary monitor', () => {
+    const second = { x: 1920, y: 0, width: 1280, height: 800 }
+    expect(keepOnScreen({ x: 2500, y: 700 }, { width: 960, height: 720 }, second)).toEqual({
+      x: 2240,
+      y: 80
+    })
+  })
+
+  it('parks a card larger than the work area at its top-left', () => {
+    expect(keepOnScreen({ x: 300, y: 300 }, { width: 4000, height: 3000 }, work)).toEqual({
+      x: 0,
+      y: 0
+    })
+  })
+})
+
+describe('launcherSize', () => {
+  const big = { width: 1920, height: 1080 }
+
+  it('gives composing a card several times the resting one', () => {
+    const rest = launcherSize('default', big)
+    const compose = launcherSize('compose', big)
+    expect(compose.width).toBeGreaterThan(rest.width)
+    expect(compose.height).toBeGreaterThan(rest.height * 1.5)
+  })
+
+  it('never runs a small display edge to edge', () => {
+    const size = launcherSize('compose', { width: 1024, height: 640 })
+    expect(size.width).toBeLessThanOrEqual(1024 - 80)
+    expect(size.height).toBeLessThanOrEqual(640 - 80)
+  })
+
+  it('keeps a usable card on a display smaller than the margin allows', () => {
+    const size = launcherSize('compose', { width: 300, height: 200 })
+    expect(size).toEqual({ width: 420, height: 320 })
+  })
+
+  // The mode crosses IPC, so an inherited key must not resolve to a size.
+  it('falls back to the resting size for an unknown or inherited mode', () => {
+    const rest = launcherSize('default', big)
+    expect(launcherSize('constructor', big)).toEqual(rest)
+    expect(launcherSize('__proto__', big)).toEqual(rest)
+    expect(launcherSize(undefined, big)).toEqual(rest)
+  })
+
+  it('asks for its full size when the work area is unknown', () => {
+    expect(launcherSize('default')).toEqual({ width: 692, height: 452 })
   })
 })
 

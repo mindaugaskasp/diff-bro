@@ -81,6 +81,29 @@
   outline: none;
 }
 
+/* Markup is written to be READ as its rendered form, so a Jira or Markdown body
+   is drawn beside the syntax rather than behind a toggle — it follows the typing
+   because it renders straight off the bound text. Half each: the raw side keeps
+   its own scroll, and neither is ever narrower than the other. */
+.ql-compose-split {
+  display: flex;
+  flex: 1;
+  gap: var(--space-2);
+  min-height: 0;
+}
+.ql-compose-split > * {
+  flex: 1;
+  min-width: 0;
+}
+.ql-compose-preview {
+  overflow: auto;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: var(--font-sm);
+}
+
 /* The two layers of the highlighted body. EVERY property that decides where a
    glyph lands is set on both through the same token — change one and you must
    change the other, or the colour drifts off the characters it belongs to.

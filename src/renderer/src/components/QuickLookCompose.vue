@@ -5,6 +5,11 @@
 import { computed, nextTick, toRef } from 'vue'
 import { useCaretBackOut } from '../composables/useCaretBackOut'
 import { useHighlightedInput } from '../composables/useHighlightedInput'
+import { useFormatToolbar } from '../composables/useFormatToolbar'
+import { useTextareaMarkup } from '../composables/useTextareaMarkup'
+import FormatToolbar from './FormatToolbar.vue'
+import JiraRendered from './JiraRendered.vue'
+import MarkdownRendered from './MarkdownRendered.vue'
 import SnippetNameField from './SnippetNameField.vue'
 import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 import { t } from '../i18n'
@@ -23,6 +28,14 @@ const emit = defineEmits(['save', 'cancel'])
 
 const { textareaEl, overlayEl, lines, isPlain, onScroll, onCompositionStart, onCompositionEnd } =
   useHighlightedInput({ text: body, language: toRef(props, 'resolvedLanguage') })
+
+// The two languages that are written IN markup get the same row of buttons the
+// main editor gives them. Driven off the RESOLVED language, so a body detected
+// as Markdown on Auto gets it without anyone naming the language.
+const isMarkdown = computed(() => props.resolvedLanguage === 'markdown')
+const hasMarkup = computed(() => isMarkdown.value || props.resolvedLanguage === 'jira')
+const { applySelectionEdit } = useTextareaMarkup(textareaEl, body)
+const { actions: markupActions, applyAction } = useFormatToolbar({ isMarkdown, applySelectionEdit })
 
 // Auto carries what it resolved to, so the picker doubles as the readout and
 // there is no second chip saying the same thing.
@@ -68,34 +81,44 @@ defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
       </select>
     </div>
 
+    <FormatToolbar v-if="hasMarkup" :actions="markupActions" @action="applyAction" />
+
     <div class="ql-compose-body">
       <SnippetNameField
         v-model="name"
         input-class="ql-compose-name"
         :placeholder="$t('quickLookCompose.nameOptional')"
       />
-      <div class="ql-compose-field">
-        <!-- Whitespace between these tags RENDERS and shifts every line. -->
-        <pre ref="overlayEl" class="ql-compose-hl" aria-hidden="true"><div
-          v-for="(spans, i) in lines"
-          :key="i"
-          class="ql-compose-line"
-        ><span
-          v-for="(span, j) in spans"
-          :key="j"
-          :class="span.role && `syn-${span.role}`"
-        >{{ span.text }}</span></div></pre>
-        <textarea
-          ref="textareaEl"
-          v-model="body"
-          class="ql-compose-text"
-          :class="{ plain: isPlain }"
-          :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
-          spellcheck="false"
-          @scroll="onScroll"
-          @compositionstart="onCompositionStart"
-          @compositionend="onCompositionEnd"
-        ></textarea>
+      <div class="ql-compose-split" :class="{ previewing: hasMarkup }">
+        <div class="ql-compose-field">
+          <!-- Whitespace between these tags RENDERS and shifts every line. -->
+          <pre ref="overlayEl" class="ql-compose-hl" aria-hidden="true"><div
+            v-for="(spans, i) in lines"
+            :key="i"
+            class="ql-compose-line"
+          ><span
+            v-for="(span, j) in spans"
+            :key="j"
+            :class="span.role && `syn-${span.role}`"
+          >{{ span.text }}</span></div></pre>
+          <textarea
+            ref="textareaEl"
+            v-model="body"
+            class="ql-compose-text"
+            :class="{ plain: isPlain }"
+            :placeholder="$t('quickLookCompose.pasteOrTypeTheSnippet')"
+            spellcheck="false"
+            @scroll="onScroll"
+            @compositionstart="onCompositionStart"
+            @compositionend="onCompositionEnd"
+          ></textarea>
+        </div>
+        <!-- Markup is written to be read as its rendered form, so it is drawn
+             beside the syntax rather than behind a toggle. -->
+        <div v-if="hasMarkup" class="ql-compose-preview">
+          <MarkdownRendered v-if="isMarkdown" :content="body" />
+          <JiraRendered v-else :content="body" />
+        </div>
       </div>
     </div>
 

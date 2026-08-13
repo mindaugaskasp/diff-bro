@@ -8,6 +8,50 @@ const TOP_FRACTION = 0.28
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, Math.max(lo, hi)))
 
+// What the launcher is worth at each job. A Map rather than an object literal
+// because the mode arrives from the renderer — `SIZES['constructor']` on a
+// literal is a truthy hit with no width.
+const SIZES = new Map([
+  ['default', { width: 692, height: 452 }],
+  ['compose', { width: 960, height: 720 }]
+])
+// Air left around the card, so a size never runs edge to edge on a small display.
+const SCREEN_MARGIN = 80
+const SMALLEST = { width: 420, height: 320 }
+
+/**
+ * The window size for a launcher mode, never larger than the display holding it.
+ * @param {string} mode 'default' | 'compose'; anything else resolves to default
+ * @param {{width:number,height:number}} [workArea]
+ * @returns {{width:number,height:number}}
+ */
+export function launcherSize(mode, workArea) {
+  const want = SIZES.get(mode) ?? SIZES.get('default')
+  const fit = (px, available, floor) =>
+    Number.isFinite(available) ? Math.min(px, Math.max(floor, available - SCREEN_MARGIN)) : px
+  return {
+    width: Math.round(fit(want.width, workArea?.width, SMALLEST.width)),
+    height: Math.round(fit(want.height, workArea?.height, SMALLEST.height))
+  }
+}
+
+/**
+ * The top-left a card KEEPS when it changes size: growing for a job moves the
+ * window's edges, never its origin. Re-centring instead slides every row
+ * sideways out from under the pointer that just clicked one — which is what a
+ * click on Edit did, twice, before this existed.
+ * @param {{x:number,y:number}} origin  where the card already is
+ * @param {{width:number,height:number}} size  what it is about to be
+ * @param {{x:number,y:number,width:number,height:number}} workArea
+ * @returns {{x:number,y:number}} the origin, pulled back inside the work area
+ */
+export function keepOnScreen(origin, size, workArea) {
+  return {
+    x: Math.round(clamp(origin.x, workArea.x, workArea.x + workArea.width - size.width)),
+    y: Math.round(clamp(origin.y, workArea.y, workArea.y + workArea.height - size.height))
+  }
+}
+
 /**
  * @param {{x:number,y:number,width:number,height:number}} workArea
  * @param {{width:number,height:number}} win

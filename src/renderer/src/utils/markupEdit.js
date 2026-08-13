@@ -72,6 +72,26 @@ export function listBlock(m, marker) {
   }
 }
 
+// Map every line of the selection's block, keeping the whole block selected —
+// what the per-line transforms (indent, outdent) are built from.
+export function mapBlock(m, fn) {
+  const { start, end } = lineBounds(m)
+  const next = m.text.slice(start, end).split('\n').map(fn).join('\n')
+  return {
+    text: m.text.slice(0, start) + next + m.text.slice(end),
+    start,
+    end: start + next.length
+  }
+}
+
+// A block dropped in at the caret, on its own lines, with `select` (an offset
+// and length into it) left selected so the first cell can just be typed over.
+export function insertBlock(m, block, select) {
+  const lead = m.start === 0 || m.text[m.start - 1] === '\n' ? '' : '\n'
+  const at = m.start + lead.length + select.at
+  return splice(m, `${lead}${block}`, at, at + select.length)
+}
+
 // A fenced block wrapping the selection on its own lines.
 export function blockWrap(m, opener, closer) {
   const sel = selected(m)

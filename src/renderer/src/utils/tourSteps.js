@@ -54,10 +54,6 @@ const STEPS = [
     id: 'quick-look',
     run: 1,
     since: '0.5.0',
-    // The chord is a GLOBAL shortcut that main ignores while this window is in
-    // front; the step asks for the press anyway, so it lifts that while it is up.
-    enter: 'tour-arm-chord',
-    leave: 'tour-disarm-chord',
     // No anchor for the launcher itself: it is a separate window that opens ON
     // TOP of this one. The step names the key and leaves the press to the user
     // — summoning it here stole focus and put its own explanation behind it.

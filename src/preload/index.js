@@ -173,9 +173,12 @@ contextBridge.exposeInMainWorld('api', {
   // renderer receives that pick. Shared preload → both windows see these, but
   // each only wires the half it uses.
   quickLookToggle: () => ipcRenderer.invoke('quicklook:toggle'),
-  // The tour's "press it now" step, which runs with this window in front.
-  quickLookAllowWhileFocused: (on) =>
-    ipcRenderer.send('quicklook:allow-while-focused', on === true),
+  // Settings → Shortcuts, while its capture field is armed: the chord being
+  // typed is the input, so the shortcut must not answer it.
+  quickLookCapturingShortcut: (on) => ipcRenderer.send('quicklook:capturing-shortcut', on === true),
+  // Launcher window: which job the card is doing, so main can size it. A NAME,
+  // never dimensions — the renderer does not get to decide how big a window is.
+  quickLookMode: (mode) => ipcRenderer.invoke('quicklook:mode', String(mode)),
   // Settings → Shortcuts: apply a new summon accelerator live. Resolves to
   // { ok } or { ok:false, error } ('unavailable' / 'invalid').
   quickLookSetShortcut: (accel) => ipcRenderer.invoke('quicklook:setShortcut', accel),

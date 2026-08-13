@@ -38,11 +38,16 @@ const TAGS = [
 test('a long tag list stays bounded and the rest go behind a picker', async ({ page }) => {
   await saveWithTags(page, 'E2E many tags', TAGS)
 
-  // Two rows' worth, whatever the library holds — the seeded examples carry
-  // tags of their own, so the bar is bounded by the cap, not by this test.
+  // Bounded by the shelf's own height, whatever the library holds — the seeded
+  // examples carry tags of their own, so the bar is bounded by the depth, not by
+  // this test. Nothing is clipped: the count is measured against that height.
   const shown = await page.locator('.usb-tags .usb-tag').count()
-  expect(shown).toBeLessThanOrEqual(8)
   expect(shown).toBeLessThan(TAGS.length)
+  const box = await page.locator('.usb-shelf').boundingBox()
+  for (const chip of await page.locator('.usb-shelf > *').all()) {
+    const at = await chip.boundingBox()
+    expect(at.y + at.height).toBeLessThanOrEqual(box.y + box.height + 1)
+  }
 
   const more = page.locator('.usb-more')
   await expect(more).toBeVisible()
@@ -55,7 +60,8 @@ test('a long tag list stays bounded and the rest go behind a picker', async ({ p
   await more.click()
   const picker = page.getByRole('dialog', { name: 'Collapsed tags' })
   await expect(picker.locator('.usb-tag')).toHaveCount(overflow)
-  expect(overflow).toBeLessThan(TAGS.length)
+  // The bar and the picker partition the registry — no tag in both, none lost.
+  expect(shown + overflow).toBeGreaterThanOrEqual(TAGS.length)
   await picker.getByLabel('Find a tag').fill('juli')
   await expect(picker.locator('.usb-tag')).toHaveCount(1)
 

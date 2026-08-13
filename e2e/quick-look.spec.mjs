@@ -317,7 +317,9 @@ test('an unnamed snippet can be created and then edited in place', async ({ app,
   const row = ql.locator('.ql-res', { hasText: 'Untitled' }).first()
   await expect(row).toBeVisible()
   await expect(row).toContainText(/Untitled \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
-  await row.click()
+  // Selected by searching, not by clicking: a click opens it in the main window.
+  await ql.locator('.ql-input').fill('Untitled')
+  await expect(ql.locator('.ql-pv-name')).toContainText('Untitled')
 
   // Edit it right here rather than being bounced to the main window.
   await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
@@ -329,7 +331,9 @@ test('an unnamed snippet can be created and then edited in place', async ({ app,
   await ql.locator('.ql-compose .btn-primary').click()
   await expect(ql.locator('.ql-compose')).toBeHidden()
 
-  // Renamed in place — sentence-cased, and no second copy left behind.
+  // Renamed in place — sentence-cased, and no second copy left behind. Counted
+  // on the WHOLE list, so the search that selected it cannot flatter the result.
+  await ql.locator('.ql-input').fill('')
   await expect(ql.locator('.ql-res', { hasText: 'Auth token' })).toHaveCount(1)
   await expect(ql.locator('.ql-res', { hasText: 'Untitled' })).toHaveCount(0)
 })

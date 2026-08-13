@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick, ref } from 'vue'
 import { useQuickLookCompose } from '../../../src/renderer/src/composables/useQuickLookCompose'
 
 const harness = (addResult = 'new-id') => {
@@ -220,5 +221,99 @@ describe('useQuickLookCompose — language', () => {
     const { c } = harness()
     c.open({ id: 'a', name: 'N', content: 'print(1)', language: 'python' })
     expect(c.language.value).toBe('python')
+  })
+})
+
+// Pressing the summon chord twice is how the launcher is dismissed and brought
+// back, and refresh() used to cancel the panel on the way in. `dirty` is what
+// tells a draft with work in it from an untouched one.
+describe('useQuickLookCompose — a draft worth keeping', () => {
+  it('is not dirty while closed, or freshly opened', () => {
+    const { c } = harness()
+    expect(c.dirty.value).toBe(false)
+    c.open()
+    expect(c.dirty.value).toBe(false)
+  })
+
+  it('a name carried in from the query is not, by itself, work', () => {
+    const { c } = harness()
+    c.open({ name: 'deploy rollback' })
+    expect(c.dirty.value).toBe(false)
+  })
+
+  it('a typed body or an edited name is', () => {
+    const { c } = harness()
+    c.open({ name: 'deploy rollback' })
+    c.body.value = 'kubectl rollout undo'
+    expect(c.dirty.value).toBe(true)
+
+    c.open({ id: 'a', name: 'N', content: 'x' })
+    expect(c.dirty.value).toBe(false)
+    c.name.value = 'N2'
+    expect(c.dirty.value).toBe(true)
+  })
+
+  it('stops being dirty once the draft is saved or dropped', async () => {
+    const { c } = harness()
+    c.open()
+    c.body.value = 'text'
+    await c.save()
+    expect(c.dirty.value).toBe(false)
+
+    c.open()
+    c.body.value = 'more'
+    c.cancel()
+    expect(c.dirty.value).toBe(false)
+  })
+})
+
+// The card is 452px tall at rest — nine lines. Composing asks main for the size
+// the job needs; the renderer names the JOB, never a number of pixels.
+describe('useQuickLookCompose — the card it asks for', () => {
+  afterEach(() => delete window.api)
+
+  it('asks for the compose card on open and the resting one on the way out', async () => {
+    const quickLookMode = vi.fn()
+    window.api = { quickLookMode }
+    const { c } = harness()
+
+    c.open()
+    await nextTick()
+    expect(quickLookMode).toHaveBeenLastCalledWith('compose')
+
+    c.cancel()
+    await nextTick()
+    expect(quickLookMode).toHaveBeenLastCalledWith('default')
+  })
+})
+
+// Reopening the selected row is what makes the launcher an editor. The body it
+// loads must be the stored one: the preview is truncated at 4000 chars.
+describe('useQuickLookCompose — editing the selected row', () => {
+  const rowHarness = (row) => {
+    const current = ref(row)
+    const load = vi.fn(async () => 'the whole stored body')
+    const c = useQuickLookCompose({ snippets: { add: vi.fn(), update: vi.fn(), load }, current })
+    return { c, load, current }
+  }
+
+  it('opens the panel on the stored body', async () => {
+    const { c, load } = rowHarness({ kind: 'snippet', id: 'a', name: 'N', lang: 'sql', tags: [] })
+    expect(c.canEdit.value).toBe(true)
+    await c.editCurrent()
+    expect(load).toHaveBeenCalledWith('a')
+    expect(c.composing.value).toBe(true)
+    expect(c.body.value).toBe('the whole stored body')
+  })
+
+  it('refuses a secret, a diagram, and anything that is not a snippet', async () => {
+    const secret = rowHarness({ kind: 'snippet', id: 'a', secret: true })
+    expect(secret.c.canEdit.value).toBe(false)
+    await secret.c.editCurrent()
+    expect(secret.c.composing.value).toBe(false)
+
+    expect(rowHarness({ kind: 'snippet', id: 'a', lang: 'mermaid' }).c.canEdit.value).toBe(false)
+    expect(rowHarness({ kind: 'command', id: 'base64' }).c.canEdit.value).toBe(false)
+    expect(rowHarness(null).c.canEdit.value).toBe(false)
   })
 })

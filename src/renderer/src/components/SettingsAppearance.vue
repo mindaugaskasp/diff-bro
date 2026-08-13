@@ -57,6 +57,10 @@ const groups = computed(() => [
     <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
       {{ $t('settingsDialog.showTheKeyboardShortcutBar') }}
     </SettingToggle>
+    <SettingToggle :checked="settings.showRowTags" @change="settings.setShowRowTags">
+      {{ $t('settingsDialog.showTagsOnSidebarRows') }}
+    </SettingToggle>
+    <p class="hint">{{ $t('settingsAppearance.rowTagsHint') }}</p>
     <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
       {{ $t('settingsDialog.playAShutterSoundWhen') }}
     </SettingToggle>

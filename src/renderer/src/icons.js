@@ -233,6 +233,24 @@ export const ICONS = {
     { t: 'circle', cx: 4.5, cy: 12, r: 1.1, fill: true },
     { t: 'circle', cx: 4.5, cy: 18, r: 1.1, fill: true }
   ],
+  // Step a list item in / out one level — the markup toolbars' nesting pair.
+  indent: [
+    { t: 'path', d: 'M3 8l4 4-4 4' },
+    { t: 'line', x1: 11, y1: 6, x2: 21, y2: 6 },
+    { t: 'line', x1: 11, y1: 12, x2: 21, y2: 12 },
+    { t: 'line', x1: 11, y1: 18, x2: 21, y2: 18 }
+  ],
+  outdent: [
+    { t: 'path', d: 'M7 8l-4 4 4 4' },
+    { t: 'line', x1: 11, y1: 6, x2: 21, y2: 6 },
+    { t: 'line', x1: 11, y1: 12, x2: 21, y2: 12 },
+    { t: 'line', x1: 11, y1: 18, x2: 21, y2: 18 }
+  ],
+  // A ticked box — a Markdown task list.
+  'check-square': [
+    { t: 'path', d: 'M9 11l3 3L22 4' },
+    { t: 'path', d: 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' }
+  ],
   'list-ordered': [
     { t: 'line', x1: 10, y1: 6, x2: 21, y2: 6 },
     { t: 'line', x1: 10, y1: 12, x2: 21, y2: 12 },

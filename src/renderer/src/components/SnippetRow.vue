@@ -3,11 +3,7 @@
 // with a language monogram so the row is recognizable before the name is read.
 import { computed } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
-import { useDiffStore } from '../stores/diffStore'
-import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { languageMonogram } from '../utils/languageMonogram'
-import { firstClaudeUrl } from '../utils/detectLanguage'
-import { parseTemplateVars } from '../utils/templateVars'
 import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
@@ -15,7 +11,9 @@ import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 import { useSnippetDrag } from '../composables/useSnippetDrag'
 import { injectRowReorder } from '../composables/useRowReorder'
 import { useUiStore } from '../stores/uiStore'
-import { t } from '../i18n'
+import { useRowTags } from '../composables/useRowTags'
+import { useSnippetRowActions } from '../composables/useSnippetRowActions'
+import { rowColorHex, rowColorId } from '../utils/rowColor'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').SnippetEntry>} */
@@ -27,10 +25,10 @@ const props = defineProps({
 })
 
 const store = useSnippetStore()
-
 const ui = useUiStore()
-const diff = useDiffStore()
-const { copied, flash } = useCopyFeedback()
+const { copied, copySnippet, viewDiagram, openUrl, openLink } = useSnippetRowActions(
+  () => props.entry
+)
 const { startDrag } = useSnippetDrag()
 const reorder = injectRowReorder()
 const rowState = computed(() => ({
@@ -47,40 +45,11 @@ const isClaude = computed(() => lang.value === 'claude')
 const isUrl = computed(() => lang.value === 'url')
 // Drop the tag that just restates the monogram (the auto format tag), so the
 // tag word carries information the type anchor doesn't already.
-const shownTags = computed(() => props.entry.tags.filter((t) => t !== lang.value))
-
-async function copySnippet(id) {
-  const content = await store.load(id)
-  if (content == null) return
-  // A Claude prompt with placeholders routes through the fill dialog first.
-  if (isClaude.value && parseTemplateVars(content).length) {
-    store.pendingFill = { name: props.entry.name, content }
-    return
-  }
-  const res = await window.api.copyText(content)
-  if (!res?.ok) return diff.showNotice(t('snippetRow.copyFailed'))
-  flash()
-}
-async function viewDiagram(entry) {
-  const code = await store.load(entry.id)
-  if (code != null) ui.openMermaid(entry.name, code)
-}
-// Opening is gated by the main-process claude.ai allowlist; this only offers a
-// candidate URL from the snippet.
-// A URL snippet is the whole link; main fences the scheme and confirms.
-async function openUrl() {
-  const content = await store.load(props.entry.id)
-  const url = content?.trim().split(/\s+/)[0]
-  const res = url ? await window.api.openLink(url) : { error: 'empty' }
-  if (res?.error) diff.showNotice(t('snippetRow.noOpenableLink'))
-}
-
-async function openLink() {
-  const content = await store.load(props.entry.id)
-  const url = content != null ? firstClaudeUrl(content) : null
-  if (url) await window.api.openClaudeLink(url)
-  else diff.showNotice(t('snippetRow.noClaudeLink'))
-}
+const { shown: shownTags } = useRowTags(() => props.entry.tags.filter((t) => t !== lang.value))
+const colorHex = computed(() => rowColorHex(props.entry.color))
+// Right-click is the way in — the gesture that already opens a tag's manage
+// popover from the shelf.
+const openColorMenu = (e) => (ui.rowColorMenu = { id: props.entry.id, x: e.clientX, y: e.clientY })
 
 // Hovering the name previews the snippet — not the whole row, which made the
 // card appear while you were only reaching for the row's buttons.
@@ -103,9 +72,12 @@ function onDragStart(e) {
     :class="[rowState, reorder.classFor(group, index)]"
     :data-new-row="isNew ? entry.id : null"
     :data-tour="isDiagram ? 'snippet-diagram' : null"
+    :data-color="rowColorId(entry.color)"
+    :style="colorHex ? { '--snip-color': colorHex } : null"
     data-preview-anchor
     :draggable="!isSecret(entry)"
     @dragstart="onDragStart($event)"
+    @contextmenu.prevent="openColorMenu($event)"
     v-on="reorder.handlersFor(group, index)"
   >
     <Transition name="flash">
@@ -168,7 +140,7 @@ function onDragStart(e) {
         class="row-btn"
         :data-tip="$t('snippetRow.diagram')"
         :aria-label="$t('snippetRow.viewDiagram')"
-        @click="viewDiagram(entry)"
+        @click="viewDiagram()"
       >
         <AppIcon name="diagram" />
       </button>
@@ -194,7 +166,7 @@ function onDragStart(e) {
         class="row-btn"
         :data-tip="$t('common.copy')"
         :aria-label="$t('snippetRow.copyToClipboard')"
-        @click="copySnippet(entry.id)"
+        @click="copySnippet()"
       >
         <AppIcon name="copy" />
       </button>

@@ -7,25 +7,24 @@ import {
   newSnippetButton
 } from './fixtures.mjs'
 
-// The tag shelf's depth has exactly one affordance — the grip — so the drag is
-// proven against real layout (quantised on the measured chip row) and its
-// persistence is proven the only way it can be: a relaunch of the same profile.
-// Only a launched app renders either.
+// The shelf's depth is a HEIGHT the grip drags, and what it shows at that height
+// is measured — a chip is as wide as its name, so the four-per-row it used to
+// assume made one row of pointer travel worth anything between half a rendered
+// row and two. Only a launched app has widths to measure, so all of it is
+// proven here: the seam tracking the pointer, the "+N more" count matching what
+// was actually cut, and the depth surviving a relaunch.
 
-// The first-run examples already seed four tags (example, mermaid, claude,
-// prompt); ten more guarantee the shelf overflows at every depth this test
-// visits, so the +N chip stays observable on both sides of the drag.
-const TAG_COUNT = 10
-const RESTING_CHIPS = 8 // MIN_TAG_ROWS (2) × TAGS_PER_ROW (4)
-const DRAGGED_CHIPS = 12 // one row deeper
-const OLD_CEILING_CHIPS = 48 // what twelve rows used to be worth
+// The first-run examples seed four tags (example, mermaid, claude, prompt);
+// these guarantee the shelf overflows at every depth this test visits.
+const TAG_COUNT = 36
+// Whatever the shelf is dragged to, the sections keep this much of the column.
+const LIST_FLOOR = 150
 // var(--space-3) under the last chip row, matching the air over the shelf's
 // separator: the strip's border used to sit 5px under the chips at every depth.
 const BOTTOM_GAP = 10
-// Whatever the shelf is dragged to, the sections keep this much of the column.
-const LIST_FLOOR = 150
 // MAX_TAGS is 20 per snippet, so a deep shelf takes several.
 const PER_SNIPPET = 18
+const GAP = 4
 
 async function seedSnippet(page, name, tags) {
   await newSnippetButton(page).click()
@@ -48,6 +47,9 @@ async function seedTags(page, count = TAG_COUNT) {
   }
 }
 
+const shelfHeight = async (page) => (await page.locator('.usb-shelf').boundingBox()).height
+const rowStep = async (page) => (await page.locator('.usb-tag').first().boundingBox()).height + GAP
+
 async function dragShelf(page, toY) {
   const box = await page.locator('.usb-shelf-grip').boundingBox()
   const x = box.x + box.width / 2
@@ -56,11 +58,6 @@ async function dragShelf(page, toY) {
   await page.mouse.down()
   await page.mouse.move(x, toY(y), { steps: 6 })
   await page.mouse.up()
-}
-
-async function dragShelfDownOneRow(page) {
-  const rowStep = (await page.locator('.usb-tag').first().boundingBox()).height + 4
-  await dragShelf(page, (y) => y + rowStep)
 }
 
 // The air between the last chip row and the strip's border, which is the same
@@ -87,40 +84,64 @@ async function expectHandleOnTheSeam(page) {
   expect(onSeam).toContain('usb-shelf-grip')
 }
 
-test('the shelf grip deepens the tag rows, and the depth survives a relaunch', async () => {
-  test.setTimeout(90_000)
+// Every chip the shelf shows is WHOLLY inside it: the count is measured, so a
+// chip clipped at the bottom edge means the measurement is wrong.
+async function expectNothingClipped(page) {
+  const box = await page.locator('.usb-shelf').boundingBox()
+  const chips = await page.locator('.usb-shelf > *').all()
+  for (const chip of chips) {
+    const at = await chip.boundingBox()
+    expect(at.y + at.height).toBeLessThanOrEqual(box.y + box.height + 1)
+  }
+}
+
+// "+N more" opens the N that did not fit — not the whole registry with the N
+// promised lost inside it.
+async function expectOverflowExact(page) {
+  const shown = await page.locator('.usb-tag').count()
+  const label = await page.locator('.usb-more').textContent()
+  const promised = Number(label.match(/\d+/)[0])
+
+  await page.locator('.usb-more').click()
+  const picker = page.locator('.picker')
+  await expect(picker.locator('.tag-chip')).toHaveCount(promised)
+  await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
+  await expect(picker).toHaveCount(0)
+  return shown + promised
+}
+
+test('the grip moves the shelf with the pointer, and the depth survives a relaunch', async () => {
+  test.setTimeout(120_000)
   const dir = freshUserDataDir()
   let app = await launchApp(dir)
+  let dragged
   try {
     const page = await firstReadyPage(app)
     await seedTags(page)
 
-    const chips = page.locator('.usb-tag')
-    await expect(chips).toHaveCount(RESTING_CHIPS)
-    await expect(page.locator('.usb-more')).toBeVisible()
-
     await expectHandleOnTheSeam(page)
+    await expectNothingClipped(page)
+    const total = await expectOverflowExact(page)
     const restingGap = await bottomGap(page)
     expect(restingGap).toBeGreaterThanOrEqual(BOTTOM_GAP)
 
-    // "+6 more" opens the SIX that did not fit — not the whole registry with
-    // the promised six lost inside it.
-    await page.locator('.usb-more').click()
-    const picker = page.locator('.picker')
-    await expect(picker).toBeVisible()
-    await expect(picker.locator('.tag-chip')).toHaveCount(6)
-    await expect(picker.locator('.tag-chip', { hasText: 'tag-05' })).toBeVisible()
-    await expect(picker.locator('.tag-chip', { hasText: 'example' })).toHaveCount(0)
-    await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
-    await expect(picker).toHaveCount(0)
+    const step = await rowStep(page)
+    const before = await shelfHeight(page)
+    const shownBefore = await page.locator('.usb-tag').count()
 
-    await dragShelfDownOneRow(page)
+    // Three rows of travel is three rows of shelf — within the rounding that
+    // lands it on a whole row, not the half-to-double it used to be.
+    await dragShelf(page, (y) => y + 3 * step)
+    const after = await shelfHeight(page)
+    expect(after - before).toBeGreaterThan(3 * step - GAP)
+    expect(after - before).toBeLessThan(3 * step + GAP)
 
-    // One row deeper: four more chips show and the overflow count falls in step.
-    await expect(chips).toHaveCount(DRAGGED_CHIPS)
-    await expect(page.locator('.usb-more')).toContainText('+2')
-    // And the air under the shelf is the air it had before the drag.
+    expect(await page.locator('.usb-tag').count()).toBeGreaterThan(shownBefore)
+    await expectNothingClipped(page)
+    expect(await expectOverflowExact(page)).toBe(total)
     expect(await bottomGap(page)).toBeCloseTo(restingGap, 0)
+
+    dragged = await page.locator('.usb-tag').count()
   } finally {
     await app.close()
   }
@@ -129,25 +150,25 @@ test('the shelf grip deepens the tag rows, and the depth survives a relaunch', a
   app = await launchApp(dir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.usb-tag')).toHaveCount(DRAGGED_CHIPS)
+    await expect(page.locator('.usb-tag')).toHaveCount(dragged)
   } finally {
     await app.close()
   }
 })
 
-// Dragged to the floor of the window: the shelf goes far deeper than the dozen
-// rows it used to stop at, and the sections it shares the column with keep a
-// usable slice of it — squeezed out, they take the grip off the bottom edge with
-// them and there is no way left to make the shelf small again.
-test('the shelf deepens past the old ceiling without swallowing the sidebar', async ({ page }) => {
+// Dragged to the floor of the window: the shelf goes as deep as the column
+// allows, and the sections it shares that column with keep a usable slice —
+// squeezed out, they take the grip off the bottom edge with them and there is no
+// way left to make the shelf small again.
+test('the shelf deepens to the floor without swallowing the sidebar', async ({ page }) => {
   test.setTimeout(120_000)
   await seedTags(page, 108)
-  await expect(page.locator('.usb-tag')).toHaveCount(RESTING_CHIPS)
+  const resting = await page.locator('.usb-tag').count()
 
   const floor = await page.evaluate(() => window.innerHeight - 4)
   await dragShelf(page, () => floor)
 
-  expect(await page.locator('.usb-tag').count()).toBeGreaterThan(OLD_CEILING_CHIPS)
+  expect(await page.locator('.usb-tag').count()).toBeGreaterThan(resting * 3)
 
   const aside = await page.locator('.saved').boundingBox()
   const list = await page.locator('.usb-scroll').boundingBox()
@@ -156,4 +177,73 @@ test('the shelf deepens past the old ceiling without swallowing the sidebar', as
   expect(grip.y + grip.height).toBeLessThanOrEqual(aside.y + aside.height)
   expect(await bottomGap(page)).toBeGreaterThanOrEqual(BOTTOM_GAP)
   await expectHandleOnTheSeam(page)
+})
+
+// A drag was the only way to ask, and the seam carried no keyboard at all.
+test('double-click opens the shelf to every tag, and rests it again', async ({ page }) => {
+  test.setTimeout(120_000)
+  await seedTags(page, 24)
+  const resting = await shelfHeight(page)
+  await expect(page.locator('.usb-more')).toBeVisible()
+
+  await page.locator('.usb-shelf-grip').dblclick()
+  await expect(page.locator('.usb-more')).toHaveCount(0)
+  expect(await shelfHeight(page)).toBeGreaterThan(resting)
+  await expectNothingClipped(page)
+
+  await page.locator('.usb-shelf-grip').dblclick()
+  await expect(page.locator('.usb-more')).toBeVisible()
+  expect(await shelfHeight(page)).toBeCloseTo(resting, 0)
+})
+
+// LONG names, deliberately: wide chips do not fill the rows the stored height
+// pays for, so the box hugs its chips and renders shorter than the setting. With
+// the keys anchored on what was rendered, ↓ wrote a shallower depth and moved
+// nothing, and the ↑ after it fell two rows. Short `tag-NN` names fill their
+// rows, which is why the first version of this test never saw it.
+test('the arrow keys step a row at a time even when the chips do not fill it', async ({ page }) => {
+  test.setTimeout(120_000)
+  const names = Array.from({ length: 30 }, (_, i) => `platform-migration-phase-${i + 10}`)
+  for (let at = 0; at < names.length; at += PER_SNIPPET) {
+    await seedSnippet(page, `Wide farm ${at}`, names.slice(at, at + PER_SNIPPET))
+  }
+
+  const depth = async () =>
+    Number(
+      (await page.evaluate(() => document.querySelector('.usb-shelf').style.maxHeight)).replace(
+        'px',
+        ''
+      )
+    )
+  const step = await rowStep(page)
+
+  // The first press snaps the resting default onto the measured row grid, so it
+  // is the presses AFTER that which must each be worth exactly one row.
+  await page.locator('.usb-shelf-grip').focus()
+  await page.keyboard.press('ArrowDown')
+  const onGrid = await depth()
+
+  await page.keyboard.press('ArrowDown')
+  const deeper = await depth()
+  expect(deeper - onGrid).toBeGreaterThan(step - 1)
+  expect(deeper - onGrid).toBeLessThan(step + 1)
+
+  // And back to exactly where it was — the ↑ that used to fall two rows.
+  await page.keyboard.press('ArrowUp')
+  expect(await depth()).toBe(onGrid)
+})
+
+test('the arrow keys deepen the shelf a row at a time', async ({ page }) => {
+  test.setTimeout(120_000)
+  await seedTags(page, 24)
+  const step = await rowStep(page)
+  const before = await shelfHeight(page)
+
+  await page.locator('.usb-shelf-grip').focus()
+  await page.keyboard.press('ArrowDown')
+  await expect.poll(() => shelfHeight(page)).toBeGreaterThan(before + step - GAP - 1)
+  expect(await shelfHeight(page)).toBeLessThan(before + step + GAP)
+
+  await page.keyboard.press('ArrowUp')
+  await expect.poll(() => shelfHeight(page)).toBeCloseTo(before, 0)
 })

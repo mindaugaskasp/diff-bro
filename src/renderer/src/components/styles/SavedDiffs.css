@@ -100,13 +100,22 @@
 /* The one part of the strip that gives way when the shelf is deeper than the
    column can hold: the chips scroll rather than pushing the sections out. */
 .usb-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
   min-height: 0;
   overflow-y: auto;
   margin-top: var(--space-1);
   margin-bottom: var(--space-1);
+}
+
+/* The dragged depth, in pixels, applied as a max-height (SavedDiffs.vue) — so a
+   shelf with little in it still hugs its chips. Clipped rather than scrolled:
+   useTagShelf measures what fits and hands the rest to the "+N more" picker, so
+   nothing is ever hidden behind an edge. The seam above stays OUT of this box,
+   which is what makes the stored number exactly the chip rows. */
+.usb-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow: hidden;
 }
 
 /* A dim separator LINE between the section filters and the tags — a rule of its
@@ -122,10 +131,12 @@
    panel everywhere, and 15% of it is a whisper rather than a rule. */
 .usb-tags::before {
   content: '';
-  flex: 0 0 100%;
+  display: block;
   box-sizing: border-box;
   height: 1px;
-  margin-block: var(--space-3);
+  /* The chip box below carries no gap above its first row, so the air under the
+     line is the whole distance — the flex row-gap used to add to this. */
+  margin-block: var(--space-3) calc(var(--space-3) + 4px);
   padding-inline: var(--space-4);
   background: color-mix(in srgb, var(--text) 15%, transparent);
   background-clip: content-box;
@@ -169,8 +180,15 @@
   touch-action: none;
 }
 .usb-shelf-grip:hover,
+.usb-shelf-grip:focus-visible,
 .usb-shelf-grip.resizing {
   background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+/* Keyboard focus lights the seam itself rather than ringing a 5px band: ↑/↓
+   deepen it by a row, Home rests it, End opens it to every tag. An outline
+   offset outward here would trace the whole panel edge. */
+.usb-shelf-grip:focus-visible {
+  outline: none;
 }
 
 /* The overflow keeps the chip shape — it stands in for tags, so it belongs in

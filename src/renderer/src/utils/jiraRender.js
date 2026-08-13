@@ -6,6 +6,10 @@ const HEADING = /^h([1-6])\.\s+(.*)$/
 const QUOTE_LINE = /^bq\.\s+(.*)$/
 // `*`/`#` (repeat for depth); `-` is the strike marker, not a bullet.
 const LIST_LINE = /^([*#]+)\s+(.*)$/
+// `||head||head||` opens a table; `|cell|cell|` continues it. A body row alone
+// is still a table row — Jira renders one without a header.
+const TABLE_HEAD = /^\s*\|\|.*\|\|\s*$/
+const TABLE_ROW = /^\s*\|.*\|\s*$/
 const CODE_OPEN = /^\{code(?::[^}]*)?\}$/
 // Jira also takes a block opened and closed on ONE line, which is how a single
 // command is usually pasted. The fence patterns are anchored, so that form fell
@@ -83,7 +87,8 @@ export function parseInline(text) {
 }
 
 // --- blocks -------------------------------------------------------------
-const isSpecial = (line) => HEADING.test(line) || QUOTE_LINE.test(line) || LIST_LINE.test(line)
+const isSpecial = (line) =>
+  HEADING.test(line) || QUOTE_LINE.test(line) || LIST_LINE.test(line) || TABLE_ROW.test(line)
 const isFenceOpen = (t) => CODE_OPEN.test(t) || QUOTE_OPEN.test(t) || CODE_INLINE.test(t)
 
 // The closer does not need a line of its own — Jira ends a code block wherever
@@ -140,6 +145,26 @@ function consumeList(lines, i, blocks) {
   return i
 }
 
+// Split on the row's own delimiter, dropping the outer pair — sliced rather
+// than regex-replaced, because the delimiter IS a regex metacharacter.
+const cells = (line, sep) => {
+  const t = line.trim()
+  const open = t.startsWith(sep) ? t.slice(sep.length) : t
+  const body = open.endsWith(sep) ? open.slice(0, -sep.length) : open
+  return body.split(sep).map((c) => parseInline(c.trim()))
+}
+
+function consumeTable(lines, i, blocks) {
+  const head = TABLE_HEAD.test(lines[i]) ? cells(lines[i++], '||') : []
+  const rows = []
+  while (i < lines.length && TABLE_ROW.test(lines[i]) && !TABLE_HEAD.test(lines[i])) {
+    rows.push(cells(lines[i], '|'))
+    i++
+  }
+  blocks.push({ type: 'table', align: [], head, rows })
+  return i
+}
+
 function consumeParagraph(lines, i, blocks) {
   const para = []
   while (
@@ -167,6 +192,7 @@ function consumeBlock(lines, i, blocks) {
   }
   if (QUOTE_LINE.test(line)) return consumeQuoteLines(lines, i, blocks)
   if (LIST_LINE.test(line)) return consumeList(lines, i, blocks)
+  if (TABLE_ROW.test(line)) return consumeTable(lines, i, blocks)
   return consumeParagraph(lines, i, blocks)
 }
 

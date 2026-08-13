@@ -60,11 +60,6 @@ export function clearSearch() {
   useUiStore().sidebarQuery = ''
 }
 
-// The global shortcut ignores itself while Diff Bro is in front, so that the
-// Settings capture field can be typed into. This step asks for the press with
-// the app in front, so it lifts that for as long as the step is up.
-export const allowChord = (on) => window.api.quickLookAllowWhileFocused?.(on)
-
 /** What the tour is about to drive, so `clearStage` can hand it back. */
 export function takeFilters() {
   const ui = useUiStore()
@@ -167,7 +162,6 @@ export function closeSnippet() {
 
 /** @param {{ demoTabId: string|null, editorOwned: string[]|null, sidebarWasCollapsed: boolean }} held */
 export function clearStage({ demoTabId, editorOwned, sidebarWasCollapsed, filters }) {
-  allowChord(false)
   const ui = useUiStore()
   clearSearch()
   ui.sidebarQuery = filters?.query ?? ''

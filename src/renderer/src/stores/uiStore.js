@@ -27,6 +27,10 @@ export const useUiStore = defineStore('ui', {
     mermaidView: null,
     // Snippet version history: { id } while open, null when closed.
     snippetHistory: null,
+    // The snippet row's colour popover: { id, x, y } while open, null when
+    // closed. Core, not local to the sidebar: both snippet shelves raise it and
+    // exactly one of it may be open.
+    rowColorMenu: null,
     // The sidebar's two filters. Core rather than local to the sidebar because
     // the tour drives both — it types into the search, and it clears a tag
     // filter that would hide the very snippet a step points at — and the core

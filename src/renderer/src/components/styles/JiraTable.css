@@ -1,0 +1,26 @@
+/* A rendered markup table (JiraTable.vue). Wide ones scroll INSIDE their own
+   box: the preview pane is half a card, and a table that pushed it sideways
+   would take the raw editor beside it with it. */
+.ji-table-wrap {
+  overflow-x: auto;
+  margin: var(--space-2) 0;
+}
+.ji-table {
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+  color: var(--text);
+}
+.ji-table th,
+.ji-table td {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+/* The header band is the one that must read as a header on all twenty themes:
+   --bg-elevated is the raised-surface role, so it steps away from the pane's
+   ground by construction rather than by a per-theme grey. */
+.ji-table th {
+  background: var(--bg-elevated);
+  font-weight: 600;
+}

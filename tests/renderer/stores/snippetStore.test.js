@@ -10,12 +10,12 @@ import { createIdentityKeys } from '../../../src/main/sealing'
 import { openSnippets, sealSnippets } from '../../../src/main/snippetSealing'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import {
-  EXAMPLE_SNIPPET,
   MAX_TAGS,
   TAG_PALETTE,
   languageOf,
   useSnippetStore
 } from '../../../src/renderer/src/stores/snippetStore'
+import { EXAMPLE_SNIPPET } from '../../../src/renderer/src/utils/snippetExamples'
 import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
 import { createTranslator } from '../../../src/shared/i18n'
 
@@ -914,5 +914,66 @@ describe('snippetStore — the sidebar order the reader set', () => {
     const before = store.listed.map((e) => e.name)
     store.reorder('nonsense', 0, 2)
     expect(store.listed.map((e) => e.name)).toEqual(before)
+  })
+})
+
+// A row colour is decoration the reader picked: stored beside the metadata, read
+// by nothing that filters, searches or sorts. The field is ABSENT by default and
+// absent again once cleared, so a library nobody has coloured carries no trace
+// of the feature.
+describe('snippetStore — row colour', () => {
+  const seed = (store) =>
+    store.add({ name: 'find user', content: 'SELECT 1', language: 'sql', tags: [] })
+
+  it('a new snippet has no colour at all', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    expect('color' in store.entries.find((e) => e.id === id)).toBe(false)
+  })
+
+  it('sets one, and persists it', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    store.setSnippetColor(id, 'blue')
+    expect(store.entries[0].color).toBe('blue')
+
+    setActivePinia(createPinia())
+    expect(useSnippetStore().entries[0].color).toBe('blue')
+  })
+
+  it('clearing removes the key rather than storing a "none"', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    store.setSnippetColor(id, 'green')
+    store.setSnippetColor(id, null)
+    expect('color' in store.entries[0]).toBe(false)
+    expect(localStorage.getItem('diffbro.snippets')).not.toContain('green')
+  })
+
+  it('refuses a colour that is not in the palette, and an unknown snippet', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    store.setSnippetColor(id, 'puce')
+    expect('color' in store.entries[0]).toBe(false)
+
+    store.setSnippetColor(id, 'blue')
+    store.setSnippetColor(id, '#e9687e')
+    expect(store.entries[0].color).toBe('blue')
+
+    expect(() => store.setSnippetColor('no-such-id', 'rose')).not.toThrow()
+  })
+
+  // Metadata, not content: recolouring must never re-encrypt or re-key, or a
+  // colour would cost a version in the snippet's history.
+  it('leaves the content and its history untouched', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    const before = { ...store.entries[0] }
+    store.setSnippetColor(id, 'teal')
+    const after = store.entries[0]
+    expect(after.data).toBe(before.data)
+    expect(after.iv).toBe(before.iv)
+    expect(after.history ?? []).toEqual(before.history ?? [])
+    await expect(store.load(id)).resolves.toBe('SELECT 1')
   })
 })

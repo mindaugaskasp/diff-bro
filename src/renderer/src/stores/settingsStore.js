@@ -87,6 +87,7 @@ export const useSettingsStore = defineStore('settings', {
           sectionOrder: this.sectionOrder,
           shelfOrder: this.shelfOrder,
           showShortcutBar: this.showShortcutBar,
+          showRowTags: this.showRowTags,
           rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
           // Legacy mirror: an older build (or main's fallback) still honours the
@@ -94,7 +95,7 @@ export const useSettingsStore = defineStore('settings', {
           maxComparisonFileMb: this.fileSizeLimitsMb.text,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           maxExportHeightPx: this.maxExportHeightPx,
-          tagShelfRows: this.tagShelfRows,
+          tagShelfHeight: this.tagShelfHeight,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           locale: this.locale,
@@ -162,6 +163,10 @@ export const useSettingsStore = defineStore('settings', {
     },
     setShowShortcutBar(value) {
       this.showShortcutBar = !!value
+      this.persist()
+    },
+    setShowRowTags(value) {
+      this.showRowTags = !!value
       this.persist()
     },
     setRotateThemeDaily(value) {

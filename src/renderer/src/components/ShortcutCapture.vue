@@ -1,7 +1,7 @@
 <script setup>
 // A new binding goes through main FIRST — it owns the OS registration and
 // reports if the combo is taken — and only a success persists.
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { DEFAULT_QUICKLOOK_SHORTCUT } from '../utils/settingsDefaults'
 import { acceleratorFromEvent, isValidAccelerator, acceleratorLabel } from '../utils/accelerator'
@@ -15,17 +15,26 @@ const message = ref(null) // { type: 'error' | 'ok', text }
 const label = computed(() => acceleratorLabel(settings.quickLookShortcut, isMac))
 const isDefault = computed(() => settings.quickLookShortcut === DEFAULT_QUICKLOOK_SHORTCUT)
 
+// The global shortcut answers with Diff Bro in front like anywhere else, so the
+// one field it would fight — this one — silences it for as long as it is armed.
+const listen = (on) => window.api.quickLookCapturingShortcut?.(on)
+
 function start() {
   capturing.value = true
   message.value = null
+  listen(true)
 }
 function stop() {
   capturing.value = false
+  listen(false)
 }
+// Closing Settings mid-capture does not always blur first, and a guard left
+// armed silences the summon chord for the rest of the session.
+onBeforeUnmount(stop)
 
 async function apply(accel) {
   const res = await window.api.quickLookSetShortcut(accel)
-  capturing.value = false
+  stop()
   if (res?.ok) {
     settings.setQuickLookShortcut(accel)
     message.value = { type: 'ok', text: t('shortcutCapture.updated') }
