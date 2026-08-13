@@ -5,6 +5,12 @@ import {
   sanitizeSectionOrder,
   settingsStateFrom
 } from '../../../src/renderer/src/utils/settingsDefaults'
+import {
+  DEFAULT_TAG_SHELF_PX,
+  MAX_TAG_SHELF_PX,
+  MIN_TAG_SHELF_PX,
+  TAG_ROW_PX
+} from '../../../src/renderer/src/utils/tagShelf'
 import { LEGACY_QUICKLOOK_SHORTCUT } from '../../../src/shared/shortcuts'
 
 // Growing SECTIONS is the one change here that reaches settings files already on
@@ -82,5 +88,39 @@ describe('settingsStateFrom, quick look-up shortcut', () => {
       {}
     )
     expect(state.quickLookShortcut).toBe(LEGACY_QUICKLOOK_SHORTCUT)
+  })
+})
+
+// The shelf's depth used to be a count of chip rows, four chips to a row. Every
+// settings file already on disk holds that number, and a reader who dragged the
+// shelf deep must not find it back at two rows after an update.
+describe('settingsStateFrom, the tag shelf depth', () => {
+  it('carries a dragged row count over as the height those rows took', () => {
+    expect(settingsStateFrom({ tagShelfRows: 6 }, {}).tagShelfHeight).toBe(6 * TAG_ROW_PX)
+  })
+
+  // Two was the old floor as well as the old default, so it says nothing about
+  // what the reader wanted — it rests at the new default rather than shrinking.
+  it('reads a stored two as never having been dragged at all', () => {
+    expect(settingsStateFrom({ tagShelfRows: 2 }, {}).tagShelfHeight).toBe(DEFAULT_TAG_SHELF_PX)
+  })
+
+  it('prefers the height once one has been written', () => {
+    expect(settingsStateFrom({ tagShelfRows: 6, tagShelfHeight: 300 }, {}).tagShelfHeight).toBe(300)
+  })
+
+  it('rests at the default depth for a file that has neither', () => {
+    expect(settingsStateFrom({}, {}).tagShelfHeight).toBe(DEFAULT_TAG_SHELF_PX)
+  })
+
+  it('clamps a hand-edited height back into range', () => {
+    expect(settingsStateFrom({ tagShelfHeight: 99999 }, {}).tagShelfHeight).toBe(MAX_TAG_SHELF_PX)
+    expect(settingsStateFrom({ tagShelfHeight: -20 }, {}).tagShelfHeight).toBe(MIN_TAG_SHELF_PX)
+    expect(settingsStateFrom({ tagShelfHeight: 'deep' }, {}).tagShelfHeight).toBe(
+      DEFAULT_TAG_SHELF_PX
+    )
+    expect(settingsStateFrom({ tagShelfRows: 'lots' }, {}).tagShelfHeight).toBe(
+      DEFAULT_TAG_SHELF_PX
+    )
   })
 })

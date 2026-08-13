@@ -120,9 +120,7 @@ export const COMMANDS = {
   'tour-close-snippet': ({ onboarding }) => onboarding.closeSnippet(),
   'tour-demo-search': ({ onboarding }) => onboarding.typeSearch(),
   'tour-clear-search': ({ onboarding }) => onboarding.clearSearch(),
-  'tour-clear-filters': ({ onboarding }) => onboarding.clearFilters(),
-  'tour-arm-chord': ({ onboarding }) => onboarding.armChord(),
-  'tour-disarm-chord': ({ onboarding }) => onboarding.disarmChord()
+  'tour-clear-filters': ({ onboarding }) => onboarding.clearFilters()
 }
 
 export const commandActions = () => Object.keys(COMMANDS)

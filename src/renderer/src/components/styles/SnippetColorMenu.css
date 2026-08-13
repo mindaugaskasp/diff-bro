@@ -1,0 +1,92 @@
+/* The snippet row's colour popover (SnippetColorMenu.vue). Shaped like the tab
+   strip's context menu — same backdrop, same raised card at the pointer — but
+   its body is one row of targets rather than a list of labels. */
+.rcm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.rcm {
+  position: fixed;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-3);
+}
+.rcm:focus-visible {
+  outline: none;
+}
+.rcm-hd {
+  font-size: var(--font-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: var(--space-2);
+}
+.rcm-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* A target is the size of a control, and the dot inside it is the colour. The
+   box is what the cursor lands on, so it — not the dot — carries the hot state:
+   growing the dot would read as a different colour rather than a selection. */
+.rcm-sw {
+  position: relative;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.rcm-sw.hot {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.rcm-sw:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+/* The same lightness normalisation the row and the tag ink use, so the swatch is
+   the colour the row will actually wear on this theme rather than the raw hex. */
+.rcm-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: oklch(from var(--snip-color) var(--tag-l) c h);
+}
+/* No colour: an empty ring with a stroke through it, never a filled swatch. */
+.rcm-none .rcm-dot {
+  position: relative;
+  background: none;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.rcm-none .rcm-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  transform: rotate(45deg);
+}
+/* The applied one is ticked, so the current choice survives being read without
+   colour — the ring alone would be one cue, and it would be the colour itself. */
+.rcm-tick {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  right: -1px;
+  bottom: -1px;
+  color: var(--text);
+  background: var(--bg-raised);
+  border-radius: var(--radius-pill);
+}

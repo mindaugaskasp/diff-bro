@@ -166,16 +166,20 @@ test('an unmodified inline edit does not rewrite the stored language', async ({ 
   await expect(ql.locator('.ql-compose-lang option:checked')).toHaveText(/SQL/)
   await ql.keyboard.press('ControlOrMeta+Enter')
 
+  // Searched, not clicked: a click on a row now does what ↵ does — it opens the
+  // snippet in the main window — and this test wants the preview, not the hand-off.
   await ql.locator('.ql-input').fill('orders probe')
-  await ql.locator('.ql-res:not(.ql-res-create)', { hasText: 'Orders probe' }).first().click()
+  await expect(ql.locator('.ql-pv-name')).toHaveText('Orders probe')
   await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
 
   // Still Auto — the picker would read a bare "SQL" if the language had frozen.
   await expect(ql.locator('.ql-compose-lang')).toHaveValue('auto')
   await ql.keyboard.press('ControlOrMeta+Enter')
 
+  // Searched, not clicked: a click on a row now does what ↵ does — it opens the
+  // snippet in the main window — and this test wants the preview, not the hand-off.
   await ql.locator('.ql-input').fill('orders probe')
-  await ql.locator('.ql-res:not(.ql-res-create)', { hasText: 'Orders probe' }).first().click()
+  await expect(ql.locator('.ql-pv-name')).toHaveText('Orders probe')
   await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
   await expect(ql.locator('.ql-compose-lang')).toHaveValue('auto')
 })
@@ -200,19 +204,19 @@ test('changing the language with an arrow key does not discard the draft', async
 // The launcher hides on blur and is kept warm, so a summon must land on a fresh
 // search band. This could not pass until focusInput() stopped throwing: it runs
 // first in onMounted, so it took the quicklook:show registration down with it
-// and refresh() never ran at all.
-test("a re-summon starts fresh, not on last time's draft", async ({ app, page }) => {
+// and refresh() never ran at all. What a summon deliberately KEEPS — an unsaved
+// draft, a tool panel mid-conversion — is quick-look-draft.spec.mjs.
+test("a re-summon starts fresh, not on last time's search", async ({ app, page }) => {
   const ql = await summon(app, page)
 
   await ql.locator('.ql-input').fill('marker-query')
-  await ql.keyboard.press('ControlOrMeta+n')
-  await ql.locator('.ql-compose-text').fill('half-written thought')
-  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await ql.keyboard.press('ArrowDown')
+  await expect(ql.locator('.ql-res.sel')).toBeVisible()
 
   await page.evaluate(() => window.api.quickLookToggle())
   await page.evaluate(() => window.api.quickLookToggle())
 
-  await expect(ql.locator('.ql-compose')).toBeHidden()
   await expect(ql.locator('.ql-input')).toBeVisible()
   await expect(ql.locator('.ql-input')).toHaveValue('')
+  await expect(ql.locator('.ql-res').first()).toHaveClass(/sel/)
 })

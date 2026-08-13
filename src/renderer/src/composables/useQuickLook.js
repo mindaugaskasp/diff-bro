@@ -15,10 +15,6 @@ import { t } from '../i18n'
 // convert tools only; diffs stay in the main window.
 
 const MAX_PREVIEW_CHARS = 4000
-// A textarea handles any text, so the language is not the gate — only tooling
-// the launcher lacks is. A secret is refused because its guarantee is that the
-// contents never render where they can be read.
-const NEEDS_MAIN_WINDOW = new Set(['mermaid', 'claude'])
 
 export function useQuickLook() {
   const snippets = useSnippetStore()
@@ -103,7 +99,7 @@ export function useQuickLook() {
 
   // add() pushes onto this window's own entries, so the list updates without a
   // reload; the main window picks it up on its next reload().
-  const compose = useQuickLookCompose({ snippets })
+  const compose = useQuickLookCompose({ snippets, current })
   const startCompose = () => compose.open({ name: query.value.trim() })
 
   function choose(i) {
@@ -134,8 +130,14 @@ export function useQuickLook() {
 
   // Separate Pinia instance from the main window — re-read the snippet library on
   // each summon to reflect changes made there.
+  //
+  // A summon is otherwise a fresh start, EXCEPT where the card holds work: a
+  // draft mid-sentence or a tool panel mid-conversion. Two presses of the chord
+  // in a row is how the launcher is dismissed and brought back, and it used to
+  // throw both away.
   function refresh() {
     snippets.reload()
+    if (compose.dirty.value || convertTool.value) return
     query.value = ''
     selected.value = 0
     snippetText.value = ''
@@ -145,21 +147,6 @@ export function useQuickLook() {
     handoff.reset()
     convertTool.value = null
     compose.cancel()
-  }
-
-  const canEditInline = computed(() => {
-    const it = current.value
-    return it?.kind === 'snippet' && !it.secret && !NEEDS_MAIN_WINDOW.has(it.lang)
-  })
-  // Loads the FULL body — snippetText here is truncated for preview, and saving
-  // that back would amputate anything past MAX_PREVIEW_CHARS.
-  async function editCurrent() {
-    const it = current.value
-    if (!canEditInline.value) return
-    const text = await snippets.load(it.id)
-    if (typeof text !== 'string') return
-    const { id, name, tags, language } = it
-    compose.open({ id, name, tags, content: text, language })
   }
 
   // Rows are [glyph, message id]; utils/ cannot translate, so t() runs here.
@@ -227,7 +214,7 @@ export function useQuickLook() {
     lastTool,
     exitConvert,
     compose,
-    canEditInline,
-    editCurrent
+    canEditInline: compose.canEdit,
+    editCurrent: compose.editCurrent
   }
 }

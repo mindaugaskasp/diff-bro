@@ -3,16 +3,12 @@ import { toggleTag } from '../utils/tagFilter'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useUiStore } from '../stores/uiStore'
 import { useVaultStore } from '../stores/vaultStore'
-import { useSettingsStore } from '../stores/settingsStore'
-import { MAX_TAG_ROWS, MIN_TAG_ROWS, TAGS_PER_ROW, clampNumber } from '../utils/settingsDefaults'
 
 // Diffs and snippets are what the sidebar is FOR; an unbounded tag bar pushed
-// them into a sliver the moment a library grew past a few dozen tags. The rest
-// live behind the picker, which is searchable and so is better at fifty tags
-// than the flat wall ever was.
-//
-// A tall screen has room the default two rows do not use, so the depth is a
-// setting (MIN_TAG_ROWS is the floor as well as the default).
+// them into a sliver the moment a library grew past a few dozen tags. What the
+// shelf cannot hold at its dragged depth lives behind the picker, which is
+// searchable and so is better at fifty tags than the flat wall ever was.
+// How deep it is dragged and what fits there belong to useTagShelf.
 
 /** One tag filter across the whole sidebar: the union of diff + snippet tags. */
 export function useSidebarTags() {
@@ -34,35 +30,9 @@ export function useSidebarTags() {
       .sort((a, b) => b.count - a.count)
   })
 
-  // Selected tags come first whatever their count: a filter you cannot see is
-  // worse than one you cannot reach, and rank alone would hide your own choice
-  // behind "+42 more".
-  const limit = computed(
-    () =>
-      TAGS_PER_ROW *
-      clampNumber(useSettingsStore().tagShelfRows, MIN_TAG_ROWS, MIN_TAG_ROWS, MAX_TAG_ROWS)
-  )
-  const bar = computed(() => {
-    const chosen = all.value.filter((t) => active.value.includes(t.name))
-    const rest = all.value.filter((t) => !active.value.includes(t.name))
-    const ordered = [...chosen, ...rest]
-    const cap = Math.max(limit.value, chosen.length)
-    // "+1 more" would occupy the very slot the one hidden tag could fill.
-    return ordered.length === cap + 1 ? ordered : ordered.slice(0, cap)
-  })
-
-  // What the "+N more" picker holds: exactly the tags the bar could not show.
-  const hidden = computed(() => {
-    const shown = new Set(bar.value.map((t) => t.name))
-    return all.value.filter((t) => !shown.has(t.name))
-  })
-
   return {
     active,
     all,
-    bar,
-    hidden,
-    overflow: computed(() => all.value.length - bar.value.length),
     pick: (name) => (ui.sidebarTags = toggleTag(ui.sidebarTags, name)),
     clear: () => (ui.sidebarTags = [])
   }

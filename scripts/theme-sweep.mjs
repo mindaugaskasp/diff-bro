@@ -682,6 +682,47 @@ const SURFACES = [
     }
   },
   {
+    name: 'snippet-colour',
+    // A colour the reader picked, painted across the row, plus the popover that
+    // sets it. Both are composed rather than tokenised — the row's ground is the
+    // picked ink re-lightened to --tag-l and mixed 16% into the panel, so no
+    // static scan can know what it lands on. The row's meta ink is the reason
+    // this surface exists: at --text-dim it falls under the 3.0 floor on nord
+    // (2.97) and sepia (2.72), which is why the coloured row steps to
+    // --text-hint and why that step is measured here on all twenty.
+    open: async (page) => {
+      const row = page.locator('.snippets-section .row').first()
+      await row.waitFor()
+      await row.click({ button: 'right' })
+      await page.locator('.rcm').waitFor()
+      // Teal: the darkest of the six once re-lightened on a light ground, so the
+      // wash it makes is the worst case the name has to stay readable on.
+      await page.locator('.rcm [data-color="teal"]').click()
+      await page.locator('.rcm').waitFor({ state: 'detached' })
+      await page.locator('.row[data-color]').first().waitFor()
+      // Reopened, so the menu's own inks are on screen to measure with it.
+      await row.click({ button: 'right' })
+      await page.locator('.rcm').waitFor()
+      await page.locator('.rcm [data-color="rose"]').hover()
+    },
+    // Put the library back the way the rest of the walk expects it.
+    close: async (page) => {
+      await page.locator('.rcm [data-color="none"]').click()
+      await page.locator('.rcm').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'name on a coloured row': ['.row[data-color] .nm', TEXT],
+      'age on a coloured row': ['.row[data-color] .when', DIM],
+      'menu label': ['.rcm-hd', DIM],
+      // The card the popover floats on, and the keyline that separates it from
+      // whatever it covers.
+      'menu keyline': ['.rcm', SEPARATOR, 'border'],
+      // The cursor's mark: an accent keyline is the only thing saying which
+      // target a keypress would take.
+      'cursor keyline': ['.rcm-sw.hot', DIM, 'border']
+    }
+  },
+  {
     name: 'waiting-for-second',
     // One side loaded. Dashed rim, tag, name and hint all sit on the pane
     // ground, and the rim is the affordance that says the slot is droppable.

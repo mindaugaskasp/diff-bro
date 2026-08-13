@@ -15,6 +15,7 @@ import TextToolDialog from './TextToolDialog.vue'
 import EncryptDecryptDialog from './EncryptDecryptDialog.vue'
 import SnippetEditorDialog from './SnippetEditorDialog.vue'
 import SnippetHistoryDialog from './SnippetHistoryDialog.vue'
+import SnippetColorMenu from './SnippetColorMenu.vue'
 import SnippetPassphraseDialog from './SnippetPassphraseDialog.vue'
 import SnippetDeleteDialog from './SnippetDeleteDialog.vue'
 import SnippetFillDialog from './SnippetFillDialog.vue'
@@ -75,6 +76,7 @@ const conflicts = useConflictsStore()
   <EncryptDecryptDialog v-if="ui.showCryptDialog" />
   <SnippetEditorDialog v-if="snippets.editingSnippet" />
   <SnippetHistoryDialog v-if="ui.snippetHistory" />
+  <SnippetColorMenu v-if="ui.rowColorMenu" />
   <SnippetPassphraseDialog v-if="snippets.pendingExport || snippets.pendingImport" />
   <SnippetDeleteDialog v-if="snippets.pendingDelete" />
   <SnippetFillDialog v-if="snippets.pendingFill" />

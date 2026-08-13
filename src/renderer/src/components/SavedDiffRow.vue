@@ -19,6 +19,7 @@ import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import { useShareStore } from '../features/share'
 import { useUiStore } from '../stores/uiStore'
+import { useRowTags } from '../composables/useRowTags'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../types').VaultEntry>} */
@@ -41,7 +42,10 @@ const SOON_MS = 15 * 60_000
 const isNew = computed(() => ui.lastCreatedRowId === props.entry.id)
 const formatKey = computed(() => rowFormatKey(props.entry))
 const mono = computed(() => languageMonogram(formatKey.value))
-const shownTags = computed(() => rowTags(props.entry))
+const { shown: shownTags, showing: showTags } = useRowTags(() => rowTags(props.entry))
+// With the words off the second line has nothing left to say unless the diff
+// came from someone — an empty one holds its own height open.
+const hasSubline = computed(() => showTags.value || !!props.entry.from)
 const tagColor = (t) => snippets.colorOf(t) || 'var(--text-dim)'
 
 const title = computed(() => {
@@ -128,7 +132,7 @@ function onDragStart(e) {
                is information a ten-second-old snippet's age is not. -->
           <span v-if="isNew" class="new-badge">{{ $t('newRow.badge') }}</span>
         </span>
-        <span class="l2">
+        <span v-if="hasSubline" class="l2">
           <template v-if="entry.from">
             <span class="from">{{ $t('savedDiffRow.from', { who: entry.from }) }}</span>
             <span class="trust-mark" :data-tip="$t('savedDiffRow.verifiedTheSignatureMatchedA')">

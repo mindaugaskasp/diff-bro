@@ -131,3 +131,34 @@ describe('a code block that opens and closes on one line', () => {
     expect(parseJira('{code}{code}')[0]).toEqual({ type: 'code', code: '' })
   })
 })
+
+// `||head||` opens a table, `|cell|` continues it — the same block shape
+// markdownRender emits, so one component draws both.
+describe('parseJira — tables', () => {
+  it('reads a header row and its body rows', () => {
+    const [t] = parseJira('||A||B||\n|1|2|\n|3|4|')
+    expect(t.type).toBe('table')
+    expect(t.head.map((c) => c[0].value)).toEqual(['A', 'B'])
+    expect(t.rows.map((r) => r.map((c) => c[0].value))).toEqual([
+      ['1', '2'],
+      ['3', '4']
+    ])
+  })
+
+  it('takes a table with no header at all, which Jira renders too', () => {
+    const [t] = parseJira('|1|2|')
+    expect(t.head).toEqual([])
+    expect(t.rows).toHaveLength(1)
+  })
+
+  it('renders inline markup inside a cell', () => {
+    const [t] = parseJira('||A||\n|*bold*|')
+    expect(t.rows[0][0][0].type).toBe('strong')
+  })
+
+  it('ends at the first line that is not a row', () => {
+    const blocks = parseJira('||A||\n|1|\nafter')
+    expect(blocks[0].rows).toHaveLength(1)
+    expect(blocks[1].type).toBe('paragraph')
+  })
+})

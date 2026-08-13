@@ -1,10 +1,11 @@
 <script setup>
 // The sidebar shell: a search + a segmented filter (All / Saved / External /
 // Snippets) over one scroll; each group is its own component.
-import { nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSidebarResize } from '../composables/useSidebarResize'
 import { useSidebarTags } from '../composables/useSidebarTags'
+import { useTagShelf } from '../composables/useTagShelf'
 import { useTagShelfResize } from '../composables/useTagShelfResize'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
@@ -23,8 +24,13 @@ const settings = useSettingsStore()
 const ui = useUiStore()
 const tags = useSidebarTags()
 const size = useSidebarResize()
-const shelf = ref(null)
-const shelfSize = useTagShelfResize(shelf)
+const shelfEl = ref(null)
+const shelf = useTagShelf(shelfEl, {
+  all: tags.all,
+  active: tags.active,
+  height: computed(() => settings.tagShelfHeight)
+})
+const shelfSize = useTagShelfResize(shelfEl, { fullHeight: shelf.fullHeight })
 
 const searchBox = ref(null)
 const aside = ref(null)
@@ -104,37 +110,51 @@ const showAllTags = ref(false)
             <AppIcon name="star-filled" />
           </button>
         </div>
-        <div v-if="tags.all.value.length" ref="shelf" class="usb-tags">
-          <button
-            v-for="t in tags.bar.value"
-            :key="t.name"
-            class="tag-chip usb-tag"
-            :class="{ on: tags.active.value.includes(t.name) }"
-            :style="{ '--tc': t.color }"
-            :data-tip="$t('savedDiffs.filterByTag', { name: t.name })"
-            @click="tags.pick(t.name)"
-            @contextmenu.prevent="managing = t.name"
+        <div v-if="tags.all.value.length" class="usb-tags">
+          <!-- Clipped to the dragged depth; useTagShelf measures what fits. -->
+          <div
+            ref="shelfEl"
+            class="usb-shelf"
+            :style="{ maxHeight: `${settings.tagShelfHeight}px` }"
           >
-            <span class="usb-dot" />{{ t.name }}
-            <span class="usb-tct">{{ t.count }}</span>
-          </button>
-          <button
-            v-if="tags.overflow.value > 0"
-            class="tag-chip usb-more"
-            :data-tip="$t('savedDiffs.collapsedTagsSearchable')"
-            @click="showAllTags = true"
-          >
-            {{ $t('savedDiffs.plusMore', { n: tags.overflow.value }) }}
-          </button>
+            <button
+              v-for="t in shelf.bar.value"
+              :key="t.name"
+              class="tag-chip usb-tag"
+              :class="{ on: tags.active.value.includes(t.name) }"
+              :style="{ '--tc': t.color }"
+              :data-tag="t.name"
+              :data-tip="$t('savedDiffs.filterByTag', { name: t.name })"
+              @click="tags.pick(t.name)"
+              @contextmenu.prevent="managing = t.name"
+            >
+              <span class="usb-dot" />{{ t.name }}
+              <span class="usb-tct">{{ t.count }}</span>
+            </button>
+            <button
+              v-if="shelf.overflow.value > 0"
+              class="tag-chip usb-more"
+              :data-tip="$t('savedDiffs.collapsedTagsSearchable')"
+              @click="showAllTags = true"
+            >
+              {{ $t('savedDiffs.plusMore', { n: shelf.overflow.value }) }}
+            </button>
+          </div>
         </div>
         <div
           v-if="tags.all.value.length"
           class="usb-shelf-grip"
           :class="{ resizing: shelfSize.resizing.value }"
           role="separator"
+          tabindex="0"
           aria-orientation="horizontal"
           :aria-label="$t('savedDiffs.dragToDeepenTheTag')"
+          :aria-valuenow="shelf.rows.value"
+          aria-valuemin="1"
+          :aria-valuemax="shelf.rows.value + 1"
           @pointerdown="shelfSize.start"
+          @dblclick="shelfSize.toggle"
+          @keydown="shelfSize.onKeydown"
         ></div>
         <div v-if="tags.active.value.length" class="usb-filtering">
           <span>
@@ -152,7 +172,7 @@ const showAllTags = ref(false)
       <TagManagePopover v-if="managing" :name="managing" @close="managing = ''" />
       <TagPickerPopover
         v-if="showAllTags"
-        :tags="tags.hidden.value"
+        :tags="shelf.hidden.value"
         :active="tags.active.value"
         @pick="tags.pick"
         @close="showAllTags = false"

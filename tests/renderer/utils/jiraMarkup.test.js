@@ -140,3 +140,31 @@ describe('JIRA_ACTIONS', () => {
     expect(byId.code.syntax).toBe('{{text}}')
   })
 })
+
+// Jira nests by REPEATING the marker (`**` is a second-level bullet), which is
+// the one place its toolbar cannot share Markdown's transform.
+describe('applyJiraAction — nesting and tables', () => {
+  const at = (text, start, end = start) => ({ text, start, end })
+
+  it('repeats the marker to step in, and drops one to step out', () => {
+    const inOnce = applyJiraAction('indent', at('* one\n* two', 0, 11))
+    expect(inOnce.text).toBe('** one\n** two')
+    const back = applyJiraAction('outdent', at(inOnce.text, inOnce.start, inOnce.end))
+    expect(back.text).toBe('* one\n* two')
+  })
+
+  it('keeps a numbered item numbered when it steps in', () => {
+    expect(applyJiraAction('indent', at('# one', 0, 5)).text).toBe('## one')
+  })
+
+  it('leaves a non-list line alone, and never eats the last marker', () => {
+    expect(applyJiraAction('indent', at('plain text', 0, 10)).text).toBe('plain text')
+    expect(applyJiraAction('outdent', at('* one', 0, 5)).text).toBe('* one')
+  })
+
+  it('drops in a table skeleton with the first heading selected', () => {
+    const out = applyJiraAction('table', at('', 0))
+    expect(out.text).toBe('||Column||Column||\n| | |\n')
+    expect(out.text.slice(out.start, out.end)).toBe('Column')
+  })
+})

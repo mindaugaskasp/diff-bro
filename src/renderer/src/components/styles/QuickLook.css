@@ -120,6 +120,26 @@
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
+/* A snippet's own colour, painted as the sidebar row paints it (SnippetRow.css).
+   Selection stays legible on top: the accent keyline returns and the wash steps
+   to its hover strength, so neither cue hides the other. */
+.ql-res[data-color] {
+  --snip-ink: oklch(from var(--snip-color) var(--tag-l) c h);
+  background: color-mix(in srgb, var(--snip-ink) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--snip-ink);
+}
+.ql-res[data-color]:hover,
+.ql-res[data-color].sel {
+  background: color-mix(in srgb, var(--snip-ink) 26%, transparent);
+}
+.ql-res[data-color].sel {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.ql-res[data-color] .ql-kind,
+.ql-res[data-color] .tag-word {
+  color: var(--text-hint);
+}
+
 /* Seam above the collapsible Tools header: a horizontal divider so it reads as a
    separate section while staying one keyboard list. */
 .ql-res.group-start {

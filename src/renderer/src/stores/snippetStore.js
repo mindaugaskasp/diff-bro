@@ -22,6 +22,8 @@ import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
 import { tagActions } from './snippetTags'
+import { colorActions } from './snippetColor'
+import { EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET } from '../utils/snippetExamples'
 import { historyActions } from './snippetHistory'
 import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
 
@@ -51,31 +53,6 @@ function readState() {
   const state = migrate(parsed, t('snippetNotices.untitledSnippet'))
   savePersisted('snippets', JSON.stringify(state)) // write the migrated shape back
   return state
-}
-
-// Seeded into an empty library so a first-time user sees a real snippet.
-export const EXAMPLE_SNIPPET = {
-  nameKey: 'snippetNotices.exampleMermaidDiagram',
-  language: 'mermaid',
-  tags: ['example'],
-  content: `flowchart TD
-    A[New snippet] --> B{Syntax?}
-    B -- Mermaid --> C[Live diagram preview]
-    B -- Anything else --> D[Syntax-highlighted text]
-    C --> E[Expand for a zoomable view]
-    C --> F[Encrypted at rest, like every snippet]
-    D --> F`
-}
-
-// Seeded alongside the Mermaid example: a Claude prompt showing {{variables}} —
-// copying it asks you to fill them in first (see SnippetFillDialog).
-export const CLAUDE_EXAMPLE_SNIPPET = {
-  nameKey: 'snippetNotices.exampleClaudeReviewPrompt',
-  language: 'claude',
-  tags: ['example', 'prompt'],
-  content: `Review the {{language}} changes in {{file}} for correctness, edge cases, and {{concern}}.
-
-Reply with a prioritized list — most critical first — and suggest a fix for each.`
 }
 
 // Effective syntax: the explicit language, else the `detected` one recorded at
@@ -325,6 +302,7 @@ export const useSnippetStore = defineStore('snippets', {
     // list cannot cross the boundary — no guard needed, and none to drift.
     reorder: reorderAction((s, name) => (name in GROUPS ? group(s.entries, name) : null)),
     ...tagActions,
+    ...colorActions,
     ...historyActions,
     /**
      * Remove a tag from the registry. By default the records keep living and

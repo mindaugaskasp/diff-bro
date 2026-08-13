@@ -154,6 +154,20 @@ describe('settingsStore', () => {
     expect(useSettingsStore().showShortcutBar).toBe(false)
   })
 
+  // The tag word beside a name on every sidebar row. On unless it has been
+  // turned off — a missing key is a library that never asked, not a hidden one.
+  it('shows row tags by default, and remembers being told not to', () => {
+    const s = useSettingsStore()
+    expect(s.showRowTags).toBe(true)
+    s.setShowRowTags(false)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().showRowTags).toBe(false)
+
+    useSettingsStore().setShowRowTags(true)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().showRowTags).toBe(true)
+  })
+
   it('drag-reorders a section to land just before its drop target', () => {
     const s = useSettingsStore()
     s.reorderSections('snippets', 'saved') // drop snippets before saved

@@ -66,6 +66,8 @@ export const snippetRows = (entries, languageOf) =>
         name: e.name,
         tags: e.tags ?? [],
         secret: isSecret(e),
+        // The launcher lists the same snippet, so it wears the same colour.
+        color: e.color ?? null,
         // What is stored ('auto' or an explicit id) — an inline edit must save
         // this back, never the resolved value below.
         language: e.language,

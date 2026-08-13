@@ -45,6 +45,22 @@ h6.ji-h {
 .ji-list li {
   margin: 0.15em 0;
 }
+/* A task list is a list of STATES, so it drops the bullet the state replaces
+   and lines the boxes up with the text beside them. The box is inert — this is a
+   preview of a snippet, not a checklist to tick. */
+.ji-list.ji-tasks {
+  padding-inline-start: 0.2em;
+  list-style: none;
+}
+.ji-task {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.ji-task input {
+  accent-color: var(--accent);
+  margin: 0;
+}
 .ji-quote {
   margin: 0.5em 0;
   padding: 0.2em 0.9em;

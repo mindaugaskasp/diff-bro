@@ -2,6 +2,7 @@
 // core store, which is the one thing this slice reaches for.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { DEFAULT_TAG_SHELF_PX } from '../../../../src/renderer/src/utils/tagShelf'
 import { useConfigBackupStore } from '../../../../src/renderer/src/features/configBackup'
 import { useDiffStore } from '../../../../src/renderer/src/stores/diffStore'
 import { useSettingsStore } from '../../../../src/renderer/src/stores/settingsStore'
@@ -89,13 +90,13 @@ describe('what the archive carries', () => {
   it('takes every setting, not just the theme', async () => {
     const settings = useSettingsStore()
     settings.setTheme('nord')
-    settings.setLimit('tagShelfRows', 7)
+    settings.setLimit('tagShelfHeight', 78)
     settings.setAutoCloseOldest(true)
     settings.setShutterSound(false)
 
     const bundle = await useConfigBackupStore()._bundle()
     expect(bundle.settings.theme).toBe('nord')
-    expect(bundle.settings.tagShelfRows).toBe(7)
+    expect(bundle.settings.tagShelfHeight).toBe(78)
     expect(bundle.settings.autoCloseOldest).toBe(true)
     expect(bundle.settings.shutterSound).toBe(false)
   })
@@ -125,7 +126,7 @@ describe('restoring an archive', () => {
   it('puts every setting back, not just the theme', async () => {
     const settings = useSettingsStore()
     settings.setTheme('nord')
-    settings.setLimit('tagShelfRows', 9)
+    settings.setLimit('tagShelfHeight', 104)
     settings.setAutoCloseOldest(true)
     settings.setShutterSound(false)
     settings.sectionOrder = ['tools', 'snippets', 'saved', 'external']
@@ -136,12 +137,12 @@ describe('restoring an archive', () => {
     setActivePinia(createPinia())
     localStorage.clear()
     const fresh = useSettingsStore()
-    expect(fresh.tagShelfRows).toBe(2)
+    expect(fresh.tagShelfHeight).toBe(DEFAULT_TAG_SHELF_PX)
     expect(fresh.autoCloseOldest).toBe(false)
 
     fresh.restoreState(archived.settings)
     expect(fresh.userTheme).toBe('nord')
-    expect(fresh.tagShelfRows).toBe(9)
+    expect(fresh.tagShelfHeight).toBe(104)
     expect(fresh.autoCloseOldest).toBe(true)
     expect(fresh.shutterSound).toBe(false)
     expect(fresh.sectionOrder).toEqual(['tools', 'snippets', 'saved', 'external'])

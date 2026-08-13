@@ -11,12 +11,14 @@ import { join } from 'path'
 import { DEV_URL } from './env'
 import { readSettings } from './appData'
 import { appendLog } from './logger'
-import { allowsWhileFocused } from './quickLookFocus'
+import { allowMainFocus, hideLauncher, isCapturingShortcut } from './quickLookFocus'
 import { defaultQuickLookShortcut } from '../shared/shortcuts'
 import {
+  keepOnScreen,
   placeWindow,
   displayForPoint,
   launcherDiagnostics,
+  launcherSize,
   launcherSpaceBehavior,
   needsMainWindow,
   storedAccelerator,
@@ -28,6 +30,9 @@ import {
 const DEFAULT_ACCELERATOR = defaultQuickLookShortcut(process.platform)
 
 let win = null
+// Which size the card is at. Survives a hide, so re-summoning mid-draft brings
+// back the window the draft was being written in.
+let mode = 'default'
 // The accelerator currently registered, so a change unregisters exactly it.
 let currentAccelerator = null
 // Injected by registerQuickLook, so this module never owns the main window.
@@ -36,10 +41,14 @@ let createMain = null
 function build() {
   const w = new BrowserWindow({
     // The card is flat and fills the window, so these are its exact dimensions.
-    width: 692,
-    height: 452,
+    ...launcherSize(mode),
     show: false,
     frame: false,
+    // The launcher is summoned OVER another app, so it is showing while Diff Bro
+    // is not the active app. Without this macOS spends the first click on
+    // activating the window and never delivers it — every row and button in the
+    // card ignored the first press.
+    acceptsFirstMouse: true,
     transparent: true,
     backgroundColor: '#00000000',
     resizable: false,
@@ -103,7 +112,7 @@ export const isLauncher = (candidate) => !!candidate && candidate === win
 // Also ends the un-focusable state hideLauncher leaves behind, without which
 // focus() below is a silent no-op.
 export function ensureMainWindow() {
-  allowMainFocus()
+  allowMainFocus(mainWindow())
   const main = needsMainWindow(BrowserWindow.getAllWindows(), win) ? createMain?.() : mainWindow()
   if (!main) return null
   if (main.isMinimized()) main.restore()
@@ -134,77 +143,61 @@ function logDiag(event, displays, cursor, launcher) {
   })
 }
 
-// Repositioned every summon onto the display holding the pointer.
+// Repositioned every summon onto the display holding the pointer, at whatever
+// size its current job asks for.
 function reveal() {
   const w = ensure()
   const point = screen.getCursorScreenPoint()
   const displays = screen.getAllDisplays()
   const display = displayForPoint(displays, point) ?? screen.getPrimaryDisplay()
-  const { x, y } = placeWindow(display.workArea, w.getBounds())
-  logDiag('reveal', displays, point, {
-    x,
-    y,
-    width: w.getBounds().width,
-    height: w.getBounds().height
-  })
-  w.setPosition(x, y)
+  const size = launcherSize(mode, display.workArea)
+  const { x, y } = placeWindow(display.workArea, size)
+  logDiag('reveal', displays, point, { x, y, ...size })
+  resize(w, { x, y, ...size })
   // Separate Pinia instance — the renderer re-reads its library and refocuses.
   w.webContents.send('quicklook:show')
   w.show()
   w.focus()
 }
 
-// On macOS, hiding the launcher while DiffBro is active raises the app's next
-// window (the main window) to the front. app.hide() would prevent that but hides
-// the main window too, which the next summon then drags back up. So instead make
-// the main window briefly non-focusable: the OS can't make it key, the app
-// deactivates back to the previous app, and the main window stays put.
-// The un-focusable window above is a timed state, so anything that wants to
-// focus the main window must end it first — otherwise focus() is a silent no-op
-// and the window surfaces without keyboard focus.
-let refocusTimer = null
-export function allowMainFocus() {
-  if (refocusTimer) {
-    clearTimeout(refocusTimer)
-    refocusTimer = null
-  }
-  const main = mainWindow()
-  if (main && !main.isDestroyed()) main.setFocusable(true)
+function dismiss() {
+  logDiag('hide', screen.getAllDisplays(), screen.getCursorScreenPoint(), win?.getBounds())
+  hideLauncher({ launcher: win, main: mainWindow(), platform: process.platform })
 }
 
-function hideLauncher() {
-  logDiag('hide', screen.getAllDisplays(), screen.getCursorScreenPoint(), win?.getBounds())
-  if (process.platform !== 'darwin') {
-    win?.hide()
-    return
-  }
-  const main = mainWindow()
-  if (main && main.isVisible() && !main.isMinimized()) {
-    main.setFocusable(false)
-    win?.hide()
-    if (refocusTimer) clearTimeout(refocusTimer)
-    refocusTimer = setTimeout(() => {
-      refocusTimer = null
-      if (!main.isDestroyed()) main.setFocusable(true)
-    }, 300)
-  } else {
-    win?.hide()
-  }
+// The renderer names the JOB and main decides what it is worth in pixels. It
+// grows from where the card already IS: re-centring slides the row under the
+// pointer away mid-click.
+function setMode(next) {
+  mode = next === 'compose' ? 'compose' : 'default'
+  const w = ensure()
+  const at = w.getBounds()
+  const display = screen.getDisplayMatching(at)
+  const size = launcherSize(mode, display.workArea)
+  resize(w, { ...keepOnScreen(at, size, display.workArea), ...size })
+}
+
+// The card is not the reader's to resize, but `resizable: false` is documented
+// to lock the min/max size on Windows — where it would silently refuse this and
+// leave the compose card at the resting size. Lifted for the write only; macOS
+// and Linux do not need it and are unaffected.
+function resize(w, bounds) {
+  w.setResizable(true)
+  w.setBounds(bounds)
+  w.setResizable(false)
 }
 
 export function toggleQuickLook() {
   const w = ensure()
-  if (w.isVisible()) hideLauncher()
+  if (w.isVisible()) dismiss()
   else reveal()
 }
 
-// Global-shortcut entry point only (menu/IPC toggle unconditionally): skip
-// revealing when you're already in the app, e.g. capturing a new shortcut in
-// Settings — the keypress would otherwise pop the launcher over the field.
+// Global-shortcut entry point only (menu/IPC toggle unconditionally): the one
+// thing it must not interrupt is the Settings capture field, where the chord
+// being typed IS the input.
 function onShortcut() {
-  const w = ensure()
-  const main = BrowserWindow.getAllWindows().find((x) => x !== w)
-  if (!w.isVisible() && main?.isFocused() && !allowsWhileFocused()) return
+  if (!ensure().isVisible() && isCapturingShortcut()) return
   toggleQuickLook()
 }
 
@@ -239,7 +232,8 @@ export function registerQuickLook(openMainWindow) {
   if (!res.ok) registerShortcut(DEFAULT_ACCELERATOR)
   ipcMain.handle('quicklook:toggle', () => toggleQuickLook())
   ipcMain.handle('quicklook:setShortcut', (_e, accel) => registerShortcut(accel))
-  ipcMain.handle('quicklook:hide', () => hideLauncher())
+  ipcMain.handle('quicklook:hide', () => dismiss())
+  ipcMain.handle('quicklook:mode', (_e, next) => setMode(next))
   ipcMain.handle('quicklook:open', (_e, payload) => openInMain(payload))
   // Process-wide OS registrations — release on quit.
   app.on('will-quit', () => globalShortcut.unregisterAll())
@@ -250,4 +244,6 @@ export function registerQuickLook(openMainWindow) {
 export function destroyQuickLook() {
   if (win && !win.isDestroyed()) win.destroy()
   win = null
+  // The draft went with the renderer, so the card it was written in goes too.
+  mode = 'default'
 }

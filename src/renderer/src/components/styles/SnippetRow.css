@@ -23,6 +23,30 @@
 .row.favorite:hover {
   background: color-mix(in srgb, var(--favorite) 22%, transparent);
 }
+
+/* A colour the reader picked (SnippetColorMenu.vue). The hex is never painted:
+   it is re-lightened to --tag-l, the normalisation a tag's ink already goes
+   through, then mixed into the panel — which is what holds the name at 4.5:1 on
+   all twenty themes (worst: nord, 6.40).
+
+   AFTER .row.favorite on purpose: equal specificity, and a coloured favourite
+   wears the colour while the filled gold star carries the state. */
+.row[data-color] {
+  --snip-ink: oklch(from var(--snip-color) var(--tag-l) c h);
+  background: color-mix(in srgb, var(--snip-ink) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--snip-ink);
+}
+.row[data-color]:hover {
+  background: color-mix(in srgb, var(--snip-ink) 26%, transparent);
+}
+/* --text-dim loses the 3:1 non-text floor on a washed row in nord (2.97) and
+   sepia (2.72); --text-hint is the ink that exists for exactly this and clears
+   4.5:1 on all twenty. */
+.row[data-color] .when,
+.row[data-color] .tag-word,
+.row[data-color] .varchip {
+  color: var(--text-hint);
+}
 /* "Copied" acknowledgement over the action buttons. Anchored to the row, not
    .rowacts, so it survives the pointer leaving (which hides .rowacts). */
 .copied-flash {

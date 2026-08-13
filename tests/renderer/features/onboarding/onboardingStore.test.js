@@ -477,21 +477,6 @@ describe('putting the stage back', () => {
     expect(ui.sidebarQuery).toBe('flags')
   })
 
-  // The step asks the user to press a GLOBAL shortcut that main ignores while
-  // this window is in front. Lifted for the step, put back when it is left —
-  // otherwise the guard that keeps it off the Settings capture field is gone.
-  it('puts the shortcut guard back when the tour ends', () => {
-    const allowed = []
-    window.api.quickLookAllowWhileFocused = (on) => allowed.push(on)
-    const tour = useOnboardingStore()
-    tour.begin()
-    tour.armChord()
-    expect(allowed).toStrictEqual([true])
-
-    tour.skip()
-    expect(allowed.at(-1)).toBe(false)
-  })
-
   it('gives the sidebar back to whoever had collapsed it', () => {
     const settings = useSettingsStore()
     settings.setSidebarCollapsed(true)

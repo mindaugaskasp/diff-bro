@@ -75,3 +75,51 @@ describe('applyMarkdownAction', () => {
     expect(apply('nope', model('x', 0))).toBeNull()
   })
 })
+
+// The four the toolbar gained. Each one is offered only because
+// markdownRender.js renders it — the toolbar and the live preview must never
+// disagree about what the language is.
+describe('applyMarkdownAction — strikethrough, tasks, nesting, tables', () => {
+  const at = (text, start, end = start) => ({ text, start, end })
+
+  it('wraps a selection in ~~, and unwraps it again', () => {
+    const on = applyMarkdownAction('strike', at('gone tomorrow', 0, 4))
+    expect(on.text).toBe('~~gone~~ tomorrow')
+    expect(applyMarkdownAction('strike', at(on.text, on.start, on.end)).text).toBe('gone tomorrow')
+  })
+
+  it('turns lines into task items, and back', () => {
+    const on = applyMarkdownAction('task', at('ship it\nwrite it up', 0, 19))
+    expect(on.text).toBe('- [ ] ship it\n- [ ] write it up')
+    expect(applyMarkdownAction('task', at(on.text, on.start, on.end)).text).toBe(
+      'ship it\nwrite it up'
+    )
+  })
+
+  it('steps a list item in and out by one level of two spaces', () => {
+    const inOnce = applyMarkdownAction('indent', at('- one\n- two', 0, 11))
+    expect(inOnce.text).toBe('  - one\n  - two')
+    const back = applyMarkdownAction('outdent', at(inOnce.text, inOnce.start, inOnce.end))
+    expect(back.text).toBe('- one\n- two')
+  })
+
+  it('leaves a line that is not a list item alone — indenting prose makes a code block', () => {
+    expect(applyMarkdownAction('indent', at('just a sentence', 0, 15)).text).toBe('just a sentence')
+  })
+
+  it('outdenting a top-level item is a no-op rather than eating the marker', () => {
+    expect(applyMarkdownAction('outdent', at('- one', 0, 5)).text).toBe('- one')
+  })
+
+  it('drops in a table skeleton with the first heading selected', () => {
+    const out = applyMarkdownAction('table', at('', 0))
+    expect(out.text).toBe('| Column | Column |\n| --- | --- |\n|  |  |\n')
+    expect(out.text.slice(out.start, out.end)).toBe('Column')
+  })
+
+  it('starts the table on its own line when the caret is mid-line', () => {
+    const out = applyMarkdownAction('table', at('notes', 5))
+    expect(out.text.startsWith('notes\n| Column')).toBe(true)
+    expect(out.text.slice(out.start, out.end)).toBe('Column')
+  })
+})

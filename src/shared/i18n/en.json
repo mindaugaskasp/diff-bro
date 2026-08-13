@@ -419,7 +419,11 @@
     "quote": "Quote",
     "codeBlock": "Code block",
     "link": "Link",
-    "inlineCode": "Inline code"
+    "inlineCode": "Inline code",
+    "taskList": "Task list",
+    "indent": "Indent",
+    "outdent": "Outdent",
+    "table": "Table"
   },
   "formatToolbar": {
     "label": "Formatting",
@@ -862,6 +866,7 @@
     "settingsSections": "Settings sections",
     "theme": "Theme",
     "showTheKeyboardShortcutBar": "Show the keyboard-shortcut bar over diffs",
+    "showTagsOnSidebarRows": "Show tags on sidebar rows",
     "playAShutterSoundWhen": "Play a shutter sound when a diff image is captured",
     "showTipsAfterAnUpdate": "Show tips after an update",
     "showTour": "Show tour",
@@ -1635,7 +1640,8 @@
     "groundLight": "Light",
     "groundDark": "Dark",
     "interfaceLanguage": "Interface language",
-    "behaviour": "Behaviour"
+    "behaviour": "Behaviour",
+    "rowTagsHint": "The tag shelf and the search box still filter by tag."
   },
   "cli": {
     "compare": {
@@ -1690,5 +1696,15 @@
     "cliSnippetName": "{stamp} - cli snippet",
     "flagNeedsValue": "{flag} needs a value.",
     "flagTwice": "{flag} given twice."
+  },
+  "rowColor": {
+    "menuLabel": "Colour",
+    "rose": "Rose",
+    "amber": "Amber",
+    "green": "Green",
+    "teal": "Teal",
+    "blue": "Blue",
+    "violet": "Violet",
+    "none": "No colour"
   }
 }
