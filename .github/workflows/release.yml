@@ -38,6 +38,12 @@ jobs:
           cache: npm
       - run: npm install -g npm@11 --no-fund --no-audit
       - run: npm ci --no-fund
+      # Electron 42 dropped the postinstall that used to fetch the binary: it now
+      # downloads on the first `require('electron')`. Doing it HERE keeps that
+      # download out of the first test (where it reads as a mystery timeout) and
+      # out of electron-vite, which asks for the path and never triggers it.
+      - name: Fetch the Electron binary
+        run: node -e "require('electron')"
       # Electron's runtime libraries + Xvfb + a window manager — the same set the
       # Docker test env installs. openbox is NOT optional: unmanaged, the window
       # takes a different width and the diff panes split 571/572 instead of evenly.

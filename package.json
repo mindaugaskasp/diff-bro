@@ -57,7 +57,7 @@
     "@playwright/test": "^1.61.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitest/coverage-v8": "^4.1.10",
-    "electron": "^39.8.10",
+    "electron": "^42.9.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.7.0",
@@ -75,7 +75,7 @@
     "esbuild@0.25.12": true,
     "fsevents@2.3.3": true,
     "fsevents@2.3.2": true,
-    "electron@39.8.10": true,
-    "vue-demi@0.14.10": true
+    "vue-demi@0.14.10": true,
+    "electron@42.9.0": true
   }
 }
