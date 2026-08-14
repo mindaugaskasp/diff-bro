@@ -41,6 +41,8 @@ export const SHORTCUT_GROUPS = [
       { keys: `${MOD}+K`, labelKey: 'shortcuts.clear' },
       { keys: `${MOD}+Shift+C`, labelKey: 'shortcuts.copyPatch' },
       { keys: `${MOD}+Shift+F`, labelKey: 'shortcuts.copyFile' },
+      { keys: `${MOD}+Shift+1`, labelKey: 'shortcuts.copyLeft' },
+      { keys: `${MOD}+Shift+2`, labelKey: 'shortcuts.copyRight' },
       { keys: `${MOD}+T`, labelKey: 'shortcuts.pasteTextMode' },
       { keys: `${MOD}+V`, labelKey: 'shortcuts.pasteToCompare' }
     ]

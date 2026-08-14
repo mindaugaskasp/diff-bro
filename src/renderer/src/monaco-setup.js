@@ -29,6 +29,19 @@ monaco.editor.addKeybindingRules?.([
   { keybinding: monaco.KeyMod.Shift | monaco.KeyCode.F7, command: null }
 ])
 
+// Monaco's HTML worker builds document symbols by plain recursion with no depth
+// guard (provideFileSymbolsInternal → children.forEach → itself), so an unclosed
+// tag — which nests everything after it — overflows the stack and reaches the
+// reader as a crash report over a file we should just have shown. Nothing here
+// consumes symbols: there is no outline, no breadcrumbs, and the palette that
+// would offer Go to Symbol is unbound above. setModeConfiguration REPLACES, so
+// the rest of the features have to be carried across.
+const htmlDefaults = monaco.languages.html?.htmlDefaults
+htmlDefaults?.setModeConfiguration({
+  ...htmlDefaults.modeConfiguration,
+  documentSymbols: false
+})
+
 self.MonacoEnvironment = {
   getWorker(_, label) {
     if (label === 'json') return new jsonWorker()

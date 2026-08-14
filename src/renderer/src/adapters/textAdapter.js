@@ -13,6 +13,12 @@ const EXT_TO_LANGUAGE = {
   tsx: 'typescript',
   jsx: 'javascript',
   json: 'json',
+  // JSON by spec, and all three routinely carry other languages inside their
+  // string values — a HAR holds whole captured HTML responses. Naming them here
+  // keeps that payload from deciding what the file is.
+  har: 'json',
+  map: 'json',
+  webmanifest: 'json',
   css: 'css',
   scss: 'scss',
   html: 'html',

@@ -41,6 +41,17 @@ export const editMenu = (send, isMac) => ({
       accelerator: 'CmdOrCtrl+Shift+F',
       click: () => send('copy-diff-file')
     },
+    // Shift over the digit that OPENS that side (CmdOrCtrl+1 / +2).
+    {
+      label: t('menu.edit.copyLeft'),
+      accelerator: 'CmdOrCtrl+Shift+1',
+      click: () => send('copy-left')
+    },
+    {
+      label: t('menu.edit.copyRight'),
+      accelerator: 'CmdOrCtrl+Shift+2',
+      click: () => send('copy-right')
+    },
     { label: t('menu.edit.applyPatch'), click: () => send('apply-patch') },
     { type: 'separator' },
     {

@@ -3,6 +3,7 @@
 // miss only lands on plaintext), ordered most-distinctive-first, and bounded —
 // the content can come from a snippet somebody else sealed.
 import { validateJson } from './textFormats'
+import { isClaudeLink } from './claudeLink'
 import { looksLikeMermaid } from './mermaid'
 
 // The picker's options live in src/shared so the CLI prompt offers the same set.
@@ -172,11 +173,13 @@ function looksLikeShell(t) {
 }
 
 // Ordered most-distinctive-first; the first detector to claim the text wins.
+// The two that scan anywhere skip JSON-shaped text, which isJson misses once a
+// file is too big to parse inside the window — else its quoted markup names it.
 const DETECTORS = [
   detectShebang,
-  (t) => (PHP_RE.test(t) ? 'php' : null),
+  (t) => (!jsonShaped(t) && PHP_RE.test(t) ? 'php' : null),
   (t) => (XML_DECL_RE.test(t) ? 'xml' : null),
-  (t) => (HTML_RE.test(t) ? 'html' : null),
+  (t) => (!jsonShaped(t) && HTML_RE.test(t) ? 'html' : null),
   (t) => (looksLikeXml(t) ? 'xml' : null),
   (t) => (looksLikeDockerfile(t) ? 'dockerfile' : null),
   (t) => (looksLikeCss(t) ? 'css' : null),
@@ -198,19 +201,8 @@ const MARKDOWN_FENCE = /^```/m
 // After the code detectors, so a lone `#` can't pre-empt a real program.
 const MARKDOWN_STRONG = [/^#{1,6}\s+\S/m, /\[[^\]]+\]\([^)]+\)/]
 const MARKDOWN_WEAK = [/^[-*+]\s+\S/m, /^\d+\.\s+\S/m, /^>\s+\S/m]
-
-const isJson = (t) => (t[0] === '{' || t[0] === '[') && validateJson(t).valid
-
-// A snippet that is just a claude.ai URL is a stored artifact/chat link. Only
-// the categorisation is done here; opening is gated by the main-process
-// allowlist (src/main/links.js), never by this loose match.
-const CLAUDE_LINK_RE = /^https:\/\/(www\.)?claude\.ai\/\S*$/i
-const isClaudeLink = (t) => !t.includes('\n') && CLAUDE_LINK_RE.test(t)
-
-// First claude.ai URL embedded anywhere in the text — the candidate the row's
-// "Open link" action hands to main, which re-validates it against the allowlist.
-const CLAUDE_URL_G = /https:\/\/(?:www\.)?claude\.ai\/\S*/i
-export const firstClaudeUrl = (t) => String(t ?? '').match(CLAUDE_URL_G)?.[0] ?? null
+const jsonShaped = (t) => t[0] === '{' || t[0] === '['
+const isJson = (t) => jsonShaped(t) && validateJson(t).valid
 
 // A heading or link alone is enough; the weaker list/quote signals (also common
 // in plain prose) must appear at least twice together.

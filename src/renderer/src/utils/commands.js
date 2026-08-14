@@ -37,6 +37,11 @@ export const COMMANDS = {
   },
   'copy-diff': ({ diff }) => diff.copyDiff(),
   'copy-diff-file': ({ diff }) => diff.copyDiffAsFile(),
+  // One side verbatim, rather than the patch between them. The store declines
+  // when that side has no text, which is the same answer the slot gives by
+  // hiding its copy control — so no surface can offer what another refuses.
+  'copy-left': ({ diff }) => diff.copySide('left'),
+  'copy-right': ({ diff }) => diff.copySide('right'),
   'apply-patch': ({ diff }) => diff.applyPatch(),
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),

@@ -89,6 +89,23 @@ const viewSection = (run) => ({
   ]
 })
 
+const editSection = (run) => ({
+  id: 'edit',
+  label: t('menu.edit.title'),
+  items: [
+    { label: t('menu.edit.swapSides'), keys: `${MOD}+Shift+S`, run: () => run('swap') },
+    { label: t('menu.edit.clear'), keys: `${MOD}+K`, run: () => run('clear') },
+    { label: t('menu.edit.copyPatch'), keys: `${MOD}+Shift+C`, run: () => run('copy-diff') },
+    { label: t('menu.edit.copyFile'), keys: `${MOD}+Shift+F`, run: () => run('copy-diff-file') },
+    // Shift over the digit that OPENS that side (MOD+1 / MOD+2).
+    { label: t('menu.edit.copyLeft'), keys: `${MOD}+Shift+1`, run: () => run('copy-left') },
+    { label: t('menu.edit.copyRight'), keys: `${MOD}+Shift+2`, run: () => run('copy-right') },
+    { label: t('menu.edit.applyPatch'), run: () => run('apply-patch') },
+    { sep: true },
+    { label: t('menu.edit.pasteTextMode'), keys: `${MOD}+T`, run: () => run('toggle-paste') }
+  ]
+})
+
 export function buildMenus(run) {
   return [
     {
@@ -131,27 +148,7 @@ export function buildMenus(run) {
         { label: t('menu.file.quit'), paletteHidden: true, run: () => window.api.quit() }
       ]
     },
-    {
-      id: 'edit',
-      label: t('menu.edit.title'),
-      items: [
-        { label: t('menu.edit.swapSides'), keys: `${MOD}+Shift+S`, run: () => run('swap') },
-        { label: t('menu.edit.clear'), keys: `${MOD}+K`, run: () => run('clear') },
-        {
-          label: t('menu.edit.copyPatch'),
-          keys: `${MOD}+Shift+C`,
-          run: () => run('copy-diff')
-        },
-        {
-          label: t('menu.edit.copyFile'),
-          keys: `${MOD}+Shift+F`,
-          run: () => run('copy-diff-file')
-        },
-        { label: t('menu.edit.applyPatch'), run: () => run('apply-patch') },
-        { sep: true },
-        { label: t('menu.edit.pasteTextMode'), keys: `${MOD}+T`, run: () => run('toggle-paste') }
-      ]
-    },
+    editSection(run),
     viewSection(run),
     { id: 'terminal', label: t('menu.terminal.title'), items: terminalItems(run) },
     { id: 'security', label: t('menu.security.title'), items: securityItems(run) },

@@ -12,7 +12,8 @@ import { isSecret } from '../utils/secretSnippet'
 import { snippetSource } from '../utils/snippetSource'
 import { detectTextFormat, formatJson, formatXml } from '../utils/textFormats'
 import { applyUnifiedDiff } from '../utils/unifiedDiff'
-import { diffPatchFile } from '../utils/copyAsFile'
+import { comparedSides } from '../utils/sideText'
+import { copyActions } from './diffCopy'
 import { diffToHtml } from '../utils/diffHtml'
 import { changeRegister, toCsv } from '../utils/changeRegister'
 import { clipboardSnippetName } from '../utils/cliCommand'
@@ -22,10 +23,6 @@ import { sideName } from '../utils/pasteNames'
 import { STREAMED_LIMITS } from '../utils/streamedLimits'
 import { mergeFormatBanner } from '../utils/formatBanner'
 import { t } from '../i18n'
-
-// The builder returns a sentinel for the streamed case so it need not carry the
-// store's own wording for a limit the store already owns.
-const patchError = (reason) => (reason === 'streamed' ? t(STREAMED_LIMITS.copy) : reason)
 
 let noticeTimer = null
 let diskNoticeTimer = null
@@ -39,17 +36,6 @@ function formatHintFor(file, dismissedContent) {
   const pretty = detected.kind === 'json' ? formatJson(file.content) : formatXml(file.content)
   if (pretty.trim() === file.content.trim()) return null // already pretty
   return { kind: detected.kind, valid: true }
-}
-
-// The two compared sides as { name, content }, whether in files or paste mode.
-function comparedSides(s) {
-  if (s.mode === 'paste') {
-    return [
-      s.pasteLeftFile ?? { name: 'Left', content: s.pasteLeft },
-      s.pasteRightFile ?? { name: 'Right', content: s.pasteRight }
-    ]
-  }
-  return [s.left ?? { name: 'Left', content: '' }, s.right ?? { name: 'Right', content: '' }]
 }
 
 const reloadedNote = (names) => {
@@ -587,30 +573,7 @@ export const useDiffStore = defineStore('diff', {
       clearTimeout(diskNoticeTimer)
       this.diskNotice = null
     },
-    // Recompute a clean git-style patch (Monaco's on-screen diff isn't one).
-    // Clipboard goes through main — navigator.clipboard is denied here.
-    async copyDiff() {
-      const file = diffPatchFile(this)
-      if (file.error) return this.showNotice(patchError(file.error))
-      const out = await window.api.copyText(file.content)
-      this.showNotice(
-        out?.ok
-          ? t('diffNotices.unifiedDiffCopiedToClipboard')
-          : t('diffNotices.couldNotCopyTheDiff')
-      )
-    },
-    // The twin: a real .patch file on the clipboard, for a destination that
-    // wants a file rather than characters.
-    async copyDiffAsFile() {
-      const file = diffPatchFile(this)
-      if (file.error) return this.showNotice(patchError(file.error))
-      const out = await window.api.copyAsFile(file.name, file.content)
-      this.showNotice(
-        out?.ok
-          ? t('diffNotices.copiedAsFile', { name: out.name })
-          : t('diffNotices.couldNotCopyThatAs')
-      )
-    },
+    ...copyActions,
     swap() {
       ;[this.left, this.right] = [this.right, this.left]
       // A swapped comparison no longer matches the saved snapshot's side order.

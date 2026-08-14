@@ -1,18 +1,36 @@
+/* The slot is the field; `.open` is the click target that fills it and `.copy`
+   rides at its trailing edge. Height comes from the control scale rather than
+   padding + line-height, so adding the button cannot drift the row. */
 .slot {
   flex: 1;
   min-width: 0;
-  text-align: left;
+  display: flex;
+  align-items: center;
+  height: var(--control-h);
   background: var(--bg);
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   color: var(--text-dim);
-  padding: 6px 10px;
-  cursor: pointer;
+  padding: 0 4px 0 0;
   overflow: hidden;
 }
 .slot.filled {
   border-style: solid;
   color: var(--text);
+}
+.open {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  text-align: left;
+  padding: 0 10px;
+  background: none;
+  border: 0;
+  border-radius: inherit;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
 }
 /* `.hover` is the DRAG-over state (set from JS). This is the pointer one: the
    slot is a button that opens a file dialog, and at rest it reads as a field.
@@ -23,7 +41,7 @@
   border-color: var(--btn-edge);
   box-shadow: var(--shadow-1);
 }
-.slot:active:not(.hover) {
+.slot:has(.open:active):not(.hover) {
   background: var(--btn-face-press);
   box-shadow: none;
 }
@@ -57,4 +75,33 @@
 }
 .placeholder {
   text-transform: capitalize;
+}
+/* Secondary to the slot's own job, so it stays out of the resting row and
+   arrives on hover. It sits BESIDE the name rather than over it, so a pointer
+   can only be on it while the slot is hovered and it is already visible — no
+   invisible target ever takes a click meant for the slot, and suppressing its
+   pointer events would only make it unhittable. Tab reaches it either way, and
+   focus reveals it. */
+.copy {
+  flex: none;
+  opacity: 0;
+}
+/* Full ink, not .btn-icon's --text-dim: revealed is the only state this is ever
+   SEEN in, and dim over the hovered slot's face falls under the 3:1 mark floor
+   on five light themes — sepia 2.09, solar 2.37, bloom 2.58, linen 2.72,
+   meridian 2.91. Measured in e2e/copy-side-themes.spec.mjs. */
+.slot:hover .copy,
+.copy:focus-visible {
+  opacity: 1;
+  color: var(--text);
+}
+.copy:hover {
+  border-color: var(--btn-edge);
+  background: var(--btn-face-hover);
+  color: var(--text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .slot.awaiting {
+    animation: none;
+  }
 }

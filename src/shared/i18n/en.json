@@ -79,7 +79,9 @@
       "copyPatch": "Copy Diff as Patch",
       "copyFile": "Copy Diff as File",
       "applyPatch": "Apply Patch…",
-      "pasteTextMode": "Paste Text Mode"
+      "pasteTextMode": "Paste Text Mode",
+      "copyLeft": "Copy Left Side",
+      "copyRight": "Copy Right Side"
     },
     "view": {
       "title": "View",
@@ -241,7 +243,9 @@
       "splitView": "split view",
       "clear": "clear"
     },
-    "quickLookAppWide": "Quick look-up (works app-wide)"
+    "quickLookAppWide": "Quick look-up (works app-wide)",
+    "copyLeft": "Copy left side",
+    "copyRight": "Copy right side"
   },
   "shortcutBar": {
     "hideTip": "Hide this bar — bring it back in Settings",
@@ -1452,7 +1456,9 @@
     "copiedAsFile": "{name} copied as a file — paste it where you need it.",
     "bothSidesLookLike": "Both sides look like {kind} — pretty-print?",
     "savedExpiresIn": "Saved — expires in {hours} h.",
-    "importedSnippets": "Imported one snippet. | Imported {n} snippets."
+    "importedSnippets": "Imported one snippet. | Imported {n} snippets.",
+    "sideCopied": "Copied {name}",
+    "couldNotCopyTheSide": "Could not copy that side."
   },
   "errorNotices": {
     "unknownError": "Unknown error"
@@ -1612,7 +1618,8 @@
     "hiddenByFilter": "\"{name}\" was added, but the current filter hides it."
   },
   "fileSlot": {
-    "chooseSideFile": "Choose {side} file"
+    "chooseSideFile": "Choose {side} file",
+    "copySide": "Copy {name}"
   },
   "sectionHeader": {
     "dragToReorder": "Drag to reorder"
