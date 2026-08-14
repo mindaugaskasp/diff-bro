@@ -16,6 +16,7 @@ const store = useDiffStore()
         :file="store.left"
         :awaiting="!store.left && !!store.right"
         @pick="store.pick('left')"
+        @copy="store.copySide('left')"
       />
     </div>
     <button
@@ -33,6 +34,7 @@ const store = useDiffStore()
         :file="store.right"
         :awaiting="!store.right && !!store.left"
         @pick="store.pick('right')"
+        @copy="store.copySide('right')"
       />
     </div>
   </div>

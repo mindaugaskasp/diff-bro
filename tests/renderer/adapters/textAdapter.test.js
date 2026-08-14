@@ -48,3 +48,41 @@ describe('textAdapter', () => {
     expect(textAdapter.toComparable({ name: 'noext' }).language).toBe('plaintext')
   })
 })
+
+// A .har is JSON by spec, but it is JSON whose string values hold whole captured
+// HTML responses. Sniffing only sees the first 50k, which cuts a multi-MB
+// capture into unparseable JSON, and the `<div`/`<script` inside those bodies
+// then hands the file to the HTML detector. Monaco parses the WHOLE file as
+// HTML, every unclosed tag nests the next, and its symbol walk recurses until
+// the stack goes.
+describe('a HAR capture is JSON, not the HTML it carries', () => {
+  const harOverDetectLimit = () => {
+    const entry = (i) =>
+      JSON.stringify({
+        request: { url: `https://example.test/page/${i}` },
+        response: {
+          content: {
+            mimeType: 'text/html',
+            text: `<html><body><div class="a"><span>row ${i}</span><script src="x.js">`
+          }
+        }
+      })
+    const entries = Array.from({ length: 400 }, (_, i) => entry(i)).join(',')
+    return `{"log":{"version":"1.2","entries":[${entries}]}}`
+  }
+
+  it('reads a .har as json from its extension', () => {
+    const har = harOverDetectLimit()
+    expect(har.length).toBeGreaterThan(50_000)
+    expect(textAdapter.toComparable({ name: 'session.har', content: har }).language).toBe('json')
+  })
+
+  it('does not call JSON-shaped text HTML even when the sniff window is cut short', () => {
+    // No extension to lean on — the content is all there is to go on.
+    const language = textAdapter.toComparable({
+      name: 'capture',
+      content: harOverDetectLimit()
+    }).language
+    expect(language).not.toBe('html')
+  })
+})

@@ -3,7 +3,7 @@ import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { useCopyFeedback } from './useCopyFeedback'
-import { firstClaudeUrl } from '../utils/detectLanguage'
+import { firstClaudeUrl } from '../utils/claudeLink'
 import { parseTemplateVars } from '../utils/templateVars'
 import { t } from '../i18n'
 

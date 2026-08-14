@@ -37,6 +37,7 @@ const stores = () => ({
     isSavedDiff: false,
     copyDiff: spy(),
     copyDiffAsFile: spy(),
+    copySide: spy(),
     applyPatch: spy(),
     exportDiff: spy(),
     importSnippets: spy(),
