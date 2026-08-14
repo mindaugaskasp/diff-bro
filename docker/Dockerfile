@@ -48,6 +48,11 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 # Linux Electron binaries.
 COPY package.json package-lock.json ./
 RUN npm ci
+# Electron 42 replaced its postinstall with a download on first require(). The
+# volume that shadows node_modules is populated from THIS layer, and the dev
+# server asks electron-vite for the path — which reads path.txt and throws
+# rather than fetching. So the binary is pulled in here, at build time.
+RUN node -e "require('electron')"
 
 COPY . .
 
