@@ -66,31 +66,6 @@ export function defaultFileLimits() {
   return out
 }
 
-export const DEFAULT_SETTINGS = {
-  sectionOrder: [...SECTIONS],
-  shelfOrder: {}, // { [sectionId]: [shelfId, …] }
-  showShortcutBar: true,
-  showRowTags: true,
-  rotateThemeDaily: false,
-  fileSizeLimitsMb: defaultFileLimits(),
-  maxSnippetSizeKb: DEFAULT_MAX_SNIPPET_SIZE_KB,
-  maxExportHeightPx: DEFAULT_MAX_EXPORT_HEIGHT_PX,
-  dialogSizes: {}, // { [key]: { width, height } } from user drag-resizes
-  maximizeDialogs: false,
-  shutterSound: true,
-  restoreSession: true,
-  // On by default: the point is protection from corruption nobody sees coming.
-  autoBackup: true,
-  autoBackupHours: 6,
-  examplesSeeded: false,
-  // Global shortcut for the quick look-up launcher (Electron accelerator form).
-  quickLookShortcut: DEFAULT_QUICKLOOK_SHORTCUT,
-  quickLookShortcutMigrated: true,
-  // Windows only, and ON: pressing X stores the window in the notification area
-  // rather than ending the app, so the global shortcut survives it.
-  closeToTray: true
-}
-
 export const clampNumber = (value, fallback, min, max) => {
   const n = Number(value)
   if (!Number.isFinite(n)) return fallback

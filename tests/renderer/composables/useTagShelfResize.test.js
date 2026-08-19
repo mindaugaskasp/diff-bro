@@ -3,10 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import { useTagShelfResize } from '../../../src/renderer/src/composables/useTagShelfResize'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
-import {
-  DEFAULT_TAG_SHELF_PX,
-  MAX_TAG_SHELF_PX
-} from '../../../src/renderer/src/utils/tagShelf'
+import { DEFAULT_TAG_SHELF_PX, MAX_TAG_SHELF_PX } from '../../../src/renderer/src/utils/tagShelf'
 
 const CHIP_H = 22
 const GAP = 4

@@ -291,6 +291,77 @@ Done. Anchored coach marks over the real controls, split 6 + 4.
 
 ---
 
+## OS integration
+
+```mermaid
+flowchart TD
+  finder["Finder / Explorer<br/>Open with"] --> ev{how it arrives}
+  ev -->|macOS| of["app.on('open-file')<br/>fires BEFORE whenReady"]
+  ev -->|Windows / Linux| argv["argv, cold or second-instance"]
+  of --> route
+  argv --> route["parseOpenWith → allowCliPath → deliver"]
+  route --> cycle{active tab}
+  cycle -->|opened by this flow,<br/>left filled, right empty| right["fill RIGHT"]
+  cycle -->|anything else| left["NEW TAB, fill LEFT"]
+```
+
+Done. Diff Bro is in the OS "Open with" list for text and data files.
+
+- `parseOpenWith` sits BESIDE `parseCli`, never inside it: `cliWords` strips the
+  first path as the entry point, which is exactly the slot the OS uses
+- Fixed a launch-time crash it exposed — two files selected at once parsed the
+  second as a verb, and `index.js` reported the error and `exit(1)` before a
+  window existed
+- Unpackaged, argv[1] is the entry SCRIPT, not a document. Read as one it opened
+  the app's own source
+- The 1-left / 2-right / 3-new-tab cycle is DERIVED from tab state, not counted:
+  a counter desyncs the moment a tab is closed between two opens
+- Finder sends one event per file, so the placements are serialised — otherwise
+  two files that should compare land in two tabs
+- `role: Viewer` / `rank: Alternate`: offered, never the default handler
+- Open: Linux `.desktop` MIME registration is emitted but unverified
+- Open: `.xlsx` is deliberately not associated
+
+---
+
+## Snippets
+
+```mermaid
+stateDiagram-v2
+  [*] --> view: open a snippet
+  view --> plain: Edit, then Plain
+  view --> rendered: Edit, then Rendered
+  plain --> rendered: toggle
+  rendered --> plain: toggle
+  plain --> text: Monaco edits the source
+  rendered --> dom: caret edits the DOM
+  dom --> text: domToBlocks + serialize
+  text --> [*]: Save
+```
+
+Done. The rendered view of a Markdown or Jira snippet is editable — WYSIWYG, not
+a preview.
+
+- Two parsers already emitted ONE block tree, so the read-back is shared
+  (`domToBlocks`) and only the markers differ (`markdownSerialize`,
+  `jiraSerialize`)
+- The DOM is the source of truth while typing; the tree is re-parsed only when
+  the text changes from outside, or the caret jumps to offset 0 on every key
+- An external change REBUILDS the subtree rather than patching it — typing left
+  Vue's vdom stale, and patching from a stale tree corrupts it
+- Paste reads `text/plain` only. The default inserts the clipboard's `text/html`,
+  which is markup landing in the DOM behind Vue's back (rule 8)
+- The toolbar edits the DOM here, not the source: an offset into rendered text
+  does not map onto one into markup — `**bold**` is 8 characters and shows 4
+- Task boxes tick where they are drawn, writing `- [x]` back
+- Round trips normalise spelling, never structure: `* item` → `- item`,
+  `_em_` → `*em*`, `bq.` → `{quote}`. Asserted one by one, so a widening fails
+- Open: `{code:java}` still loses its language — `parseJira` drops it before the
+  tree exists
+- Open: undo/redo does not span the two views; Monaco owns its own stack
+
+---
+
 ## Toolbar
 
 ```mermaid

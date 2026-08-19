@@ -24,6 +24,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { generateKeyPairSync } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { _electron as electron } from '@playwright/test'
+import { THEMES as ALL_THEMES } from '../src/renderer/src/utils/themes.js'
 
 /* global document, getComputedStyle -- inside page.evaluate only */
 
@@ -34,28 +35,9 @@ const OUT = join(ROOT, 'docs/screenshots/themes')
 // here is node, which would run the main bundle as a plain script.
 const ELECTRON = createRequire(import.meta.url)('electron')
 
-const THEMES = [
-  'Light',
-  'Dark',
-  'Solar',
-  'Neon',
-  'Nord',
-  'Sepia',
-  'Dim',
-  'Beacon',
-  'Meridian',
-  'Linen',
-  'Bloom',
-  'Nyan',
-  'Matrix',
-  'Contrast',
-  'Volcano',
-  'Amber',
-  'Tide',
-  'Ember',
-  'Graphite',
-  'Vector'
-]
+// The app's own list, so a new theme cannot ship unswept. Labels: the Settings
+// buttons are named after them.
+const THEMES = ALL_THEMES.map((t) => t.label)
 
 // The floors the repo already runs on. Declared PER PROBE rather than guessed
 // from the label: a regex over the probe name once matched "field label" to the
@@ -442,6 +424,39 @@ const SURFACES = [
     }
   },
   {
+    name: 'rendered-editor',
+    // The rendered view with a caret in it. caret-color is pinned to --text, so
+    // the root's text ratio IS the caret's. The task box is the one pair no
+    // computed check can settle (accent-color hands the tick to the UA).
+    open: async (page) => {
+      await page.getByRole('button', { name: 'New snippet' }).click()
+      const editor = page.getByRole('dialog', { name: 'New Snippet' })
+      await editor.getByPlaceholder('Snippet name…').fill('Rendered')
+      await editor.locator('.lang-picker select').selectOption('markdown')
+      await editor.locator('.editor').click()
+      // Both box states: accent-color only paints once a box is TICKED.
+      await page.keyboard.type(
+        '# Heading\n\nBody with **bold**.\n\n- [x] done\n- [ ] a task\n\n> quoted'
+      )
+      await page.getByRole('button', { name: 'Rendered', exact: true }).click()
+      await page.locator('.rendered-editor').waitFor()
+    },
+    close: async (page) => {
+      await page.locator('.dialog-close').click()
+      const discard = page.locator('.discard-confirm .btn-danger')
+      if (await discard.count()) await discard.click()
+      await page.locator('.dialog-backdrop').waitFor({ state: 'detached' })
+    },
+    probes: {
+      // The editing surface's own ink, and so the caret's.
+      'editable body': ['.rendered-editor', TEXT],
+      heading: ['.rendered-editor .ji-h', TEXT],
+      // Quote ink gives way deliberately, so it answers to the 3:1 floor.
+      quoted: ['.rendered-editor .ji-quote', DIM],
+      'task label': ['.rendered-editor .ji-task', TEXT]
+    }
+  },
+  {
     name: 'tour-callout',
     // Summoned rather than waited for: the tour has usually been seen and
     // recorded by the time the sweep runs.
@@ -754,7 +769,10 @@ const SURFACES = [
       'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
       'loaded tag': ['.wait-slot.filled .wait-tag', DIM],
       'loaded name': ['.wait-slot.filled .wait-name', TEXT],
-      'waiting hint': ['.wait-hint', DIM]
+      'waiting hint': ['.wait-hint', DIM],
+      // The way back from a wrong first file. A real .btn, so it answers to the
+      // reading floor rather than the 3:1 the hint above it takes.
+      'clear control': ['.wait-clear', TEXT]
     }
   },
   {

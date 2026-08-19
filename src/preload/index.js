@@ -173,6 +173,9 @@ contextBridge.exposeInMainWorld('api', {
   // renderer receives that pick. Shared preload → both windows see these, but
   // each only wires the half it uses.
   quickLookToggle: () => ipcRenderer.invoke('quicklook:toggle'),
+  // No argument reads the state; a boolean sets it and returns what took effect.
+  isFullScreen: () => ipcRenderer.invoke('window:fullscreen-state'),
+  setFullScreen: (flag) => ipcRenderer.invoke('window:fullscreen-state', flag === true),
   // Settings → Shortcuts, while its capture field is armed: the chord being
   // typed is the input, so the shortcut must not answer it.
   quickLookCapturingShortcut: (on) => ipcRenderer.send('quicklook:capturing-shortcut', on === true),

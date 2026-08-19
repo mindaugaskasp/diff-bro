@@ -6,10 +6,13 @@ import { computed } from 'vue'
 import { parseMarkdown } from '../utils/markdownRender'
 import JiraRendered from './JiraRendered.vue'
 
-const props = defineProps({ content: { type: String, default: '' } })
+const props = defineProps({
+  content: { type: String, default: '' },
+  tickable: { type: Boolean, default: false }
+})
 const blocks = computed(() => parseMarkdown(props.content))
 </script>
 
 <template>
-  <JiraRendered :blocks="blocks" />
+  <JiraRendered :blocks="blocks" :tickable="tickable" />
 </template>

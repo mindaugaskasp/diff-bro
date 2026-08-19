@@ -125,6 +125,24 @@ merely invents is refused, and reads under `userData` are denied outright — so
 compromised renderer can't turn `file:read` into an arbitrary-file-read primitive
 (SSH keys, tokens, or the key files themselves on installs with no OS keychain).
 
+### Files the OS hands over
+
+An "Open with" launch is a second instance carrying paths and no verb. The paths
+come from the OS, never from the renderer, and they are vouched for in MAIN with
+`allowCliPath` before the command is delivered — the same bounded allow-list
+`diffbro compare` already uses, so `file:read` will serve them and nothing else.
+No IPC handler was added for it: the command rides the existing `cli:command`
+channel and its `cli:ready` pending queue.
+
+Arriving from Finder makes a file no more trusted than one picked in the app. It
+goes through the same `file:read`, the same size caps and the same adapter
+validation. `parseOpenWith` itself is pure — it decides on SHAPE and never
+touches the filesystem, so existence and permission stay the fence's business.
+
+The associations are declared `role: Viewer` / `rank: Alternate`, which puts the
+app in the Open-with LIST without making it the default handler for any
+extension.
+
 ## Saved diffs (vault)
 
 Saved comparisons are AES-256-GCM encrypted at rest with an install-specific key
@@ -343,6 +361,29 @@ confidentiality, not the sender's honesty): the main process validates the
 bundle's shape and enforces count/size caps (`validateSnippetBundle`) before the
 renderer touches it, so a malformed-but-decryptable file can't half-write state
 or blow the localStorage quota. The same check guards the config-restore path.
+
+### Editing the rendered view
+
+A Markdown or Jira snippet's rendered view is editable — the caret sits in real
+`contenteditable` DOM, and every edit is read back out and re-serialized to
+markup. Two things keep that inside rule 8 (no injection sinks):
+
+- **Rendering stays interpolation.** The block tree is drawn by the same
+  `JiraRendered`/`JiraInline` components the read-only preview uses — `v-for` and
+  text interpolation, never `v-html` or `innerHTML`. `contenteditable` lets the
+  _user_ mutate the DOM; it does not parse a string into markup.
+- **Paste reads `text/plain` and nothing else.** A default paste into a
+  contenteditable inserts the clipboard's `text/html` flavour, which is
+  attacker-authored markup (`<img onerror=…>`, `<iframe>`) landing in the DOM
+  behind Vue's back and then being serialized into the user's snippet. So the
+  handler calls `preventDefault()` and inserts only
+  `clipboardData.getData('text/plain')`. **`text/html` is never read** — do not
+  "improve" paste by honouring it.
+
+Reading back (`domToBlocks`) touches only `nodeName`, `childNodes`,
+`textContent` and a fixed class whitelist. Anything the whitelist does not name
+degrades to its `textContent`, so an element that somehow reached the DOM can
+only ever come back out as text — it can never be promoted into markup.
 
 ## Tools → Encrypt/Decrypt Text
 

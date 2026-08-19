@@ -39,6 +39,8 @@ import { useSnippetStore } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
+import { usePresentationKeys } from './composables/usePresentationKeys'
+import { useWindowFocusRefresh } from './composables/useWindowFocusRefresh'
 import { hasStatusBand } from './utils/viewChrome'
 
 const store = useDiffStore()
@@ -66,12 +68,6 @@ usePasteShortcut(() => usePasteToCompareStore().request())
 useSessionPersistence()
 // Mermaid's renderer, pulled in at idle so no first render stops the app.
 useDiagramWarmup()
-// Re-diff + roll the daily theme over when the window regains focus.
-window.addEventListener('focus', () => {
-  store.refreshFromDisk()
-  settings.resolveActiveTheme()
-})
-
 // Reopen last session's comparisons, then let main release any `diffbro`
 // command it was holding for this window.
 onMounted(async () => {
@@ -98,10 +94,12 @@ const {
   handlers: dropHandlers
 } = useWindowFileDrop(store, dropSuppressed)
 useSnippetDiffSync()
+usePresentationKeys()
+useWindowFocusRefresh()
 </script>
 
 <template>
-  <div class="app" v-on="dropHandlers">
+  <div class="app" :class="{ presenting: ui.presenting }" v-on="dropHandlers">
     <MenuBar v-if="!isMac" />
 
     <AppToolbar />
@@ -164,6 +162,7 @@ useSnippetDiffSync()
             :name="(store.left || store.right).name"
             :missing="missingSide"
             @pick="store.pick(missingSide)"
+            @clear="store.clear()"
           />
           <div v-else class="empty">
             <p class="empty-title">{{ $t('app.chooseTwoFiles') }}</p>

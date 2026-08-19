@@ -26,10 +26,9 @@ export const LEGACY_SIZE = {
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 710 },
   'src/renderer/src/stores/snippetStore.js': { file: 448 },
-  'src/renderer/src/stores/tabsStore.js': { file: 323 },
+  'src/renderer/src/stores/tabsStore.js': { file: 295 },
   'src/renderer/src/stores/vaultStore.js': { file: 362 },
-  'src/renderer/src/utils/structuralDiff.js': { file: 279 },
-  'src/renderer/src/utils/tabs.js': { file: 254 }
+  'src/renderer/src/utils/structuralDiff.js': { file: 279 }
 }
 
 /** Files whose length is a declaration list, where a cap fires on adding a row. */

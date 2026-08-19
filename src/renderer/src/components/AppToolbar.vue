@@ -13,6 +13,7 @@ import { useUiStore } from '../stores/uiStore'
 import { useImageExportStore } from '../features/imageExport'
 import { ZOOM_DEFAULT, zoomLabel } from '../utils/diffZoom'
 import { useConflictsStore } from '../features/merge'
+import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
 import KeyActions from './KeyActions.vue'
 import ToolbarOverflow from './ToolbarOverflow.vue'
@@ -22,6 +23,7 @@ const store = useDiffStore()
 const ui = useUiStore()
 const imageExport = useImageExportStore()
 const conflicts = useConflictsStore()
+const { run } = useCommands()
 
 // Only while the comparison is NOT at its resting size: an unzoomed diff has
 // nothing to say, and a permanent "100%" would spend width the bar does not have
@@ -73,6 +75,18 @@ const actionState = computed(() => ({
           @click="ui.zoomDiff(0)"
         >
           {{ zoomed }}
+        </button>
+        <!-- Only with something to present: entering on an empty pane hides
+             every control and leaves a blank screen with no visible way back. -->
+        <button
+          v-if="store.ready"
+          class="btn btn-sm"
+          data-testid="toolbar-present"
+          :data-tip="$t('appToolbar.tips.presentation', { mod: MOD })"
+          @click="run('toggle-presentation')"
+        >
+          <AppIcon name="maximize" />
+          {{ $t('appToolbar.presentation') }}
         </button>
         <ViewOptionsMenu />
       </div>

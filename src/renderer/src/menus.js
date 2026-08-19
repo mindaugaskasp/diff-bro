@@ -48,6 +48,11 @@ const viewSection = (run) => ({
       run: () => run('toggle-sidebar')
     },
     { label: t('menu.view.toggleTheme'), keys: `${MOD}+D`, run: () => run('toggle-theme') },
+    {
+      label: t('menu.view.presentation'),
+      keys: 'F5',
+      run: () => run('toggle-presentation')
+    },
     { sep: true },
     {
       // No key hint: the binding is user-configurable (Settings →

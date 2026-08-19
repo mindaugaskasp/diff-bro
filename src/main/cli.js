@@ -175,6 +175,29 @@ function parseCompare(rest, resolve, transient = false) {
 }
 
 /**
+ * An OS "Open with" launch: paths, no verb.
+ *
+ * Beside parseCli, never inside it. cliWords strips argv[0] and then one more
+ * path-shaped word as the entry point — the exact slot the OS uses, so one file
+ * was discarded silently and two made the second read as a verb and exit(1)
+ * before a window existed. That strip is load-bearing for every other verb.
+ *
+ * Decides on SHAPE only; allowCliPath and the read settle the rest.
+ *
+ * @param {string[]} argv
+ * @param {{ entryPath?: string }} [options]  the app directory, for a dev run
+ * @returns {{ name: 'open-with', files: string[] }|null}
+ */
+export function parseOpenWith(argv, { entryPath } = {}) {
+  const words = (argv ?? []).filter((a) => typeof a === 'string' && !isSwitch(a))
+  const rest = words.slice(1).filter((w) => w !== entryPath && w !== '.')
+  if (!rest.length) return null
+  // Any bare word is a verb, so the launch belongs to the CLI and not here.
+  if (!rest.every(isPath)) return null
+  return { name: 'open-with', files: rest }
+}
+
+/**
  * @param {string[]} argv          the raw process argv of the launch
  * @param {(p: string) => string} [resolve]  cwd-relative → absolute
  * @returns {{ command: CliCommand|null, error: string|null }}

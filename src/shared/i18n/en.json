@@ -97,7 +97,8 @@
       "resetZoom": "Reset Zoom",
       "devTools": "Toggle Developer Tools",
       "toggleWhitespace": "Ignore Whitespace",
-      "toggleFocus": "Focus on Changes"
+      "toggleFocus": "Focus on Changes",
+      "presentation": "Presentation Mode"
     },
     "security": {
       "title": "Security",
@@ -245,7 +246,8 @@
     },
     "quickLookAppWide": "Quick look-up (works app-wide)",
     "copyLeft": "Copy left side",
-    "copyRight": "Copy right side"
+    "copyRight": "Copy right side",
+    "presentation": "Presentation mode (Esc leaves)"
   },
   "shortcutBar": {
     "hideTip": "Hide this bar — bring it back in Settings",
@@ -543,7 +545,8 @@
       "clearPaste": "Clear the pasted text ({mod}+K)",
       "comparePasted": "Compare pasted text ({mod}+T)",
       "backToFiles": "Back to comparing files ({mod}+T)",
-      "resetZoom": "The comparison is zoomed — click to return it to 100% ({mod}+0)"
+      "resetZoom": "The comparison is zoomed — click to return it to 100% ({mod}+0)",
+      "presentation": "Show just the comparison, full screen (F5). Esc leaves it"
     },
     "why": {
       "split": "Side by side applies to text and diagram comparisons",
@@ -553,7 +556,8 @@
     },
     "pasteMode": "Paste mode",
     "fileMode": "File mode",
-    "resetZoom": "Reset the diff zoom"
+    "resetZoom": "Reset the diff zoom",
+    "presentation": "Present"
   },
   "backupSettings": {
     "olderThan": "Older than",
@@ -990,7 +994,8 @@
     "orDropAFile": "— or drop a file here",
     "editSnippet": "Edit Snippet",
     "snippet": "Snippet",
-    "newSnippetTitle": "New Snippet"
+    "newSnippetTitle": "New Snippet",
+    "renderedEditor": "Rendered content, editable"
   },
   "snippetFillDialog": {
     "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
@@ -1532,7 +1537,10 @@
       "loaded": "Loaded",
       "dropSide": "Drop or choose the {side} file",
       "hint": "Drag a file or a snippet here, or use the field above.",
-      "chooseSide": "Choose the {side} file"
+      "chooseSide": "Choose the {side} file",
+      "clear": "Clear",
+      "clearTip": "Take back the file already loaded and start over",
+      "clearLabel": "Clear the loaded file"
     },
     "dropADiffTo": "Drop to open this comparison",
     "swapTip": "Swap the left and right files ({mod}+Shift+S)",

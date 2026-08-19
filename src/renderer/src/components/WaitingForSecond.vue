@@ -12,7 +12,7 @@ const props = defineProps({
   missing: { type: String, required: true }
 })
 
-const emit = defineEmits(['pick'])
+const emit = defineEmits(['pick', 'clear'])
 
 // A list, not two mirrored `v-if` branches: the separator sat at a fixed
 // position between them, so a missing LEFT put it after both.
@@ -45,6 +45,18 @@ const slotOrder = computed(() =>
       </template>
     </div>
     <p class="wait-hint">{{ $t('app.waiting.hint') }}</p>
+    <!-- A wrong first file was a dead end: the open slot only fills the OTHER
+         side. The accessible name is distinct from the toolbar's own Clear,
+         which two controls sharing would make ambiguous to every test. -->
+    <button
+      type="button"
+      class="btn btn-sm wait-clear"
+      :data-tip="$t('app.waiting.clearTip')"
+      :aria-label="$t('app.waiting.clearLabel')"
+      @click="emit('clear')"
+    >
+      {{ $t('app.waiting.clear') }}
+    </button>
   </div>
 </template>
 

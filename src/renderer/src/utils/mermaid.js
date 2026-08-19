@@ -132,8 +132,6 @@ export const DIAGRAM_THEME_OPTIONS = [
 ]
 
 /** @param {unknown} value @returns {boolean} */
-export const isDiagramTheme = (value) => DIAGRAM_THEME_OPTIONS.some((o) => o.value === value)
-
 /**
  * Which of Mermaid's two themes a resolved mode renders in.
  * @param {'light'|'dark'} mode

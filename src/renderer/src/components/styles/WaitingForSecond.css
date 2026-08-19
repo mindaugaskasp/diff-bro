@@ -71,3 +71,9 @@
   font-size: var(--font-sm);
   color: var(--text-dim);
 }
+
+/* Set apart from the hint above it: this undoes what the screen is showing, so
+   it must not read as part of the instruction. */
+.wait-clear {
+  margin-top: var(--space-3);
+}

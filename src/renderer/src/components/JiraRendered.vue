@@ -10,7 +10,10 @@ import JiraTable from './JiraTable.vue'
 const props = defineProps({
   content: { type: String, default: null },
   /** @type {import('../types').JiraBlock[]} */
-  blocks: { type: Array, default: null, validator: (v) => v === null || arrayOfShape('type')(v) }
+  blocks: { type: Array, default: null, validator: (v) => v === null || arrayOfShape('type')(v) },
+  // Opt-in: a task box is inert in a preview and tickable inside RenderedEditor,
+  // where a change writes `- [x]` back to the source.
+  tickable: { type: Boolean, default: false }
 })
 
 const items = computed(() => props.blocks ?? parseJira(props.content ?? ''))
@@ -27,19 +30,36 @@ const indent = (depth) => (depth > 1 ? { marginInlineStart: `${(depth - 1) * 16}
         <JiraInline :nodes="b.inlines" />
       </component>
       <ol v-else-if="b.type === 'list' && b.ordered" class="ji-list">
-        <li v-for="(it, k) in b.items" :key="k" :style="indent(it.depth)">
+        <li
+          v-for="(it, k) in b.items"
+          :key="k"
+          :style="indent(it.depth)"
+          :data-depth="it.depth ?? 1"
+        >
           <JiraInline :nodes="it.inlines" />
         </li>
       </ol>
       <ul v-else-if="b.type === 'list'" class="ji-list" :class="{ 'ji-tasks': b.items[0]?.task }">
-        <li v-for="(it, k) in b.items" :key="k" :style="indent(it.depth)" :class="{ 'ji-task': it.task }">
-          <input v-if="it.task" type="checkbox" :checked="it.checked" disabled tabindex="-1" />
+        <li
+          v-for="(it, k) in b.items"
+          :key="k"
+          :style="indent(it.depth)"
+          :data-depth="it.depth ?? 1"
+          :class="{ 'ji-task': it.task }"
+        >
+          <input
+            v-if="it.task"
+            type="checkbox"
+            :checked="it.checked"
+            :disabled="!tickable"
+            :tabindex="tickable ? 0 : -1"
+          />
           <JiraInline :nodes="it.inlines" />
         </li>
       </ul>
       <JiraTable v-else-if="b.type === 'table'" :block="b" />
       <blockquote v-else-if="b.type === 'quote'" class="ji-quote">
-        <JiraRendered :blocks="b.children" />
+        <JiraRendered :blocks="b.children" :tickable="tickable" />
       </blockquote>
       <pre v-else-if="b.type === 'code'" class="ji-code">{{ b.code }}</pre>
       <p v-else class="ji-p">

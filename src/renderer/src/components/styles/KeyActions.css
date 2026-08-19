@@ -13,6 +13,13 @@
   width: var(--sidebar-w, 256px);
   min-width: max-content;
 }
+/* Collapsed, the pair is wider than the rail, so there is nothing to centre
+   with and the negative margin above dragged the first button to the window
+   edge. The column cannot host the block, so it stops pretending to. */
+body:has(.saved.collapsed) .key-actions {
+  margin-left: 0;
+  width: auto;
+}
 .key-actions .btn {
   gap: 5px;
 }

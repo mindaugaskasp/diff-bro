@@ -1,12 +1,11 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron'
 import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, resolve, sep } from 'path'
-import chardet from 'chardet'
-import iconv from 'iconv-lite'
 import { readSettings } from './appData'
 import { readXlsx } from './xlsx/index'
 import { filtersFor } from './fileFilters'
 import { clipboardFilePaths } from './clipboardFiles'
+import { decodeText } from './decodeText'
 import { t } from './i18n'
 
 // Mirrors the renderer's FILE_TYPE_LIMITS; main enforces independently so a
@@ -153,12 +152,7 @@ async function readFileForRenderer(win, filePath, opts = {}) {
     return { error: 'binary', name, path: filePath }
   }
 
-  // Decode with detected encoding; anything iconv can't handle falls back to
-  // UTF-8 so the user at least sees something rather than an error.
-  const detected = chardet.detect(buffer) ?? 'UTF-8'
-  const encoding = iconv.encodingExists(detected) ? detected : 'UTF-8'
-  const content = iconv.decode(buffer, encoding)
-
+  const { content, encoding } = decodeText(buffer)
   return { path: filePath, name, content, encoding, size }
 }
 

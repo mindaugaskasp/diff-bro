@@ -95,6 +95,14 @@ function displayToggles(sendToFocused) {
   ]
 }
 
+// The View menu is a list of label/accelerator/action triples; spelled out, each
+// was five lines of the same shape.
+const viewItem = (send, key, accelerator, action) => ({
+  label: t(`menu.view.${key}`),
+  accelerator,
+  click: () => send(action)
+})
+
 const settingsItem = (send) => ({
   label: t('menu.file.settings'),
   accelerator: 'CmdOrCtrl+,',
@@ -104,34 +112,19 @@ const settingsItem = (send) => ({
 const viewMenu = (send, isDev) => ({
   label: t('menu.view.title'),
   submenu: [
-    {
-      label: t('menu.view.commandPalette'),
-      accelerator: 'CmdOrCtrl+Shift+P',
-      click: () => send('command-palette')
-    },
-    {
-      label: t('menu.view.toggleSidebar'),
-      accelerator: 'CmdOrCtrl+B',
-      click: () => send('toggle-sidebar')
-    },
+    viewItem(send, 'commandPalette', 'CmdOrCtrl+Shift+P', 'command-palette'),
+    viewItem(send, 'toggleSidebar', 'CmdOrCtrl+B', 'toggle-sidebar'),
     { type: 'separator' },
     ...displayToggles(send),
-    {
-      label: t('menu.view.toggleTheme'),
-      accelerator: 'CmdOrCtrl+D',
-      click: () => send('toggle-theme')
-    },
+    viewItem(send, 'toggleTheme', 'CmdOrCtrl+D', 'toggle-theme'),
+    viewItem(send, 'presentation', 'F5', 'toggle-presentation'),
     { type: 'separator' },
     {
       label: t('menu.view.quickLook'),
       // User-configurable global shortcut (Settings), so no fixed hint here.
       click: () => toggleQuickLook()
     },
-    {
-      label: t('menu.view.mergeConflicts'),
-      accelerator: 'CmdOrCtrl+Shift+K',
-      click: () => send('merge-conflicts')
-    },
+    viewItem(send, 'mergeConflicts', 'CmdOrCtrl+Shift+K', 'merge-conflicts'),
     { type: 'separator' },
     zoomItem('zoomIn', 'CmdOrCtrl+=', 'zoom-in'),
     zoomItem('zoomOut', 'CmdOrCtrl+-', 'zoom-out'),
