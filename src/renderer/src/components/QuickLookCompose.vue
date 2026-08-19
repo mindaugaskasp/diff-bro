@@ -68,7 +68,7 @@ defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
 
 <template>
   <div class="ql-compose" @keydown="onKeydown">
-    <div class="ql-compose-head band">
+    <div class="ql-compose-head band drag-band">
       <span class="ql-compose-title">{{
         editing ? $t('quickLookCompose.editSnippet') : $t('quickLookCompose.newSnippet')
       }}</span>

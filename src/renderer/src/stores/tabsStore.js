@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { useDiffStore } from './diffStore'
 import { useVaultStore } from './vaultStore'
-import { tabsClosedBy } from '../utils/tabMenu'
 import {
   blankSnapshot,
   canAddTab,
@@ -15,6 +14,7 @@ import {
   tabTitle
 } from '../utils/tabs'
 import {} from '../utils/session'
+import { closingActions } from './tabClosing'
 import { evictionActions } from './tabEviction'
 import { sessionActions } from './tabSession'
 
@@ -61,17 +61,6 @@ export const useTabsStore = defineStore('tabs', {
     }
   },
   actions: {
-    requestActiveClose() {
-      if (this.activeId) this.requestClose(this.activeId)
-    },
-    confirmClose() {
-      const ids = this.pendingClose
-      this.pendingClose = null
-      if (ids?.length) this.closeMany(ids)
-    },
-    cancelClose() {
-      this.pendingClose = null
-    },
     // The window opens on whatever the diff store already holds, so the first
     // tab is the current comparison rather than a blank one pushed in front.
     init() {
@@ -169,6 +158,7 @@ export const useTabsStore = defineStore('tabs', {
       this.tabs.push(tab)
       return this._fill(tab, full, { diffSaved, entryId, name })
     },
+    ...closingActions,
     ...evictionActions,
     // The seam: reaching diffStore from tabEviction or tabSession would close a
     // new import cycle back through here.
@@ -196,35 +186,17 @@ export const useTabsStore = defineStore('tabs', {
     markActiveTransient(transient) {
       if (this.active) this.active.transient = !!transient
     },
+    // Marks the tab as one an OS "Open with" opened, so the NEXT file handed
+    // over joins it on the right rather than taking a tab of its own.
+    /** @param {boolean} openWith */
+    markActiveOpenWith(openWith) {
+      if (this.active) this.active.openWith = !!openWith
+    },
     newTab({ paste = false, transient = false } = {}) {
       const diff = useDiffStore()
       const id = this.open(blankSnapshot(diff), { reuseBlank: false, transient })
       if (id && paste) diff.mode = 'paste'
       return id
-    },
-    // The single close guard — menu, ×, and middle-click all arrive here.
-    /** @param {string} id */
-    requestClose(id) {
-      this.requestCloseMany([id])
-    },
-    /**
-     * Close a whole set, asking ONCE about whatever unsaved work it holds. One
-     * prompt per tab would mean four dialogs for one "close to the right".
-     * @param {string[]} ids
-     */
-    requestCloseMany(ids) {
-      const open = (ids ?? []).filter((id) => this.tabs.some((t) => t.id === id))
-      if (!open.length) return
-      const risky = open.filter((id) => this.unsaved(this.tabs.find((t) => t.id === id)))
-      if (risky.length) this.pendingClose = open
-      else this.closeMany(open)
-    },
-    /**
-     * @param {string} anchorId  the tab the menu was opened on
-     * @param {import('../utils/tabMenu').TabMenuAction} action
-     */
-    requestMenuAction(anchorId, action) {
-      this.requestCloseMany(tabsClosedBy(this.tabs, anchorId, action).map((t) => t.id))
     },
     /**
      * Remove a set in one pass. close() in a loop would capture and re-show —

@@ -101,14 +101,18 @@ test('the diagram picture is drawn, not an empty frame', async ({ app, page }) =
   expect(painted).toBeGreaterThan(20)
 })
 
-test('a code snippet is photographed with its colouring and its name', async ({ app, page }) => {
-  await createSnippet({ page, app }, 'Deploy config', '{ "replicas": 3, "image": "web:1.2" }')
-
-  const dialog = await shoot(page, 'Deploy config')
+// Capture is Mermaid-only now, so this contract is guarded on a diagram. A SHORT
+// one: the seeded example nearly fills the pane, which leaves "cropped to the
+// snippet" and "run to the bottom" indistinguishable — 581 against a 579.75
+// ceiling on CI, passing on macOS only by luck of the pane height.
+test('a captured snippet carries its name and is cropped to itself', async ({ app, page }) => {
+  const SMALL = 'Two-node diagram'
+  await createSnippet({ page, app }, SMALL, 'graph TD\n  A[One] --> B[Two]')
+  const dialog = await shoot(page, SMALL)
   const preview = dialog.locator('.shot img')
   await expect(preview).toBeVisible()
-  await expect(preview).toHaveAttribute('alt', 'Snippet: Deploy config')
-  await expect(dialog.locator('.dialog-note').first()).toContainText('screenshot of this snippet')
+  await expect(preview).toHaveAttribute('alt', `Diagram: ${SMALL}`)
+  await expect(dialog.locator('.dialog-note').first()).toContainText('screenshot of this')
 
   const [w, h] = await reportedSize(dialog)
   expect(w).toBeGreaterThan(100)
@@ -227,4 +231,22 @@ test('the capture action is not offered while editing', async ({ page }) => {
   const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
   await view.getByRole('button', { name: 'Edit' }).click()
   await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+})
+
+// A picture of text is a worse copy of what Copy already gives you.
+test('only a Mermaid snippet offers capture', async ({ page }) => {
+  await newSnippetButton(page).click()
+  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill('Just some prose')
+  await editor.locator('.editor').click()
+  await page.keyboard.type('nothing to photograph here')
+  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(editor).toBeHidden()
+
+  await page.locator('.snippets-section .row', { hasText: 'Just some prose' }).click()
+  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await expect(view).toBeVisible()
+  await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+  // Copy is still there — it is what a text snippet actually wants.
+  await expect(view.getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
 })

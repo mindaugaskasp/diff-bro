@@ -57,6 +57,7 @@ export const SHORTCUT_GROUPS = [
       { keys: `${MOD}+Shift+D`, labelKey: 'shortcuts.toggleStructure' },
       { keys: `${MOD}+Shift+K`, labelKey: 'shortcuts.mergeConflicts' },
       { keys: `${MOD}+D`, labelKey: 'shortcuts.toggleTheme' },
+      { keys: 'F5', labelKey: 'shortcuts.presentation' },
       { keys: `${MOD}++`, labelKey: 'shortcuts.zoomIn' },
       { keys: `${MOD}+-`, labelKey: 'shortcuts.zoomOut' },
       { keys: `${MOD}+0`, labelKey: 'shortcuts.resetZoom' }

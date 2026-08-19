@@ -1,13 +1,8 @@
 // Tab bookkeeping for the comparison area. Pure: a tab is an id, a title, and
 // the diffStore snapshot that IS the document (see diffStore.snapshot()), so
-// nothing here needs Vue, the store, or Monaco.
-
-// A rail, not the bound — the real ceiling is the budget below.
-export const MAX_TABS = 16
-
-// What every open tab may hold between them, in characters. A plain count of
-// tabs charged a streamed pair holding nothing the same as two 200 MB files.
-export const MAX_LIVE_CHARS = 96_000_000
+// nothing here needs Vue, the store, or Monaco. What a tab COSTS lives in
+// tabCost.js — accounting, not identity.
+export { MAX_TABS, MAX_LIVE_CHARS, tabCost, tabsCost, canAddTab } from './tabCost'
 
 let seq = 0
 const nextId = () => `tab-${++seq}`
@@ -44,12 +39,6 @@ export const blankSnapshot = (view = {}) => ({
  *                     throwaway copies, so it may be recycled when tabs run out
  */
 
-/**
- * What the tab calls itself. Falls back through the states a comparison passes
- * through so a tab is never blank while it is being filled in.
- * @param {object} [snapshot]
- * @returns {string}
- */
 // What an empty comparison calls itself.
 export const UNTITLED = 'Untitled'
 
@@ -103,46 +92,19 @@ export function createTab(
 export const MAX_TAB_NAME = 40
 
 /** A typed tab name, tidied — or '' to mean "go back to the derived one". */
+// Unicode letters, never ASCII \w: the app is localised, and \w would make a
+// Lithuanian or Japanese tab name unwritable.
+const NOT_A_NAME = /[^\p{L}\p{M}\p{N}_ -]+/gu
+
 export const cleanTabName = (name) =>
   String(name ?? '')
+    .replace(NOT_A_NAME, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_TAB_NAME)
 
 /** What the bar shows: a typed name outranks the one derived from the files. */
 export const tabLabel = (tab) => tab?.customTitle || tab?.title || UNTITLED
-
-// A streamed side is a path, so it costs nothing to hold; a grid costs cells.
-function sideCost(side) {
-  if (!side || side.kind === 'streamed') return 0
-  if (side.kind === 'spreadsheet') {
-    return (side.sheets ?? []).reduce((n, s) => n + s.rows.length * (s.rows[0]?.length ?? 0), 0)
-  }
-  return side.content?.length ?? 0
-}
-
-/**
- * What one tab is holding, in characters.
- * @param {DiffTab} [tab]
- * @returns {number}
- */
-export function tabCost(tab) {
-  const s = tab?.snapshot ?? {}
-  return (
-    sideCost(s.left) +
-    sideCost(s.right) +
-    sideCost(s.pasteLeftFile) +
-    sideCost(s.pasteRightFile) +
-    (s.pasteLeft?.length ?? 0) +
-    (s.pasteRight?.length ?? 0)
-  )
-}
-
-/** @param {DiffTab[]} tabs */
-export const tabsCost = (tabs) => (tabs ?? []).reduce((n, t) => n + tabCost(t), 0)
-
-/** @param {DiffTab[]} tabs */
-export const canAddTab = (tabs) => (tabs?.length ?? 0) < MAX_TABS && tabsCost(tabs) < MAX_LIVE_CHARS
 
 /**
  * The tab a git-handed comparison may take over when there is no free one: the

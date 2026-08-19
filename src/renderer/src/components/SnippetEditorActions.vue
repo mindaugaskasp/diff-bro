@@ -64,12 +64,14 @@ function openHistory() {
 }
 
 // Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
-// control says which of the two it is about to do.
-const isRepair = computed(() => props.language === 'mermaid')
-const formatLabel = computed(() => (isRepair.value ? 'Repair' : 'Format'))
+// control says which of the two it is about to do. It also decides Capture: a
+// picture of a diagram IS the diagram, while a picture of text is a worse copy
+// of what Copy already gives you.
+const isMermaid = computed(() => props.language === 'mermaid')
+const formatLabel = computed(() => (isMermaid.value ? 'Repair' : 'Format'))
 const formatTip = computed(() => {
   if (!props.canFormat) return t('snippetEditorActions.formatUnavailable')
-  return isRepair.value
+  return isMermaid.value
     ? t('snippetEditorActions.unmangleTip')
     : t('snippetEditorActions.prettyPrintAs', { format: props.language.toUpperCase() })
 })
@@ -157,10 +159,10 @@ defineExpose({ flash: () => flash('text') })
   >
     <AppIcon name="clock" /> {{ $t('snippetEditorActions.history') }}
   </button>
-  <!-- Viewing is when you are looking at the thing you want a picture of. Never
-       for a secret: the store refuses it too. -->
+  <!-- Viewing is when you are looking at the thing you want a picture of, and
+       only a diagram is worth one. Never for a secret: the store refuses it too. -->
   <button
-    v-if="!editMode && !secret"
+    v-if="!editMode && !secret && isMermaid"
     class="btn"
     :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
     @click="emit('capture')"

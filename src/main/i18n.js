@@ -15,9 +15,6 @@ import {
 let active = DEFAULT_LOCALE
 let translate = createTranslator(active)
 
-/** @returns {string} the locale main is currently rendering in */
-export const currentLocale = () => active
-
 /** @param {unknown} locale */
 export function setLocale(locale) {
   active = normalizeLocale(locale)

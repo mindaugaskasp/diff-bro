@@ -43,6 +43,33 @@ electronFuses:
   # "code has no resources but signature indicates they must be present".
   # @electron/fuses re-signs the whole bundle ad-hoc right after flipping.
   resetAdHocDarwinSignature: true
+# "Open with", never the DEFAULT handler. macOS gets role: Viewer
+# (CFBundleDocumentTypes); NSIS registers OpenWithProgids, which ADDS the app to
+# Explorer's Open-with list without seizing .txt or .json from whatever the user
+# already uses. An offline diff viewer that swallows every double-clicked JSON
+# is a bug report, not a feature.
+#
+# Only the formats the adapters actually compare, plus plain text. A long list
+# makes the Open-with menu useless and widens the chance of taking a default.
+# .xlsx is deliberately absent: that is a fight with Excel nobody asked for.
+fileAssociations:
+  - ext:
+      - txt
+      - md
+      - markdown
+      - json
+      - xml
+      - yaml
+      - yml
+      - csv
+      - tsv
+      - log
+      - diff
+      - patch
+    name: Text or data file
+    description: Compare in Diff Bro
+    role: Viewer
+    rank: Alternate
 win:
   target:
     - nsis

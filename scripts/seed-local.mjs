@@ -271,6 +271,12 @@ const TEXT_FILES = {
     'region,q2,q2 forecast,q3\n"Nordics, EMEA",9200.004,9400,74000\nAPAC,6800,7000,52000\nNA,3400,3600,29000\n',
   'catalog-before.xml': '<catalog><item id="1"><price>9.99</price></item></catalog>\n',
   'catalog-after.xml': '<catalog><item id="1"><price>12.50</price></item></catalog>\n',
+  // The two extensions "Open with" associates that nothing else here writes.
+  'notes-before.md': '# Release notes\n\n- Sealed diffs\n- Excel grid\n\nShips **today**.\n',
+  'notes-after.md':
+    '# Release notes\n\n- Sealed diffs\n- Excel grid\n- Open with\n\nShips **tomorrow**.\n',
+  'plain-before.txt': 'one\ntwo\nthree\n',
+  'plain-after.txt': 'one\ntwo CHANGED\nthree\nfour\n',
   'huge-before.json': `{\n${Array.from({ length: 5000 }, (_, i) => `  "k${i}": ${i}`).join(',\n')}\n}\n`,
   'huge-after.json': `{\n${Array.from(
     { length: 5000 },

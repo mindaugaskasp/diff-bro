@@ -60,7 +60,10 @@ describe('useSnippetRowActions', () => {
 
   // The renderer only ever OFFERS a url; main validates the scheme and confirms.
   it('hands the first word of a url snippet to main, and nothing when there is none', async () => {
-    const link = withContent({ id: 'a', name: 'n', language: 'url' }, ' https://example.invalid/x \n')
+    const link = withContent(
+      { id: 'a', name: 'n', language: 'url' },
+      ' https://example.invalid/x \n'
+    )
     await link.actions.openUrl()
     expect(api.openLink).toHaveBeenCalledWith('https://example.invalid/x')
 

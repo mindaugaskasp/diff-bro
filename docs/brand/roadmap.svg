@@ -5,7 +5,7 @@
      sidebar. Track hues are real theme accents from src/renderer/src/utils/themes.js
      (Dim, Bloom, Neon, Beacon) — colour depth encodes sequence: solid now, faded
      later. Keep this in step with the items in docs/roadmap.md. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-label="Diff Bro roadmap — five tracks: developer workflow (dependencies, compare a git revision, a conflicts list and three-way merge) shipped, spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-label="Diff Bro roadmap — seven tracks: developer workflow (dependencies, compare a git revision, a conflicts list and three-way merge) shipped, spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing, snippets (an editable rendered view for Markdown and Jira), OS integration (Open with)">
   <defs>
     <linearGradient id="field" x1="0" y1="0" x2="0.55" y2="1">
       <stop offset="0" stop-color="#2f2a1c"/>
@@ -27,7 +27,7 @@
 
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
     <text x="30" y="76" font-size="40" font-weight="700" letter-spacing="-1" fill="#f4ede0">Diff Bro <tspan fill="#d9a441">roadmap</tspan></text>
-    <text x="31" y="104" font-size="14" fill="#a99a7f">Five tracks. Depth of colour is sequence — solid first, faded last.</text>
+    <text x="31" y="104" font-size="14" fill="#a99a7f">Seven tracks. Depth of colour is sequence — solid first, faded last.</text>
 
     <rect x="1016" y="52" width="154" height="28" rx="14" fill="none" stroke="#f4ede0" stroke-opacity="0.22"/>
     <text x="1093" y="70" font-size="11" letter-spacing="1.8" text-anchor="middle"
@@ -121,6 +121,44 @@
 
     <line x1="334" y1="545" x2="577" y2="545" stroke="#ddd0b6" stroke-dasharray="3 3"/>
     <text x="334" y="564" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">utils/lockfile/</text>
+
+    <!-- ============ card 6 · snippets (shipped) ============ -->
+    <rect x="608" y="360" width="273" height="223" rx="12" fill="#f6f0e4"/>
+    <text x="623" y="398" font-size="15" font-weight="600" letter-spacing="-0.15" fill="#221e16">Snippets</text>
+    <text x="866" y="398" font-size="12" text-anchor="end"
+          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">3</text>
+    <rect x="623" y="412" width="243" height="2" fill="#22d3ee"/>
+
+    <rect x="623" y="423" width="243" height="30" rx="5" fill="#22d3ee"/>
+    <text x="633" y="442" font-size="12.5" fill="#1c1710">Rendered view is editable</text>
+
+    <rect x="623" y="460" width="243" height="30" rx="5" fill="#22d3ee"/>
+    <text x="633" y="479" font-size="12.5" fill="#1c1710">Markdown + Jira, one block tree</text>
+
+    <rect x="623" y="497" width="243" height="30" rx="5" fill="#22d3ee"/>
+    <text x="633" y="516" font-size="12.5" fill="#1c1710">Paste is text/plain only</text>
+
+    <line x1="623" y1="545" x2="866" y2="545" stroke="#ddd0b6" stroke-dasharray="3 3"/>
+    <text x="623" y="564" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">utils/domToBlocks.js</text>
+
+    <!-- ============ card 7 · OS integration (shipped) ============ -->
+    <rect x="897" y="360" width="273" height="223" rx="12" fill="#f6f0e4"/>
+    <text x="912" y="398" font-size="15" font-weight="600" letter-spacing="-0.15" fill="#221e16">OS integration</text>
+    <text x="1155" y="398" font-size="12" text-anchor="end"
+          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">3</text>
+    <rect x="912" y="412" width="243" height="2" fill="#b0446e"/>
+
+    <rect x="912" y="423" width="243" height="30" rx="5" fill="#b0446e"/>
+    <text x="922" y="442" font-size="12.5" fill="#fdf6f8">Open with, from Finder / Explorer</text>
+
+    <rect x="912" y="460" width="243" height="30" rx="5" fill="#b0446e"/>
+    <text x="922" y="479" font-size="12.5" fill="#fdf6f8">Left, then right, then a new tab</text>
+
+    <rect x="912" y="497" width="243" height="30" rx="5" fill="#b0446e"/>
+    <text x="922" y="516" font-size="12.5" fill="#fdf6f8">Offered, never the default handler</text>
+
+    <line x1="912" y1="545" x2="1155" y2="545" stroke="#ddd0b6" stroke-dasharray="3 3"/>
+    <text x="912" y="564" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">main/cli.js · parseOpenWith</text>
 
     <!-- ============ rail ============ -->
     <line x1="30" y1="630" x2="1170" y2="630" stroke="#f4ede0" stroke-opacity="0.14"/>

@@ -43,6 +43,14 @@ export const useUiStore = defineStore('ui', {
     // room. Transient by design, like the diagram viewer's own zoom: it is a
     // "let me look closer at this", not a setting.
     diffZoom: ZOOM_DEFAULT,
+    // Presentation mode: the comparison with every other surface hidden, for
+    // showing a diff on a big screen. Never persisted — it is a thing you DO,
+    // and coming back to an app with no chrome and no memory of why is a trap.
+    presenting: false,
+    // What the window was doing before presentation took it full screen, so
+    // Escape restores that rather than always dropping out of full screen — a
+    // reader who was already presenting full screen would lose it.
+    wasFullScreen: false,
     // The row the new-row marker draws. ONE key, not one per collection: saving
     // a diff and then adding a snippet must leave one mark, not two. Never
     // persisted — a mark surviving a relaunch would be a second pinned-like
@@ -58,6 +66,19 @@ export const useUiStore = defineStore('ui', {
     settingsTab: null
   }),
   actions: {
+    togglePresenting() {
+      return this.presenting ? this.exitPresenting() : this.enterPresenting()
+    },
+    async enterPresenting() {
+      this.wasFullScreen = (await window.api?.isFullScreen?.()) === true
+      this.presenting = true
+      if (!this.wasFullScreen) await window.api?.setFullScreen?.(true)
+    },
+    async exitPresenting() {
+      if (!this.presenting) return
+      this.presenting = false
+      if (!this.wasFullScreen) await window.api?.setFullScreen?.(false)
+    },
     openSettings(tab = null) {
       this.settingsTab = tab
       this.showSettingsDialog = true

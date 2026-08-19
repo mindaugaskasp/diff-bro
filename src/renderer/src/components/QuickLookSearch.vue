@@ -27,7 +27,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="ql-search band" :class="{ parked: readonly }">
+  <div class="ql-search band drag-band" :class="{ parked: readonly }">
     <AppIcon name="search" class="ql-search-ico" />
     <input
       ref="input"

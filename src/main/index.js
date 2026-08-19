@@ -4,6 +4,7 @@ import { createWindow } from './window'
 import { registerAppDataIpc } from './appData'
 import { registerDemoIpc } from './demoFiles'
 import { registerQuickLookFocusIpc } from './quickLookFocus'
+import { registerPresentationIpc } from './presentation'
 import { installMenu, registerMenuIpc } from './menu'
 import { registerVaultIpc } from './vault'
 import { registerClipboardIpc } from './clipboard'
@@ -24,8 +25,8 @@ import { attachCloseToTray, installTray, markQuitting, registerTrayIpc } from '.
 import { startsHidden } from './trayCore'
 import { registerLinkIpc } from './links'
 import { installCrashHooks, registerLoggerIpc } from './logger'
-import { registerCliIpc, routeCliArgv } from './cliRoute'
-import { cliUsage, helpText, parseCli } from './cli'
+import { registerCliIpc, routeCliArgv, routeOpenWith } from './cliRoute'
+import { cliUsage, helpText, parseCli, parseOpenWith } from './cli'
 import { handoffLine, promptSnippet } from './cliPrompt'
 import { defaultIo } from './cliIo'
 import { namesFrom } from './cliNames'
@@ -39,11 +40,26 @@ installCrashHooks()
 // exit before any window is made and before the single-instance lock is touched,
 // so asking what a command does never raises the app over what you were doing.
 const cold = parseCli(process.argv)
+// `open-file` fires BEFORE whenReady on the launch it caused, so a handler
+// installed in startApp misses exactly that launch. Bound here, buffered.
+const openedBeforeReady = []
+let handOverFile = (path) => openedBeforeReady.push(path)
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  handOverFile(path)
+})
+
+// Paths with no verb are an "Open with", not a broken command: reported as an
+// error this exits(1) before a window exists.
+const coldOpenWith = cold.error
+  ? parseOpenWith(process.argv, { entryPath: app.isPackaged ? null : process.argv[1] })
+  : null
+
 if (cold.command?.name === 'help') {
   const { text, ok } = helpText(cold.command.topic)
   process.stdout.write(`${text}\n`)
   app.exit(ok ? 0 : 1)
-} else if (cold.error) {
+} else if (cold.error && !coldOpenWith) {
   process.stderr.write(`${cold.error}\n\n${cliUsage()}\n`)
   app.exit(1)
 }
@@ -108,6 +124,7 @@ function startApp(draftPath) {
   registerAppDataIpc()
   registerDemoIpc()
   registerQuickLookFocusIpc()
+  registerPresentationIpc()
   loadLocale(readSettings().locale) // before installMenu: it builds from this
   installMenu()
   registerMenuIpc()
@@ -154,6 +171,9 @@ function startApp(draftPath) {
   discardDraftFile(draftPath)
   sweepDraftFiles()
   routeCliArgv(process.argv, process.cwd(), cold.command)
+  // Drain what arrived early; deliver() still queues until the renderer is up.
+  handOverFile = (path) => routeOpenWith([path])
+  openedBeforeReady.splice(0).forEach(handOverFile)
   app.on('activate', ensureMainWindow)
 }
 

@@ -7,6 +7,7 @@ import { TOOLS } from './tools'
 import { showsSplitView, showsWhitespaceToggle } from './viewChrome'
 import { MAX_TABS } from './tabs'
 import { tabsFullMessage } from './cliCommand'
+import { openWithFromCli } from './openWithFlow'
 
 /**
  * @typedef {object} CommandStores
@@ -63,6 +64,11 @@ export const COMMANDS = {
     if (!diff.isSavedDiff) diff.togglePasteMode()
   },
   'toggle-sidebar': ({ settings }) => settings.setSidebarCollapsed(!settings.sidebarCollapsed),
+  // There has to be something to present: entering on an empty pane hides every
+  // control and leaves the reader with a blank screen and no visible way back.
+  'toggle-presentation': ({ ui, diff }) => {
+    if (ui.presenting || diff.ready) ui.togglePresenting()
+  },
   'toggle-split': ({ diff }) => {
     // Silently flipping a flag nothing reads leaves invisible state behind.
     if (showsSplitView(diff)) diff.renderSideBySide = !diff.renderSideBySide
@@ -146,7 +152,7 @@ export function runCommand(action, stores) {
 // above, and here for the same reason: the core store cannot reach into a
 // slice to satisfy a command.
 /** @type {Record<string, (stores: CommandStores, command: object) => unknown>} */
-export const CLI_COMMANDS = {
+const CLI_COMMANDS = {
   'create-snippet': ({ snippets }) => snippets.startNewSnippetFrom('', 'auto'),
   'clipboard-save': ({ diff }, command) => diff.saveClipboardSnippet(command.text),
   // Typed in the terminal, so it is saved outright rather than opened in the
@@ -158,6 +164,9 @@ export const CLI_COMMANDS = {
   },
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
+  // Opened from Finder or Explorer: files arrive ONE at a time, and the second
+  // joins the first rather than replacing it — see utils/openWithFlow.
+  'open-with': ({ diff, tabs }, command) => openWithFromCli({ diff, tabs }, command.files),
   // The passphrase is asked for here, not in the terminal: the bundle is
   // assembled in the renderer, so this is where the flow already lives.
   backup: ({ configBackup }, command) => {

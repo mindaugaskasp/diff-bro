@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cliWords, helpText, parseCli } from '../../src/main/cli'
+import { cliWords, helpText, parseCli, parseOpenWith } from '../../src/main/cli'
 import { COMMANDS } from '../../src/shared/cliCommands'
 
 // Argv reaches the app in three shapes — packaged, dev, and forwarded by
@@ -370,5 +370,109 @@ describe('parseCli — create snippet, flags given no value', () => {
 
   it('still allows --tag more than once, which is the repeatable one', () => {
     expect(parse('--tag', 'a', '--tag', 'b').command.flags.tag).toEqual(['a', 'b'])
+  })
+})
+
+// A file handed over by Finder or Explorer lands in argv's ENTRY-POINT slot,
+// which cliWords strips — so the association path cannot reuse parseCli. These
+// two shapes are what an "Open with" launch actually produces.
+describe('parseOpenWith', () => {
+  const WIN = 'C:\\Program Files\\Diff Bro\\Diff Bro.exe'
+
+  it('takes the single file a one-file launch carries', () => {
+    expect(parseOpenWith([WIN, 'C:\\Users\\m\\notes.txt'])).toEqual({
+      name: 'open-with',
+      files: ['C:\\Users\\m\\notes.txt']
+    })
+  })
+
+  // The bug: parseCli reads the SECOND path as a verb and index.js exits(1) on
+  // the error — before a window exists, so the user sees nothing at all.
+  it('takes both files a multi-select launch carries, and never errors', () => {
+    expect(parseOpenWith([WIN, 'C:\\a.txt', 'C:\\b.txt'])).toEqual({
+      name: 'open-with',
+      files: ['C:\\a.txt', 'C:\\b.txt']
+    })
+  })
+
+  it('takes every file of a wider multi-select', () => {
+    const files = ['C:\\a.txt', 'C:\\b.txt', 'C:\\c.txt', 'C:\\d.txt', 'C:\\e.txt']
+    expect(parseOpenWith([WIN, ...files]).files).toEqual(files)
+  })
+
+  it('is null for a bare launch carrying no file', () => {
+    expect(parseOpenWith(PACKAGED)).toBe(null)
+  })
+
+  // `electron .` — the entry point is the app directory, never a document.
+  it('is null for a dev run', () => {
+    expect(parseOpenWith(DEV, { entryPath: '/repo' })).toBe(null)
+  })
+
+  it('drops the entry path when it is named', () => {
+    expect(
+      parseOpenWith(['/usr/bin/electron', '/repo', '/tmp/notes.md'], { entryPath: '/repo' })
+    ).toEqual({ name: 'open-with', files: ['/tmp/notes.md'] })
+  })
+
+  it('ignores Chromium switches mixed in anywhere', () => {
+    expect(parseOpenWith([WIN, '--enable-logging', 'C:\\a.txt', '--no-sandbox']).files).toEqual([
+      'C:\\a.txt'
+    ])
+  })
+
+  it('is null when a real verb is present, so the CLI keeps its own path', () => {
+    expect(parseOpenWith([WIN, 'compare', 'a.json', 'b.json'])).toBe(null)
+    expect(parseOpenWith([WIN, 'help'])).toBe(null)
+    expect(parseOpenWith([WIN, 'clipboard', 'save'])).toBe(null)
+  })
+
+  it('is null for a --hidden login-item launch', () => {
+    expect(parseOpenWith([WIN, '--hidden'])).toBe(null)
+  })
+
+  it('survives a missing argv', () => {
+    expect(parseOpenWith(null)).toBe(null)
+    expect(parseOpenWith([])).toBe(null)
+  })
+
+  it('takes a POSIX path', () => {
+    expect(
+      parseOpenWith(['/Applications/Diff Bro.app/Contents/MacOS/Diff Bro', '/tmp/a.md'])
+    ).toEqual({ name: 'open-with', files: ['/tmp/a.md'] })
+  })
+})
+
+// Unpackaged, Electron puts the ENTRY SCRIPT in argv[1] — `electron
+// build/main/index.js file.txt`. Read as a document it opened the app's own
+// source, which is what `index.js ↔ index.js` in a tab looked like.
+describe('parseOpenWith — the entry script', () => {
+  const ENTRY = '/repo/build/main/index.js'
+
+  it('drops the entry script a dev run carries', () => {
+    expect(parseOpenWith(['/usr/bin/electron', ENTRY, '/tmp/a.txt'], { entryPath: ENTRY })).toEqual(
+      { name: 'open-with', files: ['/tmp/a.txt'] }
+    )
+  })
+
+  it('is null for a dev run carrying no file at all', () => {
+    expect(parseOpenWith(['/usr/bin/electron', ENTRY], { entryPath: ENTRY })).toBe(null)
+  })
+
+  it('keeps both files a dev run opens', () => {
+    expect(
+      parseOpenWith(['/usr/bin/electron', ENTRY, '/tmp/a.txt', '/tmp/b.txt'], {
+        entryPath: ENTRY
+      }).files
+    ).toEqual(['/tmp/a.txt', '/tmp/b.txt'])
+  })
+
+  // Packaged there is no script in argv, so nothing may be dropped: the first
+  // path IS the document.
+  it('keeps the first path when there is no entry script', () => {
+    expect(parseOpenWith(['/Applications/Diff Bro', '/tmp/a.txt'], { entryPath: null })).toEqual({
+      name: 'open-with',
+      files: ['/tmp/a.txt']
+    })
   })
 })

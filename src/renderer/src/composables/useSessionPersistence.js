@@ -4,7 +4,7 @@ import { useTabsStore } from '../stores/tabsStore'
 
 // Long enough that typing in the paste panes doesn't seal a session per
 // keystroke, short enough that quitting straight after an edit still keeps it.
-export const SAVE_DELAY = 500
+const SAVE_DELAY = 500
 
 /**
  * Keep the stored session in step with what is open. Writes are debounced and

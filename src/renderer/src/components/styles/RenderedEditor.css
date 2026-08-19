@@ -1,0 +1,18 @@
+/* Reuses the Monaco editor's keyline (SnippetEditorDialog.css), so no colour
+   here — only what a contenteditable needs that a preview does not. */
+
+/* currentColor is --text-dim inside a quote and h4-h6 — a caret you lose. */
+.rendered-editor {
+  caret-color: var(--text);
+}
+
+/* The accent keyline already says it is live; a ring on top reads as an error. */
+.rendered-editor:focus,
+.rendered-editor:focus-visible {
+  outline: none;
+}
+
+/* A tickable box is a control, not decoration. */
+.rendered-editor :deep(.ji-task input) {
+  cursor: pointer;
+}

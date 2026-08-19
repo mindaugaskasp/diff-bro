@@ -26,10 +26,6 @@ export function walkPosition(unmerged, merged) {
 }
 
 /** A fresh walk next time — used when a run ends. */
-export function walkReset() {
-  walk = { total: 0, seen: new Set() }
-}
-
 /**
  * The file the launcher watches. Comparing $MERGED's own size and timestamp was
  * not enough: a resolution that writes the same bytes back changes neither, and

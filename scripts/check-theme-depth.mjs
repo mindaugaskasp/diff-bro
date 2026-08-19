@@ -16,6 +16,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { featureStyleDirs } from './lib/featureDirs.mjs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
+import { THEMES as ALL_THEMES } from '../src/renderer/src/utils/themes.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const tokensCss = readFileSync(join(root, 'src/renderer/src/styles/tokens.css'), 'utf8')
@@ -61,28 +62,8 @@ const tokenBlocks = blocks(tokensCss)
 const themeBlocks = blocks(themesCss)
 const structuralDefaults = tokenBlocks[':root'] || {}
 
-const THEMES = [
-  'light',
-  'dark',
-  'solar',
-  'neon',
-  'nord',
-  'sepia',
-  'dim',
-  'beacon',
-  'meridian',
-  'linen',
-  'bloom',
-  'nyan',
-  'matrix',
-  'contrast',
-  'volcano',
-  'amber',
-  'tide',
-  'ember',
-  'graphite',
-  'vector'
-]
+// The app's own list, so a new theme cannot ship unchecked.
+const THEMES = ALL_THEMES.map((t) => t.id)
 
 // Effective token map for a theme: structural defaults (tokens.css) < the light
 // palette on the bare :root < the theme's own overrides. Light additionally
@@ -511,10 +492,7 @@ function pxOf(value, map) {
 // cleanup nobody asked for or a floor quietly set to whatever passed.
 const baselinePath = join(root, 'scripts/theme-pair-baseline.json')
 const BASELINE = new Map(
-  JSON.parse(readFileSync(baselinePath, 'utf8')).map((e) => [
-    `${e.theme}|${e.where}`,
-    e.ratio
-  ])
+  JSON.parse(readFileSync(baselinePath, 'utf8')).map((e) => [`${e.theme}|${e.where}`, e.ratio])
 )
 
 const pairs = componentRules()
@@ -594,8 +572,12 @@ if (stale.length) {
     console.log(`pruned ${stale.length} stale baseline entries — ${kept.length} remain\n`)
   } else {
     failures.push(
-      ...passing.map((k) => `${k.replace('|', ': ')} — now CLEARS its floor; delete its baseline line`),
-      ...vanished.map((k) => `${k.replace('|', ': ')} — baselined pair no longer exists; delete its line`)
+      ...passing.map(
+        (k) => `${k.replace('|', ': ')} — now CLEARS its floor; delete its baseline line`
+      ),
+      ...vanished.map(
+        (k) => `${k.replace('|', ': ')} — baselined pair no longer exists; delete its line`
+      )
     )
   }
 }

@@ -190,6 +190,36 @@ describe('renaming', () => {
     expect(cleanTabName('   ')).toBe('')
     expect(cleanTabName(undefined)).toBe('')
   })
+
+  // A tab is a label, not a path or a pattern. `*/` was accepted and rendered,
+  // which reads as a broken tab rather than a named one.
+  it('keeps only word characters, spaces and hyphens', () => {
+    expect(cleanTabName('*/')).toBe('')
+    expect(cleanTabName('prod/staging')).toBe('prodstaging')
+    expect(cleanTabName('report: Q3 (final)')).toBe('report Q3 final')
+    expect(cleanTabName('<script>alert(1)</script>')).toBe('scriptalert1script')
+    expect(cleanTabName('a*b?c|d')).toBe('abcd')
+  })
+
+  it('keeps the separators a real name uses', () => {
+    expect(cleanTabName('prod vs staging')).toBe('prod vs staging')
+    expect(cleanTabName('prod-vs-staging')).toBe('prod-vs-staging')
+    expect(cleanTabName('release_2026_08')).toBe('release_2026_08')
+  })
+
+  // The app ships 20 themes and a pseudolocale; stripping to ASCII \w would
+  // make a Lithuanian or Japanese tab name unnameable.
+  it('keeps letters outside ASCII', () => {
+    expect(cleanTabName('Ataskaita')).toBe('Ataskaita')
+    expect(cleanTabName('Résumé')).toBe('Résumé')
+    expect(cleanTabName('予算')).toBe('予算')
+    expect(cleanTabName('Кварtal')).toBe('Кварtal')
+  })
+
+  it('collapses the whitespace stripping leaves behind', () => {
+    expect(cleanTabName('a  *  b')).toBe('a b')
+    expect(cleanTabName('  */  ')).toBe('')
+  })
 })
 
 // The ceiling was a plain count standing in for a memory bound — every tab

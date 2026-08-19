@@ -1,10 +1,11 @@
 <script setup>
 // Create/edit a snippet: Monaco + tag-field wiring over useSnippetDraft.
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { DEFAULT_SNIPPET_DIALOG_SIZE } from '../utils/settingsDefaults'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useFormatToolbar } from '../composables/useFormatToolbar'
+import { useSnippetEditorView } from '../composables/useSnippetEditorView'
 import SnippetNameField from './SnippetNameField.vue'
 import SnippetNameHint from './SnippetNameHint.vue'
 import { useMonacoInput } from '../composables/useMonacoInput'
@@ -18,6 +19,7 @@ import MermaidPreview from './MermaidPreview.vue'
 import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
+import RenderedEditor from './RenderedEditor.vue'
 import BaseDialog from './BaseDialog.vue'
 import { t } from '../i18n'
 
@@ -62,18 +64,15 @@ const { reset, applySelectionEdit, layout } = useMonacoInput({
   readOnly
 })
 
-// A new Jira/Markdown snippet opens on the raw editor (it starts in edit mode);
-// viewing an existing one opens on the rendered preview. `hasPreview` gates the
-// toggle, toolbar and rendered view.
-const plain = ref(editMode.value)
+// `hasPreview` gates the view toggle, the toolbar and the rendered view.
 const hasPreview = computed(() => isJira.value || isMarkdown.value)
+const { plain, revealAndLayout } = useSnippetEditorView({ editMode, layout, toggleReveal })
+const renderedEditor = ref(null)
 const { actions: toolbarActions, applyAction } = useFormatToolbar({
   isMarkdown,
-  applySelectionEdit
-})
-// Relayout Monaco once it becomes visible (it may have mounted hidden).
-watch(plain, (isPlain) => {
-  if (isPlain) nextTick(layout)
+  applySelectionEdit,
+  plain,
+  rendered: renderedEditor
 })
 
 // The action row owns its copy/clear feedback; this is its handle for the
@@ -81,11 +80,6 @@ watch(plain, (isPlain) => {
 const actions = ref(null)
 async function copyAndFlash() {
   if (await copyContent()) actions.value?.flash()
-}
-// Revealing relayouts Monaco: masked, it measured zero and comes back blank.
-function revealAndLayout() {
-  toggleReveal()
-  nextTick(layout)
 }
 
 // A file dropped on the editor loads its contents.
@@ -142,11 +136,7 @@ function saveSnippet() {
       :language="language"
       :read-only="readOnly"
     />
-    <FormatToolbar
-      v-if="hasPreview && plain && editMode"
-      :actions="toolbarActions"
-      @action="applyAction"
-    />
+    <FormatToolbar v-if="hasPreview && editMode" :actions="toolbarActions" @action="applyAction" />
     <div
       class="editor-area"
       :class="{ editing: editMode }"
@@ -154,12 +144,17 @@ function saveSnippet() {
       @drop.capture.prevent.stop="editMode && onDropFile($event)"
     >
       <div v-if="(!hasPreview || plain) && !masked" ref="container" class="editor"></div>
-      <JiraRendered v-if="isJira && !plain && !masked" class="editor rendered" :content="content" />
-      <MarkdownRendered
-        v-if="isMarkdown && !plain && !masked"
+      <RenderedEditor
+        v-if="hasPreview && !plain && !masked && editMode"
+        ref="renderedEditor"
+        v-model:content="content"
         class="editor rendered"
-        :content="content"
+        :dialect="isMarkdown ? 'markdown' : 'jira'"
       />
+      <template v-else-if="hasPreview && !plain && !masked">
+        <JiraRendered v-if="isJira" class="editor rendered" :content="content" />
+        <MarkdownRendered v-else class="editor rendered" :content="content" />
+      </template>
       <SnippetSecretMask v-if="masked" />
     </div>
     <p v-if="editMode && !content.trim()" class="required-hint">

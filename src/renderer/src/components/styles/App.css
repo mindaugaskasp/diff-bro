@@ -138,3 +138,17 @@
 .content.with-status-band .shortcut-bar {
   bottom: calc(var(--band-row) + var(--space-3));
 }
+
+/* Presentation mode: the comparison and nothing else. Escape is the way back —
+   none of these controls is on screen to offer one. display:none rather than
+   opacity, so nothing hidden keeps taking clicks or tab stops. */
+.app.presenting > .toolbar,
+.app.presenting > .menubar,
+.app.presenting .saved,
+.app.presenting .diff-tabs {
+  display: none;
+}
+/* The pane owns the window: no inch of app background framing a projected diff. */
+.app.presenting .pane {
+  border: 0;
+}

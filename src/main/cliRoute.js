@@ -5,7 +5,7 @@
 import { app, clipboard, dialog, ipcMain } from 'electron'
 import { homedir, tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { parseCli } from './cli'
+import { parseCli, parseOpenWith } from './cli'
 import { installShim, removeShim, shimStatus } from './cliShim'
 import { gitToolStatus, registerGitTool, sweepGitTemp, unregisterGitTool } from './gitTool'
 import { ensureMainWindow } from './quickLook'
@@ -31,6 +31,29 @@ function deliver(command) {
  * @param {string[]} argv
  * @param {string} [cwd]  the shell's cwd, which second-instance forwards
  */
+/**
+ * Vouched for here like every other path the app is handed.
+ * @param {string[]} files  absolute
+ */
+export function routeOpenWith(files) {
+  const list = (files ?? []).filter((f) => typeof f === 'string' && f.trim())
+  if (!list.length) return
+  list.forEach(allowCliPath)
+  deliver({ name: 'open-with', files: list })
+}
+
+// Unpackaged, argv[1] is the entry SCRIPT — read as a document it opened the
+// app's own source. Packaged there is none, so the first path IS the file.
+const entryScript = () => (app.isPackaged ? null : process.argv[1])
+
+// argv carrying only paths, which parseCli cannot read — see parseOpenWith.
+function openWithFrom(argv, cwd) {
+  const parsed = parseOpenWith(argv, { entryPath: entryScript() })
+  if (!parsed) return false
+  routeOpenWith(parsed.files.map((p) => resolve(cwd || process.cwd(), p)))
+  return true
+}
+
 export function routeCliArgv(argv, cwd, carried = null) {
   // ONLY `new snippet`, whose typed answers cannot be re-derived from argv, is
   // routed as the CLI process built it. Everything else must be re-parsed HERE,
@@ -41,6 +64,9 @@ export function routeCliArgv(argv, cwd, carried = null) {
   // hands over a REORDERED argv with switches hoisted.)
   if (carried?.name === 'new-snippet') return routeCommand(carried)
   const parsed = parseCli(argv, (p) => resolve(cwd || process.cwd(), p))
+  // Before the error is reported AND before a no-op launch is dropped: both are
+  // what an "Open with" hand-off looks like to parseCli.
+  if (!parsed.command && openWithFrom(argv, cwd)) return
   if (parsed.error) {
     process.stderr.write(`${parsed.error}\n`)
     return
