@@ -142,7 +142,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="ql-foot band">
+      <div class="ql-foot band drag-band">
         <span v-for="[k, label] in footHints" :key="label"
           ><span class="ql-kbd">{{ k }}</span> {{ label }}</span
         >

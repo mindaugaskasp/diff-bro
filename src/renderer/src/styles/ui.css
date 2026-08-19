@@ -26,6 +26,18 @@
 .band-row {
   min-height: var(--band-row);
 }
+/* A band the frameless quick look-up window is dragged by (src/main/quickLook.js
+   carries the `movable` half). A drag region takes the pointer for everything
+   inside it, so every control in one has to opt back out or it goes dead while
+   still looking live — hence the blanket descendant rule rather than a class
+   each band remembers to add. Global for the same reason .band is: three
+   components own a strip and a scoped copy in the third would drift. */
+.drag-band {
+  -webkit-app-region: drag;
+}
+.drag-band :is(a, button, input, select, textarea, [contenteditable], [tabindex]) {
+  -webkit-app-region: no-drag;
+}
 /* A cluster of controls inside a band, so the toolbar reads as groups rather
    than one glued-together row. Shared rather than scoped to AppToolbar: the
    action cluster is rendered by ToolbarOverflow, whose template has two roots
@@ -1118,4 +1130,3 @@ button.tag-chip:hover .usb-tct {
 .merge-region-done {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--dg-add) 60%, transparent);
 }
-

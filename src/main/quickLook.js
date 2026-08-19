@@ -52,7 +52,7 @@ function build() {
     transparent: true,
     backgroundColor: '#00000000',
     resizable: false,
-    movable: false,
+    movable: true, // frameless: the drag bands (ui.css) are its only handle
     minimizable: false,
     maximizable: false,
     fullscreenable: false,

@@ -262,6 +262,102 @@ test('the launcher card is flat, with no rim or halo', async ({ app, page }) => 
   expect(box.gutter, 'no leftover gutter once nothing renders into it').toBe(0)
 })
 
+const appRegion = (locator) =>
+  locator.evaluate((el) => getComputedStyle(el).getPropertyValue('-webkit-app-region'))
+
+// The widest uninterrupted run of a band a pointer can actually grab — every
+// no-drag control is a hole punched in it. A handle its controls have grown
+// across is a handle in name only.
+const widestGrab = (locator) =>
+  locator.evaluate((band) => {
+    const box = band.getBoundingClientRect()
+    const holes = [...band.querySelectorAll('*')]
+      .filter((el) => getComputedStyle(el).getPropertyValue('-webkit-app-region') === 'no-drag')
+      .map((el) => el.getBoundingClientRect())
+      .sort((a, b) => a.left - b.left)
+    let widest = 0
+    let cursor = box.left
+    for (const hole of [...holes, { left: box.right, right: box.right }]) {
+      widest = Math.max(widest, hole.left - cursor)
+      cursor = Math.max(cursor, hole.right)
+    }
+    return Math.round(widest)
+  })
+
+const launcherState = (app) =>
+  app.evaluate(({ BrowserWindow }) => {
+    const w = BrowserWindow.getAllWindows().find((x) =>
+      x.webContents.getURL().includes('quicklook')
+    )
+    return { movable: w.isMovable(), visible: w.isVisible(), x: w.getBounds().x }
+  })
+
+const moveLauncherBy = (app, dx) =>
+  app.evaluate(({ BrowserWindow }, by) => {
+    const w = BrowserWindow.getAllWindows().find((x) =>
+      x.webContents.getURL().includes('quicklook')
+    )
+    const b = w.getBounds()
+    w.setPosition(b.x + by, b.y)
+  }, dx)
+
+const blurLauncher = (app) =>
+  app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()
+      .find((x) => x.webContents.getURL().includes('quicklook'))
+      .emit('blur')
+  })
+
+// The launcher is frameless, so the only thing that can move it is a drag band —
+// and the OS does the moving, which needs `movable` on the window AS WELL AS the
+// CSS. Both halves are pinned here, and so is the trap that arrives with them: a
+// drag band takes the pointer for everything inside it that has not opted back
+// out, so the search box, the + and the language picker would go dead while
+// still looking live.
+test('the launcher moves by its chrome bands without deadening their controls', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+
+  expect(
+    (await launcherState(app)).movable,
+    'a drag band cannot move a window the OS refuses to move'
+  ).toBe(true)
+
+  expect(await appRegion(ql.locator('.ql-search'))).toBe('drag')
+  expect(await appRegion(ql.locator('.ql-foot'))).toBe('drag')
+  expect(await appRegion(ql.locator('.ql-input'))).toBe('no-drag')
+  expect(await appRegion(ql.locator('.ql-add'))).toBe('no-drag')
+  // The hint strip carries no controls, so it is the handle that is always there.
+  expect(await widestGrab(ql.locator('.ql-foot'))).toBeGreaterThan(400)
+
+  // The controls in those bands still do their jobs — typed into, clicked,
+  // chosen from — which is what the no-drag rule buys.
+  await ql.locator('.ql-input').fill('Dragged')
+  await expect(ql.locator('.ql-input')).toHaveValue('Dragged')
+  await ql.locator('.ql-add').click()
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+
+  expect(await appRegion(ql.locator('.ql-compose-head'))).toBe('drag')
+  expect(await appRegion(ql.locator('.ql-compose-lang'))).toBe('no-drag')
+  // The case this was built for: moving the card aside while writing a snippet.
+  expect(await widestGrab(ql.locator('.ql-compose-head'))).toBeGreaterThan(200)
+  await ql.locator('.ql-compose-lang').selectOption('sql')
+  await expect(ql.locator('.ql-compose-lang')).toHaveValue('sql')
+
+  // A moved card must keep the Spotlight dismissal the launcher is built on.
+  // The blur is emitted rather than provoked by focusing something else: a
+  // hidden window on a virtual display does not hand focus over on demand, so
+  // what is asserted is the wiring `movable` now sits beside, not the OS.
+  // Read AFTER the compose growth, which re-clamps x on a narrow display.
+  const before = (await launcherState(app)).x
+  await moveLauncherBy(app, 40)
+  expect((await launcherState(app)).x).toBe(before + 40)
+  await blurLauncher(app)
+  await expect.poll(async () => (await launcherState(app)).visible, { timeout: 6000 }).toBe(false)
+})
+
 // The search box must never be live while something else owns the launcher —
 // a tool panel, the new-snippet panel, or a snippet being read. Each disables it
 // a different way, so all three are pinned here.
