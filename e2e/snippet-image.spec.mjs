@@ -101,13 +101,17 @@ test('the diagram picture is drawn, not an empty frame', async ({ app, page }) =
   expect(painted).toBeGreaterThan(20)
 })
 
-// Capture is Mermaid-only now, so this contract is guarded on a diagram. The
-// code-snippet stage still exists in imageExportStore; nothing reaches it.
-test('a captured snippet carries its name and is cropped to itself', async ({ page }) => {
-  const dialog = await shoot(page, DIAGRAM)
+// Capture is Mermaid-only now, so this contract is guarded on a diagram. A SHORT
+// one: the seeded example nearly fills the pane, which leaves "cropped to the
+// snippet" and "run to the bottom" indistinguishable — 581 against a 579.75
+// ceiling on CI, passing on macOS only by luck of the pane height.
+test('a captured snippet carries its name and is cropped to itself', async ({ app, page }) => {
+  const SMALL = 'Two-node diagram'
+  await createSnippet({ page, app }, SMALL, 'graph TD\n  A[One] --> B[Two]')
+  const dialog = await shoot(page, SMALL)
   const preview = dialog.locator('.shot img')
   await expect(preview).toBeVisible()
-  await expect(preview).toHaveAttribute('alt', `Diagram: ${DIAGRAM}`)
+  await expect(preview).toHaveAttribute('alt', `Diagram: ${SMALL}`)
   await expect(dialog.locator('.dialog-note').first()).toContainText('screenshot of this')
 
   const [w, h] = await reportedSize(dialog)
