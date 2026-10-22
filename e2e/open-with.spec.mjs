@@ -104,8 +104,6 @@ test('the app still starts when handed a path, rather than treating it as a comm
   rmSync(userDataDir, { recursive: true, force: true })
 })
 
-// One file from the OS is also how a file gets VIEWED: the loaded side showed
-// only its name until a second file arrived.
 test('a single file opened from the OS shows its contents beside a waiting right pane', async () => {
   const userDataDir = freshUserDataDir()
   const files = fixtureFiles()

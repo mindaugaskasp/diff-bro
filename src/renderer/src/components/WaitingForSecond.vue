@@ -1,6 +1,4 @@
 <script setup>
-// One side loaded: that file is shown in its own pane so it can be read on its
-// own, and the empty pane sits where the missing file will go.
 import { computed } from 'vue'
 import AppIcon from './AppIcon.vue'
 import SingleFileView from './SingleFileView.vue'

@@ -109,8 +109,6 @@ test('a secret snippet is not draggable', async ({ page }) => {
   await expect(ordinary).toHaveAttribute('draggable', 'true')
 })
 
-// One side loaded: the panes mirror the comparison, so the loaded file is shown
-// where it sits and the empty pane is where the missing file will go.
 const paneOrder = (waiting) =>
   waiting.evaluate((el) =>
     [...el.children].map((s) => (s.classList.contains('loaded') ? 'loaded' : 'open'))
@@ -127,23 +125,18 @@ test('one side loaded shows its contents and an empty pane, in pane order', asyn
 
   const waiting = page.locator('.waiting')
   await expect(waiting).toBeVisible()
-  // The snippet filled the LEFT, so the empty pane is second.
   expect(await paneOrder(waiting)).toEqual(['loaded', 'open'])
   await expect(waiting.locator('.wait-pane.loaded .monaco-editor')).toBeVisible()
-  // The accent is on the RIM, never the label — as ink it is under the
-  // reading floor on solar, meridian and sepia.
+  // Accent on the rim, never the label: as ink it fails contrast on solar, meridian, sepia.
   const open = waiting.locator('.wait-slot.open')
   expect(await open.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('dashed')
   await expect(open.locator('.wait-label')).toContainText('Right')
 
-  // The plus and the dashed rim advertise a click, so the slot has to accept
-  // one — and be reachable by keyboard.
   expect(await open.evaluate((el) => el.tagName)).toBe('BUTTON')
   expect(await open.evaluate((el) => getComputedStyle(el).cursor)).toBe('pointer')
   await expect(open).toHaveAttribute('aria-label', /Choose the Right file/)
 })
 
-// The mirror case: a missing LEFT puts the empty pane first.
 test('the empty pane sits on the left when the LEFT side is missing', async ({ page }) => {
   const row = page.locator('.row', { hasText: DIAGRAM }).first()
   const rb = await row.boundingBox()

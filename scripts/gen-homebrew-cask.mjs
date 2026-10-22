@@ -75,6 +75,13 @@ cask "diff-bro" do
 
   app "Diff Bro.app"
 
+  # Unsigned build: clearing quarantine is safe only because the sha256 above pinned the download.
+  postflight_steps do
+    run "/usr/bin/xattr",
+        args:         ["-dr", "com.apple.quarantine", "{{appdir}}/Diff Bro.app"],
+        must_succeed: false
+  end
+
   # Saved diffs, the identity keypair and window state live outside the app
   # bundle, so a plain uninstall leaves them behind. \`brew uninstall --zap\`
   # is the documented way to remove them too.
@@ -83,19 +90,6 @@ cask "diff-bro" do
     "~/Library/Preferences/com.mindaugas.diffbro.plist",
     "~/Library/Saved Application State/com.mindaugas.diffbro.savedState",
   ]
-
-  # ALPHA build: not signed or notarized (see DEVELOPMENT_PLAN.md Phase 3), so
-  # macOS quarantines it and Gatekeeper reports it "damaged". We clear the
-  # quarantine flag in postflight so \`brew install\` just works. This bypasses
-  # Gatekeeper's check on THIS app — an accepted trade only because Homebrew has
-  # already verified the download against the pinned sha256 above, and the
-  # caveat below tells users plainly what they're installing. \`must_succeed:
-  # false\` keeps a no-op strip (flag already absent) from failing the install.
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Diff Bro.app"],
-                   must_succeed: false
-  end
 
   caveats <<~EOS
     ⚠️  ALPHA / development build — NOT signed or notarized by Apple.

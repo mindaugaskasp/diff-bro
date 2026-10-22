@@ -739,8 +739,6 @@ const SURFACES = [
   },
   {
     name: 'waiting-for-second',
-    // One side loaded: its contents in one pane, the dashed waiting slot in the
-    // other. Title, label and hint sit on the pane ground.
     // Synthesized DragEvents, not a mouse path: Chromium will not begin a
     // native HTML5 drag from injected pointer input.
     open: async (page) => {

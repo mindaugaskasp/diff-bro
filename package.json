@@ -44,7 +44,7 @@
     "vue-i18n": "^11.4.8",
     "yaml": "^2.9.0"
   },
-  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows. global-agent: @electron/get (inside electron-builder) pins ^3, whose roarr → sprintf-js chain has no patched version; v4 drops it and keeps bootstrap(), which only runs under ELECTRON_GET_USE_PROXY.",
+  "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows. global-agent: ^3 (via electron-builder) pulls an unpatched sprintf-js; v4 drops it, and only loads under ELECTRON_GET_USE_PROXY.",
   "overrides": {
     "brace-expansion": "^5.0.9",
     "global-agent": "^4.1.3"

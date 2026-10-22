@@ -37,8 +37,7 @@ help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-# macOS without Docker Desktop: Colima is a free, headless Docker runtime. The
-# VM is sized for `make e2e` — every worker is a full Electron plus its Xvfb.
+# Sized for `make e2e`: every worker is a full Electron plus its own Xvfb.
 COLIMA_FLAGS ?= --cpu 4 --memory 8 --disk 60
 docker-setup: ## macOS: install + start a Docker runtime (Colima) for everything below
 	@command -v brew >/dev/null || { echo "Needs Homebrew: https://brew.sh"; exit 1; }
