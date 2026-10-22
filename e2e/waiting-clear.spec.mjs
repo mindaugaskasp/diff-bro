@@ -17,7 +17,7 @@ async function loadOneSide(page) {
     slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
     slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
   })
-  await page.locator('.wait-slots').waitFor()
+  await page.locator('.waiting').waitFor()
 }
 
 test('the waiting screen can clear the file already loaded', async ({ page }) => {

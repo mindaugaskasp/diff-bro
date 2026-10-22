@@ -63,7 +63,7 @@ Builds are **unsigned**, so SmartScreen and Gatekeeper warn on first launch (the
 | **Diagrams**             | Two Mermaid files compare as a picture, not as text — one diagram carrying both revisions, so an inserted node reads as one change instead of a rewrite.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Tools**                | JSON, Base64, UUID, JWT, Epoch, URL, Lines, XML, checksums, a regex tester, find & replace, text encryption — rich panels, not blank text boxes. All of them live in their own sidebar section; star the ones you reach for and they stay at the top.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Merge conflicts**      | Registered as git's `difftool` **and** `mergetool`: `git mergetool` opens the list of every conflicted file first — what is left, what is done, and how many regions each still holds. Take a whole side from a row without opening anything, or pick one for a real three-way view: the two branches either side, the file you are producing in the middle, and that middle one is a full editor. Each side is labelled with the branch it came from and read out of git's index, so no `<<<<<<<` ever reaches the screen; a button on each pane's inner edge moves that side across, F7 walks the conflicts, and where neither side is right you just type the answer. Resolve them in any order — saving returns you to the list, and closing it never ends the merge. It writes each merged file back and tells git it is done — the only files Diff Bro writes over; everything else it produces is a new file you picked the place for. |
-| **Open with**            | Diff Bro appears in Finder's **Open With** menu and Explorer's **Open with** list for text and data files — `.txt`, `.md`, `.json`, `.xml`, `.yaml`, `.csv`, `.log`, `.diff` and the rest. The first file opens a tab and takes the left pane; the next joins it on the right; the one after that starts a new tab. Select two at once and they open as one comparison. It is offered, never imposed: Diff Bro does not make itself the default handler for anything, so double-clicking a JSON still opens whatever it always did. |
+| **Open with**            | Diff Bro appears in Finder's **Open With** menu and Explorer's **Open with** list for text and data files — `.txt`, `.md`, `.json`, `.xml`, `.yaml`, `.csv`, `.log`, `.diff` and the rest. The first file opens a tab and takes the left pane, its contents shown straight away so a single file can simply be read; the next joins it on the right; the one after that starts a new tab. Select two at once and they open as one comparison. It is offered, never imposed: Diff Bro does not make itself the default handler for anything, so double-clicking a JSON still opens whatever it always did. |
 | **Terminal**             | `diffbro compare a.json b.json` opens a comparison in the running app, and either side can name a git revision instead of a file — `diffbro compare HEAD~1:src/app.js src/app.js` reads the old copy straight out of the repository, so you never have to produce one first. `diffbro open` raises the app, `diffbro backup <path>` writes an encrypted archive. No port, no daemon.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Yours to arrange**     | Twenty themes (Nord, Sepia, Solar, Nyan, Matrix, Volcano, Tide, Graphite, plus accessibility-grade Contrast and Beacon), shared tags, adjustable limits.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
@@ -146,8 +146,33 @@ npm run dev      # run it
 npm run check    # lint + tests
 ```
 
-No local Node? The same flow runs in Docker: `make dev`, `make check`, `make e2e`
-(see [docker/README.md](docker/README.md) and `make help`).
+### Running in Docker
+
+No local Node? The same flow runs in Docker — the real Electron app on a virtual
+display, viewed in the browser over noVNC.
+
+1. **Get a Docker runtime.** Docker Desktop works. On macOS without it:
+
+   ```bash
+   make docker-setup   # brew installs Colima + the docker CLI, starts the VM
+   ```
+
+   Size the VM with `make docker-setup COLIMA_FLAGS="--cpu 6 --memory 12"`;
+   `colima stop` / `colima start` afterwards.
+
+2. **Start the app.**
+
+   ```bash
+   make up             # build the image and start the container
+   ```
+
+   Open <http://localhost:6080/vnc.html> and click _Connect_. Source edits
+   hot-reload; `make restart` relaunches, `make stop` stops it.
+
+3. **Test in the container.** `make check` (lint + unit tests), `make e2e`
+   (Playwright, against a virtual display).
+
+More in [docker/README.md](docker/README.md) and `make help`.
 
 Electron · Vue 3 · Pinia · Monaco. New formats plug in through the adapter
 registry rather than into the viewer.

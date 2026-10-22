@@ -28,7 +28,7 @@ SEED_NODE_FLAGS := --disable-warning=MODULE_TYPELESS_PACKAGE_JSON
 # One-shot container for build/lint/test work: no display, no entrypoint.
 RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 
-.PHONY: help install test-env test-env-detached up stop down restart rebuild logs shell \
+.PHONY: help docker-setup install test-env test-env-detached up stop down restart rebuild logs shell \
         clean dev check test e2e lint build package-win package-linux package-mac audit-fix \
         audit-fix-force \
         brew-cask screenshots theme-sweep local-seed local-seed-many local-seed-clean
@@ -36,6 +36,19 @@ RUN_NPM := docker compose run --rm --entrypoint npm $(SERVICE)
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+
+# macOS without Docker Desktop: Colima is a free, headless Docker runtime. The
+# VM is sized for `make e2e` — every worker is a full Electron plus its Xvfb.
+COLIMA_FLAGS ?= --cpu 4 --memory 8 --disk 60
+docker-setup: ## macOS: install + start a Docker runtime (Colima) for everything below
+	@command -v brew >/dev/null || { echo "Needs Homebrew: https://brew.sh"; exit 1; }
+	brew install colima docker docker-compose
+	@mkdir -p $(HOME)/.docker
+	@test -f $(HOME)/.docker/config.json || \
+		printf '{\n  "cliPluginsExtraDirs": ["%s/lib/docker/cli-plugins"]\n}\n' "$$(brew --prefix)" \
+		> $(HOME)/.docker/config.json
+	colima status >/dev/null 2>&1 || colima start $(COLIMA_FLAGS)
+	docker compose version
 
 test-env: ## Build + start the Docker test environment (noVNC at http://localhost:6080/vnc.html)
 	docker compose up --build

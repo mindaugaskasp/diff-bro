@@ -159,7 +159,7 @@ async function clearComparison(page) {
     await page.keyboard.press('Escape')
     await backdrop.first().waitFor({ state: 'detached' })
   }
-  await page.locator('.monaco-diff-editor, .wait-slots').waitFor({ state: 'detached' })
+  await page.locator('.monaco-diff-editor, .waiting').waitFor({ state: 'detached' })
 }
 
 // Each surface: how to open it, and the pairs that carry meaning once open.
@@ -739,8 +739,8 @@ const SURFACES = [
   },
   {
     name: 'waiting-for-second',
-    // One side loaded. Dashed rim, tag, name and hint all sit on the pane
-    // ground, and the rim is the affordance that says the slot is droppable.
+    // One side loaded: its contents in one pane, the dashed waiting slot in the
+    // other. Title, label and hint sit on the pane ground.
     // Synthesized DragEvents, not a mouse path: Chromium will not begin a
     // native HTML5 drag from injected pointer input.
     open: async (page) => {
@@ -757,7 +757,7 @@ const SURFACES = [
         slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
         slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
       })
-      await page.locator('.wait-slots').waitFor()
+      await page.locator('.waiting').waitFor()
     },
     // The sweep leaves ONE structure diff loaded for every later surface to
     // read; this is the only surface that has to disturb it, so it puts it back.
@@ -767,8 +767,7 @@ const SURFACES = [
     },
     probes: {
       'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
-      'loaded tag': ['.wait-slot.filled .wait-tag', DIM],
-      'loaded name': ['.wait-slot.filled .wait-name', TEXT],
+      'waiting title': ['.wait-slot.open .wait-title', TEXT],
       'waiting hint': ['.wait-hint', DIM],
       // The way back from a wrong first file. A real .btn, so it answers to the
       // reading floor rather than the 3:1 the hint above it takes.

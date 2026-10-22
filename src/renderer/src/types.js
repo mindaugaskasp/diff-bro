@@ -81,6 +81,14 @@
  */
 
 /**
+ * The comparable produced by textAdapter.
+ * @typedef {object} TextComparable
+ * @property {'text'} kind
+ * @property {string} text
+ * @property {string} language  Monaco language id
+ */
+
+/**
  * The comparable produced by xlsxAdapter for the (upcoming) grid viewer.
  * @typedef {object} SpreadsheetComparable
  * @property {'spreadsheet'} kind

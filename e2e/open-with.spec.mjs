@@ -103,3 +103,26 @@ test('the app still starts when handed a path, rather than treating it as a comm
   rmSync(files.dir, { recursive: true, force: true })
   rmSync(userDataDir, { recursive: true, force: true })
 })
+
+// One file from the OS is also how a file gets VIEWED: the loaded side showed
+// only its name until a second file arrived.
+test('a single file opened from the OS shows its contents beside a waiting right pane', async () => {
+  const userDataDir = freshUserDataDir()
+  const files = fixtureFiles()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+
+  await openWith(userDataDir, [files.alpha])
+  const loaded = page.locator('.wait-pane.loaded')
+  await expect(loaded.locator('.monaco-editor .view-lines')).toContainText('two')
+  const waiting = page.locator('.wait-pane.open')
+  await expect(waiting).toContainText('Waiting for file')
+
+  const [l, r] = [await loaded.boundingBox(), await waiting.boundingBox()]
+  expect(l.x + l.width).toBeLessThanOrEqual(r.x + 1)
+  expect(l.height).toBeGreaterThan(200)
+
+  await app.close()
+  rmSync(files.dir, { recursive: true, force: true })
+  rmSync(userDataDir, { recursive: true, force: true })
+})

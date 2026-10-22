@@ -109,10 +109,14 @@ test('a secret snippet is not draggable', async ({ page }) => {
   await expect(ordinary).toHaveAttribute('draggable', 'true')
 })
 
-// One side loaded used to be two lines of centred prose, which SAID what was
-// missing without showing it. The slots mirror the panes, so the empty one sits
-// where the missing file will go — and its order flips with the missing side.
-test('one side loaded shows a filled slot and an empty one, in pane order', async ({ page }) => {
+// One side loaded: the panes mirror the comparison, so the loaded file is shown
+// where it sits and the empty pane is where the missing file will go.
+const paneOrder = (waiting) =>
+  waiting.evaluate((el) =>
+    [...el.children].map((s) => (s.classList.contains('loaded') ? 'loaded' : 'open'))
+  )
+
+test('one side loaded shows its contents and an empty pane, in pane order', async ({ page }) => {
   const row = page.locator('.row', { hasText: DIAGRAM }).first()
   const rb = await row.boundingBox()
   const pb = await page.locator('.pane').boundingBox()
@@ -121,38 +125,26 @@ test('one side loaded shows a filled slot and an empty one, in pane order', asyn
   await page.mouse.move(pb.x + pb.width / 2, pb.y + pb.height / 2, { steps: 10 })
   await page.mouse.up()
 
-  const slots = page.locator('.wait-slots')
-  await expect(slots).toBeVisible()
-  const seen = await slots.evaluate((el) => ({
-    // Every child, not just the slots: the ↔ sat at a fixed position between
-    // two mirrored branches, so a missing LEFT rendered it after both of them.
-    order: [...el.children].map((s) =>
-      s.classList.contains('wait-vs') ? 'vs' : s.classList.contains('filled') ? 'filled' : 'open'
-    ),
-    name: el.querySelector('.wait-name').textContent,
-    // The accent is on the RIM, never the label — as ink it is under the
-    // reading floor on solar, meridian and sepia.
-    rim: getComputedStyle(el.querySelector('.wait-slot.open')).borderStyle
-  }))
-  // The snippet filled the LEFT, so the empty slot is second.
-  expect(seen.order).toEqual(['filled', 'vs', 'open'])
-  expect(seen.name).toBe(DIAGRAM)
-  expect(seen.rim).toBe('dashed')
-  await expect(slots.locator('.wait-label')).toContainText('Right')
+  const waiting = page.locator('.waiting')
+  await expect(waiting).toBeVisible()
+  // The snippet filled the LEFT, so the empty pane is second.
+  expect(await paneOrder(waiting)).toEqual(['loaded', 'open'])
+  await expect(waiting.locator('.wait-pane.loaded .monaco-editor')).toBeVisible()
+  // The accent is on the RIM, never the label — as ink it is under the
+  // reading floor on solar, meridian and sepia.
+  const open = waiting.locator('.wait-slot.open')
+  expect(await open.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('dashed')
+  await expect(open.locator('.wait-label')).toContainText('Right')
 
   // The plus and the dashed rim advertise a click, so the slot has to accept
-  // one — and be reachable by keyboard, which the div it started as never was.
-  const open = slots.locator('.wait-slot.open')
+  // one — and be reachable by keyboard.
   expect(await open.evaluate((el) => el.tagName)).toBe('BUTTON')
   expect(await open.evaluate((el) => getComputedStyle(el).cursor)).toBe('pointer')
   await expect(open).toHaveAttribute('aria-label', /Choose the Right file/)
 })
 
-// The mirror case. Only the left-filled orientation was ever driven, and it is
-// the one where the separator happens to land right.
-test('the separator still sits between the slots when the LEFT side is missing', async ({
-  page
-}) => {
+// The mirror case: a missing LEFT puts the empty pane first.
+test('the empty pane sits on the left when the LEFT side is missing', async ({ page }) => {
   const row = page.locator('.row', { hasText: DIAGRAM }).first()
   const rb = await row.boundingBox()
   const right = await page.locator('[data-side="right"]').first().boundingBox()
@@ -161,15 +153,10 @@ test('the separator still sits between the slots when the LEFT side is missing',
   await page.mouse.move(right.x + right.width / 2, right.y + right.height / 2, { steps: 10 })
   await page.mouse.up()
 
-  const slots = page.locator('.wait-slots')
-  await expect(slots).toBeVisible()
-  await expect(slots.locator('.wait-label')).toContainText('Left')
-  const order = await slots.evaluate((el) =>
-    [...el.children].map((s) =>
-      s.classList.contains('wait-vs') ? 'vs' : s.classList.contains('filled') ? 'filled' : 'open'
-    )
-  )
-  expect(order).toEqual(['open', 'vs', 'filled'])
+  const waiting = page.locator('.waiting')
+  await expect(waiting).toBeVisible()
+  await expect(waiting.locator('.wait-label')).toContainText('Left')
+  expect(await paneOrder(waiting)).toEqual(['open', 'loaded'])
 })
 
 // The hover preview is anchored to the row you start the drag from, so it sat

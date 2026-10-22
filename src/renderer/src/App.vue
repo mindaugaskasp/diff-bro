@@ -156,11 +156,12 @@ useWindowFocusRefresh()
             <StreamedDiffViewer v-else-if="store.comparableKind === 'streamed'" />
             <SpreadsheetDiffViewer v-else />
           </template>
-          <!-- One side loaded: make it obvious a second file is still needed. -->
+          <!-- One side loaded: shown on its own, beside the pane still waiting. -->
           <WaitingForSecond
             v-else-if="store.left || store.right"
             :name="(store.left || store.right).name"
             :missing="missingSide"
+            :comparable="store.leftComparable || store.rightComparable"
             @pick="store.pick(missingSide)"
             @clear="store.clear()"
           />

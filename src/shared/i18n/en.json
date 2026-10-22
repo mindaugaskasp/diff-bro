@@ -1535,6 +1535,7 @@
     "chooseTwoFiles": "Choose or drop two files to compare.",
     "waiting": {
       "loaded": "Loaded",
+      "title": "Waiting for file",
       "dropSide": "Drop or choose the {side} file",
       "hint": "Drag a file or a snippet here, or use the field above.",
       "chooseSide": "Choose the {side} file",
