@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommitTypeAll(chore)"],
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 8,
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "automerge": false,
+  "dependencyDashboard": true,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"],
+    "minimumReleaseAge": null,
+    "schedule": ["at any time"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "postUpdateOptions": ["npmDedupe"],
+  "packageRules": [
+    {
+      "description": "Majors wait for a human: each one is a network audit (docs/standards.md, rule 2).",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "addLabels": ["major"]
+    },
+    {
+      "description": "Dev tooling, minor and patch, as one PR.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev tooling",
+      "matchPackageNames": ["!electron", "!monaco-editor"]
+    },
+    {
+      "description": "Ships in the app: one PR per package so each is audited on its own.",
+      "matchDepTypes": ["dependencies"],
+      "addLabels": ["runtime"]
+    },
+    {
+      "description": "allowScripts in package.json is version-pinned: the new version must be re-approved with `npm install-scripts approve` in the same PR.",
+      "matchPackageNames": ["electron", "esbuild", "fsevents", "electron-winstaller", "vue-demi"],
+      "addLabels": ["install-script"],
+      "prBodyNotes": [
+        "⚠️ This package runs an install script. Review it, then run `npm install-scripts approve {{{depName}}}` and commit the updated `allowScripts` pin before merging."
+      ]
+    },
+    {
+      "description": ".nvmrc, engines, the Dockerfile base image and CI's node-version move together.",
+      "matchDepNames": ["node"],
+      "groupName": "Node.js",
+      "addLabels": ["node"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    }
+  ]
+}
