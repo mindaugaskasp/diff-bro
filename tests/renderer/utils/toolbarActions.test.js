@@ -146,3 +146,19 @@ describe('toolbarActions', () => {
     })
   })
 })
+
+describe('toolbarActions over a snippet tab', () => {
+  it('disables every row and says what they are for', () => {
+    const over = rows({ isSnippet: true, isPaste: true })
+    expect(over.length).toBeGreaterThan(0)
+    for (const row of over) {
+      expect(row.disabled, row.id).toBe(true)
+      expect(row.tipKey, row.id).toBe('appToolbar.tips.forComparisons')
+      expect(row.active, row.id).toBeFalsy()
+    }
+  })
+
+  it('keeps the same rows in the same places, so the bar does not reflow', () => {
+    expect(rows({ isSnippet: true }).map((r) => r.id)).toEqual(rows().map((r) => r.id))
+  })
+})

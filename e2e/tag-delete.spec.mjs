@@ -10,6 +10,8 @@ test.beforeEach(async ({ page }) => {
 // toggle, and the rows that survive are all rendered facts.
 
 async function saveTaggedDiff(page, name, tag) {
+  // A comparison starts in its own tab: Paste mode is off while a snippet is in front.
+  await page.getByRole('button', { name: 'New comparison' }).click()
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('{\n  "a": 1\n}')
   await page.getByPlaceholder('Paste changed text here').fill('{\n  "a": 2\n}')
