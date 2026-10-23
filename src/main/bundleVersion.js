@@ -1,12 +1,13 @@
 import { readFileSync, statSync } from 'fs'
-import { dirname, join } from 'path'
+import { posix } from 'path'
 
 export const MAX_PLIST_BYTES = 64 * 1024
 const VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/
 const SHORT_VERSION = /<key>CFBundleShortVersionString<\/key>\s*<string>([^<]*)<\/string>/
 
 /** @param {string} execPath `Contents/MacOS/<name>` inside the bundle */
-export const infoPlistPath = (execPath) => join(dirname(execPath), '..', 'Info.plist')
+// posix: a macOS bundle path, also on the Windows CI runner that tests it.
+export const infoPlistPath = (execPath) => posix.join(posix.dirname(execPath), '..', 'Info.plist')
 
 /** @returns {string|null} */
 export function bundleVersionOf(xml) {
