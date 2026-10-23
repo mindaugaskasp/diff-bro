@@ -15,12 +15,16 @@ const args = [...(appDir ? [appDir] : []), `--user-data-dir=${profile}`, 'mcp']
 const child = spawn(exe, args, { env, stdio: ['pipe', 'pipe', 'inherit'] })
 const answers = new Map()
 const noise = []
+let answered = 0
+let raw = ''
+child.stdout.on('data', (d) => (raw += d.toString('latin1')))
 createInterface({ input: child.stdout }).on('line', (line) => {
   try {
     const msg = JSON.parse(line)
+    answered++
     answers.get(msg.id)?.(msg)
   } catch {
-    noise.push(line)
+    noise.push(`${JSON.stringify(line)} after ${answered} answer(s)`)
   }
 })
 
@@ -37,8 +41,7 @@ function fail(why) {
 }
 
 const timer = setTimeout(
-  () =>
-    fail(`no answer within 60 s; stdout held: ${noise.map((l) => JSON.stringify(l)).join(', ')}`),
+  () => fail(`no answer within 60 s; stdout held: ${noise.join(', ')}`),
   60_000
 )
 const init = await request(1, 'initialize', { protocolVersion: '2025-06-18' })
