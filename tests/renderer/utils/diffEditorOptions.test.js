@@ -42,3 +42,17 @@ describe('diffEditorOptions', () => {
     expect(diffEditorOptions(view())).not.toHaveProperty('fontSize')
   })
 })
+
+describe('diffEditorOptions for a narrow pane', () => {
+  it('leaves wrapping off for the comparison view', () => {
+    expect(diffEditorOptions(view()).wordWrap).toBe('off')
+  })
+
+  it('wraps long lines and goes inline below 640px when asked', () => {
+    const opts = diffEditorOptions(view({ wrap: true, inlineBelow: 640 }))
+    expect(opts.wordWrap).toBe('on')
+    expect(opts.diffWordWrap).toBe('on')
+    expect(opts.useInlineViewWhenSpaceIsLimited).toBe(true)
+    expect(opts.renderSideBySideInlineBreakpoint).toBe(640)
+  })
+})

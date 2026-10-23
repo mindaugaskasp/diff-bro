@@ -369,6 +369,37 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'snippet-history',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      const doc = page.locator('.snippet-doc:visible')
+      const history = doc.getByRole('button', { name: 'History', exact: true })
+      if (!(await history.isVisible())) {
+        await doc.getByRole('button', { name: 'Edit', exact: true }).click()
+        await doc.locator('.editor').click()
+        await page.keyboard.press('ControlOrMeta+End')
+        await page.keyboard.type(' ')
+        await doc.getByRole('button', { name: 'Save', exact: true }).click()
+      }
+      await history.click()
+      await page.locator('.hist-version').last().click()
+      await page.locator('.hist-band .btn').first().waitFor()
+    },
+    close: async (page) => {
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
+      await page.locator('.hist-panel').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'version label': ['.hist-version .hv-when', TEXT],
+      'version time': ['.hist-version .hv-meta', TEXT],
+      'selected version': ['.hist-version.on .hv-when', TEXT],
+      'band text': ['.hist-band .hb-text', TEXT],
+      'band meta': ['.hist-band .hb-meta', TEXT],
+      'copy button': ['.hist-band .btn', TEXT]
+    }
+  },
+  {
     name: 'tour-consent',
     // Only a cold profile asks, so the sweep makes this one cold and reloads.
     open: async (page) => {

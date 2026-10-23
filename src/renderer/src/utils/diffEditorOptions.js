@@ -8,10 +8,16 @@ import { MONACO_THEME } from '../composables/useMonacoTheme'
  * Linux and Windows. DiffViewer reads the resolved size back once and zooms from
  * whatever this platform actually chose.
  *
- * @param {{ renderSideBySide: boolean, ignoreTrimWhitespace: boolean }} view
+ * @param {{ renderSideBySide: boolean, ignoreTrimWhitespace: boolean, wrap?: boolean, inlineBelow?: number }} view
+ *   `wrap` and `inlineBelow` are for a narrow pane (the snippet history), never the comparison
  * @returns {object} options for monaco.editor.createDiffEditor
  */
-export const diffEditorOptions = ({ renderSideBySide, ignoreTrimWhitespace }) => ({
+export const diffEditorOptions = ({
+  renderSideBySide,
+  ignoreTrimWhitespace,
+  wrap,
+  inlineBelow
+}) => ({
   // The app's own theme, defined from the live palette before the editor is
   // built (see useMonacoTheme). Stock vs/vs-dark ignored the palette entirely.
   theme: MONACO_THEME,
@@ -25,7 +31,10 @@ export const diffEditorOptions = ({ renderSideBySide, ignoreTrimWhitespace }) =>
   // app opens at, Split view did nothing while its checkbox stayed ticked and
   // pressable. Greying it out on a drag would be worse: the reader asked for
   // two panes, so they get two panes.
-  useInlineViewWhenSpaceIsLimited: false,
+  useInlineViewWhenSpaceIsLimited: !!inlineBelow,
+  ...(inlineBelow ? { renderSideBySideInlineBreakpoint: inlineBelow } : {}),
+  wordWrap: wrap ? 'on' : 'off',
+  diffWordWrap: wrap ? 'on' : 'off',
   ignoreTrimWhitespace,
   scrollBeyondLastLine: false,
   contextmenu: false,

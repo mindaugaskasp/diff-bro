@@ -42,8 +42,13 @@ export function useMonacoDiffPane({ container, original, modified, language }) {
     applyMonacoTheme(settings.theme)
     editor = monaco.editor.createDiffEditor(
       container.value,
-      // Inline: the dialog is far below Monaco's 900px side-by-side breakpoint.
-      diffEditorOptions({ renderSideBySide: false, ignoreTrimWhitespace: false })
+      // Side by side only when the resizable panel is wide enough for two readable panes.
+      diffEditorOptions({
+        renderSideBySide: true,
+        ignoreTrimWhitespace: false,
+        wrap: true,
+        inlineBelow: 640
+      })
     )
     setModels()
   }
