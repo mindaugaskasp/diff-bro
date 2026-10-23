@@ -1244,6 +1244,26 @@ button.tag-chip:hover .usb-tct {
   font-size: var(--font-xs);
   color: var(--text-meta);
 }
+/* A row's own icon action (star, copy, delete): chip-sized, quiet until hovered. */
+.row-btn {
+  width: var(--chip-h);
+  height: var(--chip-h);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-meta);
+  cursor: pointer;
+  font-size: var(--font-md);
+}
+.row-btn:hover {
+  color: var(--accent-ink);
+}
+.row-btn.delete:hover {
+  color: var(--danger-bg);
+}
 .count-pill {
   height: var(--chip-h);
   min-width: var(--chip-h);

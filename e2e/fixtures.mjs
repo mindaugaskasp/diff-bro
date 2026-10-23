@@ -205,28 +205,52 @@ export async function openMenu(page, top, sub, leaf) {
   }
 }
 
+// Under full-suite load Playwright's inspector link to Electron main has dropped
+// its context mid-run (virtual-rows, twice); the stubs below are idempotent, so retry.
+async function evaluateInMain(app, fn, arg) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await app.evaluate(fn, arg)
+    } catch (err) {
+      if (attempt >= 3 || !/Execution context was destroyed/.test(err.message)) throw err
+    }
+  }
+}
+
 // Answer a confirm dialog in MAIN. Some handlers ask before doing something
 // outside the app (installing a PATH shim, rewriting ~/.gitconfig); a spec that
 // drives them has to say which button the user pressed.
 export async function stubMessageBox(app, response = 1) {
-  await app.evaluate(({ dialog }, r) => {
-    dialog.showMessageBox = async () => ({ response: r })
-  }, response)
+  await evaluateInMain(
+    app,
+    ({ dialog }, r) => {
+      dialog.showMessageBox = async () => ({ response: r })
+    },
+    response
+  )
 }
 
 // Replace the native save/open dialogs in the MAIN process so file flows are
 // deterministic (no un-driveable OS dialog). The handlers call dialog.show*Dialog
 // at invoke time, so reassigning the property takes effect immediately.
 export async function stubSaveDialog(app, filePath) {
-  await app.evaluate(({ dialog }, fp) => {
-    dialog.showSaveDialog = async () => ({ canceled: false, filePath: fp })
-  }, filePath)
+  await evaluateInMain(
+    app,
+    ({ dialog }, fp) => {
+      dialog.showSaveDialog = async () => ({ canceled: false, filePath: fp })
+    },
+    filePath
+  )
 }
 export async function stubOpenDialog(app, filePaths) {
   const list = Array.isArray(filePaths) ? filePaths : [filePaths]
-  await app.evaluate(({ dialog }, fps) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: fps })
-  }, list)
+  await evaluateInMain(
+    app,
+    ({ dialog }, fps) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: fps })
+    },
+    list
+  )
 }
 
 export { expect }

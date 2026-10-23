@@ -11,6 +11,7 @@ vi.mock('../../../src/renderer/src/composables/useCommands', () => ({
 const { useHomeActions } = await import('../../../src/renderer/src/composables/useHomeActions')
 const { useSnippetStore } = await import('../../../src/renderer/src/stores/snippetStore')
 const { useDiffStore } = await import('../../../src/renderer/src/stores/diffStore')
+const { useVaultStore } = await import('../../../src/renderer/src/stores/vaultStore')
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -41,5 +42,19 @@ describe('useHomeActions', () => {
   it('runs a tool through the command registry', async () => {
     await useHomeActions().openItem({ kind: 'tool', id: 'json', action: 'tools-json' })
     expect(run).toHaveBeenCalledWith('tools-json')
+  })
+
+  it('asks before deleting a snippet, a saved diff or a received one', () => {
+    const { deleteItem } = useHomeActions()
+    deleteItem({ kind: 'snippet', id: 's1', name: 'Note' })
+    expect(useSnippetStore().pendingDelete).toEqual({ type: 'snippet', id: 's1', name: 'Note' })
+    deleteItem({ kind: 'received', id: 'r1', name: 'From Ada' })
+    expect(useVaultStore().pendingDelete).toEqual({ id: 'r1', name: 'From Ada' })
+  })
+
+  it('never deletes a tool', () => {
+    useHomeActions().deleteItem({ kind: 'tool', id: 'json', name: 'JSON' })
+    expect(useSnippetStore().pendingDelete).toBeNull()
+    expect(useVaultStore().pendingDelete).toBeNull()
   })
 })

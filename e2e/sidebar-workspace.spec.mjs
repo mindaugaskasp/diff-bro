@@ -78,3 +78,77 @@ test('a rail count clears its icon', async ({ page }) => {
   ])
   expect(count.x).toBeGreaterThanOrEqual(icon.x + icon.width - 1)
 })
+
+async function newSnippet(page, name) {
+  await openNewSnippet(page)
+  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill(name)
+  await editor.locator('.editor').click()
+  await page.keyboard.type('body')
+  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(editor).toBeHidden()
+}
+
+async function saveDiff(page, name) {
+  await page.getByRole('button', { name: 'Paste mode' }).click()
+  await page.getByPlaceholder('Paste original text here').fill('before')
+  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill(name)
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(dialog).toBeHidden()
+}
+
+const homeItem = (page, name) => page.locator('.home .home-item', { hasText: name })
+
+async function deleteFromHome(page, name, dialogName) {
+  const item = homeItem(page, name)
+  await item.hover()
+  await item.getByRole('button', { name: `Delete ${name}` }).click()
+  const confirm = page.getByRole('dialog', { name: dialogName })
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(confirm).toBeHidden()
+}
+
+test('Home deletes a recent snippet and a recent diff, each after confirming', async ({ page }) => {
+  await newSnippet(page, 'Doomed note')
+  await saveDiff(page, 'Doomed diff')
+  await railItem(page, 'Home').click()
+
+  await deleteFromHome(page, 'Doomed note', 'Delete snippet?')
+  await expect(homeItem(page, 'Doomed note')).toHaveCount(0)
+  await deleteFromHome(page, 'Doomed diff', 'Delete saved diff?')
+  await expect(homeItem(page, 'Doomed diff')).toHaveCount(0)
+
+  await railItem(page, 'Snippets').click()
+  await expect(page.locator('.snippets-section .row', { hasText: 'Doomed note' })).toHaveCount(0)
+  await railItem(page, 'Diffs').click()
+  await expect(page.locator('li.diff', { hasText: 'Doomed diff' })).toHaveCount(0)
+})
+
+test('a pinned card on Home can be deleted, and a pinned tool cannot', async ({ page }) => {
+  await newSnippet(page, 'Pinned note')
+  await railItem(page, 'Snippets').click()
+  const row = page.locator('.snippets-section .row', { hasText: 'Pinned note' })
+  await row.hover()
+  await row.locator('.star').click()
+  await railItem(page, 'Home').click()
+
+  const pinned = page
+    .locator('.home-block')
+    .filter({ has: page.getByRole('heading', { name: 'Pinned', exact: true }) })
+  await expect(pinned.locator('.home-item', { hasText: 'Pinned note' })).toBeVisible()
+  const item = pinned.locator('.home-item', { hasText: 'Pinned note' })
+  await item.hover()
+  await item.getByRole('button', { name: 'Delete Pinned note' }).click()
+  await page
+    .getByRole('dialog', { name: 'Delete snippet?' })
+    .getByRole('button', { name: 'Delete', exact: true })
+    .click()
+  await expect(page.locator('.home .home-item', { hasText: 'Pinned note' })).toHaveCount(0)
+
+  const quick = page.locator('.home-block', { hasText: 'Quick tools' })
+  await expect(quick.getByRole('button', { name: /^Delete / })).toHaveCount(0)
+})

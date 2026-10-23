@@ -545,6 +545,7 @@ const SURFACES = [
     open: async (page) => {
       await showPanel(page, 'home')
       await page.locator('.home-row').first().waitFor()
+      await page.locator('.home-item').first().hover()
     },
     close: async () => {},
     probes: {
@@ -554,7 +555,8 @@ const SURFACES = [
       'day label': ['.home-day', TEXT],
       'recent name': ['.home-row .row-2-name', TEXT],
       'recent meta': ['.home-row .row-2-meta', TEXT],
-      'glyph on its well': ['.home-row .glyph-well', TEXT]
+      'glyph on its well': ['.home-row .glyph-well', TEXT],
+      'delete, shown': ['.home-item:hover .home-delete', DIM]
     }
   },
   {
