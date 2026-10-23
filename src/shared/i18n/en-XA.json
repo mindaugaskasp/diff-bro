@@ -650,6 +650,12 @@
     "noDifferencesBothSidesAre": "[Ńō đĩƒƒéřéńçéş — ƀōţĥ şĩđéş àřé ĩđéńţĩçàł ·øé·øé·øé·øé·ø]",
     "lines": "[Łĩńéş ·ø]"
   },
+  "appUpdatedNotice": {
+    "updated": "[Đĩƒƒ Ɓřō ŵàş ūƥđàţéđ ţō ṽ{version} ·øé·øé·øé·ø]",
+    "restart": "[Řéşţàřţ ·øé]",
+    "saveSnippetFirst": "[Šàṽé ōř đĩşçàřđ ţĥĩş şńĩƥƥéţ ƒĩřşţ ·øé·øé·øé·øé]",
+    "dismiss": "[Đĩşɱĩşş ţĥé ūƥđàţé ńōţĩçé ·øé·øé·øé]"
+  },
   "diskChangeNotice": {
     "dismissTheFileChangedNotice": "[Đĩşɱĩşş ţĥé ƒĩłé-çĥàńğéđ ńōţĩçé ·øé·øé·øé·ø]",
     "dismiss": "[Đĩşɱĩşş ·øé]"

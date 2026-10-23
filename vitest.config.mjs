@@ -58,6 +58,7 @@ export default defineConfig({
         'src/main/kdf.js',
         'src/main/configBackup.js',
         'src/main/issueUrl.js',
+        'src/main/bundleVersion.js',
         'src/main/logFormat.js',
         'src/main/logRedact.js',
         'src/main/captureRect.js',

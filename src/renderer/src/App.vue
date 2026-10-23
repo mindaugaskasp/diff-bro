@@ -37,6 +37,7 @@ import DiffTabBar from './components/DiffTabBar.vue'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
+import AppUpdatedNotice from './components/AppUpdatedNotice.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { isMac } from './keys'
@@ -70,8 +71,7 @@ usePasteShortcut(() => usePasteToCompareStore().request())
 useSessionPersistence()
 // Mermaid's renderer, pulled in at idle so no first render stops the app.
 useDiagramWarmup()
-// Reopen last session's comparisons, then let main release any `diffbro`
-// command it was holding for this window.
+// Restore last session, then let main release a `diffbro` command held for this window.
 onMounted(async () => {
   await tabs.restoreSession()
   window.api.cliReady()
@@ -182,6 +182,7 @@ useWindowFocusRefresh()
           </transition>
 
           <DiskChangeNotice />
+          <AppUpdatedNotice />
 
           <ShortcutBar
             v-if="

@@ -650,6 +650,12 @@
     "noDifferencesBothSidesAre": "No differences — both sides are identical",
     "lines": "Lines"
   },
+  "appUpdatedNotice": {
+    "updated": "Diff Bro was updated to v{version}",
+    "restart": "Restart",
+    "saveSnippetFirst": "Save or discard this snippet first",
+    "dismiss": "Dismiss the update notice"
+  },
   "diskChangeNotice": {
     "dismissTheFileChangedNotice": "Dismiss the file-changed notice",
     "dismiss": "Dismiss"
