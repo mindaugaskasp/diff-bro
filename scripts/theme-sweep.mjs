@@ -369,6 +369,26 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'editor-text',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'File', exact: true }).click()
+      await page.getByText('Settings', { exact: true }).click()
+      const dlg = page.getByRole('dialog', { name: 'Settings' })
+      await dlg.getByRole('button', { name: 'Appearance', exact: true }).click()
+      await dlg.locator('.font-preview').scrollIntoViewIfNeeded()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+    },
+    probes: {
+      hint: ['.settings-appearance .hint', TEXT],
+      'zoom level': ['.zoom-level', TEXT],
+      'reset button': ['.zoom-controls .btn:not(.btn-icon)', TEXT],
+      preview: ['.font-preview', TEXT]
+    }
+  },
+  {
     name: 'snippet-history',
     open: async (page) => {
       await showPanel(page, 'snippets')

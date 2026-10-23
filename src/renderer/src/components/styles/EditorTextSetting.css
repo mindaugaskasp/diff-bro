@@ -1,0 +1,26 @@
+.zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.zoom-level {
+  min-width: 3.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.font-preview {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-md);
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+}
+/* A div, not a label: .row only sets direction, because labels are already flex. */
+.zoom-row {
+  display: flex;
+}

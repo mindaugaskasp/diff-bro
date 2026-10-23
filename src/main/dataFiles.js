@@ -18,6 +18,7 @@ export const STORE_NAMES = [
   'onboarding', // tour progress — features/onboarding/onboardingStore.js
   'sidebar', // sidebar width — composables/useSidebarResize.js
   'historyPanel', // snippet history panel width — composables/useHistoryResize.js
+  'editorFont', // code editor typeface — stores/editorFontStore.js
   'mergePanes', // merge pane split — features/merge/useMergePaneSizes.js
   'tools' // pinned tools — features/tools/toolsStore.js
 ]

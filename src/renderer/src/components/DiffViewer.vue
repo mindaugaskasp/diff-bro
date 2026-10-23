@@ -7,23 +7,19 @@ import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useDiffStore } from '../stores/diffStore'
 import { diffEditorOptions } from '../utils/diffEditorOptions'
-import { zoomedPx } from '../utils/diffZoom'
 import { diffLineStats } from '../utils/diffStats'
 import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
 import { applyMonacoTheme } from '../composables/useMonacoTheme'
 import AppIcon from './AppIcon.vue'
 import { useSettingsStore } from '../stores/settingsStore'
-import { useUiStore } from '../stores/uiStore'
 import { useTabScroll } from '../composables/useTabScroll'
+import { useEditorText } from '../composables/useEditorText'
 
 const store = useDiffStore()
 const restoreScroll = useTabScroll()
 
 const settings = useSettingsStore()
-const ui = useUiStore()
-let baseFont = 0
-const applyZoom = (zoom) =>
-  baseFont && editor?.updateOptions({ fontSize: zoomedPx(baseFont, zoom) })
+const text = useEditorText()
 const container = ref(null)
 
 let editor = null
@@ -56,10 +52,7 @@ onMounted(() => {
       ignoreTrimWhitespace: store.ignoreTrimWhitespace
     })
   )
-  // Monaco's default size is platform-specific, so the resting size is whatever
-  // it just chose — read once, before any zoom has moved it.
-  baseFont = editor.getModifiedEditor().getOption(monaco.editor.EditorOption.fontInfo).fontSize
-  applyZoom(ui.diffZoom)
+  text.attach(editor, editor.getModifiedEditor())
   editor.onDidUpdateDiff(() => {
     const stats = diffLineStats(editor.getLineChanges())
     store.stats = stats
@@ -82,7 +75,6 @@ watch(
 // post-flush: the probe in applyMonacoTheme reads the LIVE palette, so it has
 // to run after data-theme has been stamped on the document.
 watch(() => settings.theme, applyMonacoTheme, { flush: 'post' })
-watch(() => ui.diffZoom, applyZoom)
 
 onBeforeUnmount(() => {
   setDiffScroller(null)

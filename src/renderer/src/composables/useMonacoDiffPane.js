@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useSettingsStore } from '../stores/settingsStore'
-import { useMonacoZoom } from './useMonacoZoom'
+import { useEditorText } from './useEditorText'
 import { applyMonacoTheme } from './useMonacoTheme'
 import { diffEditorOptions } from '../utils/diffEditorOptions'
 import { diffLineStats } from '../utils/diffStats'
@@ -19,7 +19,7 @@ import { diffLineStats } from '../utils/diffStats'
  */
 export function useMonacoDiffPane({ container, original, modified, language }) {
   const settings = useSettingsStore()
-  const zoom = useMonacoZoom()
+  const text = useEditorText()
   let editor = null
   const stats = ref(null)
   let models = null
@@ -55,7 +55,7 @@ export function useMonacoDiffPane({ container, original, modified, language }) {
         inlineBelow: 640
       })
     )
-    zoom.attach(editor, editor.getModifiedEditor())
+    text.attach(editor, editor.getModifiedEditor())
     editor.onDidUpdateDiff(() => (stats.value = diffLineStats(editor.getLineChanges())))
     setModels()
   }
