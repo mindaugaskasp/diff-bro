@@ -15,20 +15,12 @@ export const TOUR_COPY = {
   share: { titleKey: 'tour.share.title', bodyKey: 'tour.share.body' },
   library: { titleKey: 'tour.library.title', bodyKey: 'tour.library.body' },
   'quick-look': { titleKey: 'tour.quick-look.title', bodyKey: 'tour.quick-look.body' },
-  'settings-open': {
-    titleKey: 'tour.settings-open.title',
-    bodyKey: 'tour.settings-open.body',
-    nextLabelKey: 'tour.settings-open.nextLabel'
-  },
-  'settings-panes': { titleKey: 'tour.settings-panes.title', bodyKey: 'tour.settings-panes.body' },
-  'settings-tips': { titleKey: 'tour.settings-tips.title', bodyKey: 'tour.settings-tips.body' },
   'snippet-new': {
     titleKey: 'tour.snippet-new.title',
     bodyKey: 'tour.snippet-new.body',
     nextLabelKey: 'tour.snippet-new.nextLabel'
   },
   'snippet-save': { titleKey: 'tour.snippet-save.title', bodyKey: 'tour.snippet-save.body' },
-  'snippet-drag': { titleKey: 'tour.snippet-drag.title', bodyKey: 'tour.snippet-drag.body' },
   'diagram-open': {
     titleKey: 'tour.diagram-open.title',
     bodyKey: 'tour.diagram-open.body',

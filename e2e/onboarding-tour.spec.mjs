@@ -2,25 +2,19 @@
 // behaviour can be checked: a fresh launch, a relaunch of the SAME profile, and
 // an overlay that measures live DOM. jsdom can prove the schedule; only this can
 // prove the ring lands on the control the step names.
-import {
-  test,
-  expect,
-  clickAppMenuItem,
-  firstReadyPage,
-  launchApp,
-  freshUserDataDir,
-  showPanel,
-  pickTag
-} from './fixtures.mjs'
-import { rmSync } from 'node:fs'
+import { test, expect, clickAppMenuItem, showPanel, pickTag } from './fixtures.mjs'
 
 // The only spec that wants the tour: every other profile in the suite has tips
 // off, or the veil would take the first click of each of them.
 test.use({ tips: true })
 
+test.beforeEach(async ({ page }) => {
+  await page.getByRole('button', { name: 'Start tour' }).click()
+})
+
 const callout = (page) => page.locator('.tour-callout')
 const ring = (page) => page.locator('.tour-ring')
-// The primary carries the step's OWN label ("Open Settings", "Load a demo
+// The primary carries the step's OWN label ("Open the editor", "Load a demo
 // pair"), so it is located structurally rather than by text.
 const next = (page) => callout(page).locator('.btn-primary')
 const back = (page) => callout(page).getByRole('button', { name: 'Back' })
@@ -37,7 +31,7 @@ const finishRun = async (page) =>
 const stepNumber = async (page) =>
   Number((await callout(page).locator('.tour-step-n').textContent()).split(' ')[1])
 
-test('a cold launch opens run one on the file slots', async ({ page }) => {
+test('Start tour opens step one on the file slots', async ({ page }) => {
   await expect(callout(page)).toBeVisible()
   await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 1 of \d+$/)
 
@@ -101,14 +95,13 @@ test('the veil takes the pointer everywhere the step does not want it', async ({
 
   // A live step leaves its control alone: the editor step invites you to press
   // the Save it rings, so that one hole really is open.
-  await finishRun(page)
-  await page.getByRole('button', { name: 'Show me' }).click()
-  await advance(page)
+  await advance(page, 5)
   expect(await at('[data-tour="snippet-save"]', 6, 6)).toBe('live')
 
-  // The drop-zone step's hole is the whole pane, file slots and all — a click
-  // there would open a picker over a step about dragging.
-  await advance(page)
+  // The diagram step's hole is the whole pane, file slots and all — a click
+  // there would open a picker over a step about reading the picture.
+  await advance(page, 2)
+  await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
   expect(await at('[data-tour="slots"]', 120, 4)).toBe('blocked')
 })
 
@@ -151,47 +144,6 @@ test('the library step types into the search and blocks the pointer', async ({ p
   await expect(page.locator('[data-tour="search"] input')).toHaveValue('')
 })
 
-test('Escape ends it, and it stays gone across a relaunch', async () => {
-  const dir = freshUserDataDir({ tips: true })
-  try {
-    const first = await launchApp(dir)
-    const page = await firstReadyPage(first)
-    await expect(callout(page)).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(callout(page)).toBeHidden()
-    await first.close()
-
-    const second = await launchApp(dir)
-    const back = await firstReadyPage(second)
-    await back.waitForTimeout(400)
-    await expect(back.locator('.tour-callout')).toBeHidden()
-    await second.close()
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('finishing run one asks about run two, and Not now closes it', async ({ page }) => {
-  await expect(callout(page)).toBeVisible()
-  await finishRun(page)
-  const prompt = page.getByRole('dialog', { name: 'Three more tips?' })
-  await expect(prompt).toBeVisible()
-  // Run one walks THROUGH Settings, and a prompt stacked on top of an open
-  // dialog is what a tour that does not put its props away looks like.
-  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden()
-  await prompt.getByRole('button', { name: 'Not now' }).click()
-  await expect(prompt).toBeHidden()
-  await expect(callout(page)).toBeHidden()
-})
-
-test('Show me runs the rest straight away rather than waiting for a relaunch', async ({ page }) => {
-  await expect(callout(page)).toBeVisible()
-  await finishRun(page)
-  await page.getByRole('button', { name: 'Show me' }).click()
-  await expect(callout(page)).toBeVisible()
-  await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 1 of \d+$/)
-})
-
 test('Skip tips ends it, and Help ▸ Show Tour brings it back', async ({ app, page }) => {
   await expect(callout(page)).toBeVisible()
   await callout(page).getByRole('button', { name: 'Skip tips' }).click()
@@ -201,8 +153,7 @@ test('Skip tips ends it, and Help ▸ Show Tour brings it back', async ({ app, p
   // while the setting stays off.
   await clickAppMenuItem(app, 'Show Tour')
   await expect(callout(page)).toBeVisible()
-  // A replay plays every step of both runs as one run.
-  expect(await stepCount(page)).toBeGreaterThan(6)
+  expect(await stepCount(page)).toBe(8)
   await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 1 of \d+$/)
 })
 
@@ -224,48 +175,26 @@ test('every step still shows a card with the sidebar collapsed', async ({ app, p
 })
 
 // Revisiting a step must also put back what the step before it opened, or the
-// card returns to a control that is now behind a dialog.
+// card returns to a control that is now behind the editor.
 test('Back returns a step, and closes what that step had opened', async ({ page }) => {
   await expect(back(page)).toHaveCount(0)
-  await page.locator('.tour-callout').waitFor()
-  while (!(await page.getByRole('dialog', { name: 'Settings' }).isVisible())) {
-    await next(page).click()
-  }
+  const editor = page.locator('[data-tour="snippet-editor"]')
+  while (!(await editor.isVisible())) await next(page).click()
   const inside = await stepNumber(page)
 
   await back(page).click()
   expect(await stepNumber(page)).toBe(inside - 1)
-  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden()
+  await expect(editor).toBeHidden()
 
-  // And forward again from there, rather than the tour losing its place.
   await next(page).click()
-  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+  await expect(editor).toBeVisible()
   expect(await stepNumber(page)).toBe(inside)
 })
 
-// A step whose target sits INSIDE a dialog must keep its callout inside that
-// dialog too. Placed beside, it straddled the dialog's edge and spilled onto
-// the blurred app behind, reading as unrelated to the row it points at.
-test('a callout pointing into a dialog stays within it', async ({ page }) => {
-  await expect(callout(page)).toBeVisible()
-  await expect(next(page)).toHaveText('Load a demo pair')
-  while (!(await page.getByRole('dialog', { name: 'Settings' }).isVisible())) {
-    await next(page).click()
-  }
-  const fits = await page.evaluate(() => {
-    const rect = (s) => document.querySelector(s).getBoundingClientRect()
-    const c = rect('.tour-callout')
-    const d = rect('.dialog')
-    return c.left >= d.left - 1 && c.right <= d.right + 1
-  })
-  expect(fits).toBe(true)
-})
-
-// Run two's editor step: Save must be a control that can actually fire. The
-// draft opened blank, so its Save was disabled the whole time it was ringed.
+// The editor step: Save must be a control that can actually fire. The draft
+// opened blank, so its Save was disabled the whole time it was ringed.
 test('the snippet step opens a draft whose Save is live', async ({ page }) => {
-  await finishRun(page)
-  await page.getByRole('button', { name: 'Show me' }).click()
+  await advance(page, 4)
   await expect(next(page)).toHaveText('Open the editor')
   await next(page).click()
 
@@ -318,8 +247,6 @@ test('a blocked control explains itself without covering the card', async ({ pag
 // The last step shows a diagram CHANGE rather than describing one: the step
 // before it loads two revisions of the same flow and turns the diagram view on.
 test('the tour ends on a real diagram comparison', async ({ page }) => {
-  await finishRun(page)
-  await page.getByRole('button', { name: 'Show me' }).click()
   await advance(page, (await stepCount(page)) - 1)
 
   await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
@@ -350,9 +277,7 @@ test('a replay swaps the demo pair rather than keeping the first one', async ({ 
 test('the demo comparison and the demo snippet leave with the tour', async ({ page }) => {
   const rows = page.locator('[data-tour="snippets"] .rows li, [data-tour="snippets"] .rows > *')
 
-  await finishRun(page)
-  await page.getByRole('button', { name: 'Show me' }).click()
-  await advance(page)
+  await advance(page, 5)
   // The tour opened Snippets for this step, so the library is on screen.
   const seeded = await rows.count()
   // The ringed Save is the live one, and pressing it is the only way the

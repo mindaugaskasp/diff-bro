@@ -128,15 +128,15 @@ where the concept lives in this repo.
 - **Comparable kind** — `text` vs `spreadsheet`; the content router picks the
   viewer from it.
 - **Tips vs tour** — two different things, and the copy leans on the
-  difference. **Tips** are the automatic ones: they appear on a first launch and
-  after an update, and `showTips` turns them off for good. The **tour** is the
+  difference. **Tips** are the automatic ones: offered by the consent dialog on
+  a first launch and after an update, and `showTips` turns them off for good. The **tour** is the
   same steps summoned deliberately (Help ▸ Show Tour, Settings, the palette); it
   ignores every flag and never switches tips back on.
-- **Run** — one block of tour steps shown together. Run one is the six a first
-  launch needs; run two is the four offered afterwards by the "Three more tips?"
-  dialog.
+- **Consent dialog** — what every unrequested tour starts with. Start tour
+  plays it, No thanks turns tips off, and closing it defers: it asks once more
+  on a later launch, then stops.
 - **Zone step** — a step whose target is an area rather than a control (the
-  comparison pane, which takes a drop anywhere). Ringed dashed, and its callout
+  comparison pane, showing a diagram diff). Ringed dashed, and its callout
   sits inside it.
 - **Live step** — the exception. A step's hole is cut so its target stays sharp,
   but the pointer stops at the veil unless the step says `live`: a click on a

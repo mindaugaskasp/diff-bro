@@ -253,18 +253,17 @@ flowchart LR
 ```mermaid
 stateDiagram-v2
   [*] --> launch
-  launch --> runOne: no stored step
-  launch --> app: both runs done
-  launch --> prompt: run one done, deferred once
-  runOne --> prompt: six steps, ends on the tips row
-  prompt --> runTwo: Show me
-  prompt --> app: Not now (re-asks once, then stops)
-  runTwo --> app: four steps
-  runOne --> app: Escape or Skip tips, tips off for good
-  app --> runOne: Help ▸ Show Tour, ignores every flag
+  launch --> consent: not started, or an update added steps
+  launch --> tour: started earlier, resumes
+  launch --> app: done, or tips off
+  consent --> tour: Start tour
+  consent --> app: No thanks, tips off for good
+  consent --> app: Escape (re-asks once, then stops)
+  tour --> app: eight steps, or Escape / Skip tips
+  app --> tour: Help ▸ Show Tour, ignores every flag
 ```
 
-Done. Anchored coach marks over the real controls, split 6 + 4.
+Done. A consent dialog, then eight anchored coach marks over the real controls.
 
 - A step's command fires on NEXT, never on entry: the step points at the
   control, Next performs the action, the step after it lands inside what opened

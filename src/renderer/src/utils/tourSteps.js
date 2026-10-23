@@ -21,7 +21,6 @@ export const TOUR_VERSION = '0.5.0'
 const STEPS = [
   {
     id: 'compare',
-    run: 1,
     since: '0.5.0',
     target: '[data-tour="slots"]',
     side: 'bottom',
@@ -30,7 +29,6 @@ const STEPS = [
   },
   {
     id: 'share',
-    run: 1,
     since: '0.5.0',
     target: '[data-tour="share"]',
     // The button is what you press; the comparison is what gets sealed.
@@ -39,7 +37,6 @@ const STEPS = [
   },
   {
     id: 'library',
-    run: 1,
     since: '0.5.0',
     // The sidebar is the surface all three of these steps work inside: cut out
     // of the veil and stroked, with the ring on the one control that matters.
@@ -52,7 +49,6 @@ const STEPS = [
   },
   {
     id: 'quick-look',
-    run: 1,
     since: '0.5.0',
     // No anchor for the launcher itself: it is a separate window that opens ON
     // TOP of this one. The step names the key and leaves the press to the user
@@ -61,42 +57,7 @@ const STEPS = [
     side: 'right'
   },
   {
-    id: 'settings-open',
-    run: 1,
-    since: '0.5.0',
-    // Absent on macOS, where the menu bar is the OS's — the missing-target
-    // fallback centres the card, and the copy names the File menu on both.
-    target: '[data-tour="menubar"]',
-    side: 'bottom',
-    advance: 'settings',
-    undo: 'tour-close-settings'
-  },
-  {
-    id: 'settings-panes',
-    run: 1,
-    since: '0.5.0',
-    target: '[data-tour="settings-nav"]',
-    context: '[data-tour="settings"]',
-    side: 'right',
-    // Idempotent going forwards, where Settings is already open; what reopens
-    // it when Back returns here from a step that closed it.
-    enter: 'settings'
-  },
-  {
-    id: 'settings-tips',
-    run: 1,
-    since: '0.5.0',
-    target: '[data-tour="tips"]',
-    context: '[data-tour="settings"]',
-    side: 'top',
-    enter: 'settings',
-    // The last step inside Settings: leaving it either way puts the dialog
-    // away, so the steps that follow are not read through it.
-    leave: 'tour-close-settings'
-  },
-  {
     id: 'snippet-new',
-    run: 2,
     since: '0.5.0',
     target: '[data-tour="snippet-new"]',
     context: '[data-tour="sidebar"]',
@@ -107,7 +68,6 @@ const STEPS = [
   },
   {
     id: 'snippet-save',
-    run: 2,
     since: '0.5.0',
     // The one step that asks for the press it rings. Its Next does NOT save —
     // a card button doing exactly what the ringed control does reads as two
@@ -119,16 +79,7 @@ const STEPS = [
     leave: 'tour-close-snippet'
   },
   {
-    id: 'snippet-drag',
-    run: 2,
-    since: '0.5.0',
-    target: '[data-tour="pane"]',
-    side: 'left',
-    zone: true
-  },
-  {
     id: 'diagram-open',
-    run: 2,
     since: '0.5.0',
     target: '[data-tour="snippets"]',
     context: '[data-tour="sidebar"]',
@@ -141,12 +92,19 @@ const STEPS = [
   },
   {
     id: 'diagram',
-    run: 2,
     since: '0.5.0',
     target: '[data-tour="pane"]',
     side: 'left',
     zone: true
   }
+]
+
+/** What the consent dialog says the tour covers. */
+export const TOUR_TOPICS = [
+  { icon: 'diff', hue: 'diff', labelKey: 'onboarding.tourConsent.topicCompare' },
+  { icon: 'share', hue: 'secure', labelKey: 'onboarding.tourConsent.topicShare' },
+  { icon: 'search', hue: 'inspect', labelKey: 'onboarding.tourConsent.topicFind' },
+  { icon: 'code', hue: 'snippet', labelKey: 'onboarding.tourConsent.topicSnippets' }
 ]
 
 /** @type {import('../types').TourStep[]} */
@@ -167,56 +125,35 @@ export function compareVersions(a, b) {
   return 0
 }
 
-/**
- * The contiguous block of steps sharing the run of the step at `index`.
- * Stops at the run boundary so run one never spills into run two.
- */
-export function runBlockAt(index, steps = TOUR_STEPS) {
-  const first = steps[index]
-  if (!first) return []
-  const block = []
-  for (let i = index; i < steps.length && steps[i].run === first.run; i++) block.push(steps[i])
-  return block
-}
-
 const NONE = { mode: 'none', steps: [] }
+const MAX_DEFER = 2
 
-// Steps introduced after the version last seen. Returns null when the pointer
-// has not yet reached the end of what existed back then, so a resumed tour is
-// never mistaken for an upgrade.
-function upgradePlan(steps, at, seenVersion) {
-  if (!seenVersion) return at >= steps.length ? NONE : null
+// Steps introduced after the version last seen. Null when the user has not yet
+// been through what existed then, so a resumed tour is never taken for an update.
+function upgradeSteps(steps, at, seenVersion) {
+  if (!seenVersion) return null
   const older = steps.filter((s) => compareVersions(s.since, seenVersion) <= 0)
   if (at < older.length) return null
-  const fresh = steps.filter((s) => compareVersions(s.since, seenVersion) > 0)
-  return fresh.length ? { mode: 'steps', steps: fresh } : NONE
+  return steps.filter((s) => compareVersions(s.since, seenVersion) > 0)
 }
 
+const prompt = (kind, steps, deferred) =>
+  (deferred ?? 0) >= MAX_DEFER ? NONE : { mode: 'prompt', kind, steps }
+
 /**
- * What the tour should do right now.
- *
- * `prompt` is the "Three more tips?" dialog: run two is never started
- * unannounced, because the gap between finishing run one and being ready for
- * more is the user's to judge, not ours.
- *
+ * What the tour should do right now. Nothing starts unannounced: a first run
+ * and an update's new steps both ask first; only a tour already agreed to resumes.
  * @param {import('../types').TourState} state
- * @returns {{ mode: 'steps'|'prompt'|'none', steps: import('../types').TourStep[] }}
+ * @returns {{ mode: 'steps'|'prompt'|'none', kind?: 'intro'|'update', steps: import('../types').TourStep[] }}
  */
 export function tourPlan(state) {
   const steps = state.allSteps ?? TOUR_STEPS
   if (!state.showTips) return NONE
-
   const at = state.tourStep ?? 0
-  // An update's new steps outrank the run-two prompt: only new ones are left,
-  // and they play as their own run rather than re-opening a finished tour.
-  const upgrade = upgradePlan(steps, at, state.seenVersion)
-  if (upgrade) return upgrade
 
-  const block = runBlockAt(at, steps)
-  if (!block.length) return NONE
-  // Ask only when ARRIVING at a later run, never when resuming one already
-  // under way — `at` must be that run's first index in the whole list.
-  const entering = block[0].run > 1 && at === steps.findIndex((s) => s.run === block[0].run)
-  if (!entering) return { mode: 'steps', steps: block }
-  return (state.tourDeferred ?? 0) >= 2 ? NONE : { mode: 'prompt', steps: block }
+  const fresh = upgradeSteps(steps, at, state.seenVersion)
+  if (fresh) return fresh.length ? prompt('update', fresh, state.tourDeferred) : NONE
+  if (at >= steps.length) return NONE
+  if (at > 0) return { mode: 'steps', steps: steps.slice(at) }
+  return prompt('intro', steps, state.tourDeferred)
 }

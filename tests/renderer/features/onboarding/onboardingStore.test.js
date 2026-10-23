@@ -11,13 +11,12 @@ import { useTabsStore } from '../../../../src/renderer/src/stores/tabsStore'
 import { useUiStore } from '../../../../src/renderer/src/stores/uiStore'
 import { TOUR_STEPS, TOUR_VERSION } from '../../../../src/renderer/src/utils/tourSteps'
 
-const RUN_ONE = TOUR_STEPS.filter((s) => s.run === 1).length
 const stored = () => JSON.parse(localStorage.getItem('diffbro.onboarding') ?? '{}')
 
-// Step one holds the veil down for a beat before advancing, so walking the run
+// Step one holds the veil down for a beat before advancing, so walking the tour
 // means flushing that timer each time.
 const runOut = (tour) => {
-  for (let i = 0; i < RUN_ONE; i++) {
+  for (let i = 0; i < TOUR_STEPS.length; i++) {
     tour.next()
     if (tour.revealing) vi.runAllTimers()
   }
@@ -48,11 +47,21 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 describe('starting', () => {
-  it('opens run one on a cold first launch', () => {
+  it('asks first on a cold launch, with the veil still up', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    expect(tour.promptOpen).toBe(true)
+    expect(tour.promptKind).toBe('intro')
+    expect(tour.active).toBe(false)
+  })
+
+  it('Start tour opens step one', () => {
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.acceptPrompt()
+    expect(tour.promptOpen).toBe(false)
     expect(tour.active).toBe(true)
-    expect(tour.steps).toHaveLength(RUN_ONE)
+    expect(tour.steps).toHaveLength(TOUR_STEPS.length)
     expect(tour.currentStep.id).toBe('compare')
   })
 
@@ -64,9 +73,10 @@ describe('starting', () => {
     expect(tour.promptOpen).toBe(false)
   })
 
-  it('resumes mid-run where it was left', () => {
+  it('resumes mid-tour where it was left, without asking again', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     vi.runAllTimers()
     expect(tour.tourStep).toBe(1)
@@ -74,58 +84,45 @@ describe('starting', () => {
     setActivePinia(createPinia())
     const relaunched = useOnboardingStore()
     relaunched.begin()
+    expect(relaunched.promptOpen).toBe(false)
     expect(relaunched.currentStep.id).toBe(TOUR_STEPS[1].id)
   })
 })
 
 describe('advancing', () => {
-  it('walks the run and then closes', () => {
+  it('walks the tour, closes, and marks the version seen', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     runOut(tour)
     expect(tour.active).toBe(false)
-    expect(tour.tourStep).toBe(RUN_ONE)
-  })
-
-  it('asks about run two the moment run one ends, not on a later launch', () => {
-    const tour = useOnboardingStore()
-    tour.begin()
-    runOut(tour)
-    expect(tour.promptOpen).toBe(true)
-  })
-
-  it('marks the version seen once every run is done', () => {
-    const tour = useOnboardingStore()
-    tour.begin()
-    runOut(tour)
-    tour.acceptPrompt()
-    for (let i = 0; i < TOUR_STEPS.length - RUN_ONE; i++) {
-      tour.next()
-      if (tour.revealing) vi.runAllTimers()
-    }
+    expect(tour.promptOpen).toBe(false)
     expect(tour.tourStep).toBe(TOUR_STEPS.length)
     expect(tour.seenVersion).toBe(TOUR_VERSION)
-    expect(tour.promptOpen).toBe(false)
   })
 })
 
-describe('the continuation prompt', () => {
+describe('the consent prompt', () => {
   const toPrompt = () => {
     const tour = useOnboardingStore()
     tour.begin()
-    runOut(tour)
     return tour
   }
 
-  it('Show me starts run two in the same session', () => {
+  it('No thanks turns tips off for good', () => {
     const tour = toPrompt()
-    tour.acceptPrompt()
+    tour.declinePrompt()
     expect(tour.promptOpen).toBe(false)
-    expect(tour.active).toBe(true)
-    expect(tour.steps.every((s) => s.run === 2)).toBe(true)
+    expect(tour.active).toBe(false)
+    expect(stored().showTips).toBe(false)
+
+    setActivePinia(createPinia())
+    const relaunched = useOnboardingStore()
+    relaunched.begin()
+    expect(relaunched.promptOpen).toBe(false)
   })
 
-  it('Not now closes it without turning tips off', () => {
+  it('a dismiss closes it without turning tips off', () => {
     const tour = toPrompt()
     tour.deferPrompt()
     expect(tour.promptOpen).toBe(false)
@@ -155,21 +152,61 @@ describe('the continuation prompt', () => {
     tour.begin()
     expect(tour.promptOpen).toBe(false)
   })
+
+  it('accepting resets the defer count, so a later update gets its own asks', () => {
+    toPrompt().deferPrompt()
+    setActivePinia(createPinia())
+    const tour = toPrompt()
+    tour.acceptPrompt()
+    expect(stored().deferred).toBe(0)
+  })
+})
+
+describe('profiles from the two-run tour', () => {
+  it('a profile that had started it is never asked again', () => {
+    localStorage.setItem(
+      'diffbro.onboarding',
+      JSON.stringify({ showTips: true, tourStep: 7, seenVersion: '', deferred: 1 })
+    )
+    const tour = useOnboardingStore()
+    tour.begin()
+    expect(tour.promptOpen).toBe(false)
+    expect(tour.active).toBe(false)
+  })
+
+  it('a profile that never started it is asked like a new one', () => {
+    localStorage.setItem('diffbro.onboarding', JSON.stringify({ showTips: true, tourStep: 0 }))
+    const tour = useOnboardingStore()
+    tour.begin()
+    expect(tour.promptOpen).toBe(true)
+  })
+
+  it('a new-layout profile mid-tour still resumes', () => {
+    localStorage.setItem(
+      'diffbro.onboarding',
+      JSON.stringify({ showTips: true, tourStep: 3, layout: 2 })
+    )
+    const tour = useOnboardingStore()
+    tour.begin()
+    expect(tour.currentStep.id).toBe(TOUR_STEPS[3].id)
+  })
 })
 
 describe('opting out', () => {
   it('skip closes the tour and turns tips off for good', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.skip()
     expect(tour.active).toBe(false)
     expect(tour.showTips).toBe(false)
     expect(stored().showTips).toBe(false)
   })
 
-  it('a skipped run one never leads to the run-two prompt', () => {
+  it('a skipped tour is never offered again', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.skip()
 
     setActivePinia(createPinia())
@@ -190,6 +227,7 @@ describe('opting out', () => {
   it('can be skipped from the very first step', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     expect(tour.currentStep.id).toBe('compare')
     tour.skip()
     expect(tour.active).toBe(false)
@@ -223,6 +261,7 @@ describe('replay', () => {
   it('leaves the recorded progress alone until it finishes', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     vi.runAllTimers()
     const before = tour.tourStep
@@ -238,6 +277,7 @@ describe('persistence', () => {
   it('round-trips its state through the store file', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     vi.runAllTimers()
     expect(stored().tourStep).toBe(1)
@@ -270,6 +310,7 @@ describe("when a step's command fires", () => {
   it('runs nothing on arrival, however much the step has to say', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     expect(tour.currentStep.advance).toBe('tour-demo-diff')
     expect(tour.pendingCommand).toBe(null)
   })
@@ -277,6 +318,7 @@ describe("when a step's command fires", () => {
   it("runs the step's own command when Next is pressed", () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     expect(tour.pendingCommand).toStrictEqual({ action: 'tour-demo-diff' })
   })
@@ -286,6 +328,7 @@ describe("when a step's command fires", () => {
   it('hands over a fresh request each time, so the same command twice both run', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     const first = tour.pendingCommand
     tour.replay()
@@ -316,6 +359,7 @@ describe('going back', () => {
   it('returns to the step before, and records the move', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     vi.runAllTimers()
     expect(tour.currentStep.id).toBe('share')
@@ -329,25 +373,28 @@ describe('going back', () => {
   it('does nothing on the first step — there is nowhere behind it', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.back()
     expect(tour.index).toBe(0)
     expect(tour.tourStep).toBe(0)
   })
 
   it('undoes what the step it returns to had opened', () => {
-    const ui = useUiStore()
     const tour = useOnboardingStore()
     tour.replay()
-    const at = TOUR_STEPS.findIndex((s) => s.id === 'settings-panes')
+    const at = TOUR_STEPS.findIndex((s) => s.id === 'snippet-save')
     for (let i = 0; i < at; i++) {
       tour.next()
       if (tour.revealing) vi.runAllTimers()
     }
-    ui.showSettingsDialog = true
 
+    const dispatched = []
+    tour.$subscribe(() => tour.pendingCommand && dispatched.push(tour.pendingCommand.action), {
+      flush: 'sync'
+    })
     tour.back()
-    expect(tour.currentStep.id).toBe('settings-open')
-    expect(tour.pendingCommand).toStrictEqual({ action: 'tour-close-settings' })
+    expect(tour.currentStep.id).toBe('snippet-new')
+    expect(dispatched).toContain('tour-close-snippet')
   })
 
   // Leaving forwards already cleared the search it typed; leaving backwards has
@@ -391,6 +438,7 @@ describe('the demo comparison', () => {
     tabs.init()
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     await tour.openDemo()
     return { tabs, tour, diff: useDiffStore() }
   }
@@ -436,13 +484,13 @@ describe('the demo comparison', () => {
   })
 })
 
-// The rest of the stage, cleared the same way. Run one walks THROUGH Settings,
-// so without this the "Three more tips?" dialog opened on top of it.
+// The rest of the stage, cleared the same way. A replay starts from Settings.
 describe('putting the stage back', () => {
   it('closes the Settings dialog the tour opened', () => {
     const ui = useUiStore()
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     ui.showSettingsDialog = true
     runOut(tour)
     expect(ui.showSettingsDialog).toBe(false)
@@ -452,6 +500,7 @@ describe('putting the stage back', () => {
     const ui = useUiStore()
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.typeSearch()
     vi.runAllTimers()
     expect(ui.sidebarQuery).toBeTruthy()
@@ -467,6 +516,7 @@ describe('putting the stage back', () => {
     ui.sidebarQuery = 'flags'
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
 
     tour.clearFilters()
     expect(ui.sidebarTags).toStrictEqual([])
@@ -482,6 +532,7 @@ describe('putting the stage back', () => {
     settings.setSidebarCollapsed(true)
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     expect(settings.sidebarCollapsed).toBe(false)
     tour.skip()
     expect(settings.sidebarCollapsed).toBe(true)
@@ -492,6 +543,7 @@ describe('putting the stage back', () => {
     snippets.editingSnippet = { id: null }
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.openSnippet()
     tour.skip()
     expect(snippets.editingSnippet).toStrictEqual({ id: null })
@@ -509,6 +561,7 @@ describe('putting the stage back', () => {
     const snippets = useSnippetStore()
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.openSnippet()
     await pressSave(snippets)
     expect(snippets.entries).toHaveLength(1)
@@ -521,6 +574,7 @@ describe('putting the stage back', () => {
     const snippets = useSnippetStore()
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.openSnippet()
     await pressSave(snippets)
     tour.skip()
@@ -532,6 +586,7 @@ describe('putting the stage back', () => {
     await snippets.add({ name: DEMO_NAME, content: 'mine', language: 'json' })
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.openSnippet()
     await pressSave(snippets)
     tour.skip()
@@ -542,6 +597,7 @@ describe('putting the stage back', () => {
     const snippets = useSnippetStore()
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.openSnippet()
     expect(snippets.editingSnippet.initialName).toBeTruthy()
     tour.skip()
@@ -553,6 +609,7 @@ describe('the reveal after step one', () => {
   it('drops the veil for a beat before moving on, then advances', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     expect(tour.currentStep.id).toBe('compare')
 
     tour.next()
@@ -568,6 +625,7 @@ describe('the reveal after step one', () => {
   it('ignores a second Next while the veil is down', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     tour.next()
     vi.runAllTimers()
@@ -577,6 +635,7 @@ describe('the reveal after step one', () => {
   it('a skip during the reveal ends the tour rather than advancing into it', () => {
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.next()
     tour.skip()
     vi.runAllTimers()
@@ -591,6 +650,7 @@ describe('the tour and the sidebar panel', () => {
     settings.setSidebarPanel('tools')
     const tour = useOnboardingStore()
     tour.begin()
+    tour.acceptPrompt()
     tour.clearFilters()
     expect(settings.sidebarPanel).toBe('snippets')
     tour.skip()

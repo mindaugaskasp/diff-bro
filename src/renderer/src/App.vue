@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import { SnippetShot, useImageExportStore } from './features/imageExport'
-import { ContinueTourDialog, TourOverlay } from './features/onboarding'
+import { TourConsentDialog, TourOverlay } from './features/onboarding'
 import { usePasteToCompareStore } from './features/pasteToCompare'
 import { useCommands } from './composables/useCommands'
 import { useSettingsStore } from './stores/settingsStore'
@@ -200,7 +200,7 @@ useWindowFocusRefresh()
 
     <AppDialogs />
     <AppTooltip />
-    <ContinueTourDialog />
+    <TourConsentDialog />
     <TourOverlay />
 
     <transition name="fade">

@@ -215,7 +215,7 @@
    is a plain `.btn`. See docs/standards.md. */
 .btn-ghost {
   background: none;
-  color: var(--text-dim);
+  color: var(--text-meta);
   border-color: var(--btn-edge);
   box-shadow: none;
 }

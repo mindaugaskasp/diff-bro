@@ -54,6 +54,11 @@ const DIM = 3
 // twelve themes for a line that is doing exactly its job.
 const SEPARATOR = 1.11
 
+async function setOnboarding(page, state) {
+  await page.evaluate((s) => globalThis.api.storeSave('onboarding', JSON.stringify(s)), state)
+  await page.reload()
+}
+
 async function showPanel(page, panel) {
   const item = page.locator(`.rail-item[data-panel="${panel}"]`)
   if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
@@ -363,6 +368,25 @@ async function seedClaudeInbox(page, userDataDir) {
 }
 
 const SURFACES = [
+  {
+    name: 'tour-consent',
+    // Only a cold profile asks, so the sweep makes this one cold and reloads.
+    open: async (page) => {
+      await setOnboarding(page, { showTips: true, tourStep: 0, layout: 2 })
+      await page.getByRole('dialog', { name: 'Take a one-minute tour?' }).waitFor()
+    },
+    close: async (page) => {
+      await setOnboarding(page, { showTips: false, layout: 2 })
+      await page.locator('[data-tour="slots"]').waitFor()
+    },
+    probes: {
+      intro: ['.dialog .dialog-note', TEXT],
+      topic: ['.tour-topics li', TEXT],
+      'topic glyph': ['.tour-topics .glyph-well', TEXT],
+      'start later': ['.tour-later', TEXT],
+      'no thanks': ['.dialog .btn-ghost', TEXT]
+    }
+  },
   {
     name: 'update-notice',
     open: async (page, { app }) => {
