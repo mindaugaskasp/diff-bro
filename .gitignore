@@ -27,5 +27,5 @@ quality-audit.md
 .cache/
 
 # Crash dumps from Electron in the Docker container
-core
-core.*
+/core
+/core.[0-9]*
