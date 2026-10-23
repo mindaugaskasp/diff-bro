@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { versionRows } from '../utils/snippetHistory'
 import { isSecret } from '../utils/secretSnippet'
@@ -7,6 +8,7 @@ import { useVersionPair } from '../composables/useVersionPair'
 import { useMonacoDiffPane } from '../composables/useMonacoDiffPane'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { ago } from '../utils/relativeTime'
+import { useHistoryResize } from '../composables/useHistoryResize'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import AppIcon from './AppIcon.vue'
 
@@ -52,43 +54,63 @@ async function copyVersion() {
   if (res?.ok) flash()
 }
 
-const stamp = (at) => new Date(at).toLocaleString()
+const stamp = (at) =>
+  new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const t = useI18n().t
+const rowLabel = (row) => (row.index === -1 ? t('snippetHistoryDialog.current') : ago(row.at))
+const selectedRow = computed(() => rows.value.find((r) => r.index === selected.value))
+
+const panel = ref(null)
+const { width, start, reset } = useHistoryResize(
+  () => panel.value?.parentElement?.clientWidth ?? window.innerWidth
+)
 </script>
 
 <template>
   <aside
     v-if="entry"
+    ref="panel"
     class="hist-panel"
+    :style="{ width: `${width}px` }"
     :aria-label="$t('snippetHistoryDialog.title', { name: entry.name })"
   >
+    <button
+      class="hist-grip"
+      :aria-label="$t('snippetHistoryDialog.resize')"
+      :data-tip="$t('snippetHistoryDialog.resizeTip')"
+      @pointerdown="start"
+      @dblclick="reset"
+    ></button>
     <div class="hist-head band">
       <span class="hist-title">{{ $t('snippetEditorActions.history') }}</span>
       <button class="btn btn-sm btn-icon" :aria-label="$t('common.close')" @click="emit('close')">
         <AppIcon name="x" />
       </button>
     </div>
-    <div class="hist-body">
-      <ol class="hist-rail">
-        <li v-for="row in rows" :key="row.index">
-          <button
-            class="hist-version"
-            :class="{ on: selected === row.index }"
-            @click="select(row.index)"
-          >
-            <span class="hv-when">{{ stamp(row.at) }}</span>
-            <span class="hv-meta">
-              {{ row.index === -1 ? $t('snippetHistoryDialog.current') : ago(row.at) }}
-            </span>
-          </button>
-        </li>
-      </ol>
-      <div v-if="!masked" ref="container" class="hist-diff"></div>
-      <div v-else class="hist-diff hist-masked"><SnippetSecretMask compact /></div>
-    </div>
-    <div class="hist-actions">
+    <ol class="hist-rail">
+      <li v-for="row in rows" :key="row.index">
+        <button
+          class="hist-version"
+          :class="{ on: selected === row.index }"
+          :aria-current="selected === row.index || undefined"
+          @click="select(row.index)"
+        >
+          <span class="hv-when">{{ rowLabel(row) }}</span>
+          <span class="hv-meta">{{ stamp(row.at) }}</span>
+        </button>
+      </li>
+    </ol>
+    <div class="hist-band band">
+      <span v-if="selected === -1" class="hb-text">
+        {{ $t('snippetHistoryDialog.isCurrent') }}
+      </span>
+      <span v-else class="hb-text">
+        <strong>{{ selectedRow && rowLabel(selectedRow) }}</strong>
+        <span class="hb-meta">{{ $t('snippetHistoryDialog.toCurrent') }}</span>
+      </span>
       <button
         v-if="isSecret(entry)"
-        class="btn"
+        class="btn btn-sm"
         :data-tip="
           masked
             ? $t('snippetEditorActions.showTheContents')
@@ -99,10 +121,10 @@ const stamp = (at) => new Date(at).toLocaleString()
         <AppIcon :name="masked ? 'eye' : 'eye-off'" />
         {{ masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide') }}
       </button>
-      <!-- Works while masked — copying without revealing is what a secret is
-           FOR, and the row and editor both honour that. -->
+      <!-- Works while masked: copying without revealing is what a secret is for. -->
       <button
-        class="btn"
+        v-if="selected !== -1"
+        class="btn btn-sm"
         :class="{ copied }"
         :data-tip="$t('snippetHistoryDialog.copyTip')"
         @click="copyVersion"
@@ -110,6 +132,8 @@ const stamp = (at) => new Date(at).toLocaleString()
         {{ copied ? $t('common.copied') : $t('snippetHistoryDialog.copyVersion') }}
       </button>
     </div>
+    <div v-if="!masked" ref="container" class="hist-diff"></div>
+    <div v-else class="hist-diff hist-masked"><SnippetSecretMask compact /></div>
   </aside>
 </template>
 

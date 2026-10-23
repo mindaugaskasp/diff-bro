@@ -968,7 +968,11 @@
     "title": "History — {name}",
     "current": "Current",
     "copyVersion": "Copy this version",
-    "copyTip": "Copy the selected version's contents"
+    "copyTip": "Copy the selected version's contents",
+    "resize": "Resize the history panel",
+    "resizeTip": "Drag to resize · double-click to reset",
+    "toCurrent": "→ Current",
+    "isCurrent": "This is the current version"
   },
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",

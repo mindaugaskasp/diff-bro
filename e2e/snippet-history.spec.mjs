@@ -1,4 +1,14 @@
-import { test, expect, openNewSnippet, snippetDoc } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  firstReadyPage,
+  freshUserDataDir,
+  launchApp,
+  openNewSnippet,
+  showPanel,
+  snippetDoc
+} from './fixtures.mjs'
+import { rmSync } from 'node:fs'
 import { focusEditor } from './monaco.mjs'
 
 // Version history is real only in a launched app: versions are the actual
@@ -107,14 +117,98 @@ test("a secret snippet's history opens masked, copies masked, reveals on demand"
   await expect(dialog.locator('.hist-diff .view-line')).toHaveCount(0)
 
   // Copy without revealing — the point of a secret; the plaintext reaches the
-  // clipboard while the DOM keeps the mask.
+  // clipboard while the DOM keeps the mask. Current has no copy here: it is the
+  // snippet itself, so the older version is the one to copy.
+  await dialog.locator('.hist-version').last().click()
   await app.evaluate(({ clipboard }) => clipboard.clear())
   await dialog.getByRole('button', { name: 'Copy this version' }).click()
   await expect(dialog.getByRole('button', { name: 'Copied' })).toBeVisible()
-  expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe('sk-live-NEW')
+  expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe('sk-live-OLD')
   await expect(dialog.locator('.secret-mask')).toBeVisible()
 
   await dialog.getByRole('button', { name: 'Show', exact: true }).click()
   await expect(dialog.locator('.secret-mask')).toHaveCount(0)
-  await expect(dialog.locator('.hist-diff')).toContainText('sk-live-NEW')
+  await expect(dialog.locator('.hist-diff')).toContainText('sk-live-OLD')
+})
+
+const LONG = `curl -fsS -o /dev/null -w "%{http_code}\\n" https://example.com/health/${'x'.repeat(160)}`
+
+test('the history diff wraps a long line instead of scrolling sideways', async ({ page }) => {
+  await createSnippet(page, 'Wrapped', LONG)
+  await editSnippet(page, 'Wrapped', `${LONG} ggg`)
+  const panel = await openHistory(page, 'Wrapped')
+  await expect(panel.locator('.hist-diff .view-line').first()).toBeVisible()
+
+  const overflow = await page.evaluate(() => {
+    const pane = document.querySelector('.hist-diff').getBoundingClientRect()
+    // What is on screen: the modified side's lines and the removed lines drawn as
+    // view zones. Inline mode keeps the original editor alive but hidden.
+    const lines = [
+      ...document.querySelectorAll(
+        '.hist-diff .editor.modified .view-lines .view-line span, .hist-diff .view-zones .view-line span'
+      )
+    ]
+    return Math.max(...lines.map((l) => l.getBoundingClientRect().right)) - pane.right
+  })
+  expect(overflow).toBeLessThanOrEqual(1)
+})
+
+test('the copy action sits on the selected version, not in a footer', async ({ page }) => {
+  await createSnippet(page, 'Banded', 'v1')
+  await editSnippet(page, 'Banded', 'v2')
+  const panel = await openHistory(page, 'Banded')
+  const band = panel.locator('.hist-band')
+
+  await expect(band).toHaveText('This is the current version')
+  await expect(panel.getByRole('button', { name: 'Copy this version' })).toHaveCount(0)
+
+  await panel.locator('.hist-version').last().click()
+  await expect(band).toContainText('→ Current')
+  await expect(band.getByRole('button', { name: 'Copy this version' })).toBeVisible()
+  await expect(panel.locator('.hist-version').last()).toHaveAttribute('aria-current', 'true')
+})
+
+test('the panel resizes from its left edge, and a double-click resets it', async ({ page }) => {
+  await createSnippet(page, 'Resizable', 'a')
+  await editSnippet(page, 'Resizable', 'b')
+  const panel = await openHistory(page, 'Resizable')
+  const width = async () => (await panel.boundingBox()).width
+  const before = await width()
+
+  const grip = await panel.locator('.hist-grip').boundingBox()
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(grip.x - 120, grip.y + grip.height / 2, { steps: 6 })
+  await page.mouse.up()
+  expect(await width()).toBeGreaterThan(before + 100)
+
+  await panel.locator('.hist-grip').dblclick()
+  expect(Math.round(await width())).toBe(Math.round(before))
+})
+
+test('the panel keeps its width across a relaunch', async () => {
+  const dir = freshUserDataDir()
+  try {
+    const first = await launchApp(dir)
+    let page = await firstReadyPage(first)
+    await createSnippet(page, 'Remembered', 'a')
+    await editSnippet(page, 'Remembered', 'b')
+    let panel = await openHistory(page, 'Remembered')
+    const grip = await panel.locator('.hist-grip').boundingBox()
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(grip.x - 120, grip.y + grip.height / 2, { steps: 6 })
+    await page.mouse.up()
+    const widened = Math.round((await panel.boundingBox()).width)
+    await first.close()
+
+    const second = await launchApp(dir)
+    page = await firstReadyPage(second)
+    await showPanel(page, 'snippets')
+    panel = await openHistory(page, 'Remembered')
+    expect(Math.round((await panel.boundingBox()).width)).toBe(widened)
+    await second.close()
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

@@ -1,5 +1,5 @@
 .hist-panel {
-  width: 360px;
+  position: relative;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -17,13 +17,9 @@
   font-size: var(--font-md);
   font-weight: 650;
 }
-.hist-body {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: minmax(0, 40%) minmax(0, 1fr);
-}
 .hist-rail {
+  flex: none;
+  max-height: 40%;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -31,11 +27,45 @@
   border-bottom: 1px solid var(--border);
   background: var(--bg);
 }
-.hist-actions {
-  display: flex;
+.hist-band {
+  flex: none;
+  justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-top: 1px solid var(--line);
+  min-height: var(--band-row);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.hb-text {
+  min-width: 0;
+  flex: 1;
+  font-size: var(--font-sm);
+}
+.hb-meta {
+  margin-left: var(--space-1);
+  color: var(--text-meta);
+}
+.hist-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 2;
+  width: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+}
+.hist-grip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2.5px;
+  width: 3px;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: var(--radius);
+  background: var(--btn-edge);
 }
 .hist-version {
   display: flex;
@@ -66,9 +96,11 @@
 }
 .hv-meta {
   font-size: var(--font-xs);
-  color: var(--text-dim);
+  color: var(--text-meta);
 }
 .hist-diff {
+  flex: 1;
+  min-height: 0;
   min-width: 0;
   background: var(--bg);
 }
