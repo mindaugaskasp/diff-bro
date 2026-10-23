@@ -1,4 +1,4 @@
-// Windows CI: proves a GUI-subsystem exe launched as Claude Desktop does keeps its stdio pipes.
+// Windows CI: proves the packaged exe, launched as Claude Desktop does, reads and answers over stdio.
 // Usage: node scripts/mcp-smoke.mjs <executable> [<app dir>]
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -8,23 +8,22 @@ import { createInterface } from 'node:readline'
 
 const [exe, appDir] = process.argv.slice(2)
 const profile = mkdtempSync(join(tmpdir(), 'diffbro-mcp-smoke-'))
-const env = { ...process.env, DIFFBRO_MCP_TRACE: '1' }
+const env = { ...process.env }
 delete env.ELECTRON_RUN_AS_NODE
 
 const args = [...(appDir ? [appDir] : []), `--user-data-dir=${profile}`, 'mcp']
 const child = spawn(exe, args, { env, stdio: ['pipe', 'pipe', 'inherit'] })
 const answers = new Map()
 const noise = []
-let answered = 0
-let raw = ''
-child.stdout.on('data', (d) => (raw += d.toString('latin1')))
 createInterface({ input: child.stdout }).on('line', (line) => {
+  // Electron on Windows writes one blank line at startup, before any reply;
+  // MCP clients skip it. Anything else on stdout would corrupt the protocol.
+  if (!line.trim()) return
   try {
     const msg = JSON.parse(line)
-    answered++
     answers.get(msg.id)?.(msg)
   } catch {
-    noise.push(`${JSON.stringify(line)} after ${answered} answer(s)`)
+    noise.push(JSON.stringify(line))
   }
 })
 
@@ -54,7 +53,5 @@ const code = await new Promise((resolve) => child.on('exit', resolve))
 clearTimeout(timer)
 rmSync(profile, { recursive: true, force: true })
 if (code !== 0) fail(`exited ${code} after stdin closed`)
-// stdout is the protocol channel: even a blank line is something a client must parse.
-if (noise.length)
-  fail(`non-protocol output on stdout: ${noise.map((l) => JSON.stringify(l)).join(', ')}`)
+if (noise.length) fail(`non-protocol output on stdout: ${noise.join(', ')}`)
 console.log('mcp smoke: initialize answered, refused while off, exited on EOF')

@@ -7,7 +7,7 @@
 | **Branch** | `feat/claude-mcp` |
 | **Started** | 2026-10-23 |
 | **Finished** | — |
-| **Bugs found and fixed this iteration** | 2 / 2 |
+| **Bugs found and fixed this iteration** | 3 / 3 |
 | **Token baseline** | 2026-10-23T05:06:37Z |
 | **Claude tokens used** | 30,561,937 (cache read 30.17M, output 137k), 2026-10-23T05:06Z → 05:47Z |
 
@@ -216,7 +216,7 @@ switch is read on every call, so turning it off revokes access immediately.
 - [x] 9. Home "From Claude · N to review". **Preview** opens a tab and saves
       nothing. **Accept** saves through the ordinary stores; a comparison
       becomes a kept saved diff.
-- [x] 10. `e2e/claude-mcp.spec.mjs` (6 tests); `claude-settings` and
+- [x] 10. `e2e/claude-mcp.spec.mjs` (5 tests); `claude-settings` and
       `claude-inbox` added to the theme sweep.
 - [x] 11. Docs (all "yes" rows).
 - [x] 12. `/validate`; share roundtrip re-verified in Docker (`sharing.spec`,
@@ -268,7 +268,7 @@ switch is read on every call, so turning it off revokes access immediately.
       / 95.88 / 96.39, i18n 1366/1366, structure clean.
 - [x] e2e:
       - `make e2e` (Linux): 540 passed, 0 failed, 4 skipped (macOS-only).
-      - `claude-mcp.spec` on the macOS host: 6/6.
+      - `claude-mcp.spec` on the macOS host: 5/5.
       - Headless mode is verified on macOS and Linux. **Windows: not verified.**
 - [x] theme sweep `claude-settings` + `claude-inbox`: 140 measurements across
       20 themes, all above their floors (after the intro fix).
@@ -289,6 +289,18 @@ one item:** the plan's step 2 requires a Windows spike, so someone needs to
 check by hand on Windows that `"<Diff Bro.exe>" mcp`, launched by Claude
 Desktop, keeps its stdio pipes and answers `initialize`. Until then, Windows is
 not advertised.
+
+3. **Windows: the MCP process never saw a request.** Electron's
+   `process.stdin` reports EOF at once in the main process of the GUI-subsystem
+   exe; stdout and stderr work. The fix reads handle 0 directly on Windows.
+   The CI smoke was red (run 39911082995, trace showed `stdin end` with no
+   bytes) and is green on the fix (run 39912060762: both requests answered).
+
+**Known, tolerated:** on Windows, Electron writes one blank line to stdout at
+startup, before any reply. Diff Bro does not write it and cannot suppress it.
+The official MCP clients (TypeScript and Python SDKs) skip a line they cannot
+parse and log it. The smoke tolerates blank lines only; any other stdout
+output fails it.
 
 **Windows check automated:** `ci.yml`'s Windows `check` job now packages
 `Diff Bro.exe` (`electron-builder --win --dir`) and runs `scripts/mcp-smoke.mjs`
