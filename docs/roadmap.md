@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — five tracks. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — eight tracks. Claude connection, shipped: read the library over stdio, proposals wait on Home. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -323,6 +323,26 @@ Done. Diff Bro is in the OS "Open with" list for text and data files.
 - Open: `.xlsx` is deliberately not associated
 
 ---
+
+## Claude connection
+
+**Built**: `diffbro mcp`, a windowless stdio MCP server in the app binary.
+Behind a signed grant in Settings ▸ Claude it offers:
+
+- list and read snippets and saved diffs (never secrets, never received diffs);
+- a unified diff of two texts;
+- proposals for a new snippet or comparison, which wait on Home under
+  **From Claude** until accepted.
+
+Every call is logged by tool and item name.
+
+**Next**:
+
+- **Propose edit:** an edit to an existing snippet, shown as a diff against the
+  current version.
+- **Received diffs:** a separate, explicitly worded scope.
+- **Windows:** confirm the headless launch keeps its stdio pipes, done by hand
+  on a Windows machine before the feature is advertised there.
 
 ## Snippets
 

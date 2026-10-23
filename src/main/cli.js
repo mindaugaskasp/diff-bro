@@ -72,7 +72,7 @@ export function cliWords(argv) {
 
 /**
  * @typedef {object} CliCommand
- * @property {'compare'|'create-snippet'|'clipboard-save'|'raise'|'backup'} name
+ * @property {'compare'|'create-snippet'|'clipboard-save'|'raise'|'backup'|'mcp'} name
  * @property {string[]} [files]  absolute paths, for `compare`
  * @property {string} [path]     absolute destination, for `backup`
  */
@@ -137,6 +137,7 @@ const VERBS = {
       : { command: { name: 'create-snippet' }, error: null }
   },
 
+  mcp: (rest) => (rest.length ? null : { command: { name: 'mcp' }, error: null }),
   clipboard: (rest) =>
     rest[0] === 'save' ? { command: { name: 'clipboard-save' }, error: null } : null,
   help: (rest) => ({ command: { name: 'help', topic: rest[0] ?? null }, error: null })

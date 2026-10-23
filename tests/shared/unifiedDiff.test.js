@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  applyUnifiedDiff,
-  toUnifiedDiff,
-  MAX_DIFF_LINES
-} from '../../../src/renderer/src/utils/unifiedDiff'
+import { applyUnifiedDiff, toUnifiedDiff, MAX_DIFF_LINES } from '../../src/shared/unifiedDiff'
 
 describe('toUnifiedDiff', () => {
   it('returns an empty patch for identical sides', () => {

@@ -180,6 +180,11 @@ describe('parseCli — the other verbs', () => {
     expect(parseCli([...PACKAGED, 'clipboard', 'save']).command).toEqual({ name: 'clipboard-save' })
   })
 
+  it('reads `mcp`, with Chromium switches around it, and nothing after it', () => {
+    expect(parseCli([...PACKAGED, '--use-mock-keychain', 'mcp']).command).toEqual({ name: 'mcp' })
+    expect(parseCli([...PACKAGED, 'mcp', 'serve']).error).toMatch(/Unknown command/)
+  })
+
   // Renamed from `cb`, so the old spelling must report rather than silently
   // do nothing — a stale muscle-memory command that no-ops is the worst answer.
   it('reports the retired `cb` spelling instead of ignoring it', () => {

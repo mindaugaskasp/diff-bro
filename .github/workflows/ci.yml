@@ -50,6 +50,16 @@ jobs:
         run: node scripts/check-install-warnings.mjs npm-ci.log
       - run: npm run check # ESLint + Vitest
       - run: npm run build # ensure it bundles
+      # Claude Desktop launches `Diff Bro.exe mcp` with piped stdio; whether a
+      # GUI-subsystem exe keeps those pipes can only be proven on Windows.
+      - name: Claude connection answers over stdio (packaged exe)
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npx electron-builder --win --dir --publish never
+          node scripts/mcp-smoke.mjs "dist/win-unpacked/Diff Bro.exe"
 
   # End-to-end tests drive the app's OWN Electron (Playwright `_electron`) under a
   # virtual display — no bundled browser, no network, same as the Docker test env.

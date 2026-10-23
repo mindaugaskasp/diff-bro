@@ -58,8 +58,12 @@ export async function firstReadyPage(app) {
 export const test = base.extend({
   // Per-file: `test.use({ tips: true })` launches with the onboarding tour armed.
   tips: [false, { option: true }],
-  app: async ({ tips }, use) => {
-    const userDataDir = freshUserDataDir({ tips })
+  userDataDir: async ({ tips }, use) => {
+    const dir = freshUserDataDir({ tips })
+    await use(dir)
+    rmSync(dir, { recursive: true, force: true })
+  },
+  app: async ({ userDataDir }, use) => {
     const app = await launchApp(userDataDir)
     // Trace the whole run (with screenshots); keep it only when the test fails,
     // attached so it shows up in the HTML report and as a CI artifact. Electron
@@ -73,7 +77,6 @@ export const test = base.extend({
     await app.context().tracing.stop(failed ? { path: tracePath } : {})
     if (failed) await info.attach('trace', { path: tracePath, contentType: 'application/zip' })
     await app.close()
-    rmSync(userDataDir, { recursive: true, force: true })
   },
   // Every test is also a detector for an uncaught renderer error. Nothing here
   // asserts it on purpose — the point is the ones that slip through a flow

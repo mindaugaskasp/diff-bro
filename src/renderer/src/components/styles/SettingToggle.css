@@ -8,7 +8,7 @@
   margin-bottom: var(--space-2);
   cursor: pointer;
   font-size: var(--font-md);
-  color: var(--text-dim);
+  color: var(--text-meta);
 }
 
 .setting-toggle.disabled {

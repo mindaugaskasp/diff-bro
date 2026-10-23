@@ -906,7 +906,8 @@
       "logs": "Logs",
       "email": "Email",
       "cli": "Terminal",
-      "fun": "Fun"
+      "fun": "Fun",
+      "claude": "Claude"
     }
   },
   "settingsLimits": {
@@ -1689,6 +1690,10 @@
       "summary": "open a new snippet, or write one at the prompt",
       "detail": "Raises the main window with an empty snippet in the editor — the full one, with the name field, syntax picker and tags.\n\nWith --interactive (or -i) it asks instead, in the terminal: a name, a syntax and the body, then saves the snippet tagged \"cli\" so it is findable as one afterwards. An unnamed one is named after the time it was made. At the name prompt, Tab completes against the snippets you already have.\n\nThe body takes as many lines as you like. :wq or :x writes it, :q or :a discards it, and Ctrl+C cancels — vim's own meanings, and a line that merely contains one of them is kept as content. An empty body is asked for again rather than throwing away the name and syntax you already gave.\n\nOptions: --name takes a name, --syntax takes a name from the list, and --tag may be repeated. A question a flag has answered is not asked.\n\nPipe a file in and nothing is asked at all: the whole of stdin becomes the body. The prompts go to stderr, so redirecting stdout captures only the confirmation."
     },
+    "mcp": {
+      "summary": "serve your library to a Claude app over stdio",
+      "detail": "Started by a Claude app, not by hand: it reads requests on stdin and\nanswers on stdout, and opens no window.\n\nIt answers nothing until Settings → Claude has the connection turned on,\nand only for the parts of the library you allowed there. Secret snippets\nand received diffs are never shared. Anything Claude proposes waits on\nHome until you accept or discard it."
+    },
     "help": {
       "summary": "list the commands, or explain one",
       "detail": "Prints this list. With a command name, explains that command."
@@ -1755,5 +1760,45 @@
     "generate": "Generate",
     "inspect": "Inspect",
     "secure": "Secure & apply"
+  },
+  "claude": {
+    "settings": {
+      "title": "Claude connection",
+      "intro": "Let a Claude app on this computer read the parts of your library you allow below, and offer snippets and comparisons for you to review.",
+      "enable": "Enable Claude MCP connection",
+      "warningTitle": "Before you turn this on",
+      "warningRead": "Claude can read the snippets and saved diffs you allow below. Your Claude app sends what it reads to Anthropic.",
+      "warningNever": "Secret snippets and diffs you received are never shared.",
+      "warningReview": "Anything Claude offers waits on Home until you accept it.",
+      "warningRevoke": "Unticking this stops access at Claude’s next request.",
+      "confirm": "Enable",
+      "keyError": "The encryption key couldn’t be read, so the connection stays off.",
+      "scopesTitle": "What Claude may do",
+      "connectTitle": "Connect a Claude app",
+      "claudeCode": "Claude Code — run this in a terminal:",
+      "claudeDesktop": "Claude Desktop — add this to its config file:"
+    },
+    "scope": {
+      "snippets": "Read snippets",
+      "diffs": "Read saved diffs",
+      "compare": "Compare texts it sends",
+      "proposeSnippets": "Offer new snippets",
+      "proposeDiffs": "Offer new comparisons"
+    },
+    "activity": {
+      "title": "Activity",
+      "empty": "Claude hasn’t asked for anything yet.",
+      "clear": "Clear"
+    },
+    "inbox": {
+      "heading": "From Claude · {n} to review",
+      "kind": {
+        "snippet": "Snippet",
+        "comparison": "Comparison"
+      },
+      "preview": "Preview",
+      "accept": "Accept",
+      "discard": "Discard"
+    }
   }
 }

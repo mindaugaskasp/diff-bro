@@ -35,12 +35,15 @@ async function createSnippet({ page, app }, name, body) {
   await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
-  await focusEditor(editor)
   await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), body)
-  await app.evaluate(({ BrowserWindow }) =>
-    (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
-  )
-  await expect(editor.locator('.view-line').first()).not.toHaveText('')
+  // A paste fired before Monaco holds focus lands nowhere, so retry it while the editor is empty.
+  await expect(async () => {
+    await focusEditor(editor)
+    await app.evaluate(({ BrowserWindow }) =>
+      (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
+    )
+    await expect(editor.locator('.view-line').first()).not.toHaveText('', { timeout: 1000 })
+  }).toPass({ timeout: 10000 })
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }

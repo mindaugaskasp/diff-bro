@@ -22,7 +22,7 @@ class VaultKeyUnavailable extends Error {
 
 let vaultKeyPromise = null
 
-function getVaultKey() {
+export function getVaultKey() {
   // Never cache a rejection, so a later call after the keychain unlocks succeeds.
   vaultKeyPromise ??= loadVaultKey().catch((err) => {
     vaultKeyPromise = null
@@ -40,7 +40,7 @@ async function generateVaultKey(keyPath) {
   return Buffer.from(key, 'base64')
 }
 
-async function loadVaultKey() {
+async function loadVaultKey({ create = true } = {}) {
   const keyPath = dataFile('vault.key')
   let raw
   try {
@@ -48,7 +48,7 @@ async function loadVaultKey() {
   } catch (err) {
     // Only a genuinely absent file is "first run"; any other read error must
     // not overwrite it.
-    if (err.code === 'ENOENT') return generateVaultKey(keyPath)
+    if (err.code === 'ENOENT' && create) return generateVaultKey(keyPath)
     throw new VaultKeyUnavailable()
   }
   const isPlain = raw.subarray(0, PLAIN_PREFIX.length).toString() === PLAIN_PREFIX
@@ -65,6 +65,9 @@ async function loadVaultKey() {
     throw new VaultKeyUnavailable()
   }
 }
+
+// For `diffbro mcp`, a second process: it must never mint a key the app has not.
+export const readExistingVaultKey = () => loadVaultKey({ create: false })
 
 // Distinct sentinel so the renderer warns instead of purging every entry.
 async function withKey(fn) {

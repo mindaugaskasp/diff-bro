@@ -13,6 +13,7 @@ import ShortcutCapture from './ShortcutCapture.vue'
 import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
 import { EmailSettings } from '../features/email'
+import { ClaudeSettings } from '../features/claude'
 import { useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
 
@@ -33,6 +34,7 @@ const TABS = [
   { id: 'logs', labelKey: 'settingsDialog.tab.logs' },
   { id: 'email', labelKey: 'settingsDialog.tab.email' },
   { id: 'cli', labelKey: 'settingsDialog.tab.cli' },
+  { id: 'claude', labelKey: 'settingsDialog.tab.claude' },
   { id: 'fun', labelKey: 'settingsDialog.tab.fun' }
 ].filter((t) => isWindows || !t.windowsOnly)
 
@@ -115,6 +117,8 @@ function close() {
         <LogSettings v-else-if="tab === 'logs'" />
 
         <EmailSettings v-else-if="tab === 'email'" />
+
+        <ClaudeSettings v-else-if="tab === 'claude'" />
 
         <template v-else-if="tab === 'cli'">
           <CliSettings />

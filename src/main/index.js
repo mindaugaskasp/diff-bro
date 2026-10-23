@@ -32,6 +32,8 @@ import { defaultIo } from './cliIo'
 import { namesFrom } from './cliNames'
 import { discardDraftFile, readDraftFile, sweepDraftFiles, writeDraftFile } from './cliDraft'
 import { loadLocale, t } from './i18n'
+import { startMcp } from './mcp'
+import { registerClaudeIpc } from './claude'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
@@ -146,6 +148,7 @@ function startApp(draftPath) {
   registerLinkIpc()
   registerCliIpc()
   registerTrayIpc()
+  registerClaudeIpc()
   // Every main window, not just the first: without this the hidden launcher
   // keeps a window alive and blocks quit.
   const openMainWindow = (opts) => {
@@ -177,7 +180,8 @@ function startApp(draftPath) {
   app.on('activate', ensureMainWindow)
 }
 
-boot()
+if (cold.command?.name === 'mcp') startMcp()
+else boot()
 
 // Every route out of the app passes through here first, so the close handler
 // knows this one is a real quit and lets the window go (see trayCore).

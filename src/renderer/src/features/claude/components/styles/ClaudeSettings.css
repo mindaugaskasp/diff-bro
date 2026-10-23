@@ -1,0 +1,37 @@
+.claude-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.claude-settings h4 {
+  margin-bottom: 0;
+}
+.claude-warning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--warning-bg);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--bg);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+.claude-warning-title {
+  margin: 0;
+  font-weight: 650;
+}
+.claude-warning ul {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.claude-warning-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.claude-error {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--danger-text);
+}

@@ -6,7 +6,7 @@
 // and neither grows past its cap. The IPC call takes bytes and a display name;
 // main stages the file (src/main/clipboardStage.js) and the renderer never sees
 // or supplies a path.
-import { toUnifiedDiff } from './unifiedDiff'
+import { toUnifiedDiff } from '../../../shared/unifiedDiff'
 import { isSecret } from './secretSnippet'
 
 const MAX_STEM = 60
