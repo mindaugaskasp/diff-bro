@@ -947,15 +947,10 @@
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
     "copyAsFile": "Copy as file",
     "capture": "Capture",
-    "edit": "Edit",
     "showTheContents": "Show the contents",
     "hideTheContentsAgain": "Hide the contents again",
     "show": "Show",
     "hide": "Hide",
-    "confirmClear": "Confirm clear",
-    "clear": "Clear",
-    "clickAgainToClear": "Click again to clear the editor",
-    "clearTheEditor": "Clear the editor (e.g. remove pasted content)",
     "copiedToClipboard": "Copied to clipboard",
     "copyTheContents": "Copy the contents to the clipboard",
     "prettyPrintAs": "Pretty-print as {format}",
@@ -989,9 +984,6 @@
     "plain": "Plain",
     "syntax": "Syntax",
     "aSnippetNeedsContentTo": "A snippet needs content to save.",
-    "discardThisSnippetYourUnsaved": "Discard this snippet? Your unsaved content will be lost.",
-    "keepEditing": "Keep editing",
-    "discard": "Discard",
     "secretHint": "{label} — hide the contents behind ****",
     "orDropAFile": "— or drop a file here",
     "renderedEditor": "Rendered content, editable",
@@ -1830,7 +1822,8 @@
     "newSnippetHint": "Write or paste something worth keeping in your library."
   },
   "snippetDocument": {
-    "compareWith": "Compare with…"
+    "compareWith": "Compare with…",
+    "clickToEdit": "Click to edit"
   },
   "keysPanel": {
     "yourKey": "Your key",

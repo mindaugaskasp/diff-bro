@@ -1,39 +1,40 @@
 import { test, expect, openNewSnippet } from './fixtures.mjs'
 
-// Cancelling (or ×-ing) a new snippet that has typed/pasted content must not
-// silently throw it away — a real bug only a launch reproduces, since the guard
-// lives on the dialog's close paths and Monaco feeds the "dirty" state.
-test('cancelling a new snippet with typed content asks before discarding', async ({ page }) => {
-  await openNewSnippet(page)
-  const dialog = page.getByRole('region', { name: 'New Snippet' })
-  await expect(dialog).toBeVisible()
+// Closing a new snippet that holds typed content must not silently throw it
+// away. There is no Cancel any more: the tab's own close guard asks.
+const closeTab = (page) => page.locator('.diff-tabs .tab.active .tab-close').click()
 
-  await dialog.locator('.editor').click()
+test('closing a new snippet with typed content asks before discarding', async ({ page }) => {
+  await openNewSnippet(page)
+  const doc = page.getByRole('region', { name: 'New Snippet' })
+  await expect(doc).toBeVisible()
+
+  await doc.locator('.editor').click()
   await page.keyboard.type('do not lose me')
 
-  // Cancel does not close — it raises the discard confirmation.
-  await dialog.getByRole('button', { name: 'Cancel' }).click()
-  await expect(dialog).toBeVisible()
-  await expect(dialog.getByText('Discard this snippet?')).toBeVisible()
+  await closeTab(page)
+  const ask = page.getByRole('dialog', { name: 'Close comparison?' })
+  await expect(ask).toBeVisible()
 
-  // Keep editing returns to the editor with the content intact.
-  await dialog.getByRole('button', { name: 'Keep editing' }).click()
-  await expect(dialog.getByText('Discard this snippet?')).toBeHidden()
-  await expect(dialog).toBeVisible()
+  // Keeping it returns to the editor with the content intact.
+  await ask.getByRole('button', { name: 'Keep it open' }).click()
+  await expect(ask).toBeHidden()
+  await expect(doc).toBeVisible()
   await expect(page.getByText('do not lose me').first()).toBeVisible()
 
-  // Cancel again, then Discard, actually closes and drops the draft.
-  await dialog.getByRole('button', { name: 'Cancel' }).click()
-  await dialog.getByRole('button', { name: 'Discard', exact: true }).click()
-  await expect(dialog).toBeHidden()
+  // Closing again and confirming drops the draft.
+  await closeTab(page)
+  await ask.getByRole('button', { name: 'Close it' }).click()
+  await expect(doc).toBeHidden()
 })
 
-// An untouched new snippet has nothing to protect, so Cancel closes at once.
-test('cancelling an empty new snippet closes without a prompt', async ({ page }) => {
+// An untouched new snippet has nothing to protect, so it closes at once.
+test('closing an empty new snippet does not ask', async ({ page }) => {
   await openNewSnippet(page)
-  const dialog = page.getByRole('region', { name: 'New Snippet' })
-  await expect(dialog).toBeVisible()
+  const doc = page.getByRole('region', { name: 'New Snippet' })
+  await expect(doc).toBeVisible()
 
-  await dialog.getByRole('button', { name: 'Cancel' }).click()
-  await expect(dialog).toBeHidden()
+  await closeTab(page)
+  await expect(page.getByRole('dialog', { name: 'Close comparison?' })).toHaveCount(0)
+  await expect(doc).toBeHidden()
 })

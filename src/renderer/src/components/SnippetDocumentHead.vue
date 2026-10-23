@@ -12,19 +12,21 @@ defineProps({
 })
 const name = defineModel('name', { type: String, default: '' })
 const secret = defineModel('secret', { type: Boolean, default: false })
-const emit = defineEmits(['editTags'])
+const emit = defineEmits(['editTags', 'editName'])
+const nameLabel = ref(null)
 
 const tagField = ref(null)
 defineExpose({
   tagValues: () => ({ tags: tagField.value.tags, tagColors: tagField.value.newColors() }),
-  focusTags: () => tagField.value?.focus()
+  focusTags: () => tagField.value?.focus(),
+  focusName: () => nameLabel.value?.querySelector('input')?.focus()
 })
 </script>
 
 <template>
   <header class="doc-head">
     <div class="doc-ident">
-      <label class="doc-name">
+      <label ref="nameLabel" class="doc-name" @mousedown="readOnly && emit('editName')">
         <span class="visually-hidden">{{ $t('snippetEditorDialog.name') }}</span>
         <SnippetNameField
           v-model="name"

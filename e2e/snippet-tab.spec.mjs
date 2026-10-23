@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, editInPlace } from './fixtures.mjs'
 
 const strip = (page) => page.getByRole('tablist', { name: 'Open comparisons' })
 
@@ -46,7 +46,7 @@ test('history docks beside the snippet once it has an earlier version', async ({
   const doc = await newSnippet(page, 'Versioned', 'v1')
   await doc.getByRole('button', { name: 'Save', exact: true }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
-  await view.getByRole('button', { name: /Edit/ }).click()
+  await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('End')

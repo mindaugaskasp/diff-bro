@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, snippetDoc } from './fixtures.mjs'
+import { test, expect, openNewSnippet, snippetDoc, editInPlace } from './fixtures.mjs'
 
 // jsdom has no editing host, so only a launch proves a person typing into the
 // rendered view and the snippet actually changing.
@@ -155,6 +155,6 @@ test('the rendered view of a saved snippet is not editable until Edit', async ({
   await expect(reopened.locator('.jira-rendered')).toBeVisible()
   await expect(reopened.locator('.rendered-editor')).toHaveCount(0)
 
-  await reopened.getByRole('button', { name: 'Edit', exact: true }).click()
+  await editInPlace(page)
   await expect(reopened.locator('.rendered-editor')).toBeVisible()
 })

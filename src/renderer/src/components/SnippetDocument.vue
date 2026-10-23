@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, computed, watch, nextTick } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
@@ -8,6 +8,7 @@ import { useSnippetEditorView } from '../composables/useSnippetEditorView'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import { useSnippetFindKeys } from '../composables/useSnippetFindKeys'
+import { useSnippetInlineEdit } from '../composables/useSnippetInlineEdit'
 import SnippetDocumentHead from './SnippetDocumentHead.vue'
 import SnippetEditorHeader from './SnippetEditorHeader.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
@@ -46,7 +47,7 @@ watch(draft.isDirty, (d) => tabs.setSnippetMeta(props.tab.id, { dirty: d }), { i
 const container = ref(null)
 const head = ref(null)
 const readOnly = computed(() => !editMode.value)
-const { reset, applySelectionEdit, layout, openFind, cursor } = useMonacoInput({
+const { applySelectionEdit, layout, openFind, cursor } = useMonacoInput({
   container,
   content,
   language,
@@ -88,11 +89,7 @@ const docLabel = computed(() =>
   )
 )
 
-async function editTags() {
-  draft.startEditing()
-  await nextTick()
-  head.value.focusTags()
-}
+const inline = useSnippetInlineEdit({ draft, tab: props.tab, head, save: saveSnippet, onDropFile })
 
 const showHistory = ref(false)
 const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
@@ -105,6 +102,7 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
     data-tour="snippet-editor"
     role="region"
     :aria-label="docLabel"
+    @keydown.capture="inline.onKeydown"
   >
     <SnippetDocumentHead
       ref="head"
@@ -113,10 +111,11 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
       :initial-tags="draft.initialTags"
       :edit-mode="editMode"
       :read-only="readOnly"
-      @edit-tags="editTags"
+      @edit-tags="inline.editTags"
+      @edit-name="inline.editName"
     >
       <button
-        v-if="editing.id && !editMode && !draft.secret.value"
+        v-if="editing.id && !draft.secret.value"
         type="button"
         class="btn"
         @click="compareWith"
@@ -126,23 +125,18 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
       <SnippetEditorActions
         ref="actions"
         :edit-mode="editMode"
-        :can-format="draft.canFormat.value"
         :name="name"
         :content="content"
         :language="language"
         :has-content="!!content"
-        :can-save="!!name.trim() && !!content.trim() && !draft.saving.value"
+        :can-save="inline.canSave.value"
         :secret="draft.secret.value"
         :masked="masked"
         :snippet-id="editing.id"
-        @format="draft.formatContent"
         @copy="copyAndFlash"
         @capture="draft.captureImage"
-        @clear="reset('')"
         @reveal="revealAndLayout"
-        @edit="draft.startEditing"
         @save="saveSnippet"
-        @close="draft.requestClose"
         @history="showHistory = !showHistory"
       />
     </SnippetDocumentHead>
@@ -150,11 +144,12 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
       <div class="doc-main">
         <SnippetEditorHeader
           v-model:plain="plain"
-          v-model:chosen-language="draft.chosenLanguage.value"
-          :edit-mode="editMode"
+          :chosen-language="draft.chosenLanguage.value"
           :has-preview="hasPreview"
           :language="language"
-          :read-only="readOnly"
+          :can-format="draft.canFormat.value"
+          @update:chosen-language="inline.setLanguage"
+          @format="inline.format"
         />
         <FormatToolbar
           v-if="hasPreview && editMode"
@@ -164,9 +159,13 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
         <div
           class="editor-area"
           :class="{ editing: editMode }"
+          @mousedown.capture="inline.onContentPointerDown"
           @dragover.capture.prevent.stop
-          @drop.capture.prevent.stop="editMode && onDropFile($event)"
+          @drop.capture.prevent.stop="inline.dropFile"
         >
+          <span v-if="!editMode && !masked" class="edit-cue" aria-hidden="true">
+            {{ $t('snippetDocument.clickToEdit') }}
+          </span>
           <div v-if="(!hasPreview || plain) && !masked" ref="container" class="editor"></div>
           <RenderedEditor
             v-if="hasPreview && !plain && !masked && editMode"
@@ -192,17 +191,6 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
           {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
         </p>
         <MermaidPreview v-if="isMermaid && !masked" :code="content" @expand="draft.expandDiagram" />
-        <div v-if="draft.confirmingDiscard.value" class="discard-confirm" role="alertdialog">
-          <span>{{ $t('snippetEditorDialog.discardThisSnippetYourUnsaved') }}</span>
-          <div class="discard-actions">
-            <button class="btn btn-sm btn-ghost" @click="draft.keepEditing">
-              {{ $t('snippetEditorDialog.keepEditing') }}
-            </button>
-            <button class="btn btn-sm btn-danger" @click="draft.discardDraft">
-              {{ $t('snippetEditorDialog.discard') }}
-            </button>
-          </div>
-        </div>
       </div>
       <SnippetHistoryPanel
         v-if="showHistory && editing.id"

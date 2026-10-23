@@ -369,6 +369,29 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'snippet-inline-edit',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      const area = page.locator('.snippet-doc:visible .editor-area')
+      await area.hover()
+      await page.locator('.edit-cue').waitFor()
+    },
+    close: async (page) => {
+      await page.mouse.move(0, 0)
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
+      await page.locator('.edit-cue').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'click-to-edit cue': ['.edit-cue', TEXT],
+      'cue keyline': ['.edit-cue', DIM, 'border'],
+      'hover keyline': ['.editor-area:not(.editing) .editor', DIM, 'border'],
+      'drop hint': ['.snippet-doc .drop-hint', TEXT],
+      // Disabled here (nothing to format in this syntax): an inactive control, held to DIM.
+      'format button (disabled)': ['.snippet-doc .editor-header .btn:disabled', DIM]
+    }
+  },
+  {
     name: 'snippet-tag-chips',
     open: async (page) => {
       await showPanel(page, 'snippets')
@@ -378,8 +401,8 @@ const SURFACES = [
       await doc.locator('.tag-pop').waitFor()
     },
     close: async (page) => {
-      // Cancel on an untouched snippet closes its tab.
-      await page.locator('.snippet-doc:visible').getByRole('button', { name: 'Cancel' }).click()
+      // Nothing was changed, so its tab closes without asking.
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
       await page.locator('.tag-row').waitFor({ state: 'detached' })
     },
     probes: {
@@ -440,7 +463,6 @@ const SURFACES = [
       const doc = page.locator('.snippet-doc:visible')
       const history = doc.getByRole('button', { name: 'History', exact: true })
       if (!(await history.isVisible())) {
-        await doc.getByRole('button', { name: 'Edit', exact: true }).click()
         await doc.locator('.editor').click()
         await page.keyboard.press('ControlOrMeta+End')
         await page.keyboard.type(' ')
@@ -748,10 +770,7 @@ const SURFACES = [
       await page.locator('.snippet-doc:visible').waitFor()
     },
     close: async (page) => {
-      await page
-        .locator('.snippet-doc:visible')
-        .getByRole('button', { name: 'Close', exact: true })
-        .click()
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
       await showPanel(page, 'home')
     },
     probes: {

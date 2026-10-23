@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Status** | approved |
-| **Progress** | 0 / 8 steps |
+| **Status** | in-progress |
+| **Progress** | 8 / 8 slices built; 0–7 merged |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-23 |
 | **Finished** | — |
@@ -162,6 +162,8 @@ alternatives and "Today".
 
 - **History panel:**
   - `.doc-main { min-width: 0 }`, so the panel can never be pushed off-screen.
+    Amended in slice 1: the visible cut-off was the unwrapped diff, not
+    `.doc-main`; the overflow test never went red and was dropped.
   - The width is resized from a left-edge grip through the existing
     `useSidebarResize` pattern (pointer capture, clamp, persist).
   - The list is `flex: none; max-height: 40%`.
@@ -182,7 +184,8 @@ alternatives and "Today".
   - View ▸ Zoom In / Out / Reset (`CmdOrCtrl+=` / `-` / `0`, already in the
     menu and `MenuBar.vue`) act on whichever editor is in front.
   - The snippet status bar gets `− 100% +`; clicking the percentage resets.
-  - The level persists across a relaunch.
+  - The level does not persist across a relaunch, matching the diff viewer's
+    zoom (`uiStore` keeps it session-only on purpose). Amended in slice 3.
 - **Editor font**, in Settings ▸ Appearance ▸ Editor.
   - The options are a curated list of monospace families, filtered to the
     ones installed, with `document.fonts.check('12px "<family>"')`, plus
@@ -303,15 +306,15 @@ tests.
 
 | # | slice | branch | what it ships | PR | status |
 |---|---|---|---|---|---|
-| 0 | Spec, canvas and process rules | `docs/snippet-redesign-spec` | this plan; `/implement` rules: design artifact first, approved design gate, one PR per slice | | |
-| 1 | History panel | `fix/snippet-history-panel` | never off-screen (`.doc-main` min-width 0); left-edge resize 320 px..60%, persisted; wrapped diff; version rows with relative time and ±; Copy this version in a band above the diff | | |
-| 2 | ⌘F find and replace | `fix/snippet-find-replace` | Cmd/Ctrl+F anywhere in the snippet opens find; replace expanded while editing; Cmd+Alt+F / Ctrl+H | | |
-| 3 | Code zoom in snippets | `fix/snippet-editor-zoom` | View ▸ Zoom (⌘+ ⌘− ⌘0) scales the snippet editor and history diff too, one shared level | | |
-| 4 | Editor font | `feat/editor-font` | Settings ▸ Appearance ▸ Editor: installed monospace fonts only, live preview, applied to every Monaco | | |
-| 5 | Toolbar over a snippet | `fix/toolbar-snippet-context` | View, Paste mode, Save, Share, Copy diff, Capture and Clear disabled with a "For comparisons" tip | | |
-| 6 | Editor status bar | `improvement/snippet-status-bar` | gutter and line numbers (`--text-meta`); status bar with counts, Ln/Col, `− 100% +`, and the template-tags popover with live values; the "Template tags" link is removed | | |
-| 7 | Tag chips (A) | `improvement/snippet-tag-chips` | chips in a row, dashed + Add tag, no frame; × and an inline input while editing; suggestions in a popover | | |
-| 8 | Inline edit | `improvement/snippet-inline-edit` | one layout; no Edit, Cancel, Clear or Close; click to edit with the hover cue; fixed action row; Save disabled until changed; Format beside Syntax; Escape | | |
+| 0 | Spec, canvas and process rules | `docs/snippet-redesign-spec` | this plan; `/implement` rules: design artifact first, approved design gate, one PR per slice | #71 | merged |
+| 1 | History panel | `fix/snippet-history-panel` | never off-screen (`.doc-main` min-width 0); left-edge resize 320 px..60%, persisted; wrapped diff; version rows with relative time and ±; Copy this version in a band above the diff | #72, #73 | merged |
+| 2 | ⌘F find and replace | `fix/snippet-find-replace` | Cmd/Ctrl+F anywhere in the snippet opens find; replace expanded while editing; Cmd+Alt+F / Ctrl+H | #74 | merged |
+| 3 | Code zoom in snippets | `fix/snippet-editor-zoom` | View ▸ Zoom (⌘+ ⌘− ⌘0) scales the snippet editor and history diff too, one shared level | #75 | merged |
+| 4 | Editor font | `feat/editor-font` | Settings ▸ Appearance ▸ Editor: installed monospace fonts only, live preview, applied to every Monaco | #77 | merged |
+| 5 | Toolbar over a snippet | `fix/toolbar-snippet-context` | View, Paste mode, Save, Share, Copy diff, Capture and Clear disabled with a "For comparisons" tip | #76 | merged |
+| 6 | Editor status bar | `improvement/snippet-status-bar` | gutter and line numbers (`--text-meta`); status bar with counts, Ln/Col, `− 100% +`, and the template-tags popover with live values; the "Template tags" link is removed | #78 | merged |
+| 7 | Tag chips (A) | `improvement/snippet-tag-chips` | chips in a row, dashed + Add tag, no frame; × and an inline input while editing; suggestions in a popover | #79 | merged |
+| 8 | Inline edit | `improvement/snippet-inline-edit` | one layout; no Edit, Cancel, Clear or Close; click to edit with the hover cue; fixed action row; Save disabled until changed; Format beside Syntax; Escape | this PR | in review |
 
 Each slice's PR description links this spec and the **Approved design**
 artboard it implements. `/validate` holds it against that artboard. The PR is
@@ -327,6 +330,8 @@ done only when its CI is green on every runner.
 | 2026-10-23 | The font list is installed fonts only | offline: no web fonts; listing an absent font silently falls back | free-text font name |
 | 2026-10-23 | Built-in template tags show their live value, with the description as a tooltip | the user asked; a value says exactly what saving will write, from the same `resolve` that writes it | the description alone |
 | 2026-10-23 | The approved artboards are frozen copies, not imports of the exploration ones | later exploration must not change what was signed off | `<dc-import>` wrappers |
+| 2026-10-24 | Inline edit: File ▸ Save saves the snippet in front; closing an unsaved one goes through the tab's own close guard | one save path and one discard guard, so no bar of its own in the document | keeping the in-document discard bar |
+| 2026-10-24 | The disabled Format is held to the non-text floor (DIM) in the sweep | an inactive control is not text to be read; the enabled one keeps TEXT | forcing the disabled label to 4.5:1 |
 
 ## Validation
 

@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel, closeSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, closeSnippet, editInPlace } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
 test.beforeEach(async ({ page }) => {
@@ -182,7 +182,7 @@ test('a secret snippet offers no capture action', async ({ page }) => {
   await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
   // ...while an ordinary snippet's view offers it. The ghost Close by its
   // text — the header × carries the same accessible name.
-  await view.getByText('Close', { exact: true }).click()
+  await closeSnippet(page)
   await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
   await expect(
     page
@@ -236,7 +236,7 @@ test('a snippet is captured from the view its contents are shown in', async ({ p
 test('the capture action is not offered while editing', async ({ page }) => {
   await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
-  await view.getByRole('button', { name: 'Edit' }).click()
+  await editInPlace(page)
   await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
 })
 

@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, editInPlace, closeSnippet } from './fixtures.mjs'
 
 // Full snippet CRUD through the real vault: create (encrypt + store), see it in
 // the list, edit (decrypt → update), and delete (with its confirm dialog). The
@@ -21,20 +21,22 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   await expect(row).toBeVisible()
 
   // --- edit (rename) ---
-  // Clicking the row opens the read-only view; Edit unlocks the same dialog.
+  // Clicking the row opens the snippet; a press on it edits in place.
   await row.locator('.entry').click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
-  await view.getByRole('button', { name: 'Edit', exact: true }).click()
+  await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await expect(edit).toBeVisible()
-  await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
+  // Nothing to save until something changes.
+  await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeDisabled()
   await edit.getByPlaceholder('Snippet name…').fill('My renamed note')
+  await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
   await edit.getByRole('button', { name: 'Save', exact: true }).click()
 
   await expect(edit).toBeHidden()
   const saved = page.getByRole('region', { name: 'Snippet', exact: true })
-  await saved.getByRole('button', { name: 'Close', exact: true }).click()
+  await closeSnippet(page)
   await expect(saved).toBeHidden()
 
   const rows = page.locator('.snippets-section .row')

@@ -5,7 +5,7 @@
 
 import { TOOLS } from './tools'
 import { showsSplitView, showsWhitespaceToggle } from './viewChrome'
-import { MAX_TABS } from './tabs'
+import { MAX_TABS, isSnippetTab } from './tabs'
 import { tabsFullMessage } from './cliCommand'
 import { openWithFromCli } from './openWithFlow'
 
@@ -28,7 +28,8 @@ const openTool = (tool) => (s) => (s.ui.textTool = tool)
 export const COMMANDS = {
   'open-left': ({ diff }) => diff.pick('left'),
   'open-right': ({ diff }) => diff.pick('right'),
-  save: ({ diff }) => {
+  save: ({ diff, tabs, ui }) => {
+    if (isSnippetTab(tabs?.active)) return ui.requestSnippetSave()
     if (diff.hasUnsavedWork) diff.showSaveDialog = true
   },
   'share-current': ({ share }) => share.shareCurrent(),

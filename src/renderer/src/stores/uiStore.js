@@ -42,6 +42,8 @@ export const useUiStore = defineStore('ui', {
     // room. Transient by design, like the diagram viewer's own zoom: it is a
     // "let me look closer at this", not a setting.
     diffZoom: ZOOM_DEFAULT,
+    // ⌘S with a snippet in front: the snippet document that is showing answers it.
+    snippetSaveRequest: 0,
     // Presentation mode: the comparison with every other surface hidden, for
     // showing a diff on a big screen. Never persisted — it is a thing you DO,
     // and coming back to an app with no chrome and no memory of why is a trap.
@@ -96,6 +98,9 @@ export const useUiStore = defineStore('ui', {
     },
     clearNewRow(id) {
       if (this.lastCreatedRowId === id) this.lastCreatedRowId = null
+    },
+    requestSnippetSave() {
+      this.snippetSaveRequest++
     },
     zoomDiff(direction) {
       this.diffZoom = steppedZoom(this.diffZoom, direction)
