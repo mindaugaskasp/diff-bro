@@ -1,0 +1,56 @@
+/* Sits under the disk-change notice's slot, so both can be up at once. */
+.update-notice {
+  position: absolute;
+  top: calc(var(--band-row) + var(--space-3) + var(--control-h) + var(--space-2));
+  right: var(--space-3);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 46%;
+  padding: 3px 4px 3px 10px;
+  min-height: var(--control-h);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: var(--font-sm);
+  box-shadow: var(--shadow-2);
+}
+.un-icon {
+  flex: none;
+  color: var(--text-dim);
+}
+.un-text {
+  min-width: 0;
+}
+.update-notice .btn {
+  flex: none;
+}
+.un-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.un-x:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

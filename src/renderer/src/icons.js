@@ -330,6 +330,10 @@ export const ICONS = {
     { t: 'path', d: 'M4 17h11a5 5 0 0 0 5-5' }
   ],
   // Two lanes running opposite ways — exchanging the left and right files.
+  refresh: [
+    { t: 'path', d: 'M23 4v6h-6M1 20v-6h6' },
+    { t: 'path', d: 'M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15' }
+  ],
   swap: [
     { t: 'path', d: 'M4 9h16M16 5l4 4-4 4' },
     { t: 'path', d: 'M20 15H4M8 11l-4 4 4 4' }

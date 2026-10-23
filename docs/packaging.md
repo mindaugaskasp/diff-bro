@@ -164,6 +164,15 @@ app's `LSMinimumSystemVersion`, so `brew install` fails fast on an unsupported
 Mac. Without the `macos` stanza `brew audit` crashes outright. Validate a
 change with `brew style` and `brew audit --cask --online` against a local tap.
 
+**Upgrading a running app.** The cask's `uninstall quit: "com.mindaugas.diffbro"`
+makes `brew upgrade` quit Diff Bro before it swaps the bundle. Homebrew runs the
+uninstall stanza of the cask that is _already installed_, so the stanza first
+takes effect on the upgrade after the one that delivers it. For that upgrade,
+and for any swap the quit did not catch, the app checks its own `Info.plist` on
+window focus (`src/main/bundleUpdate.js`). When the version on disk differs from
+the running build, it offers a Restart. Restart waits while a snippet has
+unsaved changes.
+
 Submitting to the **official** homebrew-cask isn't an option until the app is
 signed + notarized (Phase 3).
 

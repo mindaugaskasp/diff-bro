@@ -34,6 +34,7 @@ import { discardDraftFile, readDraftFile, sweepDraftFiles, writeDraftFile } from
 import { loadLocale, t } from './i18n'
 import { startMcp } from './mcp'
 import { registerClaudeIpc } from './claude'
+import { watchForBundleUpdate } from './bundleUpdate'
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
@@ -149,6 +150,7 @@ function startApp(draftPath) {
   registerCliIpc()
   registerTrayIpc()
   registerClaudeIpc()
+  watchForBundleUpdate()
   // Every main window, not just the first: without this the hidden launcher
   // keeps a window alive and blocks quit.
   const openMainWindow = (opts) => {

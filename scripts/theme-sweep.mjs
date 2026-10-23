@@ -364,6 +364,26 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'update-notice',
+    open: async (page, { app }) => {
+      await app.evaluate(({ BrowserWindow }) => {
+        for (const win of BrowserWindow.getAllWindows())
+          win.webContents.send('app:updated', '9.9.9')
+      })
+      await page.locator('.update-notice').waitFor()
+    },
+    close: async (page) => {
+      await page.getByRole('button', { name: 'Dismiss the update notice' }).click()
+      await page.locator('.update-notice').waitFor({ state: 'detached' })
+    },
+    probes: {
+      message: ['.update-notice .un-text', TEXT],
+      restart: ['.update-notice .btn', TEXT],
+      icon: ['.update-notice .un-icon', DIM, 'text'],
+      keyline: ['.update-notice', SEPARATOR, 'border']
+    }
+  },
+  {
     name: 'conflict-list',
     // The row's three status inks are NEW roles (--mg-open / --mg-done /
     // --mg-blocked) and each is a WORD, so every one answers to the reading
@@ -999,7 +1019,7 @@ const chosenSurfaces = () => {
 
 async function sweepSurface({ app, main, surface, theme, findings, userDataDir }) {
   const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
-  await surface.open(page, { userDataDir })
+  await surface.open(page, { userDataDir, app })
   await page.waitForTimeout(120)
   await page.screenshot({ path: join(OUT, `${surface.name}-${theme.toLowerCase()}.png`) })
 

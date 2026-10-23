@@ -9,7 +9,7 @@ cask "diff-bro" do
   desc "Offline-only desktop diff viewer"
   homepage "https://github.com/mindaugaskasp/diff-bro"
 
-  # The DMG carries an arm64-only build, and Electron 39 sets
+  # The DMG carries an arm64-only build, and Electron 42 sets
   # LSMinimumSystemVersion 12.0. Declared so `brew install` refuses up
   # front on an unsupported Mac instead of staging an app that cannot run.
   # A bare macOS symbol is Homebrew's ">= that version" form.
@@ -18,12 +18,16 @@ cask "diff-bro" do
 
   app "Diff Bro.app"
 
+
   # Unsigned build: clearing quarantine is safe only because the sha256 above pinned the download.
   postflight_steps do
     run "/usr/bin/xattr",
         args:         ["-dr", "com.apple.quarantine", "{{appdir}}/Diff Bro.app"],
         must_succeed: false
   end
+
+  # Without it brew swaps the bundle under a running app, which keeps the old build.
+  uninstall quit: "com.mindaugas.diffbro"
 
   # Saved diffs, the identity keypair and window state live outside the app
   # bundle, so a plain uninstall leaves them behind. `brew uninstall --zap`
