@@ -205,8 +205,7 @@ export async function openMenu(page, top, sub, leaf) {
   }
 }
 
-// Under full-suite load Playwright's inspector link to Electron main has dropped
-// its context mid-run (virtual-rows, twice); the stubs below are idempotent, so retry.
+// Playwright's link to Electron main drops its context under suite load; these stubs are idempotent.
 async function evaluateInMain(app, fn, arg) {
   for (let attempt = 1; ; attempt++) {
     try {
@@ -276,6 +275,15 @@ export async function pickTag(page, name) {
   await picker.getByLabel('Find a tag').fill(name)
   await picker.locator('.usb-tag', { hasText: name }).first().click()
   await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
+}
+
+// It re-titles itself (New / Edit / Snippet); only the active tab's is visible.
+export const snippetDoc = (page) => page.locator('.snippet-doc:visible')
+
+export async function closeSnippet(page) {
+  const doc = snippetDoc(page)
+  await doc.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(doc).toHaveCount(0)
 }
 
 export async function openNewSnippet(page) {

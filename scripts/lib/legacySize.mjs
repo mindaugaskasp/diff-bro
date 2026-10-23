@@ -16,7 +16,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/composables/useMonacoInput.js': { fn: 96 },
   'src/renderer/src/composables/useQuickLook.js': { fn: 202 },
   'src/renderer/src/composables/useQuickLookKeys.js': { fn: 97 },
-  'src/renderer/src/composables/useSnippetDraft.js': { fn: 182 },
+  'src/renderer/src/composables/useSnippetDraft.js': { fn: 170 },
   'src/renderer/src/composables/useSnippetPreview.js': { fn: 73 },
   'src/renderer/src/composables/useSpreadsheetDiff.js': { fn: 69 },
   'src/renderer/src/composables/useStreamedDiff.js': { fn: 99 },
@@ -26,7 +26,6 @@ export const LEGACY_SIZE = {
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 710 },
   'src/renderer/src/stores/snippetStore.js': { file: 446 },
-  'src/renderer/src/stores/tabsStore.js': { file: 295 },
   'src/renderer/src/stores/vaultStore.js': { file: 358 },
   'src/renderer/src/utils/structuralDiff.js': { file: 279 }
 }

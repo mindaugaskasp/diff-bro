@@ -46,7 +46,7 @@ test('one click on a snippet hands it to the main window', async ({ app, page })
   await row(ql, EXAMPLE).click()
 
   // The same hand-off ↵ performs: the main window opens that snippet.
-  const opened = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const opened = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(opened).toBeVisible()
   await expect(opened.getByPlaceholder('Snippet name…')).toHaveValue(EXAMPLE)
 })

@@ -5,6 +5,18 @@ works) inside a Linux container on a virtual display, streamed to your
 browser via noVNC. No NSIS/DMG build, no installer, nothing touches the
 host beyond Docker itself.
 
+## Getting a Docker runtime
+
+Docker Desktop works. On macOS without it:
+
+```bash
+make docker-setup        # brew installs Colima + the docker CLI, starts the VM
+```
+
+Size the VM with `make docker-setup COLIMA_FLAGS="--cpu 6 --memory 12"`;
+`colima stop` / `colima start` afterwards. Then `make up` builds the image and
+starts the app; `make check` and `make e2e` test inside the container.
+
 ## Usage
 
 ```bash

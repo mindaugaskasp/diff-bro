@@ -31,7 +31,7 @@ const rail = (row) =>
 
 async function addSnippet(page, name) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('body text')
@@ -105,7 +105,7 @@ test('opening the row retires the marker', async ({ page }) => {
   await expect(row).toHaveClass(/is-new/)
 
   await row.locator('.entry').click()
-  await page.getByRole('dialog', { name: 'Snippet', exact: true }).waitFor()
+  await page.getByRole('region', { name: 'Snippet', exact: true }).waitFor()
   await page.keyboard.press('Escape')
 
   await expect(row).not.toHaveClass(/is-new/)

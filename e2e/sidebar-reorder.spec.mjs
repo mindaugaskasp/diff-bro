@@ -42,7 +42,7 @@ const names = (page) => page.locator(`${SNIPPETS} .nm`).allTextContents()
 async function seedSnippets(page, labels) {
   for (const label of labels) {
     await openNewSnippet(page)
-    const editor = page.getByRole('dialog', { name: 'New Snippet' })
+    const editor = page.getByRole('region', { name: 'New Snippet' })
     await editor.getByPlaceholder('Snippet name…').fill(label)
     await editor.locator('.editor').click()
     await page.keyboard.type(`body of ${label}`)

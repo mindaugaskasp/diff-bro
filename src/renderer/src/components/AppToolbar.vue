@@ -15,7 +15,6 @@ import { ZOOM_DEFAULT, zoomLabel } from '../utils/diffZoom'
 import { useConflictsStore } from '../features/merge'
 import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
-import KeyActions from './KeyActions.vue'
 import ToolbarOverflow from './ToolbarOverflow.vue'
 import ViewOptionsMenu from './ViewOptionsMenu.vue'
 
@@ -48,9 +47,6 @@ const actionState = computed(() => ({
 
 <template>
   <header class="toolbar band">
-    <!-- Left of everything: `.options` is margin-left:auto, so this sits over
-         the sidebar, beside the library these two set up. -->
-    <KeyActions />
     <!-- Change counts live in the status band under the panes (DiffViewer), in
          the same words the diagram diff uses. -->
     <div class="options">

@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, closeSnippet } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -47,7 +47,7 @@ test('two dropped snippets open as an ordinary comparison', async ({ page }) => 
 // renders no raw editor to type into.
 test('editing a compared snippet updates the diff without a reload', async ({ app, page }) => {
   await openNewSnippet(page)
-  const make = page.getByRole('dialog', { name: 'New Snippet' })
+  const make = page.getByRole('region', { name: 'New Snippet' })
   await make.getByPlaceholder('Snippet name…').fill('Live target')
   // Typed rather than pasted: routing this through the OS clipboard sometimes
   // did not land under CI's parallel workers, leaving the editor empty and Save
@@ -57,7 +57,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   const save = make.getByRole('button', { name: 'Save', exact: true })
   await expect(save).toBeEnabled()
   await save.click()
-  await page.keyboard.press('Escape')
+  await closeSnippet(page)
 
   await dragRowTo(page, 'Live target', '.slot[data-side="left"]')
   await expect(page.locator('.slot[data-side="left"]')).toContainText('Live target', {
@@ -67,9 +67,9 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
 
   await page.locator('.snippets-section .row', { hasText: 'Live target' }).click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await view.getByRole('button', { name: 'Edit', exact: true }).click()
-  const edit = page.getByRole('dialog', { name: 'Edit Snippet' })
+  const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('ControlOrMeta+a')
   await app.evaluate(({ clipboard }) => clipboard.writeText('LIVE-EDIT-MARKER'))
@@ -77,7 +77,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
     (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
   )
   await edit.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.keyboard.press('Escape')
+  await closeSnippet(page)
 
   await expect(page.locator('.diff-container')).toContainText('LIVE-EDIT-MARKER', {
     timeout: 15000
@@ -99,13 +99,13 @@ test('clearing the comparison leaves both snippets alone', async ({ page }) => {
 
 test('a secret snippet is not draggable', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.keyboard.press('Escape')
+  await closeSnippet(page)
 
   const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
   await expect(secret).toHaveAttribute('draggable', 'false')

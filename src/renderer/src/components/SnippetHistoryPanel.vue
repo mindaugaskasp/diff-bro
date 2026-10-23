@@ -1,22 +1,19 @@
 <script setup>
-// A snippet's past edits: a rail of versions, each diffed against the version
-// it replaced. View-only — the contents of any version are a Copy away.
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
-import { useUiStore } from '../stores/uiStore'
 import { versionRows } from '../utils/snippetHistory'
 import { isSecret } from '../utils/secretSnippet'
 import { useVersionPair } from '../composables/useVersionPair'
 import { useMonacoDiffPane } from '../composables/useMonacoDiffPane'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { ago } from '../utils/relativeTime'
-import BaseDialog from './BaseDialog.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import AppIcon from './AppIcon.vue'
 
-const ui = useUiStore()
+const props = defineProps({ snippetId: { type: String, required: true } })
+const emit = defineEmits(['close'])
 const store = useSnippetStore()
-const entry = computed(() => store.entries.find((e) => e.id === ui.snippetHistory?.id))
+const entry = computed(() => store.entries.find((e) => e.id === props.snippetId))
 const rows = computed(() => versionRows(entry.value))
 const language = computed(() => languageOf(entry.value))
 
@@ -38,7 +35,7 @@ function select(index) {
   return selectPair(index, prev)
 }
 select(-1)
-watch(entry, (e) => e || ui.closeSnippetHistory())
+watch(entry, (e) => e || emit('close'))
 
 const container = ref(null)
 useMonacoDiffPane({
@@ -59,12 +56,17 @@ const stamp = (at) => new Date(at).toLocaleString()
 </script>
 
 <template>
-  <BaseDialog
+  <aside
     v-if="entry"
-    width="680px"
-    :title="$t('snippetHistoryDialog.title', { name: entry.name })"
-    @close="ui.closeSnippetHistory()"
+    class="hist-panel"
+    :aria-label="$t('snippetHistoryDialog.title', { name: entry.name })"
   >
+    <div class="hist-head band">
+      <span class="hist-title">{{ $t('snippetEditorActions.history') }}</span>
+      <button class="btn btn-sm btn-icon" :aria-label="$t('common.close')" @click="emit('close')">
+        <AppIcon name="x" />
+      </button>
+    </div>
     <div class="hist-body">
       <ol class="hist-rail">
         <li v-for="row in rows" :key="row.index">
@@ -83,7 +85,7 @@ const stamp = (at) => new Date(at).toLocaleString()
       <div v-if="!masked" ref="container" class="hist-diff"></div>
       <div v-else class="hist-diff hist-masked"><SnippetSecretMask compact /></div>
     </div>
-    <template #actions>
+    <div class="hist-actions">
       <button
         v-if="isSecret(entry)"
         class="btn"
@@ -107,11 +109,8 @@ const stamp = (at) => new Date(at).toLocaleString()
       >
         {{ copied ? $t('common.copied') : $t('snippetHistoryDialog.copyVersion') }}
       </button>
-      <button class="btn btn-ghost" @click="ui.closeSnippetHistory()">
-        {{ $t('common.close') }}
-      </button>
-    </template>
-  </BaseDialog>
+    </div>
+  </aside>
 </template>
 
-<style scoped src="./styles/SnippetHistoryDialog.css"></style>
+<style scoped src="./styles/SnippetHistoryPanel.css"></style>

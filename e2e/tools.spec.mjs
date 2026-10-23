@@ -52,7 +52,7 @@ test('a tool output is kept as a snippet, named by the user', async ({ page }) =
   // The tool is gone — not stacked under the editor — and the editor carries the
   // output with an empty name, the one thing the app cannot infer.
   await expect(tool).toHaveCount(0)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await expect(editor).toBeVisible()
   await expect(editor.getByPlaceholder('Snippet name…')).toHaveValue('')
   await expect(editor.locator('.editor')).toContainText('a2VlcCBtZQ==')

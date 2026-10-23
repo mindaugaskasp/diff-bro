@@ -7,7 +7,7 @@ import { test, expect, openNewSnippet } from './fixtures.mjs'
 // tests can't (they call the pure detector directly, never through the editor).
 test('the editor shows and updates the auto-detected syntax as you type', async ({ page }) => {
   await openNewSnippet(page)
-  const dialog = page.getByRole('dialog', { name: 'New Snippet' })
+  const dialog = page.getByRole('region', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 
   // A blank draft detects as plaintext — the baseline the indicator starts on.

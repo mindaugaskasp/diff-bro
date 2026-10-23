@@ -55,7 +55,9 @@ async function brightestRow(app, rect) {
 
 async function editorRect(page) {
   return page.evaluate(() => {
-    const r = document.querySelector('.dialog .editor-area .editor').getBoundingClientRect()
+    const r = document
+      .querySelector('.snippet-doc:not([style*="display: none"]) .editor-area .editor')
+      .getBoundingClientRect()
     // Inset past the panel's own border, which is legitimately not the surface.
     return {
       x: Math.round(r.x + 2),
@@ -76,7 +78,7 @@ async function expectNoPaleSliver(app, page, what) {
 
 test('the snippet editor shows no pale sliver in view mode', async ({ app, page }) => {
   await page.locator('li.row').first().click()
-  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   await page.waitForTimeout(700)
   await expectNoPaleSliver(app, page, 'view mode')
 })
@@ -94,17 +96,17 @@ test('the snippet editor shows no pale sliver on a tinted light ground', async (
   await page.keyboard.press('Escape')
 
   await page.locator('li.row').first().click()
-  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   await page.waitForTimeout(700)
   await expectNoPaleSliver(app, page, 'sepia view mode')
 })
 
 test('the snippet editor shows no pale sliver in edit mode', async ({ app, page }) => {
   await page.locator('li.row').first().click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await view.getByRole('button', { name: 'Edit', exact: true }).click()
-  await expect(page.getByRole('dialog', { name: 'Edit Snippet' })).toBeVisible()
-  await page.locator('.dialog .editor').click()
+  await expect(page.getByRole('region', { name: 'Edit Snippet' })).toBeVisible()
+  await page.locator('.snippet-doc .editor').first().click()
   await page.waitForTimeout(700)
   await expectNoPaleSliver(app, page, 'edit mode')
 })

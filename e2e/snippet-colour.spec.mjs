@@ -19,7 +19,7 @@ const menu = (page) => page.locator('.rcm')
 
 async function seedSnippet(page, name) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('seeded body')

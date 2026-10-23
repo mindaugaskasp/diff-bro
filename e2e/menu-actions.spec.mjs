@@ -9,13 +9,13 @@ async function pasteCompare(page, left, right) {
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeHidden()
+  await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
 
 test('Edit → Clear empties a loaded comparison', async ({ page }) => {
   await pasteCompare(page, 'a', 'b')
   await openMenu(page, 'Edit', 'Clear')
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
+  await expect(page.getByText('What are you comparing?')).toBeVisible()
 })
 
 test('Edit → Paste Text Mode opens the paste panes', async ({ page }) => {

@@ -9,7 +9,7 @@ async function pasteCompare(page, left, right) {
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeHidden()
+  await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
 
 test('the display options open, toggle, and close again', async ({ page }) => {
@@ -150,34 +150,28 @@ test('the bar sheds words before it sheds controls', async ({ app, page }) => {
   expect(await wordy()).toBe(true)
   await expect(more).toBeHidden()
 
-  // Rung 2 — no room for the words, room for every control. The narrowest the
-  // app goes at 100% zoom, in the longest locale.
+  // Rung 2 — no room for the words, room for every control: the narrowest
+  // window, the longest locale, a modest zoom.
   const win = await app.browserWindow(page)
   const [w, h] = await win.evaluate((b) => b.getMinimumSize())
   await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
-  const grip = page.locator('.usb-grip')
-  const box = await grip.boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + 200)
-  await page.mouse.down()
-  await page.mouse.move(box.x + 400, box.y + 200, { steps: 8 })
-  await page.mouse.up()
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
+  await win.evaluate((b) => b.webContents.setZoomLevel(1))
 
   await expect.poll(wordy).toBe(false)
   await expect(actions).toHaveCount(all) // nothing folded yet
   await expect(more).toBeHidden()
 
   // Rung 3 — not even the glyphs fit.
-  await win.evaluate((b) => b.webContents.setZoomLevel(2.5))
+  await win.evaluate((b) => b.webContents.setZoomLevel(5))
   await expect(more).toBeVisible()
   expect(await actions.count()).toBeLessThan(all)
 })
 
-// The overflow menu earns its place only if it can actually fire. The widest
-// reachable layout does it: minimum window, sidebar at its cap, longest locale,
-// maximum zoom. Nothing folds short of that — which is the other half of the
+// The overflow menu earns its place only if it can actually fire: minimum window,
+// longest locale, a large zoom. Nothing folds short of that — the other half of the
 // contract, asserted first.
 test('the overflow menu appears only when the row runs out of room', async ({ app, page }) => {
   await pasteCompare(page, 'a\nb', 'a\nc')
@@ -193,19 +187,10 @@ test('the overflow menu appears only when the row runs out of room', async ({ ap
   // Still inline at the minimum: the View menu alone bought enough room.
   await expect(more).toBeHidden()
 
-  // Drag the sidebar to its cap: `.key-actions` is `width: var(--sidebar-w)`, so
-  // this is the one term in the bar's width the reader moves.
-  const grip = page.locator('.usb-grip')
-  const box = await grip.boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + 200)
-  await page.mouse.down()
-  await page.mouse.move(box.x + 400, box.y + 200, { steps: 8 })
-  await page.mouse.up()
-
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
-  await win.evaluate((b) => b.webContents.setZoomLevel(2.5))
+  await win.evaluate((b) => b.webContents.setZoomLevel(5))
 
   await expect(more).toBeVisible()
   // And what folded is reachable, not lost.
@@ -230,16 +215,10 @@ test('unfolding the row while its menu is open takes the backdrop with it', asyn
   const [w, h] = await win.evaluate((b) => b.getMinimumSize())
   await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
 
-  const grip = page.locator('.usb-grip')
-  const box = await grip.boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + 200)
-  await page.mouse.down()
-  await page.mouse.move(box.x + 400, box.y + 200, { steps: 8 })
-  await page.mouse.up()
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
-  await win.evaluate((b) => b.webContents.setZoomLevel(2.5))
+  await win.evaluate((b) => b.webContents.setZoomLevel(5))
 
   await expect(more).toBeVisible()
   await more.click()

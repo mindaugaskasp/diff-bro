@@ -52,7 +52,7 @@
   align-items: center;
   justify-content: space-between;
   font-size: var(--font-md);
-  color: var(--text-dim);
+  color: var(--text-meta);
 }
 .drop-hint {
   color: var(--text-hint);
@@ -108,7 +108,7 @@
   padding: 2px 8px;
   border: none;
   background: var(--bg);
-  color: var(--text-dim);
+  color: var(--text-meta);
   font-family: inherit;
   font-size: var(--font-sm);
   cursor: pointer;

@@ -9,7 +9,6 @@ import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { useCopyAsFile } from '../composables/useCopyAsFile'
 import { snippetFile } from '../utils/copyAsFile'
 import { useSnippetStore } from '../stores/snippetStore'
-import { useUiStore } from '../stores/uiStore'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -22,9 +21,20 @@ const props = defineProps({
   canSave: { type: Boolean, required: true },
   // A secret snippet adds a reveal toggle; `masked` is its current state.
   secret: { type: Boolean, default: false },
-  masked: { type: Boolean, default: false }
+  masked: { type: Boolean, default: false },
+  snippetId: { type: String, default: null }
 })
-const emit = defineEmits(['format', 'copy', 'capture', 'clear', 'reveal', 'edit', 'save', 'close'])
+const emit = defineEmits([
+  'format',
+  'copy',
+  'capture',
+  'clear',
+  'reveal',
+  'edit',
+  'save',
+  'close',
+  'history'
+])
 
 // One flash, two buttons — so it records WHICH was pressed. A bare boolean put
 // the acknowledgement on Copy when the reader had pressed Copy as file, the
@@ -46,22 +56,10 @@ const copyFileTip = computed(() =>
 )
 const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
-// Wired here rather than through the parent: the row reads the store the way
-// its copy-as-file half does, and the editor dialog stays inside its budget.
 const store = useSnippetStore()
-const ui = useUiStore()
-const viewedEntry = computed(() =>
-  store.entries.find((entry) => entry.id === store.editingSnippet?.id)
+const hasHistory = computed(
+  () => (store.entries.find((e) => e.id === props.snippetId)?.history?.length ?? 0) > 0
 )
-const hasHistory = computed(() => (viewedEntry.value?.history?.length ?? 0) > 0)
-// The editor closes FIRST — two stacked dialogs is what the diagram expander
-// and the tools' save-as-snippet already avoid.
-function openHistory() {
-  const id = viewedEntry.value?.id
-  if (!id) return
-  store.editingSnippet = null
-  ui.openSnippetHistory(id)
-}
 
 // Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
 // control says which of the two it is about to do. It also decides Capture: a
@@ -155,7 +153,7 @@ defineExpose({ flash: () => flash('text') })
     v-if="!editMode && hasHistory"
     class="btn"
     :data-tip="$t('snippetEditorActions.historyTip')"
-    @click="openHistory"
+    @click="emit('history')"
   >
     <AppIcon name="clock" /> {{ $t('snippetEditorActions.history') }}
   </button>

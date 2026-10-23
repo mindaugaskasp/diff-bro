@@ -34,12 +34,13 @@ function initialFields(editing, existing) {
   }
 }
 
-export function useSnippetDraft() {
+/**
+ * @param {{ editing: { id: string|null }, onClose: () => void, onSaved: (id: string) => void }} host
+ */
+export function useSnippetDraft({ editing, onClose, onSaved }) {
   const store = useSnippetStore()
   const diff = useDiffStore()
   const settings = useSettingsStore()
-
-  const editing = store.editingSnippet
   // A new snippet becomes existing after its first save, so re-save updates.
   const isNew = ref(editing.id == null)
   const existing = isNew.value ? null : store.entries.find((e) => e.id === editing.id)
@@ -82,7 +83,7 @@ export function useSnippetDraft() {
   const isJira = computed(() => language.value === 'jira')
   const isMarkdown = computed(() => language.value === 'markdown')
 
-  const close = () => (store.editingSnippet = null)
+  const close = onClose
 
   // Unsaved-changes guard: a dirty draft confirms before closing.
   const baselineSecret = ref(initial.secret)
@@ -137,13 +138,10 @@ export function useSnippetDraft() {
       await store.update(editing.id, fields)
       saving.value = false
     }
-    // Saving is a finished action, so it closes. The baseline moves first: close
-    // runs the same path Cancel does, and a stale baseline would read as unsaved
-    // work and raise the discard prompt over a snippet already written.
     baselineName.value = name.value
     baselineContent.value = content.value
     baselineSecret.value = secret.value
-    close()
+    onSaved(editing.id)
   }
 
   const canFormat = computed(() => !!content.value.trim() && !!FORMATTERS[language.value])
@@ -169,20 +167,13 @@ export function useSnippetDraft() {
     return true
   }
 
-  // A picture of the SNIPPET, not of the editor: the dialog closes first, the
-  // way the diagram expander does, and the stage is photographed underneath it.
   function captureImage() {
-    if (!editing.id) return
-    const id = editing.id
-    close()
-    useImageExportStore().exportSnippetImage(id)
+    if (editing.id) useImageExportStore().exportSnippetImage(editing.id)
   }
 
   function expandDiagram(theme = '') {
     if (!content.value.trim()) return
-    // Close first or it stacks over the viewer; the preview's ground travels.
     useUiStore().openMermaid(name.value.trim() || 'Diagram', content.value, theme)
-    close()
   }
 
   return {

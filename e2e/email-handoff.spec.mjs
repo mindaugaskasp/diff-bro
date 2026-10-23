@@ -323,6 +323,17 @@ test('the picker holds thirty keys and a filter cannot hide a selection', async 
 
 // ——— The key swap's own hand-offs (specs/2026-08-09-email-my-key) ———
 
+async function addTrustedKeyFromPanel(page) {
+  await page
+    .getByRole('navigation', { name: 'Sidebar' })
+    .getByRole('button', { name: /^Keys/ })
+    .click()
+  await page
+    .locator('.keys-panel')
+    .getByRole('button', { name: /^Add( their key)?$/ })
+    .click()
+}
+
 test('Email it opens an UNADDRESSED draft carrying the fingerprint, key staged for pasting', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
@@ -331,7 +342,11 @@ test('Email it opens an UNADDRESSED draft carrying the fingerprint, key staged f
 
   try {
     await captureOsCalls(app)
-    await page.getByRole('button', { name: 'My key' }).click()
+    await page
+      .getByRole('navigation', { name: 'Sidebar' })
+      .getByRole('button', { name: /^Keys/ })
+      .click()
+    await page.locator('.keys-panel').getByRole('button', { name: 'Send my key' }).click()
     const dialog = page.getByRole('dialog', { name: 'Share my public key' })
     await dialog.getByPlaceholder('e.g. Alice — laptop').fill('E2E mailer')
     const shownFp = (await dialog.locator('.fp code').innerText()).trim()
@@ -378,7 +393,7 @@ test('a clipboard key is offered for verification; junk falls through to the pic
 
     // Junk on the clipboard: straight to the picker, no dialog, no notice.
     await app.evaluate(({ clipboard }) => clipboard.writeText('not a key at all'))
-    await page.getByRole('button', { name: 'Trusted key' }).click()
+    await addTrustedKeyFromPanel(page)
     await expect(page.getByRole('dialog', { name: 'Add Trusted Key' })).toHaveCount(0)
     expect(await app.evaluate(() => globalThis.__pickers)).toBe(1)
 
@@ -387,7 +402,7 @@ test('a clipboard key is offered for verification; junk falls through to the pic
     const text =
       '```\n' + encodePublicKey({ ...peer, format: KEY_FORMAT, label: 'Rūta phone' }) + '\n```'
     await app.evaluate(({ clipboard }, t) => clipboard.writeText(t), text)
-    await page.getByRole('button', { name: 'Trusted key' }).click()
+    await addTrustedKeyFromPanel(page)
 
     const confirm = page.getByRole('dialog', { name: 'Add Trusted Key' })
     await expect(confirm).toBeVisible()
@@ -402,7 +417,7 @@ test('a clipboard key is offered for verification; junk falls through to the pic
 
     // Round two, this time trusting it: the name field prefills from the key's
     // own label and Add lands it in the sidebar's trusted keys.
-    await page.getByRole('button', { name: 'Trusted key' }).click()
+    await addTrustedKeyFromPanel(page)
     await expect(confirm).toBeVisible()
     await expect(confirm.getByPlaceholder('e.g. Alice — laptop')).toHaveValue('Rūta phone')
     await confirm.getByRole('button', { name: 'Add', exact: true }).click()

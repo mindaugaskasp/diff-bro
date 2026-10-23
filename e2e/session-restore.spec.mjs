@@ -104,7 +104,7 @@ test('turning the setting off forgets the session and stops storing one', async 
 
     app = await launchApp(userDataDir)
     page = await firstReadyPage(app)
-    await expect(page.getByText('Choose or drop two files to compare')).toBeVisible()
+    await expect(page.getByText('What are you comparing?')).toBeVisible()
     // And the choice itself survived the quit.
     await openSettings(page)
     await page.getByRole('button', { name: 'Storage', exact: true }).click()
@@ -126,7 +126,7 @@ test('closing the last comparison leaves the next launch empty', async () => {
 
     // Clearing it is a decision, and it has to outlive the quit too.
     await openMenu(page, 'Edit', 'Clear')
-    await expect(page.getByText('Choose or drop two files to compare')).toBeVisible()
+    await expect(page.getByText('What are you comparing?')).toBeVisible()
     await expect
       .poll(() => JSON.parse(readFileSync(join(userDataDir, 'session.json'), 'utf-8')).data)
       .toBeUndefined()
@@ -134,8 +134,8 @@ test('closing the last comparison leaves the next launch empty', async () => {
 
     app = await launchApp(userDataDir)
     page = await firstReadyPage(app)
-    await expect(page.getByText('Choose or drop two files to compare')).toBeVisible()
-    await expect(tabs(page)).toHaveCount(1)
+    await expect(page.getByText('What are you comparing?')).toBeVisible()
+    await expect(tabs(page)).toHaveCount(0)
     await app.close()
   } finally {
     rmSync(userDataDir, { recursive: true, force: true })

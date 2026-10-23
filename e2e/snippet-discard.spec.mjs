@@ -5,7 +5,7 @@ import { test, expect, openNewSnippet } from './fixtures.mjs'
 // lives on the dialog's close paths and Monaco feeds the "dirty" state.
 test('cancelling a new snippet with typed content asks before discarding', async ({ page }) => {
   await openNewSnippet(page)
-  const dialog = page.getByRole('dialog', { name: 'New Snippet' })
+  const dialog = page.getByRole('region', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 
   await dialog.locator('.editor').click()
@@ -31,7 +31,7 @@ test('cancelling a new snippet with typed content asks before discarding', async
 // An untouched new snippet has nothing to protect, so Cancel closes at once.
 test('cancelling an empty new snippet closes without a prompt', async ({ page }) => {
   await openNewSnippet(page)
-  const dialog = page.getByRole('dialog', { name: 'New Snippet' })
+  const dialog = page.getByRole('region', { name: 'New Snippet' })
   await expect(dialog).toBeVisible()
 
   await dialog.getByRole('button', { name: 'Cancel' }).click()

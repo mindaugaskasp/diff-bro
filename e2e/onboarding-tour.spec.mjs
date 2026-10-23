@@ -339,8 +339,9 @@ test('a replay swaps the demo pair rather than keeping the first one', async ({ 
   await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
   await expect(page.locator('[data-tour="slots"]')).toContainText('demo-flow-v1.mmd')
   await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
-  // One scratch tab, not two: the second pair replaced the first in place.
-  await expect(page.locator('.tab')).toHaveCount(2)
+  // One scratch tab, not two: the second pair replaced the first in place. The
+  // reader's own start tab is blank, which the strip does not draw.
+  await expect(page.locator('.diff-tabs .tab')).toHaveCount(1)
 })
 
 // The whole stage is the tour's own: the comparison it loaded and the snippet it

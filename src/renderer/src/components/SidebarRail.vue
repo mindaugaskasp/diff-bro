@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { useShareStore } from '../features/share'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useRailKeys } from '../composables/useRailKeys'
 import { useSectionReorder } from '../composables/useSectionReorder'
@@ -11,6 +12,8 @@ const emit = defineEmits(['select'])
 const settings = useSettingsStore()
 const vault = useVaultStore()
 const snippets = useSnippetStore()
+const share = useShareStore()
+share.refreshTrusted()
 
 const ITEMS = {
   home: { icon: 'home', labelKey: 'sidebarRail.home', count: () => 0 },
@@ -20,11 +23,14 @@ const ITEMS = {
     labelKey: 'sidebarRail.snippets',
     count: () => snippets.entries.length
   },
-  tools: { icon: 'grid', labelKey: 'sidebarRail.tools', count: () => 0 }
+  tools: { icon: 'grid', labelKey: 'sidebarRail.tools', count: () => 0 },
+  keys: { icon: 'key', labelKey: 'sidebarRail.keys', count: () => share.trusted.length }
 }
 const SECTION_OF = { diffs: 'saved', snippets: 'snippets', tools: 'tools' }
+// Keys is pinned to the foot of the rail: not a place you reorder, a place you go.
+const order = computed(() => [...settings.railOrder, 'keys'])
 const items = computed(() =>
-  settings.railOrder.map((id) => ({
+  order.value.map((id) => ({
     id,
     ...ITEMS[id],
     count: ITEMS[id].count(),
@@ -44,7 +50,7 @@ function select(id) {
   emit('select', id)
 }
 const onKeydown = useRailKeys(
-  computed(() => settings.railOrder),
+  order,
   computed(() => settings.sidebarPanel),
   select
 )
@@ -72,6 +78,7 @@ const toggleKey = computed(() =>
       class="rail-item"
       :class="{
         on: isOpen(item.id),
+        pinned: item.id === 'keys',
         'drop-target': item.section && reorder.isDropTarget(item.section),
         dragging: item.section && reorder.isDragging(item.section)
       }"

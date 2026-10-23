@@ -8,6 +8,7 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import { useSnippetStore } from '../../stores/snippetStore'
 import { useTabsStore } from '../../stores/tabsStore'
 import { useUiStore } from '../../stores/uiStore'
+import { blankSnapshot, isSnippetTab } from '../../utils/tabs'
 
 const SNIPPET = {
   name: 'Checkout API — staging',
@@ -116,7 +117,8 @@ async function loadPair(kind) {
 async function openPair(kind) {
   const tabs = useTabsStore()
   if (!tabs.canHost(true)) return null
-  const id = tabs.newTab({ transient: true })
+  // A fresh tab, never the reused start one: the flag below must not outlive it.
+  const id = tabs.open(blankSnapshot(), { reuseBlank: false, transient: true })
   if (!id) return null
   // Kept out of the saved session as well as closed at the end: quitting
   // mid-tour is the one exit that never reaches `clearStage`.
@@ -154,7 +156,7 @@ const named = () => useSnippetStore().entries.filter((e) => e.name === SNIPPET.n
  */
 export function openSnippet() {
   const snippets = useSnippetStore()
-  if (snippets.editingSnippet) return null
+  if (snippets.editingSnippet || isSnippetTab(useTabsStore().active)) return null
   const before = named().map((e) => e.id)
   snippets.editingSnippet = {
     id: null,
@@ -166,8 +168,15 @@ export function openSnippet() {
   return before
 }
 
+// Only the tour's own tab: a snippet the reader had open is theirs to close.
 export function closeSnippet() {
   useSnippetStore().editingSnippet = null
+  const tabs = useTabsStore()
+  for (const tab of tabs.tabs.filter(isSnippetTab)) {
+    if (tab.snippet.initial?.initialName !== SNIPPET.name) continue
+    tabs.setSnippetMeta(tab.id, { dirty: false })
+    tabs.close(tab.id)
+  }
 }
 
 function restoreSidebar(filters, wasCollapsed) {

@@ -11,8 +11,26 @@ test.describe.configure({ timeout: 180_000 })
 
 const tabCount = (page) => page.locator('.diff-tabs .tab').count()
 
-async function fillStrip(page) {
-  for (let i = 1; i < MAX_TABS; i++) await openMenu(page, 'File', 'New Comparison')
+// A real comparison per tab: a blank one is the start surface, which the strip
+// hides and New Comparison reuses rather than stacking.
+async function addComparison(page, i, { save = false, left = `left ${i}` } = {}) {
+  if (i > 0) await openMenu(page, 'File', 'New Comparison')
+  await page.getByRole('button', { name: 'Paste mode' }).click()
+  await page.getByPlaceholder('Paste original text here').fill(left)
+  await page.getByPlaceholder('Paste changed text here').fill(`right ${i}`)
+  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  if (!save) return
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByLabel('Name', { exact: true }).fill(`tab ${i}`)
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(dialog).toBeHidden()
+}
+
+async function fillStrip(page, { save = false, firstLeft } = {}) {
+  for (let i = 0; i < MAX_TABS; i++) {
+    await addComparison(page, i, { save, left: i === 0 && firstLeft ? firstLeft : `left ${i}` })
+  }
   await expect.poll(() => tabCount(page)).toBe(MAX_TABS)
 }
 
@@ -30,23 +48,21 @@ async function turnOn(page) {
   await page.keyboard.press('Escape')
 }
 
-// A blank tab holds nothing to lose, so it goes without a word — which is the
-// whole point of the setting.
+// A saved comparison holds nothing to lose, so it goes without a word — which
+// is the whole point of the setting. The start surface takes its place.
 test('with it on, a disposable oldest tab just goes', async ({ page }) => {
   await turnOn(page)
-  await fillStrip(page)
+  await fillStrip(page, { save: true })
 
   await openMenu(page, 'File', 'New Comparison')
-  await expect.poll(() => tabCount(page)).toBe(MAX_TABS)
+  await expect.poll(() => tabCount(page)).toBe(MAX_TABS - 1)
   await expect(page.getByRole('dialog', { name: 'Make room?' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toBeVisible()
 })
 
 test('an oldest tab holding work asks first', async ({ page }) => {
   await turnOn(page)
-  // Give the FIRST tab something to lose before the rest are opened.
-  await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('work in progress')
-  await fillStrip(page)
+  await fillStrip(page, { firstLeft: 'work in progress' })
 
   await openMenu(page, 'File', 'New Comparison')
   const dialog = page.getByRole('dialog', { name: 'Make room?' })
@@ -63,6 +79,6 @@ test('an oldest tab holding work asks first', async ({ page }) => {
     .getByRole('dialog', { name: 'Make room?' })
     .getByRole('button', { name: 'Close it and open' })
     .click()
-  await expect.poll(() => tabCount(page)).toBe(MAX_TABS)
+  await expect.poll(() => tabCount(page)).toBe(MAX_TABS - 1)
   await expect(page.locator('.diff-tabs .tab', { hasText: 'work in progress' })).toHaveCount(0)
 })

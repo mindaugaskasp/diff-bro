@@ -87,15 +87,14 @@ test('Close Others leaves the anchor, and it is the one on screen', async ({ pag
   await expect(tabs(page).nth(0)).toHaveClass(/active/)
 })
 
-// close() already refuses to leave an empty window, so Close All lands on a
-// blank comparison rather than a state with no document at all.
-test('Close All returns to a single blank comparison, not an empty window', async ({ page }) => {
+// Close All never leaves an empty window: it lands on the start surface.
+test('Close All returns to the start surface, not an empty window', async ({ page }) => {
   await savedTabs(page, 3)
   await openMenuOn(page, 0)
   await item(page, 'Close All').click()
-  await expect(tabs(page)).toHaveCount(1)
+  await expect(tabs(page)).toHaveCount(0)
   await expect(page.locator('.diff-tabs')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Paste mode' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toBeVisible()
 })
 
 // The reported trap: the discard dialog names ONE comparison, so a bulk close

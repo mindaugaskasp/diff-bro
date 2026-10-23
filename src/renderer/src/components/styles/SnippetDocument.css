@@ -1,0 +1,69 @@
+.snippet-doc {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+}
+.doc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.doc-ident {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+/* Both layers: the completion ghost drifts off the caret if their type differs. */
+.doc-name :deep(.ghost-field input),
+.doc-name :deep(.ghost-layer) {
+  font-size: var(--font-xl);
+  font-weight: 650;
+}
+.doc-name :deep(.ghost-field input) {
+  width: 100%;
+}
+/* The document's title, not a greyed form field: view mode is the fill, not the ink. */
+.doc-name :deep(.ghost-field.ro > input) {
+  color: var(--text);
+}
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.doc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 60%;
+}
+.doc-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.doc-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

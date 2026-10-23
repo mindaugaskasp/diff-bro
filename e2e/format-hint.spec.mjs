@@ -9,7 +9,7 @@ async function pasteCompare(page, left, right) {
   await page.getByPlaceholder('Paste original text here').fill(left)
   await page.getByPlaceholder('Paste changed text here').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeHidden()
+  await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
 
 // The format banner is a `div.hint`; the ShortcutBar's chips are `span.hint`,

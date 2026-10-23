@@ -3,13 +3,13 @@ import { test, expect, newSnippetButton, openNewSnippet, showPanel } from './fix
 // Regression cover for UI defects found by eye. Each of these shipped once, so
 // each gets a test that fails if it comes back.
 
-test('the supported-format tiles are real buttons that open a filtered picker', async ({
+test('the start surface names each format as a button that opens a filtered picker', async ({
   page
 }) => {
-  const tiles = page.locator('.chips button.chip')
+  const tiles = page.locator('.start-formats button.format')
   // Named rather than counted: a bare number says nothing about which tile went
   // missing, and adding Mermaid broke it with a diff that read "6 became 7".
-  await expect(tiles).toHaveText([/Excel/, /JSON/, /XML/, /YAML/, /CSV/, /Markdown/, /Mermaid/])
+  await expect(tiles).toHaveText([/Excel/, /CSV/, /JSON/, /YAML/, /XML/, /Markdown/, /Mermaid/])
 
   // Every tile is reachable and says what it opens. The tip is the app's own
   // (data-tip), not native `title`, which Electron often never draws.
@@ -32,7 +32,7 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
     ['Import', 'Import snippets from a file']
   ]
   for (const [tooltip, name] of cases) {
-    const button = page.getByRole('button', { name })
+    const button = page.getByRole('button', { name, exact: true })
     await expect(button, `${name} should still be findable by name`).toBeVisible()
     await expect(button).toHaveAttribute('data-tip', tooltip)
   }
@@ -181,7 +181,7 @@ test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
 test('every icon-only button carries an accessible name', async ({ page }) => {
   // Reach the ones that only exist once something is open.
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog').first()
+  const editor = page.getByRole('region', { name: /Snippet/ }).first()
   await expect(editor).toBeVisible()
 
   const unnamed = await page.evaluate(() =>
@@ -342,7 +342,7 @@ const PRIMARY = `(() => {
 // the keyline must carry the change.
 test('hovering the primary button moves its keyline, not its fill', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Primary hover')
   await editor.locator('.editor').click()
   await page.keyboard.type('body')

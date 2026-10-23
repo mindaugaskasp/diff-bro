@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, snippetDoc } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
 // Version history is real only in a launched app: versions are the actual
@@ -8,20 +8,18 @@ import { focusEditor } from './monaco.mjs'
 
 async function createSnippet(page, name, body, { secret = false } = {}) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)
   await page.keyboard.type(body)
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(editor).toBeHidden()
+  await expect(snippetDoc(page).getByRole('button', { name: 'Edit' })).toBeVisible()
 }
 
 async function editSnippet(page, name, body) {
   await page.locator('.snippets-section .row', { hasText: name }).click()
-  // The dialog re-titles itself on Edit ("Snippet" → "Edit snippet"), so a
-  // name-scoped handle goes stale mid-helper; only one dialog is ever open.
-  const view = page.getByRole('dialog')
+  const view = snippetDoc(page)
   await view.getByRole('button', { name: 'Edit' }).click()
   // A secret opens masked with no editor mounted — reveal before typing.
   const show = view.getByRole('button', { name: 'Show', exact: true })
@@ -30,16 +28,16 @@ async function editSnippet(page, name, body) {
   await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.type(body)
   await view.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(view).toBeHidden()
+  await expect(view.getByRole('button', { name: 'Edit' })).toBeVisible()
 }
 
 async function openHistory(page, name) {
   await page.locator('.snippets-section .row', { hasText: name }).click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await view.getByRole('button', { name: 'History', exact: true }).click()
-  // The editor gets out of the way first — never two stacked dialogs.
-  await expect(view).toHaveCount(0)
-  return page.getByRole('dialog', { name: /^History — / })
+  // Docked beside the snippet, which stays open.
+  await expect(view).toBeVisible()
+  return page.getByRole('complementary', { name: /^History — / })
 }
 
 test('two edits become two versions, each diffed against its predecessor', async ({
@@ -49,7 +47,7 @@ test('two edits become two versions, each diffed against its predecessor', async
   await createSnippet(page, 'Rollout plan', 'replicas: 1')
   // A snippet with no history yet offers no History button.
   await page.locator('.snippets-section .row', { hasText: 'Rollout plan' }).click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view.getByRole('button', { name: 'Edit' })).toBeVisible()
   await expect(view.getByRole('button', { name: 'History', exact: true })).toHaveCount(0)
   // The ghost Close by its text — the header × carries the same accessible name.
@@ -85,13 +83,13 @@ test('a name-only edit adds no version', async ({ page }) => {
   await editSnippet(page, 'Endpoint note', 'GET /v2/users')
 
   // Rename without touching the content: no new version may appear. The
-  // un-named handle again — the dialog re-titles itself on Edit.
+  // un-named handle again — the document re-titles itself on Edit.
   await page.locator('.snippets-section .row', { hasText: 'Endpoint note' }).click()
-  const view = page.getByRole('dialog')
+  const view = snippetDoc(page)
   await view.getByRole('button', { name: 'Edit' }).click()
   await view.getByPlaceholder('Snippet name…').fill('Endpoint note v2')
   await view.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(view).toBeHidden()
+  await expect(view.getByRole('button', { name: 'Edit' })).toBeVisible()
 
   const dialog = await openHistory(page, 'Endpoint note v2')
   await expect(dialog.locator('.hist-version')).toHaveCount(2)

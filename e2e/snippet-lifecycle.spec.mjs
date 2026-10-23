@@ -6,7 +6,7 @@ import { test, expect, openNewSnippet } from './fixtures.mjs'
 test('a snippet can be created, edited, and deleted', async ({ page }) => {
   // --- create ---
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await expect(editor).toBeVisible()
 
   await editor.getByPlaceholder('Snippet name…').fill('My note')
@@ -14,31 +14,32 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   await page.keyboard.type('remember to hydrate')
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
 
-  // Saving is a finished action: the editor closes and you are back at the list
-  // with the new row, rather than parked in a read-only view of what you wrote.
+  // Saving leaves the tab showing what was saved, and the row lands in the list.
   await expect(editor).toBeHidden()
-  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   const row = page.locator('.snippets-section .row', { hasText: 'My note' })
   await expect(row).toBeVisible()
 
   // --- edit (rename) ---
   // Clicking the row opens the read-only view; Edit unlocks the same dialog.
   await row.locator('.entry').click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await view.getByRole('button', { name: 'Edit', exact: true }).click()
-  const edit = page.getByRole('dialog', { name: 'Edit Snippet' })
+  const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await expect(edit).toBeVisible()
   await expect(edit.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
   await edit.getByPlaceholder('Snippet name…').fill('My renamed note')
   await edit.getByRole('button', { name: 'Save', exact: true }).click()
 
-  // Saving an edit closes it too — no Escape needed to get back to the list.
   await expect(edit).toBeHidden()
-  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toBeHidden()
+  const saved = page.getByRole('region', { name: 'Snippet', exact: true })
+  await saved.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(saved).toBeHidden()
 
-  await expect(page.getByText('My renamed note', { exact: true })).toBeVisible()
-  await expect(page.getByText('My note', { exact: true })).toBeHidden()
+  const rows = page.locator('.snippets-section .row')
+  await expect(rows.filter({ hasText: 'My renamed note' })).toBeVisible()
+  await expect(rows.filter({ hasText: /^My note$/ })).toHaveCount(0)
 
   // --- delete (with confirm) ---
   const renamed = page.locator('.snippets-section .row', { hasText: 'My renamed note' })

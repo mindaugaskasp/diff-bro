@@ -5,7 +5,7 @@ import { test, expect, openNewSnippet } from './fixtures.mjs'
 // somebody else's click would open.
 async function newUrlSnippet(page, name, url) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('select').selectOption('url')
   await editor.locator('.editor').click()

@@ -56,7 +56,7 @@ test('screens for review', async ({ page }) => {
 
 test('Home lists a newly created snippet under Today', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Fresh on Home')
   await editor.locator('.editor').click()
   await page.keyboard.type('body')
@@ -81,7 +81,7 @@ test('a rail count clears its icon', async ({ page }) => {
 
 async function newSnippet(page, name) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('body')

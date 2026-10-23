@@ -85,16 +85,6 @@
     "ratio": 4.36
   },
   {
-    "theme": "sepia",
-    "where": "SnippetEditorDialog.css .view-toggle button",
-    "ratio": 3.93
-  },
-  {
-    "theme": "solar",
-    "where": "SnippetEditorDialog.css .view-toggle button",
-    "ratio": 4.36
-  },
-  {
     "theme": "bloom",
     "where": "SpreadsheetDiffViewer.css .identical-row",
     "ratio": 4.19

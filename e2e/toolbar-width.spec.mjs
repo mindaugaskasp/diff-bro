@@ -80,9 +80,7 @@ test('the toolbar has nothing to scroll at the minimum size', async ({ app, page
 const hiddenInBar = (page) =>
   page.locator('.toolbar .options').evaluate((el) => el.scrollWidth - el.clientWidth)
 
-// Drag the sidebar seam to its cap. `.key-actions` is `width: var(--sidebar-w)`,
-// so every pixel the sidebar gains is a pixel the bar's controls lose — the one
-// term in the toolbar's width that the READER moves.
+// Drag the sidebar seam to its cap — the one layout term the reader moves.
 async function widenSidebarToCap(page) {
   const grip = page.locator('.usb-grip')
   const box = await grip.boundingBox()
@@ -129,9 +127,8 @@ test('a longer locale fits the toolbar as well as the application', async ({ app
   await expect.poll(() => hiddenInBar(page)).toBe(0)
 })
 
-// The widest reachable layout: minimum window, sidebar dragged to its cap. Both
-// are things a reader does deliberately, and together they cost the bar 128px it
-// never had.
+// The widest reachable layout: minimum window, sidebar dragged to its cap. The
+// bar spans the window, so this holds it to not borrowing from the sidebar again.
 test('the toolbar fits with the sidebar dragged to its cap', async ({ app, page }) => {
   await minimumSize(app, page)
   await widenSidebarToCap(page)

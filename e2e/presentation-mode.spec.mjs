@@ -7,7 +7,7 @@ async function loadDiff(page) {
   await page.getByPlaceholder('Paste original text here').fill('one\ntwo\nthree')
   await page.getByPlaceholder('Paste changed text here').fill('one\ntwo CHANGED\nthree')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeHidden()
+  await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
 
 const chrome = (page) => ({
