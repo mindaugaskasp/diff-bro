@@ -8,6 +8,7 @@ import { THEMES } from '../utils/themes'
 import { LOCALES } from '../../../shared/i18n'
 import SettingToggle from './SettingToggle.vue'
 import ThemeTile from './ThemeTile.vue'
+import EditorTextSetting from './EditorTextSetting.vue'
 
 const settings = useSettingsStore()
 
@@ -52,6 +53,8 @@ const groups = computed(() => [
       </select>
     </label>
     <p class="hint">{{ $t('settings.language.hint') }}</p>
+
+    <EditorTextSetting />
 
     <h4>{{ $t('settingsAppearance.behaviour') }}</h4>
     <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">

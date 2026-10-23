@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useSettingsStore } from '../stores/settingsStore'
-import { useUiStore } from '../stores/uiStore'
+import { useEditorText } from './useEditorText'
 import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
 
 // A Monaco editor bound to a `content` ref: two-way sync, live language switching,
@@ -38,7 +38,7 @@ function runFind(editor, withReplace) {
 
 export function useMonacoInput({ container, content, language, readOnly, options = {} }) {
   const settings = useSettingsStore()
-  const ui = useUiStore()
+  const text = useEditorText({ basePx: FONT_PX })
   const ready = ref(false)
   let editor = null
 
@@ -54,10 +54,10 @@ export function useMonacoInput({ container, content, language, readOnly, options
       ...BASE_OPTIONS,
       value: content.value,
       language: language.value,
-      fontSize: FONT_PX * ui.diffZoom,
       readOnly: isReadOnly(),
       ...options
     })
+    text.attach(editor)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => openFind(!isReadOnly()))
     editor.onDidChangeModelContent(() => {
       content.value = editor.getValue()
@@ -83,10 +83,6 @@ export function useMonacoInput({ container, content, language, readOnly, options
   if (readOnly) watch(readOnly, (ro) => editor?.updateOptions({ readOnly: !!ro }))
   // post-flush: applyMonacoTheme probes the live palette, after data-theme is stamped.
   watch(() => settings.theme, applyMonacoTheme, { flush: 'post' })
-  watch(
-    () => ui.diffZoom,
-    (zoom) => editor?.updateOptions({ fontSize: FONT_PX * zoom })
-  )
   onBeforeUnmount(destroyEditor)
 
   // Replace the content and put the caret back where the user is working.

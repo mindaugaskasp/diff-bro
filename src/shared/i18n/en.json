@@ -1841,5 +1841,16 @@
     "stepAdd": "Add the key they send back, and check its fingerprint with them.",
     "sendMyKey": "Send my key",
     "addTheirKey": "Add their key"
+  },
+  "editorText": {
+    "title": "Editor",
+    "hint": "Applies to comparisons, snippets and history.",
+    "font": "Font",
+    "fontLabel": "Editor font",
+    "systemDefault": "System default",
+    "zoom": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "shortcuts": "Also {mod}+, {mod}− and {mod}0. Only fonts installed on this computer are listed."
   }
 }

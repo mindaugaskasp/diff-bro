@@ -10,6 +10,8 @@ export class Range {
 export const editor = {
   OverviewRulerLane: { Left: 1, Center: 2, Right: 4, Full: 7 },
   EditorOption: { fontInfo: 'fontInfo' },
+  EditorOptions: { fontFamily: { defaultValue: 'DEFAULT_FACE' } },
+  remeasureFonts: () => {},
   create: () => ({ dispose: () => {} }),
   createDiffEditor: () => ({ dispose: () => {} }),
   colorizeElement: async () => {},
