@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel, closeSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, closeSnippet, editInPlace } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -67,8 +67,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
 
   await page.locator('.snippets-section .row', { hasText: 'Live target' }).click()
-  const view = page.getByRole('region', { name: 'Snippet', exact: true })
-  await view.getByRole('button', { name: 'Edit', exact: true }).click()
+  await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('ControlOrMeta+a')

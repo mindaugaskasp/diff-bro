@@ -1,10 +1,8 @@
 <script setup>
-// The snippet editor's action row, split out of SnippetEditorDialog to keep it
-// within its line budget. Owns only the two bits of feedback state its buttons
-// need (the copy flash, the two-step clear); everything else is the parent's.
+// The snippet document's action row: the same buttons viewing and editing, so
+// none moves under the pointer. Owns only the copy flash; the rest is the parent's.
 import { t } from '../i18n'
 import { computed } from 'vue'
-import { useArmedAction } from '../composables/useArmedAction'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
 import { useCopyAsFile } from '../composables/useCopyAsFile'
 import { snippetFile } from '../utils/copyAsFile'
@@ -15,7 +13,6 @@ const props = defineProps({
   editMode: { type: Boolean, required: true },
   name: { type: String, default: '' },
   content: { type: String, default: '' },
-  canFormat: { type: Boolean, required: true },
   language: { type: String, required: true },
   hasContent: { type: Boolean, required: true },
   canSave: { type: Boolean, required: true },
@@ -24,26 +21,12 @@ const props = defineProps({
   masked: { type: Boolean, default: false },
   snippetId: { type: String, default: null }
 })
-const emit = defineEmits([
-  'format',
-  'copy',
-  'capture',
-  'clear',
-  'reveal',
-  'edit',
-  'save',
-  'close',
-  'history'
-])
+const emit = defineEmits(['copy', 'capture', 'reveal', 'save', 'history'])
 
-// One flash, two buttons — so it records WHICH was pressed. A bare boolean put
-// the acknowledgement on Copy when the reader had pressed Copy as file, the
-// button right beside it. That is what flash's `mark` is for.
+// One flash, two buttons — so it records WHICH was pressed.
 const { copied, flash } = useCopyFeedback()
 const copiedText = computed(() => copied.value === 'text')
 const copiedFile = computed(() => copied.value === 'file')
-// The twin of Copy, and adjacent to it: that adjacency is what makes them read
-// as a choice between two things rather than two unrelated actions.
 const { supported: canCopyFile, copyFile } = useCopyAsFile()
 async function copyAsFile() {
   const draft = { name: props.name, content: props.content, secret: props.secret }
@@ -54,32 +37,13 @@ const copyFileTip = computed(() =>
     ? "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk"
     : t('snippetEditorActions.copyAsFileTip')
 )
-const { armed: clearArmed, trigger: clearContent } = useArmedAction(() => emit('clear'))
 
 const store = useSnippetStore()
 const hasHistory = computed(
   () => (store.entries.find((e) => e.id === props.snippetId)?.history?.length ?? 0) > 0
 )
-
-// Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
-// control says which of the two it is about to do. It also decides Capture: a
-// picture of a diagram IS the diagram, while a picture of text is a worse copy
-// of what Copy already gives you.
+// A picture of a diagram IS the diagram; a picture of text is a worse copy.
 const isMermaid = computed(() => props.language === 'mermaid')
-const formatLabel = computed(() => (isMermaid.value ? 'Repair' : 'Format'))
-const formatTip = computed(() => {
-  if (!props.canFormat) return t('snippetEditorActions.formatUnavailable')
-  return isMermaid.value
-    ? t('snippetEditorActions.unmangleTip')
-    : t('snippetEditorActions.prettyPrintAs', { format: props.language.toUpperCase() })
-})
-const clearTip = computed(() =>
-  clearArmed.value
-    ? t('snippetEditorActions.clickAgainToClear')
-    : t('snippetEditorActions.clearTheEditor')
-)
-// Copy works whether or not the contents are on screen — that is the whole
-// point of a secret snippet.
 const copyTip = computed(() =>
   copiedText.value
     ? t('snippetEditorActions.copiedToClipboard')
@@ -91,15 +55,6 @@ defineExpose({ flash: () => flash('text') })
 </script>
 
 <template>
-  <button
-    v-if="editMode"
-    class="btn btn-sm"
-    :disabled="!canFormat"
-    :data-tip="formatTip"
-    @click="emit('format')"
-  >
-    {{ formatLabel }}
-  </button>
   <button
     v-if="secret"
     class="btn btn-sm"
@@ -113,9 +68,7 @@ defineExpose({ flash: () => flash('text') })
     <AppIcon :name="masked ? 'eye' : 'eye-off'" />
     {{ masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide') }}
   </button>
-  <!-- aria-label is the STABLE name on both: only the visible word swaps for the
-       flash, so a screen reader is never told the button it is on has become a
-       different button mid-press. -->
+  <!-- aria-label is the STABLE name: only the visible word swaps for the flash. -->
   <button
     class="btn btn-sm"
     :class="{ copied: copiedText }"
@@ -127,7 +80,7 @@ defineExpose({ flash: () => flash('text') })
     {{ copiedText ? $t('common.copied') : $t('common.copy') }}
   </button>
   <button
-    v-if="canCopyFile && !editMode"
+    v-if="canCopyFile"
     class="btn btn-sm"
     :class="{ copied: copiedFile }"
     :disabled="!hasContent || secret"
@@ -138,49 +91,33 @@ defineExpose({ flash: () => flash('text') })
     <AppIcon :name="copiedFile ? 'check' : 'clipboard'" />
     {{ copiedFile ? $t('common.copied') : $t('snippetEditorActions.copyAsFile') }}
   </button>
-  <button
-    v-if="editMode"
-    class="btn btn-sm"
-    :class="{ armed: clearArmed }"
-    :disabled="!hasContent"
-    :data-tip="clearTip"
-    @click="hasContent && clearContent()"
-  >
-    {{ clearArmed ? $t('snippetEditorActions.confirmClear') : $t('snippetEditorActions.clear') }}
-  </button>
   <span class="spacer" />
   <button
-    v-if="!editMode && hasHistory"
+    v-if="hasHistory"
     class="btn"
     :data-tip="$t('snippetEditorActions.historyTip')"
     @click="emit('history')"
   >
     <AppIcon name="clock" /> {{ $t('snippetEditorActions.history') }}
   </button>
-  <!-- Viewing is when you are looking at the thing you want a picture of, and
-       only a diagram is worth one. Never for a secret: the store refuses it too. -->
+  <!-- Never for a secret: the store refuses it too. -->
   <button
-    v-if="!editMode && !secret && isMermaid"
+    v-if="!secret && isMermaid"
     class="btn"
+    :disabled="editMode"
     :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
     @click="emit('capture')"
   >
     <AppIcon name="image" /> {{ $t('snippetEditorActions.capture') }}
   </button>
-  <button v-if="!editMode" class="btn btn-primary" @click="emit('edit')">
-    <AppIcon name="edit" /> {{ $t('snippetEditorActions.edit') }}
-  </button>
   <button
-    v-else
     class="btn btn-primary"
     data-tour="snippet-save"
     :disabled="!canSave"
+    :aria-label="$t('common.save')"
     @click="emit('save')"
   >
     {{ $t('common.save') }}
-  </button>
-  <button class="btn btn-ghost" @click="emit('close')">
-    {{ editMode ? $t('common.cancel') : $t('common.close') }}
   </button>
 </template>
 

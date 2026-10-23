@@ -1,4 +1,4 @@
-import { test, expect, showPanel } from './fixtures.mjs'
+import { test, expect, showPanel, editInPlace } from './fixtures.mjs'
 
 async function openSnippet(page) {
   await showPanel(page, 'snippets')
@@ -34,8 +34,8 @@ test('hovering template tags lists the fill-ins and the built-ins with their val
 })
 
 test('while editing, the bar follows the caret', async ({ page }) => {
-  const doc = await openSnippet(page)
-  await doc.getByRole('button', { name: 'Edit', exact: true }).click()
+  await openSnippet(page)
+  await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('End')
@@ -64,7 +64,7 @@ test('the bar zooms the code and shows the level', async ({ page }) => {
 })
 
 test('the name field no longer carries its own template-tags link', async ({ page }) => {
-  const doc = await openSnippet(page)
-  await doc.getByRole('button', { name: 'Edit', exact: true }).click()
+  await openSnippet(page)
+  await editInPlace(page)
   await expect(page.locator('.snippet-doc:visible .tokens-hint')).toHaveCount(0)
 })

@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, closeSnippet } from './fixtures.mjs'
 
 // A secret snippet is a claim about what is DRAWN, so it can only be checked in
 // a launched app: the contents must be absent from the editor, the hover card
@@ -62,7 +62,7 @@ test('reopening a revealed secret starts masked again', async ({ page }) => {
   const view = await createSecret(page)
   await view.getByRole('button', { name: 'Show' }).click()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
-  await view.getByRole('button', { name: 'Close', exact: true }).click()
+  await closeSnippet(page)
 
   // Reveal is per-open and never stored, so the next look is hidden again.
   await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
@@ -72,8 +72,8 @@ test('reopening a revealed secret starts masked again', async ({ page }) => {
 })
 
 test('the hover card masks a secret and never decrypts it', async ({ page }) => {
-  const view = await createSecret(page)
-  await view.getByRole('button', { name: 'Close', exact: true }).click()
+  await createSecret(page)
+  await closeSnippet(page)
 
   const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
   await expect(row.locator('.secret-mark')).toBeVisible() // the lock marker

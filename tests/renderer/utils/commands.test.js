@@ -61,7 +61,13 @@ const stores = () => ({
     noteToolUsed: spy(),
     toggleTheme: spy()
   },
-  ui: { zoomDiff: spy(), openSettings: spy(), togglePresenting: spy(), presenting: false },
+  ui: {
+    zoomDiff: spy(),
+    openSettings: spy(),
+    togglePresenting: spy(),
+    presenting: false,
+    requestSnippetSave: spy()
+  },
   snippets: { startNewSnippetFrom: spy() },
   share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy(), openKeysPanel: spy() },
   imageExport: { exportCurrentImage: spy() },
@@ -123,6 +129,22 @@ describe('runCommand', () => {
     const s = stores()
     runCommand('tab-next', s)
     expect(s.tabs.step).toHaveBeenCalledWith(1)
+  })
+
+  // ⌘S means "save what I am looking at"; with a snippet in front that is the snippet.
+  it('Save goes to the snippet in front, not the comparison behind it', () => {
+    const s = stores()
+    s.tabs.active = { kind: 'snippet', snippet: { id: 'x' } }
+    runCommand('save', s)
+    expect(s.ui.requestSnippetSave).toHaveBeenCalled()
+    expect(s.diff.showSaveDialog).toBe(false)
+  })
+
+  it('Save still opens the save dialog for a comparison', () => {
+    const s = stores()
+    runCommand('save', s)
+    expect(s.diff.showSaveDialog).toBe(true)
+    expect(s.ui.requestSnippetSave).not.toHaveBeenCalled()
   })
 
   it('ignores an unknown action rather than throwing', () => {

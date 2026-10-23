@@ -1,4 +1,4 @@
-import { test, expect, clickAppMenuItem, showPanel } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, showPanel, editInPlace } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -103,8 +103,7 @@ test('the snippet editor shows no pale sliver on a tinted light ground', async (
 
 test('the snippet editor shows no pale sliver in edit mode', async ({ app, page }) => {
   await page.locator('li.row').first().click()
-  const view = page.getByRole('region', { name: 'Snippet', exact: true })
-  await view.getByRole('button', { name: 'Edit', exact: true }).click()
+  await editInPlace(page)
   await expect(page.getByRole('region', { name: 'Edit Snippet' })).toBeVisible()
   await page.locator('.snippet-doc .editor').first().click()
   await page.waitForTimeout(700)

@@ -31,6 +31,11 @@
 /* The document's title, not a greyed form field: view mode is the fill, not the ink. */
 .doc-name :deep(.ghost-field.ro > input) {
   color: var(--text);
+  background: var(--bg);
+  cursor: text;
+}
+.doc-name :deep(.ghost-field.ro > input:hover) {
+  border-color: var(--btn-edge);
 }
 .doc-meta {
   display: flex;

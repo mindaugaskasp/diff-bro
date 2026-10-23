@@ -280,10 +280,18 @@ export async function pickTag(page, name) {
 // It re-titles itself (New / Edit / Snippet); only the active tab's is visible.
 export const snippetDoc = (page) => page.locator('.snippet-doc:visible')
 
+// No Close button any more: a snippet is closed like any tab.
 export async function closeSnippet(page) {
+  await page.locator('.diff-tabs .tab.active .tab-close').click()
+  await expect(snippetDoc(page)).toHaveCount(0)
+}
+
+// No Edit button any more: a press on the content starts editing in place.
+export async function editInPlace(page) {
   const doc = snippetDoc(page)
-  await doc.getByRole('button', { name: 'Close', exact: true }).click()
-  await expect(doc).toHaveCount(0)
+  await doc.locator('.editor-area').click({ position: { x: 90, y: 14 } })
+  await expect(page.getByRole('region', { name: 'Edit Snippet' })).toBeVisible()
+  return doc
 }
 
 export async function openNewSnippet(page) {

@@ -1,27 +1,36 @@
 <script setup>
-// The editor's header strip: the "Content" label, the rendered/plain toggle and
-// the syntax picker. Its own component so SnippetEditorDialog's template stays
-// inside its cap.
+// The editor's header strip: the "Content" label, the rendered/plain toggle,
+// Format and the syntax picker. The same in both states, so nothing moves.
+import { computed } from 'vue'
+import { t } from '../i18n'
 import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 
-defineProps({
-  editMode: { type: Boolean, default: false },
+const props = defineProps({
   hasPreview: { type: Boolean, default: false },
   plain: { type: Boolean, default: false },
   language: { type: String, default: '' },
   chosenLanguage: { type: String, default: 'auto' },
-  readOnly: { type: Boolean, default: false }
+  canFormat: { type: Boolean, default: false }
 })
-defineEmits(['update:plain', 'update:chosenLanguage'])
+defineEmits(['update:plain', 'update:chosenLanguage', 'format'])
+
+// Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
+// control says which of the two it is about to do.
+const isMermaid = computed(() => props.language === 'mermaid')
+const formatLabel = computed(() => (isMermaid.value ? 'Repair' : 'Format'))
+const formatTip = computed(() => {
+  if (!props.canFormat) return t('snippetEditorActions.formatUnavailable')
+  return isMermaid.value
+    ? t('snippetEditorActions.unmangleTip')
+    : t('snippetEditorActions.prettyPrintAs', { format: props.language.toUpperCase() })
+})
 </script>
 
 <template>
   <div class="editor-header">
     <span
       >{{ $t('snippetEditorDialog.content') }}
-      <span v-if="editMode" class="drop-hint">{{
-        $t('snippetEditorDialog.orDropAFile')
-      }}</span></span
+      <span class="drop-hint">{{ $t('snippetEditorDialog.orDropAFile') }}</span></span
     >
     <div class="editor-controls">
       <div
@@ -37,11 +46,19 @@ defineEmits(['update:plain', 'update:chosenLanguage'])
           {{ $t('snippetEditorDialog.plain') }}
         </button>
       </div>
+      <button
+        type="button"
+        class="btn btn-sm"
+        :disabled="!canFormat"
+        :data-tip="formatTip"
+        @click="$emit('format')"
+      >
+        {{ formatLabel }}
+      </button>
       <label class="lang-picker">
         {{ $t('snippetEditorDialog.syntax') }}
         <select
           :value="chosenLanguage"
-          :disabled="readOnly"
           @change="$emit('update:chosenLanguage', $event.target.value)"
         >
           <option v-for="l in SNIPPET_LANGUAGES" :key="l.id" :value="l.id">

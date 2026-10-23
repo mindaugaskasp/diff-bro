@@ -1,4 +1,4 @@
-import { test, expect, showPanel } from './fixtures.mjs'
+import { test, expect, showPanel, editInPlace } from './fixtures.mjs'
 
 // The bug: pressing Edit leaves focus on <body>, so Monaco never saw ⌘F.
 const FIND = 'ControlOrMeta+f'
@@ -14,8 +14,8 @@ async function openSnippet(page) {
 const findWidget = (page) => page.locator('.snippet-doc:visible .find-widget')
 
 test('⌘F straight after Edit opens find with replace expanded', async ({ page }) => {
-  const doc = await openSnippet(page)
-  await doc.getByRole('button', { name: 'Edit', exact: true }).click()
+  await openSnippet(page)
+  await editInPlace(page)
   await page.keyboard.press(FIND)
 
   await expect(findWidget(page)).toHaveClass(/visible/)
@@ -23,8 +23,8 @@ test('⌘F straight after Edit opens find with replace expanded', async ({ page 
 })
 
 test('⌘F from the name field still opens find in the content', async ({ page }) => {
-  const doc = await openSnippet(page)
-  await doc.getByRole('button', { name: 'Edit', exact: true }).click()
+  await openSnippet(page)
+  await editInPlace(page)
   await page.getByRole('region', { name: 'Edit Snippet' }).getByPlaceholder('Snippet name…').click()
   await page.keyboard.press(FIND)
   await expect(findWidget(page)).toHaveClass(/visible/)

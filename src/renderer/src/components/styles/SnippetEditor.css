@@ -6,23 +6,36 @@
 .fields .grow {
   flex: 1;
 }
-/* View/edit cue. In view mode every field sits inert on a muted grey fill;
-   pressing Edit returns them to the plain white editable surface (the base
-   --bg from .dialog input), so the grey → white flip is the switch. An editable
-   input stays plainly white like every other input — no muddy tint. */
 .fields input:read-only {
   background: var(--bg-elevated);
   color: var(--text-hint);
-  /* View mode is not editable, so don't tease a text caret on hover. */
   cursor: default;
 }
 .editor-area.editing .editor {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
 }
-/* Monaco keeps its I-beam even when read-only; drop it to the default arrow in
-   view mode so the editor doesn't imply you can type before pressing Edit. */
-.editor-area:not(.editing) .editor :deep(.monaco-mouse-cursor-text) {
-  cursor: default;
+/* Viewing invites a click: the keyline steps up and a cue says what the click does. */
+.editor-area:not(.editing):hover .editor {
+  border-color: var(--btn-edge);
+}
+.edit-cue {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  z-index: 2;
+  display: none;
+  align-items: center;
+  height: var(--chip-h);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-sm);
+  pointer-events: none;
+}
+.editor-area:not(.editing):hover .edit-cue {
+  display: inline-flex;
 }
 /* A real editor in both states: the code on --bg, never a grey wash. */
 .editor-area:not(.editing) .editor,
@@ -42,12 +55,7 @@
 .editor-area .editor :deep(.monaco-editor .line-numbers.active-line-number) {
   color: var(--text);
 }
-/* Edit mode: the same discipline, to the ACTIVE editor surface. Without this
-   Monaco paints its stock-'vs' white background, which reads as a white artifact
-   on the app's tinted light surfaces. Pin it to tokens (matching the read-only
-   inputs' --bg surface). The stock current-line rim is dropped globally in
-   styles/monaco.css; marking the cursor's line is this editor's own choice, so
-   only the background belongs here — and only while it is editable. */
+/* Monaco otherwise paints its stock 'vs' white over the tinted light themes. */
 .editor-area.editing .editor :deep(.monaco-editor),
 .editor-area.editing .editor :deep(.monaco-editor-background) {
   background: var(--bg);
@@ -85,6 +93,7 @@
    basis and a floor so a small drag can't collapse it. It holds either the
    Monaco editor or the rendered Jira preview — both fill it. */
 .editor-area {
+  position: relative;
   display: flex;
   flex: 1 1 280px;
   min-height: 160px;
@@ -138,12 +147,6 @@
   color: var(--success-text);
   border-color: color-mix(in srgb, var(--success-text) 45%, var(--border));
 }
-/* Armed clear: a danger cue so the second, destructive click is deliberate. */
-.ghost.small.armed {
-  border-color: var(--danger-border);
-  color: var(--danger-bg);
-  font-weight: 600;
-}
 /* Required-field hints (name + content) — explain why Save is disabled. */
 .required-hint {
   margin: 0;
@@ -152,25 +155,6 @@
   padding-left: 9px;
   color: var(--danger-bg);
   font-size: var(--font-sm);
-}
-/* Unsaved-changes guard bar — a danger-accented confirm shown before a dirty
-   draft is discarded via Cancel or ×. */
-.discard-confirm {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 4px;
-  padding: 8px 10px;
-  border: 1px solid var(--danger-border);
-  border-radius: var(--radius);
-  background: var(--bg-panel);
-  font-size: var(--font-md);
-}
-.discard-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
 }
 
 /* Secret toggle: an inline checkbox row, overriding the stacked column layout
