@@ -11,8 +11,15 @@ import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
  * @param {import('vue').Ref<string>} args.content              two-way bound text
  * @param {import('vue').Ref<string>} args.language             Monaco language id
  * @param {object} [args.options]                               extra editor options
- * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void }}
+ * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void, openFind: (withReplace: boolean) => void }}
  */
+/** Open Monaco's find widget, with the replace row when asked. */
+function runFind(editor, withReplace) {
+  if (!editor) return
+  editor.focus()
+  editor.getAction(withReplace ? 'editor.action.startFindReplaceAction' : 'actions.find')?.run()
+}
+
 export function useMonacoInput({ container, content, language, readOnly, options = {} }) {
   const settings = useSettingsStore()
   const ready = ref(false)
@@ -21,9 +28,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
   // `readOnly` may be a ref (view/edit mode) or absent; read it either way.
   const isReadOnly = () => (readOnly ? !!readOnly.value : false)
 
-  // Created against whatever container is present, and re-created if one appears
-  // later: a secret snippet unmounts the editor entirely rather than hiding it,
-  // so the plaintext is not sitting in the DOM behind a display:none.
+  // Re-created when a container appears: a masked secret unmounts it, never hides it.
   function createEditor() {
     if (editor || !container.value) return
     // Defined before the editor exists: the option below only NAMES it.
@@ -46,6 +51,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
       readOnly: isReadOnly(),
       ...options
     })
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => openFind(!isReadOnly()))
     editor.onDidChangeModelContent(() => {
       content.value = editor.getValue()
     })
@@ -68,8 +74,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
     if (editor) monaco.editor.setModelLanguage(editor.getModel(), lang)
   })
   if (readOnly) watch(readOnly, (ro) => editor?.updateOptions({ readOnly: !!ro }))
-  // post-flush, because applyMonacoTheme probes the LIVE palette off the
-  // document — a pre-flush watcher reads the theme the app is leaving.
+  // post-flush: applyMonacoTheme probes the live palette, after data-theme is stamped.
   watch(() => settings.theme, applyMonacoTheme, { flush: 'post' })
   onBeforeUnmount(destroyEditor)
 
@@ -102,10 +107,12 @@ export function useMonacoInput({ container, content, language, readOnly, options
     editor.focus()
   }
 
+  const openFind = (withReplace) => runFind(editor, withReplace && !isReadOnly())
+
   // Re-layout after the editor was created in a hidden container and then shown.
   function layout() {
     editor?.layout()
   }
 
-  return { ready, reset, applySelectionEdit, layout }
+  return { ready, reset, applySelectionEdit, layout, openFind }
 }

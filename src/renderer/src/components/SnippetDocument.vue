@@ -7,6 +7,7 @@ import { useFormatToolbar } from '../composables/useFormatToolbar'
 import { useSnippetEditorView } from '../composables/useSnippetEditorView'
 import { useMonacoInput } from '../composables/useMonacoInput'
 import { useFileTextDrop } from '../composables/useFileDrop'
+import { useSnippetFindKeys } from '../composables/useSnippetFindKeys'
 import SnippetDocumentHead from './SnippetDocumentHead.vue'
 import SnippetEditorHeader from './SnippetEditorHeader.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
@@ -44,12 +45,14 @@ watch(draft.isDirty, (d) => tabs.setSnippetMeta(props.tab.id, { dirty: d }), { i
 const container = ref(null)
 const head = ref(null)
 const readOnly = computed(() => !editMode.value)
-const { reset, applySelectionEdit, layout } = useMonacoInput({
+const { reset, applySelectionEdit, layout, openFind } = useMonacoInput({
   container,
   content,
   language,
   readOnly
 })
+const docRoot = ref(null)
+useSnippetFindKeys({ root: docRoot, editing: editMode, openFind })
 const hasPreview = computed(() => isJira.value || isMarkdown.value)
 const { plain, revealAndLayout } = useSnippetEditorView({
   editMode,
@@ -89,7 +92,13 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
 </script>
 
 <template>
-  <section class="snippet-doc" data-tour="snippet-editor" role="region" :aria-label="docLabel">
+  <section
+    ref="docRoot"
+    class="snippet-doc"
+    data-tour="snippet-editor"
+    role="region"
+    :aria-label="docLabel"
+  >
     <SnippetDocumentHead
       ref="head"
       v-model:name="name"
