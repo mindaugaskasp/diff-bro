@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useUiStore } from '../stores/uiStore'
 import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
 
 // A Monaco editor bound to a `content` ref: two-way sync, live language switching,
@@ -13,6 +14,21 @@ import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
  * @param {object} [args.options]                               extra editor options
  * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void, openFind: (withReplace: boolean) => void }}
  */
+const FONT_PX = 12.5
+const BASE_OPTIONS = {
+  theme: MONACO_THEME,
+  automaticLayout: true,
+  minimap: { enabled: false },
+  // No right-hand overview-ruler lane: with the minimap off it only paints a
+  // stock-theme border that reads as a white sliver against the app surface.
+  overviewRulerLanes: 0,
+  overviewRulerBorder: false,
+  hideCursorInOverviewRuler: true,
+  scrollbar: { useShadows: false },
+  scrollBeyondLastLine: false,
+  contextmenu: false
+}
+
 /** Open Monaco's find widget, with the replace row when asked. */
 function runFind(editor, withReplace) {
   if (!editor) return
@@ -22,6 +38,7 @@ function runFind(editor, withReplace) {
 
 export function useMonacoInput({ container, content, language, readOnly, options = {} }) {
   const settings = useSettingsStore()
+  const ui = useUiStore()
   const ready = ref(false)
   let editor = null
 
@@ -34,20 +51,10 @@ export function useMonacoInput({ container, content, language, readOnly, options
     // Defined before the editor exists: the option below only NAMES it.
     applyMonacoTheme(settings.theme)
     editor = monaco.editor.create(container.value, {
+      ...BASE_OPTIONS,
       value: content.value,
       language: language.value,
-      theme: MONACO_THEME,
-      automaticLayout: true,
-      minimap: { enabled: false },
-      // No right-hand overview-ruler lane: with the minimap off it only paints a
-      // stock-theme border that reads as a white sliver against the app surface.
-      overviewRulerLanes: 0,
-      overviewRulerBorder: false,
-      hideCursorInOverviewRuler: true,
-      scrollbar: { useShadows: false },
-      scrollBeyondLastLine: false,
-      contextmenu: false,
-      fontSize: 12.5,
+      fontSize: FONT_PX * ui.diffZoom,
       readOnly: isReadOnly(),
       ...options
     })
@@ -76,6 +83,10 @@ export function useMonacoInput({ container, content, language, readOnly, options
   if (readOnly) watch(readOnly, (ro) => editor?.updateOptions({ readOnly: !!ro }))
   // post-flush: applyMonacoTheme probes the live palette, after data-theme is stamped.
   watch(() => settings.theme, applyMonacoTheme, { flush: 'post' })
+  watch(
+    () => ui.diffZoom,
+    (zoom) => editor?.updateOptions({ fontSize: FONT_PX * zoom })
+  )
   onBeforeUnmount(destroyEditor)
 
   // Replace the content and put the caret back where the user is working.
