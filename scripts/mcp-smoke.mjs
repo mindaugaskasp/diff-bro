@@ -14,9 +14,14 @@ delete env.ELECTRON_RUN_AS_NODE
 const args = [...(appDir ? [appDir] : []), `--user-data-dir=${profile}`, 'mcp']
 const child = spawn(exe, args, { env, stdio: ['pipe', 'pipe', 'inherit'] })
 const answers = new Map()
+const noise = []
 createInterface({ input: child.stdout }).on('line', (line) => {
-  const msg = JSON.parse(line)
-  answers.get(msg.id)?.(msg)
+  try {
+    const msg = JSON.parse(line)
+    answers.get(msg.id)?.(msg)
+  } catch {
+    noise.push(line)
+  }
 })
 
 const request = (id, method, params) =>
@@ -42,4 +47,7 @@ const code = await new Promise((resolve) => child.on('exit', resolve))
 clearTimeout(timer)
 rmSync(profile, { recursive: true, force: true })
 if (code !== 0) fail(`exited ${code} after stdin closed`)
+// stdout is the protocol channel: even a blank line is something a client must parse.
+if (noise.length)
+  fail(`non-protocol output on stdout: ${noise.map((l) => JSON.stringify(l)).join(', ')}`)
 console.log('mcp smoke: initialize answered, refused while off, exited on EOF')
