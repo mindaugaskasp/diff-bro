@@ -78,8 +78,8 @@ test('offers nothing for a name nothing matches', async ({ app, page }) => {
   await expect(ql.locator('.name-ghost')).toHaveText('')
 })
 
-// The editor has its own name field, and SnippetNameHint already sits under it.
-test('the editor completes too, and the template hint still shows', async ({ page }) => {
+// The editor has its own name field; the template tags moved to the status bar.
+test('the editor completes too, and the template tags are still offered', async ({ page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New Snippet' })
@@ -92,8 +92,7 @@ test('the editor completes too, and the template hint still shows', async ({ pag
   // Past the fork, one match remains and the whole name is offered.
   await editor.getByPlaceholder('Snippet name…').fill('Example — M')
   await expect(editor.locator('.name-ghost')).toHaveText('ermaid diagram')
-  // The two occupy different space and must not displace each other.
-  await expect(editor.locator('.name-templates')).toBeVisible()
+  await expect(editor.locator('.editor-status .tt-trigger')).toBeVisible()
   await expect(editor.getByPlaceholder('Snippet name…')).toHaveValue('Example — M')
 })
 

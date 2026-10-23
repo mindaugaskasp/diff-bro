@@ -13,6 +13,7 @@ import SnippetEditorHeader from './SnippetEditorHeader.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import SnippetHistoryPanel from './SnippetHistoryPanel.vue'
+import SnippetStatusBar from './SnippetStatusBar.vue'
 import MermaidPreview from './MermaidPreview.vue'
 import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
@@ -45,7 +46,7 @@ watch(draft.isDirty, (d) => tabs.setSnippetMeta(props.tab.id, { dirty: d }), { i
 const container = ref(null)
 const head = ref(null)
 const readOnly = computed(() => !editMode.value)
-const { reset, applySelectionEdit, layout, openFind } = useMonacoInput({
+const { reset, applySelectionEdit, layout, openFind, cursor } = useMonacoInput({
   container,
   content,
   language,
@@ -173,6 +174,13 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
           </template>
           <SnippetSecretMask v-if="masked" />
         </div>
+        <SnippetStatusBar
+          v-if="!masked"
+          :content="content"
+          :language="language"
+          :cursor="cursor"
+          :editing="editMode"
+        />
         <p v-if="editMode && !content.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
         </p>

@@ -369,6 +369,29 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'snippet-status-bar',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('.snippet-doc:visible .tt-trigger').hover()
+      await page.locator('.tt-pop').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
+      await page.locator('.editor-status').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'status text': ['.snippet-doc .editor-status', TEXT],
+      'zoom level': ['.snippet-doc .es-level', TEXT],
+      'line number': ['.snippet-doc .editor .line-numbers', TEXT],
+      'popover hint': ['.tt-pop .tt-hint', TEXT],
+      'built-in tag': ['.tt-pop .tt-tag', TEXT],
+      'built-in value': ['.tt-pop .tt-value', TEXT],
+      'fill-in chip': ['.tt-pop .tt-chip', TEXT]
+    }
+  },
+  {
     name: 'editor-text',
     open: async (page) => {
       await page.getByRole('button', { name: 'File', exact: true }).click()
