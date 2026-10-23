@@ -43,32 +43,20 @@ test('a templated name is resolved when the snippet is saved', async ({ page }) 
   await expect(page.locator('.snippets-section .row', { hasText: '{{today}}' })).toHaveCount(0)
 })
 
-// The hint is ALWAYS there — that is what makes the feature discoverable without
-// already knowing it exists — but the table it carries costs no row and no
-// click. It was a button opening a nine-token list; the list is reference
-// material read once, so it is a tooltip now and the row never grows.
-test('the tags hint is always offered, and carries the table in its tip', async ({ page }) => {
+// Always offered, now from the editor's status bar: the name field carries
+// only the "Saves as" preview, and only while the name holds a tag.
+test('the template tags are always offered, with what each saves as', async ({ page }) => {
   const dialog = await newSnippet(page, 'Just a name')
-  const hint = dialog.locator('.name-templates .tokens-hint')
-  await expect(hint).toBeVisible()
-  await expect(dialog.locator('.name-templates .preview')).toHaveCount(0)
+  await expect(dialog.locator('.name-templates')).toHaveCount(0)
 
-  // Not a control: nothing here is pressable, so nothing can read as pressable.
-  await expect(dialog.locator('.name-templates button')).toHaveCount(0)
-
-  // Every token is named in the tip, with what it means and what it resolves to.
-  const tip = await hint.getAttribute('data-tip')
-  expect(tip).toContain('{{today}}')
-  expect(tip).toContain('{{week}}')
-  expect(tip).toContain(today()) // the same clock the preview uses
-  expect(tip.split('\n').length).toBeGreaterThan(9) // the sentence + nine tokens
-
-  // And it really surfaces on hover, through the app's own tooltip.
-  await hint.hover()
-  await expect(page.locator('.tip-bubble')).toContainText('{{today}}')
-
-  // The row itself never grew: no list is added to the layout, open or shut.
-  await expect(dialog.locator('.name-templates .tokens')).toHaveCount(0)
+  const trigger = dialog.locator('.editor-status .tt-trigger')
+  await expect(trigger).toBeVisible()
+  await trigger.hover()
+  const pop = page.getByRole('dialog', { name: 'Template tags' })
+  await expect(pop).toContainText('{{today}}')
+  await expect(pop).toContainText('{{week}}')
+  await expect(pop).toContainText(today()) // the same clock the preview uses
+  await expect(pop.locator('.tt-row')).toHaveCount(9)
 })
 
 // The report that prompted the rework: nine tokens permanently under the field

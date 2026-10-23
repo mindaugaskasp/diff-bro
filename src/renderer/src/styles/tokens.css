@@ -165,6 +165,8 @@
 
   /* Glyph wells: colour lives in the well, legibility in the glyph. */
   --text-meta: color-mix(in srgb, var(--text-dim) 50%, var(--text));
+  /* The code editor's gutter and status bar: a step off the editing surface. */
+  --editor-gutter: color-mix(in srgb, var(--bg) 60%, var(--bg-panel));
   --line: color-mix(in srgb, var(--text) 12%, var(--bg-panel));
   --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
   --hue-diff: #c2410c;

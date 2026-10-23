@@ -1625,8 +1625,7 @@
     "weekday": "day of the week",
     "month": "month name",
     "year": "the year",
-    "tokens": "Template tags",
-    "tip": "Insert today’s date, the time, the ISO week and more — resolved once, when you save"
+    "tokens": "Template tags"
   },
   "newRow": {
     "badge": "New",
@@ -1852,5 +1851,17 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "shortcuts": "Also {mod}+, {mod}− and {mod}0. Only fonts installed on this computer are listed."
+  },
+  "statusBar": {
+    "position": "Ln {line}, Col {column}",
+    "lines": "{n} line | {n} lines",
+    "characters": "{n} character | {n} characters",
+    "templateTags": "{n} template tag | {n} template tags",
+    "encoding": "UTF-8",
+    "resetZoom": "Reset zoom ({mod}0)",
+    "inThisSnippet": "In this snippet",
+    "fillsHint": "You’re asked for these when you copy it. Type {example} anywhere to add one.",
+    "builtIn": "Built in",
+    "builtInHint": "Use them in the name; saving now would put in:"
   }
 }

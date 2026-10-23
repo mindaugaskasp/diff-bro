@@ -12,7 +12,7 @@ import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
  * @param {import('vue').Ref<string>} args.content              two-way bound text
  * @param {import('vue').Ref<string>} args.language             Monaco language id
  * @param {object} [args.options]                               extra editor options
- * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void, openFind: (withReplace: boolean) => void }}
+ * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void, openFind: (withReplace: boolean) => void, cursor: import('vue').Ref<{line: number, column: number}|null> }}
  */
 const FONT_PX = 12.5
 const BASE_OPTIONS = {
@@ -36,10 +36,35 @@ function runFind(editor, withReplace) {
   editor.getAction(withReplace ? 'editor.action.startFindReplaceAction' : 'actions.find')?.run()
 }
 
+/**
+ * Bridge Monaco's line/column selection to flat offsets, run a pure transform
+ * as one undo step, then restore the selection.
+ */
+function applyTransform(editor, transform) {
+  if (!editor) return
+  const model = editor.getModel()
+  const sel = editor.getSelection()
+  const start = model.getOffsetAt(sel.getStartPosition())
+  const end = model.getOffsetAt(sel.getEndPosition())
+  const result = transform({ text: model.getValue(), start, end })
+  if (!result) return
+  editor.pushUndoStop()
+  editor.executeEdits('toolbar', [{ range: model.getFullModelRange(), text: result.text }])
+  editor.pushUndoStop()
+  editor.setSelection(
+    monaco.Selection.fromPositions(
+      model.getPositionAt(result.start),
+      model.getPositionAt(result.end)
+    )
+  )
+  editor.focus()
+}
+
 export function useMonacoInput({ container, content, language, readOnly, options = {} }) {
   const settings = useSettingsStore()
   const text = useEditorText({ basePx: FONT_PX })
   const ready = ref(false)
+  const cursor = ref(null)
   let editor = null
 
   // `readOnly` may be a ref (view/edit mode) or absent; read it either way.
@@ -59,6 +84,9 @@ export function useMonacoInput({ container, content, language, readOnly, options
     })
     text.attach(editor)
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => openFind(!isReadOnly()))
+    editor.onDidChangeCursorPosition(({ position }) => {
+      cursor.value = { line: position.lineNumber, column: position.column }
+    })
     editor.onDidChangeModelContent(() => {
       content.value = editor.getValue()
     })
@@ -92,27 +120,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
     editor?.focus()
   }
 
-  // Bridge Monaco's line/column selection to flat offsets, run a pure transform
-  // as one undo step, then restore the selection.
-  function applySelectionEdit(transform) {
-    if (!editor) return
-    const model = editor.getModel()
-    const sel = editor.getSelection()
-    const start = model.getOffsetAt(sel.getStartPosition())
-    const end = model.getOffsetAt(sel.getEndPosition())
-    const result = transform({ text: model.getValue(), start, end })
-    if (!result) return
-    editor.pushUndoStop()
-    editor.executeEdits('toolbar', [{ range: model.getFullModelRange(), text: result.text }])
-    editor.pushUndoStop()
-    editor.setSelection(
-      monaco.Selection.fromPositions(
-        model.getPositionAt(result.start),
-        model.getPositionAt(result.end)
-      )
-    )
-    editor.focus()
-  }
+  const applySelectionEdit = (transform) => applyTransform(editor, transform)
 
   const openFind = (withReplace) => runFind(editor, withReplace && !isReadOnly())
 
@@ -121,5 +129,5 @@ export function useMonacoInput({ container, content, language, readOnly, options
     editor?.layout()
   }
 
-  return { ready, reset, applySelectionEdit, layout, openFind }
+  return { ready, cursor, reset, applySelectionEdit, layout, openFind }
 }

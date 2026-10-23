@@ -24,14 +24,23 @@
 .editor-area:not(.editing) .editor :deep(.monaco-mouse-cursor-text) {
   cursor: default;
 }
-/* View mode greys the content editor the same way the read-only name field is
-   greyed, so the whole form reads inert until Edit is pressed. Monaco paints its
-   own surface, so tint its background layers to the muted elevated surface. */
+/* A real editor in both states: the code on --bg, never a grey wash. */
 .editor-area:not(.editing) .editor,
 .editor-area:not(.editing) .editor :deep(.monaco-editor),
-.editor-area:not(.editing) .editor :deep(.monaco-editor-background),
-.editor-area:not(.editing) .editor :deep(.monaco-editor .margin) {
-  background: var(--bg-elevated);
+.editor-area:not(.editing) .editor :deep(.monaco-editor-background) {
+  background: var(--bg);
+}
+/* The gutter steps off the code and is ruled from it; the status bar below shares it. */
+.editor-area .editor :deep(.monaco-editor .margin) {
+  background: var(--editor-gutter);
+  box-shadow: inset -1px 0 var(--border);
+}
+/* --text-dim misses 4.5:1 on sepia and solar; the meta ink clears it on all 20. */
+.editor-area .editor :deep(.monaco-editor .line-numbers) {
+  color: var(--text-meta);
+}
+.editor-area .editor :deep(.monaco-editor .line-numbers.active-line-number) {
+  color: var(--text);
 }
 /* Edit mode: the same discipline, to the ACTIVE editor surface. Without this
    Monaco paints its stock-'vs' white background, which reads as a white artifact
@@ -40,8 +49,7 @@
    styles/monaco.css; marking the cursor's line is this editor's own choice, so
    only the background belongs here — and only while it is editable. */
 .editor-area.editing .editor :deep(.monaco-editor),
-.editor-area.editing .editor :deep(.monaco-editor-background),
-.editor-area.editing .editor :deep(.monaco-editor .margin) {
+.editor-area.editing .editor :deep(.monaco-editor-background) {
   background: var(--bg);
 }
 .editor-area.editing .editor :deep(.monaco-editor .current-line) {
@@ -87,6 +95,11 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+}
+/* The status bar closes the frame below the editor. */
+.editor-area:has(+ .editor-status) .editor {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 .editor.rendered {
   overflow: auto;
