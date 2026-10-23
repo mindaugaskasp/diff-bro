@@ -972,7 +972,9 @@
     "resize": "Resize the history panel",
     "resizeTip": "Drag to resize · double-click to reset",
     "toCurrent": "→ Current",
-    "isCurrent": "This is the current version"
+    "isCurrent": "This is the current version",
+    "added": "+{n}",
+    "removed": "−{n}"
   },
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",

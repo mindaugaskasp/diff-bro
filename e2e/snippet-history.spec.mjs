@@ -159,7 +159,10 @@ test('the copy action sits on the selected version, not in a footer', async ({ p
   const panel = await openHistory(page, 'Banded')
   const band = panel.locator('.hist-band')
 
-  await expect(band).toHaveText('This is the current version')
+  await expect(band).toContainText('This is the current version')
+  // The selected pair's line counts, from Monaco's own diff of what is on screen.
+  await expect(band.locator('.hb-stats .add')).toHaveText('+1')
+  await expect(band.locator('.hb-stats .del')).toHaveText('−1')
   await expect(panel.getByRole('button', { name: 'Copy this version' })).toHaveCount(0)
 
   await panel.locator('.hist-version').last().click()

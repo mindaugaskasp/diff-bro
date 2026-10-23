@@ -40,7 +40,7 @@ select(-1)
 watch(entry, (e) => e || emit('close'))
 
 const container = ref(null)
-useMonacoDiffPane({
+const { stats } = useMonacoDiffPane({
   container,
   original: computed(() => pair.value.before),
   modified: computed(() => pair.value.after),
@@ -107,6 +107,10 @@ const { width, start, reset } = useHistoryResize(
       <span v-else class="hb-text">
         <strong>{{ selectedRow && rowLabel(selectedRow) }}</strong>
         <span class="hb-meta">{{ $t('snippetHistoryDialog.toCurrent') }}</span>
+      </span>
+      <span v-if="stats && !masked" class="hb-stats">
+        <span class="add">{{ $t('snippetHistoryDialog.added', { n: stats.additions }) }}</span>
+        <span class="del">{{ $t('snippetHistoryDialog.removed', { n: stats.deletions }) }}</span>
       </span>
       <button
         v-if="isSecret(entry)"

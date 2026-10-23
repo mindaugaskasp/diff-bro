@@ -1,8 +1,9 @@
-import { onBeforeUnmount, onMounted, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as monaco from 'monaco-editor'
 import { useSettingsStore } from '../stores/settingsStore'
 import { applyMonacoTheme } from './useMonacoTheme'
 import { diffEditorOptions } from '../utils/diffEditorOptions'
+import { diffLineStats } from '../utils/diffStats'
 
 // A read-only inline Monaco diff bound to two text refs — the history dialog's
 // pane. DiffViewer keeps its own heavier wiring (views, zoom, navigation);
@@ -13,10 +14,12 @@ import { diffEditorOptions } from '../utils/diffEditorOptions'
  * @param {import('vue').Ref<string>} args.original
  * @param {import('vue').Ref<string>} args.modified
  * @param {import('vue').Ref<string>} args.language  Monaco language id
+ * @returns {{ stats: import('vue').Ref<{ additions: number, deletions: number }|null> }}
  */
 export function useMonacoDiffPane({ container, original, modified, language }) {
   const settings = useSettingsStore()
   let editor = null
+  const stats = ref(null)
   let models = null
 
   const disposeModels = () => {
@@ -50,6 +53,7 @@ export function useMonacoDiffPane({ container, original, modified, language }) {
         inlineBelow: 640
       })
     )
+    editor.onDidUpdateDiff(() => (stats.value = diffLineStats(editor.getLineChanges())))
     setModels()
   }
 
@@ -68,4 +72,5 @@ export function useMonacoDiffPane({ container, original, modified, language }) {
     editor = null
     disposeModels()
   })
+  return { stats }
 }
