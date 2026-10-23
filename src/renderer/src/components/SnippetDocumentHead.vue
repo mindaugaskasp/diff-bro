@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import SnippetNameField from './SnippetNameField.vue'
 import SnippetNameHint from './SnippetNameHint.vue'
-import TagChipsField from './TagChipsField.vue'
+import TagChipRow from './TagChipRow.vue'
 import SnippetSecretToggle from './SnippetSecretToggle.vue'
 
 defineProps({
@@ -12,10 +12,12 @@ defineProps({
 })
 const name = defineModel('name', { type: String, default: '' })
 const secret = defineModel('secret', { type: Boolean, default: false })
+const emit = defineEmits(['editTags'])
 
 const tagField = ref(null)
 defineExpose({
-  tagValues: () => ({ tags: tagField.value.tags, tagColors: tagField.value.newColors() })
+  tagValues: () => ({ tags: tagField.value.tags, tagColors: tagField.value.newColors() }),
+  focusTags: () => tagField.value?.focus()
 })
 </script>
 
@@ -35,7 +37,12 @@ defineExpose({
       </span>
       <SnippetNameHint v-if="editMode" :name="name" />
       <div class="doc-meta">
-        <TagChipsField ref="tagField" :initial="initialTags" :readonly="readOnly" />
+        <TagChipRow
+          ref="tagField"
+          :initial="initialTags"
+          :readonly="readOnly"
+          @request-edit="emit('editTags')"
+        />
         <SnippetSecretToggle v-model="secret" :readonly="readOnly" />
       </div>
     </div>

@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, computed, watch } from 'vue'
+import { reactive, ref, computed, watch, nextTick } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetDraft } from '../composables/useSnippetDraft'
@@ -88,6 +88,12 @@ const docLabel = computed(() =>
   )
 )
 
+async function editTags() {
+  draft.startEditing()
+  await nextTick()
+  head.value.focusTags()
+}
+
 const showHistory = ref(false)
 const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
 </script>
@@ -107,6 +113,7 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
       :initial-tags="draft.initialTags"
       :edit-mode="editMode"
       :read-only="readOnly"
+      @edit-tags="editTags"
     >
       <button
         v-if="editing.id && !editMode && !draft.secret.value"

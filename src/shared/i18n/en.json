@@ -1137,7 +1137,10 @@
     "usedOf": "{used} of {max}",
     "removeOneFirst": " — remove one to add another",
     "removeTip": "Remove {tag}",
-    "removeTagLabel": "Remove tag {tag}"
+    "removeTagLabel": "Remove tag {tag}",
+    "addTag": "Add tag",
+    "addPlaceholder": "add a tag…",
+    "suggestions": "Tag suggestions"
   },
   "tagManagePopover": {
     "tagName": "Tag name",
