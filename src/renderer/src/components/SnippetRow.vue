@@ -7,6 +7,7 @@ import { languageMonogram } from '../utils/languageMonogram'
 import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
+import SnippetRowMeta from './SnippetRowMeta.vue'
 import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 import { useSnippetDrag } from '../composables/useSnippetDrag'
 import { injectRowReorder } from '../composables/useRowReorder'
@@ -84,6 +85,37 @@ function onDragStart(e) {
       <span v-if="copied" class="copied-flash" aria-live="polite">{{ $t('common.copied') }}</span>
     </Transition>
     <button
+      class="entry"
+      draggable="false"
+      @pointerdown="ui.clearNewRow(entry.id)"
+      @click="store.editingSnippet = { id: entry.id }"
+      @mouseenter="$emit('hoverTitle', $event)"
+      @mouseleave="$emit('leaveTitle')"
+    >
+      <span
+        class="monogram glyph-well"
+        data-hue="snippet"
+        :data-tip="$t('snippetRow.languageTip', { lang })"
+        >{{ mono.label }}</span
+      >
+      <span class="row-2-text">
+        <span class="nm-line">
+          <AppIcon
+            v-if="isSecret(entry)"
+            class="secret-mark"
+            name="lock"
+            :data-tip="SECRET_NOTICE"
+          />
+          <span class="nm">{{ entry.name }}</span>
+        </span>
+        <SnippetRowMeta :vars="entry.vars ?? []" :tags="shownTags" />
+      </span>
+    </button>
+    <!-- The badge takes the age slot: the age of a row made ten seconds ago is
+         not information, and which row is new is. -->
+    <span v-if="isNew" class="new-badge">{{ $t('newRow.badge') }}</span>
+    <span v-else class="when">{{ ago(entry.createdAt) }}</span>
+    <button
       class="star"
       draggable="false"
       :class="{ on: favorite }"
@@ -93,47 +125,6 @@ function onDragStart(e) {
     >
       <AppIcon :name="favorite ? 'star-filled' : 'star'" />
     </button>
-    <button
-      class="entry"
-      draggable="false"
-      @pointerdown="ui.clearNewRow(entry.id)"
-      @click="store.editingSnippet = { id: entry.id }"
-      @mouseenter="$emit('hoverTitle', $event)"
-      @mouseleave="$emit('leaveTitle')"
-    >
-      <span
-        class="monogram"
-        :style="{ '--fam': mono.family }"
-        :data-tip="$t('snippetRow.languageTip', { lang })"
-        >{{ mono.label }}</span
-      >
-      <AppIcon v-if="isSecret(entry)" class="secret-mark" name="lock" :data-tip="SECRET_NOTICE" />
-      <span class="nm">{{ entry.name }}</span>
-      <span
-        v-if="entry.vars?.length"
-        class="varchip"
-        :data-tip="
-          $t('snippetRow.placeholderTip', entry.vars.length, {
-            named: { n: entry.vars.length, list: entry.vars.join(', ') }
-          })
-        "
-      >
-        <AppIcon name="braces" />{{ entry.vars.length }}
-      </span>
-      <span
-        v-if="shownTags.length"
-        class="tag-word"
-        :style="{ '--tc': store.colorOf(shownTags[0]) }"
-      >
-        <span class="tw-dot"></span>
-        <span class="tw-label">{{ shownTags[0] }}</span>
-        <span v-if="shownTags.length > 1" class="tw-more">+{{ shownTags.length - 1 }}</span>
-      </span>
-    </button>
-    <!-- The badge takes the age slot: the age of a row made ten seconds ago is
-         not information, and which row is new is. -->
-    <span v-if="isNew" class="new-badge">{{ $t('newRow.badge') }}</span>
-    <span v-else class="when">{{ ago(entry.createdAt) }}</span>
     <span class="rowacts" draggable="false">
       <button
         v-if="isDiagram"

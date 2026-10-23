@@ -115,8 +115,8 @@ function onDragStart(e) {
 
     <button class="stack" :data-tip="title" @pointerdown="ui.clearNewRow(entry.id)" @click="open">
       <span
-        class="monogram"
-        :style="{ '--fam': mono.family }"
+        class="monogram glyph-well"
+        :data-hue="entry.from ? 'received' : 'diff'"
         :data-tip="
           formatKey
             ? $t('savedDiffRow.formatTip', { format: formatKey })

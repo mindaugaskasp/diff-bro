@@ -63,7 +63,11 @@ export function clearSearch() {
 /** What the tour is about to drive, so `clearStage` can hand it back. */
 export function takeFilters() {
   const ui = useUiStore()
-  return { query: ui.sidebarQuery, tags: [...ui.sidebarTags] }
+  return {
+    query: ui.sidebarQuery,
+    tags: [...ui.sidebarTags],
+    panel: useSettingsStore().sidebarPanel
+  }
 }
 
 // A tag filter of the user's can hide the very snippet a step points at, which
@@ -72,6 +76,12 @@ export function takeFilters() {
 export function clearFilters() {
   clearSearch()
   useUiStore().sidebarTags = []
+  showSnippets()
+}
+
+// The snippet steps point into the Snippets panel; another panel hides them.
+export function showSnippets() {
+  useSettingsStore().setSidebarPanel('snippets')
 }
 
 /**
@@ -160,15 +170,21 @@ export function closeSnippet() {
   useSnippetStore().editingSnippet = null
 }
 
-/** @param {{ demoTabId: string|null, editorOwned: string[]|null, sidebarWasCollapsed: boolean }} held */
-export function clearStage({ demoTabId, editorOwned, sidebarWasCollapsed, filters }) {
+function restoreSidebar(filters, wasCollapsed) {
   const ui = useUiStore()
+  const settings = useSettingsStore()
   clearSearch()
   ui.sidebarQuery = filters?.query ?? ''
   ui.sidebarTags = filters?.tags ?? []
-  ui.showSettingsDialog = false
+  if (filters?.panel) settings.setSidebarPanel(filters.panel)
+  if (wasCollapsed) settings.setSidebarCollapsed(true)
+}
+
+/** @param {{ demoTabId: string|null, editorOwned: string[]|null, sidebarWasCollapsed: boolean }} held */
+export function clearStage({ demoTabId, editorOwned, sidebarWasCollapsed, filters }) {
+  restoreSidebar(filters, sidebarWasCollapsed)
+  useUiStore().showSettingsDialog = false
   if (demoTabId) useTabsStore().close(demoTabId)
-  if (sidebarWasCollapsed) useSettingsStore().setSidebarCollapsed(true)
   if (!editorOwned) return
   closeSnippet()
   // The example was the tour's, not the user's — it goes when the tour does,

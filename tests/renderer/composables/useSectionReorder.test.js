@@ -25,7 +25,9 @@ const pointer = (y, { x = 0, button = 0, pointerId = 1, target = null } = {}) =>
 
 // A press that landed on one of the header's own controls.
 const onControl = (y) =>
-  pointer(y, { target: { closest: (sel) => (sel.includes('button') ? {} : null) } })
+  pointer(y, {
+    target: { closest: (sel) => (sel.includes('button') ? { hasAttribute: () => false } : null) }
+  })
 
 // Press on one section, travel to another, release.
 const drag = (r, fromId, toId) => {
@@ -73,6 +75,18 @@ describe('useSectionReorder', () => {
     expect(useSettingsStore().sectionOrder).toEqual(SECTIONS)
     // And the control's own click is left entirely alone.
     expect(r.consumeClickSuppression()).toBe(false)
+  })
+
+  it('treats a button that opts in as a reorder handle as the drag handle', () => {
+    const r = useSectionReorder()
+    const handle = { hasAttribute: (name) => name === 'data-reorder-handle' }
+    const down = pointer(ROWS.tools, {
+      target: { closest: (sel) => (sel.includes('button') ? handle : null) }
+    })
+    r.onPointerDown('tools', down)
+    r.onPointerMove(pointer(ROWS.saved))
+    r.onPointerUp(pointer(ROWS.saved))
+    expect(useSettingsStore().sectionOrder[0]).toBe('tools')
   })
 
   it('marks only the hovered header as the drop target, following the cursor', () => {

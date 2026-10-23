@@ -1,4 +1,4 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, newSnippetButton, openNewSnippet, showPanel } from './fixtures.mjs'
 
 // Regression cover for UI defects found by eye. Each of these shipped once, so
 // each gets a test that fails if it comes back.
@@ -25,6 +25,7 @@ test('the supported-format tiles are real buttons that open a filtered picker', 
 // only one. The name now comes from aria-label and the tip from data-tip, which
 // is exactly the pairing this pins.
 test('icon buttons keep a descriptive name alongside the short tooltip', async ({ page }) => {
+  await showPanel(page, 'snippets')
   const cases = [
     ['New', 'New snippet'],
     ['Export', 'Export all snippets to a passphrase-protected file'],
@@ -38,6 +39,7 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
 })
 
 test('a tool panel copy button has a hover tooltip, not just an aria-label', async ({ page }) => {
+  await showPanel(page, 'tools')
   await page.getByRole('button', { name: 'Search every tool' }).click()
   await page.keyboard.type('json')
   await page.keyboard.press('Enter')
@@ -53,16 +55,18 @@ test('a tool panel copy button has a hover tooltip, not just an aria-label', asy
 // The preview used to open from anywhere on the row, so it appeared while you
 // were only reaching for the row's buttons.
 test('the snippet preview opens from the row, but not from its controls', async ({ page }) => {
+  await showPanel(page, 'snippets')
   const row = page.locator('li.row').first()
   await expect(row).toBeVisible()
 
-  // The star and the row actions keep their own tooltips; they do not summon
-  // a preview card.
+  // The star and the row actions keep their own tooltips; they summon no preview.
+  const box = await row.boundingBox()
+  await row.hover({ position: { x: box.width - 4, y: box.height / 2 } })
   await row.locator('.star').hover()
   await page.waitForTimeout(500)
   await expect(page.locator('.preview')).toHaveCount(0)
 
-  await row.locator('.nm').hover()
+  await row.locator('.nm').hover({ position: { x: 4, y: 4 } })
   await expect(page.locator('.preview')).toBeVisible()
 
   // Anchored to the title instead of the row, the card covered the row buttons.
@@ -77,6 +81,7 @@ test('the snippet preview opens from the row, but not from its controls', async 
 // The trigger used to be the name SPAN, which is only as tall as its glyphs: a
 // few pixels of vertical drift left it and the card vanished mid-reach.
 test('the preview target is the full height of the row', async ({ page }) => {
+  await showPanel(page, 'snippets')
   const row = page.locator('li.row').first()
   const entry = row.locator('.entry')
   await expect(entry).toBeVisible()
@@ -100,6 +105,7 @@ test('the preview target is the full height of the row', async ({ page }) => {
 // The first section label is a pseudo-element above its row; too small a margin
 // clipped "Recent" against the search bar.
 test('the palette section label has room above its first row', async ({ page }) => {
+  await showPanel(page, 'tools')
   await page.getByRole('button', { name: 'Search every tool' }).click()
   await expect(page.locator('.cp')).toBeVisible()
 
@@ -117,6 +123,7 @@ test('the palette section label has room above its first row', async ({ page }) 
 // Native `title` tooltips are drawn by the OS, so they are invisible to the app,
 // unstyleable and slow. This asserts a tooltip the page actually renders.
 test('hovering an icon button shows a visible tooltip', async ({ page }) => {
+  await showPanel(page, 'snippets')
   const button = newSnippetButton(page)
   await button.hover()
 
@@ -173,7 +180,7 @@ test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
 // button that carries no aria-label has no name at all.
 test('every icon-only button carries an accessible name', async ({ page }) => {
   // Reach the ones that only exist once something is open.
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog').first()
   await expect(editor).toBeVisible()
 
@@ -189,6 +196,7 @@ test('every icon-only button carries an accessible name', async ({ page }) => {
 // Reaching the card means crossing the gap between the sidebar and the card,
 // where neither is hovered — the close delay has to outlast that trip.
 test('the preview survives the pointer travelling into it', async ({ page }) => {
+  await showPanel(page, 'snippets')
   const row = page.locator('li.row').first()
   await row.locator('.entry').hover()
   const card = page.locator('.preview')
@@ -317,7 +325,7 @@ const PRIMARY = `(() => {
     const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
     return (hi + 0.05) / (lo + 0.05)
   }
-  const el = document.querySelector('.empty-cta .btn-primary')
+  const el = document.querySelector('[data-tour="snippet-save"]')
   const cs = getComputedStyle(el)
   const fill = parse(cs.backgroundColor)
   return {
@@ -333,8 +341,13 @@ const PRIMARY = `(() => {
 // against a 4.5 floor, the worst pair in the app. The fill must now stay put and
 // the keyline must carry the change.
 test('hovering the primary button moves its keyline, not its fill', async ({ page }) => {
-  const cta = page.locator('.empty-cta .btn-primary')
-  await expect(cta).toBeVisible()
+  await openNewSnippet(page)
+  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill('Primary hover')
+  await editor.locator('.editor').click()
+  await page.keyboard.type('body')
+  const cta = page.locator('[data-tour="snippet-save"]')
+  await expect(cta).toBeEnabled()
 
   await page.mouse.move(0, 0)
   const rest = await page.evaluate(PRIMARY)
@@ -357,7 +370,7 @@ test('hovering the primary button moves its keyline, not its fill', async ({ pag
   expect(hover.edgeVsFill, `keyline ${hover.edge} on fill ${hover.fill}`).toBeGreaterThan(1.16)
 })
 
-// The collapsed rail is a 48px strip; every control in it centres on the
+// The collapsed rail is its own strip; every control in it centres on the
 // strip's own axis. Glued to the left edge, the rail reads as clipped.
 test('the collapsed rail centres its buttons on the strip', async ({ page }) => {
   await page.getByRole('button', { name: 'Collapse the sidebar' }).click()
@@ -365,12 +378,12 @@ test('the collapsed rail centres its buttons on the strip', async ({ page }) => 
   await expect(rail).toBeVisible()
   // The collapse animates width for 160ms — measure the settled strip.
   await expect
-    .poll(async () => (await page.locator('aside.saved').boundingBox()).width)
-    .toBeLessThan(49)
+    .poll(async () => Math.round((await page.locator('aside.saved').boundingBox()).width))
+    .toBe(Math.round((await rail.boundingBox()).width))
 
   const strip = await page.locator('aside.saved').boundingBox()
   const mid = strip.x + strip.width / 2
-  for (const target of ['.rail-band .sidebar-toggle', '.rail-btn']) {
+  for (const target of ['.rail-band .sidebar-toggle', '.rail-item']) {
     const box = await page.locator(target).first().boundingBox()
     expect(Math.abs(box.x + box.width / 2 - mid)).toBeLessThanOrEqual(1.5)
   }

@@ -3,6 +3,7 @@ import {
   test,
   expect,
   clickAppMenuItem,
+  showPanel,
   launchApp,
   freshUserDataDir,
   firstReadyPage
@@ -54,6 +55,8 @@ test('a diagram pins light while the app stays dark, and brings its own paper', 
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await page.keyboard.press('Escape')
+
+  await showPanel(page, 'snippets')
 
   const row = page.getByText('Example — Mermaid diagram')
   await row.hover()
@@ -238,6 +241,7 @@ test('the diagram renderer is ready before anything needs it', async ({ page }) 
 // a relaunch. Closing the viewer must put it back.
 test('a diagram theme lasts for that viewer only, and does not persist', async ({ page }) => {
   const openViewer = async () => {
+    await showPanel(page, 'snippets')
     await page.getByText('Example — Mermaid diagram').hover()
     await page.getByRole('button', { name: 'View diagram' }).click()
     const viewer = page.locator('.viewer-backdrop')
@@ -278,6 +282,8 @@ test('an Auto diagram redraws when the app theme flips', async ({ app, page }) =
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await page.keyboard.press('Escape')
 
+  await showPanel(page, 'snippets')
+
   await page.getByText('Example — Mermaid diagram').hover()
   await page.getByRole('button', { name: 'View diagram' }).click()
   const viewer = page.locator('.viewer-backdrop')
@@ -314,6 +320,7 @@ test('a pinned diagram grounds the whole stage, not a box that pans away', async
   // App stays Light (the default), so pinning Dark is the mismatch — and the
   // surface that used to show through was white.
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await showPanel(page, 'snippets')
   await page.getByText('Example — Mermaid diagram').hover()
   await page.getByRole('button', { name: 'View diagram' }).click()
   const viewer = page.locator('.viewer-backdrop')

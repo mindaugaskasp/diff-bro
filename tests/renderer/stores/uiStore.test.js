@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { MOVED_ROW_MS, useUiStore } from '../../../src/renderer/src/stores/uiStore'
+import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 
-beforeEach(() => setActivePinia(createPinia()))
+beforeEach(() => {
+  setActivePinia(createPinia())
+  localStorage.clear()
+})
 
 // All three actions were uncovered. openToolsPalette narrows paletteScope, and
 // only commands.js widens it again — a pairing nothing asserted, so a palette
@@ -71,5 +75,21 @@ describe('uiStore — the row a reorder just moved', () => {
     const ui = useUiStore()
     ui.markMovedRow('row-1')
     expect(ui.lastCreatedRowId).toBeNull()
+  })
+})
+
+describe('a newly created row', () => {
+  it('opens the sidebar panel that holds it', () => {
+    const settings = useSettingsStore()
+    useUiStore().markNewRow('s1', 'snippets')
+    expect(settings.sidebarPanel).toBe('snippets')
+    expect(useUiStore().lastCreatedRowId).toBe('s1')
+  })
+
+  it('leaves the panel alone when the caller names none', () => {
+    const settings = useSettingsStore()
+    settings.setSidebarPanel('tools')
+    useUiStore().markNewRow('x')
+    expect(settings.sidebarPanel).toBe('tools')
   })
 })

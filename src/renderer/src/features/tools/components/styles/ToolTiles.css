@@ -1,0 +1,76 @@
+.tool-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-4);
+}
+.tt-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tt-head {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-meta);
+}
+.tt-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--hue) 72%, var(--text));
+}
+.tt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.tt-cell {
+  position: relative;
+  min-width: 0;
+}
+.tt-tile {
+  width: 100%;
+}
+.tt-name {
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+.tt-pin {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: var(--chip-h);
+  height: var(--chip-h);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-meta);
+  font-size: var(--font-sm);
+  opacity: 0;
+  cursor: pointer;
+}
+.tt-cell:hover .tt-pin,
+.tt-pin:focus-visible,
+.tt-pin.on {
+  opacity: 1;
+}
+.tt-pin.on {
+  color: var(--pin-ink);
+}
+.tt-pin:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+.tt-empty {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+}

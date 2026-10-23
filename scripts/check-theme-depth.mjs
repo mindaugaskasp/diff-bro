@@ -160,7 +160,15 @@ const RULES = [
   // …and the text still has to be readable ON the band, which is where a tint
   // chosen only for visibility goes wrong.
   { key: 'text/add-line', a: 'text', b: 'diff-add-line', min: 4.5, kind: 'text' },
-  { key: 'text/del-line', a: 'text', b: 'diff-del-line', min: 4.5, kind: 'text' }
+  { key: 'text/del-line', a: 'text', b: 'diff-del-line', min: 4.5, kind: 'text' },
+  // Sidebar secondary text (ages, counts, tag names) is 10.5–11.5px: body-text floor.
+  { key: 'meta/panel', a: 'text-meta', b: 'bg-panel', min: 4.5, kind: 'text' },
+  { key: 'card/panel', a: 'bg-card', b: 'bg-panel', min: 1.04, kind: 'surface' },
+  { key: 'text/select', a: 'text', b: 'select-wash', min: 4.5, kind: 'text' },
+  // A glyph well's monogram is text, so it answers to 4.5 even inside a tint.
+  ...['diff', 'snippet', 'received', 'encode', 'format', 'generate', 'inspect', 'secure'].map(
+    (hue) => ({ key: `glyph/${hue}`, a: `glyph-${hue}`, b: `well-${hue}`, min: 4.5, kind: 'text' })
+  )
 ]
 const tok = (n) => `--${n}`
 
@@ -185,6 +193,16 @@ for (const theme of THEMES) {
       failures.push(`${theme}: ${r.key} ${ratio.toFixed(2)} < ${r.min} (${r.kind})`)
   }
   rows.push({ theme, cells })
+}
+
+// A contrast ratio cannot tell a lifted card from a sunken one, so the direction is checked.
+for (const theme of THEMES) {
+  const map = mapFor(theme)
+  const [bg, panel, card] = ['--bg', '--bg-panel', '--bg-card'].map((n) =>
+    luminance(resolve(n, map))
+  )
+  if (bg > panel && card < panel)
+    failures.push(`${theme}: card/panel — card is darker than the panel`)
 }
 
 // --- report ----------------------------------------------------------------

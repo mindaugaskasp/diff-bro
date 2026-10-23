@@ -6,7 +6,7 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  newSnippetButton
+  openNewSnippet
 } from './fixtures.mjs'
 
 // Highlighting is only real in a launched app: Monaco does the tokenising, it
@@ -14,7 +14,7 @@ import {
 // model of that language has existed. jsdom can answer none of that.
 
 async function addSnippet(page, { name, language, body, secret = false }) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.lang-picker select').selectOption(language)

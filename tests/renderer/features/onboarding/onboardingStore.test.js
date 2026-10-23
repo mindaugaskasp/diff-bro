@@ -584,3 +584,16 @@ describe('the reveal after step one', () => {
     expect(tour.revealing).toBe(false)
   })
 })
+
+describe('the tour and the sidebar panel', () => {
+  it('opens Snippets to show a snippet row, and gives the panel back when it ends', () => {
+    const settings = useSettingsStore()
+    settings.setSidebarPanel('tools')
+    const tour = useOnboardingStore()
+    tour.begin()
+    tour.clearFilters()
+    expect(settings.sidebarPanel).toBe('snippets')
+    tour.skip()
+    expect(settings.sidebarPanel).toBe('tools')
+  })
+})

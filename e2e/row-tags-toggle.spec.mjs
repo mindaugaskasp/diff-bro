@@ -4,8 +4,10 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  newSnippetButton,
-  openSettings
+  openSettings,
+  openNewSnippet,
+  pickTag,
+  showPanel
 } from './fixtures.mjs'
 
 // A tag word sits next to the name on every saved-diff and snippet row. For a
@@ -18,7 +20,7 @@ const snippetTag = (page) => page.locator('.snippets-section .row .tag-word')
 const diffTag = (page) => page.locator('li.diff .tag-word')
 
 async function seedSnippet(page, name, tags) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
@@ -66,18 +68,26 @@ test('the toggle takes the tag word off both kinds of row, and puts it back', as
   await seedSnippet(page, 'Rollback runbook', ['ops'])
   await seedDiff(page, 'E2E tagged diff', ['ops'])
 
-  await expect(snippetTag(page).first()).toBeVisible()
-  await expect(diffTag(page).first()).toBeVisible()
+  const tagWords = async (count) => {
+    await showPanel(page, 'snippets')
+    if (count) await expect(snippetTag(page).first()).toBeVisible()
+    else await expect(snippetTag(page)).toHaveCount(0)
+    await showPanel(page, 'diffs')
+    if (count) await expect(diffTag(page).first()).toBeVisible()
+    else await expect(diffTag(page)).toHaveCount(0)
+  }
+  await tagWords(true)
 
   await setRowTags(page, false)
-  await expect(snippetTag(page)).toHaveCount(0)
-  await expect(diffTag(page)).toHaveCount(0)
+  await tagWords(false)
   // The name is what the row is for, and it is still there.
-  await expect(page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })).toBeVisible()
+  await showPanel(page, 'snippets')
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+  ).toBeVisible()
 
   await setRowTags(page, true)
-  await expect(snippetTag(page).first()).toBeVisible()
-  await expect(diffTag(page).first()).toBeVisible()
+  await tagWords(true)
 })
 
 // Hiding the WORD is not hiding the tag: both ways of reaching one still work,
@@ -88,15 +98,17 @@ test('the shelf and the search still filter by tag with the words off', async ({
   await seedSnippet(page, 'Untagged note', [])
   await setRowTags(page, false)
 
-  const chip = page.locator('.usb-tag', { hasText: 'ops' }).first()
-  await expect(chip).toBeVisible()
-  await chip.click()
-  await expect(page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })).toBeVisible()
+  await pickTag(page, 'ops')
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+  ).toBeVisible()
   await expect(page.locator('.snippets-section .row', { hasText: 'Untagged note' })).toHaveCount(0)
-  await chip.click()
+  await pickTag(page, 'ops')
 
-  await page.getByPlaceholder('Search diffs & snippets…').fill('ops')
-  await expect(page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })).toBeVisible()
+  await page.getByPlaceholder('Search snippets').fill('ops')
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+  ).toBeVisible()
   await expect(page.locator('.snippets-section .row', { hasText: 'Untagged note' })).toHaveCount(0)
 })
 
@@ -115,7 +127,9 @@ test('the choice survives a relaunch', async () => {
   app = await launchApp(dir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })).toBeVisible()
+    await expect(
+      page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+    ).toBeVisible()
     await expect(snippetTag(page)).toHaveCount(0)
   } finally {
     await app.close()

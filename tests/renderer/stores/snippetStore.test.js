@@ -380,6 +380,17 @@ describe('snippetStore — tags model', () => {
   // Saved diffs draw from the SAME tag registry (vaultStore calls
   // snippetStore.registerTags), so a tag deleted here has to leave them too —
   // otherwise a saved diff keeps a tag the app no longer knows the colour of.
+  // Filtered by a tag that is then deleted, the sidebar kept filtering by it —
+  // every row hidden, and no chip left to switch the filter off.
+  it('deleteTag drops the tag from the sidebar filter', async () => {
+    const store = useSnippetStore()
+    const ui = useUiStore()
+    await store.add({ name: 'a', content: 'x', language: 'auto', tags: ['gone', 'stay'] })
+    ui.sidebarTags = ['gone', 'stay']
+    store.deleteTag('gone')
+    expect(ui.sidebarTags).toEqual(['stay'])
+  })
+
   it('deleteTag also strips the tag from saved diffs', async () => {
     const store = useSnippetStore()
     const vault = useVaultStore()

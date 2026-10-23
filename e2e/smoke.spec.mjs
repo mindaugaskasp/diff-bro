@@ -1,4 +1,4 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect } from './fixtures.mjs'
 
 // The launch smoke test: proves the built main + preload + renderer actually
 // boot together and paint. If window.api (preload) failed to bridge, the
@@ -10,7 +10,7 @@ test('boots to the empty-state diff view in a single window', async ({ app, page
   // so this also proves the sync version bridge resolved.
   await expect(page).toHaveTitle(/^Diff Bro v\d+\.\d+\.\d+/)
   await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
-  // The snippets shelf renders, which only happens once the preload-backed
-  // stores have hydrated.
-  await expect(newSnippetButton(page)).toBeVisible()
+  // Home lists seeded snippets only once the preload-backed stores have hydrated.
+  await expect(page.getByRole('navigation', { name: 'Sidebar' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Recent' })).toBeVisible()
 })

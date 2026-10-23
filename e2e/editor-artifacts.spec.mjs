@@ -1,4 +1,8 @@
-import { test, expect, clickAppMenuItem } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // Monaco paints its stock-'vs' surfaces while the app tints its editors to
 // token colours; every disagreement is a pale sliver, and it kept coming back

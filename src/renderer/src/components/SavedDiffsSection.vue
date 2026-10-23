@@ -17,6 +17,7 @@ import { t } from '../i18n'
 const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
+  panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] },
@@ -79,6 +80,7 @@ useNewRowMarker({
       :open="open"
       :first="first"
       :unified="unified"
+      :panel="panel"
       :count="rows.length"
       :filtering="filtering"
       @toggle="open = !open"
@@ -100,7 +102,7 @@ useNewRowMarker({
       </template>
     </SectionHeader>
 
-    <div v-show="open" class="section-body">
+    <div v-show="open || panel" class="section-body">
       <div v-if="!hasOwn" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}</p>
         <button

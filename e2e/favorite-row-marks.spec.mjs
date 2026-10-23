@@ -1,25 +1,19 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
 
-// A favourited row marks itself the same way in every section. Snippets lost
-// their mark silently: the only rule that drew it was `.shelf.fav .row` in
-// SnippetsPanel.css, and the `.shelf` markup it targets was removed when the
-// separate favourites shelf went away. Nothing failed, because nothing measured
-// the mark — so a starred snippet looked identical to an unstarred one.
-//
-// Asserted as computed style rather than a screenshot: the bar is a box-shadow
-// and the wash is a background, and both are readable off the live DOM.
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
-const marks = (row) =>
-  row.evaluate((el) => {
+// A starred snippet once looked identical to an unstarred one and nothing failed.
+
+const restingStar = (row) =>
+  row.locator('.star').evaluate((el) => {
     const s = getComputedStyle(el)
-    return { shadow: s.boxShadow, background: s.backgroundColor }
+    return { shown: s.display !== 'none', color: s.color }
   })
 
-const drawn = (m) =>
-  m.shadow !== 'none' && m.shadow !== '' && !/rgba\(0, 0, 0, 0\)/.test(m.background)
-
 async function addSnippet(page, name) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
@@ -28,24 +22,26 @@ async function addSnippet(page, name) {
   await expect(editor).toBeHidden()
 }
 
-test('a favourited snippet row carries the same mark a pinned tool does', async ({ page }) => {
+test('a starred snippet row keeps its star at rest, in the ink a pinned tool uses', async ({
+  page
+}) => {
   await addSnippet(page, 'E2E favourite target')
+  const row = page.locator('.snippets-section .row').filter({ hasText: 'E2E favourite target' })
 
-  const snippets = page.locator('.sidebar-section').filter({ hasText: 'Snippets' })
-  const row = snippets.locator('.row').filter({ hasText: 'E2E favourite target' })
+  await page.mouse.move(0, 0)
+  expect((await restingStar(row)).shown, 'an unstarred row shows no star at rest').toBe(false)
 
-  const before = await marks(row)
-  expect(drawn(before), 'an unstarred row must NOT be marked').toBe(false)
-
+  await row.hover()
   await row.locator('.star').click()
-  const after = await marks(row)
-  expect(drawn(after), 'a starred snippet row must draw the bar and the wash').toBe(true)
+  await page.mouse.move(0, 0)
+  const starred = await restingStar(row)
+  expect(starred.shown, 'a starred row keeps its star at rest').toBe(true)
 
-  // The consistency the sections owe each other: the same state, the same mark.
-  const tools = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
-  await tools.locator('.row').first().locator('.star').click()
-  const pinnedTool = await marks(tools.locator('.row.pinned').first())
-
-  expect(after.shadow).toBe(pinnedTool.shadow)
-  expect(after.background).toBe(pinnedTool.background)
+  await showPanel(page, 'tools')
+  const tool = page.locator('.tt-cell').first()
+  await tool.hover()
+  await tool.locator('.tt-pin').click()
+  await page.mouse.move(0, 0)
+  const pin = await tool.locator('.tt-pin').evaluate((el) => getComputedStyle(el).color)
+  expect(starred.color).toBe(pin)
 })

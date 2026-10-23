@@ -127,19 +127,27 @@ test('strikethrough, tasks, nesting and a table all reach the preview', async ({
 
   await body.fill('gone tomorrow')
   await body.evaluate((el) => el.setSelectionRange(0, 4))
-  await toolbar(ql).getByRole('button', { name: /Strikethrough/ }).click()
+  await toolbar(ql)
+    .getByRole('button', { name: /Strikethrough/ })
+    .click()
   await expect(body).toHaveValue('~~gone~~ tomorrow')
   await expect(preview(ql).locator('s')).toHaveText('gone')
 
   await body.fill('ship it')
   await body.evaluate((el) => el.setSelectionRange(0, 7))
-  await toolbar(ql).getByRole('button', { name: /Task list/ }).click()
+  await toolbar(ql)
+    .getByRole('button', { name: /Task list/ })
+    .click()
   await expect(body).toHaveValue('- [ ] ship it')
   await expect(preview(ql).locator('input[type=checkbox]')).not.toBeChecked()
 
-  await toolbar(ql).getByRole('button', { name: /^Indent/ }).click()
+  await toolbar(ql)
+    .getByRole('button', { name: /^Indent/ })
+    .click()
   await expect(body).toHaveValue('  - [ ] ship it')
-  await toolbar(ql).getByRole('button', { name: /^Outdent/ }).click()
+  await toolbar(ql)
+    .getByRole('button', { name: /^Outdent/ })
+    .click()
   await expect(body).toHaveValue('- [ ] ship it')
 
   await body.fill('')
@@ -159,7 +167,9 @@ test('Jira gets nesting and its own table syntax', async ({ app, page }) => {
 
   await body.fill('* one')
   await body.evaluate((el) => el.setSelectionRange(0, 5))
-  await toolbar(ql).getByRole('button', { name: /^Indent/ }).click()
+  await toolbar(ql)
+    .getByRole('button', { name: /^Indent/ })
+    .click()
   await expect(body).toHaveValue('** one')
 
   await body.fill('')

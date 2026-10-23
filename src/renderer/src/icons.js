@@ -195,6 +195,9 @@ export const ICONS = {
   ],
   // Angle brackets — marks code/markup formats (JSON, XML, and the like).
   code: [{ t: 'path', d: 'm8 8-4 4 4 4M16 8l4 4-4 4' }],
+  home: [{ t: 'path', d: 'M4 11l8-7 8 7v9H4zM10 20v-5h4v5' }],
+  grid: [{ t: 'path', d: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' }],
+  diff: [{ t: 'path', d: 'M7 4v6M4 7h6M4 17h6M15 4h5v16h-5' }],
   // Rich-text formatting toolbar (Jira/Confluence wiki markup).
   bold: [
     { t: 'path', d: 'M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z' },

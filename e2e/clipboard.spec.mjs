@@ -1,4 +1,8 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // The snippet copy test asserts the "Copied" flash fired; this asserts the
 // bytes actually landed on the OS clipboard. That is the half jsdom can never

@@ -1,86 +1,66 @@
 import { rmSync } from 'node:fs'
 import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
 
-// Sidebar sections reorder by dragging their headers, and until this spec the
-// whole interaction was invisible to the suite: the unit test called the
-// handlers with fabricated events, so it passed on every platform while the real
-// drag was dead on Windows.
-//
-// Driven with page.mouse — a real pointer sequence Chromium turns into the same
-// events a hand does — so it fails for ANY reason a user would hit. It caught
-// one immediately: pointer capture taken on the press swallowed the click of
-// every control living inside a section header.
+// Real pointer input: the unit test fabricates events and once passed while the drag was dead.
 
-const header = (page, id) => page.locator(`.head[data-section="${id}"]`)
+const item = (page, panel) => page.locator(`.rail-item[data-panel="${panel}"]`)
 
-const sectionOrder = (page) =>
-  page.locator('.head[data-section]').evaluateAll((els) => els.map((el) => el.dataset.section))
+const railOrder = (page) =>
+  page.locator('.rail-item').evaluateAll((els) => els.map((el) => el.dataset.panel))
 
 // A press, a deliberate multi-step travel (one jump reads as a click), a release.
-async function dragHeader(page, fromId, toId) {
-  const from = await header(page, fromId).boundingBox()
-  const to = await header(page, toId).boundingBox()
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+async function dragItem(page, from, to) {
+  const a = await item(page, from).boundingBox()
+  const b = await item(page, to).boundingBox()
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
   await page.mouse.down()
   for (let step = 1; step <= 6; step += 1) {
     const ratio = step / 6
-    await page.mouse.move(
-      from.x + from.width / 2 + (to.x - from.x) * ratio,
-      from.y + from.height / 2 + (to.y - from.y) * ratio
-    )
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2 + (b.y - a.y) * ratio)
   }
   await page.mouse.up()
 }
 
-test('dragging a section header above another reorders the sidebar', async ({ page }) => {
-  expect(await sectionOrder(page)).toEqual(['saved', 'external', 'snippets', 'tools'])
-
-  await dragHeader(page, 'snippets', 'saved')
-
-  await expect.poll(() => sectionOrder(page)).toEqual(['snippets', 'saved', 'external', 'tools'])
+test('dragging a rail item above another reorders the rail', async ({ page }) => {
+  expect(await railOrder(page)).toEqual(['home', 'diffs', 'snippets', 'tools'])
+  await dragItem(page, 'snippets', 'diffs')
+  await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
 })
 
-test('the dragged header marks its drop target while travelling', async ({ page }) => {
-  const from = await header(page, 'snippets').boundingBox()
-  const to = await header(page, 'saved').boundingBox()
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+test('the dragged item marks its drop target while travelling', async ({ page }) => {
+  const a = await item(page, 'tools').boundingBox()
+  const b = await item(page, 'diffs').boundingBox()
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2)
   await page.mouse.down()
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 4)
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2)
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2 + 4)
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2)
 
-  await expect(header(page, 'saved')).toHaveClass(/drop-target/)
-  await expect(header(page, 'snippets')).toHaveClass(/dragging/)
+  await expect(item(page, 'diffs')).toHaveClass(/drop-target/)
+  await expect(item(page, 'tools')).toHaveClass(/dragging/)
 
   await page.mouse.up()
-  await expect(header(page, 'saved')).not.toHaveClass(/drop-target/)
+  await expect(item(page, 'diffs')).not.toHaveClass(/drop-target/)
 })
 
-// The header is both a drag handle and a collapse toggle, so the drag has to
-// swallow exactly one click and no more. Getting that wrong in either direction
-// is silent: too greedy and the section stops collapsing, too shy and every
-// reorder collapses whatever it landed on.
-test('a plain click still collapses the section, and a drag does not', async ({ page }) => {
-  const chevron = header(page, 'snippets').locator('.chev')
-  await expect(chevron).toHaveClass(/open/)
+// The item is both drag handle and button: a drag swallows its own click and no more.
+test('a plain click opens the panel, and a drag does not', async ({ page }) => {
+  await item(page, 'snippets').click()
+  await expect(item(page, 'snippets')).toHaveAttribute('aria-pressed', 'true')
+  await item(page, 'home').click()
 
-  await header(page, 'snippets').click()
-  await expect(chevron).not.toHaveClass(/open/)
-  await header(page, 'snippets').click()
-  await expect(chevron).toHaveClass(/open/)
-
-  await dragHeader(page, 'snippets', 'saved')
-  await expect.poll(() => sectionOrder(page)).toEqual(['snippets', 'saved', 'external', 'tools'])
-  // Moved, not collapsed.
-  await expect(header(page, 'snippets').locator('.chev')).toHaveClass(/open/)
+  await dragItem(page, 'snippets', 'diffs')
+  await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
+  await expect(item(page, 'home')).toHaveAttribute('aria-pressed', 'true')
 })
 
-// A section header carries SVG icons, and an inline <svg> is a native drag
-// source in Chromium (`-webkit-user-drag: auto`). On real hardware, grabbing the
-// icon starts a native image-drag that fires `pointercancel` and kills the
-// pointer-capture reorder — invisible to page.mouse, which never engages the OS
-// drag controller. The header must therefore REFUSE to become a drag source, so
-// no native drag can ever race the gesture.
-test('the header refuses to become a native drag source', async ({ page }) => {
+test('Home stays first', async ({ page }) => {
+  await dragItem(page, 'home', 'tools')
+  await dragItem(page, 'tools', 'home')
+  expect((await railOrder(page))[0]).toBe('home')
+})
+
+// A native <svg> drag fires pointercancel on real hardware, which page.mouse never reproduces.
+test('a rail item refuses to become a native drag source', async ({ page }) => {
   const preventedFrom = (selector) =>
     page.evaluate((sel) => {
       const el = document.querySelector(sel)
@@ -89,9 +69,8 @@ test('the header refuses to become a native drag source', async ({ page }) => {
       return ev.defaultPrevented
     }, selector)
 
-  expect(await preventedFrom('.head[data-section="snippets"] svg')).toBe(true)
-  expect(await preventedFrom('.head[data-section="snippets"] .section-title')).toBe(true)
-  expect(await preventedFrom('.head[data-section="snippets"]')).toBe(true)
+  expect(await preventedFrom('.rail-item[data-panel="snippets"] svg')).toBe(true)
+  expect(await preventedFrom('.rail-item[data-panel="snippets"]')).toBe(true)
 })
 
 test('a reorder survives a relaunch', async () => {
@@ -99,13 +78,13 @@ test('a reorder survives a relaunch', async () => {
   let app = await launchApp(dir)
   try {
     let page = await firstReadyPage(app)
-    await dragHeader(page, 'snippets', 'saved')
-    await expect.poll(() => sectionOrder(page)).toEqual(['snippets', 'saved', 'external', 'tools'])
+    await dragItem(page, 'snippets', 'diffs')
+    await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
     await app.close()
 
     app = await launchApp(dir)
     page = await firstReadyPage(app)
-    await expect.poll(() => sectionOrder(page)).toEqual(['snippets', 'saved', 'external', 'tools'])
+    await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
   } finally {
     await app.close()
     rmSync(dir, { recursive: true, force: true })

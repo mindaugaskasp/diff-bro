@@ -184,7 +184,7 @@ export const useVaultStore = defineStore('vault', {
         iv,
         data
       })
-      if (marks) useUiStore().markNewRow(id)
+      if (marks) useUiStore().markNewRow(id, 'diffs')
       this.persist()
       return id
     },

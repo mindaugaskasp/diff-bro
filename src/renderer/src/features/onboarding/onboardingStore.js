@@ -214,6 +214,7 @@ export const useOnboardingStore = defineStore('onboarding', {
     typeSearch: () => demo.typeSearch(),
     clearSearch: () => demo.clearSearch(),
     clearFilters: () => demo.clearFilters(),
+    showSnippets: () => demo.showSnippets(),
     acceptPrompt() {
       this.promptOpen = false
       this._open(runBlockAt(this.tourStep))

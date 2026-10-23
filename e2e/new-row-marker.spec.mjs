@@ -1,4 +1,8 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // A snippet you just made lands below every starred row, in a panel that is
 // usually scrolled, and nothing marked it. The marker is four channels; three of
@@ -26,7 +30,7 @@ const rail = (row) =>
   })
 
 async function addSnippet(page, name) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
@@ -81,20 +85,17 @@ test('the wash lingers long enough to be seen', async ({ page }) => {
   expect(parseFloat(wash.duration), 'the wash must outlast a glance away').toBeGreaterThanOrEqual(3)
 })
 
-test('a starred new row keeps the pin bar AND the new rail', async ({ page }) => {
+test('a starred new row keeps its star AND the new rail', async ({ page }) => {
   await addSnippet(page, 'E2E starred new row')
   const row = snippetRow(page, 'E2E starred new row')
+  await row.hover()
   await row.locator('.star').click()
 
-  await expect(row).toHaveClass(/favorite/)
   await expect(row, 'starring is not the row being opened, so the marker stays').toHaveClass(
     /is-new/
   )
-
-  // The pin bar is an inset box-shadow on the LEFT; the rail is a ::after on the
-  // right. Two states, two edges, stacked rather than fighting.
-  const shadow = await row.evaluate((el) => getComputedStyle(el).boxShadow)
-  expect(shadow, 'the pin bar survives the new-row marker').toContain('inset')
+  await page.mouse.move(0, 0)
+  await expect(row.locator('.star.on'), 'the star survives the new-row marker').toBeVisible()
   expect((await rail(row)).width, 'and the rail survives the star').toBe('3px')
 })
 

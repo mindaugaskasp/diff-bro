@@ -9,8 +9,15 @@ import {
   firstReadyPage,
   openMenu,
   stubSaveDialog,
-  stubOpenDialog
+  stubOpenDialog,
+  showPanel
 } from './fixtures.mjs'
+
+// Diffs sealed for this user live on the Diffs panel's Received tab.
+async function openReceived(page) {
+  await showPanel(page, 'diffs')
+  await page.getByRole('button', { name: /^Received/ }).click()
+}
 
 // Sharing is the highest-stakes flow: exchange public keys, seal a diff for one
 // recipient, and import it on the other side. The crypto core (seal/open,
@@ -94,6 +101,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     expect(sealed).toBeTruthy()
 
     // 4. Bob imports it — it lands in External diffs, credited to Alice.
+    await openReceived(pageB)
     const external = pageB.locator('.sidebar-section', { hasText: 'External diffs' })
     const externalHelp = external.locator('.empty')
     await expect(externalHelp).toBeVisible() // empty-state, before any import
@@ -224,6 +232,7 @@ test('one sealed file opens for every recipient it was addressed to', async () =
       [appC, pageC]
     ]) {
       await stubOpenDialog(app_, join(exchange, sealed[0]))
+      await openReceived(page_)
       await page_.getByRole('button', { name: /Import a shared diff/ }).click()
       await expect(page_.getByText(/Opened "Team review" from Alice/)).toBeVisible()
     }

@@ -1,5 +1,12 @@
 import { rmSync } from 'node:fs'
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  showPanel
+} from './fixtures.mjs'
 
 // Saving a diff drives the whole vault round-trip: the snapshot is AES-GCM
 // encrypted in the main process (vault:encrypt, key behind safeStorage), written
@@ -76,7 +83,7 @@ test('a saved diff persists across a relaunch and reopens', async () => {
 
 // Filtering to nothing has to say so. Snippets did; Saved diffs and External
 // diffs rendered an empty box, so a search that matched nothing looked broken.
-test('a filter that matches nothing says so in every sidebar section', async () => {
+test('a filter that matches nothing says so in each panel', async () => {
   const dir = freshUserDataDir()
   const app = await launchApp(dir)
   try {
@@ -91,11 +98,13 @@ test('a filter that matches nothing says so in every sidebar section', async () 
     await save.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.locator('li.diff', { hasText: 'Findable diff' })).toBeVisible()
 
-    await page.getByPlaceholder('Search diffs & snippets…').fill('zzz-no-such-thing')
+    await page.getByPlaceholder('Search diffs').fill('zzz-no-such-thing')
 
     const saved = page.locator('.sidebar-section', { hasText: 'Saved diffs' })
     await expect(saved.locator('li.diff')).toHaveCount(0)
     await expect(saved.getByText(/try removing a filter/)).toBeVisible()
+    // The query is the sidebar's, so the next panel answers it too.
+    await showPanel(page, 'snippets')
     await expect(page.getByText('No snippets match — try removing a filter.')).toBeVisible()
   } finally {
     await app.close()

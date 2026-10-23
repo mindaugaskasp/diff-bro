@@ -3,6 +3,7 @@
 
 import { defineStore } from 'pinia'
 import { ZOOM_DEFAULT, steppedZoom } from '../utils/diffZoom'
+import { useSettingsStore } from './settingsStore'
 
 // How long a moved row stays washed. Matches the created-row wash so the two
 // read as one language.
@@ -90,8 +91,10 @@ export const useUiStore = defineStore('ui', {
         if (this.lastMovedRowId === id) this.lastMovedRowId = null
       }, MOVED_ROW_MS)
     },
-    markNewRow(id) {
+    // Something just created is shown where it lives, not left behind a panel.
+    markNewRow(id, panel) {
       this.lastCreatedRowId = id
+      if (panel) useSettingsStore().setSidebarPanel(panel)
     },
     clearNewRow(id) {
       if (this.lastCreatedRowId === id) this.lastCreatedRowId = null

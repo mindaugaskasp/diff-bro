@@ -1,5 +1,9 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // Photographing a snippet is only real in a launched app: the picture is taken
 // by webContents.capturePage in MAIN, the diagram is an SVG Mermaid lays out,
@@ -28,7 +32,7 @@ const reportedSize = async (dialog) =>
 // Pasted, not typed: Monaco auto-indents every Enter and at this length drops a
 // keystroke outright, merging two statements into unparseable Mermaid.
 async function createSnippet({ page, app }, name, body) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)
@@ -160,7 +164,7 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
 
 // A masked secret has nothing worth photographing and everything to lose.
 test('a secret snippet offers no capture action', async ({ page }) => {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
@@ -235,7 +239,7 @@ test('the capture action is not offered while editing', async ({ page }) => {
 
 // A picture of text is a worse copy of what Copy already gives you.
 test('only a Mermaid snippet offers capture', async ({ page }) => {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Just some prose')
   await editor.locator('.editor').click()

@@ -1,4 +1,8 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // The seeded Claude prompt carries {{language}} / {{file}} / {{concern}}
 // placeholders, so copying it must route through the fill dialog and put the

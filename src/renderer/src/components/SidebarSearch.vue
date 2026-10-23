@@ -1,11 +1,12 @@
 <script setup>
-// The sidebar's search row: the box, its clear control, and the button that
-// collapses the sidebar to its rail.
 import { ref } from 'vue'
 import AppIcon from './AppIcon.vue'
 
-defineProps({ modelValue: { type: String, default: '' } })
-const emit = defineEmits(['update:modelValue', 'collapse'])
+defineProps({
+  modelValue: { type: String, default: '' },
+  placeholder: { type: String, required: true }
+})
+const emit = defineEmits(['update:modelValue'])
 
 const box = ref(null)
 defineExpose({ focus: () => box.value?.focus() })
@@ -19,7 +20,7 @@ defineExpose({ focus: () => box.value?.focus() })
         ref="box"
         :value="modelValue"
         type="search"
-        :placeholder="$t('sidebarSearch.searchDiffsSnippets')"
+        :placeholder="placeholder"
         spellcheck="false"
         @input="emit('update:modelValue', $event.target.value)"
       />
@@ -32,14 +33,6 @@ defineExpose({ focus: () => box.value?.focus() })
         <AppIcon name="x" />
       </button>
     </div>
-    <button
-      class="btn btn-icon sidebar-toggle"
-      :data-tip="$t('sidebarSearch.collapseTheSidebar')"
-      :aria-label="$t('sidebarSearch.collapseTheSidebar')"
-      @click="emit('collapse')"
-    >
-      <AppIcon name="chevron-left" />
-    </button>
   </div>
 </template>
 

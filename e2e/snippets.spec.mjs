@@ -1,4 +1,8 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // Copying a snippet shows a transient "Copied" flash at the row. Playwright's
 // clicks are trusted (they carry the user activation the async clipboard API
@@ -22,7 +26,7 @@ test('copying a snippet flashes "Copied" and then clears', async ({ page }) => {
 // At its old 460px minimum the editor needed 578px of content, so it scrolled
 // the moment it was dragged small — with the code area squeezed to 160px.
 test('the editor never scrolls at its smallest allowed size', async ({ page }) => {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const dlg = page.getByRole('dialog', { name: 'New Snippet' })
   await expect(dlg).toBeVisible()
 
@@ -58,7 +62,7 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
       .evaluate((el) => getComputedStyle(el).cursor)
   ).toBe('pointer')
 
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Vault token')
   await editor.locator('.editor').click()
@@ -91,12 +95,12 @@ test('the section add button is inked, and row actions are not', async ({ page }
 // An empty section has no rows to compete with, so it carries the real button —
 // the cold-start case: open the app, want to add something.
 test('an empty section offers a real button, a populated one does not', async ({ page }) => {
-  // Saved diffs starts empty; Snippets ships seeded examples.
-  const cta = page.locator('.empty-cta .btn-primary')
-  await expect(cta).toBeVisible()
   const snippets = page.locator('.sidebar-section', { hasText: 'Snippets' }).first()
   await expect(snippets).toHaveCount(1)
   await expect(snippets.locator('.empty-cta')).toHaveCount(0)
+  await showPanel(page, 'diffs')
+  const cta = page.locator('.empty-cta .btn-primary')
+  await expect(cta).toBeVisible()
 
   // The whole point is that it is clickable at cold start, which a DOM count
   // does not establish — a collapsed section still counts 1.
@@ -126,4 +130,23 @@ test('the preview card copies the snippet without a trip back to the row', async
   const copied = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(copied).toContain('flowchart TD')
   expect(copied.length).toBeGreaterThan(0)
+})
+
+// Reflowing hover actions once put a row action under a click on the row's middle.
+test('hovering a row overlays its actions; its middle still opens the snippet', async ({
+  page
+}) => {
+  const row = page.locator('.snippets-section .row').first()
+  await row.hover()
+  await expect(row.locator('.rowacts')).toBeVisible()
+  const [rowBox, entryBox] = await Promise.all([
+    row.boundingBox(),
+    row.locator('.entry').boundingBox()
+  ])
+  const middle = rowBox.x + rowBox.width / 2
+  expect(entryBox.x).toBeLessThan(middle)
+  expect(entryBox.x + entryBox.width).toBeGreaterThan(middle)
+
+  await row.click()
+  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toBeVisible()
 })

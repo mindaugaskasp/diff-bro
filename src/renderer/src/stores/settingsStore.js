@@ -10,10 +10,12 @@ import {
   NUMERIC_LIMITS,
   clampBackupHours,
   clampNumber,
+  railOrderOf,
   sanitizeSize,
   settingsStateFrom
 } from '../utils/settingsDefaults'
 import { backupActions } from './settingsBackup'
+import { sidebarActions } from './settingsSidebar'
 
 function readState() {
   let parsed
@@ -36,6 +38,7 @@ export const useSettingsStore = defineStore('settings', {
   getters: {
     // Sections in the user's chosen order (always every one, sanitized).
     orderedSections: (s) => s.sectionOrder,
+    railOrder: (s) => railOrderOf(s.sectionOrder),
     maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024,
     // The remembered size for a resizable dialog, or null for its default.
     dialogSize: (s) => (key) => s.dialogSizes[key] ?? null,
@@ -80,6 +83,7 @@ export const useSettingsStore = defineStore('settings', {
       this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
     },
     ...backupActions,
+    ...sidebarActions,
     persist() {
       savePersisted(
         'settings',
@@ -103,6 +107,7 @@ export const useSettingsStore = defineStore('settings', {
           restoreSession: this.restoreSession,
           autoBackup: this.autoBackup,
           sidebarCollapsed: this.sidebarCollapsed,
+          sidebarPanel: this.sidebarPanel,
           autoBackupHours: this.autoBackupHours,
           examplesSeeded: this.examplesSeeded,
           recentTools: this.recentTools,
@@ -187,10 +192,6 @@ export const useSettingsStore = defineStore('settings', {
     },
     setAutoBackupHours(hours) {
       this.autoBackupHours = clampBackupHours(hours)
-      this.persist()
-    },
-    setSidebarCollapsed(value) {
-      this.sidebarCollapsed = value === true
       this.persist()
     },
     setRestoreSession(value) {

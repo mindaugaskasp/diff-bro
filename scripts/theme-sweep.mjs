@@ -54,6 +54,11 @@ const DIM = 3
 // twelve themes for a line that is doing exactly its job.
 const SEPARATOR = 1.11
 
+async function showPanel(page, panel) {
+  const item = page.locator(`.rail-item[data-panel="${panel}"]`)
+  if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
+}
+
 // Measured in the renderer. Walks up for the first OPAQUE background and
 // composites the translucent layers back down, because a chip on a card on a
 // dialog is three layers deep and only the composite is what the eye sees.
@@ -403,6 +408,7 @@ const SURFACES = [
     // table cannot settle: the ghost has to read as clearly SECONDARY to the
     // typed text while staying legible, and that is a live-DOM judgement.
     open: async (page) => {
+      await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet' }).click()
       const editor = page.getByRole('dialog', { name: 'New Snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
@@ -429,6 +435,7 @@ const SURFACES = [
     // the root's text ratio IS the caret's. The task box is the one pair no
     // computed check can settle (accent-color hands the tick to the UA).
     open: async (page) => {
+      await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet' }).click()
       const editor = page.getByRole('dialog', { name: 'New Snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Rendered')
@@ -478,31 +485,42 @@ const SURFACES = [
     }
   },
   {
-    name: 'tools-section',
-    // Already on screen — Tools is a sidebar section, open by default. The third
-    // row is hovered because the icon's --bg-hover state is the one that has no
-    // resting equivalent to fall back on, and it is where sepia is tightest.
+    name: 'sidebar-home',
     open: async (page) => {
-      const section = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
-      await section.locator('.row').first().waitFor()
-      await section.locator('.row').first().locator('.star').click()
-      await section.locator('.row').nth(2).hover()
+      await showPanel(page, 'home')
+      await page.locator('.home-row').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      'rail label': ['.rail-item:not(.on) .rail-label', TEXT],
+      'rail label, open': ['.rail-item.on .rail-label', TEXT],
+      'rail count': ['.rail-count', TEXT],
+      'day label': ['.home-day', TEXT],
+      'recent name': ['.home-row .row-2-name', TEXT],
+      'recent meta': ['.home-row .row-2-meta', TEXT],
+      'glyph on its well': ['.home-row .glyph-well', TEXT]
+    }
+  },
+  {
+    name: 'sidebar-tools',
+    // A tile edge is a separator, not the affordance: the well, card and lift are.
+    open: async (page) => {
+      await showPanel(page, 'tools')
+      const cell = page.locator('.tt-cell').first()
+      await cell.hover()
+      await cell.locator('.tt-pin').click()
+      await page.locator('.tt-cell').nth(2).hover()
     },
     close: async (page) => {
-      const section = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
-      await section.locator('.row.pinned').first().locator('.star').click()
+      await page.locator('.tt-pin.on').first().click()
+      await showPanel(page, 'home')
     },
     probes: {
-      'tool name': ['.sidebar-section .row .nm', TEXT],
-      // The trailing meta is read as a word, so it takes the reading floor.
-      'tool kind': ['.sidebar-section .row .kind', TEXT],
-      // Marks, not text: the star at rest and the pinned star both have to
-      // register as a control against the panel.
-      'star, resting': ['.sidebar-section .row:not(.pinned) .star', DIM],
-      'star, pinned': ['.sidebar-section .row.pinned .star', DIM],
-      'type badge': ['.sidebar-section .row .monogram', DIM],
-      'row, hovered': ['.sidebar-section .row:hover .nm', TEXT],
-      disclosure: ['.sidebar-section .disclosure .nm', TEXT]
+      'tool name': ['.tt-tile .tt-name', TEXT],
+      'group label': ['.tt-head', TEXT],
+      'glyph on its well': ['.tt-tile .glyph-well', TEXT],
+      'star, pinned': ['.tt-pin.on', DIM],
+      'tile edge': ['.tt-tile', SEPARATOR, 'border']
     }
   },
   {
@@ -579,6 +597,7 @@ const SURFACES = [
     // Waits past the 4s wash so what is measured is the state that STAYS, not a
     // frame of an animation.
     open: async (page) => {
+      await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet' }).click()
       const editor = page.getByRole('dialog', { name: 'New Snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
@@ -745,6 +764,7 @@ const SURFACES = [
       // The pane may already hold a comparison (a persisted session, or a
       // previous surface): dropping into a full one gives a diff, not a wait.
       await clearComparison(page)
+      await showPanel(page, 'snippets')
       await page.locator('.snippets-section .row[draggable="true"]').first().waitFor()
       /* global DataTransfer, DragEvent -- this body runs in the renderer */
       await page.evaluate(() => {

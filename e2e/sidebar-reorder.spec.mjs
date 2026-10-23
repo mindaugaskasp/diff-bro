@@ -6,7 +6,8 @@ import {
   freshUserDataDir,
   launchApp,
   openMenu,
-  newSnippetButton
+  openNewSnippet,
+  showPanel
 } from './fixtures.mjs'
 
 // Sidebar rows rearrange by dragging one onto another. The lists were ordered
@@ -40,7 +41,7 @@ const names = (page) => page.locator(`${SNIPPETS} .nm`).allTextContents()
 // fixture happened to ship two snippets proves nothing at all.
 async function seedSnippets(page, labels) {
   for (const label of labels) {
-    await newSnippetButton(page).click()
+    await openNewSnippet(page)
     const editor = page.getByRole('dialog', { name: 'New Snippet' })
     await editor.getByPlaceholder('Snippet name…').fill(label)
     await editor.locator('.editor').click()
@@ -181,11 +182,9 @@ test('a saved diff order survives a relaunch', async () => {
   }
 })
 
-// The section body indents its rows under the header's chevron, and the row's
-// hover wash was clipped to that indent — a highlight with a bite out of its
-// left side. Measured, not screenshotted: the painted row has to start where
-// the list starts.
-test('a row wash spans the full width of its list', async ({ page }) => {
+// A row wash once had a bite out of its left side, clipped to the list's indent.
+test('a row wash sits evenly inside its list, with no bite out of one side', async ({ page }) => {
+  await showPanel(page, 'snippets')
   const row = page.locator(`${SNIPPETS}`).first()
   await row.waitFor()
   // Against the SECTION, not the list: the list is already indented, so a row
@@ -200,6 +199,6 @@ test('a row wash spans the full width of its list', async ({ page }) => {
       sectionRight: section.right
     }
   })
-  expect(rowLeft).toBeLessThanOrEqual(sectionLeft + 1)
-  expect(rowRight).toBeGreaterThanOrEqual(sectionRight - 1)
+  expect(Math.abs(rowLeft - sectionLeft - (sectionRight - rowRight))).toBeLessThanOrEqual(1)
+  expect(rowLeft - sectionLeft).toBeLessThanOrEqual(12)
 })

@@ -4,7 +4,7 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  newSnippetButton
+  openNewSnippet
 } from './fixtures.mjs'
 
 // A colour the reader picks, painted across the whole row. It is decoration —
@@ -18,7 +18,7 @@ const row = (page, name) => page.locator('.snippets-section .row', { hasText: na
 const menu = (page) => page.locator('.rcm')
 
 async function seedSnippet(page, name) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()

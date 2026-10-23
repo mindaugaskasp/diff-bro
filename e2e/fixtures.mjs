@@ -234,3 +234,24 @@ export { expect }
 // locator is a strict-mode violation waiting for a slow enough machine — it
 // took until a CI runner to fire.
 export const newSnippetButton = (page) => page.locator('[data-tour="snippet-new"]')
+
+export async function showPanel(page, panel) {
+  const item = page.locator(`.rail-item[data-panel="${panel}"]`)
+  if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
+}
+
+// The one-line shelf may hold a tag behind "+N more".
+export async function pickTag(page, name) {
+  const chip = page.locator('.usb-shelf .usb-tag', { hasText: name }).first()
+  if (await chip.isVisible()) return chip.click()
+  await page.locator('.usb-more').click()
+  const picker = page.getByRole('dialog', { name: 'Collapsed tags' })
+  await picker.getByLabel('Find a tag').fill(name)
+  await picker.locator('.usb-tag', { hasText: name }).first().click()
+  await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
+}
+
+export async function openNewSnippet(page) {
+  await showPanel(page, 'snippets')
+  await newSnippetButton(page).click()
+}
