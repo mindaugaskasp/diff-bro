@@ -1,4 +1,8 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // One side loaded by mistake was a dead end: the empty slot only offers to fill
 // the OTHER side, so the wrong first file could not be taken back from the very

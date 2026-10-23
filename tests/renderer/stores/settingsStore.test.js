@@ -444,3 +444,40 @@ describe('locale', () => {
     expect(useSettingsStore().locale).toBe(null)
   })
 })
+
+describe('sidebar panel', () => {
+  it('opens on Home', () => {
+    expect(useSettingsStore().sidebarPanel).toBe('home')
+  })
+
+  it('remembers the panel across a reload', () => {
+    useSettingsStore().setSidebarPanel('tools')
+    setActivePinia(createPinia())
+    expect(useSettingsStore().sidebarPanel).toBe('tools')
+  })
+
+  it('refuses a panel that does not exist', () => {
+    const s = useSettingsStore()
+    s.setSidebarPanel('snippets')
+    s.setSidebarPanel('external')
+    expect(s.sidebarPanel).toBe('snippets')
+  })
+
+  it('falls back to Home on a hand-edited value', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ sidebarPanel: 'saved' }))
+    setActivePinia(createPinia())
+    expect(useSettingsStore().sidebarPanel).toBe('home')
+  })
+
+  it('orders the rail by the stored section order, Home first, external folded into diffs', () => {
+    const s = useSettingsStore()
+    s.moveSection('tools', -3)
+    expect(s.railOrder).toEqual(['home', 'tools', 'diffs', 'snippets'])
+  })
+
+  it('places Diffs where saved diffs sit, whatever the received section order says', () => {
+    const s = useSettingsStore()
+    s.moveSection('saved', 3)
+    expect(s.railOrder).toEqual(['home', 'snippets', 'tools', 'diffs'])
+  })
+})

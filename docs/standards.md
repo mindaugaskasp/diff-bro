@@ -336,9 +336,21 @@ directory move passes CI while silently removing enforcement.
   accent-tinted glow into a halo. A finished proposal carries the per-theme
   verdict, the exact token-driven CSS, and the trade-offs; a single-theme mockup
   is not a proposal.
+- **A tile is the one control without the `.btn` keyline.** `.tile` (ui.css) is
+  for a grid of destinations — the Tools panel, Home's pinned and quick-tool
+  cards — where twelve outlined boxes read as a keyboard. Its resting
+  affordance is three other cues: a hue-tinted `.glyph-well`, the `--bg-card`
+  surface and `--shadow-1`. The three hard-keyline themes keep an edge through
+  `--line`. `check-theme-depth.mjs` holds the replacement to floors: glyph on its
+  well ≥ 4.5, card lighter than the panel on every light ground. Colour lives in
+  the well, legibility in the glyph (`--glyph-*` is 30% hue, 70% ink).
+- **Secondary text is `--text-meta`, not `--text-dim`.** Ages, counts and tag
+  words in a row are 10.5–11.5px and answer to 4.5:1; `--text-dim` misses that
+  on solar, sepia, nord and bloom. `--text-dim` stays for what it was tuned for.
 - **Controls and glyphs use the predefined size scale — never a bespoke box.**
   `--control-h` (30px), `--control-h-sm` (26px) and `--chip-h` (20px) in
-  `tokens.css` are the only heights a button, icon button or key chip may take,
+  `tokens.css` are the only heights a button, icon button or key chip may take
+  (plus `--tile-h` for a `.tile` and `--rail-item` for a sidebar rail item),
   and `ui.css` already ships `.btn`, `.btn-sm`, `.btn-icon` and `.ql-kbd` for
   them. Never let a control's height fall out of padding + font-size: that is how
   the Esc chip drifted to 19px beside a 26px button, and it silently re-breaks on

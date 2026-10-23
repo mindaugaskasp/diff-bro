@@ -1,32 +1,29 @@
 /* Saved-diff row presentation (SavedDiffRow.vue). Two lines led by a type
    monogram; imported rows (.external) add a sender + trust mark on line two. */
 .diff {
+  position: relative;
+  min-height: var(--row-h-2);
+  margin: 0 var(--space-2);
   display: flex;
   align-items: stretch;
-}
-.diff.favorite {
-  background: color-mix(in srgb, var(--favorite) 12%, transparent);
-  box-shadow: inset 3px 0 0 var(--pin-ink);
+  border-radius: var(--radius-lg);
 }
 /* Whole-row hover highlight — a distinct background so pointing at a row reads
    at a glance, not just a faint text-colour shift. Favorited rows deepen their
    own gold instead of going grey. */
 .diff:hover {
-  background: var(--bg-hover);
-}
-.diff.favorite:hover {
-  background: color-mix(in srgb, var(--favorite) 22%, transparent);
+  background: var(--row-hover);
 }
 .stack {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-3);
   text-align: left;
   background: none;
   border: none;
-  padding: 5px 4px 5px 6px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
   cursor: pointer;
 }
 .stack .monogram {
@@ -76,22 +73,30 @@
   opacity: 0.4;
 }
 .untagged {
-  color: var(--text-dim);
-  opacity: 0.7;
+  color: var(--text-meta);
 }
 .star {
+  order: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
+  min-width: var(--chip-h);
   background: none;
   border: none;
-  color: var(--text-dim);
-  padding: 0 4px 0 8px;
+  color: var(--text-meta);
+  padding: 0 var(--space-1);
   cursor: pointer;
-  font-size: var(--font-lg);
+  font-size: var(--font-md);
   line-height: 1;
 }
+.star:not(.on) {
+  display: none;
+}
+.diff:hover .star,
+.star:focus-visible {
+  display: flex;
+}
+
 .star:hover {
   color: var(--pin-ink);
 }
@@ -99,14 +104,17 @@
   color: var(--pin-ink);
 }
 .row-btn {
-  display: flex;
-  align-items: center;
+  width: var(--chip-h);
+  height: var(--chip-h);
+  display: grid;
+  place-items: center;
+  padding: 0;
   background: none;
   border: none;
-  color: var(--text-dim);
-  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-meta);
   cursor: pointer;
-  font-size: var(--font-lg);
+  font-size: var(--font-md);
 }
 .row-btn:hover {
   color: var(--accent-ink);
@@ -114,12 +122,16 @@
 .row-btn.delete:hover {
   color: var(--danger-bg);
 }
-/* Swap the lifetime chip for the actions on hover, so the resting row gives its
-   width to the diff name — the same trade the snippet rows make. */
+/* Overlaid, not reflowed: the name keeps its width and stays the click target. */
 .diffacts {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--chip-h) + 2 * var(--space-1));
   display: none;
   align-items: center;
-  flex-shrink: 0;
+  padding: 0 var(--space-1) 0 var(--space-2);
+  background: var(--row-hover);
 }
 .diff:hover .diffacts {
   display: inline-flex;

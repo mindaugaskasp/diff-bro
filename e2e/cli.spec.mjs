@@ -1,4 +1,11 @@
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  showPanel
+} from './fixtures.mjs'
 import { spawn } from 'node:child_process'
 import { workerEnv } from './workerEnv.mjs'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -295,6 +302,7 @@ test('`diffbro create snippet -i` saves a piped body under the flags it was give
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
+    await showPanel(page, 'snippets')
     const before = await page.locator('.snippets-section .row').count()
 
     const out = await runCliAnswering(

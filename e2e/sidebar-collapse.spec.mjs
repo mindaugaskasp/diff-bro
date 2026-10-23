@@ -24,22 +24,22 @@ test('collapsing gives the width back to the comparison', async ({ page }) => {
 
 // The reason the rail was chosen over hiding it outright: every entry point is
 // still on screen.
-test('the rail keeps every section reachable, with its count', async ({ page }) => {
+test('the rail keeps every panel reachable, with its count', async ({ page }) => {
   await collapse(page).click()
   await expect(rail(page)).toBeVisible()
-  for (const name of [/^Saved diffs/, /^External diffs/, /^Snippets/, 'Tools']) {
+  for (const name of [/^Home/, /^Diffs/, /^Snippets/, /^Tools/]) {
     await expect(rail(page).getByRole('button', { name })).toBeVisible()
   }
 })
 
-test('a rail section opens the sidebar on that section', async ({ page }) => {
+test('a rail item opens the sidebar on that panel', async ({ page }) => {
   await collapse(page).click()
   await rail(page)
     .getByRole('button', { name: /^Snippets/ })
     .click()
 
   await expect.poll(() => widthOf(page)).toBeGreaterThan(200)
-  await expect(page.getByPlaceholder('Search diffs & snippets…')).toBeVisible()
+  await expect(page.getByPlaceholder('Search snippets')).toBeVisible()
 })
 
 // Expanding must not mean picking a section you did not want, so the way back
@@ -50,7 +50,7 @@ test('the rail has its own expand button', async ({ page }) => {
   await expect(expand).toBeVisible()
   await expand.click()
   await expect.poll(() => widthOf(page)).toBeGreaterThan(200)
-  await expect(page.getByPlaceholder('Search diffs & snippets…')).toBeVisible()
+  await expect(page.getByPlaceholder('Search everything')).toBeVisible()
 })
 
 // Reported twice from a build where the rail's toggle sat at the foot: it reads
@@ -63,7 +63,7 @@ test('the toggle keeps its position when the sidebar collapses', async ({ page }
       return r ? r.top + r.height / 2 : null
     }, sel)
 
-  const expanded = await centreOf('aside.saved .usb-top .sidebar-toggle')
+  const expanded = await centreOf('aside.saved .rail-band .sidebar-toggle')
   expect(expanded).not.toBeNull()
 
   await collapse(page).click()
@@ -81,22 +81,15 @@ test('the toggle keeps its position when the sidebar collapses', async ({ page }
   expect(collapsed).toBe(expanded)
 })
 
-// The row is one control strip: a borderless glyph jammed against a bordered
-// field read as dropped in rather than placed.
-test('the collapse control matches the search box it sits beside', async ({ page }) => {
-  const row = await page.evaluate(() => {
-    const box = document.querySelector('.field-search').getBoundingClientRect()
-    const btn = document.querySelector('.sidebar-toggle').getBoundingClientRect()
-    return { gap: btn.left - box.right, boxH: box.height, btnH: btn.height }
+test('the collapse toggle sits level with the search box', async ({ page }) => {
+  const centres = await page.evaluate(() => {
+    const mid = (s) => {
+      const r = document.querySelector(s).getBoundingClientRect()
+      return r.top + r.height / 2
+    }
+    return { box: mid('.field-search'), toggle: mid('.rail-band .sidebar-toggle') }
   })
-  expect(row.gap).toBeGreaterThanOrEqual(5)
-  expect(Math.abs(row.boxH - row.btnH)).toBeLessThanOrEqual(2)
-})
-
-test('the search icon opens the sidebar with the box focused', async ({ page }) => {
-  await collapse(page).click()
-  await rail(page).getByRole('button', { name: 'Search diffs and snippets' }).click()
-  await expect(page.getByPlaceholder('Search diffs & snippets…')).toBeFocused()
+  expect(Math.abs(centres.box - centres.toggle)).toBeLessThanOrEqual(1)
 })
 
 // The rail is built from the shared size scale, never a bespoke box: its top
@@ -110,14 +103,20 @@ test('the rail is built from the size scale, not a bespoke box', async ({ page }
     const root = getComputedStyle(document.documentElement)
     const px = (name) => parseFloat(root.getPropertyValue(name))
     const band = document.querySelector('aside.saved .rail-band').getBoundingClientRect().height
-    const btn = document.querySelector('aside.saved .rail-btn').getBoundingClientRect()
-    return { band, bandToken: px('--band-row'), btn: btn.height, btnToken: px('--control-h') }
+    const item = document.querySelector('aside.saved .rail-item').getBoundingClientRect()
+    return {
+      band,
+      bandToken: px('--band-row'),
+      btnToken: px('--control-h'),
+      item: item.height,
+      itemToken: px('--rail-item')
+    }
   })
   // The band is the shared row PLUS the tab strip above the comparison column,
   // which is what puts its rule on the same line as the file slots' — see the
   // alignment test below. Still composed from tokens, never a bespoke number.
   expect(scale.band).toBeCloseTo(scale.bandToken + scale.btnToken + 1, 0)
-  expect(scale.btn).toBeCloseTo(scale.btnToken, 0)
+  expect(scale.item).toBeCloseTo(scale.itemToken, 0)
 })
 
 // "The side looks detached": the rail's first rule sat 31px above the line under
@@ -186,86 +185,6 @@ test('the collapsed sidebar survives a relaunch', async () => {
   }
 })
 
-// Collapsing used to cost you the tools: the rail's only tools control expands
-// the sidebar again. A tool now opens where it stands.
-test('the rail runs a tool without expanding the sidebar', async ({ page }) => {
-  await collapse(page).click()
-  await expect(rail(page)).toBeVisible()
-
-  // Every tool is here, under the rule that groups the tools corner — the rail
-  // no longer waits for a recents list before it has anything to show.
-  await expect(rail(page).locator('.rail-rule')).toBeVisible()
-  await expect(rail(page).locator('.rail-recent .rail-btn').first()).toBeVisible()
-
-  await rail(page).getByRole('button', { name: 'Generate UUID' }).click()
-  await expect(page.getByRole('dialog', { name: 'UUID' })).toBeVisible()
-  // ...and the sidebar is still collapsed, which is the whole point.
-  await expect(rail(page)).toBeVisible()
-  await expect(page.locator('.usb-top')).toHaveCount(0)
-})
-
-// The rail and the expanded section order by the same rule, so collapsing the
-// sidebar never rearranges the list. Before pins they disagreed: the rail showed
-// nine by recency, the shelf three, and using a tool reordered both.
-test('the rail leads with pinned tools, in the section order', async ({ page }) => {
-  const section = page.locator('.sidebar-section').filter({ hasText: 'Tools' })
-  await section.locator('.disclosure .entry').click() // Regex is past the resting six
-  await section.locator('.row').filter({ hasText: 'Regex' }).locator('.star').click()
-
-  await collapse(page).click()
-  await expect(rail(page)).toBeVisible()
-  const first = rail(page).locator('.rail-recent .rail-btn').first()
-  await expect(first).toHaveAttribute('aria-label', 'Test Regex')
-  await expect(first).toHaveClass(/pinned/)
-})
-
-// Asked for explicitly: the tools take the leftover column. A fixed count either
-// wastes a tall window or is clipped on a short one, so the rail measures.
-test('the rail fits its tools to the window, and re-fits when it changes', async ({
-  app,
-  page
-}) => {
-  await collapse(page).click()
-  await expect(rail(page)).toBeVisible()
-
-  const shown = () => rail(page).locator('.rail-recent .rail-btn').count()
-  const setHeight = (h) =>
-    app.evaluate(({ BrowserWindow }, height) => {
-      const [w] = BrowserWindow.getAllWindows()
-      const [width] = w.getContentSize()
-      w.setContentSize(width, height)
-    }, h)
-
-  await setHeight(900)
-  // Measured, not a magic number: the point is that the count FOLLOWS the
-  // window, and pinning a literal here just re-breaks on the next tool added.
-  const tall = await shown()
-  expect(tall).toBeGreaterThan(0)
-
-  await setHeight(420)
-  // Fewer, and never a clipped one: what is drawn still ends inside the box.
-  await expect.poll(shown).toBeLessThan(tall)
-  const fits = await page.evaluate(() => {
-    const box = document.querySelector('.rail-recent').getBoundingClientRect()
-    const last = [...document.querySelectorAll('.rail-recent .rail-btn')].at(-1)
-    return !last || last.getBoundingClientRect().bottom <= box.bottom + 1
-  })
-  expect(fits).toBe(true)
-
-  await setHeight(900)
-  await expect.poll(shown).toBe(tall) // ...and back
-})
-
-// The wrench used to expand the sidebar, which is the one thing a collapsed
-// rail's tools control must not do.
-test('the rail wrench opens the tools palette, sidebar still collapsed', async ({ page }) => {
-  await collapse(page).click()
-  await rail(page).getByRole('button', { name: 'Tools' }).click()
-  await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()
-  await expect(rail(page)).toBeVisible()
-  await expect(page.locator('.usb-top')).toHaveCount(0)
-})
-
 // Widen only, and it survives a relaunch. The sidebar collapses to a rail for
 // the other direction; a half-narrow list truncates every name without freeing
 // space worth having.
@@ -304,7 +223,9 @@ test('the sidebar drags wider, stops at the cap, and comes back that way', async
     expect(await drag(page, -400)).toBe(start)
     // And past the cap the pointer keeps going while the sidebar does not.
     const capped = await drag(page, 900)
-    expect(capped).toBe(Math.round(start * 1.5))
+    // The cap is the panel's; the rail beside it does not stretch.
+    const railW = (await page.locator('.rail').boundingBox()).width
+    expect(Math.round(capped - railW)).toBe(Math.round((start - railW) * 1.5))
     await first.close()
 
     const second = await launchApp(dir)

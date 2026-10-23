@@ -85,21 +85,6 @@
     "ratio": 4.36
   },
   {
-    "theme": "meridian",
-    "where": "SidebarRail.css .rail-count",
-    "ratio": 3.88
-  },
-  {
-    "theme": "sepia",
-    "where": "SidebarRail.css .rail-count",
-    "ratio": 4.35
-  },
-  {
-    "theme": "solar",
-    "where": "SidebarRail.css .rail-count",
-    "ratio": 3.52
-  },
-  {
     "theme": "sepia",
     "where": "SnippetEditorDialog.css .view-toggle button",
     "ratio": 3.93

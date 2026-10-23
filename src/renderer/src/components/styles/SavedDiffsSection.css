@@ -5,9 +5,6 @@ ul {
 }
 /* Indent the section's contents past the header's chevron, so rows read as
    children nested under the title rather than sitting on its vertical line. */
-.section-body {
-  padding-left: var(--space-4);
-}
 .empty {
   display: flex;
   align-items: center;

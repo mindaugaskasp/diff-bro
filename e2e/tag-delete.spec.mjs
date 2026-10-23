@@ -1,4 +1,8 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, pickTag } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // Deleting a tag reaches two stores at once: snippets and saved diffs share one
 // tag registry. Whether the records go with it is a choice made in the confirm,
@@ -20,7 +24,7 @@ async function saveTaggedDiff(page, name, tag) {
 }
 
 async function saveTaggedSnippet(page, name, tag) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
@@ -35,7 +39,8 @@ async function saveTaggedSnippet(page, name, tag) {
 const openTagManager = async (page, tag) => {
   // The sidebar's own tag bar — .tag-chip is also the class on the editor's
   // tag field, and only these chips open the manager.
-  const chip = page.locator('.usb-tag', { hasText: tag }).first()
+  await pickTag(page, tag)
+  const chip = page.locator('.usb-shelf .usb-tag', { hasText: tag }).first()
   await chip.click({ button: 'right' })
   await expect(page.locator('.manage')).toBeVisible()
 }
@@ -53,7 +58,9 @@ test('deleting a tag keeps its records by default', async ({ page }) => {
   await expect(confirm).toContainText('1 snippet and 1 saved diff')
   await confirm.getByRole('button', { name: 'Delete', exact: true }).click()
 
+  await showPanel(page, 'diffs')
   await expect(page.locator('li.diff', { hasText: 'E2E keep me' })).toBeVisible()
+  await showPanel(page, 'snippets')
   await expect(page.locator('.snippets-section .row', { hasText: 'E2E keep note' })).toBeVisible()
   await expect(page.locator('.usb-tag', { hasText: 'doomed' })).toHaveCount(0)
 })

@@ -106,6 +106,7 @@
    Scoped to [data-theme='light'] (not the bare :root that carries the palette)
    so the inversion never leaks onto the dark themes, which don't redefine it. */
 :root[data-theme='light'] {
+  --bg-card: var(--bg);
   --bg-canvas: var(--bg-panel);
   --bg-raised: var(--bg);
   /* Neutral black, matching an achromatic ground — a tinted drop would put a
@@ -144,6 +145,7 @@
 
 /* Solar — warm, high-key light; vivid orange accent, amber favourites. */
 :root[data-theme='solar'] {
+  --bg-card: var(--bg);
   --bg: #fffdf6;
   --bg-panel: #fbf2dd;
   --bg-hover: #f3e6c4;
@@ -236,6 +238,7 @@
    walnut ink on aged tan, burnt-sienna accent, moss-green additions. A vintage
    low-glare pick for long reading. */
 :root[data-theme='sepia'] {
+  --bg-card: var(--bg);
   --bg: #e9dcbe;
   --bg-panel: #dfcea6;
   --bg-hover: #d3bf90;
@@ -297,6 +300,7 @@
    WCAG-AAA. Pure-black ground, pure-white ink, saturated accent, bright hard
    borders. */
 :root[data-theme='beacon'] {
+  --line: var(--border);
   --tag-l: 0.8;
   --bg: #000000;
   --bg-panel: #0b0b0b;
@@ -328,6 +332,7 @@
    soft blue-grey off-white instead of pure white, teal ink, muted cyan accent.
    Calmer than the crisp Light for hours of reading. */
 :root[data-theme='meridian'] {
+  --bg-card: var(--bg);
   --bg: #f5f7f4;
   --bg-panel: #eef2ee;
   --bg-hover: #e2e8e2;
@@ -359,6 +364,7 @@
    parchment: a restrained warm ivory with near-black ink and a cool slate-blue
    accent, for an e-ink / print reading feel. */
 :root[data-theme='linen'] {
+  --bg-card: var(--bg);
   --bg: #faf7f0;
   --bg-panel: #efe9dc;
   --bg-hover: #e6dfce;
@@ -389,6 +395,7 @@
 /* Bloom — the only rose/plum accent in the set, kept low-saturation and
    high-clarity so it stays a serious reading light, not a novelty theme. */
 :root[data-theme='bloom'] {
+  --bg-card: var(--bg);
   --bg: #f9f4f5;
   --bg-panel: #efe4e7;
   --bg-hover: #e7d8dd;
@@ -482,6 +489,8 @@
 /* Contrast — maximum legibility: black on white, saturated accent, heavy
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {
+  --line: var(--border);
+  --bg-card: var(--bg);
   /* --warning-border scores 2.74:1 on this card, under the 3:1 non-text floor.
      Darkened to clear it without moving the hue. */
   --dg-chg: #8a6d00;
@@ -518,6 +527,7 @@
    lives in the accent, the keyline and the faint cast on the panel; the INK
    stays pure white, because that is where the contrast comes from. */
 :root[data-theme='volcano'] {
+  --line: var(--border);
   --tag-l: 0.8;
   --bg: #000000;
   --bg-panel: #0e0705;
@@ -671,6 +681,7 @@
 /* Vector — colour-vision-deficiency safe: blue vs orange carry add/remove
    rather than green vs red, on a neutral light ground. */
 :root[data-theme='vector'] {
+  --bg-card: var(--bg);
   --bg: #ffffff;
   --bg-panel: #eef1f4;
   --bg-hover: #e0e5ea;
@@ -698,4 +709,3 @@
   --syn-comment: #5a6068;
   color-scheme: light;
 }
-

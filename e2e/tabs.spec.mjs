@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel, pickTag } from './fixtures.mjs'
 import { MAX_TABS } from '../src/renderer/src/utils/tabs.js'
 
 // Tabs are a claim about Monaco: each holds its own comparison, and only the
@@ -314,6 +314,7 @@ test('closing back to one tab does not leave the old name behind', async ({ page
 
 // The sidebar offers the same new-comparison action, and says why when it cannot.
 test('the Saved diffs + opens a new paste comparison, and stops at the cap', async ({ page }) => {
+  await showPanel(page, 'diffs')
   // Scoped to the header: the empty state carries a button for the same action,
   // so an unscoped name matches both.
   const add = page
@@ -352,19 +353,19 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
   await save('Both tags', ['alpha', 'beta'])
   await save('Only alpha', ['alpha'])
 
-  const chip = (t) => page.locator('.usb-tag', { hasText: t })
-  await chip('beta').click()
+  const chip = (t) => page.locator('.usb-shelf .usb-tag', { hasText: t })
+  await pickTag(page, 'beta')
   await expect(page.locator('li.diff')).toHaveCount(1)
   await expect(page.locator('li.diff', { hasText: 'Both tags' })).toBeVisible()
 
   // Adding a tag WIDENS: the alpha-only diff joins rather than being hidden for
   // lacking beta.
-  await chip('alpha').click()
+  await pickTag(page, 'alpha')
   await expect(chip('alpha')).toHaveClass(/on/)
   await expect(chip('beta')).toHaveClass(/on/)
   await expect(page.locator('li.diff')).toHaveCount(2)
 
-  await chip('alpha').click()
+  await pickTag(page, 'alpha')
   await expect(page.locator('li.diff')).toHaveCount(1)
 })
 

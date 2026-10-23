@@ -30,6 +30,17 @@ export const clampBackupHours = (h) => {
 
 export const SECTIONS = ['saved', 'external', 'snippets', 'tools']
 
+export const SIDEBAR_PANELS = ['home', 'diffs', 'snippets', 'tools']
+const PANEL_OF_SECTION = { saved: 'diffs', snippets: 'snippets', tools: 'tools' }
+
+export const sanitizeSidebarPanel = (id) => (SIDEBAR_PANELS.includes(id) ? id : 'home')
+
+// Received diffs live inside the Diffs panel, so the stored section order maps
+// onto the rail with Home pinned first and `external` carrying no position.
+export function railOrderOf(sectionOrder) {
+  return ['home', ...sectionOrder.map((id) => PANEL_OF_SECTION[id]).filter(Boolean)]
+}
+
 // Per-type soft "load anyway?" thresholds (`cap` is the enforced ceiling + slider
 // max). Mirrored in src/main/files.js — keep in sync.
 export const FILE_TYPE_LIMITS = {
@@ -183,6 +194,7 @@ export function settingsStateFrom(parsed, outside) {
     // The sidebar collapsed to its rail. Off by default: the library is how a
     // comparison is usually reached.
     sidebarCollapsed: parsed.sidebarCollapsed === true,
+    sidebarPanel: sanitizeSidebarPanel(parsed.sidebarPanel),
     autoBackupHours: clampBackupHours(parsed.autoBackupHours),
     examplesSeeded: parsed.examplesSeeded === true,
     // Most-recent-first tool ids; unknown ids are dropped when rendered.

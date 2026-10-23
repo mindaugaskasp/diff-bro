@@ -19,6 +19,7 @@ import AppIcon from './AppIcon.vue'
 const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
+  panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] },
@@ -94,6 +95,7 @@ function newSnippet() {
       :open="sectionOpen"
       :first="first"
       :unified="unified"
+      :panel="panel"
       :count="rows.length"
       :filtering="filtering"
       @toggle="sectionOpen = !sectionOpen"
@@ -127,7 +129,7 @@ function newSnippet() {
       </template>
     </SectionHeader>
 
-    <div v-show="sectionOpen" class="section-body">
+    <div v-show="sectionOpen || panel" class="section-body">
       <div v-if="!store.entries.length" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}</p>
         <button class="btn btn-primary btn-sm" @click.stop="newSnippet">

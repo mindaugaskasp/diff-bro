@@ -1053,16 +1053,6 @@ button.tag-chip:hover .usb-tct {
   transition: opacity 120ms ease-out;
 }
 
-/* The section body indents its rows under the header's chevron. The row's own
-   wash — hover, favourite, the just-created tint — has to reach the sidebar
-   edge anyway, or it reads as a stripe with a bite out of its left side. The
-   row takes the indent back as padding, so its CONTENT does not move. */
-.section-body > .rows > .row,
-.section-body > .rows > .diff {
-  margin-left: calc(-1 * var(--space-4));
-  padding-left: var(--space-4);
-}
-
 /* The row a reorder just moved. Deliberately NOT `.is-new`: that one announces
    a row that did not exist a moment ago, with a badge and a rail. This says
    "here it is now" and nothing more — the same wash, no badge, no rail, so the
@@ -1129,4 +1119,141 @@ button.tag-chip:hover .usb-tct {
 }
 .merge-region-done {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--dg-add) 60%, transparent);
+}
+
+/* A tile has no .btn keyline: its affordance is the well, the card and the lift. */
+.glyph-well {
+  --well: var(--btn-face);
+  --glyph: var(--text);
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background: var(--well);
+  color: var(--glyph);
+  font-family: var(--font-mono);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+}
+.monogram.glyph-well {
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border-bottom: 0;
+  border-radius: var(--radius-lg);
+  background: var(--well);
+  color: var(--glyph);
+}
+.glyph-well > .app-icon {
+  font-size: var(--font-lg);
+}
+.glyph-well[data-hue='diff'] {
+  --hue: var(--hue-diff);
+  --well: var(--well-diff);
+  --glyph: var(--glyph-diff);
+}
+.glyph-well[data-hue='snippet'] {
+  --hue: var(--hue-snippet);
+  --well: var(--well-snippet);
+  --glyph: var(--glyph-snippet);
+}
+.glyph-well[data-hue='received'] {
+  --hue: var(--hue-received);
+  --well: var(--well-received);
+  --glyph: var(--glyph-received);
+}
+.glyph-well[data-hue='encode'] {
+  --hue: var(--hue-encode);
+  --well: var(--well-encode);
+  --glyph: var(--glyph-encode);
+}
+.glyph-well[data-hue='format'] {
+  --hue: var(--hue-format);
+  --well: var(--well-format);
+  --glyph: var(--glyph-format);
+}
+.glyph-well[data-hue='generate'] {
+  --hue: var(--hue-generate);
+  --well: var(--well-generate);
+  --glyph: var(--glyph-generate);
+}
+.glyph-well[data-hue='inspect'] {
+  --hue: var(--hue-inspect);
+  --well: var(--well-inspect);
+  --glyph: var(--glyph-inspect);
+}
+.glyph-well[data-hue='secure'] {
+  --hue: var(--hue-secure);
+  --well: var(--well-secure);
+  --glyph: var(--glyph-secure);
+}
+.tile {
+  height: var(--tile-h);
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-1);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow 0.12s,
+    transform 0.12s;
+}
+.tile:hover {
+  box-shadow: var(--shadow-2);
+}
+.tile:active {
+  box-shadow: var(--shadow-1);
+  transform: translateY(1px);
+}
+.tile:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.row-2 {
+  min-height: var(--row-h-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+.row-2-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.row-2-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.row-2-meta {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--font-xs);
+  color: var(--text-meta);
+}
+.count-pill {
+  height: var(--chip-h);
+  min-width: var(--chip-h);
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--btn-face);
+  color: var(--text-meta);
+  font-size: var(--font-xs);
+  font-variant-numeric: tabular-nums;
 }

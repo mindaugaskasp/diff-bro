@@ -2,7 +2,15 @@
 // tags are a concern of their own and the store they live in is at its cap.
 // `deleteTag` stays behind: it sweeps the vault too, and importing vaultStore
 // from here would close a new cycle through snippetStore.
-import { MAX_TAGS, TAG_PALETTE, cleanTag, nextRank } from '../utils/snippetState'
+import { MAX_TAGS, TAG_PALETTE, cleanTag, dropTag, nextRank } from '../utils/snippetState'
+import { useUiStore } from './uiStore'
+
+// Also from the sidebar filter, which would otherwise hide rows behind a tag with no chip left.
+export function forgetTag(name, ...entryLists) {
+  for (const entries of entryLists) dropTag(entries, name)
+  const ui = useUiStore()
+  ui.sidebarTags = ui.sidebarTags.filter((tag) => tag !== name)
+}
 
 export const tagActions = {
   touchTag(name) {

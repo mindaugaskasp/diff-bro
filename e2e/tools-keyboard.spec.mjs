@@ -1,4 +1,8 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'tools')
+})
 
 // The whole tool routine, keyboard only — the way it is actually used. These
 // cover the seams a click-driven test walks straight past: what has focus when a

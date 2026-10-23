@@ -43,8 +43,11 @@ const travelled = (e) => Math.hypot(e.clientX - pressAt.x, e.clientY - pressAt.y
 
 // A header carries its own controls (New snippet, the star, the disclosure). A
 // press that starts on one of those is aimed at the control, not at the handle.
-const isOwnControl = (target) =>
-  !!target?.closest?.('button, input, select, textarea, a, [role="button"]')
+// A rail button IS the handle, so it opts in with data-reorder-handle.
+function isOwnControl(target) {
+  const control = target?.closest?.('button, input, select, textarea, a, [role="button"]')
+  return !!control && !control.hasAttribute('data-reorder-handle')
+}
 
 function endGesture() {
   dragId.value = null

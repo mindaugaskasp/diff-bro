@@ -8,7 +8,9 @@ import {
   clickAppMenuItem,
   firstReadyPage,
   launchApp,
-  freshUserDataDir
+  freshUserDataDir,
+  showPanel,
+  pickTag
 } from './fixtures.mjs'
 import { rmSync } from 'node:fs'
 
@@ -277,7 +279,8 @@ test('the snippet step opens a draft whose Save is live', async ({ page }) => {
 // about a snippet that was not on screen.
 test('the last step rings the Mermaid snippet, even behind a tag filter', async ({ app, page }) => {
   await callout(page).getByRole('button', { name: 'Skip tips' }).click()
-  await page.locator('.usb-tag', { hasText: 'prompt' }).click()
+  await showPanel(page, 'snippets')
+  await pickTag(page, 'prompt')
   await expect(page.locator('[data-tour="snippet-diagram"]')).toHaveCount(0)
 
   await clickAppMenuItem(app, 'Show Tour')
@@ -345,11 +348,12 @@ test('a replay swaps the demo pair rather than keeping the first one', async ({ 
 // tidy up after something they were only shown.
 test('the demo comparison and the demo snippet leave with the tour', async ({ page }) => {
   const rows = page.locator('[data-tour="snippets"] .rows li, [data-tour="snippets"] .rows > *')
-  const seeded = await rows.count()
 
   await finishRun(page)
   await page.getByRole('button', { name: 'Show me' }).click()
   await advance(page)
+  // The tour opened Snippets for this step, so the library is on screen.
+  const seeded = await rows.count()
   // The ringed Save is the live one, and pressing it is the only way the
   // example is kept — so this is also the path cleanup has to catch.
   await page.locator('[data-tour="snippet-save"]').click()
@@ -357,6 +361,7 @@ test('the demo comparison and the demo snippet leave with the tour', async ({ pa
 
   await finishRun(page)
   await expect(page.locator('.tour-callout')).toBeHidden()
+  await showPanel(page, 'snippets')
   await expect(rows).toHaveCount(seeded)
   await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
 })

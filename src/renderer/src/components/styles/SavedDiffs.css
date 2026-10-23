@@ -1,6 +1,5 @@
 .saved {
-  position: relative; /* the resize grip pins to its right edge */
-  width: 256px;
+  width: calc(var(--rail-w) + 256px);
   /* Animated so the comparison widening does not read as a jump cut. Monaco
      carries automaticLayout, so the editor follows the width on its own. */
   transition: width 160ms ease;
@@ -12,13 +11,19 @@
      directional drop makes the chrome read as raised on every theme. */
   box-shadow: 3px 0 12px -6px rgb(var(--shadow-rgb) / 0.22);
   display: flex;
-  flex-direction: column;
   overflow: hidden; /* the body scrolls, not the whole aside */
+}
+.usb-panel {
+  position: relative; /* the resize grip pins to its right edge */
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 /* Collapsed to the rail. The width is the only thing that changes — the border,
    the lift and the surface role are the sidebar's either way. */
 .saved.collapsed {
-  width: 48px;
+  width: var(--rail-w);
 }
 /* The 160ms ease is for the collapse toggle, where the width jumps 200px at
    once. Under a drag it lags the pointer, so the grip turns it off. */
@@ -49,7 +54,6 @@
 
 /* Fixed control strip: search + the segmented group filter. */
 .usb-controls {
-  position: relative; /* the shelf grip pins to its bottom edge */
   flex: none;
   flex-direction: column;
   align-items: stretch;
@@ -61,11 +65,6 @@
   padding: 0 var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
-  /* The sections keep this much of the column whatever the shelf is dragged to,
-     and whatever the window is resized to afterwards. Squeezed out they take
-     the grip off the bottom edge with them, and a shelf with no reachable grip
-     cannot be made small again. Past the cap the chips scroll instead. */
-  max-height: calc(100% - 150px);
 }
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
@@ -99,50 +98,16 @@
   color: var(--pin-ink);
   border-color: color-mix(in srgb, var(--favorite) 40%, var(--border));
 }
-/* The one part of the strip that gives way when the shelf is deeper than the
-   column can hold: the chips scroll rather than pushing the sections out. */
-.usb-tags {
-  min-height: 0;
-  overflow-y: auto;
-  margin-top: var(--space-1);
-  margin-bottom: var(--space-1);
-}
 
-/* The dragged depth, in pixels, applied as a max-height (SavedDiffs.vue) — so a
-   shelf with little in it still hugs its chips. Clipped rather than scrolled:
-   useTagShelf measures what fits and hands the rest to the "+N more" picker, so
-   nothing is ever hidden behind an edge. The seam above stays OUT of this box,
-   which is what makes the stored number exactly the chip rows. */
+/* One line of chips; useTagShelf measures what fits and the rest go to "+N". */
 .usb-shelf {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  max-height: var(--chip-h);
   overflow: hidden;
 }
 
-/* A dim separator LINE between the section filters and the tags — a rule of its
-   own with equal air either side, not a border welded to the chip row. Inset at
-   both ends so it reads as a hairline between two groups rather than a divider
-   cutting the panel in half; content-box clipping insets the visible line
-   without narrowing the row the chips wrap in.
-
-   Tinted from --text, not --border: several themes set a border barely distinct
-   from the panel it sits on (the depth guard's floor for it is deliberately
-   low), so a border-derived hairline vanished on exactly the light grounds this
-   was meant to help. --text is the one token guaranteed to read against the
-   panel everywhere, and 15% of it is a whisper rather than a rule. */
-.usb-tags::before {
-  content: '';
-  display: block;
-  box-sizing: border-box;
-  height: 1px;
-  /* The chip box below carries no gap above its first row, so the air under the
-     line is the whole distance — the flex row-gap used to add to this. */
-  margin-block: var(--space-3) calc(var(--space-3) + 4px);
-  padding-inline: var(--space-4);
-  background: color-mix(in srgb, var(--text) 15%, transparent);
-  background-clip: content-box;
-}
 .usb-tag {
   cursor: pointer;
   padding: 2px 8px;
@@ -160,37 +125,6 @@
   min-height: 0;
   overflow-y: auto;
   padding-bottom: var(--space-4);
-}
-
-/* Drag-to-deepen: the width grip's horizontal twin, straddling the strip's own
-   border. Unmarked at rest; the depth's only affordance, persisted as
-   tagShelfRows. Full-bleed so the seam is the target, not a sliver of it.
-
-   OUT of the flow, which is the whole trick: in it, the handle can either hang
-   off the chips or sit on the border, and each attempt at one broke the other —
-   held to the chips it lights up in mid-air well above the divider, and welded
-   to the border it glues the last chip row to the edge. Pinned here it is the
-   divider, and the strip's bottom padding is free to be the air above it. */
-.usb-shelf-grip {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -3px; /* centres the 5px band on the 1px border */
-  height: 5px;
-  cursor: row-resize;
-  user-select: none;
-  touch-action: none;
-}
-.usb-shelf-grip:hover,
-.usb-shelf-grip:focus-visible,
-.usb-shelf-grip.resizing {
-  background: color-mix(in srgb, var(--accent) 45%, transparent);
-}
-/* Keyboard focus lights the seam itself rather than ringing a 5px band: ↑/↓
-   deepen it by a row, Home rests it, End opens it to every tag. An outline
-   offset outward here would trace the whole panel edge. */
-.usb-shelf-grip:focus-visible {
-  outline: none;
 }
 
 /* The overflow keeps the chip shape — it stands in for tags, so it belongs in

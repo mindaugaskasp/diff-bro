@@ -1,4 +1,4 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet } from './fixtures.mjs'
 
 // jsdom has no editing host, so only a launch proves a person typing into the
 // rendered view and the snippet actually changing.
@@ -8,8 +8,8 @@ const renderedView = (page) => page.locator('.rendered-editor')
 const plainButton = (page) => page.getByRole('button', { name: 'Plain', exact: true })
 const renderedButton = (page) => page.getByRole('button', { name: 'Rendered', exact: true })
 
-async function openNewSnippet(page, { name, language, body }) {
-  await newSnippetButton(page).click()
+async function startSnippet(page, { name, language, body }) {
+  await openNewSnippet(page)
   const editor = editorDialog(page)
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.lang-picker select').selectOption(language)
@@ -34,7 +34,7 @@ async function readSource(page) {
 }
 
 test('the rendered Markdown view takes a caret and writes back to the source', async ({ page }) => {
-  await openNewSnippet(page, { name: 'WYSIWYG MD', language: 'markdown', body: '# Title' })
+  await startSnippet(page, { name: 'WYSIWYG MD', language: 'markdown', body: '# Title' })
   await renderedButton(page).click()
 
   const heading = renderedView(page).locator('h1')
@@ -50,7 +50,7 @@ test('the rendered Markdown view takes a caret and writes back to the source', a
 })
 
 test('the rendered Jira view is editable too', async ({ page }) => {
-  await openNewSnippet(page, { name: 'WYSIWYG Jira', language: 'jira', body: 'h1. Heading' })
+  await startSnippet(page, { name: 'WYSIWYG Jira', language: 'jira', body: 'h1. Heading' })
   await renderedButton(page).click()
 
   const heading = renderedView(page).locator('h1')
@@ -63,7 +63,7 @@ test('the rendered Jira view is editable too', async ({ page }) => {
 })
 
 test('a task checkbox is tickable and writes [x] back', async ({ page }) => {
-  await openNewSnippet(page, {
+  await startSnippet(page, {
     name: 'WYSIWYG Tasks',
     language: 'markdown',
     body: '- [ ] ship it'
@@ -79,7 +79,7 @@ test('a task checkbox is tickable and writes [x] back', async ({ page }) => {
 })
 
 test('the format toolbar works in the rendered view', async ({ page }) => {
-  await openNewSnippet(page, { name: 'WYSIWYG Bold', language: 'markdown', body: 'make me bold' })
+  await startSnippet(page, { name: 'WYSIWYG Bold', language: 'markdown', body: 'make me bold' })
   await renderedButton(page).click()
 
   // Select "bold" inside the rendered paragraph, then press the toolbar button.
@@ -104,7 +104,7 @@ test('the format toolbar works in the rendered view', async ({ page }) => {
 })
 
 test('an edit in the rendered view survives a save and reopen', async ({ page }) => {
-  const editor = await openNewSnippet(page, {
+  const editor = await startSnippet(page, {
     name: 'WYSIWYG Persist',
     language: 'markdown',
     body: '# Kept'
@@ -123,7 +123,7 @@ test('an edit in the rendered view survives a save and reopen', async ({ page })
 })
 
 test('a secret snippet shows no plaintext in the rendered view while masked', async ({ page }) => {
-  const editor = await openNewSnippet(page, {
+  const editor = await startSnippet(page, {
     name: 'WYSIWYG Secret',
     language: 'markdown',
     body: '# classified'
@@ -142,7 +142,7 @@ test('a secret snippet shows no plaintext in the rendered view while masked', as
 
 // The view is a reader until Edit is pressed, exactly as Monaco is.
 test('the rendered view of a saved snippet is not editable until Edit', async ({ page }) => {
-  const editor = await openNewSnippet(page, {
+  const editor = await startSnippet(page, {
     name: 'WYSIWYG ReadOnly',
     language: 'markdown',
     body: '# Locked'

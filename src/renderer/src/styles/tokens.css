@@ -162,4 +162,39 @@
   --mg-open: color-mix(in srgb, var(--warning-border) 45%, var(--text));
   --mg-done: color-mix(in srgb, var(--success-text) 55%, var(--text));
   --mg-blocked: color-mix(in srgb, var(--danger-border) 35%, var(--text));
+
+  /* Glyph wells: colour lives in the well, legibility in the glyph. */
+  --text-meta: color-mix(in srgb, var(--text-dim) 50%, var(--text));
+  --line: color-mix(in srgb, var(--text) 12%, var(--bg-panel));
+  --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
+  --hue-diff: #c2410c;
+  --hue-snippet: #7c4dbe;
+  --hue-received: #2a74b8;
+  --hue-encode: #2a74b8;
+  --hue-format: #7c4dbe;
+  --hue-generate: #2f8a4c;
+  --hue-inspect: #b23a55;
+  --hue-secure: #a8740a;
+  --well-diff: color-mix(in srgb, var(--hue-diff) 16%, var(--bg-card));
+  --well-snippet: color-mix(in srgb, var(--hue-snippet) 16%, var(--bg-card));
+  --well-received: color-mix(in srgb, var(--hue-received) 16%, var(--bg-card));
+  --well-encode: color-mix(in srgb, var(--hue-encode) 16%, var(--bg-card));
+  --well-format: color-mix(in srgb, var(--hue-format) 16%, var(--bg-card));
+  --well-generate: color-mix(in srgb, var(--hue-generate) 16%, var(--bg-card));
+  --well-inspect: color-mix(in srgb, var(--hue-inspect) 16%, var(--bg-card));
+  --well-secure: color-mix(in srgb, var(--hue-secure) 16%, var(--bg-card));
+  --glyph-diff: color-mix(in srgb, var(--hue-diff) 30%, var(--text));
+  --glyph-snippet: color-mix(in srgb, var(--hue-snippet) 30%, var(--text));
+  --glyph-received: color-mix(in srgb, var(--hue-received) 30%, var(--text));
+  --glyph-encode: color-mix(in srgb, var(--hue-encode) 30%, var(--text));
+  --glyph-format: color-mix(in srgb, var(--hue-format) 30%, var(--text));
+  --glyph-generate: color-mix(in srgb, var(--hue-generate) 30%, var(--text));
+  --glyph-inspect: color-mix(in srgb, var(--hue-inspect) 30%, var(--text));
+  --glyph-secure: color-mix(in srgb, var(--hue-secure) 30%, var(--text));
+  --rail-w: 56px;
+  --rail-item: 52px;
+  --select-wash: color-mix(in srgb, var(--accent) 12%, var(--bg-panel));
+  --row-hover: color-mix(in srgb, var(--text) 8%, var(--bg-panel));
+  --tile-h: 44px;
+  --row-h-2: 42px;
 }

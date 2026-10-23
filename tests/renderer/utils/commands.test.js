@@ -72,7 +72,8 @@ const stores = () => ({
     closeSnippet: spy(),
     typeSearch: spy(),
     clearSearch: spy(),
-    clearFilters: spy()
+    clearFilters: spy(),
+    showSnippets: spy()
   }
 })
 

@@ -14,6 +14,8 @@ const props = defineProps({
   first: { type: Boolean, default: false },
   // Quiet group-label mode: no band fill.
   unified: { type: Boolean, default: false },
+  // The only section in a sidebar panel: a title, neither collapsible nor draggable.
+  panel: { type: Boolean, default: false },
   // How many rows survived the search/tag filter. Shown only while one is on:
   // a resting sidebar does not need every section counting itself, but a
   // filtered one has to say where the matches are — including the sections
@@ -35,8 +37,18 @@ const {
 const emit = defineEmits(['toggle'])
 // The click that ends a drag is the drag's own, not a request to collapse.
 const onClick = () => {
-  if (!consumeClickSuppression()) emit('toggle')
+  if (!props.panel && !consumeClickSuppression()) emit('toggle')
 }
+const dragHandlers = computed(() =>
+  props.panel
+    ? {}
+    : {
+        pointerdown: (e) => onPointerDown(props.sectionId, e),
+        pointermove: onPointerMove,
+        pointerup: onPointerUp,
+        pointercancel: onCancel
+      }
+)
 
 const dropTarget = computed(() => isDropTarget(props.sectionId))
 const dragging = computed(() => isDragging(props.sectionId))
@@ -45,8 +57,10 @@ const settling = computed(() => isSettling(props.sectionId))
 
 <template>
   <div
-    class="head section-head band band-row reorderable"
+    class="head section-head band band-row"
     :class="{
+      reorderable: !panel,
+      panel,
       first,
       unified,
       'drop-target': dropTarget,
@@ -54,18 +68,19 @@ const settling = computed(() => isSettling(props.sectionId))
       settling
     }"
     :data-section="sectionId"
-    :data-tip="$t('sectionHeader.dragToReorder')"
+    :data-tip="panel ? null : $t('sectionHeader.dragToReorder')"
     @click="onClick"
     @dragstart.prevent
-    @pointerdown="onPointerDown(sectionId, $event)"
-    @pointermove="onPointerMove"
-    @pointerup="onPointerUp"
-    @pointercancel="onCancel"
+    v-on="dragHandlers"
   >
-    <AppIcon class="chev" :class="{ open }" name="chevron-right" />
+    <AppIcon v-if="!panel" class="chev" :class="{ open }" name="chevron-right" />
     <span v-if="icon" class="section-icon"><AppIcon :name="icon" /></span>
     <span class="section-title">{{ title }}</span>
-    <span v-if="filtering && count !== null" class="section-count" :class="{ none: count === 0 }">
+    <span
+      v-if="(panel || filtering) && count !== null"
+      class="section-count"
+      :class="{ none: count === 0 }"
+    >
       {{ count }}
     </span>
     <span v-if="$slots.actions" class="actions-slot"><slot name="actions" /></span>

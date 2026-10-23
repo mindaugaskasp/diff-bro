@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
 
 // Each sidebar section shows an empty-state helper paragraph that must vanish the
 // moment the section holds a real record — the "Saved diffs" half of that guard
@@ -7,6 +7,7 @@ import { test, expect } from './fixtures.mjs'
 // this pins the observable behaviour so a future getter tweak can't leave stale
 // help text sitting above the user's own diffs.
 test('the Saved diffs helper text disappears after saving one diff', async ({ page }) => {
+  await showPanel(page, 'diffs')
   // "Empty" shows in several sections, so scope to the Saved diffs one.
   const saved = page.locator('.sidebar-section', { hasText: 'Saved diffs' })
   const emptyText = saved.locator('.empty')

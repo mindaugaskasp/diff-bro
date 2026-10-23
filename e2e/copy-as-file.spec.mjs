@@ -7,7 +7,7 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  newSnippetButton
+  openNewSnippet
 } from './fixtures.mjs'
 
 // Read the clipboard the way the Windows shell does — the predefined FileDropList
@@ -97,7 +97,7 @@ const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
 // Mirrors e2e/secret-snippet.spec.mjs — Monaco needs typed input, not fill().
 // Saving lands on the read-only VIEW, which is where the copy pair lives.
 async function addSnippet(page, { name, body, secret = false }) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()

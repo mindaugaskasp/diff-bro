@@ -1,4 +1,8 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // The seeded first-run snippet is a Mermaid diagram. Two real-launch behaviors
 // ride on it: the sidebar row opens the diagram in the resizable viewer, and the

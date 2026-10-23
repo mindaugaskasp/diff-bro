@@ -851,14 +851,19 @@
   "savedDiffs": {
     "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
     "dragToWidenTheSidebar": "Drag to widen the sidebar",
-    "dragToDeepenTheTag": "Drag to show more or fewer tag rows",
     "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
     "collapsedTagsSearchable": "Collapsed tags, searchable",
     "dropEveryTagFilter": "Drop every tag filter",
     "clear": "Clear",
     "plusMore": "+{n} more",
     "tagsSelected": "{n} tag selected | {n} tags selected",
-    "filterByTag": "Filter by {name} · right-click to manage"
+    "filterByTag": "Filter by {name} · right-click to manage",
+    "searchIn": {
+      "home": "Search everything",
+      "diffs": "Search diffs",
+      "snippets": "Search snippets",
+      "tools": "Find a tool"
+    }
   },
   "savedDiffsSection": {
     "savedDiffs": "Saved diffs",
@@ -922,13 +927,13 @@
   },
   "sidebarRail": {
     "expandTheSidebar": "Expand the sidebar",
-    "searchDiffsAndSnippets": "Search diffs and snippets",
     "tools": "Tools",
-    "searchDiffsSnippets": "Search diffs & snippets",
-    "searchEveryTool": "Search every tool"
+    "label": "Sidebar",
+    "home": "Home",
+    "diffs": "Diffs",
+    "snippets": "Snippets"
   },
   "sidebarSearch": {
-    "searchDiffsSnippets": "Search diffs & snippets…",
     "clearSearch": "Clear search",
     "collapseTheSidebar": "Collapse the sidebar",
     "clearTheSearchBox": "Clear the search box"
@@ -1722,5 +1727,33 @@
     "blue": "Blue",
     "violet": "Violet",
     "none": "No colour"
+  },
+  "homePanel": {
+    "pinned": "Pinned",
+    "recent": "Recent",
+    "quickTools": "Quick tools",
+    "nothingMatches": "Nothing here yet — save a diff or a snippet and it shows up.",
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "Earlier this week",
+      "earlier": "Earlier"
+    },
+    "kind": {
+      "diff": "diff",
+      "received": "received",
+      "snippet": "snippet"
+    }
+  },
+  "diffsPanel": {
+    "mine": "Mine · {n}",
+    "received": "Received · {n}"
+  },
+  "toolGroups": {
+    "encode": "Encode",
+    "format": "Format",
+    "generate": "Generate",
+    "inspect": "Inspect",
+    "secure": "Secure & apply"
   }
 }

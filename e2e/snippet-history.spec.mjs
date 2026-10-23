@@ -1,4 +1,4 @@
-import { test, expect, newSnippetButton } from './fixtures.mjs'
+import { test, expect, openNewSnippet } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
 // Version history is real only in a launched app: versions are the actual
@@ -7,7 +7,7 @@ import { focusEditor } from './monaco.mjs'
 // user path: edit twice, open History, read the change.
 
 async function createSnippet(page, name, body, { secret = false } = {}) {
-  await newSnippetButton(page).click()
+  await openNewSnippet(page)
   const editor = page.getByRole('dialog', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)

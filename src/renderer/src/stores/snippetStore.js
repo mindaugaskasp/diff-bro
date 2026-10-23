@@ -4,7 +4,6 @@ import { useUiStore } from './uiStore'
 import { loadPersisted, savePersisted } from '../persist'
 import {
   MAX_TAGS,
-  dropTag,
   TAG_PALETTE,
   cleanTag,
   derivedFrom,
@@ -21,7 +20,7 @@ import { parseSnippetImport } from '../utils/snippetImport'
 import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
-import { tagActions } from './snippetTags'
+import { forgetTag, tagActions } from './snippetTags'
 import { colorActions } from './snippetColor'
 import { EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET } from '../utils/snippetExamples'
 import { historyActions } from './snippetHistory'
@@ -217,7 +216,7 @@ export const useSnippetStore = defineStore('snippets', {
         iv: box.iv,
         data: box.data
       })
-      if (marks) useUiStore().markNewRow(id)
+      if (marks) useUiStore().markNewRow(id, 'snippets')
       this.persist()
       return id
     },
@@ -323,8 +322,7 @@ export const useSnippetStore = defineStore('snippets', {
         for (const e of this.entries.filter((e) => e.tags.includes(n))) this.remove(e.id)
         for (const e of vault.entries.filter((e) => e.tags?.includes(n))) vault.remove(e.id)
       }
-      dropTag(this.entries, n)
-      dropTag(vault.entries, n)
+      forgetTag(n, this.entries, vault.entries)
       vault.persist()
       this.persist()
     },

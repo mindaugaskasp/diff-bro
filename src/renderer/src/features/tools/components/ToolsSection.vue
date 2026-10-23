@@ -7,6 +7,7 @@ import SectionHeader from '../../../components/SectionHeader.vue'
 import AppIcon from '../../../components/AppIcon.vue'
 import { useUiStore } from '../../../stores/uiStore'
 import ToolRow from './ToolRow.vue'
+import ToolTiles from './ToolTiles.vue'
 import { useToolsStore } from '../toolsStore'
 import { t } from '../../../i18n'
 import { namedTools } from '../../../utils/tools'
@@ -14,6 +15,7 @@ import { namedTools } from '../../../utils/tools'
 const props = defineProps({
   first: { type: Boolean, default: false },
   unified: { type: Boolean, default: false },
+  panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] },
@@ -49,7 +51,10 @@ const hidden = computed(() => matches.value.length - shown.value.length)
 </script>
 
 <template>
-  <section class="sidebar-section">
+  <section v-if="panel" class="sidebar-section">
+    <ToolTiles :tools="matches" />
+  </section>
+  <section v-else class="sidebar-section">
     <SectionHeader
       section-id="tools"
       :title="$t('menu.tools.title')"

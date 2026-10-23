@@ -205,7 +205,7 @@ async function seed(page) {
     { snippets: SNIPPETS, diffs: [...savedDiffs(now), ...externalDiffs(now)], palette: TAG_PALETTE }
   )
   await page.reload()
-  await page.locator('.snippets-section .row').first().waitFor({ state: 'visible' })
+  await page.locator('.home-row').first().waitFor({ state: 'visible' })
   // Fail loudly rather than shipping a set of veiled frames that look plausible
   // in the terminal and wrong in the README.
   if (await page.locator('.tour').count()) {
@@ -235,6 +235,8 @@ async function setTheme(page, label) {
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
   await page.keyboard.press('Escape')
   await dlg.waitFor({ state: 'hidden' })
+  // The toolbar eases back from its dialog-open state; a shot taken at once looks disabled.
+  await page.waitForTimeout(400)
 }
 
 async function shoot(page, name, want) {

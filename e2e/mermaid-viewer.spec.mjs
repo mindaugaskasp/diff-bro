@@ -1,4 +1,8 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
+
+test.beforeEach(async ({ page }) => {
+  await showPanel(page, 'snippets')
+})
 
 // Geometry of the resizable Mermaid viewer — the parts jsdom can't measure (no
 // layout). It opens filling the app; Restore shrinks it to a windowed size, OS

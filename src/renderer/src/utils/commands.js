@@ -131,7 +131,8 @@ export const COMMANDS = {
   'tour-close-snippet': ({ onboarding }) => onboarding.closeSnippet(),
   'tour-demo-search': ({ onboarding }) => onboarding.typeSearch(),
   'tour-clear-search': ({ onboarding }) => onboarding.clearSearch(),
-  'tour-clear-filters': ({ onboarding }) => onboarding.clearFilters()
+  'tour-clear-filters': ({ onboarding }) => onboarding.clearFilters(),
+  'tour-show-snippets': ({ onboarding }) => onboarding.showSnippets()
 }
 
 export const commandActions = () => Object.keys(COMMANDS)

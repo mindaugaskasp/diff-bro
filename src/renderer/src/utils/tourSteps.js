@@ -100,6 +100,7 @@ const STEPS = [
     since: '0.5.0',
     target: '[data-tour="snippet-new"]',
     context: '[data-tour="sidebar"]',
+    enter: 'tour-show-snippets',
     side: 'right',
     advance: 'tour-demo-snippet',
     undo: 'tour-close-snippet'

@@ -1,8 +1,6 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, pickTag, showPanel } from './fixtures.mjs'
 
-// Filtering by a tag has to say WHERE the matches are. A section with none is
-// the answer to "why is this empty", so it stays visible showing zero rather
-// than leaving the reader to guess.
+// A panel with no match shows zero: that is the answer to "why is this empty".
 async function saveTaggedDiff(page, name, tag) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('before')
@@ -20,20 +18,19 @@ async function saveTaggedDiff(page, name, tag) {
 const headerCount = (page, title) =>
   page.locator('.sidebar-section', { hasText: title }).locator('.section-count').first()
 
-test('a resting sidebar counts nothing; a tag filter counts every section', async ({ page }) => {
+test('a panel counts its rows, a tag filter narrows the count, and none reads zero', async ({
+  page
+}) => {
   await saveTaggedDiff(page, 'E2E counted', 'finance')
-
-  // Nothing is filtered, so no section is counting itself.
-  await expect(page.locator('.section-count')).toHaveCount(0)
-
-  await page.locator('.usb-tag', { hasText: 'finance' }).first().click()
-
+  await showPanel(page, 'diffs')
   await expect(headerCount(page, 'Saved diffs')).toHaveText('1')
-  // The sections with no match say zero rather than going quiet.
-  await expect(headerCount(page, 'Snippets')).toHaveText('0')
-  await expect(headerCount(page, 'External diffs')).toHaveText('0')
 
-  // Clearing the filter puts the counts away again.
-  await page.locator('.usb-tag', { hasText: 'finance' }).first().click()
-  await expect(page.locator('.section-count')).toHaveCount(0)
+  await pickTag(page, 'finance')
+  await expect(headerCount(page, 'Saved diffs')).toHaveText('1')
+  // The same filter in the other panel says zero rather than going quiet.
+  await showPanel(page, 'snippets')
+  await expect(headerCount(page, 'Snippets')).toHaveText('0')
+
+  await pickTag(page, 'finance')
+  await expect(headerCount(page, 'Snippets')).not.toHaveText('0')
 })

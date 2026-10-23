@@ -3,26 +3,22 @@
    that knows which shelf a row sits in. */
 .row {
   position: relative;
+  min-height: var(--row-h-2);
+  margin: 0 var(--space-2);
   display: flex;
   align-items: center;
+  border-radius: var(--radius-lg);
 }
 /* Whole-row hover highlight so pointing at a snippet reads at a glance, not just
    a text-colour shift. The favourite shelf overrides this with its own gold
    hover (SnippetsPanel.css). */
 .row:hover {
-  background: var(--bg-hover);
+  background: var(--row-hover);
 }
 /* Same mark a favourited saved diff and a pinned tool carry — the state is one
    state, so it reads one way across the sidebar. --pin-ink rather than raw
    --favorite: the gold is tuned for the dark grounds and falls under the 3:1
    non-text floor on light, solar, sepia and bloom. */
-.row.favorite {
-  background: color-mix(in srgb, var(--favorite) 12%, transparent);
-  box-shadow: inset 3px 0 0 var(--pin-ink);
-}
-.row.favorite:hover {
-  background: color-mix(in srgb, var(--favorite) 22%, transparent);
-}
 
 /* A colour the reader picked (SnippetColorMenu.vue). The hex is never painted:
    it is re-lightened to --tag-l, the normalisation a tag's ink already goes
@@ -43,8 +39,8 @@
    sepia (2.72); --text-hint is the ink that exists for exactly this and clears
    4.5:1 on all twenty. */
 .row[data-color] .when,
-.row[data-color] .tag-word,
-.row[data-color] .varchip {
+.row[data-color] :deep(.tag-word),
+.row[data-color] :deep(.varchip) {
   color: var(--text-hint);
 }
 /* "Copied" acknowledgement over the action buttons. Anchored to the row, not
@@ -77,14 +73,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
+  min-width: var(--chip-h);
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--text-meta);
   cursor: pointer;
-  font-size: var(--font-lg);
+  font-size: var(--font-md);
   line-height: 1;
-  padding: 0 4px 0 8px;
+  padding: 0 var(--space-1);
+}
+.star:not(.on) {
+  display: none;
+}
+.row:hover .star,
+.star:focus-visible {
+  display: flex;
 }
 .star:hover {
   color: var(--pin-ink);
@@ -97,13 +100,20 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-3);
   text-align: left;
   background: none;
   border: none;
-  padding: 5px 4px 5px 6px;
+  padding: 0 var(--space-1) 0 var(--space-2);
   cursor: pointer;
 }
+.nm-line {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 /* The name is the primary identifier — full text colour and medium weight at
    rest, so rows stop reading as one dim, uniform column. */
 .nm {
@@ -118,47 +128,41 @@
 }
 .when {
   font-size: var(--font-xs);
-  color: var(--text-hint);
+  color: var(--text-meta);
   font-variant-numeric: tabular-nums;
   padding: 0 8px;
   flex-shrink: 0;
 }
 /* Swap the age for copy/delete on hover, so the resting row stays quiet. */
+/* Overlaid, not reflowed: the name keeps its width and stays the click target. */
 .rowacts {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--chip-h) + 2 * var(--space-1));
   display: none;
   align-items: center;
-  flex-shrink: 0;
+  padding: 0 var(--space-1) 0 var(--space-2);
+  background: var(--row-hover);
 }
-.row:hover .when,
-.row:hover .tag-word,
-.row:hover .varchip {
+.row:hover .when {
   display: none;
-}
-/* Fillable-prompt cue: {{ }} + how many placeholders await (claude snippets). */
-.varchip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  padding-right: 2px;
-  font-size: var(--font-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--text-hint);
-}
-.varchip .app-icon {
-  width: 13px;
-  height: 13px;
 }
 .row:hover .rowacts {
   display: flex;
 }
 .row-btn {
+  width: var(--chip-h);
+  height: var(--chip-h);
+  display: grid;
+  place-items: center;
+  padding: 0;
   background: none;
   border: none;
-  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  color: var(--text-meta);
   cursor: pointer;
-  font-size: var(--font-lg);
-  padding: 0 6px;
+  font-size: var(--font-md);
 }
 .row-btn:hover {
   color: var(--accent-ink);

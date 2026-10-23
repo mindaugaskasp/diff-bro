@@ -1,47 +1,49 @@
-import { test, expect, openMenu, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openMenu,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  showPanel
+} from './fixtures.mjs'
 
-// Tools is a sidebar section like the other three: every tool is reachable, a
-// row opens its panel, and PINS decide the order. The shelf this replaced showed
-// three of twelve and moved the tool you had just used to the front, so the row
-// under the cursor changed as a side effect of clicking it.
+// Pins never reorder the panel: the tile under the cursor must not move when clicked.
 
-const section = (page) => page.locator('.sidebar-section').filter({ hasText: 'Tools' })
-const rows = (page) => section(page).locator('.row')
-const names = (page) => rows(page).locator('.nm')
+const tiles = (page) => page.locator('.tool-tiles .tt-tile')
+const names = (page) => tiles(page).locator('.tt-name')
+const cell = (page, name) => page.locator('.tt-cell', { hasText: name })
+const groups = (page) => page.locator('.tool-tiles .tt-head')
 
-test('lists tools in registry order and opens one from its row', async ({ page }) => {
-  // Six at rest plus the disclosure — the cap that keeps Tools from crowding
-  // out the library above it.
-  await expect(names(page)).toHaveText(['Base64', 'JSON', 'XML', 'UUID', 'JWT', 'Epoch'])
-  await expect(section(page).locator('.disclosure')).toContainText('6 more tools')
+test('shows every tool, grouped by job, and opens one from its tile', async ({ page }) => {
+  await showPanel(page, 'tools')
+  await expect(tiles(page)).toHaveCount(12)
+  await expect(groups(page)).toHaveText([
+    'Encode',
+    'Format',
+    'Generate',
+    'Inspect',
+    'Secure & apply'
+  ])
 
-  await rows(page).filter({ hasText: 'JSON' }).locator('.entry').click()
+  await cell(page, 'JSON').locator('.tt-tile').click()
   await expect(page.getByRole('dialog', { name: 'JSON' })).toBeVisible()
 })
 
-test('the disclosure reveals the rest and folds them back', async ({ page }) => {
-  await section(page).locator('.disclosure .entry').click()
-  await expect(names(page)).toHaveCount(12)
-  await expect(section(page).locator('.disclosure')).toContainText('Show fewer')
+test('pinning marks the tile and offers the tool on Home', async ({ page }) => {
+  await showPanel(page, 'tools')
+  const regex = cell(page, 'Regex')
+  await regex.hover()
+  await regex.locator('.tt-pin').click()
+  await expect(regex.locator('.tt-pin')).toHaveAttribute('aria-pressed', 'true')
 
-  await section(page).locator('.disclosure .entry').click()
-  await expect(names(page)).toHaveCount(6)
+  await showPanel(page, 'home')
+  const pinned = page.locator('.home-block', { hasText: 'Pinned' })
+  await expect(pinned.getByRole('button', { name: /Regex/ })).toBeVisible()
 })
 
-test('pinning moves a tool to the top and marks the row', async ({ page }) => {
-  const regex = rows(page).filter({ hasText: 'Regex' })
-  await section(page).locator('.disclosure .entry').click() // Regex is past the resting six
-  await regex.locator('.star').click()
-
-  // Pinned rows head the list, so it is now first — and stays visible when the
-  // list folds back, because a pin is not subject to the resting cap.
-  await expect(names(page).first()).toHaveText('Regex')
-  await expect(rows(page).first()).toHaveClass(/pinned/)
-})
-
-// The whole argument for pins over recents. Under the old shelf this assertion
-// was false by construction: using a tool moved it to the front.
 test('using a tool does not move it', async ({ page }) => {
+  await showPanel(page, 'tools')
   const before = await names(page).allTextContents()
 
   await openMenu(page, 'Tools', 'Epoch')
@@ -61,8 +63,10 @@ test('a pin survives a relaunch', async () => {
   let page = await firstReadyPage(app)
 
   try {
-    await rows(page).filter({ hasText: 'XML' }).locator('.star').click()
-    await expect(rows(page).first()).toContainText('XML')
+    await showPanel(page, 'tools')
+    await cell(page, 'XML').hover()
+    await cell(page, 'XML').locator('.tt-pin').click()
+    await expect(cell(page, 'XML').locator('.tt-pin')).toHaveAttribute('aria-pressed', 'true')
   } finally {
     await app.close()
   }
@@ -70,29 +74,20 @@ test('a pin survives a relaunch', async () => {
   app = await launchApp(dir)
   page = await firstReadyPage(app)
   try {
-    await expect(names(page).first()).toHaveText('XML')
-    await expect(rows(page).first()).toHaveClass(/pinned/)
+    await showPanel(page, 'tools')
+    await expect(cell(page, 'XML').locator('.tt-pin')).toHaveAttribute('aria-pressed', 'true')
   } finally {
     await app.close()
   }
 })
 
-test('the sidebar search filters tools alongside everything else', async ({ page }) => {
-  await page.getByPlaceholder('Search diffs & snippets…').fill('encode')
+test('the panel search filters tools by name and by kind', async ({ page }) => {
+  await showPanel(page, 'tools')
+  await page.getByPlaceholder('Find a tool').fill('encode')
 
   // Base64 and URL both declare the Encode kind; the search reaches it.
   await expect(names(page)).toHaveText(['Base64', 'URL'])
-  // A filtered section reports its count, including the sections with none.
-  await expect(section(page).locator('.section-count')).toHaveText('2')
 
-  await page.getByPlaceholder('Search diffs & snippets…').fill('zzzz')
-  await expect(section(page).locator('.empty')).toContainText('No tools match')
-})
-
-test('the section collapses from its own header', async ({ page }) => {
-  // v-show, so the rows stay in the DOM — visibility is the assertion, not count.
-  await section(page).locator('.section-head').click()
-  await expect(names(page).first()).toBeHidden()
-  await section(page).locator('.section-head').click()
-  await expect(names(page).first()).toBeVisible()
+  await page.getByPlaceholder('Find a tool').fill('zzzz')
+  await expect(page.locator('.tt-empty')).toContainText('No tools match')
 })

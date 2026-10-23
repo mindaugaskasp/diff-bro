@@ -1,0 +1,20 @@
+.snip-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* Fillable-prompt cue: {{ }} + how many placeholders await (claude snippets). */
+.varchip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding-right: 2px;
+  font-size: var(--font-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-meta);
+}
+.varchip .app-icon {
+  width: 13px;
+  height: 13px;
+}

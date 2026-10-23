@@ -410,8 +410,8 @@ Zoom belongs to the COMPARISON, not to the window.
   fact, true only while nothing moved either
 
 **Open.** `.key-actions` is still `width: var(--sidebar-w)`, so the bar's widest
-term is the one the reader drags. Moving it to the sidebar header needs an
-unconditional status band first.
+term is the one the reader drags — and since the sidebar workspace, that width
+includes the rail. Moving the key buttons into the rail is the follow-up spec.
 
 ---
 
