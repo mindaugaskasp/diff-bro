@@ -19,6 +19,7 @@ import { STREAMED_LIMITS } from './streamedLimits'
  * @property {boolean} isPaste
  * @property {boolean} canExportImage
  * @property {boolean} isSpreadsheet
+ * @property {boolean} [isSnippet]  a snippet tab is in front
  */
 
 /**
@@ -90,6 +91,18 @@ const clearRow = (s) => ({
  * @returns {ToolbarAction[]} in bar order, left to right
  */
 export function toolbarActions(s) {
+  const rows = comparisonRows(s)
+  // Disabled in place rather than hidden: hiding would reflow the bar on every tab switch.
+  if (!s.isSnippet) return rows
+  return rows.map((row) => ({
+    ...row,
+    disabled: true,
+    active: false,
+    tipKey: 'appToolbar.tips.forComparisons'
+  }))
+}
+
+function comparisonRows(s) {
   const setup = !s.isSavedDiff
   return [
     ...(setup ? [pasteRow(s)] : []),

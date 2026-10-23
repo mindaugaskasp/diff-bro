@@ -57,6 +57,7 @@ const rows = computed(() => [
 // diagram diff — noise dressed as information.
 const changedCount = computed(() => rows.value.filter((r) => r.available && !r.isDefault).length)
 
+defineProps({ disabled: { type: Boolean, default: false } })
 defineExpose({ close })
 </script>
 
@@ -68,7 +69,8 @@ defineExpose({ close })
       :class="{ active: open }"
       :aria-expanded="open"
       aria-haspopup="true"
-      :data-tip="$t('appToolbar.tips.view')"
+      :disabled="disabled"
+      :data-tip="disabled ? $t('appToolbar.tips.forComparisons') : $t('appToolbar.tips.view')"
       @click="toggle"
     >
       {{ $t('appToolbar.view') }}

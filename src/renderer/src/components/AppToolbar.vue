@@ -10,6 +10,8 @@ import { computed } from 'vue'
 import { MOD } from '../keys'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
+import { useTabsStore } from '../stores/tabsStore'
+import { isSnippetTab } from '../utils/tabs'
 import { useImageExportStore } from '../features/imageExport'
 import { ZOOM_DEFAULT, zoomLabel } from '../utils/diffZoom'
 import { useConflictsStore } from '../features/merge'
@@ -23,6 +25,8 @@ const ui = useUiStore()
 const imageExport = useImageExportStore()
 const conflicts = useConflictsStore()
 const { run } = useCommands()
+const tabs = useTabsStore()
+const onSnippet = computed(() => isSnippetTab(tabs.active))
 
 // Only while the comparison is NOT at its resting size: an unzoomed diff has
 // nothing to say, and a permanent "100%" would spend width the bar does not have
@@ -41,7 +45,8 @@ const actionState = computed(() => ({
   canClear: store.canClear,
   isPaste: store.mode === 'paste',
   canExportImage: imageExport.canExportImage,
-  isSpreadsheet: store.isSpreadsheet
+  isSpreadsheet: store.isSpreadsheet,
+  isSnippet: onSnippet.value
 }))
 </script>
 
@@ -78,13 +83,14 @@ const actionState = computed(() => ({
           v-if="store.ready"
           class="btn btn-sm"
           data-testid="toolbar-present"
+          :disabled="onSnippet"
           :data-tip="$t('appToolbar.tips.presentation', { mod: MOD })"
           @click="run('toggle-presentation')"
         >
           <AppIcon name="maximize" />
           {{ $t('appToolbar.presentation') }}
         </button>
-        <ViewOptionsMenu />
+        <ViewOptionsMenu :disabled="onSnippet" />
       </div>
       <span class="divider" />
       <ToolbarOverflow :state="actionState" />

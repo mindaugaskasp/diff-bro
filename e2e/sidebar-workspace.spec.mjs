@@ -90,6 +90,8 @@ async function newSnippet(page, name) {
 }
 
 async function saveDiff(page, name) {
+  // A comparison starts in its own tab: Paste mode is off while a snippet is in front.
+  await page.getByRole('button', { name: 'New comparison' }).click()
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('before')
   await page.getByPlaceholder('Paste changed text here').fill('after')

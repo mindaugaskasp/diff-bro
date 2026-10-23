@@ -36,6 +36,8 @@ async function seedSnippet(page, name, tags) {
 async function seedDiff(page, name, tags) {
   const left = page.getByPlaceholder('Paste original text here')
   if (!(await left.isVisible().catch(() => false))) {
+    // A comparison starts in its own tab: Paste mode is off while a snippet is in front.
+    await page.getByRole('button', { name: 'New comparison' }).click()
     await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill(`before ${name}`)
