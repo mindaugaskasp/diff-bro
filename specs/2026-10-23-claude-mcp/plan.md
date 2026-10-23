@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| **Status** | in-progress |
-| **Progress** | 11 / 12 steps; Windows unverified |
+| **Status** | shipped |
+| **Progress** | 12 / 12 steps |
 | **Branch** | `feat/claude-mcp` |
 | **Started** | 2026-10-23 |
-| **Finished** | — |
+| **Finished** | 2026-10-23 |
 | **Bugs found and fixed this iteration** | 3 / 3 |
 | **Token baseline** | 2026-10-23T05:06:37Z |
 | **Claude tokens used** | 30,561,937 (cache read 30.17M, output 137k), 2026-10-23T05:06Z → 05:47Z |
@@ -269,7 +269,7 @@ switch is read on every call, so turning it off revokes access immediately.
 - [x] e2e:
       - `make e2e` (Linux): 540 passed, 0 failed, 4 skipped (macOS-only).
       - `claude-mcp.spec` on the macOS host: 5/5.
-      - Headless mode is verified on macOS and Linux. **Windows: not verified.**
+      - Headless mode is verified on macOS, Linux and Windows. On Windows the CI smoke drives the packaged `Diff Bro.exe` (PR #65, run 39913977946).
 - [x] theme sweep `claude-settings` + `claude-inbox`: 140 measurements across
       20 themes, all above their floors (after the intro fix).
 - [x] every Docs-impact "yes" done: README, security.md, ipc-security.md,
@@ -284,8 +284,7 @@ switch is read on every call, so turning it off revokes access immediately.
    `claude-mcp.spec` › "a session started before the app has a key…" is red on
    the old `mcp.js` and green on the fix.
 
-**Outcome:** built and green on macOS and Linux. **Status stays in-progress for
-one item:** the plan's step 2 requires a Windows spike, so someone needs to
+**Outcome:** built and green on macOS and Linux. **Windows item, now closed:** the plan's step 2 requires a Windows spike, so someone needs to
 check by hand on Windows that `"<Diff Bro.exe>" mcp`, launched by Claude
 Desktop, keeps its stdio pipes and answers `initialize`. Until then, Windows is
 not advertised.
