@@ -396,7 +396,9 @@ const SURFACES = [
       'selected version': ['.hist-version.on .hv-when', TEXT],
       'band text': ['.hist-band .hb-text', TEXT],
       'band meta': ['.hist-band .hb-meta', TEXT],
-      'copy button': ['.hist-band .btn', TEXT]
+      'copy button': ['.hist-band .btn', TEXT],
+      'lines added': ['.hist-band .hb-stats .add', TEXT],
+      'lines removed': ['.hist-band .hb-stats .del', TEXT]
     }
   },
   {
