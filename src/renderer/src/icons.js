@@ -293,6 +293,11 @@ export const ICONS = {
   hash: [{ t: 'path', d: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18' }],
   // Nested arches — a checksum identifies a file the way a print identifies a
   // hand, which is the whole idea the tool trades on.
+  key: [
+    { t: 'circle', cx: 7.5, cy: 15.5, r: 5.5 },
+    { t: 'path', d: 'm21 2-9.6 9.6' },
+    { t: 'path', d: 'm15.5 7.5 3 3L22 7l-3-3' }
+  ],
   fingerprint: [
     { t: 'path', d: 'M12 11a2 2 0 0 1 2 2c0 2.5-.4 4.8-1.2 6.9' },
     { t: 'path', d: 'M8.5 13a3.5 3.5 0 0 1 7 0c0 3-.5 5.7-1.5 8' },

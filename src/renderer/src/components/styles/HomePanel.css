@@ -40,7 +40,7 @@
   cursor: pointer;
 }
 .home-row:hover {
-  background: var(--btn-face);
+  background: var(--row-hover);
 }
 .home-row:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -57,4 +57,35 @@
   padding: 0 var(--space-3);
   font-size: var(--font-sm);
   color: var(--text-meta);
+}
+.home-item {
+  position: relative;
+  min-width: 0;
+}
+.home-item > .home-row {
+  width: calc(100% - 2 * var(--space-2));
+}
+.home-pin > .tile {
+  width: 100%;
+}
+/* Overlaid at the row's end, never reflowing it: the name stays the click target. */
+.home-item :deep(.home-delete) {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  visibility: hidden;
+}
+.home-pin :deep(.home-delete) {
+  top: var(--space-1);
+  right: var(--space-1);
+  transform: none;
+}
+.home-item:hover :deep(.home-delete),
+.home-item:focus-within :deep(.home-delete) {
+  visibility: visible;
+}
+.home-item:hover .home-age,
+.home-item:focus-within .home-age {
+  visibility: hidden;
 }

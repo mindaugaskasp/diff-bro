@@ -1,7 +1,16 @@
 // What the open comparisons look like on disk, so a quit is not a loss. Pure:
 // the store owns the crypto and the writing, this owns WHAT is worth keeping
 // and hands back a shape restore can trust.
-import { MAX_TABS, cleanTabName, createTab, isBlank, isHalfLoaded, withoutFileSlots } from './tabs'
+import {
+  MAX_TABS,
+  cleanTabName,
+  createSnippetTab,
+  createTab,
+  isBlank,
+  isHalfLoaded,
+  isSnippetTab,
+  withoutFileSlots
+} from './tabs'
 
 // Bumped only when the stored shape changes meaning; an unrecognised version is
 // dropped rather than guessed at.
@@ -91,6 +100,17 @@ const isSkipped = (tab, snapshot) => !!tab.ephemeral || isBlank({ snapshot })
 const storedSnapshot = (snapshot) =>
   isHalfLoaded({ snapshot }) ? withoutFileSlots(snapshot) : snapshot
 
+// A snippet tab by id only: a draft's text would put a secret's plaintext on disk.
+function candidateFor(tab, activeId, live) {
+  if (isSnippetTab(tab)) {
+    return tab.snippet.id ? { packed: { kind: 'snippet', snippetId: tab.snippet.id } } : null
+  }
+  const isLive = live && tab.id === activeId
+  const snapshot = storedSnapshot(isLive ? live.snapshot : tab.snapshot)
+  if (isSkipped(tab, snapshot)) return null
+  return { packed: packTab(tab, snapshot, isLive ? live.diffSaved : tab.diffSaved), sized: true }
+}
+
 export function packSession(tabs, activeId, live) {
   const kept = []
   let budget = MAX_SESSION_BYTES
@@ -99,23 +119,27 @@ export function packSession(tabs, activeId, live) {
   // not a loss — there was nothing in it.
   let dropped = 0
   for (const tab of tabs ?? []) {
-    const isLive = live && tab.id === activeId
-    const snapshot = storedSnapshot(isLive ? live.snapshot : tab.snapshot)
-    if (isSkipped(tab, snapshot)) continue
-    const packed = packTab(tab, snapshot, isLive ? live.diffSaved : tab.diffSaved)
-    const size = JSON.stringify(packed).length
-    if (size > MAX_TAB_BYTES || size > budget) {
+    const candidate = candidateFor(tab, activeId, live)
+    if (!candidate) continue
+    const size = JSON.stringify(candidate.packed).length
+    if (candidate.sized && (size > MAX_TAB_BYTES || size > budget)) {
       dropped += 1
       continue
     }
     budget -= size
-    kept.push({ ...packed, active: tab.id === activeId })
+    kept.push({ ...candidate.packed, active: tab.id === activeId })
   }
   if (!kept.length) return null
   return { version: SESSION_VERSION, tabs: kept, dropped }
 }
 
+const readSnippetTab = (raw) =>
+  typeof raw.snippetId === 'string' && raw.snippetId
+    ? { kind: 'snippet', snippetId: raw.snippetId, active: raw.active === true }
+    : null
+
 function readTab(raw) {
+  if (raw?.kind === 'snippet') return readSnippetTab(raw)
   const snapshot = raw && typeof raw === 'object' ? readSnapshot(raw.snapshot) : null
   if (!snapshot || isBlank({ snapshot })) return null
   return {
@@ -177,6 +201,7 @@ export const SESSION_AAD = 'session|v1'
  * @returns {import('./tabs').DiffTab}
  */
 export function tabFromStored(stored) {
+  if (stored.kind === 'snippet') return createSnippetTab({ snippetId: stored.snippetId })
   const tab = createTab(stored.snapshot, { diffSaved: stored.diffSaved })
   tab.entryId = stored.entryId
   tab.customTitle = cleanTabName(stored.customTitle)

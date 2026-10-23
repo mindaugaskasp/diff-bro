@@ -19,7 +19,9 @@ import DepsDiffViewer from './components/DepsDiffViewer.vue'
 import { MergeView, useMergeStore } from './features/merge'
 import StructureDiffViewer from './components/StructureDiffViewer.vue'
 import StreamedDiffViewer from './components/StreamedDiffViewer.vue'
-import SupportedFormats from './components/SupportedFormats.vue'
+import StartSurface from './components/StartSurface.vue'
+import SnippetDocument from './components/SnippetDocument.vue'
+import { useSnippetTabs } from './composables/useSnippetTabs'
 import WaitingForSecond from './components/WaitingForSecond.vue'
 import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
@@ -83,9 +85,10 @@ onMounted(async () => {
   settings.markExamplesSeeded()
 })
 
-// Window-level file drops stand down while a dialog/paste pane handles its own.
+const { activeSnippetTab, snippetTabs } = useSnippetTabs()
+// Window-level file drops stand down while a document or pane handles its own.
 const dropSuppressed = computed(
-  () => !!snippets.editingSnippet || !!ui.textTool || ui.showCryptDialog || store.mode === 'paste'
+  () => !!activeSnippetTab.value || !!ui.textTool || ui.showCryptDialog || store.mode === 'paste'
 )
 const {
   active: dragActive,
@@ -138,11 +141,18 @@ useWindowFocusRefresh()
           />
           <!-- A merge produces a file rather than comparing two, so the slots
                have nothing to name and every control above them is disabled. -->
-          <FileSlotsRow v-if="store.mode !== 'paste' && !merge.open" />
+          <SnippetDocument
+            v-for="t in snippetTabs"
+            v-show="t.id === tabs.activeId"
+            :key="t.id"
+            :tab="t"
+          />
+          <FileSlotsRow v-if="!activeSnippetTab && store.mode !== 'paste' && !merge.open" />
 
           <!-- Keyed by file: a second launch arriving while this is open must
                re-seed, not set new text under decorations anchored to the old. -->
-          <MergeView v-if="merge.open" :key="merge.fileName" />
+          <template v-if="activeSnippetTab"></template>
+          <MergeView v-else-if="merge.open" :key="merge.fileName" />
           <PasteInput v-else-if="store.mode === 'paste'" />
           <!-- Content router: pick the viewer by comparable kind. -->
           <template v-else-if="store.ready">
@@ -164,10 +174,7 @@ useWindowFocusRefresh()
             @pick="store.pick(missingSide)"
             @clear="store.clear()"
           />
-          <div v-else class="empty">
-            <p class="empty-title">{{ $t('app.chooseTwoFiles') }}</p>
-            <SupportedFormats />
-          </div>
+          <StartSurface v-else />
 
           <!-- Notices sit centred over the diff area (anchored to .content). -->
           <transition name="fade">
@@ -176,7 +183,13 @@ useWindowFocusRefresh()
 
           <DiskChangeNotice />
 
-          <ShortcutBar v-if="!merge.open" />
+          <ShortcutBar
+            v-if="
+              !merge.open &&
+              !activeSnippetTab &&
+              (store.left || store.right || store.mode === 'paste')
+            "
+          />
 
           <!-- The photo studio: covers this column while a snippet is shot. -->
           <SnippetShot v-if="imageExport.snippetShot" :shot="imageExport.snippetShot" />

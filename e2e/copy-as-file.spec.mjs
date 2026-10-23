@@ -98,7 +98,7 @@ const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
 // Saving lands on the read-only VIEW, which is where the copy pair lives.
 async function addSnippet(page, { name, body, secret = false }) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
@@ -108,7 +108,7 @@ async function addSnippet(page, { name, body, secret = false }) {
   // reached by opening the row.
   await expect(editor).toBeHidden()
   await page.locator('.snippets-section .row', { hasText: name }).locator('.entry').click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(view).toBeVisible()
   return view

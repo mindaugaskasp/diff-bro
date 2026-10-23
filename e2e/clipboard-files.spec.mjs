@@ -39,7 +39,7 @@ test('pasting two copied files compares them as files, not their names', async (
   // Both slots name the real files, and the diff renders their contents.
   await expect(page.locator('.file-slots-row')).toContainText('alpha.txt')
   await expect(page.locator('.file-slots-row')).toContainText('beta.txt')
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeHidden()
+  await expect(page.getByText('What are you comparing?')).toBeHidden()
 })
 
 test('pasting one copied file fills the first free side', async ({ app, page }) => {

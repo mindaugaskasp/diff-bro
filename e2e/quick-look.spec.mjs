@@ -45,7 +45,7 @@ test('summons the launcher with the seeded snippet and previews it', async ({ ap
 test('paints the preview with the syntax roles it tokenizes', async ({ app, page }) => {
   await seededReady(page)
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Highlight probe')
   await editor.locator('.lang-picker select').selectOption('json')
   await editor.locator('.editor').click()

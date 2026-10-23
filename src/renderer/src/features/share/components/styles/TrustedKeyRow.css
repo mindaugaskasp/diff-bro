@@ -104,10 +104,12 @@
   text-decoration: underline dotted;
   text-underline-offset: 3px;
 }
+/* Wrapped, never cut: the fingerprint is what a reader checks a key against. */
 .fp {
   font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--text-hint);
+  overflow-wrap: anywhere;
 }
 .inline-edit {
   width: 100%;

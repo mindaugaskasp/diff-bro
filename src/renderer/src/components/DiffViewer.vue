@@ -14,8 +14,10 @@ import { applyMonacoTheme } from '../composables/useMonacoTheme'
 import AppIcon from './AppIcon.vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useUiStore } from '../stores/uiStore'
+import { useTabScroll } from '../composables/useTabScroll'
 
 const store = useDiffStore()
+const restoreScroll = useTabScroll()
 
 const settings = useSettingsStore()
 const ui = useUiStore()
@@ -64,6 +66,7 @@ onMounted(() => {
     // Monaco fires this once before its worker has returned anything; that is
     // not a diff to report, to call identical, or to photograph.
     if (stats) store.diffRevision++
+    if (stats) restoreScroll(editor.getModifiedEditor())
   })
   setDiffScroller(monacoDiffScroller(() => editor))
   setModels()

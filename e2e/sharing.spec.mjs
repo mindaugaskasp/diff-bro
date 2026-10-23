@@ -47,11 +47,8 @@ async function addTrusted(app, page, keyPath) {
   const add = page.getByRole('dialog', { name: 'Add trusted key' })
   await expect(add).toBeVisible()
   await add.getByRole('button', { name: 'Add', exact: true }).click()
-  // The manager opens once stored; close it (footer button, not the × — both
-  // are named "Close").
-  const mgr = page.getByRole('dialog', { name: 'Trusted keys' })
-  await expect(mgr).toBeVisible()
-  await mgr.locator('.dialog-actions button', { hasText: 'Close' }).click()
+  // The Keys panel opens once stored, the new key in its list.
+  await expect(page.locator('.keys-panel')).toBeVisible()
 }
 
 test('two peers exchange keys, share a sealed diff, and import it', async () => {
@@ -115,7 +112,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
 
     // 5. Manage trusted keys on Alice: rename Bob, then remove him.
     await openMenu(pageA, 'Security', 'Manage Trusted Keys')
-    const mgr = pageA.getByRole('dialog', { name: 'Trusted keys' })
+    const mgr = pageA.locator('.keys-panel')
     await expect(mgr.getByText('Bob', { exact: true })).toBeVisible()
     await mgr.getByRole('button', { name: 'Rename' }).click()
     await mgr.locator('input.inline-edit').fill('Bob — laptop')
@@ -126,7 +123,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     const confirm = pageA.getByRole('dialog', { name: 'Remove trusted key?' })
     await expect(confirm).toBeVisible()
     await confirm.getByRole('button', { name: 'Remove' }).click()
-    await expect(mgr.getByText(/No trusted keys yet/i)).toBeVisible()
+    await expect(mgr.getByRole('heading', { name: 'Share diffs with someone' })).toBeVisible()
   } finally {
     await appA.close()
     await appB.close()

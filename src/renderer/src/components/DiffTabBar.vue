@@ -5,9 +5,16 @@
 // A tab is a ROW holding two buttons, never a button inside a button: nesting
 // them is invalid markup and leaves the close control unreachable to keyboard
 // and assistive tech, which is how it was first written.
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
-import { MAX_TAB_NAME, adjacentTabId, tabLabel } from '../utils/tabs'
+import {
+  MAX_TAB_NAME,
+  adjacentTabId,
+  isBlank,
+  isSnippetTab,
+  stripTabs,
+  tabLabel
+} from '../utils/tabs'
 import { useDiffStore } from '../stores/diffStore'
 import AppIcon from './AppIcon.vue'
 import TabContextMenu from './TabContextMenu.vue'
@@ -18,6 +25,10 @@ import { tabsFullNotice } from '../utils/tabNotices'
 
 const tabs = useTabsStore()
 const diff = useDiffStore()
+const live = computed(() => ({ activeId: tabs.activeId, hasContent: diff.hasActive }))
+const strip = computed(() => stripTabs(tabs.tabs, live.value))
+const onStart = computed(() => !isSnippetTab(tabs.active) && !diff.hasActive)
+const canStart = computed(() => tabs.canAdd || tabs.tabs.some(isBlank))
 
 // The label follows the live comparison, so a tab stops saying "Untitled" the
 // moment a file lands in it.
@@ -53,7 +64,8 @@ function commitRename() {
 }
 
 const track = ref(null)
-const overflow = useTabOverflow(track, () => tabs.activeId)
+// A tab begun on the start surface keeps its id and only appears later.
+const overflow = useTabOverflow(track, () => `${tabs.activeId}|${strip.value.length}`)
 // The chevrons carry the comparison you are looking at rather than panning away
 // from it — the strip and the active tab move together, and the reveal watcher
 // scrolls the new one into view.
@@ -107,7 +119,7 @@ function onTabKey(e, tab) {
       @scroll="overflow.measure()"
     >
       <div
-        v-for="tab in tabs.tabs"
+        v-for="tab in strip"
         :key="tab.id"
         class="tab"
         :class="{ active: tab.id === tabs.activeId }"
@@ -134,15 +146,15 @@ function onTabKey(e, tab) {
           :aria-selected="tab.id === tabs.activeId"
           :data-tip="$t('diffTabBar.tabTip', { name: tabLabel(tab) })"
           @click="tabs.activate(tab.id)"
-          @dblclick="startRename(tab)"
+          @dblclick="isSnippetTab(tab) || startRename(tab)"
           @auxclick.middle.prevent="tabs.requestClose(tab.id)"
           @keydown="onTabKey($event, tab)"
         >
           <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
+          <AppIcon v-if="isSnippetTab(tab)" name="code" class="kind" />
           <span class="name">{{ tabLabel(tab) }}</span>
         </button>
         <button
-          v-if="tabs.tabs.length > 1"
           class="tab-close"
           :aria-label="$t('diffTabBar.closeTab', { name: tabLabel(tab) })"
           @click="tabs.requestClose(tab.id)"
@@ -165,12 +177,12 @@ function onTabKey(e, tab) {
 
     <button
       class="add"
-      :disabled="!tabs.canAdd"
-      :data-tip="
-        tabs.canAdd ? $t('diffTabBar.newComparisonTip', { mod: MOD }) : tabsFullNotice(tabs.tabs)
-      "
+      :class="{ on: onStart }"
+      :aria-pressed="onStart"
+      :disabled="!canStart"
+      :data-tip="canStart ? $t('diffTabBar.startTip', { mod: MOD }) : tabsFullNotice(tabs.tabs)"
       :aria-label="$t('diffTabBar.newComparison')"
-      @click="tabs.newTab()"
+      @click="tabs.showStart()"
     >
       <AppIcon name="plus" />
     </button>

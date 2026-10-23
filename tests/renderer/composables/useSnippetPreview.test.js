@@ -7,6 +7,7 @@ import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { useSnippetPreview } from '../../../src/renderer/src/composables/useSnippetPreview'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
+import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
 
 const KEY = randomBytes(32)
 
@@ -91,5 +92,46 @@ describe('copyPreview', () => {
     const preview = useSnippetPreview()
     await preview.copyPreview()
     expect(window.api.copyText).not.toHaveBeenCalled()
+  })
+})
+
+// A card over the document of the very snippet it previews only hides that
+// document: the row a snippet was opened from is still under the pointer.
+describe('hovering a row', () => {
+  const rowEvent = () => {
+    const row = document.createElement('div')
+    return { currentTarget: row }
+  }
+
+  it('shows no card for the snippet already open in front', async () => {
+    vi.useFakeTimers()
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'Open one', content: 'body', marks: false })
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.openSnippet({ id })
+    const preview = useSnippetPreview()
+    await preview.onRowEnter(
+      store.entries.find((e) => e.id === id),
+      rowEvent()
+    )
+    await vi.runAllTimersAsync()
+    expect(preview.preview.value).toBeNull()
+    vi.useRealTimers()
+  })
+
+  it('still previews a snippet that is not open', async () => {
+    vi.useFakeTimers()
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'Closed one', content: 'body', marks: false })
+    useTabsStore().init()
+    const preview = useSnippetPreview()
+    await preview.onRowEnter(
+      store.entries.find((e) => e.id === id),
+      rowEvent()
+    )
+    await vi.runAllTimersAsync()
+    expect(preview.preview.value?.id).toBe(id)
+    vi.useRealTimers()
   })
 })

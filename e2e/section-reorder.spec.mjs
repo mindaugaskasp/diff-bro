@@ -22,9 +22,9 @@ async function dragItem(page, from, to) {
 }
 
 test('dragging a rail item above another reorders the rail', async ({ page }) => {
-  expect(await railOrder(page)).toEqual(['home', 'diffs', 'snippets', 'tools'])
+  expect(await railOrder(page)).toEqual(['home', 'diffs', 'snippets', 'tools', 'keys'])
   await dragItem(page, 'snippets', 'diffs')
-  await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
+  await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools', 'keys'])
 })
 
 test('the dragged item marks its drop target while travelling', async ({ page }) => {
@@ -49,7 +49,7 @@ test('a plain click opens the panel, and a drag does not', async ({ page }) => {
   await item(page, 'home').click()
 
   await dragItem(page, 'snippets', 'diffs')
-  await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
+  await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools', 'keys'])
   await expect(item(page, 'home')).toHaveAttribute('aria-pressed', 'true')
 })
 
@@ -79,12 +79,12 @@ test('a reorder survives a relaunch', async () => {
   try {
     let page = await firstReadyPage(app)
     await dragItem(page, 'snippets', 'diffs')
-    await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
+    await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools', 'keys'])
     await app.close()
 
     app = await launchApp(dir)
     page = await firstReadyPage(app)
-    await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools'])
+    await expect.poll(() => railOrder(page)).toEqual(['home', 'snippets', 'diffs', 'tools', 'keys'])
   } finally {
     await app.close()
     rmSync(dir, { recursive: true, force: true })

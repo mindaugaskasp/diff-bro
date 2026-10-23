@@ -27,7 +27,7 @@ test('copying a snippet flashes "Copied" and then clears', async ({ page }) => {
 // the moment it was dragged small — with the code area squeezed to 160px.
 test('the editor never scrolls at its smallest allowed size', async ({ page }) => {
   await openNewSnippet(page)
-  const dlg = page.getByRole('dialog', { name: 'New Snippet' })
+  const dlg = page.getByRole('region', { name: 'New Snippet' })
   await expect(dlg).toBeVisible()
 
   // The declared minimum from SnippetEditorDialog's :min-size — the smallest
@@ -63,7 +63,7 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
   ).toBe('pointer')
 
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Vault token')
   await editor.locator('.editor').click()
   await page.keyboard.type('token=abc123')
@@ -104,9 +104,7 @@ test('an empty section offers a real button, a populated one does not', async ({
 
   // The whole point is that it is clickable at cold start, which a DOM count
   // does not establish — a collapsed section still counts 1.
-  const tabsBefore = await page.locator('.tab').count()
   await cta.click()
-  await expect(page.locator('.tab')).toHaveCount(tabsBefore + 1)
   await expect(page.locator('.paste-pane, .paste-input, textarea').first()).toBeVisible()
 })
 
@@ -148,5 +146,5 @@ test('hovering a row overlays its actions; its middle still opens the snippet', 
   expect(entryBox.x + entryBox.width).toBeGreaterThan(middle)
 
   await row.click()
-  await expect(page.getByRole('dialog', { name: 'Snippet', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 })

@@ -7,16 +7,16 @@ import {
   createTab,
   cleanTabName,
   isBlank,
+  isSnippetTab,
   OPEN_DEFAULTS,
-  nextActiveId,
-  nextActiveIdAfterClosing,
   recyclableTab,
   tabTitle
 } from '../utils/tabs'
-import {} from '../utils/session'
+import { getDiffScroller } from '../utils/diffScroller'
 import { closingActions } from './tabClosing'
 import { evictionActions } from './tabEviction'
 import { sessionActions } from './tabSession'
+import { LOADS_CONTENT, snippetTabActions } from './tabSnippets'
 
 // Several comparisons open at once. diffStore stays THE ACTIVE DOCUMENT and a
 // tab is the snapshot it round-trips through snapshot()/restore(), so only the
@@ -55,6 +55,7 @@ export const useTabsStore = defineStore('tabs', {
     /** @returns {(tab: import('../utils/tabs').DiffTab) => boolean} */
     unsaved: (s) => (tab) => {
       if (!tab) return false
+      if (isSnippetTab(tab)) return !!tab.dirty
       if (tab.id !== s.activeId) return !tab.diffSaved && !isBlank(tab)
       const diff = useDiffStore()
       return !diff.diffSaved && diff.hasActive
@@ -73,6 +74,7 @@ export const useTabsStore = defineStore('tabs', {
       // the core cannot call back into this store without re-forming the cycle.
       diff.$onAction(({ name, after }) => {
         if (name === 'clear') after(() => this.unlinkActiveEntry())
+        if (LOADS_CONTENT.has(name) && isSnippetTab(this.active)) this.showStart()
       })
       const tab = createTab(diff.snapshot(), { diffSaved: diff.diffSaved })
       this.tabs = [tab]
@@ -85,6 +87,8 @@ export const useTabsStore = defineStore('tabs', {
       if (!tab) return
       const diff = useDiffStore()
       tab.snapshot = diff.snapshot()
+      if (isSnippetTab(tab)) return
+      tab.scrollTop = getDiffScroller()?.scrollTop() ?? 0
       tab.diffSaved = diff.diffSaved
       tab.title = tabTitle(tab.snapshot)
     },
@@ -159,11 +163,15 @@ export const useTabsStore = defineStore('tabs', {
       return this._fill(tab, full, { diffSaved, entryId, name })
     },
     ...closingActions,
+    ...snippetTabActions,
     ...evictionActions,
     // The seam: reaching diffStore from tabEviction or tabSession would close a
     // new import cycle back through here.
     _notice(text) {
       useDiffStore().showNotice(text)
+    },
+    _setPasteMode() {
+      useDiffStore().mode = 'paste'
     },
     _liveDoc() {
       const diff = useDiffStore()
@@ -192,36 +200,6 @@ export const useTabsStore = defineStore('tabs', {
     markActiveOpenWith(openWith) {
       if (this.active) this.active.openWith = !!openWith
     },
-    newTab({ paste = false, transient = false } = {}) {
-      const diff = useDiffStore()
-      const id = this.open(blankSnapshot(diff), { reuseBlank: false, transient })
-      if (id && paste) diff.mode = 'paste'
-      return id
-    },
-    /**
-     * Remove a set in one pass. close() in a loop would capture and re-show —
-     * and so re-diff — once per tab for a single click.
-     * @param {string[]} ids
-     */
-    closeMany(ids) {
-      const closing = new Set(ids ?? [])
-      const survivors = this.tabs.filter((t) => !closing.has(t.id))
-      // Nothing survives: fall through to close()'s last-tab path, which blanks
-      // the comparison rather than leaving an empty window.
-      if (!survivors.length) {
-        const keep = this.active ?? this.tabs[this.tabs.length - 1]
-        this.tabs = [keep]
-        this.activeId = keep.id
-        this.close(keep.id)
-        return
-      }
-      const goingTo = nextActiveIdAfterClosing(this.tabs, [...closing], this.activeId)
-      if (!closing.has(this.activeId)) this._capture()
-      this.tabs = survivors
-      const next = this.tabs.find((t) => t.id === goingTo)
-      if (next && next.id !== this.activeId) this._show(next)
-      else this.activeId = next?.id ?? null
-    },
     // Its saved diff is gone, so the tab must stop claiming to be in the vault:
     // "saved" is what silences the discard prompts.
     // The active tab no longer shows the saved diff it was opened from.
@@ -236,31 +214,6 @@ export const useTabsStore = defineStore('tabs', {
         tab.diffSaved = false
         if (tab.id === this.activeId) useDiffStore().diffSaved = false
       }
-    },
-    close(id) {
-      const target = this.tabs.find((t) => t.id === id)
-      if (!target) return
-      // Closing the last tab leaves an empty comparison, not an empty window.
-      if (this.tabs.length === 1) {
-        const fresh = blankSnapshot(useDiffStore())
-        target.entryId = null
-        target.snapshot = fresh
-        target.diffSaved = false
-        target.title = tabTitle(fresh)
-        // The name went with the comparison — leaving it behind labelled an
-        // empty tab after the diff it used to hold.
-        target.customTitle = ''
-        this._show(target)
-        return
-      }
-      const goingTo = nextActiveId(this.tabs, id, this.activeId)
-      // Capture first ONLY when the live document survives — a closing tab's
-      // state is what is being thrown away.
-      if (this.activeId !== id) this._capture()
-      this.tabs = this.tabs.filter((t) => t.id !== id)
-      const next = this.tabs.find((t) => t.id === goingTo)
-      if (next && next.id !== this.activeId) this._show(next)
-      else this.activeId = next?.id ?? null
     },
     // Menu/keyboard cycling; wraps at both ends.
     step(delta) {
@@ -287,7 +240,7 @@ export const useTabsStore = defineStore('tabs', {
     // the tab's label should follow without waiting for a switch.
     syncActiveTitle() {
       const tab = this.active
-      if (!tab) return
+      if (!tab || isSnippetTab(tab)) return
       tab.title = tabTitle(useDiffStore().snapshot())
     },
     ...sessionActions

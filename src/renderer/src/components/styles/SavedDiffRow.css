@@ -103,25 +103,6 @@
 .star.on {
   color: var(--pin-ink);
 }
-.row-btn {
-  width: var(--chip-h);
-  height: var(--chip-h);
-  display: grid;
-  place-items: center;
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-meta);
-  cursor: pointer;
-  font-size: var(--font-md);
-}
-.row-btn:hover {
-  color: var(--accent-ink);
-}
-.row-btn.delete:hover {
-  color: var(--danger-bg);
-}
 /* Overlaid, not reflowed: the name keeps its width and stays the click target. */
 .diffacts {
   position: absolute;

@@ -10,7 +10,7 @@ import { join } from 'node:path'
 // exercised in a unit test.
 test('paste-compare diffs two texts and reports the change stats', async ({ page }) => {
   // The empty state is what a fresh window shows; it must give way to the diff.
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
+  await expect(page.getByText('What are you comparing?')).toBeVisible()
 
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await page.getByPlaceholder('Paste original text here').fill('alpha\ngamma')
@@ -18,7 +18,7 @@ test('paste-compare diffs two texts and reports the change stats', async ({ page
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
   // The empty state is gone and the diff editor took over.
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeHidden()
+  await expect(page.getByText('What are you comparing?')).toBeHidden()
 
   // One inserted line → one addition, no deletions, surfaced in the toolbar
   // stats (which only render once Monaco has finished a diff pass).

@@ -545,6 +545,7 @@ const SURFACES = [
     open: async (page) => {
       await showPanel(page, 'home')
       await page.locator('.home-row').first().waitFor()
+      await page.locator('.home-item').first().hover()
     },
     close: async () => {},
     probes: {
@@ -554,7 +555,8 @@ const SURFACES = [
       'day label': ['.home-day', TEXT],
       'recent name': ['.home-row .row-2-name', TEXT],
       'recent meta': ['.home-row .row-2-meta', TEXT],
-      'glyph on its well': ['.home-row .glyph-well', TEXT]
+      'glyph on its well': ['.home-row .glyph-well', TEXT],
+      'delete, shown': ['.home-item:hover .home-delete', DIM]
     }
   },
   {
@@ -577,6 +579,61 @@ const SURFACES = [
       'glyph on its well': ['.tt-tile .glyph-well', TEXT],
       'star, pinned': ['.tt-pin.on', DIM],
       'tile edge': ['.tt-tile', SEPARATOR, 'border']
+    }
+  },
+  {
+    name: 'start-surface',
+    open: async (page) => {
+      const plus = page.locator('.diff-tabs .add')
+      if ((await plus.getAttribute('aria-pressed')) !== 'true') await plus.click()
+      await page.locator('.start-card').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      heading: ['.start-head h2', TEXT],
+      subtitle: ['.start-head .meta', TEXT],
+      'card title': ['.start-card .card-title', TEXT],
+      'card text': ['.start-card .meta', TEXT],
+      'glyph on its well': ['.start-card .glyph-well', TEXT],
+      'key hint': ['.start-card .ql-kbd', TEXT],
+      format: ['.start-formats .format', TEXT]
+    }
+  },
+  {
+    name: 'snippet-tab',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('.snippets-section .row .entry').first().click()
+      await page.locator('.snippet-doc:visible').waitFor()
+    },
+    close: async (page) => {
+      await page
+        .locator('.snippet-doc:visible')
+        .getByRole('button', { name: 'Close', exact: true })
+        .click()
+      await showPanel(page, 'home')
+    },
+    probes: {
+      'tab name': ['.diff-tabs .tab.active .name', TEXT],
+      'tab kind glyph': ['.diff-tabs .tab.active .kind', DIM],
+      'snippet name': ['.snippet-doc .doc-name input', TEXT],
+      'editor header': ['.snippet-doc .editor-header', TEXT]
+    }
+  },
+  {
+    name: 'keys-panel',
+    open: async (page) => {
+      await showPanel(page, 'keys')
+      await page.locator('.keys-panel .key-card').waitFor()
+    },
+    close: (page) => showPanel(page, 'home'),
+    probes: {
+      'key title': ['.keys-panel .key-title', TEXT],
+      fingerprint: ['.keys-panel .key-fp', TEXT],
+      heading: ['.keys-panel h3', TEXT],
+      'guide step': ['.keys-panel .steps li', TEXT],
+      'step number': ['.keys-panel .num', TEXT],
+      'rail label': ['.rail-item[data-panel="keys"] .rail-label', TEXT]
     }
   },
   {

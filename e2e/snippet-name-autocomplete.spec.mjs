@@ -82,7 +82,7 @@ test('offers nothing for a name nothing matches', async ({ app, page }) => {
 test('the editor completes too, and the template hint still shows', async ({ page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
 
   // Two seeded snippets are named `Example — …`, so the same LCP rule applies
   // here as in the launcher: it stops where they stop agreeing.
@@ -126,7 +126,7 @@ const fieldGeometry = (field) =>
 test('the ghost is actually visible, on both surfaces', async ({ app, page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Exam')
 
   const inEditor = await fieldGeometry(editor.locator('.ghost-field'))
@@ -150,7 +150,7 @@ test('the ghost is actually visible, on both surfaces', async ({ app, page }) =>
 test('a read-only name offers no completion', async ({ page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
   await page.getByText(EXAMPLE).click()
-  const editor = page.getByRole('dialog').first()
+  const editor = page.getByRole('region', { name: /Snippet/ }).first()
   await expect(editor.locator('.ghost-field.ro')).toBeVisible()
   await expect(editor.locator('.name-ghost')).toHaveText('')
 })

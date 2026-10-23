@@ -18,7 +18,7 @@ const today = () => {
 // nothing. Bracket-free text, so Monaco's auto-closing cannot perturb it.
 async function newSnippet(page, name) {
   await openNewSnippet(page)
-  const dialog = page.getByRole('dialog', { name: 'New Snippet' })
+  const dialog = page.getByRole('region', { name: 'New Snippet' })
   await dialog.getByPlaceholder('Snippet name…').fill(name)
   await dialog.locator('.editor').click()
   await page.keyboard.type('some content')
@@ -73,11 +73,10 @@ test('the tags hint is always offered, and carries the table in its tip', async 
 
 // The report that prompted the rework: nine tokens permanently under the field
 // pushed the dialog body into a scrollbar on a small window.
-test('the resting dialog does not scroll its body open', async ({ page }) => {
+test('the resting document does not scroll its body open', async ({ page }) => {
   await newSnippet(page, 'Standup {{today}}')
   const overflow = await page
-    .locator('.dialog .dialog-body, .dialog')
-    .first()
+    .locator('.snippet-doc:visible')
     .evaluate((el) => el.scrollHeight - el.clientHeight)
   expect(overflow).toBeLessThanOrEqual(0)
 })

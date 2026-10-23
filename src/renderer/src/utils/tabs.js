@@ -88,6 +88,25 @@ export function createTab(
   return { id: nextId(), title: tabTitle(snapshot), snapshot, diffSaved, transient }
 }
 
+/**
+ * A snippet open in the main area. It carries a blank comparison so diffStore
+ * still has a document, and its title is the snippet's NAME, never its content.
+ * @param {{ snippetId: string|null, title?: string, initial?: object }} opts
+ */
+export const createSnippetTab = ({ snippetId, title = '', initial = null }) => ({
+  ...createTab(),
+  kind: 'snippet',
+  title,
+  diffSaved: true,
+  dirty: false,
+  snippet: { id: snippetId ?? null, initial }
+})
+
+export const isSnippetTab = (tab) => tab?.kind === 'snippet'
+
+export const tabForSnippet = (tabs, snippetId) =>
+  snippetId ? (tabs ?? []).find((t) => isSnippetTab(t) && t.snippet.id === snippetId) : undefined
+
 // Long enough for "prod vs staging", short enough not to overrun the bar.
 export const MAX_TAB_NAME = 40
 
@@ -187,12 +206,25 @@ export const tabForEntry = (tabs, entryId) =>
  * @returns {boolean}
  */
 export function isBlank(tab) {
+  if (isSnippetTab(tab)) return false
   const s = tab?.snapshot
   if (!s) return true
   return (
     !s.left && !s.right && !s.pasteLeft && !s.pasteRight && !s.pasteLeftFile && !s.pasteRightFile
   )
 }
+
+/**
+ * The tabs the strip draws: a blank comparison is the start surface, not a tab
+ * of work. The active tab's stored copy is stale while it is worked in, so the
+ * live document answers for it.
+ * @param {DiffTab[]} tabs
+ * @param {{ activeId: string, hasContent: boolean }} [live]
+ */
+export const stripTabs = (tabs, live) =>
+  (tabs ?? []).filter((t) =>
+    live && t.id === live.activeId ? isSnippetTab(t) || live.hasContent : !isBlank(t)
+  )
 
 // A real state to be IN, but not one to come back to: after a restart the
 // waiting slot has no memory of what you were about to pick.

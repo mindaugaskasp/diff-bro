@@ -194,6 +194,16 @@
   opacity: 0.4;
   cursor: default;
 }
+/* The start surface is showing: + is where you are, the way a tab would be. */
+.diff-tabs .add.on {
+  color: var(--text);
+  background: var(--select-wash);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.diff-tabs .kind {
+  flex: none;
+  color: var(--text-meta);
+}
 
 /* Keyboard focus. Without this the controls fall back to Chromium's own black
    ring, which reads as a stray dark box on every light theme — the app's own

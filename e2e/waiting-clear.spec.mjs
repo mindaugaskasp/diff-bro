@@ -32,7 +32,7 @@ test('the waiting screen can clear the file already loaded', async ({ page }) =>
   await waiting.getByRole('button', { name: 'Clear the loaded file' }).click()
 
   await expect(waiting).toHaveCount(0)
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
+  await expect(page.getByText('What are you comparing?')).toBeVisible()
 })
 
 test('the clear control is not the way to fill the empty side', async ({ page }) => {

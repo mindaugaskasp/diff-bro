@@ -11,6 +11,7 @@ import { useEmailStore } from '../email'
 import { errorMessage } from '../../utils/shareErrors'
 import { t } from '../../i18n'
 import { keyExchangeActions } from './keyExchangeActions'
+import { keysActions } from './keysActions'
 
 export const useShareStore = defineStore('share', {
   state: () => ({
@@ -24,11 +25,13 @@ export const useShareStore = defineStore('share', {
     // Flags the just-added key so the manager can highlight it.
     lastAddedTrustedFp: null,
     showTrustedKeysDialog: false,
+    trusted: [],
     showShareKeyDialog: false,
     showRotateKeyDialog: false
   }),
   actions: {
     ...keyExchangeActions,
+    ...keysActions,
     // Save first (a share file needs a name + expiry), then the recipient picker.
     shareCurrent() {
       const diff = useDiffStore()
@@ -215,7 +218,7 @@ export const useShareStore = defineStore('share', {
         diff.showNotice(`Now trusting "${res.label}" (${res.fingerprint}).`)
         // Flag the new key so the manager highlights it.
         this.lastAddedTrustedFp = res.fingerprint
-        this.showTrustedKeysDialog = true
+        this.openKeysPanel()
       } else diff.showNotice(t('shareNotices.couldNotAddThatKey'))
     },
     cancelTrustedKey() {

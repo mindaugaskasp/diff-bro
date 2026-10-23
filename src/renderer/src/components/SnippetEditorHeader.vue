@@ -54,4 +54,4 @@ defineEmits(['update:plain', 'update:chosenLanguage'])
   </div>
 </template>
 
-<style scoped src="./styles/SnippetEditorDialog.css"></style>
+<style scoped src="./styles/SnippetEditor.css"></style>

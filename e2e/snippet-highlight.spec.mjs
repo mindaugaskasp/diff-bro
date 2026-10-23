@@ -6,7 +6,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openNewSnippet
+  openNewSnippet,
+  closeSnippet
 } from './fixtures.mjs'
 
 // Highlighting is only real in a launched app: Monaco does the tokenising, it
@@ -15,15 +16,14 @@ import {
 
 async function addSnippet(page, { name, language, body, secret = false }) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.lang-picker select').selectOption(language)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  // Saving opens the read-only view; close it so the sidebar row is hoverable.
-  await page.keyboard.press('Escape')
+  await closeSnippet(page)
   await expect(page.locator('.snippets-section .row', { hasText: name })).toBeVisible()
 }
 

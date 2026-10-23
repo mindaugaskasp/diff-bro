@@ -130,7 +130,7 @@ test('`diffbro clipboard save` stores the clipboard and opens it in the editor',
 
     await runCli(userDataDir, ['clipboard', 'save'])
 
-    const editor = page.getByRole('dialog', { name: /Snippet/i })
+    const editor = page.getByRole('region', { name: /Snippet/i })
     await expect(editor).toBeVisible({ timeout: 15000 })
     // inputValue(), not [value^=…]: v-model sets the property, never the
     // attribute, so an attribute selector never matches a Vue-bound field.
@@ -322,7 +322,7 @@ test('`diffbro create snippet -i` saves a piped body under the flags it was give
     expect(await page.locator('.snippets-section .row').count()).toBe(before + 1)
 
     await row.click()
-    const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    const view = page.getByRole('region', { name: 'Snippet', exact: true })
     await expect(view).toContainText('select 1;')
     await expect(view).toContainText('select 2;')
     await expect(view).toContainText('cli')
@@ -354,7 +354,7 @@ test('`diffbro create snippet -i` takes a piped body and flags without asking', 
     const row = page.locator('.snippets-section .row', { hasText: 'Piped schema' })
     await expect(row).toBeVisible({ timeout: 15000 })
     await row.click()
-    const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    const view = page.getByRole('region', { name: 'Snippet', exact: true })
     await expect(view).toContainText('create table t (id int);')
     await expect(view).toContainText('select 1;')
   } finally {

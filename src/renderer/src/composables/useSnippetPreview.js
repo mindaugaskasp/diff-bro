@@ -1,6 +1,8 @@
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { SECRET_MASK, isSecret } from '../utils/secretSnippet'
+import { isSnippetTab } from '../utils/tabs'
+import { useTabsStore } from '../stores/tabsStore'
 import { useSnippetPreviewActions } from './useSnippetPreviewActions'
 import { previewCardPosition } from '../utils/previewPlacement'
 
@@ -42,6 +44,12 @@ async function cardFor(entry, store, cache) {
   }
 }
 
+// Its own document is already in front: a card over it only hides it.
+function isOpenInFront(id) {
+  const { active } = useTabsStore()
+  return isSnippetTab(active) && active.snippet.id === id
+}
+
 export function useSnippetPreview() {
   const store = useSnippetStore()
   const preview = ref(null) // { id, name, tags, lang, text, style }
@@ -60,10 +68,10 @@ export function useSnippetPreview() {
   async function onRowEnter(entry, e) {
     clearTimeout(hoverTimer)
     clearTimeout(closeTimer)
-    // Anchored to the whole row: against the title alone the card landed on
-    // top of the row's own buttons.
+    // The whole row: anchored to the title, the card covered the row's buttons.
     const row = e.currentTarget.closest?.('[data-preview-anchor]') ?? e.currentTarget
     hoverTimer = setTimeout(async () => {
+      if (isOpenInFront(entry.id)) return
       pendingId = entry.id
       const card = await cardFor(entry, store, cache)
       if (!card || pendingId !== entry.id) return // no body, or pointer moved on

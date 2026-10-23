@@ -1,0 +1,11 @@
+.identicon {
+  display: grid;
+  place-items: stretch;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  padding: 5px;
+  box-sizing: border-box;
+}
+.identicon .on {
+  background: var(--glyph);
+}

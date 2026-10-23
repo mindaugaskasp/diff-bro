@@ -640,11 +640,11 @@
     "previousComparison": "Previous comparison",
     "openComparisons": "Open comparisons",
     "nextComparison": "Next comparison",
-    "newComparison": "New comparison",
     "renameTab": "Rename {name}",
     "closeTab": "Close {name}",
-    "newComparisonTip": "New comparison ({mod}+Shift+T)",
-    "tabTip": "{name} — double-click to rename"
+    "tabTip": "{name} — double-click to rename",
+    "startTip": "Start something new ({mod}+Shift+T)",
+    "newComparison": "New comparison"
   },
   "diffViewer": {
     "noDifferencesBothSidesAre": "No differences — both sides are identical",
@@ -709,12 +709,6 @@
   },
   "jiraRendered": {
     "nothingToPreviewYetSwitch": "Nothing to preview yet — switch to Plain to write."
-  },
-  "keyActions": {
-    "sendSomeoneYourPublicKey": "Send someone your public key, so they can seal diffs for you",
-    "openADiffbrokeySomeoneSent": "Open a .diffbrokey someone sent you, so you can seal diffs for them",
-    "myKey": "My key",
-    "trustedKey": "Trusted key"
   },
   "keyboardShortcutsDialog": {
     "shortcutsFor": "Shortcuts for"
@@ -862,7 +856,8 @@
       "home": "Search everything",
       "diffs": "Search diffs",
       "snippets": "Search snippets",
-      "tools": "Find a tool"
+      "tools": "Find a tool",
+      "keys": "Search trusted keys"
     }
   },
   "savedDiffsSection": {
@@ -932,7 +927,8 @@
     "label": "Sidebar",
     "home": "Home",
     "diffs": "Diffs",
-    "snippets": "Snippets"
+    "snippets": "Snippets",
+    "keys": "Keys"
   },
   "sidebarSearch": {
     "clearSearch": "Clear search",
@@ -998,10 +994,10 @@
     "discard": "Discard",
     "secretHint": "{label} — hide the contents behind ****",
     "orDropAFile": "— or drop a file here",
-    "editSnippet": "Edit Snippet",
-    "snippet": "Snippet",
+    "renderedEditor": "Rendered content, editable",
     "newSnippetTitle": "New Snippet",
-    "renderedEditor": "Rendered content, editable"
+    "editSnippet": "Edit Snippet",
+    "snippet": "Snippet"
   },
   "snippetFillDialog": {
     "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
@@ -1128,7 +1124,6 @@
     "firstRowsShown": "first {n} rows shown"
   },
   "supportedFormats": {
-    "supportedFiles": "Supported files",
     "andAnyText": "…and any text or code file — binary files aren’t supported",
     "openFormatFile": "Open {format} file"
   },
@@ -1538,7 +1533,6 @@
   "app": {
     "dropASnippetTo": "Drop a snippet to compare",
     "dropUpToTwo": "Drop up to two files to compare",
-    "chooseTwoFiles": "Choose or drop two files to compare.",
     "waiting": {
       "loaded": "Loaded",
       "title": "Waiting for file",
@@ -1748,7 +1742,9 @@
       "diff": "diff",
       "received": "received",
       "snippet": "snippet"
-    }
+    },
+    "delete": "Delete",
+    "deleteItem": "Delete {name}"
   },
   "diffsPanel": {
     "mine": "Mine · {n}",
@@ -1800,5 +1796,30 @@
       "accept": "Accept",
       "discard": "Discard"
     }
+  },
+  "startSurface": {
+    "title": "What are you comparing?",
+    "subtitle": "Drop files anywhere in this window, or start one of these.",
+    "twoFiles": "Two files",
+    "twoFilesHint": "Spreadsheets, data and any text file, side by side.",
+    "pastedText": "Pasted text",
+    "pastedTextHint": "Two blocks from the clipboard, a chat or a log.",
+    "newSnippet": "New snippet",
+    "newSnippetHint": "Write or paste something worth keeping in your library."
+  },
+  "snippetDocument": {
+    "compareWith": "Compare with…"
+  },
+  "keysPanel": {
+    "yourKey": "Your key",
+    "email": "Email",
+    "save": "Save as file",
+    "add": "Add",
+    "trusted": "Trusted · {n}",
+    "shareWithSomeone": "Share diffs with someone",
+    "stepSend": "Send them your key. They add it on their side.",
+    "stepAdd": "Add the key they send back, and check its fingerprint with them.",
+    "sendMyKey": "Send my key",
+    "addTheirKey": "Add their key"
   }
 }

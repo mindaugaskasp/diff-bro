@@ -13,30 +13,38 @@ beforeEach(() => {
   window.api = {}
 })
 
-// Put the store into "creating a new snippet" mode.
+// What the snippet tab hands the composable: the request, and what closing and
+// saving mean in that host.
+function hostFor(editing) {
+  const host = { editing, closed: false, saved: null }
+  host.onClose = () => (host.closed = true)
+  host.onSaved = (id) => (host.saved = id)
+  return host
+}
+
 function newDraft() {
   const snippets = useSnippetStore()
-  snippets.editingSnippet = { id: null }
-  return { snippets, draft: useSnippetDraft() }
+  const host = hostFor({ id: null })
+  return { snippets, host, draft: useSnippetDraft(host) }
 }
 
 describe('useSnippetDraft — discard guard', () => {
   it('a fresh empty draft closes immediately, no confirmation', () => {
-    const { snippets, draft } = newDraft()
+    const { host, draft } = newDraft()
     expect(draft.isDirty.value).toBe(false)
     draft.requestClose()
     expect(draft.confirmingDiscard.value).toBe(false)
-    expect(snippets.editingSnippet).toBeNull() // closed
+    expect(host.closed).toBe(true)
   })
 
   it('a draft with typed content asks to confirm instead of closing', () => {
-    const { snippets, draft } = newDraft()
+    const { host, draft } = newDraft()
     draft.content.value = 'critical pasted code'
     expect(draft.isDirty.value).toBe(true)
 
     draft.requestClose()
     expect(draft.confirmingDiscard.value).toBe(true)
-    expect(snippets.editingSnippet).not.toBeNull() // still open — nothing lost
+    expect(host.closed).toBe(false)
   })
 
   it('a name alone (no content yet) still counts as unsaved', () => {
@@ -46,21 +54,21 @@ describe('useSnippetDraft — discard guard', () => {
   })
 
   it('Keep editing dismisses the prompt and leaves the draft open', () => {
-    const { snippets, draft } = newDraft()
+    const { host, draft } = newDraft()
     draft.content.value = 'x'
     draft.requestClose()
     draft.keepEditing()
     expect(draft.confirmingDiscard.value).toBe(false)
-    expect(snippets.editingSnippet).not.toBeNull()
+    expect(host.closed).toBe(false)
   })
 
   it('Discard closes the editor and drops the draft', () => {
-    const { snippets, draft } = newDraft()
+    const { host, draft } = newDraft()
     draft.content.value = 'x'
     draft.requestClose()
     draft.discardDraft()
     expect(draft.confirmingDiscard.value).toBe(false)
-    expect(snippets.editingSnippet).toBeNull() // discarded
+    expect(host.closed).toBe(true)
   })
 })
 
@@ -69,8 +77,8 @@ function existingDraft() {
   const snippets = useSnippetStore()
   snippets.entries = [{ id: 'x', name: 'Existing', tags: ['a'], language: 'plaintext' }]
   snippets.load = async () => 'body text'
-  snippets.editingSnippet = { id: 'x' }
-  return { snippets, draft: useSnippetDraft() }
+  const host = hostFor({ id: 'x' })
+  return { snippets, host, draft: useSnippetDraft(host) }
 }
 
 describe('useSnippetDraft — view/edit mode', () => {
@@ -89,30 +97,31 @@ describe('useSnippetDraft — view/edit mode', () => {
 
 // Pasted Mermaid arrives with autocorrected arrows and rich-text spaces. Repair
 // rides the Format button the editor already has, rather than a second control.
-// Saving is a finished action: it closes the editor and returns you to the
-// list, rather than parking you in a read-only view of what you just wrote.
-describe('useSnippetDraft — saving closes the editor', () => {
-  it('closes after saving a NEW snippet, and the snippet is stored', async () => {
-    const { snippets, draft } = newDraft()
+// The tab decides what saving leads to; the composable reports the id, and a
+// new snippet's id is how its tab stops being a draft.
+describe('useSnippetDraft — saving reports to its host', () => {
+  it('reports the new id after saving a NEW snippet, and the snippet is stored', async () => {
+    const { snippets, host, draft } = newDraft()
     window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
     draft.name.value = 'My note'
     draft.content.value = 'remember to hydrate'
 
     await draft.save({ tags: [], tagColors: {} })
 
-    expect(snippets.editingSnippet).toBeNull()
+    expect(host.saved).toBe(snippets.entries[0].id)
+    expect(draft.isDirty.value).toBe(false)
     expect(snippets.entries).toHaveLength(1)
     expect(snippets.entries[0].name).toBe('My note')
   })
 
-  it('closes after saving an EDIT of an existing snippet', async () => {
+  it('reports the same id after saving an EDIT of an existing snippet', async () => {
     const snippets = useSnippetStore()
     window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
     const id = await snippets.add({ name: 'Original', content: 'body' })
     // The composable decrypts on mount; without this it rejects unhandled.
     window.api.vaultDecrypt = async () => 'body'
-    snippets.editingSnippet = { id }
-    const draft = useSnippetDraft()
+    const host = hostFor({ id })
+    const draft = useSnippetDraft(host)
     draft.editMode.value = true
     draft.name.value = 'Renamed'
     // save() guards on non-empty content; the real editor has it decrypted by now.
@@ -120,20 +129,20 @@ describe('useSnippetDraft — saving closes the editor', () => {
 
     await draft.save({ tags: [], tagColors: {} })
 
-    expect(snippets.editingSnippet).toBeNull()
+    expect(host.saved).toBe(id)
     expect(snippets.entries[0].name).toBe('Renamed')
   })
 
-  it('stays OPEN when the vault key is unavailable, so the draft can retry', async () => {
-    const { snippets, draft } = newDraft()
+  it('reports nothing when the vault key is unavailable, so the draft can retry', async () => {
+    const { snippets, host, draft } = newDraft()
     window.api.vaultEncrypt = async () => ({ error: 'vault-key-unavailable' })
     draft.name.value = 'My note'
     draft.content.value = 'body'
 
     await draft.save({ tags: [], tagColors: {} })
 
-    // Closing here would silently destroy what the user typed.
-    expect(snippets.editingSnippet).not.toBeNull()
+    expect(host.saved).toBeNull()
+    expect(draft.isDirty.value).toBe(true)
     expect(snippets.entries).toHaveLength(0)
   })
 })

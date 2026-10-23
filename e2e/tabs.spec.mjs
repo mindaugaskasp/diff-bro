@@ -1,5 +1,4 @@
 import { test, expect, showPanel, pickTag } from './fixtures.mjs'
-import { MAX_TABS } from '../src/renderer/src/utils/tabs.js'
 
 // Tabs are a claim about Monaco: each holds its own comparison, and only the
 // one on screen owns an editor. Neither is checkable in jsdom — there is no
@@ -51,7 +50,11 @@ test('the bar is there from the start, so a second comparison is reachable', asy
   await expect(tabBar(page)).toBeVisible()
   await expect(tabs(page)).toHaveCount(1)
 
+  // + brings up the start surface; the comparison started there is the new tab.
   await addTab(page).click()
+  await expect(addTab(page)).toHaveAttribute('aria-pressed', 'true')
+  await expect(tabs(page)).toHaveCount(1)
+  await compare(page, 'gamma', 'delta')
   await expect(tabs(page)).toHaveCount(2)
 })
 
@@ -112,8 +115,6 @@ test('an unsaved tab confirms before it closes, and a kept one survives', async 
 
 test('closing the last comparison empties it rather than the window', async ({ page }) => {
   await compare(page, 'only', 'ONLY')
-  await addTab(page).click()
-  await expect(tabs(page)).toHaveCount(2)
   await expect(await closeControl(page, 0)).toHaveCount(1)
 
   // Park the pointer first, or
@@ -122,9 +123,8 @@ test('closing the last comparison empties it rather than the window', async ({ p
     .getByRole('dialog', { name: 'Close comparison?' })
     .getByRole('button', { name: 'Close it' })
     .click()
-  await expect(tabs(page)).toHaveCount(1)
-  await expect(tabs(page).first()).toContainText('Untitled')
-  await expect(page.getByRole('button', { name: 'Paste mode' })).toBeVisible()
+  await expect(tabs(page)).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toBeVisible()
 })
 
 test('a saved diff is focused rather than opened twice', async ({ page }) => {
@@ -175,18 +175,20 @@ test('a tab does not resize when the pointer enters it', async ({ page }) => {
   expect((await tabs(page).nth(1).boundingBox()).x).toBe(neighbour.x)
 })
 
-// Pressing + used to go through the same blank-tab reuse meant for OPENING a
-// comparison, so on a fresh window it refilled the tab you were looking at and
-// appeared to do nothing at all.
-test('the + always adds a tab, even from an empty one', async ({ page }) => {
-  await expect(tabs(page)).toHaveCount(1)
-  await expect(tabs(page).first()).toContainText('Untitled')
-
+// The start surface is not a tab of work, so + returns to the one there is
+// rather than lining up empty tabs behind the strip.
+test('+ shows the start surface, and pressing it again adds nothing', async ({ page }) => {
+  await expect(tabs(page)).toHaveCount(0)
+  await expect(addTab(page)).toHaveAttribute('aria-pressed', 'true')
   await addTab(page).click()
+  await addTab(page).click()
+  await expect(tabs(page)).toHaveCount(0)
+
+  await compare(page, 'alpha', 'beta')
+  await addTab(page).click()
+  await addTab(page).click()
+  await compare(page, 'gamma', 'delta')
   await expect(tabs(page)).toHaveCount(2)
-
-  await addTab(page).click()
-  await expect(tabs(page)).toHaveCount(3)
 })
 
 // A tab is the one place a comparison already has a name, so renaming it should
@@ -279,18 +281,10 @@ test('renaming a saved diff’s tab renames it in the sidebar', async ({ page })
   await expect(page.locator('li.diff', { hasText: 'First name' })).toHaveCount(0)
 })
 
-// A lone tab has nothing to fall back to, so closing it would only empty the
-// comparison the Clear button already empties — and the × implied otherwise.
-test('a single tab has no close control', async ({ page }) => {
+// A lone tab has the start surface to fall back to, so it closes like any other.
+test('a single tab carries a close control', async ({ page }) => {
   await compare(page, 'alpha', 'beta')
   await expect(tabs(page)).toHaveCount(1)
-  await expect(
-    tabs(page)
-      .first()
-      .getByRole('button', { name: /^Close/ })
-  ).toHaveCount(0)
-
-  await addTab(page).click()
   await expect(await closeControl(page, 0)).toHaveCount(1)
 })
 
@@ -301,19 +295,20 @@ test('closing back to one tab does not leave the old name behind', async ({ page
   await page.locator('.diff-tabs .tab-rename').fill('the old one')
   await page.locator('.diff-tabs .tab-rename').press('Enter')
 
-  await addTab(page).click()
   await clickClose(page, 0)
   await page
     .getByRole('dialog', { name: 'Close comparison?' })
     .getByRole('button', { name: 'Close it' })
     .click()
+  await expect(tabs(page)).toHaveCount(0)
 
+  await compare(page, 'gamma', 'delta')
   await expect(tabs(page)).toHaveCount(1)
   await expect(tabs(page).first()).not.toContainText('the old one')
 })
 
 // The sidebar offers the same new-comparison action, and says why when it cannot.
-test('the Saved diffs + opens a new paste comparison, and stops at the cap', async ({ page }) => {
+test('the Saved diffs + opens a paste comparison on the start surface', async ({ page }) => {
   await showPanel(page, 'diffs')
   // Scoped to the header: the empty state carries a button for the same action,
   // so an unscoped name matches both.
@@ -322,16 +317,9 @@ test('the Saved diffs + opens a new paste comparison, and stops at the cap', asy
     .locator('.actions-slot')
     .getByRole('button', { name: 'New comparison' })
   await add.click()
-  await expect(tabs(page)).toHaveCount(2)
   await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
-
-  while (await add.isEnabled()) await add.click()
-  await expect(tabs(page)).toHaveCount(MAX_TABS)
-  await expect(add).toBeDisabled()
-  await expect(add).toHaveAttribute(
-    'data-tip',
-    new RegExp(`most comparisons at once \\(${MAX_TABS}\\)`)
-  )
+  await page.getByPlaceholder('Paste original text here').fill('typed')
+  await expect(tabs(page)).toHaveCount(1)
 })
 
 // A diff or snippet carries several tags, so the filter takes several too —
@@ -428,7 +416,7 @@ test('the close confirmation calls a renamed tab by its name', async ({ page }) 
 // retitled it immediately.
 test('a tab retitles from either paste pane', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await expect(tabs(page).first()).toContainText('Untitled')
+  await expect(tabs(page)).toHaveCount(0)
 
   await page.getByPlaceholder('Paste changed text here').fill('right-hand side only')
   await expect(tabs(page).first()).toContainText('Pasted text')

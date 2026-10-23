@@ -1,9 +1,9 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, snippetDoc } from './fixtures.mjs'
 
 // jsdom has no editing host, so only a launch proves a person typing into the
 // rendered view and the snippet actually changing.
 
-const editorDialog = (page) => page.getByRole('dialog', { name: 'New Snippet' })
+const editorDialog = (page) => page.getByRole('region', { name: 'New Snippet' })
 const renderedView = (page) => page.locator('.rendered-editor')
 const plainButton = (page) => page.getByRole('button', { name: 'Plain', exact: true })
 const renderedButton = (page) => page.getByRole('button', { name: 'Rendered', exact: true })
@@ -97,7 +97,7 @@ test('the format toolbar works in the rendered view', async ({ page }) => {
     sel.removeAllRanges()
     sel.addRange(range)
   })
-  await page.getByRole('button', { name: 'Bold' }).click()
+  await snippetDoc(page).getByRole('button', { name: /^Bold/ }).click()
 
   await expect(paragraph.locator('strong')).toHaveText('bold')
   expect(await readSource(page)).toBe('make me **bold**')
@@ -118,7 +118,7 @@ test('an edit in the rendered view survives a save and reopen', async ({ page })
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Persist' })
   await expect(row).toBeVisible()
   await row.locator('.entry').click()
-  const reopened = page.getByRole('dialog')
+  const reopened = snippetDoc(page)
   await expect(reopened.locator('.jira-rendered h1')).toHaveText('Kept across')
 })
 
@@ -130,11 +130,10 @@ test('a secret snippet shows no plaintext in the rendered view while masked', as
   })
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
-  await page.keyboard.press('Escape')
 
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Secret' })
   await row.locator('.entry').click()
-  const reopened = page.getByRole('dialog')
+  const reopened = snippetDoc(page)
   await expect(reopened.locator('.secret-mask')).toBeVisible()
   await expect(reopened.locator('.rendered-editor')).toHaveCount(0)
   expect(await reopened.textContent()).not.toContain('classified')
@@ -152,7 +151,7 @@ test('the rendered view of a saved snippet is not editable until Edit', async ({
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG ReadOnly' })
   await expect(row).toBeVisible()
   await row.locator('.entry').click()
-  const reopened = page.getByRole('dialog')
+  const reopened = snippetDoc(page)
   await expect(reopened.locator('.jira-rendered')).toBeVisible()
   await expect(reopened.locator('.rendered-editor')).toHaveCount(0)
 

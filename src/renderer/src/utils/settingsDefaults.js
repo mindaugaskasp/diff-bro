@@ -30,7 +30,7 @@ export const clampBackupHours = (h) => {
 
 export const SECTIONS = ['saved', 'external', 'snippets', 'tools']
 
-export const SIDEBAR_PANELS = ['home', 'diffs', 'snippets', 'tools']
+export const SIDEBAR_PANELS = ['home', 'diffs', 'snippets', 'tools', 'keys']
 const PANEL_OF_SECTION = { saved: 'diffs', snippets: 'snippets', tools: 'tools' }
 
 export const sanitizeSidebarPanel = (id) => (SIDEBAR_PANELS.includes(id) ? id : 'home')

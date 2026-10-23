@@ -9,7 +9,7 @@ const SECRET = 'sk-live-DEADBEEF-0123456789'
 
 async function createSecret(page, name = 'Prod API key') {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(SECRET)
@@ -19,7 +19,7 @@ async function createSecret(page, name = 'Prod API key') {
   // reaches it: by opening the row.
   await expect(editor).toBeHidden()
   await page.locator('.snippets-section .row', { hasText: name }).locator('.entry').click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   return view
 }
@@ -62,18 +62,18 @@ test('reopening a revealed secret starts masked again', async ({ page }) => {
   const view = await createSecret(page)
   await view.getByRole('button', { name: 'Show' }).click()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
-  await view.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
+  await view.getByRole('button', { name: 'Close', exact: true }).click()
 
   // Reveal is per-open and never stored, so the next look is hidden again.
   await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
-  const reopened = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const reopened = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(reopened.locator('.secret-mask')).toBeVisible()
   await expect(page.locator('body')).not.toContainText(SECRET)
 })
 
 test('the hover card masks a secret and never decrypts it', async ({ page }) => {
   const view = await createSecret(page)
-  await view.locator('.dialog-actions').getByRole('button', { name: 'Close' }).click()
+  await view.getByRole('button', { name: 'Close', exact: true }).click()
 
   const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
   await expect(row.locator('.secret-mark')).toBeVisible() // the lock marker
@@ -90,7 +90,7 @@ test('the hover card masks a secret and never decrypts it', async ({ page }) => 
 
 test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Plain note')
   await editor.locator('.editor').click()
   await page.keyboard.type('nothing secret here')
@@ -98,7 +98,7 @@ test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await expect(editor).toBeHidden()
 
   await page.locator('.snippets-section .row', { hasText: 'Plain note' }).locator('.entry').click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
   await expect(view.getByRole('button', { name: 'Show' })).toHaveCount(0)

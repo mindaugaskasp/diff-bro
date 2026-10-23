@@ -909,7 +909,7 @@ describe('closing the active comparison from the menu', () => {
     menu('settings')
     expect(ui.showSettingsDialog).toBe(true)
     menu('manage-keys')
-    expect(useShareStore().showTrustedKeysDialog).toBe(true)
+    expect(useSettingsStore().sidebarPanel).toBe('keys')
     menu('export-pubkey')
     expect(useShareStore().showShareKeyDialog).toBe(true)
     menu('config-backup')

@@ -18,6 +18,10 @@
   justify-content: center;
   width: 100%;
 }
+.rail-item.pinned {
+  margin-top: auto;
+  margin-bottom: var(--space-2);
+}
 .rail-item {
   position: relative;
   width: calc(var(--rail-w) - var(--space-2));

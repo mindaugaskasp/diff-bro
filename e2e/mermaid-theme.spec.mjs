@@ -125,8 +125,8 @@ test('the editor preview theme does not outlive the editor', async () => {
     let app = await launchApp(userDataDir)
     let page = await firstReadyPage(app)
 
-    await page.getByText('Example — Mermaid diagram').click()
-    const editor = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+    const editor = page.getByRole('region', { name: 'Snippet', exact: true })
     const host = editor.locator('.mmd-preview .mermaid-diagram .host')
     await expect(editor.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
 
@@ -138,8 +138,8 @@ test('the editor preview theme does not outlive the editor', async () => {
 
     app = await launchApp(userDataDir)
     page = await firstReadyPage(app)
-    await page.getByText('Example — Mermaid diagram').click()
-    const reopened = page.getByRole('dialog', { name: 'Snippet', exact: true })
+    await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+    const reopened = page.getByRole('region', { name: 'Snippet', exact: true })
     await expect(reopened.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
     // Back to Auto, which on a light app means no paper of its own.
     await expect
@@ -164,8 +164,8 @@ test('the diagram never sits on a ground it was not drawn for', async ({ app, pa
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await page.keyboard.press('Escape')
 
-  await page.getByText('Example — Mermaid diagram').click()
-  const editor = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+  const editor = page.getByRole('region', { name: 'Snippet', exact: true })
   const host = editor.locator('.mmd-preview .host')
   await expect(editor.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
   // Auto on a dark app: dark diagram, no paper — the state the switch leaves.

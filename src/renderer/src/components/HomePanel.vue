@@ -12,6 +12,7 @@ import { toolHue } from '../utils/toolGroups'
 import { ago } from '../utils/relativeTime'
 import { t } from '../i18n'
 import AppIcon from './AppIcon.vue'
+import HomeDeleteButton from './HomeDeleteButton.vue'
 
 const props = defineProps({ search: { type: String, default: '' } })
 
@@ -96,19 +97,16 @@ const isEmpty = computed(
     <section v-if="pinned.length" class="home-block">
       <h3 class="home-head">{{ $t('homePanel.pinned') }}</h3>
       <div class="home-grid">
-        <button
-          v-for="item in pinned"
-          :key="`${item.kind}-${item.id}`"
-          type="button"
-          class="tile home-pin"
-          @click="openItem(item)"
-        >
-          <span class="glyph-well" :data-hue="item.hue">
-            <template v-if="item.glyph">{{ item.glyph.text }}</template>
-            <AppIcon v-else :name="item.icon" />
-          </span>
-          <span class="row-2-name">{{ item.name }}</span>
-        </button>
+        <div v-for="item in pinned" :key="`${item.kind}-${item.id}`" class="home-item home-pin">
+          <button type="button" class="tile" @click="openItem(item)">
+            <span class="glyph-well" :data-hue="item.hue">
+              <template v-if="item.glyph">{{ item.glyph.text }}</template>
+              <AppIcon v-else :name="item.icon" />
+            </span>
+            <span class="row-2-name">{{ item.name }}</span>
+          </button>
+          <HomeDeleteButton v-if="item.kind !== 'tool'" :item="item" />
+        </div>
       </div>
     </section>
 
@@ -116,23 +114,20 @@ const isEmpty = computed(
       <h3 class="home-head">{{ $t('homePanel.recent') }}</h3>
       <template v-for="group in recent" :key="group.key">
         <h4 class="home-day">{{ $t(group.labelKey) }}</h4>
-        <button
-          v-for="item in group.items"
-          :key="`${item.kind}-${item.id}`"
-          type="button"
-          class="row-2 home-row"
-          @click="openItem(item)"
-        >
-          <span class="glyph-well" :data-hue="item.hue">
-            <template v-if="item.glyph">{{ item.glyph.text }}</template>
-            <AppIcon v-else :name="item.icon" />
-          </span>
-          <span class="row-2-text">
-            <span class="row-2-name">{{ item.name }}</span>
-            <span class="row-2-meta">{{ metaOf(item) }}</span>
-          </span>
-          <span class="home-age">{{ ago(item.at) }}</span>
-        </button>
+        <div v-for="item in group.items" :key="`${item.kind}-${item.id}`" class="home-item">
+          <button type="button" class="row-2 home-row" @click="openItem(item)">
+            <span class="glyph-well" :data-hue="item.hue">
+              <template v-if="item.glyph">{{ item.glyph.text }}</template>
+              <AppIcon v-else :name="item.icon" />
+            </span>
+            <span class="row-2-text">
+              <span class="row-2-name">{{ item.name }}</span>
+              <span class="row-2-meta">{{ metaOf(item) }}</span>
+            </span>
+            <span class="home-age">{{ ago(item.at) }}</span>
+          </button>
+          <HomeDeleteButton :item="item" />
+        </div>
       </template>
     </section>
 

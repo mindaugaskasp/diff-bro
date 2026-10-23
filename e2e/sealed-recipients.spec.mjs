@@ -62,7 +62,7 @@ test('removing a trusted key shows what has already been sealed for it', async (
     await saveAndSeal(page, 'E2E exposure')
 
     await openMenu(page, 'Security', 'Manage Trusted Keys')
-    const manager = page.getByRole('dialog', { name: 'Trusted keys' })
+    const manager = page.locator('.keys-panel')
     await manager.locator('li', { hasText: PEER }).getByRole('button', { name: 'Remove' }).click()
 
     const confirm = page.getByRole('dialog', { name: 'Remove trusted key?' })
@@ -86,7 +86,7 @@ test('a cancelled seal leaves no record behind', async ({ app, page }) => {
   await saveAndSeal(page, 'E2E cancelled')
 
   await openMenu(page, 'Security', 'Manage Trusted Keys')
-  const manager = page.getByRole('dialog', { name: 'Trusted keys' })
+  const manager = page.locator('.keys-panel')
   await manager.locator('li', { hasText: PEER }).getByRole('button', { name: 'Remove' }).click()
 
   const confirm = page.getByRole('dialog', { name: 'Remove trusted key?' })

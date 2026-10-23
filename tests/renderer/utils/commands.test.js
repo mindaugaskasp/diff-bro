@@ -49,6 +49,7 @@ const stores = () => ({
   },
   tabs: {
     newTab: spy(),
+    showStart: spy(),
     step: spy(),
     requestActiveClose: spy(),
     canHost: () => true,
@@ -62,7 +63,7 @@ const stores = () => ({
   },
   ui: { zoomDiff: spy(), openSettings: spy(), togglePresenting: spy(), presenting: false },
   snippets: { startNewSnippetFrom: spy() },
-  share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy() },
+  share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy(), openKeysPanel: spy() },
   imageExport: { exportCurrentImage: spy() },
   configBackup: { open: spy(), pendingPath: null },
   onboarding: {

@@ -8,6 +8,7 @@ import HomePanel from './HomePanel.vue'
 import DiffsPanel from './DiffsPanel.vue'
 import SnippetsPanel from './SnippetsPanel.vue'
 import { ToolsSection } from '../features/tools'
+import { KeysPanel } from '../features/share'
 import TagManagePopover from './TagManagePopover.vue'
 import TagPickerPopover from './TagPickerPopover.vue'
 import AppIcon from './AppIcon.vue'
@@ -53,7 +54,8 @@ const PANEL_VIEW = {
   home: HomePanel,
   diffs: DiffsPanel,
   snippets: SnippetsPanel,
-  tools: ToolsSection
+  tools: ToolsSection,
+  keys: KeysPanel
 }
 const panel = computed(() => settings.sidebarPanel)
 const filterable = computed(() => panel.value === 'diffs' || panel.value === 'snippets')
@@ -72,7 +74,8 @@ const SEARCH_KEY = {
   home: 'savedDiffs.searchIn.home',
   diffs: 'savedDiffs.searchIn.diffs',
   snippets: 'savedDiffs.searchIn.snippets',
-  tools: 'savedDiffs.searchIn.tools'
+  tools: 'savedDiffs.searchIn.tools',
+  keys: 'savedDiffs.searchIn.keys'
 }
 const favOnly = ref(false)
 const managing = ref('')

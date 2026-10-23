@@ -8,7 +8,7 @@ const BROKEN = 'flowchart TD\n \u00a0A[Start] \u2014> B[End]\n  B --> C[Done]'
 
 test('a diagram broken by a paste is repaired by its own button', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Pasted flow')
   await editor.locator('.editor').click()
   await page.keyboard.insertText(BROKEN)
@@ -36,7 +36,7 @@ test('a diagram broken by a paste is repaired by its own button', async ({ page 
 // pasted into a ticket is the text.
 test('the repair is what gets saved', async ({ app, page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Saved flow')
   await editor.locator('.editor').click()
   await page.keyboard.insertText(BROKEN)
@@ -47,7 +47,7 @@ test('the repair is what gets saved', async ({ app, page }) => {
   // Reopened from the row, so what is copied comes from the STORE rather than
   // from the buffer the editor still had in hand.
   await page.locator('.snippets-section .row', { hasText: 'Saved flow' }).locator('.entry').click()
-  const view = page.getByRole('dialog', { name: 'Snippet', exact: true })
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await app.evaluate(({ clipboard }) => clipboard.clear())
   const copy = view.getByRole('button', { name: 'Copy', exact: true })

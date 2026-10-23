@@ -9,7 +9,7 @@ import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useVaultStore } from '../../../src/renderer/src/stores/vaultStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
-import { MAX_TABS, tabLabel } from '../../../src/renderer/src/utils/tabs'
+import { MAX_TABS, isBlank, tabLabel } from '../../../src/renderer/src/utils/tabs'
 
 const SESSION_KEY = randomBytes(32)
 const FILE = (name, content = 'x') => ({ path: `/tmp/${name}`, name, content })
@@ -139,20 +139,27 @@ describe('opening', () => {
   // Reusing a blank tab is right when a comparison is being OPENED — it stops an
   // empty tab being left behind. It is wrong for the + button, where it made the
   // click do nothing at all on a fresh window.
-  it('always makes a tab when asked for a new one, even from a blank one', () => {
+  // A blank comparison is the start surface and the strip hides it, so asking
+  // for a new one returns to it rather than piling up tabs nobody can see.
+  it('returns to the blank comparison when asked for a new one', () => {
     const tabs = useTabsStore()
     tabs.init()
+    tabs.newTab()
+    tabs.newTab()
     expect(tabs.tabs).toHaveLength(1)
+    tabs.open(comparison('a.json', 'b.json'))
     tabs.newTab()
     expect(tabs.tabs).toHaveLength(2)
-    tabs.newTab()
-    expect(tabs.tabs).toHaveLength(3)
+    expect(isBlank(tabs.active)).toBe(true)
   })
 
   it('still refuses a new tab past the ceiling', () => {
     const tabs = useTabsStore()
     tabs.init()
-    for (let i = 0; i < MAX_TABS + 2; i++) tabs.newTab()
+    for (let i = 0; i < MAX_TABS; i++) {
+      tabs.open(comparison(`l${i}.json`, `r${i}.json`), { reuseBlank: i === 0 })
+    }
+    expect(tabs.newTab()).toBeNull()
     expect(tabs.tabs).toHaveLength(MAX_TABS)
   })
 

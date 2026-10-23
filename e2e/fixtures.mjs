@@ -205,28 +205,51 @@ export async function openMenu(page, top, sub, leaf) {
   }
 }
 
+// Playwright's link to Electron main drops its context under suite load; these stubs are idempotent.
+async function evaluateInMain(app, fn, arg) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await app.evaluate(fn, arg)
+    } catch (err) {
+      if (attempt >= 3 || !/Execution context was destroyed/.test(err.message)) throw err
+    }
+  }
+}
+
 // Answer a confirm dialog in MAIN. Some handlers ask before doing something
 // outside the app (installing a PATH shim, rewriting ~/.gitconfig); a spec that
 // drives them has to say which button the user pressed.
 export async function stubMessageBox(app, response = 1) {
-  await app.evaluate(({ dialog }, r) => {
-    dialog.showMessageBox = async () => ({ response: r })
-  }, response)
+  await evaluateInMain(
+    app,
+    ({ dialog }, r) => {
+      dialog.showMessageBox = async () => ({ response: r })
+    },
+    response
+  )
 }
 
 // Replace the native save/open dialogs in the MAIN process so file flows are
 // deterministic (no un-driveable OS dialog). The handlers call dialog.show*Dialog
 // at invoke time, so reassigning the property takes effect immediately.
 export async function stubSaveDialog(app, filePath) {
-  await app.evaluate(({ dialog }, fp) => {
-    dialog.showSaveDialog = async () => ({ canceled: false, filePath: fp })
-  }, filePath)
+  await evaluateInMain(
+    app,
+    ({ dialog }, fp) => {
+      dialog.showSaveDialog = async () => ({ canceled: false, filePath: fp })
+    },
+    filePath
+  )
 }
 export async function stubOpenDialog(app, filePaths) {
   const list = Array.isArray(filePaths) ? filePaths : [filePaths]
-  await app.evaluate(({ dialog }, fps) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: fps })
-  }, list)
+  await evaluateInMain(
+    app,
+    ({ dialog }, fps) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: fps })
+    },
+    list
+  )
 }
 
 export { expect }
@@ -252,6 +275,15 @@ export async function pickTag(page, name) {
   await picker.getByLabel('Find a tag').fill(name)
   await picker.locator('.usb-tag', { hasText: name }).first().click()
   await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
+}
+
+// It re-titles itself (New / Edit / Snippet); only the active tab's is visible.
+export const snippetDoc = (page) => page.locator('.snippet-doc:visible')
+
+export async function closeSnippet(page) {
+  const doc = snippetDoc(page)
+  await doc.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(doc).toHaveCount(0)
 }
 
 export async function openNewSnippet(page) {

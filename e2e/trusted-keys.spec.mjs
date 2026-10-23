@@ -25,7 +25,7 @@ function seedTrustedKeys(dir) {
 
 // BaseDialog stops Escape on window in capture, so the row's own cancel handler
 // never ran: Escape closed the whole manager and discarded what was being typed.
-test('Escape cancels an in-progress edit before it closes the manager', async () => {
+test('Escape cancels an in-progress edit and leaves the list in place', async () => {
   test.setTimeout(60_000)
   const dir = freshUserDataDir()
   seedTrustedKeys(dir)
@@ -34,7 +34,7 @@ test('Escape cancels an in-progress edit before it closes the manager', async ()
 
   try {
     await openMenu(page, 'Security', 'Manage Trusted Keys')
-    const mgr = page.getByRole('dialog', { name: 'Trusted keys' })
+    const mgr = page.locator('.keys-panel')
     await expect(mgr).toBeVisible()
 
     const row = mgr.locator('li.key').first()
@@ -50,9 +50,10 @@ test('Escape cancels an in-progress edit before it closes the manager', async ()
     await expect(row).toContainText('Teammate 01')
     await expect(mgr).not.toContainText('Half-typed name')
 
-    // With nothing being edited, Escape closes as usual.
+    // The panel is part of the sidebar: with nothing being edited there is
+    // nothing for Escape to close.
     await page.keyboard.press('Escape')
-    await expect(mgr).toBeHidden()
+    await expect(mgr).toBeVisible()
   } finally {
     await app.close()
     rmSync(dir, { force: true, recursive: true })
@@ -68,7 +69,7 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
 
   try {
     await openMenu(page, 'Security', 'Manage Trusted Keys')
-    const mgr = page.getByRole('dialog', { name: 'Trusted keys' })
+    const mgr = page.locator('.keys-panel')
     await expect(mgr).toBeVisible()
 
     // Every key renders, and the list bounds itself with a scroll rather than
@@ -114,12 +115,11 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
     await expect(mgr.getByText('Teammate 08 — laptop')).toBeVisible()
 
     // The changes persist across a relaunch (the store was rewritten cleanly).
-    await mgr.locator('.dialog-actions button', { hasText: 'Close' }).click()
     await app.close()
     app = await launchApp(dir)
     page = await firstReadyPage(app)
     await openMenu(page, 'Security', 'Manage Trusted Keys')
-    const mgr2 = page.getByRole('dialog', { name: 'Trusted keys' })
+    const mgr2 = page.locator('.keys-panel')
     await expect(mgr2.locator('li.key')).toHaveCount(N - 2)
     await expect(mgr2.getByText('Teammate 08 — laptop')).toBeVisible()
   } finally {

@@ -26,8 +26,6 @@ export const useUiStore = defineStore('ui', {
     paletteScope: 'all',
     // Mermaid diagram viewer: { name, code } while open, null when closed.
     mermaidView: null,
-    // Snippet version history: { id } while open, null when closed.
-    snippetHistory: null,
     // The snippet row's colour popover: { id, x, y } while open, null when
     // closed. Core, not local to the sidebar: both snippet shelves raise it and
     // exactly one of it may be open.
@@ -110,12 +108,6 @@ export const useUiStore = defineStore('ui', {
     },
     closeMermaid() {
       this.mermaidView = null
-    },
-    openSnippetHistory(id) {
-      this.snippetHistory = { id }
-    },
-    closeSnippetHistory() {
-      this.snippetHistory = null
     },
     // The command palette, scoped to tools (the shelf's "Browse all tools").
     openToolsPalette() {

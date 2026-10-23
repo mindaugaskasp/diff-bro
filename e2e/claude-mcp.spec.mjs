@@ -53,7 +53,7 @@ function mcpClient(userDataDir) {
 
 async function createSnippet(page, name, body, { secret = false } = {}) {
   await openNewSnippet(page)
-  const editor = page.getByRole('dialog', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New Snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)

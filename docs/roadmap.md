@@ -359,6 +359,17 @@ stateDiagram-v2
   text --> [*]: Save
 ```
 
+Done. Snippets open as tabs beside the comparisons, not in a dialog: the whole
+window to edit in, History docked beside the snippet, Compare with… into a new
+comparison, and a draft that survives switching away.
+
+- One tab model: a tab is `kind: 'diff'` or `'snippet'`; a snippet tab carries a
+  blank comparison so `diffStore` still mirrors the active tab
+- A blank comparison is the start surface — the strip hides it and `+` returns
+  to it, so empty tabs never pile up behind the strip
+- A snippet tab is stored by id only: a draft's text in the session would put a
+  secret's plaintext on disk
+
 Done. The rendered view of a Markdown or Jira snippet is editable — WYSIWYG, not
 a preview.
 

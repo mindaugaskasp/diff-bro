@@ -9,7 +9,7 @@ test('boots to the empty-state diff view in a single window', async ({ app, page
   // The window title carries the installed version (window.api.appVersion),
   // so this also proves the sync version bridge resolved.
   await expect(page).toHaveTitle(/^Diff Bro v\d+\.\d+\.\d+/)
-  await expect(page.getByText('Choose or drop two files to compare.')).toBeVisible()
+  await expect(page.getByText('What are you comparing?')).toBeVisible()
   // Home lists seeded snippets only once the preload-backed stores have hydrated.
   await expect(page.getByRole('navigation', { name: 'Sidebar' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Recent' })).toBeVisible()
