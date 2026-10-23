@@ -2,7 +2,7 @@
 // ticket or PR: inline CSS, no external assets (so it opens anywhere and can't
 // phone home), and every piece of user text goes through esc() before it lands
 // in the markup. Pure, so it's unit-tested. { error } past the size guard.
-import { diffLines } from './unifiedDiff'
+import { diffLines } from '../../../shared/unifiedDiff'
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ESC[c])

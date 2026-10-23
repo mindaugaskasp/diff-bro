@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| **Status** | approved — builds after sidebar-workspace ships |
-| **Progress** | 0 / 12 steps |
+| **Status** | in-progress |
+| **Progress** | 11 / 12 steps; Windows unverified |
 | **Branch** | `feat/claude-mcp` |
 | **Started** | 2026-10-23 |
 | **Finished** | — |
-| **Bugs found and fixed this iteration** | 0 / 0 |
-| **Token baseline** | not yet |
-| **Claude tokens used** | not measured |
+| **Bugs found and fixed this iteration** | 2 / 2 |
+| **Token baseline** | 2026-10-23T05:06:37Z |
+| **Claude tokens used** | 30,561,937 (cache read 30.17M, output 137k), 2026-10-23T05:06Z → 05:47Z |
 
 ## Problem
 
@@ -193,26 +193,34 @@ switch is read on every call, so turning it off revokes access immediately.
 
 ## Implementation plan
 
-- [ ] 1. Rule-2 audit of `@modelcontextprotocol/sdk` (stdio import path,
-      transitive tree, install scripts, `npm audit`); record the result and
-      choose SDK or hand-rolled subset.
-- [ ] 2. Prove the headless mode: `diffbro mcp` starts Electron without a
-      window, skips the single-instance lock for this mode, keeps stdout clean of
-      Chromium logging, and obtains the vault key via `safeStorage`. Spike on
-      macOS, Windows, Linux, because each keychain behaves differently headless.
-      **Stop and re-plan if any platform cannot.**
-- [ ] 3. `src/main/mcpProtocol.js` (pure) + tests.
-- [ ] 4. `src/main/mcpTools.js` (pure, scope-checked) + negative tests.
-- [ ] 5. `src/main/inboxStore.js`: encrypted, atomic, capped, expiring + tests.
-- [ ] 6. `src/main/mcp.js`: thin glue wiring stdio, settings and stores.
-- [ ] 7. Settings section + IPC + activity log.
-- [ ] 8. Renderer `inboxStore` + `fs.watch` bridge in main (path computed in
-      main; renderer names no file).
-- [ ] 9. Home "From Claude" card list; Accept opens comparisons in a new tab.
-- [ ] 10. e2e spec.
-- [ ] 11. Docs (all "yes" rows).
-- [ ] 12. `/validate`; re-verify the share roundtrip in Docker (rule 5 says so
-      for any crypto-adjacent change).
+- [x] 1. Rule-2 audit of `@modelcontextprotocol/sdk` 1.32.1: **rejected**.
+      17 runtime dependencies (express, hono, cors, eventsource, jose,
+      cross-spawn, …) for five methods. Hand-rolled in `mcpProtocol.js`.
+- [x] 2. Headless mode proven on **macOS** (host) and **Linux** (Docker e2e and
+      theme sweep):
+      - no window, no single-instance lock;
+      - clean stdout, about 0.6 s to answer;
+      - vault key via `safeStorage`.
+
+      **Windows is not verified**: no Windows machine here. Open below.
+- [x] 3. `mcpProtocol.js` (pure) + tests.
+- [x] 4. `mcpTools.js` / `mcpLibrary.js` / `mcpInput.js` / `mcpResources.js`
+      (pure, scope-checked) + negative tests. The secret-snippet test was seen
+      red against a list-everything stub.
+- [x] 5. `inboxStore.js`: encrypted, atomic, capped, expiring + tests.
+- [x] 6. `mcp.js`: glue for stdio, the grant and the stores.
+- [x] 7. Settings ▸ Claude (`features/claude`) + `claude.js` IPC + signed grant
+      (`mcpGrant.js`) + activity log (`claudeFiles.js`).
+- [x] 8. Renderer `claudeStore` + an `fs.watch` bridge in main
+      (`inbox:changed`; the path is computed in main).
+- [x] 9. Home "From Claude · N to review". **Preview** opens a tab and saves
+      nothing. **Accept** saves through the ordinary stores; a comparison
+      becomes a kept saved diff.
+- [x] 10. `e2e/claude-mcp.spec.mjs` (6 tests); `claude-settings` and
+      `claude-inbox` added to the theme sweep.
+- [x] 11. Docs (all "yes" rows).
+- [x] 12. `/validate`; share roundtrip re-verified in Docker (`sharing.spec`,
+      inside the full `make e2e`).
 
 ## Decisions
 
@@ -222,14 +230,68 @@ switch is read on every call, so turning it off revokes access immediately.
 | 2026-10-23 | writes are inbox proposals the user accepts | the user asked to "check later"; and Claude never mutates the library unseen | direct writes |
 | 2026-10-23 | secret snippets and received diffs never exposed | their promises are to the user and to the sender respectively | a scope toggle for them |
 | 2026-10-23 | depends on sidebar-workspace (Home) for the inbox surface | that is where "to review" belongs; without it, a fifth sidebar section would bring back the stacking E removes | a dialog |
+| 2026-10-23 | branch from `improvement/sidebar-workspace`, not main | the inbox lives on Home, which only exists on that unmerged branch | waiting for it to merge |
+| 2026-10-23 | hand-roll the protocol | SDK: 17 runtime deps incl. an HTTP server stack | `@modelcontextprotocol/sdk` |
+| 2026-10-23 | grant HMAC under HKDF(vault key) | a plain settings flag bypasses the keychain ACL | `settings.json` flag |
+| 2026-10-23 | a proposed language must be one the editor knows, else none | it reaches Monaco | free text |
+| 2026-10-23 | e2e spawns the MCP child with `--use-mock-keychain` | Playwright launches the app with Chromium's mock keychain, so its key opens only under the same switch | a real-HOME launch for this spec |
+| 2026-10-23 | `.dialog-note` (ui.css, 36 dialogs) moves to `--text-meta`, at the owner's request | on `--text-dim` it read 3.44–4.31 on solar, nord, sepia and bloom; now ≥ 5.43 on all 20 | a Claude-pane-only override (tried first, removed) |
+| 2026-10-23 | Settings checkbox labels (`SettingToggle`) move to `--text-meta` too, at the owner's request | same 3.44–4.31 failure; probed in the `claude-settings` sweep | — |
 | 2026-10-23 | approved by the owner on one condition: an **"Enable Claude MCP connection"** checkbox in Settings, off by default, gated by a warning the user confirms | sending library contents to the user's Claude client is acceptable only as the user's explicit, informed opt-in | an implicit enable when a scope is ticked |
+
+### Amendments made while building
+
+- **`run_tool` dropped.** The tool functions are renderer `utils/`; moving them
+  to `src/shared` is churn for something Claude does itself. The *Tools* scope
+  became **Compare texts it sends** (`compare_texts`).
+- **The grant is signed, not a setting.** Settings asked only for a checkbox; a
+  plain flag in `settings.json` would let any process that writes that file
+  switch the connection on, sidestepping the keychain ACL. Main MACs it under an
+  HKDF of the vault key.
+- **IPC**: `claude:connection`, `claude:setConnection`, `claude:activity`,
+  `claude:clearActivity`, `inbox:list`, `inbox:read`, `inbox:discard`, plus the
+  `inbox:changed` event. `inbox:accept` became renderer-side: read, add
+  through the store, discard. The library keeps one writer.
+- **Grant, activity and inbox live in userData**, not the data folder. Consent
+  is per install; a restored or moved data folder must not carry it.
+- **The setup command names the app binary, not the `diffbro` shim.** On
+  Windows the shim is `start ""`, which detaches and drops stdio.
+- **`AAD` formulas and `unifiedDiff.js` moved to `src/shared`**, so main and
+  the renderer cannot drift.
 
 ## Validation
 
-- [ ] `/validate`
-- [ ] `npm run check`
-- [ ] e2e green, headless mode verified on all three platforms
-- [ ] every Docs-impact "yes" done
-- [ ] token usage measured
+- [x] `/validate`: comments trimmed to one-line whys. Conventions clean: lint,
+      size caps, layering, tests mirror subjects. Security verified, see
+      quality-audit.md.
+- [x] `npm run check`: exit 0. 3824 passed / 2 skipped, coverage 95.35 / 88.35
+      / 95.88 / 96.39, i18n 1366/1366, structure clean.
+- [x] e2e:
+      - `make e2e` (Linux): 540 passed, 0 failed, 4 skipped (macOS-only).
+      - `claude-mcp.spec` on the macOS host: 6/6.
+      - Headless mode is verified on macOS and Linux. **Windows: not verified.**
+- [x] theme sweep `claude-settings` + `claude-inbox`: 140 measurements across
+      20 themes, all above their floors (after the intro fix).
+- [x] every Docs-impact "yes" done: README, security.md, ipc-security.md,
+      standards.md, roadmap.md + roadmap.svg.
+- [x] token usage measured.
 
-**Outcome:**
+**Bugs found and fixed, each red → green:**
+1. Enabling sent a reactive Proxy over IPC ("An object could not be cloned"),
+   so the grant was never written. Seen red in `claude-mcp.spec`.
+2. The MCP process read the vault key once at startup. A Claude session started
+   before the app had made a key stayed off forever. It now retries per request.
+   `claude-mcp.spec` › "a session started before the app has a key…" is red on
+   the old `mcp.js` and green on the fix.
+
+**Outcome:** built and green on macOS and Linux. **Status stays in-progress for
+one item:** the plan's step 2 requires a Windows spike, so someone needs to
+check by hand on Windows that `"<Diff Bro.exe>" mcp`, launched by Claude
+Desktop, keeps its stdio pipes and answers `initialize`. Until then, Windows is
+not advertised.
+
+**Windows check automated:** `ci.yml`'s Windows `check` job now packages
+`Diff Bro.exe` (`electron-builder --win --dir`) and runs `scripts/mcp-smoke.mjs`
+against it. It checks that the exe answers `initialize`, refuses while off, and
+exits on EOF. The job runs on a PR to main; its first green run closes this
+item.

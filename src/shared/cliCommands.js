@@ -51,6 +51,12 @@ export const COMMANDS = [
     detailKey: 'cli.clipboard.detail'
   },
   {
+    topic: 'mcp',
+    usage: 'diffbro mcp',
+    summaryKey: 'cli.mcp.summary',
+    detailKey: 'cli.mcp.detail'
+  },
+  {
     topic: 'help',
     usage: 'diffbro help [<command>]',
     summaryKey: 'cli.help.summary',

@@ -60,6 +60,14 @@ regression test from decoration.
    because nothing in main opens a socket, not because anything stops it. Any
    future proposal to add one starts from there.
 
+   **The Claude connection does not break it either, for the same reason.**
+   `diffbro mcp` is launched by the user's Claude app and speaks over stdio,
+   so main still opens no socket; the data leaves through that app the way a
+   sealed file leaves through the mail client. It is off until a signed grant
+   says otherwise, never shares secret snippets or received diffs, and only
+   proposes, never writes the library. See `specs/2026-10-23-claude-mcp/plan.md`
+   and docs/security.md. HTTP/SSE and a local socket were rejected.
+
 2. **New dependencies need a network audit.** Before adding any package:
    confirm it makes no runtime network calls, then run `npm audit`. Prefer
    zero new production dependencies. `yaml` (structure-aware comparison) passed
@@ -150,6 +158,9 @@ regression test from decoration.
    A **secret snippet refuses Copy as file** for the same reason: its guarantee is
    that the contents never land somewhere readable, which a volatile text
    clipboard honours and a file on disk does not.
+
+   The Claude connection adds no sandbox exit: no `openExternal`, and no path
+   handed to the OS. Its inbox and grant paths are computed in main.
 
 8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only

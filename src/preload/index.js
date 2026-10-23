@@ -200,5 +200,16 @@ contextBridge.exposeInMainWorld('api', {
   // Main window: a result chosen in the launcher arrives here ({ kind, id }).
   onQuickLookOpen: (handler) => {
     ipcRenderer.on('quicklook:openInMain', (_e, payload) => handler(payload))
+  },
+  // Claude connection: booleans in, summaries and one proposal by id out.
+  claudeConnection: () => ipcRenderer.invoke('claude:connection'),
+  setClaudeConnection: (grant) => ipcRenderer.invoke('claude:setConnection', grant),
+  claudeActivity: () => ipcRenderer.invoke('claude:activity'),
+  clearClaudeActivity: () => ipcRenderer.invoke('claude:clearActivity'),
+  inboxList: () => ipcRenderer.invoke('inbox:list'),
+  inboxRead: (id) => ipcRenderer.invoke('inbox:read', String(id)),
+  inboxDiscard: (id) => ipcRenderer.invoke('inbox:discard', String(id)),
+  onInboxChanged: (handler) => {
+    ipcRenderer.on('inbox:changed', () => handler())
   }
 })

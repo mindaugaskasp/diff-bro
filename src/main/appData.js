@@ -69,6 +69,7 @@ function readStore(name) {
 // and exporting readStore itself would let a later caller reach vault.json past
 // that check.
 export const readSnippetStore = () => readStore('snippets')
+export const readVaultStore = () => readStore('vault')
 
 // Main reads the renderer's settings.json fresh for the few limits it enforces
 // (e.g. the large-file threshold).

@@ -20,6 +20,13 @@ rejected rather than shipped, because the kill switch would not have caught it:
 it filters `session.defaultSession.webRequest`, which is Chromium traffic only,
 so a main-process `tls.connect` would have been invisible to it.
 
+**Connecting a Claude app does not change it either.** `diffbro mcp` speaks
+MCP over **stdio**: the Claude app launches it and talks through its stdin and
+stdout, so Diff Bro opens no socket and listens on no port. What Claude reads
+leaves through the Claude app the user configured, the way an emailed diff
+leaves through their mail client. It is off until the user turns it on. See
+[The Claude connection](#the-claude-connection-diffbro-mcp).
+
 **Reading a file out of git does not change it either.** `src/main/gitRepo.js`
 spawns `git` to answer two questions — where the repository begins, and what a
 file looked like at a revision — the same way `gitTool.js` already spawns it to
@@ -267,6 +274,61 @@ silent-trust path.
 
 - **The recipient must still be a trusted key.** There is no route that mails a
   diff to an address you have not tied to one.
+
+## The Claude connection (`diffbro mcp`)
+
+A Claude app (Claude Code, Claude Desktop) can read parts of the library and
+offer new snippets and comparisons for the user to review. Nothing about it is
+on by default.
+
+**Transport.** stdio only. The Claude app launches the app binary with the `mcp`
+verb, a windowless instance that never takes the single-instance lock, and the
+two exchange newline-delimited JSON-RPC (`mcpProtocol.js`, hand-rolled: the
+official SDK carries an HTTP server stack and 17 runtime dependencies). An
+HTTP/SSE transport or a local socket into the running app were rejected, because
+either one opens a socket in Diff Bro.
+
+**Consent is a signed grant, not a setting.** Settings ▸ Claude holds a master
+checkbox, **Enable Claude MCP connection**. Ticking it shows what the
+connection means and takes effect only on **Enable**. The switch and its five
+scopes are written by main to `claude-grant.json` with an HMAC under a key
+derived from the vault key (`mcpGrant.js`). A plain flag in `settings.json`
+would let any process able to write that file turn the connection on, which
+would get around the keychain ACL that guards the vault key itself. The MCP
+process reads the grant on **every** request, so unticking stops access at the
+next call. A missing, malformed or forged grant reads as off.
+
+**What is never shared, whatever the scopes** (`mcpLibrary.js`, negative-tested):
+
+- **secret snippets**. Their promise is that the contents land nowhere
+  readable, and a model's context is readable.
+- **received diffs**. The sender sealed them for this user, not for a third
+  party.
+- expired diffs, keys, fingerprints, the trust store, settings and logs.
+
+**Writes are proposals.** Claude cannot change or delete anything. A proposed
+snippet or comparison is written by the MCP process as one AES-GCM file in
+`userData/claude-inbox/`, encrypted with the vault key and with its id, kind
+and timestamps bound as AAD (`inboxStore.js`). It lands atomically (temp, then
+rename). Home lists it under **From Claude**, and only **Accept** turns it into
+a snippet or saved diff, through the same stores the user's own edits use.
+Only the MCP process creates inbox files and only the app deletes them, so the
+two never write one file. Proposals expire after a week; at most 50 wait at
+once.
+
+**Input from the Claude app is hostile** (`mcpInput.js`). Every argument is
+typed and capped: names 200 characters, notes 2,000, bodies 1 MB, at most 20
+tags, a language from the editor's own list or none. A message over 2 MB is
+refused unparsed, and an unknown method or tool is an error. Proposals render
+only through Vue text interpolation.
+
+**Activity.** Every call is logged to `claude-activity.jsonl` with its time,
+tool and the name of the item it touched, never contents. Settings ▸ Claude
+shows the most recent 200 and can clear them.
+
+**Reach.** Any process running as the same OS user can launch `diffbro mcp`. On
+macOS that process still needs the keychain item the app's code signature
+unlocks, and without a valid grant it answers nothing.
 
 ## Copy as file, and the plaintext window it opens
 

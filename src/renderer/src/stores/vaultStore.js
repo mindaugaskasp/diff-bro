@@ -8,6 +8,7 @@ import { useUiStore } from './uiStore'
 import { t } from '../i18n'
 import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
 import { confirmationActions } from './vaultConfirmations'
+import { diffAad as entryAad } from '../../../shared/entryAad'
 
 // Content crypto runs in main (vault:*); only name/tags/timestamps are plaintext.
 // Re-exported: many modules import these from here; they live in
@@ -21,11 +22,6 @@ export const TTL_OPTIONS = [
   { label: '3 days', hours: 72 },
   { label: '1 week', hours: 168 }
 ]
-
-// Timestamps bind the ciphertext as AES-GCM AAD (tampering expiresAt makes it
-// undecryptable); name/tags/favorite are excluded so they stay free metadata.
-const entryAad = (id, createdAt, expiresAt, from) =>
-  [id, createdAt, expiresAt, from ?? ''].join('|')
 
 // Re-exported: several modules import diffFormatTag from here. The entry
 // coercion is pure, so it lives in utils/vaultEntries.js.

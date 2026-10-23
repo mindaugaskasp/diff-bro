@@ -17,7 +17,7 @@ import { describe, it, expect } from 'vitest'
 import { zipSync, strToU8 } from 'fflate'
 import { readXlsx } from '../../src/main/xlsx/index'
 import { alignRows } from '../../src/renderer/src/utils/alignRows'
-import { toUnifiedDiff, MAX_DIFF_LINES } from '../../src/renderer/src/utils/unifiedDiff'
+import { toUnifiedDiff, MAX_DIFF_LINES } from '../../src/shared/unifiedDiff'
 
 const RUN = !!process.env.STRESS
 const COLS = 12

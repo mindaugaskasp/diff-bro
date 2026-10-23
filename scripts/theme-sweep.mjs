@@ -306,6 +306,62 @@ async function openConflictList(page, userDataDir) {
   await page.locator('.cf-row.done').first().waitFor({ timeout: 10000 })
 }
 
+async function openClaudePane(page) {
+  await page.getByRole('button', { name: 'File', exact: true }).click()
+  await page.getByText('Settings', { exact: true }).click()
+  const dlg = page.getByRole('dialog', { name: 'Settings' })
+  await dlg.getByRole('button', { name: 'Claude', exact: true }).click()
+  return dlg
+}
+
+// Retried while the grant the pane just signed is still on its way to disk.
+async function proposeOverMcp(userDataDir) {
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  const call = {
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'tools/call',
+    params: {
+      name: 'propose_snippet',
+      arguments: {
+        name: 'Rollback',
+        content: 'kubectl rollout undo',
+        note: 'The inverse of the deploy'
+      }
+    }
+  }
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const child = spawn(
+      ELECTRON,
+      [MAIN, `--user-data-dir=${userDataDir}`, '--use-mock-keychain', 'mcp'],
+      {
+        env
+      }
+    )
+    let out = ''
+    child.stdout.on('data', (d) => (out += d))
+    child.stdin.end(`${JSON.stringify(call)}\n`)
+    await new Promise((resolve) => child.on('exit', resolve))
+    if (out.includes('proposalId')) return
+    await new Promise((resolve) => setTimeout(resolve, 300))
+  }
+  throw new Error('diffbro mcp never accepted the proposal')
+}
+
+let claudeInboxSeeded = false
+async function seedClaudeInbox(page, userDataDir) {
+  if (claudeInboxSeeded) return
+  const dlg = await openClaudePane(page)
+  await dlg.getByLabel('Enable Claude MCP connection').check()
+  await dlg.getByRole('alertdialog').getByRole('button', { name: 'Enable', exact: true }).click()
+  await dlg.getByLabel('Offer new snippets').check()
+  await page.keyboard.press('Escape')
+  await dlg.waitFor({ state: 'detached' })
+  await proposeOverMcp(userDataDir)
+  claudeInboxSeeded = true
+}
+
 const SURFACES = [
   {
     name: 'conflict-list',
@@ -521,6 +577,42 @@ const SURFACES = [
       'glyph on its well': ['.tt-tile .glyph-well', TEXT],
       'star, pinned': ['.tt-pin.on', DIM],
       'tile edge': ['.tt-tile', SEPARATOR, 'border']
+    }
+  },
+  {
+    name: 'claude-settings',
+    open: async (page) => {
+      const dlg = await openClaudePane(page)
+      const master = dlg.getByLabel('Enable Claude MCP connection')
+      if (await master.isChecked()) await master.uncheck()
+      await master.check()
+      await dlg.getByRole('alertdialog').waitFor()
+    },
+    close: async (page) => {
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click()
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+    },
+    probes: {
+      intro: ['.claude-settings .dialog-note', TEXT],
+      'checkbox label': ['.claude-settings .setting-toggle span', TEXT],
+      'warning title': ['.claude-warning-title', TEXT],
+      'warning text': ['.claude-warning li', TEXT]
+    }
+  },
+  {
+    name: 'claude-inbox',
+    open: async (page, { userDataDir }) => {
+      await seedClaudeInbox(page, userDataDir)
+      await showPanel(page, 'home')
+      await page.locator('.inbox-item').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      'proposal name': ['.inbox-item .row-2-name', TEXT],
+      'proposal meta': ['.inbox-item .row-2-meta', TEXT],
+      'proposal note': ['.inbox-note', TEXT],
+      'glyph on its well': ['.inbox-item .glyph-well', TEXT]
     }
   },
   {
