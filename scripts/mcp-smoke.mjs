@@ -8,7 +8,7 @@ import { createInterface } from 'node:readline'
 
 const [exe, appDir] = process.argv.slice(2)
 const profile = mkdtempSync(join(tmpdir(), 'diffbro-mcp-smoke-'))
-const env = { ...process.env }
+const env = { ...process.env, DIFFBRO_MCP_TRACE: '1' }
 delete env.ELECTRON_RUN_AS_NODE
 
 const args = [...(appDir ? [appDir] : []), `--user-data-dir=${profile}`, 'mcp']
@@ -36,7 +36,11 @@ function fail(why) {
   process.exit(1)
 }
 
-const timer = setTimeout(() => fail('no answer within 60 s'), 60_000)
+const timer = setTimeout(
+  () =>
+    fail(`no answer within 60 s; stdout held: ${noise.map((l) => JSON.stringify(l)).join(', ')}`),
+  60_000
+)
 const init = await request(1, 'initialize', { protocolVersion: '2025-06-18' })
 if (init.result?.serverInfo?.name !== 'diffbro') fail(`initialize: ${JSON.stringify(init)}`)
 const tools = await request(2, 'tools/list')

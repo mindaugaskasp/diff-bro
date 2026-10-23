@@ -56,7 +56,12 @@ function sessionFor(keyOf, paths) {
   )
 }
 
+const trace = (what) => process.env.DIFFBRO_MCP_TRACE && process.stderr.write(`[mcp] ${what}\n`)
+
 async function serve() {
+  trace(`ready; stdin isTTY=${process.stdin.isTTY} stdout isTTY=${process.stdout.isTTY}`)
+  process.stdin.on('data', (d) => trace(`stdin ${d.length} bytes`))
+  process.stdin.on('end', () => trace('stdin end'))
   installNetworkKillSwitch()
   // Retried per request: a client may start this before the app has made a key.
   let key = null
@@ -64,13 +69,15 @@ async function serve() {
   const lines = createInterface({ input: process.stdin, crlfDelay: Infinity })
   for await (const line of lines) {
     key ??= await readExistingVaultKey().catch(() => null)
+    trace(`line ${line.length} chars`)
     const response = await session.handleLine(line)
-    if (response) process.stdout.write(`${JSON.stringify(response)}\n`)
+    if (response) process.stdout.write(`${JSON.stringify(response)}\n`, () => trace('wrote'))
   }
   app.quit()
 }
 
 export function startMcp() {
+  trace(`start pid=${process.pid}`)
   // stdout is the protocol channel; a stray log line would corrupt it.
   console.log = console.info = console.warn = console.error
   app.dock?.hide()
