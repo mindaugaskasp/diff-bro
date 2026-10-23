@@ -10,7 +10,7 @@ export function claudeSetup({ exePath, appPath }) {
   return {
     command: exePath,
     args,
-    cli: `claude mcp add diffbro -- ${quoted}`,
+    cli: `claude mcp add --scope user diffbro -- ${quoted}`,
     desktopJson: JSON.stringify({ mcpServers: { diffbro: { command: exePath, args } } }, null, 2)
   }
 }

@@ -400,3 +400,10 @@
  */
 
 export {}
+
+/**
+ * One Claude app as Settings ▸ Claude shows it; computed in main from its own config file.
+ * @typedef {object} ClaudeAppState
+ * @property {boolean} available  installed on this computer
+ * @property {'absent'|'current'|'stale'|'unknown'} status  whether its config launches this app
+ */

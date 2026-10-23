@@ -29,7 +29,10 @@ export const useClaudeStore = defineStore('claude', {
     confirming: false,
     error: null,
     activity: [],
-    inbox: []
+    inbox: [],
+    apps: null,
+    connecting: '',
+    connectResult: null
   }),
   getters: {
     enabled: (s) => s.connection?.enabled === true,
@@ -61,6 +64,17 @@ export const useClaudeStore = defineStore('claude', {
       const res = await window.api.setClaudeConnection({ enabled, scopes: { ...scopes } })
       this.error = res?.error ?? null
       if (!res?.error) this.connection = res
+    },
+    async loadApps() {
+      this.apps = await window.api.claudeApps()
+    },
+    async connectApp(target) {
+      this.connecting = target
+      this.connectResult = null
+      const res = await window.api.connectClaudeApp(target)
+      this.connecting = ''
+      if (res?.apps) this.apps = res.apps
+      if (!res?.canceled) this.connectResult = { target, outcome: res?.error ?? 'ok' }
     },
     async loadActivity() {
       this.activity = await window.api.claudeActivity()

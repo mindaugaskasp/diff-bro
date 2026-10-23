@@ -8,12 +8,18 @@ describe('claude setup command', () => {
       appPath: null
     })
     expect(setup.cli).toBe(
-      'claude mcp add diffbro -- "/Applications/Diff Bro.app/Contents/MacOS/Diff Bro" "mcp"'
+      'claude mcp add --scope user diffbro -- "/Applications/Diff Bro.app/Contents/MacOS/Diff Bro" "mcp"'
     )
     expect(JSON.parse(setup.desktopJson).mcpServers.diffbro).toEqual({
       command: '/Applications/Diff Bro.app/Contents/MacOS/Diff Bro',
       args: ['mcp']
     })
+  })
+
+  // The default scope is the terminal's folder: pasted from a project, only that project got the tools.
+  it('registers for every Claude Code session, not the folder it was pasted in', () => {
+    const setup = claudeSetup({ exePath: '/x/Diff Bro', appPath: null })
+    expect(setup.cli).toMatch(/^claude mcp add --scope user diffbro -- /)
   })
 
   it('passes the app directory to Electron on an unpackaged run', () => {

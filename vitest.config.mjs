@@ -59,6 +59,7 @@ export default defineConfig({
         'src/main/configBackup.js',
         'src/main/issueUrl.js',
         'src/main/bundleVersion.js',
+        'src/main/claudeConnectCore.js',
         'src/main/logFormat.js',
         'src/main/logRedact.js',
         'src/main/captureRect.js',
