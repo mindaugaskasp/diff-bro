@@ -1137,7 +1137,10 @@
     "usedOf": "[{used} ōƒ {max} ·øé·]",
     "removeOneFirst": "[ — řéɱōṽé ōńé ţō àđđ àńōţĥéř ·øé·øé·øé]",
     "removeTip": "[Řéɱōṽé {tag} ·øé·]",
-    "removeTagLabel": "[Řéɱōṽé ţàğ {tag} ·øé·ø]"
+    "removeTagLabel": "[Řéɱōṽé ţàğ {tag} ·øé·ø]",
+    "addTag": "[Àđđ ţàğ ·øé]",
+    "addPlaceholder": "[àđđ à ţàğ… ·øé]",
+    "suggestions": "[Ţàğ şūğğéşţĩōńş ·øé·øé]"
   },
   "tagManagePopover": {
     "tagName": "[Ţàğ ńàɱé ·øé]",

@@ -369,6 +369,27 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'snippet-tag-chips',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      const doc = page.locator('.snippet-doc:visible')
+      await doc.getByRole('button', { name: 'Add tag' }).click()
+      await doc.locator('.tag-pop').waitFor()
+    },
+    close: async (page) => {
+      // Cancel on an untouched snippet closes its tab.
+      await page.locator('.snippet-doc:visible').getByRole('button', { name: 'Cancel' }).click()
+      await page.locator('.tag-row').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'add input text': ['.snippet-doc .input-pill .taginput', TEXT],
+      count: ['.tag-pop .cap', TEXT],
+      suggestion: ['.tag-pop .sugg', TEXT],
+      'input keyline': ['.snippet-doc .input-pill', DIM, 'border']
+    }
+  },
+  {
     name: 'snippet-status-bar',
     open: async (page) => {
       await showPanel(page, 'snippets')
