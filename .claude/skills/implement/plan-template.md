@@ -32,6 +32,15 @@ The approach, then what was rejected.
 
 ## Design
 
+**Source of truth:** <design canvas link>. A UI/UX change starts there and is
+iterated there; this section is pasted from it and re-pasted when it changes.
+**Approved design:** <the canvas's Approved design page, and the date it was
+signed off>. No code before both exist.
+
+| artboard | shows |
+|---|---|
+| | |
+
 Token-driven only — depth roles (`--bg-canvas` / `--bg` / `--bg-elevated` /
 `--bg-raised`), `--shadow-*`, `--control-h` / `--control-h-sm` / `--chip-h`,
 `.band` / `.band-row`, `<AppIcon>`. Name the tokens; a literal colour,
@@ -97,6 +106,15 @@ Screenshots: `empty-state`, `diff-dark`, `diff-light`, `save-encrypted`,
 container** — needs Xvfb; `_electron` cannot launch Electron on the macOS host.
 A restyled control stales every frame containing it, and the README `alt` text
 changes with the image.
+
+## Delivery
+
+One PR per design change, each deployable alone, in merge order. A slice
+never depends on an unmerged sibling.
+
+| # | slice | branch | PR | status |
+|---|---|---|---|---|
+| | | | | |
 
 ## Implementation plan
 

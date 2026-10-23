@@ -44,6 +44,42 @@ Read the whole plan first — Decisions exists so settled questions stay settled
 Ask only where two readings mean materially different work; log routine calls in
 Decisions.
 
+### UI/UX work starts with a design artifact
+
+Any change with a visible surface gets a **design canvas artifact** before the
+plan is written. The canvas is the **primary source of truth**, and the spec
+follows it, never the other way round.
+
+1. Create it: `Artifact` quickstart, intent `design`, titled after the slug.
+   - Artboards for the proposed states (at rest, hover, editing, empty,
+     error: whichever the change has).
+   - One "Today" artboard holding host screenshots of the current state.
+   - Colours parsed from `themes.css` (light and dark at least, as a tweak),
+     never guessed.
+2. Iterate on the canvas with the user. Feedback changes the artboards first,
+   then the spec.
+3. Paste it into the plan's **Design** section:
+   - the canvas link;
+   - a table of each artboard and what it shows;
+   - the layout rules and token mapping it fixes.
+
+   Re-paste whenever the canvas changes. A spec whose Design section no longer
+   matches the canvas is stale.
+
+4. **Approve before you build.** Once the look is decided, add an **Approved
+   design** page to the canvas.
+   - It holds frozen copies of the chosen artboards only: the selected
+     options applied, with no alternatives and no "Today".
+   - A sticky lists the decisions.
+   - It is the canvas's launch page.
+   - Development does not start until that page exists and the user has
+     signed it off. Later exploration happens on the other pages and never
+     edits the approved copies; a change to the approved look means a new
+     sign-off.
+
+`/validate` and review hold the built UI against the **Approved design**
+page. The spec text alone is not the reference.
+
 ## 3. Write the plan
 
 Copy this skill's `plan-template.md` to `specs/$(date +%F)-<slug>/plan.md`. It
@@ -66,6 +102,20 @@ Present it and wait. No code, no branch. On approval: `Status: approved`.
 ## 5. Branch + baseline
 
 One spec, one branch, created before the first edit.
+
+**An approved design ships in slices, one PR per design change.**
+- Split the approved design into the smallest changes that each stand alone.
+  Each slice is its own branch off `main` and its own PR, with its own failing
+  tests first.
+- After each merge `main` must be releasable: CI green on every runner, no
+  half-built UI behind it, and nothing in the slice depending on an unmerged
+  sibling.
+- Order the slices so each builds only on what has already merged.
+- List them in the plan's **Delivery** table: slice, branch, PR, status. Tick
+  each one off on merge.
+- The spec, canvas and process changes travel in the first PR. A slice never
+  carries another slice's work, so the blast radius stays one change and each
+  one can be shown deployable on its own.
 
 | prefix | when |
 |---|---|
