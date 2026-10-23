@@ -127,7 +127,6 @@ export const COMMANDS = {
   'tour-demo-diff': ({ onboarding }) => onboarding.openDemo(),
   'tour-demo-diagram': ({ onboarding }) => onboarding.openDemo('diagram'),
   'tour-demo-snippet': ({ onboarding }) => onboarding.openSnippet(),
-  'tour-close-settings': ({ ui }) => (ui.showSettingsDialog = false),
   'tour-close-snippet': ({ onboarding }) => onboarding.closeSnippet(),
   'tour-demo-search': ({ onboarding }) => onboarding.typeSearch(),
   'tour-clear-search': ({ onboarding }) => onboarding.clearSearch(),

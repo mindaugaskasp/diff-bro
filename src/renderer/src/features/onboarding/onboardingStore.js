@@ -1,42 +1,26 @@
 import { defineStore } from 'pinia'
-import { loadPersistedJson, savePersisted } from '../../persist'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useUiStore } from '../../stores/uiStore'
-import { TOUR_STEPS, TOUR_VERSION, runBlockAt, tourPlan } from '../../utils/tourSteps'
+import { TOUR_STEPS, TOUR_VERSION, tourPlan } from '../../utils/tourSteps'
 import * as demo from './tourDemo'
+import { MAX_DEFER, clampInt, readProgress, saveProgress } from './onboardingPersist'
 
-// Its own persisted key rather than a corner of settingsStore: the tour is one
-// slice's state, and the core store is already at its size cap.
-const KEY = 'onboarding'
-const MAX_DEFER = 2
 // The beat after step one: the veil lifts so the comparison it just loaded is
 // actually SEEN rather than described through a blur. Just long enough to
 // register — past about half a second the next card reads as late.
 const REVEAL_MS = 450
 
-const clampInt = (value, lo, hi) => {
-  const n = Number.parseInt(value, 10)
-  if (!Number.isFinite(n)) return lo
-  return Math.max(lo, Math.min(hi, n))
-}
-
 function readState() {
-  const saved = loadPersistedJson(KEY)
   return {
-    // Master switch. Off means off for every future version too.
-    showTips: saved.showTips !== false,
-    // Index of the next unseen step; clamped so a hand-edited file cannot
-    // leave the tour pointing past the end of the list.
-    tourStep: clampInt(saved.tourStep, 0, TOUR_STEPS.length),
-    seenVersion: typeof saved.seenVersion === 'string' ? saved.seenVersion : '',
-    // How many times "Not now" has been chosen. Two is the end of asking.
-    deferred: clampInt(saved.deferred, 0, MAX_DEFER),
+    ...readProgress(),
     // Live, not persisted.
     steps: [],
     index: 0,
     active: false,
     promptOpen: false,
-    // "Not now" also silences the prompt for the rest of this session.
+    promptKind: '',
+    promptSteps: [],
+    // A dismissed prompt stays quiet for the rest of this session.
     asked: false,
     revealTimer: null,
     // Veil down, tour still running: a pause to look at what step one loaded.
@@ -64,17 +48,9 @@ export const useOnboardingStore = defineStore('onboarding', {
   },
   actions: {
     persist() {
-      savePersisted(
-        KEY,
-        JSON.stringify({
-          showTips: this.showTips,
-          tourStep: this.tourStep,
-          seenVersion: this.seenVersion,
-          deferred: this.deferred
-        })
-      )
+      saveProgress(this)
     },
-    // Consulted once per launch. Never starts a later run unannounced.
+    // Consulted once per launch. Never starts a tour unannounced.
     begin() {
       if (this.active || this.promptOpen || this.asked) return
       const plan = tourPlan({
@@ -84,7 +60,10 @@ export const useOnboardingStore = defineStore('onboarding', {
         tourDeferred: this.deferred
       })
       if (plan.mode === 'steps') this._open(plan.steps)
-      else if (plan.mode === 'prompt') this.promptOpen = true
+      if (plan.mode !== 'prompt') return
+      this.promptKind = plan.kind
+      this.promptSteps = plan.steps
+      this.promptOpen = true
     },
     _open(steps) {
       if (!steps.length) return
@@ -152,7 +131,6 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.tourStep = clampInt(step, 0, TOUR_STEPS.length)
       this.persist()
     },
-    // End of a run: close, then ask about the next one if there is one.
     finish() {
       const wasReplaying = this.replaying
       this._tidy()
@@ -161,15 +139,11 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.index = 0
       this.replaying = false
       if (wasReplaying) return
-      this._advanceTo(this.tourStep + 1)
-      if (this.tourStep >= TOUR_STEPS.length) {
-        this.seenVersion = TOUR_VERSION
-        this.persist()
-        return
-      }
-      if (runBlockAt(this.tourStep).length) this.promptOpen = true
+      this.tourStep = TOUR_STEPS.length
+      this.seenVersion = TOUR_VERSION
+      this.persist()
     },
-    // Leaving early is an answer, not a pause — including for every later run.
+    // Leaving early is an answer, not a pause — including for every later version.
     // Guarded because Escape reaches here from a listener that outlives the
     // tour: without it, every Escape in the app turned tips off and wrote.
     skip() {
@@ -217,7 +191,14 @@ export const useOnboardingStore = defineStore('onboarding', {
     showSnippets: () => demo.showSnippets(),
     acceptPrompt() {
       this.promptOpen = false
-      this._open(runBlockAt(this.tourStep))
+      this.deferred = 0
+      this.persist()
+      this._open(this.promptSteps)
+    },
+    declinePrompt() {
+      this.promptOpen = false
+      this.showTips = false
+      this.persist()
     },
     // One reminder is a reminder; two is pestering. `asked` keeps it quiet for
     // the rest of THIS session as well.

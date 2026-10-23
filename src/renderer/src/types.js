@@ -308,7 +308,6 @@
  * rare effect that belongs on arrival, and only ever happens INSIDE the ring.
  * @typedef {object} TourStep
  * @property {string} id
- * @property {1|2} run              which launch's block this belongs to
  * @property {string} since         app version that introduced it
  * @property {string} target        a `[data-tour="…"]` selector
  * @property {'top'|'bottom'|'left'|'right'} [side]  preferred callout side
@@ -331,8 +330,8 @@
  * @typedef {object} TourState
  * @property {boolean} showTips
  * @property {number} tourStep      index of the next unseen step
- * @property {string} seenVersion   '' until every run has been walked
- * @property {number} [tourDeferred] how many times "Not now" was chosen
+ * @property {string} seenVersion   '' until the tour has been walked
+ * @property {number} [tourDeferred] how many times the consent dialog was dismissed
  * @property {TourStep[]} [allSteps] the list to plan over; defaults to TOUR_STEPS
  */
 

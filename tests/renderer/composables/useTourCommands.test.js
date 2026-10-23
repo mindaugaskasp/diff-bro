@@ -27,6 +27,7 @@ describe('menus while the tour is running', () => {
     const { runFromMenu } = useCommands()
 
     tour.begin()
+    tour.acceptPrompt()
     expect(tour.active).toBe(true)
     runFromMenu('settings')
     expect(ui.showSettingsDialog).toBe(false)
@@ -44,6 +45,7 @@ describe('menus while the tour is running', () => {
     const { run } = useCommands()
 
     tour.begin()
+    tour.acceptPrompt()
     run('settings')
     expect(ui.showSettingsDialog).toBe(true)
   })
@@ -54,11 +56,11 @@ describe('useTourCommands', () => {
     const tour = useOnboardingStore()
     const tabs = useTabsStore()
     useTourCommands()
-    expect(tour.active).toBe(false)
+    expect(tour.promptOpen).toBe(false)
 
     tabs.sessionReady = true
     await nextTick()
-    expect(tour.active).toBe(true)
+    expect(tour.promptOpen).toBe(true)
   })
 
   // `sessionReady` never turns true when the setting is off, because there is no
@@ -68,6 +70,6 @@ describe('useTourCommands', () => {
     useSettingsStore().setRestoreSession(false)
     const tour = useOnboardingStore()
     useTourCommands()
-    expect(tour.active).toBe(true)
+    expect(tour.promptOpen).toBe(true)
   })
 })
