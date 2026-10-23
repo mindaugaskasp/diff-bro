@@ -1,6 +1,7 @@
 // Opens no socket, never takes the single-instance lock, never writes the library.
 import { app } from 'electron'
 import { createInterface } from 'readline'
+import { createReadStream } from 'fs'
 import { join } from 'path'
 import { installNetworkKillSwitch } from './security'
 import { readSnippetStore, readVaultStore } from './appData'
@@ -60,13 +61,19 @@ const trace = (what) => process.env.DIFFBRO_MCP_TRACE && process.stderr.write(`[
 
 async function serve() {
   trace(`ready; stdin isTTY=${process.stdin.isTTY} stdout isTTY=${process.stdout.isTTY}`)
-  process.stdin.on('data', (d) => trace(`stdin ${d.length} bytes`))
-  process.stdin.on('end', () => trace('stdin end'))
+  // On Windows Electron's process.stdin reports EOF at once; handle 0 itself is readable.
+  const input =
+    process.platform === 'win32'
+      ? createReadStream(null, { fd: 0, autoClose: false })
+      : process.stdin
+  input.on('data', (d) => trace(`stdin ${d.length} bytes`))
+  input.on('end', () => trace('stdin end'))
+  input.on('error', (e) => trace(`stdin error ${e.code} ${e.message}`))
   installNetworkKillSwitch()
   // Retried per request: a client may start this before the app has made a key.
   let key = null
   const session = sessionFor(() => key, claudePaths(app.getPath('userData')))
-  const lines = createInterface({ input: process.stdin, crlfDelay: Infinity })
+  const lines = createInterface({ input, crlfDelay: Infinity })
   for await (const line of lines) {
     key ??= await readExistingVaultKey().catch(() => null)
     trace(`line ${line.length} chars`)
