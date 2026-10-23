@@ -702,6 +702,32 @@ const SURFACES = [
     }
   },
   {
+    name: 'claude-connect',
+    open: async (page) => {
+      const dlg = await openClaudePane(page)
+      const master = dlg.getByLabel('Enable Claude MCP connection')
+      if (!(await master.isChecked())) {
+        await master.check()
+        await dlg
+          .getByRole('alertdialog')
+          .getByRole('button', { name: 'Enable', exact: true })
+          .click()
+      }
+      await dlg.locator('.app-row').first().waitFor()
+    },
+    close: async (page) => {
+      await page.getByLabel('Enable Claude MCP connection').uncheck()
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+    },
+    probes: {
+      'app name': ['.app-row .app-name', TEXT],
+      'app status': ['.app-row .app-status', TEXT],
+      'manual heading': ['.setup-manual', TEXT],
+      command: ['.setup-block code', TEXT]
+    }
+  },
+  {
     name: 'claude-inbox',
     open: async (page, { userDataDir }) => {
       await seedClaudeInbox(page, userDataDir)

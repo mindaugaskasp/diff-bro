@@ -206,6 +206,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   // Claude connection: booleans in, summaries and one proposal by id out.
   claudeConnection: () => ipcRenderer.invoke('claude:connection'),
+  claudeApps: () => ipcRenderer.invoke('claude:apps'),
+  connectClaudeApp: (target) => ipcRenderer.invoke('claude:connectApp', String(target)),
   setClaudeConnection: (grant) => ipcRenderer.invoke('claude:setConnection', grant),
   claudeActivity: () => ipcRenderer.invoke('claude:activity'),
   clearClaudeActivity: () => ipcRenderer.invoke('claude:clearActivity'),

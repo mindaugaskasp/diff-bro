@@ -4,6 +4,7 @@ import { mkdirSync, watch } from 'fs'
 import { getVaultKey } from './vault'
 import { GRANT_OFF, signGrant, verifyGrant } from './mcpGrant'
 import { claudeSetup } from './claudeSetup'
+import { registerClaudeConnectIpc } from './claudeConnect'
 import {
   claudePaths,
   clearActivity,
@@ -74,4 +75,5 @@ export function registerClaudeIpc() {
     return { ok: true }
   })
   registerInboxIpc(paths)
+  registerClaudeConnectIpc()
 }

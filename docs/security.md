@@ -322,6 +322,32 @@ tags, a language from the editor's own list or none. A message over 2 MB is
 refused unparsed, and an unknown method or tool is an error. Proposals render
 only through Vue text interpolation.
 
+**Connecting from Settings** (`claudeConnect.js`, core in
+`claudeConnectCore.js`). Two more exits from the sandbox, fenced like the
+others:
+- **Claude Code.** **Connect** runs `claude mcp add --scope user diffbro --
+  <this app> mcp` through `execFile`, with no shell.
+  - The executable is the first that exists in a fixed list of install
+    locations computed in main, the user's own first. A Dock-launched app has
+    no shell `PATH`, and running a login shell to find one would execute the
+    user's rc files.
+  - The argv is built in main from `process.execPath`. The renderer names only
+    the target, `'code'` or `'desktop'`.
+  - Main shows the confirmation itself, so the renderer cannot skip it.
+  - The spawn carries `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` and
+    `DISABLE_AUTOUPDATER=1`. Main still opens no socket: like the mail
+    hand-off, the work is done by the user's own app.
+- **Claude Desktop.** **Connect** merges one `mcpServers.diffbro` entry into
+  `claude_desktop_config.json` and leaves every other key alone.
+  - It writes atomically (temp, then rename).
+  - It saves the previous file as `claude_desktop_config.json.diffbro-backup`.
+  - It refuses a file it cannot parse or that is over 8 MB, rather than
+    replacing it.
+- **Status.** It is read from `mcpServers.diffbro` in `~/.claude.json` and in
+  the Desktop config, size-capped, and never sent anywhere. `claude mcp get`
+  was rejected because it health-checks the server by launching a second
+  Diff Bro.
+
 **Activity.** Every call is logged to `claude-activity.jsonl` with its time,
 tool and the name of the item it touched, never contents. Settings ▸ Claude
 shows the most recent 200 and can clear them.

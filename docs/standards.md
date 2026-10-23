@@ -159,8 +159,16 @@ regression test from decoration.
    that the contents never land somewhere readable, which a volatile text
    clipboard honours and a file on disk does not.
 
-   The Claude connection adds no sandbox exit: no `openExternal`, and no path
-   handed to the OS. Its inbox and grant paths are computed in main.
+   The Claude connection's MCP server adds no sandbox exit: no `openExternal`,
+   and no path handed to the OS. Its inbox and grant paths are computed in main.
+   **Connect** in Settings ▸ Claude adds two, both confirmed in main
+   (`claudeConnect.js`):
+   - an `execFile` of the user's `claude` CLI, found at fixed install paths,
+     with an argv built in main;
+   - a merge into Claude Desktop's config, which is backed up and never written
+     over a file that did not parse.
+
+   The renderer names only the target, never a command or a path.
 
 8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only

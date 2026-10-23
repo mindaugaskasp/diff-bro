@@ -160,3 +160,44 @@ describe('claude inbox', () => {
     expect(window.api.inboxList).toHaveBeenCalled()
   })
 })
+
+describe('connecting a Claude app', () => {
+  const absent = { code: { available: true, status: 'absent' }, desktop: null }
+  const connected = { code: { available: true, status: 'current' }, desktop: null }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    window.api = {
+      claudeApps: vi.fn(async () => absent),
+      connectClaudeApp: vi.fn(async () => ({ ok: true, apps: connected }))
+    }
+  })
+
+  it('reads which apps are installed and connected', async () => {
+    const claude = useClaudeStore()
+    await claude.loadApps()
+    expect(claude.apps).toEqual(absent)
+  })
+
+  it('asks main to connect the named app and takes the status it reports back', async () => {
+    const claude = useClaudeStore()
+    await claude.connectApp('code')
+    expect(window.api.connectClaudeApp).toHaveBeenCalledWith('code')
+    expect(claude.apps).toEqual(connected)
+    expect(claude.connectResult).toEqual({ target: 'code', outcome: 'ok' })
+  })
+
+  it('reports a failure against the app it was for', async () => {
+    window.api.connectClaudeApp = vi.fn(async () => ({ error: 'cli-failed', apps: absent }))
+    const claude = useClaudeStore()
+    await claude.connectApp('code')
+    expect(claude.connectResult).toEqual({ target: 'code', outcome: 'cli-failed' })
+  })
+
+  it('says nothing when the confirmation was cancelled', async () => {
+    window.api.connectClaudeApp = vi.fn(async () => ({ canceled: true, apps: absent }))
+    const claude = useClaudeStore()
+    await claude.connectApp('code')
+    expect(claude.connectResult).toBeNull()
+  })
+})
