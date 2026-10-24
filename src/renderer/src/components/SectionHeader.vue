@@ -75,14 +75,15 @@ const settling = computed(() => isSettling(props.sectionId))
   >
     <AppIcon v-if="!panel" class="chev" :class="{ open }" name="chevron-right" />
     <span v-if="icon" class="section-icon"><AppIcon :name="icon" /></span>
-    <span class="section-title">{{ title }}</span>
-    <span
-      v-if="(panel || filtering) && count !== null"
-      class="section-count"
-      :class="{ none: count === 0 }"
-    >
-      {{ count }}
-    </span>
+    <slot name="title">
+      <span class="section-title">{{ title }}</span>
+      <span
+        v-if="(panel || filtering) && count !== null"
+        :class="panel ? 'count-chip' : ['section-count', { none: count === 0 }]"
+      >
+        {{ count }}
+      </span>
+    </slot>
     <span v-if="$slots.actions" class="actions-slot"><slot name="actions" /></span>
   </div>
 </template>

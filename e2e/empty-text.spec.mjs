@@ -8,8 +8,8 @@ import { test, expect, showPanel } from './fixtures.mjs'
 // help text sitting above the user's own diffs.
 test('the Saved diffs helper text disappears after saving one diff', async ({ page }) => {
   await showPanel(page, 'diffs')
-  // "Empty" shows in several sections, so scope to the Saved diffs one.
-  const saved = page.locator('.sidebar-section', { hasText: 'Saved diffs' })
+  // "Empty" shows in several sections, so scope to the saved one.
+  const saved = page.locator('.sidebar-section[data-section="saved"]')
   const emptyText = saved.locator('.empty')
   await expect(emptyText).toBeVisible() // fresh install
 

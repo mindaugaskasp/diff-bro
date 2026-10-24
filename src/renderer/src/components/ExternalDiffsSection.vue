@@ -1,7 +1,7 @@
 <script setup>
 // The "External diffs" section: diffs shared by others, each signed by its sender.
 import { computed, ref } from 'vue'
-import { matchesTags } from '../utils/tagFilter'
+import { useDiffRows, RECEIVED_GROUPS } from '../composables/useDiffRows'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import { provideRowReorder } from '../composables/useRowReorder'
@@ -25,31 +25,11 @@ const props = defineProps({
 })
 
 const vault = useVaultStore()
+const { rows, filtering } = useDiffRows(() => props, RECEIVED_GROUPS)
 const ui = useUiStore()
 const share = useShareStore()
 
 const open = ref(true)
-const q = computed(() => props.search.trim().toLowerCase())
-// A filter is on when there is a search term or a tag selected — the only time
-// a per-section count is worth the space.
-const filtering = computed(() => !!q.value || props.tags.length > 0)
-const matches = (e) =>
-  (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
-  matchesTags(e.tags, props.tags)
-// A row carries its place in the FULL group, not in the filtered view: dropping
-// A in front of B has to mean the same thing whether or not a filter is hiding
-// the rows between them.
-const placed = (group) =>
-  vault[group]
-    .filter(matches)
-    .map((entry) => ({ entry, group, index: vault[group].indexOf(entry) }))
-// One list, favorited (starred) shared diffs first — no separate Favorites shelf.
-const rows = computed(() =>
-  props.favOnly
-    ? placed('importedFavorites')
-    : [...placed('importedFavorites'), ...placed('importedOthers')]
-)
-
 const reorder = provideRowReorder((group, from, to) =>
   ui.markMovedRow(vault.reorder(group, from, to))
 )
@@ -94,6 +74,7 @@ function startImport() {
       :filtering="filtering"
       @toggle="open = !open"
     >
+      <template v-if="$slots.title" #title><slot name="title" /></template>
       <template #actions>
         <button
           class="btn btn-icon"

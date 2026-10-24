@@ -28,6 +28,19 @@ test('Diffs splits mine from received', async ({ page }) => {
   await expect(received).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('Mine and Received are the Diffs header, not a row of their own', async ({ page }) => {
+  await railItem(page, 'Diffs').click()
+  const head = page.locator('.diffs-panel .section-head')
+  const mine = head.getByRole('button', { name: /^Mine/ })
+  const received = head.getByRole('button', { name: /^Received/ })
+  await expect(mine).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.diffs-panel .seg')).toHaveCount(0)
+  expect(await mine.evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(/inset/)
+
+  await received.click()
+  await expect(head.getByRole('button', { name: 'Import a shared diff' })).toBeVisible()
+})
+
 test('collapsing hides the panel and leaves the rail at its own width', async ({ page }) => {
   await rail(page).getByRole('button', { name: 'Collapse the sidebar' }).click()
   const railBox = await rail(page).boundingBox()
