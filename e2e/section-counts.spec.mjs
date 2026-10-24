@@ -16,17 +16,21 @@ async function saveTaggedDiff(page, name, tag) {
 }
 
 const headerCount = (page, title) =>
-  page.locator('.sidebar-section', { hasText: title }).locator('.section-count').first()
+  page.locator('.sidebar-section', { hasText: title }).locator('.count-chip').first()
+const mineCount = (page) => page.getByRole('button', { name: /^Mine/ }).locator('.count-chip')
 
 test('a panel counts its rows, a tag filter narrows the count, and none reads zero', async ({
   page
 }) => {
   await saveTaggedDiff(page, 'E2E counted', 'finance')
   await showPanel(page, 'diffs')
-  await expect(headerCount(page, 'Saved diffs')).toHaveText('1')
+  await expect(mineCount(page)).toHaveText('1')
 
   await pickTag(page, 'finance')
-  await expect(headerCount(page, 'Saved diffs')).toHaveText('1')
+  await expect(mineCount(page)).toHaveText('1')
+  await page.getByPlaceholder('Search diffs').fill('no-such-diff')
+  await expect(mineCount(page)).toHaveText('0')
+  await page.getByPlaceholder('Search diffs').fill('')
   // The same filter in the other panel says zero rather than going quiet.
   await showPanel(page, 'snippets')
   await expect(headerCount(page, 'Snippets')).toHaveText('0')

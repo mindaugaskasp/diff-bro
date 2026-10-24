@@ -313,7 +313,7 @@ test('the Saved diffs + opens a paste comparison on the start surface', async ({
   // Scoped to the header: the empty state carries a button for the same action,
   // so an unscoped name matches both.
   const add = page
-    .locator('.sidebar-section', { hasText: 'Saved diffs' })
+    .locator('.sidebar-section[data-section="saved"]')
     .locator('.actions-slot')
     .getByRole('button', { name: 'New comparison' })
   await add.click()

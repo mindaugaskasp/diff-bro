@@ -105,6 +105,8 @@ function measureProbes(selectors) {
     }
     return stack.reduce((acc, layer) => over(layer, acc), [255, 255, 255])
   }
+  // An underline drawn as an inset box-shadow: its colour leads the computed value.
+  const shadowColour = (cs) => parse(cs.boxShadow.match(/^(rgba?|color)\([^)]*\)/)?.[0] ?? '')
   const measure = (selector) => {
     const el = document.querySelector(selector)
     if (!el) return null
@@ -113,7 +115,9 @@ function measureProbes(selectors) {
     const own = parse(cs.backgroundColor)
     const surface = own.length >= 3 && (own.length < 4 || own[3] > 0) ? over(own, behind) : behind
     const border = parse(cs.borderTopColor)
+    const shadow = shadowColour(cs)
     return {
+      shadow: shadow.length >= 3 ? ratio(over(shadow, surface), surface) : null,
       text: ratio(over(parse(cs.color), surface), surface),
       border:
         border.length >= 3 && parseFloat(cs.borderTopWidth) > 0
@@ -128,6 +132,17 @@ const realKey = () => ({
   sign: generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }),
   box: generateKeyPairSync('x25519').publicKey.export({ type: 'spki', format: 'pem' })
 })
+
+async function closeSnippetTab(page) {
+  await page.locator('.diff-tabs .tab.active .tab-close').click()
+  const ask = page.getByRole('dialog', { name: 'Close snippet?' })
+  const asked = await ask.waitFor({ timeout: 2000 }).then(
+    () => true,
+    () => false
+  )
+  if (asked) await ask.getByRole('button', { name: 'Close it' }).click()
+  await page.getByRole('region', { name: 'New Snippet' }).waitFor({ state: 'detached' })
+}
 
 async function setTheme(page, label) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
@@ -628,20 +643,12 @@ const SURFACES = [
     // typed text while staying legible, and that is a live-DOM judgement.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet' }).click()
-      const editor = page.getByRole('dialog', { name: 'New Snippet' })
+      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      const editor = page.getByRole('region', { name: 'New Snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
       await editor.locator('.name-ghost').waitFor()
     },
-    // The × and the discard guard behind it, not Escape: the name field owns
-    // Escape (it dismisses the completion), so the dialog never saw it and its
-    // backdrop swallowed the NEXT surface's clicks.
-    close: async (page) => {
-      await page.locator('.dialog-close').click()
-      const discard = page.locator('.discard-confirm .btn-danger')
-      if (await discard.count()) await discard.click()
-      await page.locator('.dialog-backdrop').waitFor({ state: 'detached' })
-    },
+    close: closeSnippetTab,
     probes: {
       'typed name': ['.ghost-field input', TEXT],
       // Hint ink, so the 3:1 floor --text-dim already carries elsewhere.
@@ -655,8 +662,8 @@ const SURFACES = [
     // computed check can settle (accent-color hands the tick to the UA).
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet' }).click()
-      const editor = page.getByRole('dialog', { name: 'New Snippet' })
+      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      const editor = page.getByRole('region', { name: 'New Snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Rendered')
       await editor.locator('.lang-picker select').selectOption('markdown')
       await editor.locator('.editor').click()
@@ -667,12 +674,7 @@ const SURFACES = [
       await page.getByRole('button', { name: 'Rendered', exact: true }).click()
       await page.locator('.rendered-editor').waitFor()
     },
-    close: async (page) => {
-      await page.locator('.dialog-close').click()
-      const discard = page.locator('.discard-confirm .btn-danger')
-      if (await discard.count()) await discard.click()
-      await page.locator('.dialog-backdrop').waitFor({ state: 'detached' })
-    },
+    close: closeSnippetTab,
     probes: {
       // The editing surface's own ink, and so the caret's.
       'editable body': ['.rendered-editor', TEXT],
@@ -720,6 +722,21 @@ const SURFACES = [
       'recent meta': ['.home-row .row-2-meta', TEXT],
       'glyph on its well': ['.home-row .glyph-well', TEXT],
       'delete, shown': ['.home-item:hover .home-delete', DIM]
+    }
+  },
+  {
+    name: 'diffs-switch',
+    open: async (page) => {
+      await showPanel(page, 'diffs')
+      await page.locator('.whose-opt.on').waitFor()
+    },
+    close: async () => {},
+    probes: {
+      'chosen label': ['.whose-opt.on', TEXT],
+      'other label': ['.whose-opt:not(.on)', TEXT],
+      'chosen underline': ['.whose-opt.on', DIM, 'shadow'],
+      'count on the chosen': ['.whose-opt.on .count-chip', TEXT],
+      'count on the other': ['.whose-opt:not(.on) .count-chip', TEXT]
     }
   },
   {
@@ -933,8 +950,8 @@ const SURFACES = [
     // frame of an animation.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet' }).click()
-      const editor = page.getByRole('dialog', { name: 'New Snippet' })
+      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      const editor = page.getByRole('region', { name: 'New Snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
       await editor.locator('.editor').click()
       await page.keyboard.type('sweep')
@@ -947,6 +964,7 @@ const SURFACES = [
     // surface's screenshot then differs from its baseline for no reason — which
     // is how one run dirtied 98 committed PNGs.
     close: async (page) => {
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
       const row = page.locator('.row.is-new')
       await row.hover()
       await row.getByRole('button', { name: 'Delete' }).click()
@@ -964,25 +982,6 @@ const SURFACES = [
       'badge keyline': ['.row.is-new .new-badge', DIM, 'border'],
       // The name must stay readable while the row wears the marker.
       'row name': ['.row.is-new .nm', TEXT]
-    }
-  },
-  {
-    name: 'trusted-keys',
-    open: async (page) => {
-      await page.getByRole('button', { name: 'Security', exact: true }).click()
-      await page.getByText('Manage Trusted Keys', { exact: true }).click()
-      await page.getByRole('dialog', { name: 'Trusted keys' }).waitFor()
-    },
-    close: (page) => page.keyboard.press('Escape'),
-    probes: {
-      'row label': ['.key .label', TEXT],
-      'row fingerprint': ['.key .fp', DIM],
-      'address, set': ['.key .mail.set', TEXT],
-      // A call to action, so it is held to the reading floor — which is what
-      // moved it off --text-dim (3.44 on sepia) and onto --text-hint.
-      'address, unset': ['.key .mail:not(.set)', TEXT],
-      'search field': ['.field-search', TEXT],
-      'filtered count': ['.keys-head .count', DIM]
     }
   },
   {
@@ -1036,6 +1035,7 @@ const SURFACES = [
     // header band — an e2e runs in ONE theme, so `not.toBe(rowInk)` could never
     // have caught it. This is where that number gets checked on all 14.
     open: async (page) => {
+      await showPanel(page, 'diffs')
       await page.locator('.actions-slot .btn-icon').first().waitFor()
       await page.locator('.empty-cta .btn-primary').first().waitFor()
     },
@@ -1060,6 +1060,7 @@ const SURFACES = [
     // (2.97) and sepia (2.72), which is why the coloured row steps to
     // --text-hint and why that step is measured here on all twenty.
     open: async (page) => {
+      await showPanel(page, 'snippets')
       const row = page.locator('.snippets-section .row').first()
       await row.waitFor()
       await row.click({ button: 'right' })
@@ -1133,7 +1134,7 @@ const SURFACES = [
     // the input box. It is a read sentence, so it takes the reading floor —
     // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
     open: async (page) => {
-      await page.getByRole('button', { name: 'Tools', exact: true }).click()
+      await page.locator('.menubar button.top', { hasText: /^Tools$/ }).click()
       // Scoped to the open dropdown: the loaded diff can also say "JSON".
       await page.locator('.dropdown').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()

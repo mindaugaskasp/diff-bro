@@ -1,13 +1,13 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useUiStore } from '../stores/uiStore'
-import { t } from '../i18n'
-import SegmentedControl from './SegmentedControl.vue'
+import DiffsWhoseSwitch from './DiffsWhoseSwitch.vue'
+import { useDiffRows, OWN_GROUPS, RECEIVED_GROUPS } from '../composables/useDiffRows'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 
-defineProps({
+const props = defineProps({
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] },
@@ -25,20 +25,12 @@ watch(
   },
   { immediate: true }
 )
-const options = computed(() => [
-  {
-    value: 'mine',
-    label: t('diffsPanel.mine', { n: vault.active.length - vault.importedActive.length })
-  },
-  { value: 'received', label: t('diffsPanel.received', { n: vault.importedActive.length }) }
-])
+const mine = useDiffRows(() => props, OWN_GROUPS).rows
+const received = useDiffRows(() => props, RECEIVED_GROUPS).rows
 </script>
 
 <template>
   <div class="diffs-panel">
-    <div class="diffs-whose">
-      <SegmentedControl v-model:value="whose" :options="options" compact />
-    </div>
     <SavedDiffsSection
       v-if="whose === 'mine'"
       data-section="saved"
@@ -47,7 +39,11 @@ const options = computed(() => [
       :search="search"
       :tags="tags"
       :fav-only="favOnly"
-    />
+    >
+      <template #title>
+        <DiffsWhoseSwitch v-model:whose="whose" :mine="mine.length" :received="received.length" />
+      </template>
+    </SavedDiffsSection>
     <ExternalDiffsSection
       v-else
       data-section="external"
@@ -56,7 +52,11 @@ const options = computed(() => [
       :search="search"
       :tags="tags"
       :fav-only="favOnly"
-    />
+    >
+      <template #title>
+        <DiffsWhoseSwitch v-model:whose="whose" :mine="mine.length" :received="received.length" />
+      </template>
+    </ExternalDiffsSection>
   </div>
 </template>
 

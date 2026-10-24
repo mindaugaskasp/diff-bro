@@ -1277,3 +1277,21 @@ button.tag-chip:hover .usb-tct {
   font-size: var(--font-xs);
   font-variant-numeric: tabular-nums;
 }
+
+/* A count beside a title: a section header, the Diffs panel's Mine / Received. */
+.count-chip {
+  flex: none;
+  height: var(--chip-h);
+  min-width: var(--chip-h);
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--btn-face);
+  /* --text-meta on this face is 4.18 on nord. */
+  color: var(--text);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}

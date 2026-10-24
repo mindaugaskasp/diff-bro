@@ -100,7 +100,7 @@ test('a filter that matches nothing says so in each panel', async () => {
 
     await page.getByPlaceholder('Search diffs').fill('zzz-no-such-thing')
 
-    const saved = page.locator('.sidebar-section', { hasText: 'Saved diffs' })
+    const saved = page.locator('.sidebar-section[data-section="saved"]')
     await expect(saved.locator('li.diff')).toHaveCount(0)
     await expect(saved.getByText(/try removing a filter/)).toBeVisible()
     // The query is the sidebar's, so the next panel answers it too.

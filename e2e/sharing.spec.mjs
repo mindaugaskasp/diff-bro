@@ -99,7 +99,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
 
     // 4. Bob imports it — it lands in External diffs, credited to Alice.
     await openReceived(pageB)
-    const external = pageB.locator('.sidebar-section', { hasText: 'External diffs' })
+    const external = pageB.locator('.sidebar-section[data-section="external"]')
     const externalHelp = external.locator('.empty')
     await expect(externalHelp).toBeVisible() // empty-state, before any import
     await stubOpenDialog(appB, join(exchange, sealed))

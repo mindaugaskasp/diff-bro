@@ -2,9 +2,3 @@
   display: flex;
   flex-direction: column;
 }
-.diffs-whose {
-  padding: var(--space-2) var(--space-3);
-}
-.diffs-whose :deep(.seg) {
-  width: 100%;
-}

@@ -1752,8 +1752,9 @@
     "deleteItem": "Delete {name}"
   },
   "diffsPanel": {
-    "mine": "Mine · {n}",
-    "received": "Received · {n}"
+    "mine": "Mine",
+    "received": "Received",
+    "whose": "Whose diffs"
   },
   "toolGroups": {
     "encode": "Encode",

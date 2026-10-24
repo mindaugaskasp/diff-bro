@@ -178,19 +178,6 @@
 .head.panel .section-title {
   flex: 0 1 auto;
 }
-.head.panel .section-count {
-  height: var(--chip-h);
-  min-width: var(--chip-h);
-  box-sizing: border-box;
-  display: inline-grid;
-  place-items: center;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--btn-face);
-  color: var(--text-meta);
-  font-size: var(--font-xs);
-  font-weight: 500;
-}
 .head.panel > .actions-slot {
   margin-left: auto;
 }

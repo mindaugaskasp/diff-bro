@@ -1,7 +1,7 @@
 <script setup>
 // The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs.
 import { computed, ref } from 'vue'
-import { matchesTags } from '../utils/tagFilter'
+import { useDiffRows, OWN_GROUPS } from '../composables/useDiffRows'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
 import { provideRowReorder } from '../composables/useRowReorder'
@@ -23,31 +23,12 @@ const props = defineProps({
   tags: { type: Array, default: () => [] },
   favOnly: { type: Boolean, default: false }
 })
-const q = computed(() => props.search.trim().toLowerCase())
-const matches = (e) =>
-  (!q.value || e.name.toLowerCase().includes(q.value) || e.tags.some((t) => t.includes(q.value))) &&
-  matchesTags(e.tags, props.tags)
-
-// A filter is on when there is a search term or a tag selected — the only time
-// a per-section count is worth the space.
-const filtering = computed(() => !!q.value || props.tags.length > 0)
 
 const tabs = useTabsStore()
 const vault = useVaultStore()
+const { rows, filtering } = useDiffRows(() => props, OWN_GROUPS)
 const ui = useUiStore()
 const open = ref(true)
-
-// A row carries its place in the FULL group, not in the filtered view: dropping
-// A in front of B has to mean the same thing whether or not a filter is hiding
-// the rows between them.
-const placed = (group) =>
-  vault[group]
-    .filter(matches)
-    .map((entry) => ({ entry, group, index: vault[group].indexOf(entry) }))
-// One list, favorites first; the ★ filter keeps only them.
-const rows = computed(() =>
-  props.favOnly ? placed('favoritesOwn') : [...placed('favoritesOwn'), ...placed('ownActive')]
-)
 
 const reorder = provideRowReorder((group, from, to) =>
   ui.markMovedRow(vault.reorder(group, from, to))
@@ -85,6 +66,7 @@ useNewRowMarker({
       :filtering="filtering"
       @toggle="open = !open"
     >
+      <template v-if="$slots.title" #title><slot name="title" /></template>
       <template #actions>
         <button
           class="btn btn-icon"
