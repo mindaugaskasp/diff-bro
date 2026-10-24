@@ -1506,6 +1506,7 @@
     "couldNotSaveTheImage": "Could not save the image."
   },
   "shareNotices": {
+    "noKeyOnClipboard": "The clipboard doesn't hold a public key — copy theirs, then Paste key.",
     "nothingToShareYetLoad": "Nothing to share yet — load two files or paste some text first.",
     "thatIsNotAUsable": "That is not a usable email address — it was not saved. Check for a stray space or comma.",
     "thatDiffCouldNotBe": "That diff could not be read — nothing was sealed.",
@@ -1832,6 +1833,9 @@
     "clickToEdit": "Click to edit"
   },
   "keysPanel": {
+    "pasteKey": "Paste key",
+    "paste": "Paste",
+    "pasteTip": "Add a key someone sent you as text — copy it, then paste",
     "yourKey": "Your key",
     "email": "Email",
     "save": "Save as file",

@@ -155,6 +155,9 @@ function submit() {
           </i18n-t>
         </span>
       </div>
+      <button type="button" class="btn btn-sm" @click="share.pasteTrustedKey()">
+        {{ $t('keysPanel.pasteKey') }}
+      </button>
       <button type="button" class="btn btn-sm btn-primary" @click="share.addTrustedKey()">
         {{ $t('share.diffDialog.addTheirKey2') }}
       </button>

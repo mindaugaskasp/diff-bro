@@ -49,8 +49,13 @@
 .trusted-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
   margin-bottom: var(--space-2);
+}
+.trusted-head h3 {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 h3 {
   margin: 0;

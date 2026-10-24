@@ -29,6 +29,18 @@ export const keyExchangeActions = {
     else if (res?.error) diff.showNotice(t('shareNotices.keyEmailFailed'))
   },
 
+  // Asked for outright, so a miss is said aloud rather than opening a file picker.
+  async pasteTrustedKey() {
+    const peeked = await window.api.peekClipboardKey()
+    if (peeked?.ok) {
+      this.pendingTrustedKey = pendingFrom(peeked, 'clipboard')
+      return
+    }
+    const diff = useDiffStore()
+    if (peeked?.error === 'own-key') diff.showNotice(t('shareNotices.thatsYourOwnKey'))
+    else diff.showNotice(t('shareNotices.noKeyOnClipboard'))
+  },
+
   // Pick a key, clipboard first: a key copied out of a chat app is offered —
   // through the same confirm — before the file picker opens. Every peek miss
   // (junk, empty, your OWN key just copied to send) falls through silently.
