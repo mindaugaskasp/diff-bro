@@ -457,3 +457,42 @@ test('sealing the current diff for a person writes the file', async () => {
     await app.close()
   }
 })
+
+// "+ Add" only peeks the clipboard silently; Paste key asks for it outright, and
+// says so when the clipboard holds no key rather than opening a file picker.
+test('Paste key offers the clipboard key, and says when there is none', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+
+  try {
+    await app.evaluate(({ dialog }) => {
+      globalThis.__pickers = 0
+      dialog.showOpenDialog = async () => {
+        globalThis.__pickers++
+        return { canceled: true, filePaths: [] }
+      }
+    })
+    await page
+      .getByRole('navigation', { name: 'Sidebar' })
+      .getByRole('button', { name: /^Keys/ })
+      .click()
+    const paste = page.getByRole('button', { name: 'Paste key' })
+
+    await app.evaluate(({ clipboard }) => clipboard.writeText('not a key at all'))
+    await paste.click()
+    await expect(page.getByText("The clipboard doesn't hold a public key")).toBeVisible()
+    expect(await app.evaluate(() => globalThis.__pickers)).toBe(0)
+
+    const peer = realKey()
+    const text = encodePublicKey({ ...peer, format: KEY_FORMAT, label: 'Rūta phone' })
+    await app.evaluate(({ clipboard }, t) => clipboard.writeText(t), text)
+    await paste.click()
+    const confirm = page.getByRole('dialog', { name: 'Add Trusted Key' })
+    await expect(confirm.getByText('Read from your clipboard')).toBeVisible()
+    await expect(confirm.locator('code').first()).toHaveText(fingerprint(peer.sign, peer.box))
+  } finally {
+    await app.close()
+  }
+})

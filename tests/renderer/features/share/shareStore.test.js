@@ -210,3 +210,32 @@ describe('shareStore.addTrustedKey — clipboard peek', () => {
     expect(window.api.addTrustedKey).toHaveBeenCalled()
   })
 })
+
+describe('shareStore.pasteTrustedKey', () => {
+  it('offers a clipboard key through the naming dialog', async () => {
+    window.api = {
+      peekClipboardKey: vi
+        .fn()
+        .mockResolvedValue({ ok: true, key: { sign: 's' }, fingerprint: 'fp', defaultLabel: 'Ana' })
+    }
+    const share = useShareStore()
+    await share.pasteTrustedKey()
+    expect(share.pendingTrustedKey).toMatchObject({ fingerprint: 'fp', source: 'clipboard' })
+  })
+
+  it('says so when the clipboard holds no key, and opens no picker', async () => {
+    window.api = {
+      peekClipboardKey: vi.fn().mockResolvedValue({ error: 'no-key' }),
+      addTrustedKey: vi.fn()
+    }
+    await useShareStore().pasteTrustedKey()
+    expect(notices()).toMatch(/doesn't hold a public key/)
+    expect(window.api.addTrustedKey).not.toHaveBeenCalled()
+  })
+
+  it('names your own key as yours', async () => {
+    window.api = { peekClipboardKey: vi.fn().mockResolvedValue({ error: 'own-key' }) }
+    await useShareStore().pasteTrustedKey()
+    expect(notices()).toMatch(/your own/i)
+  })
+})
