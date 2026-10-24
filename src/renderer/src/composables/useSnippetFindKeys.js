@@ -1,7 +1,7 @@
 import { getCurrentInstance, onBeforeUnmount } from 'vue'
 import { findKeyAction } from '../utils/findKeys'
 
-// On the window, not the snippet: after Edit, focus sits on <body>, outside it.
+// On the window: after a save, focus sits on <body>, outside the snippet.
 /**
  * @param {object} args
  * @param {import('vue').Ref<HTMLElement|null>} args.root  the snippet document

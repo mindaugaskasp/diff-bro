@@ -1,6 +1,4 @@
 <script setup>
-// "Saves as" for a name holding template tags; the tags themselves are listed in
-// the editor's status bar.
 import { computed } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { expandTemplates, hasTemplate } from '../utils/snippetTemplates'

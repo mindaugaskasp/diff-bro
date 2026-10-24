@@ -1,5 +1,4 @@
-// Monospace faces the editor may use. Only installed ones are offered: the app
-// is offline and never downloads a font, and a missing one silently falls back.
+// Installed faces only: the app never downloads a font, and a missing one silently falls back.
 
 export const EDITOR_FONTS = [
   'SF Mono',

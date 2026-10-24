@@ -955,6 +955,7 @@
     "copyTheContents": "Copy the contents to the clipboard",
     "prettyPrintAs": "Pretty-print as {format}",
     "copyAsFileTip": "Put the snippet on the clipboard AS A FILE, to paste into a message or a folder",
+    "secretCopyAsFileTip": "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk",
     "formatUnavailable": "Formatting is available for JSON, XML, SQL or Mermaid",
     "unmangleTip": "Put back the arrows, quotes and spaces a paste broke",
     "history": "History",

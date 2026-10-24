@@ -1,6 +1,4 @@
 <script setup>
-// The editor's header strip: the "Content" label, the rendered/plain toggle,
-// Format and the syntax picker. The same in both states, so nothing moves.
 import { computed } from 'vue'
 import { t } from '../i18n'
 import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
@@ -14,8 +12,7 @@ const props = defineProps({
 })
 defineEmits(['update:plain', 'update:chosenLanguage', 'format'])
 
-// Mermaid's formatter repairs pasted damage rather than pretty-printing, so the
-// control says which of the two it is about to do.
+// Mermaid's formatter repairs pasted damage; it does not pretty-print.
 const isMermaid = computed(() => props.language === 'mermaid')
 const formatLabel = computed(() => (isMermaid.value ? 'Repair' : 'Format'))
 const formatTip = computed(() => {
