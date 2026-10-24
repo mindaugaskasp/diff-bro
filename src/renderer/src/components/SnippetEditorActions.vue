@@ -1,6 +1,5 @@
 <script setup>
-// The snippet document's action row: the same buttons viewing and editing, so
-// none moves under the pointer. Owns only the copy flash; the rest is the parent's.
+// The same buttons viewing and editing, so none moves under the pointer.
 import { t } from '../i18n'
 import { computed } from 'vue'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
@@ -34,7 +33,7 @@ async function copyAsFile() {
 }
 const copyFileTip = computed(() =>
   props.secret
-    ? "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk"
+    ? t('snippetEditorActions.secretCopyAsFileTip')
     : t('snippetEditorActions.copyAsFileTip')
 )
 

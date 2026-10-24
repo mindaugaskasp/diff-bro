@@ -1,6 +1,5 @@
 <script setup>
-// The snippet document's tags: chips in a row, no frame. The add pill becomes
-// the input while editing, and its suggestions float so nothing below moves.
+// Suggestions float, so nothing below moves while typing a tag.
 import { reactive, ref } from 'vue'
 import { useSnippetStore, MAX_TAGS } from '../stores/snippetStore'
 import { useTagInput } from '../composables/useTagInput'

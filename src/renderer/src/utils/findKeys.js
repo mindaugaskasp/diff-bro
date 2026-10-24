@@ -1,6 +1,3 @@
-// Which find shortcut a keydown is, by platform convention. Pure, so the
-// mapping is testable without a keyboard.
-
 const MAC = { f: 'find', 'f+alt': 'replace' }
 const PC = { f: 'find', h: 'replace' }
 

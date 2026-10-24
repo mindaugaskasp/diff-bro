@@ -1,6 +1,3 @@
-// Editing in place: a press on the content starts it, Escape leaves it when there
-// is nothing to lose. Saving and the tab's close guard cover the rest.
-
 // Escape belongs to these first: closing find or a suggestion list is not "stop editing".
 const OWNS_ESCAPE = '.find-widget, .suggest-widget, .tag-pop, .tt-pop, [role="dialog"]'
 const OPEN_WIDGET = '.find-widget.visible, .suggest-widget.visible'
