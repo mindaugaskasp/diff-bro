@@ -109,7 +109,8 @@ changes with the image.
 
 ## Delivery
 
-One PR per design change, stacked:
+One PR per design change, stacked with git-spice
+(`git-spice branch create`, `git-spice stack submit`):
 - Slice 1 targets `main`, and each later slice targets the slice below it.
 - Each PR is reviewed alone and is green on its own.
 - The stack merges bottom-up and is released as one tag.

@@ -103,22 +103,28 @@ Present it and wait. No code, no branch. On approval: `Status: approved`.
 
 One spec, one branch, created before the first edit.
 
-**An approved design ships in slices, one PR per design change, as a stack.**
+**An approved design ships in slices, one PR per design change, as a stack
+managed with [git-spice](https://abhinav.github.io/git-spice/).**
 - Split the approved design into the smallest changes that each stand alone,
   each with its own failing tests first.
-- **Stack them:** slice 1 branches off `main` and its PR targets `main`.
-  Slice N branches off slice N−1, and its PR targets slice N−1's branch.
-  Each PR then shows only its own slice, and is reviewed as one PR.
+- **Stack them with git-spice** (`gs` is only a zsh alias, so scripts call
+  `git-spice`):
+  - once per clone: `git-spice repo init --trunk main --remote origin`, then
+    `git-spice auth login` with the GitHub CLI method, which reuses `gh`;
+  - each slice: `git-spice branch create <prefix>/<slug>` on top of the slice
+    below it, so slice 1 sits on `main` and slice N on slice N−1;
+  - publish: `git-spice stack submit --fill`. Every PR targets the slice
+    below it, shows only its own change, and is reviewed as one PR.
 - **Every slice is green on its own.** CI must pass on every runner for each
   PR in the stack, not only the top, and no slice leaves half-built UI behind
   it.
-- **The stack releases as one unit.** Merge bottom-up with
-  `gh pr merge --squash --delete-branch`, then tag once the whole stack is on
-  `main`. A squash rewrites history, so after each merge rebase the next
-  slice onto the new `main` (`git rebase --onto origin/main <old-base>`),
-  point its PR at `main`, and push with `--force-with-lease`.
-- **A fix found in a lower slice goes into that slice,** then the slices
-  above it are rebased. Never patch it from the top.
+- **A fix found in a lower slice goes into that slice:**
+  `git-spice branch checkout` it, commit, then `git-spice upstack restack`
+  and `git-spice stack submit`. Never patch it from the top.
+- **The stack releases as one unit.**
+  `git-spice downstack merge --method squash --branch <top>` merges
+  bottom-up, restacking and resubmitting what is above as it goes. Then
+  `git-spice repo sync`, and tag once the whole stack is on `main`.
 - List the slices in the plan's **Delivery** table: slice, branch, base, PR,
   status. Tick each one off on merge.
 - The spec, canvas and process changes travel in the first slice. A slice
