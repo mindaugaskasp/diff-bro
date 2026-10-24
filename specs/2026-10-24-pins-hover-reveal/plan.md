@@ -1,4 +1,4 @@
-# Pinned tools, hover that reads, Show in folder, one-file open, and one tool-window size
+# Pinned tools, hover that reads, Show in folder, one-file open, and one tool window
 
 | | |
 |---|---|
@@ -52,6 +52,9 @@ Five reports from the user, 2026-10-24.
    - Encrypt also obeys the "maximize dialogs" setting, so it can fill nearly
      the whole window.
    - Moving between two tools changes the window under the user's hands.
+   - Clicking outside closes Encrypt / Decrypt (`close-on-backdrop`) but not
+     the text tools (`:close-on-backdrop="false"`, `TextToolDialog.vue:60`).
+     The same gesture does two different things.
 
 ## Solution (to be drawn on the canvas, then approved)
 
@@ -101,6 +104,13 @@ Five reports from the user, 2026-10-24.
   - The "maximize dialogs" setting applies to every tool or to none.
   - Tool content flexes to the shared size. Short tools centre in it, and
     nothing scrolls at the minimum.
+  - **Every tool closes on a click outside it,** through the existing
+    `useBackdropClose` guard: the press must start and end on the backdrop,
+    so a drag-select or resize that ends outside never closes it.
+  - **A tool keeps its last input for the session.** Closing by a click
+    outside must not cost a long paste. Reopening the same tool restores
+    what was typed. The input is renderer memory only, never persisted, so
+    nothing a tool held survives a relaunch.
 
 | option | why not |
 |---|---|
@@ -108,6 +118,7 @@ Five reports from the user, 2026-10-24.
 | Hover by shadow only, darker | the lift is the resting cue; on dark grounds `--shadow-2` cannot carry hover alone |
 | Show in folder opens the data folder (`openPath`) | lands the user in a folder of a dozen files with nothing selected |
 | One file keeps opening into the left pane | the user's report: the start screen is the wrong first view for one file |
+| Text tools keep refusing a backdrop click | the user asked for one behaviour; closing everywhere plus session-kept input loses nothing |
 | Each tool sized to its content | the user's report: sizes changing between tools is the problem |
 | Encrypt shrunk to 460px like the others | its two panes and options need the width; growing the others to one generous size serves every tool |
 | One file opens in a read-only viewer | the user asked for the snippet or text editor view; a new snippet tab already has the editor and costs nothing until saved |
@@ -194,6 +205,13 @@ the hover face delta to a floor on every theme.
   - A resize made in one tool is the size the next tool opens at.
 - **Unit:** the settings migration from `dialogSize('encrypt')` to
   `dialogSize('tool')` keeps a size the user already chose.
+- **e2e, slice 5:** a press and release on the backdrop closes every tool
+  (red on `main` for the text tools). A drag that starts inside and ends
+  outside does not close it.
+- **e2e, slice 5:** type into a tool, close it with a click outside, reopen
+  it: the input is back.
+- **Unit:** the per-tool session input store, keyed by tool id and cleared
+  on relaunch.
 
 ## Docs impact
 
@@ -207,15 +225,17 @@ the hover face delta to a floor on every theme.
 
 ## Delivery
 
-One PR per design change, each deployable alone.
+One PR per design change, stacked with git-spice. Slice 1 targets `main`,
+and each later slice targets the one below it. Each PR is reviewed alone and
+is green on its own. The stack merges bottom-up and ships as one tag.
 
-| # | slice | branch | PR | status |
-|---|---|---|---|---|
-| 1 | Pinned group in Tools | `fix/tools-pinned-group` | | |
-| 2 | Hover contract and sweep channel | `improvement/hover-contract` | | |
-| 3 | Show in folder | `feat/show-in-folder` | | |
-| 4 | One opened file becomes a snippet tab | `improvement/open-file-as-snippet` | | |
-| 5 | One tool-window size | `improvement/tool-window-size` | | |
+| # | slice | branch | base | PR | status |
+|---|---|---|---|---|---|
+| 1 | Pinned group in Tools | `fix/tools-pinned-group` | `main` | | |
+| 2 | Hover contract and sweep channel | `improvement/hover-contract` | slice 1 | | |
+| 3 | Show in folder | `feat/show-in-folder` | slice 2 | | |
+| 4 | One opened file becomes a snippet tab | `improvement/open-file-as-snippet` | slice 3 | | |
+| 5 | One tool window: shared size, and every tool closes on a click outside | `improvement/tool-window` | slice 4 | | |
 
 ## Implementation plan
 
