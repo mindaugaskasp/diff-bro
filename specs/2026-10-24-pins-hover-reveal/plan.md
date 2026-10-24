@@ -1,9 +1,9 @@
-# Pinned tools in Tools, hover that reads, and Show in folder
+# Pinned tools in Tools, hover that reads, Show in folder, and opening one file
 
 | | |
 |---|---|
 | **Status** | draft |
-| **Progress** | 0 / 3 slices |
+| **Progress** | 0 / 4 slices |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-24 |
 | **Finished** | — |
@@ -13,7 +13,7 @@
 
 ## Problem
 
-Three reports from the user, 2026-10-24.
+Four reports from the user, 2026-10-24.
 
 1. **A pinned tool moves on Home but not in Tools.**
    - Pinning (★) a tool puts it in Home's Pinned block (`HomePanel.vue:55`).
@@ -37,6 +37,14 @@ Three reports from the user, 2026-10-24.
      `STORE_NAMES`).
    - The only reveal today is Settings ▸ data folder (`datadir:reveal`,
      `appData.js:157`).
+4. **Opening one file shows the start screen.**
+   - "Open with Diff Bro", `diffbro open <file>` or a dropped single file
+     goes through `open-file` (`index.js:50`) and the `open-with` command
+     (`commands.js:170`, `openWithFromCli`).
+   - The file fills the **left** pane, and the window shows the "waiting for
+     the second file" start screen.
+   - Opening one file usually means reading or editing it, not starting a
+     comparison. The user has to look past a half-empty comparison to see it.
 
 ## Solution (to be drawn on the canvas, then approved)
 
@@ -61,17 +69,37 @@ Three reports from the user, 2026-10-24.
     `'snippets'`.
   - That is a fourth reveal site under hard rule 7. It is fenced like the
     other three, and `docs/standards.md` gets the same paragraph.
+- **One file opens as an editor, not half a comparison.** A single opened
+  file becomes a **new, unsaved snippet tab**:
+  - the name is the file name, and the syntax is detected from its extension;
+  - the content is the file's text, in the snippet document already used for
+    snippets (status bar, find, zoom);
+  - nothing reaches the library until the user presses Save;
+  - **Compare with…** in that document starts a comparison with the file on
+    the left.
+  - **Two or more files opened together** still open as a comparison, as
+    today.
+  - A binary or oversized file is refused with the notice it gets today; it
+    never becomes a snippet.
 
 | option | why not |
 |---|---|
 | Pinned tools stay in their group, marked by the star alone | the user's report: a pin must move the tile, as it does on Home |
 | Hover by shadow only, darker | the lift is the resting cue; on dark grounds `--shadow-2` cannot carry hover alone |
 | Show in folder opens the data folder (`openPath`) | lands the user in a folder of a dozen files with nothing selected |
+| One file keeps opening into the left pane | the user's report: the start screen is the wrong first view for one file |
+| One file opens in a read-only viewer | the user asked for the snippet or text editor view; a new snippet tab already has the editor and costs nothing until saved |
 
-**Open question for approval:** is the folder you want the **app's data
+**Open questions for approval:**
+
+1. Is the folder you want the **app's data
 folder** (where the encrypted store lives), or, for a diff of two files on
 disk, the **folder of the original files**? The snapshot keeps file names,
 not paths, so the second needs the source path stored at save time.
+2. With one file already open as a snippet tab, does a **second** "Open
+   with" join it as a comparison (today's two-step) or open a second
+   editor tab? Recommendation: a second editor tab. Compare with… is the
+   explicit way to start a comparison, and two-at-once still compares.
 
 ## Scope
 
@@ -79,17 +107,22 @@ not paths, so the second needs the source path stored at save time.
 - Tools panel grouping;
 - the hover states of `.tile`, `.seg-opt`, `.whose-opt`, `.rail-item`, row
   actions and Home cards;
-- a reveal row action on saved-diff and snippet rows.
+- a reveal row action on saved-diff and snippet rows;
+- single-file open (OS "Open with", `diffbro open <file>`, a single dropped
+  file onto an empty window) as a new snippet tab.
 
 **Out:**
 - changing what a pin means on Home;
 - a per-item file export;
-- received diffs: their row already offers export.
+- received diffs: their row already offers export;
+- writing an edited file back to its original path. The tab is a snippet,
+  and Save stores it in the library; saving to disk would be its own spec.
 
 ## Design
 
 **Source of truth:** a design canvas (to be made: Tools with a Pinned
-group, a hover sheet per control in all 20 themes, and the reveal row action).
+group, a hover sheet per control in all 20 themes, the reveal row action, and
+a file opened as a new snippet tab).
 **Approved design:** none yet. No code before both exist.
 
 ### Theme verdict — all 20
@@ -120,6 +153,14 @@ the hover face delta to a floor on every theme.
   path (stubbed in main). The handler rejects an unknown store name.
 - **Unit:** the main-side path resolver, for an allowlisted name, an unknown
   name, and path traversal.
+- **e2e, slice 4:** `open-with.spec.mjs` is rewritten.
+  - One file opened from the OS opens a "New Snippet" region named after the
+    file, holding its text, with no start screen. Red on `main` first.
+  - Two files at once still compare.
+  - The two tests asserting today's left-pane behaviour (`:47`, `:107`)
+    change with the decision recorded.
+- **Unit:** `openWithFromCli` routes one file to a snippet draft and two
+  files to a comparison. Language detection comes from the file name.
 
 ## Docs impact
 
@@ -127,7 +168,7 @@ the hover face delta to a floor on every theme.
 |---|---|---|
 | `docs/standards.md` | yes | rule 7 gains the reveal site; the hover contract is written beside the `.btn` and `.tile` rules |
 | `docs/security.md` | yes | the new sandbox exit, fenced |
-| `docs/features.md` | yes | Tools pinning and Show in folder |
+| `docs/features.md` | yes | Tools pinning, Show in folder, and "Open with" opens one file as an editor (the terminal row's `diffbro open [<file>]` text changes) |
 | `docs/screenshots/*.png` | yes | Tools panel and rows, regenerated by the sweep |
 | `README.md` | no | no feature-status change |
 
@@ -140,6 +181,7 @@ One PR per design change, each deployable alone.
 | 1 | Pinned group in Tools | `fix/tools-pinned-group` | | |
 | 2 | Hover contract and sweep channel | `improvement/hover-contract` | | |
 | 3 | Show in folder | `feat/show-in-folder` | | |
+| 4 | One opened file becomes a snippet tab | `improvement/open-file-as-snippet` | | |
 
 ## Implementation plan
 
@@ -147,6 +189,7 @@ One PR per design change, each deployable alone.
 - [ ] 1. Slice 1.
 - [ ] 2. Slice 2.
 - [ ] 3. Slice 3.
+- [ ] 4. Slice 4.
 
 ## Decisions
 
