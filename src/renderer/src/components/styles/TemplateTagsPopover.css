@@ -1,5 +1,8 @@
+/* Flex, not inline: an inline span adds a descender strut and grows the status bar. */
 .tt {
   position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 .tt-trigger {
   display: inline-flex;

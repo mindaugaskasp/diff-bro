@@ -63,6 +63,10 @@
   display: flex;
   flex-direction: column;
 }
+/* Only the editor gives up height: a squeezed row overflows its own line box. */
+.doc-main > :not(.editor-area) {
+  flex: none;
+}
 .doc-main > .format-toolbar {
   padding: var(--space-1) var(--space-4);
   border: 0;

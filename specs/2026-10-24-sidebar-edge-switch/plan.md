@@ -163,7 +163,7 @@ None. No IPC, no fs, no crypto, no new dependency, no external link.
 | 2026-10-24 | The theme sweep repaired so every surface runs | it had rotted: four surfaces still opened the snippet dialog or assumed which panel was open; `trusted-keys` opened a dialog the Keys panel replaced, and `keys-panel` covers it | sweeping only the surfaces this change touches |
 | 2026-10-24 | The editor's ring is an `outline` with `outline-offset: -1px`, and the sweep gains an `outline` channel | an inset box-shadow on the area paints under Monaco's positioned layers; an outline paints above them | an inset box-shadow; a border, which would bring the frame back |
 | 2026-10-24 | The required hint and the Mermaid preview move above the status bar, keeping their inset | the status bar has to be last for the column to end at the window; framed extras are not the edge | leaving the status bar mid-column |
-| 2026-10-24 | The editor header pads by `--space-1` vertically | at `--space-2` the document overflowed 2 px at its minimum size (`snippets.spec` caught it) | a smaller editor floor |
+| 2026-10-24 | `.tt` is `inline-flex`, and every row but the editor is `flex: none` | `snippets.spec` caught a 2 px overflow at the minimum size on Linux: the inline `.tt` span carried a descender strut (30 px in a 26 px bar), which the old 10 px inset had hidden | tightening the header padding, which passed on macOS and still failed on Linux |
 | 2026-10-24 | The sweep gains a `shadow` channel | the underline is an inset `box-shadow`; neither the text nor the border channel can see it | an unmeasured indicator |
 
 ## Validation
