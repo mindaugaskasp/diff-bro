@@ -12,7 +12,7 @@ const LITERAL_KEY = /(?<![\w$.])\$?t\(\s*(['"])([^'"]+)\1/gu
 // <i18n-t keypath="…"> is the OTHER way a key is named, and the only construct
 // this codebase uses that the call-shaped scan above cannot see. A typo here
 // renders the id on screen with the build still green.
-const KEYPATH_ATTR = /keypath="([^"]+)"/gu
+const KEYPATH_ATTR = /(?<!:)keypath="([^"]+)"/gu
 // Anything that is NOT a quoted literal: a template literal or a variable. Both
 // are invisible to the scan above, and a variable reads like an ordinary call —
 // files.js does `t(spec.titleKey)`, which only the unused-key warning caught.

@@ -1556,7 +1556,11 @@
     "keepThemOpen": "Keep them open",
     "keepItOpen": "Keep it open",
     "closingMany": "Closing {count} comparisons. {risky} of them haven’t been saved, and closing discards them.",
-    "closingOne": "{name} hasn’t been saved. Closing it discards the comparison."
+    "closingOne": "{name} hasn’t been saved. Closing it discards the comparison.",
+    "closeSnippet": "Close snippet?",
+    "closingOneSnippet": "{name} has unsaved changes. Closing it discards them.",
+    "closeTabs": "Close tabs?",
+    "closingManyTabs": "Closing {count} tabs. {risky} of them have unsaved changes, and closing discards them."
   },
   "pasteConfirmDialog": {
     "overwritePastedText": "Overwrite pasted text?",
