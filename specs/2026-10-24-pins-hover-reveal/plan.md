@@ -11,6 +11,41 @@
 | **Token baseline** | — (taken when the build starts) |
 | **Claude tokens used** | — |
 
+## Resume here
+
+State on 2026-10-24: **spec drafted, canvas drawn, nothing built.** Release
+v0.13.0 shipped before this work started, so `main` holds nothing of it.
+
+1. **Get the canvas approved.** https://claude.ai/artifact/FA9kFwk7FtaEoeA5LvtcqQ
+   - Read its comments first (`ArtifactComments`, action `read`).
+   - Fold any changes into the boards and this spec.
+   - On sign-off, add an **Approved design** page to the canvas, link it in
+     Design above, and set Status to `approved`.
+2. **Build the stack** with git-spice (`git-spice`, never `gs`); the repo is
+   already initialised and authenticated.
+   - Slice 1 also carries this spec. Rebase this branch's commits into it, or
+     merge this docs branch first.
+   - Each slice is `git-spice branch create <branch from Delivery>`, failing
+     test first, `npm run check`, then `git-spice stack submit --fill`.
+   - Merge bottom-up once every PR is green: `git-spice downstack merge
+     --method squash --branch <top>`, `git-spice repo sync`, then one tag.
+3. **Re-measure the theme verdict** with the sweep's new `hover` channel once
+   slice 2 exists. The table above was computed offline by resolving
+   `var()` and `color-mix(in srgb …)` from `themes.css` and `tokens.css`.
+
+**Where each slice starts in the code:**
+
+| slice | start reading |
+|---|---|
+| 1 Pinned group | `components/ToolTiles.vue`, `utils/toolGroups.js` (`TOOL_GROUPS`), `HomePanel.vue:55` for how Home does it |
+| 2 Hover | `styles/ui.css` (`.tile` ~1191, `.btn` ~142), `styles/tokens.css` (`--btn-face*`, `--bg-card`), `scripts/theme-sweep.mjs` (`against()`, the `shadow`/`outline` channels) and `scripts/check-theme-depth.mjs` |
+| 3 Show in folder | `src/main/dataFiles.js` (`STORE_NAMES`; files are `<name>.json`), `src/main/appData.js:157` (`datadir:reveal`), `SavedDiffRow.vue`, the snippet row, the preload |
+| 4 Open one file | `src/main/index.js:50` (`open-file`), `utils/commands.js:170` (`openWithFromCli`), the snippet draft store, `e2e/open-with.spec.mjs` (`:47`, `:107` change) |
+| 5 Tool window | `TextToolDialog.vue:60`, `EncryptDecryptDialog.vue:97`, `settings.dialogSize`, `composables/useBackdropClose.js`, `src/main/window.js:49` and `:79` |
+
+**Leave alone:** `e2e/.open-with.spec.mjs.swp` is the user's editor swap
+file, untracked.
+
 ## Problem
 
 Five reports from the user, 2026-10-24.
