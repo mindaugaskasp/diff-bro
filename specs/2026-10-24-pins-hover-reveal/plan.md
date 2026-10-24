@@ -105,8 +105,8 @@ Five reports from the user, 2026-10-24.
     never becomes a snippet.
 - **One tool-window size.** Every tool panel, text tools and Encrypt alike,
   opens at one shared size.
-  - New tokens: `--tool-dialog-w` and `--tool-dialog-h`, starting at about
-    720 × 560, to be settled on the canvas.
+  - New tokens: `--tool-dialog-w` and `--tool-dialog-h`, 720 × 540 (canvas
+    boards 5a and 5b).
   - It must fit the minimum window (1120 × 640, `window.js:49`) with the
     menu bar and margins showing. If the largest tool's content does not fit,
     the default window grows instead (today 1400 × 900, `window.js:79`).
@@ -156,17 +156,35 @@ Five reports from the user, 2026-10-24.
 
 ## Design
 
-**Source of truth:** a design canvas (to be made: Tools with a Pinned
-group, a hover sheet per control in all 20 themes, the reveal row action, and
-a file opened as a new snippet tab, the "Compare with…?" prompt for a
-second file, and every tool at the one size in the
-minimum and default windows).
-**Approved design:** none yet. No code before both exist.
+**Source of truth:** https://claude.ai/artifact/FA9kFwk7FtaEoeA5LvtcqQ, seven boards:
+1. Tools ▸ Pinned group (today vs proposed).
+2. The hover contract in all 20 themes.
+3. Show in folder.
+4. One opened file as a snippet tab, and the second-file prompt.
+5. The text tool and Encrypt at the shared size in the minimum window.
+
+**Approved design:** none yet. No code before the user signs it off.
+
+- **Hover CSS:** `--tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text))`.
+  `.tile:hover` takes that face, a `--btn-edge` border and `--shadow-2`.
+  `.seg-opt:hover` and `.whose-opt:hover` take `--btn-face-hover`.
+- **Tool window:** `--tool-dialog-w: 720px`, `--tool-dialog-h: 540px`. In the
+  1120 × 640 minimum that leaves 65 px above and below and 200 px each side.
+  The default window (1400 × 900) already fits it, so it does not grow.
 
 ### Theme verdict — all 20
 
-To be measured on the canvas from `themes.css`. The new sweep channel holds
-the hover face delta to a floor on every theme.
+Resolved from `themes.css` and `tokens.css`. Ratios are on the panel.
+
+| floor | holds on | lowest |
+|---|---|---|
+| tile face, rest → hover ≥ 1.15 | 20 / 20 | sepia 1.19, solar and meridian 1.20 |
+| hover edge on panel ≥ 3:1 | 20 / 20 | sepia 3.22, solar 3.43 |
+| toggle wash on panel ≥ 1.4 | 20 / 20 | sepia 1.46 |
+| toggle label on wash ≥ 4.5 | 20 / 20 | nord 4.84 |
+
+- contrast, beacon and volcano keep their hard keyline; hover only steps it.
+- The accent stays off every hover, so matrix, nyan and neon do not halo.
 
 ## Security rules touched
 
@@ -245,7 +263,7 @@ is green on its own. The stack merges bottom-up and ships as one tag.
 
 ## Implementation plan
 
-- [ ] 0. Design canvas → Approved design page signed off by the user.
+- [ ] 0. Design canvas (drawn: https://claude.ai/artifact/FA9kFwk7FtaEoeA5LvtcqQ) → Approved design page signed off by the user.
 - [ ] 1. Slice 1.
 - [ ] 2. Slice 2.
 - [ ] 3. Slice 3.
