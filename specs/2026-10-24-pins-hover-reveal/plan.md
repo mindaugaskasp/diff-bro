@@ -148,8 +148,8 @@ Five reports from the user, 2026-10-24.
     menu bar and margins showing. If the largest tool's content does not fit,
     the default window grows instead (today 1400 × 900, `window.js:79`).
   - All tool panels are resizable. One remembered size, `dialogSize('tool')`,
-    replaces the per-tool `'encrypt'` key: move between tools and the window
-    stays put.
+    replaces the per-tool `'encrypt'` key, with no migration (#113): the old
+    size resets. Move between tools and the window stays put.
   - The "maximize dialogs" setting applies to every tool or to none.
   - Tool content flexes to the shared size. Short tools centre in it, and
     nothing scrolls at the minimum.
@@ -264,8 +264,6 @@ Resolved from `themes.css` and `tokens.css`. Ratios are on the panel.
   - At the minimum window size, no tool panel overflows the viewport, and its
     content does not scroll.
   - A resize made in one tool is the size the next tool opens at.
-- **Unit:** the settings migration from `dialogSize('encrypt')` to
-  `dialogSize('tool')` keeps a size the user already chose.
 - **e2e, slice 5:** a press and release on the backdrop closes every tool
   (red on `main` for the text tools). A drag that starts inside and ends
   outside does not close it.
@@ -314,6 +312,7 @@ is green on its own. The stack merges bottom-up and ships as one tag.
 | 2026-10-24 | Spec only; no code until the canvas is approved | the user asked for a spec now and the build later, on its own branch | building alongside the v0.13.0 release |
 | 2026-10-24 | Show in folder reveals the encrypted store file holding the item | the user: "should show the location of encrypted file" | the folder of the original files, which would need source paths stored at save time |
 | 2026-10-24 | A second opened file asks "Compare with <previous file>?"; Yes compares, No opens a new tab | the user's answer; the prompt is drawn on the canvas | always a new tab; always joining as a comparison |
+| 2026-10-24 | No migration of `dialogSize('encrypt')`; it resets | the maintainer dropped backward compatibility codebase-wide (#113) | migrating the remembered size |
 | 2026-10-24 | Dismissing the prompt opens a new tab | the non-destructive choice; the comparison is one Compare with… away | dismiss cancels the open, which drops the file the user asked for |
 
 ## Validation
