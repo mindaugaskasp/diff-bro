@@ -13,7 +13,9 @@
 
 ## Resume here
 
-State on 2026-10-24: **spec drafted, canvas drawn, nothing built.** Release
+State on 2026-10-24: **spec drafted, canvas drawn, nothing built.** Tracked
+as GitHub issue #92 (`needs-info`: canvas sign-off). Slices are sub-issues
+#93–#97, each blocked by the one before it. Release
 v0.13.0 shipped before this work started, so `main` holds nothing of it.
 
 1. **Get the canvas approved.** https://claude.ai/artifact/FA9kFwk7FtaEoeA5LvtcqQ
@@ -288,13 +290,13 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`,
 and each later slice targets the one below it. Each PR is reviewed alone and
 is green on its own. The stack merges bottom-up and ships as one tag.
 
-| # | slice | branch | base | PR | status |
-|---|---|---|---|---|---|
-| 1 | Pinned group in Tools | `fix/tools-pinned-group` | `main` | | |
-| 2 | Hover contract and sweep channel | `improvement/hover-contract` | slice 1 | | |
-| 3 | Show in folder | `feat/show-in-folder` | slice 2 | | |
-| 4 | One opened file becomes a snippet tab | `improvement/open-file-as-snippet` | slice 3 | | |
-| 5 | One tool window: shared size, and every tool closes on a click outside | `improvement/tool-window` | slice 4 | | |
+| # | slice | branch | base | issue | PR | status |
+|---|---|---|---|---|---|---|
+| 1 | Pinned group in Tools | `fix/tools-pinned-group` | `main` | #93 | | |
+| 2 | Hover contract and sweep channel | `improvement/hover-contract` | slice 1 | #94 | | |
+| 3 | Show in folder | `feat/show-in-folder` | slice 2 | #95 | | |
+| 4 | One opened file becomes a snippet tab | `improvement/open-file-as-snippet` | slice 3 | #96 | | |
+| 5 | One tool window: shared size, and every tool closes on a click outside | `improvement/tool-window` | slice 4 | #97 | | |
 
 ## Implementation plan
 
