@@ -114,15 +114,13 @@ function measureProbes(selectors) {
     const behind = groundOf(el.parentElement ?? el)
     const own = parse(cs.backgroundColor)
     const surface = own.length >= 3 && (own.length < 4 || own[3] > 0) ? over(own, behind) : behind
-    const border = parse(cs.borderTopColor)
-    const shadow = shadowColour(cs)
+    const against = (colour) => (colour.length >= 3 ? ratio(over(colour, surface), surface) : null)
+    const hasBorder = parseFloat(cs.borderTopWidth) > 0
     return {
-      shadow: shadow.length >= 3 ? ratio(over(shadow, surface), surface) : null,
       text: ratio(over(parse(cs.color), surface), surface),
-      border:
-        border.length >= 3 && parseFloat(cs.borderTopWidth) > 0
-          ? ratio(over(border, surface), surface)
-          : null
+      border: against(hasBorder ? parse(cs.borderTopColor) : []),
+      shadow: against(shadowColour(cs)),
+      outline: against(cs.outlineStyle === 'none' ? [] : parse(cs.outlineColor))
     }
   }
   return Object.fromEntries(Object.entries(selectors).map(([k, sel]) => [k, measure(sel)]))
@@ -400,7 +398,7 @@ const SURFACES = [
     probes: {
       'click-to-edit cue': ['.edit-cue', TEXT],
       'cue keyline': ['.edit-cue', DIM, 'border'],
-      'hover keyline': ['.editor-area:not(.editing) .editor', DIM, 'border'],
+      'hover ring': ['.editor-area:not(.editing) .editor', DIM, 'outline'],
       'drop hint': ['.snippet-doc .drop-hint', TEXT],
       // Disabled here (nothing to format in this syntax): an inactive control, held to DIM.
       'format button (disabled)': ['.snippet-doc .editor-header .btn:disabled', DIM]

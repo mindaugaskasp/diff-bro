@@ -180,6 +180,10 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
           </template>
           <SnippetSecretMask v-if="masked" />
         </div>
+        <p v-if="editMode && !content.trim()" class="required-hint">
+          {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
+        </p>
+        <MermaidPreview v-if="isMermaid && !masked" :code="content" @expand="draft.expandDiagram" />
         <SnippetStatusBar
           v-if="!masked"
           :content="content"
@@ -187,10 +191,6 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
           :cursor="cursor"
           :editing="editMode"
         />
-        <p v-if="editMode && !content.trim()" class="required-hint">
-          {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
-        </p>
-        <MermaidPreview v-if="isMermaid && !masked" :code="content" @expand="draft.expandDiagram" />
       </div>
       <SnippetHistoryPanel
         v-if="showHistory && editing.id"

@@ -56,13 +56,28 @@
   min-height: 0;
   display: flex;
 }
+/* Flush to the window like every other column; only the framed extras keep an inset. */
 .doc-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+}
+/* Only the editor gives up height: a squeezed row overflows its own line box. */
+.doc-main > :not(.editor-area) {
+  flex: none;
+}
+.doc-main > .format-toolbar {
+  padding: var(--space-1) var(--space-4);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.doc-main > .required-hint {
+  margin: var(--space-2) var(--space-4) 0;
+}
+.doc-main > .mmd-preview {
+  margin: var(--space-3) var(--space-4);
 }
 .visually-hidden {
   position: absolute;
