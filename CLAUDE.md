@@ -55,3 +55,17 @@ file below is imported into context automatically.
   `e2e/quick-look-window-recovery.spec.mjs` guards itself with
   `test.skip(process.platform !== 'darwin', …)`. Verify those red→green by hand:
   `git stash push -- src/main/ && npm run build`, run, restore.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `mindaugaskasp/diff-bro`, via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles, each label named after its role. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `docs/glossary.md`, with decisions in each spec's Decisions table. See `docs/agents/domain.md`.
