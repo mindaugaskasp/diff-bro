@@ -109,12 +109,14 @@ changes with the image.
 
 ## Delivery
 
-One PR per design change, each deployable alone, in merge order. A slice
-never depends on an unmerged sibling.
+One PR per design change, stacked:
+- Slice 1 targets `main`, and each later slice targets the slice below it.
+- Each PR is reviewed alone and is green on its own.
+- The stack merges bottom-up and is released as one tag.
 
-| # | slice | branch | PR | status |
-|---|---|---|---|---|
-| | | | | |
+| # | slice | branch | base | PR | status |
+|---|---|---|---|---|---|
+| | | | | | |
 
 ## Implementation plan
 

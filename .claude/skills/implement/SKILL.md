@@ -103,19 +103,26 @@ Present it and wait. No code, no branch. On approval: `Status: approved`.
 
 One spec, one branch, created before the first edit.
 
-**An approved design ships in slices, one PR per design change.**
-- Split the approved design into the smallest changes that each stand alone.
-  Each slice is its own branch off `main` and its own PR, with its own failing
-  tests first.
-- After each merge `main` must be releasable: CI green on every runner, no
-  half-built UI behind it, and nothing in the slice depending on an unmerged
-  sibling.
-- Order the slices so each builds only on what has already merged.
-- List them in the plan's **Delivery** table: slice, branch, PR, status. Tick
-  each one off on merge.
-- The spec, canvas and process changes travel in the first PR. A slice never
-  carries another slice's work, so the blast radius stays one change and each
-  one can be shown deployable on its own.
+**An approved design ships in slices, one PR per design change, as a stack.**
+- Split the approved design into the smallest changes that each stand alone,
+  each with its own failing tests first.
+- **Stack them:** slice 1 branches off `main` and its PR targets `main`.
+  Slice N branches off slice N−1, and its PR targets slice N−1's branch.
+  Each PR then shows only its own slice, and is reviewed as one PR.
+- **Every slice is green on its own.** CI must pass on every runner for each
+  PR in the stack, not only the top, and no slice leaves half-built UI behind
+  it.
+- **The stack releases as one unit.** Merge bottom-up with
+  `gh pr merge --squash --delete-branch`, then tag once the whole stack is on
+  `main`. A squash rewrites history, so after each merge rebase the next
+  slice onto the new `main` (`git rebase --onto origin/main <old-base>`),
+  point its PR at `main`, and push with `--force-with-lease`.
+- **A fix found in a lower slice goes into that slice,** then the slices
+  above it are rebased. Never patch it from the top.
+- List the slices in the plan's **Delivery** table: slice, branch, base, PR,
+  status. Tick each one off on merge.
+- The spec, canvas and process changes travel in the first slice. A slice
+  never carries another slice's work, so each review stays one change.
 
 | prefix | when |
 |---|---|
