@@ -1,9 +1,9 @@
-# Pinned tools in Tools, hover that reads, Show in folder, and opening one file
+# Pinned tools, hover that reads, Show in folder, one-file open, and one tool-window size
 
 | | |
 |---|---|
 | **Status** | draft |
-| **Progress** | 0 / 4 slices |
+| **Progress** | 0 / 5 slices |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-24 |
 | **Finished** | — |
@@ -13,7 +13,7 @@
 
 ## Problem
 
-Four reports from the user, 2026-10-24.
+Five reports from the user, 2026-10-24.
 
 1. **A pinned tool moves on Home but not in Tools.**
    - Pinning (★) a tool puts it in Home's Pinned block (`HomePanel.vue:55`).
@@ -45,6 +45,13 @@ Four reports from the user, 2026-10-24.
      the second file" start screen.
    - Opening one file usually means reading or editing it, not starting a
      comparison. The user has to look past a half-empty comparison to see it.
+5. **Tool windows are different sizes.**
+   - The text tools (`TextToolDialog.vue:60`) are fixed at `460px`.
+   - Encrypt / Decrypt (`EncryptDecryptDialog.vue:97`) is `560px`, resizable,
+     and remembers a size of its own (`settings.dialogSize('encrypt')`).
+   - Encrypt also obeys the "maximize dialogs" setting, so it can fill nearly
+     the whole window.
+   - Moving between two tools changes the window under the user's hands.
 
 ## Solution (to be drawn on the canvas, then approved)
 
@@ -81,6 +88,19 @@ Four reports from the user, 2026-10-24.
     today.
   - A binary or oversized file is refused with the notice it gets today; it
     never becomes a snippet.
+- **One tool-window size.** Every tool panel, text tools and Encrypt alike,
+  opens at one shared size.
+  - New tokens: `--tool-dialog-w` and `--tool-dialog-h`, starting at about
+    720 × 560, to be settled on the canvas.
+  - It must fit the minimum window (1120 × 640, `window.js:49`) with the
+    menu bar and margins showing. If the largest tool's content does not fit,
+    the default window grows instead (today 1400 × 900, `window.js:79`).
+  - All tool panels are resizable. One remembered size, `dialogSize('tool')`,
+    replaces the per-tool `'encrypt'` key: move between tools and the window
+    stays put.
+  - The "maximize dialogs" setting applies to every tool or to none.
+  - Tool content flexes to the shared size. Short tools centre in it, and
+    nothing scrolls at the minimum.
 
 | option | why not |
 |---|---|
@@ -88,6 +108,8 @@ Four reports from the user, 2026-10-24.
 | Hover by shadow only, darker | the lift is the resting cue; on dark grounds `--shadow-2` cannot carry hover alone |
 | Show in folder opens the data folder (`openPath`) | lands the user in a folder of a dozen files with nothing selected |
 | One file keeps opening into the left pane | the user's report: the start screen is the wrong first view for one file |
+| Each tool sized to its content | the user's report: sizes changing between tools is the problem |
+| Encrypt shrunk to 460px like the others | its two panes and options need the width; growing the others to one generous size serves every tool |
 | One file opens in a read-only viewer | the user asked for the snippet or text editor view; a new snippet tab already has the editor and costs nothing until saved |
 
 **Open questions for approval:**
@@ -109,7 +131,9 @@ not paths, so the second needs the source path stored at save time.
   actions and Home cards;
 - a reveal row action on saved-diff and snippet rows;
 - single-file open (OS "Open with", `diffbro open <file>`, a single dropped
-  file onto an empty window) as a new snippet tab.
+  file onto an empty window) as a new snippet tab;
+- every tool panel (`TextToolDialog` cases and `EncryptDecryptDialog`) at one
+  shared size, plus the default window size if needed.
 
 **Out:**
 - changing what a pin means on Home;
@@ -122,7 +146,8 @@ not paths, so the second needs the source path stored at save time.
 
 **Source of truth:** a design canvas (to be made: Tools with a Pinned
 group, a hover sheet per control in all 20 themes, the reveal row action, and
-a file opened as a new snippet tab).
+a file opened as a new snippet tab, and every tool at the one size in the
+minimum and default windows).
 **Approved design:** none yet. No code before both exist.
 
 ### Theme verdict — all 20
@@ -161,6 +186,14 @@ the hover face delta to a floor on every theme.
     change with the decision recorded.
 - **Unit:** `openWithFromCli` routes one file to a snippet draft and two
   files to a comparison. Language detection comes from the file name.
+- **e2e, slice 5:** open each tool in turn and measure the panel's bounding
+  box: one width and height for all of them. Red on `main` first (460 vs 560
+  and up).
+  - At the minimum window size, no tool panel overflows the viewport, and its
+    content does not scroll.
+  - A resize made in one tool is the size the next tool opens at.
+- **Unit:** the settings migration from `dialogSize('encrypt')` to
+  `dialogSize('tool')` keeps a size the user already chose.
 
 ## Docs impact
 
@@ -169,7 +202,7 @@ the hover face delta to a floor on every theme.
 | `docs/standards.md` | yes | rule 7 gains the reveal site; the hover contract is written beside the `.btn` and `.tile` rules |
 | `docs/security.md` | yes | the new sandbox exit, fenced |
 | `docs/features.md` | yes | Tools pinning, Show in folder, and "Open with" opens one file as an editor (the terminal row's `diffbro open [<file>]` text changes) |
-| `docs/screenshots/*.png` | yes | Tools panel and rows, regenerated by the sweep |
+| `docs/screenshots/*.png` | yes | Tools panel, rows and `tool-dialog`, regenerated by the sweep |
 | `README.md` | no | no feature-status change |
 
 ## Delivery
@@ -182,6 +215,7 @@ One PR per design change, each deployable alone.
 | 2 | Hover contract and sweep channel | `improvement/hover-contract` | | |
 | 3 | Show in folder | `feat/show-in-folder` | | |
 | 4 | One opened file becomes a snippet tab | `improvement/open-file-as-snippet` | | |
+| 5 | One tool-window size | `improvement/tool-window-size` | | |
 
 ## Implementation plan
 
@@ -190,6 +224,7 @@ One PR per design change, each deployable alone.
 - [ ] 2. Slice 2.
 - [ ] 3. Slice 3.
 - [ ] 4. Slice 4.
+- [ ] 5. Slice 5.
 
 ## Decisions
 
