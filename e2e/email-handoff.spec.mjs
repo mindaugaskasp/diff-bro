@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto'
 import { KEY_FORMAT, decodePublicKey, encodePublicKey, fingerprint } from '../src/main/sealing.js'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   test,
@@ -427,6 +427,32 @@ test('a clipboard key is offered for verification; junk falls through to the pic
     expect(stored).toHaveLength(1)
     expect(stored[0].fingerprint).toBe(fingerprint(peer.sign, peer.box))
     expect(stored[0].label).toBe('Rūta phone')
+  } finally {
+    await app.close()
+  }
+})
+
+// The toolbar's Share keeps its draft in reactive state; sealing it for a person
+// once threw "An object could not be cloned" at the IPC boundary.
+test('sealing the current diff for a person writes the file', async () => {
+  test.setTimeout(90_000)
+  const dir = freshUserDataDir()
+  seedKeys(dir, [{ label: 'Ana', email: 'ana@example.com' }])
+  const app = await launchApp(dir)
+  const page = await firstReadyPage(app)
+
+  try {
+    const sealedPath = join(dir, 'sealed.diffbro')
+    await stubSaveDialog(app, sealedPath)
+
+    const share = await compareAndShare(page)
+    await share.getByRole('checkbox').first().check()
+    await share.getByRole('button', { name: 'Create file' }).click()
+
+    await expect(page.getByText(/Sealed shared diff/i)).toBeVisible()
+    await expect(page.getByText(/could not be cloned/i)).toHaveCount(0)
+    // The file takes a forced, hashed name in the folder chosen.
+    expect(readdirSync(dir).some((f) => f.endsWith('.diffbro'))).toBe(true)
   } finally {
     await app.close()
   }

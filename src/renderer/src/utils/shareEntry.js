@@ -46,9 +46,13 @@ export function sealableFromEntry(entry, payload, now = Date.now()) {
   }
 }
 
-/** The current diff, which has no saved entry yet. */
+/**
+ * The current diff, which has no saved entry yet. The draft is live reactive state, and
+ * IPC's structured clone refuses a Proxy, so the snapshot leaves as plain JSON.
+ */
 export function sealableFromDraft({ name, ttlHours, snapshot, tags }, now = Date.now()) {
   const localExpiresAt = ttlHours === null ? null : now + ttlSpan(ttlHours)
   const { expiresAt } = sealedWindow({ createdAt: now, expiresAt: localExpiresAt }, now)
-  return { name, createdAt: now, expiresAt, snapshot, tags: sendableTags(tags) }
+  const plain = JSON.parse(JSON.stringify(snapshot ?? null))
+  return { name, createdAt: now, expiresAt, snapshot: plain, tags: sendableTags(tags) }
 }
