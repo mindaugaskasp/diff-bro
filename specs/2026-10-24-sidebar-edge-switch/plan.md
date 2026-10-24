@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Status** | approved |
-| **Progress** | 1 / 2 slices built |
+| **Progress** | 2 / 2 slices built; 1 merged |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-24 |
 | **Finished** | — |
-| **Bugs found and fixed this iteration** | 0 / 2 |
+| **Bugs found and fixed this iteration** | 3 / 3 |
 | **Token baseline** | 2026-10-24T07:39:02Z |
 | **Claude tokens used** | — |
 
@@ -38,8 +38,8 @@ Two reports from the user's screenshots, both in volcano.
   - The code runs edge to edge, with no frame.
   - The status bar is flush at the window's bottom edge, ruled by `--line`.
   - Every column now ends at the same line, as the diff view already does.
-  - The click-to-edit hover keyline becomes an inset ring (`--btn-edge`),
-    because there is no frame left to recolour.
+  - The click-to-edit hover keyline becomes a `--btn-edge` outline drawn
+    inside the editor, because there is no frame left to recolour.
 - **Switch 1, the header is the switch.** The pill row is removed, and
   Mine / Received become the section header's title.
   - The active choice is `--text` at weight 700, with a 2 px `--accent`
@@ -123,7 +123,7 @@ None. No IPC, no fs, no crypto, no new dependency, no external link.
 - **e2e, slice 2:** `e2e/snippet-flush-edge.spec.mjs`.
   - The status bar's bottom equals the window's.
   - The editor's left edge equals the document's.
-  - The hover cue is a `--btn-edge` inset ring.
+  - The hover cue is a ring over the code (`outline`, inset by `outline-offset`).
 - **red → green:** each spec watched failing on `main` first.
 - **theme sweep:** `diffs-switch` and `snippet-inline-edit` surfaces, all 20.
 - **seed fixtures:** none; no data shape changes.
@@ -141,14 +141,14 @@ None. No IPC, no fs, no crypto, no new dependency, no external link.
 
 | # | slice | branch | PR | status |
 |---|---|---|---|---|
-| 1 | Mine / Received as the header (Switch 1), plus this spec | `improvement/diffs-whose-header` | | |
+| 1 | Mine / Received as the header (Switch 1), plus this spec | `improvement/diffs-whose-header` | #83 | merged |
 | 2 | Snippet document flush to the edge (Edge C) | `improvement/snippet-flush-edge` | | |
 
 ## Implementation plan
 
 - [x] 1. Slice 1: red e2e; a `title` slot on `SectionHeader`; `DiffsWhoseTabs`
       inside it; the pill row removed; sweep surface; PR, CI, merge.
-- [ ] 2. Slice 2: red e2e; flush padding, frame, status bar and hover ring;
+- [x] 2. Slice 2: red e2e; flush padding, frame, status bar and hover ring;
       sweep; PR, CI, merge.
 
 ## Decisions
@@ -161,6 +161,9 @@ None. No IPC, no fs, no crypto, no new dependency, no external link.
 | 2026-10-24 | One `useDiffRows` for both sections and the switch's counts | the two sections carried identical filter code, and the counts must use the same rule | a third copy in `DiffsPanel` |
 | 2026-10-24 | `.count-chip` moves to `ui.css`, inked `--text` | two components need it; `--text-meta` on its face is 4.18 on nord, 4.29 on sepia | a scoped copy; the old meta ink, never measured before |
 | 2026-10-24 | The theme sweep repaired so every surface runs | it had rotted: four surfaces still opened the snippet dialog or assumed which panel was open; `trusted-keys` opened a dialog the Keys panel replaced, and `keys-panel` covers it | sweeping only the surfaces this change touches |
+| 2026-10-24 | The editor's ring is an `outline` with `outline-offset: -1px`, and the sweep gains an `outline` channel | an inset box-shadow on the area paints under Monaco's positioned layers; an outline paints above them | an inset box-shadow; a border, which would bring the frame back |
+| 2026-10-24 | The required hint and the Mermaid preview move above the status bar, keeping their inset | the status bar has to be last for the column to end at the window; framed extras are not the edge | leaving the status bar mid-column |
+| 2026-10-24 | The editor header pads by `--space-1` vertically | at `--space-2` the document overflowed 2 px at its minimum size (`snippets.spec` caught it) | a smaller editor floor |
 | 2026-10-24 | The sweep gains a `shadow` channel | the underline is an inset `box-shadow`; neither the text nor the border channel can see it | an unmeasured indicator |
 
 ## Validation

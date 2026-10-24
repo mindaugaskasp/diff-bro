@@ -11,12 +11,15 @@
   color: var(--text-hint);
   cursor: default;
 }
+/* An outline, not a border: it paints over Monaco's positioned layers, and the code stays flush. */
 .editor-area.editing .editor {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  outline: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+  outline-offset: -1px;
 }
-/* Viewing invites a click: the keyline steps up and a cue says what the click does. */
+/* Viewing invites a click: a ring appears and a cue says what the click does. */
 .editor-area:not(.editing):hover .editor {
-  border-color: var(--btn-edge);
+  outline: 1px solid var(--btn-edge);
+  outline-offset: -1px;
 }
 .edit-cue {
   position: absolute;
@@ -67,6 +70,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--line);
   font-size: var(--font-md);
   color: var(--text-meta);
 }
@@ -101,14 +106,7 @@
 .editor {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   overflow: hidden;
-}
-/* The status bar closes the frame below the editor. */
-.editor-area:has(+ .editor-status) .editor {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
 }
 .editor.rendered {
   overflow: auto;
