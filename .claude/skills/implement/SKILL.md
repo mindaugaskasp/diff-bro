@@ -41,8 +41,11 @@ Read the whole plan first — Decisions exists so settled questions stay settled
   repo's recurring failure
 - `README.md`, `docs/roadmap.md`, `docs/screenshots/` — what goes stale
 
-Ask only where two readings mean materially different work; log routine calls in
-Decisions.
+**Grill the user before anything is drawn or written.** Ask about every open
+detail — behaviour, edge cases, scope, copy, what is out — one question at a
+time, each with a recommended answer (the `grilling` skill), until nothing is
+left to guess. Record every answer in Decisions. Only then build the canvas or
+write the plan.
 
 ### UI/UX work starts with a design artifact
 

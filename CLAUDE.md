@@ -15,6 +15,11 @@ file below is imported into context automatically.
 - **Never `git commit` unless explicitly asked.**
 - **Run `npm run check` before declaring any task done** — lint + style-token
   guard + theme-depth guard + tests against the coverage floors.
+- **Grill the user before proposing a spec, design or technical artifact.**
+  Ask about every open detail first — behaviour, edge cases, scope, wording,
+  what is out — one question at a time with a recommended answer (the
+  `grilling` skill), until nothing is left to guess. Only then draw a canvas or
+  write a plan; a draft built on guesses comes back as a redesign.
 - Three standards get skipped most often, so they are restated here:
   - **A bug gets a failing test first.** Red → green, or the test guards
     nothing.
