@@ -13,7 +13,7 @@ test('closing a new snippet with typed content asks before discarding', async ({
   await page.keyboard.type('do not lose me')
 
   await closeTab(page)
-  const ask = page.getByRole('dialog', { name: 'Close comparison?' })
+  const ask = page.getByRole('dialog', { name: 'Close snippet?' })
   await expect(ask).toBeVisible()
 
   // Keeping it returns to the editor with the content intact.
@@ -35,6 +35,6 @@ test('closing an empty new snippet does not ask', async ({ page }) => {
   await expect(doc).toBeVisible()
 
   await closeTab(page)
-  await expect(page.getByRole('dialog', { name: 'Close comparison?' })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: 'Close snippet?' })).toHaveCount(0)
   await expect(doc).toBeHidden()
 })

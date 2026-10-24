@@ -46,6 +46,10 @@ describe('keysUsedIn', () => {
   // utils/ is pure and cannot call t(), so it exports key IDs on a `*Key`
   // property and the component resolves them. Without this the guard sees every
   // shortcut label as an unused catalogue entry.
+  it('reads a bound :keypath as an expression, not a key', () => {
+    expect(keysUsedIn('<i18n-t :keypath="keys.bodyKey" tag="span">')).toEqual([])
+  })
+
   it('counts a *Key property holding a literal as a use', () => {
     expect(keysUsedIn(`{ keys: 'X', labelKey: 'shortcuts.openLeft' }`)).toEqual([
       'shortcuts.openLeft'

@@ -5,6 +5,7 @@
 import { computed } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { tabLabel } from '../utils/tabs'
+import { closePromptKeys } from '../utils/tabClosePrompt'
 import BaseDialog from './BaseDialog.vue'
 
 const tabs = useTabsStore()
@@ -16,6 +17,7 @@ const pending = computed(() =>
 // would overstate what is being decided.
 const risky = computed(() => pending.value.filter((t) => tabs.unsaved(t)))
 const many = computed(() => risky.value.length > 1)
+const keys = computed(() => closePromptKeys(risky.value))
 // The label, not the derived title — a name the reader typed IS its name.
 const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'this comparison'))
 </script>
@@ -23,12 +25,12 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
 <template>
   <BaseDialog
     :width="many ? '400px' : '340px'"
-    :title="many ? $t('tabCloseDialog.closeComparisons') : $t('tabCloseDialog.closeComparison')"
+    :title="$t(keys.titleKey)"
     :closable="false"
     @close="tabs.cancelClose()"
   >
     <p v-if="many" class="dialog-note">
-      <i18n-t keypath="tabCloseDialog.closingMany" tag="span">
+      <i18n-t :keypath="keys.bodyKey" tag="span">
         <template #count>{{ pending.length }}</template>
         <template #risky
           ><strong>{{ risky.length }}</strong></template
@@ -36,7 +38,7 @@ const only = computed(() => (risky.value.length ? tabLabel(risky.value[0]) : 'th
       </i18n-t>
     </p>
     <p v-else class="dialog-note">
-      <i18n-t keypath="tabCloseDialog.closingOne" tag="span">
+      <i18n-t :keypath="keys.bodyKey" tag="span">
         <template #name
           ><strong>“{{ only }}”</strong></template
         >
