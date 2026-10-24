@@ -87,6 +87,36 @@ describe('shareStore.shareTo', () => {
   })
 })
 
+// The toolbar's Share keeps its draft in Pinia state, so the snapshot is a deep
+// reactive Proxy. Electron's IPC structured-clones its arguments and throws
+// "An object could not be cloned" on one; structuredClone throws the same way.
+describe('shareStore.shareTo with a draft', () => {
+  it('seals a draft from live state without a clone error', async () => {
+    window.api = {
+      shareExport: vi.fn(async (entry, fps) => {
+        structuredClone([entry, fps])
+        return { ok: true, to: 'Ada', path: '/tmp/a.diffbro' }
+      })
+    }
+    const share = useShareStore()
+    const vault = useVaultStore()
+    vault.saveShareTwin = vi.fn().mockResolvedValue(true)
+    share.shareDraft = {
+      name: 'draft',
+      ttlHours: 24,
+      tags: ['q3'],
+      snapshot: {
+        left: { name: 'a.txt', content: 'one' },
+        right: { name: 'b.txt', content: 'two' }
+      }
+    }
+
+    await share.shareTo(['fp-ada'])
+    expect(window.api.shareExport).toHaveBeenCalledOnce()
+    expect(notices()).toContain('/tmp/a.diffbro')
+  })
+})
+
 // The email half of the key swap: an unaddressed draft with the key file on
 // the clipboard, degrading like the diff hand-off does.
 describe('shareStore.runEmailKey', () => {
