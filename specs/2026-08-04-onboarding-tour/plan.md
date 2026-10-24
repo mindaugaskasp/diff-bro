@@ -2,14 +2,17 @@
 
 |                                         |                        |
 | --------------------------------------- | ---------------------- |
-| **Status**                              | in-progress            |
+| **Status**                              | shipped                |
 | **Progress**                            | 20 / 20 steps          |
 | **Branch**                              | `feat/onboarding-tour` |
 | **Started**                             | 2026-08-04             |
-| **Finished**                            |                        |
+| **Finished**                            | 2026-08-05             |
 | **Bugs found and fixed this iteration** | 9 / 9                  |
 | **Token baseline**                      | 2026-08-04T14:04:37Z   |
 | **Claude tokens used**                  |                        |
+
+Shipped in #25. The consent dialog and the cut to eight steps came later, in
+#68 — see `specs/2026-10-23-tour-consent/plan.md`.
 
 Design proposal, approved 2026-08-04 — `proposal.html` beside this file (open it
 locally; it is the interactive prototype: 7 views × 14 themes, live). Also
