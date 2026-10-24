@@ -73,7 +73,9 @@ Five reports from the user, 2026-10-24.
   - A new theme-sweep channel measures the hover delta, so a too-faint hover
     fails on whichever of the 20 themes it is faint on.
 - **Show in folder on a saved diff or snippet row.** It is a row action
-  beside Delete. Main reveals that item's store file in the OS file manager.
+  beside Delete. Main reveals, selected in the OS file manager, the
+  **encrypted store file** that holds the item (`vault` for a diff,
+  `snippets` for a snippet), not the folder of the original files.
   - `shell.showItemInFolder` takes a path **computed in main** from the
     `STORE_NAMES` allowlist. The renderer sends only `'vault'` or
     `'snippets'`.
@@ -89,6 +91,16 @@ Five reports from the user, 2026-10-24.
     the left.
   - **Two or more files opened together** still open as a comparison, as
     today.
+  - **A second file opened while the first is still open asks first.** If
+    the snippet tab made from the previously opened file is still open, a
+    prompt asks "Compare with <previous file>?":
+    - **Compare** (primary): a comparison opens, previous file on the left,
+      new file on the right; the previous tab stays as it was.
+    - **Open as new tab**: the new file opens in its own snippet tab.
+    - Escape or a click outside means **Open as new tab**, the choice that
+      loses nothing.
+    - No previous tab open (closed, or saved and closed): no prompt, a new
+      tab.
   - A binary or oversized file is refused with the notice it gets today; it
     never becomes a snippet.
 - **One tool-window size.** Every tool panel, text tools and Encrypt alike,
@@ -123,17 +135,6 @@ Five reports from the user, 2026-10-24.
 | Encrypt shrunk to 460px like the others | its two panes and options need the width; growing the others to one generous size serves every tool |
 | One file opens in a read-only viewer | the user asked for the snippet or text editor view; a new snippet tab already has the editor and costs nothing until saved |
 
-**Open questions for approval:**
-
-1. Is the folder you want the **app's data
-folder** (where the encrypted store lives), or, for a diff of two files on
-disk, the **folder of the original files**? The snapshot keeps file names,
-not paths, so the second needs the source path stored at save time.
-2. With one file already open as a snippet tab, does a **second** "Open
-   with" join it as a comparison (today's two-step) or open a second
-   editor tab? Recommendation: a second editor tab. Compare with… is the
-   explicit way to start a comparison, and two-at-once still compares.
-
 ## Scope
 
 **In:**
@@ -157,7 +158,8 @@ not paths, so the second needs the source path stored at save time.
 
 **Source of truth:** a design canvas (to be made: Tools with a Pinned
 group, a hover sheet per control in all 20 themes, the reveal row action, and
-a file opened as a new snippet tab, and every tool at the one size in the
+a file opened as a new snippet tab, the "Compare with…?" prompt for a
+second file, and every tool at the one size in the
 minimum and default windows).
 **Approved design:** none yet. No code before both exist.
 
@@ -193,6 +195,10 @@ the hover face delta to a floor on every theme.
   - One file opened from the OS opens a "New Snippet" region named after the
     file, holding its text, with no start screen. Red on `main` first.
   - Two files at once still compare.
+  - A second file opened while the first's tab is open shows the prompt;
+    Compare gives a comparison with the first on the left, Open as new tab
+    gives a second tab, Escape behaves as Open as new tab.
+  - With the first tab closed, a second file opens with no prompt.
   - The two tests asserting today's left-pane behaviour (`:47`, `:107`)
     change with the decision recorded.
 - **Unit:** `openWithFromCli` routes one file to a snippet draft and two
@@ -251,6 +257,9 @@ is green on its own. The stack merges bottom-up and ships as one tag.
 | date | decision | why | rejected |
 |---|---|---|---|
 | 2026-10-24 | Spec only; no code until the canvas is approved | the user asked for a spec now and the build later, on its own branch | building alongside the v0.13.0 release |
+| 2026-10-24 | Show in folder reveals the encrypted store file holding the item | the user: "should show the location of encrypted file" | the folder of the original files, which would need source paths stored at save time |
+| 2026-10-24 | A second opened file asks "Compare with <previous file>?"; Yes compares, No opens a new tab | the user's answer; the prompt is drawn on the canvas | always a new tab; always joining as a comparison |
+| 2026-10-24 | Dismissing the prompt opens a new tab | the non-destructive choice; the comparison is one Compare with… away | dismiss cancels the open, which drops the file the user asked for |
 
 ## Validation
 
