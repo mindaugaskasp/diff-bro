@@ -9,7 +9,7 @@ import {
   derivedFrom,
   effectiveLanguage,
   entryAad,
-  migrate,
+  readLibrary,
   nextColor,
   nextRank,
   promptVars
@@ -49,9 +49,7 @@ function readState() {
       parsed = null
     }
   }
-  const state = migrate(parsed, t('snippetNotices.untitledSnippet'))
-  savePersisted('snippets', JSON.stringify(state)) // write the migrated shape back
-  return state
+  return readLibrary(parsed, t('snippetNotices.untitledSnippet'))
 }
 
 // Effective syntax: the explicit language, else the `detected` one recorded at
@@ -369,10 +367,8 @@ export const useSnippetStore = defineStore('snippets', {
     async fullBundle() {
       return this._bundle(this.entries)
     },
-    // Merge a bundle in (restore/import): appends snippets, keeps existing tag
-    // colors. Also accepts the legacy categories shape.
+    // Merge a bundle in (restore/import): appends snippets, keeps existing tag colors.
     async restoreBundle(bundle) {
-      if (Array.isArray(bundle?.categories)) return this._restoreLegacyBundle(bundle.categories)
       this._registerBundleTags(bundle?.tags)
       for (const s of bundle?.snippets ?? []) {
         // The other half of the rule: a crafted bundle cannot plant one either.
@@ -396,17 +392,6 @@ export const useSnippetStore = defineStore('snippets', {
         this.tags[n] = {
           color: TAG_PALETTE.includes(meta?.color) ? meta.color : nextColor(this.tags),
           rank: nextRank(this.tags)
-        }
-      }
-    },
-    // Pre-tags export: each category folds into a tag of the same name.
-    async _restoreLegacyBundle(categories) {
-      for (const category of categories) {
-        const tag = cleanTag(category.name)
-        const tags = tag && tag !== 'default' ? [tag] : []
-        for (const s of category.snippets ?? []) {
-          if (s.language === URL_LANGUAGE) continue
-          await this.add({ name: s.name, content: s.content, language: s.language, tags })
         }
       }
     },

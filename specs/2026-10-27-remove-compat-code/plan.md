@@ -32,6 +32,7 @@ work has to route around.
 | Saved diffs | `utils/vaultEntries.js:30–54` accepts a bare array and strips `categoryId` | an old-shaped vault loads empty |
 | Snippet bundles | `main/snippetSealing.js:28–29,39–43,110–140` validates the categories bundle; `stores/snippetStore.js:373–375,402–415` restores it | an old shared snippet bundle fails to import |
 | Key files | `main/sealing.js:171–182` imports a plain-JSON public key | an old plain `.diffbrokey` fails to import |
+| Key format | `main/sealing.js:35` `ACCEPTED_KEY_FORMATS` still takes `diffbro-key/1` (64-bit fingerprint era) on import | a pre-128-bit key export fails to import; keys already trusted are unaffected (the store is not re-checked) |
 | KDF | `main/kdf.js:14,35` `LEGACY_PARAMS` (scrypt N=2¹⁴) for an envelope with no `kdf` | text encrypted, a snippet bundle or a config backup made before the `kdf` field existed can no longer be opened |
 
 **Not compat; stays** (verified):
@@ -133,7 +134,7 @@ stop loading, through paths and messages that already exist. No canvas.
 |---|---|---|---|---|---|
 | 1 | Settings and UI state: localStorage migration, shortcut bar, file-size limit and its mirror, Quick Look shortcut, tag shelf, onboarding, `isLegacy`. Carries this spec. | `improvement/drop-compat-state` | `main` | | |
 | 2 | Library shapes: snippet `migrate()` categories path and its write-back, vault bare array and `categoryId`, the categories snippet bundle (main and renderer) | `improvement/drop-compat-library` | slice 1 | | |
-| 3 | Crypto-adjacent: KDF legacy params, plain-JSON key import; docs; 0.14.0 | `improvement/drop-compat-crypto` | slice 2 | | |
+| 3 | Crypto-adjacent: KDF legacy params, plain-JSON key import, `diffbro-key/1`; docs; 0.14.0 | `improvement/drop-compat-crypto` | slice 2 | | |
 
 ## Implementation plan
 
@@ -153,6 +154,7 @@ stop loading, through paths and messages that already exist. No canvas.
 | 2026-10-27 | Ship as 0.14.0 with Breaking changes in the notes | pre-1.0 semver allows it in a minor | 1.0.0 |
 | 2026-10-27 | `assignOrder` stays | received diffs, imports and seeded examples can arrive with no `order`; it numbers them, so it is not only compat | deleting it |
 | 2026-10-27 | `LEGACY_QUICKLOOK_SHORTCUT` renamed, not removed | it is still the macOS and Linux default | deleting the value |
+| 2026-10-27 | `diffbro-key/1` import dropped too | found while building slice 3: the same kind of compat, on the same import path | keeping it |
 | 2026-10-27 | Three slices by area | each reviewable alone; crypto isolated for its rule-5 verification | one PR |
 
 ## Validation

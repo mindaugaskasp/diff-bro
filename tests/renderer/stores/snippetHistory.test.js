@@ -7,7 +7,7 @@ import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
 import { MAX_SNIPPET_HISTORY } from '../../../src/renderer/src/utils/snippetHistory'
-import { migrate } from '../../../src/renderer/src/utils/snippetState'
+import { readLibrary } from '../../../src/renderer/src/utils/snippetState'
 
 const KEY = randomBytes(32)
 
@@ -92,7 +92,7 @@ describe('loadVersion', () => {
 })
 
 describe('hostile shapes and boundaries', () => {
-  it('migrate defaults history and drops malformed versions (rule 6)', () => {
+  it('readLibrary defaults history and drops malformed versions (rule 6)', () => {
     const entry = { id: 'a', aadSalt: 's', name: 'n', createdAt: 1, tags: [], iv: 'i', data: 'd' }
     const parsed = {
       tags: {},
@@ -102,7 +102,7 @@ describe('hostile shapes and boundaries', () => {
         { ...entry, id: 'c', history: [{ savedAt: 1, iv: 'x', data: 'y' }, { savedAt: 'bad' }] }
       ]
     }
-    const state = migrate(parsed, 'Untitled')
+    const state = readLibrary(parsed, 'Untitled')
     expect(state.entries[0].history).toEqual([])
     expect(state.entries[1].history).toEqual([])
     expect(state.entries[2].history).toEqual([{ savedAt: 1, iv: 'x', data: 'y' }])

@@ -27,7 +27,6 @@ export function readSharedTo(raw) {
 }
 
 /**
- * Tolerates the legacy category shape and the even older bare-array shape.
  * `untitled` is passed in rather than translated here: utils never calls t().
  * @param {string|null} raw   the persisted store file
  * @param {string} untitled   already-translated fallback name
@@ -36,23 +35,15 @@ export function readEntries(raw, untitled) {
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
-    const list = Array.isArray(parsed)
-      ? parsed
-      : Array.isArray(parsed.entries)
-        ? parsed.entries
-        : []
-    return list.map((e) => {
-      // Coerce name/tags so old data can't throw downstream (not in the AAD, so
-      // decryption is unaffected).
-      const clean = {
-        ...e,
-        name: typeof e?.name === 'string' ? e.name : String(e?.name ?? untitled),
-        tags: Array.isArray(e.tags) ? e.tags.filter((t) => typeof t === 'string') : [],
-        sharedTo: readSharedTo(e.sharedTo)
-      }
-      delete clean.categoryId
-      return clean
-    })
+    const list = Array.isArray(parsed?.entries) ? parsed.entries : []
+    // Coerce name/tags so a hand-edited file can't throw downstream (not in the
+    // AAD, so decryption is unaffected).
+    return list.map((e) => ({
+      ...e,
+      name: typeof e?.name === 'string' ? e.name : String(e?.name ?? untitled),
+      tags: Array.isArray(e.tags) ? e.tags.filter((t) => typeof t === 'string') : [],
+      sharedTo: readSharedTo(e.sharedTo)
+    }))
   } catch {
     return []
   }
