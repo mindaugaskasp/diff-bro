@@ -17,7 +17,7 @@ import { t } from '../i18n'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
-import SavedDiffMoreMenu from './SavedDiffMoreMenu.vue'
+import ActionMenu from './ActionMenu.vue'
 import { useShareStore } from '../features/share'
 import { useUiStore } from '../stores/uiStore'
 import { useRowTags } from '../composables/useRowTags'
@@ -81,7 +81,16 @@ function onDragStart(e) {
   setRowDragPayload(e.dataTransfer, DIFF_DRAG_TYPE, [props.entry.id])
   reorder.onDragStart(e, { group: props.group, index: props.index })
 }
-const revealStore = () => window.api.storeReveal('vault')
+const moreItems = computed(() => [
+  ...(props.entry.format !== 'excel'
+    ? [{ action: 'export', label: t('savedDiffRow.exportAsImage'), icon: 'image' }]
+    : []),
+  { action: 'reveal', label: t('showInFolder.label'), icon: 'folder' }
+])
+function onMore(action) {
+  if (action === 'export') imageExport.exportImage(props.entry.id)
+  else window.api.storeReveal('vault')
+}
 </script>
 
 <template>
@@ -181,11 +190,11 @@ const revealStore = () => window.api.storeReveal('vault')
       >
         <AppIcon name="share" />
       </button>
-      <SavedDiffMoreMenu
+      <ActionMenu
         v-if="!entry.from"
-        :can-export="entry.format !== 'excel'"
-        @export="imageExport.exportImage(entry.id)"
-        @reveal="revealStore"
+        :label="$t('savedDiffRow.moreActions')"
+        :items="moreItems"
+        @pick="onMore"
       />
       <button
         class="row-btn delete"

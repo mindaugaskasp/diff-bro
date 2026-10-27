@@ -7,6 +7,7 @@ import { filtersFor } from './fileFilters'
 import { clipboardFilePaths } from './clipboardFiles'
 import { decodeText } from './decodeText'
 import { t } from './i18n'
+import { exportTarget } from './exportTarget'
 
 // Mirrors the renderer's FILE_TYPE_LIMITS; main enforces independently so a
 // hand-edited settings.json can't wedge the app. Keep the numbers in sync.
@@ -78,13 +79,6 @@ export function mayReadPath(filePath) {
 
 // `format` is only ever a key here, so no caller can name `.exe`; the null
 // prototype keeps 'constructor' from resolving up the chain.
-const EXPORT_FORMATS = Object.freeze(
-  Object.assign(Object.create(null), {
-    html: { ext: 'html', label: 'HTML', titleKey: 'export.html' },
-    csv: { ext: 'csv', label: 'CSV', titleKey: 'export.csv' }
-  })
-)
-
 // Gated on the .xlsx extension too, so a plain .zip isn't read as a spreadsheet.
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 function looksLikeXlsx(name, buffer) {
@@ -227,14 +221,13 @@ export function registerFileIpc() {
   // write surface to audit. Never touches the allowed-paths read gate.
   ipcMain.handle('diff:exportFile', async (e, payload) => {
     const { text, name, format } = payload || {}
-    const spec = EXPORT_FORMATS[format]
-    if (typeof text !== 'string' || !spec) return { error: 'bad-args' }
+    const target = exportTarget(format, name)
+    if (typeof text !== 'string' || !target) return { error: 'bad-args' }
     const win = BrowserWindow.fromWebContents(e.sender)
-    const safe = String(name || 'diff').replace(/[\\/:*?"<>|]/g, '-')
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
-      title: t(spec.titleKey),
-      defaultPath: `${safe}.${spec.ext}`,
-      filters: [{ name: spec.label, extensions: [spec.ext] }]
+      title: t(target.titleKey),
+      defaultPath: target.defaultPath,
+      filters: target.filters
     })
     if (canceled || !filePath) return { canceled: true }
     await writeFile(filePath, text, 'utf8')

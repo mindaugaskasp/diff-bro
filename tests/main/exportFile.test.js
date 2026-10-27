@@ -80,4 +80,27 @@ describe('diff:exportFile', () => {
     expect(await exportFile({ text: 'x', format: 'csv', name: 'n' })).toEqual({ canceled: true })
     expect(written).toHaveLength(0)
   })
+
+  describe('the text format (Save snippet as file)', () => {
+    it('keeps an allowlisted text extension from the suggested name', async () => {
+      await exportFile({ text: 'a: 1', format: 'text', name: 'config.yml' })
+      const opts = saveDialog.mock.calls[0][1]
+      expect(opts.defaultPath).toBe('config.yml')
+      expect(opts.filters).toEqual([{ name: 'YML', extensions: ['yml'] }])
+      expect(written[0].text).toBe('a: 1')
+    })
+
+    it('falls back to .txt for anything off the list, so a renderer cannot pick an executable one', async () => {
+      for (const name of ['run.exe', 'evil.bat', 'x.app', 'noext', 'a.c0mmand']) {
+        saveDialog.mockClear()
+        await exportFile({ text: 'x', format: 'text', name })
+        expect(saveDialog.mock.calls[0][1].defaultPath).toMatch(/\.txt$/)
+      }
+    })
+
+    it('strips path separators', async () => {
+      await exportFile({ text: 'x', format: 'text', name: '../../etc/notes.md' })
+      expect(saveDialog.mock.calls[0][1].defaultPath).toBe('..-..-etc-notes.md')
+    })
+  })
 })

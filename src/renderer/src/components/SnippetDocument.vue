@@ -42,7 +42,7 @@ const draft = useSnippetDraft({
   }
 })
 const { name, content, masked, language, isMermaid, isJira, isMarkdown, editMode } = draft
-useTabContent(props.tab, { name, content, secret: draft.secret, editing })
+const { saveAsFile } = useTabContent(props.tab, draft, editing)
 
 watch(name, (n) => tabs.setSnippetMeta(props.tab.id, { title: n.trim() }), { immediate: true })
 watch(draft.isDirty, (d) => tabs.setSnippetMeta(props.tab.id, { dirty: d }), { immediate: true })
@@ -146,6 +146,7 @@ const compareWith = () =>
         @reveal="revealAndLayout"
         @save="saveSnippet"
         @history="showHistory = !showHistory"
+        @save-as-file="saveAsFile"
       />
     </Teleport>
     <div class="doc-body">

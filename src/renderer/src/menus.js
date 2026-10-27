@@ -110,48 +110,55 @@ const editSection = (run) => ({
   ]
 })
 
+const fileSection = (run) => ({
+  id: 'file',
+  label: t('menu.file.title'),
+  items: [
+    { label: t('menu.file.openLeft'), keys: `${MOD}+1`, run: () => run('open-left') },
+    { label: t('menu.file.openRight'), keys: `${MOD}+2`, run: () => run('open-right') },
+    { sep: true },
+    { label: t('menu.file.save'), keys: `${MOD}+S`, run: () => run('save') },
+    {
+      label: t('menu.file.saveAsFile'),
+      keys: `${MOD}+Alt+S`,
+      run: () => run('save-snippet-as-file')
+    },
+    { label: t('menu.file.share'), keys: `${MOD}+E`, run: () => run('share-current') },
+    { label: t('menu.file.import'), keys: `${MOD}+I`, run: () => run('import-shared') },
+    { label: t('menu.file.exportHtml'), run: () => run('export-html') },
+    { label: t('menu.file.exportImage'), run: () => run('export-image') },
+    { sep: true },
+    {
+      label: t('menu.file.newComparison'),
+      keys: `${MOD}+Shift+T`,
+      run: () => run('tab-new')
+    },
+    {
+      label: t('menu.file.closeComparison'),
+      keys: `${MOD}+Shift+W`,
+      run: () => run('tab-close')
+    },
+    {
+      label: t('menu.file.nextComparison'),
+      keys: 'Ctrl+Tab',
+      run: () => run('tab-next')
+    },
+    {
+      label: t('menu.file.prevComparison'),
+      keys: 'Ctrl+Shift+Tab',
+      run: () => run('tab-prev')
+    },
+    { label: t('menu.file.importSnippets'), run: () => run('import-snippets') },
+    { sep: true },
+    { label: t('menu.file.settings'), keys: `${MOD}+,`, run: () => run('settings') },
+    { sep: true },
+    { label: t('menu.file.quit'), paletteHidden: true, run: () => window.api.quit() }
+  ]
+})
+
 export function buildMenus(run) {
   return [
-    {
-      id: 'file',
-      label: t('menu.file.title'),
-      items: [
-        { label: t('menu.file.openLeft'), keys: `${MOD}+1`, run: () => run('open-left') },
-        { label: t('menu.file.openRight'), keys: `${MOD}+2`, run: () => run('open-right') },
-        { sep: true },
-        { label: t('menu.file.save'), keys: `${MOD}+S`, run: () => run('save') },
-        { label: t('menu.file.share'), keys: `${MOD}+E`, run: () => run('share-current') },
-        { label: t('menu.file.import'), keys: `${MOD}+I`, run: () => run('import-shared') },
-        { label: t('menu.file.exportHtml'), run: () => run('export-html') },
-        { label: t('menu.file.exportImage'), run: () => run('export-image') },
-        { sep: true },
-        {
-          label: t('menu.file.newComparison'),
-          keys: `${MOD}+Shift+T`,
-          run: () => run('tab-new')
-        },
-        {
-          label: t('menu.file.closeComparison'),
-          keys: `${MOD}+Shift+W`,
-          run: () => run('tab-close')
-        },
-        {
-          label: t('menu.file.nextComparison'),
-          keys: 'Ctrl+Tab',
-          run: () => run('tab-next')
-        },
-        {
-          label: t('menu.file.prevComparison'),
-          keys: 'Ctrl+Shift+Tab',
-          run: () => run('tab-prev')
-        },
-        { label: t('menu.file.importSnippets'), run: () => run('import-snippets') },
-        { sep: true },
-        { label: t('menu.file.settings'), keys: `${MOD}+,`, run: () => run('settings') },
-        { sep: true },
-        { label: t('menu.file.quit'), paletteHidden: true, run: () => window.api.quit() }
-      ]
-    },
+    fileSection(run),
     editSection(run),
     viewSection(run),
     { id: 'terminal', label: t('menu.terminal.title'), items: terminalItems(run) },

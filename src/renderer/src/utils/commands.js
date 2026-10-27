@@ -3,6 +3,7 @@
 // importing them, so this stays pure and the core store never reaches sideways
 // into a feature to satisfy a menu item.
 
+import { saveTabAsFile } from './snippetFileSave'
 import { TOOLS } from './tools'
 import { showsSplitView, showsWhitespaceToggle } from './viewChrome'
 import { MAX_TABS, isSnippetTab } from './tabs'
@@ -43,6 +44,7 @@ export const COMMANDS = {
   'copy-left': ({ diff }) => diff.copySide('left'),
   'copy-right': ({ diff }) => diff.copySide('right'),
   'apply-patch': ({ diff }) => diff.applyPatch(),
+  'save-snippet-as-file': ({ tabs }) => saveTabAsFile(tabs.activeId),
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),
   'tab-new': ({ tabs }) => tabs.showStart(),

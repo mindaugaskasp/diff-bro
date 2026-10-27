@@ -857,6 +857,27 @@ const SURFACES = [
     }
   },
   {
+    name: 'snippet-more',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page
+        .locator('#toolbar-doc-actions')
+        .getByRole('button', { name: 'More snippet actions' })
+        .click()
+      await page.locator('.ctx').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
+    },
+    probes: {
+      'menu item': ['.ctx .ctx-item', TEXT],
+      'shortcut hint': ['.ctx .ctx-keys', TEXT],
+      'menu keyline': ['.ctx', SEPARATOR, 'border']
+    }
+  },
+  {
     name: 'diff-row-more',
     open: async (page) => {
       await page.locator('.diff-tabs .add').click()
