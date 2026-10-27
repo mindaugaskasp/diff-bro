@@ -33,7 +33,8 @@ test('a saved diff row reveals the encrypted vault store', async ({ app, page })
 
   const row = page.locator('li.diff', { hasText: 'kept' })
   await row.hover()
-  await row.getByRole('button', { name: 'Show in folder' }).click()
+  await row.getByRole('button', { name: 'More actions' }).click()
+  await page.getByRole('menuitem', { name: 'Show in folder' }).click()
 
   await expect.poll(() => revealed(app)).toHaveLength(1)
   expect((await revealed(app))[0]).toMatch(/[\\/]vault\.json$/)

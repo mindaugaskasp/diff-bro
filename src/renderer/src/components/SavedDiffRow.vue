@@ -17,7 +17,7 @@ import { t } from '../i18n'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
-import ShowInFolderButton from './ShowInFolderButton.vue'
+import SavedDiffMoreMenu from './SavedDiffMoreMenu.vue'
 import { useShareStore } from '../features/share'
 import { useUiStore } from '../stores/uiStore'
 import { useRowTags } from '../composables/useRowTags'
@@ -81,6 +81,7 @@ function onDragStart(e) {
   setRowDragPayload(e.dataTransfer, DIFF_DRAG_TYPE, [props.entry.id])
   reorder.onDragStart(e, { group: props.group, index: props.index })
 }
+const revealStore = () => window.api.storeReveal('vault')
 </script>
 
 <template>
@@ -155,7 +156,7 @@ function onDragStart(e) {
 
     <span class="diffacts">
       <button
-        v-if="entry.format !== 'excel'"
+        v-if="entry.from && entry.format !== 'excel'"
         class="row-btn"
         :data-tip="$t('savedDiffRow.exportThisDiffAsA')"
         :aria-label="$t('savedDiffRow.exportAsImage')"
@@ -180,7 +181,12 @@ function onDragStart(e) {
       >
         <AppIcon name="share" />
       </button>
-      <ShowInFolderButton v-if="!entry.from" store="vault" />
+      <SavedDiffMoreMenu
+        v-if="!entry.from"
+        :can-export="entry.format !== 'excel'"
+        @export="imageExport.exportImage(entry.id)"
+        @reveal="revealStore"
+      />
       <button
         class="row-btn delete"
         :data-tip="$t('savedDiffRow.deleteThisSavedDiffNow')"

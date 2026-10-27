@@ -808,12 +808,10 @@
   },
   "showInFolder": {
     "label": "Show in folder",
-    "tip": {
-      "vault": "Show the encrypted file that holds your saved diffs",
-      "snippets": "Show the encrypted file that holds your snippets"
-    }
+    "tip": "Show the encrypted file that holds your snippets"
   },
   "savedDiffRow": {
+    "moreActions": "More actions",
     "exportAsImage": "Export as image",
     "editTags": "Edit tags",
     "shareAsSealedFile": "Share as sealed file",

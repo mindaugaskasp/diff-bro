@@ -162,7 +162,7 @@ function onDragStart(e) {
       >
         <AppIcon name="copy" />
       </button>
-      <ShowInFolderButton store="snippets" />
+      <ShowInFolderButton />
       <button
         class="row-btn delete"
         :data-tip="$t('snippetRow.delete')"
