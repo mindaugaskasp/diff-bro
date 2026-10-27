@@ -145,7 +145,8 @@
   padding: 0 var(--space-1) 0 var(--space-2);
   background: var(--row-hover);
 }
-.row:hover .when {
+.row:hover .when,
+.row:hover .new-badge {
   display: none;
 }
 .row:hover .rowacts {

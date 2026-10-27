@@ -111,3 +111,11 @@ test('opening the row retires the marker', async ({ page }) => {
   await expect(row).not.toHaveClass(/is-new/)
   await expect(row.locator('.new-badge')).toHaveCount(0)
 })
+
+test('hovering a new row hides the NEW badge behind its actions entirely', async ({ page }) => {
+  await addSnippet(page, 'E2E new row hover')
+  const row = snippetRow(page, 'E2E new row hover')
+  await row.hover()
+  await expect(row.locator('.rowacts')).toBeVisible()
+  await expect(row.locator('.new-badge')).toBeHidden()
+})
