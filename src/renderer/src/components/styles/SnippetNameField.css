@@ -13,6 +13,9 @@
 .ghost-field:focus-within {
   border-color: var(--accent);
 }
+.ghost-field.invalid {
+  border-color: var(--danger-border);
+}
 /* View mode: the same grey → white flip every other field in the dialog uses. */
 .ghost-field.ro {
   background: var(--bg-elevated);

@@ -1141,6 +1141,8 @@
     "removeTip": "Remove {tag}",
     "removeTagLabel": "Remove tag {tag}",
     "addTag": "Add tag",
+    "moreTags": "{count} more tags",
+    "allTags": "All tags",
     "addPlaceholder": "add a tag…",
     "suggestions": "Tag suggestions"
   },

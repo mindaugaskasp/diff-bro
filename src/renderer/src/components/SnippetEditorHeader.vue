@@ -24,7 +24,7 @@ const formatTip = computed(() => {
 </script>
 
 <template>
-  <div class="editor-header">
+  <div class="editor-header band band-row">
     <span
       >{{ $t('snippetEditorDialog.content') }}
       <span class="drop-hint">{{ $t('snippetEditorDialog.orDropAFile') }}</span></span

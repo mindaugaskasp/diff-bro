@@ -114,6 +114,7 @@ const compareWith = () =>
       v-model:secret="draft.secret.value"
       :initial-tags="draft.initialTags"
       :edit-mode="editMode"
+      :needs-name="editMode && !!content.trim() && !name.trim()"
       :read-only="readOnly"
       @edit-tags="inline.editTags"
       @edit-name="inline.editName"

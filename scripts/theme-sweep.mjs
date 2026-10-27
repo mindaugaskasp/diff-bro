@@ -701,6 +701,32 @@ const SURFACES = [
     }
   },
   {
+    name: 'snippet-head-row',
+    // Applied tag labels are oklch(), which this parser cannot read; check:themes holds them.
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      const doc = page.getByRole('region', { name: 'New Snippet' })
+      await doc.getByPlaceholder('Snippet name…').fill('Standup {{today}}')
+      const input = doc.getByRole('textbox', { name: 'Add tag' })
+      for (const tag of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot']) {
+        await input.fill(`${tag}-sweep-tag`)
+        await input.press('Enter')
+      }
+      await doc.locator('.more-chip').click()
+      await page.locator('.tag-more-pop').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await closeSnippetTab(page)
+    },
+    probes: {
+      'saves-as hint': ['.name-templates .preview', DIM],
+      '+N label': ['.more-chip', TEXT],
+      '+N keyline': ['.more-chip', DIM, 'border']
+    }
+  },
+  {
     name: 'rendered-editor',
     // The rendered view with a caret in it. caret-color is pinned to --text, so
     // the root's text ratio IS the caret's. The task box is the one pair no

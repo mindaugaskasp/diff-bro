@@ -406,11 +406,12 @@ directory move passes CI while silently removing enforcement.
   padding — it drifts the instant a font size or line-height changes (that is
   what twice broke the sidebar/file-input alignment). Bands that sit at the
   same vertical position across the sidebar/main divider share a height so
-  their content lines up by construction: the file-slots row and EVERY sidebar
-  section header add `.band-row` (height `--band-row`), so the headers all
-  match each other and the first lines up with the file inputs. Controls
-  sharing a band row must be
-  equal-height flex-centred boxes.
+  their content lines up by construction. Every sidebar section header and the
+  snippet document's Content bar add `.band-row` (`--band-row`); the file-slots
+  row and the snippet document head add `.head-band` (`--head-band`, the
+  sidebar's search band less the tab strip), so both lines run straight across
+  the divider. Controls sharing a band row must be equal-height flex-centred
+  boxes.
 - **Icons are SVG, never Unicode glyphs.** A symbol like ◈ / ⧉ / 🔒 tofus into a
   `[]` box on any font that lacks it, which kept happening. Every icon comes
   from `<AppIcon name="…" />`, whose geometry lives in `src/renderer/src/icons.js`

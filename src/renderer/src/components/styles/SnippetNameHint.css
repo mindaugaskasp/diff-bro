@@ -1,23 +1,22 @@
-/* "Saves as" for a templated name (SnippetNameHint.vue). */
+/* "Saves as" for a templated name, in the completion ghost's ink at the field's end. */
 .name-templates {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 8px;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  margin-top: var(--space-2);
+  max-width: 60%;
+  pointer-events: none;
 }
-/* Truncates rather than wrapping: a long templated name would otherwise push the
-   header taller every character. */
+.name-templates.clipped {
+  visibility: hidden;
+}
 .preview {
-  margin: 0;
-  min-width: 0;
   font-size: var(--font-sm);
-  color: var(--text-meta);
+  font-weight: 400;
+  color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.preview strong {
-  color: var(--text);
-  font-weight: 600;
 }

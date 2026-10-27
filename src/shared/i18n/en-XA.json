@@ -1141,6 +1141,8 @@
     "removeTip": "[Řéɱōṽé {tag} ·øé·]",
     "removeTagLabel": "[Řéɱōṽé ţàğ {tag} ·øé·ø]",
     "addTag": "[Àđđ ţàğ ·øé]",
+    "moreTags": "[{count} ɱōřé ţàğş ·øé·øé]",
+    "allTags": "[Àłł ţàğş ·øé]",
     "addPlaceholder": "[àđđ à ţàğ… ·øé]",
     "suggestions": "[Ţàğ şūğğéşţĩōńş ·øé·øé]"
   },

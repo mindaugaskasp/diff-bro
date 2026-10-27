@@ -1,0 +1,30 @@
+.more-anchor {
+  flex: none;
+}
+.more-chip {
+  height: var(--chip-h);
+  border-radius: calc(var(--chip-h) / 2);
+  border: 1px solid var(--btn-edge-strong);
+  background: var(--btn-face);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-xs);
+  cursor: pointer;
+}
+.more-chip:hover {
+  background: var(--btn-face-hover);
+}
+.tag-more-pop {
+  left: 0;
+  right: auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  width: max-content;
+  max-width: 360px;
+}
+.tag-more-pop .etag {
+  position: relative;
+  height: var(--chip-h);
+  border-radius: calc(var(--chip-h) / 2);
+}
