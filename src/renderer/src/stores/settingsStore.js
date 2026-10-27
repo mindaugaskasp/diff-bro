@@ -24,13 +24,8 @@ function readState() {
   } catch {
     parsed = {}
   }
-  // One-time migration of the shortcut bar's old localStorage dismissal.
-  const showShortcutBar =
-    typeof parsed.showShortcutBar === 'boolean'
-      ? parsed.showShortcutBar
-      : localStorage.getItem('diffbro.shortcutBarDismissed') !== '1'
   // Theme is persisted under its own key, since long before the settings blob.
-  return settingsStateFrom(parsed, { showShortcutBar, theme: loadPersisted('theme') })
+  return settingsStateFrom(parsed, { theme: loadPersisted('theme') })
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -94,9 +89,6 @@ export const useSettingsStore = defineStore('settings', {
           showRowTags: this.showRowTags,
           rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
-          // Legacy mirror: an older build (or main's fallback) still honours the
-          // text limit through the pre-per-type key.
-          maxComparisonFileMb: this.fileSizeLimitsMb.text,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           maxExportHeightPx: this.maxExportHeightPx,
           tagShelfHeight: this.tagShelfHeight,
@@ -112,7 +104,6 @@ export const useSettingsStore = defineStore('settings', {
           examplesSeeded: this.examplesSeeded,
           recentTools: this.recentTools,
           quickLookShortcut: this.quickLookShortcut,
-          quickLookShortcutMigrated: this.quickLookShortcutMigrated,
           closeToTray: this.closeToTray,
           autoCloseOldest: this.autoCloseOldest
         })

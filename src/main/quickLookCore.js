@@ -1,6 +1,6 @@
 // Pure geometry for the quick look-up window, kept out of the Electron glue
 // (quickLook.js) so it unit-tests without a display server.
-import { migratedQuickLookShortcut } from '../shared/shortcuts'
+import { storedQuickLookShortcut } from '../shared/shortcuts'
 
 // Fraction of the free vertical space left above the window — a launcher sits a
 // bit above centre, not dead-centre.
@@ -67,20 +67,14 @@ export function placeWindow(workArea, win) {
 }
 
 /**
- * The accelerator to register, from what settings.json holds. Applied in MAIN as
- * well as in the renderer because main registers the binding before any window
- * has read that file — waiting would leave the first launch after an update
- * still answering to the superseded combination.
- * @param {{ quickLookShortcut?: unknown, quickLookShortcutMigrated?: unknown }} settings
+ * The accelerator to register, from what settings.json holds; main registers it
+ * before any window has read that file.
+ * @param {{ quickLookShortcut?: unknown }} settings
  * @param {string} fallback
  * @returns {string}
  */
 export const storedAccelerator = (settings, fallback) =>
-  migratedQuickLookShortcut({
-    stored: settings?.quickLookShortcut,
-    migrated: settings?.quickLookShortcutMigrated,
-    fallback
-  })
+  storedQuickLookShortcut(settings?.quickLookShortcut, fallback)
 
 /**
  * Index of the display whose bounds contain `point`, else -1.

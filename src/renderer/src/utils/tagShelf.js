@@ -11,17 +11,6 @@ export const MIN_TAG_SHELF_PX = TAG_ROW_PX
 export const DEFAULT_TAG_SHELF_PX = TAG_ROW_PX * 3
 export const MAX_TAG_SHELF_PX = 2000
 
-// A settings file written before the depth became a height still holds
-// tagShelfRows. Two was that setting's FLOOR as well as its default, so a stored
-// two carries no choice to keep — anything deeper does, one row for one row.
-const LEGACY_DEFAULT_ROWS = 2
-export function migratedShelfHeight(parsed) {
-  if (parsed.tagShelfHeight !== undefined) return parsed.tagShelfHeight
-  const rows = Number(parsed.tagShelfRows)
-  if (!Number.isFinite(rows)) return undefined
-  return rows > LEGACY_DEFAULT_ROWS ? rows * TAG_ROW_PX : DEFAULT_TAG_SHELF_PX
-}
-
 // N rows occupy `N*rowStep - gap` — the last row has no gap under it — so the
 // gap comes back before the division.
 const rowsIn = (height, rowStep, gap) => (Number(height) + gap) / rowStep

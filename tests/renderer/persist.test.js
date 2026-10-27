@@ -41,17 +41,14 @@ describe('persist (durable store with migration)', () => {
     expect(localStorage.getItem('diffbro.snippets')).toBeNull()
   })
 
-  it('migrates the old localStorage copy into the file store, keeping a fallback', () => {
+  it('ignores an old localStorage copy when the file store has none', () => {
     const files = fileStore()
-    localStorage.setItem('diffbro.vault', '{"legacy":true}')
-    // File store empty -> returns the legacy value AND copies it forward.
-    expect(loadPersisted('vault')).toBe('{"legacy":true}')
-    expect(files.vault).toBe('{"legacy":true}')
-    // localStorage is left intact as a safety net.
-    expect(localStorage.getItem('diffbro.vault')).toBe('{"legacy":true}')
+    localStorage.setItem('diffbro.vault', '{"old":true}')
+    expect(loadPersisted('vault')).toBeNull()
+    expect(files.vault).toBeUndefined()
   })
 
-  it('prefers the file store over a stale localStorage copy once migrated', () => {
+  it('reads the file store, never a localStorage copy, when the store IPC exists', () => {
     const files = fileStore()
     files.vault = '{"current":1}'
     localStorage.setItem('diffbro.vault', '{"stale":1}')

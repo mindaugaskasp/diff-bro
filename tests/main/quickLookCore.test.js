@@ -230,20 +230,11 @@ describe('storedAccelerator', () => {
   const FALLBACK = 'Control+Alt+Space'
 
   it('keeps a binding the user chose', () => {
-    const settings = { quickLookShortcut: 'Alt+Shift+D', quickLookShortcutMigrated: true }
-    expect(storedAccelerator(settings, FALLBACK)).toBe('Alt+Shift+D')
+    expect(storedAccelerator({ quickLookShortcut: 'Alt+Shift+D' }, FALLBACK)).toBe('Alt+Shift+D')
   })
 
-  it('moves an un-migrated install off the superseded default', () => {
+  it('keeps a stored binding as it is, even the old cross-platform default', () => {
     const settings = { quickLookShortcut: 'CommandOrControl+Shift+Space' }
-    expect(storedAccelerator(settings, FALLBACK)).toBe(FALLBACK)
-  })
-
-  it('leaves a migrated install alone, even on the old combination', () => {
-    const settings = {
-      quickLookShortcut: 'CommandOrControl+Shift+Space',
-      quickLookShortcutMigrated: true
-    }
     expect(storedAccelerator(settings, FALLBACK)).toBe('CommandOrControl+Shift+Space')
   })
 

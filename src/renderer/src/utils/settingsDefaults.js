@@ -2,17 +2,12 @@
 // back into range. Pure data and pure functions — no store, so the clamping is
 // testable on its own.
 import { isLocale } from '../../../shared/i18n'
-import { defaultQuickLookShortcut, migratedQuickLookShortcut } from '../../../shared/shortcuts'
+import { defaultQuickLookShortcut, storedQuickLookShortcut } from '../../../shared/shortcuts'
 import { isValidAccelerator } from './accelerator'
 import { platformId } from '../keys'
 import { MAX_RECENT_TOOLS } from './tools'
 import { normalizeTheme } from './themes'
-import {
-  DEFAULT_TAG_SHELF_PX,
-  MAX_TAG_SHELF_PX,
-  MIN_TAG_SHELF_PX,
-  migratedShelfHeight
-} from './tagShelf'
+import { DEFAULT_TAG_SHELF_PX, MAX_TAG_SHELF_PX, MIN_TAG_SHELF_PX } from './tagShelf'
 
 export const DEFAULT_QUICKLOOK_SHORTCUT = defaultQuickLookShortcut(platformId)
 
@@ -94,19 +89,15 @@ export function sanitizeSectionOrder(order) {
   return kept
 }
 
-// Clamped to each type's [1, cap]; migrates the pre-per-type maxComparisonFileMb
-// into the text bucket.
+// Clamped to each type's [1, cap].
 export function readFileLimits(parsed) {
   const stored =
     parsed.fileSizeLimitsMb && typeof parsed.fileSizeLimitsMb === 'object'
       ? parsed.fileSizeLimitsMb
       : {}
-  const legacy = Number(parsed.maxComparisonFileMb)
   const out = {}
   for (const [type, spec] of Object.entries(FILE_TYPE_LIMITS)) {
-    const legacySeed = type === 'text' && Number.isFinite(legacy) ? legacy : spec.default
-    const raw = stored[type] ?? legacySeed
-    out[type] = clampNumber(raw, spec.default, 1, spec.cap)
+    out[type] = clampNumber(stored[type] ?? spec.default, spec.default, 1, spec.cap)
   }
   return out
 }
@@ -135,7 +126,7 @@ export function readDialogSizes(parsed) {
  * the store does the reading, so every fallback here is testable without one.
  *
  * @param {object} parsed the persisted settings blob
- * @param {{ showShortcutBar: boolean, theme: unknown }} outside values kept
+ * @param {{ theme: unknown }} outside values kept
  *   under their own store keys rather than inside settings.json
  */
 // One table, read on load and written by settingsStore.setLimit — three numbers
@@ -167,14 +158,14 @@ export function settingsStateFrom(parsed, outside) {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
-    showShortcutBar: outside.showShortcutBar,
+    showShortcutBar: parsed.showShortcutBar !== false,
     // The tag word beside a name on every sidebar row. On by default; off is for
     // a library where nearly everything carries the same tags, and it hides the
     // WORD only — the shelf and the search still filter by them.
     showRowTags: parsed.showRowTags !== false,
     rotateThemeDaily: parsed.rotateThemeDaily === true,
     fileSizeLimitsMb: readFileLimits(parsed),
-    ...readNumericLimits({ ...parsed, tagShelfHeight: migratedShelfHeight(parsed) }),
+    ...readNumericLimits(parsed),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
     // NULL until the user picks one: persist() writes every key, so defaulting
@@ -201,15 +192,11 @@ export function settingsStateFrom(parsed, outside) {
     recentTools: Array.isArray(parsed.recentTools)
       ? parsed.recentTools.filter((id) => typeof id === 'string').slice(0, MAX_RECENT_TOOLS)
       : [],
-    // A hand-edited/invalid stored accelerator falls back to the default, and an
-    // install still holding the old cross-platform default is moved off it once.
-    quickLookShortcut: migratedQuickLookShortcut({
-      stored: isValidAccelerator(parsed.quickLookShortcut) ? parsed.quickLookShortcut : null,
-      migrated: parsed.quickLookShortcutMigrated,
-      fallback: DEFAULT_QUICKLOOK_SHORTCUT
-    }),
-    // Set on first read and persisted, so the move above happens exactly once.
-    quickLookShortcutMigrated: true,
+    // A hand-edited/invalid stored accelerator falls back to the default.
+    quickLookShortcut: storedQuickLookShortcut(
+      isValidAccelerator(parsed.quickLookShortcut) ? parsed.quickLookShortcut : null,
+      DEFAULT_QUICKLOOK_SHORTCUT
+    ),
     closeToTray: parsed.closeToTray !== false,
     userTheme: normalizeTheme(outside.theme),
     // The ACTIVE theme components read — userTheme, unless daily rotation is on.
