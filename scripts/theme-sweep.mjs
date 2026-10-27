@@ -175,8 +175,14 @@ async function loadStructureDiff(page) {
 // Any dialog the clear raised has to go too, or its backdrop swallows the
 // clicks the NEXT surface makes and the sweep dies three surfaces later.
 async function clearComparison(page) {
-  const clear = page.getByRole('button', { name: 'Clear', exact: true })
-  if (await clear.isEnabled().catch(() => false)) await clear.click()
+  const close = page.locator('.diff-tabs .tab.active .tab-close')
+  if (await close.isVisible().catch(() => false)) {
+    await close.click()
+    const confirm = page.getByRole('dialog', { name: 'Close comparison?' })
+    if (await confirm.isVisible().catch(() => false)) {
+      await confirm.getByRole('button', { name: 'Close it' }).click()
+    }
+  }
   const backdrop = page.locator('.dialog-backdrop')
   while (await backdrop.count()) {
     await page.keyboard.press('Escape')
