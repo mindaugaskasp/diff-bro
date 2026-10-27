@@ -130,9 +130,9 @@ describe('validateSnippetBundle', () => {
     ok({ snippets: [{ name: 'n', content: 'x', tags: ['a'] }], tags: { a: { color: '#4c8dff' } } })
   })
 
-  it('still accepts a legacy categories bundle (old exports)', () => {
-    ok({ categories: [] })
-    ok({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x', language: 'sql' }] }] })
+  it('refuses a categories bundle from before tags', () => {
+    bad({ categories: [] }, 'malformed')
+    bad({ categories: [{ name: 'c', snippets: [{ name: 'n', content: 'x' }] }] }, 'malformed')
   })
 
   it('rejects non-object / wrong-shape bundles as malformed', () => {

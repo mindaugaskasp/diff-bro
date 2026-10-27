@@ -25,8 +25,6 @@ export const SNIPPET_LIMITS = {
   totalTags: 500, // tag-registry cap
   tagBytes: 64,
   colorBytes: 16, // a hex color, nothing longer
-  categories: 200, // legacy bundle caps
-  snippetsPerCategory: 1000,
   nameBytes: 512,
   languageBytes: 64,
   contentBytes: 512 * 1024, // 512 KB per snippet
@@ -36,11 +34,9 @@ export const SNIPPET_LIMITS = {
 const byteLen = (s) => Buffer.byteLength(s, 'utf8')
 
 // null when `bundle` is well-formed and within caps, else 'malformed'/'too-large'.
-// Accepts the current tags shape and the legacy categories shape.
 export function validateSnippetBundle(bundle, limits = SNIPPET_LIMITS) {
   if (!bundle || typeof bundle !== 'object') return 'malformed'
   if (Array.isArray(bundle.snippets)) return validateTagsBundle(bundle, limits)
-  if (Array.isArray(bundle.categories)) return validateLegacyBundle(bundle, limits)
   return 'malformed'
 }
 
@@ -103,39 +99,6 @@ function validateTagsBundle(bundle, limits) {
     if (byteLen(s.content) > limits.contentBytes || total > limits.totalContentBytes) {
       return 'too-large'
     }
-  }
-  return null
-}
-
-// Pre-tags export shape: snippets nested under categories. `budget` carries the
-// running content total across categories, so the whole-file cap still applies.
-function validateLegacyCategory(category, limits, budget) {
-  if (!category || typeof category !== 'object') return 'malformed'
-  if (typeof category.name !== 'string' || byteLen(category.name) > limits.nameBytes) {
-    return 'malformed'
-  }
-  if (!Array.isArray(category.snippets)) return 'malformed'
-  if (category.snippets.length > limits.snippetsPerCategory) return 'too-large'
-  for (const snippet of category.snippets) {
-    const err = validateSnippetShape(snippet, limits) || chargeContent(snippet, limits, budget)
-    if (err) return err
-  }
-  return null
-}
-
-// Count one snippet's content against the per-snippet and whole-bundle caps.
-function chargeContent(snippet, limits, budget) {
-  const size = byteLen(snippet.content)
-  budget.total += size
-  return size > limits.contentBytes || budget.total > limits.totalContentBytes ? 'too-large' : null
-}
-
-function validateLegacyBundle(bundle, limits) {
-  if (bundle.categories.length > limits.categories) return 'too-large'
-  const budget = { total: 0 }
-  for (const category of bundle.categories) {
-    const err = validateLegacyCategory(category, limits, budget)
-    if (err) return err
   }
   return null
 }

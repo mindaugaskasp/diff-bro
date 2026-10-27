@@ -299,28 +299,13 @@ describe('vaultStore', () => {
     expect(vault.entries.find((e) => e.from === 'alice').tags).toContain('imported')
   })
 
-  it('migrates a legacy category vault into flat entries (categoryId dropped)', () => {
-    const legacy = {
-      categories: [{ id: 'c1', name: 'Default', isDefault: true }],
-      entries: [
-        {
-          id: 'old1',
-          name: 'legacy diff',
-          createdAt: Date.now(),
-          expiresAt: Date.now() + 3600_000,
-          from: null,
-          categoryId: 'c1',
-          iv: 'x',
-          data: 'y'
-        }
-      ]
-    }
-    localStorage.setItem('diffbro.vault', JSON.stringify(legacy))
+  it('reads a bare-array vault from before entries had a wrapper as empty', () => {
+    localStorage.setItem(
+      'diffbro.vault',
+      JSON.stringify([{ id: 'old1', name: 'legacy diff', createdAt: 1, iv: 'x', data: 'y' }])
+    )
     setActivePinia(createPinia())
-    const vault = useVaultStore()
-    expect(vault.entries).toHaveLength(1)
-    expect(vault.entries[0].categoryId).toBeUndefined()
-    expect(vault.entries[0].tags).toEqual([])
+    expect(useVaultStore().entries).toEqual([])
   })
 
   it('refuses to load an expired entry', async () => {

@@ -107,18 +107,7 @@ export function derivedFrom(entry, content) {
 const isTagShape = (parsed) =>
   !!parsed && !!parsed.tags && Array.isArray(parsed.entries) && !parsed.categories
 
-// Every non-default category becomes a tag of the same name.
-function tagsFromCategories(categories) {
-  const tags = {}
-  for (const c of categories) {
-    if (c.isDefault) continue
-    const n = cleanTag(c.name)
-    if (n && !tags[n]) tags[n] = { color: nextColor(tags), rank: nextRank(tags) }
-  }
-  return tags
-}
-
-// Coerce name/tags so old/partial data can't throw the sidebar's unguarded field
+// Coerce name/tags so partial or hand-edited data can't throw the sidebar's unguarded field
 // access (not in the AAD, so decryption is unaffected). `untitled` is passed in
 // rather than translated here: utils never calls t().
 const entryName = (e, untitled) =>
@@ -128,7 +117,6 @@ const entryTags = (e) => (Array.isArray(e?.tags) ? e.tags.filter((t) => typeof t
 function normalizeEntry(e, untitled) {
   return {
     ...e,
-    // Pre-existing snippets have never been edited, so they date from creation.
     updatedAt: Number.isFinite(e?.updatedAt) ? e.updatedAt : e?.createdAt,
     name: entryName(e, untitled),
     // Only a real `true` masks: a hand-edited store must not be able to unmask a
@@ -140,30 +128,14 @@ function normalizeEntry(e, untitled) {
 }
 
 /**
- * Migrate the legacy categories shape to tags. The AAD keeps aadSalt = the old
- * categoryId, so existing ciphertext still decrypts — a metadata-only reshape.
+ * The library in today's shape; anything else reads as empty.
  * @param {object|null} parsed  the parsed store file, or null
  * @param {string} untitled     already-translated fallback name
  */
-export function migrate(parsed, untitled) {
-  if (isTagShape(parsed)) {
-    return {
-      tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
-      entries: (Array.isArray(parsed.entries) ? parsed.entries : []).map((e) =>
-        normalizeEntry(e, untitled)
-      )
-    }
+export function readLibrary(parsed, untitled) {
+  if (!isTagShape(parsed)) return { tags: {}, entries: [] }
+  return {
+    tags: typeof parsed.tags === 'object' && parsed.tags ? parsed.tags : {},
+    entries: parsed.entries.map((e) => normalizeEntry(e, untitled))
   }
-  const categories = Array.isArray(parsed?.categories) ? parsed.categories : []
-  const catById = new Map(categories.map((c) => [c.id, c]))
-  const entries = (Array.isArray(parsed?.entries) ? parsed.entries : []).map((e) => {
-    const cat = catById.get(e.categoryId)
-    const tagName = cat && !cat.isDefault ? cleanTag(cat.name) : null
-    const { categoryId, ...rest } = e
-    return normalizeEntry(
-      { ...rest, aadSalt: categoryId, tags: tagName ? [tagName] : [] },
-      untitled
-    )
-  })
-  return { tags: tagsFromCategories(categories), entries }
 }

@@ -5,7 +5,7 @@ import { CONFIG_FORMAT, openConfig, sealConfig } from '../../src/main/configBack
 const BUNDLE = {
   identity: { priv: { sign: 'x', box: 'y' }, pub: { fingerprint: 'abc' } },
   trusted: [{ fingerprint: 'def', label: 'Alice' }],
-  snippets: { categories: [{ name: 'SQL', snippets: [{ name: 'q', content: 'SELECT 1' }] }] },
+  snippets: { snippets: [{ name: 'q', content: 'SELECT 1', tags: ['sql'] }], tags: {} },
   settings: { theme: 'light' }
 }
 

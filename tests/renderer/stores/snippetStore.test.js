@@ -636,25 +636,16 @@ describe('snippetStore — tags model', () => {
     expect(fresh.entries.map((e) => e.name)).toEqual(['Keep'])
   })
 
-  it('imports a legacy { categories } bundle, folding each category into a tag', async () => {
-    // A bundle produced by the previous (categories) version.
+  it('refuses a { categories } bundle from before tags', async () => {
     lastExportedFile = await sealSnippets(
-      {
-        categories: [
-          { name: 'Default', snippets: [{ name: 'Loose', content: 'x', language: 'auto' }] },
-          { name: 'SQL', snippets: [{ name: 'Q', content: 'SELECT 1', language: 'sql' }] }
-        ]
-      },
+      { categories: [{ name: 'SQL', snippets: [{ name: 'Q', content: 'SELECT 1' }] }] },
       'pw',
       IDENTITY
     )
     const store = useSnippetStore()
     const res = await store.importSnippets('pw')
-    expect(res.ok).toBe(true)
-    const loose = store.entries.find((e) => e.name === 'Loose')
-    const q = store.entries.find((e) => e.name === 'Q')
-    expect(loose.tags).toEqual([]) // "Default" category → untagged
-    expect(q.tags).toEqual(['sql']) // "SQL" category → sql tag
+    expect(res.ok).toBeUndefined()
+    expect(store.entries.find((e) => e.name === 'Q')).toBeUndefined()
   })
 
   it('importSnippets surfaces a friendly message on the wrong passphrase', async () => {
@@ -666,42 +657,16 @@ describe('snippetStore — tags model', () => {
     expect(res.message).toBeTruthy()
   })
 
-  // --- migration ---
-  it('migrates a legacy { categories, entries } blob without re-encrypting (aadSalt = old categoryId)', async () => {
-    const id = 'e1'
-    const catId = 'c-sql'
-    const createdAt = 1700000000000
-    // Encrypt exactly as the old store did: AAD = [id, categoryId, createdAt].
-    const box = vaultEncrypt(KEY, 'legacy content', [id, catId, createdAt].join('|'))
+  it('reads a { categories, entries } library from before tags as empty', () => {
     localStorage.setItem(
       'diffbro.snippets',
       JSON.stringify({
-        categories: [
-          { id: 'c-def', name: 'Default', isDefault: true },
-          { id: catId, name: 'SQL' }
-        ],
-        entries: [
-          {
-            id,
-            categoryId: catId,
-            name: 'old snippet',
-            createdAt,
-            language: 'sql',
-            favorite: false,
-            iv: box.iv,
-            data: box.data
-          }
-        ]
+        categories: [{ id: 'c-sql', name: 'SQL' }],
+        entries: [{ id: 'e1', categoryId: 'c-sql', name: 'old', createdAt: 1, iv: 'x', data: 'y' }]
       })
     )
     setActivePinia(createPinia())
-    const store = useSnippetStore()
-    const migrated = store.entries[0]
-    expect(migrated.aadSalt).toBe(catId) // preserves the AAD binding
-    expect(migrated.tags).toEqual(['sql']) // category → tag
-    expect(store.tags.sql).toBeTruthy()
-    // The whole point: content still decrypts after a metadata-only migration.
-    await expect(store.load(id)).resolves.toBe('legacy content')
+    expect(useSnippetStore().entries).toEqual([])
   })
 
   // The quick look-up window is a separate Pinia instance and calls reload() on
