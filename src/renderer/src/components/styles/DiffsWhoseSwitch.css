@@ -23,7 +23,7 @@
   cursor: pointer;
 }
 .whose-opt:hover {
-  background: var(--btn-face-hover);
+  background: var(--btn-face);
   color: var(--text);
 }
 .whose-opt.on {

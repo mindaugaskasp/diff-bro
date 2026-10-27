@@ -1211,7 +1211,7 @@ button.tag-chip:hover .usb-tct {
 }
 .tile:hover {
   background: var(--tile-face-hover);
-  border-color: var(--btn-edge);
+  border-color: var(--btn-edge-strong);
   box-shadow: var(--shadow-2);
 }
 .tile:active {

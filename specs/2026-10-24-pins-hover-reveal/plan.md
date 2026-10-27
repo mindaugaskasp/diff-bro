@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | approved |
-| **Progress** | 0 / 5 slices |
+| **Progress** | 1 / 5 slices |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-24 |
 | **Finished** | — |
@@ -219,22 +219,26 @@ off by the user on 2026-10-27. Boards 1, 2, 3, 4a, 4b, 4c, 5a and 5b; the
 decisions sticky repeats the Decisions table below.
 
 - **Hover CSS:** `--tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text))`.
-  `.tile:hover` takes that face, a `--btn-edge` border and `--shadow-2`.
-  `.seg-opt:hover` and `.whose-opt:hover` take `--btn-face-hover`.
+  `.tile:hover` takes that face, a `--btn-edge-strong` border and `--shadow-2`.
+  `.seg-opt:not(.on):hover` and `.whose-opt:hover` take `--btn-face`.
 - **Tool window:** `--tool-dialog-w: 720px`, `--tool-dialog-h: 540px`. In the
   1120 × 640 minimum that leaves 65 px above and below and 200 px each side.
   The default window (1400 × 900) already fits it, so it does not grow.
 
 ### Theme verdict — all 20
 
-Resolved from `themes.css` and `tokens.css`. Ratios are on the panel.
+Measured by the theme sweep's `hover` channel on the live app, 2026-10-27.
 
 | floor | holds on | lowest |
 |---|---|---|
-| tile face, rest → hover ≥ 1.15 | 20 / 20 | sepia 1.19, solar and meridian 1.20 |
-| hover edge on panel ≥ 3:1 | 20 / 20 | sepia 3.22, solar 3.43 |
-| toggle wash on panel ≥ 1.4 | 20 / 20 | sepia 1.46 |
-| toggle label on wash ≥ 4.5 | 20 / 20 | nord 4.84 |
+| tile face, rest → hover ≥ 1.15 | 20 / 20 | sepia 1.19, meridian 1.20 |
+| hovered tile edge ≥ 3:1 | 20 / 20 | nord 3.98 |
+| toggle wash, rest → hover ≥ 1.15 | 20 / 20 | segmented: sepia 1.25; Mine/Received: sepia 1.26 |
+| hovered toggle label ≥ 4.5 | 20 / 20 | segmented: nord 4.56; Mine/Received: nord 5.98 |
+
+The offline estimate this replaced missed two nord failures, which the sweep
+caught: `--btn-edge` on the hovered tile (2.6) and a `--btn-face-hover` wash
+under the segment label (3.83).
 
 - contrast, beacon and volcano keep their hard keyline; hover only steps it.
 - The accent stays off every hover, so matrix, nyan and neon do not halo.
@@ -333,6 +337,7 @@ is green on its own. The stack merges bottom-up and ships as one tag.
 | 2026-10-27 | "Saves as …" is grey text in the name field; hides with a tooltip when the name is long | the user's choice on the canvas | a floating hint; hints in the Content bar |
 | 2026-10-27 | File-slots row moves to 151 in slice 4 | the user: same slice | its own slice |
 | 2026-10-27 | "Opened from …" moves to the status bar | the one-row head has no room; the user signed off the page with it | a second head row |
+| 2026-10-27 | Hover floor is one step of 1.15, the `.btn` hover's own bar; toggles wash with `--btn-face`; the hovered tile edge is `--btn-edge-strong` | on nord a 1.4 wash and a 4.5 label cannot both hold; the sweep measured it | a 1.4 wash floor; a per-theme wash |
 | 2026-10-27 | JSON tool highlights input and output | the user, at sign-off | output only |
 | 2026-10-24 | Dismissing the prompt opens a new tab | the non-destructive choice; the comparison is one Compare with… away | dismiss cancels the open, which drops the file the user asked for |
 
