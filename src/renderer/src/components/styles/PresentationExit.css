@@ -1,0 +1,19 @@
+/* Always on screen, never competing with what is presented: no face, no lift
+   and a hairline edge at rest; the full button only under the pointer or focus. */
+.present-exit {
+  position: fixed;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 50;
+  gap: var(--space-1);
+  background: var(--bg);
+  border-color: var(--line);
+  box-shadow: none;
+  color: var(--text-meta);
+}
+.present-exit:hover,
+.present-exit:focus-visible {
+  background: var(--btn-face-hover);
+  border-color: var(--btn-edge);
+  color: var(--text);
+}

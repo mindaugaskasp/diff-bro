@@ -166,6 +166,19 @@ describe('runCommand', () => {
     expect(s.settings.noteToolUsed).not.toHaveBeenCalled()
   })
 
+  it('presents a snippet tab, but not an empty one', () => {
+    const empty = stores()
+    empty.diff.ready = false
+    runCommand('toggle-presentation', empty)
+    expect(empty.ui.togglePresenting).not.toHaveBeenCalled()
+
+    const onSnippet = stores()
+    onSnippet.diff.ready = false
+    onSnippet.tabs.active = { kind: 'snippet' }
+    runCommand('toggle-presentation', onSnippet)
+    expect(onSnippet.ui.togglePresenting).toHaveBeenCalled()
+  })
+
   it('honours a guard rather than acting unconditionally', () => {
     const s = stores()
     runCommand('clear', s)

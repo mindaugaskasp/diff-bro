@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
 
 // The exit is a key press, and only a launch has the keyboard and the layout.
 
@@ -65,4 +65,39 @@ test('the window full-screen state is readable and settable from the renderer', 
   expect(typeof before).toBe('boolean')
   const after = await page.evaluate(() => window.api.setFullScreen(false))
   expect(typeof after).toBe('boolean')
+})
+
+const exitButton = (page) => page.getByRole('button', { name: 'Exit presentation mode' })
+
+test('presenting shows only the comparison, with an Exit button that leaves', async ({ page }) => {
+  await loadDiff(page)
+  await page.getByTestId('toolbar-present').click()
+  await expect(page.locator('.file-slots-row')).toBeHidden()
+  const exit = exitButton(page)
+  await expect(exit).toBeVisible()
+  await exit.click()
+  await expect(page.locator('.app > .toolbar')).toBeVisible()
+  await expect(exit).toHaveCount(0)
+})
+
+test('a snippet tab can be presented: its content only', async ({ page }) => {
+  await showPanel(page, 'snippets')
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  const doc = page.getByRole('region', { name: 'Snippet', exact: true })
+  await expect(doc).toBeVisible()
+
+  const present = page.getByTestId('toolbar-present')
+  await expect(present).toBeEnabled()
+  await present.click()
+
+  await expect(page.locator('.app > .toolbar')).toBeHidden()
+  await expect(page.locator('.diff-tabs')).toBeHidden()
+  await expect(doc.locator('.doc-head')).toBeHidden()
+  await expect(doc.locator('.editor-header')).toBeHidden()
+  await expect(doc.locator('.editor-status')).toBeHidden()
+  await expect(doc.locator('.monaco-editor')).toBeVisible()
+  await expect(exitButton(page)).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(doc.locator('.doc-head')).toBeVisible()
 })

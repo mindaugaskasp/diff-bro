@@ -1,5 +1,6 @@
 <script setup>
 // Every modal, mounted in one place; each is driven by its own store state.
+import PresentationExit from './PresentationExit.vue'
 import { useDiffStore } from '../stores/diffStore'
 import { DiffImageDialog, useImageExportStore } from '../features/imageExport'
 import { useSnippetStore } from '../stores/snippetStore'
@@ -55,6 +56,7 @@ const conflicts = useConflictsStore()
 </script>
 
 <template>
+  <PresentationExit v-if="ui.presenting" />
   <SaveDiffDialog v-if="store.showSaveDialog" />
   <ReplaceDiffDialog v-if="store.pendingReplace || store.pendingPick" />
   <ShareDiffDialog v-if="share.shareEntryId || share.shareDraft" />
