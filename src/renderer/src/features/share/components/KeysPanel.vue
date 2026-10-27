@@ -52,11 +52,11 @@ onMounted(async () => {
         <button
           type="button"
           class="btn btn-sm"
-          :aria-label="$t('keysPanel.pasteKey')"
-          :data-tip="$t('keysPanel.pasteTip')"
+          :aria-label="$t('keysPanel.addFromClipboardLabel')"
+          :data-tip="$t('keysPanel.addFromClipboardTip')"
           @click="share.pasteTrustedKey()"
         >
-          <AppIcon name="clipboard" />{{ $t('keysPanel.paste') }}
+          <AppIcon name="clipboard" />{{ $t('keysPanel.addFromClipboard') }}
         </button>
       </div>
       <TrustedKeyList :query="search" />
@@ -78,11 +78,11 @@ onMounted(async () => {
         <button
           type="button"
           class="btn btn-sm"
-          :aria-label="$t('keysPanel.pasteKey')"
-          :data-tip="$t('keysPanel.pasteTip')"
+          :aria-label="$t('keysPanel.addFromClipboardLabel')"
+          :data-tip="$t('keysPanel.addFromClipboardTip')"
           @click="share.pasteTrustedKey()"
         >
-          <AppIcon name="clipboard" />{{ $t('keysPanel.paste') }}
+          <AppIcon name="clipboard" />{{ $t('keysPanel.addFromClipboard') }}
         </button>
       </div>
     </section>
