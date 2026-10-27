@@ -1690,7 +1690,7 @@
     },
     "open": {
       "summary": "raise the app, optionally on a file",
-      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, that file fills the left side and waits for the right — the\nsame as `compare` with one path, under a name that reads like opening.\nFor two files at once, use `compare`."
+      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, it opens as an unsaved snippet you can read, edit or save —\nthe same as Open With. For two files at once, use `compare`."
     },
     "backup": {
       "summary": "write a passphrase-protected backup",

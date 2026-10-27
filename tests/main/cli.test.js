@@ -119,8 +119,8 @@ describe('parseCli — compare', () => {
   })
 })
 
-// `open` is the documented spelling of "put the app in front of me", and with a
-// path it is `compare`'s one-file behaviour under a name that reads like opening.
+// `open` is the documented spelling of "put the app in front of me"; with a path
+// it opens that file the way Finder's Open With does.
 describe('parseCli — open', () => {
   it('raises the app with no path', () => {
     expect(parseCli([...PACKAGED, 'open'])).toEqual({
@@ -129,10 +129,10 @@ describe('parseCli — open', () => {
     })
   })
 
-  it('opens one file as a comparison waiting for its second side', () => {
+  it('opens one file the way Open With does', () => {
     const { command, error } = parseCli([...PACKAGED, 'open', 'a.json'], (p) => `/cwd/${p}`)
     expect(error).toBe(null)
-    expect(command).toEqual({ name: 'compare', files: ['/cwd/a.json'], transient: false })
+    expect(command).toEqual({ name: 'open-with', files: ['/cwd/a.json'] })
   })
 
   // Two paths is `compare`. Accepting them here would make the verbs synonyms.

@@ -230,7 +230,7 @@ test('`diffbro open` raises the app without touching the comparison', async () =
   }
 })
 
-test('`diffbro open <file>` fills the left side and waits for the right', async () => {
+test('`diffbro open <file>` opens it as an unsaved snippet', async () => {
   const userDataDir = freshUserDataDir()
   const work = mkdtempSync(join(tmpdir(), 'diffbro-cli-'))
   const only = join(work, 'only.json')
@@ -242,9 +242,8 @@ test('`diffbro open <file>` fills the left side and waits for the right', async 
 
     await runCli(userDataDir, ['open', only])
 
-    await expect(page.locator('.slot[data-side="left"]')).toContainText('only.json', {
-      timeout: 15000
-    })
+    const doc = page.getByRole('region', { name: 'New Snippet' })
+    await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('only.json', { timeout: 15000 })
     await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
   } finally {
     await app.close()

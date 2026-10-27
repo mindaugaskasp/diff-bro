@@ -149,7 +149,10 @@ function parseOpen(rest, resolve) {
   const paths = rest.filter((p) => p.trim())
   if (!paths.length) return { command: { name: 'raise' }, error: null }
   if (paths.length > 1) return { command: null, error: 'open takes one file — try compare.' }
-  return parseCompare(paths, resolve)
+  const side = sideOf(paths[0], resolve)
+  // A git revision has no file to open as a snippet, so it stays a comparison.
+  if (typeof side !== 'string') return parseCompare(paths, resolve)
+  return { command: { name: 'open-with', files: [side] }, error: null }
 }
 
 function parseBackup(rest, resolve) {
