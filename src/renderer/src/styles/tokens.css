@@ -169,6 +169,7 @@
   --editor-gutter: color-mix(in srgb, var(--bg) 60%, var(--bg-panel));
   --line: color-mix(in srgb, var(--text) 12%, var(--bg-panel));
   --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
+  --tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text));
   --hue-diff: #c2410c;
   --hue-snippet: #7c4dbe;
   --hue-received: #2a74b8;

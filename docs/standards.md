@@ -363,6 +363,12 @@ directory move passes CI while silently removing enforcement.
   `--line`. `check-theme-depth.mjs` holds the replacement to floors: glyph on its
   well ≥ 4.5, card lighter than the panel on every light ground. Colour lives in
   the well, legibility in the glyph (`--glyph-*` is 30% hue, 70% ink).
+- **Hover changes two things: the face and the edge or lift.** A shadow step
+  alone is not a hover; on the dark grounds `--shadow-2` barely moves. A tile
+  steps to `--tile-face-hover` with a `--btn-edge-strong` keyline; a text
+  toggle gains the `--btn-face` wash; the accent never goes on a hovered label.
+  The theme sweep's `hover` channel holds the face step to 1.15 (`.btn`'s own
+  hover bar) and the hovered label and edge to their usual floors on all 20.
 - **Secondary text is `--text-meta`, not `--text-dim`.** Ages, counts and tag
   words in a row are 10.5–11.5px and answer to 4.5:1; `--text-dim` misses that
   on solar, sepia, nord and bloom. `--text-dim` stays for what it was tuned for.

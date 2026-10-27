@@ -49,6 +49,8 @@ const DIM = 3
 // hard rule only on contrast and beacon. Holding it to DIM here would fail
 // twelve themes for a line that is doing exactly its job.
 const SEPARATOR = 1.11
+// The resting-to-hovered face step; the bar is .btn's own shipped hover (1.16 on sepia).
+const HOVER_STEP = 1.15
 
 async function setOnboarding(page, state) {
   await page.evaluate((s) => globalThis.api.storeSave('onboarding', JSON.stringify(s)), state)
@@ -64,7 +66,7 @@ async function showPanel(page, panel) {
 // composites the translucent layers back down, because a chip on a card on a
 // dialog is three layers deep and only the composite is what the eye sees.
 // Passed as a function, never eval'd — rule 8.
-function measureProbes(selectors) {
+function measureProbes({ selectors, baseline = {} }) {
   // Chromium resolves color-mix() to `color(srgb 0.2 0.7 0.3)` — 0-1 floats —
   // rather than rgb() with 0-255 ints, by version. Reading those as 0-255 makes
   // every mixed colour look near-black, which is exactly the false failure this
@@ -103,7 +105,7 @@ function measureProbes(selectors) {
   }
   // An underline drawn as an inset box-shadow: its colour leads the computed value.
   const shadowColour = (cs) => parse(cs.boxShadow.match(/^(rgba?|color)\([^)]*\)/)?.[0] ?? '')
-  const measure = (selector) => {
+  const measure = (key, selector) => {
     const el = document.querySelector(selector)
     if (!el) return null
     const cs = getComputedStyle(el)
@@ -116,10 +118,12 @@ function measureProbes(selectors) {
       text: ratio(over(parse(cs.color), surface), surface),
       border: against(hasBorder ? parse(cs.borderTopColor) : []),
       shadow: against(shadowColour(cs)),
-      outline: against(cs.outlineStyle === 'none' ? [] : parse(cs.outlineColor))
+      outline: against(cs.outlineStyle === 'none' ? [] : parse(cs.outlineColor)),
+      face: surface,
+      step: baseline[key] ? ratio(baseline[key], surface) : null
     }
   }
-  return Object.fromEntries(Object.entries(selectors).map(([k, sel]) => [k, measure(sel)]))
+  return Object.fromEntries(Object.entries(selectors).map(([k, sel]) => [k, measure(k, sel)]))
 }
 
 const realKey = () => ({
@@ -754,7 +758,9 @@ const SURFACES = [
       'other label': ['.whose-opt:not(.on)', TEXT],
       'chosen underline': ['.whose-opt.on', DIM, 'shadow'],
       'count on the chosen': ['.whose-opt.on .count-chip', TEXT],
-      'count on the other': ['.whose-opt:not(.on) .count-chip', TEXT]
+      'count on the other': ['.whose-opt:not(.on) .count-chip', TEXT],
+      'toggle wash, hovered': ['.whose-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
+      'toggle label, hovered': ['.whose-opt:not(.on)', TEXT, 'text', 'hover']
     }
   },
   {
@@ -776,6 +782,8 @@ const SURFACES = [
       'group label': ['.tt-head', TEXT],
       'glyph on its well': ['.tt-tile .glyph-well', TEXT],
       'star, pinned': ['.tt-pin.on', DIM],
+      'tile face, hovered': ['.tt-tile', HOVER_STEP, 'step', 'hover'],
+      'tile edge, hovered': ['.tt-tile', DIM, 'border', 'hover'],
       'Pinned group star': ['.tt-star', DIM],
       'tile edge': ['.tt-tile', SEPARATOR, 'border']
     }
@@ -1170,10 +1178,13 @@ const SURFACES = [
       // Scoped to the open dropdown: the loaded diff can also say "JSON".
       await page.locator('.dropdown').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
+      await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },
     close: (page) => page.keyboard.press('Escape'),
     probes: {
-      'tool description': ['.tt-desc', TEXT]
+      'tool description': ['.tt-desc', TEXT],
+      'segment wash, hovered': ['.seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
+      'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover']
     }
   }
 ]
@@ -1216,15 +1227,31 @@ const chosenSurfaces = () => {
   return only?.length ? SURFACES.filter((s) => only.includes(s.name)) : SURFACES
 }
 
+async function measureHovered(page, what, selector) {
+  await page.mouse.move(0, 0)
+  await page.waitForTimeout(200)
+  const rest = (await page.evaluate(measureProbes, { selectors: { [what]: selector } }))[what]
+  if (!rest) return null
+  await page.locator(selector).first().hover()
+  await page.waitForTimeout(200)
+  const baseline = { [what]: rest.face }
+  const got = await page.evaluate(measureProbes, { selectors: { [what]: selector }, baseline })
+  await page.mouse.move(0, 0)
+  return got[what]
+}
+
 async function sweepSurface({ app, main, surface, theme, findings, userDataDir }) {
   const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
   await surface.open(page, { userDataDir, app })
   await page.waitForTimeout(120)
 
-  const selectors = Object.fromEntries(
-    Object.entries(surface.probes).map(([what, [sel]]) => [what, sel])
-  )
-  const probe = await page.evaluate(measureProbes, selectors)
+  const entries = Object.entries(surface.probes)
+  const resting = entries.filter(([, probe]) => probe[3] !== 'hover')
+  const selectors = Object.fromEntries(resting.map(([what, [sel]]) => [what, sel]))
+  const probe = await page.evaluate(measureProbes, { selectors })
+  for (const [what, [sel]] of entries.filter(([, p]) => p[3] === 'hover')) {
+    probe[what] = await measureHovered(page, what, sel)
+  }
 
   for (const [what, got] of Object.entries(probe)) {
     if (!got) continue
