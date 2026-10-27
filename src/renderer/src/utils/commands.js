@@ -20,6 +20,7 @@ import { openWithFromCli } from './openWithFlow'
  * @property {object} [configBackup]
  * @property {object} [share]
  * @property {object} [conflicts]  the merge walk's file list
+ * @property {object} [openWith]  the second-opened-file prompt
  */
 
 const openTool = (tool) => (s) => (s.ui.textTool = tool)
@@ -162,9 +163,9 @@ const CLI_COMMANDS = {
   },
   compare: ({ diff, tabs }, command) =>
     compareFromCli({ diff, tabs }, command.files, command.transient === true),
-  // Opened from Finder or Explorer: files arrive ONE at a time, and the second
-  // joins the first rather than replacing it — see utils/openWithFlow.
-  'open-with': ({ diff, tabs }, command) => openWithFromCli({ diff, tabs }, command.files),
+  // Opened from Finder or Explorer — see utils/openWithFlow.
+  'open-with': ({ diff, tabs, openWith }, command) =>
+    openWithFromCli({ diff, tabs, openWith }, command.files),
   // The passphrase is asked for here, not in the terminal: the bundle is
   // assembled in the renderer, so this is where the flow already lives.
   backup: ({ configBackup }, command) => {

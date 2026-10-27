@@ -123,6 +123,7 @@ function routeCommand(command, cwd) {
   if (special) return void special(command)
   // Vouch for the paths before the renderer asks for them: file:read honours
   // only what main has already approved.
+  if (command?.name === 'open-with') return void routeOpenWith(command.files)
   if (command?.name === 'compare') command.files.forEach(allowCliPath)
   deliver(command)
 }

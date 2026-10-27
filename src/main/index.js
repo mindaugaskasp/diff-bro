@@ -35,6 +35,9 @@ import { loadLocale, t } from './i18n'
 import { startMcp } from './mcp'
 import { registerClaudeIpc } from './claude'
 import { watchForBundleUpdate } from './bundleUpdate'
+import { batchOpenFiles } from './openFileBatch'
+
+const OPEN_FILE_BATCH_MS = 150
 
 applyHeadlessSwitches() // must precede app ready, while the command line is mutable
 installCrashHooks()
@@ -177,8 +180,8 @@ function startApp(draftPath) {
   sweepDraftFiles()
   routeCliArgv(process.argv, process.cwd(), cold.command)
   // Drain what arrived early; deliver() still queues until the renderer is up.
-  handOverFile = (path) => routeOpenWith([path])
-  openedBeforeReady.splice(0).forEach(handOverFile)
+  handOverFile = batchOpenFiles(routeOpenWith, OPEN_FILE_BATCH_MS)
+  if (openedBeforeReady.length) routeOpenWith(openedBeforeReady.splice(0))
   app.on('activate', ensureMainWindow)
 }
 

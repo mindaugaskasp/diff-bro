@@ -18,3 +18,10 @@ export function openWithTarget({ active, hasLeft, hasRight }) {
   if (!hasRight) return { newTab: false, side: 'right' }
   return { newTab: true, side: 'left' }
 }
+
+/**
+ * One file dropped on an empty window opens like Open With: as a snippet.
+ * @param {{ count: number, targetSide: string|null, hasLeft: boolean, hasRight: boolean, onSnippet: boolean }} o
+ */
+export const opensDropAsSnippet = ({ count, targetSide, hasLeft, hasRight, onSnippet }) =>
+  count === 1 && !targetSide && !hasLeft && !hasRight && !onSnippet

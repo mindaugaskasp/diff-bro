@@ -1,10 +1,12 @@
 <script setup>
 // Suggestions float, so nothing below moves while typing a tag.
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useSnippetStore, MAX_TAGS } from '../stores/snippetStore'
 import { useTagInput } from '../composables/useTagInput'
 import TagGlyph from './TagGlyph.vue'
 import AppIcon from './AppIcon.vue'
+import TagOverflowPopover from './TagOverflowPopover.vue'
+import { useChipFold } from '../composables/useChipFold'
 
 const props = defineProps({
   /** @type {import('vue').PropType<string[]>} */
@@ -13,13 +15,17 @@ const props = defineProps({
     default: () => [],
     validator: (v) => v.every((t) => typeof t === 'string')
   },
-  readonly: { type: Boolean, default: false }
+  readonly: { type: Boolean, default: false },
+  fold: { type: Boolean, default: false }
 })
 const emit = defineEmits(['requestEdit'])
 
 const store = useSnippetStore()
 const field = reactive(useTagInput(props.initial))
 const focused = ref(false)
+const rowEl = ref(null)
+const { shown } = useChipFold(rowEl, () => field.tags, props.fold)
+const hidden = computed(() => Math.max(0, field.tags.length - shown.value))
 
 function onBlur() {
   focused.value = false
@@ -29,11 +35,12 @@ defineExpose({ ...field, focus: () => field.inputEl?.focus() })
 </script>
 
 <template>
-  <div class="tag-row">
+  <div ref="rowEl" class="tag-row" :class="{ fold }">
     <span
-      v-for="t in field.tags"
+      v-for="(t, i) in field.tags"
       :key="t"
       class="tag-chip etag"
+      :class="{ folded: i >= shown }"
       :style="{ '--tc': field.colorFor(t) }"
     >
       <TagGlyph :color="field.colorFor(t)" />{{ t }}
@@ -48,6 +55,14 @@ defineExpose({ ...field, focus: () => field.inputEl?.focus() })
         <AppIcon name="x" />
       </button>
     </span>
+    <TagOverflowPopover
+      v-if="hidden"
+      :tags="field.tags"
+      :hidden="hidden"
+      :color-for="field.colorFor"
+      :readonly="readonly"
+      @remove="field.remove"
+    />
     <button v-if="readonly" type="button" class="add-pill" @click="emit('requestEdit')">
       <AppIcon name="plus" /> {{ $t('tagChipsField.addTag') }}
     </button>

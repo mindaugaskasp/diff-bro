@@ -88,6 +88,10 @@ export const ICONS = {
     { t: 'path', d: 'M12 5v14' },
     { t: 'path', d: 'm19 12-7 7-7-7' }
   ],
+  'arrow-right': [
+    { t: 'path', d: 'M5 12h14' },
+    { t: 'path', d: 'm12 5 7 7-7 7' }
+  ],
   // Diagonal share arrow (out of the box).
   // A floppy disk — Save, when the toolbar is too narrow to spell it out.
   save: [

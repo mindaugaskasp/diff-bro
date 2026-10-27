@@ -54,10 +54,10 @@ test('a tool output is kept as a snippet, named by the user', async ({ page }) =
   await expect(tool).toHaveCount(0)
   const editor = page.getByRole('region', { name: 'New Snippet' })
   await expect(editor).toBeVisible()
-  await expect(editor.getByPlaceholder('Snippet name…')).toHaveValue('')
+  await expect(editor.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('')
   await expect(editor.locator('.editor')).toContainText('a2VlcCBtZQ==')
 
-  await editor.getByPlaceholder('Snippet name…').fill('Encoded thing')
+  await editor.getByRole('textbox', { name: 'Name', exact: true }).fill('Encoded thing')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.locator('.snippets-section .row', { hasText: 'Encoded thing' })).toBeVisible()
 })

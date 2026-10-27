@@ -26,6 +26,9 @@
 .band-row {
   min-height: var(--band-row);
 }
+.head-band {
+  height: var(--head-band);
+}
 /* A band the frameless quick look-up window is dragged by (src/main/quickLook.js
    carries the `movable` half). A drag region takes the pointer for everything
    inside it, so every control in one has to opt back out or it goes dead while

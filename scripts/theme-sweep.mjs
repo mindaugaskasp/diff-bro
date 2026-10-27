@@ -191,6 +191,46 @@ async function clearComparison(page) {
   await page.locator('.monaco-diff-editor, .waiting').waitFor({ state: 'detached' })
 }
 
+async function openWithFile(userDataDir, path) {
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  await new Promise((resolve) => {
+    const child = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, path], {
+      env,
+      stdio: 'ignore'
+    })
+    child.on('exit', resolve)
+    setTimeout(resolve, 8000)
+  })
+}
+
+let openedFiles = null
+function openedFixtures() {
+  if (openedFiles) return openedFiles
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-sweep-open-'))
+  openedFiles = { dir, first: join(dir, 'config.yaml'), second: join(dir, 'config.prod.yaml') }
+  writeFileSync(openedFiles.first, 'service:\n  port: 8080\n')
+  writeFileSync(openedFiles.second, 'service:\n  port: 443\n')
+  return openedFiles
+}
+
+async function closeOpenedTabs(page) {
+  const opened = page.getByRole('region', { name: 'New Snippet' })
+  while (await opened.count()) {
+    await page.locator('.diff-tabs .tab.active .tab-close').click()
+    const ask = page.getByRole('dialog', { name: 'Close snippet?' })
+    if (
+      await ask.waitFor({ timeout: 1500 }).then(
+        () => true,
+        () => false
+      )
+    ) {
+      await ask.getByRole('button', { name: 'Close it' }).click()
+    }
+    await page.waitForTimeout(150)
+  }
+}
+
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const LOCKFILE = (version) =>
   JSON.stringify(
@@ -658,6 +698,32 @@ const SURFACES = [
       'typed name': ['.ghost-field input', TEXT],
       // Hint ink, so the 3:1 floor --text-dim already carries elsewhere.
       'name ghost': ['.name-ghost', DIM]
+    }
+  },
+  {
+    name: 'snippet-head-row',
+    // Applied tag labels are oklch(), which this parser cannot read; check:themes holds them.
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      const doc = page.getByRole('region', { name: 'New Snippet' })
+      await doc.getByPlaceholder('Snippet name…').fill('Standup {{today}}')
+      const input = doc.getByRole('textbox', { name: 'Add tag' })
+      for (const tag of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot']) {
+        await input.fill(`${tag}-sweep-tag`)
+        await input.press('Enter')
+      }
+      await doc.locator('.more-chip').click()
+      await page.locator('.tag-more-pop').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await closeSnippetTab(page)
+    },
+    probes: {
+      'saves-as hint': ['.name-templates .preview', DIM],
+      '+N label': ['.more-chip', TEXT],
+      '+N keyline': ['.more-chip', DIM, 'border']
     }
   },
   {
@@ -1219,6 +1285,29 @@ const SURFACES = [
       'segment wash, hovered': ['.seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
       'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover']
     }
+  },
+  {
+    name: 'open-with-prompt',
+    open: async (page, { userDataDir }) => {
+      const files = openedFixtures()
+      await openWithFile(userDataDir, files.first)
+      await page.bringToFront()
+      await page.locator('.es-opened').waitFor({ timeout: 20000 })
+      await openWithFile(userDataDir, files.second)
+      await page.getByRole('dialog', { name: /^Compare with/ }).waitFor({ timeout: 20000 })
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: /^Compare with/ }).waitFor({ state: 'detached' })
+      await closeOpenedTabs(page)
+    },
+    probes: {
+      'opened-from line': ['.es-opened', TEXT],
+      'prompt sentence': ['.dialog-note', TEXT],
+      'side label': ['.owp-label', TEXT],
+      'side name': ['.owp-name', TEXT],
+      'side keyline': ['.owp-side', SEPARATOR, 'border']
+    }
   }
 ]
 
@@ -1341,7 +1430,7 @@ async function main() {
     await app.close()
     // The two scratch repositories the merge surfaces build, which are real
     // working trees and not worth leaving in the temp dir.
-    for (const dir of [conflicted?.dir, ...walked]) {
+    for (const dir of [conflicted?.dir, openedFiles?.dir, ...walked]) {
       if (dir) rmSync(dir, { recursive: true, force: true })
     }
   }

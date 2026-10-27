@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { openWithTarget } from '../../../src/renderer/src/utils/openWithRouting'
+import { openWithTarget, opensDropAsSnippet } from '../../../src/renderer/src/utils/openWithRouting'
 
 // Left, then right of that same tab, then a new tab. Derived from state, so an
 // action between two opens cannot desync the cycle for good.
@@ -63,5 +63,23 @@ describe('openWithTarget', () => {
       }
     }
     expect(seen).toEqual(['new:left', 'same:right', 'new:left', 'same:right'])
+  })
+})
+
+describe('opensDropAsSnippet', () => {
+  const empty = { count: 1, targetSide: null, hasLeft: false, hasRight: false, onSnippet: false }
+
+  it('opens one file dropped on an empty window as a snippet', () => {
+    expect(opensDropAsSnippet(empty)).toBe(true)
+  })
+
+  it('leaves a drop onto a slot, a second file, or a loaded comparison to the comparison', () => {
+    expect(opensDropAsSnippet({ ...empty, targetSide: 'left' })).toBe(false)
+    expect(opensDropAsSnippet({ ...empty, count: 2 })).toBe(false)
+    expect(opensDropAsSnippet({ ...empty, hasLeft: true })).toBe(false)
+  })
+
+  it('leaves a drop over a snippet tab as it was', () => {
+    expect(opensDropAsSnippet({ ...empty, onSnippet: true })).toBe(false)
   })
 })

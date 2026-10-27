@@ -8,6 +8,7 @@ import { useSnippetNameComplete } from '../composables/useSnippetNameComplete'
 const props = defineProps({
   placeholder: { type: String, default: '' },
   readonly: { type: Boolean, default: false },
+  invalid: { type: Boolean, default: false },
   /** A selector hook for the surface; styling belongs to this component. */
   inputClass: { type: String, default: '' }
 })
@@ -20,7 +21,7 @@ const { inputEl, overlayEl, ghost, onKeydown, onScroll } = useSnippetNameComplet
 </script>
 
 <template>
-  <div class="ghost-field" :class="{ ro: readonly }">
+  <div class="ghost-field" :class="{ ro: readonly, invalid }">
     <!-- prettier-ignore — whitespace between these tags RENDERS, shifting the
          ghost off the caret. e2e asserts the overlay reads exactly typed+ghost. -->
     <span ref="overlayEl" class="ghost-layer" aria-hidden="true"
@@ -39,6 +40,7 @@ const { inputEl, overlayEl, ghost, onKeydown, onScroll } = useSnippetNameComplet
       @keydown="onKeydown"
       @scroll="onScroll"
     />
+    <slot />
   </div>
 </template>
 

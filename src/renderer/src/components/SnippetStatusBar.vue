@@ -14,7 +14,8 @@ const props = defineProps({
   language: { type: String, default: 'plaintext' },
   /** @type {import('vue').PropType<{line: number, column: number}|null>} */
   cursor: { type: Object, default: null },
-  editing: { type: Boolean, default: false }
+  editing: { type: Boolean, default: false },
+  openedFrom: { type: String, default: '' }
 })
 
 const ui = useUiStore()
@@ -28,6 +29,9 @@ const languageKey = computed(
 <template>
   <div class="editor-status">
     <span class="es-side">
+      <span v-if="openedFrom" class="es-opened" :data-tip="openedFrom">
+        {{ $t('openWith.openedFrom', { folder: openedFrom }) }} ·
+      </span>
       <span v-if="editing && cursor">{{ $t('statusBar.position', cursor) }} ·</span>
       <span>
         {{ $t('statusBar.lines', stats.lines) }} ·

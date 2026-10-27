@@ -9,7 +9,7 @@ const store = useDiffStore()
 </script>
 
 <template>
-  <div class="file-slots-row band band-row" data-tour="slots">
+  <div class="file-slots-row band head-band" data-tour="slots">
     <div class="slot-half">
       <FileSlot
         side="left"

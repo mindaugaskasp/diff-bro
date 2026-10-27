@@ -12,7 +12,7 @@
   background: var(--bg-canvas);
 }
 .rail-band {
-  height: calc(var(--band-row) + var(--control-h) + 1px);
+  height: calc(var(--head-band) + var(--control-h) + 1px);
   padding-bottom: var(--control-h);
   flex: none;
   justify-content: center;

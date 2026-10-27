@@ -806,6 +806,17 @@
     "shareStepOne": "Share diff — step 1 of 2: save it",
     "nextChooseRecipient": "Next: choose recipient"
   },
+  "openWith": {
+    "prompt": {
+      "title": "Compare with {name}?",
+      "body": "You opened {next} while {previous} is open.",
+      "left": "Left",
+      "right": "Right",
+      "newTab": "Open as new tab",
+      "compare": "Compare"
+    },
+    "openedFrom": "Opened from {folder} · not in your library yet"
+  },
   "showInFolder": {
     "label": "Show in folder",
     "tip": "Show the encrypted file that holds your snippets"
@@ -1130,6 +1141,8 @@
     "removeTip": "Remove {tag}",
     "removeTagLabel": "Remove tag {tag}",
     "addTag": "Add tag",
+    "moreTags": "{count} more tags",
+    "allTags": "All tags",
     "addPlaceholder": "add a tag…",
     "suggestions": "Tag suggestions"
   },
@@ -1677,7 +1690,7 @@
     },
     "open": {
       "summary": "raise the app, optionally on a file",
-      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, that file fills the left side and waits for the right — the\nsame as `compare` with one path, under a name that reads like opening.\nFor two files at once, use `compare`."
+      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, it opens as an unsaved snippet you can read, edit or save —\nthe same as Open With. For two files at once, use `compare`."
     },
     "backup": {
       "summary": "write a passphrase-protected backup",
