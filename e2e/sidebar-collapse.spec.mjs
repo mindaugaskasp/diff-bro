@@ -93,7 +93,7 @@ test('the collapse toggle sits level with the search box', async ({ page }) => {
 })
 
 // The rail is built from the shared size scale, never a bespoke box: its top
-// cell is --band-row and its controls are --control-h, so collapsing changes
+// cell is --head-band and its controls are --control-h, so collapsing changes
 // the sidebar's width and nothing about its rhythm.
 test('the rail is built from the size scale, not a bespoke box', async ({ page }) => {
   await collapse(page).click()
@@ -106,13 +106,13 @@ test('the rail is built from the size scale, not a bespoke box', async ({ page }
     const item = document.querySelector('aside.saved .rail-item').getBoundingClientRect()
     return {
       band,
-      bandToken: px('--band-row'),
+      bandToken: px('--head-band'),
       btnToken: px('--control-h'),
       item: item.height,
       itemToken: px('--rail-item')
     }
   })
-  // The band is the shared row PLUS the tab strip above the comparison column,
+  // The band is the head band PLUS the tab strip above the comparison column,
   // which is what puts its rule on the same line as the file slots' — see the
   // alignment test below. Still composed from tokens, never a bespoke number.
   expect(scale.band).toBeCloseTo(scale.bandToken + scale.btnToken + 1, 0)

@@ -1,5 +1,4 @@
-// Finder sends one `open-file` per selected file, back to back. Files that
-// arrive within `windowMs` of each other were opened together.
+// Finder sends one `open-file` per file; ones within `windowMs` were opened together.
 /**
  * @param {(paths: string[]) => void} deliver
  * @param {number} windowMs
