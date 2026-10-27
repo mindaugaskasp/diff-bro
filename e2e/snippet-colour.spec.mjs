@@ -183,3 +183,37 @@ test('the launcher shows the colour, and it survives a relaunch', async () => {
     await app.close()
   }
 })
+
+// The strip is opaque (it covers the name's tail), so it has to render the
+// same colour the hovered row composes over its ground, not a neutral grey.
+// Read off rendered pixels: computed styles cannot show how an out-of-gamut
+// ink clamps when it is composited.
+test('a hovered coloured row paints its actions on the same colour as the row', async ({
+  page
+}) => {
+  await seedSnippet(page, 'Even hover')
+  await openMenu(page, 'Even hover')
+  await pick(page, 'blue')
+  const target = row(page, 'Even hover')
+  await target.hover()
+  const acts = target.locator('.rowacts')
+  await expect(acts).toBeVisible()
+  const rowBox = await target.boundingBox()
+  const actsBox = await acts.boundingBox()
+  const png = await page.screenshot({ clip: rowBox })
+  const [rowPx, actsPx] = await page.evaluate(
+    async ({ bytes, at }) => {
+      const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)]))
+      const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')
+      ctx.drawImage(bitmap, 0, 0)
+      const scale = bitmap.width / at.rowW
+      const px = (x, y) => [...ctx.getImageData(x * scale, y * scale, 1, 1).data.slice(0, 3)]
+      return [px(at.rowX, 2), px(at.actsX, 2)]
+    },
+    {
+      bytes: [...png],
+      at: { rowW: rowBox.width, rowX: rowBox.width * 0.35, actsX: actsBox.x - rowBox.x + 3 }
+    }
+  )
+  for (let i = 0; i < 3; i++) expect(Math.abs(rowPx[i] - actsPx[i])).toBeLessThanOrEqual(2)
+})
