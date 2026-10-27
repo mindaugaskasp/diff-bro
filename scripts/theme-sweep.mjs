@@ -996,8 +996,7 @@ const SURFACES = [
       await page.locator('.row.is-new .new-badge').waitFor()
       await page.waitForTimeout(4200)
     },
-    // DELETE the row rather than merely retiring it: a leftover scratch snippet
-    // grows the sidebar by one per theme and shifts every later surface.
+    // Delete, not retire: a leftover row shifts every later surface.
     close: async (page) => {
       await page.locator('.diff-tabs .tab.active .tab-close').click()
       const row = page.locator('.row.is-new')

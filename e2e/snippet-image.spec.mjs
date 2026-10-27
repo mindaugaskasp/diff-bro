@@ -237,7 +237,6 @@ test('a snippet is captured from the view its contents are shown in', async ({ p
   expect(Buffer.from(src.split(',')[1], 'base64').subarray(0, 8).equals(PNG_MAGIC)).toBe(true)
 })
 
-// The row never reshapes on edit, so Capture stays put and waits for viewing.
 test('the capture action is disabled while editing', async ({ page }) => {
   await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()

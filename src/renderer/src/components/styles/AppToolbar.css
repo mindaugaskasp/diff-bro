@@ -67,9 +67,3 @@
 .doc-actions:empty {
   display: none;
 }
-.doc-actions :deep(.btn) {
-  height: var(--control-h);
-}
-.doc-actions :deep(.spacer) {
-  display: none;
-}
