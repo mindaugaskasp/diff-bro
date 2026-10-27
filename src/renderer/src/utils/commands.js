@@ -8,7 +8,7 @@ import { TOOLS } from './tools'
 import { showsSplitView, showsWhitespaceToggle } from './viewChrome'
 import { MAX_TABS, isSnippetTab } from './tabs'
 import { tabsFullMessage } from './cliCommand'
-import { openWithFromCli } from './openWithFlow'
+import { openFileAsSnippet, openWithFromCli } from './openWithFlow'
 
 /**
  * @typedef {object} CommandStores
@@ -45,6 +45,7 @@ export const COMMANDS = {
   'copy-right': ({ diff }) => diff.copySide('right'),
   'apply-patch': ({ diff }) => diff.applyPatch(),
   'save-snippet-as-file': ({ tabs }) => saveTabAsFile(tabs.activeId),
+  'open-file-as-snippet': ({ diff, tabs, openWith }) => openFileAsSnippet({ diff, tabs, openWith }),
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),
   'tab-new': ({ tabs }) => tabs.showStart(),

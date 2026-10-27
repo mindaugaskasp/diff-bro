@@ -116,6 +116,11 @@ const fileSection = (run) => ({
   items: [
     { label: t('menu.file.openLeft'), keys: `${MOD}+1`, run: () => run('open-left') },
     { label: t('menu.file.openRight'), keys: `${MOD}+2`, run: () => run('open-right') },
+    {
+      label: t('menu.file.openAsSnippet'),
+      keys: `${MOD}+O`,
+      run: () => run('open-file-as-snippet')
+    },
     { sep: true },
     { label: t('menu.file.save'), keys: `${MOD}+S`, run: () => run('save') },
     {

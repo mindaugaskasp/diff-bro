@@ -57,6 +57,7 @@
   "menu": {
     "file": {
       "title": "File",
+      "openAsSnippet": "Open File as Snippet…",
       "openLeft": "Open Left",
       "saveAsFile": "Save Snippet as File…",
       "openRight": "Open Right",
@@ -211,6 +212,7 @@
     },
     "openLeft": "Open left file",
     "openRight": "Open right file",
+    "openAsSnippet": "Open a file as a snippet",
     "saveSnippetAsFile": "Save snippet as file",
     "saveDiff": "Save diff",
     "shareDiff": "Share diff",
@@ -1060,6 +1062,7 @@
   },
   "snippetsPanel": {
     "snippets": "Snippets",
+    "openFile": "Open a text file as a snippet",
     "newSnippet": "New snippet",
     "exportAllSnippetsToA": "Export all snippets to a passphrase-protected file",
     "importSnippetsFromAFile": "Import snippets from a file",

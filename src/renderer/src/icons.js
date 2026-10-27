@@ -88,6 +88,12 @@ export const ICONS = {
     { t: 'path', d: 'M12 5v14' },
     { t: 'path', d: 'm19 12-7 7-7-7' }
   ],
+  'folder-open': [
+    {
+      t: 'path',
+      d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1M3 7v10a2 2 0 0 0 2 2h12.5a2 2 0 0 0 1.9-1.4L22 11H7.5a2 2 0 0 0-1.9 1.4L3 19'
+    }
+  ],
   'arrow-right': [
     { t: 'path', d: 'M5 12h14' },
     { t: 'path', d: 'm12 5 7 7-7 7' }
