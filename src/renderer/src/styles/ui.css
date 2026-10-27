@@ -1204,10 +1204,14 @@ button.tag-chip:hover .usb-tct {
   text-align: left;
   cursor: pointer;
   transition:
+    background-color 0.12s,
+    border-color 0.12s,
     box-shadow 0.12s,
     transform 0.12s;
 }
 .tile:hover {
+  background: var(--tile-face-hover);
+  border-color: var(--btn-edge);
   box-shadow: var(--shadow-2);
 }
 .tile:active {

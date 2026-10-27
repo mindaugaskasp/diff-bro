@@ -2,7 +2,8 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-1);
+  margin-left: calc(-1 * var(--space-2));
 }
 /* The accent is the underline only: on a label it misses 4.5:1 on five themes. */
 .whose-opt {
@@ -10,8 +11,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0;
+  padding: 0 var(--space-2);
   border: 0;
+  border-radius: var(--radius-sm);
   background: none;
   color: var(--text-meta);
   font: inherit;
@@ -21,6 +23,7 @@
   cursor: pointer;
 }
 .whose-opt:hover {
+  background: var(--btn-face-hover);
   color: var(--text);
 }
 .whose-opt.on {
