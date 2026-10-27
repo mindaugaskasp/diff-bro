@@ -6,10 +6,6 @@ describe('rowFormatKey', () => {
     expect(rowFormatKey({ format: 'json', tags: ['work'] })).toBe('json')
   })
 
-  it('falls back to a format-shaped tag for entries saved before the field existed', () => {
-    expect(rowFormatKey({ tags: ['json', 'work'] })).toBe('json')
-  })
-
   it('is null when nothing identifies the format', () => {
     expect(rowFormatKey({ tags: ['work'] })).toBeNull()
     expect(rowFormatKey(undefined)).toBeNull()
@@ -30,8 +26,9 @@ describe('rowTags', () => {
     expect(rowTags({ format: 'json', tags: ['imported', 'work'] })).toEqual(['work'])
   })
 
-  it("drops a legacy entry's format tag, which its monogram already states", () => {
-    expect(rowTags({ tags: ['json', 'work'] })).toEqual(['work'])
+  it('reads an entry with no format field as having none', () => {
+    expect(rowFormatKey({ tags: ['json'] })).toBeNull()
+    expect(rowTags({ tags: ['json', 'work'] })).toEqual(['json', 'work'])
   })
 
   it('tolerates a missing tags array', () => {
@@ -50,10 +47,5 @@ describe('a diff saved with no detectable format', () => {
 
   it('does not invent a monogram from that tag', () => {
     expect(rowFormatKey({ format: null, tags: ['json'] })).toBeNull()
-  })
-
-  it('still reads a legacy entry, which has no format field at all', () => {
-    expect(rowFormatKey({ tags: ['json'] })).toBe('json')
-    expect(rowTags({ tags: ['json', 'work'] })).toEqual(['work'])
   })
 })

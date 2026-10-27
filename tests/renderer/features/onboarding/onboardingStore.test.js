@@ -162,18 +162,7 @@ describe('the consent prompt', () => {
   })
 })
 
-describe('profiles from the two-run tour', () => {
-  it('a profile that had started it is never asked again', () => {
-    localStorage.setItem(
-      'diffbro.onboarding',
-      JSON.stringify({ showTips: true, tourStep: 7, seenVersion: '', deferred: 1 })
-    )
-    const tour = useOnboardingStore()
-    tour.begin()
-    expect(tour.promptOpen).toBe(false)
-    expect(tour.active).toBe(false)
-  })
-
+describe('a stored tour position', () => {
   it('a profile that never started it is asked like a new one', () => {
     localStorage.setItem('diffbro.onboarding', JSON.stringify({ showTips: true, tourStep: 0 }))
     const tour = useOnboardingStore()
@@ -181,14 +170,18 @@ describe('profiles from the two-run tour', () => {
     expect(tour.promptOpen).toBe(true)
   })
 
-  it('a new-layout profile mid-tour still resumes', () => {
-    localStorage.setItem(
-      'diffbro.onboarding',
-      JSON.stringify({ showTips: true, tourStep: 3, layout: 2 })
-    )
+  it('a profile mid-tour resumes where it stopped', () => {
+    localStorage.setItem('diffbro.onboarding', JSON.stringify({ showTips: true, tourStep: 3 }))
     const tour = useOnboardingStore()
     tour.begin()
     expect(tour.currentStep.id).toBe(TOUR_STEPS[3].id)
+  })
+
+  it('does not write a layout marker', () => {
+    useOnboardingStore().begin()
+    expect(JSON.parse(localStorage.getItem('diffbro.onboarding') ?? '{}')).not.toHaveProperty(
+      'layout'
+    )
   })
 })
 

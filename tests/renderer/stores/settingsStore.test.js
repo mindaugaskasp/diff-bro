@@ -77,9 +77,9 @@ describe('settingsStore', () => {
     expect(s.shelfOrderFor('external', ['x'])).toEqual(['x'])
   })
 
-  it('migrates the legacy shortcut-bar dismissal flag', () => {
+  it('ignores the old localStorage shortcut-bar dismissal', () => {
     localStorage.setItem('diffbro.shortcutBarDismissed', '1')
-    expect(useSettingsStore().showShortcutBar).toBe(false)
+    expect(useSettingsStore().showShortcutBar).toBe(true)
   })
 
   it('clamps each file-type size guard to its own cap, independently', () => {
@@ -124,18 +124,16 @@ describe('settingsStore', () => {
     expect(useSettingsStore().maxExportHeightPx).toBe(MAX_EXPORT_HEIGHT_PX_CAP)
   })
 
-  it('migrates the pre-per-type maxComparisonFileMb into the text limit', () => {
+  it('ignores the old single maxComparisonFileMb', () => {
     localStorage.setItem('diffbro.settings', JSON.stringify({ maxComparisonFileMb: 42 }))
-    const s = useSettingsStore()
-    expect(s.fileSizeLimitMb('text')).toBe(42) // legacy value -> text bucket
-    expect(s.fileSizeLimitMb('spreadsheet')).toBe(FILE_TYPE_LIMITS.spreadsheet.default)
+    expect(useSettingsStore().fileSizeLimitMb('text')).toBe(FILE_TYPE_LIMITS.text.default)
   })
 
-  it('persists per-type limits and a legacy text mirror across reload', () => {
+  it('persists per-type limits, and nothing under the old single key', () => {
     useSettingsStore().setFileSizeLimitMb('spreadsheet', 60)
     const raw = JSON.parse(localStorage.getItem('diffbro.settings'))
     expect(raw.fileSizeLimitsMb.spreadsheet).toBe(60)
-    expect(raw.maxComparisonFileMb).toBe(FILE_TYPE_LIMITS.text.default) // legacy mirror
+    expect(raw).not.toHaveProperty('maxComparisonFileMb')
     setActivePinia(createPinia())
     expect(useSettingsStore().fileSizeLimitMb('spreadsheet')).toBe(60)
   })
