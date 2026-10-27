@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 0 / 3 slices |
+| **Progress** | 3 / 3 slices built; 2 merged |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-27 |
 | **Finished** | — |
 | **Bugs found and fixed this iteration** | 0 / 0 |
 | **Token baseline** | 2026-10-27T16:07:56Z |
-| **Claude tokens used** | — |
+| **Claude tokens used** | not measured: `token-usage.mjs` reads the host's transcripts, and the host has no Node (the container cannot see them) |
 
 ## Problem
 
@@ -132,15 +132,15 @@ stop loading, through paths and messages that already exist. No canvas.
 
 | # | slice | branch | base | PR | status |
 |---|---|---|---|---|---|
-| 1 | Settings and UI state: localStorage migration, shortcut bar, file-size limit and its mirror, Quick Look shortcut, tag shelf, onboarding, `isLegacy`. Carries this spec. | `improvement/drop-compat-state` | `main` | | |
-| 2 | Library shapes: snippet `migrate()` categories path and its write-back, vault bare array and `categoryId`, the categories snippet bundle (main and renderer) | `improvement/drop-compat-library` | slice 1 | | |
+| 1 | Settings and UI state: localStorage migration, shortcut bar, file-size limit and its mirror, Quick Look shortcut, tag shelf, onboarding, `isLegacy`. Carries this spec. | `improvement/drop-compat-state` | `main` | #132 | merged |
+| 2 | Library shapes: snippet `migrate()` categories path and its write-back, vault bare array and `categoryId`, the categories snippet bundle (main and renderer) | `improvement/drop-compat-library` | slice 1 | #133 | merged |
 | 3 | Crypto-adjacent: KDF legacy params, plain-JSON key import, `diffbro-key/1`; docs; 0.14.0 | `improvement/drop-compat-crypto` | slice 2 | | |
 
 ## Implementation plan
 
-- [ ] 1. Slice 1: red tests for the resets; delete the paths; `npm run check`; `make e2e`; `/validate`; PR.
-- [ ] 2. Slice 2: red tests (categories library and vault read empty, categories bundle `malformed`); delete; check; e2e; validate; PR.
-- [ ] 3. Slice 3: red tests (`scryptParamsFor({})` null, plain key refused); delete; `docs/security.md`; 0.14.0; check; e2e; Docker share roundtrip; validate; PR.
+- [x] 1. Slice 1: red tests for the resets; delete the paths; `npm run check`; `make e2e`; `/validate`; PR.
+- [x] 2. Slice 2: red tests (categories library and vault read empty, categories bundle `malformed`); delete; check; e2e; validate; PR.
+- [x] 3. Slice 3: red tests (`scryptParamsFor({})` null, plain key refused); delete; `docs/security.md`; 0.14.0; check; e2e; Docker share roundtrip; validate; PR.
 - [ ] 4. Merge bottom-up as each is green; release notes draft with **Breaking changes**.
 
 ## Decisions
@@ -159,9 +159,9 @@ stop loading, through paths and messages that already exist. No canvas.
 
 ## Validation
 
-- [ ] `/validate`
-- [ ] `npm run check`
-- [ ] `make e2e`
-- [ ] Docker share roundtrip (slice 3)
-- [ ] every Docs-impact "yes" done
-- [ ] token usage measured
+- [x] `/validate`: per slice, comments swept, security greps clean; two size-ratchet entries tightened (`snippetStore.js`, `sealing.js`).
+- [x] `npm run check`: exit 0 on each slice.
+- [x] `make e2e`: 619 passed, 4 skipped (macOS-gated) on each slice.
+- [x] Docker share roundtrip (slice 3): the 9 sharing, sealed-recipient and rotation specs pass.
+- [x] every Docs-impact "yes" done: `docs/security.md` (key import, KDF), `package.json` 0.14.0. `docs/standards.md` describes none of the removed paths.
+- [ ] token usage measured: not possible here, see header.

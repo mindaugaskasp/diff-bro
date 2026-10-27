@@ -32,7 +32,7 @@ export const MAX_TTL_MS = 7 * 24 * 3600 * 1000
 // Key FILES stay importable across the bump: the fingerprint is always
 // RECOMPUTED at 128 bits on import, never trusted from the file. Shares are
 // matched exactly, since their 64-bit binding was baked into signature + AAD.
-export const ACCEPTED_KEY_FORMATS = ['diffbro-key/2', 'diffbro-key/1']
+export const ACCEPTED_KEY_FORMATS = [KEY_FORMAT]
 export const isAcceptedKeyFormat = (fmt) => ACCEPTED_KEY_FORMATS.includes(fmt)
 
 // A key rotation, stated by the key material itself. Signed by BOTH halves —
@@ -168,18 +168,15 @@ const contentAad = (audience) => Buffer.from(`${SHARE_FORMAT}|${audience}`)
 const keyAad = (recipientFp, audience) => Buffer.from(`${SHARE_FORMAT}|${recipientFp}|${audience}`)
 
 // A public key isn't secret, so the `dbk1:` envelope is obfuscation, not
-// encryption. Import still accepts legacy plain JSON; the fingerprint is always
-// recomputed, never trusted from the encoding.
+// encryption. The fingerprint is always recomputed, never trusted from the encoding.
 const KEY_ENVELOPE_PREFIX = 'dbk1:'
 export function encodePublicKey(pub) {
   return KEY_ENVELOPE_PREFIX + Buffer.from(JSON.stringify(pub)).toString('base64')
 }
 export function decodePublicKey(text) {
   const t = String(text).trim()
-  if (t.startsWith(KEY_ENVELOPE_PREFIX)) {
-    return JSON.parse(Buffer.from(t.slice(KEY_ENVELOPE_PREFIX.length), 'base64').toString('utf8'))
-  }
-  return JSON.parse(t) // legacy plain-JSON key file
+  if (!t.startsWith(KEY_ENVELOPE_PREFIX)) throw new Error('not a key envelope')
+  return JSON.parse(Buffer.from(t.slice(KEY_ENVELOPE_PREFIX.length), 'base64').toString('utf8'))
 }
 
 const isFingerprintList = (v) =>

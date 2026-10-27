@@ -412,8 +412,8 @@ import dialog names which key vouched and still says to verify.
 
 - Identity private keys are wrapped by the OS keychain in `userData` and never
   cross IPC. Public keys are exported/copied in an obfuscated `dbk1:` envelope
-  (a public key isn't secret — this just stops casual text-editor readability;
-  legacy plain-JSON keys are still accepted).
+  (a public key isn't secret — this just stops casual text-editor readability).
+  Import takes only that envelope and the current key format, `diffbro-key/2`.
 - Every trust decision keys off a **128-bit fingerprint** (32 hex chars) over
   both public keys — trusted-key lookup, the audience binding in the signature,
   and the GCM AAD. 128 bits keeps a targeted crafted-keypair second preimage at
@@ -489,6 +489,11 @@ The local passphrase text tool uses **authenticated AES-256-GCM only**
 unauthenticated mode (CBC) was removed: without a MAC, a tampered blob can
 decrypt "successfully" to attacker-influenced garbage — a footgun for a tool
 reached for precisely when integrity matters.
+
+Every passphrase blob (text, a snippet bundle, a configuration backup) carries
+its scrypt cost in a `kdf` field, bounded on open. A blob without one is
+refused; the N=2¹⁴ default that files from before the field were read with was
+removed in 0.14.0.
 
 ---
 

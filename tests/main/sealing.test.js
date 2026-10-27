@@ -65,31 +65,20 @@ describe('format versioning / revocation', () => {
 })
 
 describe('key-file format acceptance (backward compatibility)', () => {
-  it('accepts the current and the previous key format, rejects others', () => {
+  it('accepts only the current key format', () => {
     expect(ACCEPTED_KEY_FORMATS).toContain(KEY_FORMAT)
     expect(isAcceptedKeyFormat('diffbro-key/2')).toBe(true)
-    expect(isAcceptedKeyFormat('diffbro-key/1')).toBe(true) // pre-128-bit exports
+    expect(isAcceptedKeyFormat('diffbro-key/1')).toBe(false) // pre-128-bit exports
     expect(isAcceptedKeyFormat('diffbro-key/0')).toBe(false)
     expect(isAcceptedKeyFormat(SHARE_FORMAT)).toBe(false)
     expect(isAcceptedKeyFormat(undefined)).toBe(false)
   })
 
-  it('a legacy diffbro-key/1 file stays importable and recomputes a 128-bit fingerprint', () => {
+  it('refuses a plain-JSON key file; only the dbk1: envelope decodes', () => {
     const { pub } = createIdentityKeys()
-    // Simulate a key file written by a pre-bump build: old format tag + the
-    // old 64-bit fingerprint, same key material.
-    const legacyFile = JSON.stringify(
-      { format: 'diffbro-key/1', sign: pub.sign, box: pub.box, fingerprint: 'deadbeefdeadbeef' },
-      null,
-      2
-    )
-    const decoded = decodePublicKey(legacyFile)
-    expect(isAcceptedKeyFormat(decoded.format)).toBe(true)
-    // The stored (64-bit) fingerprint is ignored; the recomputed one is 128-bit
-    // and matches what the current build derives for these keys.
-    const recomputed = fingerprint(decoded.sign, decoded.box)
-    expect(recomputed).toMatch(/^[0-9a-f]{32}$/)
-    expect(recomputed).toBe(pub.fingerprint)
+    const plain = JSON.stringify({ format: 'diffbro-key/2', sign: pub.sign, box: pub.box })
+    expect(() => decodePublicKey(plain)).toThrow()
+    expect(decodePublicKey(encodePublicKey(pub)).sign).toBe(pub.sign)
   })
 })
 
@@ -112,11 +101,6 @@ describe('public-key obfuscation', () => {
     expect(encoded).not.toContain('BEGIN PUBLIC KEY') // not plainly readable
     expect(() => JSON.parse(encoded)).toThrow() // not JSON in a text editor
     expect(decodePublicKey(encoded)).toEqual(pub)
-  })
-
-  it('still decodes a legacy plain-JSON key file (backward compatible)', () => {
-    const { pub } = createIdentityKeys()
-    expect(decodePublicKey(JSON.stringify(pub, null, 2))).toEqual(pub)
   })
 })
 
