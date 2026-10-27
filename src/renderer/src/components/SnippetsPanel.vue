@@ -11,6 +11,8 @@ import { provideRowReorder } from '../composables/useRowReorder'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
+import { MOD } from '../keys'
+import { useCommands } from '../composables/useCommands'
 import SnippetRow from './SnippetRow.vue'
 import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
@@ -84,6 +86,7 @@ function newSnippet() {
   sectionOpen.value = true
   store.editingSnippet = { id: null }
 }
+const { run } = useCommands()
 </script>
 
 <template>
@@ -109,6 +112,14 @@ function newSnippet() {
           @click.stop="newSnippet"
         >
           <AppIcon name="plus" />
+        </button>
+        <button
+          class="btn btn-icon"
+          :data-tip="`${$t('snippetsPanel.openFile')}  ${MOD}+O`"
+          :aria-label="$t('snippetsPanel.openFile')"
+          @click.stop="run('open-file-as-snippet')"
+        >
+          <AppIcon name="folder-open" />
         </button>
         <button
           class="btn btn-icon"

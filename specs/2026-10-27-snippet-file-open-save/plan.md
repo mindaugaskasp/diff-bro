@@ -1,15 +1,15 @@
 # Open a file as a snippet, save a snippet as a file
 
-| | |
-|---|---|
-| **Status** | in-progress |
-| **Progress** | 0 / 6 steps |
-| **Branch** | `feat/snippet-file-open-save` |
-| **Started** | 2026-10-27 |
-| **Finished** | — |
-| **Bugs found and fixed this iteration** | 0 / 0 |
-| **Token baseline** | 2026-10-27T19:18:35Z |
-| **Claude tokens used** | — |
+|                                         |                               |
+| --------------------------------------- | ----------------------------- |
+| **Status**                              | in-progress                   |
+| **Progress**                            | 5 / 6 steps                   |
+| **Branch**                              | `feat/snippet-file-open-save` |
+| **Started**                             | 2026-10-27                    |
+| **Finished**                            | —                             |
+| **Bugs found and fixed this iteration** | 0 / 0                         |
+| **Token baseline**                      | 2026-10-27T19:18:35Z          |
+| **Claude tokens used**                  | —                             |
 
 ## Problem
 
@@ -41,13 +41,13 @@ carries four buttons (Compare with…, Copy, Copy as file, Save).
   `.ctx` menu) serves this ⋯ and the saved-diff row's More actions, which is
   refactored onto it.
 
-| option | why not |
-|---|---|
-| Write back to the opened file | the user chose an explicit Save as… every time |
-| Toolbar button for Save as file | four save-shaped buttons; the user chose ⋯ |
-| Copy as file split button (D) | a control type the app does not have |
-| Labelled "Open file" button (B) | the user chose the icon (A) |
-| A new `snippet:saveFile` IPC | `diff:exportFile` is the one audited write surface |
+| option                          | why not                                            |
+| ------------------------------- | -------------------------------------------------- |
+| Write back to the opened file   | the user chose an explicit Save as… every time     |
+| Toolbar button for Save as file | four save-shaped buttons; the user chose ⋯         |
+| Copy as file split button (D)   | a control type the app does not have               |
+| Labelled "Open file" button (B) | the user chose the icon (A)                        |
+| A new `snippet:saveFile` IPC    | `diff:exportFile` is the one audited write surface |
 
 ## Scope
 
@@ -64,11 +64,11 @@ several files from the dialog (one file, as Open With).
 **Approved design:** its "Approved design" page, chosen 2026-10-27 (A and the
 revised C), awaiting sign-off.
 
-| artboard | shows |
-|---|---|
+| artboard                           | shows                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
 | Snippets panel: Open file icon (A) | folder-open icon between New and Export; tooltip "Open a text file as a snippet ⌘O" |
-| Snippet toolbar (C, revised) | Compare with…, Copy, ⋯, Save; ⋯ open with Copy as file and Save as file… ⌥⌘S |
-| File menu | Open File as Snippet… ⌘O, Save Snippet as File… ⌥⌘S |
+| Snippet toolbar (C, revised)       | Compare with…, Copy, ⋯, Save; ⋯ open with Copy as file and Save as file… ⌥⌘S        |
+| File menu                          | Open File as Snippet… ⌘O, Save Snippet as File… ⌥⌘S                                 |
 
 Token-driven: the panel icon is the header's existing `.btn-icon` row; ⋯ is a
 `.btn` + `.btn-icon` at `--control-h`; the menu is the shared `.ctx` (moved to
@@ -107,42 +107,42 @@ keyline over the snippet toolbar) so the reuse is measured, not assumed.
 
 ## Docs impact
 
-| surface | needed? | what changes |
-|---|---|---|
-| `README.md` | no | no feature-status change |
-| `docs/screenshots/*.png` | no | the sweep writes none; no README frame shows the snippet toolbar |
-| `docs/roadmap.md` | no | not a roadmap item |
-| `docs/brand/roadmap.svg` | no | same |
-| `docs/features.md` | yes | snippets row: open a file, save as a file |
-| `docs/security.md` | yes | the `text` export format; secret refuses Save as file |
+| surface                  | needed? | what changes                                                     |
+| ------------------------ | ------- | ---------------------------------------------------------------- |
+| `README.md`              | no      | no feature-status change                                         |
+| `docs/screenshots/*.png` | no      | the sweep writes none; no README frame shows the snippet toolbar |
+| `docs/roadmap.md`        | no      | not a roadmap item                                               |
+| `docs/brand/roadmap.svg` | no      | same                                                             |
+| `docs/features.md`       | yes     | snippets row: open a file, save as a file                        |
+| `docs/security.md`       | yes     | the `text` export format; secret refuses Save as file            |
 
 ## Delivery
 
-| # | slice | branch | base | PR | status |
-|---|---|---|---|---|---|
-| 1 | `ActionMenu` + ⋯ with Copy as file and Save as file; File menu; `text` export | `feat/snippet-file-open-save` | `main` | | |
-| 2 | Open File as Snippet: menu, shortcut, panel icon | `feat/open-file-as-snippet-menu` | slice 1 | | |
+| #   | slice                                                                         | branch                           | base    | PR   | status |
+| --- | ----------------------------------------------------------------------------- | -------------------------------- | ------- | ---- | ------ |
+| 1   | `ActionMenu` + ⋯ with Copy as file and Save as file; File menu; `text` export | `feat/snippet-file-open-save`    | `main`  | #136 |        |
+| 2   | Open File as Snippet: menu, shortcut, panel icon                              | `feat/open-file-as-snippet-menu` | slice 1 |      |        |
 
 ## Implementation plan
 
-- [ ] 1. Red tests for slice 1.
-- [ ] 2. `ActionMenu.vue`; refactor `SavedDiffMoreMenu` onto it; ⋯ in the snippet toolbar.
-- [ ] 3. `text` export format in main; Save Snippet as File command, menus, shortcut.
-- [ ] 4. Slice 2: red tests; Open File as Snippet command, menus, shortcut, panel icon.
-- [ ] 5. Docs; sweep surface.
+- [x] 1. Red tests for slice 1.
+- [x] 2. `ActionMenu.vue`; refactor `SavedDiffMoreMenu` onto it; ⋯ in the snippet toolbar.
+- [x] 3. `text` export format in main; Save Snippet as File command, menus, shortcut.
+- [x] 4. Slice 2: red tests; Open File as Snippet command, menus, shortcut, panel icon.
+- [x] 5. Docs; sweep surface.
 - [ ] 6. `npm run check`, `make e2e`, `make theme-sweep`, `/validate`; PRs; merge when green.
 
 ## Decisions
 
-| date | decision | why | rejected |
-|---|---|---|---|
-| 2026-10-27 | Save as file always asks for a path | the user's choice | write back to the source; both |
-| 2026-10-27 | File menu + toolbar ⋯ for Save as file | the user's choice | a toolbar button; menu only |
-| 2026-10-27 | Copy as file moves under ⋯ too | the user, on board C | keeping it as a button |
-| 2026-10-27 | File menu + Snippets panel for Open | the user's choice | either alone |
-| 2026-10-27 | Panel control is an icon (A) | the user's choice | labelled button (B) |
+| date       | decision                                           | why                                               | rejected                       |
+| ---------- | -------------------------------------------------- | ------------------------------------------------- | ------------------------------ |
+| 2026-10-27 | Save as file always asks for a path                | the user's choice                                 | write back to the source; both |
+| 2026-10-27 | File menu + toolbar ⋯ for Save as file             | the user's choice                                 | a toolbar button; menu only    |
+| 2026-10-27 | Copy as file moves under ⋯ too                     | the user, on board C                              | keeping it as a button         |
+| 2026-10-27 | File menu + Snippets panel for Open                | the user's choice                                 | either alone                   |
+| 2026-10-27 | Panel control is an icon (A)                       | the user's choice                                 | labelled button (B)            |
 | 2026-10-27 | `CmdOrCtrl+O` open, `CmdOrCtrl+Alt+S` save as file | O is free and conventional; Shift+S is Swap sides | moving Swap sides; no shortcut |
-| 2026-10-27 | A secret snippet refuses Save as file | same guarantee as Copy as file: never on disk | — |
+| 2026-10-27 | A secret snippet refuses Save as file              | same guarantee as Copy as file: never on disk     | —                              |
 
 ## Validation
 

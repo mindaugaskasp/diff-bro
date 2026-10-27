@@ -53,11 +53,10 @@ async function compareWithOpened({ diff, tabs }, previous, file) {
   diff.receive('right', file)
 }
 
-async function openOne(stores, path) {
-  const file = await readOrNotify(stores.diff, path)
+async function openRead(stores, file) {
   if (!file) return
   // Binary, unreadable, streamed or a spreadsheet: the comparison view handles it as before.
-  if (typeof file.content !== 'string' || file.kind) return place(stores, path, file)
+  if (typeof file.content !== 'string' || file.kind) return place(stores, file.path, file)
   const previous = openedFileTab(stores.tabs)
   if (previous) {
     const name = previous.title || previous.snippet.initial.initialName
@@ -65,6 +64,19 @@ async function openOne(stores, path) {
     if (choice === 'compare') return compareWithOpened(stores, previous, file)
   }
   stores.tabs.openSnippet(openedFileDraft(file), file.name)
+}
+
+const openOne = async (stores, path) => openRead(stores, await readOrNotify(stores.diff, path))
+
+/**
+ * File ▸ Open File as Snippet…: main's open dialog, then the Open With route.
+ * @param {{ diff: object, tabs: object, openWith: object }} stores
+ */
+export function openFileAsSnippet(stores) {
+  queue = queue
+    .then(async () => openRead(stores, await window.api.openFile('snippet')))
+    .catch(() => {})
+  return queue
 }
 
 /**

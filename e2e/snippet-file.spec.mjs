@@ -1,7 +1,15 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { test, expect, docActions, openNewSnippet, stubSaveDialog } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  docActions,
+  openNewSnippet,
+  showPanel,
+  stubOpenDialog,
+  stubSaveDialog
+} from './fixtures.mjs'
 
 const more = (page) => docActions(page).getByRole('button', { name: 'More snippet actions' })
 
@@ -55,4 +63,42 @@ test('a secret snippet cannot be saved or copied as a file', async ({ page }) =>
   await newSnippet(page, { name: 'Token', body: 'sk-live-xxxx', secret: true })
   await more(page).click()
   await expect(page.getByRole('menuitem', { name: /Save as file/ })).toBeDisabled()
+})
+
+function textFile(name, body) {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-open-as-'))
+  const path = join(dir, name)
+  writeFileSync(path, body)
+  return { dir, path }
+}
+
+test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab', async ({
+  app,
+  page
+}) => {
+  const { dir, path } = textFile('notes.md', '# heading')
+  try {
+    await stubOpenDialog(app, path)
+    await page.getByRole('button', { name: 'File', exact: true }).click()
+    await page.getByText('Open File as Snippet…', { exact: true }).click()
+    const doc = page.getByRole('region', { name: 'New Snippet' })
+    await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('notes.md')
+    await expect(doc.locator('.view-lines')).toContainText('# heading')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('the Snippets panel opens a file as a snippet from its header', async ({ app, page }) => {
+  const { dir, path } = textFile('query.sql', 'SELECT 1')
+  try {
+    await stubOpenDialog(app, path)
+    await showPanel(page, 'snippets')
+    await page.getByRole('button', { name: 'Open a text file as a snippet' }).click()
+    await expect(
+      page.getByRole('region', { name: 'New Snippet' }).getByPlaceholder('Snippet name…')
+    ).toHaveValue('query.sql')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
