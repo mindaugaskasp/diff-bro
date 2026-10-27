@@ -776,6 +776,7 @@ const SURFACES = [
       'group label': ['.tt-head', TEXT],
       'glyph on its well': ['.tt-tile .glyph-well', TEXT],
       'star, pinned': ['.tt-pin.on', DIM],
+      'Pinned group star': ['.tt-star', DIM],
       'tile edge': ['.tt-tile', SEPARATOR, 'border']
     }
   },

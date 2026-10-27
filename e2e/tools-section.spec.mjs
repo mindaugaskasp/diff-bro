@@ -8,8 +8,6 @@ import {
   showPanel
 } from './fixtures.mjs'
 
-// Pins never reorder the panel: the tile under the cursor must not move when clicked.
-
 const tiles = (page) => page.locator('.tool-tiles .tt-tile')
 const names = (page) => tiles(page).locator('.tt-name')
 const cell = (page, name) => page.locator('.tt-cell', { hasText: name })
@@ -40,6 +38,25 @@ test('pinning marks the tile and offers the tool on Home', async ({ page }) => {
   await showPanel(page, 'home')
   const pinned = page.locator('.home-block', { hasText: 'Pinned' })
   await expect(pinned.getByRole('button', { name: /Regex/ })).toBeVisible()
+})
+
+test('a pin moves the tile into Pinned, and unpinning returns it', async ({ page }) => {
+  await showPanel(page, 'tools')
+  await cell(page, 'Regex').hover()
+  await cell(page, 'Regex').locator('.tt-pin').click()
+
+  await expect(groups(page).first()).toHaveText('Pinned')
+  const pinnedGroup = page.locator('.tt-group').first()
+  await expect(pinnedGroup.locator('.tt-name')).toHaveText(['Regex'])
+  const inspect = page.locator('.tt-group', {
+    has: page.locator('.tt-head', { hasText: 'Inspect' })
+  })
+  await expect(inspect.locator('.tt-name')).toHaveText(['JWT'])
+
+  await pinnedGroup.locator('.tt-cell', { hasText: 'Regex' }).hover()
+  await pinnedGroup.locator('.tt-pin').click()
+  await expect(groups(page).first()).toHaveText('Encode')
+  await expect(inspect.locator('.tt-name')).toHaveText(['JWT', 'Regex'])
 })
 
 test('using a tool does not move it', async ({ page }) => {
