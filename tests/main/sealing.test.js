@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   ACCEPTED_KEY_FORMATS,
   KEY_FORMAT,
-  MAX_LABEL_LEN,
   MAX_TTL_MS,
   SHARE_FORMAT,
-  cleanLabel,
   createIdentityKeys,
   decodePublicKey,
   encodePublicKey,
@@ -92,22 +90,6 @@ describe('key-file format acceptance (backward compatibility)', () => {
     const recomputed = fingerprint(decoded.sign, decoded.box)
     expect(recomputed).toMatch(/^[0-9a-f]{32}$/)
     expect(recomputed).toBe(pub.fingerprint)
-  })
-})
-
-describe('cleanLabel (untrusted key display label)', () => {
-  it('trims and collapses whitespace, keeps normal text incl. punctuation', () => {
-    expect(cleanLabel('  Alice — laptop  ')).toBe('Alice — laptop')
-    expect(cleanLabel('a\t b   c')).toBe('a b c')
-  })
-  it('strips control characters and newlines (no multi-line labels)', () => {
-    expect(cleanLabel('line1\nline2\r\ttab\x00nul')).toBe('line1 line2 tab nul')
-  })
-  it('hard-caps the length', () => {
-    expect(cleanLabel('x'.repeat(500))).toHaveLength(MAX_LABEL_LEN)
-  })
-  it('returns empty string for non-strings', () => {
-    for (const v of [undefined, null, 42, {}, []]) expect(cleanLabel(v)).toBe('')
   })
 })
 

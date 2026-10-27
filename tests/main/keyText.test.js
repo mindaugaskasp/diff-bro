@@ -47,3 +47,10 @@ describe('parseKeyText', () => {
     expect(parsed.defaultLabel).toBe('')
   })
 })
+
+describe('key names on import', () => {
+  it('refuses a key whose name is over the limit, rather than cutting it', () => {
+    expect(() => parseKeyText(keyText('x'.repeat(41)))).toThrow('name-too-long')
+    expect(parseKeyText(keyText('x'.repeat(40))).defaultLabel).toHaveLength(40)
+  })
+})

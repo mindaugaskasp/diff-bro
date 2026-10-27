@@ -20,7 +20,8 @@ watch([() => share.pendingTrustedKey, () => share.pendingUntrust], ([a, b]) => {
 })
 
 async function commitRename(fingerprint, label) {
-  if (label.trim()) await window.api.renameTrusted(fingerprint, label)
+  const res = await window.api.renameTrusted(fingerprint, label)
+  if (res?.error) share.noticeKeyName(res.error)
   await share.refreshTrusted()
 }
 async function commitEmail(fingerprint, email) {

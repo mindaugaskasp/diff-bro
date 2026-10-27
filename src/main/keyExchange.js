@@ -4,6 +4,7 @@
 // this that gates a picked file: there is no silent-add path.
 import { clipboard, ipcMain } from 'electron'
 import { parseKeyText } from './keyText'
+import { keyReadError } from '../shared/keyName'
 import { getIdentity, vouchedBy } from './share'
 import { guardIdentity } from './shareCore'
 
@@ -14,8 +15,8 @@ export function registerKeyExchangeIpc() {
       let parsed
       try {
         parsed = parseKeyText(clipboard.readText())
-      } catch {
-        return { error: 'no-key' }
+      } catch (err) {
+        return { error: keyReadError(err, 'no-key') }
       }
       if (parsed.fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
       return {

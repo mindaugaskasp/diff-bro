@@ -1,17 +1,28 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useShareStore } from '../shareStore'
+import { useKeyName } from '../useKeyName'
+import { takenBy } from '../../../../../shared/keyName'
 import BaseDialog from '../../../components/BaseDialog.vue'
+import KeyNameHint from './KeyNameHint.vue'
 
 const share = useShareStore()
 const label = ref('')
 const fingerprint = ref('')
 const busy = ref(false)
+const nameInput = ref(null)
+const { problem, count, message } = useKeyName(label)
+const blocked = computed(() => busy.value || !!problem.value)
+const contact = computed(() => takenBy(share.trusted, label.value, null))
 
 onMounted(async () => {
+  nameInput.value?.focus()
+  share.refreshTrusted()
   // Prefill the prior name and show the fingerprint for out-of-band verification.
   label.value = (await window.api.myKeyLabel()) ?? ''
   fingerprint.value = (await window.api.myFingerprint()) ?? ''
+  await nextTick()
+  nameInput.value?.select()
 })
 
 async function save() {
@@ -66,13 +77,15 @@ function close() {
     <label>
       {{ $t('share.keyDialog.nameOthersWillSee') }}
       <input
+        ref="nameInput"
         v-model="label"
         type="text"
         spellcheck="false"
-        maxlength="80"
         :placeholder="$t('share.keyDialog.eGAliceLaptop')"
       />
     </label>
+    <KeyNameHint :count="count" :message="message" />
+    <p v-if="contact" class="hint">{{ $t('keyName.alsoAContact', { name: contact.label }) }}</p>
     <p class="hint">
       {{ $t('share.keyDialog.shownToWhoeverImportsThis') }}
     </p>
@@ -84,15 +97,15 @@ function close() {
     </i18n-t>
 
     <template #actions>
-      <button class="btn btn-primary" :disabled="busy" @click="save">
+      <button class="btn btn-primary" :disabled="blocked" @click="save">
         {{ $t('share.keyDialog.saveToFile') }}
       </button>
-      <button class="btn" :disabled="busy" @click="copy">
+      <button class="btn" :disabled="blocked" @click="copy">
         {{ $t('share.keyDialog.copyToClipboard') }}
       </button>
       <button
         class="btn"
-        :disabled="busy"
+        :disabled="blocked"
         :data-tip="$t('share.keyDialog.emailItTip')"
         @click="email"
       >

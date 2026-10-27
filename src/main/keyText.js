@@ -2,13 +2,8 @@
 // a chat message delivers back. Pure: the Electron glue (keyExchange.js) reads
 // the clipboard; this decides whether the text is a key. The fingerprint is
 // always recomputed from the material — a stated one is never trusted.
-import {
-  cleanLabel,
-  decodePublicKey,
-  fingerprint,
-  isAcceptedKeyFormat,
-  rebuiltPublicKey
-} from './sealing'
+import { importedKeyName } from '../shared/keyName'
+import { decodePublicKey, fingerprint, isAcceptedKeyFormat, rebuiltPublicKey } from './sealing'
 
 export const MAX_KEY_TEXT_BYTES = 64 * 1024
 
@@ -36,6 +31,6 @@ export function parseKeyText(text) {
   return {
     key: rebuiltPublicKey(key),
     fp: fingerprint(key.sign, key.box),
-    defaultLabel: cleanLabel(key.label) || ''
+    defaultLabel: importedKeyName(key.label)
   }
 }

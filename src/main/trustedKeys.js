@@ -10,6 +10,7 @@ import { ipcMain } from 'electron'
 import { readFile, writeFile } from 'fs/promises'
 import { dataFile } from './appData'
 import { isValidEmail, normalizeEmail } from './mailAddress'
+import { keyNameProblem, normalizeKeyName, takenBy } from '../shared/keyName'
 
 const trustPath = () => dataFile('trusted-keys.json')
 
@@ -45,6 +46,17 @@ export async function storeTrusted(key, fp, label) {
 }
 
 /**
+ * A name another key does not already wear, within the length limit.
+ * @returns {Promise<{ label: string } | { error: string }>}
+ */
+export async function checkedTrustedName(fp, label) {
+  const problem = keyNameProblem(label)
+  if (problem) return { error: `name-${problem}` }
+  if (takenBy(await readTrusted(), label, fp)) return { error: 'name-taken' }
+  return { label: normalizeKeyName(label) }
+}
+
+/**
  * Addresses for the given fingerprints, in the order asked. Resolved HERE from
  * the trust store rather than accepted from the renderer, so a hand-off can only
  * ever reach someone already trusted.
@@ -75,7 +87,9 @@ export function registerTrustedKeyIpc() {
     const trusted = await readTrusted()
     const entry = trusted.find((t) => t.fingerprint === fp)
     if (!entry) return { error: 'unknown' }
-    entry.label = (label || fp).trim() || fp
+    const named = await checkedTrustedName(fp, label)
+    if (named.error) return named
+    entry.label = named.label
     await writeTrusted(trusted)
     return { ok: true, label: entry.label, fingerprint: fp }
   })

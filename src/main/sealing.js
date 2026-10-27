@@ -104,19 +104,6 @@ export function rebuiltPublicKey(key) {
   return out
 }
 
-// Cosmetic display label only — never part of the fingerprint or any trust
-// decision, so treat as untrusted: strip control chars, collapse, hard-cap.
-export const MAX_LABEL_LEN = 80
-export function cleanLabel(value) {
-  if (typeof value !== 'string') return ''
-  let out = ''
-  for (const ch of value) {
-    const c = ch.codePointAt(0)
-    out += c < 0x20 || c === 0x7f ? ' ' : ch
-  }
-  return out.replace(/\s+/g, ' ').trim().slice(0, MAX_LABEL_LEN)
-}
-
 const HKDF_INFO = SHARE_FORMAT
 
 // Covers both public keys and anchors every trust decision, so it must resist a

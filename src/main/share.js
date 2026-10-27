@@ -7,7 +7,6 @@ import { basename } from 'path'
 import { dataFile, getDataDir } from './appData'
 import {
   KEY_FORMAT,
-  cleanLabel,
   createIdentityKeys,
   decodePublicKey,
   encodePublicKey,
@@ -23,8 +22,15 @@ import { mayReadPath } from './files'
 import { openConfig, sealConfig } from './configBackup'
 import { checkDestination, writeBackupZip } from './backupZip'
 import { IdentityUnavailable, guardIdentity, validateRestoredConfig } from './shareCore'
+import { importedKeyName, keyNameProblem, keyReadError, normalizeKeyName } from '../shared/keyName'
 import { validateSnippetBundle } from './snippetSealing'
-import { readTrusted, registerTrustedKeyIpc, replaceTrusted, storeTrusted } from './trustedKeys'
+import {
+  checkedTrustedName,
+  readTrusted,
+  registerTrustedKeyIpc,
+  replaceTrusted,
+  storeTrusted
+} from './trustedKeys'
 import { sealAndWrite } from './shareExport'
 import { t } from './i18n'
 
@@ -171,14 +177,15 @@ async function persistIdentity(priv, pub) {
   await writeFile(pubPath(), JSON.stringify(pub, null, 2))
 }
 
-// Set/refresh the cosmetic display label (never part of the fingerprint or any
-// trust check) and return the pub with it embedded.
+// Every export of this key carries a valid name: the given one, or the one
+// already stored. A nameless or over-long name refuses the export.
 export async function pubWithLabel(rawLabel) {
   const { priv, pub } = await getIdentity()
-  // null/undefined keeps the existing label; a string (even '') sets it.
-  if (rawLabel == null) return pub
-  const label = cleanLabel(rawLabel)
-  if ((pub.label ?? '') !== label) {
+  const wanted = rawLabel ?? pub.label
+  const problem = keyNameProblem(wanted)
+  if (problem) throw new Error(`name-${problem}`)
+  const label = normalizeKeyName(wanted)
+  if (pub.label !== label) {
     pub.label = label
     await persistIdentity(priv, pub)
   }
@@ -199,12 +206,25 @@ async function parseKeyFileAt(path) {
   if (size > MAX_KEY_FILE_BYTES) throw new Error('too large')
   const key = decodePublicKey(await readFile(path, 'utf-8'))
   if (!isAcceptedKeyFormat(key.format) || !key.sign || !key.box) throw new Error('bad format')
-  const embedded = cleanLabel(key.label)
+  const embedded = importedKeyName(key.label)
   return {
     key: rebuiltPublicKey(key),
     fp: fingerprint(key.sign, key.box),
     defaultLabel: embedded || basename(path).replace(/\.diffbrokey$/i, '')
   }
+}
+
+// What a read key becomes for the renderer to name: never your own key.
+async function keyOffer(read) {
+  let parsed
+  try {
+    parsed = await read()
+  } catch (err) {
+    return { error: keyReadError(err) }
+  }
+  if (parsed.fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
+  const { key, fp, defaultLabel } = parsed
+  return { ok: true, key, fingerprint: fp, defaultLabel, vouchedBy: await vouchedBy(key) }
 }
 
 // Size + filename-integrity guards on the untrusted file before openSealed does
@@ -300,7 +320,7 @@ export function registerShareIpc() {
   // This install's current key display label (what recipients see on import).
   ipcMain.handle('share:myLabel', async () => {
     try {
-      return cleanLabel((await getIdentity()).pub.label)
+      return normalizeKeyName((await getIdentity()).pub.label)
     } catch (err) {
       if (err instanceof IdentityUnavailable) return ''
       throw err
@@ -315,7 +335,7 @@ export function registerShareIpc() {
       const pub = await pubWithLabel(label)
       const { canceled, filePath } = await dialog.showSaveDialog({
         title: t('dialog.exportPublicKey'),
-        defaultPath: keyFileBasename(cleanLabel(pub.label), pub.fingerprint),
+        defaultPath: keyFileBasename(normalizeKeyName(pub.label), pub.fingerprint),
         filters: [{ name: t('fileFilter.publicKey'), extensions: ['diffbrokey'] }]
       })
       if (canceled || !filePath) return { canceled: true }
@@ -347,20 +367,7 @@ export function registerShareIpc() {
       })
       if (canceled || !filePaths.length) return { canceled: true }
 
-      let parsed
-      try {
-        parsed = await parseKeyFileAt(filePaths[0])
-      } catch {
-        return { error: 'not-a-key' }
-      }
-      if (parsed.fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
-      return {
-        ok: true,
-        key: parsed.key,
-        fingerprint: parsed.fp,
-        defaultLabel: parsed.defaultLabel,
-        vouchedBy: await vouchedBy(parsed.key)
-      }
+      return keyOffer(() => parseKeyFileAt(filePaths[0]))
     })
   )
 
@@ -370,21 +377,7 @@ export function registerShareIpc() {
     'share:readKeyFile',
     guardIdentity(async (e, path) => {
       if (!mayReadPath(path)) return { error: 'not-permitted' }
-      let parsed
-      try {
-        parsed = await parseKeyFileAt(path)
-      } catch {
-        return { error: 'not-a-key' }
-      }
-      // You can't (and needn't) trust your own key.
-      if (parsed.fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
-      return {
-        ok: true,
-        key: parsed.key,
-        fingerprint: parsed.fp,
-        defaultLabel: parsed.defaultLabel,
-        vouchedBy: await vouchedBy(parsed.key)
-      }
+      return keyOffer(() => parseKeyFileAt(path))
     })
   )
 
@@ -395,9 +388,10 @@ export function registerShareIpc() {
       if (!isAcceptedKeyFormat(key?.format) || !key.sign || !key.box) return { error: 'not-a-key' }
       const fp = fingerprint(key.sign, key.box)
       if (fp === (await getIdentity()).pub.fingerprint) return { error: 'own-key' }
-      const vouch = await vouchedBy(key)
-      await storeTrusted(key, fp, label)
-      return { ok: true, label: (label || fp).trim() || fp, fingerprint: fp, vouchedBy: vouch }
+      const named = await checkedTrustedName(fp, label)
+      if (named.error) return named
+      await storeTrusted(key, fp, named.label)
+      return { ok: true, label: named.label, fingerprint: fp, vouchedBy: await vouchedBy(key) }
     })
   )
 
