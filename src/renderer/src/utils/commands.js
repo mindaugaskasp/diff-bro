@@ -64,8 +64,8 @@ export const COMMANDS = {
   'toggle-sidebar': ({ settings }) => settings.setSidebarCollapsed(!settings.sidebarCollapsed),
   // There has to be something to present: entering on an empty pane hides every
   // control and leaves the reader with a blank screen and no visible way back.
-  'toggle-presentation': ({ ui, diff }) => {
-    if (ui.presenting || diff.ready) ui.togglePresenting()
+  'toggle-presentation': ({ ui, diff, tabs }) => {
+    if (ui.presenting || diff.ready || isSnippetTab(tabs?.active)) ui.togglePresenting()
   },
   'toggle-split': ({ diff }) => {
     // Silently flipping a flag nothing reads leaves invisible state behind.

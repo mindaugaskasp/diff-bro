@@ -729,6 +729,20 @@ const SURFACES = [
     }
   },
   {
+    name: 'presentation-exit',
+    open: async (page) => {
+      await page.getByTestId('toolbar-present').click()
+      await page.locator('.present-exit').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.locator('.present-exit').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'exit label at rest': ['.present-exit', TEXT]
+    }
+  },
+  {
     name: 'diffs-switch',
     open: async (page) => {
       await showPanel(page, 'diffs')

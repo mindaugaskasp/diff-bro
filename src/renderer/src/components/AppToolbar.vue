@@ -79,10 +79,9 @@ const actionState = computed(() => ({
         <!-- Only with something to present: entering on an empty pane hides
              every control and leaves a blank screen with no visible way back. -->
         <button
-          v-if="store.ready"
+          v-if="store.ready || onSnippet"
           class="btn btn-sm"
           data-testid="toolbar-present"
-          :disabled="onSnippet"
           :data-tip="$t('appToolbar.tips.presentation', { mod: MOD })"
           @click="run('toggle-presentation')"
         >
