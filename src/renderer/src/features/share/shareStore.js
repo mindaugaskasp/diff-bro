@@ -190,7 +190,7 @@ export const useShareStore = defineStore('share', {
         }
       } else if (res.error === 'own-key') {
         diff.showNotice(t('shareNotices.thatsYourOwnKey'))
-      } else {
+      } else if (!this.noticeKeyName(res.error)) {
         diff.showNotice(t('shareNotices.thatFileIsNotA2'))
       }
     },
@@ -213,7 +213,8 @@ export const useShareStore = defineStore('share', {
         // Flag the new key so the manager highlights it.
         this.lastAddedTrustedFp = res.fingerprint
         this.openKeysPanel()
-      } else diff.showNotice(t('shareNotices.couldNotAddThatKey'))
+      } else if (!this.noticeKeyName(res.error))
+        diff.showNotice(t('shareNotices.couldNotAddThatKey'))
     },
     cancelTrustedKey() {
       this.pendingTrustedKey = null

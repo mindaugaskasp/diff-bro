@@ -8,6 +8,7 @@ import {
   openNewSnippet,
   pickTag,
   showPanel,
+  docActions,
   saveSettings
 } from './fixtures.mjs'
 
@@ -30,7 +31,7 @@ async function seedSnippet(page, name, tags) {
     await editor.getByPlaceholder('add a tag…').fill(tag)
     await editor.getByPlaceholder('add a tag…').press('Enter')
   }
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }
 

@@ -1,0 +1,16 @@
+.key-name-hint {
+  margin: calc(-1 * var(--space-1)) 0 0;
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+}
+.problem {
+  flex: 1;
+  color: var(--text);
+  font-weight: 600;
+}
+.count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}

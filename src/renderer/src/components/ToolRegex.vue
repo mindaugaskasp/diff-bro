@@ -2,6 +2,7 @@
 // The regex tester. Matches are highlighted by rendering the SEGMENTS the pure
 // engine returns as spans — `v-html` is banned (rule 8), and building markup
 // from a user's own subject is exactly what that rule is for.
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref } from 'vue'
 import { FLAGS, replaceAll, runRegex } from '../utils/regex'
 import AppIcon from './AppIcon.vue'
@@ -9,9 +10,9 @@ import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
-const pattern = ref('')
+const pattern = useToolDraft('regex.pattern')
 const flags = ref(['g'])
-const subject = ref('')
+const subject = useToolDraft('regex.subject')
 const replacement = ref('')
 const selected = ref(0)
 

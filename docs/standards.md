@@ -126,11 +126,15 @@ regression test from decoration.
    be opened with one click.
 
    Four sibling surfaces hand a PATH to the OS rather than a URL, and are
-   fenced the same way. `shell.showItemInFolder` has two call sites — `mail.js`,
-   which reveals the sealed file it just wrote, and `logger.js` (`log:reveal`,
-   which also uses `shell.openPath`); `shell.openPath` has a third at
-   `appData.js` (`datadir:reveal`). In all of them the path is COMPUTED IN MAIN
-   from a pointer file and the renderer names no file. `mail.js` reveals the sealed file it just wrote — the path is the one main computed, never round-tripped through
+   fenced the same way. `shell.showItemInFolder` has three call sites —
+   `mail.js`, which reveals the sealed file it just wrote; `logger.js`
+   (`log:reveal`, which also uses `shell.openPath`); and `appData.js`
+   (`store:reveal`, Show in folder on a saved diff or snippet row).
+   `shell.openPath` has one more at `appData.js` (`datadir:reveal`). In all of
+   them the path is COMPUTED IN MAIN and the renderer names no file:
+   `store:reveal` takes a store NAME, and `revealableStoreFile` (`dataFiles.js`)
+   allows only `vault` and `snippets`, so a traversing or absolute name, or any
+   other store, is refused before a path exists. `mail.js` reveals the sealed file it just wrote — the path is the one main computed, never round-tripped through
    the renderer, and there is no handler that reveals an arbitrary one.
    **Copy as file** (`clipboardCopy.js`) stages bytes and puts the staged path on
    the clipboard; `clipboard:writeFile` takes **bytes and a display name, never a
@@ -363,6 +367,12 @@ directory move passes CI while silently removing enforcement.
   `--line`. `check-theme-depth.mjs` holds the replacement to floors: glyph on its
   well ≥ 4.5, card lighter than the panel on every light ground. Colour lives in
   the well, legibility in the glyph (`--glyph-*` is 30% hue, 70% ink).
+- **Hover changes two things: the face and the edge or lift.** A shadow step
+  alone is not a hover; on the dark grounds `--shadow-2` barely moves. A tile
+  steps to `--tile-face-hover` with a `--btn-edge-strong` keyline; a text
+  toggle gains the `--btn-face` wash; the accent never goes on a hovered label.
+  The theme sweep's `hover` channel holds the face step to 1.15 (`.btn`'s own
+  hover bar) and the hovered label and edge to their usual floors on all 20.
 - **Secondary text is `--text-meta`, not `--text-dim`.** Ages, counts and tag
   words in a row are 10.5–11.5px and answer to 4.5:1; `--text-dim` misses that
   on solar, sepia, nord and bloom. `--text-dim` stays for what it was tuned for.
@@ -396,11 +406,12 @@ directory move passes CI while silently removing enforcement.
   padding — it drifts the instant a font size or line-height changes (that is
   what twice broke the sidebar/file-input alignment). Bands that sit at the
   same vertical position across the sidebar/main divider share a height so
-  their content lines up by construction: the file-slots row and EVERY sidebar
-  section header add `.band-row` (height `--band-row`), so the headers all
-  match each other and the first lines up with the file inputs. Controls
-  sharing a band row must be
-  equal-height flex-centred boxes.
+  their content lines up by construction. Every sidebar section header and the
+  snippet document's Content bar add `.band-row` (`--band-row`); the file-slots
+  row and the snippet document head add `.head-band` (`--head-band`, the
+  sidebar's search band less the tab strip), so both lines run straight across
+  the divider. Controls sharing a band row must be equal-height flex-centred
+  boxes.
 - **Icons are SVG, never Unicode glyphs.** A symbol like ◈ / ⧉ / 🔒 tofus into a
   `[]` box on any font that lacks it, which kept happening. Every icon comes
   from `<AppIcon name="…" />`, whose geometry lives in `src/renderer/src/icons.js`

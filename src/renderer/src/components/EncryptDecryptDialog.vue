@@ -1,4 +1,6 @@
 <script setup>
+import { TOOL_DIALOG_KEY, TOOL_DIALOG_SIZE } from '../utils/tools'
+import { useToolDraft } from '../composables/useToolDraft'
 import { ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -12,7 +14,7 @@ const store = useDiffStore()
 
 const ui = useUiStore()
 const settings = useSettingsStore()
-const input = ref('')
+const input = useToolDraft('crypt.input')
 const { onDropFile } = useFileTextDrop((text) => {
   input.value = text
 })
@@ -95,13 +97,12 @@ function close() {
 
 <template>
   <BaseDialog
-    width="560px"
     resizable
     close-on-backdrop
-    :initial-size="settings.dialogSize('encrypt')"
+    :initial-size="settings.dialogSize(TOOL_DIALOG_KEY) ?? TOOL_DIALOG_SIZE"
     :title="$t('encryptDecryptDialog.encryptDecryptText')"
     @close="close"
-    @resize="(s) => settings.setDialogSize('encrypt', s)"
+    @resize="(s) => settings.setDialogSize(TOOL_DIALOG_KEY, s)"
   >
     <p class="dialog-note">
       {{ $t('encryptDecryptDialog.localOnlyThePassphraseAnd') }}

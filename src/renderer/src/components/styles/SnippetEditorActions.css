@@ -1,7 +1,3 @@
-/* Action-row styles, moved here with the buttons they belong to. */
-.spacer {
-  flex: 1;
-}
 /* Copy acknowledgement: a brief success tint so the click clearly landed. */
 .btn.copied {
   color: var(--success-text);

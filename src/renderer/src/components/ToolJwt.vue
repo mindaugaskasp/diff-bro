@@ -3,7 +3,8 @@
 // Decodes header + payload, humanizes the time claims (iat/nbf/exp), and flags
 // the alg + expiry. Decode only — the signature is never verified. Pure logic in
 // utils/jwt.
-import { computed, ref } from 'vue'
+import { useToolDraft } from '../composables/useToolDraft'
+import { computed } from 'vue'
 import { parseJwt, jwtClaims } from '../utils/jwt'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
@@ -11,7 +12,7 @@ import { useCopyFeedback } from '../composables/useCopyFeedback'
 
 defineProps({ compact: { type: Boolean, default: false } })
 
-const input = ref('')
+const input = useToolDraft('jwt.input')
 const empty = computed(() => !input.value.trim())
 const parsed = computed(() => parseJwt(input.value))
 const ok = computed(() => !empty.value && !parsed.value.error)

@@ -287,6 +287,8 @@ export async function pickTag(page, name) {
   await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
 }
 
+export const docActions = (page) => page.locator('#toolbar-doc-actions')
+
 // It re-titles itself (New / Edit / Snippet); only the active tab's is visible.
 export const snippetDoc = (page) => page.locator('.snippet-doc:visible')
 

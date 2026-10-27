@@ -31,11 +31,13 @@
   /* Vertical band rhythm. A "band" is a full-width horizontal strip (the file
      slots row, a section header, the toolbar) that vertically centers its
      content with flexbox — never fake-aligned with top padding. --band-row is
-     the shared height of the row bands: the file-slots row and EVERY sidebar
-     section header. One height means the first header lines up with the file
-     inputs across the divider, and all the section headers match each other.
-     See .band in ui.css. */
+     the shared height of every sidebar section header and the snippet
+     document's Content bar, so they line up across the divider. See .band in
+     ui.css. */
   --band-row: 52px;
+  /* The sidebar's search band (80) less the tab strip (31): a document head and
+     the file-slots row end on the same line as that band. */
+  --head-band: 49px;
   /* Spacing rhythm. Prefer these over ad-hoc pixel padding so panels and
      buttons share one rhythm and never drift apart. */
   --space-1: 4px;
@@ -169,6 +171,7 @@
   --editor-gutter: color-mix(in srgb, var(--bg) 60%, var(--bg-panel));
   --line: color-mix(in srgb, var(--text) 12%, var(--bg-panel));
   --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
+  --tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text));
   --hue-diff: #c2410c;
   --hue-snippet: #7c4dbe;
   --hue-received: #2a74b8;

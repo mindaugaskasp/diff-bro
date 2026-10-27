@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel, pickTag } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, pickTag, docActions } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -33,7 +33,7 @@ async function saveTaggedSnippet(page, name, tag) {
   await page.keyboard.type('seeded body')
   await editor.getByPlaceholder('add a tag…').fill(tag)
   await editor.getByPlaceholder('add a tag…').press('Enter')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.locator('.snippets-section .row', { hasText: name })).toBeVisible()
   await expect(editor).toBeHidden()
 }

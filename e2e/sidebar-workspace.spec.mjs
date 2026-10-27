@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
 
 const rail = (page) => page.getByRole('navigation', { name: 'Sidebar' })
 const railItem = (page, name) => rail(page).getByRole('button', { name: new RegExp(`^${name}`) })
@@ -73,7 +73,7 @@ test('Home lists a newly created snippet under Today', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Fresh on Home')
   await editor.locator('.editor').click()
   await page.keyboard.type('body')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
   await railItem(page, 'Home').click()
@@ -98,7 +98,7 @@ async function newSnippet(page, name) {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('body')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }
 

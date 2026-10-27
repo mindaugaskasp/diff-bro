@@ -4,6 +4,13 @@
 import { useDiffStore } from '../../stores/diffStore'
 import { useEmailStore } from '../email'
 import { t } from '../../i18n'
+import { MAX_KEY_NAME } from '../../../../shared/keyName'
+
+const KEY_NAME_NOTICES = {
+  'name-too-long': () => t('shareNotices.keyNameTooLong', { max: MAX_KEY_NAME }),
+  'name-taken': () => t('shareNotices.keyNameTaken'),
+  'name-empty': () => t('keyName.empty')
+}
 
 const pendingFrom = (res, source) => ({
   key: res.key,
@@ -29,6 +36,13 @@ export const keyExchangeActions = {
     else if (res?.error) diff.showNotice(t('shareNotices.keyEmailFailed'))
   },
 
+  /** @returns {boolean} whether the error was about the key's name, and said */
+  noticeKeyName(error) {
+    const notice = KEY_NAME_NOTICES[error]
+    if (notice) useDiffStore().showNotice(notice())
+    return !!notice
+  },
+
   // Asked for outright, so a miss is said aloud rather than opening a file picker.
   async pasteTrustedKey() {
     const peeked = await window.api.peekClipboardKey()
@@ -38,7 +52,7 @@ export const keyExchangeActions = {
     }
     const diff = useDiffStore()
     if (peeked?.error === 'own-key') diff.showNotice(t('shareNotices.thatsYourOwnKey'))
-    else diff.showNotice(t('shareNotices.noKeyOnClipboard'))
+    else if (!this.noticeKeyName(peeked?.error)) diff.showNotice(t('shareNotices.noKeyOnClipboard'))
   },
 
   // Pick a key, clipboard first: a key copied out of a chat app is offered —
@@ -56,6 +70,8 @@ export const keyExchangeActions = {
       this.pendingTrustedKey = pendingFrom(res)
     } else if (res.error === 'own-key') {
       diff.showNotice(t('shareNotices.thatsYourOwnKey'))
+    } else if (this.noticeKeyName(res.error)) {
+      return
     } else if (res.error) {
       diff.showNotice(t('shareNotices.thatFileIsNotA'))
     }

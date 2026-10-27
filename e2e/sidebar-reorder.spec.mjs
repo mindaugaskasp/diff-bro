@@ -7,7 +7,8 @@ import {
   launchApp,
   openMenu,
   openNewSnippet,
-  showPanel
+  showPanel,
+  docActions
 } from './fixtures.mjs'
 
 // Sidebar rows rearrange by dragging one onto another. The lists were ordered
@@ -46,7 +47,7 @@ async function seedSnippets(page, labels) {
     await editor.getByPlaceholder('Snippet name…').fill(label)
     await editor.locator('.editor').click()
     await page.keyboard.type(`body of ${label}`)
-    await editor.getByRole('button', { name: 'Save', exact: true }).click()
+    await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
     await expect(editor).toBeHidden()
   }
   // Newest leads, so they come back in reverse of the order they were made.

@@ -44,8 +44,7 @@ const actionState = computed(() => ({
   isSavedDiff: store.isSavedDiff,
   isPaste: store.mode === 'paste',
   canExportImage: imageExport.canExportImage,
-  isSpreadsheet: store.isSpreadsheet,
-  isSnippet: onSnippet.value
+  isSpreadsheet: store.isSpreadsheet
 }))
 </script>
 
@@ -68,7 +67,7 @@ const actionState = computed(() => ({
           {{ $t('merge.conflictsLeft', conflicts.remaining) }}
         </button>
         <button
-          v-if="zoomed"
+          v-if="zoomed && !onSnippet"
           class="btn btn-sm zoom-level"
           :data-tip="$t('appToolbar.tips.resetZoom', { mod: MOD })"
           :aria-label="$t('appToolbar.resetZoom')"
@@ -88,10 +87,11 @@ const actionState = computed(() => ({
           <AppIcon name="maximize" />
           {{ $t('appToolbar.presentation') }}
         </button>
-        <ViewOptionsMenu :disabled="onSnippet" />
+        <ViewOptionsMenu v-if="!onSnippet" />
       </div>
       <span class="divider" />
-      <ToolbarOverflow :state="actionState" />
+      <div id="toolbar-doc-actions" class="group doc-actions" />
+      <ToolbarOverflow v-if="!onSnippet" :state="actionState" />
     </div>
   </header>
 </template>

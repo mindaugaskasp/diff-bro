@@ -2,6 +2,7 @@
 // The Epoch / Date tool panel — hosted in both the Tools dialog and the Quick
 // Look launcher. Bidirectional: pick a date → epoch, and an epoch → readable
 // rows (ISO / relative / local). Pure conversions live in utils/epoch.js.
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { nowEpoch, epochRows, pickToEpoch, nowLocalInput } from '../utils/epoch'
 import { isDarkTheme } from '../utils/themes'
@@ -31,7 +32,7 @@ const ZONES = [
 const unit = ref('seconds')
 const tz = ref('UTC')
 const picked = ref('')
-const epochIn = ref('')
+const epochIn = useToolDraft('epoch.input')
 
 const live = ref(nowEpoch(unit.value))
 const timer = setInterval(() => (live.value = nowEpoch(unit.value)), 1000)

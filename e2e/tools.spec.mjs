@@ -1,4 +1,4 @@
-import { test, expect, openMenu } from './fixtures.mjs'
+import { test, expect, openMenu, docActions } from './fixtures.mjs'
 
 // The Tools dialogs are pure-util workbenches opened from the Tools menu. Their
 // utils are unit-tested; a launch proves the menu → dialog → util → output
@@ -54,11 +54,11 @@ test('a tool output is kept as a snippet, named by the user', async ({ page }) =
   await expect(tool).toHaveCount(0)
   const editor = page.getByRole('region', { name: 'New Snippet' })
   await expect(editor).toBeVisible()
-  await expect(editor.getByPlaceholder('Snippet name…')).toHaveValue('')
+  await expect(editor.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('')
   await expect(editor.locator('.editor')).toContainText('a2VlcCBtZQ==')
 
-  await editor.getByPlaceholder('Snippet name…').fill('Encoded thing')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await editor.getByRole('textbox', { name: 'Name', exact: true }).fill('Encoded thing')
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.locator('.snippets-section .row', { hasText: 'Encoded thing' })).toBeVisible()
 })
 

@@ -44,28 +44,79 @@ function fixtureFiles() {
   }
 }
 
-test('a file opened from the OS fills the left pane, and a second joins it on the right', async () => {
+const newSnippet = (page) => page.getByRole('region', { name: 'New Snippet' })
+const comparePrompt = (page) => page.getByRole('dialog', { name: /^Compare with/ })
+const tabCount = (page) => page.locator('.diff-tabs .tab').count()
+
+async function launchWithFiles() {
   const userDataDir = freshUserDataDir()
   const files = fixtureFiles()
   const app = await launchApp(userDataDir)
   const page = await firstReadyPage(app)
+  const done = async () => {
+    await app.close()
+    rmSync(files.dir, { recursive: true, force: true })
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+  return { userDataDir, files, page, done }
+}
+
+test('one file opened from the OS opens as an unsaved snippet, not half a comparison', async () => {
+  const { userDataDir, files, page, done } = await launchWithFiles()
 
   await openWith(userDataDir, [files.alpha])
-  await expect(page.locator('.diff-tabs')).toBeVisible()
-  await expect(page.getByText('alpha.txt').first()).toBeVisible()
+  const doc = newSnippet(page)
+  await expect(doc).toBeVisible()
+  await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('alpha.txt')
+  await expect(doc.locator('.view-lines')).toContainText('two')
+  await expect(doc.locator('.editor-status')).toContainText('not in your library yet')
+  await expect(page.locator('.waiting')).toHaveCount(0)
+  await done()
+})
 
-  // The SECOND file joins the first rather than taking a tab of its own.
+test('a second file asks first; Compare puts the first on the left', async () => {
+  const { userDataDir, files, page, done } = await launchWithFiles()
+
+  await openWith(userDataDir, [files.alpha])
+  await expect(newSnippet(page)).toBeVisible()
   await openWith(userDataDir, [files.beta])
-  await expect(page.getByText('beta.txt').first()).toBeVisible()
-  expect(await page.locator('.diff-tabs .tab').count()).toBe(1)
 
-  // The third starts the cycle again.
-  await openWith(userDataDir, [files.gamma])
-  await expect.poll(async () => page.locator('.diff-tabs .tab').count(), { timeout: 8000 }).toBe(2)
+  const prompt = comparePrompt(page)
+  await expect(prompt).toContainText('alpha.txt')
+  await prompt.getByRole('button', { name: 'Compare', exact: true }).click()
 
-  await app.close()
-  rmSync(files.dir, { recursive: true, force: true })
-  rmSync(userDataDir, { recursive: true, force: true })
+  await expect(page.locator('.slot[data-side="left"]')).toContainText('alpha.txt')
+  await expect(page.locator('.slot[data-side="right"]')).toContainText('beta.txt')
+  expect(await tabCount(page)).toBe(2)
+  await done()
+})
+
+test('dismissing the prompt opens the second file in its own tab', async () => {
+  const { userDataDir, files, page, done } = await launchWithFiles()
+
+  await openWith(userDataDir, [files.alpha])
+  await expect(newSnippet(page)).toBeVisible()
+  await openWith(userDataDir, [files.beta])
+  await expect(comparePrompt(page)).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await expect(newSnippet(page).getByPlaceholder('Snippet name…')).toHaveValue('beta.txt')
+  expect(await tabCount(page)).toBe(2)
+  await done()
+})
+
+test('with the first file closed, a second opens without asking', async () => {
+  const { userDataDir, files, page, done } = await launchWithFiles()
+
+  await openWith(userDataDir, [files.alpha])
+  await expect(newSnippet(page)).toBeVisible()
+  await page.getByRole('button', { name: /^Close alpha\.txt/ }).click()
+  await expect(newSnippet(page)).toHaveCount(0)
+
+  await openWith(userDataDir, [files.beta])
+  await expect(newSnippet(page).getByPlaceholder('Snippet name…')).toHaveValue('beta.txt')
+  await expect(comparePrompt(page)).toHaveCount(0)
+  await done()
 })
 
 // Two files at once produced "Unknown command: <second path>" and exit(1),
@@ -98,27 +149,6 @@ test('the app still starts when handed a path, rather than treating it as a comm
   // Three files: two tabs, and the window is still alive to show them.
   await expect.poll(async () => page.locator('.diff-tabs .tab').count(), { timeout: 8000 }).toBe(2)
   expect(await slotNames(page)).toBeTruthy()
-
-  await app.close()
-  rmSync(files.dir, { recursive: true, force: true })
-  rmSync(userDataDir, { recursive: true, force: true })
-})
-
-test('a single file opened from the OS shows its contents beside a waiting right pane', async () => {
-  const userDataDir = freshUserDataDir()
-  const files = fixtureFiles()
-  const app = await launchApp(userDataDir)
-  const page = await firstReadyPage(app)
-
-  await openWith(userDataDir, [files.alpha])
-  const loaded = page.locator('.wait-pane.loaded')
-  await expect(loaded.locator('.monaco-editor .view-lines')).toContainText('two')
-  const waiting = page.locator('.wait-pane.open')
-  await expect(waiting).toContainText('Waiting for file')
-
-  const [l, r] = [await loaded.boundingBox(), await waiting.boundingBox()]
-  expect(l.x + l.width).toBeLessThanOrEqual(r.x + 1)
-  expect(l.height).toBeGreaterThan(200)
 
   await app.close()
   rmSync(files.dir, { recursive: true, force: true })

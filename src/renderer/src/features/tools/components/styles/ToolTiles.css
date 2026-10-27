@@ -24,6 +24,9 @@
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--hue) 72%, var(--text));
 }
+.tt-star {
+  color: var(--pin-ink);
+}
 .tt-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

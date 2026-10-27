@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
 
 // A URL snippet is a saved link with a one-click open. It is the one snippet
 // type that never leaves the machine, so a shared bundle can never carry a link
@@ -10,7 +10,7 @@ async function newUrlSnippet(page, name, url) {
   await editor.locator('select').selectOption('url')
   await editor.locator('.editor').click()
   await page.keyboard.type(url)
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }
 

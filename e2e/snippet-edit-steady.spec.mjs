@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, snippetDoc, editInPlace } from './fixtures.mjs'
+import { test, expect, openNewSnippet, snippetDoc, editInPlace, docActions } from './fixtures.mjs'
 
 const boxes = (doc) =>
   doc.locator('.tag-row .tag-chip, .tag-row .add-pill').evaluateAll((els) =>
@@ -18,7 +18,7 @@ test('entering edit mode moves and resizes no tag pill', async ({ page }) => {
   }
   await editor.locator('.editor').click()
   await page.keyboard.type('body')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
   const doc = snippetDoc(page)

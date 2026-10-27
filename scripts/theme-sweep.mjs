@@ -12,11 +12,8 @@
 //
 // Runs INSIDE the container via `make theme-sweep`, for the same reason as the
 // screenshots: Playwright's _electron cannot launch this Electron on macOS.
-//
-// PNGs land in docs/screenshots/themes/<surface>-<theme>.png so a human can
-// still look; the exit code is what gates.
 
-import { mkdtempSync, mkdirSync, existsSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, existsSync, rmSync, writeFileSync } from 'node:fs'
 import { execFileSync, spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -30,7 +27,6 @@ import { THEMES as ALL_THEMES } from '../src/renderer/src/utils/themes.js'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
-const OUT = join(ROOT, 'docs/screenshots/themes')
 // The app's OWN Electron, the way the launcher would reach it — process.execPath
 // here is node, which would run the main bundle as a plain script.
 const ELECTRON = createRequire(import.meta.url)('electron')
@@ -53,6 +49,8 @@ const DIM = 3
 // hard rule only on contrast and beacon. Holding it to DIM here would fail
 // twelve themes for a line that is doing exactly its job.
 const SEPARATOR = 1.11
+// The resting-to-hovered face step; the bar is .btn's own shipped hover (1.16 on sepia).
+const HOVER_STEP = 1.15
 
 async function setOnboarding(page, state) {
   await page.evaluate((s) => globalThis.api.storeSave('onboarding', JSON.stringify(s)), state)
@@ -68,7 +66,7 @@ async function showPanel(page, panel) {
 // composites the translucent layers back down, because a chip on a card on a
 // dialog is three layers deep and only the composite is what the eye sees.
 // Passed as a function, never eval'd — rule 8.
-function measureProbes(selectors) {
+function measureProbes({ selectors, baseline = {} }) {
   // Chromium resolves color-mix() to `color(srgb 0.2 0.7 0.3)` — 0-1 floats —
   // rather than rgb() with 0-255 ints, by version. Reading those as 0-255 makes
   // every mixed colour look near-black, which is exactly the false failure this
@@ -107,7 +105,7 @@ function measureProbes(selectors) {
   }
   // An underline drawn as an inset box-shadow: its colour leads the computed value.
   const shadowColour = (cs) => parse(cs.boxShadow.match(/^(rgba?|color)\([^)]*\)/)?.[0] ?? '')
-  const measure = (selector) => {
+  const measure = (key, selector) => {
     const el = document.querySelector(selector)
     if (!el) return null
     const cs = getComputedStyle(el)
@@ -120,10 +118,12 @@ function measureProbes(selectors) {
       text: ratio(over(parse(cs.color), surface), surface),
       border: against(hasBorder ? parse(cs.borderTopColor) : []),
       shadow: against(shadowColour(cs)),
-      outline: against(cs.outlineStyle === 'none' ? [] : parse(cs.outlineColor))
+      outline: against(cs.outlineStyle === 'none' ? [] : parse(cs.outlineColor)),
+      face: surface,
+      step: baseline[key] ? ratio(baseline[key], surface) : null
     }
   }
-  return Object.fromEntries(Object.entries(selectors).map(([k, sel]) => [k, measure(sel)]))
+  return Object.fromEntries(Object.entries(selectors).map(([k, sel]) => [k, measure(k, sel)]))
 }
 
 const realKey = () => ({
@@ -191,6 +191,46 @@ async function clearComparison(page) {
     await backdrop.first().waitFor({ state: 'detached' })
   }
   await page.locator('.monaco-diff-editor, .waiting').waitFor({ state: 'detached' })
+}
+
+async function openWithFile(userDataDir, path) {
+  const env = { ...process.env }
+  delete env.ELECTRON_RUN_AS_NODE
+  await new Promise((resolve) => {
+    const child = spawn(ELECTRON, [MAIN, `--user-data-dir=${userDataDir}`, path], {
+      env,
+      stdio: 'ignore'
+    })
+    child.on('exit', resolve)
+    setTimeout(resolve, 8000)
+  })
+}
+
+let openedFiles = null
+function openedFixtures() {
+  if (openedFiles) return openedFiles
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-sweep-open-'))
+  openedFiles = { dir, first: join(dir, 'config.yaml'), second: join(dir, 'config.prod.yaml') }
+  writeFileSync(openedFiles.first, 'service:\n  port: 8080\n')
+  writeFileSync(openedFiles.second, 'service:\n  port: 443\n')
+  return openedFiles
+}
+
+async function closeOpenedTabs(page) {
+  const opened = page.getByRole('region', { name: 'New Snippet' })
+  while (await opened.count()) {
+    await page.locator('.diff-tabs .tab.active .tab-close').click()
+    const ask = page.getByRole('dialog', { name: 'Close snippet?' })
+    if (
+      await ask.waitFor({ timeout: 1500 }).then(
+        () => true,
+        () => false
+      )
+    ) {
+      await ask.getByRole('button', { name: 'Close it' }).click()
+    }
+    await page.waitForTimeout(150)
+  }
 }
 
 // Each surface: how to open it, and the pairs that carry meaning once open.
@@ -482,12 +522,13 @@ const SURFACES = [
       await showPanel(page, 'snippets')
       await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
       const doc = page.locator('.snippet-doc:visible')
-      const history = doc.getByRole('button', { name: 'History', exact: true })
+      const actions = page.locator('#toolbar-doc-actions')
+      const history = actions.getByRole('button', { name: 'History', exact: true })
       if (!(await history.isVisible())) {
         await doc.locator('.editor').click()
         await page.keyboard.press('ControlOrMeta+End')
         await page.keyboard.type(' ')
-        await doc.getByRole('button', { name: 'Save', exact: true }).click()
+        await actions.getByRole('button', { name: 'Save', exact: true }).click()
       }
       await history.click()
       await page.locator('.hist-version').last().click()
@@ -612,7 +653,7 @@ const SURFACES = [
       await page.getByRole('button', { name: 'Compare', exact: true }).click()
       await page.locator('.deps-row').first().waitFor()
     },
-    close: (page) => page.getByRole('button', { name: 'Clear', exact: true }).click(),
+    close: clearComparison,
     probes: {
       'package name': ['.deps-name', TEXT],
       'old version': ['.deps-move .del', TEXT],
@@ -659,6 +700,32 @@ const SURFACES = [
       'typed name': ['.ghost-field input', TEXT],
       // Hint ink, so the 3:1 floor --text-dim already carries elsewhere.
       'name ghost': ['.name-ghost', DIM]
+    }
+  },
+  {
+    name: 'snippet-head-row',
+    // Applied tag labels are oklch(), which this parser cannot read; check:themes holds them.
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      const doc = page.getByRole('region', { name: 'New Snippet' })
+      await doc.getByPlaceholder('Snippet name…').fill('Standup {{today}}')
+      const input = doc.getByRole('textbox', { name: 'Add tag' })
+      for (const tag of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot']) {
+        await input.fill(`${tag}-sweep-tag`)
+        await input.press('Enter')
+      }
+      await doc.locator('.more-chip').click()
+      await page.locator('.tag-more-pop').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await closeSnippetTab(page)
+    },
+    probes: {
+      'saves-as hint': ['.name-templates .preview', DIM],
+      '+N label': ['.more-chip', TEXT],
+      '+N keyline': ['.more-chip', DIM, 'border']
     }
   },
   {
@@ -733,12 +800,15 @@ const SURFACES = [
   {
     name: 'presentation-exit',
     open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
       await page.getByTestId('toolbar-present').click()
       await page.locator('.present-exit').waitFor()
     },
     close: async (page) => {
       await page.keyboard.press('Escape')
       await page.locator('.present-exit').waitFor({ state: 'detached' })
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
     },
     probes: {
       'exit label at rest': ['.present-exit', TEXT]
@@ -756,7 +826,9 @@ const SURFACES = [
       'other label': ['.whose-opt:not(.on)', TEXT],
       'chosen underline': ['.whose-opt.on', DIM, 'shadow'],
       'count on the chosen': ['.whose-opt.on .count-chip', TEXT],
-      'count on the other': ['.whose-opt:not(.on) .count-chip', TEXT]
+      'count on the other': ['.whose-opt:not(.on) .count-chip', TEXT],
+      'toggle wash, hovered': ['.whose-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
+      'toggle label, hovered': ['.whose-opt:not(.on)', TEXT, 'text', 'hover']
     }
   },
   {
@@ -778,7 +850,43 @@ const SURFACES = [
       'group label': ['.tt-head', TEXT],
       'glyph on its well': ['.tt-tile .glyph-well', TEXT],
       'star, pinned': ['.tt-pin.on', DIM],
+      'tile face, hovered': ['.tt-tile', HOVER_STEP, 'step', 'hover'],
+      'tile edge, hovered': ['.tt-tile', DIM, 'border', 'hover'],
+      'Pinned group star': ['.tt-star', DIM],
       'tile edge': ['.tt-tile', SEPARATOR, 'border']
+    }
+  },
+  {
+    name: 'diff-row-more',
+    open: async (page) => {
+      await page.locator('.diff-tabs .add').click()
+      await page.getByRole('button', { name: 'Paste mode' }).click()
+      await page.getByPlaceholder('Paste original text here').fill('before')
+      await page.getByPlaceholder('Paste changed text here').fill('after')
+      await page.getByRole('button', { name: 'Compare', exact: true }).click()
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      const save = page.getByRole('dialog', { name: 'Save diff' })
+      await save.getByLabel('Name', { exact: true }).fill('Sweep more menu')
+      await save.getByRole('button', { name: 'Save', exact: true }).click()
+      await showPanel(page, 'diffs')
+      const row = page.locator('li.diff', { hasText: 'Sweep more menu' })
+      await row.hover()
+      await row.getByRole('button', { name: 'More actions' }).click()
+      await page.locator('.ctx').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      const row = page.locator('li.diff', { hasText: 'Sweep more menu' })
+      await row.hover()
+      await row.getByRole('button', { name: 'Delete now' }).click()
+      const ask = page.getByRole('dialog').filter({ hasText: 'Sweep more menu' })
+      await ask.getByRole('button', { name: /^Delete/ }).click()
+      await row.waitFor({ state: 'detached' })
+      await clearComparison(page)
+    },
+    probes: {
+      'menu item': ['.ctx .ctx-item', TEXT],
+      'menu keyline': ['.ctx', SEPARATOR, 'border']
     }
   },
   {
@@ -937,6 +1045,22 @@ const SURFACES = [
     }
   },
   {
+    name: 'toolbar-snippet-actions',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('#toolbar-doc-actions .btn-primary').waitFor()
+    },
+    close: async (page) => {
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
+      await page.locator('#toolbar-doc-actions .btn').first().waitFor({ state: 'detached' })
+    },
+    probes: {
+      'action, resting': ['#toolbar-doc-actions .btn:not(:disabled):not(.btn-primary)', TEXT],
+      'save, nothing to save': ['#toolbar-doc-actions .btn-primary:disabled', DIM]
+    }
+  },
+  {
     name: 'view-menu',
     // The panel this spec added: a surface that has to LIFT off the toolbar on
     // all 14, on a shadow that does not exist on seven of them.
@@ -975,14 +1099,14 @@ const SURFACES = [
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
       await editor.locator('.editor').click()
       await page.keyboard.type('sweep')
-      await editor.getByRole('button', { name: 'Save', exact: true }).click()
+      await page
+        .locator('#toolbar-doc-actions')
+        .getByRole('button', { name: 'Save', exact: true })
+        .click()
       await page.locator('.row.is-new .new-badge').waitFor()
       await page.waitForTimeout(4200)
     },
-    // DELETE the row rather than merely retiring it. A sweep that leaves its
-    // scratch snippet behind grows the sidebar by one per theme, and every other
-    // surface's screenshot then differs from its baseline for no reason — which
-    // is how one run dirtied 98 committed PNGs.
+    // Delete, not retire: a leftover row shifts every later surface.
     close: async (page) => {
       await page.locator('.diff-tabs .tab.active .tab-close').click()
       const row = page.locator('.row.is-new')
@@ -1155,10 +1279,39 @@ const SURFACES = [
       // Scoped to the open dropdown: the loaded diff can also say "JSON".
       await page.locator('.dropdown').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
+      await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },
     close: (page) => page.keyboard.press('Escape'),
     probes: {
-      'tool description': ['.tt-desc', TEXT]
+      'tool description': ['.tt-desc', TEXT],
+      'segment wash, hovered': ['.seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
+      'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover'],
+      'input key': ['.tjs-in-field .syn-property', TEXT],
+      'output key': ['.tjs-text .syn-property', TEXT],
+      'output number': ['.tjs-text .syn-number', TEXT]
+    }
+  },
+  {
+    name: 'open-with-prompt',
+    open: async (page, { userDataDir }) => {
+      const files = openedFixtures()
+      await openWithFile(userDataDir, files.first)
+      await page.bringToFront()
+      await page.locator('.es-opened').waitFor({ timeout: 20000 })
+      await openWithFile(userDataDir, files.second)
+      await page.getByRole('dialog', { name: /^Compare with/ }).waitFor({ timeout: 20000 })
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: /^Compare with/ }).waitFor({ state: 'detached' })
+      await closeOpenedTabs(page)
+    },
+    probes: {
+      'opened-from line': ['.es-opened', TEXT],
+      'prompt sentence': ['.dialog-note', TEXT],
+      'side label': ['.owp-label', TEXT],
+      'side name': ['.owp-name', TEXT],
+      'side keyline': ['.owp-side', SEPARATOR, 'border']
     }
   }
 ]
@@ -1201,16 +1354,31 @@ const chosenSurfaces = () => {
   return only?.length ? SURFACES.filter((s) => only.includes(s.name)) : SURFACES
 }
 
+async function measureHovered(page, what, selector) {
+  await page.mouse.move(0, 0)
+  await page.waitForTimeout(200)
+  const rest = (await page.evaluate(measureProbes, { selectors: { [what]: selector } }))[what]
+  if (!rest) return null
+  await page.locator(selector).first().hover()
+  await page.waitForTimeout(200)
+  const baseline = { [what]: rest.face }
+  const got = await page.evaluate(measureProbes, { selectors: { [what]: selector }, baseline })
+  await page.mouse.move(0, 0)
+  return got[what]
+}
+
 async function sweepSurface({ app, main, surface, theme, findings, userDataDir }) {
   const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
   await surface.open(page, { userDataDir, app })
   await page.waitForTimeout(120)
-  await page.screenshot({ path: join(OUT, `${surface.name}-${theme.toLowerCase()}.png`) })
 
-  const selectors = Object.fromEntries(
-    Object.entries(surface.probes).map(([what, [sel]]) => [what, sel])
-  )
-  const probe = await page.evaluate(measureProbes, selectors)
+  const entries = Object.entries(surface.probes)
+  const resting = entries.filter(([, probe]) => probe[3] !== 'hover')
+  const selectors = Object.fromEntries(resting.map(([what, [sel]]) => [what, sel]))
+  const probe = await page.evaluate(measureProbes, { selectors })
+  for (const [what, [sel]] of entries.filter(([, p]) => p[3] === 'hover')) {
+    probe[what] = await measureHovered(page, what, sel)
+  }
 
   for (const [what, got] of Object.entries(probe)) {
     if (!got) continue
@@ -1226,7 +1394,6 @@ async function main() {
     console.error(`Build missing (${MAIN}). Run 'npm run build' first.`)
     process.exit(1)
   }
-  mkdirSync(OUT, { recursive: true })
   const userDataDir = mkdtempSync(join(tmpdir(), 'diffbro-sweep-'))
   const { fingerprint } = await import(pathToFileURL(join(ROOT, 'src/main/sealing.js')).href)
   // Seed the trust store on disk before launch — the manager reads it on open.
@@ -1268,7 +1435,7 @@ async function main() {
     await app.close()
     // The two scratch repositories the merge surfaces build, which are real
     // working trees and not worth leaving in the temp dir.
-    for (const dir of [conflicted?.dir, ...walked]) {
+    for (const dir of [conflicted?.dir, openedFiles?.dir, ...walked]) {
       if (dir) rmSync(dir, { recursive: true, force: true })
     }
   }
@@ -1299,7 +1466,6 @@ function report(findings) {
   console.log('')
   if (!failed.length) {
     console.log(`✓ theme sweep ok — ${findings.length} measurements across ${THEMES.length} themes`)
-    console.log(`  images: docs/screenshots/themes/`)
     return
   }
   console.log(`✗ theme sweep: ${failed.length} measurement(s) under floor:`)

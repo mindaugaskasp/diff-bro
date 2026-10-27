@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, docActions } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -35,7 +35,7 @@ async function addSnippet(page, name) {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('body text')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }
 

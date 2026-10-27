@@ -527,8 +527,7 @@
       "comparePasted": "Compare pasted text ({mod}+T)",
       "backToFiles": "Back to comparing files ({mod}+T)",
       "resetZoom": "The comparison is zoomed — click to return it to 100% ({mod}+0)",
-      "presentation": "Show just the comparison, full screen (F5). Esc leaves it",
-      "forComparisons": "For comparisons"
+      "presentation": "Show just the comparison, full screen (F5). Esc leaves it"
     },
     "why": {
       "split": "Side by side applies to text and diagram comparisons",
@@ -807,7 +806,23 @@
     "shareStepOne": "Share diff — step 1 of 2: save it",
     "nextChooseRecipient": "Next: choose recipient"
   },
+  "openWith": {
+    "prompt": {
+      "title": "Compare with {name}?",
+      "body": "You opened {next} while {previous} is open.",
+      "left": "Left",
+      "right": "Right",
+      "newTab": "Open as new tab",
+      "compare": "Compare"
+    },
+    "openedFrom": "Opened from {folder} · not in your library yet"
+  },
+  "showInFolder": {
+    "label": "Show in folder",
+    "tip": "Show the encrypted file that holds your snippets"
+  },
   "savedDiffRow": {
+    "moreActions": "More actions",
     "exportAsImage": "Export as image",
     "editTags": "Edit tags",
     "shareAsSealedFile": "Share as sealed file",
@@ -1134,6 +1149,8 @@
     "removeTip": "Remove {tag}",
     "removeTagLabel": "Remove tag {tag}",
     "addTag": "Add tag",
+    "moreTags": "{count} more tags",
+    "allTags": "All tags",
     "addPlaceholder": "add a tag…",
     "suggestions": "Tag suggestions"
   },
@@ -1508,6 +1525,8 @@
     "couldNotSaveTheImage": "Could not save the image."
   },
   "shareNotices": {
+    "keyNameTooLong": "That key's name is longer than {max} characters, so it wasn't added.",
+    "keyNameTaken": "Another key already has that name.",
     "noKeyOnClipboard": "The clipboard doesn't hold a public key — copy theirs, then Paste key.",
     "nothingToShareYetLoad": "Nothing to share yet — load two files or paste some text first.",
     "thatIsNotAUsable": "That is not a usable email address — it was not saved. Check for a stray space or comma.",
@@ -1679,7 +1698,7 @@
     },
     "open": {
       "summary": "raise the app, optionally on a file",
-      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, that file fills the left side and waits for the right — the\nsame as `compare` with one path, under a name that reads like opening.\nFor two files at once, use `compare`."
+      "detail": "Brings Diff Bro to the front, starting it if it is not running.\n\nWith a file, it opens as an unsaved snippet you can read, edit or save —\nthe same as Open With. For two files at once, use `compare`."
     },
     "backup": {
       "summary": "write a passphrase-protected backup",
@@ -1757,6 +1776,7 @@
     "whose": "Whose diffs"
   },
   "toolGroups": {
+    "pinned": "Pinned",
     "encode": "Encode",
     "format": "Format",
     "generate": "Generate",
@@ -1819,6 +1839,14 @@
   },
   "presentation": {
     "exit": "Exit presentation mode"
+  },
+  "keyName": {
+    "counter": "{n} / {max}",
+    "empty": "Add a name first",
+    "tooLong": "Keep the name to {max} characters or fewer",
+    "taken": "You already have a key named “{name}”",
+    "renamedOnImport": "You already have a key named “{name}”, so this one is named “{suggested}”. Change it if you like.",
+    "alsoAContact": "One of your contacts is also called {name}"
   },
   "startSurface": {
     "title": "What are you comparing?",

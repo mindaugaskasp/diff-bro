@@ -4,6 +4,10 @@ import { openSavedDiff } from './useSavedDiffOpen'
 import { isSnippetDragType } from './useSnippetDrag'
 import { useShareStore } from '../features/share'
 import { t } from '../i18n'
+import { useCommands } from './useCommands'
+import { useTabsStore } from '../stores/tabsStore'
+import { isSnippetTab } from '../utils/tabs'
+import { opensDropAsSnippet } from '../utils/openWithRouting'
 
 // Load a dropped file's text into a tool input. getPathForFile registers the
 // path with main's read allowlist (src/main/files.js).
@@ -48,6 +52,14 @@ async function dropPaths(store, paths, targetSide) {
   if (keyPath) return useShareStore().receiveDroppedKey(keyPath)
   const sharedPath = paths.find((p) => p.toLowerCase().endsWith('.diffbro'))
   if (sharedPath) return useShareStore().receiveDroppedSharedDiff(sharedPath)
+  const asSnippet = opensDropAsSnippet({
+    count: paths.length,
+    targetSide,
+    hasLeft: !!store.left,
+    hasRight: !!store.right,
+    onSnippet: isSnippetTab(useTabsStore().active)
+  })
+  if (asSnippet) return useCommands().runCli({ name: 'open-with', files: paths })
   return store.dropFiles(paths, targetSide)
 }
 

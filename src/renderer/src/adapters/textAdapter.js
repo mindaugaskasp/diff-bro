@@ -42,18 +42,21 @@ const EXT_TO_LANGUAGE = {
   toml: 'ini'
 }
 
+/** @param {string} name @returns {string|undefined} the language its extension names */
+export const languageForName = (name) => EXT_TO_LANGUAGE[name.split('.').pop()?.toLowerCase() ?? '']
+
 export const textAdapter = {
   id: 'text',
   // Fallback adapter: matches everything.
   matches: () => true,
   toComparable(file) {
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
     // A known extension is authoritative. Otherwise — an extensionless file
     // (Dockerfile, Makefile, a shell script named `deploy`) or pasted text,
     // whose synthetic name carries no real extension — sniff the content so the
     // diff is still highlighted rather than dumped as plaintext.
     const language =
-      EXT_TO_LANGUAGE[ext] ?? detectSnippetLanguage(file.content?.slice(0, DETECT_LIMIT) ?? '')
+      languageForName(file.name) ??
+      detectSnippetLanguage(file.content?.slice(0, DETECT_LIMIT) ?? '')
     return { kind: 'text', text: file.content, language }
   },
   sameContent: (a, b) => a?.content === b?.content

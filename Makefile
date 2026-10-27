@@ -198,7 +198,7 @@ brew-cask: ## Regenerate the Homebrew cask for the current (or VERSION=x.y.z) re
 # --remote-debugging-port=0 flag Playwright passes; Linux Electron accepts it).
 # Builds first, seeds a demo library, walks each state — no manual interaction.
 # Images land on the host via the bind mount. SHOTS="name ..." for a subset.
-theme-sweep: up ## Measure a new surface across all 14 themes (contrast + screenshots)
+theme-sweep: up ## Measure every surface's contrast across all 20 themes
 	docker compose exec -T $(SERVICE) npm run build
 	docker compose exec -T $(SERVICE) node scripts/theme-sweep.mjs
 

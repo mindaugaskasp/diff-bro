@@ -28,6 +28,16 @@ const ALLOWED_STORES = new Set(STORE_NAMES)
 /** @param {unknown} name */
 export const isStoreName = (name) => typeof name === 'string' && ALLOWED_STORES.has(name)
 
+const REVEALABLE_STORES = new Set(['vault', 'snippets'])
+
+/**
+ * The store file Show in folder may select: only the two holding saved items.
+ * @param {unknown} name
+ * @returns {string|null}
+ */
+export const revealableStoreFile = (name) =>
+  typeof name === 'string' && REVEALABLE_STORES.has(name) ? `${name}.json` : null
+
 /**
  * Every file that makes up this install's data — moved together when the
  * location changes, so the folder is self-contained and portable. The stores

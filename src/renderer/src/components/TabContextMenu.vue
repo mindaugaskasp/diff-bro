@@ -52,5 +52,3 @@ onMounted(() => panel.value?.focus())
     </div>
   </div>
 </template>
-
-<style scoped src="./styles/TabContextMenu.css"></style>

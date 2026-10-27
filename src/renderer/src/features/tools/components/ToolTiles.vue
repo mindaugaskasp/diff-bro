@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useCommands } from '../../../composables/useCommands'
 import { arrayOfShape } from '../../../utils/props'
-import { TOOL_GROUPS } from '../../../utils/toolGroups'
+import { toolHue, toolTileGroups } from '../../../utils/toolGroups'
 import AppIcon from '../../../components/AppIcon.vue'
 import { useToolsStore } from '../toolsStore'
 
@@ -14,20 +14,16 @@ const props = defineProps({
 const store = useToolsStore()
 const { run } = useCommands()
 
-const groups = computed(() =>
-  TOOL_GROUPS.map((group) => ({
-    ...group,
-    tools: props.tools.filter((tool) => group.ids.includes(tool.id))
-  })).filter((group) => group.tools.length)
-)
+const groups = computed(() => toolTileGroups(props.tools, store.pinned))
 </script>
 
 <template>
   <div class="tool-tiles">
     <p v-if="!groups.length" class="tt-empty">{{ $t('tools.section.noToolsMatchTryRemoving') }}</p>
-    <section v-for="group in groups" :key="group.hue" class="tt-group">
+    <section v-for="group in groups" :key="group.key" class="tt-group">
       <h3 class="tt-head">
-        <span class="tt-dot glyph-well" :data-hue="group.hue" aria-hidden="true"></span>
+        <AppIcon v-if="group.key === 'pinned'" name="star-filled" class="tt-star" />
+        <span v-else class="tt-dot glyph-well" :data-hue="group.key" aria-hidden="true"></span>
         {{ $t(group.labelKey) }}
       </h3>
       <div class="tt-grid">
@@ -38,7 +34,9 @@ const groups = computed(() =>
             :data-tip="tool.descKey ? $t(tool.descKey) : tool.name"
             @click="run(tool.action)"
           >
-            <span class="glyph-well" :data-hue="group.hue"><AppIcon :name="tool.icon" /></span>
+            <span class="glyph-well" :data-hue="toolHue(tool.id)"
+              ><AppIcon :name="tool.icon"
+            /></span>
             <span class="row-2-name tt-name">{{ tool.name }}</span>
           </button>
           <button

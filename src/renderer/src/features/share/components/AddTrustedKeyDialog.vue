@@ -1,10 +1,32 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useShareStore } from '../shareStore'
+import { useKeyName } from '../useKeyName'
+import { distinctKeyName, normalizeKeyName, takenBy } from '../../../../../shared/keyName'
 import BaseDialog from '../../../components/BaseDialog.vue'
+import KeyNameHint from './KeyNameHint.vue'
 
 const share = useShareStore()
 const label = ref(share.pendingTrustedKey?.label ?? '')
+const renamedFrom = ref('')
+const renamedTo = ref('')
+const fingerprint = () => share.pendingTrustedKey?.fingerprint ?? null
+const { problem, count, message } = useKeyName(label, {
+  trusted: () => share.trusted,
+  fingerprint
+})
+
+// A name another contact already wears is swapped for a numbered one up front,
+// so the list never holds two keys the reader cannot tell apart.
+onMounted(async () => {
+  await share.refreshTrusted()
+  const offered = normalizeKeyName(label.value)
+  if (offered && takenBy(share.trusted, offered, fingerprint())) {
+    renamedFrom.value = offered
+    label.value = distinctKeyName(offered, share.trusted, fingerprint())
+    renamedTo.value = label.value
+  }
+})
 // Guard against a second submit while the key is still being stored.
 const adding = ref(false)
 
@@ -62,8 +84,12 @@ function chooseFileInstead() {
           autofocus
         />
       </label>
+      <p v-if="renamedFrom" class="dialog-note">
+        {{ $t('keyName.renamedOnImport', { name: renamedFrom, suggested: renamedTo }) }}
+      </p>
+      <KeyNameHint :count="count" :message="message" />
       <div class="dialog-actions">
-        <button type="submit" class="btn btn-primary" :disabled="!label.trim() || adding">
+        <button type="submit" class="btn btn-primary" :disabled="!!problem || adding">
           {{ adding ? $t('addTrustedKeyDialog.adding') : $t('addTrustedKeyDialog.add') }}
         </button>
         <button type="button" class="btn btn-ghost" @click="share.cancelTrustedKey()">
