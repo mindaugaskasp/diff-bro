@@ -35,6 +35,16 @@
 .row[data-color]:hover {
   background: color-mix(in srgb, var(--snip-ink) 26%, transparent);
 }
+/* The wash layered over the panel, not one color-mix: an out-of-gamut ink
+   clamps when composited but not inside color-mix, so the two drift apart. */
+.row[data-color] .rowacts {
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--snip-ink) 26%, transparent),
+      color-mix(in srgb, var(--snip-ink) 26%, transparent)
+    ),
+    var(--bg-panel);
+}
 /* --text-dim loses the 3:1 non-text floor on a washed row in nord (2.97) and
    sepia (2.72); --text-hint is the ink that exists for exactly this and clears
    4.5:1 on all twenty. */
