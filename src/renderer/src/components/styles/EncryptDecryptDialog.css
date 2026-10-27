@@ -1,8 +1,11 @@
-/* Encrypted blobs are long — a little more room than the shared default. */
 /* Grow to share the panel's extra height when the dialog is dragged taller. */
 textarea {
   flex: 1 1 100px;
-  min-height: 70px;
+  min-height: 52px;
+}
+label:has(> textarea) {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .row {
   display: flex;

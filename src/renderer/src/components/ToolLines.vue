@@ -1,4 +1,5 @@
 <script setup>
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref } from 'vue'
 import { processLines } from '../utils/lines'
 import SegmentedControl from './SegmentedControl.vue'
@@ -20,7 +21,7 @@ const SORT_OPTS = [
   { value: 'natural', label: 'Natural' }
 ]
 
-const input = ref('')
+const input = useToolDraft('lines.input')
 const splitBy = ref('')
 const trim = ref(false)
 const dropBlank = ref(false)

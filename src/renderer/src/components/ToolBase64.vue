@@ -1,4 +1,5 @@
 <script setup>
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref } from 'vue'
 import { t } from '../i18n'
 import { base64Decode, base64Encode, byteLength } from '../utils/base64'
@@ -13,7 +14,7 @@ const modes = computed(() => [
   { value: 'encode', label: t('toolBase64.encode') },
   { value: 'decode', label: t('toolBase64.decode') }
 ])
-const input = ref('')
+const input = useToolDraft('base64.input')
 const mode = ref('encode')
 const urlSafe = ref(false)
 const wrap = ref(false)

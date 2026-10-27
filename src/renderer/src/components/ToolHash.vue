@@ -3,6 +3,7 @@
 // a checksum tool answers is "which of these matches what they published" —
 // and the compare field answers it outright. Digests come from main
 // (src/main/hashing.js); a file is streamed there, never read here.
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref, watch } from 'vue'
 import { HASH_LABELS, fileSize, matchingAlgorithm } from '../utils/hash'
 import SegmentedControl from './SegmentedControl.vue'
@@ -17,7 +18,7 @@ const SOURCES = [
 ]
 
 const source = ref('text')
-const input = ref('')
+const input = useToolDraft('hash.input')
 const digests = ref({})
 const file = ref(null)
 const busy = ref(false)
