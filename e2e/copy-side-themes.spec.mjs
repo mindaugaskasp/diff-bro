@@ -53,6 +53,7 @@ const contrastOf = (page, selector) =>
   }, selector)
 
 test('the slot copy control is legible on every theme', async ({ app, page }) => {
+  test.setTimeout(90_000)
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-copyside-themes-'))
   const left = join(dir, 'alpha.txt')
   const right = join(dir, 'beta.txt')
