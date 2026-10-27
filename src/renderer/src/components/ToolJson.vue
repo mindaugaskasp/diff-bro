@@ -1,9 +1,12 @@
 <script setup>
+import { useToolDraft } from '../composables/useToolDraft'
 import { t } from '../i18n'
 import { computed, ref } from 'vue'
 import { stringifyJson, jsonPath, sortDeep } from '../utils/json'
 import SegmentedControl from './SegmentedControl.vue'
 import JsonTree from './JsonTree.vue'
+import HighlightedTextarea from './HighlightedTextarea.vue'
+import { miniLines } from '../utils/miniHighlight'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
 import { useCopyFeedback } from '../composables/useCopyFeedback'
@@ -17,7 +20,7 @@ const modes = computed(() => [
   { value: 'minify', label: t('toolJson.minify') },
   { value: 'sort', label: t('toolJson.sortKeys') }
 ])
-const input = ref('')
+const input = useToolDraft('json.input')
 const mode = ref('pretty')
 const filter = ref('')
 
@@ -42,6 +45,7 @@ const filtered = computed(() => {
 const shaped = computed(() =>
   'value' in filtered.value ? stringifyJson(filtered.value.value, mode.value) : ''
 )
+const shapedLines = computed(() => miniLines(shaped.value, 'json'))
 const treeValue = computed(() =>
   mode.value === 'sort' && 'value' in filtered.value
     ? sortDeep(filtered.value.value)
@@ -65,13 +69,13 @@ offerToolOutput(
 
 <template>
   <div class="tjs" :class="{ compact }">
-    <textarea
+    <HighlightedTextarea
       v-model="input"
-      class="tjs-in"
+      class="tjs-in-field"
+      language="json"
       :placeholder="$t('toolJson.pasteJSON')"
-      spellcheck="false"
-      :aria-label="$t('toolJson.jSON')"
-    ></textarea>
+      :label="$t('toolJson.jSON')"
+    />
 
     <p v-if="parsed.error" class="tjs-err">{{ parsed.error }}</p>
 
@@ -106,7 +110,15 @@ offerToolOutput(
               <AppIcon :name="copied ? 'check' : 'copy'" />
             </button>
           </div>
-          <pre class="tjs-text">{{ shaped }}</pre>
+          <!-- prettier-ignore — whitespace between these tags renders. -->
+          <pre class="tjs-text"><div
+            v-for="(spans, i) in shapedLines"
+            :key="i"
+          ><span
+            v-for="(span, j) in spans"
+            :key="j"
+            :class="span.role && `syn-${span.role}`"
+          >{{ span.text }}</span></div></pre>
         </div>
         <div class="tjs-tree"><JsonTree :value="treeValue" /></div>
       </template>

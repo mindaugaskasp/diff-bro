@@ -1,0 +1,47 @@
+/* Both layers resolve the same metrics, or the colour drifts off its glyphs. */
+.hl-field {
+  position: relative;
+  display: flex;
+  min-height: 72px;
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.hl-layer,
+.hl-text {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+  white-space: pre;
+  tab-size: 2;
+}
+.hl-layer {
+  position: absolute;
+  inset: 0;
+  color: var(--text);
+  overflow: hidden;
+  pointer-events: none;
+}
+.hl-text {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  overflow: auto;
+  border-color: var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: transparent;
+  caret-color: var(--accent);
+}
+.hl-text.plain {
+  color: var(--text);
+}
+.hl-text:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}

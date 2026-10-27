@@ -6,7 +6,8 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { toolOutput } from '../composables/useToolOutput'
-import { toolById } from '../utils/tools'
+import { TOOL_DIALOG_KEY, TOOL_DIALOG_SIZE, toolById } from '../utils/tools'
+import { useSettingsStore } from '../stores/settingsStore'
 import { t } from '../i18n'
 import BaseDialog from './BaseDialog.vue'
 import ToolEpoch from './ToolEpoch.vue'
@@ -27,6 +28,7 @@ const props = defineProps({
 })
 
 const ui = useUiStore()
+const settings = useSettingsStore()
 const snippets = useSnippetStore()
 const nameKey = computed(() => toolById(props.tool)?.nameKey)
 const title = computed(() => (nameKey.value ? t(nameKey.value) : t('tools.fallbackTitle')))
@@ -57,7 +59,14 @@ function close() {
 </script>
 
 <template>
-  <BaseDialog width="460px" :close-on-backdrop="false" :title="title" @close="close">
+  <BaseDialog
+    resizable
+    close-on-backdrop
+    :initial-size="settings.dialogSize(TOOL_DIALOG_KEY) ?? TOOL_DIALOG_SIZE"
+    :title="title"
+    @close="close"
+    @resize="(size) => settings.setDialogSize(TOOL_DIALOG_KEY, size)"
+  >
     <p v-if="descKey" class="tt-desc">{{ t(descKey) }}</p>
     <div ref="body" class="tt-body">
       <ToolEpoch v-if="tool === 'epoch'" />

@@ -1,4 +1,5 @@
 <script setup>
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref } from 'vue'
 import { parseXml, stringifyXml, xpath } from '../utils/xml'
 import SegmentedControl from './SegmentedControl.vue'
@@ -13,7 +14,7 @@ const MODES = [
   { value: 'pretty', label: 'Pretty' },
   { value: 'minify', label: 'Minify' }
 ]
-const input = ref('')
+const input = useToolDraft('xml.input')
 const mode = ref('pretty')
 const filter = ref('')
 

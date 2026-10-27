@@ -1283,7 +1283,10 @@ const SURFACES = [
     probes: {
       'tool description': ['.tt-desc', TEXT],
       'segment wash, hovered': ['.seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
-      'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover']
+      'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover'],
+      'input key': ['.tjs-in-field .syn-property', TEXT],
+      'output key': ['.tjs-text .syn-property', TEXT],
+      'output number': ['.tjs-text .syn-number', TEXT]
     }
   },
   {

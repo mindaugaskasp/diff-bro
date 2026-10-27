@@ -3,7 +3,7 @@
 |                                         |                                 |
 | --------------------------------------- | ------------------------------- |
 | **Status**                              | approved                        |
-| **Progress**                            | 2 / 5 slices                    |
+| **Progress**                            | 5 / 5 slices built              |
 | **Branch**                              | one per slice; see Delivery     |
 | **Started**                             | 2026-10-24                      |
 | **Finished**                            | —                               |
@@ -153,7 +153,7 @@ Five reports from the user, 2026-10-24.
   - The comparison's file-slots row also ends at 151 (today 154).
 - **One tool-window size.** Every tool panel, text tools and Encrypt alike,
   opens at one shared size.
-  - New tokens: `--tool-dialog-w` and `--tool-dialog-h`, 720 × 540 (canvas
+  - `TOOL_DIALOG_SIZE` in `utils/tools.js`, 720 × 540 (canvas
     boards 5a and 5b).
   - It must fit the minimum window (1120 × 640, `window.js:49`) with the
     menu bar and margins showing. If the largest tool's content does not fit,
@@ -226,7 +226,7 @@ decisions sticky repeats the Decisions table below.
 - **Hover CSS:** `--tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text))`.
   `.tile:hover` takes that face, a `--btn-edge-strong` border and `--shadow-2`.
   `.seg-opt:not(.on):hover` and `.whose-opt:hover` take `--btn-face`.
-- **Tool window:** `--tool-dialog-w: 720px`, `--tool-dialog-h: 540px`. In the
+- **Tool window:** `TOOL_DIALOG_SIZE`, 720 × 540. In the
   1120 × 640 minimum that leaves 65 px above and below and 200 px each side.
   The default window (1400 × 900) already fits it, so it does not grow.
 
@@ -316,18 +316,18 @@ is green on its own. The stack merges bottom-up and ships as one tag.
 | --- | --------------------------------------------------------------------- | ---------------------------------- | ------- | ----- | ---- | ------ |
 | 1   | Pinned group in Tools                                                 | `fix/tools-pinned-group`           | `main`  | #93   | #127 | merged |
 | 2   | Hover contract and sweep channel                                      | `improvement/hover-contract`       | slice 1 | #94   | #128 | merged |
-| 3   | Show in folder                                                        | `feat/show-in-folder`              | slice 2 | #95   |      |        |
-| 4   | One opened file becomes a snippet tab; one-row snippet head           | `improvement/open-file-as-snippet` | slice 3 | #96   |      |        |
+| 3   | Show in folder                                                        | `feat/show-in-folder`              | slice 2 | #95   | #129 | merged |
+| 4   | One opened file becomes a snippet tab; one-row snippet head           | `improvement/open-file-as-snippet` | slice 3 | #96   | #130 |        |
 | 5   | One tool window: shared size, click outside closes, JSON highlighting | `improvement/tool-window`          | slice 4 | #97   |      |        |
 
 ## Implementation plan
 
 - [x] 0. Design canvas (drawn: https://claude.ai/artifact/FA9kFwk7FtaEoeA5LvtcqQ) → Approved design page signed off by the user.
-- [ ] 1. Slice 1.
-- [ ] 2. Slice 2.
-- [ ] 3. Slice 3.
-- [ ] 4. Slice 4.
-- [ ] 5. Slice 5.
+- [x] 1. Slice 1.
+- [x] 2. Slice 2.
+- [x] 3. Slice 3.
+- [x] 4. Slice 4.
+- [x] 5. Slice 5.
 
 ## Decisions
 
@@ -344,6 +344,8 @@ is green on its own. The stack merges bottom-up and ships as one tag.
 | 2026-10-27 | "Opened from …" moves to the status bar                                                                                                   | the one-row head has no room; the user signed off the page with it                                         | a second head row                                                                   |
 | 2026-10-27 | Hover floor is one step of 1.15, the `.btn` hover's own bar; toggles wash with `--btn-face`; the hovered tile edge is `--btn-edge-strong` | on nord a 1.4 wash and a 4.5 label cannot both hold; the sweep measured it                                 | a 1.4 wash floor; a per-theme wash                                                  |
 | 2026-10-27 | Saved-diff rows put Export as image and Show in folder under "More actions"; snippet rows keep the icon                                   | five icons covered the row's middle, so a click on the name hit Share; the user chose option B on board 3c | five icons; right-click only                                                        |
+| 2026-10-27 | The tool size is a JS constant, not CSS tokens                                                                                            | BaseDialog's resize keeps sizes in pixels and remembers them; a token would only be read back from CSS     | `--tool-dialog-w/h` tokens                                                          |
+| 2026-10-27 | Every single-file open becomes a snippet: Open With, `diffbro open <file>`, one file dropped on an empty window                           | the spec's scope named all three; a git revision side of `open` still compares                             | Open With only                                                                      |
 | 2026-10-27 | JSON tool highlights input and output                                                                                                     | the user, at sign-off                                                                                      | output only                                                                         |
 | 2026-10-24 | Dismissing the prompt opens a new tab                                                                                                     | the non-destructive choice; the comparison is one Compare with… away                                       | dismiss cancels the open, which drops the file the user asked for                   |
 

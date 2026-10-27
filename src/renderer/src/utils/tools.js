@@ -214,3 +214,7 @@ export function toolPaletteItems(ids) {
   }
   return out
 }
+
+/** Every tool panel opens at this size; a resize is remembered under one key. */
+export const TOOL_DIALOG_SIZE = { width: 720, height: 540 }
+export const TOOL_DIALOG_KEY = 'tool'

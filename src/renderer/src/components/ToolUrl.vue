@@ -2,6 +2,7 @@
 // The URL tool panel — hosted in the Tools dialog and the Quick Look launcher.
 // Encode/decode (component or full-URI), plus an editable query-param table that
 // rebuilds the URL as you edit. Pure logic in utils/url.
+import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref, watch } from 'vue'
 import { encodeUrl, decodeUrl, parseQuery, buildQuery } from '../utils/url'
 import SegmentedControl from './SegmentedControl.vue'
@@ -23,7 +24,7 @@ const SCOPES = [
 
 const mode = ref('encode')
 const scope = ref('component')
-const input = ref('')
+const input = useToolDraft('url.input')
 const component = computed(() => scope.value === 'component')
 const output = computed(() =>
   mode.value === 'encode'
