@@ -140,6 +140,7 @@ test('adding your own key is refused', async ({ app, page }) => {
     await stubSaveDialog(app, keyPath)
     await openMenu(page, 'Security', 'Share My Public Key')
     const dlg = page.getByRole('dialog', { name: 'Share my public key' })
+    await dlg.getByPlaceholder('e.g. Alice — laptop').fill('Me')
     await dlg.getByRole('button', { name: /Save to file/ }).click()
     await expect(page.getByText(/public key was saved/i)).toBeVisible()
 

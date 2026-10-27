@@ -194,3 +194,21 @@ describe('addressesFor', () => {
     })
   })
 })
+
+describe('trusted key names', () => {
+  it('a rename to a name another key wears, or an invalid one, is refused', async () => {
+    await storeTrusted(key(1), 'fp-a', 'Alex')
+    await storeTrusted(key(2), 'fp-b', 'Sam')
+    expect(await call('share:renameTrusted', 'fp-b', ' alex ')).toEqual({ error: 'name-taken' })
+    expect(await call('share:renameTrusted', 'fp-b', '  ')).toEqual({ error: 'name-empty' })
+    expect(await call('share:renameTrusted', 'fp-b', 'x'.repeat(41))).toEqual({
+      error: 'name-too-long'
+    })
+    expect((await readTrusted()).find((t) => t.fingerprint === 'fp-b').label).toBe('Sam')
+  })
+
+  it('a key may keep its own name under a different case', async () => {
+    await storeTrusted(key(1), 'fp-a', 'Alex')
+    expect(await call('share:renameTrusted', 'fp-a', 'ALEX')).toMatchObject({ ok: true })
+  })
+})

@@ -1500,6 +1500,8 @@
     "couldNotSaveTheImage": "Could not save the image."
   },
   "shareNotices": {
+    "keyNameTooLong": "That key's name is longer than {max} characters, so it wasn't added.",
+    "keyNameTaken": "Another key already has that name.",
     "noKeyOnClipboard": "The clipboard doesn't hold a public key — copy theirs, then Paste key.",
     "nothingToShareYetLoad": "Nothing to share yet — load two files or paste some text first.",
     "thatIsNotAUsable": "That is not a usable email address — it was not saved. Check for a stray space or comma.",
@@ -1811,6 +1813,14 @@
   },
   "presentation": {
     "exit": "Exit presentation mode"
+  },
+  "keyName": {
+    "counter": "{n} / {max}",
+    "empty": "Add a name first",
+    "tooLong": "Keep the name to {max} characters or fewer",
+    "taken": "You already have a key named “{name}”",
+    "renamedOnImport": "You already have a key named “{name}”, so this one is named “{suggested}”. Change it if you like.",
+    "alsoAContact": "One of your contacts is also called {name}"
   },
   "startSurface": {
     "title": "What are you comparing?",
