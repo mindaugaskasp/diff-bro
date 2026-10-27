@@ -10,7 +10,7 @@ const SRC =
   '{"id":1,"name":"Ada","items":[{"id":10,"name":"alpha"},{"id":20,"name":"beta"}],"log":"{\\"x\\":1}"}'
 
 test('formats, filters via JSONPath, minifies and copies', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'JSON')
+  await openMenu(page, 'Tools', 'Format', 'JSON')
   const dlg = page.getByRole('dialog', { name: 'JSON' })
   await expect(dlg).toBeVisible()
   await dlg.getByLabel('JSON', { exact: true }).fill(SRC)
@@ -32,7 +32,7 @@ test('formats, filters via JSONPath, minifies and copies', async ({ app, page })
 })
 
 test('reports invalid JSON', async ({ page }) => {
-  await openMenu(page, 'Tools', 'JSON')
+  await openMenu(page, 'Tools', 'Format', 'JSON')
   const dlg = page.getByRole('dialog', { name: 'JSON' })
   await dlg.getByLabel('JSON', { exact: true }).fill('{ bad: }')
   await expect(dlg.locator('.tjs-err')).toBeVisible()

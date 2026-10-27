@@ -5,7 +5,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // wiring, the live reactivity of the pipeline, and the clipboard write.
 
 test('builds a SQL IN-clause list from a messy UUID paste and copies it', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'Lines')
+  await openMenu(page, 'Tools', 'Format', 'Lines')
   const dlg = page.getByRole('dialog', { name: 'Lines' })
   await expect(dlg).toBeVisible()
 
@@ -28,7 +28,7 @@ test('builds a SQL IN-clause list from a messy UUID paste and copies it', async 
 })
 
 test('explodes a delimited line into a wrapped list', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Lines')
+  await openMenu(page, 'Tools', 'Format', 'Lines')
   const dlg = page.getByRole('dialog', { name: 'Lines' })
   await dlg.getByLabel('Lines', { exact: true }).fill('aaad, adad, ddd, 444, 5f5, r4e')
   await dlg.getByLabel('Split by', { exact: true }).fill(', ')
@@ -43,7 +43,7 @@ test('explodes a delimited line into a wrapped list', async ({ page }) => {
 })
 
 test('natural sort orders numbered lines by value', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Lines')
+  await openMenu(page, 'Tools', 'Format', 'Lines')
   const dlg = page.getByRole('dialog', { name: 'Lines' })
   await dlg.getByLabel('Lines', { exact: true }).fill('item10\nitem2\nitem1')
   await dlg.locator('.seg-opt', { hasText: 'Natural' }).click()
@@ -53,7 +53,7 @@ test('natural sort orders numbered lines by value', async ({ page }) => {
 // Find & Replace was folded into Lines: the modes and the case toggle came with
 // it, so the standalone Replace tool could go.
 test('replace supports word and regex modes with a case toggle', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Lines')
+  await openMenu(page, 'Tools', 'Format', 'Lines')
   const dlg = page.getByRole('dialog', { name: 'Lines' })
   await dlg.getByLabel('Lines', { exact: true }).fill('cat category\nCAT')
 
@@ -79,7 +79,7 @@ test('replace supports word and regex modes with a case toggle', async ({ page }
 })
 
 test('a bad regex is reported instead of silently doing nothing', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Lines')
+  await openMenu(page, 'Tools', 'Format', 'Lines')
   const dlg = page.getByRole('dialog', { name: 'Lines' })
   await dlg.getByLabel('Lines', { exact: true }).fill('anything')
   await dlg.locator('.seg-opt', { hasText: 'Regex' }).click()

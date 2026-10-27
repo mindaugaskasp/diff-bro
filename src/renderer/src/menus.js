@@ -27,8 +27,26 @@ const displayToggles = (run) => [
   { label: t('menu.view.toggleFocus'), run: () => run('toggle-focus') }
 ]
 
-// Mirrors the native Terminal menu (menuSections.terminalMenu).
-const terminalItems = (run) => [{ label: t('menu.terminal.info'), run: () => run('settings-cli') }]
+const zoomItems = (run) => [
+  {
+    label: t('menu.view.zoomIn'),
+    keys: `${MOD}++`,
+    paletteHidden: true,
+    run: () => run('zoom-in')
+  },
+  {
+    label: t('menu.view.zoomOut'),
+    keys: `${MOD}+-`,
+    paletteHidden: true,
+    run: () => run('zoom-out')
+  },
+  {
+    label: t('menu.view.resetZoom'),
+    keys: `${MOD}+0`,
+    paletteHidden: true,
+    run: () => run('zoom-reset')
+  }
+]
 
 const viewSection = (run) => ({
   id: 'view',
@@ -40,13 +58,13 @@ const viewSection = (run) => ({
       paletteHidden: true,
       run: () => run('command-palette')
     },
-    { sep: true },
-    ...displayToggles(run),
     {
       label: t('menu.view.toggleSidebar'),
       keys: `${MOD}+B`,
       run: () => run('toggle-sidebar')
     },
+    { sep: true },
+    { label: t('menu.view.display'), items: displayToggles(run) },
     { label: t('menu.view.toggleTheme'), keys: `${MOD}+D`, run: () => run('toggle-theme') },
     {
       label: t('menu.view.presentation'),
@@ -66,24 +84,7 @@ const viewSection = (run) => ({
       run: () => run('merge-conflicts')
     },
     { sep: true },
-    {
-      label: t('menu.view.zoomIn'),
-      keys: `${MOD}++`,
-      paletteHidden: true,
-      run: () => run('zoom-in')
-    },
-    {
-      label: t('menu.view.zoomOut'),
-      keys: `${MOD}+-`,
-      paletteHidden: true,
-      run: () => run('zoom-out')
-    },
-    {
-      label: t('menu.view.resetZoom'),
-      keys: `${MOD}+0`,
-      paletteHidden: true,
-      run: () => run('zoom-reset')
-    },
+    { label: t('menu.view.zoom'), items: zoomItems(run) },
     { sep: true, devOnly: true },
     {
       label: t('menu.view.devTools'),
@@ -99,14 +100,23 @@ const editSection = (run) => ({
   label: t('menu.edit.title'),
   items: [
     { label: t('menu.edit.swapSides'), keys: `${MOD}+Shift+S`, run: () => run('swap') },
-    { label: t('menu.edit.copyPatch'), keys: `${MOD}+Shift+C`, run: () => run('copy-diff') },
-    { label: t('menu.edit.copyFile'), keys: `${MOD}+Shift+F`, run: () => run('copy-diff-file') },
-    // Shift over the digit that OPENS that side (MOD+1 / MOD+2).
-    { label: t('menu.edit.copyLeft'), keys: `${MOD}+Shift+1`, run: () => run('copy-left') },
-    { label: t('menu.edit.copyRight'), keys: `${MOD}+Shift+2`, run: () => run('copy-right') },
+    {
+      label: t('menu.edit.copy'),
+      items: [
+        { label: t('menu.edit.copyPatch'), keys: `${MOD}+Shift+C`, run: () => run('copy-diff') },
+        {
+          label: t('menu.edit.copyFile'),
+          keys: `${MOD}+Shift+F`,
+          run: () => run('copy-diff-file')
+        },
+        // Shift over the digit that OPENS that side (MOD+1 / MOD+2).
+        { label: t('menu.edit.copyLeft'), keys: `${MOD}+Shift+1`, run: () => run('copy-left') },
+        { label: t('menu.edit.copyRight'), keys: `${MOD}+Shift+2`, run: () => run('copy-right') }
+      ]
+    },
     { label: t('menu.edit.applyPatch'), run: () => run('apply-patch') },
     { sep: true },
-    { label: t('menu.edit.pasteTextMode'), keys: `${MOD}+T`, run: () => run('toggle-paste') }
+    { label: t('menu.edit.pasteMode'), keys: `${MOD}+T`, run: () => run('toggle-paste') }
   ]
 })
 
@@ -123,15 +133,27 @@ const fileSection = (run) => ({
     },
     { sep: true },
     { label: t('menu.file.save'), keys: `${MOD}+S`, run: () => run('save') },
-    {
-      label: t('menu.file.saveAsFile'),
-      keys: `${MOD}+Alt+S`,
-      run: () => run('save-snippet-as-file')
-    },
     { label: t('menu.file.share'), keys: `${MOD}+E`, run: () => run('share-current') },
-    { label: t('menu.file.import'), keys: `${MOD}+I`, run: () => run('import-shared') },
-    { label: t('menu.file.exportHtml'), run: () => run('export-html') },
-    { label: t('menu.file.exportImage'), run: () => run('export-image') },
+    {
+      label: t('menu.file.import'),
+      items: [
+        { label: t('menu.file.importShared'), keys: `${MOD}+I`, run: () => run('import-shared') },
+        { label: t('menu.file.importSnippets'), run: () => run('import-snippets') }
+      ]
+    },
+    {
+      label: t('menu.file.export'),
+      items: [
+        { label: t('menu.file.exportHtml'), run: () => run('export-html') },
+        { label: t('menu.file.exportImage'), run: () => run('export-image') },
+        {
+          label: t('menu.file.exportSnippetFile'),
+          keys: `${MOD}+Alt+S`,
+          run: () => run('save-snippet-as-file')
+        },
+        { label: t('menu.file.exportAllSnippets'), run: () => run('export-snippets') }
+      ]
+    },
     { sep: true },
     {
       label: t('menu.file.newComparison'),
@@ -153,7 +175,6 @@ const fileSection = (run) => ({
       keys: 'Ctrl+Shift+Tab',
       run: () => run('tab-prev')
     },
-    { label: t('menu.file.importSnippets'), run: () => run('import-snippets') },
     { sep: true },
     { label: t('menu.file.settings'), keys: `${MOD}+,`, run: () => run('settings') },
     { sep: true },
@@ -166,7 +187,6 @@ export function buildMenus(run) {
     fileSection(run),
     editSection(run),
     viewSection(run),
-    { id: 'terminal', label: t('menu.terminal.title'), items: terminalItems(run) },
     { id: 'security', label: t('menu.security.title'), items: securityItems(run) },
     {
       id: 'tools',
@@ -183,6 +203,7 @@ export function buildMenus(run) {
         { sep: true },
         { label: t('menu.help.shortcuts'), run: () => run('shortcuts') },
         { label: t('menu.help.showTour'), run: () => run('show-tour') },
+        { label: t('menu.help.terminal'), run: () => run('settings-cli') },
         { sep: true },
         { label: t('menu.help.reportIssue'), run: () => window.api.reportIssue() }
       ]

@@ -165,7 +165,7 @@ test('copying the diff as a file writes a patch, not the diff text', async ({ ap
   // Through the menu, which is what a reader actually reaches for and what
   // menu-actions.spec.mjs already proves is wired.
   await clearClipboard(app)
-  await openMenu(page, 'Edit', 'Copy Diff as File')
+  await openMenu(page, 'Edit', 'Copy', 'Diff as File')
 
   const path = await waitForCopiedPath(app, /\.patch$/)
   const patch = readFileSync(path, 'utf-8')

@@ -438,7 +438,7 @@ test('a hovering tooltip is not photographed with the diff', async ({ app, page 
   })
 
   // The menu path leaves the pointer — and the tip — exactly where they were.
-  await clickAppMenuItem(app, 'Export Diff as Image…')
+  await clickAppMenuItem(app, 'Diff as Image…')
   await expect(page.getByRole('dialog', { name: 'Export as image' })).toBeVisible()
 
   const leaked = await page.evaluate(() => {

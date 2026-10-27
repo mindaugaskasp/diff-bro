@@ -5,7 +5,7 @@ import { test, expect, openMenu, docActions } from './fixtures.mjs'
 // wiring and the OS-clipboard write.
 
 test('Encrypt then Decrypt round-trips text under a passphrase', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Text Encryption', 'Encrypt / Decrypt')
+  await openMenu(page, 'Tools', 'Secure', 'Encrypt / Decrypt')
   const dialog = page.getByRole('dialog', { name: 'Encrypt / Decrypt Text' })
   await expect(dialog).toBeVisible()
 
@@ -24,7 +24,7 @@ test('Encrypt then Decrypt round-trips text under a passphrase', async ({ page }
 })
 
 test('decrypting with the wrong passphrase fails loudly', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Text Encryption', 'Encrypt / Decrypt')
+  await openMenu(page, 'Tools', 'Secure', 'Encrypt / Decrypt')
   const dialog = page.getByRole('dialog', { name: 'Encrypt / Decrypt Text' })
 
   await dialog.getByPlaceholder('Plain text to encrypt').fill('secret')
@@ -41,7 +41,7 @@ test('decrypting with the wrong passphrase fails loudly', async ({ page }) => {
 // snippet, paste, name it. The store action for this existed and nothing called
 // it — its own comment described a button that was never built.
 test('a tool output is kept as a snippet, named by the user', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Base64')
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
   const tool = page.getByRole('dialog', { name: 'Base64' })
   await tool.getByRole('textbox').first().fill('keep me')
 
@@ -65,7 +65,7 @@ test('a tool output is kept as a snippet, named by the user', async ({ page }) =
 // An empty tool has nothing worth keeping, and a button that is nearly always
 // disabled is noise.
 test('the save action stays away until there is something to keep', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Base64')
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
   const tool = page.getByRole('dialog', { name: 'Base64' })
   await expect(tool.getByRole('button', { name: 'Save as snippet' })).toHaveCount(0)
   await tool.getByRole('textbox').first().fill('now there is')

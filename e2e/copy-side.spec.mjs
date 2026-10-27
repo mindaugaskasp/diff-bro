@@ -67,11 +67,11 @@ test('the Edit menu reaches the same two sides', async ({ app, page }) => {
     await loadPair(app, page, left, right)
 
     await clearClipboard(app)
-    await clickAppMenuItem(app, 'Copy Left Side')
+    await clickAppMenuItem(app, 'Left Side')
     await expect.poll(() => readClipboard(app)).toBe(LEFT_TEXT)
 
     await clearClipboard(app)
-    await clickAppMenuItem(app, 'Copy Right Side')
+    await clickAppMenuItem(app, 'Right Side')
     await expect.poll(() => readClipboard(app)).toBe(RIGHT_TEXT)
   } finally {
     rmSync(dir, { recursive: true, force: true })

@@ -8,7 +8,7 @@ const SRC =
   '<book id="b2"><title>Neuromancer</title></book></catalog>'
 
 test('formats, filters via XPath, minifies and copies', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'XML')
+  await openMenu(page, 'Tools', 'Format', 'XML')
   const dlg = page.getByRole('dialog', { name: 'XML' })
   await expect(dlg).toBeVisible()
   await dlg.getByLabel('XML', { exact: true }).fill(SRC)
@@ -35,7 +35,7 @@ test('formats, filters via XPath, minifies and copies', async ({ app, page }) =>
 })
 
 test('reports malformed XML with its location', async ({ page }) => {
-  await openMenu(page, 'Tools', 'XML')
+  await openMenu(page, 'Tools', 'Format', 'XML')
   const dlg = page.getByRole('dialog', { name: 'XML' })
   await dlg.getByLabel('XML', { exact: true }).fill('<a>\n  <b></c>\n</a>')
   await expect(dlg.locator('.txm-err')).toBeVisible()

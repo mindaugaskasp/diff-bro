@@ -7,6 +7,14 @@
 // labels in place.
 import { t } from './i18n'
 
+/** A menu row: its catalogue key under `menu.`, an optional accelerator, the action sent. */
+const item = (send, key, accelerator, action) => ({
+  label: t(`menu.${key}`),
+  ...(accelerator ? { accelerator } : {}),
+  click: () => send(action)
+})
+const group = (key, submenu) => ({ label: t(`menu.${key}`), submenu })
+
 /** @param {(action: string) => void} send */
 export const editMenu = (send, isMac) => ({
   label: t('menu.edit.title'),
@@ -25,39 +33,17 @@ export const editMenu = (send, isMac) => ({
           { type: 'separator' }
         ]
       : []),
-    {
-      label: t('menu.edit.swapSides'),
-      accelerator: 'CmdOrCtrl+Shift+S',
-      click: () => send('swap')
-    },
-    {
-      label: t('menu.edit.copyPatch'),
-      accelerator: 'CmdOrCtrl+Shift+C',
-      click: () => send('copy-diff')
-    },
-    {
-      label: t('menu.edit.copyFile'),
-      accelerator: 'CmdOrCtrl+Shift+F',
-      click: () => send('copy-diff-file')
-    },
-    // Shift over the digit that OPENS that side (CmdOrCtrl+1 / +2).
-    {
-      label: t('menu.edit.copyLeft'),
-      accelerator: 'CmdOrCtrl+Shift+1',
-      click: () => send('copy-left')
-    },
-    {
-      label: t('menu.edit.copyRight'),
-      accelerator: 'CmdOrCtrl+Shift+2',
-      click: () => send('copy-right')
-    },
-    { label: t('menu.edit.applyPatch'), click: () => send('apply-patch') },
+    item(send, 'edit.swapSides', 'CmdOrCtrl+Shift+S', 'swap'),
+    group('edit.copy', [
+      item(send, 'edit.copyPatch', 'CmdOrCtrl+Shift+C', 'copy-diff'),
+      item(send, 'edit.copyFile', 'CmdOrCtrl+Shift+F', 'copy-diff-file'),
+      // Shift over the digit that OPENS that side (CmdOrCtrl+1 / +2).
+      item(send, 'edit.copyLeft', 'CmdOrCtrl+Shift+1', 'copy-left'),
+      item(send, 'edit.copyRight', 'CmdOrCtrl+Shift+2', 'copy-right')
+    ]),
+    item(send, 'edit.applyPatch', null, 'apply-patch'),
     { type: 'separator' },
-    {
-      label: t('menu.edit.pasteTextMode'),
-      accelerator: 'CmdOrCtrl+T',
-      click: () => send('toggle-paste')
-    }
+    item(send, 'edit.pasteMode', 'CmdOrCtrl+T', 'toggle-paste')
   ]
 })
 
@@ -65,73 +51,46 @@ export const editMenu = (send, isMac) => ({
 export const securityMenu = (send) => ({
   label: t('menu.security.title'),
   submenu: [
-    { label: t('menu.security.sharePublicKey'), click: () => send('export-pubkey') },
+    group('security.myKey', [
+      item(send, 'security.sharePublicKey', null, 'export-pubkey'),
+      item(send, 'security.replaceKey', null, 'rotate-key')
+    ]),
+    group('security.trustedKeys', [
+      item(send, 'security.addTrustedKey', null, 'add-trusted-key'),
+      item(send, 'security.manageTrustedKeys', null, 'manage-keys')
+    ]),
     { type: 'separator' },
-    { label: t('menu.security.addTrustedKey'), click: () => send('add-trusted-key') },
-    { label: t('menu.security.manageTrustedKeys'), click: () => send('manage-keys') },
-    { label: t('menu.security.replaceKey'), click: () => send('rotate-key') },
-    { type: 'separator' },
-    {
-      label: t('menu.security.configuration'),
-      submenu: [
-        { label: t('menu.security.backUp'), click: () => send('config-backup') },
-        { label: t('menu.security.restore'), click: () => send('config-restore') }
-      ]
-    }
+    group('security.configuration', [
+      item(send, 'security.backUp', null, 'config-backup'),
+      item(send, 'security.restore', null, 'config-restore')
+    ])
   ]
 })
 
+// The Tools panel's job groups (utils/toolGroups.js), so the menu and the panel agree.
 /** @param {(action: string) => void} send */
-// Documents the `diffbro` command, so it lands on the Settings pane that lists
-// the subcommands rather than opening Settings wherever it left off.
-export const terminalMenu = (send) => ({
-  label: t('menu.terminal.title'),
-  submenu: [{ label: t('menu.terminal.info'), click: () => send('settings-cli') }]
-})
-
 export const toolsMenu = (send) => ({
   label: t('menu.tools.title'),
   submenu: [
-    {
-      label: t('menu.tools.base64'),
-      accelerator: 'CmdOrCtrl+Shift+B',
-      click: () => send('tools-base64')
-    },
-    {
-      label: t('menu.tools.json'),
-      accelerator: 'CmdOrCtrl+Shift+J',
-      click: () => send('tools-json')
-    },
-    {
-      label: t('menu.tools.xml'),
-      accelerator: 'CmdOrCtrl+Shift+M',
-      click: () => send('tools-xml')
-    },
-    {
-      label: t('menu.tools.uuid'),
-      accelerator: 'CmdOrCtrl+Shift+U',
-      click: () => send('tools-uuid')
-    },
-    { label: t('menu.tools.jwt'), click: () => send('tools-jwt') },
-    { label: t('menu.tools.epoch'), click: () => send('tools-epoch') },
-    { label: t('menu.tools.url'), click: () => send('tools-url') },
-    {
-      label: t('menu.tools.lines'),
-      accelerator: 'CmdOrCtrl+Shift+R',
-      click: () => send('tools-lines')
-    },
-    { label: t('menu.tools.checksum'), click: () => send('tools-hash') },
-    { label: t('menu.tools.regex'), click: () => send('tools-regex') },
-    {
-      label: t('menu.tools.textEncryption'),
-      submenu: [
-        {
-          label: t('menu.tools.encryptDecrypt'),
-          accelerator: 'CmdOrCtrl+Shift+X',
-          click: () => send('tools-crypt')
-        }
-      ]
-    }
+    group('tools.encode', [
+      item(send, 'tools.base64', 'CmdOrCtrl+Shift+B', 'tools-base64'),
+      item(send, 'tools.url', null, 'tools-url')
+    ]),
+    group('tools.format', [
+      item(send, 'tools.json', 'CmdOrCtrl+Shift+J', 'tools-json'),
+      item(send, 'tools.xml', 'CmdOrCtrl+Shift+M', 'tools-xml'),
+      item(send, 'tools.lines', 'CmdOrCtrl+Shift+R', 'tools-lines')
+    ]),
+    group('tools.generate', [
+      item(send, 'tools.uuid', 'CmdOrCtrl+Shift+U', 'tools-uuid'),
+      item(send, 'tools.epoch', null, 'tools-epoch'),
+      item(send, 'tools.checksum', null, 'tools-hash')
+    ]),
+    group('tools.inspect', [
+      item(send, 'tools.jwt', null, 'tools-jwt'),
+      item(send, 'tools.regex', null, 'tools-regex')
+    ]),
+    group('tools.secure', [item(send, 'tools.encryptDecrypt', 'CmdOrCtrl+Shift+X', 'tools-crypt')])
   ]
 })
 
@@ -150,6 +109,8 @@ export const helpMenu = ({ send, version, onReportIssue }) => ({
     { type: 'separator' },
     { label: t('menu.help.shortcuts'), click: () => send('shortcuts') },
     { label: t('menu.help.showTour'), click: () => send('show-tour') },
+    // Lands on the Settings pane that lists the `diffbro` subcommands.
+    { label: t('menu.help.terminal'), click: () => send('settings-cli') },
     { type: 'separator' },
     { label: t('menu.help.reportIssue'), click: onReportIssue }
   ]

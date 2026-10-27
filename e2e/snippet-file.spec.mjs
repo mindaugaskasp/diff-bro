@@ -8,7 +8,8 @@ import {
   openNewSnippet,
   showPanel,
   stubOpenDialog,
-  stubSaveDialog
+  stubSaveDialog,
+  openMenu
 } from './fixtures.mjs'
 
 const more = (page) => docActions(page).getByRole('button', { name: 'More snippet actions' })
@@ -51,8 +52,7 @@ test('the File menu saves the snippet in front as a file too', async ({ app, pag
   try {
     await newSnippet(page, { name: 'From the menu', body: 'menu body' })
     await stubSaveDialog(app, out)
-    await page.getByRole('button', { name: 'File', exact: true }).click()
-    await page.getByText('Save Snippet as File…', { exact: true }).click()
+    await openMenu(page, 'File', 'Export', 'Snippet as File')
     await expect.poll(() => readFileSync(out, 'utf-8')).toBe('menu body')
   } finally {
     rmSync(dir, { recursive: true, force: true })

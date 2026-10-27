@@ -155,7 +155,7 @@ test('the bar sheds words before it sheds controls', async ({ app, page }) => {
   const win = await app.browserWindow(page)
   const [w, h] = await win.evaluate((b) => b.getMinimumSize())
   await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await saveSettings(page)
   await win.evaluate((b) => b.webContents.setZoomLevel(2))
@@ -187,7 +187,7 @@ test('the overflow menu appears only when the row runs out of room', async ({ ap
   // Still inline at the minimum: the View menu alone bought enough room.
   await expect(more).toBeHidden()
 
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await saveSettings(page)
   await win.evaluate((b) => b.webContents.setZoomLevel(6))
@@ -215,7 +215,7 @@ test('unfolding the row while its menu is open takes the backdrop with it', asyn
   const [w, h] = await win.evaluate((b) => b.getMinimumSize())
   await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
 
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await saveSettings(page)
   await win.evaluate((b) => b.webContents.setZoomLevel(6))

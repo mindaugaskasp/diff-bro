@@ -51,7 +51,7 @@ test('a diagram pins light while the app stays dark, and brings its own paper', 
   app,
   page
 }) => {
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
@@ -159,7 +159,7 @@ test('the editor preview theme does not outlive the editor', async () => {
 // one drawn for the old ground, so for a few frames light ink sits on a white
 // sheet. Only a continuous probe can see it.
 test('the diagram never sits on a ground it was not drawn for', async ({ app, page }) => {
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
@@ -277,7 +277,7 @@ test('a diagram theme lasts for that viewer only, and does not persist', async (
 // render time, so a diagram drawn for the dark theme keeps its light-on-dark ink
 // until it is rendered again.
 test('an Auto diagram redraws when the app theme flips', async ({ app, page }) => {
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')

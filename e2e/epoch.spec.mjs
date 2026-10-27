@@ -4,7 +4,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // proves the menu → panel → pure-util wiring and the per-row OS-clipboard write.
 
 test('epoch → date rows render and a row copies to the clipboard', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'Epoch / Date')
+  await openMenu(page, 'Tools', 'Generate', 'Epoch / Date')
   const dlg = page.getByRole('dialog', { name: 'Epoch' })
   await expect(dlg).toBeVisible()
 
@@ -18,7 +18,7 @@ test('epoch → date rows render and a row copies to the clipboard', async ({ ap
 })
 
 test('a picked date converts to its Unix timestamp', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Epoch / Date')
+  await openMenu(page, 'Tools', 'Generate', 'Epoch / Date')
   const dlg = page.getByRole('dialog', { name: 'Epoch' })
   await dlg.getByLabel('Date and time, as YYYY-MM-DD HH:MM').fill('2025-07-30 13:00')
   const expected = String(Math.floor(Date.parse('2025-07-30T13:00Z') / 1000))

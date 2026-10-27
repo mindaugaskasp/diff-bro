@@ -2,7 +2,7 @@ import { BrowserWindow, Menu, app, dialog, ipcMain, shell, systemPreferences } f
 import { homedir } from 'os'
 import { ISSUE_BASE, buildIssueUrl } from './issueUrl'
 import { isLauncher, toggleQuickLook } from './quickLook'
-import { editMenu, helpMenu, securityMenu, terminalMenu, toolsMenu } from './menuSections'
+import { editMenu, helpMenu, securityMenu, toolsMenu } from './menuSections'
 import { setLocale, t } from './i18n'
 import { refreshTrayMenu } from './tray'
 
@@ -115,7 +115,7 @@ const viewMenu = (send, isDev) => ({
     viewItem(send, 'commandPalette', 'CmdOrCtrl+Shift+P', 'command-palette'),
     viewItem(send, 'toggleSidebar', 'CmdOrCtrl+B', 'toggle-sidebar'),
     { type: 'separator' },
-    ...displayToggles(send),
+    { label: t('menu.view.display'), submenu: displayToggles(send) },
     viewItem(send, 'toggleTheme', 'CmdOrCtrl+D', 'toggle-theme'),
     viewItem(send, 'presentation', 'F5', 'toggle-presentation'),
     { type: 'separator' },
@@ -126,9 +126,14 @@ const viewMenu = (send, isDev) => ({
     },
     viewItem(send, 'mergeConflicts', 'CmdOrCtrl+Shift+K', 'merge-conflicts'),
     { type: 'separator' },
-    zoomItem('zoomIn', 'CmdOrCtrl+=', 'zoom-in'),
-    zoomItem('zoomOut', 'CmdOrCtrl+-', 'zoom-out'),
-    zoomItem('resetZoom', 'CmdOrCtrl+0', 'zoom-reset'),
+    {
+      label: t('menu.view.zoom'),
+      submenu: [
+        zoomItem('zoomIn', 'CmdOrCtrl+=', 'zoom-in'),
+        zoomItem('zoomOut', 'CmdOrCtrl+-', 'zoom-out'),
+        zoomItem('resetZoom', 'CmdOrCtrl+0', 'zoom-reset')
+      ]
+    },
     ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : [])
   ]
 })
@@ -147,17 +152,28 @@ const fileMenu = (send, isMac) => ({
     fileItem(send, 'openAsSnippet', 'CmdOrCtrl+O', 'open-file-as-snippet'),
     { type: 'separator' },
     fileItem(send, 'save', 'CmdOrCtrl+S', 'save'),
-    fileItem(send, 'saveAsFile', 'CmdOrCtrl+Alt+S', 'save-snippet-as-file'),
     fileItem(send, 'share', 'CmdOrCtrl+E', 'share-current'),
-    fileItem(send, 'import', 'CmdOrCtrl+I', 'import-shared'),
-    fileItem(send, 'exportHtml', null, 'export-html'),
-    fileItem(send, 'exportImage', null, 'export-image'),
+    {
+      label: t('menu.file.import'),
+      submenu: [
+        fileItem(send, 'importShared', 'CmdOrCtrl+I', 'import-shared'),
+        fileItem(send, 'importSnippets', null, 'import-snippets')
+      ]
+    },
+    {
+      label: t('menu.file.export'),
+      submenu: [
+        fileItem(send, 'exportHtml', null, 'export-html'),
+        fileItem(send, 'exportImage', null, 'export-image'),
+        fileItem(send, 'exportSnippetFile', 'CmdOrCtrl+Alt+S', 'save-snippet-as-file'),
+        fileItem(send, 'exportAllSnippets', null, 'export-snippets')
+      ]
+    },
     { type: 'separator' },
     fileItem(send, 'newComparison', 'CmdOrCtrl+Shift+T', 'tab-new'),
     fileItem(send, 'closeComparison', 'CmdOrCtrl+Shift+W', 'tab-close'),
     fileItem(send, 'nextComparison', 'Ctrl+Tab', 'tab-next'),
     fileItem(send, 'prevComparison', 'Ctrl+Shift+Tab', 'tab-prev'),
-    fileItem(send, 'importSnippets', null, 'import-snippets'),
     { type: 'separator' },
     settingsItem(send),
     { type: 'separator' },
@@ -174,7 +190,6 @@ export function installMenu() {
     ...(isMac ? [{ role: 'appMenu' }] : []),
     fileMenu(sendToFocused, isMac),
     editMenu(sendToFocused, isMac),
-    terminalMenu(sendToFocused),
     viewMenu(sendToFocused, isDev),
     securityMenu(sendToFocused),
     toolsMenu(sendToFocused),

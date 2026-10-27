@@ -53,6 +53,7 @@ export const COMMANDS = {
   'tab-prev': ({ tabs }) => tabs.step(-1),
   'tab-close': ({ tabs }) => tabs.requestActiveClose(),
   'import-snippets': ({ diff }) => diff.importSnippets(),
+  'export-snippets': ({ snippets }) => (snippets.pendingExport = { all: true }),
   // Reopening the list is the way back after dismissing it. Guarded on `live`:
   // once git stops walking there is no session to show, and offering one would
   // mean reconstructing a merge git has finished with.

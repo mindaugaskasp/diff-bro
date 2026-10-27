@@ -63,7 +63,7 @@ test('using a tool does not move it', async ({ page }) => {
   await showPanel(page, 'tools')
   const before = await names(page).allTextContents()
 
-  await openMenu(page, 'Tools', 'Epoch')
+  await openMenu(page, 'Tools', 'Generate', 'Epoch')
   await page.getByRole('dialog', { name: 'Epoch' }).waitFor()
   await page.keyboard.press('Escape')
 

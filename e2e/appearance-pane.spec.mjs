@@ -94,7 +94,7 @@ test('content stays clear of the pane scrollbar', async ({ page }) => {
 // wherever Settings happened to open last — and that pane lists every
 // subcommand `parseCli` accepts, from the shared list the terminal help reads.
 test('the Terminal menu opens Settings on the pane that documents the CLI', async ({ page }) => {
-  await openMenu(page, 'Terminal', 'Commands & Setup')
+  await openMenu(page, 'Help', 'Terminal Commands & Setup')
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Terminal')
 
@@ -119,7 +119,7 @@ test('the Terminal menu switches panes when Settings is already open', async ({ 
   await page.locator('.settings-nav .nav-item', { hasText: 'Storage' }).click()
   await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Storage')
 
-  await openMenu(page, 'Terminal', 'Commands & Setup')
+  await openMenu(page, 'Help', 'Terminal Commands & Setup')
   await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Terminal')
   await expect(page.locator('.cli-list dt code').first()).toBeVisible()
 })
