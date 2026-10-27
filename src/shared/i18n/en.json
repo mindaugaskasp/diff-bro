@@ -1750,6 +1750,7 @@
     "whose": "Whose diffs"
   },
   "toolGroups": {
+    "pinned": "Pinned",
     "encode": "Encode",
     "format": "Format",
     "generate": "Generate",
