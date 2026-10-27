@@ -1833,9 +1833,9 @@
     "clickToEdit": "Click to edit"
   },
   "keysPanel": {
-    "pasteKey": "Paste key",
-    "paste": "Paste",
-    "pasteTip": "Add a key someone sent you as text — copy it, then paste",
+    "addFromClipboard": "Add from clipboard",
+    "addFromClipboardLabel": "Add their key from clipboard",
+    "addFromClipboardTip": "Add a key someone sent you as text — copy it first",
     "yourKey": "Your key",
     "email": "Email",
     "save": "Save as file",

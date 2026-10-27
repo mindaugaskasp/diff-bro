@@ -155,8 +155,13 @@ function submit() {
           </i18n-t>
         </span>
       </div>
-      <button type="button" class="btn btn-sm" @click="share.pasteTrustedKey()">
-        {{ $t('keysPanel.pasteKey') }}
+      <button
+        type="button"
+        class="btn btn-sm"
+        :aria-label="$t('keysPanel.addFromClipboardLabel')"
+        @click="share.pasteTrustedKey()"
+      >
+        {{ $t('keysPanel.addFromClipboard') }}
       </button>
       <button type="button" class="btn btn-sm btn-primary" @click="share.addTrustedKey()">
         {{ $t('share.diffDialog.addTheirKey2') }}

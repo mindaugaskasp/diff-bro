@@ -458,9 +458,10 @@ test('sealing the current diff for a person writes the file', async () => {
   }
 })
 
-// "+ Add" only peeks the clipboard silently; Paste key asks for it outright, and
-// says so when the clipboard holds no key rather than opening a file picker.
-test('Paste key offers the clipboard key, and says when there is none', async () => {
+// "+ Add" only peeks the clipboard silently; Add from clipboard asks for it
+// outright, and says so when the clipboard holds no key rather than opening a
+// file picker.
+test('Add from clipboard offers the clipboard key, and says when there is none', async () => {
   test.setTimeout(90_000)
   const dir = freshUserDataDir()
   const app = await launchApp(dir)
@@ -478,7 +479,8 @@ test('Paste key offers the clipboard key, and says when there is none', async ()
       .getByRole('navigation', { name: 'Sidebar' })
       .getByRole('button', { name: /^Keys/ })
       .click()
-    const paste = page.getByRole('button', { name: 'Paste key' })
+    const paste = page.getByRole('button', { name: 'Add their key from clipboard' })
+    await expect(paste).toHaveText('Add from clipboard')
 
     await app.evaluate(({ clipboard }) => clipboard.writeText('not a key at all'))
     await paste.click()
