@@ -170,6 +170,7 @@
   letter-spacing: 0;
   background: transparent;
   border-top: none;
+  border-bottom: 1px solid var(--border);
   cursor: default;
 }
 .head.panel .section-icon {
