@@ -789,6 +789,39 @@ const SURFACES = [
     }
   },
   {
+    name: 'diff-row-more',
+    open: async (page) => {
+      await page.locator('.diff-tabs .add').click()
+      await page.getByRole('button', { name: 'Paste mode' }).click()
+      await page.getByPlaceholder('Paste original text here').fill('before')
+      await page.getByPlaceholder('Paste changed text here').fill('after')
+      await page.getByRole('button', { name: 'Compare', exact: true }).click()
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      const save = page.getByRole('dialog', { name: 'Save diff' })
+      await save.getByLabel('Name', { exact: true }).fill('Sweep more menu')
+      await save.getByRole('button', { name: 'Save', exact: true }).click()
+      await showPanel(page, 'diffs')
+      const row = page.locator('li.diff', { hasText: 'Sweep more menu' })
+      await row.hover()
+      await row.getByRole('button', { name: 'More actions' }).click()
+      await page.locator('.ctx').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      const row = page.locator('li.diff', { hasText: 'Sweep more menu' })
+      await row.hover()
+      await row.getByRole('button', { name: 'Delete now' }).click()
+      const ask = page.getByRole('dialog').filter({ hasText: 'Sweep more menu' })
+      await ask.getByRole('button', { name: /^Delete/ }).click()
+      await row.waitFor({ state: 'detached' })
+      await clearComparison(page)
+    },
+    probes: {
+      'menu item': ['.ctx .ctx-item', TEXT],
+      'menu keyline': ['.ctx', SEPARATOR, 'border']
+    }
+  },
+  {
     name: 'start-surface',
     open: async (page) => {
       const plus = page.locator('.diff-tabs .add')

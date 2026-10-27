@@ -17,7 +17,7 @@ import {
 import { join } from 'path'
 // Extension required, unlike the rest of src/main: seed-worker.cjs loads this
 // module without a bundler. tests/scripts/seedWorker.test.js guards it.
-import { DATA_FILES, isStoreName, planDataDirMove } from './dataFiles.js'
+import { DATA_FILES, isStoreName, planDataDirMove, revealableStoreFile } from './dataFiles.js'
 import { t } from './i18n.js'
 
 const pointerPath = () => join(app.getPath('userData'), 'data-location.json')
@@ -156,6 +156,14 @@ export function registerAppDataIpc() {
 
   ipcMain.handle('datadir:reveal', () => {
     shell.openPath(getDataDir())
+    return { ok: true }
+  })
+
+  // The renderer names a store, never a path: main resolves it from an allowlist.
+  ipcMain.handle('store:reveal', (_e, name) => {
+    const file = revealableStoreFile(name)
+    if (!file) return { error: 'unknown-store' }
+    shell.showItemInFolder(dataFile(file))
     return { ok: true }
   })
 

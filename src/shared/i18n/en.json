@@ -806,7 +806,12 @@
     "shareStepOne": "Share diff — step 1 of 2: save it",
     "nextChooseRecipient": "Next: choose recipient"
   },
+  "showInFolder": {
+    "label": "Show in folder",
+    "tip": "Show the encrypted file that holds your snippets"
+  },
   "savedDiffRow": {
+    "moreActions": "More actions",
     "exportAsImage": "Export as image",
     "editTags": "Edit tags",
     "shareAsSealedFile": "Share as sealed file",

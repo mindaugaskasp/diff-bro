@@ -28,7 +28,8 @@ async function saveDiff(page, name, texts) {
 async function openImageExport(page, name) {
   const row = page.locator('li.diff', { hasText: name })
   await row.hover()
-  await row.getByRole('button', { name: 'Export as image' }).click()
+  await row.getByRole('button', { name: 'More actions' }).click()
+  await page.getByRole('menuitem', { name: 'Export as image' }).click()
   return page.getByRole('dialog', { name: 'Export as image' })
 }
 
