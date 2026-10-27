@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, docActions } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -68,7 +68,7 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
   await editor.locator('.editor').click()
   await page.keyboard.type('token=abc123')
   await editor.getByRole('checkbox', { name: /secret/i }).check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
   const secret = page.locator('.row', { hasText: 'Vault token' }).first()
   await expect(secret).toHaveAttribute('draggable', 'false')

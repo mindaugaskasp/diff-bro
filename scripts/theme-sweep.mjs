@@ -12,11 +12,8 @@
 //
 // Runs INSIDE the container via `make theme-sweep`, for the same reason as the
 // screenshots: Playwright's _electron cannot launch this Electron on macOS.
-//
-// PNGs land in docs/screenshots/themes/<surface>-<theme>.png so a human can
-// still look; the exit code is what gates.
 
-import { mkdtempSync, mkdirSync, existsSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, existsSync, rmSync, writeFileSync } from 'node:fs'
 import { execFileSync, spawn } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -30,7 +27,6 @@ import { THEMES as ALL_THEMES } from '../src/renderer/src/utils/themes.js'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
-const OUT = join(ROOT, 'docs/screenshots/themes')
 // The app's OWN Electron, the way the launcher would reach it — process.execPath
 // here is node, which would run the main bundle as a plain script.
 const ELECTRON = createRequire(import.meta.url)('electron')
@@ -480,12 +476,13 @@ const SURFACES = [
       await showPanel(page, 'snippets')
       await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
       const doc = page.locator('.snippet-doc:visible')
-      const history = doc.getByRole('button', { name: 'History', exact: true })
+      const actions = page.locator('#toolbar-doc-actions')
+      const history = actions.getByRole('button', { name: 'History', exact: true })
       if (!(await history.isVisible())) {
         await doc.locator('.editor').click()
         await page.keyboard.press('ControlOrMeta+End')
         await page.keyboard.type(' ')
-        await doc.getByRole('button', { name: 'Save', exact: true }).click()
+        await actions.getByRole('button', { name: 'Save', exact: true }).click()
       }
       await history.click()
       await page.locator('.hist-version').last().click()
@@ -610,7 +607,7 @@ const SURFACES = [
       await page.getByRole('button', { name: 'Compare', exact: true }).click()
       await page.locator('.deps-row').first().waitFor()
     },
-    close: (page) => page.getByRole('button', { name: 'Clear', exact: true }).click(),
+    close: clearComparison,
     probes: {
       'package name': ['.deps-name', TEXT],
       'old version': ['.deps-move .del', TEXT],
@@ -731,12 +728,15 @@ const SURFACES = [
   {
     name: 'presentation-exit',
     open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
       await page.getByTestId('toolbar-present').click()
       await page.locator('.present-exit').waitFor()
     },
     close: async (page) => {
       await page.keyboard.press('Escape')
       await page.locator('.present-exit').waitFor({ state: 'detached' })
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
     },
     probes: {
       'exit label at rest': ['.present-exit', TEXT]
@@ -935,6 +935,22 @@ const SURFACES = [
     }
   },
   {
+    name: 'toolbar-snippet-actions',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('#toolbar-doc-actions .btn-primary').waitFor()
+    },
+    close: async (page) => {
+      await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
+      await page.locator('#toolbar-doc-actions .btn').first().waitFor({ state: 'detached' })
+    },
+    probes: {
+      'action, resting': ['#toolbar-doc-actions .btn:not(:disabled):not(.btn-primary)', TEXT],
+      'save, nothing to save': ['#toolbar-doc-actions .btn-primary:disabled', DIM]
+    }
+  },
+  {
     name: 'view-menu',
     // The panel this spec added: a surface that has to LIFT off the toolbar on
     // all 14, on a shadow that does not exist on seven of them.
@@ -973,14 +989,15 @@ const SURFACES = [
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
       await editor.locator('.editor').click()
       await page.keyboard.type('sweep')
-      await editor.getByRole('button', { name: 'Save', exact: true }).click()
+      await page
+        .locator('#toolbar-doc-actions')
+        .getByRole('button', { name: 'Save', exact: true })
+        .click()
       await page.locator('.row.is-new .new-badge').waitFor()
       await page.waitForTimeout(4200)
     },
-    // DELETE the row rather than merely retiring it. A sweep that leaves its
-    // scratch snippet behind grows the sidebar by one per theme, and every other
-    // surface's screenshot then differs from its baseline for no reason — which
-    // is how one run dirtied 98 committed PNGs.
+    // DELETE the row rather than merely retiring it: a leftover scratch snippet
+    // grows the sidebar by one per theme and shifts every later surface.
     close: async (page) => {
       await page.locator('.diff-tabs .tab.active .tab-close').click()
       const row = page.locator('.row.is-new')
@@ -1203,7 +1220,6 @@ async function sweepSurface({ app, main, surface, theme, findings, userDataDir }
   const page = surface.window === 'launcher' ? await launcherPage(app, main) : main
   await surface.open(page, { userDataDir, app })
   await page.waitForTimeout(120)
-  await page.screenshot({ path: join(OUT, `${surface.name}-${theme.toLowerCase()}.png`) })
 
   const selectors = Object.fromEntries(
     Object.entries(surface.probes).map(([what, [sel]]) => [what, sel])
@@ -1224,7 +1240,6 @@ async function main() {
     console.error(`Build missing (${MAIN}). Run 'npm run build' first.`)
     process.exit(1)
   }
-  mkdirSync(OUT, { recursive: true })
   const userDataDir = mkdtempSync(join(tmpdir(), 'diffbro-sweep-'))
   const { fingerprint } = await import(pathToFileURL(join(ROOT, 'src/main/sealing.js')).href)
   // Seed the trust store on disk before launch — the manager reads it on open.
@@ -1297,7 +1312,6 @@ function report(findings) {
   console.log('')
   if (!failed.length) {
     console.log(`✓ theme sweep ok — ${findings.length} measurements across ${THEMES.length} themes`)
-    console.log(`  images: docs/screenshots/themes/`)
     return
   }
   console.log(`✗ theme sweep: ${failed.length} measurement(s) under floor:`)

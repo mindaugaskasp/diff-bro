@@ -5,7 +5,8 @@ import {
   showPanel,
   closeSnippet,
   closeComparison,
-  editInPlace
+  editInPlace,
+  docActions
 } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
@@ -62,7 +63,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   // disabled until the test timed out. The clipboard is not what this covers.
   await make.locator('.editor').click()
   await page.keyboard.type('before-the-edit')
-  const save = make.getByRole('button', { name: 'Save', exact: true })
+  const save = docActions(page).getByRole('button', { name: 'Save', exact: true })
   await expect(save).toBeEnabled()
   await save.click()
   await closeSnippet(page)
@@ -83,7 +84,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   await app.evaluate(({ BrowserWindow }) =>
     (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
   )
-  await edit.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await closeSnippet(page)
 
   await expect(page.locator('.diff-container')).toContainText('LIVE-EDIT-MARKER', {
@@ -111,7 +112,7 @@ test('a secret snippet is not draggable', async ({ page }) => {
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await closeSnippet(page)
 
   const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' })

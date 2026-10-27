@@ -1,4 +1,4 @@
-import { test, expect, editInPlace } from './fixtures.mjs'
+import { test, expect, editInPlace, docActions } from './fixtures.mjs'
 
 const strip = (page) => page.getByRole('tablist', { name: 'Open comparisons' })
 
@@ -12,8 +12,8 @@ async function newSnippet(page, name, body) {
 }
 
 test('a saved snippet stays open, named in its tab', async ({ page }) => {
-  const doc = await newSnippet(page, 'Deploy notes', 'kubectl rollout restart')
-  await doc.getByRole('button', { name: 'Save', exact: true }).click()
+  await newSnippet(page, 'Deploy notes', 'kubectl rollout restart')
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(strip(page).getByRole('tab', { name: /Deploy notes/ })).toBeVisible()
@@ -35,24 +35,26 @@ test('switching away keeps an unsaved draft, and closing it asks first', async (
 })
 
 test('Compare with… opens a comparison with the snippet on the left', async ({ page }) => {
-  const doc = await newSnippet(page, 'Left side', 'alpha')
-  await doc.getByRole('button', { name: 'Save', exact: true }).click()
+  await newSnippet(page, 'Left side', 'alpha')
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await page.getByRole('button', { name: 'Compare with…' }).click()
   await expect(page.locator('.slot[data-side="left"]')).toContainText('Left side')
   await expect(strip(page).getByRole('tab', { name: /Left side/ })).toHaveCount(2)
 })
 
 test('history docks beside the snippet once it has an earlier version', async ({ page }) => {
-  const doc = await newSnippet(page, 'Versioned', 'v1')
-  await doc.getByRole('button', { name: 'Save', exact: true }).click()
+  await newSnippet(page, 'Versioned', 'v1')
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit Snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' and v2')
-  await edit.getByRole('button', { name: 'Save', exact: true }).click()
-  await view.getByRole('button', { name: /History/ }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page)
+    .getByRole('button', { name: /History/ })
+    .click()
   await expect(page.getByRole('complementary', { name: /Versioned/ })).toBeVisible()
   await expect(view).toBeVisible()
 })

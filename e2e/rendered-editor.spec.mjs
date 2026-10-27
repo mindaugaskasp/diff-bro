@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, snippetDoc, editInPlace } from './fixtures.mjs'
+import { test, expect, openNewSnippet, snippetDoc, editInPlace, docActions } from './fixtures.mjs'
 
 // jsdom has no editing host, so only a launch proves a person typing into the
 // rendered view and the snippet actually changing.
@@ -104,7 +104,7 @@ test('the format toolbar works in the rendered view', async ({ page }) => {
 })
 
 test('an edit in the rendered view survives a save and reopen', async ({ page }) => {
-  const editor = await startSnippet(page, {
+  await startSnippet(page, {
     name: 'WYSIWYG Persist',
     language: 'markdown',
     body: '# Kept'
@@ -113,7 +113,7 @@ test('an edit in the rendered view survives a save and reopen', async ({ page })
   await renderedView(page).locator('h1').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' across')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Persist' })
   await expect(row).toBeVisible()
@@ -129,7 +129,7 @@ test('a secret snippet shows no plaintext in the rendered view while masked', as
     body: '# classified'
   })
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Secret' })
   await row.locator('.entry').click()
@@ -141,12 +141,12 @@ test('a secret snippet shows no plaintext in the rendered view while masked', as
 
 // The view is a reader until Edit is pressed, exactly as Monaco is.
 test('the rendered view of a saved snippet is not editable until Edit', async ({ page }) => {
-  const editor = await startSnippet(page, {
+  await startSnippet(page, {
     name: 'WYSIWYG ReadOnly',
     language: 'markdown',
     body: '# Locked'
   })
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG ReadOnly' })
   await expect(row).toBeVisible()

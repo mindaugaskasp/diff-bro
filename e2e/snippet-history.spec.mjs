@@ -8,7 +8,8 @@ import {
   showPanel,
   snippetDoc,
   editInPlace,
-  closeSnippet
+  closeSnippet,
+  docActions
 } from './fixtures.mjs'
 import { rmSync } from 'node:fs'
 import { focusEditor } from './monaco.mjs'
@@ -25,7 +26,7 @@ async function createSnippet(page, name, body, { secret = false } = {}) {
   await focusEditor(editor)
   await page.keyboard.type(body)
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 }
 
@@ -33,20 +34,20 @@ async function editSnippet(page, name, body) {
   await page.locator('.snippets-section .row', { hasText: name }).click()
   const view = snippetDoc(page)
   // A secret opens masked, and a masked one is not edited: reveal first.
-  const show = view.getByRole('button', { name: 'Show', exact: true })
+  const show = docActions(page).getByRole('button', { name: 'Show', exact: true })
   if (await show.isVisible().catch(() => false)) await show.click()
   await editInPlace(page)
   await focusEditor(view)
   await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.type(body)
-  await view.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 }
 
 async function openHistory(page, name) {
   await page.locator('.snippets-section .row', { hasText: name }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
-  await view.getByRole('button', { name: 'History', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'History', exact: true }).click()
   // Docked beside the snippet, which stays open.
   await expect(view).toBeVisible()
   return page.getByRole('complementary', { name: /^History — / })
@@ -59,9 +60,10 @@ test('two edits become two versions, each diffed against its predecessor', async
   await createSnippet(page, 'Rollout plan', 'replicas: 1')
   // A snippet with no history yet offers no History button.
   await page.locator('.snippets-section .row', { hasText: 'Rollout plan' }).click()
-  const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
-  await expect(view.getByRole('button', { name: 'History', exact: true })).toHaveCount(0)
+  await expect(docActions(page).getByRole('button', { name: 'History', exact: true })).toHaveCount(
+    0
+  )
   // The ghost Close by its text — the header × carries the same accessible name.
   await closeSnippet(page)
 
@@ -100,7 +102,7 @@ test('a name-only edit adds no version', async ({ page }) => {
   const view = snippetDoc(page)
   await editInPlace(page)
   await view.getByPlaceholder('Snippet name…').fill('Endpoint note v2')
-  await view.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 
   const dialog = await openHistory(page, 'Endpoint note v2')

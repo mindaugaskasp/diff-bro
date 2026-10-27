@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
 
 // Only a real launch has Mermaid's parser, so "the diagram was broken and now
 // renders" can only be answered here. The input is exactly what Word and
@@ -41,7 +41,7 @@ test('the repair is what gets saved', async ({ app, page }) => {
   await editor.locator('.editor').click()
   await page.keyboard.insertText(BROKEN)
   await editor.getByRole('button', { name: 'Repair', exact: true }).click()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
   // Reopened from the row, so what is copied comes from the STORE rather than
@@ -50,7 +50,7 @@ test('the repair is what gets saved', async ({ app, page }) => {
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await app.evaluate(({ clipboard }) => clipboard.clear())
-  const copy = view.getByRole('button', { name: 'Copy', exact: true })
+  const copy = docActions(page).getByRole('button', { name: 'Copy', exact: true })
   await copy.click()
   // The NAME is stable across the flash — only the visible word swaps — so the
   // acknowledgement is read off the text, not off a second accessible name.

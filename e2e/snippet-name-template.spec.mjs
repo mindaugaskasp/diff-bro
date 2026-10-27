@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
 
 // A {{today}} in a snippet name is resolved ONCE, at save. The unit tests own
 // the token table; what only a launched app can show is that the resolved name
@@ -22,7 +22,7 @@ async function newSnippet(page, name) {
   await dialog.getByPlaceholder('Snippet name…').fill(name)
   await dialog.locator('.editor').click()
   await page.keyboard.type('some content')
-  await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
+  await expect(docActions(page).getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
   return dialog
 }
 
@@ -32,7 +32,7 @@ test('a templated name is resolved when the snippet is saved', async ({ page }) 
   // The preview says what will happen before it happens.
   await expect(dialog.locator('.name-templates .preview')).toContainText(`Standup ${today()}`)
 
-  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   // Saving resolves the template into the STORED name, so the row is what says
@@ -71,7 +71,7 @@ test('the resting document does not scroll its body open', async ({ page }) => {
 
 test('an unknown token is kept, not silently dropped', async ({ page }) => {
   const dialog = await newSnippet(page, 'Build {{version}}')
-  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(dialog).toBeHidden()
   await expect(
     page.locator('.snippets-section .row', { hasText: 'Build {{version}}' })
