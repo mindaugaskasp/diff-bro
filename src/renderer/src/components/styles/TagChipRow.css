@@ -6,11 +6,29 @@
   min-height: var(--control-h);
 }
 .tag-row .tag-chip {
+  position: relative;
   height: var(--chip-h);
   border-radius: calc(var(--chip-h) / 2);
 }
+/* Overlaid on the chip's end, never in the flow: entering edit mode must not
+   resize a pill or shift the row. */
+.tag-row .etag .x {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-1);
+  border-radius: 0 calc(var(--chip-h) / 2) calc(var(--chip-h) / 2) 0;
+  background: inherit;
+  opacity: 0;
+}
+.tag-row .etag:hover .x,
+.tag-row .etag:focus-within .x {
+  opacity: 1;
+}
 .add-pill {
   position: relative;
+  min-width: 8.5em;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -35,7 +53,9 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .input-pill .taginput {
-  min-width: 7em;
+  flex: 1;
+  width: 0;
+  min-width: 0;
   padding: 0;
   font-size: var(--font-sm);
 }
