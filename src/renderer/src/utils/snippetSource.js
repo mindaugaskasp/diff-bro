@@ -11,6 +11,8 @@ export const DRAG_TYPE = 'application/x-diffbro-snippet'
 // A saved or external diff dragged out of the sidebar. Its own flavour, so a
 // drop target can tell "compare this snippet" from "open this comparison".
 export const DIFF_DRAG_TYPE = 'application/x-diffbro-diff'
+// An open snippet tab dragged off the strip; carries the tab id.
+export const TAB_DRAG_TYPE = 'application/x-diffbro-snippet-tab'
 
 // A comparison has two sides, and an id is a uuid. Both caps exist so a crafted
 // drag cannot make the app decrypt an unbounded list of anything.

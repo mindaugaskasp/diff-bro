@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowFileDrop } from '../../../src/renderer/src/composables/useFileDrop'
-import { DIFF_DRAG_TYPE, DRAG_TYPE } from '../../../src/renderer/src/utils/snippetSource'
+import {
+  DIFF_DRAG_TYPE,
+  DRAG_TYPE,
+  TAB_DRAG_TYPE
+} from '../../../src/renderer/src/utils/snippetSource'
+import {
+  registerTabContent,
+  unregisterTabContent
+} from '../../../src/renderer/src/composables/useTabContent'
 import { openSavedDiff } from '../../../src/renderer/src/composables/useSavedDiffOpen'
 
 vi.mock('../../../src/renderer/src/composables/useSavedDiffOpen', () => ({
@@ -155,5 +163,36 @@ describe('useWindowFileDrop — a saved diff that will not open', () => {
     const s = { ...store(), showNotice: vi.fn() }
     await useWindowFileDrop(s, ref(false)).onDrop(diffDrop())
     expect(s.showNotice).not.toHaveBeenCalled()
+  })
+})
+
+describe('useWindowFileDrop — an open snippet tab', () => {
+  const tabDrop = (region) => ({
+    dataTransfer: { types: [TAB_DRAG_TYPE], getData: () => 'tab-1' },
+    target: targetIn(region)
+  })
+
+  it("drops the tab's current text onto the comparison", async () => {
+    registerTabContent('tab-1', () => ({
+      name: 'Notes',
+      content: 'now',
+      secret: false,
+      snippetId: null
+    }))
+    const s = store()
+    await useWindowFileDrop(s, ref(false)).onDrop(tabDrop(true))
+    expect(s.dropFiles).toHaveBeenCalledWith(
+      [{ path: null, name: 'Notes', content: 'now', snippetId: null }],
+      null
+    )
+    unregisterTabContent('tab-1')
+  })
+
+  it('ignores it outside the comparison column', async () => {
+    registerTabContent('tab-1', () => ({ name: 'N', content: 'x', secret: false, snippetId: null }))
+    const s = store()
+    await useWindowFileDrop(s, ref(false)).onDrop(tabDrop(false))
+    expect(s.dropFiles).not.toHaveBeenCalled()
+    unregisterTabContent('tab-1')
   })
 })
