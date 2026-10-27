@@ -1,4 +1,4 @@
-import { test, expect, openMenu, openSettings } from './fixtures.mjs'
+import { test, expect, openMenu, openSettings, saveSettings } from './fixtures.mjs'
 import { MAX_TABS } from '../src/renderer/src/utils/tabs.js'
 
 // Past the cap `open()` refuses, which for a reader who treats tabs as
@@ -45,7 +45,7 @@ async function turnOn(page) {
   await openSettings(page)
   await page.getByRole('button', { name: 'Storage' }).click()
   await page.getByRole('checkbox', { name: /close the oldest comparison/i }).check()
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
 }
 
 // A saved comparison holds nothing to lose, so it goes without a word — which

@@ -4,7 +4,8 @@ import {
   openSettings,
   launchApp,
   freshUserDataDir,
-  firstReadyPage
+  firstReadyPage,
+  saveSettings
 } from './fixtures.mjs'
 import { rmSync } from 'node:fs'
 
@@ -23,7 +24,7 @@ const chooseLocale = async (page, id) => {
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption(id)
 }
 
-const closeDialog = (page) => page.keyboard.press('Escape')
+const closeDialog = (page) => saveSettings(page)
 
 test('switching language re-renders the chrome and survives a relaunch', async () => {
   const dir = freshUserDataDir()

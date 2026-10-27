@@ -15,7 +15,7 @@
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
-  font-size: var(--font-md);
+  font-size: calc(var(--font-md) * var(--diff-zoom, 1));
   line-height: 1.7;
   overflow-x: auto;
   white-space: pre;

@@ -16,6 +16,8 @@ import { EmailSettings } from '../features/email'
 import { ClaudeSettings } from '../features/claude'
 import { useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
+import { useSettingsDraft } from '../composables/useSettingsDraft'
+import SettingsUnsavedDialog from './SettingsUnsavedDialog.vue'
 
 const ui = useUiStore()
 const settings = useSettingsStore()
@@ -54,13 +56,16 @@ watch(
   }
 )
 
-function close() {
-  ui.showSettingsDialog = false
-}
+const draft = useSettingsDraft({ close: () => (ui.showSettingsDialog = false) })
 </script>
 
 <template>
-  <BaseDialog width="870px" tour="settings" :title="$t('settingsDialog.settings')" @close="close">
+  <BaseDialog
+    width="870px"
+    tour="settings"
+    :title="$t('settingsDialog.settings')"
+    @close="draft.requestClose()"
+  >
     <div class="settings-body">
       <nav
         class="settings-nav"
@@ -94,7 +99,7 @@ function close() {
                     ? $t('settingsDialog.theTourIsRunning')
                     : $t('settingsDialog.runTheTourAgain')
                 "
-                @click="tour.replay()"
+                @click="draft.requestClose(() => tour.replay())"
               >
                 {{ $t('settingsDialog.showTour') }}
               </button>
@@ -145,8 +150,14 @@ function close() {
     </div>
 
     <template #actions>
-      <button class="btn btn-ghost" @click="close">{{ $t('common.close') }}</button>
+      <button class="btn btn-ghost" @click="draft.requestClose()">
+        {{ $t('common.close') }}
+      </button>
+      <button class="btn btn-primary" :disabled="!draft.isDirty.value" @click="draft.save()">
+        {{ $t('settingsDialog.save') }}
+      </button>
     </template>
+    <SettingsUnsavedDialog v-if="draft.asking.value" @answer="draft.answer" />
   </BaseDialog>
 </template>
 

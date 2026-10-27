@@ -8,7 +8,8 @@ import {
   openNewSnippet,
   pickTag,
   showPanel,
-  docActions
+  docActions,
+  saveSettings
 } from './fixtures.mjs'
 
 // A tag word sits next to the name on every saved-diff and snippet row. For a
@@ -62,7 +63,7 @@ async function setRowTags(page, on) {
   const box = page.locator('.setting-toggle', { hasText: TOGGLE }).locator('input')
   if ((await box.isChecked()) !== on) await box.click()
   await expect(box).toBeChecked({ checked: on })
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden()
 }
 

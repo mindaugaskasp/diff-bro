@@ -1,4 +1,11 @@
-import { test, expect, clickAppMenuItem, showPanel, editInPlace } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  clickAppMenuItem,
+  showPanel,
+  editInPlace,
+  saveSettings
+} from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -93,7 +100,7 @@ test('the snippet editor shows no pale sliver on a tinted light ground', async (
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Sepia theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'sepia')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
 
   await page.locator('li.row').first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()

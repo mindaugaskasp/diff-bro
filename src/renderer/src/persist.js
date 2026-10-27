@@ -28,9 +28,30 @@ export function loadPersisted(name) {
   return raw
 }
 
-export function savePersisted(name, contents) {
+function writePersisted(name, contents) {
   if (typeof window.api?.storeSave === 'function') window.api.storeSave(name, contents)
   else localStorage.setItem(legacyKey(name), contents)
+}
+
+// Writes to these keys wait in memory until released: Settings edits a draft
+// that only reaches disk on Save.
+let held = null
+
+/** @param {string[]} names */
+export function holdPersisted(names) {
+  held = { names: new Set(names), pending: new Map() }
+}
+
+/** @param {boolean} commit write what was held, or drop it */
+export function releasePersisted(commit) {
+  const pending = held?.pending
+  held = null
+  if (commit) for (const [name, contents] of pending ?? []) writePersisted(name, contents)
+}
+
+export function savePersisted(name, contents) {
+  if (held?.names.has(name)) held.pending.set(name, contents)
+  else writePersisted(name, contents)
 }
 
 // The parse every caller was hand-rolling around loadPersisted, with the same

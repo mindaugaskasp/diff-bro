@@ -6,7 +6,8 @@ import {
   showPanel,
   launchApp,
   freshUserDataDir,
-  firstReadyPage
+  firstReadyPage,
+  saveSettings
 } from './fixtures.mjs'
 
 // Mermaid's two themes are each drawn for their own ground, so pinning a diagram
@@ -54,7 +55,7 @@ test('a diagram pins light while the app stays dark, and brings its own paper', 
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
 
   await showPanel(page, 'snippets')
 
@@ -162,7 +163,7 @@ test('the diagram never sits on a ground it was not drawn for', async ({ app, pa
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
 
   await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
   const editor = page.getByRole('region', { name: 'Snippet', exact: true })
@@ -280,7 +281,7 @@ test('an Auto diagram redraws when the app theme flips', async ({ app, page }) =
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Dark theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
 
   await showPanel(page, 'snippets')
 

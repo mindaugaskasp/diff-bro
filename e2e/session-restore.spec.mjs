@@ -7,7 +7,8 @@ import {
   freshUserDataDir,
   firstReadyPage,
   openSettings,
-  closeComparison
+  closeComparison,
+  saveSettings
 } from './fixtures.mjs'
 
 // Closing the app must not throw away what was open. Only a real launch proves
@@ -92,8 +93,7 @@ test('turning the setting off forgets the session and stops storing one', async 
     await expect
       .poll(() => JSON.parse(readFileSync(join(userDataDir, 'session.json'), 'utf-8')).data)
       .toBeUndefined()
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden()
+    await saveSettings(page)
 
     // Still nothing stored as work continues.
     await compare(page, 'more-left', 'more-right')

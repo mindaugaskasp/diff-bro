@@ -6,7 +6,8 @@ import {
   freshUserDataDir,
   launchApp,
   openSettings,
-  showPanel
+  showPanel,
+  saveSettings
 } from './fixtures.mjs'
 
 const family = (locator) => locator.evaluate((el) => getComputedStyle(el).fontFamily)
@@ -20,7 +21,7 @@ async function pickFirstInstalledFont(page) {
   expect(chosen, 'at least one installed monospace font').toBeTruthy()
   await select.selectOption(chosen)
   await expect(dialog.locator('.font-preview')).toHaveCSS('font-family', new RegExp(chosen))
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   return chosen
 }
 
