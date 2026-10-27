@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog, stubSaveDialog } from './fixtures.mjs'
+import { test, expect, stubOpenDialog, stubSaveDialog, closeComparison } from './fixtures.mjs'
 import { zipSync, strToU8 } from 'fflate'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -93,7 +93,7 @@ test('the status bar is the same height for a grid diff as for a text diff', asy
     const textHeight = (await textBand.boundingBox()).height
 
     // Same window, now a grid diff.
-    await page.getByRole('button', { name: 'Clear', exact: true }).click()
+    await closeComparison(page)
     await stubOpenDialog(app, [leftPath])
     await page.locator('.slot[data-side="left"]').click()
     await stubOpenDialog(app, [rightPath])

@@ -81,13 +81,13 @@ test('the Copy diff button keeps the toolbar band aligned and un-overflowed', as
 
   const toolbar = page.locator('.toolbar')
   const copy = page.getByRole('button', { name: 'Copy diff' })
-  const clear = page.getByRole('button', { name: 'Clear', exact: true })
+  const capture = page.getByRole('button', { name: 'Capture', exact: true })
   await expect(copy).toBeVisible()
 
-  const [tb, cb, clr] = await Promise.all([
+  const [tb, cb, cap] = await Promise.all([
     toolbar.boundingBox(),
     copy.boundingBox(),
-    clear.boundingBox()
+    capture.boundingBox()
   ])
 
   // Inside the band, not clipped above/below or wrapped onto a second row.
@@ -95,9 +95,9 @@ test('the Copy diff button keeps the toolbar band aligned and un-overflowed', as
   expect(cb.y + cb.height).toBeLessThanOrEqual(tb.y + tb.height + 1)
 
   // Band rule: controls sharing a row are equal-height, flex-centred boxes, so
-  // Copy diff and Clear must share a top edge and a height (within 1px).
-  expect(Math.abs(cb.y - clr.y)).toBeLessThanOrEqual(1)
-  expect(Math.abs(cb.height - clr.height)).toBeLessThanOrEqual(1)
+  // Copy diff and Capture must share a top edge and a height (within 1px).
+  expect(Math.abs(cb.y - cap.y)).toBeLessThanOrEqual(1)
+  expect(Math.abs(cb.height - cap.height)).toBeLessThanOrEqual(1)
 
   // No sideways scroll: the toolbar stays within the viewport and the document
   // never gains horizontal overflow.

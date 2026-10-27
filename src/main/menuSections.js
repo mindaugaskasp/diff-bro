@@ -30,7 +30,6 @@ export const editMenu = (send, isMac) => ({
       accelerator: 'CmdOrCtrl+Shift+S',
       click: () => send('swap')
     },
-    { label: t('menu.edit.clear'), accelerator: 'CmdOrCtrl+K', click: () => send('clear') },
     {
       label: t('menu.edit.copyPatch'),
       accelerator: 'CmdOrCtrl+Shift+C',

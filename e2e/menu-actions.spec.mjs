@@ -12,12 +12,6 @@ async function pasteCompare(page, left, right) {
   await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
 
-test('Edit → Clear empties a loaded comparison', async ({ page }) => {
-  await pasteCompare(page, 'a', 'b')
-  await openMenu(page, 'Edit', 'Clear')
-  await expect(page.getByText('What are you comparing?')).toBeVisible()
-})
-
 test('Edit → Paste Text Mode opens the paste panes', async ({ page }) => {
   await openMenu(page, 'Edit', 'Paste Text Mode')
   await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()

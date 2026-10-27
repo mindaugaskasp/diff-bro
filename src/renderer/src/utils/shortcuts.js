@@ -38,7 +38,6 @@ export const SHORTCUT_GROUPS = [
     labelKey: 'shortcuts.group.edit',
     items: [
       { keys: `${MOD}+Shift+S`, labelKey: 'shortcuts.swapSides' },
-      { keys: `${MOD}+K`, labelKey: 'shortcuts.clear' },
       { keys: `${MOD}+Shift+C`, labelKey: 'shortcuts.copyPatch' },
       { keys: `${MOD}+Shift+F`, labelKey: 'shortcuts.copyFile' },
       { keys: `${MOD}+Shift+1`, labelKey: 'shortcuts.copyLeft' },
@@ -85,6 +84,5 @@ export const SHORTCUT_BAR = [
   { keys: `${MOD}+S`, labelKey: 'shortcuts.bar.saveDiff' },
   { keys: `${MOD}+Shift+S`, labelKey: 'shortcuts.bar.swap' },
   { keys: `${MOD}+T`, labelKey: 'shortcuts.bar.pasteText' },
-  { keys: `${MOD}+\\`, labelKey: 'shortcuts.bar.splitView' },
-  { keys: `${MOD}+K`, labelKey: 'shortcuts.bar.clear' }
+  { keys: `${MOD}+\\`, labelKey: 'shortcuts.bar.splitView' }
 ]

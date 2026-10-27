@@ -7,7 +7,7 @@ test('with a snippet in front, the comparison controls are disabled', async ({ p
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 
   const bar = page.locator('.toolbar')
-  for (const name of ['View', 'Paste mode', 'Save', 'Share', 'Copy diff', 'Capture', 'Clear']) {
+  for (const name of ['View', 'Paste mode', 'Save', 'Share', 'Copy diff', 'Capture']) {
     await expect(bar.getByRole('button', { name, exact: true }), name).toBeDisabled()
   }
   await expect(bar.getByRole('button', { name: 'Paste mode', exact: true })).toHaveAttribute(

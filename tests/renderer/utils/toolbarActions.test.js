@@ -12,7 +12,6 @@ const base = {
   ready: true,
   comparableKind: 'text',
   isSavedDiff: false,
-  canClear: true,
   isPaste: false,
   canExportImage: true,
   isSpreadsheet: false
@@ -34,13 +33,7 @@ describe('toolbarActions', () => {
   it('folds in the documented order, and only ids it produces', () => {
     const ids = rows().map((r) => r.id)
     expect(FOLD_ORDER.filter((id) => !ids.includes(id))).toEqual([])
-    expect(FOLD_ORDER).toEqual([
-      'clear',
-      'export-image',
-      'copy-diff',
-      'toggle-paste',
-      'share-current'
-    ])
+    expect(FOLD_ORDER).toEqual(['export-image', 'copy-diff', 'toggle-paste', 'share-current'])
   })
 
   // Pinning is a promise that the control fits. Share was pinned first and the
@@ -121,11 +114,6 @@ describe('toolbarActions', () => {
       expect(byId({ canExportImage: false })['export-image'].tipKey).toBe(
         'appToolbar.tips.captureNeedsFiles'
       )
-    })
-
-    it('says which thing Clear would throw away', () => {
-      expect(byId({ isPaste: true }).clear.tipKey).toBe('appToolbar.tips.clearPaste')
-      expect(byId({ isPaste: false }).clear.tipKey).toBe('appToolbar.tips.clearFiles')
     })
   })
 

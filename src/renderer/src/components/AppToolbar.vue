@@ -42,7 +42,6 @@ const actionState = computed(() => ({
   ready: store.ready,
   comparableKind: store.comparableKind,
   isSavedDiff: store.isSavedDiff,
-  canClear: store.canClear,
   isPaste: store.mode === 'paste',
   canExportImage: imageExport.canExportImage,
   isSpreadsheet: store.isSpreadsheet,

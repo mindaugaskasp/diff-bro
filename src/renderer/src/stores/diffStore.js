@@ -125,13 +125,6 @@ export const useDiffStore = defineStore('diff', {
     isSavedDiff() {
       return this.hasActive && this.diffSaved
     },
-    // Clear throws work away, and a vault-backed tab has none to throw: emptying
-    // it left the tab still holding the old snapshot, so the pane went blank
-    // while the tab claimed the diff and reopening the entry made a second tab.
-    // Closing the tab is the way out of one of those.
-    canClear() {
-      return this.hasActive && !this.diffSaved
-    },
     // Saving keeps its own encrypted copy of both sides, which is exactly what a
     // file too large to hold cannot provide.
     canSave() {

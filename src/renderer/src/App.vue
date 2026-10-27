@@ -172,7 +172,6 @@ useWindowFocusRefresh()
             :missing="missingSide"
             :comparable="store.leftComparable || store.rightComparable"
             @pick="store.pick(missingSide)"
-            @clear="store.clear()"
           />
           <StartSurface v-else />
 

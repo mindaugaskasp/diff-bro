@@ -175,8 +175,14 @@ async function loadStructureDiff(page) {
 // Any dialog the clear raised has to go too, or its backdrop swallows the
 // clicks the NEXT surface makes and the sweep dies three surfaces later.
 async function clearComparison(page) {
-  const clear = page.getByRole('button', { name: 'Clear', exact: true })
-  if (await clear.isEnabled().catch(() => false)) await clear.click()
+  const close = page.locator('.diff-tabs .tab.active .tab-close')
+  if (await close.isVisible().catch(() => false)) {
+    await close.click()
+    const confirm = page.getByRole('dialog', { name: 'Close comparison?' })
+    if (await confirm.isVisible().catch(() => false)) {
+      await confirm.getByRole('button', { name: 'Close it' }).click()
+    }
+  }
   const backdrop = page.locator('.dialog-backdrop')
   while (await backdrop.count()) {
     await page.keyboard.press('Escape')
@@ -1120,10 +1126,7 @@ const SURFACES = [
     probes: {
       'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
       'waiting title': ['.wait-slot.open .wait-title', TEXT],
-      'waiting hint': ['.wait-hint', DIM],
-      // The way back from a wrong first file. A real .btn, so it answers to the
-      // reading floor rather than the 3:1 the hint above it takes.
-      'clear control': ['.wait-clear', TEXT]
+      'waiting hint': ['.wait-hint', DIM]
     }
   },
   {

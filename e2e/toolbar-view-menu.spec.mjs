@@ -158,14 +158,14 @@ test('the bar sheds words before it sheds controls', async ({ app, page }) => {
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
-  await win.evaluate((b) => b.webContents.setZoomLevel(1))
+  await win.evaluate((b) => b.webContents.setZoomLevel(2))
 
   await expect.poll(wordy).toBe(false)
   await expect(actions).toHaveCount(all) // nothing folded yet
   await expect(more).toBeHidden()
 
   // Rung 3 — not even the glyphs fit.
-  await win.evaluate((b) => b.webContents.setZoomLevel(5))
+  await win.evaluate((b) => b.webContents.setZoomLevel(6))
   await expect(more).toBeVisible()
   expect(await actions.count()).toBeLessThan(all)
 })
@@ -179,7 +179,7 @@ test('the overflow menu appears only when the row runs out of room', async ({ ap
   // the accessible name is pseudolocalized too.
   const more = page.getByRole('button', { name: /More actions|Ṁōřé àçţĩōńş/u })
   await expect(more).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Clear', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Capture', exact: true })).toBeVisible()
 
   const win = await app.browserWindow(page)
   const [w, h] = await win.evaluate((b) => b.getMinimumSize())
@@ -190,7 +190,7 @@ test('the overflow menu appears only when the row runs out of room', async ({ ap
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
-  await win.evaluate((b) => b.webContents.setZoomLevel(5))
+  await win.evaluate((b) => b.webContents.setZoomLevel(6))
 
   await expect(more).toBeVisible()
   // And what folded is reachable, not lost.
@@ -218,7 +218,7 @@ test('unfolding the row while its menu is open takes the backdrop with it', asyn
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
-  await win.evaluate((b) => b.webContents.setZoomLevel(5))
+  await win.evaluate((b) => b.webContents.setZoomLevel(6))
 
   await expect(more).toBeVisible()
   await more.click()
