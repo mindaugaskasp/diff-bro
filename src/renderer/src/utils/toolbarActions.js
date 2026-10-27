@@ -15,7 +15,6 @@ import { STREAMED_LIMITS } from './streamedLimits'
  * @property {boolean} ready
  * @property {string}  comparableKind
  * @property {boolean} isSavedDiff
- * @property {boolean} canClear
  * @property {boolean} isPaste
  * @property {boolean} canExportImage
  * @property {boolean} isSpreadsheet
@@ -41,7 +40,7 @@ import { STREAMED_LIMITS } from './streamedLimits'
 // where the hand expects it. Measured: with Share pinned too, the pinned set
 // alone still overflowed by 18px at maximum zoom in en-XA with the sidebar at
 // its cap — pinning something is a promise that it fits.
-export const FOLD_ORDER = ['clear', 'export-image', 'copy-diff', 'toggle-paste', 'share-current']
+export const FOLD_ORDER = ['export-image', 'copy-diff', 'toggle-paste', 'share-current']
 
 const saveTipKey = (s) => {
   if (s.isStreamed) return STREAMED_LIMITS.save
@@ -74,15 +73,6 @@ const pasteRow = (s) => ({
   disabled: false,
   // Paste mode is a mode, so the control that entered it stays lit.
   active: s.isPaste,
-  pinned: false
-})
-
-const clearRow = (s) => ({
-  id: 'clear',
-  labelKey: 'appToolbar.clear',
-  tipKey: s.isPaste ? 'appToolbar.tips.clearPaste' : 'appToolbar.tips.clearFiles',
-  icon: 'x',
-  disabled: !s.canClear,
   pinned: false
 })
 
@@ -137,7 +127,6 @@ function comparisonRows(s) {
       icon: 'image',
       disabled: !s.canExportImage,
       pinned: false
-    },
-    ...(setup ? [clearRow(s)] : [])
+    }
   ]
 }

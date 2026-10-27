@@ -75,7 +75,6 @@
     "edit": {
       "title": "Edit",
       "swapSides": "Swap Sides",
-      "clear": "Clear",
       "copyPatch": "Copy Diff as Patch",
       "copyFile": "Copy Diff as File",
       "applyPatch": "Apply Patch…",
@@ -219,7 +218,6 @@
     "nextComparison": "Next comparison",
     "prevComparison": "Previous comparison",
     "swapSides": "Swap sides",
-    "clear": "Clear",
     "copyPatch": "Copy diff as patch",
     "copyFile": "Copy diff as file",
     "pasteTextMode": "Paste text mode",
@@ -245,8 +243,7 @@
       "saveDiff": "save diff",
       "swap": "swap",
       "pasteText": "paste text",
-      "splitView": "split view",
-      "clear": "clear"
+      "splitView": "split view"
     },
     "quickLookAppWide": "Quick look-up (works app-wide)",
     "copyLeft": "Copy left side",
@@ -510,7 +507,6 @@
     "share": "Share",
     "copyDiff": "Copy diff",
     "capture": "Capture",
-    "clear": "Clear",
     "view": "View",
     "more": "More actions",
     "structure": "Structure",
@@ -528,8 +524,6 @@
       "capture": "Export this diff as an image — select lines first to capture just those",
       "captureGrid": "Export this comparison as an image",
       "captureNeedsFiles": "Load two files to export an image",
-      "clearFiles": "Clear both files ({mod}+K)",
-      "clearPaste": "Clear the pasted text ({mod}+K)",
       "comparePasted": "Compare pasted text ({mod}+T)",
       "backToFiles": "Back to comparing files ({mod}+T)",
       "resetZoom": "The comparison is zoomed — click to return it to 100% ({mod}+0)",
@@ -1541,10 +1535,7 @@
       "title": "Waiting for file",
       "dropSide": "Drop or choose the {side} file",
       "hint": "Drag a file or a snippet here, or use the field above.",
-      "chooseSide": "Choose the {side} file",
-      "clear": "Clear",
-      "clearTip": "Take back the file already loaded and start over",
-      "clearLabel": "Clear the loaded file"
+      "chooseSide": "Choose the {side} file"
     },
     "dropADiffTo": "Drop to open this comparison",
     "swapTip": "Swap the left and right files ({mod}+Shift+S)",

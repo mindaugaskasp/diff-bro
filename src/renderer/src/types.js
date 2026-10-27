@@ -357,7 +357,6 @@
  * @property {boolean} ready
  * @property {string}  comparableKind  'text' | 'diagram' | 'spreadsheet' | …
  * @property {boolean} isSavedDiff     a vault-backed tab: no paste toggle, no clear
- * @property {boolean} canClear
  * @property {boolean} isPaste         paste mode rather than file mode
  * @property {boolean} canExportImage
  * @property {boolean} isSpreadsheet

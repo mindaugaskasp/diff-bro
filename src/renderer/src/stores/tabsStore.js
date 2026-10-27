@@ -68,8 +68,8 @@ export const useTabsStore = defineStore('tabs', {
       if (this.tabs.length) return
       const diff = useDiffStore()
       // Subscribed rather than called: a cleared comparison must drop its tab's
-      // entry link on EVERY path, and there are three (the Clear command, a
-      // replacement dropped in, a replacement after saving). Requiring each
+      // entry link on EVERY path (a replacement dropped in, a replacement after
+      // saving). Requiring each
       // caller to remember is what orphaned the link the first two times — and
       // the core cannot call back into this store without re-forming the cycle.
       diff.$onAction(({ name, after }) => {

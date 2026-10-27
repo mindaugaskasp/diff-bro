@@ -1,4 +1,12 @@
-import { test, expect, openNewSnippet, showPanel, closeSnippet, editInPlace } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openNewSnippet,
+  showPanel,
+  closeSnippet,
+  closeComparison,
+  editInPlace
+} from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -83,14 +91,14 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   })
 })
 
-// Clearing or saving is the diff's business; the library is not touched.
-test('clearing the comparison leaves both snippets alone', async ({ page }) => {
+// Closing or saving is the diff's business; the library is not touched.
+test('closing the comparison leaves both snippets alone', async ({ page }) => {
   const rows = () => page.locator('.snippets-section .row')
   const before = await rows().count()
 
   await dragRowTo(page, DIAGRAM, '.slot[data-side="left"]')
   await expect(page.locator('.slot[data-side="left"]')).toContainText(DIAGRAM, { timeout: 15000 })
-  await page.getByRole('button', { name: 'Clear', exact: true }).click()
+  await closeComparison(page)
 
   await expect(rows()).toHaveCount(before)
   await expect(rows().filter({ hasText: DIAGRAM })).toHaveCount(1)

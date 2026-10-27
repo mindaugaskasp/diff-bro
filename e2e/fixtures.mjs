@@ -294,6 +294,15 @@ export async function editInPlace(page) {
   return doc
 }
 
+// Closing the tab is the one way to abandon a comparison; unsaved work asks first.
+export async function closeComparison(page) {
+  await page.locator('.diff-tabs .tab.active .tab-close').click()
+  const confirm = page.getByRole('dialog', { name: 'Close comparison?' })
+  if (await confirm.isVisible().catch(() => false)) {
+    await confirm.getByRole('button', { name: 'Close it' }).click()
+  }
+}
+
 export async function openNewSnippet(page) {
   await showPanel(page, 'snippets')
   await newSnippetButton(page).click()

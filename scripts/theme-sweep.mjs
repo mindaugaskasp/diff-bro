@@ -1120,10 +1120,7 @@ const SURFACES = [
     probes: {
       'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
       'waiting title': ['.wait-slot.open .wait-title', TEXT],
-      'waiting hint': ['.wait-hint', DIM],
-      // The way back from a wrong first file. A real .btn, so it answers to the
-      // reading floor rather than the 3:1 the hint above it takes.
-      'clear control': ['.wait-clear', TEXT]
+      'waiting hint': ['.wait-hint', DIM]
     }
   },
   {

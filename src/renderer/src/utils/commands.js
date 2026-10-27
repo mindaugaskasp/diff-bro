@@ -34,9 +34,6 @@ export const COMMANDS = {
   },
   'share-current': ({ share }) => share.shareCurrent(),
   swap: ({ diff }) => diff.swap(),
-  clear: ({ diff }) => {
-    if (diff.canClear) diff.clear()
-  },
   'copy-diff': ({ diff }) => diff.copyDiff(),
   'copy-diff-file': ({ diff }) => diff.copyDiffAsFile(),
   // One side verbatim, rather than the patch between them. The store declines

@@ -6,8 +6,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openMenu,
-  openSettings
+  openSettings,
+  closeComparison
 } from './fixtures.mjs'
 
 // Closing the app must not throw away what was open. Only a real launch proves
@@ -124,8 +124,8 @@ test('closing the last comparison leaves the next launch empty', async () => {
     await compare(page, 'transient', 'TRANSIENT')
     await sessionOnDisk(userDataDir)
 
-    // Clearing it is a decision, and it has to outlive the quit too.
-    await openMenu(page, 'Edit', 'Clear')
+    // Closing it is a decision, and it has to outlive the quit too.
+    await closeComparison(page)
     await expect(page.getByText('What are you comparing?')).toBeVisible()
     await expect
       .poll(() => JSON.parse(readFileSync(join(userDataDir, 'session.json'), 'utf-8')).data)

@@ -99,7 +99,6 @@ const editSection = (run) => ({
   label: t('menu.edit.title'),
   items: [
     { label: t('menu.edit.swapSides'), keys: `${MOD}+Shift+S`, run: () => run('swap') },
-    { label: t('menu.edit.clear'), keys: `${MOD}+K`, run: () => run('clear') },
     { label: t('menu.edit.copyPatch'), keys: `${MOD}+Shift+C`, run: () => run('copy-diff') },
     { label: t('menu.edit.copyFile'), keys: `${MOD}+Shift+F`, run: () => run('copy-diff-file') },
     // Shift over the digit that OPENS that side (MOD+1 / MOD+2).

@@ -81,7 +81,3 @@
   text-align: center;
 }
 
-/* Apart from the hint: it undoes the screen rather than continuing the instruction. */
-.wait-clear {
-  margin-top: var(--space-3);
-}

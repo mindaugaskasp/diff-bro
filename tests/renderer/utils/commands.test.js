@@ -23,7 +23,6 @@ const spy = () => vi.fn()
 const stores = () => ({
   diff: {
     hasUnsavedWork: true,
-    canClear: true,
     canCompareStructure: true,
     renderSideBySide: true,
     semanticView: false,
@@ -168,13 +167,13 @@ describe('runCommand', () => {
 
   it('honours a guard rather than acting unconditionally', () => {
     const s = stores()
-    runCommand('clear', s)
-    expect(s.diff.clear).toHaveBeenCalled()
+    runCommand('toggle-paste', s)
+    expect(s.diff.togglePasteMode).toHaveBeenCalled()
 
     const guarded = stores()
-    guarded.diff.canClear = false
-    runCommand('clear', guarded)
-    expect(guarded.diff.clear).not.toHaveBeenCalled()
+    guarded.diff.isSavedDiff = true
+    runCommand('toggle-paste', guarded)
+    expect(guarded.diff.togglePasteMode).not.toHaveBeenCalled()
   })
 
   // The real defence: a handler destructuring the wrong store throws only when

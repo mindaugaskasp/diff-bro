@@ -11,7 +11,7 @@ const props = defineProps({
   comparable: { type: Object, default: null }
 })
 
-const emit = defineEmits(['pick', 'clear'])
+const emit = defineEmits(['pick'])
 
 const paneOrder = computed(() =>
   props.missing === 'left' ? ['open', 'loaded'] : ['loaded', 'open']
@@ -45,16 +45,6 @@ const isViewable = computed(
           }}</span>
         </button>
         <p class="wait-hint">{{ $t('app.waiting.hint') }}</p>
-        <!-- Accessible name kept distinct from the toolbar's own Clear. -->
-        <button
-          type="button"
-          class="btn btn-sm wait-clear"
-          :data-tip="$t('app.waiting.clearTip')"
-          :aria-label="$t('app.waiting.clearLabel')"
-          @click="emit('clear')"
-        >
-          {{ $t('app.waiting.clear') }}
-        </button>
       </section>
     </template>
   </div>
