@@ -1,4 +1,4 @@
-import { test, expect, openSettings, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openSettings, stubOpenDialog, saveSettings } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -72,7 +72,7 @@ test('the slot copy control is legible on every theme', async ({ app, page }) =>
       await openSettings(page)
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: `Use the ${theme.label} theme` }).click()
-      await page.keyboard.press('Escape')
+      await saveSettings(page)
       await dlg.waitFor({ state: 'hidden' })
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme.id)
 

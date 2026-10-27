@@ -1,4 +1,4 @@
-import { test, expect, clickAppMenuItem, openViewMenu } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, openViewMenu, saveSettings } from './fixtures.mjs'
 
 // The View menu and the overflow menu. Both are launch-only: the fold is driven
 // by real measurement, and the checkbox appearance faults these controls used to
@@ -157,7 +157,7 @@ test('the bar sheds words before it sheds controls', async ({ app, page }) => {
   await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   await win.evaluate((b) => b.webContents.setZoomLevel(2))
 
   await expect.poll(wordy).toBe(false)
@@ -189,7 +189,7 @@ test('the overflow menu appears only when the row runs out of room', async ({ ap
 
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   await win.evaluate((b) => b.webContents.setZoomLevel(6))
 
   await expect(more).toBeVisible()
@@ -217,7 +217,7 @@ test('unfolding the row while its menu is open takes the backdrop with it', asyn
 
   await clickAppMenuItem(app, 'Settings')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   await win.evaluate((b) => b.webContents.setZoomLevel(6))
 
   await expect(more).toBeVisible()

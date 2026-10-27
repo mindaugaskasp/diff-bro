@@ -5,7 +5,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openSettings
+  openSettings,
+  saveSettings
 } from './fixtures.mjs'
 
 // Picking a theme must (1) apply to the document immediately and (2) survive a
@@ -24,6 +25,7 @@ test('a chosen theme applies at once and persists across a relaunch', async () =
     await openSettings(page)
     await page.getByRole('button', { name: 'Use the Neon theme' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'neon')
+    await saveSettings(page)
     await app.close()
 
     // Relaunch the same profile: the choice was written to userData and reloads.
@@ -73,7 +75,7 @@ test('the diff editor is painted by the theme, not by Monaco stock', async ({ pa
 
   await openSettings(page)
   await page.getByRole('button', { name: 'Use the Matrix theme' }).click()
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'matrix')
   await page.waitForTimeout(400)
   const matrix = await surfaces()
@@ -82,7 +84,7 @@ test('the diff editor is painted by the theme, not by Monaco stock', async ({ pa
 
   await openSettings(page)
   await page.getByRole('button', { name: 'Use the Nyan theme' }).click()
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'nyan')
   await page.waitForTimeout(400)
   const nyan = await surfaces()

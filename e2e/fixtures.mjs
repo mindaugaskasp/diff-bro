@@ -146,6 +146,16 @@ export async function openSettings(page) {
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
 }
 
+// Settings edits are a draft: Save writes them and the dialog then closes
+// without asking. Found by role-free locators, so it works in any locale.
+export async function saveSettings(page) {
+  const panel = page.locator('[data-tour="settings"]')
+  const save = panel.locator(':scope > .dialog-actions .btn-primary')
+  if (await save.isEnabled()) await save.click()
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+}
+
 // The four display toggles live behind the toolbar's View button, so anything
 // driving one opens the panel first. Idempotent — the panel stays open across a
 // toggle, so a test flipping two in a row calls this once.

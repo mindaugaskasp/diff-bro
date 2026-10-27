@@ -65,7 +65,11 @@ const previewFace = computed(() => fontStack(fonts.family) || 'var(--font-mono)'
     </span>
   </div>
   <p class="hint">{{ $t('editorText.shortcuts', { mod: MOD }) }}</p>
-  <div class="font-preview" :style="{ fontFamily: previewFace }" aria-hidden="true">
+  <div
+    class="font-preview"
+    :style="{ fontFamily: previewFace, '--diff-zoom': ui.diffZoom }"
+    aria-hidden="true"
+  >
     <div v-for="line in PREVIEW" :key="line">{{ line }}</div>
   </div>
 </template>

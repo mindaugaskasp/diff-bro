@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { loadPersisted, savePersisted } from '../../src/renderer/src/persist'
+import {
+  holdPersisted,
+  loadPersisted,
+  releasePersisted,
+  savePersisted
+} from '../../src/renderer/src/persist'
 
 beforeEach(() => {
   localStorage.clear()
@@ -56,5 +61,25 @@ describe('persist (durable store with migration)', () => {
   it('returns null when nothing is stored anywhere', () => {
     fileStore()
     expect(loadPersisted('vault')).toBeNull()
+  })
+})
+
+describe('held writes', () => {
+  it('keeps the latest write to a held key until released, and drops it on discard', () => {
+    const files = fileStore()
+    holdPersisted(['settings'])
+    savePersisted('settings', 'a')
+    savePersisted('settings', 'b')
+    savePersisted('vault', 'v')
+    expect(files).toEqual({ vault: 'v' })
+    releasePersisted(true)
+    expect(files.settings).toBe('b')
+
+    holdPersisted(['settings'])
+    savePersisted('settings', 'c')
+    releasePersisted(false)
+    expect(files.settings).toBe('b')
+    savePersisted('settings', 'd')
+    expect(files.settings).toBe('d')
   })
 })

@@ -6,7 +6,8 @@ import {
   openSettings,
   openMenu,
   stubSaveDialog,
-  stubOpenDialog
+  stubOpenDialog,
+  saveSettings
 } from './fixtures.mjs'
 
 // Config backup seals identity keys, trusted hosts, snippets and settings into
@@ -20,7 +21,7 @@ test('backing up then restoring recovers the saved settings', async ({ app, page
   await openSettings(page)
   await page.getByRole('button', { name: 'Use the Neon theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'neon')
-  await page.keyboard.press('Escape')
+  await saveSettings(page)
 
   // Back up (save dialog stubbed to a temp file).
   await stubSaveDialog(app, backupPath)

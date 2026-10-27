@@ -858,6 +858,14 @@
     "closeOneFirst": "{reason} — close one first"
   },
   "settingsDialog": {
+    "save": "Save",
+    "unsaved": {
+      "title": "Save your settings?",
+      "body": "You changed settings that haven't been saved yet.",
+      "save": "Save",
+      "discard": "Discard",
+      "keepEditing": "Keep editing"
+    },
     "settings": "Settings",
     "settingsSections": "Settings sections",
     "theme": "Theme",

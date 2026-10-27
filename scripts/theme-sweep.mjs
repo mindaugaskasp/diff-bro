@@ -145,8 +145,10 @@ async function closeSnippetTab(page) {
 async function setTheme(page, label) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
   await page.getByText('Settings', { exact: true }).click()
-  const dlg = page.getByRole('dialog', { name: 'Settings' })
+  const dlg = page.getByRole('dialog', { name: 'Settings', exact: true })
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
+  const save = dlg.locator(':scope > .dialog-actions .btn-primary')
+  if (await save.isEnabled()) await save.click()
   await page.keyboard.press('Escape')
   await dlg.waitFor({ state: 'hidden' })
 }
