@@ -111,7 +111,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     await expect(externalHelp).toBeHidden() // the help text clears once a diff is there
 
     // 5. Manage trusted keys on Alice: rename Bob, then remove him.
-    await openMenu(pageA, 'Security', 'Manage Trusted Keys')
+    await openMenu(pageA, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
     const mgr = pageA.locator('.keys-panel')
     await expect(mgr.getByText('Bob', { exact: true })).toBeVisible()
     await mgr.getByRole('button', { name: 'Rename' }).click()

@@ -140,7 +140,7 @@ test('a diff sealed before rotation still opens after it', async () => {
     bobPage = await firstReadyPage(bob)
     const beforeFp = await bobPage.evaluate(() => window.api.myFingerprint())
 
-    await openMenu(bobPage, 'Security', 'Replace My Key…')
+    await openMenu(bobPage, 'Security', 'My Key', 'Replace My Key')
     const dialog = bobPage.getByRole('dialog', { name: 'Replace my key' })
     await dialog.getByRole('button', { name: 'Replace my key' }).click()
     await expect(dialog).toContainText(/new fingerprint/i)
