@@ -20,6 +20,7 @@ import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
 import RenderedEditor from './RenderedEditor.vue'
+import { useTabContent } from '../composables/useTabContent'
 import { t } from '../i18n'
 
 const props = defineProps({ tab: { type: Object, required: true } })
@@ -41,6 +42,7 @@ const draft = useSnippetDraft({
   }
 })
 const { name, content, masked, language, isMermaid, isJira, isMarkdown, editMode } = draft
+useTabContent(props.tab, { name, content, secret: draft.secret, editing })
 
 watch(name, (n) => tabs.setSnippetMeta(props.tab.id, { title: n.trim() }), { immediate: true })
 watch(draft.isDirty, (d) => tabs.setSnippetMeta(props.tab.id, { dirty: d }), { immediate: true })

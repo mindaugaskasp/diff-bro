@@ -22,6 +22,7 @@ import { useTabContextMenu } from '../composables/useTabContextMenu'
 import { useTabOverflow } from '../composables/useTabOverflow'
 import { MOD } from '../keys'
 import { tabsFullNotice } from '../utils/tabNotices'
+import { startTabDrag } from '../composables/useTabContent'
 
 const tabs = useTabsStore()
 const diff = useDiffStore()
@@ -124,6 +125,8 @@ function onTabKey(e, tab) {
         class="tab"
         :class="{ active: tab.id === tabs.activeId }"
         :data-active="tab.id === tabs.activeId"
+        :draggable="isSnippetTab(tab)"
+        @dragstart="startTabDrag($event, tab.id)"
         @contextmenu.prevent="menu.show(tab.id, { x: $event.clientX, y: $event.clientY })"
       >
         <input

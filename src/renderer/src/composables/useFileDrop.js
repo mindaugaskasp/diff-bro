@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
-import { DIFF_DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
+import { DIFF_DRAG_TYPE, TAB_DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
+import { tabSnippetSource } from './useTabContent'
 import { openSavedDiff } from './useSavedDiffOpen'
 import { isSnippetDragType } from './useSnippetDrag'
 import { useShareStore } from '../features/share'
@@ -31,8 +32,9 @@ const diffIds = (e) => dragIdsFrom(e.dataTransfer, DIFF_DRAG_TYPE)
 // replaces the whole comparison while a snippet fills one side — so one flag
 // for "not a file" was never enough.
 const dragKindOf = (e) => {
-  if (Array.from(e.dataTransfer?.types ?? []).includes(DIFF_DRAG_TYPE)) return 'diff'
-  if (isSnippetDragType(e.dataTransfer)) return 'snippet'
+  const types = Array.from(e.dataTransfer?.types ?? [])
+  if (types.includes(DIFF_DRAG_TYPE)) return 'diff'
+  if (isSnippetDragType(e.dataTransfer) || types.includes(TAB_DRAG_TYPE)) return 'snippet'
   return 'files'
 }
 const isRowDrag = (e) => dragKindOf(e) !== 'files'
@@ -63,6 +65,15 @@ async function dropPaths(store, paths, targetSide) {
   return store.dropFiles(paths, targetSide)
 }
 
+// An open snippet tab, dropped on the comparison: its current text fills a side.
+async function dropTab(e, store) {
+  if (!Array.from(e.dataTransfer?.types ?? []).includes(TAB_DRAG_TYPE)) return false
+  const tabId = e.dataTransfer.getData(TAB_DRAG_TYPE)
+  const source = isInDiffRegion(e) && tabSnippetSource(tabId)
+  if (source) await store.dropFiles([source], sideUnder(e))
+  return true
+}
+
 // What a release actually means, by payload. A dropped DIFF replaces the
 // comparison wholesale; a dropped snippet fills one side; a file may be either.
 // Both row flavours only count inside the column that will host them.
@@ -75,6 +86,7 @@ async function routeDrop(e, store) {
       store.showNotice(t('savedDiffRow.expiredOrUndecryptable'))
     return
   }
+  if (await dropTab(e, store)) return
   const ids = snippetIds(e)
   if (ids.length) {
     if (isInDiffRegion(e)) await store.dropSnippets(ids, sideUnder(e))
