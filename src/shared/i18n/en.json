@@ -58,6 +58,7 @@
     "file": {
       "title": "File",
       "openLeft": "Open Left",
+      "saveAsFile": "Save Snippet as File…",
       "openRight": "Open Right",
       "share": "Share",
       "import": "Import",
@@ -190,7 +191,8 @@
   },
   "export": {
     "html": "Export diff as HTML",
-    "csv": "Export the change register"
+    "csv": "Export the change register",
+    "text": "Save snippet as file"
   },
   "fileFilter": {
     "png": "PNG image",
@@ -209,6 +211,7 @@
     },
     "openLeft": "Open left file",
     "openRight": "Open right file",
+    "saveSnippetAsFile": "Save snippet as file",
     "saveDiff": "Save diff",
     "shareDiff": "Share diff",
     "importShared": "Import shared diff",
@@ -963,6 +966,9 @@
   "snippetEditorActions": {
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
     "copyAsFile": "Copy as file",
+    "copiedAsFile": "Copied as a file.",
+    "saveAsFile": "Save as file…",
+    "moreActions": "More snippet actions",
     "capture": "Capture",
     "showTheContents": "Show the contents",
     "hideTheContentsAgain": "Hide the contents again",
@@ -971,8 +977,6 @@
     "copiedToClipboard": "Copied to clipboard",
     "copyTheContents": "Copy the contents to the clipboard",
     "prettyPrintAs": "Pretty-print as {format}",
-    "copyAsFileTip": "Put the snippet on the clipboard AS A FILE, to paste into a message or a folder",
-    "secretCopyAsFileTip": "Secret snippets can't be copied as a file — a staged copy would be plaintext on disk",
     "formatUnavailable": "Formatting is available for JSON, XML, SQL or Mermaid",
     "unmangleTip": "Put back the arrows, quotes and spaces a paste broke",
     "history": "History",

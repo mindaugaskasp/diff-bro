@@ -18,6 +18,7 @@ export const SHORTCUT_GROUPS = [
       { keys: `${MOD}+1`, labelKey: 'shortcuts.openLeft' },
       { keys: `${MOD}+2`, labelKey: 'shortcuts.openRight' },
       { keys: `${MOD}+S`, labelKey: 'shortcuts.saveDiff' },
+      { keys: `${MOD}+Alt+S`, labelKey: 'shortcuts.saveSnippetAsFile' },
       { keys: `${MOD}+E`, labelKey: 'shortcuts.shareDiff' },
       { keys: `${MOD}+I`, labelKey: 'shortcuts.importShared' },
       { keys: `${MOD}+,`, labelKey: 'shortcuts.settings' }

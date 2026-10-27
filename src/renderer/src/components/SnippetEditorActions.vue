@@ -7,6 +7,9 @@ import { useCopyAsFile } from '../composables/useCopyAsFile'
 import { snippetFile } from '../utils/copyAsFile'
 import { useSnippetStore } from '../stores/snippetStore'
 import AppIcon from './AppIcon.vue'
+import ActionMenu from './ActionMenu.vue'
+import { useDiffStore } from '../stores/diffStore'
+import { MOD } from '../keys'
 
 const props = defineProps({
   editMode: { type: Boolean, required: true },
@@ -20,22 +23,40 @@ const props = defineProps({
   masked: { type: Boolean, default: false },
   snippetId: { type: String, default: null }
 })
-const emit = defineEmits(['copy', 'capture', 'reveal', 'save', 'history'])
+const emit = defineEmits(['copy', 'capture', 'reveal', 'save', 'history', 'saveAsFile'])
 
-// One flash, two buttons — so it records WHICH was pressed.
 const { copied, flash } = useCopyFeedback()
 const copiedText = computed(() => copied.value === 'text')
-const copiedFile = computed(() => copied.value === 'file')
 const { supported: canCopyFile, copyFile } = useCopyAsFile()
 async function copyAsFile() {
   const draft = { name: props.name, content: props.content, secret: props.secret }
-  if (await copyFile(snippetFile({ ...draft, lang: props.language }))) flash('file')
+  if (await copyFile(snippetFile({ ...draft, lang: props.language }))) {
+    useDiffStore().showNotice(t('snippetEditorActions.copiedAsFile'))
+  }
 }
-const copyFileTip = computed(() =>
-  props.secret
-    ? t('snippetEditorActions.secretCopyAsFileTip')
-    : t('snippetEditorActions.copyAsFileTip')
-)
+const fileItems = computed(() => {
+  const off = !props.hasContent || props.secret
+  return [
+    ...(canCopyFile.value
+      ? [
+          {
+            action: 'copy-file',
+            label: t('snippetEditorActions.copyAsFile'),
+            icon: 'clipboard',
+            disabled: off
+          }
+        ]
+      : []),
+    {
+      action: 'save-file',
+      label: t('snippetEditorActions.saveAsFile'),
+      icon: 'save',
+      keys: `${MOD}+Alt+S`,
+      disabled: off
+    }
+  ]
+})
+const onFileAction = (action) => (action === 'copy-file' ? copyAsFile() : emit('saveAsFile'))
 
 const store = useSnippetStore()
 const hasHistory = computed(
@@ -78,18 +99,12 @@ defineExpose({ flash: () => flash('text') })
   >
     {{ copiedText ? $t('common.copied') : $t('common.copy') }}
   </button>
-  <button
-    v-if="canCopyFile"
-    class="btn"
-    :class="{ copied: copiedFile }"
-    :disabled="!hasContent || secret"
-    :data-tip="copyFileTip"
-    :aria-label="$t('snippetEditorActions.copyAsFile')"
-    @click="copyAsFile"
-  >
-    <AppIcon :name="copiedFile ? 'check' : 'clipboard'" />
-    {{ copiedFile ? $t('common.copied') : $t('snippetEditorActions.copyAsFile') }}
-  </button>
+  <ActionMenu
+    :label="$t('snippetEditorActions.moreActions')"
+    :items="fileItems"
+    trigger-class="btn btn-icon"
+    @pick="onFileAction"
+  />
   <button
     v-if="hasHistory"
     class="btn"

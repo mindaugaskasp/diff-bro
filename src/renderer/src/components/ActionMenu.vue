@@ -1,11 +1,21 @@
 <script setup>
 import { nextTick, ref } from 'vue'
 import AppIcon from './AppIcon.vue'
+import { shaped } from '../utils/props'
 
 const MENU_W = 232
 
-defineProps({ canExport: { type: Boolean, default: true } })
-const emit = defineEmits(['export', 'reveal'])
+defineProps({
+  label: { type: String, required: true },
+  /** @type {import('vue').PropType<{action: string, label: string, icon: string, keys?: string, disabled?: boolean}[]>} */
+  items: {
+    type: Array,
+    required: true,
+    validator: (v) => v.every(shaped('action', 'label', 'icon'))
+  },
+  triggerClass: { type: String, default: 'row-btn' }
+})
+const emit = defineEmits(['pick'])
 
 const trigger = ref(null)
 const menu = ref(null)
@@ -16,25 +26,26 @@ async function toggle() {
   const r = trigger.value.getBoundingClientRect()
   at.value = { x: Math.max(8, r.right - MENU_W), y: r.bottom + 4 }
   await nextTick()
-  menu.value?.querySelector('button')?.focus()
+  menu.value?.querySelector('button:not(:disabled)')?.focus()
 }
 function close() {
   at.value = null
 }
 function pick(action) {
   close()
-  emit(action)
+  emit('pick', action)
 }
 </script>
 
 <template>
   <button
     ref="trigger"
-    class="row-btn"
+    type="button"
+    :class="triggerClass"
     aria-haspopup="menu"
     :aria-expanded="!!at"
-    :data-tip="$t('savedDiffRow.moreActions')"
-    :aria-label="$t('savedDiffRow.moreActions')"
+    :data-tip="label"
+    :aria-label="label"
     @click="toggle"
   >
     <AppIcon name="more-horizontal" />
@@ -45,22 +56,23 @@ function pick(action) {
         ref="menu"
         class="ctx"
         role="menu"
-        :aria-label="$t('savedDiffRow.moreActions')"
+        :aria-label="label"
         :style="{ left: `${at.x}px`, top: `${at.y}px` }"
         @pointerdown.stop
         @keydown.esc.stop="close"
       >
         <button
-          v-if="canExport"
+          v-for="item in items"
+          :key="item.action"
           type="button"
           class="ctx-item"
           role="menuitem"
-          @click="pick('export')"
+          :disabled="item.disabled"
+          @click="pick(item.action)"
         >
-          <AppIcon name="image" /> {{ $t('savedDiffRow.exportAsImage') }}
-        </button>
-        <button type="button" class="ctx-item" role="menuitem" @click="pick('reveal')">
-          <AppIcon name="folder" /> {{ $t('showInFolder.label') }}
+          <AppIcon :name="item.icon" />
+          <span class="ctx-label">{{ item.label }}</span>
+          <span v-if="item.keys" class="ctx-keys">{{ item.keys }}</span>
         </button>
       </div>
     </div>

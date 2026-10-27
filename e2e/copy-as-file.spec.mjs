@@ -115,12 +115,17 @@ async function addSnippet(page, { name, body, secret = false }) {
   return view
 }
 
+async function copyAsFileItem(page) {
+  await docActions(page).getByRole('button', { name: 'More snippet actions' }).click()
+  return page.getByRole('menuitem', { name: 'Copy as file' })
+}
+
 test('copying a snippet as a file puts a real file on the clipboard', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
   await clearClipboard(app)
-  await docActions(page).getByRole('button', { name: 'Copy as file' }).click()
+  await (await copyAsFileItem(page)).click()
 
   const path = await waitForCopiedPath(app, /E2E-copy-target\.\w+$/)
   // The bytes are the snippet's, so what pastes is the snippet and not its name.
@@ -143,7 +148,7 @@ test('a secret snippet offers Copy content but never Copy as file', async ({ pag
 
   await addSnippet(page, { name: 'E2E secret', body: 'sk-live-xxxx', secret: true })
   await expect(docActions(page).getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
-  await expect(docActions(page).getByRole('button', { name: 'Copy as file' })).toBeDisabled()
+  await expect(await copyAsFileItem(page)).toBeDisabled()
 })
 
 test('copying the diff as a file writes a patch, not the diff text', async ({ app, page }) => {
@@ -184,7 +189,7 @@ test('the quit sweep removes staged plaintext', async ({ app, page }) => {
 
   await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
   await clearClipboard(app)
-  await docActions(page).getByRole('button', { name: 'Copy as file' }).click()
+  await (await copyAsFileItem(page)).click()
   const staged = await waitForCopiedPath(app, /E2E-ephemeral\.\w+$/)
   expect(readFileSync(staged, 'utf-8')).toBe('transient')
 
@@ -206,7 +211,7 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
   try {
     await addSnippet(page, { name: 'E2E crash victim', body: 'plaintext' })
     await clearClipboard(app)
-    await docActions(page).getByRole('button', { name: 'Copy as file' }).click()
+    await (await copyAsFileItem(page)).click()
     staged = await waitForCopiedPath(app, /E2E-crash-victim\.\w+$/)
     expect(readFileSync(staged, 'utf-8')).toBe('plaintext')
   } finally {
@@ -229,27 +234,13 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
   }
 })
 
-// One useCopyFeedback drove BOTH buttons, so pressing Copy as file flipped the
-// shared boolean and the acknowledgement appeared on COPY — the button beside
-// the one the reader had actually pressed. `flash(mark)` exists for exactly this
-// (a panel with several copy buttons records WHICH one), and neither caller used
-// it. Asserted on the rendered labels, since that is the whole of the bug.
-test('Copy as file acknowledges itself, not the button beside it', async ({ page }) => {
+test('Copy as file acknowledges with a notice, and Copy keeps its own label', async ({ page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   await addSnippet(page, { name: 'E2E flash target', body: 'alpha' })
-  // Names are stable across the flash: only the visible word swaps, so a screen
-  // reader is never told the button it is on has become a different button.
-  const copy = docActions(page).getByRole('button', { name: 'Copy', exact: true })
-  const asFile = docActions(page).getByRole('button', { name: 'Copy as file' })
-
-  await asFile.click()
-  await expect(asFile).toHaveText(/Copied/)
-  await expect(copy).toHaveText('Copy') // the untouched twin must not claim it
-
-  // And the same in reverse, so neither is merely hard-coded to its own state.
-  await expect(asFile).toHaveText(/Copy as file/) // flash elapsed
-  await copy.click()
-  await expect(copy).toHaveText('Copied')
-  await expect(asFile).toHaveText(/Copy as file/)
+  await (await copyAsFileItem(page)).click()
+  await expect(page.locator('.notice')).toContainText(/Copied/)
+  await expect(docActions(page).getByRole('button', { name: 'Copy', exact: true })).toHaveText(
+    'Copy'
+  )
 })

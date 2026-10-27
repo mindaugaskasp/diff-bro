@@ -1,32 +1,10 @@
 import { onBeforeUnmount } from 'vue'
 import { TAB_DRAG_TYPE } from '../utils/snippetSource'
 import { useTabsStore } from '../stores/tabsStore'
+import { registerTabContent, tabSnippetSource, unregisterTabContent } from '../utils/tabContent'
+import { saveTabAsFile } from '../utils/snippetFileSave'
 
-/**
- * @typedef {object} TabContent
- * @property {string} name
- * @property {string} content     what the tab shows now, unsaved edits included
- * @property {boolean} secret
- * @property {string|null} snippetId  set only while the tab matches the saved snippet
- */
-
-/** @type {Map<string, () => TabContent>} */
-const readers = new Map()
-
-/** @param {string} tabId @param {() => TabContent} read */
-export const registerTabContent = (tabId, read) => void readers.set(tabId, read)
-/** @param {string} tabId */
-export const unregisterTabContent = (tabId) => void readers.delete(tabId)
-
-/**
- * The comparison side an open snippet tab becomes, or null when it is gone or secret.
- * @param {string} tabId
- */
-export function tabSnippetSource(tabId) {
-  const tab = readers.get(tabId)?.()
-  if (!tab || tab.secret) return null
-  return { path: null, name: tab.name, content: tab.content, snippetId: tab.snippetId }
-}
+export { registerTabContent, tabSnippetSource, unregisterTabContent }
 
 /**
  * Drag start for a snippet tab: the id only, and never for a secret one.
@@ -46,15 +24,18 @@ export function startTabDrag(e, tabId) {
  * rides along only while the tab matches what is saved, so the side stays live.
  * @param {{ id: string, title?: string }} tab
  * @param {{ name: import('vue').Ref<string>, content: import('vue').Ref<string>,
- *   secret: import('vue').Ref<boolean>, editing: { id: string|null } }} draft
+ *   language: import('vue').Ref<string>, secret: import('vue').Ref<boolean> }} draft
+ * @param {{ id: string|null }} editing
  */
-export function useTabContent(tab, { name, content, secret, editing }) {
+export function useTabContent(tab, { name, content, language, secret }, editing) {
   const tabs = useTabsStore()
   registerTabContent(tab.id, () => ({
     name: name.value.trim() || tab.title || '',
     content: content.value,
+    language: language.value,
     secret: secret.value,
     snippetId: editing.id && !tabs.unsaved(tab) ? editing.id : null
   }))
   onBeforeUnmount(() => unregisterTabContent(tab.id))
+  return { saveAsFile: () => saveTabAsFile(tab.id) }
 }

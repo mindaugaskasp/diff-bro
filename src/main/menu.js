@@ -133,6 +133,71 @@ const viewMenu = (send, isDev) => ({
   ]
 })
 
+const fileMenu = (sendToFocused, isMac) => ({
+  label: t('menu.file.title'),
+  submenu: [
+    {
+      label: t('menu.file.openLeft'),
+      accelerator: 'CmdOrCtrl+1',
+      click: () => sendToFocused('open-left')
+    },
+    {
+      label: t('menu.file.openRight'),
+      accelerator: 'CmdOrCtrl+2',
+      click: () => sendToFocused('open-right')
+    },
+    { type: 'separator' },
+    {
+      label: t('menu.file.save'),
+      accelerator: 'CmdOrCtrl+S',
+      click: () => sendToFocused('save')
+    },
+    {
+      label: t('menu.file.saveAsFile'),
+      accelerator: 'CmdOrCtrl+Alt+S',
+      click: () => sendToFocused('save-snippet-as-file')
+    },
+    {
+      label: t('menu.file.share'),
+      accelerator: 'CmdOrCtrl+E',
+      click: () => sendToFocused('share-current')
+    },
+    {
+      label: t('menu.file.import'),
+      accelerator: 'CmdOrCtrl+I',
+      click: () => sendToFocused('import-shared')
+    },
+    { label: t('menu.file.exportHtml'), click: () => sendToFocused('export-html') },
+    { label: t('menu.file.exportImage'), click: () => sendToFocused('export-image') },
+    { type: 'separator' },
+    {
+      label: t('menu.file.newComparison'),
+      accelerator: 'CmdOrCtrl+Shift+T',
+      click: () => sendToFocused('tab-new')
+    },
+    {
+      label: t('menu.file.closeComparison'),
+      accelerator: 'CmdOrCtrl+Shift+W',
+      click: () => sendToFocused('tab-close')
+    },
+    {
+      label: t('menu.file.nextComparison'),
+      accelerator: 'Ctrl+Tab',
+      click: () => sendToFocused('tab-next')
+    },
+    {
+      label: t('menu.file.prevComparison'),
+      accelerator: 'Ctrl+Shift+Tab',
+      click: () => sendToFocused('tab-prev')
+    },
+    { label: t('menu.file.importSnippets'), click: () => sendToFocused('import-snippets') },
+    { type: 'separator' },
+    settingsItem(sendToFocused),
+    { type: 'separator' },
+    isMac ? { role: 'close' } : { role: 'quit' }
+  ]
+})
+
 export function installMenu() {
   const isMac = process.platform === 'darwin'
   disableInjectedMacMenuItems()
@@ -140,65 +205,7 @@ export function installMenu() {
   const isDev = !app.isPackaged
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
-    {
-      label: t('menu.file.title'),
-      submenu: [
-        {
-          label: t('menu.file.openLeft'),
-          accelerator: 'CmdOrCtrl+1',
-          click: () => sendToFocused('open-left')
-        },
-        {
-          label: t('menu.file.openRight'),
-          accelerator: 'CmdOrCtrl+2',
-          click: () => sendToFocused('open-right')
-        },
-        { type: 'separator' },
-        {
-          label: t('menu.file.save'),
-          accelerator: 'CmdOrCtrl+S',
-          click: () => sendToFocused('save')
-        },
-        {
-          label: t('menu.file.share'),
-          accelerator: 'CmdOrCtrl+E',
-          click: () => sendToFocused('share-current')
-        },
-        {
-          label: t('menu.file.import'),
-          accelerator: 'CmdOrCtrl+I',
-          click: () => sendToFocused('import-shared')
-        },
-        { label: t('menu.file.exportHtml'), click: () => sendToFocused('export-html') },
-        { label: t('menu.file.exportImage'), click: () => sendToFocused('export-image') },
-        { type: 'separator' },
-        {
-          label: t('menu.file.newComparison'),
-          accelerator: 'CmdOrCtrl+Shift+T',
-          click: () => sendToFocused('tab-new')
-        },
-        {
-          label: t('menu.file.closeComparison'),
-          accelerator: 'CmdOrCtrl+Shift+W',
-          click: () => sendToFocused('tab-close')
-        },
-        {
-          label: t('menu.file.nextComparison'),
-          accelerator: 'Ctrl+Tab',
-          click: () => sendToFocused('tab-next')
-        },
-        {
-          label: t('menu.file.prevComparison'),
-          accelerator: 'Ctrl+Shift+Tab',
-          click: () => sendToFocused('tab-prev')
-        },
-        { label: t('menu.file.importSnippets'), click: () => sendToFocused('import-snippets') },
-        { type: 'separator' },
-        settingsItem(sendToFocused),
-        { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' }
-      ]
-    },
+    fileMenu(sendToFocused, isMac),
     editMenu(sendToFocused, isMac),
     terminalMenu(sendToFocused),
     viewMenu(sendToFocused, isDev),

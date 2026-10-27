@@ -5,10 +5,10 @@
 
 /** @type {Record<string, {fn?: number, file?: number}>} */
 export const LEGACY_SIZE = {
-  'src/main/files.js': { fn: 84 },
+  'src/main/files.js': { fn: 83 },
   'src/main/hashDiff.js': { file: 335 },
   'src/main/lineIndexCore.js': { fn: 67 },
-  'src/main/menu.js': { fn: 79 },
+  'src/main/menu.js': { fn: 64 },
   'src/main/sealing.js': { file: 372 },
   'src/main/share.js': { fn: 179, file: 504 },
   'src/main/window.js': { fn: 69 },
@@ -22,7 +22,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/composables/useStreamedDiff.js': { fn: 99 },
   'src/renderer/src/composables/useTabContextMenu.js': { fn: 70 },
   'src/renderer/src/composables/useTagInput.js': { fn: 84 },
-  'src/renderer/src/menus.js': { fn: 67 },
+  'src/renderer/src/menus.js': { fn: 63 },
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 703 },
   'src/renderer/src/stores/snippetStore.js': { file: 431 },
