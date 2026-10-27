@@ -117,6 +117,7 @@
 .diff:hover .diffacts {
   display: inline-flex;
 }
-.diff:hover .state-chip {
+.diff:hover .state-chip,
+.diff:hover .new-badge {
   display: none;
 }
