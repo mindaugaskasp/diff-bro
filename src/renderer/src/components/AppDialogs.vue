@@ -38,6 +38,7 @@ import {
 } from '../features/share'
 import { EmailHandoffDialog, useEmailStore } from '../features/email'
 import { ConflictsDialog, useConflictsStore } from '../features/merge'
+import { ComparePromptDialog, useOpenWithStore } from '../features/openWith'
 import { useUiStore } from '../stores/uiStore'
 
 const store = useDiffStore()
@@ -53,6 +54,7 @@ const snippets = useSnippetStore()
 const vault = useVaultStore()
 const errors = useErrorStore()
 const conflicts = useConflictsStore()
+const openWith = useOpenWithStore()
 </script>
 
 <template>
@@ -86,4 +88,5 @@ const conflicts = useConflictsStore()
   <PasteConfirmDialog v-if="paste.prompt" />
   <CliBlockedDialog v-if="store.cliBlocked" />
   <ConflictsDialog v-if="conflicts.open" />
+  <ComparePromptDialog v-if="openWith.prompt" />
 </template>

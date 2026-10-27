@@ -93,7 +93,10 @@ const docLabel = computed(() =>
 const inline = useSnippetInlineEdit({ draft, tab: props.tab, head, save: saveSnippet, onDropFile })
 
 const showHistory = ref(false)
-const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
+const compareWith = () =>
+  editing.id
+    ? useDiffStore().dropSnippets([editing.id], 'left')
+    : useDiffStore().drop('left', editing.openedPath)
 </script>
 
 <template>
@@ -117,7 +120,7 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
     />
     <Teleport v-if="inFront" to="#toolbar-doc-actions" defer>
       <button
-        v-if="editing.id && !draft.secret.value"
+        v-if="(editing.id || editing.openedPath) && !draft.secret.value"
         type="button"
         class="btn"
         @click="compareWith"
@@ -192,6 +195,7 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
           :language="language"
           :cursor="cursor"
           :editing="editMode"
+          :opened-from="editing.id ? '' : (editing.openedFrom ?? '')"
         />
       </div>
       <SnippetHistoryPanel

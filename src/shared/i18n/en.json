@@ -806,6 +806,17 @@
     "shareStepOne": "Share diff — step 1 of 2: save it",
     "nextChooseRecipient": "Next: choose recipient"
   },
+  "openWith": {
+    "prompt": {
+      "title": "Compare with {name}?",
+      "body": "You opened {next} while {previous} is open.",
+      "left": "Left",
+      "right": "Right",
+      "newTab": "Open as new tab",
+      "compare": "Compare"
+    },
+    "openedFrom": "Opened from {folder} · not in your library yet"
+  },
   "showInFolder": {
     "label": "Show in folder",
     "tip": "Show the encrypted file that holds your snippets"
