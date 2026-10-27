@@ -140,6 +140,7 @@ contextBridge.exposeInMainWorld('api', {
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),
   dataDirReset: () => ipcRenderer.invoke('datadir:reset'),
   dataDirReveal: () => ipcRenderer.invoke('datadir:reveal'),
+  storeReveal: (name) => ipcRenderer.invoke('store:reveal', name),
   relaunch: () => ipcRenderer.invoke('app:relaunch'),
   onAppUpdated: (handler) => {
     ipcRenderer.on('app:updated', (_e, version) => handler(String(version)))

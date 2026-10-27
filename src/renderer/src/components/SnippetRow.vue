@@ -7,6 +7,7 @@ import { languageMonogram } from '../utils/languageMonogram'
 import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
+import ShowInFolderButton from './ShowInFolderButton.vue'
 import SnippetRowMeta from './SnippetRowMeta.vue'
 import { SECRET_NOTICE, isSecret } from '../utils/secretSnippet'
 import { useSnippetDrag } from '../composables/useSnippetDrag'
@@ -161,6 +162,7 @@ function onDragStart(e) {
       >
         <AppIcon name="copy" />
       </button>
+      <ShowInFolderButton store="snippets" />
       <button
         class="row-btn delete"
         :data-tip="$t('snippetRow.delete')"

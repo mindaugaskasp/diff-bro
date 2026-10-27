@@ -17,6 +17,7 @@ import { t } from '../i18n'
 import { rowFormatKey, rowTags } from '../utils/diffRowTags'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
+import ShowInFolderButton from './ShowInFolderButton.vue'
 import { useShareStore } from '../features/share'
 import { useUiStore } from '../stores/uiStore'
 import { useRowTags } from '../composables/useRowTags'
@@ -179,6 +180,7 @@ function onDragStart(e) {
       >
         <AppIcon name="share" />
       </button>
+      <ShowInFolderButton v-if="!entry.from" store="vault" />
       <button
         class="row-btn delete"
         :data-tip="$t('savedDiffRow.deleteThisSavedDiffNow')"

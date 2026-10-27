@@ -6,7 +6,13 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
-import { DATA_FILES, STORE_NAMES, isStoreName, planDataDirMove } from '../../src/main/dataFiles'
+import {
+  DATA_FILES,
+  STORE_NAMES,
+  isStoreName,
+  planDataDirMove,
+  revealableStoreFile
+} from '../../src/main/dataFiles'
 
 const slash = (dir, name) => `${dir}/${name}`
 
@@ -111,6 +117,24 @@ describe('isStoreName', () => {
 // re-pointing after a reinstall work. Returning to the default must not do the
 // same, or stale copies left in userData silently win over everything made
 // while the data lived elsewhere.
+describe('revealableStoreFile', () => {
+  it('names the encrypted store holding saved diffs and snippets', () => {
+    expect(revealableStoreFile('vault')).toBe('vault.json')
+    expect(revealableStoreFile('snippets')).toBe('snippets.json')
+  })
+
+  it('refuses every other store', () => {
+    expect(revealableStoreFile('settings')).toBeNull()
+    expect(revealableStoreFile('trusted-keys')).toBeNull()
+  })
+
+  it('refuses a traversing, absolute or non-string name', () => {
+    for (const name of ['../vault', 'vault/../../etc', '/etc/passwd', '', null, 1, ['vault']]) {
+      expect(revealableStoreFile(name)).toBeNull()
+    }
+  })
+})
+
 describe('planDataDirMove', () => {
   const both = () => true
   const neither = () => false

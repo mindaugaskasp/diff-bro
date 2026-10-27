@@ -132,6 +132,14 @@ merely invents is refused, and reads under `userData` are denied outright — so
 compromised renderer can't turn `file:read` into an arbitrary-file-read primitive
 (SSH keys, tokens, or the key files themselves on installs with no OS keychain).
 
+### Show in folder
+
+A saved diff or snippet row can reveal its store in the OS file manager. The
+renderer sends a store name; main maps it through `revealableStoreFile`, which
+allows `vault` and `snippets` only, joins it to the data directory and calls
+`shell.showItemInFolder`. Any other name returns `unknown-store` and reveals
+nothing. What is selected is the encrypted store file, never a decrypted copy.
+
 ### Files the OS hands over
 
 An "Open with" launch is a second instance carrying paths and no verb. The paths
@@ -325,8 +333,9 @@ only through Vue text interpolation.
 **Connecting from Settings** (`claudeConnect.js`, core in
 `claudeConnectCore.js`). Two more exits from the sandbox, fenced like the
 others:
+
 - **Claude Code.** **Connect** runs `claude mcp add --scope user diffbro --
-  <this app> mcp` through `execFile`, with no shell.
+<this app> mcp` through `execFile`, with no shell.
   - The executable is the first that exists in a fixed list of install
     locations computed in main, the user's own first. A Dock-launched app has
     no shell `PATH`, and running a login shell to find one would execute the

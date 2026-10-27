@@ -126,11 +126,15 @@ regression test from decoration.
    be opened with one click.
 
    Four sibling surfaces hand a PATH to the OS rather than a URL, and are
-   fenced the same way. `shell.showItemInFolder` has two call sites — `mail.js`,
-   which reveals the sealed file it just wrote, and `logger.js` (`log:reveal`,
-   which also uses `shell.openPath`); `shell.openPath` has a third at
-   `appData.js` (`datadir:reveal`). In all of them the path is COMPUTED IN MAIN
-   from a pointer file and the renderer names no file. `mail.js` reveals the sealed file it just wrote — the path is the one main computed, never round-tripped through
+   fenced the same way. `shell.showItemInFolder` has three call sites —
+   `mail.js`, which reveals the sealed file it just wrote; `logger.js`
+   (`log:reveal`, which also uses `shell.openPath`); and `appData.js`
+   (`store:reveal`, Show in folder on a saved diff or snippet row).
+   `shell.openPath` has one more at `appData.js` (`datadir:reveal`). In all of
+   them the path is COMPUTED IN MAIN and the renderer names no file:
+   `store:reveal` takes a store NAME, and `revealableStoreFile` (`dataFiles.js`)
+   allows only `vault` and `snippets`, so a traversing or absolute name, or any
+   other store, is refused before a path exists. `mail.js` reveals the sealed file it just wrote — the path is the one main computed, never round-tripped through
    the renderer, and there is no handler that reveals an arbitrary one.
    **Copy as file** (`clipboardCopy.js`) stages bytes and puts the staged path on
    the clipboard; `clipboard:writeFile` takes **bytes and a display name, never a

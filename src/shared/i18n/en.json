@@ -806,6 +806,13 @@
     "shareStepOne": "Share diff — step 1 of 2: save it",
     "nextChooseRecipient": "Next: choose recipient"
   },
+  "showInFolder": {
+    "label": "Show in folder",
+    "tip": {
+      "vault": "Show the encrypted file that holds your saved diffs",
+      "snippets": "Show the encrypted file that holds your snippets"
+    }
+  },
   "savedDiffRow": {
     "exportAsImage": "Export as image",
     "editTags": "Edit tags",
