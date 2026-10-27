@@ -3,9 +3,9 @@ import { randomBytes } from 'crypto'
 import { SCRYPT_PARAMS, deriveKey, scryptParamsFor } from '../../src/main/kdf'
 
 describe('scryptParamsFor', () => {
-  it('falls back to legacy defaults when no kdf field is present (old files)', () => {
-    expect(scryptParamsFor({})).toEqual({ N: 2 ** 14, r: 8, p: 1 })
-    expect(scryptParamsFor({ kdf: undefined })).toEqual({ N: 2 ** 14, r: 8, p: 1 })
+  it('refuses an envelope with no kdf field rather than guessing old params', () => {
+    expect(scryptParamsFor({})).toBeNull()
+    expect(scryptParamsFor({ kdf: undefined })).toBeNull()
   })
 
   it('returns the embedded params when they are valid and in-bounds', () => {
