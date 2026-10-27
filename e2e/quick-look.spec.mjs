@@ -1,4 +1,4 @@
-import { test, expect, clickAppMenuItem, openNewSnippet } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, openNewSnippet, docActions } from './fixtures.mjs'
 
 // The quick look-up is a SECOND BrowserWindow (quicklook.html), summoned by a
 // global shortcut in real use. Global shortcuts and OS focus are unreliable
@@ -50,7 +50,7 @@ test('paints the preview with the syntax roles it tokenizes', async ({ app, page
   await editor.locator('.lang-picker select').selectOption('json')
   await editor.locator('.editor').click()
   await page.keyboard.type('{ "keep": true, "count": 42 }')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await page.keyboard.press('Escape')
 
   const ql = await summon(app, page)

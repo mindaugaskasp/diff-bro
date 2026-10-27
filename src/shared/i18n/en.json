@@ -527,8 +527,7 @@
       "comparePasted": "Compare pasted text ({mod}+T)",
       "backToFiles": "Back to comparing files ({mod}+T)",
       "resetZoom": "The comparison is zoomed — click to return it to 100% ({mod}+0)",
-      "presentation": "Show just the comparison, full screen (F5). Esc leaves it",
-      "forComparisons": "For comparisons"
+      "presentation": "Show just the comparison, full screen (F5). Esc leaves it"
     },
     "why": {
       "split": "Side by side applies to text and diagram comparisons",

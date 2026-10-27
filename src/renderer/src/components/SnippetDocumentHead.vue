@@ -48,7 +48,6 @@ defineExpose({
         <SnippetSecretToggle v-model="secret" :readonly="readOnly" />
       </div>
     </div>
-    <div class="doc-actions"><slot /></div>
   </header>
 </template>
 

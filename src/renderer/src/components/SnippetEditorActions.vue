@@ -56,7 +56,7 @@ defineExpose({ flash: () => flash('text') })
 <template>
   <button
     v-if="secret"
-    class="btn btn-sm"
+    class="btn"
     :data-tip="
       masked
         ? $t('snippetEditorActions.showTheContents')
@@ -69,7 +69,7 @@ defineExpose({ flash: () => flash('text') })
   </button>
   <!-- aria-label is the STABLE name: only the visible word swaps for the flash. -->
   <button
-    class="btn btn-sm"
+    class="btn"
     :class="{ copied: copiedText }"
     :disabled="!hasContent"
     :data-tip="copyTip"
@@ -80,7 +80,7 @@ defineExpose({ flash: () => flash('text') })
   </button>
   <button
     v-if="canCopyFile"
-    class="btn btn-sm"
+    class="btn"
     :class="{ copied: copiedFile }"
     :disabled="!hasContent || secret"
     :data-tip="copyFileTip"
@@ -90,7 +90,6 @@ defineExpose({ flash: () => flash('text') })
     <AppIcon :name="copiedFile ? 'check' : 'clipboard'" />
     {{ copiedFile ? $t('common.copied') : $t('snippetEditorActions.copyAsFile') }}
   </button>
-  <span class="spacer" />
   <button
     v-if="hasHistory"
     class="btn"

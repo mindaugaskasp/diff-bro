@@ -4,7 +4,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openNewSnippet
+  openNewSnippet,
+  docActions
 } from './fixtures.mjs'
 
 // A colour the reader picks, painted across the whole row. It is decoration —
@@ -23,7 +24,7 @@ async function seedSnippet(page, name) {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('seeded body')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }
 

@@ -64,3 +64,6 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-dim);
 }
+.doc-actions:empty {
+  display: none;
+}

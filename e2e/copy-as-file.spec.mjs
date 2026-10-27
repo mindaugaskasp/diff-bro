@@ -7,7 +7,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openNewSnippet
+  openNewSnippet,
+  docActions
 } from './fixtures.mjs'
 
 // Read the clipboard the way the Windows shell does — the predefined FileDropList
@@ -103,7 +104,7 @@ async function addSnippet(page, { name, body, secret = false }) {
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   // Save closes the editor; the copy pair lives on the read-only VIEW, which is
   // reached by opening the row.
   await expect(editor).toBeHidden()
@@ -117,9 +118,9 @@ async function addSnippet(page, { name, body, secret = false }) {
 test('copying a snippet as a file puts a real file on the clipboard', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  const view = await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
+  await addSnippet(page, { name: 'E2E copy target', body: 'alpha' })
   await clearClipboard(app)
-  await view.getByRole('button', { name: 'Copy as file' }).click()
+  await docActions(page).getByRole('button', { name: 'Copy as file' }).click()
 
   const path = await waitForCopiedPath(app, /E2E-copy-target\.\w+$/)
   // The bytes are the snippet's, so what pastes is the snippet and not its name.
@@ -127,8 +128,8 @@ test('copying a snippet as a file puts a real file on the clipboard', async ({ a
 })
 
 test('copy content puts text, and no file, on the clipboard', async ({ app, page }) => {
-  const view = await addSnippet(page, { name: 'E2E text only', body: 'just text' })
-  await view.getByRole('button', { name: 'Copy', exact: true }).click()
+  await addSnippet(page, { name: 'E2E text only', body: 'just text' })
+  await docActions(page).getByRole('button', { name: 'Copy', exact: true }).click()
 
   const text = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(text).toBe('just text')
@@ -140,9 +141,9 @@ test('copy content puts text, and no file, on the clipboard', async ({ app, page
 test('a secret snippet offers Copy content but never Copy as file', async ({ page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  const view = await addSnippet(page, { name: 'E2E secret', body: 'sk-live-xxxx', secret: true })
-  await expect(view.getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
-  await expect(view.getByRole('button', { name: 'Copy as file' })).toBeDisabled()
+  await addSnippet(page, { name: 'E2E secret', body: 'sk-live-xxxx', secret: true })
+  await expect(docActions(page).getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
+  await expect(docActions(page).getByRole('button', { name: 'Copy as file' })).toBeDisabled()
 })
 
 test('copying the diff as a file writes a patch, not the diff text', async ({ app, page }) => {
@@ -181,9 +182,9 @@ const isGone = (path) => {
 test('the quit sweep removes staged plaintext', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  const view = await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
+  await addSnippet(page, { name: 'E2E ephemeral', body: 'transient' })
   await clearClipboard(app)
-  await view.getByRole('button', { name: 'Copy as file' }).click()
+  await docActions(page).getByRole('button', { name: 'Copy as file' }).click()
   const staged = await waitForCopiedPath(app, /E2E-ephemeral\.\w+$/)
   expect(readFileSync(staged, 'utf-8')).toBe('transient')
 
@@ -203,9 +204,9 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
 
   let staged
   try {
-    const view = await addSnippet(page, { name: 'E2E crash victim', body: 'plaintext' })
+    await addSnippet(page, { name: 'E2E crash victim', body: 'plaintext' })
     await clearClipboard(app)
-    await view.getByRole('button', { name: 'Copy as file' }).click()
+    await docActions(page).getByRole('button', { name: 'Copy as file' }).click()
     staged = await waitForCopiedPath(app, /E2E-crash-victim\.\w+$/)
     expect(readFileSync(staged, 'utf-8')).toBe('plaintext')
   } finally {
@@ -236,11 +237,11 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
 test('Copy as file acknowledges itself, not the button beside it', async ({ page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  const view = await addSnippet(page, { name: 'E2E flash target', body: 'alpha' })
+  await addSnippet(page, { name: 'E2E flash target', body: 'alpha' })
   // Names are stable across the flash: only the visible word swaps, so a screen
   // reader is never told the button it is on has become a different button.
-  const copy = view.getByRole('button', { name: 'Copy', exact: true })
-  const asFile = view.getByRole('button', { name: 'Copy as file' })
+  const copy = docActions(page).getByRole('button', { name: 'Copy', exact: true })
+  const asFile = docActions(page).getByRole('button', { name: 'Copy as file' })
 
   await asFile.click()
   await expect(asFile).toHaveText(/Copied/)

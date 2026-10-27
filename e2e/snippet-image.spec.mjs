@@ -1,4 +1,12 @@
-import { test, expect, openNewSnippet, showPanel, closeSnippet, editInPlace } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openNewSnippet,
+  showPanel,
+  closeSnippet,
+  editInPlace,
+  docActions
+} from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
 test.beforeEach(async ({ page }) => {
@@ -17,8 +25,8 @@ const DIAGRAM = 'Example — Mermaid diagram'
 // copy/delete only, so the shot starts from where the contents are shown.
 async function shoot(page, name) {
   await page.locator('.snippets-section .row', { hasText: name }).click()
-  const view = page.getByRole('region', { name: 'Snippet', exact: true })
-  await view.getByRole('button', { name: 'Capture', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
+  await docActions(page).getByRole('button', { name: 'Capture', exact: true }).click()
   return page.getByRole('dialog', { name: 'Export as image' })
 }
 
@@ -43,7 +51,7 @@ async function createSnippet({ page, app }, name, body) {
     )
     await expect(editor.locator('.view-line').first()).not.toHaveText('', { timeout: 1000 })
   }).toPass({ timeout: 10000 })
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 }
 
@@ -173,22 +181,20 @@ test('a secret snippet offers no capture action', async ({ page }) => {
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
   await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
-  await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+  await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toHaveCount(
+    0
+  )
   // ...while an ordinary snippet's view offers it. The ghost Close by its
   // text — the header × carries the same accessible name.
   await closeSnippet(page)
   await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
-  await expect(
-    page
-      .getByRole('region', { name: 'Snippet', exact: true })
-      .getByRole('button', { name: 'Capture', exact: true })
-  ).toBeVisible()
+  await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toBeVisible()
 })
 
 // Capture moved into the view window; the hover row keeps copy/delete only, so
@@ -231,13 +237,13 @@ test('a snippet is captured from the view its contents are shown in', async ({ p
   expect(Buffer.from(src.split(',')[1], 'base64').subarray(0, 8).equals(PNG_MAGIC)).toBe(true)
 })
 
-// Editing is not viewing: the button belongs to the read-only state, beside the
-// other things you do WITH a snippet rather than TO it.
-test('the capture action is not offered while editing', async ({ page }) => {
+test('the capture action is disabled while editing', async ({ page }) => {
   await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
-  const view = page.getByRole('region', { name: 'Snippet', exact: true })
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
+  const capture = docActions(page).getByRole('button', { name: 'Capture', exact: true })
+  await expect(capture).toBeEnabled()
   await editInPlace(page)
-  await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+  await expect(capture).toBeDisabled()
 })
 
 // A picture of text is a worse copy of what Copy already gives you.
@@ -247,13 +253,15 @@ test('only a Mermaid snippet offers capture', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Just some prose')
   await editor.locator('.editor').click()
   await page.keyboard.type('nothing to photograph here')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
   await page.locator('.snippets-section .row', { hasText: 'Just some prose' }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
-  await expect(view.getByRole('button', { name: 'Capture', exact: true })).toHaveCount(0)
+  await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toHaveCount(
+    0
+  )
   // Copy is still there — it is what a text snippet actually wants.
-  await expect(view.getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
+  await expect(docActions(page).getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
 })

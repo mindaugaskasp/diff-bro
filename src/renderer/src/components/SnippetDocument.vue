@@ -24,6 +24,7 @@ import { t } from '../i18n'
 
 const props = defineProps({ tab: { type: Object, required: true } })
 const tabs = useTabsStore()
+const inFront = computed(() => tabs.activeId === props.tab.id)
 const editing = reactive({ ...(props.tab.snippet.initial ?? {}), id: props.tab.snippet.id })
 const draft = useSnippetDraft({
   editing,
@@ -113,7 +114,8 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
       :read-only="readOnly"
       @edit-tags="inline.editTags"
       @edit-name="inline.editName"
-    >
+    />
+    <Teleport v-if="inFront" to="#toolbar-doc-actions" defer>
       <button
         v-if="editing.id && !draft.secret.value"
         type="button"
@@ -139,7 +141,7 @@ const compareWith = () => useDiffStore().dropSnippets([editing.id], 'left')
         @save="saveSnippet"
         @history="showHistory = !showHistory"
       />
-    </SnippetDocumentHead>
+    </Teleport>
     <div class="doc-body">
       <div class="doc-main">
         <SnippetEditorHeader

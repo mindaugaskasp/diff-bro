@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, closeSnippet } from './fixtures.mjs'
+import { test, expect, openNewSnippet, closeSnippet, docActions } from './fixtures.mjs'
 
 // A secret snippet is a claim about what is DRAWN, so it can only be checked in
 // a launched app: the contents must be absent from the editor, the hover card
@@ -14,7 +14,7 @@ async function createSecret(page, name = 'Prod API key') {
   await editor.locator('.editor').click()
   await page.keyboard.type(SECRET)
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   // Save closes the editor, so the read-only view is reached the way a reader
   // reaches it: by opening the row.
   await expect(editor).toBeHidden()
@@ -38,7 +38,7 @@ test('a saved secret is masked on screen but copies in full', async ({ app, page
 
   // But copying still yields the real thing — the whole point.
   await app.evaluate(({ clipboard }) => clipboard.clear())
-  const copy = view.getByRole('button', { name: 'Copy', exact: true })
+  const copy = docActions(page).getByRole('button', { name: 'Copy', exact: true })
   await copy.click()
   // The NAME is stable across the flash — only the visible word swaps — so the
   // acknowledgement is read off the text, not off a second accessible name.
@@ -49,18 +49,18 @@ test('a saved secret is masked on screen but copies in full', async ({ app, page
 test('Show reveals the contents, and Hide puts them back', async ({ page }) => {
   const view = await createSecret(page)
 
-  await view.getByRole('button', { name: 'Show' }).click()
+  await docActions(page).getByRole('button', { name: 'Show' }).click()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
   await expect(page.locator('.monaco-editor').first()).toContainText('sk-live-DEADBEEF')
 
-  await view.getByRole('button', { name: 'Hide' }).click()
+  await docActions(page).getByRole('button', { name: 'Hide' }).click()
   await expect(view.locator('.secret-mask')).toBeVisible()
   await expect(page.locator('body')).not.toContainText(SECRET)
 })
 
 test('reopening a revealed secret starts masked again', async ({ page }) => {
   const view = await createSecret(page)
-  await view.getByRole('button', { name: 'Show' }).click()
+  await docActions(page).getByRole('button', { name: 'Show' }).click()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
   await closeSnippet(page)
 
@@ -94,13 +94,13 @@ test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Plain note')
   await editor.locator('.editor').click()
   await page.keyboard.type('nothing secret here')
-  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
   await page.locator('.snippets-section .row', { hasText: 'Plain note' }).locator('.entry').click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(view.locator('.secret-mask')).toHaveCount(0)
-  await expect(view.getByRole('button', { name: 'Show' })).toHaveCount(0)
+  await expect(docActions(page).getByRole('button', { name: 'Show' })).toHaveCount(0)
   await expect(page.locator('.monaco-editor').first()).toContainText('nothing secret here')
 })
