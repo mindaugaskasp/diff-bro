@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snippet row</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="dk" data-theme="{{ theme }}" style="width: {{ width }}; background: var(--bg-panel)">
+  <ul style="list-style: none; margin: 0; padding: 0 var(--space-2)">
+    <li class="{{ rowCls }}" style="padding-left: {{ indent }}">
+      <button type="button" class="entry">
+        <span class="monogram glyph-well" data-hue="{{ hue }}">{{ mono }}</span>
+        <span class="row-2-text"><span class="nm-line"><span class="nm">{{ name }}</span></span><span class="row-2-meta snip-meta">{{ meta }}</span></span>
+      </button>
+      <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}"><span class="new-badge">New</span></sc-if>
+      <button type="button" class="star" aria-label="Favorite (pin to top)"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.9l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94z"></path></svg></button>
+    </li>
+  </ul>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark","solar","neon","nord","sepia","dim","beacon","meridian","linen","bloom","nyan","matrix","contrast","volcano","amber","tide","ember","graphite","vector"],"default":"light"},"name":{"editor":"text","default":"Restart api"},"mono":{"editor":"text","default":"SH"},"hue":{"editor":"enum","options":["snippet","diff","received"],"default":"snippet"},"meta":{"editor":"text","default":""},"isNew":{"editor":"boolean","default":false},"depth":{"editor":"int","default":0},"width":{"editor":"text","default":"256px"},"$preview":{"width":256,"height":46}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const isNew = !!this.props.isNew;
+    return {
+      theme: this.props.theme ?? 'light',
+      name: this.props.name ?? 'Restart api',
+      mono: this.props.mono ?? 'SH',
+      hue: this.props.hue ?? 'snippet',
+      meta: this.props.meta ?? '',
+      isNew,
+      rowCls: isNew ? 'row is-new' : 'row',
+      indent: ((this.props.depth ?? 0) * 16) + 'px',
+      width: this.props.width ?? '256px'
+    };
+  }
+}
+</script>
+</body>
+</html>

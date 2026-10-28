@@ -59,6 +59,11 @@ follows it, never the other way round.
    - One "Today" artboard holding host screenshots of the current state.
    - Colours parsed from `themes.css` (light and dark at least, as a tweak),
      never guessed.
+   - Built from the canvas kit in `design/components/` (the app's real CSS and
+     markup), never hand-drawn look-alikes. A part the kit lacks is added
+     there first. See `design/README.md`.
+   - Each variant is drawn as a flow: its entry state, then every screen
+     reached by using it, with realistic volume.
 2. Iterate on the canvas with the user. Feedback changes the artboards first,
    then the spec.
 3. Paste it into the plan's **Design** section:
@@ -71,8 +76,11 @@ follows it, never the other way round.
 
 4. **Approve before you build.** Once the look is decided, add an **Approved
    design** page to the canvas.
-   - It holds frozen copies of the chosen artboards only: the selected
-     options applied, with no alternatives and no "Today".
+   - It holds the chosen design **rendered on the live app**, not mockups:
+     a `design/render/<issue>-<slug>.render.mjs` drives each state, draws the
+     redesign over the real components with `design/render/kit.mjs`, and
+     screenshots light and dark. Those screenshots are the approved copies:
+     the selected options applied, with no alternatives and no "Today".
    - A sticky lists the decisions.
    - It is the canvas's launch page.
    - Development does not start until that page exists and the user has

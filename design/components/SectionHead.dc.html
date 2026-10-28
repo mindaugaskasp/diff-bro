@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar section header</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="dk" data-theme="{{ theme }}" style="width: {{ width }}; background: var(--bg-panel)">
+  <div class="head section-head band band-row panel first">
+    <span class="section-icon"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-4 4 4 4M16 8l4 4-4 4"></path></svg></span>
+    <span class="section-title">{{ title }}</span>
+    <span class="count-chip">{{ count }}</span>
+    <span class="actions-slot">
+      <sc-for list="{{ actions }}" as="a" hint-placeholder-count="4">
+        <button type="button" class="btn btn-icon" aria-label="{{ a.label }}"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ a.d }}"></path></svg></button>
+      </sc-for>
+    </span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark","solar","neon","nord","sepia","dim","beacon","meridian","linen","bloom","nyan","matrix","contrast","volcano","amber","tide","ember","graphite","vector"],"default":"light"},"title":{"editor":"text","default":"Snippets"},"count":{"editor":"int","default":14},"width":{"editor":"text","default":"256px"},"$preview":{"width":256,"height":50}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: this.props.theme ?? 'light',
+      title: this.props.title ?? 'Snippets',
+      count: this.props.count ?? 14,
+      width: this.props.width ?? '256px',
+      actions: [
+        { label: 'New snippet', d: 'M5 12h14M12 5v14' },
+        { label: 'Open a text file as a snippet', d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1M3 7v10a2 2 0 0 0 2 2h12.5a2 2 0 0 0 1.9-1.4L22 11H7.5a2 2 0 0 0-1.9 1.4L3 19' },
+        { label: 'Export all snippets', d: 'M12 19V5m-7 7 7-7 7 7' },
+        { label: 'Import snippets', d: 'M12 5v14m7-7-7 7-7-7' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
