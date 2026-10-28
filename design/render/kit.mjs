@@ -61,6 +61,7 @@ export function installKit() {
     const fill = open
       ? 'color-mix(in srgb, var(--hue-received) 14%, var(--bg))'
       : 'color-mix(in srgb, var(--hue-received) 5%, var(--bg-panel))'
+    li.classList.add('dk-proposal')
     li.style.cssText = `outline:1px ${open ? 'solid' : 'dashed'} ${RECV_EDGE};outline-offset:-1px;border-radius:var(--radius);margin:3px 0;background:${fill}`
   }
   function addCheckbox(li, checked) {
@@ -85,7 +86,10 @@ export function installKit() {
     if (!o.isNew) $('.new-badge', li)?.remove()
     if (o.proposed) markProposed(li, o.open)
     if (o.depth) li.style.paddingLeft = `${o.depth * 16}px`
-    if (o.selected) li.style.background = SELECTED
+    if (o.selected) {
+      li.style.background = SELECTED
+      li.classList.add('dk-selected')
+    }
     if (o.box) addCheckbox(li, o.checked)
     return li
   }
@@ -94,6 +98,7 @@ export function installKit() {
       'li',
       `list-style:none;display:flex;align-items:center;gap:6px;height:28px;padding:0 var(--space-3) 0 calc(var(--space-3) + ${depth * 16}px);font-size:var(--font-sm);font-weight:650;color:var(--text)`
     )
+    li.className = 'dk-taghead'
     const chev = svg(open ? ICON.chevronDown : ICON.chevronRight, '12px')
     chev.style.color = 'var(--text-meta)'
     li.append(chev)
