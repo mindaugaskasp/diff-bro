@@ -17,8 +17,8 @@ async function savedTabs(page, count) {
       await page.locator('.diff-tabs').getByRole('button', { name: 'New comparison' }).click()
     }
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill(`left ${i}`)
-    await page.getByPlaceholder('Paste changed text here').fill(`right ${i}`)
+    await page.getByPlaceholder('Paste or type the original text').fill(`left ${i}`)
+    await page.getByPlaceholder('Paste or type the changed text').fill(`right ${i}`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Save diff' })
@@ -104,8 +104,8 @@ test('a bulk close over unsaved work asks once, and counts', async ({ page }) =>
   for (const text of ['first', 'second']) {
     await page.locator('.diff-tabs').getByRole('button', { name: 'New comparison' }).click()
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill(text)
-    await page.getByPlaceholder('Paste changed text here').fill(`${text} changed`)
+    await page.getByPlaceholder('Paste or type the original text').fill(text)
+    await page.getByPlaceholder('Paste or type the changed text').fill(`${text} changed`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
   }
   await expect(tabs(page)).toHaveCount(3)

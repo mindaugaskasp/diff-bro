@@ -25,7 +25,7 @@ test('⌘F straight after Edit opens find with replace expanded', async ({ page 
 test('⌘F from the name field still opens find in the content', async ({ page }) => {
   await openSnippet(page)
   await editInPlace(page)
-  await page.getByRole('region', { name: 'Edit Snippet' }).getByPlaceholder('Snippet name…').click()
+  await page.getByRole('region', { name: 'Edit snippet' }).getByPlaceholder('Snippet name…').click()
   await page.keyboard.press(FIND)
   await expect(findWidget(page)).toHaveClass(/visible/)
 })

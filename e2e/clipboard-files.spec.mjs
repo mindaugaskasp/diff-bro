@@ -67,5 +67,7 @@ test('pasting plain text still enters paste mode', async ({ app, page }) => {
       .first()
       .click()
   }
-  await expect(page.getByPlaceholder('Paste original text here')).toHaveValue('just some text')
+  await expect(page.getByPlaceholder('Paste or type the original text')).toHaveValue(
+    'just some text'
+  )
 })

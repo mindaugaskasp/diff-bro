@@ -11,7 +11,7 @@ const TOOLS = [
   ['Lines', 'Lines'],
   ['Checksum', 'Checksum'],
   ['Regex', 'Regex'],
-  ['Encrypt', 'Encrypt / Decrypt Text']
+  ['Encrypt', 'Encrypt / decrypt text']
 ]
 
 const panel = (page) => page.locator('.dialog').last()
@@ -58,7 +58,7 @@ test('a resize in one tool is the size the next one opens at', async ({ page }) 
   expect(resized.width).toBeGreaterThan(box.width)
   await page.keyboard.press('Escape')
 
-  await openTool(page, 'Encrypt', 'Encrypt / Decrypt Text')
+  await openTool(page, 'Encrypt', 'Encrypt / decrypt text')
   const next = await panel(page).boundingBox()
   expect(Math.round(next.width)).toBe(Math.round(resized.width))
   expect(Math.round(next.height)).toBe(Math.round(resized.height))

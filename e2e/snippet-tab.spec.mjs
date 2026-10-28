@@ -4,7 +4,7 @@ const strip = (page) => page.getByRole('tablist', { name: 'Open comparisons' })
 
 async function newSnippet(page, name, body) {
   await page.getByRole('button', { name: /New snippet/ }).click()
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.getByPlaceholder('Snippet name…').fill(name)
   await doc.locator('.editor').click()
   await page.keyboard.type(body)
@@ -27,7 +27,7 @@ test('switching away keeps an unsaved draft, and closing it asks first', async (
   await strip(page)
     .getByRole('tab', { name: /Half done/ })
     .click()
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await expect(doc.locator('.view-lines')).toContainText('first line')
 
   await page.getByRole('button', { name: /^Close Half done/ }).click()
@@ -47,7 +47,7 @@ test('history docks beside the snippet once it has an earlier version', async ({
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await editInPlace(page)
-  const edit = page.getByRole('region', { name: 'Edit Snippet' })
+  const edit = page.getByRole('region', { name: 'Edit snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' and v2')

@@ -23,7 +23,7 @@ const diffTag = (page) => page.locator('li.diff .tag-word')
 
 async function seedSnippet(page, name, tags) {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('seeded body')
@@ -36,14 +36,14 @@ async function seedSnippet(page, name, tags) {
 }
 
 async function seedDiff(page, name, tags) {
-  const left = page.getByPlaceholder('Paste original text here')
+  const left = page.getByPlaceholder('Paste or type the original text')
   if (!(await left.isVisible().catch(() => false))) {
     // A comparison starts in its own tab: Paste mode is off while a snippet is in front.
     await page.getByRole('button', { name: 'New comparison' }).click()
     await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill(`before ${name}`)
-  await page.getByPlaceholder('Paste changed text here').fill(`after ${name}`)
+  await page.getByPlaceholder('Paste or type the changed text').fill(`after ${name}`)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

@@ -6,15 +6,15 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // action table — proving each menu action reaches the store.
 async function pasteCompare(page, left, right) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(left)
-  await page.getByPlaceholder('Paste changed text here').fill(right)
+  await page.getByPlaceholder('Paste or type the original text').fill(left)
+  await page.getByPlaceholder('Paste or type the changed text').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
 
 test('Edit → Paste Mode opens the paste panes', async ({ page }) => {
   await openMenu(page, 'Edit', 'Paste Mode')
-  await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
+  await expect(page.getByPlaceholder('Paste or type the original text')).toBeVisible()
 })
 
 test('View → Toggle Light/Dark Theme flips the ground', async ({ page }) => {

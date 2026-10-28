@@ -47,7 +47,8 @@ function parseEntry(entry) {
   return { name: entry.slice(0, at), version: entry.slice(at + 1) }
 }
 
-const covers = (version, prefix) => !prefix || version === prefix || version.startsWith(`${prefix}.`)
+const covers = (version, prefix) =>
+  !prefix || version === prefix || version.startsWith(`${prefix}.`)
 
 /**
  * Installed packages as name -> versions, from a package-lock.

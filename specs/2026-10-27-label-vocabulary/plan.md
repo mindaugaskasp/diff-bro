@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| **Status** | in-progress |
-| **Progress** | 0 / 2 slices |
+| **Status** | shipped |
+| **Progress** | 2 / 2 slices |
 | **Branch** | one per slice; see Delivery |
 | **Started** | 2026-10-27 |
-| **Finished** | — |
-| **Bugs found and fixed this iteration** | 0 / 0 |
+| **Finished** | 2026-10-28 |
+| **Bugs found and fixed this iteration** | 0 / 0 (the sweep's JSON path and six specs on renamed labels were test drift, fixed in their slice) |
 | **Token baseline** | 2026-10-27T20:50:02Z |
-| **Claude tokens used** | — |
+| **Claude tokens used** | not measured: no host node to run token-usage.mjs |
 
 ## Problem
 
@@ -80,7 +80,7 @@ renamed labels.
 
 **Source of truth:** https://claude.ai/artifact/E174ittqxaradEYSE3Kx2m
 **Approved design:** its "Approved design" page (2026-10-27): the complete menu
-map and the naming-rules sticky, awaiting sign-off.
+map and the naming-rules sticky, signed off.
 
 | artboard | shows |
 |---|---|
@@ -123,14 +123,14 @@ confirm-before-open path; Terminal's item still opens Settings ▸ Terminal.
 
 | # | slice | branch | base | PR | status |
 |---|---|---|---|---|---|
-| 1 | Menus regrouped and their labels (both menus, palette); Terminal into Help | `improvement/menu-groups` | `main` | | |
-| 2 | Catalogue-wide renames, placeholders, the guide and the `check:i18n` guard | `improvement/label-vocabulary` | slice 1 | | |
+| 1 | Menus regrouped and their labels (both menus, palette); Terminal into Help | `improvement/menu-groups` | `main` | #138 | merged |
+| 2 | Catalogue-wide renames, placeholders, the guide and the `check:i18n` guard | `improvement/label-vocabulary` | slice 1 | (this PR) | open |
 
 ## Implementation plan
 
-- [ ] 1. Slice 1: red tests; native and in-app menus; palette; specs; check, e2e, validate; PR.
-- [ ] 2. Slice 2: inventory diff; renames; placeholders; guide; guard (red first); specs; check, e2e, validate; PR.
-- [ ] 3. Merge bottom-up as each is green.
+- [x] 1. Slice 1: red tests; native and in-app menus; palette; specs; check, e2e, validate; PR.
+- [x] 2. Slice 2: inventory diff; renames; placeholders; guide; guard (red first); specs; check, e2e, validate; PR.
+- [x] 3. Merge bottom-up as each is green.
 
 ## Decisions
 
@@ -146,8 +146,9 @@ confirm-before-open path; Terminal's item still opens Settings ▸ Terminal.
 
 ## Validation
 
-- [ ] `/validate`
-- [ ] `npm run check`
-- [ ] `make e2e`
-- [ ] Docs-impact "yes" done
-- [ ] token usage measured
+- [x] `/validate`: one stale comment header trimmed (`labelRules.mjs`); security rules untouched (strings and menu structure only)
+- [x] `npm run check`: exit 0, 4037 tests passed
+- [x] `make e2e`: slice 1 green; slice 2 624 passed, 3 failed on renamed labels, fixed, rerun 27/27 passed
+- [x] theme sweep: 3440 measurements across 20 themes, ok
+- [x] Docs-impact "yes" done (`standards.md`, `features.md`, `security.md`)
+- [ ] token usage measured: not possible, no host node

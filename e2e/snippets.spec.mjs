@@ -27,7 +27,7 @@ test('copying a snippet flashes "Copied" and then clears', async ({ page }) => {
 // the moment it was dragged small — with the code area squeezed to 160px.
 test('the editor never scrolls at its smallest allowed size', async ({ page }) => {
   await openNewSnippet(page)
-  const dlg = page.getByRole('region', { name: 'New Snippet' })
+  const dlg = page.getByRole('region', { name: 'New snippet' })
   await expect(dlg).toBeVisible()
 
   // The declared minimum from SnippetEditorDialog's :min-size — the smallest
@@ -63,7 +63,7 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
   ).toBe('pointer')
 
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Vault token')
   await editor.locator('.editor').click()
   await page.keyboard.type('token=abc123')

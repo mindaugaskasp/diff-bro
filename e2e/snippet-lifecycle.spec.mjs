@@ -6,7 +6,7 @@ import { test, expect, openNewSnippet, editInPlace, closeSnippet, docActions } f
 test('a snippet can be created, edited, and deleted', async ({ page }) => {
   // --- create ---
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await expect(editor).toBeVisible()
 
   await editor.getByPlaceholder('Snippet name…').fill('My note')
@@ -26,7 +26,7 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await editInPlace(page)
-  const edit = page.getByRole('region', { name: 'Edit Snippet' })
+  const edit = page.getByRole('region', { name: 'Edit snippet' })
   await expect(edit).toBeVisible()
   // Nothing to save until something changes.
   await expect(docActions(page).getByRole('button', { name: 'Save', exact: true })).toBeDisabled()

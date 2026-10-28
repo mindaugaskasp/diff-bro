@@ -29,7 +29,7 @@ test('a replaced bundle offers a restart onto the new build', async ({ app, page
 test('restart waits for an unsaved snippet', async ({ app, page }) => {
   await stubRelaunch(app)
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.locator('.editor').click()
   await page.keyboard.type('unsaved work')
 

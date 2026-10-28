@@ -47,7 +47,7 @@ async function capture() {
     // Transparent would let the page's white base blend with the desktop;
     // the SVG paints its own opaque white, so an opaque window is correct.
     backgroundColor: '#ffffff',
-    webPreferences: { javascript: false, offscreen: true },
+    webPreferences: { javascript: false, offscreen: true }
   })
   await win.loadURL(pathToFileURL(svg).href)
   // capturePage() races the first paint on an offscreen window.

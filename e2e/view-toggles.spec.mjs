@@ -4,8 +4,8 @@ import { test, expect, setViewOption } from './fixtures.mjs'
 // actually changes the rendered diff, which jsdom can't show.
 async function pasteCompare(page, left, right) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(left)
-  await page.getByPlaceholder('Paste changed text here').fill(right)
+  await page.getByPlaceholder('Paste or type the original text').fill(left)
+  await page.getByPlaceholder('Paste or type the changed text').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.getByText('What are you comparing?')).toBeHidden()
 }
@@ -25,11 +25,11 @@ test('the Paste mode button names its destination so the toggle is explicit', as
     .filter({ hasText: /Paste mode|File mode/ })
   await expect(toggle).toHaveText('Paste mode') // files mode: offers paste
   await toggle.click()
-  await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
+  await expect(page.getByPlaceholder('Paste or type the original text')).toBeVisible()
   await expect(toggle).toHaveText('File mode') // now offers the way back
   await toggle.click()
   await expect(toggle).toHaveText('Paste mode') // back to files mode
-  await expect(page.getByPlaceholder('Paste original text here')).toBeHidden()
+  await expect(page.getByPlaceholder('Paste or type the original text')).toBeHidden()
 })
 
 test('Swap flips additions and deletions', async ({ page }) => {

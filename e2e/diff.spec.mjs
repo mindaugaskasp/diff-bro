@@ -13,8 +13,8 @@ test('paste-compare diffs two texts and reports the change stats', async ({ page
   await expect(page.getByText('What are you comparing?')).toBeVisible()
 
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('alpha\ngamma')
-  await page.getByPlaceholder('Paste changed text here').fill('alpha\nZEBRA\ngamma')
+  await page.getByPlaceholder('Paste or type the original text').fill('alpha\ngamma')
+  await page.getByPlaceholder('Paste or type the changed text').fill('alpha\nZEBRA\ngamma')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
   // The empty state is gone and the diff editor took over.

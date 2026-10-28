@@ -111,7 +111,7 @@ test('the snippet editor shows no pale sliver on a tinted light ground', async (
 test('the snippet editor shows no pale sliver in edit mode', async ({ app, page }) => {
   await page.locator('li.row').first().click()
   await editInPlace(page)
-  await expect(page.getByRole('region', { name: 'Edit Snippet' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Edit snippet' })).toBeVisible()
   await page.locator('.snippet-doc .editor').first().click()
   await page.waitForTimeout(700)
   await expectNoPaleSliver(app, page, 'edit mode')

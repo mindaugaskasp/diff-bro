@@ -23,8 +23,8 @@ test('the snippet head and Content bar line up with the sidebar bands', async ({
 test('the comparison file slots end on the sidebar top band', async ({ page }) => {
   await showPanel(page, 'diffs')
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('a')
-  await page.getByPlaceholder('Paste changed text here').fill('b')
+  await page.getByPlaceholder('Paste or type the original text').fill('a')
+  await page.getByPlaceholder('Paste or type the changed text').fill('b')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
   expect(await bottomOf(page.locator('.file-slots-row'))).toBe(await bottomOf(topBand(page)))
@@ -32,7 +32,7 @@ test('the comparison file slots end on the sidebar top band', async ({ page }) =
 
 test('tags that do not fit fold into a +N chip that lists them', async ({ page }) => {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   const input = doc.getByRole('textbox', { name: 'Add tag' })
   for (const tag of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel']) {
     await input.fill(`${tag}-long-tag-name`)
@@ -51,7 +51,7 @@ test('"Saves as" sits inside the name field, and an empty name says it needs one
   page
 }) => {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   const name = doc.getByPlaceholder('Snippet name…')
   await name.fill('Standup {{today}}')
 

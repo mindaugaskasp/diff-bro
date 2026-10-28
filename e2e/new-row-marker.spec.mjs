@@ -31,7 +31,7 @@ const rail = (row) =>
 
 async function addSnippet(page, name) {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type('body text')

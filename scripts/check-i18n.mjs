@@ -13,6 +13,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { catalogueKeys, dottedLiteralsIn, dynamicKeyLines, keysUsedIn } from './lib/i18nKeys.mjs'
+import { labelProblems } from './lib/labelRules.mjs'
 import { isStaleGenerated, pseudoTree } from './lib/pseudo.mjs'
 
 const UNUSED_IS_ERROR = true
@@ -48,6 +49,8 @@ for (const file of walk(join(root, 'src'))) {
   for (const value of dottedLiteralsIn(source)) if (known.has(value)) used.add(value)
   for (const { line, text } of dynamicKeyLines(source)) dynamic.push(`${where}:${line}  ${text}`)
 }
+
+problems.push(...labelProblems(en))
 
 const expected = `${JSON.stringify(pseudoTree(en), null, 2)}\n`
 let current

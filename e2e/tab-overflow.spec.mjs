@@ -12,8 +12,8 @@ async function addTabs(page, count) {
   for (let i = 0; i < count; i++) {
     if (i > 0) await bar(page).getByRole('button', { name: 'New comparison' }).click()
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill(`left ${i}`)
-    await page.getByPlaceholder('Paste changed text here').fill(`right ${i}`)
+    await page.getByPlaceholder('Paste or type the original text').fill(`left ${i}`)
+    await page.getByPlaceholder('Paste or type the changed text').fill(`right ${i}`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
   }
   await expect(tabs(page)).toHaveCount(count)
@@ -37,7 +37,7 @@ test('a single tab is sized to its name, not to the floor', async ({ page }) => 
   // ...and the floor comes back the moment there is something to crowd it.
   await bar(page).getByRole('button', { name: 'New comparison' }).click()
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('a second one')
+  await page.getByPlaceholder('Paste or type the original text').fill('a second one')
   await expect(tabs(page)).toHaveCount(2)
   const widths = await tabs(page).evaluateAll((els) =>
     els.map((e) => e.getBoundingClientRect().width)

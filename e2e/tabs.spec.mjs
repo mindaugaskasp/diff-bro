@@ -6,8 +6,8 @@ import { test, expect, showPanel, pickTag } from './fixtures.mjs'
 
 async function compare(page, left, right) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(left)
-  await page.getByPlaceholder('Paste changed text here').fill(right)
+  await page.getByPlaceholder('Paste or type the original text').fill(left)
+  await page.getByPlaceholder('Paste or type the changed text').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 }
@@ -317,8 +317,8 @@ test('the Saved diffs + opens a paste comparison on the start surface', async ({
     .locator('.actions-slot')
     .getByRole('button', { name: 'New comparison' })
   await add.click()
-  await expect(page.getByPlaceholder('Paste original text here')).toBeVisible()
-  await page.getByPlaceholder('Paste original text here').fill('typed')
+  await expect(page.getByPlaceholder('Paste or type the original text')).toBeVisible()
+  await page.getByPlaceholder('Paste or type the original text').fill('typed')
   await expect(tabs(page)).toHaveCount(1)
 })
 
@@ -418,7 +418,7 @@ test('a tab retitles from either paste pane', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await expect(tabs(page)).toHaveCount(0)
 
-  await page.getByPlaceholder('Paste changed text here').fill('right-hand side only')
+  await page.getByPlaceholder('Paste or type the changed text').fill('right-hand side only')
   await expect(tabs(page).first()).toContainText('Pasted text')
 })
 

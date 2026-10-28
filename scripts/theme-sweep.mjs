@@ -139,7 +139,7 @@ async function closeSnippetTab(page) {
     () => false
   )
   if (asked) await ask.getByRole('button', { name: 'Close it' }).click()
-  await page.getByRole('region', { name: 'New Snippet' }).waitFor({ state: 'detached' })
+  await page.getByRole('region', { name: 'New snippet' }).waitFor({ state: 'detached' })
 }
 
 async function setTheme(page, label) {
@@ -158,10 +158,10 @@ async function setTheme(page, label) {
 async function loadStructureDiff(page) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
   await page
-    .getByPlaceholder('Paste original text here')
+    .getByPlaceholder('Paste or type the original text')
     .fill('{\n  "a": 1,\n  "b": 2,\n  "gone": 3\n}')
   await page
-    .getByPlaceholder('Paste changed text here')
+    .getByPlaceholder('Paste or type the changed text')
     .fill('{\n  "a": 9,\n  "b": 2,\n  "added": 4\n}')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   // The display toggles live behind the View button now.
@@ -217,7 +217,7 @@ function openedFixtures() {
 }
 
 async function closeOpenedTabs(page) {
-  const opened = page.getByRole('region', { name: 'New Snippet' })
+  const opened = page.getByRole('region', { name: 'New snippet' })
   while (await opened.count()) {
     await page.locator('.diff-tabs .tab.active .tab-close').click()
     const ask = page.getByRole('dialog', { name: 'Close snippet?' })
@@ -648,8 +648,8 @@ const SURFACES = [
       const names = page.getByPlaceholder('Name this side')
       await names.first().fill('package-lock.json')
       await names.nth(1).fill('package-lock.json')
-      await page.getByPlaceholder('Paste original text here').fill(LOCKFILE('3.4.21'))
-      await page.getByPlaceholder('Paste changed text here').fill(LOCKFILE('3.5.13'))
+      await page.getByPlaceholder('Paste or type the original text').fill(LOCKFILE('3.4.21'))
+      await page.getByPlaceholder('Paste or type the changed text').fill(LOCKFILE('3.5.13'))
       await page.getByRole('button', { name: 'Compare', exact: true }).click()
       await page.locator('.deps-row').first().waitFor()
     },
@@ -691,7 +691,7 @@ const SURFACES = [
     open: async (page) => {
       await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet', exact: true }).click()
-      const editor = page.getByRole('region', { name: 'New Snippet' })
+      const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
       await editor.locator('.name-ghost').waitFor()
     },
@@ -708,7 +708,7 @@ const SURFACES = [
     open: async (page) => {
       await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet', exact: true }).click()
-      const doc = page.getByRole('region', { name: 'New Snippet' })
+      const doc = page.getByRole('region', { name: 'New snippet' })
       await doc.getByPlaceholder('Snippet name…').fill('Standup {{today}}')
       const input = doc.getByRole('textbox', { name: 'Add tag' })
       for (const tag of ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot']) {
@@ -736,7 +736,7 @@ const SURFACES = [
     open: async (page) => {
       await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet', exact: true }).click()
-      const editor = page.getByRole('region', { name: 'New Snippet' })
+      const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Rendered')
       await editor.locator('.lang-picker select').selectOption('markdown')
       await editor.locator('.editor').click()
@@ -882,8 +882,8 @@ const SURFACES = [
     open: async (page) => {
       await page.locator('.diff-tabs .add').click()
       await page.getByRole('button', { name: 'Paste mode' }).click()
-      await page.getByPlaceholder('Paste original text here').fill('before')
-      await page.getByPlaceholder('Paste changed text here').fill('after')
+      await page.getByPlaceholder('Paste or type the original text').fill('before')
+      await page.getByPlaceholder('Paste or type the changed text').fill('after')
       await page.getByRole('button', { name: 'Compare', exact: true }).click()
       await page.getByRole('button', { name: 'Save', exact: true }).click()
       const save = page.getByRole('dialog', { name: 'Save diff' })
@@ -1116,7 +1116,7 @@ const SURFACES = [
     open: async (page) => {
       await showPanel(page, 'snippets')
       await page.getByRole('button', { name: 'New snippet', exact: true }).click()
-      const editor = page.getByRole('region', { name: 'New Snippet' })
+      const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
       await editor.locator('.editor').click()
       await page.keyboard.type('sweep')

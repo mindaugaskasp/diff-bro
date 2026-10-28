@@ -43,7 +43,7 @@ test('a saved snippet tab dropped on a side loads there, and stays open', async 
 
 test("an unsaved tab drops the text it shows now, under the tab's name", async ({ page }) => {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.getByPlaceholder('Snippet name…').fill('Draft notes')
   await doc.locator('.editor').click()
   await page.keyboard.type('typed but not saved')
@@ -56,7 +56,7 @@ test("an unsaved tab drops the text it shows now, under the tab's name", async (
 
 test('a secret snippet tab does not start a drag', async ({ page }) => {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.getByPlaceholder('Snippet name…').fill('Hidden thing')
   await doc.locator('.editor').click()
   await page.keyboard.type('secret text')

@@ -302,7 +302,7 @@ export async function closeSnippet(page) {
 export async function editInPlace(page) {
   const doc = snippetDoc(page)
   await doc.locator('.editor-area').click({ position: { x: 90, y: 14 } })
-  await expect(page.getByRole('region', { name: 'Edit Snippet' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Edit snippet' })).toBeVisible()
   return doc
 }
 

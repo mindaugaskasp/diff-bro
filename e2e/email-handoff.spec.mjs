@@ -63,12 +63,12 @@ const seedKeys = (dir, entries) =>
   )
 
 async function compareAndShare(page) {
-  const left = page.getByPlaceholder('Paste original text here')
+  const left = page.getByPlaceholder('Paste or type the original text')
   if (!(await left.isVisible().catch(() => false))) {
     await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill('before')
-  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByPlaceholder('Paste or type the changed text').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Share', exact: true }).click()
   // The toolbar Share saves FIRST — SaveDiffDialog retitles itself for the
@@ -346,7 +346,7 @@ test('Email it opens an UNADDRESSED draft carrying the fingerprint, key staged f
       .getByRole('navigation', { name: 'Sidebar' })
       .getByRole('button', { name: /^Keys/ })
       .click()
-    await page.locator('.keys-panel').getByRole('button', { name: 'Send my key' }).click()
+    await page.locator('.keys-panel').getByRole('button', { name: 'Share my key' }).click()
     const dialog = page.getByRole('dialog', { name: 'Share my public key' })
     await dialog.getByPlaceholder('e.g. Alice — laptop').fill('E2E mailer')
     const shownFp = (await dialog.locator('.fp code').innerText()).trim()

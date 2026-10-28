@@ -36,7 +36,7 @@ test('hovering template tags lists the fill-ins and the built-ins with their val
 test('while editing, the bar follows the caret', async ({ page }) => {
   await openSnippet(page)
   await editInPlace(page)
-  const edit = page.getByRole('region', { name: 'Edit Snippet' })
+  const edit = page.getByRole('region', { name: 'Edit snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('End')
   const at = async () => {

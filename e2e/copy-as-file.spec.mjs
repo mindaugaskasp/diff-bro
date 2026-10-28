@@ -99,7 +99,7 @@ const supported = (page) => page.evaluate(() => window.api.canCopyAsFile())
 // Saving lands on the read-only VIEW, which is where the copy pair lives.
 async function addSnippet(page, { name, body, secret = false }) {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
@@ -154,12 +154,12 @@ test('a secret snippet offers Copy content but never Copy as file', async ({ pag
 test('copying the diff as a file writes a patch, not the diff text', async ({ app, page }) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
-  const left = page.getByPlaceholder('Paste original text here')
+  const left = page.getByPlaceholder('Paste or type the original text')
   if (!(await left.isVisible().catch(() => false))) {
     await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill('one\ntwo\n')
-  await page.getByPlaceholder('Paste changed text here').fill('one\nTWO\n')
+  await page.getByPlaceholder('Paste or type the changed text').fill('one\nTWO\n')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
   // Through the menu, which is what a reader actually reaches for and what

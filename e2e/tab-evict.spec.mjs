@@ -16,8 +16,8 @@ const tabCount = (page) => page.locator('.diff-tabs .tab').count()
 async function addComparison(page, i, { save = false, left = `left ${i}` } = {}) {
   if (i > 0) await openMenu(page, 'File', 'New Comparison')
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(left)
-  await page.getByPlaceholder('Paste changed text here').fill(`right ${i}`)
+  await page.getByPlaceholder('Paste or type the original text').fill(left)
+  await page.getByPlaceholder('Paste or type the changed text').fill(`right ${i}`)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   if (!save) return
   await page.getByRole('button', { name: 'Save', exact: true }).click()

@@ -21,7 +21,7 @@ import { focusEditor } from './monaco.mjs'
 
 async function createSnippet(page, name, body, { secret = false } = {}) {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)
   await page.keyboard.type(body)

@@ -242,7 +242,7 @@ test('`diffbro open <file>` opens it as an unsaved snippet', async () => {
 
     await runCli(userDataDir, ['open', only])
 
-    const doc = page.getByRole('region', { name: 'New Snippet' })
+    const doc = page.getByRole('region', { name: 'New snippet' })
     await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('only.json', { timeout: 15000 })
     await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
   } finally {

@@ -18,7 +18,7 @@ const today = () => {
 // nothing. Bracket-free text, so Monaco's auto-closing cannot perturb it.
 async function newSnippet(page, name) {
   await openNewSnippet(page)
-  const dialog = page.getByRole('region', { name: 'New Snippet' })
+  const dialog = page.getByRole('region', { name: 'New snippet' })
   await dialog.getByPlaceholder('Snippet name…').fill(name)
   await dialog.locator('.editor').click()
   await page.keyboard.type('some content')

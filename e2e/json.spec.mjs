@@ -109,8 +109,8 @@ test('the structure toggle keeps its slot when the two sides are not both struct
   page
 }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('just some prose')
-  await page.getByPlaceholder('Paste changed text here').fill('some other prose')
+  await page.getByPlaceholder('Paste or type the original text').fill('just some prose')
+  await page.getByPlaceholder('Paste or type the changed text').fill('some other prose')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
   const panel = await openViewMenu(page)
