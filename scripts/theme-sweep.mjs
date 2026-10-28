@@ -1297,8 +1297,9 @@ const SURFACES = [
     // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
     open: async (page) => {
       await page.locator('.menubar button.top', { hasText: /^Tools$/ }).click()
-      // Scoped to the open dropdown: the loaded diff can also say "JSON".
-      await page.locator('.dropdown').getByText('JSON', { exact: true }).click()
+      await page.locator('.dropdown .submenu', { hasText: 'Format' }).hover()
+      // Scoped to the flyout: the loaded diff can also say "JSON".
+      await page.locator('.flyout').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
       await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },
