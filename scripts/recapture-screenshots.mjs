@@ -228,7 +228,7 @@ async function loadPair(app, page, leftPath, rightPath) {
 
 async function setTheme(page, label) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings', { exact: true }).click()
+  await page.getByText('Settings…', { exact: true }).click()
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   // By accessible name, not the tooltip attribute: tooltips moved from native
   // `title` to `data-tip` and silently broke this.

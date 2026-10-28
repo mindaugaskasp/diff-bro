@@ -29,7 +29,7 @@ async function openReceived(page) {
 // closes the dialog itself, so no explicit Close is needed.
 async function exportKey(app, page, name, path) {
   await stubSaveDialog(app, path)
-  await openMenu(page, 'Security', 'Share My Public Key')
+  await openMenu(page, 'Security', 'My Key', 'Share My Public Key')
   const dlg = page.getByRole('dialog', { name: 'Share my public key' })
   await dlg.getByLabel('Name others will see').fill(name)
   await dlg.getByRole('button', { name: /Save to file/ }).click()
@@ -43,7 +43,7 @@ async function exportKey(app, page, name, path) {
 async function addTrusted(app, page, keyPath) {
   await app.evaluate(({ clipboard }) => clipboard.clear())
   await stubOpenDialog(app, keyPath)
-  await openMenu(page, 'Security', 'Add Trusted Key')
+  await openMenu(page, 'Security', 'Trusted Keys', 'Add Trusted Key')
   const add = page.getByRole('dialog', { name: 'Add trusted key' })
   await expect(add).toBeVisible()
   await add.getByRole('button', { name: 'Add', exact: true }).click()
@@ -111,7 +111,7 @@ test('two peers exchange keys, share a sealed diff, and import it', async () => 
     await expect(externalHelp).toBeHidden() // the help text clears once a diff is there
 
     // 5. Manage trusted keys on Alice: rename Bob, then remove him.
-    await openMenu(pageA, 'Security', 'Manage Trusted Keys')
+    await openMenu(pageA, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
     const mgr = pageA.locator('.keys-panel')
     await expect(mgr.getByText('Bob', { exact: true })).toBeVisible()
     await mgr.getByRole('button', { name: 'Rename' }).click()
@@ -138,7 +138,7 @@ test('adding your own key is refused', async ({ app, page }) => {
   const keyPath = join(dir, 'me.diffbrokey')
   try {
     await stubSaveDialog(app, keyPath)
-    await openMenu(page, 'Security', 'Share My Public Key')
+    await openMenu(page, 'Security', 'My Key', 'Share My Public Key')
     const dlg = page.getByRole('dialog', { name: 'Share my public key' })
     await dlg.getByPlaceholder('e.g. Alice — laptop').fill('Me')
     await dlg.getByRole('button', { name: /Save to file/ }).click()
@@ -146,7 +146,7 @@ test('adding your own key is refused', async ({ app, page }) => {
 
     await app.evaluate(({ clipboard }) => clipboard.clear())
     await stubOpenDialog(app, keyPath)
-    await openMenu(page, 'Security', 'Add Trusted Key')
+    await openMenu(page, 'Security', 'Trusted Keys', 'Add Trusted Key')
     await expect(page.getByText(/your own public key/i)).toBeVisible()
     // No naming dialog opened.
     await expect(page.getByRole('dialog', { name: 'Add trusted key' })).toBeHidden()
@@ -162,7 +162,7 @@ test('a file that is not a public key is rejected', async ({ app, page }) => {
   try {
     await app.evaluate(({ clipboard }) => clipboard.clear())
     await stubOpenDialog(app, bad)
-    await openMenu(page, 'Security', 'Add Trusted Key')
+    await openMenu(page, 'Security', 'Trusted Keys', 'Add Trusted Key')
     await expect(page.getByText(/not a valid public key/i)).toBeVisible()
   } finally {
     rmSync(dir, { recursive: true, force: true })

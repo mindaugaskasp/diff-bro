@@ -9,7 +9,8 @@ import { test, expect, openMenu } from './fixtures.mjs'
 const FOX = 'The quick brown fox jumps over the lazy dog'
 const FOX_SHA256 = 'd7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592'
 
-const openTool = (page, label) => openMenu(page, 'Tools', label)
+const openTool = (page, label) =>
+  openMenu(page, 'Tools', label.startsWith('Checksum') ? 'Generate' : 'Inspect', label)
 
 test('the checksum tool digests text through main and names a pasted match', async ({ page }) => {
   await openTool(page, 'Checksum / Hash')

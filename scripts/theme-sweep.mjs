@@ -144,7 +144,7 @@ async function closeSnippetTab(page) {
 
 async function setTheme(page, label) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings', { exact: true }).click()
+  await page.getByText('Settings…', { exact: true }).click()
   const dlg = page.getByRole('dialog', { name: 'Settings', exact: true })
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
   const save = dlg.locator(':scope > .dialog-actions .btn-primary')
@@ -374,7 +374,7 @@ async function openConflictList(page, userDataDir) {
 
 async function openClaudePane(page) {
   await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings', { exact: true }).click()
+  await page.getByText('Settings…', { exact: true }).click()
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   await dlg.getByRole('button', { name: 'Claude', exact: true }).click()
   return dlg
@@ -500,7 +500,7 @@ const SURFACES = [
     name: 'editor-text',
     open: async (page) => {
       await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings', { exact: true }).click()
+      await page.getByText('Settings…', { exact: true }).click()
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: 'Appearance', exact: true }).click()
       await dlg.locator('.font-preview').scrollIntoViewIfNeeded()
@@ -1153,7 +1153,7 @@ const SURFACES = [
     name: 'settings-email',
     open: async (page) => {
       await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings', { exact: true }).click()
+      await page.getByText('Settings…', { exact: true }).click()
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: 'Email', exact: true }).click()
       await dlg.locator('.email-settings').waitFor()
@@ -1175,7 +1175,7 @@ const SURFACES = [
     // the label rather than trusting colour alone.
     open: async (page) => {
       await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings', { exact: true }).click()
+      await page.getByText('Settings…', { exact: true }).click()
       await page.getByRole('dialog', { name: 'Settings' }).waitFor()
       await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
       await page.locator('.theme-tile.active').waitFor()
@@ -1297,8 +1297,9 @@ const SURFACES = [
     // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
     open: async (page) => {
       await page.locator('.menubar button.top', { hasText: /^Tools$/ }).click()
-      // Scoped to the open dropdown: the loaded diff can also say "JSON".
-      await page.locator('.dropdown').getByText('JSON', { exact: true }).click()
+      await page.locator('.dropdown .submenu', { hasText: 'Format' }).hover()
+      // Scoped to the flyout: the loaded diff can also say "JSON".
+      await page.locator('.flyout').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
       await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },

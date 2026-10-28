@@ -53,7 +53,7 @@ test('an ordinary launch still shows its window', async () => {
 test('the Desktop settings pane is absent where there is no tray', async ({ app, page }) => {
   test.skip(process.platform === 'win32', 'the pane is expected here')
 
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   const dialog = page.getByRole('dialog', { name: 'Settings' })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Desktop', exact: true })).toHaveCount(0)

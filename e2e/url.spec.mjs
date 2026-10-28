@@ -5,7 +5,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // URL live. A launch proves the wiring, the reactivity, and the clipboard write.
 
 test('encodes and decodes, honoring component vs full-URI', async ({ page }) => {
-  await openMenu(page, 'Tools', 'URL Encode / Decode')
+  await openMenu(page, 'Tools', 'Encode', 'URL Encode / Decode')
   const dlg = page.getByRole('dialog', { name: 'URL' })
   await expect(dlg).toBeVisible()
   const inp = dlg.getByLabel('URL or text')
@@ -26,7 +26,7 @@ test('the editable query-param table rebuilds the URL live and copies it', async
   app,
   page
 }) => {
-  await openMenu(page, 'Tools', 'URL Encode / Decode')
+  await openMenu(page, 'Tools', 'Encode', 'URL Encode / Decode')
   const dlg = page.getByRole('dialog', { name: 'URL' })
   await dlg.getByLabel('URL or text').fill('https://x.io/p?q=hello%20world&utm=a')
 

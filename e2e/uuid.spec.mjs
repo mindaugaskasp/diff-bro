@@ -5,7 +5,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // panel → pure-util wiring and the OS-clipboard write.
 
 test('generates a v4 UUID and copies the formatted value', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'UUID')
+  await openMenu(page, 'Tools', 'Generate', 'UUID')
   const dlg = page.getByRole('dialog', { name: 'UUID' })
   await expect(dlg).toBeVisible()
 
@@ -20,7 +20,7 @@ test('generates a v4 UUID and copies the formatted value', async ({ app, page })
 })
 
 test('reverse-converts a pasted 32-hex to canonical and shows its version', async ({ page }) => {
-  await openMenu(page, 'Tools', 'UUID')
+  await openMenu(page, 'Tools', 'Generate', 'UUID')
   const dlg = page.getByRole('dialog', { name: 'UUID' })
   await dlg.getByLabel('UUID', { exact: true }).fill('886313e13b8a53729b900c9aee199e5d')
   await expect(dlg.locator('.tu-out-v')).toHaveText('886313e1-3b8a-5372-9b90-0c9aee199e5d')
@@ -28,7 +28,7 @@ test('reverse-converts a pasted 32-hex to canonical and shows its version', asyn
 })
 
 test('v5 verify confirms a matching UUID and rejects a mismatch', async ({ page }) => {
-  await openMenu(page, 'Tools', 'UUID')
+  await openMenu(page, 'Tools', 'Generate', 'UUID')
   const dlg = page.getByRole('dialog', { name: 'UUID' })
   await dlg.locator('.seg-opt', { hasText: 'v5' }).click()
   await dlg.getByLabel('Name', { exact: true }).fill('example.com')

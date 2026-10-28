@@ -141,7 +141,7 @@ export async function openSettings(page) {
     await clickAppMenuItem(page.electronApp, 'Settings')
   } else {
     await page.getByRole('button', { name: 'File', exact: true }).click()
-    await page.getByText('Settings', { exact: true }).click()
+    await page.getByText('Settings…', { exact: true }).click()
   }
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
 }

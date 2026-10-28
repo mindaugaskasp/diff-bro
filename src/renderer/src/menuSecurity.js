@@ -4,11 +4,20 @@ import { t } from './i18n'
 
 /** @param {(action: string) => void} run */
 export const securityItems = (run) => [
-  { label: t('menu.security.sharePublicKey'), run: () => run('export-pubkey') },
-  { sep: true },
-  { label: t('menu.security.addTrustedKey'), run: () => run('add-trusted-key') },
-  { label: t('menu.security.manageTrustedKeys'), run: () => run('manage-keys') },
-  { label: t('menu.security.replaceKey'), run: () => run('rotate-key') },
+  {
+    label: t('menu.security.myKey'),
+    items: [
+      { label: t('menu.security.sharePublicKey'), run: () => run('export-pubkey') },
+      { label: t('menu.security.replaceKey'), run: () => run('rotate-key') }
+    ]
+  },
+  {
+    label: t('menu.security.trustedKeys'),
+    items: [
+      { label: t('menu.security.addTrustedKey'), run: () => run('add-trusted-key') },
+      { label: t('menu.security.manageTrustedKeys'), run: () => run('manage-keys') }
+    ]
+  },
   { sep: true },
   {
     label: t('menu.security.configuration'),

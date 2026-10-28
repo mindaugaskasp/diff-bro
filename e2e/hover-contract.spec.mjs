@@ -26,7 +26,7 @@ test('a text toggle gains a face on hover', async ({ page }) => {
   await showPanel(page, 'diffs')
   await expectHoverChanges(page, page.locator('.whose-opt:not(.on)'), ['face'])
 
-  await openMenu(page, 'Tools', 'JSON')
+  await openMenu(page, 'Tools', 'Format', 'JSON')
   await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
   await expectHoverChanges(page, page.locator('.seg-opt:not(.on)').first(), ['face'])
 })

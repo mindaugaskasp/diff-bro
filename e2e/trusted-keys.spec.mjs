@@ -33,7 +33,7 @@ test('Escape cancels an in-progress edit and leaves the list in place', async ()
   const page = await firstReadyPage(app)
 
   try {
-    await openMenu(page, 'Security', 'Manage Trusted Keys')
+    await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
     const mgr = page.locator('.keys-panel')
     await expect(mgr).toBeVisible()
 
@@ -68,7 +68,7 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
   let page = await firstReadyPage(app)
 
   try {
-    await openMenu(page, 'Security', 'Manage Trusted Keys')
+    await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
     const mgr = page.locator('.keys-panel')
     await expect(mgr).toBeVisible()
 
@@ -118,7 +118,7 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
     await app.close()
     app = await launchApp(dir)
     page = await firstReadyPage(app)
-    await openMenu(page, 'Security', 'Manage Trusted Keys')
+    await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
     const mgr2 = page.locator('.keys-panel')
     await expect(mgr2.locator('li.key')).toHaveCount(N - 2)
     await expect(mgr2.getByText('Teammate 08 — laptop')).toBeVisible()

@@ -5,7 +5,7 @@ import { test, expect, openMenu } from './fixtures.mjs'
 // live reactivity, and the clipboard write.
 
 test('encodes live, decodes back via the toggle, and copies', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'Base64')
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
   const dlg = page.getByRole('dialog', { name: 'Base64' })
   await expect(dlg).toBeVisible()
 
@@ -22,7 +22,7 @@ test('encodes live, decodes back via the toggle, and copies', async ({ app, page
 })
 
 test('URL-safe strips padding, and invalid Base64 is reported', async ({ page }) => {
-  await openMenu(page, 'Tools', 'Base64')
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
   const dlg = page.getByRole('dialog', { name: 'Base64' })
 
   await dlg.getByLabel('Base64 input').fill('hello')

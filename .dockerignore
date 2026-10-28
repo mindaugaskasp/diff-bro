@@ -3,3 +3,5 @@ build
 dist
 .git
 *.log
+e2e-failures
+test-results

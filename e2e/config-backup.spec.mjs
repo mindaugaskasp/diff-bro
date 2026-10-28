@@ -83,7 +83,7 @@ test('restoring an identity retires the outgoing key instead of destroying it', 
   await expect(page.getByText(/backed up/i)).toBeVisible()
   const identityA = await fingerprintOf()
 
-  await openMenu(page, 'Security', 'Replace My Key…')
+  await openMenu(page, 'Security', 'My Key', 'Replace My Key')
   const rotate = page.getByRole('dialog', { name: 'Replace my key' })
   await rotate.getByRole('button', { name: 'Replace my key' }).click()
   await expect(rotate).toContainText(/new fingerprint/i)

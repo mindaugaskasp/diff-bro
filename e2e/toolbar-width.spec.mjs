@@ -114,7 +114,7 @@ test('a longer locale fits the toolbar as well as the application', async ({ app
   await minimumSize(app, page)
   // The application menu, not the in-app MenuBar: the latter only exists on
   // Windows/Linux, and this invariant is not platform-specific.
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
 
@@ -147,7 +147,7 @@ test('a longer locale re-measures the bar even at an unchanged window size', asy
 }) => {
   await minimumSize(app, page)
   await widenSidebarToCap(page)
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
 
@@ -168,7 +168,7 @@ test('a longer locale re-measures the bar even at an unchanged window size', asy
 test('the toolbar fits at maximum zoom, in a long locale, at the cap', async ({ app, page }) => {
   await minimumSize(app, page)
   await widenSidebarToCap(page)
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await page.keyboard.press('Escape')
   await setZoom(app, page, 2.5)

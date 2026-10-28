@@ -9,7 +9,7 @@ const JWT =
   '.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 
 test('decodes header/payload, humanizes claims, and copies the payload', async ({ app, page }) => {
-  await openMenu(page, 'Tools', 'JWT Decode')
+  await openMenu(page, 'Tools', 'Inspect', 'JWT Decode')
   const dlg = page.getByRole('dialog', { name: 'JWT' })
   await expect(dlg).toBeVisible()
   await dlg.getByLabel('JWT').fill(JWT)
@@ -25,7 +25,7 @@ test('decodes header/payload, humanizes claims, and copies the payload', async (
 })
 
 test('reports a malformed token', async ({ page }) => {
-  await openMenu(page, 'Tools', 'JWT Decode')
+  await openMenu(page, 'Tools', 'Inspect', 'JWT Decode')
   const dlg = page.getByRole('dialog', { name: 'JWT' })
   await dlg.getByLabel('JWT').fill('not-a-jwt')
   await expect(dlg.locator('.tj-err')).toBeVisible()

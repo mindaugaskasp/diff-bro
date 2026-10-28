@@ -25,7 +25,7 @@ test('replacing the key changes the fingerprint and keeps the old one for readin
   expect(before).toMatch(/^[0-9a-f]{32}$/)
   expect(await page.evaluate(() => window.api.retiredKeyCount())).toBe(0)
 
-  await openMenu(page, 'Security', 'Replace My Key…')
+  await openMenu(page, 'Security', 'My Key', 'Replace My Key')
   const dialog = page.getByRole('dialog', { name: 'Replace my key' })
   await expect(dialog).toBeVisible()
 
@@ -44,7 +44,7 @@ test('replacing the key changes the fingerprint and keeps the old one for readin
 })
 
 test('destroying the retired keys is a second, deliberate step', async ({ page }) => {
-  await openMenu(page, 'Security', 'Replace My Key…')
+  await openMenu(page, 'Security', 'My Key', 'Replace My Key')
   const dialog = page.getByRole('dialog', { name: 'Replace my key' })
   await dialog.getByRole('button', { name: 'Replace my key' }).click()
   await expect(dialog).toContainText(/new fingerprint/i)
@@ -140,7 +140,7 @@ test('a diff sealed before rotation still opens after it', async () => {
     bobPage = await firstReadyPage(bob)
     const beforeFp = await bobPage.evaluate(() => window.api.myFingerprint())
 
-    await openMenu(bobPage, 'Security', 'Replace My Key…')
+    await openMenu(bobPage, 'Security', 'My Key', 'Replace My Key')
     const dialog = bobPage.getByRole('dialog', { name: 'Replace my key' })
     await dialog.getByRole('button', { name: 'Replace my key' }).click()
     await expect(dialog).toContainText(/new fingerprint/i)

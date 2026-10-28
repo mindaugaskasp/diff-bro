@@ -96,7 +96,7 @@ test('the snippet editor shows no pale sliver in view mode', async ({ app, page 
 // Monaco's near-white, so it is where a leak shows up first.
 test('the snippet editor shows no pale sliver on a tinted light ground', async ({ app, page }) => {
   // The Electron menu, not the in-app MenuBar, which macOS does not render.
-  await clickAppMenuItem(app, 'Settings')
+  await clickAppMenuItem(app, 'Settings…')
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Use the Sepia theme' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'sepia')
