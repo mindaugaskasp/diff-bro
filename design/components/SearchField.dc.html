@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar search</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="dk" data-theme="{{ theme }}" style="width: {{ width }}; padding: var(--space-2) var(--space-3); background: var(--bg-panel)">
+  <div class="usb-top">
+    <div class="field-search">
+      <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0zM21 21l-4.5-4.5"></path></svg>
+      <input type="search" placeholder="{{ placeholder }}" value="{{ value }}" spellcheck="false" aria-label="{{ placeholder }}">
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark","solar","neon","nord","sepia","dim","beacon","meridian","linen","bloom","nyan","matrix","contrast","volcano","amber","tide","ember","graphite","vector"],"default":"light"},"placeholder":{"editor":"text","default":"Search snippets"},"value":{"editor":"text","default":""},"width":{"editor":"text","default":"256px"},"$preview":{"width":256,"height":50}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: this.props.theme ?? 'light',
+      placeholder: this.props.placeholder ?? 'Search snippets',
+      value: this.props.value ?? '',
+      width: this.props.width ?? '256px'
+    };
+  }
+}
+</script>
+</body>
+</html>

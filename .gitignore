@@ -29,3 +29,6 @@ quality-audit.md
 # Crash dumps from Electron in the Docker container
 /core
 /core.[0-9]*
+
+# Real-app design renders (see design/README.md)
+design/render/out/

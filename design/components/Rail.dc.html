@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar rail</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="dk" data-theme="{{ theme }}" style="width: 56px; height: {{ height }}; display: flex">
+  <nav class="rail" aria-label="Sidebar" style="height: 100%">
+    <div class="rail-band band">
+      <button type="button" class="btn btn-icon sidebar-toggle" aria-label="Collapse the sidebar"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg></button>
+    </div>
+    <sc-for list="{{ items }}" as="r" hint-placeholder-count="4">
+      <button type="button" class="{{ r.cls }}" data-panel="{{ r.panel }}" aria-pressed="{{ r.on }}" aria-label="{{ r.label }}">
+        <span class="rail-well">
+          <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ r.d }}"></path></svg>
+          <sc-if value="{{ r.count }}" hint-placeholder-val="{{ false }}"><span class="count-pill rail-count">{{ r.count }}</span></sc-if>
+          <sc-if value="{{ r.pending }}" hint-placeholder-val="{{ false }}"><span class="count-pill rail-count" style="right: auto; left: calc(var(--space-3) * -1); background: var(--hue-received); border-color: var(--hue-received); color: #ffffff">✦{{ r.pending }}</span></sc-if>
+        </span>
+        <span class="rail-label">{{ r.label }}</span>
+      </button>
+    </sc-for>
+    <span style="flex: 1"></span>
+    <button type="button" class="rail-item" data-panel="keys" aria-label="Keys">
+      <span class="rail-well"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 15.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0zM21 2l-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"></path></svg></span>
+      <span class="rail-label">Keys</span>
+    </button>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark","solar","neon","nord","sepia","dim","beacon","meridian","linen","bloom","nyan","matrix","contrast","volcano","amber","tide","ember","graphite","vector"],"default":"light"},"active":{"editor":"enum","options":["home","diffs","snippets","tools"],"default":"snippets"},"snippetCount":{"editor":"int","default":14},"pendingSnippets":{"editor":"int","default":0},"pendingDiffs":{"editor":"int","default":0},"height":{"editor":"text","default":"640px"},"$preview":{"width":56,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'snippets';
+    const item = (panel, label, d, count, pending) => ({
+      panel, label, d, count, pending,
+      on: String(active === panel),
+      cls: active === panel ? 'rail-item on' : 'rail-item'
+    });
+    return {
+      theme: this.props.theme ?? 'light',
+      height: this.props.height ?? '640px',
+      items: [
+        item('home', 'Home', 'M4 11l8-7 8 7v9H4zM10 20v-5h4v5', false, false),
+        item('diffs', 'Diffs', 'M7 4v6M4 7h6M4 17h6M15 4h5v16h-5', false, this.props.pendingDiffs || false),
+        item('snippets', 'Snippets', 'm8 8-4 4 4 4M16 8l4 4-4 4', this.props.snippetCount ?? 14, this.props.pendingSnippets || false),
+        item('tools', 'Tools', 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', false, false)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

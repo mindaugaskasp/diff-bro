@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tab strip</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="dk" data-theme="{{ theme }}" style="width: {{ width }}">
+  <div class="diff-tabs band">
+    <div class="track" role="tablist" aria-label="Open comparisons">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+        <div class="{{ t.cls }}" data-active="{{ t.on }}">
+          <button type="button" class="tab-open" role="tab" aria-selected="{{ t.on }}"><svg class="app-icon kind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ t.d }}"></path></svg><span class="name">{{ t.label }}</span></button>
+          <button type="button" class="tab-close" aria-label="Close {{ t.label }}"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+        </div>
+      </sc-for>
+    </div>
+    <button type="button" class="add" aria-label="New comparison"><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark","solar","neon","nord","sepia","dim","beacon","meridian","linen","bloom","nyan","matrix","contrast","volcano","amber","tide","ember","graphite","vector"],"default":"light"},"tabs":{"editor":null,"default":null},"width":{"editor":"text","default":"968px"},"$preview":{"width":968,"height":34}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const CODE = 'm8 8-4 4 4 4M16 8l4 4-4 4';
+    const DIFF = 'M7 4v6M4 7h6M4 17h6M15 4h5v16h-5';
+    const given = this.props.tabs ?? [
+      { label: 'Restart api', kind: 'snippet', active: true },
+      { label: 'Drain a node', kind: 'snippet' },
+      { label: 'config.yaml prod ↔ staging', kind: 'diff' }
+    ];
+    return {
+      theme: this.props.theme ?? 'light',
+      width: this.props.width ?? '968px',
+      tabs: given.map((t) => ({ label: t.label, on: String(!!t.active), cls: t.active ? 'tab active' : 'tab', d: t.kind === 'diff' ? DIFF : CODE }))
+    };
+  }
+}
+</script>
+</body>
+</html>

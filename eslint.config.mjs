@@ -348,7 +348,7 @@ export default [
   // takes Playwright's mandatory `{}` first argument — that empty pattern is the
   // framework idiom, not a mistake.
   {
-    files: ['e2e/**', 'playwright.config.mjs'],
+    files: ['e2e/**', 'playwright.config.mjs', 'design/**'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: { 'no-empty-pattern': 'off' }
   }
