@@ -181,7 +181,7 @@ test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
 test('every icon-only button carries an accessible name', async ({ page }) => {
   // Reach the ones that only exist once something is open.
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: /Snippet/ }).first()
+  const editor = page.getByRole('region', { name: /snippet/i }).first()
   await expect(editor).toBeVisible()
 
   const unnamed = await page.evaluate(() =>

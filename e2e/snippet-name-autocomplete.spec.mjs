@@ -149,7 +149,7 @@ test('the ghost is actually visible, on both surfaces', async ({ app, page }) =>
 test('a read-only name offers no completion', async ({ page }) => {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
   await page.getByText(EXAMPLE).click()
-  const editor = page.getByRole('region', { name: /Snippet/ }).first()
+  const editor = page.getByRole('region', { name: /snippet/i }).first()
   await expect(editor.locator('.ghost-field.ro')).toBeVisible()
   await expect(editor.locator('.name-ghost')).toHaveText('')
 })
