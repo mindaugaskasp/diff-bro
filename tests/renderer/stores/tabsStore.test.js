@@ -575,6 +575,17 @@ describe('the tab on screen, asked about itself', () => {
     expect(tabs.unsaved(tabs.active)).toBe(true)
   })
 
+  it('stays unsaved when a file comparison is switched to paste mode', () => {
+    const diff = useDiffStore()
+    const tabs = useTabsStore()
+    tabs.init()
+    diff.left = FILE('a.txt')
+    diff.right = FILE('b.txt')
+
+    diff.mode = 'paste'
+    expect(tabs.unsaved(tabs.active)).toBe(true)
+  })
+
   it('stops being unsaved as soon as it is saved, not on the next switch', () => {
     const diff = useDiffStore()
     const tabs = useTabsStore()
