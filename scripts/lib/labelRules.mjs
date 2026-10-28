@@ -1,5 +1,4 @@
-// The naming guide's checkable half (docs/standards.md, "Labels and menus"):
-// menu items are Title Case, and wording the guide retired stays retired.
+// The checkable half of "Labels follow one vocabulary" in docs/standards.md.
 
 const SMALL_WORDS = new Set([
   'a',
