@@ -16,7 +16,7 @@ const more = (page) => docActions(page).getByRole('button', { name: 'More snippe
 
 async function newSnippet(page, { name, body, secret = false }) {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.getByPlaceholder('Snippet name…').fill(name)
   await doc.locator('.editor').click()
   await page.keyboard.type(body)
@@ -36,7 +36,7 @@ test('Save as file writes what the tab shows to the path the user picks', async 
       }
     }, out)
     await more(page).click()
-    await page.getByRole('menuitem', { name: /Save as file/ }).click()
+    await page.getByRole('menuitem', { name: /Export as file/ }).click()
 
     await expect.poll(() => readFileSync(out, 'utf-8')).toBe('unsaved but on screen')
     const opts = await app.evaluate(() => globalThis.__saveOpts)
@@ -62,7 +62,7 @@ test('the File menu saves the snippet in front as a file too', async ({ app, pag
 test('a secret snippet cannot be saved or copied as a file', async ({ page }) => {
   await newSnippet(page, { name: 'Token', body: 'sk-live-xxxx', secret: true })
   await more(page).click()
-  await expect(page.getByRole('menuitem', { name: /Save as file/ })).toBeDisabled()
+  await expect(page.getByRole('menuitem', { name: /Export as file/ })).toBeDisabled()
 })
 
 function textFile(name, body) {
@@ -81,7 +81,7 @@ test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab'
     await stubOpenDialog(app, path)
     await page.getByRole('button', { name: 'File', exact: true }).click()
     await page.getByText('Open File as Snippet…', { exact: true }).click()
-    const doc = page.getByRole('region', { name: 'New Snippet' })
+    const doc = page.getByRole('region', { name: 'New snippet' })
     await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('notes.md')
     await expect(doc.locator('.view-lines')).toContainText('# heading')
   } finally {
@@ -96,7 +96,7 @@ test('the Snippets panel opens a file as a snippet from its header', async ({ ap
     await showPanel(page, 'snippets')
     await page.getByRole('button', { name: 'Open a text file as a snippet' }).click()
     await expect(
-      page.getByRole('region', { name: 'New Snippet' }).getByPlaceholder('Snippet name…')
+      page.getByRole('region', { name: 'New snippet' }).getByPlaceholder('Snippet name…')
     ).toHaveValue('query.sql')
   } finally {
     rmSync(dir, { recursive: true, force: true })

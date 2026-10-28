@@ -21,8 +21,8 @@ test('a saved diff does not offer the paste/file mode toggle', async ({ page }) 
   await expect(paste).toBeVisible()
 
   await paste.click()
-  await page.getByPlaceholder('Paste original text here').fill('before')
-  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByPlaceholder('Paste or type the original text').fill('before')
+  await page.getByPlaceholder('Paste or type the changed text').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   // Still a scratch comparison, so the toggle stays — whichever way it reads.
   const toggle = page.getByRole('button', { name: /^(Paste mode|File mode)$/ })
@@ -47,8 +47,8 @@ test('a saved diff persists across a relaunch and reopens', async () => {
 
     // Make something saveable via paste-compare (no file dialog needed).
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
-    await page.getByPlaceholder('Paste changed text here').fill('one\nZULU')
+    await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo')
+    await page.getByPlaceholder('Paste or type the changed text').fill('one\nZULU')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
     // Save it under a known name.
@@ -89,8 +89,8 @@ test('a filter that matches nothing says so in each panel', async () => {
   try {
     const page = await firstReadyPage(app)
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill('alpha')
-    await page.getByPlaceholder('Paste changed text here').fill('beta')
+    await page.getByPlaceholder('Paste or type the original text').fill('alpha')
+    await page.getByPlaceholder('Paste or type the changed text').fill('beta')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     const save = page.getByRole('dialog', { name: 'Save diff' })
@@ -120,8 +120,8 @@ test('a diff can be kept for as long as a week', async () => {
   try {
     const page = await firstReadyPage(app)
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill('alpha')
-    await page.getByPlaceholder('Paste changed text here').fill('beta')
+    await page.getByPlaceholder('Paste or type the original text').fill('alpha')
+    await page.getByPlaceholder('Paste or type the changed text').fill('beta')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
     await page.getByRole('button', { name: 'Save', exact: true }).click()
 
@@ -151,8 +151,8 @@ test('a diff can be kept for as long as a week', async () => {
 // opens there, the same path the row click takes — one action, two gestures.
 test('a saved diff row can be dragged into the comparison column', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('alpha')
-  await page.getByPlaceholder('Paste changed text here').fill('beta')
+  await page.getByPlaceholder('Paste or type the original text').fill('alpha')
+  await page.getByPlaceholder('Paste or type the changed text').fill('beta')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

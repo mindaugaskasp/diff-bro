@@ -16,8 +16,8 @@ test('in a comparison the pane divider runs straight down from the swap button',
   page
 }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
-  await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
+  await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo')
+  await page.getByPlaceholder('Paste or type the changed text').fill('one\nTWO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.monaco-diff-editor')).toBeVisible()
   await page.waitForTimeout(400)

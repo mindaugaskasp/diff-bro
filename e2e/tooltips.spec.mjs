@@ -7,8 +7,8 @@ import { test, expect } from './fixtures.mjs'
 
 async function compare(page) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('alpha\nbravo')
-  await page.getByPlaceholder('Paste changed text here').fill('alpha\nBRAVO')
+  await page.getByPlaceholder('Paste or type the original text').fill('alpha\nbravo')
+  await page.getByPlaceholder('Paste or type the changed text').fill('alpha\nBRAVO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 }
@@ -42,8 +42,8 @@ test('icon-only controls carry both a tooltip and an accessible name', async ({ 
 // clicked, and it wrapped long text. Both had to be reproduced here.
 async function savedDiffRow(page) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
-  await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
+  await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo')
+  await page.getByPlaceholder('Paste or type the changed text').fill('one\nTWO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

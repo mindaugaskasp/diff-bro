@@ -6,7 +6,7 @@ const closeTab = (page) => page.locator('.diff-tabs .tab.active .tab-close').cli
 
 test('closing a new snippet with typed content asks before discarding', async ({ page }) => {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await expect(doc).toBeVisible()
 
   await doc.locator('.editor').click()
@@ -31,7 +31,7 @@ test('closing a new snippet with typed content asks before discarding', async ({
 // An untouched new snippet has nothing to protect, so it closes at once.
 test('closing an empty new snippet does not ask', async ({ page }) => {
   await openNewSnippet(page)
-  const doc = page.getByRole('region', { name: 'New Snippet' })
+  const doc = page.getByRole('region', { name: 'New snippet' })
   await expect(doc).toBeVisible()
 
   await closeTab(page)

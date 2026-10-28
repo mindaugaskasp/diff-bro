@@ -15,8 +15,8 @@ const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 async function saveDiff(page, name, texts) {
   const [left, right] = texts ?? ['alpha\nbravo\ncharlie', 'alpha\nBRAVO!\ncharlie']
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(left)
-  await page.getByPlaceholder('Paste changed text here').fill(right)
+  await page.getByPlaceholder('Paste or type the original text').fill(left)
+  await page.getByPlaceholder('Paste or type the changed text').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })
@@ -83,8 +83,8 @@ test('the screenshot is of the saved diff, and excludes the app chrome', async (
     .getByRole('button', { name: 'New comparison', exact: true })
     .click()
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('zulu')
-  await page.getByPlaceholder('Paste changed text here').fill('zulu\nyankee')
+  await page.getByPlaceholder('Paste or type the original text').fill('zulu')
+  await page.getByPlaceholder('Paste or type the changed text').fill('zulu\nyankee')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.getByText('yankee').first()).toBeVisible()
 
@@ -244,8 +244,8 @@ test('the exported picture actually carries the diff highlighting', async ({ app
 // where line 7 sits, so this is the one place the feature is actually verified.
 async function pasteCompare(page, left, right) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(left)
-  await page.getByPlaceholder('Paste changed text here').fill(right)
+  await page.getByPlaceholder('Paste or type the original text').fill(left)
+  await page.getByPlaceholder('Paste or type the changed text').fill(right)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 }
@@ -416,8 +416,8 @@ test('two genuinely identical sides still say so', async ({ page }) => {
 // teleported to <body>, outside the region's element tree.
 test('a hovering tooltip is not photographed with the diff', async ({ app, page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('alpha\nbeta')
-  await page.getByPlaceholder('Paste changed text here').fill('alpha\nGAMMA')
+  await page.getByPlaceholder('Paste or type the original text').fill('alpha\nbeta')
+  await page.getByPlaceholder('Paste or type the changed text').fill('alpha\nGAMMA')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 

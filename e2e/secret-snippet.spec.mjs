@@ -9,7 +9,7 @@ const SECRET = 'sk-live-DEADBEEF-0123456789'
 
 async function createSecret(page, name = 'Prod API key') {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(SECRET)
@@ -90,7 +90,7 @@ test('the hover card masks a secret and never decrypts it', async ({ page }) => 
 
 test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Plain note')
   await editor.locator('.editor').click()
   await page.keyboard.type('nothing secret here')

@@ -383,7 +383,7 @@ is bounded rather than assumed away:
 - a sealed `.diffbro` is unaffected: it is ciphertext, so staging it exposes
   nothing.
 
-**Save as file** writes a snippet's plaintext where the user picks, through
+**Export as file** writes a snippet's plaintext where the user picks, through
 `diff:exportFile`, still the one handler that writes renderer-supplied text.
 Its `text` format takes a display name; main strips path characters and keeps
 the extension only when it is one of the snippet syntaxes' (`exportTarget.js`),

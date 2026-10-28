@@ -14,7 +14,7 @@ test('sharing my key needs a name of at most 40 characters, typed straight away'
   page
 }) => {
   await openKeys(page)
-  await page.locator('.keys-panel').getByRole('button', { name: 'Send my key' }).click()
+  await page.locator('.keys-panel').getByRole('button', { name: 'Share my key' }).click()
   const dialog = page.getByRole('dialog', { name: 'Share my public key' })
   const name = dialog.getByPlaceholder('e.g. Alice — laptop')
   await expect(name).toBeFocused()

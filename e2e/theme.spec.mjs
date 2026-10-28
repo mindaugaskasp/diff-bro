@@ -45,8 +45,8 @@ test('a chosen theme applies at once and persists across a relaunch', async () =
 // it: the colours come from Monaco's own stylesheet, not the app's.
 test('the diff editor is painted by the theme, not by Monaco stock', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('one\ntwo\nthree')
-  await page.getByPlaceholder('Paste changed text here').fill('one\nTWO!\nthree')
+  await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo\nthree')
+  await page.getByPlaceholder('Paste or type the changed text').fill('one\nTWO!\nthree')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.monaco-diff-editor')).toBeVisible()
 

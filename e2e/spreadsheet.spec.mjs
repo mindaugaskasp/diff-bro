@@ -84,8 +84,8 @@ test('the status bar is the same height for a grid diff as for a text diff', asy
   try {
     // A text diff first, to measure the reference band.
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
-    await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
+    await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo')
+    await page.getByPlaceholder('Paste or type the changed text').fill('one\nTWO')
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
     const textBand = page.locator('.diff-viewer .status-band')
     await expect(textBand).toBeVisible()

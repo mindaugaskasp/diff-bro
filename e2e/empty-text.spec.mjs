@@ -14,8 +14,8 @@ test('the Saved diffs helper text disappears after saving one diff', async ({ pa
   await expect(emptyText).toBeVisible() // fresh install
 
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('a')
-  await page.getByPlaceholder('Paste changed text here').fill('b')
+  await page.getByPlaceholder('Paste or type the original text').fill('a')
+  await page.getByPlaceholder('Paste or type the changed text').fill('b')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

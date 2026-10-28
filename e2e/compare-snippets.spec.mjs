@@ -56,7 +56,7 @@ test('two dropped snippets open as an ordinary comparison', async ({ page }) => 
 // renders no raw editor to type into.
 test('editing a compared snippet updates the diff without a reload', async ({ app, page }) => {
   await openNewSnippet(page)
-  const make = page.getByRole('region', { name: 'New Snippet' })
+  const make = page.getByRole('region', { name: 'New snippet' })
   await make.getByPlaceholder('Snippet name…').fill('Live target')
   // Typed rather than pasted: routing this through the OS clipboard sometimes
   // did not land under CI's parallel workers, leaving the editor empty and Save
@@ -77,7 +77,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
 
   await page.locator('.snippets-section .row', { hasText: 'Live target' }).click()
   await editInPlace(page)
-  const edit = page.getByRole('region', { name: 'Edit Snippet' })
+  const edit = page.getByRole('region', { name: 'Edit snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('ControlOrMeta+a')
   await app.evaluate(({ clipboard }) => clipboard.writeText('LIVE-EDIT-MARKER'))
@@ -107,7 +107,7 @@ test('closing the comparison leaves both snippets alone', async ({ page }) => {
 
 test('a secret snippet is not draggable', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')

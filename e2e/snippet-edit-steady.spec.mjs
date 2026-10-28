@@ -10,7 +10,7 @@ const boxes = (doc) =>
 
 test('entering edit mode moves and resizes no tag pill', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Steady pills')
   for (const tag of ['alpha', 'beta']) {
     await editor.locator('.taginput').fill(tag)

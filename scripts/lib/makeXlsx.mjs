@@ -5,11 +5,15 @@ import { zipSync, strToU8 } from 'fflate'
 // (src/main/xlsx) is the compatibility contract, not a full OOXML implementation.
 
 const esc = (s) =>
-  String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c])
+  String(s).replace(
+    /[<>&'"]/g,
+    (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]
+  )
 
 const colLetter = (n) => {
   let s = ''
-  for (let x = n + 1; x > 0; x = Math.floor((x - 1) / 26)) s = String.fromCharCode(65 + ((x - 1) % 26)) + s
+  for (let x = n + 1; x > 0; x = Math.floor((x - 1) / 26))
+    s = String.fromCharCode(65 + ((x - 1) % 26)) + s
   return s
 }
 
@@ -33,7 +37,11 @@ function sheetXml(rows) {
  */
 export function makeXlsx(sheets) {
   const files = {}
-  const sheetRefs = sheets.map((s, i) => ({ name: s.name, rid: `rId${i + 1}`, path: `worksheets/sheet${i + 1}.xml` }))
+  const sheetRefs = sheets.map((s, i) => ({
+    name: s.name,
+    rid: `rId${i + 1}`,
+    path: `worksheets/sheet${i + 1}.xml`
+  }))
 
   files['[Content_Types].xml'] =
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheetRefs

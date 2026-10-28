@@ -8,12 +8,12 @@ test.beforeEach(async ({ page }) => {
 // a sliver as soon as a library grew past a few dozen tags, which is a priority
 // inversion only a real layout can show.
 async function saveWithTags(page, name, tags) {
-  const left = page.getByPlaceholder('Paste original text here')
+  const left = page.getByPlaceholder('Paste or type the original text')
   if (!(await left.isVisible().catch(() => false))) {
     await page.getByRole('button', { name: 'Paste mode' }).click()
   }
   await left.fill(`before ${name}`)
-  await page.getByPlaceholder('Paste changed text here').fill(`after ${name}`)
+  await page.getByPlaceholder('Paste or type the changed text').fill(`after ${name}`)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

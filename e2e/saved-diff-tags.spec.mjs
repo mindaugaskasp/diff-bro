@@ -9,8 +9,8 @@ import { test, expect } from './fixtures.mjs'
 // swallowed. A pasted file name is what gives the diff its format.
 async function saveJsonDiff(page, name, tag) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('{\n  "a": 1\n}')
-  await page.getByPlaceholder('Paste changed text here').fill('{\n  "a": 2\n}')
+  await page.getByPlaceholder('Paste or type the original text').fill('{\n  "a": 1\n}')
+  await page.getByPlaceholder('Paste or type the changed text').fill('{\n  "a": 2\n}')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

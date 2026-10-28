@@ -12,8 +12,8 @@ import { test, expect } from './fixtures.mjs'
 // safeStorage — a path jsdom can't reach.
 test('sharing with no trusted keys walks through first-time key setup', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('before')
-  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByPlaceholder('Paste or type the original text').fill('before')
+  await page.getByPlaceholder('Paste or type the changed text').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 
   // Step 1: Share reuses the save dialog to name and time-box the diff.

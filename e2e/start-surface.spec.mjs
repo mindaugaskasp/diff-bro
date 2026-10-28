@@ -5,8 +5,8 @@ const plus = (page) => page.getByRole('button', { name: 'New comparison' })
 
 async function comparePasted(page) {
   await page.getByRole('button', { name: 'Pasted text' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('before')
-  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByPlaceholder('Paste or type the original text').fill('before')
+  await page.getByPlaceholder('Paste or type the changed text').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
 }
 
@@ -33,6 +33,6 @@ test('a comparison started from it becomes a tab, and + returns to the surface',
 
 test('New snippet opens a snippet tab in the main view', async ({ page }) => {
   await page.getByRole('button', { name: /New snippet/ }).click()
-  await expect(page.getByRole('region', { name: 'New Snippet' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'New snippet' })).toBeVisible()
   await expect(strip(page).getByRole('tab')).toHaveCount(1)
 })

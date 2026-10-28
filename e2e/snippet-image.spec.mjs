@@ -40,7 +40,7 @@ const reportedSize = async (dialog) =>
 // keystroke outright, merging two statements into unparseable Mermaid.
 async function createSnippet({ page, app }, name, body) {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), body)
   // A paste fired before Monaco holds focus lands nowhere, so retry it while the editor is empty.
@@ -145,8 +145,8 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
   const LEFT = Array.from({ length: 200 }, (_, i) => `line ${i + 1}`).join('\n')
   const RIGHT = LEFT.replace('line 40', 'line 40 CHANGED')
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill(LEFT)
-  await page.getByPlaceholder('Paste changed text here').fill(RIGHT)
+  await page.getByPlaceholder('Paste or type the original text').fill(LEFT)
+  await page.getByPlaceholder('Paste or type the changed text').fill(RIGHT)
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
 
@@ -176,7 +176,7 @@ test('the live comparison survives the shot, scroll position and all', async ({ 
 // A masked secret has nothing worth photographing and everything to lose.
 test('a secret snippet offers no capture action', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
@@ -249,7 +249,7 @@ test('the capture action is disabled while editing', async ({ page }) => {
 // A picture of text is a worse copy of what Copy already gives you.
 test('only a Mermaid snippet offers capture', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Just some prose')
   await editor.locator('.editor').click()
   await page.keyboard.type('nothing to photograph here')

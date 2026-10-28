@@ -4,8 +4,8 @@ import { test, expect, showPanel } from './fixtures.mjs'
 
 async function loadDiff(page) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('one\ntwo\nthree')
-  await page.getByPlaceholder('Paste changed text here').fill('one\ntwo CHANGED\nthree')
+  await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo\nthree')
+  await page.getByPlaceholder('Paste or type the changed text').fill('one\ntwo CHANGED\nthree')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.getByText('What are you comparing?')).toBeHidden()
 }

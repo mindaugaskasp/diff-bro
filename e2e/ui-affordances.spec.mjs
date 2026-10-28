@@ -146,8 +146,8 @@ test('hovering an icon button shows a visible tooltip', async ({ page }) => {
 // carried a "kept" label that said nothing a blank space would not.
 test('saved-diff actions stay out of the way until the row is hovered', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('a')
-  await page.getByPlaceholder('Paste changed text here').fill('b')
+  await page.getByPlaceholder('Paste or type the original text').fill('a')
+  await page.getByPlaceholder('Paste or type the changed text').fill('b')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const save = page.getByRole('dialog', { name: 'Save diff' })
@@ -342,7 +342,7 @@ const PRIMARY = `(() => {
 // the keyline must carry the change.
 test('hovering the primary button moves its keyline, not its fill', async ({ page }) => {
   await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New Snippet' })
+  const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Primary hover')
   await editor.locator('.editor').click()
   await page.keyboard.type('body')

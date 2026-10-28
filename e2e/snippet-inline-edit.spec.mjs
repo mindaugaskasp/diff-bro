@@ -11,7 +11,7 @@ const actionNames = (page) =>
   docActions(page)
     .locator('button')
     .evaluateAll((bs) => bs.map((b) => b.getAttribute('aria-label') || b.textContent.trim()))
-const editing = (page) => page.getByRole('region', { name: 'Edit Snippet' })
+const editing = (page) => page.getByRole('region', { name: 'Edit snippet' })
 
 test('the action row is the same viewing and editing, with no Edit, Cancel, Clear or Close', async ({
   page

@@ -441,6 +441,27 @@ directory move passes CI while silently removing enforcement.
   need to know the consequence — a passphrase they must not lose, or
   AES-256-CBC being unauthenticated. Those explain a choice; the rest was
   decoration.
+- **Labels follow one vocabulary.** The same act has the same name in a menu, on
+  its button and in its shortcut hint.
+  - **Casing:** menu items are Title Case (small words lower); every other
+    label, tooltip, placeholder and dialog title is sentence case.
+  - **Verbs:** Save keeps something in the library. Export writes a file to
+    disk. Share hands something to another person (a diff, your public key).
+    Import brings in a file you pick; Add puts in one item by hand. Delete
+    destroys a saved item; Remove takes something out of a list or field;
+    Close ends a tab or dialog; Discard drops unsaved edits; Clear empties an
+    input, search or filter.
+  - **Placeholders** for a body of text read "Paste or type <thing>…", plus
+    ", or drop a file" where a drop works. A single-value field names what it
+    wants.
+  - **Ellipsis** only when more input follows (a dialog or a picker).
+  - **Menus** group by job (Import ▸, Export ▸, Copy ▸, Display ▸, Zoom ▸, the
+    Tools panel's groups); a shortcut never needs its submenu opened.
+    `tests/menuMap.fixture.js` holds both menus, native and in-app, to one map.
+
+  `npm run check:i18n` fails on a `menu.*` label that is not Title Case and on
+  wording the guide retired (`scripts/lib/labelRules.mjs`).
+
 - **User-facing text lives in the catalogue, never in source.**
   `src/shared/i18n/en.json` is the single source, read by vue-i18n in the
   renderer and `@intlify/core` in main — so a menu label and the button that

@@ -123,8 +123,8 @@ test('the rail is built from the size scale, not a bespoke box', async ({ page }
 // the file slots, so the two columns read as unrelated grids.
 test('the rail rule lands on the same line as the file slots', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('a')
-  await page.getByPlaceholder('Paste changed text here').fill('b')
+  await page.getByPlaceholder('Paste or type the original text').fill('a')
+  await page.getByPlaceholder('Paste or type the changed text').fill('b')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.diff-container')).toBeVisible()
   await collapse(page).click()

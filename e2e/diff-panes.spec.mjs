@@ -6,8 +6,10 @@ import { test, expect } from './fixtures.mjs'
 test('both panes carry the same scrollbar furniture', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
   const many = Array.from({ length: 60 }, (_, i) => `line ${i}`).join('\n')
-  await page.getByPlaceholder('Paste original text here').fill(many)
-  await page.getByPlaceholder('Paste changed text here').fill(many.replace('line 5', 'LINE 5!'))
+  await page.getByPlaceholder('Paste or type the original text').fill(many)
+  await page
+    .getByPlaceholder('Paste or type the changed text')
+    .fill(many.replace('line 5', 'LINE 5!'))
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.monaco-diff-editor')).toBeVisible()
   await page.waitForTimeout(500)
@@ -27,8 +29,8 @@ test('both panes carry the same scrollbar furniture', async ({ page }) => {
 // change to the ruler cannot quietly start stealing width from one side.
 test('the two panes are the same width', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('one\ntwo')
-  await page.getByPlaceholder('Paste changed text here').fill('one\nTWO')
+  await page.getByPlaceholder('Paste or type the original text').fill('one\ntwo')
+  await page.getByPlaceholder('Paste or type the changed text').fill('one\nTWO')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.monaco-diff-editor')).toBeVisible()
   await page.waitForTimeout(400)
@@ -45,8 +47,10 @@ test('the two panes are the same width', async ({ page }) => {
 test('the pane scrollbars are slim, and the same on both sides', async ({ page }) => {
   await page.getByRole('button', { name: 'Paste mode' }).click()
   const many = Array.from({ length: 80 }, (_, i) => `line ${i}`).join('\n')
-  await page.getByPlaceholder('Paste original text here').fill(many)
-  await page.getByPlaceholder('Paste changed text here').fill(many.replace('line 5', 'CHANGED'))
+  await page.getByPlaceholder('Paste or type the original text').fill(many)
+  await page
+    .getByPlaceholder('Paste or type the changed text')
+    .fill(many.replace('line 5', 'CHANGED'))
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await expect(page.locator('.monaco-diff-editor')).toBeVisible()
   await page.waitForTimeout(400)

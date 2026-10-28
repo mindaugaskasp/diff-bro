@@ -3,8 +3,8 @@ import { test, expect, pickTag, showPanel } from './fixtures.mjs'
 // A panel with no match shows zero: that is the answer to "why is this empty".
 async function saveTaggedDiff(page, name, tag) {
   await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste original text here').fill('before')
-  await page.getByPlaceholder('Paste changed text here').fill('after')
+  await page.getByPlaceholder('Paste or type the original text').fill('before')
+  await page.getByPlaceholder('Paste or type the changed text').fill('after')
   await page.getByRole('button', { name: 'Compare', exact: true }).click()
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Save diff' })

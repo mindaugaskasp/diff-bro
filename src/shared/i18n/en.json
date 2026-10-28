@@ -147,7 +147,7 @@
     }
   },
   "reportIssue": {
-    "title": "Report an Issue",
+    "title": "Report an issue",
     "message": "Open the issue tracker in your browser?",
     "openInBrowser": "Open in browser",
     "leavesApp": "Diff Bro itself stays offline. This opens your web browser (which does connect to the internet) at:\n\n{url}",
@@ -190,7 +190,7 @@
     "exportSnippets": "Export snippets",
     "importSnippets": "Import snippets",
     "importSharedDiff": "Import shared diff",
-    "exportPublicKey": "Export my public key",
+    "exportPublicKey": "Share my public key",
     "addTrustedKey": "Add trusted public key",
     "backupConfig": "Back up configuration",
     "restoreConfig": "Restore configuration",
@@ -202,7 +202,7 @@
   "export": {
     "html": "Export diff as HTML",
     "csv": "Export the change register",
-    "text": "Save snippet as file"
+    "text": "Export snippet as file"
   },
   "fileFilter": {
     "png": "PNG image",
@@ -222,7 +222,7 @@
     "openLeft": "Open left file",
     "openRight": "Open right file",
     "openAsSnippet": "Open a file as a snippet",
-    "saveSnippetAsFile": "Save snippet as file",
+    "saveSnippetAsFile": "Export snippet as file",
     "saveDiff": "Save diff",
     "shareDiff": "Share diff",
     "importShared": "Import shared diff",
@@ -234,7 +234,7 @@
     "swapSides": "Swap sides",
     "copyPatch": "Copy diff as patch",
     "copyFile": "Copy diff as file",
-    "pasteTextMode": "Paste text mode",
+    "pasteTextMode": "Paste mode",
     "pasteToCompare": "Paste to compare",
     "commandPalette": "Command palette",
     "toggleSplit": "Toggle split view",
@@ -656,10 +656,10 @@
     "dismiss": "Dismiss"
   },
   "encryptDecryptDialog": {
-    "plainTextToEncryptOr": "Plain text to encrypt, or an encrypted blob to decrypt… (or drop a file here)",
+    "plainTextToEncryptOr": "Paste or type text to encrypt or a blob to decrypt, or drop a file…",
     "32Bytes64HexOr": "32 bytes — 64 hex or base64",
     "16Bytes32HexOr": "16 bytes — 32 hex or base64",
-    "encryptDecryptText": "Encrypt / Decrypt Text",
+    "encryptDecryptText": "Encrypt / decrypt text",
     "localOnlyThePassphraseAnd": "Local only — the passphrase and text never leave this machine and are not saved anywhere. Encrypts with authenticated AES-256-GCM, so tampering is always detected on decrypt.",
     "input": "Input",
     "keyType": "Key type",
@@ -724,9 +724,9 @@
     "default": "default",
     "clickAgainToPermanently": "Click again to permanently delete every log file",
     "deleteAllLocalLog": "Delete all local log files",
-    "cleared": "Cleared",
-    "confirmClear": "Confirm clear",
-    "clearLogs": "Clear logs"
+    "cleared": "Deleted",
+    "confirmClear": "Confirm delete",
+    "clearLogs": "Delete logs"
   },
   "mermaidDiagram": {
     "diagramError": "Diagram error",
@@ -756,8 +756,8 @@
   },
   "pasteInput": {
     "nameThisSide": "Name this side…",
-    "pasteOriginalTextHereOr": "Paste original text here… or drop a file",
-    "pasteChangedTextHereOr": "Paste changed text here… or drop a file",
+    "pasteOriginalTextHereOr": "Paste or type the original text, or drop a file…",
+    "pasteChangedTextHereOr": "Paste or type the changed text, or drop a file…",
     "original": "Original",
     "changed": "Changed",
     "compare": "Compare",
@@ -864,7 +864,7 @@
     "dragToWidenTheSidebar": "Drag to widen the sidebar",
     "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
     "collapsedTagsSearchable": "Collapsed tags, searchable",
-    "dropEveryTagFilter": "Drop every tag filter",
+    "dropEveryTagFilter": "Clear every tag filter",
     "clear": "Clear",
     "plusMore": "+{n} more",
     "tagsSelected": "{n} tag selected | {n} tags selected",
@@ -978,7 +978,7 @@
     "aPictureOfThisSnippet": "A picture of this snippet, as the app draws it",
     "copyAsFile": "Copy as file",
     "copiedAsFile": "Copied as a file.",
-    "saveAsFile": "Save as file…",
+    "saveAsFile": "Export as file…",
     "moreActions": "More snippet actions",
     "capture": "Capture",
     "showTheContents": "Show the contents",
@@ -1020,8 +1020,8 @@
     "secretHint": "{label} — hide the contents behind ****",
     "orDropAFile": "— or drop a file here",
     "renderedEditor": "Rendered content, editable",
-    "newSnippetTitle": "New Snippet",
-    "editSnippet": "Edit Snippet",
+    "newSnippetTitle": "New snippet",
+    "editSnippet": "Edit snippet",
     "snippet": "Snippet"
   },
   "snippetFillDialog": {
@@ -1037,8 +1037,8 @@
     "export": "Export",
     "enterExisting": "Enter the passphrase this file was exported with.",
     "chooseNew": "Choose a passphrase. You'll need it again to reimport this file.",
-    "importTitle": "Import Snippets",
-    "exportAllTitle": "Export All Snippets",
+    "importTitle": "Import snippets",
+    "exportAllTitle": "Export all snippets",
     "exportTagTitle": "Export \"{tag}\" tag",
     "exportedTo": "Exported to {path}",
     "exportFailed": "Export failed.",
@@ -1214,8 +1214,8 @@
     "copyValue": "Copy {value}"
   },
   "toolHash": {
-    "pasteText": "Paste text…",
-    "pasteTheDigestYouWere": "Paste the digest you were given…",
+    "pasteText": "Paste or type text…",
+    "pasteTheDigestYouWere": "Paste or type the digest you were given…",
     "textToHash": "Text to hash",
     "expectedDigest": "Expected digest",
     "of": "Of",
@@ -1225,7 +1225,7 @@
     "copyValue": "Copy {value}"
   },
   "toolJson": {
-    "pasteJSON": "Paste JSON…",
+    "pasteJSON": "Paste or type JSON…",
     "pathJSONPath": "$.path[*] — JSONPath",
     "jSON": "JSON",
     "jSONPathFilter": "JSONPath filter",
@@ -1235,7 +1235,7 @@
     "minify": "Minify"
   },
   "toolJwt": {
-    "pasteAJWTHeaderPayload": "Paste a JWT — header.payload.signature",
+    "pasteAJWTHeaderPayload": "Paste or type a JWT — header.payload.signature…",
     "jWT": "JWT",
     "copyHeader": "Copy header",
     "copyPayload": "Copy payload",
@@ -1247,7 +1247,7 @@
     "notExpired": "Not expired"
   },
   "toolLines": {
-    "pasteLines": "Paste lines…",
+    "pasteLines": "Paste or type lines…",
     "find": "Find…",
     "replace": "Replace…",
     "prefixEachLine": "Prefix each line…",
@@ -1269,7 +1269,7 @@
     "result": "Result"
   },
   "toolRegex": {
-    "pasteTheTextToTest": "Paste the text to test against…",
+    "pasteTheTextToTest": "Paste or type the text to test against…",
     "regularExpression": "Regular expression",
     "subjectText": "Subject text",
     "replacement": "Replacement",
@@ -1279,7 +1279,7 @@
     "replacePlaceholder": "Replace with… ($1, $<name>)"
   },
   "toolUrl": {
-    "uRLOrTextToEncode": "URL or text to encode / decode…",
+    "uRLOrTextToEncode": "Paste or type a URL or text to encode or decode…",
     "uRLOrText": "URL or text",
     "copyResult": "Copy result",
     "parameterKey": "Parameter key",
@@ -1307,7 +1307,7 @@
     "versionVariant": "v{version} · {variant}"
   },
   "toolXml": {
-    "pasteXML": "Paste XML…",
+    "pasteXML": "Paste or type XML…",
     "tagAttrXPath": "//tag/{'@'}attr — XPath",
     "xML": "XML",
     "xPathFilter": "XPath filter",
@@ -1443,7 +1443,7 @@
     "keyDialog": {
       "eGAliceLaptop": "e.g. Alice — laptop",
       "shareMyPublicKey": "Share my public key",
-      "securityAddTrustedKey": "Security → Add Trusted Key",
+      "securityAddTrustedKey": "Security → Trusted Keys → Add Trusted Key…",
       "nameOthersWillSee": "Name others will see",
       "shownToWhoeverImportsThis": "Shown to whoever imports this key, so they recognize it's from you. Not secret, and not part of the key's identity.",
       "fingerprint": "Fingerprint {fp}",
@@ -1840,7 +1840,7 @@
     "activity": {
       "title": "Activity",
       "empty": "Claude hasn’t asked for anything yet.",
-      "clear": "Clear"
+      "clear": "Delete activity"
     },
     "inbox": {
       "heading": "From Claude · {n} to review",
@@ -1884,13 +1884,13 @@
     "addFromClipboardTip": "Add a key someone sent you as text — copy it first",
     "yourKey": "Your key",
     "email": "Email",
-    "save": "Save as file",
+    "save": "Export as file",
     "add": "Add",
     "trusted": "Trusted · {n}",
     "shareWithSomeone": "Share diffs with someone",
     "stepSend": "Send them your key. They add it on their side.",
     "stepAdd": "Add the key they send back, and check its fingerprint with them.",
-    "sendMyKey": "Send my key",
+    "sendMyKey": "Share my key",
     "addTheirKey": "Add their key"
   },
   "editorText": {

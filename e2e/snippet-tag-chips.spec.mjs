@@ -14,7 +14,7 @@ test('tags sit in a row with no frame, and + Add tag starts editing', async ({ p
   await expect(doc.locator('.tag-row .tag-chip')).toHaveCount(3)
 
   await doc.getByRole('button', { name: 'Add tag' }).click()
-  await expect(page.getByRole('region', { name: 'Edit Snippet' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Edit snippet' })).toBeVisible()
   await expect(doc.getByPlaceholder('add a tag…')).toBeFocused()
 })
 

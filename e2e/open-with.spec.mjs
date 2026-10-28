@@ -44,7 +44,7 @@ function fixtureFiles() {
   }
 }
 
-const newSnippet = (page) => page.getByRole('region', { name: 'New Snippet' })
+const newSnippet = (page) => page.getByRole('region', { name: 'New snippet' })
 const comparePrompt = (page) => page.getByRole('dialog', { name: /^Compare with/ })
 const tabCount = (page) => page.locator('.diff-tabs .tab').count()
 

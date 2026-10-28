@@ -43,7 +43,7 @@ const names = (page) => page.locator(`${SNIPPETS} .nm`).allTextContents()
 async function seedSnippets(page, labels) {
   for (const label of labels) {
     await openNewSnippet(page)
-    const editor = page.getByRole('region', { name: 'New Snippet' })
+    const editor = page.getByRole('region', { name: 'New snippet' })
     await editor.getByPlaceholder('Snippet name…').fill(label)
     await editor.locator('.editor').click()
     await page.keyboard.type(`body of ${label}`)
@@ -141,8 +141,8 @@ async function seedDiffs(page, labels) {
     // hides itself while only one tab is open.
     await openMenu(page, 'File', 'New Comparison')
     await page.getByRole('button', { name: 'Paste mode' }).click()
-    await page.getByPlaceholder('Paste original text here').fill(`before ${label}`)
-    await page.getByPlaceholder('Paste changed text here').fill(`after ${label}`)
+    await page.getByPlaceholder('Paste or type the original text').fill(`before ${label}`)
+    await page.getByPlaceholder('Paste or type the changed text').fill(`after ${label}`)
     await page.getByRole('button', { name: 'Compare', exact: true }).click()
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Save diff' })

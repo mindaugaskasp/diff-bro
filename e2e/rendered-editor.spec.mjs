@@ -3,7 +3,7 @@ import { test, expect, openNewSnippet, snippetDoc, editInPlace, docActions } fro
 // jsdom has no editing host, so only a launch proves a person typing into the
 // rendered view and the snippet actually changing.
 
-const editorDialog = (page) => page.getByRole('region', { name: 'New Snippet' })
+const editorDialog = (page) => page.getByRole('region', { name: 'New snippet' })
 const renderedView = (page) => page.locator('.rendered-editor')
 const plainButton = (page) => page.getByRole('button', { name: 'Plain', exact: true })
 const renderedButton = (page) => page.getByRole('button', { name: 'Rendered', exact: true })
