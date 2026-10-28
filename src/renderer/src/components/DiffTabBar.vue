@@ -10,6 +10,7 @@ import { useTabsStore } from '../stores/tabsStore'
 import {
   MAX_TAB_NAME,
   adjacentTabId,
+  holdsContent,
   isBlank,
   isSnippetTab,
   stripTabs,
@@ -26,9 +27,9 @@ import { startTabDrag } from '../composables/useTabContent'
 
 const tabs = useTabsStore()
 const diff = useDiffStore()
-const live = computed(() => ({ activeId: tabs.activeId, hasContent: diff.hasActive }))
+const live = computed(() => ({ activeId: tabs.activeId, hasContent: holdsContent(diff) }))
 const strip = computed(() => stripTabs(tabs.tabs, live.value))
-const onStart = computed(() => !isSnippetTab(tabs.active) && !diff.hasActive)
+const onStart = computed(() => !isSnippetTab(tabs.active) && !holdsContent(diff))
 const canStart = computed(() => tabs.canAdd || tabs.tabs.some(isBlank))
 
 // The label follows the live comparison, so a tab stops saying "Untitled" the

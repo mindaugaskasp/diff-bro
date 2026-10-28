@@ -10,6 +10,7 @@ import {
   tabLabel,
   canAddTab,
   createTab,
+  holdsContent,
   isBlank,
   nextActiveId,
   tabForEntry,
@@ -105,6 +106,15 @@ describe('isBlank', () => {
     expect(isBlank({ snapshot: { left: file('a.txt') } })).toBe(false)
     expect(isBlank({ snapshot: { mode: 'paste', pasteRight: 'typed' } })).toBe(false)
     expect(isBlank({ snapshot: { pasteLeftFile: file('d.md') } })).toBe(false)
+  })
+})
+
+describe('holdsContent', () => {
+  it('counts files and pasted text whatever the mode', () => {
+    expect(holdsContent({ mode: 'paste', left: file('a.txt'), right: file('b.txt') })).toBe(true)
+    expect(holdsContent({ mode: 'files', pasteLeft: 'typed' })).toBe(true)
+    expect(holdsContent({ mode: 'paste', pasteLeft: '', pasteRight: '' })).toBe(false)
+    expect(holdsContent(undefined)).toBe(false)
   })
 })
 

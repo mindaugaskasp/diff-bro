@@ -207,12 +207,12 @@ export const tabForEntry = (tabs, entryId) =>
  */
 export function isBlank(tab) {
   if (isSnippetTab(tab)) return false
-  const s = tab?.snapshot
-  if (!s) return true
-  return (
-    !s.left && !s.right && !s.pasteLeft && !s.pasteRight && !s.pasteLeftFile && !s.pasteRightFile
-  )
+  return !holdsContent(tab?.snapshot)
 }
+
+// In EITHER mode: a file comparison switched to paste mode still holds its files.
+export const holdsContent = (s) =>
+  !!(s && (s.left || s.right || s.pasteLeft || s.pasteRight || s.pasteLeftFile || s.pasteRightFile))
 
 /**
  * The tabs the strip draws: a blank comparison is the start surface, not a tab

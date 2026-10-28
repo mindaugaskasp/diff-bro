@@ -6,6 +6,7 @@ import {
   canAddTab,
   createTab,
   cleanTabName,
+  holdsContent,
   isBlank,
   isSnippetTab,
   OPEN_DEFAULTS,
@@ -58,7 +59,7 @@ export const useTabsStore = defineStore('tabs', {
       if (isSnippetTab(tab)) return !!tab.dirty
       if (tab.id !== s.activeId) return !tab.diffSaved && !isBlank(tab)
       const diff = useDiffStore()
-      return !diff.diffSaved && diff.hasActive
+      return !diff.diffSaved && holdsContent(diff)
     }
   },
   actions: {
