@@ -115,7 +115,7 @@ test('an edit in the rendered view survives a save and reopen', async ({ page })
   await page.keyboard.type(' across')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
-  const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Persist' })
+  const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Persist' }).first()
   await expect(row).toBeVisible()
   await row.locator('.entry').click()
   const reopened = snippetDoc(page)
@@ -131,7 +131,7 @@ test('a secret snippet shows no plaintext in the rendered view while masked', as
   await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
-  const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Secret' })
+  const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Secret' }).first()
   await row.locator('.entry').click()
   const reopened = snippetDoc(page)
   await expect(reopened.locator('.secret-mask')).toBeVisible()
@@ -148,7 +148,7 @@ test('the rendered view of a saved snippet is not editable until Edit', async ({
   })
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
 
-  const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG ReadOnly' })
+  const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG ReadOnly' }).first()
   await expect(row).toBeVisible()
   await row.locator('.entry').click()
   const reopened = snippetDoc(page)

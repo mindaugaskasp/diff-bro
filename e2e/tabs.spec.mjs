@@ -322,9 +322,9 @@ test('the Saved diffs + opens a paste comparison on the start surface', async ({
   await expect(tabs(page)).toHaveCount(1)
 })
 
-// A diff or snippet carries several tags, so the filter takes several too —
-// selecting two shows the rows carrying either.
-test('several tags can be selected, and they widen the list', async ({ page }) => {
+// A tag scope (#121) keeps the diffs carrying that tag, and picking it again
+// takes the scope off.
+test('a tag scope keeps the diffs that carry it', async ({ page }) => {
   const save = async (name, tag) => {
     await compare(page, `left-${name}`, `right-${name}`)
     await page.getByRole('button', { name: 'Save', exact: true }).click()
@@ -335,7 +335,7 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
       await d.getByPlaceholder('add a tag…').press('Enter')
     }
     await d.getByRole('button', { name: 'Save', exact: true }).click()
-    await expect(page.locator('li.diff', { hasText: name })).toBeVisible()
+    await expect(page.locator('li.diff', { hasText: name }).first()).toBeVisible()
     await addTab(page).click()
   }
   await save('Both tags', ['alpha', 'beta'])
@@ -345,15 +345,11 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
   await expect(page.locator('li.diff')).toHaveCount(1)
   await expect(page.locator('li.diff', { hasText: 'Both tags' })).toBeVisible()
 
-  // Adding a tag WIDENS: the alpha-only diff joins rather than being hidden for
-  // lacking beta.
   await pickTag(page, 'alpha')
-  // The readout, not the chips: a chip may be folded into "+N more".
-  await expect(page.locator('.usb-filtering')).toContainText('2 tags selected')
   await expect(page.locator('li.diff')).toHaveCount(2)
 
   await pickTag(page, 'alpha')
-  await expect(page.locator('li.diff')).toHaveCount(1)
+  await expect(page.locator('.usb-top .scope-chip')).toHaveCount(0)
 })
 
 // The tab you are looking at IS the live document: its snapshot is only

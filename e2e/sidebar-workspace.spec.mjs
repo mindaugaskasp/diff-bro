@@ -112,7 +112,9 @@ test('Home deletes a recent snippet and a recent diff, each after confirming', a
   await expect(homeItem(page, 'Doomed diff')).toHaveCount(0)
 
   await navItem(page, 'Snippets').click()
-  await expect(page.locator('.snippets-section .row', { hasText: 'Doomed note' })).toHaveCount(0)
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Doomed note' }).first()
+  ).toHaveCount(0)
   await navItem(page, 'Diffs').click()
   await expect(page.locator('li.diff', { hasText: 'Doomed diff' })).toHaveCount(0)
 })
@@ -120,7 +122,7 @@ test('Home deletes a recent snippet and a recent diff, each after confirming', a
 test('a pinned card on Home can be deleted, and a pinned tool cannot', async ({ page }) => {
   await newSnippet(page, 'Pinned note')
   await navItem(page, 'Snippets').click()
-  const row = page.locator('.snippets-section .row', { hasText: 'Pinned note' })
+  const row = page.locator('.snippets-section .row', { hasText: 'Pinned note' }).first()
   await row.hover()
   await row.locator('.star').click()
   await navItem(page, 'Home').click()

@@ -87,7 +87,7 @@ test('the toggle takes the tag word off both kinds of row, and puts it back', as
   // The name is what the row is for, and it is still there.
   await showPanel(page, 'snippets')
   await expect(
-    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' }).first()
   ).toBeVisible()
 
   await setRowTags(page, true)
@@ -96,7 +96,7 @@ test('the toggle takes the tag word off both kinds of row, and puts it back', as
 
 // Hiding the WORD is not hiding the tag: both ways of reaching one still work,
 // which is the whole reason the row can afford to drop it.
-test('the shelf and the search still filter by tag with the words off', async ({ page }) => {
+test('the # scope and the search still filter by tag with the words off', async ({ page }) => {
   test.setTimeout(120_000)
   await seedSnippet(page, 'Rollback runbook', ['ops'])
   await seedSnippet(page, 'Untagged note', [])
@@ -104,16 +104,20 @@ test('the shelf and the search still filter by tag with the words off', async ({
 
   await pickTag(page, 'ops')
   await expect(
-    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' }).first()
   ).toBeVisible()
-  await expect(page.locator('.snippets-section .row', { hasText: 'Untagged note' })).toHaveCount(0)
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Untagged note' }).first()
+  ).toHaveCount(0)
   await pickTag(page, 'ops')
 
   await page.getByPlaceholder('Search snippets').fill('ops')
   await expect(
-    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+    page.locator('.snippets-section .row', { hasText: 'Rollback runbook' }).first()
   ).toBeVisible()
-  await expect(page.locator('.snippets-section .row', { hasText: 'Untagged note' })).toHaveCount(0)
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Untagged note' }).first()
+  ).toHaveCount(0)
 })
 
 test('the choice survives a relaunch', async () => {
@@ -132,7 +136,7 @@ test('the choice survives a relaunch', async () => {
   try {
     const page = await firstReadyPage(app)
     await expect(
-      page.locator('.snippets-section .row', { hasText: 'Rollback runbook' })
+      page.locator('.snippets-section .row', { hasText: 'Rollback runbook' }).first()
     ).toBeVisible()
     await expect(snippetTag(page)).toHaveCount(0)
   } finally {

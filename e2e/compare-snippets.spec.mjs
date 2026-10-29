@@ -24,7 +24,7 @@ const PROMPT = 'Example — Claude review prompt'
 // elements reliably, so the drag is driven the way the browser does it: one
 // DataTransfer shared by dragstart and drop.
 async function dragRowTo(page, name, targetSelector) {
-  await page.locator('.snippets-section .row', { hasText: name }).hover()
+  await page.locator('.snippets-section .row', { hasText: name }).first().hover()
   await page.evaluate(
     ({ name: rowName, target }) => {
       const row = [...document.querySelectorAll('.snippets-section .row')].find((r) =>
@@ -75,7 +75,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   await dragRowTo(page, DIAGRAM, '.slot[data-side="right"]')
   await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
 
-  await page.locator('.snippets-section .row', { hasText: 'Live target' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Live target' }).first().click()
   await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit snippet' })
   await edit.locator('.editor').click()
@@ -115,9 +115,9 @@ test('a secret snippet is not draggable', async ({ page }) => {
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await closeSnippet(page)
 
-  const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
+  const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()
   await expect(secret).toHaveAttribute('draggable', 'false')
-  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM })
+  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM }).first()
   await expect(ordinary).toHaveAttribute('draggable', 'true')
 })
 

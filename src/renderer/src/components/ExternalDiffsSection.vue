@@ -20,8 +20,7 @@ const props = defineProps({
   panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
-  tags: { type: Array, default: () => [] },
-  favOnly: { type: Boolean, default: false }
+  tags: { type: Array, default: () => [] }
 })
 
 const vault = useVaultStore()

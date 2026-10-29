@@ -82,3 +82,11 @@
   color: var(--text-hint);
   font-size: var(--font-sm);
 }
+
+/* #121: a fourth tag level is refused, with the deepest the path can go. */
+.too-deep {
+  display: block;
+  margin: var(--space-1) 0 0;
+  color: var(--text);
+  font-size: var(--font-sm);
+}

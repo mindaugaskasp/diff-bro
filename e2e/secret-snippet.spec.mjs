@@ -18,7 +18,7 @@ async function createSecret(page, name = 'Prod API key') {
   // Save closes the editor, so the read-only view is reached the way a reader
   // reaches it: by opening the row.
   await expect(editor).toBeHidden()
-  await page.locator('.snippets-section .row', { hasText: name }).locator('.entry').click()
+  await page.locator('.snippets-section .row', { hasText: name }).first().locator('.entry').click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   return view
@@ -65,7 +65,7 @@ test('reopening a revealed secret starts masked again', async ({ page }) => {
   await closeSnippet(page)
 
   // Reveal is per-open and never stored, so the next look is hidden again.
-  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first().click()
   const reopened = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(reopened.locator('.secret-mask')).toBeVisible()
   await expect(page.locator('body')).not.toContainText(SECRET)
@@ -75,7 +75,7 @@ test('the hover card masks a secret and never decrypts it', async ({ page }) => 
   await createSecret(page)
   await closeSnippet(page)
 
-  const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
+  const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()
   await expect(row.locator('.secret-mark')).toBeVisible() // the lock marker
   // The card opens on mouseenter, which never fires if the pointer is already
   // resting on the row — park it away first so the hover is a real arrival.
@@ -97,7 +97,11 @@ test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
-  await page.locator('.snippets-section .row', { hasText: 'Plain note' }).locator('.entry').click()
+  await page
+    .locator('.snippets-section .row', { hasText: 'Plain note' })
+    .first()
+    .locator('.entry')
+    .click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(view.locator('.secret-mask')).toHaveCount(0)

@@ -7,7 +7,6 @@ import { isValidAccelerator } from './accelerator'
 import { platformId } from '../keys'
 import { MAX_RECENT_TOOLS } from './tools'
 import { normalizeTheme } from './themes'
-import { DEFAULT_TAG_SHELF_PX, MAX_TAG_SHELF_PX, MIN_TAG_SHELF_PX } from './tagShelf'
 
 export const DEFAULT_QUICKLOOK_SHORTCUT = defaultQuickLookShortcut(platformId)
 
@@ -129,11 +128,6 @@ export const NUMERIC_LIMITS = {
     default: DEFAULT_MAX_EXPORT_HEIGHT_PX,
     min: MIN_EXPORT_HEIGHT_PX,
     max: MAX_EXPORT_HEIGHT_PX_CAP
-  },
-  tagShelfHeight: {
-    default: DEFAULT_TAG_SHELF_PX,
-    min: MIN_TAG_SHELF_PX,
-    max: MAX_TAG_SHELF_PX
   }
 }
 

@@ -224,7 +224,7 @@ test('the last step rings the Mermaid snippet, even behind a tag filter', async 
 
   // And the filter it cleared to get there is the user's, so it comes back.
   await advance(page, 2)
-  await expect(page.locator('.usb-tag.on', { hasText: 'prompt' })).toBeVisible()
+  await expect(page.locator('.usb-top .scope-chip')).toContainText('prompt')
 })
 
 // A blocked control has to say why. The shared tooltip could not: it anchors
@@ -276,19 +276,23 @@ test('a replay swaps the demo pair rather than keeping the first one', async ({ 
 // saved both go when it ends, rather than becoming a library the user has to
 // tidy up after something they were only shown.
 test('the demo comparison and the demo snippet leave with the tour', async ({ page }) => {
-  const rows = page.locator('[data-tour="snippets"] .rows li, [data-tour="snippets"] .rows > *')
+  // Distinct snippets, not rows: one with two tags is listed under both (#121).
+  const library = () =>
+    page
+      .locator('[data-tour="snippets"] .tag-tree .row .nm')
+      .evaluateAll((els) => new Set(els.map((el) => el.textContent.trim())).size)
 
   await advance(page, 5)
   // The tour opened Snippets for this step, so the library is on screen.
-  const seeded = await rows.count()
+  const seeded = await library()
   // The ringed Save is the live one, and pressing it is the only way the
   // example is kept — so this is also the path cleanup has to catch.
   await page.locator('[data-tour="snippet-save"]').click()
-  await expect(rows).toHaveCount(seeded + 1)
+  await expect.poll(library).toBe(seeded + 1)
 
   await finishRun(page)
   await expect(page.locator('.tour-callout')).toBeHidden()
   await showPanel(page, 'snippets')
-  await expect(rows).toHaveCount(seeded)
+  await expect.poll(library).toBe(seeded)
   await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
 })

@@ -35,7 +35,8 @@ const dragRowOnto = (page, listSelector, { from, to, half = 'above' }) =>
     { list: listSelector, fromIndex: from, toIndex: to, where: half }
   )
 
-const SNIPPETS = '.snippets-section .row'
+// Untagged rows sit in their own section of the tag tree (#121); a drag stays in it.
+const SNIPPETS = '.snippets-section .ts-head[data-path="∅"] + .ts-rows > .row'
 const names = (page) => page.locator(`${SNIPPETS} .nm`).allTextContents()
 
 // Its own rows rather than the seeded examples: a spec that skips because the
@@ -79,32 +80,28 @@ test('dropping below the last row sends it to the end', async ({ page }) => {
 // The favourite boundary is enforced by the group split, not by a guard: each
 // group is its own list, so a drag confined to its list cannot cross. This is
 // the test that would catch the split being collapsed into one list.
-test('a plain snippet cannot be dropped above a favourite', async ({ page }) => {
+// Favorites are their own section (#121), and a drag never leaves its section:
+// a plain row dropped on a favourite stays where it was.
+test('a plain snippet cannot be dropped among the favorites', async ({ page }) => {
   await seedSnippets(page, ['Alpha row', 'Bravo row', 'Charlie row'])
+  const FAVORITES = '.snippets-section .ts-head[data-path="★"] + .ts-rows > .row'
   const rows = page.locator(SNIPPETS)
-  const total = await rows.count()
-
-  // Star the LAST row, which lifts it into the favourites group at the top.
-  await rows.nth(total - 1).hover()
+  await rows.last().hover()
   await rows
-    .nth(total - 1)
+    .last()
     .getByRole('button', { name: /pin to top/i })
     .click()
-  await expect(page.locator(`${SNIPPETS}.favorite`)).toHaveCount(1)
+  await expect(page.locator(FAVORITES)).toHaveCount(1)
 
   const before = await names(page)
-  // Row 1 is the first NON-favourite; try to drop it above the favourite at 0.
-  await dragRowOnto(page, SNIPPETS, { from: 1, to: 0 })
-
+  // Both lists in one selector: the favorite comes first in document order.
+  await dragRowOnto(page, `${FAVORITES}, ${SNIPPETS}`, { from: 1, to: 0 })
   expect(await names(page)).toEqual(before)
-  await expect(page.locator(`${SNIPPETS}.favorite`)).toHaveCount(1)
+  await expect(page.locator(FAVORITES)).toHaveCount(1)
 
-  // …and the same drag WITHIN the group still works, so this is the boundary
-  // holding rather than reordering being broken.
-  await dragRowOnto(page, SNIPPETS, { from: 2, to: 1 })
-  const after = await names(page)
-  expect(after[1]).toBe(before[2])
-  expect(after[0]).toBe(before[0])
+  // …and a drag inside the section still works, so this is the boundary holding.
+  await dragRowOnto(page, SNIPPETS, { from: 1, to: 0 })
+  expect((await names(page))[0]).toBe(before[1])
 })
 
 test('the order survives a relaunch', async () => {
@@ -186,7 +183,7 @@ test('a saved diff order survives a relaunch', async () => {
 // A row wash once had a bite out of its left side, clipped to the list's indent.
 test('a row wash sits evenly inside its list, with no bite out of one side', async ({ page }) => {
   await showPanel(page, 'snippets')
-  const row = page.locator(`${SNIPPETS}`).first()
+  const row = page.locator('.snippets-section .ts-rows > .row').first()
   await row.waitFor()
   // Against the SECTION, not the list: the list is already indented, so a row
   // that merely matches it still leaves the gap the reader is looking at.

@@ -89,7 +89,6 @@ export const useSettingsStore = defineStore('settings', {
           fileSizeLimitsMb: this.fileSizeLimitsMb,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           maxExportHeightPx: this.maxExportHeightPx,
-          tagShelfHeight: this.tagShelfHeight,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           locale: this.locale,

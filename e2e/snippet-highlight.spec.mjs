@@ -25,12 +25,12 @@ async function addSnippet(page, { name, language, body, secret = false }) {
   if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await closeSnippet(page)
-  await expect(page.locator('.snippets-section .row', { hasText: name })).toBeVisible()
+  await expect(page.locator('.snippets-section .row', { hasText: name }).first()).toBeVisible()
 }
 
 const previewOf = async (page, name) => {
   await page.mouse.move(0, 0)
-  await page.locator('.snippets-section .row', { hasText: name }).hover()
+  await page.locator('.snippets-section .row', { hasText: name }).first().hover()
   const card = page.locator('.preview')
   await expect(card).toBeVisible()
   return card

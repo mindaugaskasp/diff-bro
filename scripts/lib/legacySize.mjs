@@ -19,7 +19,7 @@ export const LEGACY_SIZE = {
   'src/renderer/src/composables/useSpreadsheetDiff.js': { fn: 69 },
   'src/renderer/src/composables/useStreamedDiff.js': { fn: 99 },
   'src/renderer/src/composables/useTabContextMenu.js': { fn: 70 },
-  'src/renderer/src/composables/useTagInput.js': { fn: 84 },
+  'src/renderer/src/composables/useTagInput.js': { fn: 83 },
   'src/renderer/src/menus.js': { fn: 61 },
   'src/renderer/src/monaco-mermaid.js': { fn: 94 },
   'src/renderer/src/stores/diffStore.js': { file: 700 },

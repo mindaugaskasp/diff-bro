@@ -10,7 +10,8 @@ test.beforeEach(async ({ page }) => {
 const CLAUDE_EXAMPLE = 'Example — Claude review prompt'
 
 test('copying a Claude prompt fills its {{variables}} before copying', async ({ app, page }) => {
-  await page.getByText(CLAUDE_EXAMPLE).hover()
+  // Listed under both its tags (#121); either row copies the same prompt.
+  await page.getByText(CLAUDE_EXAMPLE).first().hover()
   await page.getByRole('button', { name: 'Copy to clipboard' }).click()
 
   // Copy is intercepted by the fill dialog because the prompt has placeholders.

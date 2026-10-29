@@ -131,6 +131,8 @@ describe('mcp tools', () => {
       { name: 'n', content: 'x', tags: Array.from({ length: 21 }, (_, i) => `t${i}`) }
     ],
     ['a non-string tag', { name: 'n', content: 'x', tags: [{}] }],
+    // #121: tags nest up to three levels; Claude cannot write a fourth.
+    ['a tag nested four deep', { name: 'n', content: 'x', tags: ['ops/k8s/prod/eu'] }],
     ['an array for arguments', ['n']]
   ])('refuses a proposal with %s and writes nothing', (_label, args) => {
     const ctx = ctxWith(allOn)

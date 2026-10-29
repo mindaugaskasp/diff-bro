@@ -114,7 +114,10 @@ test('the preview card copies the snippet without a trip back to the row', async
   app,
   page
 }) => {
-  await page.locator('.snippets-section .row', { hasText: 'Example — Mermaid diagram' }).hover()
+  await page
+    .locator('.snippets-section .row', { hasText: 'Example — Mermaid diagram' })
+    .first()
+    .hover()
   const card = page.locator('.preview')
   await expect(card).toBeVisible()
 

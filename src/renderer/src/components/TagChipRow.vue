@@ -89,6 +89,9 @@ defineExpose({ ...field, focus: () => field.inputEl?.focus() })
           {{ $t('tagChipsField.usedOf', { used: field.tags.length, max: MAX_TAGS })
           }}{{ field.canAddMore ? '' : $t('tagChipsField.removeOneFirst') }}
         </span>
+        <span v-if="field.tooDeep" class="too-deep" role="alert">{{
+          $t('tagChipsField.tooDeep', { path: field.tooDeep })
+        }}</span>
         <div v-if="field.suggestions.length && field.canAddMore" class="suggest">
           <button
             v-for="s in field.suggestions"

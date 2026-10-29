@@ -157,7 +157,7 @@ test('Claude reads allowed snippets, never a secret, and its proposal is reviewe
   await bar.getByRole('button', { name: 'Accept · add to Snippets' }).click()
   await expect(bar).toHaveCount(0)
   await expect(group).toHaveCount(0)
-  const saved = page.locator('.snippets-section .row', { hasText: 'Rollback api' })
+  const saved = page.locator('.snippets-section .row', { hasText: 'Rollback api' }).first()
   await expect(saved).toBeVisible()
 
   // Undo takes the saved snippet back out and returns the proposal.

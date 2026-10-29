@@ -44,6 +44,21 @@ describe('useTagInput — committing tags', () => {
     expect(field.tags.value).toEqual(['backend'])
   })
 
+  // #121: tags nest up to three levels. A fourth is refused with the reason,
+  // and what was typed stays so it can be fixed rather than retyped.
+  it('refuses a tag nested four deep and keeps it in the field', () => {
+    const f = useTagInput()
+    f.input.value = 'ops/k8s/prod/eu'
+    f.onKey(press('Enter'))
+    expect(f.tags.value).toEqual([])
+    expect(f.input.value).toBe('ops/k8s/prod/eu')
+    expect(f.tooDeep.value).toBe('ops/k8s/prod')
+    f.input.value = 'ops/k8s/prod'
+    f.onKey(press('Enter'))
+    expect(f.tags.value).toEqual(['ops/k8s/prod'])
+    expect(f.tooDeep.value).toBe('')
+  })
+
   it('ignores a blank commit', () => {
     const field = useTagInput()
     field.input.value = '   '

@@ -46,7 +46,11 @@ test('the repair is what gets saved', async ({ app, page }) => {
 
   // Reopened from the row, so what is copied comes from the STORE rather than
   // from the buffer the editor still had in hand.
-  await page.locator('.snippets-section .row', { hasText: 'Saved flow' }).locator('.entry').click()
+  await page
+    .locator('.snippets-section .row', { hasText: 'Saved flow' })
+    .first()
+    .locator('.entry')
+    .click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await app.evaluate(({ clipboard }) => clipboard.clear())

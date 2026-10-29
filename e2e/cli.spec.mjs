@@ -316,7 +316,9 @@ test('`diffbro create snippet -i` saves a piped body under the flags it was give
     expect(out.stdout).toContain('2 lines')
     expect(out.stdout).not.toContain('(optional)')
 
-    const row = page.locator('.snippets-section .row', { hasText: 'Written from the shell' })
+    const row = page
+      .locator('.snippets-section .row', { hasText: 'Written from the shell' })
+      .first()
     await expect(row).toBeVisible({ timeout: 15000 })
     expect(await page.locator('.snippets-section .row').count()).toBe(before + 1)
 
@@ -350,7 +352,7 @@ test('`diffbro create snippet -i` takes a piped body and flags without asking', 
     expect(`${out.stdout}\n--- exit ${out.code}, stderr:\n${out.stderr}`).toContain('Piped schema')
     expect(out.stdout).toContain('tagged cli db')
 
-    const row = page.locator('.snippets-section .row', { hasText: 'Piped schema' })
+    const row = page.locator('.snippets-section .row', { hasText: 'Piped schema' }).first()
     await expect(row).toBeVisible({ timeout: 15000 })
     await row.click()
     const view = page.getByRole('region', { name: 'Snippet', exact: true })

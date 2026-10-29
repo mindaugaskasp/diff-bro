@@ -292,12 +292,9 @@
 }
 /* --- Popover layer ------------------------------------------------------
    A panel anchored to a button, dismissed by Escape or a press outside — the
-   View options and the toolbar's overflow menu. Shared because there were
-   already TWO hand-rolled copies of this shell (TagPickerPopover.css,
-   TagManagePopover.css) and a third scoped one is how the sidebar ended up with
-   three different "action" buttons. Those two are candidates for adopting this;
-   they are not migrated here because they position themselves against the
-   sidebar and sit above the dialog layer, which is their own change.
+   View options and the toolbar's overflow menu. Shared because a hand-rolled
+   copy (TagManagePopover.css) already existed, and a scoped one per component
+   is how the sidebar ended up with three different "action" buttons.
 
    Surface is --bg-elevated, NOT --bg-panel: --bg-raised resolves to --bg-panel
    on 13 of 14 themes, which is the toolbar's own colour, so a panel hanging off
@@ -1046,7 +1043,9 @@ button.tag-chip:hover .usb-tct {
    first version) hid the very thing being placed. A tint, not a blur: blur
    forces a repaint of every row on each dragover and the list stutters. */
 .rows.reordering > .row:not(.is-dragging),
-.rows.reordering > .diff:not(.is-dragging) {
+.rows.reordering > .diff:not(.is-dragging),
+.tag-tree.reordering .ts-rows > .row:not(.is-dragging),
+.tag-tree.reordering .ts-rows > .diff:not(.is-dragging) {
   opacity: 0.45;
   transition: opacity 120ms ease-out;
 }

@@ -5,11 +5,6 @@ import {
   sanitizeSectionOrder,
   settingsStateFrom
 } from '../../../src/renderer/src/utils/settingsDefaults'
-import {
-  DEFAULT_TAG_SHELF_PX,
-  MAX_TAG_SHELF_PX,
-  MIN_TAG_SHELF_PX
-} from '../../../src/renderer/src/utils/tagShelf'
 
 // Growing SECTIONS is the one change here that reaches settings files already on
 // disk. A stored order predates every section added after it was written, so
@@ -73,24 +68,6 @@ describe('settingsStateFrom, quick look-up shortcut', () => {
   it('falls back for a hand-edited value that is not an accelerator', () => {
     expect(settingsStateFrom({ quickLookShortcut: 'garbage' }, {}).quickLookShortcut).toBe(
       DEFAULT_QUICKLOOK_SHORTCUT
-    )
-  })
-})
-
-describe('settingsStateFrom, the tag shelf depth', () => {
-  it('ignores the old row count', () => {
-    expect(settingsStateFrom({ tagShelfRows: 6 }, {}).tagShelfHeight).toBe(DEFAULT_TAG_SHELF_PX)
-  })
-
-  it('rests at the default depth for a file that has neither', () => {
-    expect(settingsStateFrom({}, {}).tagShelfHeight).toBe(DEFAULT_TAG_SHELF_PX)
-  })
-
-  it('clamps a hand-edited height back into range', () => {
-    expect(settingsStateFrom({ tagShelfHeight: 99999 }, {}).tagShelfHeight).toBe(MAX_TAG_SHELF_PX)
-    expect(settingsStateFrom({ tagShelfHeight: -20 }, {}).tagShelfHeight).toBe(MIN_TAG_SHELF_PX)
-    expect(settingsStateFrom({ tagShelfHeight: 'deep' }, {}).tagShelfHeight).toBe(
-      DEFAULT_TAG_SHELF_PX
     )
   })
 })

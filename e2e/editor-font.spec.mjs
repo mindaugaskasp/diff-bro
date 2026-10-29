@@ -27,7 +27,7 @@ async function pickFirstInstalledFont(page) {
 
 async function snippetLines(page) {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
   const lines = page.locator('.snippet-doc:visible .editor .view-lines').first()
   await expect(lines).toBeVisible()
   return lines
