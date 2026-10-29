@@ -79,7 +79,7 @@ const actionState = computed(() => ({
              every control and leaves a blank screen with no visible way back. -->
         <button
           v-if="store.ready || onSnippet"
-          class="btn btn-square"
+          class="btn btn-sm btn-square"
           data-testid="toolbar-present"
           :aria-label="$t('appToolbar.presentation')"
           :data-tip="$t('appToolbar.tips.presentation', { mod: MOD })"

@@ -64,7 +64,7 @@ defineExpose({ close })
   <span class="anchor" @keydown="onKeydown">
     <button
       ref="trigger"
-      class="btn"
+      class="btn btn-sm"
       :class="{ active: open, 'btn-square': !changedCount }"
       :aria-expanded="open"
       aria-haspopup="true"

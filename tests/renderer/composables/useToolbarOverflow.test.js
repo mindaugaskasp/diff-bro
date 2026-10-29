@@ -33,7 +33,7 @@ beforeAll(() => {
 const styled = (el, { columnGap = 0, controlH = null }) => {
   STYLES.set(el, {
     columnGap: `${columnGap}px`,
-    getPropertyValue: (p) => (p === '--control-h' && controlH !== null ? `${controlH}px` : '')
+    getPropertyValue: (p) => (p === '--control-h-sm' && controlH !== null ? `${controlH}px` : '')
   })
   return el
 }

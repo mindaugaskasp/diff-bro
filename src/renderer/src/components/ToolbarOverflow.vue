@@ -74,7 +74,7 @@ function activate(id) {
     <button
       v-for="row in shown"
       :key="row.id"
-      class="btn"
+      class="btn btn-sm"
       :class="{ 'btn-primary': row.id === 'save', 'btn-square': !row.labelled, active: row.active }"
       :data-action="row.id"
       :data-tour="row.id === 'share-current' ? 'share' : undefined"
@@ -89,7 +89,7 @@ function activate(id) {
 
     <span v-if="hidden.length" class="anchor" @keydown="onKeydown">
       <button
-        class="btn btn-square"
+        class="btn btn-sm btn-square"
         :class="{ active: open }"
         :aria-expanded="open"
         aria-haspopup="true"

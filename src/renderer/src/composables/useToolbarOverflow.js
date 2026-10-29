@@ -19,12 +19,12 @@ function measureLabelled(el, ids) {
   return out
 }
 
-// A .btn-square is exactly --control-h wide, so an icon and the overflow
+// A .btn-sm.btn-square is exactly --control-h-sm wide, so an icon and the overflow
 // trigger cost the size scale rather than a measurement of something not drawn.
 // A hidden-but-measurable ghost trigger was tried: it extended past the right
 // edge and scrolled the document sideways by its own width, at every size.
 function iconUnit(el) {
-  const h = parseFloat(getComputedStyle(el).getPropertyValue('--control-h')) || 0
+  const h = parseFloat(getComputedStyle(el).getPropertyValue('--control-h-sm')) || 0
   return h + columnGap(el)
 }
 

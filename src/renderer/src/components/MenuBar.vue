@@ -37,7 +37,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 <template>
   <nav class="menubar" data-tour="menubar">
     <button
-      class="btn btn-square"
+      class="btn btn-sm btn-square"
       :class="{ active: open }"
       aria-haspopup="menu"
       :aria-expanded="open"

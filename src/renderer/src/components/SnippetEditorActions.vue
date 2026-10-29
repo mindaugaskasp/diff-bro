@@ -79,7 +79,7 @@ defineExpose({ flash: () => flash('text') })
   <button
     v-if="canCompare"
     type="button"
-    class="btn btn-square"
+    class="btn btn-sm btn-square"
     :aria-label="$t('snippetDocument.compareWith')"
     :data-tip="$t('snippetDocument.compareWith')"
     @click="emit('compare')"
@@ -88,7 +88,7 @@ defineExpose({ flash: () => flash('text') })
   </button>
   <button
     v-if="secret"
-    class="btn btn-square"
+    class="btn btn-sm btn-square"
     :aria-label="masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide')"
     :data-tip="
       masked
@@ -101,7 +101,7 @@ defineExpose({ flash: () => flash('text') })
   </button>
   <!-- aria-label is the STABLE name: only the glyph swaps for the flash. -->
   <button
-    class="btn btn-square"
+    class="btn btn-sm btn-square"
     :class="{ copied: copiedText }"
     :disabled="!hasContent"
     :data-tip="copiedText ? $t('common.copied') : copyTip"
@@ -118,7 +118,7 @@ defineExpose({ flash: () => flash('text') })
   />
   <button
     v-if="hasHistory"
-    class="btn btn-square"
+    class="btn btn-sm btn-square"
     :aria-label="$t('snippetEditorActions.history')"
     :data-tip="$t('snippetEditorActions.historyTip')"
     @click="emit('history')"
@@ -128,7 +128,7 @@ defineExpose({ flash: () => flash('text') })
   <!-- Never for a secret: the store refuses it too. -->
   <button
     v-if="!secret && isMermaid"
-    class="btn btn-square"
+    class="btn btn-sm btn-square"
     :disabled="editMode"
     :aria-label="$t('snippetEditorActions.capture')"
     :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
@@ -137,7 +137,7 @@ defineExpose({ flash: () => flash('text') })
     <AppIcon name="image" />
   </button>
   <button
-    class="btn btn-primary"
+    class="btn btn-sm btn-primary"
     data-tour="snippet-save"
     :disabled="!canSave"
     :aria-label="$t('common.save')"
