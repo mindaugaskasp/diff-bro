@@ -163,6 +163,7 @@
  * @property {string} name
  * @property {string[]} tags
  * @property {string} lang                 '' when it's plain text
+ * @property {string} age                  compact age, e.g. "3d" (utils/relativeTime)
  * @property {string} text                 truncated plaintext
  * @property {{left: string, top: string}} style  fixed-position placement
  */

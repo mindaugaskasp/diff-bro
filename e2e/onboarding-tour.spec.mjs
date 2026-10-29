@@ -163,7 +163,8 @@ test('Skip tips ends it, and Help ▸ Show Tour brings it back', async ({ app, p
 test('every step still shows a card with the sidebar collapsed', async ({ app, page }) => {
   await expect(callout(page)).toBeVisible()
   await callout(page).getByRole('button', { name: 'Skip tips' }).click()
-  await page.getByRole('button', { name: 'Collapse the sidebar' }).click()
+  await page.locator('.usb-grip').hover()
+  await page.getByRole('button', { name: 'Hide the sidebar' }).click()
 
   await clickAppMenuItem(app, 'Show Tour')
   const total = await stepCount(page)

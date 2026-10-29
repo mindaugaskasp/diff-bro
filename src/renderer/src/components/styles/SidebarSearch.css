@@ -1,14 +1,13 @@
 /* The sidebar's search row. These rules live here rather than in SavedDiffs.css
    because scoped CSS does not reach into a child component — the markup moved
    and left its styling behind, which is exactly what that rule is for. */
-/* A real band row, not a row with padding above it: the rail centres the same
-   toggle in --band-row, and 10px of container padding above a 26px control put
-   it 3px high of that. Centred by the band, so it cannot drift on a type change. */
+/* A real band row under the segmented band: with the strip's bottom padding it
+   ends on --head-band, the line a document head and the file slots end on. */
 .usb-top {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--band-row);
+  min-height: calc(var(--head-band) - var(--space-2));
 }
 /* The box itself is .field-search in ui.css — three components need it now,
    and a scoped copy in the second one drifts. Only the ROW layout is local. */

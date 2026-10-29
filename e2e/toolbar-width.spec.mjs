@@ -86,15 +86,14 @@ async function widenSidebarToCap(page) {
   const box = await grip.boundingBox()
   await page.mouse.move(box.x + box.width / 2, box.y + 200)
   await page.mouse.down()
-  // Past SIDEBAR_MAX on purpose; clampSidebarWidth pins the panel to 384.
+  // Past SIDEBAR_MAX on purpose; clampSidebarWidth pins the sidebar to 468.
   await page.mouse.move(box.x + 400, box.y + 200, { steps: 8 })
   await page.mouse.up()
-  const rail = Math.round((await page.locator('.rail').boundingBox()).width)
   await expect
     .poll(() =>
       page.locator('.saved').evaluate((el) => Math.round(el.getBoundingClientRect().width))
     )
-    .toBe(384 + rail)
+    .toBe(468)
 }
 
 const setZoom = (app, page, level) =>

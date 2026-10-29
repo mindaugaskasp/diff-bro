@@ -8,7 +8,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  stubSaveDialog
+  stubSaveDialog,
+  showPanel
 } from './fixtures.mjs'
 
 // The hand-off only exists across the IPC boundary: main seals the file, builds
@@ -324,10 +325,7 @@ test('the picker holds thirty keys and a filter cannot hide a selection', async 
 // ——— The key swap's own hand-offs (specs/2026-08-09-email-my-key) ———
 
 async function addTrustedKeyFromPanel(page) {
-  await page
-    .getByRole('navigation', { name: 'Sidebar' })
-    .getByRole('button', { name: /^Keys/ })
-    .click()
+  await showPanel(page, 'keys')
   await page
     .locator('.keys-panel')
     .getByRole('button', { name: /^Add( their key)?$/ })
@@ -342,10 +340,7 @@ test('Email it opens an UNADDRESSED draft carrying the fingerprint, key staged f
 
   try {
     await captureOsCalls(app)
-    await page
-      .getByRole('navigation', { name: 'Sidebar' })
-      .getByRole('button', { name: /^Keys/ })
-      .click()
+    await showPanel(page, 'keys')
     await page.locator('.keys-panel').getByRole('button', { name: 'Share my key' }).click()
     const dialog = page.getByRole('dialog', { name: 'Share my public key' })
     await dialog.getByPlaceholder('e.g. Alice — laptop').fill('E2E mailer')
@@ -475,10 +470,7 @@ test('Add from clipboard offers the clipboard key, and says when there is none',
         return { canceled: true, filePaths: [] }
       }
     })
-    await page
-      .getByRole('navigation', { name: 'Sidebar' })
-      .getByRole('button', { name: /^Keys/ })
-      .click()
+    await showPanel(page, 'keys')
     const paste = page.getByRole('button', { name: 'Add their key from clipboard' })
     await expect(paste).toHaveText('Add from clipboard')
 

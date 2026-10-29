@@ -48,7 +48,6 @@
 /* --text-dim loses the 3:1 non-text floor on a washed row in nord (2.97) and
    sepia (2.72); --text-hint is the ink that exists for exactly this and clears
    4.5:1 on all twenty. */
-.row[data-color] .when,
 .row[data-color] :deep(.tag-word),
 .row[data-color] :deep(.varchip) {
   color: var(--text-hint);
@@ -136,14 +135,6 @@
   font-size: var(--font-md);
   font-weight: 500;
 }
-.when {
-  font-size: var(--font-xs);
-  color: var(--text-meta);
-  font-variant-numeric: tabular-nums;
-  padding: 0 8px;
-  flex-shrink: 0;
-}
-/* Swap the age for copy/delete on hover, so the resting row stays quiet. */
 /* Overlaid, not reflowed: the name keeps its width and stays the click target. */
 .rowacts {
   position: absolute;
@@ -155,7 +146,6 @@
   padding: 0 var(--space-1) 0 var(--space-2);
   background: var(--row-hover);
 }
-.row:hover .when,
 .row:hover .new-badge {
   display: none;
 }

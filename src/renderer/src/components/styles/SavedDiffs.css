@@ -1,5 +1,5 @@
 .saved {
-  width: calc(var(--rail-w) + 256px);
+  width: 312px;
   /* Animated so the comparison widening does not read as a jump cut. Monaco
      carries automaticLayout, so the editor follows the width on its own. */
   transition: width 160ms ease;
@@ -14,37 +14,22 @@
   overflow: hidden; /* the body scrolls, not the whole aside */
 }
 .usb-panel {
-  position: relative; /* the resize grip pins to its right edge */
+  position: relative; /* the edge handle pins to its right edge */
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
-/* Collapsed to the rail. The width is the only thing that changes — the border,
-   the lift and the surface role are the sidebar's either way. */
+/* Collapsed away entirely; SidebarEdge leaves a strip to bring it back. */
 .saved.collapsed {
-  width: var(--rail-w);
+  width: 0;
+  border-right: 0;
+  box-shadow: none;
 }
-/* The 160ms ease is for the collapse toggle, where the width jumps 200px at
-   once. Under a drag it lags the pointer, so the grip turns it off. */
+/* The 160ms ease is for the collapse, where the width jumps at once. Under a
+   drag it lags the pointer, so the grip turns it off. */
 .saved.resizing {
   transition: none;
-}
-/* Drag-to-widen: hit area on the seam, unmarked until pointed at. A visible
-   handle on a border the eye already reads as a divider is just noise. */
-.usb-grip {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 4px;
-  height: 100%;
-  cursor: col-resize;
-  user-select: none;
-  touch-action: none;
-}
-.usb-grip:hover,
-.saved.resizing .usb-grip {
-  background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   .saved {
@@ -58,19 +43,15 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-1);
-  /* No top padding: the search row IS the band row, so the toggle it holds
-     lines up with the rail's. The bottom is not free either — it is the air the
-     shelf grip needs, held at 10px by e2e/tag-shelf-resize. --space-1 measured
-     9 and took the grip with it. */
+  /* No top padding: the search row IS the band row. The bottom is the air the
+     shelf grip needs, held at 10px by e2e/tag-shelf-resize. */
   padding: 0 var(--space-3) var(--space-2);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: var(--bg-panel);
 }
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
    set slightly apart with a divider. */
-/* The search field and its one modifier share a row, so the band keeps the
-   height the rail lines up against. */
+/* The search field and its one modifier share one row. */
 .usb-find {
   flex: none;
   gap: var(--space-2);

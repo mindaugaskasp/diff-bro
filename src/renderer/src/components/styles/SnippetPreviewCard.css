@@ -59,6 +59,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.pv-age {
+  flex: none;
+  font-size: var(--font-xs);
+  color: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}
 .pv-lang {
   font-size: var(--font-2xs);
   font-weight: 600;

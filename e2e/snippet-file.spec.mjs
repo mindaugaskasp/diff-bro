@@ -88,12 +88,13 @@ test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab'
   }
 })
 
-test('the Snippets panel opens a file as a snippet from its header', async ({ app, page }) => {
+test('the Snippets panel opens a file as a snippet from its ⋯ menu', async ({ app, page }) => {
   const { dir, path } = textFile('query.sql', 'SELECT 1')
   try {
     await stubOpenDialog(app, path)
     await showPanel(page, 'snippets')
-    await page.getByRole('button', { name: 'Open a text file as a snippet' }).click()
+    await page.getByRole('button', { name: 'Snippet library actions' }).click()
+    await page.getByRole('menuitem', { name: /Open a text file as a snippet/ }).click()
     await expect(
       page.getByRole('region', { name: 'New snippet' }).getByPlaceholder('Snippet name…')
     ).toHaveValue('query.sql')

@@ -65,7 +65,14 @@ async function setOnboarding(page, state) {
 }
 
 async function showPanel(page, panel) {
-  const item = page.locator(`.rail-item[data-panel="${panel}"]`)
+  if (panel === 'keys') {
+    await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+    await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: 'Security' }).hover()
+    await page.locator('.menubar .flyout > .submenu', { hasText: 'Trusted Keys' }).hover()
+    await page.locator('.flyout .flyout').getByText('Manage Trusted Keys…', { exact: true }).click()
+    return
+  }
+  const item = page.locator(`.sidebar-nav [data-value="${panel}"]`)
   if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
 }
 
@@ -790,9 +797,9 @@ const SURFACES = [
     },
     close: async () => {},
     probes: {
-      'rail label': ['.rail-item:not(.on) .rail-label', TEXT],
-      'rail label, open': ['.rail-item.on .rail-label', TEXT],
-      'rail count': ['.rail-count', TEXT],
+      'segment glyph': ['.sidebar-nav .seg-opt:not(.on)', DIM],
+      'segment glyph, open': ['.sidebar-nav .seg-opt.on', DIM],
+      'edge handle, hovered': ['.sidebar-handle', DIM, 'text', 'hover'],
       'day label': ['.home-day', TEXT],
       'recent name': ['.home-row .row-2-name', TEXT],
       'recent meta': ['.home-row .row-2-meta', TEXT],
@@ -961,8 +968,7 @@ const SURFACES = [
       fingerprint: ['.keys-panel .key-fp', TEXT],
       heading: ['.keys-panel h3', TEXT],
       'guide step': ['.keys-panel .steps li', TEXT],
-      'step number': ['.keys-panel .num', TEXT],
-      'rail label': ['.rail-item[data-panel="keys"] .rail-label', TEXT]
+      'step number': ['.keys-panel .num', TEXT]
     }
   },
   {
@@ -1247,7 +1253,6 @@ const SURFACES = [
     },
     probes: {
       'name on a coloured row': ['.row[data-color] .nm', TEXT],
-      'age on a coloured row': ['.row[data-color] .when', DIM],
       'menu label': ['.rcm-hd', DIM],
       // The card the popover floats on, and the keyline that separates it from
       // whatever it covers.
@@ -1307,8 +1312,8 @@ const SURFACES = [
     close: (page) => page.keyboard.press('Escape'),
     probes: {
       'tool description': ['.tt-desc', TEXT],
-      'segment wash, hovered': ['.seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
-      'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover'],
+      'segment wash, hovered': ['.dialog .seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
+      'segment label, hovered': ['.dialog .seg-opt:not(.on)', TEXT, 'text', 'hover'],
       'input key': ['.tjs-in-field .syn-property', TEXT],
       'output key': ['.tjs-text .syn-property', TEXT],
       'output number': ['.tjs-text .syn-number', TEXT]

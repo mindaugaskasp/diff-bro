@@ -26,15 +26,7 @@ export const clampBackupHours = (h) => {
 export const SECTIONS = ['saved', 'external', 'snippets', 'tools']
 
 export const SIDEBAR_PANELS = ['home', 'diffs', 'snippets', 'tools', 'keys']
-const PANEL_OF_SECTION = { saved: 'diffs', snippets: 'snippets', tools: 'tools' }
-
 export const sanitizeSidebarPanel = (id) => (SIDEBAR_PANELS.includes(id) ? id : 'home')
-
-// Received diffs live inside the Diffs panel, so the stored section order maps
-// onto the rail with Home pinned first and `external` carrying no position.
-export function railOrderOf(sectionOrder) {
-  return ['home', ...sectionOrder.map((id) => PANEL_OF_SECTION[id]).filter(Boolean)]
-}
 
 // Per-type soft "load anyway?" thresholds (`cap` is the enforced ceiling + slider
 // max). Mirrored in src/main/files.js — keep in sync.

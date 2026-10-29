@@ -4,7 +4,6 @@
 import { computed } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { languageMonogram } from '../utils/languageMonogram'
-import { ago } from '../utils/relativeTime'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import ShowInFolderButton from './ShowInFolderButton.vue'
@@ -112,10 +111,7 @@ function onDragStart(e) {
         <SnippetRowMeta :vars="entry.vars ?? []" :tags="shownTags" />
       </span>
     </button>
-    <!-- The badge takes the age slot: the age of a row made ten seconds ago is
-         not information, and which row is new is. -->
     <span v-if="isNew" class="new-badge">{{ $t('newRow.badge') }}</span>
-    <span v-else class="when">{{ ago(entry.createdAt) }}</span>
     <button
       class="star"
       draggable="false"

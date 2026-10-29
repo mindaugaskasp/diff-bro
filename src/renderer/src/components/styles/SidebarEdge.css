@@ -1,0 +1,76 @@
+/* Drag-to-widen: hit area on the seam, unmarked until pointed at. */
+.usb-grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+.usb-grip:hover {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.edge-pill {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-meta);
+  font-size: var(--font-xs);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.edge-pill:hover {
+  color: var(--text);
+  border-color: var(--btn-edge-strong);
+}
+.edge-pill:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Revealed by the seam it sits on, and kept while the pointer is on it. */
+.sidebar-handle {
+  right: 2px;
+  z-index: 2;
+  border-radius: var(--radius-lg);
+}
+.usb-grip:hover + .sidebar-handle,
+.sidebar-handle:hover {
+  opacity: 1;
+}
+
+/* Collapsed: a thin hover zone at the window's left edge, under the top bar. */
+.sidebar-strip {
+  position: fixed;
+  top: calc(var(--control-h) + 1px);
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: 10px;
+}
+.strip-pill {
+  left: -1px;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+.sidebar-strip:hover .strip-pill {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-pill {
+    transition: none;
+  }
+}

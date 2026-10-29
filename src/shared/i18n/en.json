@@ -912,18 +912,19 @@
     "unusable": "That shortcut can’t be used — try another.",
     "holdAModifier": "Hold a modifier (Ctrl/Cmd, Alt, or Shift) and press a key."
   },
-  "sidebarRail": {
-    "expandTheSidebar": "Expand the sidebar",
-    "tools": "Tools",
+  "sidebarNav": {
     "label": "Sidebar",
     "home": "Home",
     "diffs": "Diffs",
     "snippets": "Snippets",
-    "keys": "Keys"
+    "tools": "Tools",
+    "hide": "Hide the sidebar",
+    "hideTip": "Hide the sidebar ({mod}+B)",
+    "show": "Show the sidebar",
+    "showTip": "Show the sidebar ({mod}+B)"
   },
   "sidebarSearch": {
     "clearSearch": "Clear search",
-    "collapseTheSidebar": "Collapse the sidebar",
     "clearTheSearchBox": "Clear the search box"
   },
   "snippetDeleteDialog": {
@@ -1038,12 +1039,11 @@
   "snippetsPanel": {
     "snippets": "Snippets",
     "openFile": "Open a text file as a snippet",
+    "moreActions": "Snippet library actions",
     "newSnippet": "New snippet",
     "exportAllSnippetsToA": "Export all snippets to a passphrase-protected file",
     "importSnippetsFromAFile": "Import snippets from a file",
     "new": "New",
-    "export": "Export",
-    "import": "Import",
     "empty": "Empty",
     "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter.",
     "newSnippetCta": "New snippet"

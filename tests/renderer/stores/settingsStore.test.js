@@ -466,16 +466,4 @@ describe('sidebar panel', () => {
     setActivePinia(createPinia())
     expect(useSettingsStore().sidebarPanel).toBe('home')
   })
-
-  it('orders the rail by the stored section order, Home first, external folded into diffs', () => {
-    const s = useSettingsStore()
-    s.moveSection('tools', -3)
-    expect(s.railOrder).toEqual(['home', 'tools', 'diffs', 'snippets'])
-  })
-
-  it('places Diffs where saved diffs sit, whatever the received section order says', () => {
-    const s = useSettingsStore()
-    s.moveSection('saved', 3)
-    expect(s.railOrder).toEqual(['home', 'snippets', 'tools', 'diffs'])
-  })
 })
