@@ -85,6 +85,7 @@ useNewRowMarker({
     </SectionHeader>
 
     <div v-show="open || panel" class="section-body">
+      <slot name="lead" />
       <div v-if="!hasOwn" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}</p>
         <button

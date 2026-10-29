@@ -16,6 +16,7 @@ import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
 import AppIcon from './AppIcon.vue'
 import SnippetsMoreMenu from './SnippetsMoreMenu.vue'
+import { ProposalsGroup } from '../features/claude'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -116,6 +117,7 @@ function newSnippet() {
     </SectionHeader>
 
     <div v-show="sectionOpen || panel" class="section-body">
+      <ProposalsGroup kind="snippet" />
       <div v-if="!store.entries.length" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}</p>
         <button class="btn btn-primary btn-sm" @click.stop="newSnippet">

@@ -1019,18 +1019,25 @@ const SURFACES = [
     }
   },
   {
-    name: 'claude-inbox',
+    // #121: the From Claude group atop Snippets, a proposal opened under its bar.
+    name: 'claude-proposals',
     open: async (page, { userDataDir }) => {
       await seedClaudeInbox(page, userDataDir)
-      await showPanel(page, 'home')
-      await page.locator('.inbox-item').first().waitFor()
+      await showPanel(page, 'snippets')
+      await page.locator('.proposals .pg-entry').first().click()
+      await page.locator('.proposal-bar').waitFor()
     },
-    close: async () => {},
+    close: async (page) => {
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
+    },
     probes: {
-      'proposal name': ['.inbox-item .row-2-name', TEXT],
-      'proposal meta': ['.inbox-item .row-2-meta', TEXT],
-      'proposal note': ['.inbox-note', TEXT],
-      'glyph on its well': ['.inbox-item .glyph-well', TEXT]
+      'group title': ['.pg-head .pg-title', TEXT],
+      'proposal name': ['.pg-row .row-2-name', TEXT],
+      'proposal keyline': ['.pg-row', DIM, 'outline'],
+      'glyph on its well': ['.pg-row .glyph-well', TEXT],
+      'segment count': ['.seg-badge', TEXT],
+      'bar title': ['.pb-title', TEXT],
+      'bar note': ['.pb-note', TEXT]
     }
   },
   {

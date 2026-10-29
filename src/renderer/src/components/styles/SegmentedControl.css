@@ -54,3 +54,19 @@
     transition: none;
   }
 }
+/* A count of what is waiting there (#121: Claude's proposals). White on the
+   received hue was approved on all 20 themes (4.90 the lowest). */
+.seg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 14px;
+  margin-left: 3px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--hue-received);
+  /* token-exempt: approved white on --hue-received, 4.90 at worst */
+  color: #fff;
+  font-size: var(--font-2xs);
+  font-weight: 600;
+}

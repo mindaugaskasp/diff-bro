@@ -10,6 +10,8 @@ import AppIcon from './AppIcon.vue'
 import ActionMenu from './ActionMenu.vue'
 import { useDiffStore } from '../stores/diffStore'
 import { MOD } from '../keys'
+import { useClaudeStore } from '../features/claude'
+import { useTabsStore } from '../stores/tabsStore'
 
 const props = defineProps({
   editMode: { type: Boolean, required: true },
@@ -24,6 +26,10 @@ const props = defineProps({
   snippetId: { type: String, default: null },
   canCompare: { type: Boolean, default: false }
 })
+// Under review, the proposal bar's Accept is the save (#121).
+const claude = useClaudeStore()
+const tabs = useTabsStore()
+const proposed = computed(() => !!claude.reviewing[tabs.activeId])
 const emit = defineEmits(['compare', 'copy', 'capture', 'reveal', 'save', 'history', 'saveAsFile'])
 
 const { copied, flash } = useCopyFeedback()
@@ -137,6 +143,7 @@ defineExpose({ flash: () => flash('text') })
     <AppIcon name="image" />
   </button>
   <button
+    v-if="!proposed"
     class="btn btn-sm btn-primary"
     data-tour="snippet-save"
     :disabled="!canSave"

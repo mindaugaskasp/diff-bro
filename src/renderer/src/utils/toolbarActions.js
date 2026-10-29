@@ -18,6 +18,7 @@ import { STREAMED_LIMITS } from './streamedLimits'
  * @property {boolean} isPaste
  * @property {boolean} canExportImage
  * @property {boolean} isSpreadsheet
+ * @property {boolean} [isProposal] the tab is reviewing a Claude proposal (#121)
  */
 
 /**
@@ -76,6 +77,16 @@ const pasteRow = (s) => ({
   pinned: false
 })
 
+const saveRow = (s) => ({
+  id: 'save',
+  labelKey: 'common.save',
+  tipKey: saveTipKey(s),
+  icon: 'save',
+  disabled: !s.hasUnsavedWork,
+  labelled: true,
+  pinned: true
+})
+
 /**
  * @param {ToolbarState} s
  * @returns {ToolbarAction[]} in bar order, left to right
@@ -84,15 +95,7 @@ export function toolbarActions(s) {
   const setup = !s.isSavedDiff
   return [
     ...(setup ? [pasteRow(s)] : []),
-    {
-      id: 'save',
-      labelKey: 'common.save',
-      tipKey: saveTipKey(s),
-      icon: 'save',
-      disabled: !s.hasUnsavedWork,
-      labelled: true,
-      pinned: true
-    },
+    ...(s.isProposal ? [] : [saveRow(s)]),
     {
       id: 'share-current',
       labelKey: 'appToolbar.share',

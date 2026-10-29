@@ -356,6 +356,7 @@ export const ICONS = {
     { t: 'circle', cx: 17, cy: 18, r: 2 }
   ],
   compare: [{ t: 'path', d: 'M7 4v6M4 7h6M4 17h6M15 4h5v16h-5' }],
+  sparkle: [{ t: 'path', d: 'M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z' }],
   // A framed picture — exporting a saved diff as a shareable image.
   image: [
     { t: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },

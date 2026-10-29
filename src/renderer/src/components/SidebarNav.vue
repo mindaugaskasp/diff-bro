@@ -1,9 +1,10 @@
 <script setup>
 // The sidebar's four places as one segmented control (#144), in a fixed order.
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useSidebarNavKeys } from '../composables/useSidebarNavKeys'
+import { useClaudeStore } from '../features/claude'
 import SegmentedControl from './SegmentedControl.vue'
 
 const PLACES = [
@@ -16,7 +17,22 @@ const PLACES = [
 const { t } = useI18n()
 const settings = useSettingsStore()
 const el = ref(null)
-const options = computed(() => PLACES.map((p) => ({ ...p, label: t(p.labelKey) })))
+const claude = useClaudeStore()
+onMounted(() => claude.loadInbox())
+// Claude's proposals wait in Snippets and Diffs, and the segment says how many.
+const waiting = computed(() => ({
+  snippets: claude.snippetProposals.length,
+  diffs: claude.diffProposals.length
+}))
+const options = computed(() =>
+  PLACES.map((p) => {
+    const label = t(p.labelKey)
+    const n = waiting.value[p.value] ?? 0
+    return n
+      ? { ...p, label, badge: n, badgeLabel: t('sidebarNav.waiting', { place: label, n }) }
+      : { ...p, label }
+  })
+)
 const panel = computed({
   get: () => settings.sidebarPanel,
   set: (id) => settings.setSidebarPanel(id)

@@ -15,6 +15,7 @@ import { isSnippetTab } from '../utils/tabs'
 import { useImageExportStore } from '../features/imageExport'
 import { ZOOM_DEFAULT, zoomLabel } from '../utils/diffZoom'
 import { useConflictsStore } from '../features/merge'
+import { useClaudeStore } from '../features/claude'
 import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
 import ToolbarOverflow from './ToolbarOverflow.vue'
@@ -24,6 +25,7 @@ const store = useDiffStore()
 const ui = useUiStore()
 const imageExport = useImageExportStore()
 const conflicts = useConflictsStore()
+const claude = useClaudeStore()
 const { run } = useCommands()
 const tabs = useTabsStore()
 const onSnippet = computed(() => isSnippetTab(tabs.active))
@@ -44,7 +46,8 @@ const actionState = computed(() => ({
   isSavedDiff: store.isSavedDiff,
   isPaste: store.mode === 'paste',
   canExportImage: imageExport.canExportImage,
-  isSpreadsheet: store.isSpreadsheet
+  isSpreadsheet: store.isSpreadsheet,
+  isProposal: !!claude.reviewing[tabs.activeId]
 }))
 </script>
 

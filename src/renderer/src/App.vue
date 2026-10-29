@@ -32,6 +32,7 @@ import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import TopBar from './components/TopBar.vue'
+import { ProposalBar, ProposalUndoNotice } from './features/claude'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
@@ -117,6 +118,7 @@ useWindowFocusRefresh()
           </div>
         </transition>
         <TopBar />
+        <ProposalBar />
         <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the
            toast would start its fade-leave transition and the shutter would
@@ -172,6 +174,7 @@ useWindowFocusRefresh()
           <!-- Notices sit centred over the diff area (anchored to .content). -->
           <transition name="fade">
             <div v-if="store.notice" class="notice">{{ store.notice }}</div>
+            <ProposalUndoNotice />
           </transition>
 
           <DiskChangeNotice />

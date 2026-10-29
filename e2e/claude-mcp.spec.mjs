@@ -102,7 +102,7 @@ test('the connection is off until the user confirms the warning', async ({ page,
   }
 })
 
-test('Claude reads allowed snippets, never a secret, and its proposal waits on Home', async ({
+test('Claude reads allowed snippets, never a secret, and its proposal is reviewed in Snippets', async ({
   page,
   userDataDir
 }) => {
@@ -138,15 +138,63 @@ test('Claude reads allowed snippets, never a secret, and its proposal waits on H
     client.close()
   }
 
-  await showPanel(page, 'home')
-  const inbox = page.locator('.home-block', { hasText: 'From Claude' })
-  await expect(inbox.getByRole('heading')).toHaveText('From Claude · 1 to review')
-  await expect(inbox).toContainText('The inverse of Deploy notes')
-  await inbox.getByRole('button', { name: 'Accept' }).click()
-  await expect(inbox).toHaveCount(0)
-
+  // #121: it waits atop Snippets, and the segment counts it.
   await showPanel(page, 'snippets')
-  await expect(page.locator('.snippets-section .row', { hasText: 'Rollback' })).toBeVisible()
+  await expect(page.locator('.sidebar-nav [data-value="snippets"]')).toHaveAttribute(
+    'aria-label',
+    'Snippets, 1 from Claude'
+  )
+  const group = page.getByRole('region', { name: 'From Claude' })
+  await expect(group).toContainText('From Claude · 1')
+
+  // Opened, every field is editable, and Accept saves the reader's version.
+  await group.getByRole('button', { name: /Rollback/ }).click()
+  const bar = page.getByRole('region', { name: 'Proposed by Claude' })
+  await expect(bar).toContainText('The inverse of Deploy notes')
+  await expect(docActions(page).getByRole('button', { name: 'Save', exact: true })).toHaveCount(0)
+  const doc = page.getByRole('region', { name: 'New snippet' })
+  await doc.getByPlaceholder('Snippet name…').fill('Rollback api')
+  await bar.getByRole('button', { name: 'Accept · add to Snippets' }).click()
+  await expect(bar).toHaveCount(0)
+  await expect(group).toHaveCount(0)
+  const saved = page.locator('.snippets-section .row', { hasText: 'Rollback api' })
+  await expect(saved).toBeVisible()
+
+  // Undo takes the saved snippet back out and returns the proposal.
+  await page.locator('.proposal-undo').getByRole('button', { name: 'Undo' }).click()
+  await expect(saved).toHaveCount(0)
+  await expect(group).toContainText('From Claude · 1')
+})
+
+test('proposed comparisons wait atop Diffs and are accepted together', async ({
+  page,
+  userDataDir
+}) => {
+  await enableWith(page, ['Offer new comparisons'])
+  await page.keyboard.press('Escape')
+  const client = mcpClient(userDataDir)
+  try {
+    await grantReaches(client, ['propose_comparison'])
+    for (const name of ['prod ↔ staging', 'v1 ↔ v2']) {
+      const res = await client.callTool('propose_comparison', { name, left: 'a', right: 'b' })
+      expect(res.isError).toBeUndefined()
+    }
+  } finally {
+    client.close()
+  }
+
+  await showPanel(page, 'diffs')
+  const group = page.getByRole('region', { name: 'From Claude' })
+  await expect(group).toContainText('From Claude · 2')
+  await group.getByRole('button', { name: 'Select' }).click()
+  await group.getByRole('button', { name: /prod ↔ staging/ }).click()
+  await group.getByRole('button', { name: /v1 ↔ v2/ }).click()
+  await group.getByRole('button', { name: 'Accept 2' }).click()
+
+  await expect(group).toHaveCount(0)
+  await expect(page.locator('.proposal-undo')).toContainText('Accepted 2 proposals')
+  await expect(page.locator('li.diff', { hasText: 'prod ↔ staging' })).toBeVisible()
+  await expect(page.locator('li.diff', { hasText: 'v1 ↔ v2' })).toBeVisible()
 })
 
 // A Claude app may start this before DiffBro has ever made a vault key.
