@@ -1,5 +1,6 @@
 // Everything a Claude client sends is untrusted input (rule 6).
 import { EXPLICIT_LANGUAGES } from '../shared/snippetLanguages'
+import { MAX_TAG_DEPTH, isTagTooDeep } from '../shared/tagPath'
 
 export const LIMITS = {
   name: 200,
@@ -36,7 +37,10 @@ function nonEmpty(value, key, max) {
 function tagList(value, key) {
   if (!Array.isArray(value)) throw new InputError(`${key} must be an array of strings`)
   if (value.length > LIMITS.tags) throw new InputError(`${key} holds more than ${LIMITS.tags}`)
-  return value.map((t) => nonEmpty(t, key, LIMITS.tag))
+  const tags = value.map((t) => nonEmpty(t, key, LIMITS.tag))
+  const deep = tags.find(isTagTooDeep)
+  if (deep) throw new InputError(`${key}: "${deep}" nests deeper than ${MAX_TAG_DEPTH} levels`)
+  return tags
 }
 
 const argsOf = (args) => (args && typeof args === 'object' && !Array.isArray(args) ? args : {})

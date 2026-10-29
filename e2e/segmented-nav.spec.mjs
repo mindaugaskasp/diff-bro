@@ -56,3 +56,16 @@ test('the edge handle hides the sidebar, and the left strip brings it back', asy
   await expect(nav(page)).toBeVisible()
   await expect.poll(async () => (await aside(page).boundingBox()).width).toBeGreaterThan(300)
 })
+
+// Invisible until its seam is pointed at, so until then it must not take the
+// clicks meant for the rows beneath it (the star at a row's right end).
+test('the hidden edge handle does not take clicks meant for the rows', async ({ page }) => {
+  await page.mouse.move(600, 400)
+  const handle = page.getByRole('button', { name: 'Hide the sidebar' })
+  const box = await handle.boundingBox()
+  const hit = await page.evaluate(
+    ([x, y]) => document.elementFromPoint(x, y)?.closest('.sidebar-handle') !== null,
+    [box.x + box.width / 2, box.y + box.height / 2]
+  )
+  expect(hit).toBe(false)
+})

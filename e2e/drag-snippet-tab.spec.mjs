@@ -32,7 +32,7 @@ async function newComparison(page) {
 
 test('a saved snippet tab dropped on a side loads there, and stays open', async ({ page }) => {
   await showPanel(page, 'snippets')
-  await page.locator('.snippets-section .row', { hasText: PROMPT }).click()
+  await page.locator('.snippets-section .row', { hasText: PROMPT }).first().click()
   await expect(strip(page).getByRole('tab', { name: new RegExp(PROMPT) })).toBeVisible()
   await newComparison(page)
 

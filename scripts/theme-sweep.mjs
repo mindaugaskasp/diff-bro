@@ -445,7 +445,7 @@ const SURFACES = [
     name: 'snippet-inline-edit',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       const area = page.locator('.snippet-doc:visible .editor-area')
       await area.hover()
       await page.locator('.edit-cue').waitFor()
@@ -468,7 +468,7 @@ const SURFACES = [
     name: 'snippet-tag-chips',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       const doc = page.locator('.snippet-doc:visible')
       await doc.getByRole('button', { name: 'Add tag' }).click()
       await doc.locator('.tag-pop').waitFor()
@@ -489,7 +489,7 @@ const SURFACES = [
     name: 'snippet-status-bar',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page.locator('.snippet-doc:visible .tt-trigger').hover()
       await page.locator('.tt-pop').waitFor()
     },
@@ -531,7 +531,7 @@ const SURFACES = [
     name: 'snippet-history',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       const doc = page.locator('.snippet-doc:visible')
       const actions = page.locator('#toolbar-doc-actions')
       const history = actions.getByRole('button', { name: 'History', exact: true })
@@ -799,7 +799,7 @@ const SURFACES = [
     probes: {
       'segment glyph': ['.sidebar-nav .seg-opt:not(.on)', DIM],
       'segment glyph, open': ['.sidebar-nav .seg-opt.on', DIM],
-      'edge handle, hovered': ['.sidebar-handle', DIM, 'text', 'hover'],
+      'edge handle glyph': ['.sidebar-handle', DIM],
       'day label': ['.home-day', TEXT],
       'recent name': ['.home-row .row-2-name', TEXT],
       'recent meta': ['.home-row .row-2-meta', TEXT],
@@ -811,7 +811,7 @@ const SURFACES = [
     name: 'presentation-exit',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page.getByTestId('toolbar-present').click()
       await page.locator('.present-exit').waitFor()
     },
@@ -870,7 +870,7 @@ const SURFACES = [
     name: 'snippet-more',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page
         .locator('#toolbar-doc-actions')
         .getByRole('button', { name: 'More snippet actions' })
@@ -1019,6 +1019,22 @@ const SURFACES = [
     }
   },
   {
+    // #121: Snippets as sections by tag, and the # scope beside the search.
+    name: 'tag-tree',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('.ts-head').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      'section label': ['.ts-head .ts-label', TEXT],
+      'section count': ['.ts-head .ts-count', TEXT],
+      'section chevron': ['.ts-head .ts-chev', DIM],
+      'section, hovered': ['.ts-head', HOVER_STEP, 'step', 'hover'],
+      '# button': ['.hash-btn', DIM]
+    }
+  },
+  {
     // #121: the From Claude group atop Snippets, a proposal opened under its bar.
     name: 'claude-proposals',
     open: async (page, { userDataDir }) => {
@@ -1084,7 +1100,7 @@ const SURFACES = [
     name: 'toolbar-snippet-actions',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page.locator('#toolbar-doc-actions .btn-primary').waitFor()
     },
     close: async (page) => {

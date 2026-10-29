@@ -7,7 +7,7 @@ export const RECEIVED_GROUPS = ['importedFavorites', 'importedOthers']
 
 /**
  * The rows one list shows under the sidebar's search, tags and ★ filter, starred first.
- * @param {() => {search: string, tags: string[], favOnly: boolean}} filter
+ * @param {() => {search: string, tags: string[]}} filter
  * @param {string[]} groups the starred vault group, then the rest
  */
 export function useDiffRows(filter, [starred, rest]) {
@@ -24,8 +24,7 @@ export function useDiffRows(filter, [starred, rest]) {
     vault[group]
       .filter(matches)
       .map((entry) => ({ entry, group, index: vault[group].indexOf(entry) }))
-  const rows = computed(() =>
-    filter().favOnly ? placed(starred) : [...placed(starred), ...placed(rest)]
-  )
-  return { rows, filtering }
+  const rows = computed(() => [...placed(starred), ...placed(rest)])
+  const items = computed(() => rows.value.map((r) => r.entry))
+  return { rows, items, filtering }
 }

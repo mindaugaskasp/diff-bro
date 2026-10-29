@@ -157,6 +157,16 @@
  */
 
 /**
+ * One section of the tag tree (see utils/tagTree).
+ * @typedef {object} TagNode
+ * @property {string} path     the tag as written, `a/b/c`
+ * @property {string} label    its last part
+ * @property {object[]} items  what carries exactly this tag
+ * @property {number} count    everything inside it, each once
+ * @property {TagNode[]} children
+ */
+
+/**
  * The decrypted hover preview of a snippet (see useSnippetPreview).
  * @typedef {object} SnippetPreview
  * @property {string} id
@@ -223,6 +233,7 @@
  * @typedef {object} TagField
  * @property {string[]} tags
  * @property {string} input
+ * @property {string} tooDeep        the deepest a refused four-level tag could be, or ''
  * @property {HTMLInputElement|null} inputEl
  * @property {boolean} canAddMore
  * @property {string[]} suggestions

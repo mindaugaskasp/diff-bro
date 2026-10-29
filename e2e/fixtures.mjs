@@ -287,15 +287,16 @@ export async function showPanel(page, panel) {
   if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
 }
 
-// The one-line shelf may hold a tag behind "+N more".
+// The # scope in the sidebar search (#121): picking the scoped tag again clears it.
 export async function pickTag(page, name) {
-  const chip = page.locator('.usb-shelf .usb-tag', { hasText: name }).first()
-  if (await chip.isVisible()) return chip.click()
-  await page.locator('.usb-more').click()
-  const picker = page.getByRole('dialog', { name: 'Collapsed tags' })
-  await picker.getByLabel('Find a tag').fill(name)
-  await picker.locator('.usb-tag', { hasText: name }).first().click()
-  await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
+  const chip = page.locator('.usb-top .scope-chip')
+  if ((await chip.count()) && (await chip.locator('.scope-text').innerText()) === name) {
+    return chip.getByRole('button').click()
+  }
+  const box = page.locator('.usb-top input[type="search"]')
+  await box.fill(`#${name}`)
+  await page.locator('.usb-top .scope-list li', { hasText: new RegExp(`^${name}$`) }).click()
+  await expect(chip.locator('.scope-text')).toHaveText(name)
 }
 
 export const docActions = (page) => page.locator('#toolbar-doc-actions')

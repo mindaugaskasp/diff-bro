@@ -16,7 +16,7 @@ async function newUrlSnippet(page, name, url) {
 
 test('a URL snippet offers a one-click open', async ({ page }) => {
   await newUrlSnippet(page, 'Docs', 'https://example.com/docs')
-  const row = page.locator('li.row', { hasText: 'Docs' })
+  const row = page.locator('li.row', { hasText: 'Docs' }).first()
   await expect(row.locator('.monogram')).toHaveText('URL')
 
   await row.hover()

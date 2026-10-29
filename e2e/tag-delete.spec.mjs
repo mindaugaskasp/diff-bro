@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel, pickTag, docActions } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, docActions } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -34,16 +34,14 @@ async function saveTaggedSnippet(page, name, tag) {
   await editor.getByPlaceholder('add a tag…').fill(tag)
   await editor.getByPlaceholder('add a tag…').press('Enter')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.locator('.snippets-section .row', { hasText: name })).toBeVisible()
+  await expect(page.locator('.snippets-section .row', { hasText: name }).first()).toBeVisible()
   await expect(editor).toBeHidden()
 }
 
+// A tag's section header in the tree opens the manager (#121).
+const section = (page, tag) => page.locator(`.ts-head[data-path="${tag}"]`)
 const openTagManager = async (page, tag) => {
-  // The sidebar's own tag bar — .tag-chip is also the class on the editor's
-  // tag field, and only these chips open the manager.
-  await pickTag(page, tag)
-  const chip = page.locator('.usb-shelf .usb-tag', { hasText: tag }).first()
-  await chip.click({ button: 'right' })
+  await section(page, tag).click({ button: 'right' })
   await expect(page.locator('.manage')).toBeVisible()
 }
 
@@ -63,8 +61,10 @@ test('deleting a tag keeps its records by default', async ({ page }) => {
   await showPanel(page, 'diffs')
   await expect(page.locator('li.diff', { hasText: 'E2E keep me' })).toBeVisible()
   await showPanel(page, 'snippets')
-  await expect(page.locator('.snippets-section .row', { hasText: 'E2E keep note' })).toBeVisible()
-  await expect(page.locator('.usb-tag', { hasText: 'doomed' })).toHaveCount(0)
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'E2E keep note' }).first()
+  ).toBeVisible()
+  await expect(section(page, 'doomed')).toHaveCount(0)
 })
 
 test('the toggle takes the records with the tag, on both sides', async ({ page }) => {
@@ -80,10 +80,10 @@ test('the toggle takes the records with the tag, on both sides', async ({ page }
   await confirm.getByRole('button', { name: /Delete tag and 2/ }).click()
 
   await expect(page.locator('li.diff', { hasText: 'E2E delete me' })).toHaveCount(0)
-  await expect(page.locator('.snippets-section .row', { hasText: 'E2E doomed note' })).toHaveCount(
-    0
-  )
-  await expect(page.locator('.usb-tag', { hasText: 'doomed' })).toHaveCount(0)
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'E2E doomed note' }).first()
+  ).toHaveCount(0)
+  await expect(section(page, 'doomed')).toHaveCount(0)
 })
 
 // The bigger action must never be inherited from the last tag someone removed.
@@ -96,12 +96,16 @@ test('the toggle resets between one tag and the next', async ({ page }) => {
   let confirm = page.getByRole('dialog', { name: 'Delete tag?' })
   await confirm.getByRole('checkbox').check()
   await confirm.getByRole('button', { name: /Delete tag and 1/ }).click()
-  await expect(page.locator('.snippets-section .row', { hasText: 'E2E first' })).toHaveCount(0)
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'E2E first' }).first()
+  ).toHaveCount(0)
 
   await openTagManager(page, 'beta')
   await page.getByRole('button', { name: 'Delete tag' }).click()
   confirm = page.getByRole('dialog', { name: 'Delete tag?' })
   await expect(confirm.getByRole('checkbox')).not.toBeChecked()
   await confirm.getByRole('button', { name: 'Delete', exact: true }).click()
-  await expect(page.locator('.snippets-section .row', { hasText: 'E2E second' })).toBeVisible()
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'E2E second' }).first()
+  ).toBeVisible()
 })

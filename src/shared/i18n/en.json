@@ -826,19 +826,11 @@
     "openTip": "Open \"{name}\"{from}{loc}"
   },
   "savedDiffs": {
-    "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
     "dragToWidenTheSidebar": "Drag to widen the sidebar",
-    "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
-    "collapsedTagsSearchable": "Collapsed tags, searchable",
-    "dropEveryTagFilter": "Clear every tag filter",
-    "clear": "Clear",
-    "plusMore": "+{n} more",
-    "tagsSelected": "{n} tag selected | {n} tags selected",
-    "filterByTag": "Filter by {name} · right-click to manage",
     "searchIn": {
       "home": "Search everything",
-      "diffs": "Search diffs",
-      "snippets": "Search snippets",
+      "diffs": "Search diffs, or # for a tag",
+      "snippets": "Search snippets, or # for a tag",
       "tools": "Find a tool",
       "keys": "Search trusted keys"
     }
@@ -912,6 +904,10 @@
     "unusable": "That shortcut can’t be used — try another.",
     "holdAModifier": "Hold a modifier (Ctrl/Cmd, Alt, or Shift) and press a key."
   },
+  "tagTree": {
+    "favorites": "Favorites",
+    "untagged": "Untagged"
+  },
   "sidebarNav": {
     "label": "Sidebar",
     "home": "Home",
@@ -925,6 +921,9 @@
     "waiting": "{place}, {n} from Claude"
   },
   "sidebarSearch": {
+    "clearScope": "Clear the {tag} scope",
+    "scope": "Search inside a tag",
+    "scopeTip": "Search inside a tag (#)",
     "clearSearch": "Clear search",
     "clearTheSearchBox": "Clear the search box"
   },
@@ -1124,6 +1123,7 @@
     "tabActions": "Tab actions"
   },
   "tagChipsField": {
+    "tooDeep": "Tags nest up to 3 levels. \"{path}\" is the deepest this can go.",
     "tags": "Tags",
     "default": "Default",
     "upTo": "— up to {max}, or leave empty for Default",
@@ -1144,12 +1144,6 @@
     "export": "Export…",
     "rename": "Rename",
     "useColour": "Use colour {colour}"
-  },
-  "tagPickerPopover": {
-    "findATag": "Find a tag…",
-    "collapsedTags": "Collapsed tags",
-    "findATag2": "Find a tag",
-    "noTagMatches": "No tag matches “{q}”"
   },
   "textToolDialog": {
     "keepThisInYourSnippet": "Keep this in your snippet library — you name it",

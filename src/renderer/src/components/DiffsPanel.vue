@@ -8,11 +8,11 @@ import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
 import { ProposalsGroup } from '../features/claude'
 
+defineEmits(['manageTag'])
 const props = defineProps({
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
-  tags: { type: Array, default: () => [] },
-  favOnly: { type: Boolean, default: false }
+  tags: { type: Array, default: () => [] }
 })
 
 const vault = useVaultStore()
@@ -39,22 +39,14 @@ const received = useDiffRows(() => props, RECEIVED_GROUPS).rows
       panel
       :search="search"
       :tags="tags"
-      :fav-only="favOnly"
+      @manage-tag="$emit('manageTag', $event)"
     >
       <template #title>
         <DiffsWhoseSwitch v-model:whose="whose" :mine="mine.length" :received="received.length" />
       </template>
       <template #lead><ProposalsGroup kind="comparison" /></template>
     </SavedDiffsSection>
-    <ExternalDiffsSection
-      v-else
-      data-section="external"
-      first
-      panel
-      :search="search"
-      :tags="tags"
-      :fav-only="favOnly"
-    >
+    <ExternalDiffsSection v-else data-section="external" first panel :search="search" :tags="tags">
       <template #title>
         <DiffsWhoseSwitch v-model:whose="whose" :mine="mine.length" :received="received.length" />
       </template>

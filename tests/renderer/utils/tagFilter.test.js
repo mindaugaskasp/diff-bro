@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { matchesTags, toggleTag } from '../../../src/renderer/src/utils/tagFilter'
 
 describe('matchesTags', () => {
+  // #121: a tag is a path, and scoping to a section takes in what is nested under it.
+  it('matches a row tagged anywhere under the scoped path', () => {
+    expect(matchesTags(['ops/k8s/prod'], ['ops'])).toBe(true)
+    expect(matchesTags(['ops/k8s/prod'], ['ops/k8s'])).toBe(true)
+    expect(matchesTags(['ops/k8s'], ['ops/k8s/prod'])).toBe(false)
+    expect(matchesTags(['opsx'], ['ops'])).toBe(false)
+  })
+
   it('lets everything through when nothing is selected', () => {
     expect(matchesTags(['a'], [])).toBe(true)
     expect(matchesTags([], undefined)).toBe(true)

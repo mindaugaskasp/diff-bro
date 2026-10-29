@@ -60,87 +60,16 @@
   flex: 1 1 auto;
   min-width: 0;
 }
-/* ★ narrows the list to favourites. A real control on the search band rather
-   than a bespoke chip: the row it used to sit in mixed three control semantics
-   in one costume — a command (All), an independent boolean (this) and four
-   multi-select toggles — wrapped to two rows at the resting sidebar width, sized
-   its chips 19px and 20px against a --chip-h of 20 and a --control-h-sm of 26,
-   and its four section toggles duplicated the collapse chevron every section
-   header already carries. */
+/* The one modifier beside the search box (Tools: search every tool). A
+   persistent control beside an input, so it keeps the neutral face and keyline. */
 .usb-star {
   flex: 0 0 auto;
-  /* .btn-icon is flat by design for ROW actions; this one is a persistent
-     filter beside an input, so it takes the neutral control's resting face and
-     keyline back. */
   background: var(--btn-face);
   border-color: var(--btn-edge);
-}
-.usb-star.on {
-  color: var(--pin-ink);
-  border-color: color-mix(in srgb, var(--favorite) 40%, var(--border));
-}
-
-/* One line of chips; useTagShelf measures what fits and the rest go to "+N". */
-.usb-shelf {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  max-height: var(--chip-h);
-  overflow: hidden;
-}
-
-.usb-tag {
-  cursor: pointer;
-  padding: 2px 8px;
-  font-size: var(--font-xs);
-}
-.usb-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-  background: var(--tag-ink);
 }
 .usb-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding-bottom: var(--space-4);
-}
-
-/* The overflow keeps the chip shape — it stands in for tags, so it belongs in
-   their row — but carries no colour dot, because it is not one. */
-.usb-more {
-  border: 1px dashed var(--border);
-  background: transparent;
-  color: var(--text-dim);
-}
-.usb-more:hover {
-  border-style: solid;
-  color: var(--text);
-}
-/* Clearing is an ACTION, not a tag, and inside the chip row it read as one more
-   selected tag whatever shape it took. It belongs on its own line, beside the
-   thing it undoes: how many tags are on. */
-.usb-filtering {
-  flex: none;
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--pad-inset-x) 0;
-  font-size: var(--font-sm);
-  color: var(--text-dim);
-}
-.usb-clear {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: var(--font-sm);
-  color: var(--accent-ink);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.usb-clear:hover {
-  color: var(--text);
 }

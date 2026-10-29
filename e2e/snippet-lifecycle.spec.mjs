@@ -17,7 +17,7 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   // Saving leaves the tab showing what was saved, and the row lands in the list.
   await expect(editor).toBeHidden()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
-  const row = page.locator('.snippets-section .row', { hasText: 'My note' })
+  const row = page.locator('.snippets-section .row', { hasText: 'My note' }).first()
   await expect(row).toBeVisible()
 
   // --- edit (rename) ---
@@ -44,7 +44,7 @@ test('a snippet can be created, edited, and deleted', async ({ page }) => {
   await expect(rows.filter({ hasText: /^My note$/ })).toHaveCount(0)
 
   // --- delete (with confirm) ---
-  const renamed = page.locator('.snippets-section .row', { hasText: 'My renamed note' })
+  const renamed = page.locator('.snippets-section .row', { hasText: 'My renamed note' }).first()
   await renamed.hover()
   await renamed.getByRole('button', { name: 'Delete' }).click()
   const del = page.getByRole('dialog', { name: 'Delete snippet?' })
