@@ -586,6 +586,12 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   call it). **Anything new that reaches a shared OS resource — a fixed temp
   path, a lock, a well-known port — has to be added to that list.**
 
+- **Docker renders in CI's fonts.** The ubuntu runner falls back to DejaVu
+  Sans; a bare Debian image falls back to Nimbus Sans, which is narrower, so a
+  layout that only just fits passed locally and failed in CI (#148: five specs
+  at once after the type grew half a pixel). `docker/fonts/dejavu` is mounted
+  into the container's font path, and Debian's fontconfig then prefers it, so
+  both measure the same text. Never remove the mount to make a spec pass.
 - **A failing E2E keeps its trace.** Playwright clears `test-results/` at the
   START of a run, so a failure's trace is destroyed by the next run — which is
   how three sightings of the same intermittent were lost with nothing to show

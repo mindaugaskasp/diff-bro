@@ -13,16 +13,25 @@
 }
 .doc-name {
   position: relative;
-  flex: 0 1 380px;
+  flex: 0 1 400px;
   min-width: 120px;
 }
+/* Room for the +N chip and the add pill, so folding never pushes them out. */
 .doc-tags {
   flex: 1;
-  min-width: 0;
+  min-width: 140px;
 }
+/* Gives way first: the explanation ellipses down to the checkbox and its word. */
 .doc-secret {
-  flex: none;
+  flex: 0 100 auto;
+  min-width: 5.5em;
+  overflow: hidden;
   margin-left: auto;
+}
+.doc-secret > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* Both layers: the completion ghost drifts off the caret if their type differs. */
 .doc-name :deep(.ghost-field input),
