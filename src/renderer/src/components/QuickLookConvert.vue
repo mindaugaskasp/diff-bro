@@ -1,6 +1,5 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useCaretBackOut } from '../composables/useCaretBackOut'
 import { usePanelScroll } from '../composables/usePanelScroll'
 import AppIcon from './AppIcon.vue'
 import ToolEpoch from './ToolEpoch.vue'
@@ -19,10 +18,7 @@ const props = defineProps({
   // The panel stays mounted while the list is showing, so it needs telling.
   visible: { type: Boolean, default: true }
 })
-const emit = defineEmits(['back'])
-
-// ← mirrors the → that entered the panel (see useCaretBackOut).
-const { onKeydown } = useCaretBackOut(() => emit('back'))
+defineEmits(['back', 'dismiss'])
 
 const PANEL_ICONS = {
   epoch: 'clock',
@@ -55,7 +51,7 @@ watch(
 </script>
 
 <template>
-  <div class="qc" @keydown.escape="$emit('back')" @keydown="onKeydown">
+  <div class="qc" @keydown.escape="$emit('dismiss')">
     <div class="qc-head band">
       <button
         class="btn btn-icon qc-back"

@@ -675,10 +675,7 @@ export const useDiffStore = defineStore('diff', {
     // view does the load/restore the launcher stays out of.
     async openFromQuickLook(payload) {
       if (!payload?.id) return
-      if (payload.kind === 'snippet') {
-        useSnippetStore().editingSnippet = { id: payload.id }
-        return
-      }
+      if (payload.kind === 'snippet') return useSnippetStore().openFromLauncher(payload.id)
       const p = await useVaultStore().load(payload.id)
       if (p) this.restore(p)
     },

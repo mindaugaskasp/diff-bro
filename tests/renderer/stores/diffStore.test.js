@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { runCommand } from '../../../src/renderer/src/utils/commands'
@@ -788,6 +788,23 @@ describe('diffStore', () => {
     const store = useDiffStore()
     await store.openFromQuickLook({ kind: 'snippet', id: 's1' })
     expect(useSnippetStore().editingSnippet).toEqual({ id: 's1' })
+  })
+
+  // The launcher is a separate Pinia: its new id is unknown here until a reload.
+  it('openFromQuickLook re-reads the library for a snippet it does not know yet', async () => {
+    const snippets = useSnippetStore()
+    const reload = vi.spyOn(snippets, 'reload').mockImplementation(() => {})
+    await useDiffStore().openFromQuickLook({ kind: 'snippet', id: 'fresh' })
+    expect(reload).toHaveBeenCalledTimes(1)
+    expect(snippets.editingSnippet).toEqual({ id: 'fresh' })
+  })
+
+  it('openFromQuickLook does not re-read the library for a snippet it already has', async () => {
+    const snippets = useSnippetStore()
+    snippets.entries.push({ id: 'known', name: 'Known', tags: [] })
+    const reload = vi.spyOn(snippets, 'reload').mockImplementation(() => {})
+    await useDiffStore().openFromQuickLook({ kind: 'snippet', id: 'known' })
+    expect(reload).not.toHaveBeenCalled()
   })
 
   it('openFromQuickLook loads and restores a saved diff', async () => {

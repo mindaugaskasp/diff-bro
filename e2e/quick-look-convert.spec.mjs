@@ -16,7 +16,7 @@ async function summon(app, page) {
   return ql
 }
 
-// → into a tool mirrors → into a snippet preview.
+// → drills into a tool from the end of the query.
 async function enterBase64(ql) {
   await ql.locator('.ql-input').fill('base64')
   // Excluding the create row: hasText is a case-insensitive substring match, so
@@ -33,28 +33,32 @@ test('→ enters the tool and its panel converts inline', async ({ app, page }) 
   await expect(ql.locator('.tb-text')).toHaveText('aGVsbG8=')
 })
 
+const launcherVisible = (app) =>
+  app.evaluate(({ BrowserWindow }) => {
+    const w = BrowserWindow.getAllWindows().find((x) =>
+      x.webContents.getURL().includes('quicklook')
+    )
+    return w ? w.isVisible() : false
+  })
+
 // Entering a tool lands the caret in its first field, so Escape works without
-// clicking first — on body the keydown never reaches the panel's handler.
-test('Escape returns to the list with no click first', async ({ app, page }) => {
+// clicking first — on body the keydown never reaches the panel's handler. Escape
+// leaves the launcher from anywhere, a tool included.
+test('Escape closes the launcher from a tool with no click first', async ({ app, page }) => {
   const ql = await summon(app, page)
   await enterBase64(ql)
   await expect(ql.getByLabel('Base64 input')).toBeFocused()
   await ql.keyboard.press('Escape')
-  await expect(ql.locator('.ql-input')).toBeVisible()
+  await expect.poll(() => launcherVisible(app), { timeout: 6000 }).toBe(false)
 })
 
-// ← is the mirror of the → that entered the panel. It must not fire while the
-// caret can still move inside a field.
-test('← returns to the list from the panel, but not mid-field', async ({ app, page }) => {
+// The ← key is only ever a caret move, even in an empty field.
+test('the ← key never leaves the panel', async ({ app, page }) => {
   const ql = await summon(app, page)
   await enterBase64(ql)
-  await ql.getByLabel('Base64 input').fill('hello')
-  await ql.keyboard.press('ArrowLeft') // caret is at the end — the field keeps it
-  await expect(ql.locator('.qc-name')).toHaveText('Base64')
-
   await ql.getByLabel('Base64 input').fill('')
-  await ql.keyboard.press('ArrowLeft') // nothing left to give up — back out
-  await expect(ql.locator('.ql-input')).toBeVisible()
+  await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.qc-name')).toHaveText('Base64')
 })
 
 test('the back button returns to the list and navigation resumes', async ({ app, page }) => {
@@ -74,15 +78,15 @@ test('a tool panel reports bad input instead of failing silently', async ({ app,
   await expect(ql.locator('.tb-err')).toBeVisible()
 })
 
-// Leaving a panel used to destroy it, so an accidental Escape threw away
-// whatever you had typed. Re-entering must find the work still there.
+// Leaving a panel used to destroy it, so going back threw away whatever you had
+// typed. Re-entering must find the work still there.
 test('a tool panel keeps its input when you leave and come back', async ({ app, page }) => {
   const ql = await summon(app, page)
   await enterBase64(ql)
   await ql.getByLabel('Base64 input').fill('keep me')
   await expect(ql.locator('.tb-text')).toHaveText('a2VlcCBtZQ==')
 
-  await ql.keyboard.press('Escape')
+  await ql.locator('.qc-back').click()
   await expect(ql.locator('.ql-input')).toBeVisible()
 
   await enterBase64(ql)

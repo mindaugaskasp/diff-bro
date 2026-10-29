@@ -301,6 +301,7 @@
    borders. */
 :root[data-theme='beacon'] {
   --line: var(--border);
+  --field-edge: var(--border);
   --tag-l: 0.8;
   --bg: #000000;
   --bg-panel: #0b0b0b;
@@ -490,6 +491,7 @@
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {
   --line: var(--border);
+  --field-edge: var(--border);
   --bg-card: var(--bg);
   /* --warning-border scores 2.74:1 on this card, under the 3:1 non-text floor.
      Darkened to clear it without moving the hue. */
@@ -528,6 +530,7 @@
    stays pure white, because that is where the contrast comes from. */
 :root[data-theme='volcano'] {
   --line: var(--border);
+  --field-edge: var(--border);
   --tag-l: 0.8;
   --bg: #000000;
   --bg-panel: #0e0705;

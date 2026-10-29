@@ -61,7 +61,10 @@ test('Tab cycles inside the dialog and never escapes it', async ({ page }) => {
   }
 })
 
-test('the launcher arrow chain reaches a tool and comes back', async ({ app, page }) => {
+test('the launcher arrow chain reaches a tool, and the back button returns', async ({
+  app,
+  page
+}) => {
   const [ql] = await Promise.all([
     app.waitForEvent('window'),
     page.evaluate(() => window.api.quickLookToggle())
@@ -84,8 +87,10 @@ test('the launcher arrow chain reaches a tool and comes back', async ({ app, pag
   await expect(ql.locator('.qc-name')).toBeVisible()
   await expect(ql.locator('.qc-panel input, .qc-panel textarea').first()).toBeFocused()
 
-  // ← back out, and arrow navigation still works.
+  // The ← key stays a caret move; the ← button goes back, and arrows still work.
   await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.qc-name')).toBeVisible()
+  await ql.locator('.qc-back').click()
   await expect(ql.locator('.ql-input')).toBeFocused()
   await ql.keyboard.press('ArrowDown')
   await expect(ql.locator('.ql-res.sel')).toBeVisible()

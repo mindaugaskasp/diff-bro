@@ -92,11 +92,6 @@ function useInlineEdit({ snippets, current, open }) {
   return { canEdit, editCurrent }
 }
 
-// Writing is not looking up: main gives the card the size the job needs. A JOB
-// NAME crosses the boundary, never a number of pixels.
-const sizeCardFor = (composing) =>
-  watch(composing, (on) => window.api?.quickLookMode?.(on ? 'compose' : 'default'))
-
 /** @returns {Promise<string|null>} the stored id, or null when the vault refused */
 async function persist(snippets, editingId, draft) {
   // A creation has no past to record, so the change flag stays off its draft.
@@ -123,7 +118,6 @@ export function useQuickLookCompose({ snippets, current = ref(null), onSaved = (
   const canSave = computed(() => hasBody.value && !saving.value)
   // Work that would be lost: what a re-summon must not throw away.
   const dirty = computed(() => composing.value && touched.value)
-  sizeCardFor(composing)
 
   /** @param {{id?: string, name?: string, content?: string, tags?: string[], language?: string}} [snippet] */
   function open(snippet = {}) {
@@ -161,6 +155,7 @@ export function useQuickLookCompose({ snippets, current = ref(null), onSaved = (
     ...useInlineEdit({ snippets, current, open }),
     composing,
     editing,
+    editingId,
     dirty,
     name,
     body,

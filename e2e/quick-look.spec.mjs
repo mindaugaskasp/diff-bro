@@ -1,4 +1,4 @@
-import { test, expect, clickAppMenuItem, openNewSnippet, docActions } from './fixtures.mjs'
+import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
 
 // The quick look-up is a SECOND BrowserWindow (quicklook.html), summoned by a
 // global shortcut in real use. Global shortcuts and OS focus are unreliable
@@ -26,58 +26,64 @@ async function seededReady(page) {
   await expect(page.getByText(EXAMPLE)).toBeVisible()
 }
 
-test('summons the launcher with the seeded snippet and previews it', async ({ app, page }) => {
+// The seeded examples are mermaid and claude, which open in the main window.
+async function saveJsonSnippet(page, name) {
+  await openNewSnippet(page)
+  const editor = page.getByRole('region', { name: 'New snippet' })
+  await editor.getByPlaceholder('Snippet name…').fill(name)
+  await editor.locator('.lang-picker select').selectOption('json')
+  await editor.locator('.editor').click()
+  await page.keyboard.type('{ "keep": true, "count": 42 }')
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await page.keyboard.press('Escape')
+}
+
+test('summons the launcher with the seeded snippet', async ({ app, page }) => {
   await seededReady(page)
   const ql = await summon(app, page)
 
   // Filter to the Mermaid example so the test is independent of how many
   // snippets are seeded / their order (the top result is auto-selected).
   await ql.locator('.ql-input').fill('Mermaid')
-  await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
-  await expect(ql.locator('.ql-pv-name')).toHaveText(EXAMPLE)
+  await expect(ql.locator('.ql-res.sel', { hasText: EXAMPLE })).toBeVisible()
+  await expect(ql.locator('.ql-preview')).toHaveCount(0)
 })
 
 // The launcher tokenizes with Prism because it cannot carry Monaco, and paints
-// the runs with the shared --syn-* roles. Those class RULES lived in a scoped
-// stylesheet belonging to another component, so the spans rendered and matched
-// nothing: every preview here was monochrome. The seeded examples are mermaid
-// and claude, neither of which Prism has a grammar for, so this brings its own.
-test('paints the preview with the syntax roles it tokenizes', async ({ app, page }) => {
+// the runs with the shared --syn-* roles.
+test('paints the editor sheet with the syntax roles it tokenizes', async ({ app, page }) => {
   await seededReady(page)
-  await openNewSnippet(page)
-  const editor = page.getByRole('region', { name: 'New snippet' })
-  await editor.getByPlaceholder('Snippet name…').fill('Highlight probe')
-  await editor.locator('.lang-picker select').selectOption('json')
-  await editor.locator('.editor').click()
-  await page.keyboard.type('{ "keep": true, "count": 42 }')
-  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
-  await page.keyboard.press('Escape')
+  await saveJsonSnippet(page, 'Highlight probe')
 
   const ql = await summon(app, page)
   await ql.locator('.ql-input').fill('Highlight probe')
-  const roled = ql.locator('.ql-pv-body [class*="syn-"]').first()
+  await ql.keyboard.press('Enter')
+  const roled = ql.locator('.ql-compose-hl [class*="syn-"]').first()
   await expect(roled).toBeVisible()
   const [ink, plain] = await Promise.all([
     roled.evaluate((el) => getComputedStyle(el).color),
-    ql.locator('.ql-pv-body').evaluate((el) => getComputedStyle(el).color)
+    ql.locator('.ql-compose-hl').evaluate((el) => getComputedStyle(el).color)
   ])
   expect(ink).not.toBe(plain)
 })
 
-test('→ enters snippet-scroll mode and ← returns to the list', async ({ app, page }) => {
+test('Enter opens a snippet in the sheet, and the ← button goes back', async ({ app, page }) => {
   await seededReady(page)
+  await saveJsonSnippet(page, 'Sheet probe')
   const ql = await summon(app, page)
 
-  await ql.locator('.ql-input').fill('Mermaid')
-  await ql.keyboard.press('ArrowRight')
+  await ql.locator('.ql-input').fill('Sheet probe')
+  await ql.keyboard.press('Enter')
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await expect(ql.locator('.ql-compose-name')).toHaveValue('Sheet probe')
 
-  // The whole body flips to the parked/focused state and the footer hints swap.
-  await expect(ql.locator('.ql-body')).toHaveClass(/in-preview/)
-  await expect(ql.getByText('back to list')).toBeVisible()
+  await ql.locator('.ql-compose-name').press('Home')
+  await ql.locator('.ql-compose-name').press('ArrowLeft')
+  await expect(ql.locator('.ql-compose')).toBeVisible()
 
-  await ql.keyboard.press('ArrowLeft')
-  await expect(ql.locator('.ql-body')).not.toHaveClass(/in-preview/)
-  await expect(ql.getByText('scroll preview')).toBeVisible()
+  await ql.locator('.ql-compose-back').click()
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+  await expect(ql.locator('.ql-input')).toHaveValue('Sheet probe')
 })
 
 test('copying names the snippet, flashes on its row, then closes', async ({ app, page }) => {
@@ -85,7 +91,8 @@ test('copying names the snippet, flashes on its row, then closes', async ({ app,
   const ql = await summon(app, page)
 
   await ql.locator('.ql-input').fill('Mermaid')
-  await ql.locator('.ql-pv-copy').click()
+  await expect(ql.locator('.ql-res.sel', { hasText: EXAMPLE })).toBeVisible()
+  await ql.keyboard.press('Control+c')
 
   // The confirmation names what was taken…
   await expect(ql.locator('.ql-toast')).toContainText(EXAMPLE)
@@ -111,32 +118,7 @@ test('copying names the snippet, flashes on its row, then closes', async ({ app,
     .toBe(false)
 })
 
-// Shift+Cmd+C copies just the highlighted preview line; the whole-snippet copy
-// stays on Cmd+C. The active line steps with ↑/↓ (keyboard) and is marked .hot.
-test('Shift+Cmd+C copies only the active preview line', async ({ app, page }) => {
-  await seededReady(page)
-  const ql = await summon(app, page)
-
-  await ql.locator('.ql-input').fill('Mermaid')
-  await ql.keyboard.press('ArrowRight') // enter preview; line 0 is active
-
-  await expect(ql.locator('.ql-pv-line.hot')).toHaveCount(1)
-  await ql.keyboard.press('ArrowDown') // step to line 2 (index 1)
-  const active = ql.locator('.ql-pv-line').nth(1)
-  await expect(active).toHaveClass(/hot/)
-  const lineText = await active.textContent()
-
-  await ql.keyboard.press('Shift+Control+c') // Linux env → Ctrl+Shift+C
-  await expect(ql.locator('.ql-toast')).toContainText('line 2')
-
-  const clip = await app.evaluate(({ clipboard }) => clipboard.readText())
-  expect(clip).toBe(lineText)
-})
-
-// ← is exit navigation once there is nothing left to back out of, but the search
-// box must keep the key while its caret can still move — otherwise editing a
-// query slams the launcher shut mid-word.
-test('← exits the launcher only once the caret has nowhere left to go', async ({ app, page }) => {
+test('Escape closes the launcher from the sheet; ← never closes it', async ({ app, page }) => {
   const ql = await summon(app, page)
   const hidden = () =>
     app.evaluate(({ BrowserWindow }) => {
@@ -146,46 +128,14 @@ test('← exits the launcher only once the caret has nowhere left to go', async 
       return w ? !w.isVisible() : true
     })
 
-  await ql.locator('.ql-input').fill('me') // caret sits at the end
-  await ql.keyboard.press('ArrowLeft') // → caret 1
-  await ql.keyboard.press('ArrowLeft') // → caret 0
+  await ql.locator('.ql-input').fill('me')
+  for (let i = 0; i < 4; i++) await ql.keyboard.press('ArrowLeft')
   await expect.poll(hidden, { timeout: 2000 }).toBe(false)
 
-  await ql.keyboard.press('ArrowLeft') // nowhere left to go: exit
+  await ql.locator('.ql-add').click()
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await ql.keyboard.press('Escape')
   await expect.poll(hidden, { timeout: 6000 }).toBe(true)
-})
-
-// The footer must advertise ← as the way out, and must still fit: hints live in
-// a fixed-height band with no wrap, so a chip too many pushes them out of sight
-// rather than reflowing. Measured, not eyeballed — and in a dark theme too,
-// since a theme may retune the type scale the band is sized against.
-async function footerFitsIn(app, page, theme) {
-  const ql = await summon(app, page)
-  await expect(ql.locator('html')).toHaveAttribute('data-theme', theme)
-
-  const foot = ql.locator('.ql-foot')
-  const fits = () => foot.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)
-
-  await expect(foot).toContainText('←/Esc')
-  await expect(foot).toContainText('close')
-  expect(await fits(), `footer overflows in ${theme}`).toBe(true)
-
-  // Inside the expanded Tools section ← steps back out instead of closing, and
-  // that longer label is the widest the band ever has to carry.
-  await ql.keyboard.press('ArrowRight')
-  await expect(foot).toContainText('collapse')
-  expect(await fits(), `footer overflows in ${theme} with Tools open`).toBe(true)
-}
-
-test('the footer advertises ← as the exit and still fits the band', async ({ app, page }) => {
-  await footerFitsIn(app, page, 'light')
-})
-
-test('the footer still fits once a dark theme retunes the tokens', async ({ app, page }) => {
-  await clickAppMenuItem(app, 'Toggle Light/Dark Theme')
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-
-  await footerFitsIn(app, page, 'dark')
 })
 
 // Creating a snippet without raising the app: the + panel writes through the
@@ -206,41 +156,36 @@ test('the + button creates a plaintext snippet under a sentence-cased name', asy
   await expect(ql.locator('.ql-compose')).toBeHidden()
   await ql.locator('.ql-input').fill('Deploy')
   await expect(ql.locator('.ql-res', { hasText: 'Deploy checklist' })).toBeVisible()
-  // Plaintext carries no language chip, which is how it reads as plain.
-  await expect(ql.locator('.ql-pv-lang')).toHaveCount(0)
 
   // It really round-trips through the vault, not just the in-memory list.
-  await ql.keyboard.press('ArrowRight')
-  await expect(ql.locator('.ql-pv-body')).toContainText('1. build')
+  await ql.keyboard.press('Enter')
+  await expect(ql.locator('.ql-compose-text')).toHaveValue('1. build\n2. ship')
 })
 
-// Reading or composing a snippet gives the whole width to the right pane. The
-// grid track animates, so assert the measurable end states plus the fact that a
-// transition is declared — a jump-cut would still pass the width checks alone.
-test('the list collapses for compose and preview, and comes back', async ({ app, page }) => {
+test('the sheet takes the whole card at the same size, and gives it back', async ({
+  app,
+  page
+}) => {
   const ql = await summon(app, page)
-  const width = () =>
-    ql.locator('.ql-results').evaluate((el) => Math.round(el.getBoundingClientRect().width))
-
-  const declared = await ql
-    .locator('.ql-body')
-    .evaluate((el) => getComputedStyle(el).transitionProperty)
-  expect(declared).toContain('grid-template-columns')
-
-  const open = await width()
-  expect(open).toBeGreaterThan(100)
+  const bounds = () =>
+    app.evaluate(({ BrowserWindow }) => {
+      const w = BrowserWindow.getAllWindows().find((x) =>
+        x.webContents.getURL().includes('quicklook')
+      )
+      const { width, height } = w.getBounds()
+      return { width, height }
+    })
+  const resting = await bounds()
 
   await ql.locator('.ql-add').click()
-  await expect.poll(width, { timeout: 4000 }).toBeLessThan(5)
-  await ql.keyboard.press('Escape')
-  await expect.poll(width, { timeout: 4000 }).toBe(open)
+  await expect(ql.locator('.ql-compose')).toBeVisible()
+  await expect(ql.locator('.ql-results')).toBeHidden()
+  await expect(ql.locator('.ql-search')).toBeHidden()
+  expect(await bounds()).toEqual(resting)
 
-  await ql.locator('.ql-input').fill('Mermaid')
-  await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
-  await ql.keyboard.press('ArrowRight')
-  await expect.poll(width, { timeout: 4000 }).toBeLessThan(5)
-  await ql.keyboard.press('ArrowLeft')
-  await expect.poll(width, { timeout: 4000 }).toBe(open)
+  await ql.locator('.ql-compose-back').click()
+  await expect(ql.locator('.ql-results')).toBeVisible()
+  expect(await bounds()).toEqual(resting)
 })
 
 // The card is deliberately flat: no rim, no drop shadow. Its own background is
@@ -326,11 +271,8 @@ test('the launcher moves by its chrome bands without deadening their controls', 
   ).toBe(true)
 
   expect(await appRegion(ql.locator('.ql-search'))).toBe('drag')
-  expect(await appRegion(ql.locator('.ql-foot'))).toBe('drag')
   expect(await appRegion(ql.locator('.ql-input'))).toBe('no-drag')
   expect(await appRegion(ql.locator('.ql-add'))).toBe('no-drag')
-  // The hint strip carries no controls, so it is the handle that is always there.
-  expect(await widestGrab(ql.locator('.ql-foot'))).toBeGreaterThan(400)
 
   // The controls in those bands still do their jobs — typed into, clicked,
   // chosen from — which is what the no-drag rule buys.
@@ -340,9 +282,11 @@ test('the launcher moves by its chrome bands without deadening their controls', 
   await expect(ql.locator('.ql-compose')).toBeVisible()
 
   expect(await appRegion(ql.locator('.ql-compose-head'))).toBe('drag')
+  expect(await appRegion(ql.locator('.ql-compose-foot'))).toBe('drag')
   expect(await appRegion(ql.locator('.ql-compose-lang'))).toBe('no-drag')
   // The case this was built for: moving the card aside while writing a snippet.
-  expect(await widestGrab(ql.locator('.ql-compose-head'))).toBeGreaterThan(200)
+  // The footer carries only the language, so it is the handle that is always there.
+  expect(await widestGrab(ql.locator('.ql-compose-foot'))).toBeGreaterThan(400)
   await ql.locator('.ql-compose-lang').selectOption('sql')
   await expect(ql.locator('.ql-compose-lang')).toHaveValue('sql')
 
@@ -350,7 +294,6 @@ test('the launcher moves by its chrome bands without deadening their controls', 
   // The blur is emitted rather than provoked by focusing something else: a
   // hidden window on a virtual display does not hand focus over on demand, so
   // what is asserted is the wiring `movable` now sits beside, not the OS.
-  // Read AFTER the compose growth, which re-clamps x on a narrow display.
   const before = (await launcherState(app)).x
   await moveLauncherBy(app, 40)
   expect((await launcherState(app)).x).toBe(before + 40)
@@ -359,16 +302,14 @@ test('the launcher moves by its chrome bands without deadening their controls', 
 })
 
 // The search box must never be live while something else owns the launcher —
-// a tool panel, the new-snippet panel, or a snippet being read. Each disables it
-// a different way, so all three are pinned here.
-test('the search box is dead whenever a panel or preview owns the launcher', async ({
+// a tool panel or the editor sheet. Both take it away entirely.
+test('the search box is gone whenever a panel or the sheet owns the launcher', async ({
   app,
   page
 }) => {
   const ql = await summon(app, page)
   const input = ql.locator('.ql-input')
 
-  // 1. A tool panel replaces the whole launcher, search band included.
   await input.fill('epoch')
   await ql.keyboard.press('Enter')
   await expect(ql.locator('.qc')).toBeVisible()
@@ -376,25 +317,11 @@ test('the search box is dead whenever a panel or preview owns the launcher', asy
   await ql.locator('.qc-back').click()
   await expect(input).toBeVisible()
 
-  // 2. The new-snippet panel rolls the band away entirely.
   await ql.locator('.ql-add').click()
   await expect(ql.locator('.ql-compose')).toBeVisible()
   await expect(input).toBeHidden()
-  await ql.keyboard.press('Escape')
+  await ql.locator('.ql-compose-back').click()
   await expect(input).toBeVisible()
-
-  // 3. Reading a snippet keeps the box focused (the arrow driver needs it) but
-  //    read-only, so a stray keystroke cannot refilter the list underneath.
-  await input.fill('Mermaid')
-  await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
-  await ql.keyboard.press('ArrowRight')
-  await expect(ql.locator('.ql-body')).toHaveClass(/in-preview/)
-  await expect(input).toHaveAttribute('readonly', '')
-  await ql.keyboard.press('z')
-  await expect(input).toHaveValue('Mermaid')
-
-  await ql.keyboard.press('ArrowLeft')
-  await expect(input).not.toHaveAttribute('readonly', '')
 })
 
 // The loop the launcher exists for: capture something unnamed, then rename and
@@ -413,14 +340,10 @@ test('an unnamed snippet can be created and then edited in place', async ({ app,
   const row = ql.locator('.ql-res', { hasText: 'Untitled' }).first()
   await expect(row).toBeVisible()
   await expect(row).toContainText(/Untitled \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
-  // Selected by searching, not by clicking: a click opens it in the main window.
   await ql.locator('.ql-input').fill('Untitled')
-  await expect(ql.locator('.ql-pv-name')).toContainText('Untitled')
-
-  // Edit it right here rather than being bounced to the main window.
-  await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
+  await ql.keyboard.press('Enter')
   await expect(ql.locator('.ql-compose')).toBeVisible()
-  await expect(ql.locator('.ql-compose-title')).toHaveText('Edit snippet')
+  await expect(ql.locator('.ql-compose-name')).toHaveValue(/Untitled/)
   await expect(ql.locator('.ql-compose-text')).toHaveValue('token=abc123')
 
   await ql.locator('.ql-compose-name').fill('auth token')
@@ -513,22 +436,20 @@ test('arrowing down scrolls the results list to keep the selection visible', asy
 
 // The launcher's keyboard model assumes the search box holds focus — onKeydown
 // is bound to it. So ANY control that takes focus kills arrow navigation, which
-// is what clicking the preview's back arrow did. Asserted through the visible
-// consequence (the selection stops moving), not through document.activeElement.
+// is what clicking a back arrow did. Asserted through the visible consequence
+// (the selection stops moving), not through document.activeElement.
 test('arrow keys still work after clicking a launcher button', async ({ app, page }) => {
   await seededReady(page)
   const ql = await summon(app, page)
+  await ql.locator('.ql-input').fill('epoch')
+  await ql.keyboard.press('Enter')
+  await expect(ql.locator('.qc')).toBeVisible()
+
+  await ql.locator('.qc-back').click() // mouse click parks focus on the button
   await ql.locator('.ql-input').fill('Example')
-  await expect(ql.locator('.ql-res').first()).toBeVisible()
-  const count = await ql.locator('.ql-res').count()
-  expect(count, 'needs two results for ArrowDown to have somewhere to go').toBeGreaterThan(1)
+  await expect(ql.locator('.ql-res').nth(1)).toBeVisible()
   const selectedName = () => ql.locator('.ql-res.sel').first().innerText()
-
-  await ql.keyboard.press('ArrowRight') // into the preview zone
-  await expect(ql.locator('.ql-pv-back')).toBeVisible()
   const before = await selectedName()
-
-  await ql.locator('.ql-pv-back').click() // mouse click parks focus on the button
   await ql.keyboard.press('ArrowDown')
 
   await expect

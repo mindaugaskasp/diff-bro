@@ -6,11 +6,6 @@ import {
   snippetRows,
   NO_MATCH
 } from '../../../src/renderer/src/utils/quickLook'
-import {
-  composeHints,
-  listHints,
-  previewHints
-} from '../../../src/renderer/src/utils/quickLookHints'
 
 const item = (over) => ({ kind: 'snippet', id: '1', name: '', tags: [], lang: '', ...over })
 
@@ -157,47 +152,5 @@ describe('resultRows', () => {
   // The header is built in utils/, which cannot translate — it carries a key.
   it('gives the tools header a message id rather than raw English', () => {
     expect(rows({ toolsOpen: true })[0]).toMatchObject({ nameKey: 'quickLook.toolsHeader' })
-  })
-})
-
-// utils/ is pure and cannot call t(): a label resolved at module load would
-// freeze whatever locale the app started in. These tables hand back IDs.
-describe('hint tables', () => {
-  const ids = (rows) => rows.map(([, id]) => id)
-  const isKey = (id) => id.startsWith('quickLook.hint.')
-
-  it('previewHints returns message ids and keeps the given glyph', () => {
-    const rows = previewHints()
-    expect(ids(rows).every(isKey)).toBe(true)
-    expect(rows.some(([glyph]) => /C$/.test(glyph))).toBe(true)
-  })
-
-  it('composeHints returns message ids', () => {
-    expect(ids(composeHints()).every(isKey)).toBe(true)
-  })
-
-  it('listHints always advertises the new-snippet key', () => {
-    const rows = listHints({ kind: 'snippet', toolsOpen: false })
-    expect(ids(rows).every(isKey)).toBe(true)
-    expect(ids(rows)).toContain('quickLook.hint.newSnippet')
-  })
-
-  it('listHints says "create" on the create row and "open" elsewhere', () => {
-    const on = (kind) => ids(listHints({ kind, toolsOpen: false }))
-    expect(on('create')).toContain('quickLook.hint.create')
-    expect(on('snippet')).toContain('quickLook.hint.open')
-  })
-
-  it('listHints offers → only on a row that drills in', () => {
-    const arrow = (kind) => listHints({ kind, toolsOpen: false }).some(([glyph]) => glyph === '→')
-    expect(arrow('snippet')).toBe(true)
-    expect(arrow('tools')).toBe(true)
-    expect(arrow('create')).toBe(false)
-  })
-
-  it('listHints reads ←/Esc as collapse only while the section is open', () => {
-    const last = (toolsOpen) => listHints({ kind: 'tools', toolsOpen }).at(-1)[1]
-    expect(last(true)).toBe('quickLook.hint.collapse')
-    expect(last(false)).toBe('quickLook.hint.close')
   })
 })

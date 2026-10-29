@@ -1,12 +1,9 @@
 import { computed, ref, watch } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
-import { SECRET_MASK } from '../utils/secretSnippet'
 import { rank, resultRows, snippetRows } from '../utils/quickLook'
-import { composeHints, copyKeyLabel, listHints, previewHints } from '../utils/quickLookHints'
 import { convertItems } from '../utils/quickLookCommands'
 import { useQuickLookKeys } from './useQuickLookKeys'
 import { useQuickLookCompose } from './useQuickLookCompose'
-import { usePreviewLines } from './usePreviewLines'
 import { useQuickLookHandoff } from './useQuickLookHandoff'
 import { t } from '../i18n'
 
@@ -14,16 +11,10 @@ import { t } from '../i18n'
 // Monaco/Mermaid) so a summon is instant — it lists snippets and the inline
 // convert tools only; diffs stay in the main window.
 
-const MAX_PREVIEW_CHARS = 4000
-
 export function useQuickLook() {
   const snippets = useSnippetStore()
   const query = ref('')
   const selected = ref(0)
-  const snippetText = ref('')
-  // 'list' navigates results; 'preview' scrolls the active snippet body.
-  const zone = ref('list')
-  const previewEl = ref(null)
 
   const snippetItems = computed(() => snippetRows(snippets.entries, languageOf))
 
@@ -43,7 +34,6 @@ export function useQuickLook() {
   const toolsIndex = () => results.value.findIndex((r) => r.kind === 'tools')
 
   watch(query, () => {
-    zone.value = 'list'
     const open = query.value.trim() !== '' && toolItems.value.length > 0
     toolsOpen.value = open
     // A tool-matching search lands on the first tool, just past the header.
@@ -61,33 +51,6 @@ export function useQuickLook() {
     toolsOpen.value = !toolsOpen.value
     if (!toolsOpen.value) selected.value = toolsIndex()
   }
-  // ← / Escape from the expanded section closes it and parks on the header.
-  function collapseTools() {
-    if (!toolsOpen.value) return false
-    toolsOpen.value = false
-    selected.value = toolsIndex()
-    return true
-  }
-
-  const canEnterPreview = () => current.value?.kind === 'snippet' && !!previewEl.value
-
-  // Guarded by id so a fast arrow sweep never renders a stale decrypt.
-  watch(current, async (it) => {
-    snippetText.value = ''
-    zone.value = 'list' // a new (or diff) selection can't stay in snippet-scroll
-    preview.reset()
-    if (it?.kind !== 'snippet') return
-    // A secret is never decrypted to be previewed — only to be copied.
-    if (it.secret) {
-      snippetText.value = SECRET_MASK
-      return
-    }
-    const text = await snippets.load(it.id)
-    if (current.value?.id === it.id && typeof text === 'string') {
-      snippetText.value = text.slice(0, MAX_PREVIEW_CHARS)
-    }
-  })
-
   // A convert tool opens the inline panel; a snippet/diff opens in the main
   // window. Convert never raises the app — the whole point of doing it here.
   const convertTool = ref(null) // { id, name, panel } | null
@@ -102,6 +65,9 @@ export function useQuickLook() {
   const compose = useQuickLookCompose({ snippets, current })
   const startCompose = () => compose.open({ name: query.value.trim() })
 
+  const openInApp = (it) => window.api.quickLookOpen({ kind: it.kind, id: it.id })
+
+  // A secret or a main-window-only language opens in the main window instead.
   function choose(i) {
     const it = results.value[i]
     if (!it) return
@@ -112,21 +78,24 @@ export function useQuickLook() {
       lastTool.value = convertTool.value
       return
     }
-    window.api.quickLookOpen({ kind: it.kind, id: it.id })
+    if (it.kind === 'snippet' && compose.canEdit.value) return compose.editCurrent()
+    openInApp(it)
+  }
+
+  async function openFromSheet() {
+    const unsaved = compose.dirty.value || !compose.editing.value
+    const id = unsaved ? await compose.save() : compose.editingId.value
+    if (id) openInApp({ kind: 'snippet', id })
+  }
+
+  function open(i) {
+    const it = results.value[i]
+    if (it && (it.kind === 'snippet' || it.kind === 'diff')) openInApp(it)
   }
 
   const handoff = useQuickLookHandoff({ snippets, results })
   const { closing, copied, copiedName, copiedIndex, copy } = handoff
   const dismiss = () => handoff.animateOut()
-
-  // The preview-line concern (↑/↓ stepping, hover, single-line Shift+Cmd+C copy).
-  const preview = usePreviewLines({
-    snippetText,
-    zone,
-    previewEl,
-    current,
-    onCopied: handoff.confirmLine
-  })
 
   // Separate Pinia instance from the main window — re-read the snippet library on
   // each summon to reflect changes made there.
@@ -140,38 +109,21 @@ export function useQuickLook() {
     if (compose.dirty.value || convertTool.value) return
     query.value = ''
     selected.value = 0
-    snippetText.value = ''
-    zone.value = 'list'
     toolsOpen.value = false
-    preview.reset()
     handoff.reset()
     convertTool.value = null
     compose.cancel()
   }
 
-  // Rows are [glyph, message id]; utils/ cannot translate, so t() runs here.
-  const footHints = computed(() => {
-    const rows = compose.composing.value
-      ? composeHints()
-      : zone.value === 'preview'
-        ? previewHints()
-        : listHints({ kind: current.value?.kind, toolsOpen: toolsOpen.value })
-    return rows.map(([glyph, id]) => [glyph, t(id)])
-  })
-
   const { onKeydown } = useQuickLookKeys({
     count: () => results.value.length,
     selected,
-    zone,
-    canEnterPreview,
-    movePreview: preview.movePreview,
     onChoose: choose,
     onDismiss: dismiss,
     onCopy: copy,
-    onCopyLine: preview.copyLine,
+    onOpen: open,
     onNew: startCompose,
-    onCollapse: collapseTools,
-    // → drills in, mirroring → into a snippet preview.
+    // → drills into the tools section, or into a tool.
     onExpand: () => {
       const it = current.value
       if (it?.kind === 'tools') {
@@ -193,15 +145,9 @@ export function useQuickLook() {
     results,
     current,
     toolsOpen,
-    snippetLines: preview.snippetLines,
-    snippetSpans: preview.snippetSpans,
-    lineClass: preview.lineClass,
-    hoverLine: preview.hoverLine,
-    footHints,
-    copyKey: copyKeyLabel,
-    zone,
-    previewEl,
     choose,
+    open,
+    openFromSheet,
     copy,
     copied,
     copiedName,
@@ -213,8 +159,6 @@ export function useQuickLook() {
     convertTool,
     lastTool,
     exitConvert,
-    compose,
-    canEditInline: compose.canEdit,
-    editCurrent: compose.editCurrent
+    compose
   }
 }

@@ -1,12 +1,10 @@
-/* Floating quick look-up launcher (QuickLook.vue). The window itself is
-   transparent (src/main/quickLook.js) so this card floats as a raised surface
-   with a modal-level shadow, Spotlight-style. */
+/* The OS window is transparent (src/main/quickLook.js); the card is .ql. */
 .ql {
   position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-panel);
+  background: var(--bg-raised);
   border-radius: var(--radius-xl);
   /* Deliberately flat — no rim, no drop shadow. The panel colour is the only
      thing separating the card from the desktop, so nothing renders into a
@@ -30,11 +28,10 @@
   }
 }
 
-/* Transient "Copied" cue, centred above the footer. */
 .ql-toast {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--control-h) + var(--space-3));
+  bottom: var(--space-4);
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
@@ -70,31 +67,16 @@
   }
 }
 
-/* --- body: results | preview ---
-   minmax(0, 1fr) + min-height:0 on the items caps the single row at the card
-   height so each column scrolls internally instead of overflowing the window
-   (grid items default to min-height:auto, which otherwise grows to content). */
-.ql-body {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: minmax(0, 1fr);
-  min-height: 0;
-}
 .ql-results {
+  flex: 1;
   list-style: none;
   margin: 0;
   padding: var(--space-2);
   min-height: 0;
-  /* A grid item defaults to min-width:auto, which would refuse to shrink past
-     its content and defeat the 0fr collapse below. */
-  min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  border-right: 1px solid var(--border);
 }
-.ql-empty,
-.ql-pv-none {
+.ql-empty {
   color: var(--text-dim);
   font-size: var(--font-sm);
   padding: var(--space-4);
@@ -107,7 +89,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   border: 1px solid transparent;
   cursor: pointer;
 }
@@ -178,137 +160,6 @@
   letter-spacing: 0.08em;
 }
 
-/* --- preview --- */
-.ql-preview {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  background: var(--bg);
-}
-.ql-pv-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4) 0;
-}
-.ql-pv-body {
-  flex: 1;
-  margin: 0;
-  padding: var(--space-3) var(--space-4) var(--space-3) 0;
-  overflow: auto;
-  counter-reset: ln;
-  font-family: var(--font-mono);
-  font-size: var(--font-sm);
-  line-height: 1.5;
-  color: var(--text-hint);
-}
-/* Line numbers via a CSS counter — generated content is never part of a text
-   selection, so copying the preview never drags the gutter along. */
-.ql-pv-line {
-  position: relative;
-  padding-left: 3.4em;
-  min-height: 1.5em;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.ql-pv-line::before {
-  counter-increment: ln;
-  content: counter(ln);
-  position: absolute;
-  left: 0;
-  width: 2.6em;
-  text-align: right;
-  color: var(--text-dim);
-  opacity: 0.55;
-  user-select: none;
-  font-variant-numeric: tabular-nums;
-}
-/* Hover marks the copy target in either zone; .hot is the keyboard-active line
-   (preview zone) — an accent tint + edge, the launcher's own selection language
-   (matches .ql-res.sel and the in-preview seam) so it never reads as a stray
-   grey/white band. Shift+Cmd+C copies it. */
-.ql-pv-line:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-}
-.ql-pv-line.hot {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  box-shadow: inset 2px 0 0 0 var(--accent);
-}
-/* A Shift+Arrow range paints every line `hot`; the one the arrows are actually
-   moving keeps a slightly stronger ground so the head of the block is findable
-   without a second colour. */
-.ql-pv-line.hot.cursor {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-}
-/* The selected line numbers stop being a faint aside once they mark a range. */
-.ql-pv-line.hot::before {
-  opacity: 1;
-  color: var(--text);
-}
-.ql-pv-msg {
-  flex: 1;
-  padding: var(--space-4);
-  color: var(--text-dim);
-  font-size: var(--font-sm);
-}
-.ql-pv-foot {
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  border-top: 1px solid var(--border);
-  background: var(--bg-panel);
-}
-.ql-pv-actions {
-  display: inline-flex;
-  gap: var(--space-2);
-}
-
-/* --- footer hints --- */
-.ql-foot {
-  gap: var(--space-4);
-  padding: 0 var(--space-4);
-  height: var(--control-h);
-  border-top: 1px solid var(--border);
-  font-size: var(--font-xs);
-  color: var(--text-dim);
-}
-
-/* --- preview-focus mode ---
-   Stepping into the preview (→) relays through three coordinated cues: the
-   preview pane gains an accent focus ring, the results list parks (dims, and its
-   selection drops to a quiet outline), and the footer hints swap (see template).
-   Everything resolves through tokens so it holds on every theme. */
-.ql-results {
-  transition:
-    opacity 0.16s ease,
-    padding 0.24s ease;
-}
-.ql-preview {
-  transition: box-shadow 0.16s ease;
-}
-
-/* Reading or composing a snippet hands the whole width to the right pane: the
-   grid track itself animates to 0fr, so the list slides shut instead of sitting
-   there at half width. Padding goes with it, or a collapsed track still holds
-   its own gutter open. */
-.ql-body {
-  transition: grid-template-columns 0.24s ease;
-}
-.ql-body.in-preview,
-.ql-body.composing {
-  grid-template-columns: 0fr 1fr;
-}
-.ql-body.in-preview .ql-results,
-.ql-body.composing .ql-results {
-  padding-right: 0;
-  padding-left: 0;
-  /* Hand the seam to the preview's accent edge so they don't double up. */
-  border-right-color: transparent;
-}
-.ql-body.in-preview .ql-results {
-  opacity: 0.5;
-}
-
 /* Selecting a tool swaps the whole launcher for its panel. The panel drifts in
    from the right — the same direction → drills in — and on the way back it is
    taken out of flow so the list can lay out underneath it rather than the two
@@ -331,47 +182,11 @@
   transform: translateX(10px);
 }
 
-/* Compose mode takes the search band away rather than leaving a dead field over
-   the editor — it rolls up by its own fixed band height, so the panel grows into
-   the space instead of the whole card jumping. */
-.ql-band-enter-active,
-.ql-band-leave-active {
-  overflow: hidden;
-  transition:
-    height 0.2s ease,
-    opacity 0.14s ease;
-}
-.ql-band-enter-from,
-.ql-band-leave-to {
-  height: 0;
-  opacity: 0;
-}
-.ql-band-enter-to,
-.ql-band-leave-from {
-  height: var(--band-row);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .ql-body,
-  .ql-results,
-  .ql-preview,
   .ql-panel-enter-active,
-  .ql-panel-leave-active,
-  .ql-band-enter-active,
-  .ql-band-leave-active {
+  .ql-panel-leave-active {
     transition: none;
   }
-}
-.ql-body.in-preview .ql-res.sel {
-  background: transparent;
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-}
-/* Focus reads as a single accent seam on the shared divider plus a faint tint —
-   no full ring, so it never parallels the search-band / footer / window borders
-   or fight the rounded corners. */
-.ql-body.in-preview .ql-preview {
-  box-shadow: inset 2px 0 0 0 var(--accent);
-  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
 }
 
 /* --- per-row "Copied" cue ---
@@ -421,8 +236,6 @@
   transform: translateY(-50%) scale(0.85);
 }
 @media (prefers-reduced-motion: reduce) {
-  .ql-results,
-  .ql-preview,
   .ql-copychip-enter-active,
   .ql-copychip-leave-active {
     transition: none;
