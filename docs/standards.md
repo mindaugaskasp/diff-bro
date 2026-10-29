@@ -386,7 +386,7 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
 - **Controls and glyphs use the predefined size scale — never a bespoke box.**
   `--control-h` (30px), `--control-h-sm` (26px) and `--chip-h` (20px) in
   `tokens.css` are the only heights a button, icon button or key chip may take
-  (plus `--tile-h` for a `.tile` and `--rail-item` for a sidebar rail item),
+  (plus `--tile-h` for a `.tile`),
   and `ui.css` already ships `.btn`, `.btn-sm`, `.btn-icon` and `.ql-kbd` for
   them. Never let a control's height fall out of padding + font-size: that is how
   the Esc chip drifted to 19px beside a 26px button, and it silently re-breaks on

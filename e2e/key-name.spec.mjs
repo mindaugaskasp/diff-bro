@@ -1,14 +1,13 @@
 import { generateKeyPairSync } from 'node:crypto'
 import { KEY_FORMAT, encodePublicKey } from '../src/main/sealing.js'
-import { test, expect } from './fixtures.mjs'
+import { test, expect, showPanel } from './fixtures.mjs'
 
 const realKey = () => ({
   sign: generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }),
   box: generateKeyPairSync('x25519').publicKey.export({ type: 'spki', format: 'pem' })
 })
 
-const openKeys = (page) =>
-  page.getByRole('navigation', { name: 'Sidebar' }).getByRole('button', { name: /^Keys/ }).click()
+const openKeys = (page) => showPanel(page, 'keys')
 
 test('sharing my key needs a name of at most 40 characters, typed straight away', async ({
   page

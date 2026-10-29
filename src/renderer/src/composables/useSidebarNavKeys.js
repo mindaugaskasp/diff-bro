@@ -1,13 +1,14 @@
-const STEP = { ArrowDown: 1, ArrowUp: -1 }
+const STEP = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 1, ArrowUp: -1 }
 
 /**
- * Keyboard model for the sidebar rail: arrows move (wrapping), Home/End jump.
- * @param {import('vue').Ref<string[]>} ids        rail order
+ * Keyboard model for the sidebar's segmented control: arrows move (wrapping),
+ * Home/End jump.
+ * @param {import('vue').Ref<string[]>} ids        segment order
  * @param {import('vue').Ref<string>} current      the open panel
  * @param {(id: string) => void} select
  * @returns {(e: KeyboardEvent) => void}
  */
-export function useRailKeys(ids, current, select) {
+export function useSidebarNavKeys(ids, current, select) {
   return (e) => {
     const list = ids.value
     let next = null

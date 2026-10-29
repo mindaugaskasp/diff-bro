@@ -12,7 +12,8 @@ import { KeysPanel } from '../features/share'
 import TagManagePopover from './TagManagePopover.vue'
 import TagPickerPopover from './TagPickerPopover.vue'
 import AppIcon from './AppIcon.vue'
-import SidebarRail from './SidebarRail.vue'
+import SidebarNav from './SidebarNav.vue'
+import SidebarEdge from './SidebarEdge.vue'
 import SidebarSearch from './SidebarSearch.vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useUiStore } from '../stores/uiStore'
@@ -87,13 +88,12 @@ const showAllTags = ref(false)
     ref="aside"
     class="saved"
     :class="{ collapsed: settings.sidebarCollapsed, resizing: size.resizing.value }"
-    :style="
-      settings.sidebarCollapsed ? null : { width: `calc(var(--rail-w) + ${size.width.value}px)` }
-    "
+    :style="settings.sidebarCollapsed ? null : { width: `${size.width.value}px` }"
     data-tour="sidebar"
   >
-    <SidebarRail />
-    <div v-if="!settings.sidebarCollapsed" class="usb-panel" :data-panel="panel">
+    <SidebarEdge v-if="settings.sidebarCollapsed" collapsed />
+    <div v-else class="usb-panel" :data-panel="panel">
+      <SidebarNav />
       <div class="usb-controls band">
         <div class="usb-find band">
           <SidebarSearch v-model="ui.sidebarQuery" :placeholder="$t(SEARCH_KEY[panel])" />
@@ -164,14 +164,7 @@ const showAllTags = ref(false)
       <div class="usb-scroll">
         <component :is="PANEL_VIEW[panel]" v-bind="panelProps" />
       </div>
-      <!-- Widen only: narrower truncates every name without freeing space. -->
-      <div
-        class="usb-grip"
-        role="separator"
-        aria-orientation="vertical"
-        :aria-label="$t('savedDiffs.dragToWidenTheSidebar')"
-        @pointerdown="size.start"
-      ></div>
+      <SidebarEdge @resize="size.start" />
     </div>
   </aside>
 </template>

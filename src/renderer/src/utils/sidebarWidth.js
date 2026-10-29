@@ -1,8 +1,8 @@
 // How wide the sidebar may be dragged. Pure so the bounds are testable without
 // a pointer: the composable owns the drag, this owns the rule.
 
-/** The designed width, and the floor — the sidebar widens, it never narrows. */
-export const SIDEBAR_W = 256
+/** The designed width, and the floor: the 56px rail and the 256px panel it replaced. */
+export const SIDEBAR_W = 312
 /**
  * Half again and no further. Past that the comparison — what the window is
  * actually for — loses more than a longer snippet name gains, and the sidebar

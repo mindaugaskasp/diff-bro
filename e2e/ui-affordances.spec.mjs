@@ -28,8 +28,7 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
   await showPanel(page, 'snippets')
   const cases = [
     ['New', 'New snippet'],
-    ['Export', 'Export all snippets to a passphrase-protected file'],
-    ['Import', 'Import snippets from a file']
+    ['Snippet library actions', 'Snippet library actions']
   ]
   for (const [tooltip, name] of cases) {
     const button = page.getByRole('button', { name, exact: true })
@@ -372,23 +371,4 @@ test('hovering the primary button moves its keyline, not its fill', async ({ pag
   // The bar is the neutral .btn's own shipped hover step (1.16 at worst): a
   // primary must move at least as visibly as the quiet button beside it.
   expect(hover.edgeVsFill, `keyline ${hover.edge} on fill ${hover.fill}`).toBeGreaterThan(1.16)
-})
-
-// The collapsed rail is its own strip; every control in it centres on the
-// strip's own axis. Glued to the left edge, the rail reads as clipped.
-test('the collapsed rail centres its buttons on the strip', async ({ page }) => {
-  await page.getByRole('button', { name: 'Collapse the sidebar' }).click()
-  const rail = page.locator('.rail')
-  await expect(rail).toBeVisible()
-  // The collapse animates width for 160ms — measure the settled strip.
-  await expect
-    .poll(async () => Math.round((await page.locator('aside.saved').boundingBox()).width))
-    .toBe(Math.round((await rail.boundingBox()).width))
-
-  const strip = await page.locator('aside.saved').boundingBox()
-  const mid = strip.x + strip.width / 2
-  for (const target of ['.rail-band .sidebar-toggle', '.rail-item']) {
-    const box = await page.locator(target).first().boundingBox()
-    expect(Math.abs(box.x + box.width / 2 - mid)).toBeLessThanOrEqual(1.5)
-  }
 })

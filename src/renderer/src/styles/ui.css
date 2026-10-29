@@ -1135,13 +1135,14 @@ button.tag-chip:hover .usb-tct {
   font-size: var(--font-2xs);
   font-weight: 600;
 }
+/* A sidebar row's monogram is quiet (#144): no well, meta ink. */
 .monogram.glyph-well {
   width: var(--control-h-sm);
   height: var(--control-h-sm);
   border-bottom: 0;
   border-radius: var(--radius-lg);
-  background: var(--well);
-  color: var(--glyph);
+  background: transparent;
+  color: var(--text-meta);
 }
 .glyph-well > .app-icon {
   font-size: var(--font-lg);

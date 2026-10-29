@@ -5,3 +5,5 @@ dist
 *.log
 e2e-failures
 test-results
+# Electron crash dumps from the container (see .gitignore): hundreds of MB each.
+/core

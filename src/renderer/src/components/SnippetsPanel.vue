@@ -11,12 +11,11 @@ import { provideRowReorder } from '../composables/useRowReorder'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
-import { MOD } from '../keys'
-import { useCommands } from '../composables/useCommands'
 import SnippetRow from './SnippetRow.vue'
 import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
 import AppIcon from './AppIcon.vue'
+import SnippetsMoreMenu from './SnippetsMoreMenu.vue'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -86,7 +85,6 @@ function newSnippet() {
   sectionOpen.value = true
   store.editingSnippet = { id: null }
 }
-const { run } = useCommands()
 </script>
 
 <template>
@@ -113,30 +111,7 @@ const { run } = useCommands()
         >
           <AppIcon name="plus" />
         </button>
-        <button
-          class="btn btn-icon"
-          :data-tip="`${$t('snippetsPanel.openFile')}  ${MOD}+O`"
-          :aria-label="$t('snippetsPanel.openFile')"
-          @click.stop="run('open-file-as-snippet')"
-        >
-          <AppIcon name="folder-open" />
-        </button>
-        <button
-          class="btn btn-icon"
-          :data-tip="$t('snippetsPanel.export')"
-          :aria-label="$t('snippetsPanel.exportAllSnippetsToA')"
-          @click.stop="store.pendingExport = { all: true }"
-        >
-          <AppIcon name="arrow-up" />
-        </button>
-        <button
-          class="btn btn-icon"
-          :data-tip="$t('snippetsPanel.import')"
-          :aria-label="$t('snippetsPanel.importSnippetsFromAFile')"
-          @click.stop="store.pendingImport = true"
-        >
-          <AppIcon name="arrow-down" />
-        </button>
+        <span class="more-wrap" @click.stop><SnippetsMoreMenu /></span>
       </template>
     </SectionHeader>
 

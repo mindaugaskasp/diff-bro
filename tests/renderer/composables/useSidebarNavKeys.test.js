@@ -1,17 +1,29 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { useRailKeys } from '../../../src/renderer/src/composables/useRailKeys'
+import { useSidebarNavKeys } from '../../../src/renderer/src/composables/useSidebarNavKeys'
 
 const key = (k) => ({ key: k, preventDefault: vi.fn() })
 
-describe('useRailKeys', () => {
+describe('useSidebarNavKeys', () => {
   const setup = (current = 'home') => {
     const select = vi.fn()
-    const onKeydown = useRailKeys(ref(['home', 'diffs', 'snippets', 'tools']), ref(current), select)
+    const onKeydown = useSidebarNavKeys(
+      ref(['home', 'diffs', 'snippets', 'tools']),
+      ref(current),
+      select
+    )
     return { select, onKeydown }
   }
 
-  it('moves down and up through the rail', () => {
+  // The segmented control runs left to right (#144).
+  it('moves right and left across the segments', () => {
+    const { select, onKeydown } = setup('diffs')
+    onKeydown(key('ArrowRight'))
+    onKeydown(key('ArrowLeft'))
+    expect(select.mock.calls).toEqual([['snippets'], ['home']])
+  })
+
+  it('still moves with down and up', () => {
     const { select, onKeydown } = setup('diffs')
     onKeydown(key('ArrowDown'))
     onKeydown(key('ArrowUp'))
