@@ -22,7 +22,7 @@ async function seedDeployPair(ql) {
     await ql.keyboard.press('ControlOrMeta+n')
     await ql.locator('.ql-compose-name').fill(name)
     await ql.locator('.ql-compose-text').fill('echo ' + name)
-    await ql.keyboard.press('ControlOrMeta+Enter')
+    await ql.keyboard.press('ControlOrMeta+s')
     await expect(ql.locator('.ql-compose')).toBeHidden()
   }
 }
@@ -52,7 +52,7 @@ test('Tab accepts the ghost and the saved name is what was on screen', async ({ 
 
   await ql.keyboard.type('canary')
   await ql.locator('.ql-compose-text').fill('echo canary')
-  await ql.keyboard.press('ControlOrMeta+Enter')
+  await ql.keyboard.press('ControlOrMeta+s')
 
   await ql.locator('.ql-input').fill('Deploy — canary')
   await expect(

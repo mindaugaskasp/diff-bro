@@ -363,39 +363,12 @@
     "noCommand": "No matching command."
   },
   "quickLook": {
-    "backTip": "Back (Esc)",
+    "backTip": "Back",
     "backLabel": "Back to the results",
     "enter": "Enter",
-    "selectAResultToPreview": "Select a result to preview it.",
     "browseTools": "Press {key} to browse the tool | Press {key} to browse the {count} tools.",
     "openTool": "Press {key} to open this tool.",
-    "hint": {
-      "navigate": "navigate",
-      "scrollPreview": "scroll preview",
-      "openTool": "open tool",
-      "browseTools": "browse tools",
-      "open": "open",
-      "create": "create",
-      "copy": "copy",
-      "newSnippet": "new snippet",
-      "collapse": "collapse",
-      "close": "close",
-      "save": "save",
-      "cancel": "cancel",
-      "line": "line",
-      "selectLines": "select lines",
-      "copyLines": "copy lines",
-      "backToList": "back to list",
-      "back": "back",
-      "name": "name",
-      "acceptName": "accept name"
-    },
     "createHint": "Press {key} to name and capture it.",
-    "action": {
-      "openInEditor": "Open in editor",
-      "browseTools": "Browse tools",
-      "createSnippet": "Create snippet"
-    },
     "toolsHeader": "Tools"
   },
   "toolRow": {
@@ -771,20 +744,11 @@
   "quickLookCompose": {
     "nameOptional": "Name (optional)",
     "pasteOrTypeTheSnippet": "Paste or type the snippet…",
-    "editSnippet": "Edit snippet",
-    "newSnippet": "New snippet",
     "saving": "Saving…",
     "language": "Language"
   },
   "quickLookConvert": {
     "esc": "Esc"
-  },
-  "quickLookPreviewHead": {
-    "backToList": "Back to list",
-    "backToTheResultsList": "Back to the results list (←)",
-    "editThisSnippetWithoutLeaving": "Edit this snippet without leaving the launcher",
-    "edit": "Edit",
-    "copyContentsTip": "Copy the contents to the clipboard ({key})"
   },
   "quickLookResults": {
     "noSnippetOrToolMatches": "No snippet or tool matches.",
@@ -792,7 +756,6 @@
   },
   "quickLookSearch": {
     "searchSnippetsTools": "Search snippets & tools…",
-    "esc": "Esc",
     "newSnippet": "New snippet",
     "captureANewSnippet": "Capture a new snippet ({key})"
   },

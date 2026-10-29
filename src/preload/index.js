@@ -185,7 +185,6 @@ contextBridge.exposeInMainWorld('api', {
   quickLookCapturingShortcut: (on) => ipcRenderer.send('quicklook:capturing-shortcut', on === true),
   // Launcher window: which job the card is doing, so main can size it. A NAME,
   // never dimensions — the renderer does not get to decide how big a window is.
-  quickLookMode: (mode) => ipcRenderer.invoke('quicklook:mode', String(mode)),
   // Settings → Shortcuts: apply a new summon accelerator live. Resolves to
   // { ok } or { ok:false, error } ('unavailable' / 'invalid').
   quickLookSetShortcut: (accel) => ipcRenderer.invoke('quicklook:setShortcut', accel),

@@ -170,6 +170,8 @@
   /* The code editor's gutter and status bar: a step off the editing surface. */
   --editor-gutter: color-mix(in srgb, var(--bg) 60%, var(--bg-panel));
   --line: color-mix(in srgb, var(--text) 12%, var(--bg-panel));
+  /* A quiet field has no edge, except on the hard-keyline themes, which keep theirs. */
+  --field-edge: transparent;
   --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
   --tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text));
   --hue-diff: #c2410c;

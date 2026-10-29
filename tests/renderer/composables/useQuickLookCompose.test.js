@@ -267,23 +267,27 @@ describe('useQuickLookCompose — a draft worth keeping', () => {
   })
 })
 
-// The card is 452px tall at rest — nine lines. Composing asks main for the size
-// the job needs; the renderer names the JOB, never a number of pixels.
-describe('useQuickLookCompose — the card it asks for', () => {
+describe('useQuickLookCompose — the card stays one size', () => {
   afterEach(() => delete window.api)
 
-  it('asks for the compose card on open and the resting one on the way out', async () => {
-    const quickLookMode = vi.fn()
-    window.api = { quickLookMode }
+  it('opens and closes the sheet without asking for a different card', async () => {
+    const calls = []
+    window.api = new Proxy(
+      {},
+      {
+        get:
+          (_t, name) =>
+          (...args) =>
+            calls.push([name, ...args])
+      }
+    )
     const { c } = harness()
 
     c.open()
     await nextTick()
-    expect(quickLookMode).toHaveBeenLastCalledWith('compose')
-
     c.cancel()
     await nextTick()
-    expect(quickLookMode).toHaveBeenLastCalledWith('default')
+    expect(calls).toEqual([])
   })
 })
 

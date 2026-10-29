@@ -18,7 +18,7 @@ function harness(n = 3, start = 0) {
   const onChoose = vi.fn()
   const onDismiss = vi.fn()
   const onCopy = vi.fn()
-  const onCopyLine = vi.fn()
+  const onOpen = vi.fn()
   const onNew = vi.fn()
   const { onKeydown } = useQuickLookKeys({
     count: () => n,
@@ -26,10 +26,10 @@ function harness(n = 3, start = 0) {
     onChoose,
     onDismiss,
     onCopy,
-    onCopyLine,
+    onOpen,
     onNew
   })
-  return { selected, onChoose, onDismiss, onCopy, onCopyLine, onNew, press: presser(onKeydown) }
+  return { selected, onChoose, onDismiss, onCopy, onOpen, onNew, press: presser(onKeydown) }
 }
 
 describe('useQuickLookKeys', () => {
@@ -103,17 +103,11 @@ describe('useQuickLookKeys', () => {
     expect(h.onCopy).not.toHaveBeenCalled()
   })
 
-  it('Shift+Cmd/Ctrl+C copies the active preview line, not the whole row', () => {
+  it('Shift+Cmd/Ctrl+C copies the whole row: there is no preview line to copy', () => {
     const collapsed = { selectionStart: 0, selectionEnd: 0 }
     const h = harness(3, 1)
-    const pd = h.press('C', { metaKey: true, shiftKey: true, target: collapsed })
-    expect(pd).toHaveBeenCalled()
-    expect(h.onCopyLine).toHaveBeenCalledTimes(1)
-    expect(h.onCopy).not.toHaveBeenCalled()
-
-    const h2 = harness(3, 0)
-    h2.press('c', { ctrlKey: true, shiftKey: true, target: collapsed })
-    expect(h2.onCopyLine).toHaveBeenCalledTimes(1)
+    h.press('C', { metaKey: true, shiftKey: true, target: collapsed })
+    expect(h.onCopy).toHaveBeenCalledWith(1)
   })
 
   it('does not copy a plain c (no modifier) or when the list is empty', () => {
@@ -126,217 +120,83 @@ describe('useQuickLookKeys', () => {
   })
 })
 
-// A stand-in for the two focus zones. canEnter mirrors "the active row has a
-// scrollable snippet preview"; movePreview is spied.
-function previewHarness({ zoneStart = 'list', canEnter = true } = {}) {
-  const selected = { value: 0 }
-  const zone = { value: zoneStart }
-  const movePreview = vi.fn()
-  const onDismiss = vi.fn()
-  const { onKeydown } = useQuickLookKeys({
-    count: () => 3,
-    selected,
-    zone,
-    canEnterPreview: () => canEnter,
-    movePreview,
-    onChoose: vi.fn(),
-    onDismiss
-  })
-  const atEnd = { selectionStart: 4, selectionEnd: 4, value: 'auth' }
-  return { selected, zone, movePreview, onDismiss, press: presser(onKeydown), atEnd }
-}
-
-describe('useQuickLookKeys — preview zone', () => {
-  it('ArrowRight enters the preview from the end of the query when one exists', () => {
-    const h = previewHarness()
-    const pd = h.press('ArrowRight', { target: h.atEnd })
-    expect(h.zone.value).toBe('preview')
-    expect(pd).toHaveBeenCalled()
-  })
-
-  it('ArrowRight is ignored mid-query (the caret moves instead)', () => {
-    const h = previewHarness()
-    const pd = h.press('ArrowRight', {
-      target: { selectionStart: 2, selectionEnd: 2, value: 'auth' }
-    })
-    expect(h.zone.value).toBe('list')
-    expect(pd).not.toHaveBeenCalled()
-  })
-
-  it('ArrowRight is ignored when the row has no scrollable preview', () => {
-    const h = previewHarness({ canEnter: false })
-    h.press('ArrowRight', { target: h.atEnd })
-    expect(h.zone.value).toBe('list')
-  })
-
-  it('in the preview, Up/Down step the active line and leave the list selection put', () => {
-    const h = previewHarness({ zoneStart: 'preview' })
-    h.press('ArrowDown')
-    h.press('ArrowUp')
-    expect(h.movePreview.mock.calls).toEqual([
-      [1, false],
-      [-1, false]
-    ])
-    expect(h.selected.value).toBe(0)
-  })
-
-  it('ArrowLeft returns from the preview to the list', () => {
-    const h = previewHarness({ zoneStart: 'preview' })
-    const pd = h.press('ArrowLeft')
-    expect(h.zone.value).toBe('list')
-    expect(pd).toHaveBeenCalled()
-  })
-
-  it('Escape backs out of the preview before it dismisses', () => {
-    const h = previewHarness({ zoneStart: 'preview' })
-    h.press('Escape')
-    expect(h.zone.value).toBe('list')
-    expect(h.onDismiss).not.toHaveBeenCalled()
-    h.press('Escape')
+// Esc leaves the launcher from anywhere; the ← key is only ever a caret move.
+describe('useQuickLookKeys — leaving', () => {
+  it('Escape dismisses, even with a section open', () => {
+    const h = harness(3, 1)
+    const prevented = h.press('Escape')
     expect(h.onDismiss).toHaveBeenCalledTimes(1)
+    expect(prevented).toHaveBeenCalled()
+  })
+
+  it('ArrowLeft never navigates or dismisses, wherever the caret is', () => {
+    const h = harness(3, 1)
+    const atStart = { selectionStart: 0, selectionEnd: 0, value: 'auth' }
+    const prevented = h.press('ArrowLeft', { target: atStart })
+    expect(h.onDismiss).not.toHaveBeenCalled()
+    expect(prevented).not.toHaveBeenCalled()
   })
 })
 
-describe('useQuickLookKeys — onExpand (→ on a non-preview row)', () => {
-  function expandHarness(handled) {
-    const onExpand = vi.fn(() => handled)
+describe('useQuickLookKeys — Enter and Cmd/Ctrl+Enter', () => {
+  it('Enter chooses the selected row (a snippet opens the editor sheet)', () => {
+    const h = harness(3, 2)
+    h.press('Enter')
+    expect(h.onChoose).toHaveBeenCalledWith(2)
+    expect(h.onOpen).not.toHaveBeenCalled()
+  })
+
+  it('Cmd/Ctrl+Enter opens the selected row in the main window', () => {
+    for (const mod of ['metaKey', 'ctrlKey']) {
+      const h = harness(3, 1)
+      const prevented = h.press('Enter', { [mod]: true })
+      expect(h.onOpen).toHaveBeenCalledWith(1)
+      expect(h.onChoose).not.toHaveBeenCalled()
+      expect(prevented).toHaveBeenCalled()
+    }
+  })
+
+  it('Cmd/Ctrl+Enter is a no-op on an empty list', () => {
+    const h = harness(0)
+    h.press('Enter', { metaKey: true })
+    expect(h.onOpen).not.toHaveBeenCalled()
+  })
+})
+
+// → still drills into a tools section or a tool, from the end of the query.
+describe('useQuickLookKeys — ArrowRight', () => {
+  function expandHarness(handles) {
+    const onExpand = vi.fn(() => handles)
     const { onKeydown } = useQuickLookKeys({
       count: () => 3,
       selected: { value: 0 },
-      canEnterPreview: () => false,
       onChoose: vi.fn(),
       onDismiss: vi.fn(),
       onExpand
     })
-    const atEnd = { selectionStart: 4, selectionEnd: 4, value: 'base' }
-    return { onExpand, press: presser(onKeydown), atEnd }
+    return { onExpand, press: presser(onKeydown) }
   }
+  const atEnd = { selectionStart: 4, selectionEnd: 4, value: 'json' }
 
-  it('hands → to onExpand and prevents default when it handles it (a command)', () => {
+  it('hands → to onExpand and prevents default when it handles it', () => {
     const h = expandHarness(true)
-    const pd = h.press('ArrowRight', { target: h.atEnd })
-    expect(h.onExpand).toHaveBeenCalled()
-    expect(pd).toHaveBeenCalled()
+    const prevented = h.press('ArrowRight', { target: atEnd })
+    expect(h.onExpand).toHaveBeenCalledTimes(1)
+    expect(prevented).toHaveBeenCalled()
   })
 
-  it('lets the caret move when onExpand declines (e.g. a diff row)', () => {
+  it('lets the caret move when onExpand declines', () => {
     const h = expandHarness(false)
-    const pd = h.press('ArrowRight', { target: h.atEnd })
-    expect(h.onExpand).toHaveBeenCalled()
-    expect(pd).not.toHaveBeenCalled()
+    expect(h.press('ArrowRight', { target: atEnd })).not.toHaveBeenCalled()
   })
 
-  it('does not fire → mid-query', () => {
+  it('does not fire mid-query', () => {
     const h = expandHarness(true)
-    h.press('ArrowRight', { target: { selectionStart: 1, selectionEnd: 1, value: 'base' } })
+    h.press('ArrowRight', { target: { selectionStart: 1, selectionEnd: 1, value: 'json' } })
     expect(h.onExpand).not.toHaveBeenCalled()
   })
 })
 
-describe('useQuickLookKeys — onCollapse (← / Escape in the list)', () => {
-  function collapseHarness(handled) {
-    const onCollapse = vi.fn(() => handled)
-    const onDismiss = vi.fn()
-    const { onKeydown } = useQuickLookKeys({
-      count: () => 3,
-      selected: { value: 0 },
-      onChoose: vi.fn(),
-      onDismiss,
-      onCollapse
-    })
-    return { onCollapse, onDismiss, press: presser(onKeydown) }
-  }
-
-  it('ArrowLeft in the list collapses an open section and prevents default', () => {
-    const h = collapseHarness(true)
-    const pd = h.press('ArrowLeft')
-    expect(h.onCollapse).toHaveBeenCalled()
-    expect(pd).toHaveBeenCalled()
-  })
-
-  // ← is exit navigation: with no preview to leave and no section to collapse,
-  // the only level left to back out of is the launcher itself.
-  it('ArrowLeft dismisses when there is nothing left to back out of', () => {
-    const h = collapseHarness(false)
-    const pd = h.press('ArrowLeft')
-    expect(h.onDismiss).toHaveBeenCalledTimes(1)
-    expect(pd).toHaveBeenCalled()
-  })
-
-  // …but the search box owns ← while the caret still has somewhere to go, or
-  // editing a query would slam the launcher shut mid-word.
-  it('ArrowLeft stays a caret move while text sits to its left', () => {
-    const h = collapseHarness(false)
-    const pd = h.press('ArrowLeft', {
-      target: { selectionStart: 2, selectionEnd: 2, value: 'diff' }
-    })
-    expect(h.onDismiss).not.toHaveBeenCalled()
-    expect(pd).not.toHaveBeenCalled()
-  })
-
-  it('ArrowLeft dismisses from the start of a non-empty query', () => {
-    const h = collapseHarness(false)
-    h.press('ArrowLeft', { target: { selectionStart: 0, selectionEnd: 0, value: 'diff' } })
-    expect(h.onDismiss).toHaveBeenCalledTimes(1)
-  })
-
-  it('ArrowLeft with a modifier is left to the field (word/line jump)', () => {
-    const h = collapseHarness(false)
-    for (const mod of ['metaKey', 'ctrlKey', 'altKey']) {
-      h.press('ArrowLeft', {
-        [mod]: true,
-        target: { selectionStart: 0, selectionEnd: 0, value: '' }
-      })
-    }
-    expect(h.onDismiss).not.toHaveBeenCalled()
-  })
-
-  it('ArrowLeft collapses before it dismisses, one level at a time', () => {
-    const h = collapseHarness(true)
-    h.press('ArrowLeft')
-    expect(h.onCollapse).toHaveBeenCalled()
-    expect(h.onDismiss).not.toHaveBeenCalled()
-  })
-
-  it('Escape collapses the section before dismissing', () => {
-    const h = collapseHarness(true)
-    h.press('Escape')
-    expect(h.onCollapse).toHaveBeenCalled()
-    expect(h.onDismiss).not.toHaveBeenCalled()
-  })
-
-  it('Escape dismisses when there is nothing to collapse', () => {
-    const h = collapseHarness(false)
-    h.press('Escape')
-    expect(h.onDismiss).toHaveBeenCalledTimes(1)
-  })
-})
-
-// Shift+Arrow in the preview extends a line range, as an editor does. In the
-// LIST there is one selection, so Shift must not change what an arrow means.
-describe('useQuickLookKeys — Shift+Arrow', () => {
-  it('passes the extend flag through in the preview zone', () => {
-    const h = previewHarness({ zoneStart: 'preview' })
-    h.press('ArrowDown', { shiftKey: true })
-    h.press('ArrowUp', { shiftKey: true })
-    expect(h.movePreview.mock.calls).toEqual([
-      [1, true],
-      [-1, true]
-    ])
-  })
-
-  it('leaves list navigation alone', () => {
-    const h = previewHarness({ zoneStart: 'list' })
-    const before = h.selected.value
-    h.press('ArrowDown', { shiftKey: true })
-    expect(h.selected.value).toBe(before + 1)
-    expect(h.movePreview).not.toHaveBeenCalled()
-  })
-})
-
-// The launcher had no key for "create a snippet" at all — startCompose's only
-// caller was the + button's @click, which Tab reaches at the cost of killing
-// every other key (the driver hangs off the search box's @keydown).
 describe('useQuickLookKeys — Cmd/Ctrl+N', () => {
   it('opens compose and swallows the key', () => {
     for (const mod of ['metaKey', 'ctrlKey']) {

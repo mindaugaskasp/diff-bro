@@ -36,7 +36,7 @@ test('Cmd+N opens compose with the query as the name, and saves', async ({ app, 
   await expect(ql.locator('.ql-compose-text')).toBeFocused()
 
   await ql.keyboard.type(SQL)
-  await ql.keyboard.press('ControlOrMeta+Enter')
+  await ql.keyboard.press('ControlOrMeta+s')
   await expect(ql.locator('.ql-compose')).toBeHidden()
 
   // Excluding the create row, which matches the same text by design — it stays
@@ -60,7 +60,7 @@ test('a saved snippet keeps the language its body was detected as', async ({ app
   // `option:checked`, not the select's textContent — that would read EVERY
   // option and pass whatever is selected.
   await expect(ql.locator('.ql-compose-lang option:checked')).toHaveText(/SQL/)
-  await ql.keyboard.press('ControlOrMeta+Enter')
+  await ql.keyboard.press('ControlOrMeta+s')
 
   // Searching by the FORMAT finds it — formatTagFor only tags a non-plaintext
   // snippet, so this fails outright when the draft is forced to plaintext.
@@ -164,28 +164,35 @@ test('an unmodified inline edit does not rewrite the stored language', async ({ 
   await ql.locator('.ql-compose-name').fill('orders probe')
   await ql.locator('.ql-compose-text').fill(SQL)
   await expect(ql.locator('.ql-compose-lang option:checked')).toHaveText(/SQL/)
-  await ql.keyboard.press('ControlOrMeta+Enter')
+  await ql.keyboard.press('ControlOrMeta+s')
 
-  // Searched, not clicked: a click on a row now does what ↵ does — it opens the
-  // snippet in the main window — and this test wants the preview, not the hand-off.
   await ql.locator('.ql-input').fill('orders probe')
-  await expect(ql.locator('.ql-pv-name')).toHaveText('Orders probe')
-  await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
+  await ql.keyboard.press('Enter')
+  await expect(ql.locator('.ql-compose-name')).toHaveValue('Orders probe')
 
   // Still Auto — the picker would read a bare "SQL" if the language had frozen.
   await expect(ql.locator('.ql-compose-lang')).toHaveValue('auto')
-  await ql.keyboard.press('ControlOrMeta+Enter')
+  await ql.keyboard.press('ControlOrMeta+s')
 
-  // Searched, not clicked: a click on a row now does what ↵ does — it opens the
-  // snippet in the main window — and this test wants the preview, not the hand-off.
   await ql.locator('.ql-input').fill('orders probe')
-  await expect(ql.locator('.ql-pv-name')).toHaveText('Orders probe')
-  await ql.locator('.ql-pv-head button', { hasText: 'Edit' }).click()
+  await ql.keyboard.press('Enter')
   await expect(ql.locator('.ql-compose-lang')).toHaveValue('auto')
 })
 
-// ArrowLeft is the native way to change a CLOSED select on Windows and Linux,
-// and the compose hints invite the user to Shift+Tab to it.
+test('Cmd/Ctrl+Enter in the sheet saves, then opens the snippet in the main window', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+  await ql.keyboard.press('ControlOrMeta+n')
+  await ql.locator('.ql-compose-name').fill('hand over')
+  await ql.locator('.ql-compose-text').fill('select 1')
+  await ql.keyboard.press('ControlOrMeta+Enter')
+
+  await expect(page.locator('.diff-tabs .tab.active')).toContainText('Hand over')
+})
+
+// ArrowLeft is the native way to change a CLOSED select on Windows and Linux.
 test('changing the language with an arrow key does not discard the draft', async ({
   app,
   page

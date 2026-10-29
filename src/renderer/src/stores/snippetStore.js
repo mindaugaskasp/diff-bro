@@ -95,13 +95,11 @@ export const useSnippetStore = defineStore('snippets', {
     keyError: null
   }),
   getters: {
-    // Whether Mermaid's renderer is worth warming at idle: a library with no
-    // diagram in it should not pay for a 2.8 MB chunk it will never render.
+    // A library with no diagram should not warm a 2.8 MB renderer at idle.
     hasDiagrams: (s) => s.entries.some((e) => languageOf(e) === 'mermaid'),
     favorites: (s) => group(s.entries, 'favorites'),
     listed: (s) => group(s.entries, 'listed'),
-    // In-use tags, most-recent first; unused ones stay in the registry (keeping
-    // their color) but off the shelf.
+    // In-use tags, most recent first; unused ones keep their colour off the shelf.
     tagList: (s) => {
       const counts = {}
       for (const e of s.entries) for (const t of e.tags) counts[t] = (counts[t] || 0) + 1
@@ -128,15 +126,18 @@ export const useSnippetStore = defineStore('snippets', {
     persist() {
       savePersisted('snippets', JSON.stringify({ tags: this.tags, entries: this.entries }))
     },
-    // The quick look-up window (separate Pinia instance) calls this on each
-    // summon to pick up snippets changed in the main window.
+    // Quick Look has its own Pinia: it re-reads on each summon.
     reload() {
       const s = readState()
       this.tags = s.tags
       this.entries = s.entries
     },
-    // Register missing tags, touch used ones to "now", and return the cleaned,
-    // de-duplicated, capped applied list.
+    // A snippet the launcher just saved is not in this Pinia yet.
+    openFromLauncher(id) {
+      if (!this.entries.some((e) => e.id === id)) this.reload()
+      this.editingSnippet = { id }
+    },
+    // Registers missing tags, touches used ones; returns the cleaned, capped list.
     registerTags(names, colors = {}) {
       const out = []
       for (const raw of names ?? []) {
@@ -150,8 +151,7 @@ export const useSnippetStore = defineStore('snippets', {
       }
       return out
     },
-    // Both first-run examples. Returns false if the vault key wasn't available,
-    // so the caller retries next launch rather than recording them as seeded.
+    // False when the vault key is unavailable, so the caller retries next launch.
     // Never marks: a seeded row is not one the user made.
     async seedExamples() {
       for (const { nameKey, ...rest } of [EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET]) {

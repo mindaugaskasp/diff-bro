@@ -1,9 +1,6 @@
 import { test, expect } from './fixtures.mjs'
 
-// Composing in the launcher is WRITING, and it was being done in a card sized to
-// read one line in. Two things have to hold: the window grows for the job, and
-// pressing the chord twice — which is how the launcher is dismissed and brought
-// back — does not take an unsaved draft with it.
+// The card stays one size, and neither the chord nor Escape drops an unsaved draft.
 
 const launcher = (app, read) =>
   app.evaluate(({ BrowserWindow }) => {
@@ -24,37 +21,24 @@ async function summon(app, page) {
   return ql
 }
 
-// Main owns the resize, so the height is polled off the OS window rather than
-// off anything the page can report about itself.
-const height = (app) => expect.poll(async () => (await bounds(app)).height, { timeout: 4000 })
-
-test('composing grows the card, and leaving it gives the size back', async ({ app, page }) => {
+test('composing keeps the card the same size and in the same place', async ({ app, page }) => {
   const ql = await summon(app, page)
   const resting = await bounds(app)
 
   await ql.locator('.ql-add').click()
   await expect(ql.locator('.ql-compose')).toBeVisible()
-  await height(app).toBeGreaterThan(resting.height * 1.4)
+  await ql.locator('.ql-compose-text').fill('line one\nline two')
+  expect(await bounds(app)).toEqual(resting)
 
-  // It grew from where it already was — down and to the right. Re-centring
-  // would slide the row under the pointer away mid-click, which is exactly what
-  // ate two clicks on Edit.
-  const grown = await bounds(app)
-  expect(grown.width).toBeGreaterThan(resting.width)
-  expect({ x: grown.x, y: grown.y }).toEqual({ x: resting.x, y: resting.y })
-
-  await ql.getByRole('button', { name: 'Cancel' }).click()
-  await height(app).toBe(resting.height)
+  await ql.locator('.ql-compose-back').click()
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+  expect(await bounds(app)).toEqual(resting)
 })
 
-test('a re-summon keeps an unsaved draft, and the card it was written in', async ({
-  app,
-  page
-}) => {
+test('a re-summon keeps an unsaved draft', async ({ app, page }) => {
   const ql = await summon(app, page)
   await ql.locator('.ql-add').click()
   await ql.locator('.ql-compose-text').fill('line one\nline two\nline three')
-  await height(app).toBeGreaterThan(600)
   const composing = await bounds(app)
 
   await toggle(page)
@@ -64,7 +48,20 @@ test('a re-summon keeps an unsaved draft, and the card it was written in', async
 
   await expect(ql.locator('.ql-compose')).toBeVisible()
   await expect(ql.locator('.ql-compose-text')).toHaveValue('line one\nline two\nline three')
-  expect((await bounds(app)).height).toBe(composing.height)
+  expect(await bounds(app)).toEqual(composing)
+})
+
+test('Escape from the sheet closes the launcher and keeps the draft', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await ql.locator('.ql-add').click()
+  await ql.locator('.ql-compose-text').fill('half written')
+
+  await ql.keyboard.press('Escape')
+  await expect.poll(() => isVisible(app), { timeout: 4000 }).toBe(false)
+  await toggle(page)
+  await expect.poll(() => isVisible(app), { timeout: 4000 }).toBe(true)
+
+  await expect(ql.locator('.ql-compose-text')).toHaveValue('half written')
 })
 
 // The other half of the rule: with nothing at stake a summon is still a fresh

@@ -2,7 +2,7 @@ import { isSecret } from './secretSnippet'
 
 // Ranking and row construction for the quick look-up. The scoring bands mirror
 // useSnippetFilters' text match so the two search surfaces agree on what a query
-// finds. The footer hint tables are next door in quickLookHints.js.
+// finds.
 
 /** @typedef {import('../types').QuickLookItem} QuickLookItem */
 

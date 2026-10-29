@@ -14,7 +14,6 @@ import { appendLog } from './logger'
 import { allowMainFocus, hideLauncher, isCapturingShortcut } from './quickLookFocus'
 import { defaultQuickLookShortcut } from '../shared/shortcuts'
 import {
-  keepOnScreen,
   placeWindow,
   displayForPoint,
   launcherDiagnostics,
@@ -30,9 +29,6 @@ import {
 const DEFAULT_ACCELERATOR = defaultQuickLookShortcut(process.platform)
 
 let win = null
-// Which size the card is at. Survives a hide, so re-summoning mid-draft brings
-// back the window the draft was being written in.
-let mode = 'default'
 // The accelerator currently registered, so a change unregisters exactly it.
 let currentAccelerator = null
 // Injected by registerQuickLook, so this module never owns the main window.
@@ -41,7 +37,7 @@ let createMain = null
 function build() {
   const w = new BrowserWindow({
     // The card is flat and fills the window, so these are its exact dimensions.
-    ...launcherSize(mode),
+    ...launcherSize(),
     show: false,
     frame: false,
     // The launcher is summoned OVER another app, so it is showing while Diff Bro
@@ -143,14 +139,13 @@ function logDiag(event, displays, cursor, launcher) {
   })
 }
 
-// Repositioned every summon onto the display holding the pointer, at whatever
-// size its current job asks for.
+// Repositioned every summon onto the display holding the pointer.
 function reveal() {
   const w = ensure()
   const point = screen.getCursorScreenPoint()
   const displays = screen.getAllDisplays()
   const display = displayForPoint(displays, point) ?? screen.getPrimaryDisplay()
-  const size = launcherSize(mode, display.workArea)
+  const size = launcherSize(display.workArea)
   const { x, y } = placeWindow(display.workArea, size)
   logDiag('reveal', displays, point, { x, y, ...size })
   resize(w, { x, y, ...size })
@@ -165,22 +160,7 @@ function dismiss() {
   hideLauncher({ launcher: win, main: mainWindow(), platform: process.platform })
 }
 
-// The renderer names the JOB and main decides what it is worth in pixels. It
-// grows from where the card already IS: re-centring slides the row under the
-// pointer away mid-click.
-function setMode(next) {
-  mode = next === 'compose' ? 'compose' : 'default'
-  const w = ensure()
-  const at = w.getBounds()
-  const display = screen.getDisplayMatching(at)
-  const size = launcherSize(mode, display.workArea)
-  resize(w, { ...keepOnScreen(at, size, display.workArea), ...size })
-}
-
-// The card is not the reader's to resize, but `resizable: false` is documented
-// to lock the min/max size on Windows — where it would silently refuse this and
-// leave the compose card at the resting size. Lifted for the write only; macOS
-// and Linux do not need it and are unaffected.
+// `resizable: false` locks the size on Windows, so it is lifted for the write only.
 function resize(w, bounds) {
   w.setResizable(true)
   w.setBounds(bounds)
@@ -233,7 +213,6 @@ export function registerQuickLook(openMainWindow) {
   ipcMain.handle('quicklook:toggle', () => toggleQuickLook())
   ipcMain.handle('quicklook:setShortcut', (_e, accel) => registerShortcut(accel))
   ipcMain.handle('quicklook:hide', () => dismiss())
-  ipcMain.handle('quicklook:mode', (_e, next) => setMode(next))
   ipcMain.handle('quicklook:open', (_e, payload) => openInMain(payload))
   // Process-wide OS registrations — release on quit.
   app.on('will-quit', () => globalShortcut.unregisterAll())
@@ -244,6 +223,4 @@ export function registerQuickLook(openMainWindow) {
 export function destroyQuickLook() {
   if (win && !win.isDestroyed()) win.destroy()
   win = null
-  // The draft went with the renderer, so the card it was written in goes too.
-  mode = 'default'
 }
