@@ -80,6 +80,7 @@
 }
 .rail-count {
   position: absolute;
+  font-size: var(--font-2xs);
   top: calc(var(--space-3) * -1);
   right: calc(var(--space-3) * -1);
   border: 1px solid var(--line);

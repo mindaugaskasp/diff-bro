@@ -15,7 +15,7 @@
 .start-head h2 {
   margin: 0 0 var(--space-1);
   font-size: var(--font-2xl);
-  font-weight: 650;
+  font-weight: 600;
   color: var(--text);
 }
 .meta {
@@ -57,7 +57,7 @@
 }
 .card-title {
   font-size: var(--font-lg);
-  font-weight: 650;
+  font-weight: 600;
 }
 .keys {
   display: flex;

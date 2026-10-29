@@ -28,7 +28,7 @@
 .doc-name :deep(.ghost-field input),
 .doc-name :deep(.ghost-layer) {
   font-size: var(--font-xl);
-  font-weight: 650;
+  font-weight: 600;
 }
 .doc-name :deep(.ghost-field input) {
   width: 100%;

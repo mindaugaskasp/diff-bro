@@ -19,7 +19,7 @@ code {
   align-items: center;
   justify-content: center;
   font-size: var(--font-md);
-  font-weight: 700;
+  font-weight: 600;
   background: var(--bg);
   border: 1px solid var(--border);
 }

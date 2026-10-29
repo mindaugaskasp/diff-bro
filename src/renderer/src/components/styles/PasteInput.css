@@ -27,7 +27,7 @@
   color: var(--text-dim);
 }
 .pane-label {
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-hint);

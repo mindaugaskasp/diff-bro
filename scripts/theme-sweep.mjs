@@ -1050,8 +1050,7 @@ const SURFACES = [
     open: (page) => page.locator('.toolbar .group.actions .btn').first().waitFor(),
     close: async () => {},
     probes: {
-      // The word and the plate's keyline together — an action that lost either
-      // reads as disabled, which is the whole reason .btn carries three cues.
+      // A plain .btn is its label, so the label carries the affordance at rest.
       'action, resting': ['.toolbar .group.actions .btn:not(:disabled)', TEXT],
       // The repo already holds this exact pair — --text-on-accent over --accent —
       // to 3.0 (check-theme-depth's `onAccent/accent`), so that contract is what

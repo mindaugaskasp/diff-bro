@@ -45,7 +45,7 @@
 }
 .pv-label {
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-dim);
@@ -61,7 +61,7 @@
 }
 .pv-lang {
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   color: var(--text-dim);

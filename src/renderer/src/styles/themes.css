@@ -302,6 +302,8 @@
 :root[data-theme='beacon'] {
   --line: var(--border);
   --field-edge: var(--border);
+  --btn-rest-edge: var(--btn-edge);
+  --btn-off-edge: var(--border);
   --tag-l: 0.8;
   --bg: #000000;
   --bg-panel: #0b0b0b;
@@ -492,6 +494,8 @@
 :root[data-theme='contrast'] {
   --line: var(--border);
   --field-edge: var(--border);
+  --btn-rest-edge: var(--btn-edge);
+  --btn-off-edge: var(--border);
   --bg-card: var(--bg);
   /* --warning-border scores 2.74:1 on this card, under the 3:1 non-text floor.
      Darkened to clear it without moving the hue. */
