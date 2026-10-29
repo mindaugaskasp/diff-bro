@@ -341,7 +341,6 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
   await save('Both tags', ['alpha', 'beta'])
   await save('Only alpha', ['alpha'])
 
-  const chip = (t) => page.locator('.usb-shelf .usb-tag', { hasText: t })
   await pickTag(page, 'beta')
   await expect(page.locator('li.diff')).toHaveCount(1)
   await expect(page.locator('li.diff', { hasText: 'Both tags' })).toBeVisible()
@@ -349,8 +348,8 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
   // Adding a tag WIDENS: the alpha-only diff joins rather than being hidden for
   // lacking beta.
   await pickTag(page, 'alpha')
-  await expect(chip('alpha')).toHaveClass(/on/)
-  await expect(chip('beta')).toHaveClass(/on/)
+  // The readout, not the chips: a chip may be folded into "+N more".
+  await expect(page.locator('.usb-filtering')).toContainText('2 tags selected')
   await expect(page.locator('li.diff')).toHaveCount(2)
 
   await pickTag(page, 'alpha')

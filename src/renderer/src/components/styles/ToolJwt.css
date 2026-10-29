@@ -34,7 +34,7 @@
 }
 .tj-badge {
   font-size: var(--font-2xs);
-  font-weight: 660;
+  font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 3px var(--space-2);
@@ -48,7 +48,7 @@
   align-items: center;
   gap: var(--space-1);
   font-size: var(--font-2xs);
-  font-weight: 620;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 3px var(--space-2);
@@ -112,7 +112,7 @@
   font-size: var(--font-2xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-weight: 640;
+  font-weight: 600;
   color: var(--text-dim);
 }
 .tj-copy {

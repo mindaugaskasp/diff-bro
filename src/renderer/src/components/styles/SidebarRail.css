@@ -78,10 +78,11 @@
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
+/* Starts at the icon's right edge (centred, 1em of --font-xl), whatever its width. */
 .rail-count {
   position: absolute;
   top: calc(var(--space-3) * -1);
-  right: calc(var(--space-3) * -1);
+  left: calc(50% + var(--font-xl) / 2);
   border: 1px solid var(--line);
   background: var(--bg-card);
   color: var(--text);

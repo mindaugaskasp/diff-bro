@@ -140,7 +140,7 @@
 .grid thead th.col-added,
 .grid thead th.col-removed {
   color: var(--text);
-  font-weight: 700;
+  font-weight: 600;
 }
 .grid thead th.col-added,
 .grid td.col-added {

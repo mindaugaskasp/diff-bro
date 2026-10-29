@@ -30,7 +30,7 @@
 }
 .sheet-tabs .tab .badge {
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   padding: 1px var(--space-2);
   border-radius: var(--radius-pill);
   /* changed-count chip: the warning bg/text pairing is contrast-guaranteed in

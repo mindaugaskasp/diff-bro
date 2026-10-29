@@ -11,7 +11,7 @@
 .group h4 {
   margin: 0 0 var(--space-1);
   font-size: var(--font-xs);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-dim);

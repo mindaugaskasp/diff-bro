@@ -244,29 +244,34 @@ const SURFACE = (buttonSel, groundSel) => `(() => {
   const painted = over(face, gc)
   const bare = [gc.r, gc.g, gc.b]
   const [hi, lo] = [lum(painted), lum(bare)].sort((a, b) => b - a)
+  const fg = parse(bs.color)
+  const shown = over({ ...fg, a: fg.a * Number(bs.opacity) }, { r: painted[0], g: painted[1], b: painted[2] })
+  const [ih, il] = [lum(shown), lum(painted)].sort((a, b) => b - a)
   return {
     alpha: face.a,
     shadow: bs.boxShadow,
     contrast: (hi + 0.05) / (lo + 0.05),
+    ink: (ih + 0.05) / (il + 0.05),
+    color: bs.color,
     background: bs.backgroundColor
   }
 })()`
 
-// A ghost button had no fill, so its contrast against the band was exactly 1.00
-// — the same nothing a disabled control shows.
-test('a resting toolbar button has a surface of its own', async ({ page }) => {
-  const paste = page.getByRole('button', { name: 'Paste mode' })
-  await expect(paste).toBeEnabled()
+// A resting .btn is plain (#144): no plate and no lift until the pointer arrives.
+test('a resting toolbar button is plain, and hover gives it a face', async ({ page }) => {
+  const sel = '.toolbar .btn:not(:disabled):not(.btn-primary):not(.active)'
+  const rest = await page.evaluate(SURFACE(sel, '.toolbar'))
+  expect(rest.alpha, `resting background was ${rest.background}`).toBe(0)
+  expect(rest.shadow, 'a resting button is not lifted').toBe('none')
+  expect(rest.ink, 'the label carries the affordance at rest').toBeGreaterThanOrEqual(4.5)
 
-  const s = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
-  expect(s.alpha, `resting background was ${s.background}`).toBeGreaterThan(0)
-  expect(s.contrast, 'the button must be distinguishable from the band it sits on').toBeGreaterThan(
-    1.2
-  )
+  await page.locator(sel).first().hover()
+  await page.waitForTimeout(250)
+  const hover = await page.evaluate(SURFACE(sel, '.toolbar'))
+  expect(hover.contrast, 'hover must paint a face off the band').toBeGreaterThan(1.15)
 })
 
-// Enabled and disabled used to differ by one alpha step on one axis. Whatever
-// the resting state gains, disabled must not have.
+// Plain at rest leaves ink as the only axis left, so disabled must move it.
 test('a disabled toolbar button differs from a resting one by more than opacity', async ({
   page
 }) => {
@@ -277,9 +282,8 @@ test('a disabled toolbar button differs from a resting one by more than opacity'
   // Not the primary — a disabled Save keeps its accent fill on purpose.
   const off = await page.evaluate(SURFACE('.toolbar .btn:disabled:not(.btn-primary)', '.toolbar'))
 
-  expect(rest.alpha, 'a resting button paints a plate').toBeGreaterThan(0)
-  expect(off.alpha, 'a disabled button paints none').toBe(0)
-  expect(rest.shadow, 'a resting button is lifted').not.toBe('none')
+  expect(off.color, 'a disabled label is a different ink').not.toBe(rest.color)
+  expect(off.ink, 'a disabled label reads weaker').toBeLessThan(rest.ink / 1.5)
   expect(off.shadow, 'a disabled button is flat').toBe('none')
 })
 
