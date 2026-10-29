@@ -260,14 +260,14 @@ const SURFACE = (buttonSel, groundSel) => `(() => {
 // A resting .btn is plain (#144): no plate and no lift until the pointer arrives.
 test('a resting toolbar button is plain, and hover gives it a face', async ({ page }) => {
   const sel = '.toolbar .btn:not(:disabled):not(.btn-primary):not(.active)'
-  const rest = await page.evaluate(SURFACE(sel, '.toolbar'))
+  const rest = await page.evaluate(SURFACE(sel, '.topbar'))
   expect(rest.alpha, `resting background was ${rest.background}`).toBe(0)
   expect(rest.shadow, 'a resting button is not lifted').toBe('none')
   expect(rest.ink, 'the label carries the affordance at rest').toBeGreaterThanOrEqual(4.5)
 
   await page.locator(sel).first().hover()
   await page.waitForTimeout(250)
-  const hover = await page.evaluate(SURFACE(sel, '.toolbar'))
+  const hover = await page.evaluate(SURFACE(sel, '.topbar'))
   expect(hover.contrast, 'hover must paint a face off the band').toBeGreaterThan(1.15)
 })
 
@@ -278,9 +278,9 @@ test('a disabled toolbar button differs from a resting one by more than opacity'
   const capture = page.getByRole('button', { name: 'Capture' })
   await expect(capture).toBeDisabled()
 
-  const rest = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+  const rest = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.topbar'))
   // Not the primary — a disabled Save keeps its accent fill on purpose.
-  const off = await page.evaluate(SURFACE('.toolbar .btn:disabled:not(.btn-primary)', '.toolbar'))
+  const off = await page.evaluate(SURFACE('.toolbar .btn:disabled:not(.btn-primary)', '.topbar'))
 
   expect(off.color, 'a disabled label is a different ink').not.toBe(rest.color)
   expect(off.ink, 'a disabled label reads weaker').toBeLessThan(rest.ink / 1.5)
@@ -291,7 +291,7 @@ test('a disabled toolbar button differs from a resting one by more than opacity'
 // .btn.active rule anywhere — the toggle had no on-state at all.
 test('the paste-mode toggle shows an on-state', async ({ page }) => {
   const toggle = page.getByRole('button', { name: 'Paste mode' })
-  const before = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+  const before = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.topbar'))
 
   await toggle.click()
   await expect(page.getByRole('button', { name: 'File mode' })).toBeVisible()
@@ -300,7 +300,7 @@ test('the paste-mode toggle shows an on-state', async ({ page }) => {
   await page.mouse.move(0, 0)
   await page.waitForTimeout(250)
 
-  const on = await page.evaluate(SURFACE('.toolbar .btn.active', '.toolbar'))
+  const on = await page.evaluate(SURFACE('.toolbar .btn.active', '.topbar'))
   expect(
     on.contrast,
     'the pressed toggle must read differently from a resting button'

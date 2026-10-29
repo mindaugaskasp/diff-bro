@@ -129,6 +129,13 @@ function writeXlsxFixtures() {
 
 // Encrypt every body through the real vault (main process) and write both store
 // files, so a reload brings the app up already full of data.
+// Through the ≡ menu, the only in-window menu since #144.
+async function pickMenuItem(page, top, label) {
+  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
+  await page.locator('.menubar .flyout').getByText(label, { exact: true }).click()
+}
+
 async function seed(page) {
   const now = Date.now()
   await page.evaluate(
@@ -227,8 +234,7 @@ async function loadPair(app, page, leftPath, rightPath) {
 }
 
 async function setTheme(page, label) {
-  await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings…', { exact: true }).click()
+  await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   // By accessible name, not the tooltip attribute: tooltips moved from native
   // `title` to `data-tip` and silently broke this.

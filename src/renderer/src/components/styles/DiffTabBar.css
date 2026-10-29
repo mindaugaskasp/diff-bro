@@ -7,10 +7,12 @@
    They are weak in DIFFERENT themes, so together a tab boundary always reads.
    The two keyline themes get the loudest version of it (beacon 14.91,
    contrast 16.87), which is exactly what they ask for. */
+/* Shares the top bar with the actions (TopBar.css owns the band); gives ground
+   first, down to the + and a sliver of track. */
 .diff-tabs {
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border);
-  flex: none;
+  flex: 0 1 auto;
+  min-width: calc(var(--control-h) * 3);
+  align-self: stretch;
 }
 /* The strip scrolls; the BAR keeps its bottom keyline unbroken, which is what
    beacon and contrast hold as a contract. The app-wide scrollbar is 10px inside

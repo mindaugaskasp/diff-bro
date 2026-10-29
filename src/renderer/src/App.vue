@@ -28,19 +28,16 @@ import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
 import ShortcutBar from './components/ShortcutBar.vue'
 
-import MenuBar from './components/MenuBar.vue'
 import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
-import AppToolbar from './components/AppToolbar.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
-import DiffTabBar from './components/DiffTabBar.vue'
+import TopBar from './components/TopBar.vue'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import AppUpdatedNotice from './components/AppUpdatedNotice.vue'
 import { useSnippetStore } from './stores/snippetStore'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
-import { isMac } from './keys'
 import { useUiStore } from './stores/uiStore'
 import { usePresentationKeys } from './composables/usePresentationKeys'
 import { useWindowFocusRefresh } from './composables/useWindowFocusRefresh'
@@ -103,9 +100,6 @@ useWindowFocusRefresh()
 
 <template>
   <div class="app" :class="{ presenting: ui.presenting }" v-on="dropHandlers">
-    <MenuBar v-if="!isMac" />
-
-    <AppToolbar />
     <!-- Nyan theme only. -->
     <NyanLane v-if="settings.theme === 'nyan'" />
 
@@ -122,7 +116,7 @@ useWindowFocusRefresh()
             </div>
           </div>
         </transition>
-        <DiffTabBar />
+        <TopBar />
         <!-- `capturing` hides the floating chrome that lives INSIDE the region the
            image export photographs. It is a class, not a v-if: removing the
            toast would start its fade-leave transition and the shutter would

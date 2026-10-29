@@ -79,8 +79,7 @@ test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab'
   const { dir, path } = textFile('notes.md', '# heading')
   try {
     await stubOpenDialog(app, path)
-    await page.getByRole('button', { name: 'File', exact: true }).click()
-    await page.getByText('Open File as Snippet…', { exact: true }).click()
+    await openMenu(page, 'File', 'Open File as Snippet…')
     const doc = page.getByRole('region', { name: 'New snippet' })
     await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('notes.md')
     await expect(doc.locator('.view-lines')).toContainText('# heading')

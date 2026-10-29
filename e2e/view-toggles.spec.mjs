@@ -20,15 +20,13 @@ test('ignore-whitespace turns a whitespace-only diff into "No differences"', asy
 })
 
 test('the Paste mode button names its destination so the toggle is explicit', async ({ page }) => {
-  const toggle = page
-    .locator('.toolbar .actions button')
-    .filter({ hasText: /Paste mode|File mode/ })
-  await expect(toggle).toHaveText('Paste mode') // files mode: offers paste
+  const toggle = page.locator('.toolbar [data-action="toggle-paste"]')
+  await expect(toggle).toHaveAttribute('aria-label', 'Paste mode') // files mode: offers paste
   await toggle.click()
   await expect(page.getByPlaceholder('Paste or type the original text')).toBeVisible()
-  await expect(toggle).toHaveText('File mode') // now offers the way back
+  await expect(toggle).toHaveAttribute('aria-label', 'File mode') // now offers the way back
   await toggle.click()
-  await expect(toggle).toHaveText('Paste mode') // back to files mode
+  await expect(toggle).toHaveAttribute('aria-label', 'Paste mode') // back to files mode
   await expect(page.getByPlaceholder('Paste or type the original text')).toBeHidden()
 })
 

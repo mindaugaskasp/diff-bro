@@ -64,7 +64,15 @@ describe('toolbarActions', () => {
 
   // The bar drops to icons before it folds anything, so a row with no glyph
   // would vanish at that rung instead of getting terser.
-  it('gives every row an icon, because the compact rung has nothing else to draw', () => {
+  it('labels Save alone; every other action is its icon (#144)', () => {
+    expect(
+      rows()
+        .filter((r) => r.labelled)
+        .map((r) => r.id)
+    ).toEqual(['save'])
+  })
+
+  it('gives every row an icon, because an unlabelled action has nothing else to draw', () => {
     for (const row of rows()) expect(row.icon, row.id).toBeTruthy()
     for (const row of rows({ isPaste: true, isSavedDiff: false }))
       expect(row.icon, row.id).toBeTruthy()

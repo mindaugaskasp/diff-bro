@@ -135,39 +135,38 @@ test('the View trigger stays pressable while its panel is open', async ({ page }
   await expect(page.getByRole('group', { name: 'View' })).toBeHidden()
 })
 
-// The ladder, all three rungs in one pass. A control loses its WORD before it
-// loses its PLACE — a bar that folded straight from labelled to a menu would
-// hide something the reader could still have reached with a glyph.
-test('the bar sheds words before it sheds controls', async ({ app, page }) => {
+// Two rungs since #144: every action but Save is its glyph at any width, and
+// only a row that cannot hold the glyphs folds — never Save, never its word.
+test('every action but Save is a glyph, and squeezed the bar folds glyphs, not Save', async ({
+  app,
+  page
+}) => {
   await pasteCompare(page, 'a\nb', 'a\nc')
   const actions = page.locator('.group.actions [data-action]')
+  const save = page.locator('.group.actions [data-action="save"]')
   const more = page.getByRole('button', { name: /More actions|Ṁōřé àçţĩōńş/u })
-  const wordy = () => actions.first().evaluate((el) => el.textContent.trim().length > 0)
+  const words = () =>
+    actions.evaluateAll((els) =>
+      els.filter((el) => el.textContent.trim()).map((el) => el.dataset.action)
+    )
 
-  // Rung 1 — room for the words.
   const all = await actions.count()
   expect(all).toBeGreaterThan(3)
-  expect(await wordy()).toBe(true)
+  expect(await words()).toEqual(['save'])
   await expect(more).toBeHidden()
 
-  // Rung 2 — no room for the words, room for every control: the narrowest
-  // window, the longest locale, a modest zoom.
   const win = await app.browserWindow(page)
   const [w, h] = await win.evaluate((b) => b.getMinimumSize())
   await win.evaluate((b, size) => b.setBounds({ width: size[0], height: size[1] }), [w, h])
   await clickAppMenuItem(app, 'Settings…')
   await page.getByRole('combobox', { name: /Language|Łàńğūàğé/u }).selectOption('en-XA')
   await saveSettings(page)
-  await win.evaluate((b) => b.webContents.setZoomLevel(2))
-
-  await expect.poll(wordy).toBe(false)
-  await expect(actions).toHaveCount(all) // nothing folded yet
-  await expect(more).toBeHidden()
-
-  // Rung 3 — not even the glyphs fit.
   await win.evaluate((b) => b.webContents.setZoomLevel(6))
+
   await expect(more).toBeVisible()
   expect(await actions.count()).toBeLessThan(all)
+  await expect(save).toBeVisible()
+  expect(await words()).toEqual(['save'])
 })
 
 // The overflow menu earns its place only if it can actually fire: minimum window,

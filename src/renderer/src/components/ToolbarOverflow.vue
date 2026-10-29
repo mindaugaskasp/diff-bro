@@ -3,12 +3,9 @@
 // drawn from ONE row array (utils/toolbarActions), so a folded action can never
 // say something different from its inline twin.
 //
-// Three rungs, never two: labelled, then icon-only, then folded. A control loses
-// its word before it loses its place, so the row degrades by getting terser
-// rather than by hiding things the moment it is squeezed.
-//
-// The label is on `aria-label` at every rung, so the accessible name is the same
-// whether the word is drawn or not.
+// Every action is its icon (#144); only the primary draws its word. Squeezed,
+// the row folds actions into the menu, least important first. The label is
+// always the accessible name and the tip.
 import { computed, ref, watch } from 'vue'
 import { MOD } from '../keys'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -46,7 +43,7 @@ const signature = computed(
   () => `${settings.activeLocale}|${rows.value.map((r) => `${r.id}:${r.labelKey}`).join('|')}`
 )
 
-const { folded, compact } = useToolbarOverflow(
+const { folded } = useToolbarOverflow(
   { host, group },
   { rows: () => rows.value, order: () => FOLD_ORDER, signature }
 )
@@ -78,7 +75,7 @@ function activate(id) {
       v-for="row in shown"
       :key="row.id"
       class="btn"
-      :class="{ 'btn-primary': row.id === 'save', 'btn-square': compact, active: row.active }"
+      :class="{ 'btn-primary': row.id === 'save', 'btn-square': !row.labelled, active: row.active }"
       :data-action="row.id"
       :data-tour="row.id === 'share-current' ? 'share' : undefined"
       :data-tip="$t(row.tipKey, { mod: MOD })"
@@ -87,7 +84,7 @@ function activate(id) {
       @click="run(row.id)"
     >
       <AppIcon :name="row.icon" />
-      <template v-if="!compact">{{ $t(row.labelKey) }}</template>
+      <template v-if="row.labelled">{{ $t(row.labelKey) }}</template>
     </button>
 
     <span v-if="hidden.length" class="anchor" @keydown="onKeydown">

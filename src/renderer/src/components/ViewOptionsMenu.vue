@@ -65,15 +65,15 @@ defineExpose({ close })
     <button
       ref="trigger"
       class="btn"
-      :class="{ active: open }"
+      :class="{ active: open, 'btn-square': !changedCount }"
       :aria-expanded="open"
       aria-haspopup="true"
+      :aria-label="$t('appToolbar.view')"
       :data-tip="$t('appToolbar.tips.view')"
       @click="toggle"
     >
-      {{ $t('appToolbar.view') }}
+      <AppIcon name="sliders" />
       <span v-if="changedCount" class="btn-count">{{ changedCount }}</span>
-      <AppIcon name="chevron-down" />
     </button>
     <div v-if="open" class="popover" role="group" :aria-label="$t('appToolbar.view')">
       <label

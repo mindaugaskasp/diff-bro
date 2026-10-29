@@ -21,9 +21,10 @@ const props = defineProps({
   // A secret snippet adds a reveal toggle; `masked` is its current state.
   secret: { type: Boolean, default: false },
   masked: { type: Boolean, default: false },
-  snippetId: { type: String, default: null }
+  snippetId: { type: String, default: null },
+  canCompare: { type: Boolean, default: false }
 })
-const emit = defineEmits(['copy', 'capture', 'reveal', 'save', 'history', 'saveAsFile'])
+const emit = defineEmits(['compare', 'copy', 'capture', 'reveal', 'save', 'history', 'saveAsFile'])
 
 const { copied, flash } = useCopyFeedback()
 const copiedText = computed(() => copied.value === 'text')
@@ -76,8 +77,19 @@ defineExpose({ flash: () => flash('text') })
 
 <template>
   <button
+    v-if="canCompare"
+    type="button"
+    class="btn btn-square"
+    :aria-label="$t('snippetDocument.compareWith')"
+    :data-tip="$t('snippetDocument.compareWith')"
+    @click="emit('compare')"
+  >
+    <AppIcon name="compare" />
+  </button>
+  <button
     v-if="secret"
-    class="btn"
+    class="btn btn-square"
+    :aria-label="masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide')"
     :data-tip="
       masked
         ? $t('snippetEditorActions.showTheContents')
@@ -86,18 +98,17 @@ defineExpose({ flash: () => flash('text') })
     @click="emit('reveal')"
   >
     <AppIcon :name="masked ? 'eye' : 'eye-off'" />
-    {{ masked ? $t('snippetEditorActions.show') : $t('snippetEditorActions.hide') }}
   </button>
-  <!-- aria-label is the STABLE name: only the visible word swaps for the flash. -->
+  <!-- aria-label is the STABLE name: only the glyph swaps for the flash. -->
   <button
-    class="btn"
+    class="btn btn-square"
     :class="{ copied: copiedText }"
     :disabled="!hasContent"
-    :data-tip="copyTip"
+    :data-tip="copiedText ? $t('common.copied') : copyTip"
     :aria-label="$t('common.copy')"
     @click="emit('copy')"
   >
-    {{ copiedText ? $t('common.copied') : $t('common.copy') }}
+    <AppIcon :name="copiedText ? 'check' : 'copy'" />
   </button>
   <ActionMenu
     :label="$t('snippetEditorActions.moreActions')"
@@ -107,21 +118,23 @@ defineExpose({ flash: () => flash('text') })
   />
   <button
     v-if="hasHistory"
-    class="btn"
+    class="btn btn-square"
+    :aria-label="$t('snippetEditorActions.history')"
     :data-tip="$t('snippetEditorActions.historyTip')"
     @click="emit('history')"
   >
-    <AppIcon name="clock" /> {{ $t('snippetEditorActions.history') }}
+    <AppIcon name="clock" />
   </button>
   <!-- Never for a secret: the store refuses it too. -->
   <button
     v-if="!secret && isMermaid"
-    class="btn"
+    class="btn btn-square"
     :disabled="editMode"
+    :aria-label="$t('snippetEditorActions.capture')"
     :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
     @click="emit('capture')"
   >
-    <AppIcon name="image" /> {{ $t('snippetEditorActions.capture') }}
+    <AppIcon name="image" />
   </button>
   <button
     class="btn btn-primary"

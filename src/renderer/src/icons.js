@@ -348,6 +348,14 @@ export const ICONS = {
     { t: 'path', d: 'M4 9h16M16 5l4 4-4 4' },
     { t: 'path', d: 'M20 15H4M8 11l-4 4 4 4' }
   ],
+  menu: [{ t: 'path', d: 'M4 7h16M4 12h16M4 17h16' }],
+  sliders: [
+    { t: 'path', d: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1' },
+    { t: 'circle', cx: 15, cy: 6, r: 2 },
+    { t: 'circle', cx: 9, cy: 12, r: 2 },
+    { t: 'circle', cx: 17, cy: 18, r: 2 }
+  ],
+  compare: [{ t: 'path', d: 'M7 4v6M4 7h6M4 17h6M15 4h5v16h-5' }],
   // A framed picture — exporting a saved diff as a shareable image.
   image: [
     { t: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },

@@ -122,14 +122,6 @@ const compareWith = () =>
       @edit-name="inline.editName"
     />
     <Teleport v-if="inFront" to="#toolbar-doc-actions" defer>
-      <button
-        v-if="(editing.id || editing.openedPath) && !draft.secret.value"
-        type="button"
-        class="btn"
-        @click="compareWith"
-      >
-        <span>{{ $t('snippetDocument.compareWith') }}</span>
-      </button>
       <SnippetEditorActions
         ref="actions"
         :edit-mode="editMode"
@@ -141,6 +133,8 @@ const compareWith = () =>
         :secret="draft.secret.value"
         :masked="masked"
         :snippet-id="editing.id"
+        :can-compare="!!(editing.id || editing.openedPath) && !draft.secret.value"
+        @compare="compareWith"
         @copy="copyAndFlash"
         @capture="draft.captureImage"
         @reveal="revealAndLayout"

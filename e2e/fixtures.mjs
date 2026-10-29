@@ -140,8 +140,7 @@ export async function openSettings(page) {
   if (usesNativeMenu()) {
     await clickAppMenuItem(page.electronApp, 'Settings')
   } else {
-    await page.getByRole('button', { name: 'File', exact: true }).click()
-    await page.getByText('Settings…', { exact: true }).click()
+    await openMenu(page, 'File', 'Settings…')
   }
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
 }
@@ -204,14 +203,16 @@ export async function openMenu(page, top, sub, leaf) {
   // The native bar is addressed by leaf label, so the path through it needs no
   // knowledge of which top menu or submenu the item lives under.
   if (usesNativeMenu()) return clickAppMenuItem(page.electronApp, leaf ?? sub)
-  await page.locator('.menubar').getByRole('button', { name: top, exact: true }).click()
+  // Flyouts open on hover; clicking a toggle would fire mouseenter (opens) then
+  // the click handler (toggles shut), so every level but the last is hovered.
+  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
+  const menu = page.locator('.menubar > .dropdown > .submenu > .flyout')
   if (leaf) {
-    // The submenu opens its flyout on hover; clicking the toggle would fire
-    // mouseenter (opens) then the click handler (toggles shut), so hover only.
-    await page.locator('.submenu', { hasText: sub }).hover()
-    await page.locator('.flyout .item', { hasText: leaf }).click()
+    await menu.locator(':scope > .submenu > .item', { hasText: sub }).hover()
+    await menu.locator('.flyout .item', { hasText: leaf }).click()
   } else {
-    await page.locator('.dropdown .item', { hasText: sub }).click()
+    await menu.locator(':scope > .item', { hasText: sub }).click()
   }
 }
 

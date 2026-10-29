@@ -11,7 +11,7 @@ async function loadDiff(page) {
 }
 
 const chrome = (page) => ({
-  toolbar: page.locator('.app > .toolbar'),
+  toolbar: page.locator('.topbar'),
   sidebar: page.locator('.saved'),
   tabs: page.locator('.diff-tabs')
 })
@@ -76,7 +76,7 @@ test('presenting shows only the comparison, with an Exit button that leaves', as
   const exit = exitButton(page)
   await expect(exit).toBeVisible()
   await exit.click()
-  await expect(page.locator('.app > .toolbar')).toBeVisible()
+  await expect(page.locator('.topbar')).toBeVisible()
   await expect(exit).toHaveCount(0)
 })
 
@@ -90,7 +90,7 @@ test('a snippet tab can be presented: its content only', async ({ page }) => {
   await expect(present).toBeEnabled()
   await present.click()
 
-  await expect(page.locator('.app > .toolbar')).toBeHidden()
+  await expect(page.locator('.topbar')).toBeHidden()
   await expect(page.locator('.diff-tabs')).toBeHidden()
   await expect(doc.locator('.doc-head')).toBeHidden()
   await expect(doc.locator('.editor-header')).toBeHidden()

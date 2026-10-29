@@ -25,8 +25,9 @@ import { STREAMED_LIMITS } from './streamedLimits'
  * @property {string}  id       also the commands.js id it runs
  * @property {string}  labelKey
  * @property {string}  tipKey
- * @property {string}  icon     icons.js name — every row has one, because the
- *   bar drops to icons before it folds anything away
+ * @property {string}  icon     icons.js name — every row has one; it is all
+ *   an unlabelled action draws
+ * @property {boolean} [labelled] draws its word beside the icon (the primary only)
  * @property {boolean} disabled
  * @property {boolean} [active] the control is IN the state it switches to, so
  *   the bar can show an on-state rather than an unlabelled press
@@ -89,6 +90,7 @@ export function toolbarActions(s) {
       tipKey: saveTipKey(s),
       icon: 'save',
       disabled: !s.hasUnsavedWork,
+      labelled: true,
       pinned: true
     },
     {

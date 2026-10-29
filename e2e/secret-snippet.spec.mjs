@@ -42,7 +42,7 @@ test('a saved secret is masked on screen but copies in full', async ({ app, page
   await copy.click()
   // The NAME is stable across the flash — only the visible word swaps — so the
   // acknowledgement is read off the text, not off a second accessible name.
-  await expect(copy).toHaveText(/Copied/)
+  await expect(copy).toHaveClass(/copied/)
   expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(SECRET)
 })
 
