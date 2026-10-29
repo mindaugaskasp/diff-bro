@@ -2,19 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 const snippetAdd = vi.fn()
+const snippetRemove = vi.fn()
 const vaultSave = vi.fn()
-const tabsOpen = vi.fn()
+const vaultRemove = vi.fn()
+const tabsOpen = vi.fn(() => 't-cmp')
+const tabsOpenSnippet = vi.fn(() => 't-snip')
 vi.mock('../../../../src/renderer/src/stores/snippetStore', () => ({
-  useSnippetStore: () => ({ add: snippetAdd })
+  useSnippetStore: () => ({ add: snippetAdd, remove: snippetRemove })
 }))
 vi.mock('../../../../src/renderer/src/stores/vaultStore', () => ({
-  useVaultStore: () => ({ save: vaultSave })
+  useVaultStore: () => ({ save: vaultSave, remove: vaultRemove })
 }))
 vi.mock('../../../../src/renderer/src/stores/tabsStore', () => ({
-  useTabsStore: () => ({ open: tabsOpen })
+  useTabsStore: () => ({ open: tabsOpen, openSnippet: tabsOpenSnippet })
 }))
 
-const { CLAUDE_SCOPES, useClaudeStore } =
+const { CLAUDE_SCOPES, UNDO_MS, useClaudeStore } =
   await import('../../../../src/renderer/src/features/claude/claudeStore')
 
 const off = Object.fromEntries(CLAUDE_SCOPES.map((s) => [s, false]))
@@ -115,6 +118,7 @@ describe('claude inbox', () => {
   })
 
   it('accepts a snippet through the snippet store, then clears it', async () => {
+    vi.useFakeTimers()
     snippetAdd.mockResolvedValue('new-id')
     const s = useClaudeStore()
     await s.loadInbox()
@@ -125,8 +129,10 @@ describe('claude inbox', () => {
       language: 'sql',
       tags: ['db']
     })
+    await vi.advanceTimersByTimeAsync(UNDO_MS)
     expect(window.api.inboxDiscard).toHaveBeenCalledWith('p1')
     expect(s.inbox.map((p) => p.id)).toEqual(['p2'])
+    vi.useRealTimers()
   })
 
   it('accepts a comparison as a kept saved diff', async () => {
@@ -143,13 +149,34 @@ describe('claude inbox', () => {
     expect(window.api.inboxDiscard).not.toHaveBeenCalled()
   })
 
-  it('previews in a tab without saving anything', async () => {
-    await useClaudeStore().preview('p2')
+  it('opens a comparison for review in a tab, without saving anything', async () => {
+    const s = useClaudeStore()
+    await s.open('p2')
     expect(tabsOpen).toHaveBeenCalledWith(
       expect.objectContaining({ pasteLeft: 'a', pasteRight: 'b' }),
       { name: 'Before/after' }
     )
     expect(vaultSave).not.toHaveBeenCalled()
+    expect(s.reviewing).toEqual({ 't-cmp': 'p2' })
+  })
+
+  // A snippet is reviewed as a snippet: an unsaved document, every field editable.
+  it('opens a snippet for review as an unsaved snippet document', async () => {
+    const s = useClaudeStore()
+    await s.open('p1')
+    expect(tabsOpenSnippet).toHaveBeenCalledWith(
+      {
+        id: null,
+        initialName: 'Fix',
+        initialContent: 'select 1',
+        initialLanguage: 'sql',
+        initialTags: ['db']
+      },
+      'Fix'
+    )
+    expect(s.reviewing).toEqual({ 't-snip': 'p1' })
+    s.stopReviewing('t-snip')
+    expect(s.reviewing).toEqual({})
   })
 
   it('refreshes instead of acting on a proposal that is already gone', async () => {
@@ -199,5 +226,92 @@ describe('connecting a Claude app', () => {
     const claude = useClaudeStore()
     await claude.connectApp('code')
     expect(claude.connectResult).toBeNull()
+  })
+})
+
+// #121: proposals live atop Snippets and Diffs, act in bulk, and every act undoes.
+describe('reviewing proposals', () => {
+  const loaded = async () => {
+    const s = useClaudeStore()
+    await s.loadInbox()
+    return s
+  }
+
+  it('splits what is waiting into snippets and comparisons', async () => {
+    const s = await loaded()
+    expect(s.snippetProposals.map((p) => p.id)).toEqual(['p1'])
+    expect(s.diffProposals.map((p) => p.id)).toEqual(['p2'])
+  })
+
+  it('hides an accepted proposal at once and clears it only after the undo window', async () => {
+    vi.useFakeTimers()
+    snippetAdd.mockResolvedValue('new-id')
+    const s = await loaded()
+    await s.accept('p1')
+    expect(s.snippetProposals).toEqual([])
+    expect(window.api.inboxDiscard).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(UNDO_MS)
+    expect(window.api.inboxDiscard).toHaveBeenCalledWith('p1')
+    vi.useRealTimers()
+  })
+
+  it('undoing an accept removes what it saved and brings the proposal back', async () => {
+    vi.useFakeTimers()
+    snippetAdd.mockResolvedValue('new-id')
+    const s = await loaded()
+    await s.accept('p1')
+    await s.undo()
+    expect(snippetRemove).toHaveBeenCalledWith('new-id')
+    expect(s.snippetProposals.map((p) => p.id)).toEqual(['p1'])
+    await vi.advanceTimersByTimeAsync(UNDO_MS)
+    expect(window.api.inboxDiscard).not.toHaveBeenCalled()
+    expect(s.undoable).toBeNull()
+    vi.useRealTimers()
+  })
+
+  it('undoes a discard', async () => {
+    vi.useFakeTimers()
+    const s = await loaded()
+    await s.discard('p2')
+    expect(s.diffProposals).toEqual([])
+    await s.undo()
+    expect(s.diffProposals.map((p) => p.id)).toEqual(['p2'])
+    await vi.advanceTimersByTimeAsync(UNDO_MS)
+    expect(window.api.inboxDiscard).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('accepts the selected proposals together, and one undo takes them all back', async () => {
+    snippetAdd.mockResolvedValue('s1')
+    vaultSave.mockResolvedValue('d1')
+    const s = await loaded()
+    s.toggleSelected('p1')
+    s.toggleSelected('p2')
+    await s.acceptSelected()
+    expect(s.selected).toEqual([])
+    expect(s.snippetProposals).toEqual([])
+    expect(s.diffProposals).toEqual([])
+    await s.undo()
+    expect(snippetRemove).toHaveBeenCalledWith('s1')
+    expect(vaultRemove).toHaveBeenCalledWith('d1')
+    expect(s.snippetProposals.map((p) => p.id)).toEqual(['p1'])
+  })
+
+  it('discards the selected proposals together', async () => {
+    const s = await loaded()
+    s.toggleSelected('p1')
+    s.toggleSelected('p2')
+    await s.discardSelected()
+    expect(s.snippetProposals).toEqual([])
+    expect(s.diffProposals).toEqual([])
+    expect(snippetAdd).not.toHaveBeenCalled()
+  })
+
+  it('settles a proposal accepted from its own tab with what that tab saved', async () => {
+    const s = await loaded()
+    s.settleAccepted('p1', 'edited-id')
+    expect(s.snippetProposals).toEqual([])
+    await s.undo()
+    expect(snippetRemove).toHaveBeenCalledWith('edited-id')
   })
 })

@@ -1367,3 +1367,26 @@ button.tag-chip:hover .usb-tct {
   margin: var(--space-1) 0;
   background: var(--border);
 }
+
+/* A transient notice over the comparison column (App.vue, ProposalUndoNotice). */
+.notice {
+  position: absolute;
+  /* Top of the diff area, clear of the file-slots band, centred over the
+     content (its parent is .content, so it never straddles the sidebar). */
+  top: calc(var(--band-row) + var(--space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  padding: 10px 16px;
+  max-width: 70%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-3);
+}

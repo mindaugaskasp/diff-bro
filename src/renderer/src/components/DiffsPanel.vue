@@ -6,6 +6,7 @@ import DiffsWhoseSwitch from './DiffsWhoseSwitch.vue'
 import { useDiffRows, OWN_GROUPS, RECEIVED_GROUPS } from '../composables/useDiffRows'
 import SavedDiffsSection from './SavedDiffsSection.vue'
 import ExternalDiffsSection from './ExternalDiffsSection.vue'
+import { ProposalsGroup } from '../features/claude'
 
 const props = defineProps({
   search: { type: String, default: '' },
@@ -43,6 +44,7 @@ const received = useDiffRows(() => props, RECEIVED_GROUPS).rows
       <template #title>
         <DiffsWhoseSwitch v-model:whose="whose" :mine="mine.length" :received="received.length" />
       </template>
+      <template #lead><ProposalsGroup kind="comparison" /></template>
     </SavedDiffsSection>
     <ExternalDiffsSection
       v-else

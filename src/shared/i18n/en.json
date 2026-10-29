@@ -921,7 +921,8 @@
     "hide": "Hide the sidebar",
     "hideTip": "Hide the sidebar ({mod}+B)",
     "show": "Show the sidebar",
-    "showTip": "Show the sidebar ({mod}+B)"
+    "showTip": "Show the sidebar ({mod}+B)",
+    "waiting": "{place}, {n} from Claude"
   },
   "sidebarSearch": {
     "clearSearch": "Clear search",
@@ -1808,15 +1809,28 @@
       "empty": "Claude hasn’t asked for anything yet.",
       "clear": "Delete activity"
     },
-    "inbox": {
-      "heading": "From Claude · {n} to review",
-      "kind": {
-        "snippet": "Snippet",
-        "comparison": "Comparison"
-      },
-      "preview": "Preview",
-      "accept": "Accept",
-      "discard": "Discard"
+    "proposals": {
+      "label": "From Claude",
+      "title": "From Claude · {n}",
+      "select": "Select",
+      "done": "Done",
+      "selected": "{n} selected",
+      "acceptN": "Accept {n}",
+      "discardN": "Discard {n}"
+    },
+    "bar": {
+      "title": "Proposed by Claude",
+      "note": "· {note}",
+      "discard": "Discard",
+      "acceptSnippet": "Accept · add to Snippets",
+      "acceptDiff": "Accept · save diff"
+    },
+    "undo": {
+      "acceptedOne": "Added {name}",
+      "acceptedMany": "Accepted {n} proposals",
+      "discardedOne": "Discarded {name}",
+      "discardedMany": "Discarded {n} proposals",
+      "undo": "Undo"
     }
   },
   "presentation": {

@@ -1,0 +1,25 @@
+/* A received-hue band over the tab under review; its keyline is the proposal
+   row's, so the row and the tab it opened read as one thing. */
+.proposal-bar {
+  flex: none;
+  gap: var(--space-3);
+  min-height: var(--band-row);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--hue-received) 70%, var(--text));
+  background: color-mix(in srgb, var(--hue-received) 10%, var(--bg));
+  color: var(--text);
+}
+.pb-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-title {
+  font-weight: 600;
+}
+.pb-note {
+  margin-left: var(--space-1);
+  color: var(--text-meta);
+}
