@@ -33,7 +33,7 @@ beforeAll(() => {
 const styled = (el, { columnGap = 0, controlH = null }) => {
   STYLES.set(el, {
     columnGap: `${columnGap}px`,
-    getPropertyValue: (p) => (p === '--control-h' && controlH !== null ? `${controlH}px` : '')
+    getPropertyValue: (p) => (p === '--control-h-sm' && controlH !== null ? `${controlH}px` : '')
   })
   return el
 }
@@ -46,7 +46,7 @@ const sized = (width) => {
 
 const GAP = 6
 const CONTROL_H = 30
-export const COMPACT_UNIT = CONTROL_H + GAP // 36 — what any control costs as an icon
+const ICON_UNIT = CONTROL_H + GAP // 36 — what any unlabelled action costs
 
 function bar({ available, other = 0, actions }) {
   const group = styled(sized(0), { columnGap: GAP, controlH: CONTROL_H })
@@ -84,25 +84,24 @@ const applyFold = (refs, folded) => {
 
 const ROWS = [
   { id: 'toggle-paste', pinned: false },
-  { id: 'save', pinned: true },
+  { id: 'save', pinned: true, labelled: true },
   { id: 'share-current', pinned: true },
   { id: 'copy-diff', pinned: false },
   { id: 'export-image', pinned: false },
   { id: 'clear', pinned: false }
 ]
 const ORDER = ['clear', 'export-image', 'copy-diff', 'toggle-paste']
-// Measured labelled widths. Each is charged the group's 6px gap as well, so the
-// labelled row costs 340 and the same six controls cost 216 as icons.
+// Drawn widths. Only Save's is read (60 + the 6px gap); every other action costs
+// one icon unit whatever it measures, so the row costs 66 + 5 × 36 = 246.
 const WIDTHS = {
-  'toggle-paste': 90,
+  'toggle-paste': 30,
   save: 60,
-  'share-current': 64,
+  'share-current': 30,
   'copy-diff': 30,
   'export-image': 30,
   clear: 30
 }
-const LABELLED_TOTAL = 340
-const COMPACT_TOTAL = 6 * COMPACT_UNIT // 216
+const ROW_TOTAL = 66 + 5 * ICON_UNIT
 
 let unmount = () => {}
 afterEach(() => {
@@ -124,154 +123,77 @@ const start = (refs, sig = ref('a')) => {
 }
 
 describe('useToolbarOverflow', () => {
-  it('leaves the row labelled when it already fits', async () => {
-    const refs = bar({ available: LABELLED_TOTAL + 20, actions: WIDTHS })
-    const api = start(refs)
+  it('folds nothing while the icons and the labelled primary fit', async () => {
+    const api = start(bar({ available: ROW_TOTAL, actions: WIDTHS }))
     await nextTick()
-    expect(api.compact.value).toBe(false)
     expect(api.folded.value).toEqual([])
   })
 
-  // The rung that keeps every control one press away: too narrow to spell them
-  // out, wide enough to keep them all.
-  it('drops to icons before it folds anything away', async () => {
-    const refs = bar({ available: LABELLED_TOTAL - 40, actions: WIDTHS })
-    const api = start(refs)
+  it('charges an icon one unit whatever it measures, and the primary its width', async () => {
+    // Labelled widths would cost 216; icons and Save cost 246, so 230 folds.
+    const api = start(bar({ available: 230, actions: { ...WIDTHS, 'toggle-paste': 90 } }))
     await nextTick()
-    expect(api.compact.value).toBe(true)
-    expect(api.folded.value).toEqual([])
-  })
-
-  it('folds from the end of the order only once icons do not fit either', async () => {
-    // 216 of icons into 150. Three folds leave 108, and the trigger costs 36
-    // once anything has folded: 144 fits, 180 (two folds) does not.
-    const refs = bar({ available: 150, actions: WIDTHS })
-    const api = start(refs)
-    await nextTick()
-    expect(api.compact.value).toBe(true)
-    expect(api.folded.value).toEqual(['clear', 'export-image', 'copy-diff'])
+    // One fold leaves 210, plus the 36 trigger = 246 > 230; two leave 174 + 36.
+    expect(api.folded.value).toEqual(['clear', 'export-image'])
   })
 
   it('charges the row for what is NOT an action', async () => {
-    // Wide enough for the labels on its own; not once the View button and the
-    // divider are paid for.
-    const roomy = bar({ available: LABELLED_TOTAL + 20, actions: WIDTHS })
-    const roomyApi = start(roomy)
+    const roomy = start(bar({ available: ROW_TOTAL + 100, other: 100, actions: WIDTHS }))
     await nextTick()
-    expect(roomyApi.compact.value).toBe(false)
+    expect(roomy.folded.value).toEqual([])
     unmount()
-
-    const refs = bar({ available: LABELLED_TOTAL + 20, other: 120, actions: WIDTHS })
-    const api = start(refs)
+    const api = start(bar({ available: ROW_TOTAL + 99, other: 100, actions: WIDTHS }))
     await nextTick()
-    expect(api.compact.value).toBe(true)
-    expect(api.folded.value).toEqual([])
+    expect(api.folded.value).toEqual(['clear', 'export-image'])
   })
 
   it('never folds a pinned action, whatever the width', async () => {
-    const refs = bar({ available: 40, actions: WIDTHS })
-    const api = start(refs)
+    const api = start(bar({ available: 10, actions: WIDTHS }))
     await nextTick()
-    expect(api.folded.value).not.toContain('save')
-    expect(api.folded.value).not.toContain('share-current')
+    expect(api.folded.value).toEqual(ORDER)
   })
 
-  // The cascade this composable exists to prevent: a folded control is removed
-  // from the DOM and measures nothing, so a second pass that re-read the DOM
-  // would see it as free, believe there is room, and keep folding — or lose the
-  // width and never unfold. The cache is the fix.
   it('does not cascade when it measures again after folding', async () => {
-    const refs = bar({ available: 150, actions: WIDTHS })
+    const refs = bar({ available: 230, actions: WIDTHS })
     const api = start(refs)
     await nextTick()
     const first = [...api.folded.value]
     applyFold(refs, first)
-
-    api.measure()
-    expect(api.folded.value).toEqual(first)
     api.measure()
     expect(api.folded.value).toEqual(first)
   })
 
-  // The other half of the same invariant: a compact control MEASURES --control-h,
-  // so a pass that re-read the DOM while compact would overwrite the labelled
-  // widths and the row could never earn its words back.
-  it('keeps the labelled widths while compact, so the row can grow back', async () => {
-    let available = COMPACT_TOTAL + 10
-    const group = styled(sized(0), { columnGap: GAP, controlH: CONTROL_H })
-    for (const [id, width] of Object.entries(WIDTHS)) {
-      const child = sized(width)
-      child.dataset.action = id
-      // Compact is what the DOM reports once the labels are gone.
-      Object.defineProperty(child, 'compactNow', { writable: true, value: false })
-      child.getBoundingClientRect = () => ({ width: child.compactNow ? CONTROL_H : width })
-      group.append(child)
-    }
-    const host = styled(sized(0), { columnGap: 0 })
-    Object.defineProperty(host, 'clientWidth', { get: () => available })
-    host.append(group)
-    document.body.append(host)
+  // The tabs scroll, so they give ground before an action folds into the menu.
+  it('counts what the tab strip beside it can still give back', async () => {
+    const refs = bar({ available: 200, actions: WIDTHS })
+    const topbar = document.createElement('div')
+    topbar.className = 'topbar'
+    const tabs = sized(300)
+    tabs.className = 'diff-tabs'
+    STYLES.set(tabs, { minWidth: '90px', columnGap: '0px', getPropertyValue: () => '' })
+    topbar.append(tabs, refs.host.value)
+    document.body.append(topbar)
 
-    const refs = { host: ref(host), group: ref(group) }
     const api = start(refs)
     await nextTick()
-    expect(api.compact.value).toBe(true)
-    for (const c of group.children) c.compactNow = true
-
-    api.measure() // a resize while compact must not relearn the widths
-    // Between the two totals: only a composable that still knows the row costs
-    // 340 with its labels on stays compact here. One that has relearned 216 off
-    // the icons believes it fits and spells out labels that do not.
-    available = (COMPACT_TOTAL + LABELLED_TOTAL) / 2
-    api.measure()
-    expect(api.compact.value).toBe(true)
-
-    available = LABELLED_TOTAL + 20
-    api.measure()
-    expect(api.compact.value).toBe(false) // and it can still grow back
+    // 246 into 200 folds on its own; the strip's 210 above its floor covers it.
+    expect(api.folded.value).toEqual([])
   })
 
-  // A language switch changes what every control MEASURES without changing the
-  // size of the row it sits in, so no resize fires and only the signature watch
-  // can notice. The first version of this test asserted the same fold answer
-  // before and after, which a watcher that never runs also satisfies — it passed
-  // with `watch(signature, remeasure)` deleted. It now widens the controls the
-  // way a longer locale does, so the answer MUST move.
-  it('re-measures on a signature change, at an unchanged row width', async () => {
+  it('re-measures the primary on a signature change, at an unchanged row width', async () => {
     const sig = ref('en')
-    const grow = new Map()
-    const group = styled(sized(0), { columnGap: GAP, controlH: CONTROL_H })
-    for (const [id, width] of Object.entries(WIDTHS)) {
-      const child = sized(width)
-      child.dataset.action = id
-      child.getBoundingClientRect = () => ({ width: grow.get(id) ?? width })
-      group.append(child)
-    }
-    let available = 250
-    const host = styled(sized(0), { columnGap: 0 })
-    Object.defineProperty(host, 'clientWidth', { get: () => available })
-    host.append(group)
-    document.body.append(host)
-
-    const api = start({ host: ref(host), group: ref(group) }, sig)
+    const refs = bar({ available: ROW_TOTAL, actions: WIDTHS })
+    const api = start(refs, sig)
     await nextTick()
-    // 340 of labels into 250: compact, but every control still fits as an icon.
-    expect(api.compact.value).toBe(true)
     expect(api.folded.value).toEqual([])
 
-    // en-XA is ~40% longer. The ROW does not change size — only its contents do.
-    for (const [id, w] of Object.entries(WIDTHS)) grow.set(id, Math.round(w * 1.4))
+    // en-XA's "Save" is longer; the ROW does not change size, only its word.
+    const save = refs.group.value.querySelector('[data-action="save"]')
+    save.getBoundingClientRect = () => ({ width: 90 })
     sig.value = 'en-XA'
     await nextTick()
     await nextTick()
-
-    // Compact already fitted, so the fold answer cannot move — what must move is
-    // the LABELLED total the composable now knows, which is what lets the row
-    // grow back correctly later. Prove it by giving it the room for English.
-    available = LABELLED_TOTAL + 20
-    api.measure()
-    // Still compact: it re-measured, and the longer labels do NOT fit that width.
-    expect(api.compact.value).toBe(true)
+    expect(api.folded.value).toEqual(['clear', 'export-image'])
   })
 
   // jsdom has no ResizeObserver at all, so `delete globalThis.ResizeObserver`
@@ -314,7 +236,7 @@ describe('useToolbarOverflow', () => {
 
   it('still fits the row where there is no ResizeObserver at all', async () => {
     expect(globalThis.ResizeObserver).toBeUndefined() // jsdom ships none
-    const refs = bar({ available: 150, actions: WIDTHS })
+    const refs = bar({ available: 180, actions: WIDTHS })
     const api = start(refs)
     await nextTick()
     expect(api.folded.value).toEqual(['clear', 'export-image', 'copy-diff'])

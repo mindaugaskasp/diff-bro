@@ -52,6 +52,13 @@ const SEPARATOR = 1.11
 // The resting-to-hovered face step; the bar is .btn's own shipped hover (1.16 on sepia).
 const HOVER_STEP = 1.15
 
+// Through the ≡ menu, the only in-window menu since #144.
+async function pickMenuItem(page, top, label) {
+  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
+  await page.locator('.menubar .flyout').getByText(label, { exact: true }).click()
+}
+
 async function setOnboarding(page, state) {
   await page.evaluate((s) => globalThis.api.storeSave('onboarding', JSON.stringify(s)), state)
   await page.reload()
@@ -143,8 +150,7 @@ async function closeSnippetTab(page) {
 }
 
 async function setTheme(page, label) {
-  await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings…', { exact: true }).click()
+  await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings', exact: true })
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
   const save = dlg.locator(':scope > .dialog-actions .btn-primary')
@@ -373,8 +379,7 @@ async function openConflictList(page, userDataDir) {
 }
 
 async function openClaudePane(page) {
-  await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings…', { exact: true }).click()
+  await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   await dlg.getByRole('button', { name: 'Claude', exact: true }).click()
   return dlg
@@ -499,8 +504,7 @@ const SURFACES = [
   {
     name: 'editor-text',
     open: async (page) => {
-      await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings…', { exact: true }).click()
+      await pickMenuItem(page, 'File', 'Settings…')
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: 'Appearance', exact: true }).click()
       await dlg.locator('.font-preview').scrollIntoViewIfNeeded()
@@ -762,8 +766,7 @@ const SURFACES = [
     // Summoned rather than waited for: the tour has usually been seen and
     // recorded by the time the sweep runs.
     open: async (page) => {
-      await page.getByRole('button', { name: 'Help', exact: true }).click()
-      await page.getByText('Show Tour', { exact: true }).click()
+      await pickMenuItem(page, 'Help', 'Show Tour')
       await page.locator('.tour-callout').waitFor()
     },
     close: (page) => page.keyboard.press('Escape'),
@@ -1151,8 +1154,7 @@ const SURFACES = [
   {
     name: 'settings-email',
     open: async (page) => {
-      await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings…', { exact: true }).click()
+      await pickMenuItem(page, 'File', 'Settings…')
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: 'Email', exact: true }).click()
       await dlg.locator('.email-settings').waitFor()
@@ -1173,8 +1175,7 @@ const SURFACES = [
     // weakest of the fourteen at 3.52, which is why selection also thickens
     // the label rather than trusting colour alone.
     open: async (page) => {
-      await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings…', { exact: true }).click()
+      await pickMenuItem(page, 'File', 'Settings…')
       await page.getByRole('dialog', { name: 'Settings' }).waitFor()
       await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
       await page.locator('.theme-tile.active').waitFor()
@@ -1295,10 +1296,11 @@ const SURFACES = [
     // the input box. It is a read sentence, so it takes the reading floor —
     // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
     open: async (page) => {
-      await page.locator('.menubar button.top', { hasText: /^Tools$/ }).click()
-      await page.locator('.dropdown .submenu', { hasText: 'Format' }).hover()
+      await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+      await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: 'Tools' }).hover()
+      await page.locator('.menubar .flyout > .submenu', { hasText: 'Format' }).hover()
       // Scoped to the flyout: the loaded diff can also say "JSON".
-      await page.locator('.flyout').getByText('JSON', { exact: true }).click()
+      await page.locator('.flyout .flyout').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
       await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },

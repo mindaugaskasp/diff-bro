@@ -241,6 +241,19 @@ describe('untilChanged', () => {
 })
 
 describe('planSlices', () => {
+  // Main refuses a side under 32px (MIN_CAPTURE_SIDE), and one refused strip
+  // fails the whole picture: a 10px remainder made a tall diagram unexportable.
+  it('never leaves a last slice too short for main to photograph', () => {
+    const { slices } = planSlices({ contentHeight: 1010, viewportHeight: 500 })
+    expect(slices.at(-1).height).toBeGreaterThanOrEqual(32)
+    expect(slices.reduce((sum, s) => sum + s.height, 0)).toBe(1010)
+    let at = 0
+    for (const s of slices) {
+      expect(s.scrollTop + s.offsetY).toBe(at)
+      at += s.height
+    }
+  })
+
   it('is a single slice when the diff already fits the pane', () => {
     const plan = planSlices({ contentHeight: 300, viewportHeight: 640 })
     expect(plan).toEqual({ slices: [{ scrollTop: 0, offsetY: 0, height: 300 }], truncated: false })

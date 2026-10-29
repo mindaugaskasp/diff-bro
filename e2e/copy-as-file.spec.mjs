@@ -234,13 +234,15 @@ test('staged plaintext does not survive a relaunch that skipped the quit sweep',
   }
 })
 
-test('Copy as file acknowledges with a notice, and Copy keeps its own label', async ({ page }) => {
+test('Copy as file acknowledges with a notice, and Copy keeps its own confirm', async ({
+  page
+}) => {
   test.skip(!(await supported(page)), 'this platform cannot carry a file on the clipboard')
 
   await addSnippet(page, { name: 'E2E flash target', body: 'alpha' })
   await (await copyAsFileItem(page)).click()
   await expect(page.locator('.notice')).toContainText(/Copied/)
-  await expect(docActions(page).getByRole('button', { name: 'Copy', exact: true })).toHaveText(
-    'Copy'
+  await expect(docActions(page).getByRole('button', { name: 'Copy', exact: true })).not.toHaveClass(
+    /copied/
   )
 })

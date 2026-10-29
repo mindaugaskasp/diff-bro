@@ -54,7 +54,7 @@ test('the repair is what gets saved', async ({ app, page }) => {
   await copy.click()
   // The NAME is stable across the flash — only the visible word swaps — so the
   // acknowledgement is read off the text, not off a second accessible name.
-  await expect(copy).toHaveText(/Copied/)
+  await expect(copy).toHaveClass(/copied/)
 
   const saved = await app.evaluate(({ clipboard }) => clipboard.readText())
   expect(saved).toContain('A[Start] --> B[End]')

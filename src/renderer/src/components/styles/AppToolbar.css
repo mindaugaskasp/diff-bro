@@ -1,14 +1,11 @@
-/* Top bar (AppToolbar.vue). */
-/* A band (.band gives display/align — see ui.css); this adds only its skin. */
+/* The actions half of the top bar (TopBar.vue owns the band). It never shrinks:
+   the tabs give ground first, and useToolbarOverflow folds actions only once
+   they are at their floor. */
 .toolbar {
-  /* Its own inset, named so the key buttons can cancel it and line their block
-     up with the window edge — and so the two cannot drift apart. */
-  --bar-pad: 12px;
-  gap: 12px;
-  padding: 8px var(--bar-pad);
-  background: var(--bg-panel);
-  /* Distinct separator so the stacked bars don't blend into one dark mass. */
-  border-bottom: 1px solid var(--border);
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
 }
 .options {
   display: flex;

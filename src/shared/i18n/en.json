@@ -487,6 +487,9 @@
     "rust": "Rust",
     "java": "Java"
   },
+  "menuBar": {
+    "menu": "Menu"
+  },
   "appToolbar": {
     "splitView": "Split view",
     "ignoreWhitespace": "Ignore whitespace",

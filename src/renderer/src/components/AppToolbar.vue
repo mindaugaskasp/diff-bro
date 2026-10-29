@@ -49,7 +49,7 @@ const actionState = computed(() => ({
 </script>
 
 <template>
-  <header class="toolbar band">
+  <header class="toolbar">
     <!-- Change counts live in the status band under the panes (DiffViewer), in
          the same words the diagram diff uses. -->
     <div class="options">
@@ -79,13 +79,13 @@ const actionState = computed(() => ({
              every control and leaves a blank screen with no visible way back. -->
         <button
           v-if="store.ready || onSnippet"
-          class="btn btn-sm"
+          class="btn btn-sm btn-square"
           data-testid="toolbar-present"
+          :aria-label="$t('appToolbar.presentation')"
           :data-tip="$t('appToolbar.tips.presentation', { mod: MOD })"
           @click="run('toggle-presentation')"
         >
           <AppIcon name="maximize" />
-          {{ $t('appToolbar.presentation') }}
         </button>
         <ViewOptionsMenu v-if="!onSnippet" />
       </div>

@@ -143,13 +143,30 @@ export function planSlices({ contentHeight, viewportHeight, maxHeight = Infinity
   const total = Math.min(available, maxHeight)
   const maxScroll = Math.max(0, contentHeight - viewportHeight)
   const slices = []
-  for (let covered = 0; covered < total;) {
-    const height = Math.min(viewportHeight, total - covered)
+  let covered = 0
+  for (const height of sliceHeights(total, viewportHeight)) {
     const scrollTop = Math.min(start + covered, maxScroll)
     slices.push({ scrollTop, offsetY: start + covered - scrollTop, height })
     covered += height
   }
   return { slices, truncated: available > total }
+}
+
+// Main refuses a side shorter than this (MIN_CAPTURE_SIDE in src/main/captureRect.js),
+// and one refused strip fails the whole picture.
+const MIN_SLICE = 32
+
+function sliceHeights(total, viewportHeight) {
+  const heights = []
+  for (let covered = 0; covered < total; covered += heights.at(-1)) {
+    heights.push(Math.min(viewportHeight, total - covered))
+  }
+  const short = MIN_SLICE - heights.at(-1)
+  if (heights.length > 1 && short > 0) {
+    heights[heights.length - 2] -= short
+    heights[heights.length - 1] += short
+  }
+  return heights
 }
 
 /**
