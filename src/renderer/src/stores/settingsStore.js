@@ -3,7 +3,15 @@ import { loadPersisted, savePersisted } from '../persist'
 import { activeLocale, setLocale as applyLocale } from '../i18n'
 import { isValidAccelerator } from '../utils/accelerator'
 import { noteRecent } from '../utils/tools'
-import { applyTheme, isDarkTheme, normalizeTheme, themeForDay } from '../utils/themes'
+import {
+  applyTheme,
+  isDarkTheme,
+  normalizeTheme,
+  onOsThemeChange,
+  osPrefersDark,
+  resolveTheme,
+  themeForDay
+} from '../utils/themes'
 import { normalizeLocale } from '../../../shared/i18n'
 import {
   FILE_TYPE_LIMITS,
@@ -42,15 +50,20 @@ export const useSettingsStore = defineStore('settings', {
       return (type) => this.fileSizeLimitMb(type) * 1024 * 1024
     },
     // `locale` is null until the user chooses; this is what is actually rendering.
-    activeLocale: (s) => s.locale ?? activeLocale()
+    activeLocale: (s) => s.locale ?? activeLocale(),
+    // The picker's selected tile: while rotating, the day's theme is what shows.
+    pickedTheme: (s) => (s.rotateThemeDaily ? s.theme : s.userTheme)
   },
   actions: {
     initTheme() {
       this.resolveActiveTheme()
+      onOsThemeChange(() => this.resolveActiveTheme())
     },
     // Idempotent, so calling on focus rolls the daily theme over at midnight.
     resolveActiveTheme() {
-      this.theme = this.rotateThemeDaily ? themeForDay() : this.userTheme
+      this.theme = this.rotateThemeDaily
+        ? themeForDay()
+        : resolveTheme(this.userTheme, osPrefersDark())
       applyTheme(this.theme)
     },
     // Select any of the named themes (Settings picker). Unknown ids fall back
@@ -72,8 +85,9 @@ export const useSettingsStore = defineStore('settings', {
     },
     // Quick light/dark flip for the View menu + Ctrl+D: flips the ground, so a
     // dark-ground theme (Dark, Neon) goes Light and a light-ground one goes Dark.
+    // From System it flips what is showing, and the flip replaces System.
     toggleTheme() {
-      this.setTheme(isDarkTheme(this.userTheme) ? 'light' : 'dark')
+      this.setTheme(isDarkTheme(resolveTheme(this.userTheme, osPrefersDark())) ? 'light' : 'dark')
     },
     ...backupActions,
     ...sidebarActions,

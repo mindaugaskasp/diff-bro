@@ -124,13 +124,35 @@ export const THEMES = [
   }
 ]
 
-export const DEFAULT_THEME = 'light'
+export const SYSTEM_THEME = 'system'
+export const DEFAULT_THEME = SYSTEM_THEME
+
+// Not in THEMES: it resolves to one of them, so it is no palette and no day's rotation.
+export const SYSTEM_TILE = {
+  id: SYSTEM_THEME,
+  label: 'System',
+  dark: false,
+  swatch: {
+    bg: 'linear-gradient(90deg, #ffffff 50%, #161b22 50%)',
+    accent: '#0969da',
+    add: '#3fb950',
+    del: '#f85149'
+  }
+}
 
 const BY_ID = new Map(THEMES.map((t) => [t.id, t]))
 
 export const isValidTheme = (id) => BY_ID.has(id)
 // Unknown/absent ids fall back to the default rather than breaking the UI.
-export const normalizeTheme = (id) => (BY_ID.has(id) ? id : DEFAULT_THEME)
+export const normalizeTheme = (id) => (id === SYSTEM_THEME || BY_ID.has(id) ? id : DEFAULT_THEME)
+export const resolveTheme = (id, prefersDark) =>
+  id === SYSTEM_THEME ? (prefersDark ? 'dark' : 'light') : id
+
+const OS_DARK = '(prefers-color-scheme: dark)'
+export const osPrefersDark = () => window.matchMedia?.(OS_DARK).matches ?? false
+export const onOsThemeChange = (listener) =>
+  window.matchMedia?.(OS_DARK).addEventListener('change', listener)
+
 export const isDarkTheme = (id) => BY_ID.get(id)?.dark ?? false
 
 // Stable within a day (deterministic hash of local Y-M-D → THEMES index), so

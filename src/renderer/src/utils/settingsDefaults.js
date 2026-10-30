@@ -6,7 +6,7 @@ import { defaultQuickLookShortcut, storedQuickLookShortcut } from '../../../shar
 import { isValidAccelerator } from './accelerator'
 import { platformId } from '../keys'
 import { MAX_RECENT_TOOLS } from './tools'
-import { normalizeTheme } from './themes'
+import { normalizeTheme, osPrefersDark, resolveTheme } from './themes'
 
 export const DEFAULT_QUICKLOOK_SHORTCUT = defaultQuickLookShortcut(platformId)
 
@@ -185,6 +185,6 @@ export function settingsStateFrom(parsed, outside) {
     closeToTray: parsed.closeToTray !== false,
     userTheme: normalizeTheme(outside.theme),
     // The ACTIVE theme components read — userTheme, unless daily rotation is on.
-    theme: normalizeTheme(outside.theme)
+    theme: resolveTheme(normalizeTheme(outside.theme), osPrefersDark())
   }
 }

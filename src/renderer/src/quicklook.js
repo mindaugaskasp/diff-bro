@@ -3,7 +3,13 @@ import { createPinia } from 'pinia'
 import QuickLook from './components/QuickLook.vue'
 import { installErrorHandlers } from './errorHandlers'
 import { installUpdateRecovery } from './updateRecovery'
-import { normalizeTheme, themeForDay } from './utils/themes'
+import {
+  normalizeTheme,
+  onOsThemeChange,
+  osPrefersDark,
+  resolveTheme,
+  themeForDay
+} from './utils/themes'
 import { loadPersisted } from './persist'
 import { i18n } from './i18n'
 import './styles/tokens.css'
@@ -22,9 +28,10 @@ function applyTheme() {
   }
   document.documentElement.dataset.theme = rotate
     ? themeForDay()
-    : normalizeTheme(loadPersisted('theme'))
+    : resolveTheme(normalizeTheme(loadPersisted('theme')), osPrefersDark())
 }
 applyTheme()
+onOsThemeChange(applyTheme)
 window.api.onQuickLookShow(applyTheme)
 
 const pinia = createPinia()

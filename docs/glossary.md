@@ -130,6 +130,10 @@ where the concept lives in this repo.
 - **Pane label** — the file name at the top right of each side of a
   comparison; clicking it replaces that side. Split views name each half,
   single-column views show both names together (`PaneLabels.vue`).
+- **System theme** — the default theme choice. It shows Light or Dark to match
+  the OS and follows it live; a named theme or Toggle Light/Dark replaces it.
+  It's a choice, not a palette, so it isn't one of the 20 in `THEMES` and is
+  never a day's rotation (`SYSTEM_TILE` in `utils/themes.js`).
 - **Tips vs tour** — two different things, and the copy leans on the
   difference. **Tips** are the automatic ones: offered by the consent dialog on
   a first launch and after an update, and `showTips` turns them off for good. The **tour** is the

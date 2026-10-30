@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import {
@@ -349,6 +349,85 @@ describe('the collapsed sidebar', () => {
     localStorage.setItem('diffbro.settings', JSON.stringify({ sidebarCollapsed: 'yes' }))
     setActivePinia(createPinia())
     expect(useSettingsStore().sidebarCollapsed).toBe(false)
+  })
+})
+
+describe('System theme', () => {
+  let osDark
+  let listeners
+  const stubOs = (dark) => {
+    osDark = dark
+    listeners = []
+    window.matchMedia = () => ({
+      get matches() {
+        return osDark
+      },
+      addEventListener: (_, cb) => listeners.push(cb)
+    })
+  }
+  const flipOs = (dark) => {
+    osDark = dark
+    listeners.forEach((cb) => cb())
+  }
+  afterEach(() => {
+    delete window.matchMedia
+  })
+
+  it('is the default, and shows the ground the OS asks for', () => {
+    stubOs(true)
+    const s = useSettingsStore()
+    expect(s.userTheme).toBe('system')
+    expect(s.theme).toBe('dark')
+    s.initTheme()
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('follows the OS live, without saving anything', () => {
+    stubOs(false)
+    const s = useSettingsStore()
+    s.initTheme()
+    flipOs(true)
+    expect(s.theme).toBe('dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(s.userTheme).toBe('system')
+    expect(localStorage.getItem('diffbro.theme')).toBeNull()
+  })
+
+  it('leaves a named theme alone when the OS changes', () => {
+    stubOs(false)
+    const s = useSettingsStore()
+    s.initTheme()
+    s.setTheme('nord')
+    flipOs(true)
+    expect(s.theme).toBe('nord')
+  })
+
+  it('keeps a saved Light on a dark OS', () => {
+    localStorage.setItem('diffbro.theme', 'light')
+    stubOs(true)
+    const s = useSettingsStore()
+    expect(s.userTheme).toBe('light')
+    expect(s.theme).toBe('light')
+  })
+
+  it('toggleTheme flips what is showing, and saves it in place of System', () => {
+    stubOs(true)
+    const s = useSettingsStore()
+    s.initTheme()
+    s.toggleTheme()
+    expect(s.theme).toBe('light')
+    expect(s.userTheme).toBe('light')
+    expect(localStorage.getItem('diffbro.theme')).toBe('light')
+  })
+
+  it('names the picked tile: System while it is picked, the day theme while rotating', () => {
+    stubOs(true)
+    const s = useSettingsStore()
+    s.initTheme()
+    expect(s.pickedTheme).toBe('system')
+    s.setRotateThemeDaily(true)
+    s.resolveActiveTheme()
+    expect(s.pickedTheme).toBe(s.theme)
   })
 })
 
