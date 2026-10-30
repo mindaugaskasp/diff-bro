@@ -1115,7 +1115,6 @@ button.tag-chip:hover .usb-tct {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--dg-add) 60%, transparent);
 }
 
-/* A tile has no .btn keyline: its affordance is the well, the card and the lift. */
 .glyph-well {
   --well: var(--btn-face);
   --glyph: var(--text);
@@ -1184,34 +1183,29 @@ button.tag-chip:hover .usb-tct {
   --glyph: var(--glyph-secure);
 }
 .tile {
-  height: var(--tile-h);
   min-width: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  background: var(--bg-card);
-  box-shadow: var(--shadow-1);
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  border: 1px solid var(--tile-edge);
+  border-radius: var(--radius-lg);
+  background: transparent;
   color: var(--text);
   font: inherit;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
-  transition:
-    background-color 0.12s,
-    border-color 0.12s,
-    box-shadow 0.12s,
-    transform 0.12s;
+  transition: background-color 0.12s;
+}
+.tile > .row-2-name {
+  max-width: 100%;
+  font-size: var(--font-sm);
+  font-weight: 500;
 }
 .tile:hover {
   background: var(--tile-face-hover);
-  border-color: var(--btn-edge-strong);
-  box-shadow: var(--shadow-2);
-}
-.tile:active {
-  box-shadow: var(--shadow-1);
-  transform: translateY(1px);
 }
 .tile:focus-visible {
   outline: 2px solid var(--focus-ring);

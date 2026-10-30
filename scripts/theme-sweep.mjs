@@ -807,6 +807,7 @@ const SURFACES = [
       'recent name': ['.home-row .row-2-name', TEXT],
       'recent meta': ['.home-row .row-2-meta', TEXT],
       'glyph on its well': ['.home-row .glyph-well', TEXT],
+      'quick tool name': ['.home-grid .tile .row-2-name', TEXT],
       'delete, shown': ['.home-item:hover .home-delete', DIM]
     }
   },
@@ -846,7 +847,6 @@ const SURFACES = [
   },
   {
     name: 'sidebar-tools',
-    // A tile edge is a separator, not the affordance: the well, card and lift are.
     open: async (page) => {
       await showPanel(page, 'tools')
       const cell = page.locator('.tt-cell').first()
@@ -864,9 +864,8 @@ const SURFACES = [
       'glyph on its well': ['.tt-tile .glyph-well', TEXT],
       'star, pinned': ['.tt-pin.on', DIM],
       'tile face, hovered': ['.tt-tile', HOVER_STEP, 'step', 'hover'],
-      'tile edge, hovered': ['.tt-tile', DIM, 'border', 'hover'],
-      'Pinned group star': ['.tt-star', DIM],
-      'tile edge': ['.tt-tile', SEPARATOR, 'border']
+      'tool name, hovered': ['.tt-tile', TEXT, 'text', 'hover'],
+      'Pinned group star': ['.tt-star', DIM]
     }
   },
   {

@@ -17,9 +17,9 @@ async function expectHoverChanges(page, locator, parts) {
   }
 }
 
-test('a tile changes its face and its edge on hover', async ({ page }) => {
+test('a tile gains a face on hover', async ({ page }) => {
   await showPanel(page, 'tools')
-  await expectHoverChanges(page, page.locator('.tt-tile').first(), ['face', 'edge'])
+  await expectHoverChanges(page, page.locator('.tt-tile').first(), ['face'])
 })
 
 test('a text toggle gains a face on hover', async ({ page }) => {

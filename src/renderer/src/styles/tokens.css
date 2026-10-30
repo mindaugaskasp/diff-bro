@@ -177,7 +177,8 @@
   /* A quiet field has no edge, except on the hard-keyline themes, which keep theirs. */
   --field-edge: transparent;
   --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
-  --tile-face-hover: color-mix(in srgb, var(--bg-card) 90%, var(--text));
+  --tile-edge: transparent;
+  --tile-face-hover: color-mix(in srgb, var(--text) 10%, var(--bg-panel));
   --hue-diff: #c2410c;
   --hue-snippet: #7c4dbe;
   --hue-received: #2a74b8;
@@ -204,6 +205,5 @@
   --glyph-secure: color-mix(in srgb, var(--hue-secure) 30%, var(--text));
   --select-wash: color-mix(in srgb, var(--accent) 12%, var(--bg-panel));
   --row-hover: color-mix(in srgb, var(--text) 8%, var(--bg-panel));
-  --tile-h: 44px;
   --row-h-2: 42px;
 }
