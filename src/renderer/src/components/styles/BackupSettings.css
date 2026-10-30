@@ -7,8 +7,8 @@
   color: var(--text-dim);
 }
 .every select {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--field-face);
+  border: 1px solid var(--field-edge);
   border-radius: var(--radius);
   color: var(--text);
   padding: var(--space-2) var(--space-3);

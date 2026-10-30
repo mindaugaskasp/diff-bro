@@ -122,7 +122,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
           <AppIcon name="x" />
         </button>
       </div>
-      <slot />
+      <div class="dialog-body"><slot /></div>
       <div v-if="$slots.actions" class="dialog-actions">
         <slot name="actions" />
       </div>

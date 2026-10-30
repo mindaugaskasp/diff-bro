@@ -421,29 +421,48 @@
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: var(--scrim);
+  background: color-mix(in srgb, var(--scrim) 55%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 30;
 }
+/* A sheet: the header and actions stay put and only .dialog-body scrolls (#144). */
 .dialog {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   width: 420px;
   max-width: 92vw;
-  /* Never taller than the viewport — a big dialog (e.g. the snippet editor)
-     scrolls inside itself instead of running its header/actions off-screen. */
   max-height: 92vh;
-  overflow-y: auto;
-  padding: var(--space-4);
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  /* A modal floats over the scrim — without a drop it reads as a flat rectangle
-     pinned to the backdrop, which is most of why the light theme looked flat. */
+  overflow: hidden;
+  padding: calc(var(--space-4) + var(--space-1)) calc(var(--space-4) + var(--space-2));
+  background: var(--bg-raised);
+  border: 1px solid var(--dialog-edge);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-3);
+}
+.dialog-header,
+.dialog-actions {
+  flex: none;
+}
+/* The bleed puts the scrollbar in the sheet's padding and leaves focus rings unclipped. */
+.dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-3));
+  padding: var(--space-1) var(--space-3);
+  overflow-y: auto;
+}
+/* Actions a form keeps inside itself, so Enter submits, stay in view as it scrolls. */
+.dialog-body .dialog-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  background: var(--bg-raised);
 }
 /* Opt-in drag-resize from any edge or corner (useDialogResize). The handles are
    invisible zones absolutely placed over the panel's padding ring, so they never
@@ -521,6 +540,7 @@
 .dialog h3 {
   margin: 0;
   font-size: var(--font-lg);
+  font-weight: 600;
 }
 .dialog-close {
   display: inline-flex;
@@ -579,8 +599,8 @@
 .dialog input,
 .dialog select,
 .dialog textarea {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--field-face);
+  border: 1px solid var(--field-edge);
   border-radius: var(--radius);
   color: var(--text);
   padding: 6px 8px;

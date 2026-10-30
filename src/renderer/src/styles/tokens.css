@@ -176,6 +176,8 @@
   --line: color-mix(in srgb, var(--text) 12%, var(--bg-panel));
   /* A quiet field has no edge, except on the hard-keyline themes, which keep theirs. */
   --field-edge: transparent;
+  --field-face: color-mix(in srgb, var(--text) 6%, var(--bg-raised));
+  --dialog-edge: transparent;
   --bg-card: color-mix(in srgb, var(--bg-panel) 94%, var(--text));
   --tile-edge: transparent;
   --tile-face-hover: color-mix(in srgb, var(--text) 10%, var(--bg-panel));

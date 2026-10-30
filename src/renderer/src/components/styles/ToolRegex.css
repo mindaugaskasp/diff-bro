@@ -18,8 +18,8 @@
 .tre-field {
   flex: 1;
   min-width: 0;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--field-face);
+  border: 1px solid var(--field-edge);
   border-radius: var(--radius);
   color: var(--text);
   padding: var(--space-2) var(--space-3);
@@ -55,8 +55,8 @@
 .tre-in {
   min-height: 84px;
   resize: vertical;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--field-face);
+  border: 1px solid var(--field-edge);
   border-radius: var(--radius);
   color: var(--text);
   padding: var(--space-2) var(--space-3);

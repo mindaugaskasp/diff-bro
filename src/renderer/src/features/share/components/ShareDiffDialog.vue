@@ -61,7 +61,7 @@ function submit() {
   <!-- Normal case: at least one trusted recipient exists. -->
   <BaseDialog
     v-if="recipients.length"
-    width="440px"
+    width="452px"
     :title="$t('share.diffDialog.shareDiff')"
     :escape-closes="false"
     @close="close"
