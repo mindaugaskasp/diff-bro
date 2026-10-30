@@ -5,7 +5,8 @@ import {
   showPanel,
   closeSnippet,
   editInPlace,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
@@ -180,9 +181,9 @@ test('a secret snippet offers no capture action', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
+  await markSecret(page, 'Prod API key')
 
   await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first().click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })

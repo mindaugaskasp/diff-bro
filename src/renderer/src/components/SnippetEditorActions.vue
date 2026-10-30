@@ -24,13 +24,23 @@ const props = defineProps({
   secret: { type: Boolean, default: false },
   masked: { type: Boolean, default: false },
   snippetId: { type: String, default: null },
-  canCompare: { type: Boolean, default: false }
+  canCompare: { type: Boolean, default: false },
+  canFormat: { type: Boolean, default: false }
 })
 // Under review, the proposal bar's Accept is the save (#121).
 const claude = useClaudeStore()
 const tabs = useTabsStore()
 const proposed = computed(() => !!claude.reviewing[tabs.activeId])
-const emit = defineEmits(['compare', 'copy', 'capture', 'reveal', 'save', 'history', 'saveAsFile'])
+const emit = defineEmits([
+  'compare',
+  'copy',
+  'capture',
+  'reveal',
+  'save',
+  'history',
+  'saveAsFile',
+  'format'
+])
 
 const { copied, flash } = useCopyFeedback()
 const copiedText = computed(() => copied.value === 'text')
@@ -41,9 +51,16 @@ async function copyAsFile() {
     useDiffStore().showNotice(t('snippetEditorActions.copiedAsFile'))
   }
 }
-const fileItems = computed(() => {
+// Mermaid's formatter repairs pasted damage; it does not pretty-print.
+const formatItem = computed(() =>
+  props.language === 'mermaid'
+    ? { action: 'format', label: t('snippetEditorActions.repair'), icon: 'wrench' }
+    : { action: 'format', label: t('snippetEditorActions.format'), icon: 'braces' }
+)
+const menuItems = computed(() => {
   const off = !props.hasContent || props.secret
   return [
+    { ...formatItem.value, disabled: !props.canFormat },
     ...(canCopyFile.value
       ? [
           {
@@ -63,7 +80,8 @@ const fileItems = computed(() => {
     }
   ]
 })
-const onFileAction = (action) => (action === 'copy-file' ? copyAsFile() : emit('saveAsFile'))
+const onMenuAction = (action) =>
+  action === 'copy-file' ? copyAsFile() : emit(action === 'format' ? 'format' : 'saveAsFile')
 
 const store = useSnippetStore()
 const hasHistory = computed(
@@ -118,9 +136,9 @@ defineExpose({ flash: () => flash('text') })
   </button>
   <ActionMenu
     :label="$t('snippetEditorActions.moreActions')"
-    :items="fileItems"
+    :items="menuItems"
     trigger-class="btn btn-icon"
-    @pick="onFileAction"
+    @pick="onMenuAction"
   />
   <button
     v-if="hasHistory"

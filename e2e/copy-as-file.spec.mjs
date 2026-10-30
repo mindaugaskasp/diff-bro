@@ -8,7 +8,8 @@ import {
   freshUserDataDir,
   firstReadyPage,
   openNewSnippet,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 
 // Read the clipboard the way the Windows shell does — the predefined FileDropList
@@ -103,11 +104,11 @@ async function addSnippet(page, { name, body, secret = false }) {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
-  if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   // Save closes the editor; the copy pair lives on the read-only VIEW, which is
   // reached by opening the row.
   await expect(editor).toBeHidden()
+  if (secret) await markSecret(page, name)
   await page.locator('.snippets-section .row', { hasText: name }).first().locator('.entry').click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()

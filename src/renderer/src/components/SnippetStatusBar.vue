@@ -4,26 +4,27 @@ import { MOD } from '../keys'
 import { useUiStore } from '../stores/uiStore'
 import { contentStats } from '../utils/contentStats'
 import { parseTemplateVars } from '../utils/templateVars'
-import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
 import { zoomLabel } from '../utils/diffZoom'
 import AppIcon from './AppIcon.vue'
 import TemplateTagsPopover from './TemplateTagsPopover.vue'
+import LanguageSelect from './LanguageSelect.vue'
 
 const props = defineProps({
   content: { type: String, default: '' },
   language: { type: String, default: 'plaintext' },
   /** @type {import('vue').PropType<{line: number, column: number}|null>} */
   cursor: { type: Object, default: null },
+  chosenLanguage: { type: String, default: 'auto' },
+  hasPreview: { type: Boolean, default: false },
   editing: { type: Boolean, default: false },
   openedFrom: { type: String, default: '' }
 })
+defineEmits(['update:chosenLanguage'])
+const plain = defineModel('plain', { type: Boolean, default: false })
 
 const ui = useUiStore()
 const stats = computed(() => contentStats(props.content))
 const fills = computed(() => parseTemplateVars(props.content))
-const languageKey = computed(
-  () => SNIPPET_LANGUAGES.find((l) => l.id === props.language)?.labelKey ?? null
-)
 </script>
 
 <template>
@@ -40,6 +41,25 @@ const languageKey = computed(
       <TemplateTagsPopover :fills="fills" />
     </span>
     <span class="es-side">
+      <span
+        v-if="hasPreview"
+        class="es-view"
+        role="group"
+        :aria-label="$t('snippetEditorDialog.viewMode')"
+      >
+        <button
+          class="es-btn"
+          :class="{ on: !plain }"
+          :aria-pressed="!plain"
+          @click="plain = false"
+        >
+          {{ $t('snippetEditorDialog.rendered') }}
+        </button>
+        <span aria-hidden="true">/</span>
+        <button class="es-btn" :class="{ on: plain }" :aria-pressed="plain" @click="plain = true">
+          {{ $t('snippetEditorDialog.plain') }}
+        </button>
+      </span>
       <button class="es-btn" :aria-label="$t('editorText.zoomOut')" @click="ui.zoomDiff(-1)">
         <AppIcon name="minus" />
       </button>
@@ -54,10 +74,14 @@ const languageKey = computed(
       <button class="es-btn" :aria-label="$t('editorText.zoomIn')" @click="ui.zoomDiff(1)">
         <AppIcon name="plus" />
       </button>
-      <span class="es-lang">
-        <template v-if="languageKey">{{ $t(languageKey) }} ·</template>
-        {{ $t('statusBar.encoding') }}
-      </span>
+      <LanguageSelect
+        class="es-lang"
+        :model-value="chosenLanguage"
+        :resolved="language"
+        :label="$t('snippetEditorDialog.syntax')"
+        @update:model-value="$emit('update:chosenLanguage', $event)"
+      />
+      <span>· {{ $t('statusBar.encoding') }}</span>
     </span>
   </div>
 </template>

@@ -93,7 +93,6 @@ test('a snippet tab can be presented: its content only', async ({ page }) => {
   await expect(page.locator('.topbar')).toBeHidden()
   await expect(page.locator('.diff-tabs')).toBeHidden()
   await expect(doc.locator('.doc-head')).toBeHidden()
-  await expect(doc.locator('.editor-header')).toBeHidden()
   await expect(doc.locator('.editor-status')).toBeHidden()
   await expect(doc.locator('.monaco-editor')).toBeVisible()
   await expect(exitButton(page)).toBeVisible()

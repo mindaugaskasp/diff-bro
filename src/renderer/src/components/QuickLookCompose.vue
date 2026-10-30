@@ -8,8 +8,7 @@ import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
 import MarkdownRendered from './MarkdownRendered.vue'
 import SnippetNameField from './SnippetNameField.vue'
-import { SNIPPET_LANGUAGES } from '../utils/detectLanguage'
-import { t } from '../i18n'
+import LanguageSelect from './LanguageSelect.vue'
 import AppIcon from './AppIcon.vue'
 
 const props = defineProps({
@@ -32,17 +31,6 @@ const isMarkdown = computed(() => props.resolvedLanguage === 'markdown')
 const hasMarkup = computed(() => isMarkdown.value || props.resolvedLanguage === 'jira')
 const { applySelectionEdit } = useTextareaMarkup(textareaEl, body)
 const { actions: markupActions, applyAction } = useFormatToolbar({ isMarkdown, applySelectionEdit })
-
-// Auto carries what it resolved to, so the picker doubles as the readout and
-// there is no second chip saying the same thing.
-const labelOf = (id) =>
-  t(SNIPPET_LANGUAGES.find((l) => l.id === id)?.labelKey ?? 'language.plaintext')
-const options = computed(() =>
-  SNIPPET_LANGUAGES.map(({ id, labelKey }) => ({
-    id,
-    label: id === 'auto' ? `${t(labelKey)} · ${labelOf(props.resolvedLanguage)}` : t(labelKey)
-  }))
-)
 
 const chord = (e) => (e.metaKey || e.ctrlKey) && !e.altKey
 function onKeydown(e) {
@@ -122,13 +110,12 @@ defineExpose({ focus: () => nextTick(() => textareaEl.value?.focus()) })
     </div>
 
     <div class="ql-compose-foot band drag-band">
-      <select
+      <LanguageSelect
         v-model="language"
-        class="ql-compose-lang focus-ring"
-        :aria-label="$t('quickLookCompose.language')"
-      >
-        <option v-for="o in options" :key="o.id" :value="o.id">{{ o.label }}</option>
-      </select>
+        class="ql-compose-lang"
+        :resolved="resolvedLanguage"
+        :label="$t('quickLookCompose.language')"
+      />
     </div>
   </div>
 </template>

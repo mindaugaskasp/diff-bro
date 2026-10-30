@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, markSecret, docActions } from './fixtures.mjs'
 
 const PROMPT = 'Example — Claude review prompt'
 const strip = (page) => page.getByRole('tablist', { name: 'Open comparisons' })
@@ -60,7 +60,8 @@ test('a secret snippet tab does not start a drag', async ({ page }) => {
   await doc.getByPlaceholder('Snippet name…').fill('Hidden thing')
   await doc.locator('.editor').click()
   await page.keyboard.type('secret text')
-  await doc.getByRole('checkbox', { name: 'Secret' }).check()
+  await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, 'Hidden thing')
   await newComparison(page)
 
   expect(await dragTabTo(page, 'Hidden thing', leftSlot)).toBe(false)

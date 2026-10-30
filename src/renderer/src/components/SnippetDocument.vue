@@ -10,7 +10,6 @@ import { useFileTextDrop } from '../composables/useFileDrop'
 import { useSnippetFindKeys } from '../composables/useSnippetFindKeys'
 import { useSnippetInlineEdit } from '../composables/useSnippetInlineEdit'
 import SnippetDocumentHead from './SnippetDocumentHead.vue'
-import SnippetEditorHeader from './SnippetEditorHeader.vue'
 import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import SnippetHistoryPanel from './SnippetHistoryPanel.vue'
@@ -54,7 +53,8 @@ const { applySelectionEdit, layout, openFind, cursor } = useMonacoInput({
   container,
   content,
   language,
-  readOnly
+  readOnly,
+  options: { lineNumbersMinChars: 2, lineDecorationsWidth: 8, folding: false }
 })
 const docRoot = ref(null)
 useSnippetFindKeys({ root: docRoot, editing: editMode, openFind })
@@ -113,7 +113,6 @@ const compareWith = () =>
     <SnippetDocumentHead
       ref="head"
       v-model:name="name"
-      v-model:secret="draft.secret.value"
       :initial-tags="draft.initialTags"
       :edit-mode="editMode"
       :needs-name="editMode && !!content.trim() && !name.trim()"
@@ -134,6 +133,8 @@ const compareWith = () =>
         :masked="masked"
         :snippet-id="editing.id"
         :can-compare="!!(editing.id || editing.openedPath) && !draft.secret.value"
+        :can-format="draft.canFormat.value"
+        @format="inline.format"
         @compare="compareWith"
         @copy="copyAndFlash"
         @capture="draft.captureImage"
@@ -145,15 +146,6 @@ const compareWith = () =>
     </Teleport>
     <div class="doc-body">
       <div class="doc-main">
-        <SnippetEditorHeader
-          v-model:plain="plain"
-          :chosen-language="draft.chosenLanguage.value"
-          :has-preview="hasPreview"
-          :language="language"
-          :can-format="draft.canFormat.value"
-          @update:chosen-language="inline.setLanguage"
-          @format="inline.format"
-        />
         <FormatToolbar
           v-if="hasPreview && editMode"
           :actions="toolbarActions"
@@ -189,11 +181,15 @@ const compareWith = () =>
         <MermaidPreview v-if="isMermaid && !masked" :code="content" @expand="draft.expandDiagram" />
         <SnippetStatusBar
           v-if="!masked"
+          v-model:plain="plain"
           :content="content"
           :language="language"
           :cursor="cursor"
+          :has-preview="hasPreview"
+          :chosen-language="draft.chosenLanguage.value"
           :editing="editMode"
           :opened-from="editing.id ? '' : (editing.openedFrom ?? '')"
+          @update:chosen-language="inline.setLanguage"
         />
       </div>
       <SnippetHistoryPanel

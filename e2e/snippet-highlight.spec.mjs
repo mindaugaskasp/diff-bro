@@ -8,7 +8,8 @@ import {
   firstReadyPage,
   openNewSnippet,
   closeSnippet,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 
 // Highlighting is only real in a launched app: Monaco does the tokenising, it
@@ -19,11 +20,14 @@ async function addSnippet(page, { name, language, body, secret = false }) {
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
-  await editor.locator('.lang-picker select').selectOption(language)
+  await editor
+    .locator('.editor-status')
+    .getByRole('combobox', { name: 'Syntax' })
+    .selectOption(language)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
-  if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  if (secret) await markSecret(page, name)
   await closeSnippet(page)
   await expect(page.locator('.snippets-section .row', { hasText: name }).first()).toBeVisible()
 }

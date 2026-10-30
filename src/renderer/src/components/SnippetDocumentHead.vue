@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import SnippetNameField from './SnippetNameField.vue'
 import SnippetNameHint from './SnippetNameHint.vue'
 import TagChipRow from './TagChipRow.vue'
-import SnippetSecretToggle from './SnippetSecretToggle.vue'
 
 defineProps({
   initialTags: { type: Array, default: () => [] },
@@ -12,7 +11,6 @@ defineProps({
   readOnly: { type: Boolean, default: true }
 })
 const name = defineModel('name', { type: String, default: '' })
-const secret = defineModel('secret', { type: Boolean, default: false })
 const emit = defineEmits(['editTags', 'editName'])
 const nameLabel = ref(null)
 
@@ -49,7 +47,6 @@ defineExpose({
       :readonly="readOnly"
       @request-edit="emit('editTags')"
     />
-    <SnippetSecretToggle v-model="secret" class="doc-secret" :readonly="readOnly" />
   </header>
 </template>
 

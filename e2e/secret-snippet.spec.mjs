@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, closeSnippet, docActions } from './fixtures.mjs'
+import { test, expect, openNewSnippet, closeSnippet, docActions, markSecret } from './fixtures.mjs'
 
 // A secret snippet is a claim about what is DRAWN, so it can only be checked in
 // a launched app: the contents must be absent from the editor, the hover card
@@ -13,8 +13,8 @@ async function createSecret(page, name = 'Prod API key') {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(SECRET)
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, name)
   // Save closes the editor, so the read-only view is reached the way a reader
   // reaches it: by opening the row.
   await expect(editor).toBeHidden()
