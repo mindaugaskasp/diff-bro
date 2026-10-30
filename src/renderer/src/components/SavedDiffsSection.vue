@@ -1,6 +1,6 @@
 <script setup>
 // The "Saved diffs" group: your own encrypted, auto-expiring (or kept) diffs.
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useDiffRows, OWN_GROUPS } from '../composables/useDiffRows'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
@@ -17,9 +17,6 @@ import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
 
 const props = defineProps({
-  first: { type: Boolean, default: false },
-  unified: { type: Boolean, default: false },
-  panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] }
@@ -31,7 +28,6 @@ const vault = useVaultStore()
 const snippets = useSnippetStore()
 const { rows, items, filtering } = useDiffRows(() => props, OWN_GROUPS)
 const ui = useUiStore()
-const open = ref(true)
 
 // The section in the group key confines a drag to it; the store group is the order.
 const storeGroup = (entry) => OWN_GROUPS[entry.favorite ? 0 : 1]
@@ -54,25 +50,13 @@ useNewRowMarker({
   onHidden: (id) =>
     useDiffStore().showNotice(
       t('newRow.hiddenByFilter', { name: vault.active.find((e) => e.id === id)?.name ?? '' })
-    ),
-  open: () => (open.value = true)
+    )
 })
 </script>
 
 <template>
   <section class="sidebar-section">
-    <SectionHeader
-      section-id="saved"
-      :title="$t('savedDiffsSection.savedDiffs')"
-      icon="folder"
-      :open="open"
-      :first="first"
-      :unified="unified"
-      :panel="panel"
-      :count="rows.length"
-      :filtering="filtering"
-      @toggle="open = !open"
-    >
+    <SectionHeader :title="$t('savedDiffsSection.savedDiffs')" :count="rows.length">
       <template v-if="$slots.title" #title><slot name="title" /></template>
       <template #actions>
         <button
@@ -91,7 +75,7 @@ useNewRowMarker({
       </template>
     </SectionHeader>
 
-    <div v-show="open || panel" class="section-body">
+    <div class="section-body">
       <slot name="lead" />
       <div v-if="!hasOwn" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}</p>

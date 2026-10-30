@@ -1,9 +1,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { foldedIds, iconBarWidths } from '../utils/barFit'
 
-// Measures the toolbar's action row for utils/barFit. Every action is an icon
-// one unit wide; only a labelled primary is measured, and it never folds, so it
-// is always drawn when it is read.
+// Measures the toolbar's action row for utils/barFit: only the labelled primary, which never folds.
 
 const ELEMENT_WIDTH = (el) => Math.ceil(el.getBoundingClientRect().width)
 const columnGap = (el) => parseFloat(getComputedStyle(el).columnGap) || 0

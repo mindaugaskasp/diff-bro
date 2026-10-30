@@ -14,7 +14,7 @@
 
 <p align="center">
   <img src="docs/screenshots/diff-dark.png" width="880"
-       alt="Diff Bro comparing two files side by side, with the sidebar beside the comparison">
+       alt="Diff Bro comparing two files side by side, each pane named at its top right, beside the sidebar's Home panel">
 </p>
 
 ## Install
@@ -34,14 +34,14 @@ app — see [packaging](docs/packaging.md).
 
 ## What it does
 
-|                      |                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------- |
-| **Compare**          | Two files or two pasted texts side by side, with every change highlighted.        |
-| **Understands data** | Spreadsheets, JSON, YAML, XML and diagrams compare by meaning, not just by line.  |
-| **Keep**             | Save comparisons and text snippets in a private, encrypted library.               |
-| **Share safely**     | Send a sealed file only the people you chose can open, and it expires on its own. |
-| **Tools**            | Format JSON, decode a token, convert a timestamp and more, without a website.     |
-| **Make it yours**    | Twenty themes, tags, and a quick search that finds anything in a keystroke.       |
+|                      |                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Compare**          | Two files or two pasted texts side by side, with every change highlighted.                                            |
+| **Understands data** | Spreadsheets, JSON, YAML, XML and diagrams compare by meaning, not just by line.                                      |
+| **Keep**             | Save comparisons and text snippets in a private, encrypted library.                                                   |
+| **Share safely**     | Send a sealed file only the people you chose can open, and it expires on its own.                                     |
+| **Tools**            | Format JSON, decode a token, convert a timestamp and more, without a website.                                         |
+| **Make it yours**    | A System theme that follows your OS, twenty more, nested tags, and a quick search that finds anything in a keystroke. |
 
 Everything in detail: [features](docs/features.md).
 

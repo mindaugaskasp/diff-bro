@@ -114,7 +114,7 @@ export const useUiStore = defineStore('ui', {
     closeMermaid() {
       this.mermaidView = null
     },
-    // The command palette, scoped to tools (the shelf's "Browse all tools").
+    // The command palette, scoped to tools.
     openToolsPalette() {
       this.paletteScope = 'tools'
       this.showCommandPalette = true

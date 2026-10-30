@@ -1,9 +1,7 @@
 import { ref, unref } from 'vue'
 import { loadPersisted, savePersisted } from '../persist'
 
-// Which tag sections are closed, per list (#121). The CLOSED ones are kept, so
-// a tag that appears later starts open. Its own persisted key, like the
-// sidebar's width: settingsStore is at its size cap.
+// Which tag sections are closed, per list (#121), so a tag that appears later starts open.
 const KEY = 'tagSections'
 
 function readAll() {

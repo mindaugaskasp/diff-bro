@@ -18,10 +18,9 @@ export const useToolsStore = defineStore('tools', {
   state: () => ({ pinned: readPinned() }),
   getters: {
     isPinned: (s) => (id) => s.pinned.includes(id),
-    // What the sidebar section and the rail both draw: pinned first, everything
-    // else in registry order. Using a tool never moves it.
+    // Pinned first, everything else in registry order. Using a tool never moves it.
     rows: (s) => toolRows(s.pinned),
-    railRows: (s) => (limit) => toolRows(s.pinned, limit),
+    leadingRows: (s) => (limit) => toolRows(s.pinned, limit),
     pinnedCount: (s) => s.pinned.length,
     total: () => TOOLS.length
   },

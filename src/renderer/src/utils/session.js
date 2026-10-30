@@ -9,7 +9,7 @@ import {
   isBlank,
   isHalfLoaded,
   isSnippetTab,
-  withoutFileSlots
+  withoutSides
 } from './tabs'
 
 // Bumped only when the stored shape changes meaning; an unrecognised version is
@@ -98,7 +98,7 @@ const isSkipped = (tab, snapshot) => !!tab.ephemeral || isBlank({ snapshot })
 
 // Reset on the way OUT, so the writer cannot produce a tab the reader discards.
 const storedSnapshot = (snapshot) =>
-  isHalfLoaded({ snapshot }) ? withoutFileSlots(snapshot) : snapshot
+  isHalfLoaded({ snapshot }) ? withoutSides(snapshot) : snapshot
 
 // A snippet tab by id only: a draft's text would put a secret's plaintext on disk.
 function candidateFor(tab, activeId, live) {

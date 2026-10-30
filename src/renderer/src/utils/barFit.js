@@ -1,8 +1,8 @@
 /**
  * Which items a horizontal bar has to fold away, given what each one measures.
  *
- * Pure arithmetic so the fold order is testable without a browser — the same
- * split railFit/useFittingCount already use. The caller measures; this decides.
+ * Pure arithmetic so the fold order is testable without a browser. The caller
+ * measures; this decides.
  *
  * Items fold from the FRONT of `order`, which is written least-important first.
  * A pinned id is never folded: at the widths this runs at there is always room

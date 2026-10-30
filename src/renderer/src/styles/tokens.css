@@ -35,8 +35,8 @@
      document's Content bar, so they line up across the divider. See .band in
      ui.css. */
   --band-row: 52px;
-  /* Below the top bar (31): a document head, the file-slots row and the
-     sidebar's search band all end on the same line. */
+  /* Below the top bar (31): a document head and the sidebar's search band end on
+     the same line. */
   --head-band: 49px;
   /* Spacing rhythm. Prefer these over ad-hoc pixel padding so panels and
      buttons share one rhythm and never drift apart. */
@@ -57,7 +57,7 @@
      so the same three levels cast a soft grey drop on the light default and a
      deep one on the dark themes. Surfaces opt in by depth, never by restating a
      raw shadow: --shadow-1 a resting lift (top bar, primary buttons),
-     --shadow-2 a raised element (popovers, cards, the floating shortcut bar),
+     --shadow-2 a raised element (popovers, cards),
      --shadow-3 a modal floating over the scrim. Two layers per level — a tight
      contact shadow plus a soft ambient one — read as real depth, not a blur. */
   --shadow-1: 0 1px 2px rgb(var(--shadow-rgb) / 0.1), 0 1px 3px -1px rgb(var(--shadow-rgb) / 0.08);

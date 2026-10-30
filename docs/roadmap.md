@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — eight tracks. Claude connection, shipped: read the library over stdio, proposals wait on Home. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — eight tracks. Claude connection, shipped: read the library over stdio, proposals wait in Snippets and Diffs. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -330,8 +330,8 @@ Behind a signed grant in Settings ▸ Claude it offers:
 
 - list and read snippets and saved diffs (never secrets, never received diffs);
 - a unified diff of two texts;
-- proposals for a new snippet or comparison, which wait on Home under
-  **From Claude** until accepted.
+- proposals for a new snippet or comparison, which wait atop Snippets or Diffs
+  under **From Claude**, and open as editable tabs, until accepted.
 
 Every call is logged by tool and item name.
 
@@ -396,32 +396,20 @@ a preview.
 
 ```mermaid
 flowchart LR
-  m["measure .options<br>clientWidth − siblings"]
-  a{"labels fit?"}
+  m["measure the action row"]
   b{"icons fit?"}
-  lab(["every control labelled"])
-  ico(["every control an icon"])
+  ico(["every action an icon<br>Save keeps its word"])
   fold(["fold into ⋯<br>Save pinned"])
-  m --> a
-  a -->|yes| lab
-  a -->|no| b
+  m --> b
   b -->|yes| ico
   b -->|no| fold
 ```
 
-Done. The four display toggles collapse into one `View` button with a count
-chip; the document actions shed in three rungs.
+Done. The toolbar shares the tab row (#144). The four display toggles collapse
+into one `View` button with a count chip; the document actions shed in two rungs,
+and the tabs give ground before any of them folds.
 
-- A control loses its WORD before it loses its PLACE — folding straight from
-  labelled to a menu hides something a glyph could still have reached
-- The compact width is `--control-h`, never measured: measuring it would mean
-  rendering the compact row to decide whether to render it
-- Widths are cached per id and read ONLY while the row is labelled — a folded
-  control measures 0, a compact one measures `--control-h`, and either would
-  overwrite the labelled width the row needs to grow back
-- The re-measure signature carries the active locale: a language switch changes
-  what every control measures without changing the size of the row, so the
-  `ResizeObserver` never fires
+- Every action is one unit wide, so only the labelled Save is measured
 - The count chip counts options CHANGED from their default, not options that are
   on — split view and diagram focus both default to on
 - `.options` is `flex: 1; min-width: 0` with the auto margin on its first child;
@@ -439,9 +427,23 @@ Zoom belongs to the COMPARISON, not to the window.
   `height: 24px` in CSS beside a `GRID_ROW_H` of 24 in JS — two copies of one
   fact, true only while nothing moved either
 
-**Open.** `.key-actions` is still `width: var(--sidebar-w)`, so the bar's widest
-term is the one the reader drags — and since the sidebar workspace, that width
-includes the rail. Moving the key buttons into the rail is the follow-up spec.
+---
+
+## Minimalist redesign
+
+Shipped (#144, folding in #121 and #142), in eleven slices. See
+`specs/2026-10-28-minimalist-redesign/plan.md`.
+
+- Plain controls, one type stack and three weights
+- One top row: the ≡ menu, tabs and icon actions; a segmented control instead of
+  the rail
+- Nested tag sections with `#` search; Claude's proposals atop Snippets and Diffs
+- A document is its name, its tags and its text; a comparison names its panes at
+  their top right, with no slot band or hint bar
+- Tools and Home as an icon grid; dialogs as sheets with quiet fields, whose
+  body scrolls
+- Quick Look-up as one fixed Spotlight-style card
+- A System theme that follows the OS, the new default
 
 ---
 

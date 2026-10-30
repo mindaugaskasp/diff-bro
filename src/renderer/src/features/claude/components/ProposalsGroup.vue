@@ -1,6 +1,5 @@
 <script setup>
-// What Claude proposed, atop Snippets or Diffs (#121). Contained: it scrolls in
-// its own height so the library under it never moves.
+// Claude's proposals atop Snippets or Diffs (#121); scrolls in its own height, so the library never moves.
 import { computed, ref } from 'vue'
 import { useTabsStore } from '../../../stores/tabsStore'
 import { useClaudeStore } from '../claudeStore'

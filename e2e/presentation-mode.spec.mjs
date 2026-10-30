@@ -80,6 +80,14 @@ test('presenting shows only the comparison, with an Exit button that leaves', as
   await expect(exit).toHaveCount(0)
 })
 
+test('presenting a comparison hides its pane labels', async ({ page }) => {
+  await loadDiff(page)
+  await expect(page.locator('.pane-label').first()).toBeVisible()
+  await page.getByTestId('toolbar-present').click()
+  await expect(exitButton(page)).toBeVisible()
+  await expect(page.locator('.pane-label').first()).toBeHidden()
+})
+
 test('a snippet tab can be presented: its content only', async ({ page }) => {
   await showPanel(page, 'snippets')
   await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()

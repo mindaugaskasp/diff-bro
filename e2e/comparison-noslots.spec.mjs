@@ -107,3 +107,17 @@ test('the start is a prompt and three links; the waiting pane labels the loaded 
   await expect(paneLabel(page, 'right')).toHaveCount(0)
   expect(await halfOf(page, paneLabel(page, 'left'))).toBe('left')
 })
+
+test('on a grid the labels sit above the header row, covering no column letter', async ({
+  app,
+  page
+}) => {
+  await openSide(app, page, 'left', file('before.csv', 'id,name,q1,q2,q3\n1,alpha,1,2,3\n'))
+  await openSide(app, page, 'right', file('after.csv', 'id,name,q1,q2,q3\n1,alpha,1,2,4\n'))
+  await page.locator('.sheet-bar').waitFor()
+  const labelBottom = await paneLabel(page, 'left').evaluate(
+    (el) => el.getBoundingClientRect().bottom
+  )
+  const gridTop = await page.locator('.grids').evaluate((el) => el.getBoundingClientRect().top)
+  expect(labelBottom).toBeLessThanOrEqual(gridTop)
+})

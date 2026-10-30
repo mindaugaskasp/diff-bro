@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import {
-  SECTIONS,
   FILE_TYPE_LIMITS,
   MAX_SNIPPET_SIZE_KB_CAP,
   DEFAULT_MAX_EXPORT_HEIGHT_PX,
@@ -19,32 +18,12 @@ beforeEach(() => {
 describe('settingsStore', () => {
   it('starts from safe defaults', () => {
     const s = useSettingsStore()
-    expect(s.sectionOrder).toEqual(SECTIONS)
     expect(s.fileSizeLimitMb('text')).toBe(FILE_TYPE_LIMITS.text.default)
     expect(s.fileSizeLimitMb('spreadsheet')).toBe(FILE_TYPE_LIMITS.spreadsheet.default)
     expect(s.fileSizeLimitBytes('spreadsheet')).toBe(
       FILE_TYPE_LIMITS.spreadsheet.default * 1024 * 1024
     )
     expect(s.maxSnippetSizeKb).toBeGreaterThan(0)
-  })
-
-  // Asserted on the moved window rather than the whole array, so adding a
-  // section does not mean rewriting what "move up" means.
-  it('moves a section up and down, clamping at the ends', () => {
-    const s = useSettingsStore()
-    s.moveSection('snippets', -1)
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
-    s.moveSection('saved', -1) // already first — no-op
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
-    s.moveSection('saved', 1)
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
-    expect([...s.sectionOrder].sort()).toEqual([...SECTIONS].sort())
-  })
-
-  it('persists section order across store re-creation', () => {
-    useSettingsStore().moveSection('snippets', -2)
-    setActivePinia(createPinia())
-    expect(useSettingsStore().sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
   })
 
   it('records the one-time example-seed decision and persists it', () => {
@@ -55,25 +34,6 @@ describe('settingsStore', () => {
     // survives a reload, so the example is never seeded twice
     setActivePinia(createPinia())
     expect(useSettingsStore().examplesSeeded).toBe(true)
-  })
-
-  it('repairs a corrupt or partial persisted section order', () => {
-    localStorage.setItem(
-      'diffbro.settings',
-      JSON.stringify({ sectionOrder: ['snippets', 'bogus', 'snippets'] })
-    )
-    const s = useSettingsStore()
-    // dedupe + drop unknown + append any missing, so all three always show.
-    expect([...s.sectionOrder].sort()).toEqual([...SECTIONS].sort())
-    expect(s.sectionOrder[0]).toBe('snippets')
-  })
-
-  it('stores and reconciles shelf order against the shelves that exist now', () => {
-    const s = useSettingsStore()
-    s.setShelfOrder('snippets', ['b', 'a'])
-    // A stored id that vanished is dropped; a brand-new shelf is appended.
-    expect(s.shelfOrderFor('snippets', ['a', 'b', 'c'])).toEqual(['b', 'a', 'c'])
-    expect(s.shelfOrderFor('external', ['x'])).toEqual(['x'])
   })
 
   it('ignores a stored shortcut-bar setting: the bar is gone', () => {
@@ -157,35 +117,6 @@ describe('settingsStore', () => {
     useSettingsStore().setShowRowTags(true)
     setActivePinia(createPinia())
     expect(useSettingsStore().showRowTags).toBe(true)
-  })
-
-  it('drag-reorders a section to land just before its drop target', () => {
-    const s = useSettingsStore()
-    s.reorderSections('snippets', 'saved') // drop snippets before saved
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['snippets', 'saved', 'external'])
-    s.reorderSections('external', 'snippets') // external before snippets
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['external', 'snippets', 'saved'])
-  })
-
-  it('ignores a reorder onto itself or an unknown id', () => {
-    const s = useSettingsStore()
-    s.reorderSections('saved', 'saved')
-    s.reorderSections('bogus', 'saved')
-    s.reorderSections('saved', 'bogus')
-    expect(s.sectionOrder).toEqual(SECTIONS)
-  })
-
-  it('ignores a legacy persisted section lock — reorder is never disabled', () => {
-    // The lock had no UI to release it, so a stored `true` stranded the user
-    // with reordering permanently dead. The setting is gone; a leftover value
-    // must not resurrect the freeze.
-    localStorage.setItem('diffbro.settings', JSON.stringify({ sectionsLocked: true }))
-    const s = useSettingsStore()
-    expect(s.sectionsLocked).toBeUndefined()
-    s.moveSection('snippets', -1)
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['saved', 'snippets', 'external'])
-    s.reorderSections('external', 'saved')
-    expect(s.sectionOrder.slice(0, 3)).toEqual(['external', 'saved', 'snippets'])
   })
 
   it('remembers a keyed dialog size across reloads', () => {

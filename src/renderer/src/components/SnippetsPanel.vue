@@ -1,7 +1,7 @@
 <script setup>
 // Snippets sidebar layout; filtering is useSnippetFilters, previews
 // useSnippetPreview, rows SnippetRow.
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { matchesTags } from '../utils/tagFilter'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
@@ -20,9 +20,6 @@ import TagTree from './TagTree.vue'
 import { ProposalsGroup } from '../features/claude'
 
 const props = defineProps({
-  first: { type: Boolean, default: false },
-  unified: { type: Boolean, default: false },
-  panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] }
@@ -31,7 +28,6 @@ const props = defineProps({
 defineEmits(['manageTag'])
 const store = useSnippetStore()
 const ui = useUiStore()
-const sectionOpen = ref(true)
 
 // Tag filtering + search live in the shell (props); this just mirrors the query.
 const { query, visibleFavorites, visibleListed } = useSnippetFilters()
@@ -77,31 +73,18 @@ useNewRowMarker({
   onHidden: (id) =>
     useDiffStore().showNotice(
       t('newRow.hiddenByFilter', { name: store.entries.find((e) => e.id === id)?.name ?? '' })
-    ),
-  open: () => (sectionOpen.value = true)
+    )
 })
 
 // Expand the section and open a blank snippet.
 function newSnippet() {
-  sectionOpen.value = true
   store.editingSnippet = { id: null }
 }
 </script>
 
 <template>
   <section class="snippets-section sidebar-section" data-tour="snippets">
-    <SectionHeader
-      section-id="snippets"
-      :title="$t('snippetsPanel.snippets')"
-      icon="code"
-      :open="sectionOpen"
-      :first="first"
-      :unified="unified"
-      :panel="panel"
-      :count="items.length"
-      :filtering="filtering"
-      @toggle="sectionOpen = !sectionOpen"
-    >
+    <SectionHeader :title="$t('snippetsPanel.snippets')" :count="items.length">
       <template #actions>
         <button
           class="btn btn-icon"
@@ -116,7 +99,7 @@ function newSnippet() {
       </template>
     </SectionHeader>
 
-    <div v-show="sectionOpen || panel" class="section-body">
+    <div class="section-body">
       <ProposalsGroup kind="snippet" />
       <div v-if="!store.entries.length" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}</p>

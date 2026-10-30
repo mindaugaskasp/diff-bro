@@ -235,7 +235,7 @@ export const isHalfLoaded = (tab) => {
 
 // The abandoned drop cleared and NOTHING else: paste text, the mode and the
 // view toggles are the user's own work, and blanking threw them away.
-export const withoutFileSlots = (snapshot) => ({ ...snapshot, left: null, right: null })
+export const withoutSides = (snapshot) => ({ ...snapshot, left: null, right: null })
 
 // An object, not destructuring defaults: tabsStore.open() sits on the
 // complexity limit and every `=` in a signature counts.

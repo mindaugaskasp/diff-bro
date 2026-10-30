@@ -8,6 +8,14 @@
   flex-direction: column;
 }
 
+/* In the flow, not over the grid: a grid's top right is its last column's letter. */
+.sheet-viewer > .grid-labels {
+  height: var(--control-h-sm);
+  align-items: center;
+}
+.grid-labels :deep(.pane-label) {
+  margin-top: 0;
+}
 /* The two grids share one horizontal scroll region so a wide sheet scrolls as a
    unit and the sides never drift out of column alignment. */
 .grids {

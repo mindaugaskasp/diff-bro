@@ -105,19 +105,6 @@ describe('what the archive carries', () => {
     savePersisted('session', '{"version":1,"tabs":[]}')
     expect((await useConfigBackupStore()._bundle()).session).toBe('{"version":1,"tabs":[]}')
   })
-
-  // The sidebar's own arrangement lives in the settings blob too.
-  it('takes the sidebar order the reader dragged into place', async () => {
-    const settings = useSettingsStore()
-    settings.sectionOrder = ['snippets', 'saved', 'external', 'tools']
-    settings.persist()
-    expect((await useConfigBackupStore()._bundle()).settings.sectionOrder).toEqual([
-      'snippets',
-      'saved',
-      'external',
-      'tools'
-    ])
-  })
 })
 
 // The round trip is the point: what comes out has to put you back where you
@@ -129,7 +116,6 @@ describe('restoring an archive', () => {
     settings.setLimit('maxExportHeightPx', 6000)
     settings.setAutoCloseOldest(true)
     settings.setShutterSound(false)
-    settings.sectionOrder = ['tools', 'snippets', 'saved', 'external']
     settings.persist()
     const archived = await useConfigBackupStore()._bundle()
 
@@ -145,7 +131,6 @@ describe('restoring an archive', () => {
     expect(fresh.maxExportHeightPx).toBe(6000)
     expect(fresh.autoCloseOldest).toBe(true)
     expect(fresh.shutterSound).toBe(false)
-    expect(fresh.sectionOrder).toEqual(['tools', 'snippets', 'saved', 'external'])
   })
 
   it('survives the reload after it, so the restore is not just in memory', async () => {

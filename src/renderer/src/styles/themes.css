@@ -52,7 +52,7 @@
   --success-text: #1a7f37;
   /* Modal scrim — dims the app behind a dialog. */
   --scrim: rgba(0, 0, 0, 0.5);
-  /* Favorites gold: the pinned-shelf tint and its stars. */
+  /* Favorites gold: the stars. */
   --favorite: #bf8700;
   /* Text on an accent/danger fill — a token so no component hardcodes it. */
   --text-on-accent: #ffffff;
