@@ -139,7 +139,6 @@ test('Claude reads allowed snippets, never a secret, and its proposal is reviewe
     client.close()
   }
 
-  // #121: it waits atop Snippets, and the segment counts it.
   await showPanel(page, 'snippets')
   await expect(page.locator('.sidebar-nav [data-value="snippets"]')).toHaveAttribute(
     'aria-label',
@@ -148,7 +147,6 @@ test('Claude reads allowed snippets, never a secret, and its proposal is reviewe
   const group = page.getByRole('region', { name: 'From Claude' })
   await expect(group).toContainText('From Claude · 1')
 
-  // Opened, every field is editable, and Accept saves the reader's version.
   await group.getByRole('button', { name: /Rollback/ }).click()
   const bar = page.getByRole('region', { name: 'Proposed by Claude' })
   await expect(bar).toContainText('The inverse of Deploy notes')
@@ -161,7 +159,6 @@ test('Claude reads allowed snippets, never a secret, and its proposal is reviewe
   const saved = page.locator('.snippets-section .row', { hasText: 'Rollback api' }).first()
   await expect(saved).toBeVisible()
 
-  // Undo takes the saved snippet back out and returns the proposal.
   await page.locator('.proposal-undo').getByRole('button', { name: 'Undo' }).click()
   await expect(saved).toHaveCount(0)
   await expect(group).toContainText('From Claude · 1')

@@ -58,8 +58,7 @@ onMounted(() => {
 <template>
   <div class="sheet-viewer">
     <!-- The grid's own chrome: its tabs on the left, the controls that change
-         what the grid SAYS on the right. They sat in the status band until the
-         floating shortcut bar grew over them. -->
+         what the grid SAYS on the right. -->
     <div class="sheet-bar band">
       <SheetTabBar :sheets="sheets" :active="active" @select="select" />
       <div class="grid-tools">
@@ -129,7 +128,7 @@ onMounted(() => {
       <span>{{ $t('spreadsheetDiffViewer.noDifferencesEverySheetMatches') }}</span>
     </div>
 
-    <PaneLabels />
+    <PaneLabels class="grid-labels" />
     <div
       v-if="activeSheet"
       ref="grids"

@@ -33,7 +33,6 @@ test('tag paths become nested sections, and a parent counts what is inside it', 
   await expect(section(page, 'ops/k8s').locator('.ts-count')).toHaveText('3')
   await expect(section(page, 'ops/k8s/prod').locator('.ts-count')).toHaveText('2')
   await expect(section(page, 'data').locator('.ts-count')).toHaveText('1')
-  // Two tags, two places.
   await expect(rowsUnder(page, 'ops/k8s/prod').filter({ hasText: 'Postgres vacuum' })).toHaveCount(
     1
   )

@@ -1,6 +1,5 @@
 <script setup>
-// The one way back from an accept or discard (#121), for as long as the store
-// keeps the proposal before it leaves the inbox.
+// The one way back from an accept or discard (#121), until the proposal leaves the inbox.
 import { computed } from 'vue'
 import { useClaudeStore } from '../claudeStore'
 

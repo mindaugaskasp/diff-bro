@@ -3,7 +3,7 @@ import { securityItems } from './menuSecurity'
 import { toolsItems } from './menuTools'
 import { t } from './i18n'
 
-// The in-app menu bar's contents (Windows/Linux). Kept out of MenuBar.vue so
+// The ≡ menu's contents (Windows/Linux). Kept out of MenuBar.vue so
 // the component stays presentation: this is the list, that file is the
 // dropdown behaviour.
 //

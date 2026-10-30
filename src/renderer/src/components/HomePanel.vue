@@ -71,7 +71,7 @@ const recent = computed(() =>
     .filter((group) => group.items.length)
 )
 const quick = computed(() =>
-  q.value ? [] : namedTools(toolsStore.railRows(QUICK_TOOLS), t).map(toolItem)
+  q.value ? [] : namedTools(toolsStore.leadingRows(QUICK_TOOLS), t).map(toolItem)
 )
 const KIND_KEY = {
   diff: 'homePanel.kind.diff',

@@ -1,5 +1,5 @@
-// Every action a menu, shortcut, palette entry, shelf chip or rail button can
-// trigger, in one place. Handlers receive the stores they need rather than
+// Every action a menu, shortcut, palette entry or tool tile can trigger, in one
+// place. Handlers receive the stores they need rather than
 // importing them, so this stays pure and the core store never reaches sideways
 // into a feature to satisfy a menu item.
 
@@ -145,8 +145,7 @@ export const commandActions = () => Object.keys(COMMANDS)
  */
 export function runCommand(action, stores) {
   COMMANDS[action]?.(stores)
-  // One choke point, so a tool opened from the menu, a shortcut, the shelf or
-  // the palette all count towards the shelf's recents.
+  // One choke point, so a tool opened from anywhere counts towards the palette's recents.
   const tool = TOOLS.find((t) => t.action === action)
   if (tool) stores.settings.noteToolUsed(tool.id)
 }

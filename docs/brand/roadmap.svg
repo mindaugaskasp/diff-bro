@@ -171,7 +171,7 @@
     <text x="55" y="508" font-size="12.5" fill="#1c1710">Read the library, over stdio</text>
 
     <rect x="45" y="526" width="243" height="30" rx="5" fill="#ffa285"/>
-    <text x="55" y="545" font-size="12.5" fill="#1c1710">Proposals wait on Home</text>
+    <text x="55" y="545" font-size="12.5" fill="#1c1710">Proposals wait in Snippets, Diffs</text>
 
     <line x1="45" y1="574" x2="288" y2="574" stroke="#ddd0b6" stroke-dasharray="3 3"/>
     <text x="45" y="593" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">main/mcp.js · mcpGrant.js</text>

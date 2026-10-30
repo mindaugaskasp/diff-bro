@@ -123,13 +123,12 @@
 .app.presenting .pane {
   border: 0;
 }
-/* Only the content is worth projecting: a comparison's file slots and status,
+/* Only the content is worth projecting: a comparison's pane labels and status,
    a snippet's name, tags and status bar all go. */
-.app.presenting .file-slots-row,
+.app.presenting :deep(.pane-labels),
 .app.presenting :deep(.doc-head),
 .app.presenting :deep(.format-toolbar),
 .app.presenting :deep(.editor-status),
-.app.presenting :deep(.status-band),
-.app.presenting :deep(.shortcut-bar) {
+.app.presenting :deep(.status-band) {
   display: none;
 }

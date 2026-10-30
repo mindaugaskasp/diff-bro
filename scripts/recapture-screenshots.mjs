@@ -239,11 +239,15 @@ async function setTheme(page, label) {
   // By accessible name, not the tooltip attribute: tooltips moved from native
   // `title` to `data-tip` and silently broke this.
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
+  await dlg.getByRole('button', { name: 'Save', exact: true }).click()
   await page.keyboard.press('Escape')
   await dlg.waitFor({ state: 'hidden' })
   // The toolbar eases back from its dialog-open state; a shot taken at once looks disabled.
   await page.waitForTimeout(400)
 }
+
+const newComparison = (page) =>
+  page.locator('.diff-tabs').getByRole('button', { name: 'New comparison', exact: true }).click()
 
 async function shoot(page, name, want) {
   if (want.size && !want.has(name)) return
@@ -282,14 +286,14 @@ async function main() {
     await shoot(page, 'save-encrypted', want)
     await page.keyboard.press('Escape')
 
-    await page.getByRole('button', { name: 'Clear', exact: true }).click()
+    await newComparison(page)
     console.log('Loading spreadsheet diff…')
     await loadPair(app, page, XLSX_A, XLSX_B)
     await page.locator('.sheet-tabs').waitFor({ state: 'visible' })
     await shoot(page, 'spreadsheet-diff', want)
 
     console.log('Loading diagram diff…')
-    await page.getByRole('button', { name: 'Clear', exact: true }).click()
+    await newComparison(page)
     writeFileSync(MMD_A, MMD_BEFORE)
     writeFileSync(MMD_B, MMD_AFTER)
     await loadPair(app, page, MMD_A, MMD_B)

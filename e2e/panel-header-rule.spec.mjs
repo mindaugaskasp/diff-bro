@@ -5,7 +5,7 @@ import { test, expect, showPanel } from './fixtures.mjs'
 for (const panel of ['diffs', 'snippets']) {
   test(`the ${panel} panel header is ruled off from its list`, async ({ page }) => {
     await showPanel(page, panel)
-    const head = page.locator('.head.panel:visible').first()
+    const head = page.locator('.section-head:visible').first()
     await expect(head).toBeVisible()
     const rule = await head.evaluate((el) => {
       const s = getComputedStyle(el)

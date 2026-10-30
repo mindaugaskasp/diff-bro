@@ -48,8 +48,6 @@ const isUrl = computed(() => lang.value === 'url')
 // tag word carries information the type anchor doesn't already.
 const { shown: shownTags } = useRowTags(() => props.entry.tags.filter((t) => t !== lang.value))
 const colorHex = computed(() => rowColorHex(props.entry.color))
-// Right-click is the way in — the gesture that already opens a tag's manage
-// popover from the shelf.
 const openColorMenu = (e) => (ui.rowColorMenu = { id: props.entry.id, x: e.clientX, y: e.clientY })
 
 // Hovering the name previews the snippet — not the whole row, which made the

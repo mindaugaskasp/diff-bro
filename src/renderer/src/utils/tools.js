@@ -1,4 +1,4 @@
-// The one list every tool surface reads — sidebar shelf, palette tools scope,
+// The one list every tool surface reads — sidebar panel, palette tools scope,
 // launcher — so their icons and wording cannot drift apart.
 
 /**
@@ -114,7 +114,7 @@ export const TOOLS = [
 // How many the palette's "Recent" section remembers. Most-recent-first, so it
 // rotates with what you actually reach for rather than accumulating. Recency
 // decides MEMBERSHIP of that section only — never the position of a row in the
-// sidebar or the rail, which order by pins (see toolRows).
+// sidebar, which orders by pins (see toolRows).
 export const MAX_RECENT_TOOLS = 9
 
 const BY_ID = new Map(TOOLS.map((t) => [t.id, t]))
@@ -145,10 +145,9 @@ export function recentTools(ids, limit = MAX_RECENT_TOOLS) {
 }
 
 /**
- * Row order for the sidebar section and the rail: pinned first, then the rest,
- * BOTH in registry order. Recency decides membership in the palette; it never
- * decides position here, so a row cannot move as a side effect of being used —
- * which is what the recents shelf did on every click.
+ * Row order for the Tools panel and Home: pinned first, then the rest, BOTH in
+ * registry order. Recency never decides position, so a row cannot move as a side
+ * effect of being used.
  * @param {string[]} pinnedIds  ids the user pinned, in any order
  * @param {number} [limit]      how many the surface has room for
  * @returns {(Tool & { pinned: boolean })[]}

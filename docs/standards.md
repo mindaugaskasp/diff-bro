@@ -242,7 +242,7 @@ review:
    /`load*` for something that goes to disk, IPC or the OS.
 
 2. **A boolean reads as a question**: `is`/`has`/`can`/`should`/`will`/`may`.
-   `isSameRect(a, b)`, `hasStatusBand(store)`, `canCompareDiagram`,
+   `isSameRect(a, b)`, `hasSplitPanes(store)`, `canCompareDiagram`,
    `shouldOpenSemantic(store)`. A predicate named as a statement is the most
    common miss — it is why `same`, `finite` and `skipped` were renamed.
 
@@ -279,7 +279,7 @@ anything:
    `components/`. It may **not** reach into another slice's internals — only its
    `index.js` — and **the core may not import a slice at all**. Both are lint
    failures; the second is also what `check-structure.mjs` catches as a cycle.
-3. Anything a menu, shortcut, palette entry, shelf chip or rail button can
+3. Anything a menu, shortcut, palette entry or tool tile can
    trigger is a row in `utils/commands.js`, **not** a new action on the core.
    Handlers receive the stores they need, so the registry stays pure and the core
    never reaches sideways. `commands.test.js` fails if an action named by
@@ -420,7 +420,8 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   runs straight across the divider. A comparison has no band of its own: each
   pane names its side in a label at its top right (`PaneLabels`), a zero-height
   strip placed before the viewer's body so it sits under any band the viewer
-  draws. Controls sharing a
+  draws. A grid gives the strip its own row, because its top right is a column
+  letter. Controls sharing a
   band row must be equal-height flex-centred boxes.
 - **Icons are SVG, never Unicode glyphs.** A symbol like ◈ / ⧉ / 🔒 tofus into a
   `[]` box on any font that lacks it, which kept happening. Every icon comes

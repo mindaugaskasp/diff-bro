@@ -1,7 +1,5 @@
 <script setup>
-// Over a tab reviewing a Claude proposal (#121). Every field in the tab is
-// editable; Accept saves the reader's version through the ordinary save, and the
-// proposal is filed away once that tab has a saved id.
+// Over a tab reviewing a Claude proposal (#121); Accept is the ordinary save of the reader's version.
 import { computed, watch } from 'vue'
 import { useTabsStore } from '../../../stores/tabsStore'
 import { useDiffStore } from '../../../stores/diffStore'

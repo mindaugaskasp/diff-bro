@@ -1,8 +1,5 @@
 import { test, expect } from './fixtures.mjs'
 
-// #144 slice 3: the menu bar and the toolbar band are gone. Tabs and actions share
-// one row, every action but Save is its icon, and ≡ holds the menus.
-
 async function newComparison(page) {
   await page
     .locator('.diff-tabs')

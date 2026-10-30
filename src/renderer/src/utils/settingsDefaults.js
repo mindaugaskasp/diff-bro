@@ -22,8 +22,6 @@ export const clampBackupHours = (h) => {
 // Organizational, non-secret preferences, persisted as PLAINTEXT settings.json
 // (nothing sensitive; encrypted data stays in the vault/snippet stores).
 
-export const SECTIONS = ['saved', 'external', 'snippets', 'tools']
-
 export const SIDEBAR_PANELS = ['home', 'diffs', 'snippets', 'tools', 'keys']
 export const sanitizeSidebarPanel = (id) => (SIDEBAR_PANELS.includes(id) ? id : 'home')
 
@@ -67,17 +65,6 @@ export const clampNumber = (value, fallback, min, max) => {
   const n = Number(value)
   if (!Number.isFinite(n)) return fallback
   return Math.min(Math.max(n, min), max)
-}
-
-// Normalises to exactly the known sections, once each: unknown and repeated ids
-// are dropped, and any section MISSING from a stored order is appended — which
-// is what carries a settings file written before a new section existed, keeping
-// the order the user dragged instead of resetting it.
-export function sanitizeSectionOrder(order) {
-  if (!Array.isArray(order)) return [...SECTIONS]
-  const kept = order.filter((id, i) => SECTIONS.includes(id) && order.indexOf(id) === i)
-  for (const id of SECTIONS) if (!kept.includes(id)) kept.push(id)
-  return kept
 }
 
 // Clamped to each type's [1, cap].
@@ -141,12 +128,9 @@ const readNumericLimits = (parsed) =>
 
 export function settingsStateFrom(parsed, outside) {
   return {
-    sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
-    shelfOrder:
-      parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
     // The tag word beside a name on every sidebar row. On by default; off is for
     // a library where nearly everything carries the same tags, and it hides the
-    // WORD only — the shelf and the search still filter by them.
+    // WORD only — the tag sections and the search still find by them.
     showRowTags: parsed.showRowTags !== false,
     rotateThemeDaily: parsed.rotateThemeDaily === true,
     fileSizeLimitsMb: readFileLimits(parsed),
@@ -167,7 +151,7 @@ export function settingsStateFrom(parsed, outside) {
     // off forgets the stored one too (see tabsStore.setRestoreSession).
     restoreSession: parsed.restoreSession !== false,
     autoBackup: parsed.autoBackup !== false,
-    // The sidebar collapsed to its rail. Off by default: the library is how a
+    // The sidebar hidden. Off by default: the library is how a
     // comparison is usually reached.
     sidebarCollapsed: parsed.sidebarCollapsed === true,
     sidebarPanel: sanitizeSidebarPanel(parsed.sidebarPanel),

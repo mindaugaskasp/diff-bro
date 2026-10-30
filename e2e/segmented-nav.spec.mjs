@@ -1,8 +1,5 @@
 import { test, expect, openMenu } from './fixtures.mjs'
 
-// #144 slice 4: the rail became a segmented control at the top of the sidebar.
-// It hides by a handle on its edge and comes back from a strip at the left edge.
-
 const nav = (page) => page.locator('.sidebar-nav')
 const segment = (page, panel) => nav(page).locator(`[data-value="${panel}"]`)
 const aside = (page) => page.locator('aside.saved')

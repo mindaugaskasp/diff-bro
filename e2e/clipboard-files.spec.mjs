@@ -36,7 +36,6 @@ test('pasting two copied files compares them as files, not their names', async (
   // "paste text?" first is a prompt about something the user did not do.
   await expect(page.getByRole('dialog', { name: 'Paste detected' })).toBeHidden()
 
-  // Both labels name the real files, and the diff renders their contents.
   await expect(page.locator('.pane-labels')).toContainText('alpha.txt')
   await expect(page.locator('.pane-labels')).toContainText('beta.txt')
   await expect(page.getByText('What are you comparing?')).toBeHidden()

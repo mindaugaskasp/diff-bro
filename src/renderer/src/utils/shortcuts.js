@@ -1,8 +1,7 @@
 import { MOD } from '../keys'
 
 // The single source of truth for every keyboard shortcut the app advertises.
-// Consumed by the Help → Keyboard Shortcuts dialog (full list, grouped) and the
-// floating ShortcutBar (a short subset). The real bindings live in the hidden
+// Consumed by the Help → Keyboard Shortcuts dialog. The real bindings live in the hidden
 // application menu (src/main/menu.js); this is only the labelling, so the labels
 // track the host OS through MOD (Cmd on macOS, Ctrl elsewhere).
 //

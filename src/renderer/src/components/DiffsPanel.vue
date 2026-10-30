@@ -35,8 +35,6 @@ const received = useDiffRows(() => props, RECEIVED_GROUPS).rows
     <SavedDiffsSection
       v-if="whose === 'mine'"
       data-section="saved"
-      first
-      panel
       :search="search"
       :tags="tags"
       @manage-tag="$emit('manageTag', $event)"
@@ -46,7 +44,7 @@ const received = useDiffRows(() => props, RECEIVED_GROUPS).rows
       </template>
       <template #lead><ProposalsGroup kind="comparison" /></template>
     </SavedDiffsSection>
-    <ExternalDiffsSection v-else data-section="external" first panel :search="search" :tags="tags">
+    <ExternalDiffsSection v-else data-section="external" :search="search" :tags="tags">
       <template #title>
         <DiffsWhoseSwitch v-model:whose="whose" :mine="mine.length" :received="received.length" />
       </template>

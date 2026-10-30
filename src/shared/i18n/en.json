@@ -325,8 +325,7 @@
       "recent": "Recent",
       "other": "Other tools",
       "searchEveryTool": "Search every tool",
-      "noToolsMatchTryRemoving": "No tools match — try removing a filter.",
-      "showFewer": "Show fewer"
+      "noToolsMatchTryRemoving": "No tools match — try removing a filter."
     },
     "fallbackTitle": "Tools",
     "openAction": "Open",
@@ -341,8 +340,7 @@
       "lines": "Lines",
       "hash": "Checksum",
       "regex": "Regex"
-    },
-    "moreToolCount": "{n} more tool | {n} more tools"
+    }
   },
   "palette": {
     "searchTools": "Search tools…",
@@ -353,17 +351,11 @@
   "quickLook": {
     "backTip": "Back",
     "backLabel": "Back to the results",
-    "enter": "Enter",
-    "browseTools": "Press {key} to browse the tool | Press {key} to browse the {count} tools.",
-    "openTool": "Press {key} to open this tool.",
-    "createHint": "Press {key} to name and capture it.",
     "toolsHeader": "Tools"
   },
   "toolRow": {
     "unpin": "Unpin",
-    "pin": "Pin {name} to the top",
-    "tip": "{kind} — {name}",
-    "pinToTheTop": "Pin to the top of the list"
+    "pin": "Pin {name} to the top"
   },
   "shareErrors": {
     "notAShareFile": "That file is not a Diff Bro shared diff.",
@@ -1604,9 +1596,6 @@
   },
   "paneLabels": {
     "replace": "Replace the {side} file ({name})"
-  },
-  "sectionHeader": {
-    "dragToReorder": "Drag to reorder"
   },
   "spreadsheetGrid": {
     "hiddenInSource": "Hidden in the source file"

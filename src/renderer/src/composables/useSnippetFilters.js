@@ -4,9 +4,8 @@ import { useSnippetStore } from '../stores/snippetStore'
 // Sentinel for the untagged filter — never a real tag (those are lowercased).
 export const DEFAULT_TAG = '__DEFAULT__'
 
-// Text search and tag selection for the snippets sidebar. The two COMPOSE (AND)
-// — neither resets the other — which is the whole reason this lives in one
-// place instead of being re-derived per shelf.
+// Text search and tag selection for the snippets sidebar. The two COMPOSE (AND):
+// neither resets the other.
 export function useSnippetFilters() {
   const store = useSnippetStore()
   const query = ref('')

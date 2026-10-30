@@ -38,8 +38,6 @@ function readState() {
 export const useSettingsStore = defineStore('settings', {
   state: () => readState(),
   getters: {
-    // Sections in the user's chosen order (always every one, sanitized).
-    orderedSections: (s) => s.sectionOrder,
     maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024,
     // The remembered size for a resizable dialog, or null for its default.
     dialogSize: (s) => (key) => s.dialogSizes[key] ?? null,
@@ -95,8 +93,6 @@ export const useSettingsStore = defineStore('settings', {
       savePersisted(
         'settings',
         JSON.stringify({
-          sectionOrder: this.sectionOrder,
-          shelfOrder: this.shelfOrder,
           showRowTags: this.showRowTags,
           rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
@@ -119,7 +115,7 @@ export const useSettingsStore = defineStore('settings', {
         })
       )
     },
-    // Drives the sidebar shelf's recent chips and the palette's Recent section.
+    // Drives the palette's Recent section.
     noteToolUsed(id) {
       const next = noteRecent(this.recentTools, id)
       if (next.join() === this.recentTools.join()) return
@@ -131,41 +127,6 @@ export const useSettingsStore = defineStore('settings', {
       if (this.examplesSeeded) return
       this.examplesSeeded = true
       this.persist()
-    },
-    // Move a section one step up or down (delta -1 / +1). No-op at the ends.
-    moveSection(id, delta) {
-      const order = [...this.sectionOrder]
-      const from = order.indexOf(id)
-      const to = from + delta
-      if (from === -1 || to < 0 || to >= order.length) return
-      order.splice(to, 0, order.splice(from, 1)[0])
-      this.sectionOrder = order
-      this.persist()
-    },
-    // Drag-and-drop reorder: drop section `fromId` so it lands just before
-    // `toId`. No-op when either id is unknown.
-    reorderSections(fromId, toId) {
-      if (fromId === toId) return
-      if (!this.sectionOrder.includes(fromId) || !this.sectionOrder.includes(toId)) return
-      const order = this.sectionOrder.filter((id) => id !== fromId)
-      order.splice(order.indexOf(toId), 0, fromId)
-      this.sectionOrder = order
-      this.persist()
-    },
-    // Persist the shelf order for a section (item drag-reorder). ids is the full
-    // ordered list of that section's shelf ids.
-    setShelfOrder(sectionId, ids) {
-      this.shelfOrder = { ...this.shelfOrder, [sectionId]: [...ids] }
-      this.persist()
-    },
-    // Return the stored shelf order for a section, reconciled against the shelves
-    // that actually exist now: known ids first in stored order, then any new
-    // shelf appended so nothing is ever dropped.
-    shelfOrderFor(sectionId, presentIds) {
-      const stored = this.shelfOrder[sectionId] ?? []
-      const kept = stored.filter((id) => presentIds.includes(id))
-      for (const id of presentIds) if (!kept.includes(id)) kept.push(id)
-      return kept
     },
     setShowRowTags(value) {
       this.showRowTags = !!value

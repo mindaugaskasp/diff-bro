@@ -99,7 +99,7 @@ export const useSnippetStore = defineStore('snippets', {
     hasDiagrams: (s) => s.entries.some((e) => languageOf(e) === 'mermaid'),
     favorites: (s) => group(s.entries, 'favorites'),
     listed: (s) => group(s.entries, 'listed'),
-    // In-use tags, most recent first; unused ones keep their colour off the shelf.
+    // In-use tags, most recent first; unused ones keep their colour.
     tagList: (s) => {
       const counts = {}
       for (const e of s.entries) for (const t of e.tags) counts[t] = (counts[t] || 0) + 1

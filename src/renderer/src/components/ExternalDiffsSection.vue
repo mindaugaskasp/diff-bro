@@ -1,6 +1,6 @@
 <script setup>
 // The "External diffs" section: diffs shared by others, each signed by its sender.
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useDiffRows, RECEIVED_GROUPS } from '../composables/useDiffRows'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
@@ -15,20 +15,16 @@ import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
 
 const props = defineProps({
-  first: { type: Boolean, default: false },
-  unified: { type: Boolean, default: false },
-  panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
   tags: { type: Array, default: () => [] }
 })
 
 const vault = useVaultStore()
-const { rows, filtering } = useDiffRows(() => props, RECEIVED_GROUPS)
+const { rows } = useDiffRows(() => props, RECEIVED_GROUPS)
 const ui = useUiStore()
 const share = useShareStore()
 
-const open = ref(true)
 const reorder = provideRowReorder((group, from, to) =>
   ui.markMovedRow(vault.reorder(group, from, to))
 )
@@ -48,31 +44,18 @@ useNewRowMarker({
       t('newRow.hiddenByFilter', {
         name: vault.importedActive.find((e) => e.id === id)?.name ?? ''
       })
-    ),
-  open: () => (open.value = true)
+    )
 })
 
 // Expand the section, then run the import flow.
 function startImport() {
-  open.value = true
   share.importShared()
 }
 </script>
 
 <template>
   <section class="sidebar-section">
-    <SectionHeader
-      section-id="external"
-      :title="$t('externalDiffsSection.externalDiffs')"
-      icon="share"
-      :open="open"
-      :first="first"
-      :unified="unified"
-      :panel="panel"
-      :count="rows.length"
-      :filtering="filtering"
-      @toggle="open = !open"
-    >
+    <SectionHeader :title="$t('externalDiffsSection.externalDiffs')" :count="rows.length">
       <template v-if="$slots.title" #title><slot name="title" /></template>
       <template #actions>
         <button
@@ -85,7 +68,7 @@ function startImport() {
         </button>
       </template>
     </SectionHeader>
-    <div v-show="open || panel" class="section-body">
+    <div class="section-body">
       <p v-if="!hasImported" class="empty">
         <AppIcon name="inbox" /> {{ $t('externalDiffsSection.empty') }}
       </p>

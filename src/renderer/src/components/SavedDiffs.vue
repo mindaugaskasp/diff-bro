@@ -57,9 +57,7 @@ const panelProps = computed(() =>
     ? { search: search.value }
     : {
         search: search.value,
-        tags: filterable.value ? tags.active.value : [],
-        panel: true,
-        first: true
+        tags: filterable.value ? tags.active.value : []
       }
 )
 const SEARCH_KEY = {
