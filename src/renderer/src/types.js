@@ -11,7 +11,7 @@
  * instead — the adapter registry keys off that (see adapters/).
  * @typedef {object} LoadedFile
  * @property {string} path      absolute path it was read from
- * @property {string} name      basename, shown in the slot
+ * @property {string} name      basename, shown in the pane label
  * @property {string} [content] decoded text (text files; absent for spreadsheets)
  * @property {'spreadsheet'} [kind]  non-text format, set by main
  * @property {SheetGrid[]} [sheets]  parsed worksheets when kind === 'spreadsheet'

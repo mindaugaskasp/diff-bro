@@ -72,7 +72,7 @@ const exitButton = (page) => page.getByRole('button', { name: 'Exit presentation
 test('presenting shows only the comparison, with an Exit button that leaves', async ({ page }) => {
   await loadDiff(page)
   await page.getByTestId('toolbar-present').click()
-  await expect(page.locator('.file-slots-row')).toBeHidden()
+  await expect(page.locator('.topbar')).toBeHidden()
   const exit = exitButton(page)
   await expect(exit).toBeVisible()
   await exit.click()

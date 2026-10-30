@@ -24,19 +24,17 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Anchors the floating ShortcutBar to the diff area, not the window. Isolation
-     keeps the Matrix theme's z-index:-1 rain layer behind the content, not the
-     whole app. */
+  /* Anchors the pane labels and notices to the diff area. Isolation keeps the
+     Matrix theme's z-index:-1 rain layer behind the content, not the whole app. */
   position: relative;
   isolation: isolate;
 }
-/* Image export in progress: the toast and the shortcut bar float over the diff
-   column, which is exactly the region being photographed, so they leave the
-   frame. display:none applies on the next style recalc with no transition to
-   catch — a v-if would fade out and land in the shot. */
+/* Image export in progress: the toast floats over the photographed column, so it
+   leaves the frame. display:none, not a v-if, which would fade into the shot.
+   The pane labels stay in the first slice of a tall export and leave the rest. */
 .content.capturing .notice,
 .content.capturing .disk-notice,
-.content.capturing :deep(.shortcut-bar) {
+.content.capturing-tail :deep(.pane-labels) {
   display: none;
 }
 .empty {
@@ -112,14 +110,6 @@
   font-weight: 600;
   padding: 28px 44px;
   box-shadow: var(--shadow-3);
-}
-
-/* The shortcut bar floats over the diff, anchored to .content — so when a
-   status band is showing it has to clear it, or it covers the change counts.
-   It already covered the spreadsheet/structure/streamed bars before the text
-   diff grew one. */
-.content.with-status-band .shortcut-bar {
-  bottom: calc(var(--band-row) + var(--space-3));
 }
 
 /* Presentation mode: the comparison and nothing else. Escape is the way back —

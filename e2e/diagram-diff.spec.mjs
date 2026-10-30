@@ -6,7 +6,8 @@ import {
   firstReadyPage,
   closeViewMenu,
   openViewMenu,
-  setViewOption
+  setViewOption,
+  paneLabel
 } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
@@ -63,7 +64,7 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
   const page = await firstReadyPage(app)
   const work = await openPair(userDataDir)
   try {
-    await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
+    await expect(paneLabel(page, 'right')).toContainText('pipeline-v2.mmd', {
       timeout: 15000
     })
     // The toggle renames itself rather than adding a second control.
@@ -115,7 +116,7 @@ test('focus hides the untouched part and says how much', async () => {
   const page = await firstReadyPage(app)
   const work = await openPair(userDataDir)
   try {
-    await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
+    await expect(paneLabel(page, 'right')).toContainText('pipeline-v2.mmd', {
       timeout: 15000
     })
     await setViewOption(page, /^Diagram$/i)
@@ -141,7 +142,7 @@ test('turning the toggle off returns to the text diff', async () => {
   const page = await firstReadyPage(app)
   const work = await openPair(userDataDir)
   try {
-    await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
+    await expect(paneLabel(page, 'right')).toContainText('pipeline-v2.mmd', {
       timeout: 15000
     })
     await setViewOption(page, /^Diagram$/i)
@@ -165,7 +166,7 @@ test('the change list collapses and hands its width to the diagram', async () =>
   const page = await firstReadyPage(app)
   const work = await openPair(userDataDir)
   try {
-    await expect(page.locator('.slot[data-side="right"]')).toContainText('pipeline-v2.mmd', {
+    await expect(paneLabel(page, 'right')).toContainText('pipeline-v2.mmd', {
       timeout: 15000
     })
     await setViewOption(page, /^Diagram$/i)

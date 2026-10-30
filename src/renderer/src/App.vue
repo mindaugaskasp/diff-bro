@@ -11,7 +11,6 @@ import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
 import { usePasteShortcut } from './composables/usePasteShortcut'
 import { useSessionPersistence } from './composables/useSessionPersistence'
 import { useTourCommands } from './composables/useTourCommands'
-import FileSlotsRow from './components/FileSlotsRow.vue'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
 import DiagramDiffViewer from './components/DiagramDiffViewer.vue'
@@ -26,7 +25,6 @@ import WaitingForSecond from './components/WaitingForSecond.vue'
 import NyanLane from './components/NyanLane.vue'
 import MatrixRain from './components/MatrixRain.vue'
 import PasteInput from './components/PasteInput.vue'
-import ShortcutBar from './components/ShortcutBar.vue'
 
 import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
@@ -42,7 +40,6 @@ import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { useUiStore } from './stores/uiStore'
 import { usePresentationKeys } from './composables/usePresentationKeys'
 import { useWindowFocusRefresh } from './composables/useWindowFocusRefresh'
-import { hasStatusBand } from './utils/viewChrome'
 
 const store = useDiffStore()
 const merge = useMergeStore()
@@ -53,7 +50,6 @@ tabs.init()
 const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
-const showStatusBand = computed(() => hasStatusBand(store))
 // One side loaded: which one is still wanted.
 const missingSide = computed(() => (store.left ? 'right' : 'left'))
 const { runFromMenu, runCli } = useCommands()
@@ -126,7 +122,11 @@ useWindowFocusRefresh()
         <main
           class="content"
           data-tour="pane"
-          :class="{ capturing: imageExport.imageCapturing, 'with-status-band': showStatusBand }"
+          :class="{
+            capturing: imageExport.imageCapturing,
+            'capturing-tail': imageExport.captureTail
+          }"
+          :data-drop-halves="store.ready || undefined"
           :style="{ '--diff-zoom': ui.diffZoom }"
         >
           <!-- Matrix theme: code rain behind the empty state / diff area, only
@@ -135,15 +135,12 @@ useWindowFocusRefresh()
             v-if="settings.theme === 'matrix' && !store.ready && store.mode !== 'paste'"
             fill
           />
-          <!-- A merge produces a file rather than comparing two, so the slots
-               have nothing to name and every control above them is disabled. -->
           <SnippetDocument
             v-for="t in snippetTabs"
             v-show="t.id === tabs.activeId"
             :key="t.id"
             :tab="t"
           />
-          <FileSlotsRow v-if="!activeSnippetTab && store.mode !== 'paste' && !merge.open" />
 
           <!-- Keyed by file: a second launch arriving while this is open must
                re-seed, not set new text under decorations anchored to the old. -->
@@ -179,14 +176,6 @@ useWindowFocusRefresh()
 
           <DiskChangeNotice />
           <AppUpdatedNotice />
-
-          <ShortcutBar
-            v-if="
-              !merge.open &&
-              !activeSnippetTab &&
-              (store.left || store.right || store.mode === 'paste')
-            "
-          />
 
           <!-- The photo studio: covers this column while a snippet is shot. -->
           <SnippetShot v-if="imageExport.snippetShot" :shot="imageExport.snippetShot" />

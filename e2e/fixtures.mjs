@@ -1,7 +1,7 @@
 import { test as base, _electron as electron, expect } from '@playwright/test'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workerEnv } from './workerEnv.mjs'
 
@@ -261,6 +261,18 @@ export async function stubOpenDialog(app, filePaths) {
     },
     list
   )
+}
+
+export const paneLabel = (page, side) => page.locator(`.pane-label[data-side="${side}"]`)
+
+export async function pickSide(app, side, filePath) {
+  await stubOpenDialog(app, filePath)
+  await clickAppMenuItem(app, side === 'left' ? 'Open Left' : 'Open Right')
+}
+
+export async function openSide(app, page, side, filePath) {
+  await pickSide(app, side, filePath)
+  await expect(paneLabel(page, side)).toHaveText(basename([filePath].flat()[0]))
 }
 
 export { expect }

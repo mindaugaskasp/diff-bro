@@ -83,7 +83,6 @@ export const useSettingsStore = defineStore('settings', {
         JSON.stringify({
           sectionOrder: this.sectionOrder,
           shelfOrder: this.shelfOrder,
-          showShortcutBar: this.showShortcutBar,
           showRowTags: this.showRowTags,
           rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
@@ -153,10 +152,6 @@ export const useSettingsStore = defineStore('settings', {
       const kept = stored.filter((id) => presentIds.includes(id))
       for (const id of presentIds) if (!kept.includes(id)) kept.push(id)
       return kept
-    },
-    setShowShortcutBar(value) {
-      this.showShortcutBar = !!value
-      this.persist()
     },
     setShowRowTags(value) {
       this.showRowTags = !!value

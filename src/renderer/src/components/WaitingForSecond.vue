@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import AppIcon from './AppIcon.vue'
 import SingleFileView from './SingleFileView.vue'
+import PaneLabels from './PaneLabels.vue'
 
 const props = defineProps({
   name: { type: String, required: true },
@@ -23,6 +24,7 @@ const isViewable = computed(
 
 <template>
   <div class="waiting">
+    <PaneLabels class="waiting-labels" />
     <template v-for="pane in paneOrder" :key="pane">
       <section v-if="pane === 'loaded'" class="wait-pane loaded">
         <SingleFileView v-if="isViewable" :comparable="comparable" />

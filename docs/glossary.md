@@ -127,6 +127,9 @@ where the concept lives in this repo.
 - **Sealing** — producing a shareable, signed-and-encrypted `.diffbro` file.
 - **Comparable kind** — `text` vs `spreadsheet`; the content router picks the
   viewer from it.
+- **Pane label** — the file name at the top right of each side of a
+  comparison; clicking it replaces that side. Split views name each half,
+  single-column views show both names together (`PaneLabels.vue`).
 - **Tips vs tour** — two different things, and the copy leans on the
   difference. **Tips** are the automatic ones: offered by the consent dialog on
   a first launch and after an update, and `showTips` turns them off for good. The **tour** is the
@@ -140,7 +143,7 @@ where the concept lives in this repo.
   sits inside it.
 - **Live step** — the exception. A step's hole is cut so its target stays sharp,
   but the pointer stops at the veil unless the step says `live`: a click on a
-  file slot mid-tour opens a picker over the card pointing at it. Exactly one
+  start link mid-tour opens a picker over the card pointing at it. Exactly one
   step asks for the press it rings, and that is the one ringing Save.
 - **Context region** — what a step is ABOUT when that is not the control it
   points at. The Share step rings a button but is about the whole comparison, so

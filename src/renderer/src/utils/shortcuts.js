@@ -77,14 +77,3 @@ export const SHORTCUT_GROUPS = [
     ]
   }
 ]
-
-// The compact set shown in the floating hint bar over the diff area. Objects
-// rather than tuples so scripts/check-i18n.mjs can see the keys are in use.
-export const SHORTCUT_BAR = [
-  { keys: `${MOD}+1`, labelKey: 'shortcuts.bar.openLeft' },
-  { keys: `${MOD}+2`, labelKey: 'shortcuts.bar.openRight' },
-  { keys: `${MOD}+S`, labelKey: 'shortcuts.bar.saveDiff' },
-  { keys: `${MOD}+Shift+S`, labelKey: 'shortcuts.bar.swap' },
-  { keys: `${MOD}+T`, labelKey: 'shortcuts.bar.pasteText' },
-  { keys: `${MOD}+\\`, labelKey: 'shortcuts.bar.splitView' }
-]

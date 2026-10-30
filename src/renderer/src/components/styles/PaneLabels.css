@@ -1,0 +1,55 @@
+/* Zero height in the flow: it sits on top of whatever follows it, under any band
+   before it, and moves nothing. */
+.pane-labels {
+  position: relative;
+  flex: none;
+  height: 0;
+  z-index: 5;
+  align-items: start;
+  pointer-events: none;
+}
+.pane-label {
+  margin-top: var(--space-1);
+}
+.pane-labels.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.pane-labels.joined {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-1);
+  padding-right: var(--space-4);
+}
+.split .pane-label {
+  justify-self: end;
+  margin-right: var(--space-4);
+}
+.split .pane-label[data-side='right'] {
+  grid-column: 2;
+}
+.pane-label {
+  pointer-events: auto;
+  min-width: 0;
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-meta);
+  font: inherit;
+  font-size: var(--font-xs);
+  cursor: pointer;
+}
+.pane-label:hover {
+  background: var(--btn-face-hover);
+  color: var(--text);
+}
+.pane-sep {
+  color: var(--text-meta);
+  font-size: var(--font-xs);
+}

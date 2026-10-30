@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -24,10 +24,8 @@ test('a deeply nested HTML file compares without overflowing the worker', async 
   writeFileSync(right, nested('OMEGA'))
 
   try {
-    await stubOpenDialog(app, left)
-    await page.locator('.slot[data-side="left"] .open').click()
-    await stubOpenDialog(app, right)
-    await page.locator('.slot[data-side="right"] .open').click()
+    await openSide(app, page, 'left', left)
+    await openSide(app, page, 'right', right)
 
     // The diff itself must land: one changed line, deep inside the nesting.
     await expect(page.locator('.status-band .del')).toContainText('1 removed', { timeout: 30_000 })

@@ -1,4 +1,11 @@
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  paneLabel
+} from './fixtures.mjs'
 import { workerEnv } from './workerEnv.mjs'
 import { execFileSync } from 'node:child_process'
 import { spawn } from 'node:child_process'
@@ -62,10 +69,10 @@ test('compares a file against the revision it names', async () => {
 
     // Both sides arrived: the old one out of git, the new one off disk.
     // Named for the revision it came from, so the two sides are told apart.
-    await expect(page.locator('.slot[data-side="left"] .name')).toContainText('HEAD~1', {
+    await expect(paneLabel(page, 'left')).toContainText('HEAD~1', {
       timeout: 20000
     })
-    await expect(page.locator('.slot[data-side="right"] .name')).toContainText('app.json')
+    await expect(paneLabel(page, 'right')).toContainText('app.json')
 
     // And it is a real comparison of the two revisions, not the file with
     // itself: 3 became 9.
@@ -88,7 +95,7 @@ test('says so when the revision does not exist, and opens nothing', async () => 
     await runCli(userDataDir, repo, ['compare', 'no-such-ref:app.json', 'app.json'])
     // The refusal is total: a half-loaded comparison would be worse than none.
     await page.waitForTimeout(1500)
-    await expect(page.locator('.slot[data-side="left"] .name')).toHaveCount(0)
+    await expect(paneLabel(page, 'left')).toHaveCount(0)
   } finally {
     await app.close().catch(() => {})
     rmSync(repo, { recursive: true, force: true })

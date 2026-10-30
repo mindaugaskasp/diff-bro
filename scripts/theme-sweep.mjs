@@ -567,7 +567,7 @@ const SURFACES = [
     },
     close: async (page) => {
       await setOnboarding(page, { showTips: false, layout: 2 })
-      await page.locator('[data-tour="slots"]').waitFor()
+      await page.locator('[data-tour="pane"]').waitFor()
     },
     probes: {
       intro: ['.dialog .dialog-note', TEXT],
@@ -699,7 +699,7 @@ const SURFACES = [
     // typed text while staying legible, and that is a live-DOM judgement.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
       await editor.locator('.name-ghost').waitFor()
@@ -716,7 +716,7 @@ const SURFACES = [
     // Applied tag labels are oklch(), which this parser cannot read; check:themes holds them.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const doc = page.getByRole('region', { name: 'New snippet' })
       await doc.getByPlaceholder('Snippet name…').fill('Standup {{today}}')
       const input = doc.getByRole('textbox', { name: 'Add tag' })
@@ -744,7 +744,7 @@ const SURFACES = [
     // computed check can settle (accent-color hands the tick to the UA).
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Rendered')
       await editor
@@ -929,17 +929,15 @@ const SURFACES = [
     open: async (page) => {
       const plus = page.locator('.diff-tabs .add')
       if ((await plus.getAttribute('aria-pressed')) !== 'true') await plus.click()
-      await page.locator('.start-card').first().waitFor()
+      await page.locator('.start-link').first().waitFor()
     },
     close: async () => {},
     probes: {
       heading: ['.start-head h2', TEXT],
       subtitle: ['.start-head .meta', TEXT],
-      'card title': ['.start-card .card-title', TEXT],
-      'card text': ['.start-card .meta', TEXT],
-      'glyph on its well': ['.start-card .glyph-well', TEXT],
-      'key hint': ['.start-card .ql-kbd', TEXT],
-      format: ['.start-formats .format', TEXT]
+      link: ['.start-link', TEXT],
+      'link face, hovered': ['.start-link', HOVER_STEP, 'step', 'hover'],
+      'link, hovered': ['.start-link', TEXT, 'text', 'hover']
     }
   },
   {
@@ -1079,6 +1077,19 @@ const SURFACES = [
     }
   },
   {
+    name: 'pane-labels',
+    open: async (page) => {
+      if (!(await page.locator('.pane-label').count())) await loadStructureDiff(page)
+      await page.locator('.pane-label').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      label: ['.pane-label', TEXT],
+      'label face, hovered': ['.pane-label', HOVER_STEP, 'step', 'hover'],
+      'label, hovered': ['.pane-label', TEXT, 'text', 'hover']
+    }
+  },
+  {
     name: 'toolbar-actions',
     // Already on screen, and labelled: the row only drops to glyphs when it runs
     // out of room, which at this window size it does not.
@@ -1149,7 +1160,7 @@ const SURFACES = [
     // frame of an animation.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
       await editor.locator('.editor').click()
@@ -1304,9 +1315,9 @@ const SURFACES = [
         const row = document.querySelector('.snippets-section .row[draggable="true"]')
         const dt = new DataTransfer()
         row.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
-        const slot = document.querySelector('.slot[data-side="left"]')
-        slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
-        slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
+        const start = document.querySelector('.start-surface')
+        start.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
+        start.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
       })
       await page.locator('.waiting').waitFor()
     },
@@ -1319,7 +1330,8 @@ const SURFACES = [
     probes: {
       'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
       'waiting title': ['.wait-slot.open .wait-title', TEXT],
-      'waiting hint': ['.wait-hint', DIM]
+      'waiting hint': ['.wait-hint', DIM],
+      'loaded side label': ['.pane-label', TEXT]
     }
   },
   {

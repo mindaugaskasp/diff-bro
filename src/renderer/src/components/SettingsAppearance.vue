@@ -57,9 +57,6 @@ const groups = computed(() => [
     <EditorTextSetting />
 
     <h4>{{ $t('settingsAppearance.behaviour') }}</h4>
-    <SettingToggle :checked="settings.showShortcutBar" @change="settings.setShowShortcutBar">
-      {{ $t('settingsDialog.showTheKeyboardShortcutBar') }}
-    </SettingToggle>
     <SettingToggle :checked="settings.showRowTags" @change="settings.setShowRowTags">
       {{ $t('settingsDialog.showTagsOnSidebarRows') }}
     </SettingToggle>

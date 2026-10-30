@@ -11,6 +11,7 @@ import { diffLineStats } from '../utils/diffStats'
 import { monacoDiffScroller, setDiffScroller } from '../utils/diffScroller'
 import { applyMonacoTheme } from '../composables/useMonacoTheme'
 import AppIcon from './AppIcon.vue'
+import PaneLabels from './PaneLabels.vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useTabScroll } from '../composables/useTabScroll'
 import { useEditorText } from '../composables/useEditorText'
@@ -92,6 +93,7 @@ onBeforeUnmount(() => {
       <AppIcon name="check" class="ok" />
       <span>{{ $t('diffViewer.noDifferencesBothSidesAre') }}</span>
     </div>
+    <PaneLabels />
     <div ref="container" class="diff-container"></div>
     <!-- The same band the diagram diff carries, in the same words: what changed
          reads alike whichever kind of comparison you are looking at. -->

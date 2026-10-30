@@ -225,12 +225,8 @@ export const useDiffStore = defineStore('diff', {
     }
   },
   actions: {
-    // The empty-state format tiles pick into the first free side.
-    pickFormat(format) {
-      return this.pick(this.left ? 'right' : 'left', format)
-    },
-    async pick(side, format) {
-      const file = await window.api.openFile(side, format)
+    async pick(side) {
+      const file = await window.api.openFile(side)
       if (!file) return // dialog cancelled
       // Replacing a side of a complete, unsaved comparison would discard it —
       // ask first. A saved comparison is safe to overwrite, so it skips the
@@ -354,7 +350,7 @@ export const useDiffStore = defineStore('diff', {
           : t('diffNotices.noSnippetsFoundToImport')
       )
     },
-    // 2+ files fill both sides; 1 onto a slot fills it; 1 while a comparison is
+    // 2+ files fill both sides; 1 onto a side fills it; 1 while a comparison is
     // loaded starts fresh on the left; 1 otherwise fills the first empty side.
     async dropFiles(sources, targetSide = null) {
       if (!sources.length) return
@@ -406,7 +402,7 @@ export const useDiffStore = defineStore('diff', {
     cancelReplace() {
       this.pendingReplace = null
     },
-    // --- file-load (Open / slot click) overwrite of an active comparison ---
+    // --- file-load (Open / pane label click) overwrite of an active comparison ---
     confirmPick() {
       const p = this.pendingPick
       this.pendingPick = null

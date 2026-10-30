@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, paneLabel, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync, openSync, writeSync, closeSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -54,12 +54,10 @@ test('compares two files too large to hold, streamed', async ({ app, page }) => 
   writeBigFile(rightPath, { editAt: EDIT_LINE })
 
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await expect(page.locator('.slot[data-side="left"] .name')).toHaveText('huge-left.log')
+    await openSide(app, page, 'left', [leftPath])
+    await expect(paneLabel(page, 'left')).toHaveText('huge-left.log')
 
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'right', [rightPath])
 
     // --- the streamed viewer took over, and says so -----------------------
     const marker = page.locator('.stream-mark')
@@ -186,10 +184,8 @@ test('disables what a streamed comparison cannot do, and says why', async ({ app
   writeBigFile(rightPath, { editAt: 100 })
 
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
     await expect(page.locator('.stream-mark')).toBeVisible()
 
     const save = page.getByRole('button', { name: 'Save', exact: true })
@@ -221,10 +217,8 @@ test('a normal-sized file is NOT streamed', async ({ app, page }) => {
   writeFileSync(rightPath, 'alpha\nZEBRA\ngamma\n')
 
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
 
     // The threshold sits well above ordinary files: this one keeps the full
     // editor, and everything that goes with it.

@@ -36,9 +36,9 @@ test('pasting two copied files compares them as files, not their names', async (
   // "paste text?" first is a prompt about something the user did not do.
   await expect(page.getByRole('dialog', { name: 'Paste detected' })).toBeHidden()
 
-  // Both slots name the real files, and the diff renders their contents.
-  await expect(page.locator('.file-slots-row')).toContainText('alpha.txt')
-  await expect(page.locator('.file-slots-row')).toContainText('beta.txt')
+  // Both labels name the real files, and the diff renders their contents.
+  await expect(page.locator('.pane-labels')).toContainText('alpha.txt')
+  await expect(page.locator('.pane-labels')).toContainText('beta.txt')
   await expect(page.getByText('What are you comparing?')).toBeHidden()
 })
 
@@ -51,7 +51,7 @@ test('pasting one copied file fills the first free side', async ({ app, page }) 
   // Copied files are unambiguous, so they load straight away — asking
   // "paste text?" first is a prompt about something the user did not do.
   await expect(page.getByRole('dialog', { name: 'Paste detected' })).toBeHidden()
-  await expect(page.locator('.file-slots-row')).toContainText('alpha.txt')
+  await expect(page.locator('.pane-labels')).toContainText('alpha.txt')
 })
 
 test('pasting plain text still enters paste mode', async ({ app, page }) => {

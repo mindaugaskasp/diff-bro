@@ -407,16 +407,19 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   (scripts/check-theme-depth.mjs) fails the build if any theme's text, surfaces,
   border or resting control face lose contrast — the floors are a ratchet, never
   lowered to green a run.
-- **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
-  section header, dialog header) is a _band_: it carries `.band` and vertically
+- **Alignment.** Any full-width horizontal strip (toolbar, section header,
+  dialog header) is a _band_: it carries `.band` and vertically
   centres its content with flexbox. Never fake vertical alignment with top
   padding — it drifts the instant a font size or line-height changes (that is
   what twice broke the sidebar/file-input alignment). Bands that sit at the
   same vertical position across the sidebar/main divider share a height so
   their content lines up by construction. Every sidebar section header adds
-  `.band-row` (`--band-row`); the file-slots row and the snippet document head
-  add `.head-band` (`--head-band`, the sidebar's search band less the tab
-  strip), so that line runs straight across the divider. Controls sharing a
+  `.band-row` (`--band-row`); the snippet document head adds `.head-band`
+  (`--head-band`, the sidebar's search band less the tab strip), so that line
+  runs straight across the divider. A comparison has no band of its own: each
+  pane names its side in a label at its top right (`PaneLabels`), a zero-height
+  strip placed before the viewer's body so it sits under any band the viewer
+  draws. Controls sharing a
   band row must be equal-height flex-centred boxes.
 - **Icons are SVG, never Unicode glyphs.** A symbol like ◈ / ⧉ / 🔒 tofus into a
   `[]` box on any font that lacks it, which kept happening. Every icon comes

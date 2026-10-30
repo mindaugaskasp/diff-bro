@@ -959,15 +959,12 @@ button.tag-chip:hover .usb-tct {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  min-height: var(--band-row);
-  padding: 0 var(--space-4);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-3);
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
-  font-size: var(--font-sm);
-  /* --text-hint, not --text-dim: these are words a reader reads ("Lines",
-     "6 rows"), and dim sits at the repo's 3.0 dim/panel floor — under the 4.5
-     text floor on solar, nord, sepia and bloom. */
-  color: var(--text-hint);
+  font-size: var(--font-xs);
+  color: var(--text-meta);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

@@ -36,8 +36,8 @@
 
 /* Drawn INSIDE the target's box. Any outward offset collides with whatever the
    target sits flush against, and adjacent chrome is often already accent — the
-   active tab's underline is the same 2px --accent, so an offset over the
-   file-slots band read as one thick edge instead of two elements.
+   active tab's underline is the same 2px --accent, so an offset over a band
+   below it read as one thick edge instead of two elements.
    Flat, never a glow: matrix #00ff41, nyan #ff2ecb and neon #22d3ee turn an
    accent-tinted shadow into a halo. */
 .tour-ring {

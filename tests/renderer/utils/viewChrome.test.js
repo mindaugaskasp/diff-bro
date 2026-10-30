@@ -1,64 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
+  hasSplitPanes,
   restoredSemanticView,
   shouldOpenSemantic,
-  hasStatusBand,
   showsSplitView,
   showsWhitespaceToggle
 } from '../../../src/renderer/src/utils/viewChrome'
 
-// The floating shortcut bar clears the band only when there IS one, so a wrong
-// answer here either covers the change counts or leaves the bar hovering.
 const store = (over) => ({
   ready: true,
   comparableKind: 'text',
   stats: null,
   identical: false,
   ...over
-})
-
-describe('hasStatusBand', () => {
-  it('is false before a comparison is ready', () => {
-    expect(hasStatusBand(store({ ready: false }))).toBe(false)
-    expect(hasStatusBand(undefined)).toBe(false)
-  })
-
-  // Monaco diffs in a worker and hands back null until it returns; the band is
-  // not drawn yet, so the bar must not move for it.
-  it('waits for the text diff to have a result', () => {
-    expect(hasStatusBand(store({ stats: null }))).toBe(false)
-    expect(hasStatusBand(store({ stats: { additions: 1, deletions: 0 } }))).toBe(true)
-  })
-
-  it('is false for identical text — the band is not drawn', () => {
-    expect(hasStatusBand(store({ stats: { additions: 0, deletions: 0 }, identical: true }))).toBe(
-      false
-    )
-  })
-
-  it('is true for the viewers that always draw one', () => {
-    for (const kind of ['diagram', 'tree', 'spreadsheet']) {
-      expect(hasStatusBand(store({ comparableKind: kind })), kind).toBe(true)
-      expect(hasStatusBand(store({ comparableKind: kind, identical: true })), kind).toBe(true)
-    }
-  })
-
-  // A streamed pair still indexing, or paired with pasted text, renders a
-  // message where its band would be — and the second case never resolves, so
-  // the shortcut bar would hover permanently.
-  it('waits for the streamed pair, which is not always coming', () => {
-    const streamed = { comparableKind: 'streamed' }
-    expect(hasStatusBand(store({ ...streamed, streamedPairReady: true }))).toBe(true)
-    expect(hasStatusBand(store({ ...streamed, streamedPairReady: false }))).toBe(false)
-    expect(hasStatusBand(store(streamed))).toBe(false)
-  })
-
-  // Paste mode replaces the viewer chain entirely (App.vue), so a comparison
-  // can be `ready` with nothing drawn under it.
-  it('is false in paste mode, however ready the comparison is', () => {
-    expect(hasStatusBand(store({ mode: 'paste', stats: { additions: 1 } }))).toBe(false)
-    expect(hasStatusBand(store({ mode: 'paste', comparableKind: 'spreadsheet' }))).toBe(false)
-  })
 })
 
 // The regression this pair exists to catch: Split view is NOT Monaco-only.
@@ -143,5 +97,27 @@ describe('restoredSemanticView', () => {
   it('treats a non-boolean as no record at all', () => {
     expect(restoredSemanticView({ semanticView: 'yes' }, diagram)).toBe(true)
     expect(restoredSemanticView(null, diagram)).toBe(true)
+  })
+})
+
+describe('hasSplitPanes', () => {
+  it('splits a side-by-side text or diagram view, and every spreadsheet', () => {
+    expect(hasSplitPanes(store({ renderSideBySide: true }))).toBe(true)
+    expect(hasSplitPanes(store({ comparableKind: 'diagram', renderSideBySide: true }))).toBe(true)
+    expect(hasSplitPanes(store({ comparableKind: 'spreadsheet', renderSideBySide: false }))).toBe(
+      true
+    )
+  })
+
+  it('joins an inline view and the single-column viewers', () => {
+    expect(hasSplitPanes(store({ renderSideBySide: false }))).toBe(false)
+    for (const kind of ['tree', 'deps', 'streamed'])
+      expect(hasSplitPanes(store({ comparableKind: kind, renderSideBySide: true })), kind).toBe(
+        false
+      )
+  })
+
+  it('splits the waiting state, where one side is loaded', () => {
+    expect(hasSplitPanes(store({ ready: false, renderSideBySide: false }))).toBe(true)
   })
 })

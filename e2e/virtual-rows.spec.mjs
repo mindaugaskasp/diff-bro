@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openSide } from './fixtures.mjs'
 import { zipSync, strToU8 } from 'fflate'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -43,10 +43,8 @@ async function openBigSheet(app, page) {
   const right = join(dir, 'big-b.xlsx')
   writeFileSync(left, workbook('v'))
   writeFileSync(right, workbook('w'))
-  await stubOpenDialog(app, [left])
-  await page.locator('.slot[data-side="left"]').click()
-  await stubOpenDialog(app, [right])
-  await page.locator('.slot[data-side="right"]').click()
+  await openSide(app, page, 'left', [left])
+  await openSide(app, page, 'right', [right])
   await expect(page.locator('.grids')).toBeVisible()
   return dir
 }

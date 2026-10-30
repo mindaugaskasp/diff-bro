@@ -2,7 +2,7 @@
    because scoped CSS does not reach into a child component — the markup moved
    and left its styling behind, which is exactly what that rule is for. */
 /* A real band row under the segmented band: with the strip's bottom padding it
-   ends on --head-band, the line a document head and the file slots end on. */
+   ends on --head-band, the line a document head ends on. */
 .usb-top {
   display: flex;
   align-items: center;

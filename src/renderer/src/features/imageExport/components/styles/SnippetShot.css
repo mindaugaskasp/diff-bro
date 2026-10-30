@@ -8,8 +8,6 @@
   flex-direction: column;
   background: var(--bg);
 }
-/* Same band the file-slots row is, so the picture's header sits where the app's
-   own header sits. */
 .shot-head {
   gap: var(--space-3);
   padding: 0 var(--space-3);

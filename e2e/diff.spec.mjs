@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -39,10 +39,8 @@ test('a change on disk raises a dismissible label', async ({ app, page }) => {
   writeFileSync(left, 'one\ntwo\n')
   writeFileSync(right, 'one\nTWO\n')
 
-  await stubOpenDialog(app, left)
-  await page.locator('.slot[data-side="left"]').click()
-  await stubOpenDialog(app, right)
-  await page.locator('.slot[data-side="right"]').click()
+  await openSide(app, page, 'left', left)
+  await openSide(app, page, 'right', right)
   await expect(page.locator('.diff-container')).toBeVisible()
   await expect(page.locator('.disk-notice')).toHaveCount(0)
 
