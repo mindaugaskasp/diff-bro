@@ -4,7 +4,7 @@
 import { computed } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { t } from '../i18n'
-import { THEMES } from '../utils/themes'
+import { SYSTEM_TILE, THEMES } from '../utils/themes'
 import { LOCALES } from '../../../shared/i18n'
 import SettingToggle from './SettingToggle.vue'
 import ThemeTile from './ThemeTile.vue'
@@ -28,6 +28,13 @@ const groups = computed(() => [
 <template>
   <section class="settings-appearance">
     <h4>{{ $t('settingsDialog.theme') }}</h4>
+    <div class="theme-grid">
+      <ThemeTile
+        :theme="SYSTEM_TILE"
+        :active="settings.pickedTheme === SYSTEM_TILE.id"
+        @pick="settings.setTheme(SYSTEM_TILE.id)"
+      />
+    </div>
     <template v-for="group in groups" :key="group.key">
       <p class="group-label">{{ group.label }}</p>
       <div class="theme-grid">
@@ -35,7 +42,7 @@ const groups = computed(() => [
           v-for="entry in group.themes"
           :key="entry.id"
           :theme="entry"
-          :active="settings.theme === entry.id"
+          :active="settings.pickedTheme === entry.id"
           @pick="settings.setTheme(entry.id)"
         />
       </div>

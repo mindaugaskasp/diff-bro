@@ -22,7 +22,7 @@ test('every theme cell is the same width', async ({ page }) => {
   const widths = await page
     .locator('.theme-tile')
     .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
-  expect(widths.length).toBe(THEMES.length)
+  expect(widths.length).toBe(THEMES.length + 1)
   expect(new Set(widths).size).toBe(1)
 })
 

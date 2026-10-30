@@ -35,10 +35,11 @@ export const freshUserDataDir = ({ tips = false } = {}) => {
 // needs real ones. Linux runs under Xvfb and has nothing to hide from.
 const hidden = () =>
   process.platform === 'darwin' && process.env.E2E_HIDDEN !== '0' ? ['--hidden'] : []
-export const launchApp = (userDataDir) =>
+export const launchApp = (userDataDir, options = {}) =>
   electron.launch({
     args: [MAIN, `--user-data-dir=${userDataDir}`, ...hidden()],
-    env: workerEnv(userDataDir)
+    env: workerEnv(userDataDir),
+    ...options
   })
 
 // The first window, loaded and ready to assert against.

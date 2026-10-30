@@ -572,6 +572,10 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   is trusted-click, so `navigator.clipboard` writes there hit the deny-all
   permission handler and fail: clipboard writes go through `window.api.copyText`
   (main process, `src/main/clipboard.js`), never `navigator.clipboard`.
+- **Playwright pins `prefers-color-scheme` to light**, so the default System
+  theme shows Light in every spec, even on a dark Mac. A spec about the OS theme
+  launches with `launchApp(dir, { colorScheme: 'no-override' })` and sets
+  `nativeTheme.themeSource` (`e2e/system-theme.spec.mjs`).
 - **E2E runs in parallel, and `--user-data-dir` is only half of what isolates a
   run.** Files are distributed across `E2E_WORKERS` workers (`DEFAULT_WORKERS`
   in `e2e/workerEnv.mjs` is the only place the number is written — the display

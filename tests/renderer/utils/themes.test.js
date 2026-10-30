@@ -7,11 +7,12 @@ import {
   themeForDay,
   isValidTheme,
   isDarkTheme,
-  normalizeTheme
+  normalizeTheme,
+  resolveTheme
 } from '../../../src/renderer/src/utils/themes'
 
 describe('themes registry', () => {
-  it('offers the named themes, Light first and the default', () => {
+  it('offers the named themes, Light first, with System the default', () => {
     expect(THEMES.map((t) => t.id)).toEqual([
       'light',
       'dark',
@@ -34,8 +35,8 @@ describe('themes registry', () => {
       'graphite',
       'vector'
     ])
-    expect(DEFAULT_THEME).toBe('light')
-    expect(THEMES[0].id).toBe(DEFAULT_THEME)
+    expect(DEFAULT_THEME).toBe('system')
+    expect(THEMES[0].id).toBe('light')
   })
 
   it('marks each theme dark- or light-ground (drives the editor/diagram theme)', () => {
@@ -63,6 +64,7 @@ describe('themes registry', () => {
     expect(isValidTheme('contrast')).toBe(true)
     expect(isValidTheme('midnight')).toBe(false)
     expect(normalizeTheme('solar')).toBe('solar')
+    expect(normalizeTheme('system')).toBe('system')
     expect(normalizeTheme('midnight')).toBe(DEFAULT_THEME)
     expect(normalizeTheme(undefined)).toBe(DEFAULT_THEME)
   })
@@ -87,7 +89,7 @@ describe('color-scheme agrees with the registry', () => {
   const css = readFileSync(join(process.cwd(), 'src/renderer/src/styles/themes.css'), 'utf8')
   // The bare :root carries the Light palette and is the pre-JS default.
   const declared = (id) => {
-    const selector = id === DEFAULT_THEME ? ':root \\{' : `:root\\[data-theme='${id}'\\] \\{`
+    const selector = id === 'light' ? ':root \\{' : `:root\\[data-theme='${id}'\\] \\{`
     const block = new RegExp(`${selector}([^}]*)\\}`).exec(css)
     return block ? /color-scheme:\s*(light|dark)/.exec(block[1])?.[1] : undefined
   }
@@ -116,5 +118,14 @@ describe('themeForDay', () => {
     for (let i = 0; i < 60; i++) seen.add(themeForDay(new Date(2026, 0, 1 + i)))
     expect(seen.size).toBeGreaterThan(1) // not stuck on one theme
     for (const id of seen) expect(isValidTheme(id)).toBe(true)
+  })
+})
+
+describe('resolveTheme', () => {
+  it('turns System into the ground the OS asks for, and leaves a named theme alone', () => {
+    expect(resolveTheme('system', true)).toBe('dark')
+    expect(resolveTheme('system', false)).toBe('light')
+    expect(resolveTheme('neon', false)).toBe('neon')
+    expect(resolveTheme('solar', true)).toBe('solar')
   })
 })
