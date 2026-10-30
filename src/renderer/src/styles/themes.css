@@ -301,6 +301,7 @@
    borders. */
 :root[data-theme='beacon'] {
   --line: var(--border);
+  --dialog-edge: var(--border);
   --tile-edge: var(--border);
   --field-edge: var(--border);
   --btn-rest-edge: var(--btn-edge);
@@ -494,6 +495,7 @@
    borders. An accessibility-grade pick. */
 :root[data-theme='contrast'] {
   --line: var(--border);
+  --dialog-edge: var(--border);
   --tile-edge: var(--border);
   --field-edge: var(--border);
   --btn-rest-edge: var(--btn-edge);
@@ -536,6 +538,7 @@
    stays pure white, because that is where the contrast comes from. */
 :root[data-theme='volcano'] {
   --line: var(--border);
+  --dialog-edge: var(--border);
   --tile-edge: var(--border);
   --field-edge: var(--border);
   --tag-l: 0.8;

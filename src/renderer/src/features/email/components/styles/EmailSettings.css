@@ -25,9 +25,9 @@ h4:not(:first-child) {
 .field input,
 .field textarea {
   width: 100%;
-  background: var(--bg);
+  background: var(--field-face);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--field-edge);
   border-radius: var(--radius);
   padding: 6px 9px;
   font-size: var(--font-md);

@@ -436,6 +436,15 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   (`utils/tools.js`), a `Tool*.vue` panel, and a case in `TextToolDialog` /
   `QuickLookConvert` — never another dialog component. Every tool is a panel:
   there is no text-buffer/validate path left to fall back on.
+- **A dialog is a sheet whose body scrolls, never the dialog** (#144, Q8). The
+  panel is `--bg-raised` with no edge (`--dialog-edge` is the keyline on
+  contrast, beacon and volcano). The header and the `#actions` row stay put and
+  only `.dialog-body` scrolls; a form that keeps its `.dialog-actions` inside
+  itself, so Enter submits, has them stick to the bottom of the body. Every tool
+  opens at the one shared size (`TOOL_DIALOG_SIZE`, resized for all of them at
+  once). A field is quiet: `--field-face` with a `--field-edge` border, which is
+  transparent except on the keyline themes, and the accent on focus. A tool
+  panel that styles its own input does the same, never `var(--border)`.
 - Objects that cross a boundary (props, composable returns) get a typedef in
   `src/renderer/src/types.js` and a JSDoc annotation; a prop typed `Object`
   documents nothing, so pair it with a `shaped(...)` validator from
