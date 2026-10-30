@@ -4,7 +4,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  paneLabel
+} from './fixtures.mjs'
 import { workerEnv } from './workerEnv.mjs'
 
 // An "Open with" is a SECOND launch carrying paths and no verb — the shape that
@@ -26,8 +33,7 @@ function openWith(userDataDir, files) {
   })
 }
 
-const slotNames = (page) =>
-  page.locator('.file-slot .slot-name, .file-slots .name').allTextContents()
+const paneNames = (page) => page.locator('.pane-label').allTextContents()
 
 function fixtureFiles() {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-openwith-'))
@@ -85,8 +91,8 @@ test('a second file asks first; Compare puts the first on the left', async () =>
   await expect(prompt).toContainText('alpha.txt')
   await prompt.getByRole('button', { name: 'Compare', exact: true }).click()
 
-  await expect(page.locator('.slot[data-side="left"]')).toContainText('alpha.txt')
-  await expect(page.locator('.slot[data-side="right"]')).toContainText('beta.txt')
+  await expect(paneLabel(page, 'left')).toContainText('alpha.txt')
+  await expect(paneLabel(page, 'right')).toContainText('beta.txt')
   expect(await tabCount(page)).toBe(2)
   await done()
 })
@@ -148,7 +154,7 @@ test('the app still starts when handed a path, rather than treating it as a comm
   await openWith(userDataDir, [files.alpha, files.beta, files.gamma])
   // Three files: two tabs, and the window is still alive to show them.
   await expect.poll(async () => page.locator('.diff-tabs .tab').count(), { timeout: 8000 }).toBe(2)
-  expect(await slotNames(page)).toBeTruthy()
+  expect(await paneNames(page)).toBeTruthy()
 
   await app.close()
   rmSync(files.dir, { recursive: true, force: true })

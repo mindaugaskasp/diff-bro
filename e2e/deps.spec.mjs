@@ -1,4 +1,4 @@
-import { test, expect, setViewOption, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, setViewOption, openSide } from './fixtures.mjs'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -54,10 +54,8 @@ function pair(dir) {
 
 async function openPair(app, page, dir) {
   const [l, r] = pair(dir)
-  await stubOpenDialog(app, [l])
-  await page.locator('.slot[data-side="left"]').click()
-  await stubOpenDialog(app, [r])
-  await page.locator('.slot[data-side="right"]').click()
+  await openSide(app, page, 'left', [l])
+  await openSide(app, page, 'right', [r])
 }
 
 test('two lockfiles open as dependencies, not as text', async ({ app, page }) => {

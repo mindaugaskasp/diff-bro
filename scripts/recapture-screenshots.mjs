@@ -228,9 +228,9 @@ async function stubOpen(app, filePath) {
 
 async function loadPair(app, page, leftPath, rightPath) {
   await stubOpen(app, leftPath)
-  await page.locator('.slot[data-side="left"]').click()
+  await page.locator('.start-link', { hasText: 'Two files' }).click()
   await stubOpen(app, rightPath)
-  await page.locator('.slot[data-side="right"]').click()
+  await page.locator('.wait-slot.open').click()
 }
 
 async function setTheme(page, label) {

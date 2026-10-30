@@ -54,7 +54,8 @@ export const useImageExportStore = defineStore('imageExport', {
     snippetShot: null,
     // True between opening the saved diff and taking its picture, so the app can
     // stay out of the shot (no dialog, no toast) while the shutter is open.
-    imageCapturing: false
+    imageCapturing: false,
+    captureTail: false
   }),
   getters: {
     // A streamed comparison IS photographable: its viewer registers a real
@@ -145,7 +146,7 @@ export const useImageExportStore = defineStore('imageExport', {
       this.imageEntry = { id: null, name: `${l.name} ↔ ${r.name}`, subject: 'diff', ...res }
     },
     // The shutter. `finally` matters: a stuck imageCapturing would leave the
-    // shortcut bar hidden for the rest of the session.
+    // notices hidden for the rest of the session.
     async _shoot({ band = null, awaitRediff = false } = {}) {
       const diff = useDiffStore()
       this.imageCapturing = true
@@ -207,8 +208,10 @@ export const useImageExportStore = defineStore('imageExport', {
               : { x, y: region.editorY + s.offsetY, width, height: s.height }
           const added = await window.api.appendDiffImageSlice(rect, i === 0)
           if (added?.error) return added
+          this.captureTail = true
         }
       } finally {
+        this.captureTail = false
         scroller.scrollTo(was)
       }
       const shot = await window.api.stitchDiffImage()

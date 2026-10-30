@@ -8,6 +8,7 @@ import { useDiffStore } from '../stores/diffStore'
 import { useStreamedDiff } from '../composables/useStreamedDiff'
 import { useCaptureRegion } from '../composables/useCaptureRegion'
 import AppIcon from './AppIcon.vue'
+import PaneLabels from './PaneLabels.vue'
 import StreamedMarker from './StreamedMarker.vue'
 import { t } from '../i18n'
 
@@ -39,6 +40,7 @@ const rightClass = (row) => (row.rightLine === null ? 'ghost' : row.status === '
 <template>
   <div class="stream-viewer">
     <StreamedMarker :summary="summary" :loading="loading" />
+    <PaneLabels />
 
     <div v-if="message" class="stream-empty">{{ message }}</div>
     <div v-else-if="loading" class="stream-empty">{{ $t('streamedDiffViewer.indexing') }}</div>

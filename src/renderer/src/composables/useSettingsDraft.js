@@ -19,7 +19,6 @@ export const DRAFTED_SETTINGS = [
   'locale',
   'maximizeDialogs',
   'showRowTags',
-  'showShortcutBar',
   'shutterSound',
   'fileSizeLimitsMb',
   'maxExportHeightPx',

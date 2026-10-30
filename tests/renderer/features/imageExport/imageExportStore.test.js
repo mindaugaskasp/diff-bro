@@ -178,6 +178,21 @@ describe('exportImage (saved diffs only)', () => {
       cleanup()
     })
 
+    it('names the panes on the first strip only, and restores them after', async () => {
+      const cleanup = stageTallViewer({ contentHeight: 1400 })
+      const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })
+      const tails = []
+      window.api.appendDiffImageSlice = async () => (
+        tails.push(imageExport().captureTail),
+        { ok: true }
+      )
+      window.api.stitchDiffImage = async () => CAPTURE
+      await imageExport().exportImage(id)
+      expect(tails).toEqual([false, true, true])
+      expect(imageExport().captureTail).toBe(false)
+      cleanup()
+    })
+
     it('puts the reader back where they were when the shutter closes', async () => {
       const cleanup = stageTallViewer({ contentHeight: 1400 })
       const id = await savedDiff({ mode: 'files', left: FILE('a.txt'), right: FILE('b.txt') })

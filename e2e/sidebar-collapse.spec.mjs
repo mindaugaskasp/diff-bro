@@ -25,22 +25,6 @@ test('collapsing gives the width back to the comparison', async ({ page }) => {
   expect(diffAfter).toBeGreaterThan(diffBefore + 150)
 })
 
-// Across the divider the bands share their lines: the segmented band ends with
-// the top bar (segmented-nav), and the search band with the file slots.
-test('the search band ends on the same line as the file slots', async ({ page }) => {
-  await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste or type the original text').fill('a')
-  await page.getByPlaceholder('Paste or type the changed text').fill('b')
-  await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await expect(page.locator('.diff-container')).toBeVisible()
-
-  const rows = await page.evaluate(() => {
-    const bottom = (s) => Math.round(document.querySelector(s).getBoundingClientRect().bottom)
-    return { band: bottom('.usb-controls'), slots: bottom('.file-slots-row') }
-  })
-  expect(Math.abs(rows.band - rows.slots)).toBeLessThanOrEqual(1)
-})
-
 // Asked for explicitly: the comparison must not jump when the sidebar goes.
 test('the width is animated rather than cut', async ({ page }) => {
   const transition = await aside(page).evaluate((el) => {

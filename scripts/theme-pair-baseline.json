@@ -40,16 +40,6 @@
     "ratio": 3.09
   },
   {
-    "theme": "sepia",
-    "where": "FileSlot.css .slot",
-    "ratio": 3.93
-  },
-  {
-    "theme": "solar",
-    "where": "FileSlot.css .slot",
-    "ratio": 4.36
-  },
-  {
     "theme": "dark",
     "where": "FormatHintBanner.css .hint.invalid .format",
     "ratio": 3.35

@@ -19,17 +19,6 @@ test('the snippet head ends on the sidebar search band', async ({ page }) => {
   expect(head).toBe(await bottomOf(topBand(page)))
 })
 
-test('the comparison file slots end on the sidebar top band', async ({ page }) => {
-  await showPanel(page, 'diffs')
-  await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste or type the original text').fill('a')
-  await page.getByPlaceholder('Paste or type the changed text').fill('b')
-  await page.getByRole('button', { name: 'Compare', exact: true }).click()
-  await showPanel(page, 'home')
-
-  expect(await bottomOf(page.locator('.file-slots-row'))).toBe(await bottomOf(topBand(page)))
-})
-
 test('tags that do not fit fold into a +N chip that lists them', async ({ page }) => {
   await openNewSnippet(page)
   const doc = page.getByRole('region', { name: 'New snippet' })

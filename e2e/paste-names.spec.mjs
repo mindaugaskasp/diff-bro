@@ -27,9 +27,9 @@ test('a named side is what the comparison is labelled with', async ({ page }) =>
   })
 
   // The file slots carry the names, not "Left (pasted)".
-  await expect(page.locator('.file-slots-row')).toContainText('prod config')
-  await expect(page.locator('.file-slots-row')).toContainText('staging config')
-  await expect(page.locator('.file-slots-row')).not.toContainText('(pasted)')
+  await expect(page.locator('.pane-labels')).toContainText('prod config')
+  await expect(page.locator('.pane-labels')).toContainText('staging config')
+  await expect(page.locator('.pane-labels')).not.toContainText('(pasted)')
 
   // And so does the tab.
   await expect(page.locator('.diff-tabs .tab').first()).toContainText(
@@ -39,8 +39,8 @@ test('a named side is what the comparison is labelled with', async ({ page }) =>
 
 test('an unnamed side still falls back to the placeholder', async ({ page }) => {
   await pasteNamed(page, { left: 'a', right: 'b', leftName: 'only the left' })
-  await expect(page.locator('.file-slots-row')).toContainText('only the left')
-  await expect(page.locator('.file-slots-row')).toContainText('Right (pasted)')
+  await expect(page.locator('.pane-labels')).toContainText('only the left')
+  await expect(page.locator('.pane-labels')).toContainText('Right (pasted)')
 })
 
 test('the names survive a save and reopen', async ({ page }) => {
@@ -55,8 +55,8 @@ test('the names survive a save and reopen', async ({ page }) => {
   await pasteNamed(page, { left: 'x', right: 'y' })
   await page.locator('li.diff', { hasText: 'Named sides' }).locator('.stack').click()
 
-  await expect(page.locator('.file-slots-row')).toContainText('before')
-  await expect(page.locator('.file-slots-row')).toContainText('after')
+  await expect(page.locator('.pane-labels')).toContainText('before')
+  await expect(page.locator('.pane-labels')).toContainText('after')
 })
 
 test('the names travel with the tab they were typed in', async ({ page }) => {
@@ -65,7 +65,7 @@ test('the names travel with the tab they were typed in', async ({ page }) => {
   await pasteNamed(page, { left: 'c', right: 'd', leftName: 'second-tab' })
 
   await page.locator('.diff-tabs .tab').first().click()
-  await expect(page.locator('.file-slots-row')).toContainText('first-tab')
+  await expect(page.locator('.pane-labels')).toContainText('first-tab')
   await page.locator('.diff-tabs .tab').nth(1).click()
-  await expect(page.locator('.file-slots-row')).toContainText('second-tab')
+  await expect(page.locator('.pane-labels')).toContainText('second-tab')
 })

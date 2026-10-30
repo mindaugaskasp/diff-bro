@@ -144,7 +144,6 @@ export function settingsStateFrom(parsed, outside) {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
-    showShortcutBar: parsed.showShortcutBar !== false,
     // The tag word beside a name on every sidebar row. On by default; off is for
     // a library where nearly everything carries the same tags, and it hides the
     // WORD only — the shelf and the search still filter by them.

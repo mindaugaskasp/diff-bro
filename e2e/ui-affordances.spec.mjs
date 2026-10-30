@@ -3,23 +3,6 @@ import { test, expect, newSnippetButton, openNewSnippet, showPanel } from './fix
 // Regression cover for UI defects found by eye. Each of these shipped once, so
 // each gets a test that fails if it comes back.
 
-test('the start surface names each format as a button that opens a filtered picker', async ({
-  page
-}) => {
-  const tiles = page.locator('.start-formats button.format')
-  // Named rather than counted: a bare number says nothing about which tile went
-  // missing, and adding Mermaid broke it with a diff that read "6 became 7".
-  await expect(tiles).toHaveText([/Excel/, /CSV/, /JSON/, /YAML/, /XML/, /Markdown/, /Mermaid/])
-
-  // Every tile is reachable and says what it opens. The tip is the app's own
-  // (data-tip), not native `title`, which Electron often never draws.
-  for (const tip of await tiles.evaluateAll((n) => n.map((b) => b.getAttribute('data-tip')))) {
-    expect(tip).toMatch(/^Open .+ file$/)
-  }
-  await expect(tiles.first()).toBeEnabled()
-  await expect(tiles.first()).toContainText('Excel')
-})
-
 // Shortening these tooltips once renamed the buttons: an icon-only button used
 // to take its accessible name from `title`, so the short label must not be the
 // only one. The name now comes from aria-label and the tip from data-tip, which
@@ -31,7 +14,7 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
     ['Snippet library actions', 'Snippet library actions']
   ]
   for (const [tooltip, name] of cases) {
-    const button = page.getByRole('button', { name, exact: true })
+    const button = page.locator('[data-tour="sidebar"]').getByRole('button', { name, exact: true })
     await expect(button, `${name} should still be findable by name`).toBeVisible()
     await expect(button).toHaveAttribute('data-tip', tooltip)
   }
@@ -165,14 +148,6 @@ test('saved-diff actions stay out of the way until the row is hovered', async ({
   await expect(del).toBeVisible()
   // The trash icon, like every other delete in the app.
   await expect(del.locator('svg path').first()).toHaveAttribute('d', /M3 6h18|M19 6v14/)
-})
-
-// A glyph like ⇄ tofus into a [] box on any font that lacks it, which is why
-// every standalone icon in the app is an SVG from icons.js.
-test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
-  const swap = page.getByRole('button', { name: 'Swap sides' })
-  await expect(swap.locator('svg.app-icon')).toHaveCount(1)
-  expect((await swap.innerText()).trim()).toBe('')
 })
 
 // data-tip is the app's own tooltip; assistive tech never sees it. An icon-only

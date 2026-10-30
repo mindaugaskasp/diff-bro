@@ -4,7 +4,8 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  showPanel
+  showPanel,
+  paneLabel
 } from './fixtures.mjs'
 import { spawn } from 'node:child_process'
 import { workerEnv } from './workerEnv.mjs'
@@ -106,13 +107,13 @@ test('`diffbro compare` opens the files in the running app', async () => {
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
 
     await runCli(userDataDir, ['compare', left, right])
 
     await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('.slot[data-side="left"]')).toContainText('left.json')
-    await expect(page.locator('.slot[data-side="right"]')).toContainText('right.json')
+    await expect(paneLabel(page, 'left')).toContainText('left.json')
+    await expect(paneLabel(page, 'right')).toContainText('right.json')
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
@@ -125,7 +126,7 @@ test('`diffbro clipboard save` stores the clipboard and opens it in the editor',
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
     await page.evaluate(() => window.api.copyText('cli-clipboard-body'))
 
     await runCli(userDataDir, ['clipboard', 'save'])
@@ -159,7 +160,7 @@ test('`diffbro compare` refuses a folder, a binary and a missing path', async ()
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
 
     for (const bad of [folder, binary, missing]) {
       await runCli(userDataDir, ['compare', bad])
@@ -175,7 +176,7 @@ test('`diffbro compare` refuses a folder, a binary and a missing path', async ()
     const good = join(work, 'ok.json')
     writeFileSync(good, '{"ok":1}')
     await runCli(userDataDir, ['compare', good, good])
-    await expect(page.locator('.slot[data-side="left"]')).toContainText('ok.json')
+    await expect(paneLabel(page, 'left')).toContainText('ok.json')
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
@@ -217,13 +218,13 @@ test('`diffbro open` raises the app without touching the comparison', async () =
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
 
     await runCli(userDataDir, ['open'])
 
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
     await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
-    await expect(page.locator('.slot[data-side="left"]')).toContainText('left file…')
+    await expect(paneLabel(page, 'left')).toHaveCount(0)
   } finally {
     await app.close()
     rmSync(userDataDir, { recursive: true, force: true })
@@ -238,7 +239,7 @@ test('`diffbro open <file>` opens it as an unsaved snippet', async () => {
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
 
     await runCli(userDataDir, ['open', only])
 
@@ -262,7 +263,7 @@ test('`diffbro backup <path>` seals to the path the terminal named', async () =>
   const app = await launchApp(userDataDir)
   try {
     const page = await firstReadyPage(app)
-    await expect(page.locator('.slot[data-side="left"]')).toBeVisible()
+    await expect(page.locator('.start-surface')).toBeVisible()
 
     await runCli(userDataDir, ['backup', target])
 
@@ -377,10 +378,10 @@ test('`diffbro compare` resolves relative paths against the shell, not the app',
     const page = await firstReadyPage(app)
     // Bare filenames, run from `work` — the app's own cwd is somewhere else.
     await runCliIn(userDataDir, ['compare', 'left.json', 'right.json'], work)
-    await expect(page.locator('.slot[data-side="left"]')).toContainText('left.json', {
+    await expect(paneLabel(page, 'left')).toContainText('left.json', {
       timeout: 15000
     })
-    await expect(page.locator('.slot[data-side="right"]')).toContainText('right.json')
+    await expect(paneLabel(page, 'right')).toContainText('right.json')
     await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
   } finally {
     await app.close()

@@ -4,16 +4,15 @@
 // capturing a frame too early photographs the previous diff, which is the one
 // failure mode a screenshot feature cannot have.
 
-// The comparison column: the file-slots row, the format banner and the viewer.
+// The comparison column: the format banner and the viewer, with its pane labels.
 // The toolbar, the sidebar and any dialog are deliberately outside it.
 export const CAPTURE_SELECTOR = '.content'
 // A subject that is not a diff — a snippet, a diagram — claims the region for
 // the length of one shot by putting a stage over that column (SnippetShot.vue).
 export const STAGE_SELECTOR = '[data-capture-stage]'
 // The scrolling viewer inside that column — Monaco's host, or the streamed
-// viewer's row list. The strip above it (file slots, format banner, the
-// streamed marker) belongs in the picture once, at the top, never repeated per
-// slice.
+// viewer's row list. The strip above it (format banner, streamed marker) belongs
+// in the picture once, at the top, never repeated per slice.
 export const EDITOR_SELECTOR = '.diff-container, .stream-rows'
 // One per rendered line: Monaco's own, a streamed row, or a snippet line — plus
 // the diagram figure, which is a single box standing in for all of them.
@@ -80,8 +79,8 @@ export function afterFrames(frames = 3, win = window) {
 
 /**
  * The column and, within it, the scrolling viewport — the two boxes a stitched
- * export is cut from. The strip above the viewport (file slots, format banner,
- * sheet tabs) belongs in the picture once, at the top.
+ * export is cut from. The strip above the viewport (format banner, sheet tabs)
+ * belongs in the picture once, at the top.
  *
  * The viewport is whatever the registered scroller says it is, so this works
  * for Monaco, the spreadsheet grids and the structure list alike; the selector

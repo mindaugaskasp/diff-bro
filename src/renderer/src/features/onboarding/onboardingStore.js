@@ -167,7 +167,7 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.sidebarWasCollapsed = false
       this.filters = null
     },
-    // Something to point AT: the file slots teach nothing while they are empty,
+    // Something to point AT: an empty comparison teaches nothing,
     // and the diagram step cannot show a diagram CHANGE by describing one. The
     // scratch tab is REUSED for a second pair — a replay plays both steps in
     // one run, and two tabs would be two things to put back.
