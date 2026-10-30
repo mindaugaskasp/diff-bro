@@ -1,34 +1,30 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { barLayout } from '../utils/barFit'
+import { foldedIds, iconBarWidths } from '../utils/barFit'
 
-// Measures the toolbar's action row for the rungs utils/barFit decides between.
-//
-// Widths are cached per id and read ONLY while the row is labelled: a folded
-// control measures 0 and a compact one measures --control-h, and either would
-// overwrite the labelled width the row needs in order to grow back. The cache is
-// dropped when the row set or its words change, and that pass re-measures from a
-// fully-shown labelled row.
+// Measures the toolbar's action row for utils/barFit. Every action is an icon
+// one unit wide; only a labelled primary is measured, and it never folds, so it
+// is always drawn when it is read.
 
 const ELEMENT_WIDTH = (el) => Math.ceil(el.getBoundingClientRect().width)
 const columnGap = (el) => parseFloat(getComputedStyle(el).columnGap) || 0
 
-// Every width here INCLUDES the gap that follows it, so the row's controls and
-// its overflow trigger are all counted in the same units.
-function measureLabelled(el, widths) {
+function measureLabelled(el, ids) {
   const gap = columnGap(el)
-  for (const child of el.querySelectorAll('[data-action]')) {
-    const w = ELEMENT_WIDTH(child)
-    // 0 means folded away, not "fits in nothing" — keep what we knew.
-    if (w > 0) widths.set(child.dataset.action, w + gap)
+  const out = {}
+  for (const id of ids) {
+    const child = el.querySelector(`[data-action="${id}"]`)
+    const w = child ? ELEMENT_WIDTH(child) : 0
+    if (w > 0) out[id] = w + gap
   }
+  return out
 }
 
-// A .btn-square is exactly --control-h wide, so the compact row and the overflow
+// A .btn-sm.btn-square is exactly --control-h-sm wide, so an icon and the overflow
 // trigger cost the size scale rather than a measurement of something not drawn.
 // A hidden-but-measurable ghost trigger was tried: it extended past the right
 // edge and scrolled the document sideways by its own width, at every size.
-function compactUnit(el) {
-  const h = parseFloat(getComputedStyle(el).getPropertyValue('--control-h')) || 0
+function iconUnit(el) {
+  const h = parseFloat(getComputedStyle(el).getPropertyValue('--control-h-sm')) || 0
   return h + columnGap(el)
 }
 
@@ -52,7 +48,17 @@ function observeRow(options, el, onResize) {
   const observer = new ResizeObserver(onResize)
   observer.observe(options)
   for (const kid of options.children) if (kid !== el) observer.observe(kid)
+  const tabs = options.closest('.topbar')?.querySelector('.diff-tabs')
+  if (tabs) observer.observe(tabs)
   return observer
+}
+
+// What the tab strip beside the bar can still give back before it hits its floor.
+function reclaimable(options) {
+  const tabs = options.closest('.topbar')?.querySelector('.diff-tabs')
+  if (!tabs) return 0
+  const floor = parseFloat(getComputedStyle(tabs).minWidth) || 0
+  return Math.max(0, ELEMENT_WIDTH(tabs) - floor)
 }
 
 function otherWidth(options, el) {
@@ -69,47 +75,34 @@ function otherWidth(options, el) {
  * @param {import('vue').Ref<HTMLElement|null>} refs.group the action group
  *   inside it, whose children carry `data-action`
  * @param {object} opts
- * @param {() => {id: string, pinned: boolean}[]} opts.rows current actions
+ * @param {() => {id: string, pinned: boolean, labelled?: boolean}[]} opts.rows current actions
  * @param {() => string[]} opts.order fold order, least important first
  * @param {() => string} opts.signature changes when a re-measure is required
  */
 export function useToolbarOverflow({ host, group }, { rows, order, signature }) {
   const folded = ref([])
-  const compact = ref(false)
-  const widths = new Map()
 
-  function apply() {
+  function measure() {
     const options = host.value
     const el = group.value
     if (!options || !el) return
     const current = rows()
-    const labelled = Object.fromEntries(
-      current.map((r) => [r.id, widths.get(r.id) ?? 0]).filter(([, w]) => w > 0)
+    const unit = iconUnit(el)
+    const labelled = measureLabelled(
+      el,
+      current.filter((r) => r.labelled).map((r) => r.id)
     )
-    const unit = compactUnit(el)
-    const next = barLayout({
-      labelled,
-      compactWidth: unit,
-      available: options.clientWidth - otherWidth(options, el),
+    folded.value = foldedIds({
+      widths: iconBarWidths({ ids: current.map((r) => r.id), unit, labelled }),
+      available: options.clientWidth - otherWidth(options, el) + reclaimable(options),
       order: order(),
       pinned: current.filter((r) => r.pinned).map((r) => r.id),
       trigger: unit
     })
-    compact.value = next.compact
-    folded.value = next.folded
   }
 
-  function measure() {
-    if (group.value && !compact.value) measureLabelled(group.value, widths)
-    apply()
-  }
-
-  // A changed row set invalidates every cached width: unfold, spell the labels
-  // back out, let it paint, then measure the truth.
   async function remeasure() {
-    widths.clear()
     folded.value = []
-    compact.value = false
     await nextTick()
     measure()
   }
@@ -128,5 +121,5 @@ export function useToolbarOverflow({ host, group }, { rows, order, signature }) 
   })
   watch(signature, remeasure)
 
-  return { folded, compact, measure, remeasure }
+  return { folded, measure, remeasure }
 }

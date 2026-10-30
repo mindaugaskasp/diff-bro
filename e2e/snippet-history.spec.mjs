@@ -9,7 +9,8 @@ import {
   snippetDoc,
   editInPlace,
   closeSnippet,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 import { rmSync } from 'node:fs'
 import { focusEditor } from './monaco.mjs'
@@ -25,13 +26,13 @@ async function createSnippet(page, name, body, { secret = false } = {}) {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)
   await page.keyboard.type(body)
-  if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
+  if (secret) await markSecret(page, name)
 }
 
 async function editSnippet(page, name, body) {
-  await page.locator('.snippets-section .row', { hasText: name }).click()
+  await page.locator('.snippets-section .row', { hasText: name }).first().click()
   const view = snippetDoc(page)
   // A secret opens masked, and a masked one is not edited: reveal first.
   const show = docActions(page).getByRole('button', { name: 'Show', exact: true })
@@ -45,7 +46,7 @@ async function editSnippet(page, name, body) {
 }
 
 async function openHistory(page, name) {
-  await page.locator('.snippets-section .row', { hasText: name }).click()
+  await page.locator('.snippets-section .row', { hasText: name }).first().click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await docActions(page).getByRole('button', { name: 'History', exact: true }).click()
   // Docked beside the snippet, which stays open.
@@ -59,7 +60,7 @@ test('two edits become two versions, each diffed against its predecessor', async
 }) => {
   await createSnippet(page, 'Rollout plan', 'replicas: 1')
   // A snippet with no history yet offers no History button.
-  await page.locator('.snippets-section .row', { hasText: 'Rollout plan' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Rollout plan' }).first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   await expect(docActions(page).getByRole('button', { name: 'History', exact: true })).toHaveCount(
     0
@@ -98,7 +99,7 @@ test('a name-only edit adds no version', async ({ page }) => {
 
   // Rename without touching the content: no new version may appear. The
   // un-named handle again — the document re-titles itself on Edit.
-  await page.locator('.snippets-section .row', { hasText: 'Endpoint note' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Endpoint note' }).first().click()
   const view = snippetDoc(page)
   await editInPlace(page)
   await view.getByPlaceholder('Snippet name…').fill('Endpoint note v2')

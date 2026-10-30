@@ -1,4 +1,4 @@
-import { test, expect, showPanel, pickTag } from './fixtures.mjs'
+import { test, expect, showPanel, pickTag, clickAppMenuItem } from './fixtures.mjs'
 
 // Tabs are a claim about Monaco: each holds its own comparison, and only the
 // one on screen owns an editor. Neither is checkable in jsdom — there is no
@@ -322,9 +322,9 @@ test('the Saved diffs + opens a paste comparison on the start surface', async ({
   await expect(tabs(page)).toHaveCount(1)
 })
 
-// A diff or snippet carries several tags, so the filter takes several too —
-// selecting two shows the rows carrying either.
-test('several tags can be selected, and they widen the list', async ({ page }) => {
+// A tag scope (#121) keeps the diffs carrying that tag, and picking it again
+// takes the scope off.
+test('a tag scope keeps the diffs that carry it', async ({ page }) => {
   const save = async (name, tag) => {
     await compare(page, `left-${name}`, `right-${name}`)
     await page.getByRole('button', { name: 'Save', exact: true }).click()
@@ -335,26 +335,21 @@ test('several tags can be selected, and they widen the list', async ({ page }) =
       await d.getByPlaceholder('add a tag…').press('Enter')
     }
     await d.getByRole('button', { name: 'Save', exact: true }).click()
-    await expect(page.locator('li.diff', { hasText: name })).toBeVisible()
+    await expect(page.locator('li.diff', { hasText: name }).first()).toBeVisible()
     await addTab(page).click()
   }
   await save('Both tags', ['alpha', 'beta'])
   await save('Only alpha', ['alpha'])
 
-  const chip = (t) => page.locator('.usb-shelf .usb-tag', { hasText: t })
   await pickTag(page, 'beta')
   await expect(page.locator('li.diff')).toHaveCount(1)
   await expect(page.locator('li.diff', { hasText: 'Both tags' })).toBeVisible()
 
-  // Adding a tag WIDENS: the alpha-only diff joins rather than being hidden for
-  // lacking beta.
   await pickTag(page, 'alpha')
-  await expect(chip('alpha')).toHaveClass(/on/)
-  await expect(chip('beta')).toHaveClass(/on/)
   await expect(page.locator('li.diff')).toHaveCount(2)
 
   await pickTag(page, 'alpha')
-  await expect(page.locator('li.diff')).toHaveCount(1)
+  await expect(page.locator('.usb-top .scope-chip')).toHaveCount(0)
 })
 
 // The tab you are looking at IS the live document: its snapshot is only
@@ -376,7 +371,7 @@ test('the × on the ACTIVE tab confirms before discarding its work', async ({ pa
 
 // The unsaved marker read the same stale snapshot, so it was wrong in both
 // directions on the one tab a reader is actually looking at.
-test('the unsaved marker follows the comparison on screen', async ({ page }) => {
+test('the unsaved marker follows the comparison on screen', async ({ app, page }) => {
   const dot = () => tabs(page).first().locator('.dirty')
   // A blank tab holds nothing to lose, so it is not "unsaved".
   await expect(dot()).toHaveCount(0)
@@ -393,7 +388,7 @@ test('the unsaved marker follows the comparison on screen', async ({ page }) => 
   await expect(dot()).toHaveCount(0)
 
   // Editing it brings the marker straight back.
-  await page.getByRole('button', { name: 'Swap sides' }).click()
+  await clickAppMenuItem(app, 'Swap Sides')
   await expect(dot()).toHaveCount(1)
 })
 
@@ -424,7 +419,7 @@ test('a tab retitles from either paste pane', async ({ page }) => {
 
 // Saving a comparison that is already in the vault only ever added a second row
 // saying the same thing, so the action is not offered until something changes.
-test('a comparison cannot be saved twice into two rows', async ({ page }) => {
+test('a comparison cannot be saved twice into two rows', async ({ app, page }) => {
   await compare(page, 'alpha', 'beta')
   const save = page.getByRole('button', { name: 'Save', exact: true })
   await expect(save).toBeEnabled()
@@ -440,7 +435,7 @@ test('a comparison cannot be saved twice into two rows', async ({ page }) => {
 
   // Editing it offers the save again — and it rewrites the diff it came from
   // rather than stacking a duplicate beside it.
-  await page.getByRole('button', { name: 'Swap sides' }).click()
+  await clickAppMenuItem(app, 'Swap Sides')
   await expect(save).toBeEnabled()
   await save.click()
   const update = page.getByRole('dialog', { name: 'Update diff' })

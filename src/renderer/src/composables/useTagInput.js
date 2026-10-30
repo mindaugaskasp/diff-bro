@@ -1,8 +1,17 @@
 import { computed, ref } from 'vue'
 import { useSnippetStore, MAX_TAGS, TAG_PALETTE, cleanTag } from '../stores/snippetStore'
+import { MAX_TAG_DEPTH, isTagTooDeep, tagPath } from '../utils/tagTree'
 
 // The snippet editor's tag chips field. Colors for new tags are held locally and
 // only written to the registry on save, so abandoning the editor leaves no stray.
+function nextTentativeColor(registry, tentative) {
+  const used = new Set([
+    ...Object.values(registry).map((t) => t.color),
+    ...Object.values(tentative)
+  ])
+  return TAG_PALETTE.find((c) => !used.has(c)) ?? TAG_PALETTE[0]
+}
+
 /**
  * @param {string[]} initial tags the snippet already carries
  * @returns {import('../types').TagField}
@@ -13,6 +22,8 @@ export function useTagInput(initial = []) {
   const input = ref('')
   const inputEl = ref(null)
   const tentativeColors = ref({})
+  // The deepest the refused path could go, while a fourth level is refused.
+  const tooDeep = ref('')
 
   const canAddMore = computed(() => tags.value.length < MAX_TAGS)
 
@@ -29,23 +40,19 @@ export function useTagInput(initial = []) {
   function colorFor(t) {
     return store.colorOf(t) || tentativeColors.value[t] || 'var(--text-dim)'
   }
-  function nextTentativeColor() {
-    const used = new Set([
-      ...Object.values(store.tags).map((t) => t.color),
-      ...Object.values(tentativeColors.value)
-    ])
-    return TAG_PALETTE.find((c) => !used.has(c)) ?? TAG_PALETTE[0]
-  }
 
   function add(raw) {
     if (!canAddMore.value) return
     const n = cleanTag(raw)
+    tooDeep.value = n && isTagTooDeep(n) ? tagPath(n).slice(0, MAX_TAG_DEPTH).join('/') : ''
+    if (tooDeep.value) return
     if (!n || tags.value.includes(n)) {
       input.value = ''
       return
     }
     if (!store.colorOf(n) && !tentativeColors.value[n]) {
-      tentativeColors.value = { ...tentativeColors.value, [n]: nextTentativeColor() }
+      const color = nextTentativeColor(store.tags, tentativeColors.value)
+      tentativeColors.value = { ...tentativeColors.value, [n]: color }
     }
     tags.value.push(n)
     input.value = ''
@@ -80,6 +87,7 @@ export function useTagInput(initial = []) {
   return {
     tags,
     input,
+    tooDeep,
     inputEl,
     canAddMore,
     suggestions,

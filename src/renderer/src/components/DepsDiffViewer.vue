@@ -8,6 +8,7 @@ import { useCaptureRegion } from '../composables/useCaptureRegion'
 import { diffLocks } from '../utils/lockfile/lockDiff'
 import DepsStatusBand from './DepsStatusBand.vue'
 import AppIcon from './AppIcon.vue'
+import PaneLabels from './PaneLabels.vue'
 
 const store = useDiffStore()
 
@@ -61,6 +62,7 @@ useCaptureRegion(list)
       </button>
     </div>
 
+    <PaneLabels />
     <div v-if="result.identical" class="identical-row">
       <AppIcon name="check" class="ok" />
       <span>{{ $t('depsDiffViewer.noDependencyChanged') }}</span>

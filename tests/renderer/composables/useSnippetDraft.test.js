@@ -147,6 +147,31 @@ describe('useSnippetDraft — saving reports to its host', () => {
   })
 })
 
+// Secret is set from the row menu, so an open document follows the library.
+describe('useSnippetDraft — secret follows the library', () => {
+  it('masks the moment the entry is marked secret, and never counts as an edit', async () => {
+    const snippets = useSnippetStore()
+    window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
+    window.api.vaultDecrypt = async () => 'body'
+    const id = await snippets.add({ name: 'Key', content: 'body' })
+    const draft = useSnippetDraft(hostFor({ id }))
+    expect(draft.masked.value).toBe(false)
+
+    snippets.setSnippetSecret(id, true)
+    expect(draft.secret.value).toBe(true)
+    expect(draft.masked.value).toBe(true)
+    expect(draft.isDirty.value).toBe(false)
+
+    snippets.setSnippetSecret(id, false)
+    expect(draft.masked.value).toBe(false)
+  })
+
+  it('a new snippet is never secret', () => {
+    const { draft } = newDraft()
+    expect(draft.secret.value).toBe(false)
+  })
+})
+
 describe('useSnippetDraft — repairing a diagram', () => {
   const BROKEN = 'flowchart TD\n  A —> B  '
 

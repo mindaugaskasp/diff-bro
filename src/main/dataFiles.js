@@ -20,7 +20,8 @@ export const STORE_NAMES = [
   'historyPanel', // snippet history panel width — composables/useHistoryResize.js
   'editorFont', // code editor typeface — stores/editorFontStore.js
   'mergePanes', // merge pane split — features/merge/useMergePaneSizes.js
-  'tools' // pinned tools — features/tools/toolsStore.js
+  'tools', // pinned tools — features/tools/toolsStore.js
+  'tagSections' // closed tag sections — composables/useTagSections.js
 ]
 
 const ALLOWED_STORES = new Set(STORE_NAMES)

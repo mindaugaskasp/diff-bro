@@ -325,22 +325,29 @@ directory move passes CI while silently removing enforcement.
   and holds each pair to a floor declared per probe. `check:themes` holds the
   tokens; this holds what they compose into — a label on a `color-mix` chip, a
   control in its unset state. Add a surface to `SURFACES` when you build one.
-- **A control must read as a control BEFORE it is touched, and `.btn-ghost` is
-  only ever the dismissive twin.** Quiet is right for a Cancel or Close standing
-  next to a primary that means the opposite; a lone ghost in a row reads as
-  unavailable, which is how the whole diff toolbar came to look switched off
-  until hovered. A neutral action with no primary beside it is a plain `.btn`.
-  The resting `.btn` carries three cues on three axes — the `--btn-face` veil
-  (the theme's own ink at 14%, so it steps toward the text on any ground rather
-  than picking a surface that only lifts on half the palettes), the `--btn-edge`
-  keyline at the 3:1 non-text floor, and `--shadow-1`. Hover and press step the
-  same ladder (`--btn-face-hover` / `--btn-face-press`); the accent goes on the
-  keyline and NEVER on the label, which scores below 4.5:1 on five themes. Off
-  is the opposite language — flat, no lift, weak keyline — never the same
-  properties at a lower opacity. `npm run check:themes` holds the resting face,
-  its label and its edge to floors on all 20; that check exists because nothing
-  measured the affordance the first time and a whole toolbar shipped looking
-  disabled.
+- **A resting control is plain; only the primary is filled, and `.btn-ghost` is
+  only ever the dismissive twin.** The minimalist redesign (#144, Q1) took the
+  resting `.btn` down to its label: `--btn-rest-face` and `--btn-rest-edge` are
+  transparent and there is no lift. What says "this is a button" is position (a
+  toolbar, a dialog's action row), the label or icon at full ink, and the hover
+  face, which steps the `--btn-face-hover` / `--btn-face-press` ladder with the
+  accent on the keyline and NEVER on the label (it scores below 4.5:1 on five
+  themes). `.btn-primary` keeps its fill and lift: at most one per group. A
+  Cancel or Close beside a primary is `.btn-ghost` (dim ink); a neutral action
+  with no primary beside it is a plain `.btn`. Off is dim ink, no hover and
+  reduced opacity. contrast and beacon keep the resting keyline
+  (`--btn-rest-edge: var(--btn-edge)`, `--btn-off-edge: var(--border)`), because
+  a hard edge is their contract. `npm run check:themes` holds the hover face to
+  1.15 against the panel, the label on it to 4.5, and those two themes' resting
+  keyline to 3:1. `--btn-face` and `--btn-edge` themselves are unchanged: other
+  surfaces (segmented controls, theme tiles, callouts) use them as a selected
+  face and a visible keyline.
+- **Type is one stack and three weights.** `-apple-system, 'Segoe UI',
+system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
+  `--font-xs` 11px. Weights are 600 for titles, headings and the primary
+  button, 500 for button, tool and tab labels, and 400 for rows and body text.
+  Never a fourth weight: 640, 650 and 700 had crept in until every label was
+  bold and nothing stood out.
 - **A UI/UX proposal is not a proposal until it has been checked against every
   supported theme.** `themes.css` ships 20 — light, dark, solar, neon, nord,
   sepia, dim, beacon, meridian, linen, bloom, nyan, matrix, contrast, volcano,
@@ -359,7 +366,7 @@ directory move passes CI while silently removing enforcement.
   accent-tinted glow into a halo. A finished proposal carries the per-theme
   verdict, the exact token-driven CSS, and the trade-offs; a single-theme mockup
   is not a proposal.
-- **A tile is the one control without the `.btn` keyline.** `.tile` (ui.css) is
+- **A tile carries its own resting cues.** `.tile` (ui.css) is
   for a grid of destinations — the Tools panel, Home's pinned and quick-tool
   cards — where twelve outlined boxes read as a keyboard. Its resting
   affordance is three other cues: a hue-tinted `.glyph-well`, the `--bg-card`
@@ -379,7 +386,7 @@ directory move passes CI while silently removing enforcement.
 - **Controls and glyphs use the predefined size scale — never a bespoke box.**
   `--control-h` (30px), `--control-h-sm` (26px) and `--chip-h` (20px) in
   `tokens.css` are the only heights a button, icon button or key chip may take
-  (plus `--tile-h` for a `.tile` and `--rail-item` for a sidebar rail item),
+  (plus `--tile-h` for a `.tile`),
   and `ui.css` already ships `.btn`, `.btn-sm`, `.btn-icon` and `.ql-kbd` for
   them. Never let a control's height fall out of padding + font-size: that is how
   the Esc chip drifted to 19px beside a 26px button, and it silently re-breaks on
@@ -400,18 +407,20 @@ directory move passes CI while silently removing enforcement.
   (scripts/check-theme-depth.mjs) fails the build if any theme's text, surfaces,
   border or resting control face lose contrast — the floors are a ratchet, never
   lowered to green a run.
-- **Alignment.** Any full-width horizontal strip (toolbar, file-slots row,
-  section header, dialog header) is a _band_: it carries `.band` and vertically
+- **Alignment.** Any full-width horizontal strip (toolbar, section header,
+  dialog header) is a _band_: it carries `.band` and vertically
   centres its content with flexbox. Never fake vertical alignment with top
   padding — it drifts the instant a font size or line-height changes (that is
   what twice broke the sidebar/file-input alignment). Bands that sit at the
   same vertical position across the sidebar/main divider share a height so
-  their content lines up by construction. Every sidebar section header and the
-  snippet document's Content bar add `.band-row` (`--band-row`); the file-slots
-  row and the snippet document head add `.head-band` (`--head-band`, the
-  sidebar's search band less the tab strip), so both lines run straight across
-  the divider. Controls sharing a band row must be equal-height flex-centred
-  boxes.
+  their content lines up by construction. Every sidebar section header adds
+  `.band-row` (`--band-row`); the snippet document head adds `.head-band`
+  (`--head-band`, the sidebar's search band less the tab strip), so that line
+  runs straight across the divider. A comparison has no band of its own: each
+  pane names its side in a label at its top right (`PaneLabels`), a zero-height
+  strip placed before the viewer's body so it sits under any band the viewer
+  draws. Controls sharing a
+  band row must be equal-height flex-centred boxes.
 - **Icons are SVG, never Unicode glyphs.** A symbol like ◈ / ⧉ / 🔒 tofus into a
   `[]` box on any font that lacks it, which kept happening. Every icon comes
   from `<AppIcon name="…" />`, whose geometry lives in `src/renderer/src/icons.js`
@@ -579,6 +588,12 @@ directory move passes CI while silently removing enforcement.
   call it). **Anything new that reaches a shared OS resource — a fixed temp
   path, a lock, a well-known port — has to be added to that list.**
 
+- **Docker renders in CI's fonts.** The ubuntu runner falls back to DejaVu
+  Sans; a bare Debian image falls back to Nimbus Sans, which is narrower, so a
+  layout that only just fits passed locally and failed in CI (#148: five specs
+  at once after the type grew half a pixel). `docker/fonts/dejavu` is mounted
+  into the container's font path, and Debian's fontconfig then prefers it, so
+  both measure the same text. Never remove the mount to make a spec pass.
 - **A failing E2E keeps its trace.** Playwright clears `test-results/` at the
   START of a run, so a failure's trace is destroyed by the next run — which is
   how three sightings of the same intermittent were lost with nothing to show

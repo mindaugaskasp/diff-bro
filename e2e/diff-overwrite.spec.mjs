@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs'
+import { test, expect, paneLabel } from './fixtures.mjs'
 
 // Build a two-sided comparison without a native dialog (paste-compare), then
 // return to files mode where the file slots are live.
@@ -33,17 +33,17 @@ test('opening a file over an unsaved comparison warns first, and can replace', a
   await pasteCompare(page, 'left body', 'right body')
   await stubOpenFile(app, 'picked.txt')
 
-  // Click the left file slot -> store.pick('left') -> the guard fires.
-  await page.locator('.slot[data-side="left"]').click()
+  // Click the left pane label -> store.pick('left') -> the guard fires.
+  await paneLabel(page, 'left').click()
 
   const dialog = page.getByRole('dialog', { name: 'Replace current comparison?' })
   await expect(dialog).toBeVisible()
   // Nothing replaced while the prompt is up.
-  await expect(page.locator('.slot[data-side="left"] .name')).toHaveText('Left (pasted)')
+  await expect(paneLabel(page, 'left')).toHaveText('Left (pasted)')
 
   await dialog.getByRole('button', { name: 'Replace anyway' }).click()
   await expect(dialog).toBeHidden()
-  await expect(page.locator('.slot[data-side="left"] .name')).toHaveText('picked.txt')
+  await expect(paneLabel(page, 'left')).toHaveText('picked.txt')
 })
 
 // Cancelling the prompt leaves the current comparison exactly as it was.
@@ -51,11 +51,11 @@ test('cancelling the overwrite prompt keeps the current comparison', async ({ ap
   await pasteCompare(page, 'left body', 'right body')
   await stubOpenFile(app, 'other.txt')
 
-  await page.locator('.slot[data-side="right"]').click()
+  await paneLabel(page, 'right').click()
   const dialog = page.getByRole('dialog', { name: 'Replace current comparison?' })
   await expect(dialog).toBeVisible()
 
   await dialog.getByRole('button', { name: 'Cancel' }).click()
   await expect(dialog).toBeHidden()
-  await expect(page.locator('.slot[data-side="right"] .name')).toHaveText('Right (pasted)')
+  await expect(paneLabel(page, 'right')).toHaveText('Right (pasted)')
 })

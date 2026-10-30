@@ -1,5 +1,5 @@
 .saved {
-  width: calc(var(--rail-w) + 256px);
+  width: 312px;
   /* Animated so the comparison widening does not read as a jump cut. Monaco
      carries automaticLayout, so the editor follows the width on its own. */
   transition: width 160ms ease;
@@ -14,37 +14,22 @@
   overflow: hidden; /* the body scrolls, not the whole aside */
 }
 .usb-panel {
-  position: relative; /* the resize grip pins to its right edge */
+  position: relative; /* the edge handle pins to its right edge */
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
-/* Collapsed to the rail. The width is the only thing that changes — the border,
-   the lift and the surface role are the sidebar's either way. */
+/* Collapsed away entirely; SidebarEdge leaves a strip to bring it back. */
 .saved.collapsed {
-  width: var(--rail-w);
+  width: 0;
+  border-right: 0;
+  box-shadow: none;
 }
-/* The 160ms ease is for the collapse toggle, where the width jumps 200px at
-   once. Under a drag it lags the pointer, so the grip turns it off. */
+/* The 160ms ease is for the collapse, where the width jumps at once. Under a
+   drag it lags the pointer, so the grip turns it off. */
 .saved.resizing {
   transition: none;
-}
-/* Drag-to-widen: hit area on the seam, unmarked until pointed at. A visible
-   handle on a border the eye already reads as a divider is just noise. */
-.usb-grip {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 4px;
-  height: 100%;
-  cursor: col-resize;
-  user-select: none;
-  touch-action: none;
-}
-.usb-grip:hover,
-.saved.resizing .usb-grip {
-  background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   .saved {
@@ -58,19 +43,15 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-1);
-  /* No top padding: the search row IS the band row, so the toggle it holds
-     lines up with the rail's. The bottom is not free either — it is the air the
-     shelf grip needs, held at 10px by e2e/tag-shelf-resize. --space-1 measured
-     9 and took the grip with it. */
+  /* No top padding: the search row IS the band row. The bottom is the air the
+     shelf grip needs, held at 10px by e2e/tag-shelf-resize. */
   padding: 0 var(--space-3) var(--space-2);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: var(--bg-panel);
 }
 /* Section toggles — independent pills (MULTI-select), so several can be on at
    once. "On" fills accent-tinted; "off" is a quiet outline. All + ★ are helpers,
    set slightly apart with a divider. */
-/* The search field and its one modifier share a row, so the band keeps the
-   height the rail lines up against. */
+/* The search field and its one modifier share one row. */
 .usb-find {
   flex: none;
   gap: var(--space-2);
@@ -79,87 +60,16 @@
   flex: 1 1 auto;
   min-width: 0;
 }
-/* ★ narrows the list to favourites. A real control on the search band rather
-   than a bespoke chip: the row it used to sit in mixed three control semantics
-   in one costume — a command (All), an independent boolean (this) and four
-   multi-select toggles — wrapped to two rows at the resting sidebar width, sized
-   its chips 19px and 20px against a --chip-h of 20 and a --control-h-sm of 26,
-   and its four section toggles duplicated the collapse chevron every section
-   header already carries. */
+/* The one modifier beside the search box (Tools: search every tool). A
+   persistent control beside an input, so it keeps the neutral face and keyline. */
 .usb-star {
   flex: 0 0 auto;
-  /* .btn-icon is flat by design for ROW actions; this one is a persistent
-     filter beside an input, so it takes the neutral control's resting face and
-     keyline back. */
   background: var(--btn-face);
   border-color: var(--btn-edge);
-}
-.usb-star.on {
-  color: var(--pin-ink);
-  border-color: color-mix(in srgb, var(--favorite) 40%, var(--border));
-}
-
-/* One line of chips; useTagShelf measures what fits and the rest go to "+N". */
-.usb-shelf {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  max-height: var(--chip-h);
-  overflow: hidden;
-}
-
-.usb-tag {
-  cursor: pointer;
-  padding: 2px 8px;
-  font-size: var(--font-xs);
-}
-.usb-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-  background: var(--tag-ink);
 }
 .usb-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding-bottom: var(--space-4);
-}
-
-/* The overflow keeps the chip shape — it stands in for tags, so it belongs in
-   their row — but carries no colour dot, because it is not one. */
-.usb-more {
-  border: 1px dashed var(--border);
-  background: transparent;
-  color: var(--text-dim);
-}
-.usb-more:hover {
-  border-style: solid;
-  color: var(--text);
-}
-/* Clearing is an ACTION, not a tag, and inside the chip row it read as one more
-   selected tag whatever shape it took. It belongs on its own line, beside the
-   thing it undoes: how many tags are on. */
-.usb-filtering {
-  flex: none;
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--pad-inset-x) 0;
-  font-size: var(--font-sm);
-  color: var(--text-dim);
-}
-.usb-clear {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: var(--font-sm);
-  color: var(--accent-ink);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.usb-clear:hover {
-  color: var(--text);
 }

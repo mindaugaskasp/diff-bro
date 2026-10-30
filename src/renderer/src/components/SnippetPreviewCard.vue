@@ -29,6 +29,7 @@ const isMermaid = computed(() => props.preview.lang === 'mermaid' && !props.prev
         <span class="pv-name">{{ preview.name }}</span>
       </span>
       <span v-if="preview.lang" class="pv-lang">{{ preview.lang }}</span>
+      <span class="pv-age">{{ preview.age }}</span>
     </div>
     <!-- A Mermaid snippet previews as its rendered diagram;
          clicking it opens the full-screen zoomable viewer. -->

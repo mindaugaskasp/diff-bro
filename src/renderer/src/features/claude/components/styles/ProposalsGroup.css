@@ -1,0 +1,82 @@
+/* Approved on all 20 themes (#121): the keyline is the received hue stepped
+   toward the ink, which clears 3:1 everywhere (nord 3.33 the lowest). */
+.proposals {
+  --proposal-edge: color-mix(in srgb, var(--hue-received) 70%, var(--text));
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-2) var(--space-2) 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+.pg-head {
+  height: var(--control-h);
+  gap: var(--space-2);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--hue-received) 12%, var(--bg-panel));
+  color: var(--text);
+  font-weight: 600;
+}
+.pg-glyph {
+  color: var(--glyph-received);
+}
+.pg-title {
+  flex: 1;
+  min-width: 0;
+}
+.pg-selection {
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: var(--font-sm);
+}
+.pg-count {
+  flex: 1;
+}
+.pg-list {
+  max-height: 184px;
+  margin: 0;
+  padding: 2px 0 0;
+  list-style: none;
+  overflow-y: auto;
+}
+.pg-row {
+  margin: 3px 0;
+  border-radius: var(--radius);
+  outline: 1px dashed var(--proposal-edge);
+  outline-offset: -1px;
+  background: color-mix(in srgb, var(--hue-received) 5%, var(--bg-panel));
+}
+.pg-row.open {
+  outline-style: solid;
+  background: color-mix(in srgb, var(--hue-received) 14%, var(--bg));
+}
+.pg-entry {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pg-entry:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.pg-check {
+  flex: none;
+  margin: 0;
+  accent-color: var(--hue-received);
+  pointer-events: none;
+}
+.pg-well {
+  flex: none;
+}

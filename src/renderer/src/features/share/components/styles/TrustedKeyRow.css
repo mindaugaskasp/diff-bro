@@ -34,7 +34,7 @@
 .added-badge {
   flex: none;
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   color: var(--text);

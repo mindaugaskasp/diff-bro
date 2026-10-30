@@ -1,9 +1,32 @@
 // Scrubs on the way IN, not on read: the log dir is user-chosen and can be a
 // synced folder, so nothing sensitive may reach the file in the first place.
-import { DOC_EXTENSIONS } from './fileFilters'
 
-// Longest first so `.diffbrokey` is not matched as `.diffbro`.
-const DOC_EXT = [...DOC_EXTENSIONS, 'diffbrokey', 'diffbro', 'txt', 'text']
+// Marks a path as a user document rather than source code. Longest first so
+// `.diffbrokey` is not matched as `.diffbro`.
+const DOC_EXT = [
+  'xlsx',
+  'json',
+  'jsonc',
+  'json5',
+  'xml',
+  'xsd',
+  'xsl',
+  'svg',
+  'plist',
+  'yaml',
+  'yml',
+  'csv',
+  'tsv',
+  'md',
+  'markdown',
+  'mdx',
+  'mmd',
+  'mermaid',
+  'diffbrokey',
+  'diffbro',
+  'txt',
+  'text'
+]
   .sort((a, b) => b.length - a.length)
   .join('|')
 

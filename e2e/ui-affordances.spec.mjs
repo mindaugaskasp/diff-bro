@@ -3,23 +3,6 @@ import { test, expect, newSnippetButton, openNewSnippet, showPanel } from './fix
 // Regression cover for UI defects found by eye. Each of these shipped once, so
 // each gets a test that fails if it comes back.
 
-test('the start surface names each format as a button that opens a filtered picker', async ({
-  page
-}) => {
-  const tiles = page.locator('.start-formats button.format')
-  // Named rather than counted: a bare number says nothing about which tile went
-  // missing, and adding Mermaid broke it with a diff that read "6 became 7".
-  await expect(tiles).toHaveText([/Excel/, /CSV/, /JSON/, /YAML/, /XML/, /Markdown/, /Mermaid/])
-
-  // Every tile is reachable and says what it opens. The tip is the app's own
-  // (data-tip), not native `title`, which Electron often never draws.
-  for (const tip of await tiles.evaluateAll((n) => n.map((b) => b.getAttribute('data-tip')))) {
-    expect(tip).toMatch(/^Open .+ file$/)
-  }
-  await expect(tiles.first()).toBeEnabled()
-  await expect(tiles.first()).toContainText('Excel')
-})
-
 // Shortening these tooltips once renamed the buttons: an icon-only button used
 // to take its accessible name from `title`, so the short label must not be the
 // only one. The name now comes from aria-label and the tip from data-tip, which
@@ -28,11 +11,10 @@ test('icon buttons keep a descriptive name alongside the short tooltip', async (
   await showPanel(page, 'snippets')
   const cases = [
     ['New', 'New snippet'],
-    ['Export', 'Export all snippets to a passphrase-protected file'],
-    ['Import', 'Import snippets from a file']
+    ['Snippet library actions', 'Snippet library actions']
   ]
   for (const [tooltip, name] of cases) {
-    const button = page.getByRole('button', { name, exact: true })
+    const button = page.locator('[data-tour="sidebar"]').getByRole('button', { name, exact: true })
     await expect(button, `${name} should still be findable by name`).toBeVisible()
     await expect(button).toHaveAttribute('data-tip', tooltip)
   }
@@ -168,14 +150,6 @@ test('saved-diff actions stay out of the way until the row is hovered', async ({
   await expect(del.locator('svg path').first()).toHaveAttribute('d', /M3 6h18|M19 6v14/)
 })
 
-// A glyph like ⇄ tofus into a [] box on any font that lacks it, which is why
-// every standalone icon in the app is an SVG from icons.js.
-test('the swap control is an SVG icon, not a text glyph', async ({ page }) => {
-  const swap = page.getByRole('button', { name: 'Swap sides' })
-  await expect(swap.locator('svg.app-icon')).toHaveCount(1)
-  expect((await swap.innerText()).trim()).toBe('')
-})
-
 // data-tip is the app's own tooltip; assistive tech never sees it. An icon-only
 // button that carries no aria-label has no name at all.
 test('every icon-only button carries an accessible name', async ({ page }) => {
@@ -244,42 +218,46 @@ const SURFACE = (buttonSel, groundSel) => `(() => {
   const painted = over(face, gc)
   const bare = [gc.r, gc.g, gc.b]
   const [hi, lo] = [lum(painted), lum(bare)].sort((a, b) => b - a)
+  const fg = parse(bs.color)
+  const shown = over({ ...fg, a: fg.a * Number(bs.opacity) }, { r: painted[0], g: painted[1], b: painted[2] })
+  const [ih, il] = [lum(shown), lum(painted)].sort((a, b) => b - a)
   return {
     alpha: face.a,
     shadow: bs.boxShadow,
     contrast: (hi + 0.05) / (lo + 0.05),
+    ink: (ih + 0.05) / (il + 0.05),
+    color: bs.color,
     background: bs.backgroundColor
   }
 })()`
 
-// A ghost button had no fill, so its contrast against the band was exactly 1.00
-// — the same nothing a disabled control shows.
-test('a resting toolbar button has a surface of its own', async ({ page }) => {
-  const paste = page.getByRole('button', { name: 'Paste mode' })
-  await expect(paste).toBeEnabled()
+// A resting .btn is plain (#144): no plate and no lift until the pointer arrives.
+test('a resting toolbar button is plain, and hover gives it a face', async ({ page }) => {
+  const sel = '.toolbar .btn:not(:disabled):not(.btn-primary):not(.active)'
+  const rest = await page.evaluate(SURFACE(sel, '.topbar'))
+  expect(rest.alpha, `resting background was ${rest.background}`).toBe(0)
+  expect(rest.shadow, 'a resting button is not lifted').toBe('none')
+  expect(rest.ink, 'the label carries the affordance at rest').toBeGreaterThanOrEqual(4.5)
 
-  const s = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
-  expect(s.alpha, `resting background was ${s.background}`).toBeGreaterThan(0)
-  expect(s.contrast, 'the button must be distinguishable from the band it sits on').toBeGreaterThan(
-    1.2
-  )
+  await page.locator(sel).first().hover()
+  await page.waitForTimeout(250)
+  const hover = await page.evaluate(SURFACE(sel, '.topbar'))
+  expect(hover.contrast, 'hover must paint a face off the band').toBeGreaterThan(1.15)
 })
 
-// Enabled and disabled used to differ by one alpha step on one axis. Whatever
-// the resting state gains, disabled must not have.
+// Plain at rest leaves ink as the only axis left, so disabled must move it.
 test('a disabled toolbar button differs from a resting one by more than opacity', async ({
   page
 }) => {
   const capture = page.getByRole('button', { name: 'Capture' })
   await expect(capture).toBeDisabled()
 
-  const rest = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+  const rest = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.topbar'))
   // Not the primary — a disabled Save keeps its accent fill on purpose.
-  const off = await page.evaluate(SURFACE('.toolbar .btn:disabled:not(.btn-primary)', '.toolbar'))
+  const off = await page.evaluate(SURFACE('.toolbar .btn:disabled:not(.btn-primary)', '.topbar'))
 
-  expect(rest.alpha, 'a resting button paints a plate').toBeGreaterThan(0)
-  expect(off.alpha, 'a disabled button paints none').toBe(0)
-  expect(rest.shadow, 'a resting button is lifted').not.toBe('none')
+  expect(off.color, 'a disabled label is a different ink').not.toBe(rest.color)
+  expect(off.ink, 'a disabled label reads weaker').toBeLessThan(rest.ink / 1.5)
   expect(off.shadow, 'a disabled button is flat').toBe('none')
 })
 
@@ -287,7 +265,7 @@ test('a disabled toolbar button differs from a resting one by more than opacity'
 // .btn.active rule anywhere — the toggle had no on-state at all.
 test('the paste-mode toggle shows an on-state', async ({ page }) => {
   const toggle = page.getByRole('button', { name: 'Paste mode' })
-  const before = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.toolbar'))
+  const before = await page.evaluate(SURFACE('.toolbar .btn:not(:disabled)', '.topbar'))
 
   await toggle.click()
   await expect(page.getByRole('button', { name: 'File mode' })).toBeVisible()
@@ -296,7 +274,7 @@ test('the paste-mode toggle shows an on-state', async ({ page }) => {
   await page.mouse.move(0, 0)
   await page.waitForTimeout(250)
 
-  const on = await page.evaluate(SURFACE('.toolbar .btn.active', '.toolbar'))
+  const on = await page.evaluate(SURFACE('.toolbar .btn.active', '.topbar'))
   expect(
     on.contrast,
     'the pressed toggle must read differently from a resting button'
@@ -368,23 +346,4 @@ test('hovering the primary button moves its keyline, not its fill', async ({ pag
   // The bar is the neutral .btn's own shipped hover step (1.16 at worst): a
   // primary must move at least as visibly as the quiet button beside it.
   expect(hover.edgeVsFill, `keyline ${hover.edge} on fill ${hover.fill}`).toBeGreaterThan(1.16)
-})
-
-// The collapsed rail is its own strip; every control in it centres on the
-// strip's own axis. Glued to the left edge, the rail reads as clipped.
-test('the collapsed rail centres its buttons on the strip', async ({ page }) => {
-  await page.getByRole('button', { name: 'Collapse the sidebar' }).click()
-  const rail = page.locator('.rail')
-  await expect(rail).toBeVisible()
-  // The collapse animates width for 160ms — measure the settled strip.
-  await expect
-    .poll(async () => Math.round((await page.locator('aside.saved').boundingBox()).width))
-    .toBe(Math.round((await rail.boundingBox()).width))
-
-  const strip = await page.locator('aside.saved').boundingBox()
-  const mid = strip.x + strip.width / 2
-  for (const target of ['.rail-band .sidebar-toggle', '.rail-item']) {
-    const box = await page.locator(target).first().boundingBox()
-    expect(Math.abs(box.x + box.width / 2 - mid)).toBeLessThanOrEqual(1.5)
-  }
 })

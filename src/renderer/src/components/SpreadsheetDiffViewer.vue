@@ -14,6 +14,7 @@ import SegmentedControl from './SegmentedControl.vue'
 import RowMatchMenu from './RowMatchMenu.vue'
 import SpreadsheetStatusBand from './SpreadsheetStatusBand.vue'
 import AppIcon from './AppIcon.vue'
+import PaneLabels from './PaneLabels.vue'
 
 const store = useDiffStore()
 const {
@@ -128,6 +129,7 @@ onMounted(() => {
       <span>{{ $t('spreadsheetDiffViewer.noDifferencesEverySheetMatches') }}</span>
     </div>
 
+    <PaneLabels />
     <div
       v-if="activeSheet"
       ref="grids"

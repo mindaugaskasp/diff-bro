@@ -1,4 +1,4 @@
-import { test, expect, openMenu, openViewMenu, setViewOption, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openMenu, openViewMenu, setViewOption, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -50,10 +50,8 @@ const jsonFiles = (leftText, rightText) => {
 }
 
 async function loadPair(app, page, left, right) {
-  await stubOpenDialog(app, left)
-  await page.locator('.slot[data-side="left"]').click()
-  await stubOpenDialog(app, right)
-  await page.locator('.slot[data-side="right"]').click()
+  await openSide(app, page, 'left', left)
+  await openSide(app, page, 'right', right)
   await expect(page.locator('.diff-container, .structure-diff').first()).toBeVisible()
 }
 

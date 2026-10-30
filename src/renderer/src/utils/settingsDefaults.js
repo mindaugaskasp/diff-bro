@@ -7,7 +7,6 @@ import { isValidAccelerator } from './accelerator'
 import { platformId } from '../keys'
 import { MAX_RECENT_TOOLS } from './tools'
 import { normalizeTheme } from './themes'
-import { DEFAULT_TAG_SHELF_PX, MAX_TAG_SHELF_PX, MIN_TAG_SHELF_PX } from './tagShelf'
 
 export const DEFAULT_QUICKLOOK_SHORTCUT = defaultQuickLookShortcut(platformId)
 
@@ -26,15 +25,7 @@ export const clampBackupHours = (h) => {
 export const SECTIONS = ['saved', 'external', 'snippets', 'tools']
 
 export const SIDEBAR_PANELS = ['home', 'diffs', 'snippets', 'tools', 'keys']
-const PANEL_OF_SECTION = { saved: 'diffs', snippets: 'snippets', tools: 'tools' }
-
 export const sanitizeSidebarPanel = (id) => (SIDEBAR_PANELS.includes(id) ? id : 'home')
-
-// Received diffs live inside the Diffs panel, so the stored section order maps
-// onto the rail with Home pinned first and `external` carrying no position.
-export function railOrderOf(sectionOrder) {
-  return ['home', ...sectionOrder.map((id) => PANEL_OF_SECTION[id]).filter(Boolean)]
-}
 
 // Per-type soft "load anyway?" thresholds (`cap` is the enforced ceiling + slider
 // max). Mirrored in src/main/files.js — keep in sync.
@@ -137,11 +128,6 @@ export const NUMERIC_LIMITS = {
     default: DEFAULT_MAX_EXPORT_HEIGHT_PX,
     min: MIN_EXPORT_HEIGHT_PX,
     max: MAX_EXPORT_HEIGHT_PX_CAP
-  },
-  tagShelfHeight: {
-    default: DEFAULT_TAG_SHELF_PX,
-    min: MIN_TAG_SHELF_PX,
-    max: MAX_TAG_SHELF_PX
   }
 }
 
@@ -158,7 +144,6 @@ export function settingsStateFrom(parsed, outside) {
     sectionOrder: sanitizeSectionOrder(parsed.sectionOrder),
     shelfOrder:
       parsed.shelfOrder && typeof parsed.shelfOrder === 'object' ? { ...parsed.shelfOrder } : {},
-    showShortcutBar: parsed.showShortcutBar !== false,
     // The tag word beside a name on every sidebar row. On by default; off is for
     // a library where nearly everything carries the same tags, and it hides the
     // WORD only — the shelf and the search still filter by them.

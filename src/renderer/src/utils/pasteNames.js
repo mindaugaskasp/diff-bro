@@ -4,7 +4,7 @@
 // snapshot, so it survives a save, a tab switch and a reopen.
 
 // Long enough for "staging response body", short enough not to overrun a tab or
-// a file slot.
+// a pane label.
 export const MAX_SIDE_NAME = 60
 
 export const DEFAULT_SIDE_NAME = { left: 'Left (pasted)', right: 'Right (pasted)' }

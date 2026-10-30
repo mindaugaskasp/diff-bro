@@ -27,7 +27,7 @@
 .tu-chip {
   font: inherit;
   font-size: var(--font-xs);
-  font-weight: 560;
+  font-weight: 500;
   color: var(--text-dim);
   background: var(--bg);
   border: 1px solid var(--border);
@@ -56,7 +56,7 @@
   font-size: var(--font-2xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  font-weight: 640;
+  font-weight: 600;
   color: var(--text-dim);
 }
 .tu-badge {

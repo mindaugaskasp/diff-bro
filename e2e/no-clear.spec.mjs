@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 // the OTHER side, so the wrong first file could not be taken back from the very
 // screen that was showing it.
 //
-// Dropped, not typed: a synthesized DragEvent is the only way to fill one slot
+// Dropped, not typed: a synthesized DragEvent is the only way to fill one side
 // from the renderer — Chromium will not begin a native HTML5 drag from injected
 // pointer input.
 async function loadOneSide(page) {
@@ -17,7 +17,7 @@ async function loadOneSide(page) {
     const row = document.querySelector('.snippets-section .row[draggable="true"]')
     const dt = new DataTransfer()
     row.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
-    const slot = document.querySelector('.slot[data-side="left"]')
+    const slot = document.querySelector('.start-surface')
     slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
     slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
   })

@@ -129,12 +129,20 @@ const RULES = [
   { key: 'panel/bg', a: 'bg-panel', b: 'bg', min: 1.03, kind: 'surface' },
   // The divider must be visible against the chrome it edges.
   { key: 'border/panel', a: 'border', b: 'bg-panel', min: 1.11, kind: 'border' },
-  // A control must read as a control BEFORE it is touched: the toolbar shipped
-  // with a 1.00 resting fill and dim ink — what :disabled looks like — because
-  // nothing measured the affordance.
-  { key: 'btn-face/panel', a: 'btn-face', b: 'bg-panel', min: 1.25, kind: 'control' },
-  { key: 'btn-label/face', a: 'text', b: 'btn-face', min: 4.5, kind: 'text' },
+  // A resting .btn is plain, so hover is the face that has to show, and the
+  // label has to hold on it. The keyline token still edges other controls.
+  { key: 'btn-hover/panel', a: 'btn-face-hover', b: 'bg-panel', min: 1.15, kind: 'control' },
+  { key: 'btn-label/hover', a: 'text', b: 'btn-face-hover', min: 4.5, kind: 'text' },
   { key: 'btn-edge/panel', a: 'btn-edge', b: 'bg-panel', min: 3.0, kind: 'control' },
+  // contrast and beacon keep the resting keyline: a hard edge is their contract.
+  {
+    key: 'btn-rest-edge/panel',
+    a: 'btn-rest-edge',
+    b: 'bg-panel',
+    min: 3.0,
+    kind: 'control',
+    themes: ['contrast', 'beacon']
+  },
   // A pinned row marks itself with a bar and a filled star, both non-text marks
   // on the chrome. Raw --favorite is a gold tuned to read on the dark grounds
   // and scores 2.23–3.00 on light/solar/sepia/bloom, so this shipped below the
@@ -178,6 +186,10 @@ for (const theme of THEMES) {
   const map = mapFor(theme)
   const cells = {}
   for (const r of RULES) {
+    if (r.themes && !r.themes.includes(theme)) {
+      cells[r.key] = '—'
+      continue
+    }
     let ratio
     try {
       // A veil is only a colour once painted, so both sides land on the chrome.

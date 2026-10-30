@@ -1,9 +1,8 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useVaultStore } from '../stores/vaultStore'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useToolsStore } from '../features/tools'
-import { ClaudeInbox, useClaudeStore } from '../features/claude'
 import { useHomeActions } from '../composables/useHomeActions'
 import { sidebarRecent } from '../utils/sidebarRecent'
 import { languageMonogram } from '../utils/languageMonogram'
@@ -20,8 +19,6 @@ const vault = useVaultStore()
 const snippets = useSnippetStore()
 const toolsStore = useToolsStore()
 const { openItem } = useHomeActions()
-const claude = useClaudeStore()
-onMounted(() => claude.loadInbox())
 
 const QUICK_TOOLS = 4
 const MAX_PINS = 6
@@ -82,18 +79,11 @@ const KIND_KEY = {
   snippet: 'homePanel.kind.snippet'
 }
 const metaOf = (item) => [t(KIND_KEY[item.kind]), ...item.tags].join(' · ')
-const isEmpty = computed(
-  () => !claude.inbox.length && !pinned.value.length && !recent.value.length && !quick.value.length
-)
+const isEmpty = computed(() => !pinned.value.length && !recent.value.length && !quick.value.length)
 </script>
 
 <template>
   <div class="home">
-    <section v-if="claude.inbox.length" class="home-block">
-      <h3 class="home-head">{{ $t('claude.inbox.heading', { n: claude.inbox.length }) }}</h3>
-      <ClaudeInbox />
-    </section>
-
     <section v-if="pinned.length" class="home-block">
       <h3 class="home-head">{{ $t('homePanel.pinned') }}</h3>
       <div class="home-grid">

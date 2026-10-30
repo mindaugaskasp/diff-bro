@@ -1,0 +1,29 @@
+/* One band with the top bar across the divider: the same height and keyline. */
+.sidebar-nav {
+  flex: none;
+  height: calc(var(--control-h) + 1px);
+  box-sizing: border-box;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-nav :deep(.seg-field) {
+  flex: 1;
+}
+/* A quiet track; the open place is lifted onto the ground, not filled with accent. */
+.sidebar-nav :deep(.seg) {
+  flex: 1;
+  border-color: var(--field-edge);
+  background: color-mix(in srgb, var(--text) 7%, var(--bg-panel));
+}
+.sidebar-nav :deep(.seg-opt) {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: var(--font-md);
+}
+.sidebar-nav :deep(.seg-opt.on) {
+  background: var(--bg);
+  color: var(--text);
+}

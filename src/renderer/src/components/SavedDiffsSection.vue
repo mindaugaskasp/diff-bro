@@ -4,6 +4,8 @@ import { computed, ref } from 'vue'
 import { useDiffRows, OWN_GROUPS } from '../composables/useDiffRows'
 import { useVaultStore } from '../stores/vaultStore'
 import SavedDiffRow from './SavedDiffRow.vue'
+import TagTree from './TagTree.vue'
+import { useSnippetStore } from '../stores/snippetStore'
 import { provideRowReorder } from '../composables/useRowReorder'
 import SectionHeader from './SectionHeader.vue'
 import { useTabsStore } from '../stores/tabsStore'
@@ -20,18 +22,23 @@ const props = defineProps({
   panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
-  tags: { type: Array, default: () => [] },
-  favOnly: { type: Boolean, default: false }
+  tags: { type: Array, default: () => [] }
 })
 
+defineEmits(['manageTag'])
 const tabs = useTabsStore()
 const vault = useVaultStore()
-const { rows, filtering } = useDiffRows(() => props, OWN_GROUPS)
+const snippets = useSnippetStore()
+const { rows, items, filtering } = useDiffRows(() => props, OWN_GROUPS)
 const ui = useUiStore()
 const open = ref(true)
 
+// The section in the group key confines a drag to it; the store group is the order.
+const storeGroup = (entry) => OWN_GROUPS[entry.favorite ? 0 : 1]
+const groupOf = (entry, section) => `${storeGroup(entry)}|${section}`
+const indexOf = (entry) => vault[storeGroup(entry)].indexOf(entry)
 const reorder = provideRowReorder((group, from, to) =>
-  ui.markMovedRow(vault.reorder(group, from, to))
+  ui.markMovedRow(vault.reorder(group.split('|')[0], from, to))
 )
 const hasOwn = computed(() => vault.active.some((e) => !e.from))
 
@@ -85,6 +92,7 @@ useNewRowMarker({
     </SectionHeader>
 
     <div v-show="open || panel" class="section-body">
+      <slot name="lead" />
       <div v-if="!hasOwn" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('savedDiffsSection.empty') }}</p>
         <button
@@ -95,19 +103,24 @@ useNewRowMarker({
           <AppIcon name="plus" /> {{ $t('savedDiffsSection.newComparisonCta') }}
         </button>
       </div>
-      <ul v-else class="rows" :class="{ reordering: reorder.isReordering.value }">
-        <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
-        <li v-if="!rows.length" class="empty small">
-          {{ $t('savedDiffsSection.noSavedDiffsMatchTry') }}
-        </li>
-        <SavedDiffRow
-          v-for="row in rows"
-          :key="row.entry.id"
-          :entry="row.entry"
-          :group="row.group"
-          :index="row.index"
-        />
-      </ul>
+      <!-- Filtered to nothing has to say so; a blank box reads as broken. -->
+      <p v-else-if="!items.length" class="empty small">
+        {{ $t('savedDiffsSection.noSavedDiffsMatchTry') }}
+      </p>
+      <TagTree
+        v-else
+        :items="items"
+        list="diffs"
+        :searching="filtering"
+        :scope="tags[0] ?? ''"
+        :color-of="snippets.colorOf"
+        :class="{ reordering: reorder.isReordering.value }"
+        @manage="$emit('manageTag', $event)"
+      >
+        <template #row="{ item, section }">
+          <SavedDiffRow :entry="item" :group="groupOf(item, section)" :index="indexOf(item)" />
+        </template>
+      </TagTree>
     </div>
   </section>
 </template>

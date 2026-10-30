@@ -11,6 +11,7 @@ import { zoomedPx } from '../utils/diffZoom'
 import { useUiStore } from '../stores/uiStore'
 import { visibleStructureRows } from '../utils/structureRows'
 import AppIcon from './AppIcon.vue'
+import PaneLabels from './PaneLabels.vue'
 
 const store = useDiffStore()
 
@@ -39,6 +40,7 @@ const retyped = (row) => row.status === 'changed' && row.leftType !== row.rightT
 
 <template>
   <div class="structure-diff">
+    <PaneLabels />
     <div v-if="identical" class="identical-row">
       <AppIcon name="check" class="ok" />
       <span>{{ $t('structureDiffViewer.noDifferencesTheTwoDocuments') }}</span>

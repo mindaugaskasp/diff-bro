@@ -52,13 +52,27 @@ const SEPARATOR = 1.11
 // The resting-to-hovered face step; the bar is .btn's own shipped hover (1.16 on sepia).
 const HOVER_STEP = 1.15
 
+// Through the ≡ menu, the only in-window menu since #144.
+async function pickMenuItem(page, top, label) {
+  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
+  await page.locator('.menubar .flyout').getByText(label, { exact: true }).click()
+}
+
 async function setOnboarding(page, state) {
   await page.evaluate((s) => globalThis.api.storeSave('onboarding', JSON.stringify(s)), state)
   await page.reload()
 }
 
 async function showPanel(page, panel) {
-  const item = page.locator(`.rail-item[data-panel="${panel}"]`)
+  if (panel === 'keys') {
+    await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+    await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: 'Security' }).hover()
+    await page.locator('.menubar .flyout > .submenu', { hasText: 'Trusted Keys' }).hover()
+    await page.locator('.flyout .flyout').getByText('Manage Trusted Keys…', { exact: true }).click()
+    return
+  }
+  const item = page.locator(`.sidebar-nav [data-value="${panel}"]`)
   if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
 }
 
@@ -143,8 +157,7 @@ async function closeSnippetTab(page) {
 }
 
 async function setTheme(page, label) {
-  await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings…', { exact: true }).click()
+  await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings', exact: true })
   await dlg.getByRole('button', { name: `Use the ${label} theme` }).click()
   const save = dlg.locator(':scope > .dialog-actions .btn-primary')
@@ -373,8 +386,7 @@ async function openConflictList(page, userDataDir) {
 }
 
 async function openClaudePane(page) {
-  await page.getByRole('button', { name: 'File', exact: true }).click()
-  await page.getByText('Settings…', { exact: true }).click()
+  await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   await dlg.getByRole('button', { name: 'Claude', exact: true }).click()
   return dlg
@@ -433,7 +445,7 @@ const SURFACES = [
     name: 'snippet-inline-edit',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       const area = page.locator('.snippet-doc:visible .editor-area')
       await area.hover()
       await page.locator('.edit-cue').waitFor()
@@ -446,17 +458,14 @@ const SURFACES = [
     probes: {
       'click-to-edit cue': ['.edit-cue', TEXT],
       'cue keyline': ['.edit-cue', DIM, 'border'],
-      'hover ring': ['.editor-area:not(.editing) .editor', DIM, 'outline'],
-      'drop hint': ['.snippet-doc .drop-hint', TEXT],
-      // Disabled here (nothing to format in this syntax): an inactive control, held to DIM.
-      'format button (disabled)': ['.snippet-doc .editor-header .btn:disabled', DIM]
+      'hover ring': ['.editor-area:not(.editing) .editor', DIM, 'outline']
     }
   },
   {
     name: 'snippet-tag-chips',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       const doc = page.locator('.snippet-doc:visible')
       await doc.getByRole('button', { name: 'Add tag' }).click()
       await doc.locator('.tag-pop').waitFor()
@@ -477,7 +486,7 @@ const SURFACES = [
     name: 'snippet-status-bar',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page.locator('.snippet-doc:visible .tt-trigger').hover()
       await page.locator('.tt-pop').waitFor()
     },
@@ -489,6 +498,7 @@ const SURFACES = [
     probes: {
       'status text': ['.snippet-doc .editor-status', TEXT],
       'zoom level': ['.snippet-doc .es-level', TEXT],
+      'syntax picker': ['.snippet-doc .es-lang', TEXT],
       'line number': ['.snippet-doc .editor .line-numbers', TEXT],
       'popover hint': ['.tt-pop .tt-hint', TEXT],
       'built-in tag': ['.tt-pop .tt-tag', TEXT],
@@ -499,8 +509,7 @@ const SURFACES = [
   {
     name: 'editor-text',
     open: async (page) => {
-      await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings…', { exact: true }).click()
+      await pickMenuItem(page, 'File', 'Settings…')
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: 'Appearance', exact: true }).click()
       await dlg.locator('.font-preview').scrollIntoViewIfNeeded()
@@ -520,7 +529,7 @@ const SURFACES = [
     name: 'snippet-history',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       const doc = page.locator('.snippet-doc:visible')
       const actions = page.locator('#toolbar-doc-actions')
       const history = actions.getByRole('button', { name: 'History', exact: true })
@@ -558,7 +567,7 @@ const SURFACES = [
     },
     close: async (page) => {
       await setOnboarding(page, { showTips: false, layout: 2 })
-      await page.locator('[data-tour="slots"]').waitFor()
+      await page.locator('[data-tour="pane"]').waitFor()
     },
     probes: {
       intro: ['.dialog .dialog-note', TEXT],
@@ -690,7 +699,7 @@ const SURFACES = [
     // typed text while staying legible, and that is a live-DOM judgement.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Exam')
       await editor.locator('.name-ghost').waitFor()
@@ -707,7 +716,7 @@ const SURFACES = [
     // Applied tag labels are oklch(), which this parser cannot read; check:themes holds them.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const doc = page.getByRole('region', { name: 'New snippet' })
       await doc.getByPlaceholder('Snippet name…').fill('Standup {{today}}')
       const input = doc.getByRole('textbox', { name: 'Add tag' })
@@ -735,10 +744,13 @@ const SURFACES = [
     // computed check can settle (accent-color hands the tick to the UA).
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Rendered')
-      await editor.locator('.lang-picker select').selectOption('markdown')
+      await editor
+        .locator('.editor-status')
+        .getByRole('combobox', { name: 'Syntax' })
+        .selectOption('markdown')
       await editor.locator('.editor').click()
       // Both box states: accent-color only paints once a box is TICKED.
       await page.keyboard.type(
@@ -754,7 +766,9 @@ const SURFACES = [
       heading: ['.rendered-editor .ji-h', TEXT],
       // Quote ink gives way deliberately, so it answers to the 3:1 floor.
       quoted: ['.rendered-editor .ji-quote', DIM],
-      'task label': ['.rendered-editor .ji-task', TEXT]
+      'task label': ['.rendered-editor .ji-task', TEXT],
+      'view switch (on)': ['.es-view .es-btn.on', TEXT],
+      'view switch (off)': ['.es-view .es-btn:not(.on)', TEXT]
     }
   },
   {
@@ -762,8 +776,7 @@ const SURFACES = [
     // Summoned rather than waited for: the tour has usually been seen and
     // recorded by the time the sweep runs.
     open: async (page) => {
-      await page.getByRole('button', { name: 'Help', exact: true }).click()
-      await page.getByText('Show Tour', { exact: true }).click()
+      await pickMenuItem(page, 'Help', 'Show Tour')
       await page.locator('.tour-callout').waitFor()
     },
     close: (page) => page.keyboard.press('Escape'),
@@ -787,9 +800,9 @@ const SURFACES = [
     },
     close: async () => {},
     probes: {
-      'rail label': ['.rail-item:not(.on) .rail-label', TEXT],
-      'rail label, open': ['.rail-item.on .rail-label', TEXT],
-      'rail count': ['.rail-count', TEXT],
+      'segment glyph': ['.sidebar-nav .seg-opt:not(.on)', DIM],
+      'segment glyph, open': ['.sidebar-nav .seg-opt.on', DIM],
+      'edge handle glyph': ['.sidebar-handle', DIM],
       'day label': ['.home-day', TEXT],
       'recent name': ['.home-row .row-2-name', TEXT],
       'recent meta': ['.home-row .row-2-meta', TEXT],
@@ -801,7 +814,7 @@ const SURFACES = [
     name: 'presentation-exit',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page.getByTestId('toolbar-present').click()
       await page.locator('.present-exit').waitFor()
     },
@@ -860,7 +873,7 @@ const SURFACES = [
     name: 'snippet-more',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page
         .locator('#toolbar-doc-actions')
         .getByRole('button', { name: 'More snippet actions' })
@@ -872,7 +885,8 @@ const SURFACES = [
       await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
     },
     probes: {
-      'menu item': ['.ctx .ctx-item', TEXT],
+      'menu item': ['.ctx .ctx-item:not(:disabled)', TEXT],
+      'menu item, disabled': ['.ctx .ctx-item:disabled', DIM],
       'shortcut hint': ['.ctx .ctx-keys', TEXT],
       'menu keyline': ['.ctx', SEPARATOR, 'border']
     }
@@ -915,17 +929,15 @@ const SURFACES = [
     open: async (page) => {
       const plus = page.locator('.diff-tabs .add')
       if ((await plus.getAttribute('aria-pressed')) !== 'true') await plus.click()
-      await page.locator('.start-card').first().waitFor()
+      await page.locator('.start-link').first().waitFor()
     },
     close: async () => {},
     probes: {
       heading: ['.start-head h2', TEXT],
       subtitle: ['.start-head .meta', TEXT],
-      'card title': ['.start-card .card-title', TEXT],
-      'card text': ['.start-card .meta', TEXT],
-      'glyph on its well': ['.start-card .glyph-well', TEXT],
-      'key hint': ['.start-card .ql-kbd', TEXT],
-      format: ['.start-formats .format', TEXT]
+      link: ['.start-link', TEXT],
+      'link face, hovered': ['.start-link', HOVER_STEP, 'step', 'hover'],
+      'link, hovered': ['.start-link', TEXT, 'text', 'hover']
     }
   },
   {
@@ -942,8 +954,7 @@ const SURFACES = [
     probes: {
       'tab name': ['.diff-tabs .tab.active .name', TEXT],
       'tab kind glyph': ['.diff-tabs .tab.active .kind', DIM],
-      'snippet name': ['.snippet-doc .doc-name input', TEXT],
-      'editor header': ['.snippet-doc .editor-header', TEXT]
+      'snippet name': ['.snippet-doc .doc-name input', TEXT]
     }
   },
   {
@@ -958,8 +969,7 @@ const SURFACES = [
       fingerprint: ['.keys-panel .key-fp', TEXT],
       heading: ['.keys-panel h3', TEXT],
       'guide step': ['.keys-panel .steps li', TEXT],
-      'step number': ['.keys-panel .num', TEXT],
-      'rail label': ['.rail-item[data-panel="keys"] .rail-label', TEXT]
+      'step number': ['.keys-panel .num', TEXT]
     }
   },
   {
@@ -1010,18 +1020,41 @@ const SURFACES = [
     }
   },
   {
-    name: 'claude-inbox',
-    open: async (page, { userDataDir }) => {
-      await seedClaudeInbox(page, userDataDir)
-      await showPanel(page, 'home')
-      await page.locator('.inbox-item').first().waitFor()
+    // #121: Snippets as sections by tag, and the # scope beside the search.
+    name: 'tag-tree',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('.ts-head').first().waitFor()
     },
     close: async () => {},
     probes: {
-      'proposal name': ['.inbox-item .row-2-name', TEXT],
-      'proposal meta': ['.inbox-item .row-2-meta', TEXT],
-      'proposal note': ['.inbox-note', TEXT],
-      'glyph on its well': ['.inbox-item .glyph-well', TEXT]
+      'section label': ['.ts-head .ts-label', TEXT],
+      'section count': ['.ts-head .ts-count', TEXT],
+      'section chevron': ['.ts-head .ts-chev', DIM],
+      'section, hovered': ['.ts-head', HOVER_STEP, 'step', 'hover'],
+      '# button': ['.hash-btn', DIM]
+    }
+  },
+  {
+    // #121: the From Claude group atop Snippets, a proposal opened under its bar.
+    name: 'claude-proposals',
+    open: async (page, { userDataDir }) => {
+      await seedClaudeInbox(page, userDataDir)
+      await showPanel(page, 'snippets')
+      await page.locator('.proposals .pg-entry').first().click()
+      await page.locator('.proposal-bar').waitFor()
+    },
+    close: async (page) => {
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
+    },
+    probes: {
+      'group title': ['.pg-head .pg-title', TEXT],
+      'proposal name': ['.pg-row .row-2-name', TEXT],
+      'proposal keyline': ['.pg-row', DIM, 'outline'],
+      'glyph on its well': ['.pg-row .glyph-well', TEXT],
+      'segment count': ['.seg-badge', TEXT],
+      'bar title': ['.pb-title', TEXT],
+      'bar note': ['.pb-note', TEXT]
     }
   },
   {
@@ -1044,14 +1077,26 @@ const SURFACES = [
     }
   },
   {
+    name: 'pane-labels',
+    open: async (page) => {
+      if (!(await page.locator('.pane-label').count())) await loadStructureDiff(page)
+      await page.locator('.pane-label').first().waitFor()
+    },
+    close: async () => {},
+    probes: {
+      label: ['.pane-label', TEXT],
+      'label face, hovered': ['.pane-label', HOVER_STEP, 'step', 'hover'],
+      'label, hovered': ['.pane-label', TEXT, 'text', 'hover']
+    }
+  },
+  {
     name: 'toolbar-actions',
     // Already on screen, and labelled: the row only drops to glyphs when it runs
     // out of room, which at this window size it does not.
     open: (page) => page.locator('.toolbar .group.actions .btn').first().waitFor(),
     close: async () => {},
     probes: {
-      // The word and the plate's keyline together — an action that lost either
-      // reads as disabled, which is the whole reason .btn carries three cues.
+      // A plain .btn is its label, so the label carries the affordance at rest.
       'action, resting': ['.toolbar .group.actions .btn:not(:disabled)', TEXT],
       // The repo already holds this exact pair — --text-on-accent over --accent —
       // to 3.0 (check-theme-depth's `onAccent/accent`), so that contract is what
@@ -1069,7 +1114,7 @@ const SURFACES = [
     name: 'toolbar-snippet-actions',
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+      await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
       await page.locator('#toolbar-doc-actions .btn-primary').waitFor()
     },
     close: async (page) => {
@@ -1115,7 +1160,7 @@ const SURFACES = [
     // frame of an animation.
     open: async (page) => {
       await showPanel(page, 'snippets')
-      await page.getByRole('button', { name: 'New snippet', exact: true }).click()
+      await page.locator('[data-tour="snippet-new"]').click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Theme sweep row')
       await editor.locator('.editor').click()
@@ -1152,8 +1197,7 @@ const SURFACES = [
   {
     name: 'settings-email',
     open: async (page) => {
-      await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings…', { exact: true }).click()
+      await pickMenuItem(page, 'File', 'Settings…')
       const dlg = page.getByRole('dialog', { name: 'Settings' })
       await dlg.getByRole('button', { name: 'Email', exact: true }).click()
       await dlg.locator('.email-settings').waitFor()
@@ -1174,8 +1218,7 @@ const SURFACES = [
     // weakest of the fourteen at 3.52, which is why selection also thickens
     // the label rather than trusting colour alone.
     open: async (page) => {
-      await page.getByRole('button', { name: 'File', exact: true }).click()
-      await page.getByText('Settings…', { exact: true }).click()
+      await pickMenuItem(page, 'File', 'Settings…')
       await page.getByRole('dialog', { name: 'Settings' }).waitFor()
       await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
       await page.locator('.theme-tile.active').waitFor()
@@ -1247,14 +1290,14 @@ const SURFACES = [
     },
     probes: {
       'name on a coloured row': ['.row[data-color] .nm', TEXT],
-      'age on a coloured row': ['.row[data-color] .when', DIM],
       'menu label': ['.rcm-hd', DIM],
       // The card the popover floats on, and the keyline that separates it from
       // whatever it covers.
       'menu keyline': ['.rcm', SEPARATOR, 'border'],
       // The cursor's mark: an accent keyline is the only thing saying which
       // target a keypress would take.
-      'cursor keyline': ['.rcm-sw.hot', DIM, 'border']
+      'cursor keyline': ['.rcm-sw.hot', DIM, 'border'],
+      'secret item': ['.rcm .ctx-item', TEXT]
     }
   },
   {
@@ -1272,9 +1315,9 @@ const SURFACES = [
         const row = document.querySelector('.snippets-section .row[draggable="true"]')
         const dt = new DataTransfer()
         row.dispatchEvent(new DragEvent('dragstart', { dataTransfer: dt, bubbles: true }))
-        const slot = document.querySelector('.slot[data-side="left"]')
-        slot.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
-        slot.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
+        const start = document.querySelector('.start-surface')
+        start.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true }))
+        start.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true }))
       })
       await page.locator('.waiting').waitFor()
     },
@@ -1287,7 +1330,8 @@ const SURFACES = [
     probes: {
       'waiting slot label': ['.wait-slot.open .wait-label', TEXT],
       'waiting title': ['.wait-slot.open .wait-title', TEXT],
-      'waiting hint': ['.wait-hint', DIM]
+      'waiting hint': ['.wait-hint', DIM],
+      'loaded side label': ['.pane-label', TEXT]
     }
   },
   {
@@ -1296,18 +1340,19 @@ const SURFACES = [
     // the input box. It is a read sentence, so it takes the reading floor —
     // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
     open: async (page) => {
-      await page.locator('.menubar button.top', { hasText: /^Tools$/ }).click()
-      await page.locator('.dropdown .submenu', { hasText: 'Format' }).hover()
+      await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+      await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: 'Tools' }).hover()
+      await page.locator('.menubar .flyout > .submenu', { hasText: 'Format' }).hover()
       // Scoped to the flyout: the loaded diff can also say "JSON".
-      await page.locator('.flyout').getByText('JSON', { exact: true }).click()
+      await page.locator('.flyout .flyout').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
       await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },
     close: (page) => page.keyboard.press('Escape'),
     probes: {
       'tool description': ['.tt-desc', TEXT],
-      'segment wash, hovered': ['.seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
-      'segment label, hovered': ['.seg-opt:not(.on)', TEXT, 'text', 'hover'],
+      'segment wash, hovered': ['.dialog .seg-opt:not(.on)', HOVER_STEP, 'step', 'hover'],
+      'segment label, hovered': ['.dialog .seg-opt:not(.on)', TEXT, 'text', 'hover'],
       'input key': ['.tjs-in-field .syn-property', TEXT],
       'output key': ['.tjs-text .syn-property', TEXT],
       'output number': ['.tjs-text .syn-number', TEXT]

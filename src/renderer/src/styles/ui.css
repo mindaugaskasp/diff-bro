@@ -121,9 +121,9 @@
   gap: var(--space-2);
   height: var(--control-h);
   padding: 0 14px;
-  border: 1px solid var(--btn-edge);
+  border: 1px solid var(--btn-rest-edge);
   border-radius: var(--radius);
-  background: var(--btn-face);
+  background: var(--btn-rest-face);
   color: var(--text);
   font-family: inherit;
   font-size: var(--font-md);
@@ -131,9 +131,6 @@
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  /* Reads at 12.5–18.9 on the seven light grounds; invisible on the dark ones,
-     where the lighter face carries the lift instead. */
-  box-shadow: var(--shadow-1);
   transition:
     color 0.12s,
     border-color 0.12s,
@@ -168,11 +165,10 @@
   background: var(--btn-face-hover);
   border-color: var(--accent);
 }
-/* Off is FLAT — no plate, no lift, weak keyline. Opacity alone left enabled and
-   disabled one step apart on one axis. */
+/* Off: dim ink and no hover; the hard-keyline themes keep a weak edge. */
 .btn:disabled {
   background: none;
-  border-color: var(--border);
+  border-color: var(--btn-off-edge);
   color: var(--text-dim);
   box-shadow: none;
   opacity: 0.7;
@@ -219,7 +215,7 @@
 .btn-ghost {
   background: none;
   color: var(--text-meta);
-  border-color: var(--btn-edge);
+  border-color: var(--btn-rest-edge);
   box-shadow: none;
 }
 /* .btn:hover no longer recolours a label, and dim ink is this one's rest. */
@@ -236,8 +232,7 @@
   padding: 0 10px;
   font-size: var(--font-sm);
 }
-/* Icon-only but still a PLATE. `.btn-icon` below is flat, and flat beside a
-   labelled sibling reads as unavailable — this sheds the label and nothing else. */
+/* Icon-only .btn: sheds the label, keeps the hover face. */
 .btn-square {
   width: var(--control-h);
   padding: 0;
@@ -290,19 +285,16 @@
   background: var(--btn-face-press);
   color: var(--text);
   font-size: var(--font-xs);
-  font-weight: 700;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 /* --- Popover layer ------------------------------------------------------
    A panel anchored to a button, dismissed by Escape or a press outside — the
-   View options and the toolbar's overflow menu. Shared because there were
-   already TWO hand-rolled copies of this shell (TagPickerPopover.css,
-   TagManagePopover.css) and a third scoped one is how the sidebar ended up with
-   three different "action" buttons. Those two are candidates for adopting this;
-   they are not migrated here because they position themselves against the
-   sidebar and sit above the dialog layer, which is their own change.
+   View options and the toolbar's overflow menu. Shared because a hand-rolled
+   copy (TagManagePopover.css) already existed, and a scoped one per component
+   is how the sidebar ended up with three different "action" buttons.
 
    Surface is --bg-elevated, NOT --bg-panel: --bg-raised resolves to --bg-panel
    on 13 of 14 themes, which is the toolbar's own colour, so a panel hanging off
@@ -627,7 +619,7 @@
   border-bottom: 2px solid var(--fam, var(--border));
   font-family: var(--font-mono);
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 /* Tag ink. A tag colour is picked by the user, so only its LIGHTNESS can be
@@ -836,7 +828,7 @@ button.tag-chip:hover .usb-tct {
   border-radius: var(--radius-pill);
   color: var(--text);
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   white-space: nowrap;
@@ -967,15 +959,12 @@ button.tag-chip:hover .usb-tct {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  min-height: var(--band-row);
-  padding: 0 var(--space-4);
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-3);
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
-  font-size: var(--font-sm);
-  /* --text-hint, not --text-dim: these are words a reader reads ("Lines",
-     "6 rows"), and dim sits at the repo's 3.0 dim/panel floor — under the 4.5
-     text floor on solar, nord, sepia and bloom. */
-  color: var(--text-hint);
+  font-size: var(--font-xs);
+  color: var(--text-meta);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -1051,7 +1040,9 @@ button.tag-chip:hover .usb-tct {
    first version) hid the very thing being placed. A tint, not a blur: blur
    forces a repaint of every row on each dragover and the list stutters. */
 .rows.reordering > .row:not(.is-dragging),
-.rows.reordering > .diff:not(.is-dragging) {
+.rows.reordering > .diff:not(.is-dragging),
+.tag-tree.reordering .ts-rows > .row:not(.is-dragging),
+.tag-tree.reordering .ts-rows > .diff:not(.is-dragging) {
   opacity: 0.45;
   transition: opacity 120ms ease-out;
 }
@@ -1138,15 +1129,16 @@ button.tag-chip:hover .usb-tct {
   color: var(--glyph);
   font-family: var(--font-mono);
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
 }
+/* A sidebar row's monogram is quiet (#144): no well, meta ink. */
 .monogram.glyph-well {
   width: var(--control-h-sm);
   height: var(--control-h-sm);
   border-bottom: 0;
   border-radius: var(--radius-lg);
-  background: var(--well);
-  color: var(--glyph);
+  background: transparent;
+  color: var(--text-meta);
 }
 .glyph-well > .app-icon {
   font-size: var(--font-lg);
@@ -1370,4 +1362,27 @@ button.tag-chip:hover .usb-tct {
   height: 1px;
   margin: var(--space-1) 0;
   background: var(--border);
+}
+
+/* A transient notice over the comparison column (App.vue, ProposalUndoNotice). */
+.notice {
+  position: absolute;
+  /* Top of the diff area, clear of the file-slots band, centred over the
+     content (its parent is .content, so it never straddles the sidebar). */
+  top: calc(var(--band-row) + var(--space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  padding: 10px 16px;
+  max-width: 70%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-3);
 }

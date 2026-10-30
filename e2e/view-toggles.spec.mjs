@@ -1,4 +1,4 @@
-import { test, expect, setViewOption } from './fixtures.mjs'
+import { test, expect, setViewOption, clickAppMenuItem } from './fixtures.mjs'
 
 // The toolbar toggles feed Monaco options and store state; a launch proves each
 // actually changes the rendered diff, which jsdom can't show.
@@ -20,24 +20,22 @@ test('ignore-whitespace turns a whitespace-only diff into "No differences"', asy
 })
 
 test('the Paste mode button names its destination so the toggle is explicit', async ({ page }) => {
-  const toggle = page
-    .locator('.toolbar .actions button')
-    .filter({ hasText: /Paste mode|File mode/ })
-  await expect(toggle).toHaveText('Paste mode') // files mode: offers paste
+  const toggle = page.locator('.toolbar [data-action="toggle-paste"]')
+  await expect(toggle).toHaveAttribute('aria-label', 'Paste mode') // files mode: offers paste
   await toggle.click()
   await expect(page.getByPlaceholder('Paste or type the original text')).toBeVisible()
-  await expect(toggle).toHaveText('File mode') // now offers the way back
+  await expect(toggle).toHaveAttribute('aria-label', 'File mode') // now offers the way back
   await toggle.click()
-  await expect(toggle).toHaveText('Paste mode') // back to files mode
+  await expect(toggle).toHaveAttribute('aria-label', 'Paste mode') // back to files mode
   await expect(page.getByPlaceholder('Paste or type the original text')).toBeHidden()
 })
 
-test('Swap flips additions and deletions', async ({ page }) => {
+test('Swap flips additions and deletions', async ({ app, page }) => {
   await pasteCompare(page, 'a', 'a\nb') // right has an extra line → +1 / −0
   await expect(page.locator('.status-band .add')).toHaveText('1 added')
   await expect(page.locator('.status-band .del')).toContainText('0 removed')
 
-  await page.getByRole('button', { name: 'Swap sides' }).click()
+  await clickAppMenuItem(app, 'Swap Sides')
   await expect(page.locator('.status-band .add')).toHaveText('0 added')
   await expect(page.locator('.status-band .del')).toContainText('1 removed')
 })

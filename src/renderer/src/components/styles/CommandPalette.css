@@ -136,7 +136,7 @@
   bottom: 100%;
   padding-bottom: var(--space-1);
   font-size: var(--font-2xs);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-dim);

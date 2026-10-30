@@ -5,7 +5,7 @@ const FIND = 'ControlOrMeta+f'
 
 async function openSnippet(page) {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
   const doc = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(doc).toBeVisible()
   return doc

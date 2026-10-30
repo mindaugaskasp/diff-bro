@@ -1,14 +1,63 @@
 /* The sidebar's search row. These rules live here rather than in SavedDiffs.css
    because scoped CSS does not reach into a child component — the markup moved
    and left its styling behind, which is exactly what that rule is for. */
-/* A real band row, not a row with padding above it: the rail centres the same
-   toggle in --band-row, and 10px of container padding above a 26px control put
-   it 3px high of that. Centred by the band, so it cannot drift on a type change. */
+/* A real band row under the segmented band: with the strip's bottom padding it
+   ends on --head-band, the line a document head ends on. */
 .usb-top {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--band-row);
+  min-height: calc(var(--head-band) - var(--space-2));
 }
 /* The box itself is .field-search in ui.css — three components need it now,
    and a scoped copy in the second one drifts. Only the ROW layout is local. */
+
+/* The # scope (#121): a chip in the field, and the paths it can take. */
+.usb-top {
+  position: relative;
+}
+.scope-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 50%;
+  height: var(--chip-h);
+  padding: 0 2px 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: var(--font-sm);
+}
+.scope-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scope-list {
+  position: absolute;
+  top: calc(100% - var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 220px;
+  margin: 0;
+  padding: var(--space-1);
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-3);
+}
+.scope-list li {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+.scope-list li.on,
+.scope-list li:hover {
+  background: var(--select-wash);
+}

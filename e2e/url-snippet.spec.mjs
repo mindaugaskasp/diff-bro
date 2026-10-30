@@ -16,7 +16,7 @@ async function newUrlSnippet(page, name, url) {
 
 test('a URL snippet offers a one-click open', async ({ page }) => {
   await newUrlSnippet(page, 'Docs', 'https://example.com/docs')
-  const row = page.locator('li.row', { hasText: 'Docs' })
+  const row = page.locator('li.row', { hasText: 'Docs' }).first()
   await expect(row.locator('.monogram')).toHaveText('URL')
 
   await row.hover()
@@ -39,9 +39,8 @@ test('a URL snippet is left out of an exported bundle', async ({ page }) => {
   await newUrlSnippet(page, 'Plain note', 'https://example.com/other')
 
   // Both are URL snippets, so an export bundle must come back empty.
-  await page
-    .getByRole('button', { name: 'Export all snippets to a passphrase-protected file' })
-    .click()
+  await page.getByRole('button', { name: 'Snippet library actions' }).click()
+  await page.getByRole('menuitem', { name: /Export all snippets/ }).click()
   const dlg = page.getByRole('dialog')
   await expect(dlg.first()).toBeVisible()
 })

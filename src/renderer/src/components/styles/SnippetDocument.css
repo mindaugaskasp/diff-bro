@@ -13,34 +13,41 @@
 }
 .doc-name {
   position: relative;
-  flex: 0 1 380px;
+  flex: 0 1 400px;
   min-width: 120px;
 }
+/* Room for the +N chip and the add pill, so folding never pushes them out. */
 .doc-tags {
   flex: 1;
-  min-width: 0;
-}
-.doc-secret {
-  flex: none;
-  margin-left: auto;
+  min-width: 140px;
 }
 /* Both layers: the completion ghost drifts off the caret if their type differs. */
 .doc-name :deep(.ghost-field input),
 .doc-name :deep(.ghost-layer) {
   font-size: var(--font-xl);
-  font-weight: 650;
+  font-weight: 600;
 }
 .doc-name :deep(.ghost-field input) {
   width: 100%;
 }
-/* The document's title, not a greyed form field: view mode is the fill, not the ink. */
+/* A title, not a form field: the box shows on hover and focus only. */
+.doc-name :deep(.ghost-field),
+.doc-name :deep(.ghost-field.ro) {
+  border-color: var(--field-edge);
+  background: transparent;
+}
 .doc-name :deep(.ghost-field.ro > input) {
   color: var(--text);
-  background: var(--bg);
   cursor: text;
 }
-.doc-name :deep(.ghost-field.ro > input:hover) {
+.doc-name :deep(.ghost-field.ro:hover) {
   border-color: var(--btn-edge);
+}
+.doc-name :deep(.ghost-field:focus-within) {
+  border-color: var(--accent);
+}
+.doc-name :deep(.ghost-field.invalid) {
+  border-color: var(--danger-border);
 }
 .doc-body {
   flex: 1;

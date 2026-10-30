@@ -1,4 +1,4 @@
-import { test, expect, clickAppMenuItem, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, clickAppMenuItem, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -99,10 +99,8 @@ test('a zoomed grid keeps its rows and its row height in step', async ({ app, pa
   writeFileSync(left, 'id,name\n1,alpha\n2,beta\n')
   writeFileSync(right, 'id,name\n1,alpha\n2,BETA\n')
   try {
-    await stubOpenDialog(app, [left])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [right])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [left])
+    await openSide(app, page, 'right', [right])
 
     const grid = page.locator('.grid').first()
     await expect(grid).toBeVisible()

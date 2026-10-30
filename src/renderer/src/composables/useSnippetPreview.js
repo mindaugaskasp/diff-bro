@@ -5,6 +5,7 @@ import { isSnippetTab } from '../utils/tabs'
 import { useTabsStore } from '../stores/tabsStore'
 import { useSnippetPreviewActions } from './useSnippetPreviewActions'
 import { previewCardPosition } from '../utils/previewPlacement'
+import { ago } from '../utils/relativeTime'
 
 // Hover preview: decrypt on demand, debounced (only the row the pointer settles
 // on costs a vault:decrypt), briefly cached. Renders via interpolation, never v-html.
@@ -40,6 +41,7 @@ async function cardFor(entry, store, cache) {
     // plaintext is the boring default — no badge for it.
     lang: lang === 'plaintext' ? '' : lang,
     secret: isSecret(entry),
+    age: ago(entry.createdAt),
     text: text.slice(0, MAX_PREVIEW_CHARS)
   }
 }

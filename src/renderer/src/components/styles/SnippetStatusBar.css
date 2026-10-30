@@ -16,6 +16,15 @@
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
+  white-space: nowrap;
+}
+/* The counts give way at narrow widths; the controls on the right never do. */
+.es-side:first-child {
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+.es-side:last-child {
+  flex: none;
 }
 .es-btn {
   display: inline-flex;
@@ -45,4 +54,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.es-view {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--space-3);
+}
+.es-view .es-btn {
+  color: var(--text-meta);
+}
+.es-view .es-btn.on {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

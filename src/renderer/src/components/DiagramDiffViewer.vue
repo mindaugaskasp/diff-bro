@@ -8,6 +8,7 @@ import { focusDiff } from '../utils/diagramFocus'
 import { naturalWidthOf } from '../utils/svgNaturalWidth'
 import { useZoomPan } from '../composables/useZoomPan'
 import AppIcon from './AppIcon.vue'
+import PaneLabels from './PaneLabels.vue'
 import MermaidDiagram from './MermaidDiagram.vue'
 import DiagramChangeRegister from './DiagramChangeRegister.vue'
 import { t } from '../i18n'
@@ -151,6 +152,7 @@ watch(
       {{ $t('diagramDiffViewer.alignedAtTheFirstNode') }}
     </p>
 
+    <PaneLabels />
     <div class="dg-body">
       <div
         ref="stage"

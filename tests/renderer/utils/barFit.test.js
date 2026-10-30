@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { barLayout, foldedIds } from '../../../src/renderer/src/utils/barFit'
+import { foldedIds, iconBarWidths } from '../../../src/renderer/src/utils/barFit'
 
 // Widths stand in for measured control widths; the numbers are round so an
 // off-by-one shows up as a wrong ID rather than a wrong pixel.
@@ -56,51 +56,36 @@ describe('foldedIds', () => {
   })
 })
 
-// The middle rung. A bar that folds the moment a label does not fit hides a
-// control the reader could still have reached with a glyph.
-describe('barLayout', () => {
-  const compactWidth = 36
-  const args = { labelled: widths, compactWidth, order, pinned, trigger: compactWidth }
+// Two rungs since #144: every action is an icon from the start and only the
+// labelled primary costs its measured width; past that, actions fold.
+describe('iconBarWidths', () => {
+  const unit = 36
 
-  it('stays labelled while the words fit', () => {
-    expect(barLayout({ ...args, available: total })).toEqual({ compact: false, folded: [] })
-  })
-
-  it('drops to icons rather than folding, when icons are enough', () => {
-    // 6 controls × 36 = 216, so anything from there to 299 keeps all six.
-    expect(barLayout({ ...args, available: 250 })).toEqual({ compact: true, folded: [] })
-    expect(barLayout({ ...args, available: 216 })).toEqual({ compact: true, folded: [] })
-  })
-
-  it('folds only once the icons do not fit either', () => {
-    // 216 into 150: three folds leave 108, plus the 36 trigger = 144.
-    expect(barLayout({ ...args, available: 150 })).toEqual({
-      compact: true,
-      folded: ['clear', 'capture', 'copy']
+  it('charges every action one icon unit', () => {
+    expect(iconBarWidths({ ids: ['copy', 'share'], unit, labelled: {} })).toEqual({
+      copy: 36,
+      share: 36
     })
   })
 
-  it('never reports a fold it has not compacted for', () => {
-    const { compact, folded } = barLayout({ ...args, available: 40 })
-    expect(compact).toBe(true)
-    expect(folded).not.toContain('save')
-    expect(folded).not.toContain('share')
+  it('charges a labelled primary its measured width', () => {
+    expect(iconBarWidths({ ids: ['copy', 'save'], unit, labelled: { save: 80 } })).toEqual({
+      copy: 36,
+      save: 80
+    })
   })
 
-  // A budget of nothing is the moment there is LEAST room. Falling back to
-  // `compact: false` drew every label at exactly the width that cannot hold them.
-  it('degrades to the tersest layout when there is no room at all', () => {
-    expect(barLayout({ ...args, available: 0 })).toEqual({
-      compact: true,
-      folded: ['clear', 'capture', 'copy', 'paste']
-    })
-    expect(barLayout({ ...args, available: -50 }).compact).toBe(true)
-  })
-
-  it('treats an unmeasured row as fitting rather than folding blind', () => {
-    expect(barLayout({ ...args, labelled: {}, available: 0 })).toEqual({
-      compact: false,
-      folded: []
-    })
+  it('folds icons, never the labelled primary, once they stop fitting', () => {
+    const w = iconBarWidths({ ids: ['clear', 'copy', 'save'], unit, labelled: { save: 80 } })
+    // 152 into 130: one fold leaves 116, plus the 36 trigger = 152 — so two.
+    expect(
+      foldedIds({
+        widths: w,
+        available: 130,
+        order: ['clear', 'copy'],
+        pinned: ['save'],
+        trigger: unit
+      })
+    ).toEqual(['clear', 'copy'])
   })
 })

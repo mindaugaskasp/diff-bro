@@ -3,36 +3,29 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { buildMenus } from '../menus'
 import { useCommands } from '../composables/useCommands'
 import AppIcon from './AppIcon.vue'
+import MenuList from './MenuList.vue'
 
-// Themed menu bar for Windows/Linux (macOS keeps the native one); mirrors the
-// hidden app menu, which still binds the accelerators.
+// The ≡ menu for Windows/Linux (macOS keeps the native bar); mirrors the hidden
+// app menu, which still binds the accelerators.
 const { runFromMenu: run } = useCommands()
 // Computed, not called once: the labels come from t(), so switching language
 // has to rebuild the list rather than leave the old strings on screen.
 const menus = computed(() => buildMenus(run))
-const open = ref(null)
+const open = ref(false)
 // DevTools is dev-only; hidden in packaged builds.
 const isPackaged = ref(true)
 
-// Label of the submenu currently flown out, scoped to the open dropdown.
-const openSub = ref(null)
-
-function toggle(id) {
-  open.value = open.value === id ? null : id
-  openSub.value = null
+function close() {
+  open.value = false
 }
 
 function activate(item) {
-  open.value = null
-  openSub.value = null
+  close()
   item.run()
 }
 
 function onKeydown(e) {
-  if (e.key === 'Escape') {
-    open.value = null
-    openSub.value = null
-  }
+  if (e.key === 'Escape') close()
 }
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
@@ -43,49 +36,22 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 <template>
   <nav class="menubar" data-tour="menubar">
-    <div v-for="menu in menus" :key="menu.id" class="menu">
-      <button
-        class="top"
-        :class="{ open: open === menu.id }"
-        @click="toggle(menu.id)"
-        @mouseenter="open && ((open = menu.id), (openSub = null))"
-      >
-        {{ menu.label }}
-      </button>
-      <div v-if="open === menu.id" class="dropdown">
-        <template v-for="(item, i) in menu.items" :key="i">
-          <template v-if="!(item.devOnly && isPackaged)">
-            <div v-if="item.sep" class="sep" />
-            <div v-else-if="item.info" class="item info">{{ item.label }}</div>
-            <div v-else-if="item.items" class="submenu" @mouseenter="openSub = item.label">
-              <button class="item" @click="openSub = openSub === item.label ? null : item.label">
-                <span>{{ item.label }}</span>
-                <AppIcon class="arrow" name="chevron-right" />
-              </button>
-              <div v-if="openSub === item.label" class="dropdown flyout">
-                <button
-                  v-for="sub in item.items"
-                  :key="sub.label"
-                  class="item"
-                  @click="activate(sub)"
-                >
-                  <span>{{ sub.label }}</span>
-                  <kbd v-if="sub.keys">{{ sub.keys }}</kbd>
-                </button>
-              </div>
-            </div>
-            <button v-else class="item" @click="activate(item)" @mouseenter="openSub = null">
-              <span>{{ item.label }}</span>
-              <kbd v-if="item.keys">{{ item.keys }}</kbd>
-            </button>
-          </template>
-        </template>
-      </div>
-    </div>
+    <button
+      class="btn btn-sm btn-square"
+      :class="{ active: open }"
+      aria-haspopup="menu"
+      :aria-expanded="open"
+      :aria-label="$t('menuBar.menu')"
+      :data-tip="$t('menuBar.menu')"
+      @click="open = !open"
+    >
+      <AppIcon name="menu" />
+    </button>
+    <MenuList v-if="open" :items="menus" :is-packaged="isPackaged" @pick="activate" />
   </nav>
   <!-- Click-catcher: clicking anywhere closes the
        open menu without dimming the app behind it. -->
-  <div v-if="open" class="menu-backdrop" @click="open = null" @contextmenu.prevent="open = null" />
+  <div v-if="open" class="menu-backdrop" @click="close" @contextmenu.prevent="close" />
 </template>
 
 <style scoped src="./styles/MenuBar.css"></style>

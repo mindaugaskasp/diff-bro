@@ -70,16 +70,18 @@ async function save() {
     </p>
 
     <template #actions>
-      <button type="button" class="btn btn-primary" :disabled="busy" @click="copy">
-        <AppIcon :name="copied ? 'check' : 'copy'" />
-        {{ copied ? $t('common.copied') : $t('diffImageDialog.copyImage') }}
-      </button>
-      <button type="button" class="btn" :disabled="busy" @click="save">
-        {{ $t('imageExport.diffImageDialog.savePNG') }}
-      </button>
-      <button type="button" class="btn btn-ghost" @click="imageExport.closeImageExport()">
-        {{ $t('common.close') }}
-      </button>
+      <div class="export-actions">
+        <button type="button" class="btn btn-primary" :disabled="busy" @click="copy">
+          <AppIcon :name="copied ? 'check' : 'copy'" />
+          {{ copied ? $t('common.copied') : $t('diffImageDialog.copyImage') }}
+        </button>
+        <button type="button" class="btn" :disabled="busy" @click="save">
+          {{ $t('imageExport.diffImageDialog.savePNG') }}
+        </button>
+        <button type="button" class="btn btn-ghost" @click="imageExport.closeImageExport()">
+          {{ $t('common.close') }}
+        </button>
+      </div>
     </template>
   </BaseDialog>
 </template>

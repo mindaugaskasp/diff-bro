@@ -2,7 +2,7 @@ import { test, expect, clickAppMenuItem, showPanel, editInPlace, docActions } fr
 
 async function openSnippet(page) {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
   const doc = page.locator('.snippet-doc:visible')
   await expect(doc.locator('.editor .view-lines')).toBeVisible()
   return doc

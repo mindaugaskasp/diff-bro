@@ -3,16 +3,19 @@ import { useRowColorMenu } from '../../../src/renderer/src/composables/useRowCol
 import { ROW_COLORS } from '../../../src/renderer/src/utils/rowColor'
 
 const CLEAR = ROW_COLORS.length
+const SECRET = CLEAR + 1
 
 const harness = (current = null) => {
   const picked = []
   const closed = []
+  const secrets = []
   const menu = useRowColorMenu({
     current: () => current,
     onPick: (c) => picked.push(c),
+    onSecret: () => secrets.push(true),
     onClose: () => closed.push(true)
   })
-  return { menu, picked, closed }
+  return { menu, picked, closed, secrets }
 }
 
 const press = (menu, key) => {
@@ -48,20 +51,31 @@ describe('useRowColorMenu — the keyboard', () => {
     expect(menu.cursor.value).toBe(0)
   })
 
-  it('wraps at both ends, with None as the last stop', () => {
+  it('wraps at both ends, with Secret as the last stop after None', () => {
     const { menu } = harness(ROW_COLORS[0].id)
     press(menu, 'ArrowLeft')
+    expect(menu.cursor.value).toBe(SECRET)
+    press(menu, 'ArrowLeft')
     expect(menu.cursor.value).toBe(CLEAR)
+    press(menu, 'ArrowRight')
     press(menu, 'ArrowRight')
     expect(menu.cursor.value).toBe(0)
   })
 
-  it('Home and End jump to the first colour and to None', () => {
+  it('Home and End jump to the first colour and to Secret', () => {
     const { menu } = harness('green')
     press(menu, 'End')
-    expect(menu.cursor.value).toBe(CLEAR)
+    expect(menu.cursor.value).toBe(SECRET)
     press(menu, 'Home')
     expect(menu.cursor.value).toBe(0)
+  })
+
+  it('↵ on Secret toggles it rather than picking a colour', () => {
+    const { menu, picked, secrets } = harness('blue')
+    press(menu, 'End')
+    press(menu, 'Enter')
+    expect(secrets).toHaveLength(1)
+    expect(picked).toEqual([])
   })
 
   it('↵ and Space apply what the cursor is on', () => {
@@ -71,7 +85,7 @@ describe('useRowColorMenu — the keyboard', () => {
     expect(a.picked).toEqual([ROW_COLORS[0].id])
 
     const b = harness('blue')
-    press(b.menu, 'End')
+    b.menu.point(CLEAR)
     press(b.menu, ' ')
     expect(b.picked).toEqual([null])
   })

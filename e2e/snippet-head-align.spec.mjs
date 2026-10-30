@@ -5,29 +5,18 @@ const bottomOf = async (locator) => {
   return Math.round(box.y + box.height)
 }
 const topBand = (page) => page.locator('.usb-controls:visible')
-const sectionHead = (page) => page.locator('.section-head.band-row:visible').first()
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1400, height: 860 })
 })
 
-test('the snippet head and Content bar line up with the sidebar bands', async ({ page }) => {
+test('the snippet head ends on the sidebar search band', async ({ page }) => {
   await showPanel(page, 'snippets')
   await page.locator('.snippets-section .row').first().click()
   const doc = page.getByRole('region', { name: 'Snippet', exact: true })
-
-  expect(await bottomOf(doc.locator('.doc-head'))).toBe(await bottomOf(topBand(page)))
-  expect(await bottomOf(doc.locator('.editor-header'))).toBe(await bottomOf(sectionHead(page)))
-})
-
-test('the comparison file slots end on the sidebar top band', async ({ page }) => {
-  await showPanel(page, 'diffs')
-  await page.getByRole('button', { name: 'Paste mode' }).click()
-  await page.getByPlaceholder('Paste or type the original text').fill('a')
-  await page.getByPlaceholder('Paste or type the changed text').fill('b')
-  await page.getByRole('button', { name: 'Compare', exact: true }).click()
-
-  expect(await bottomOf(page.locator('.file-slots-row'))).toBe(await bottomOf(topBand(page)))
+  const head = await bottomOf(doc.locator('.doc-head'))
+  await showPanel(page, 'home')
+  expect(head).toBe(await bottomOf(topBand(page)))
 })
 
 test('tags that do not fit fold into a +N chip that lists them', async ({ page }) => {

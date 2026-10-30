@@ -1,11 +1,4 @@
-import {
-  test,
-  expect,
-  closeViewMenu,
-  openViewMenu,
-  setViewOption,
-  stubOpenDialog
-} from './fixtures.mjs'
+import { test, expect, closeViewMenu, openViewMenu, setViewOption, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -24,10 +17,8 @@ async function loadPair(app, page, { left, right, ext = 'csv' }) {
   const rightPath = join(dir, `b.${ext}`)
   writeFileSync(leftPath, left)
   writeFileSync(rightPath, right)
-  await stubOpenDialog(app, [leftPath])
-  await page.locator('.slot[data-side="left"]').click()
-  await stubOpenDialog(app, [rightPath])
-  await page.locator('.slot[data-side="right"]').click()
+  await openSide(app, page, 'left', [leftPath])
+  await openSide(app, page, 'right', [rightPath])
   return dir
 }
 
@@ -45,10 +36,8 @@ test('the Monaco-only toggles grey out once the grid is showing', async ({ app, 
   writeFileSync(right, 'id,name\n1,alpha\n2,BETA\n')
 
   try {
-    await stubOpenDialog(app, [left])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [right])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [left])
+    await openSide(app, page, 'right', [right])
 
     // A CSV pair opens on the grid, so both Monaco-only toggles start disabled.
     await expect(page.locator('.grid').first()).toBeVisible()
@@ -138,10 +127,8 @@ test('offers no grid when only one side is delimited', async ({ app, page }) => 
   writeFileSync(csvPath, LEFT)
   writeFileSync(txtPath, LEFT)
   try {
-    await stubOpenDialog(app, [csvPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [txtPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [csvPath])
+    await openSide(app, page, 'right', [txtPath])
     const panel = await openViewMenu(page)
     await expect(panel.getByRole('checkbox', { name: 'Grid' })).toHaveCount(0)
   } finally {

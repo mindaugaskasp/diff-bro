@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, showPanel, docActions } from './fixtures.mjs'
+import { test, expect, openNewSnippet, showPanel, docActions, markSecret } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -67,8 +67,8 @@ test('a draggable row shows a grab handle, a secret one does not', async ({ page
   await editor.getByPlaceholder('Snippet name…').fill('Vault token')
   await editor.locator('.editor').click()
   await page.keyboard.type('token=abc123')
-  await editor.getByRole('checkbox', { name: /secret/i }).check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, 'Vault token')
 
   const secret = page.locator('.row', { hasText: 'Vault token' }).first()
   await expect(secret).toHaveAttribute('draggable', 'false')
@@ -114,7 +114,10 @@ test('the preview card copies the snippet without a trip back to the row', async
   app,
   page
 }) => {
-  await page.locator('.snippets-section .row', { hasText: 'Example — Mermaid diagram' }).hover()
+  await page
+    .locator('.snippets-section .row', { hasText: 'Example — Mermaid diagram' })
+    .first()
+    .hover()
   const card = page.locator('.preview')
   await expect(card).toBeVisible()
 

@@ -10,7 +10,7 @@ async function relaunched(dir, check) {
   const app = await launchApp(dir)
   try {
     const page = await firstReadyPage(app)
-    await page.locator('[data-tour="slots"]').waitFor()
+    await page.locator('[data-tour="start"]').waitFor()
     await page.waitForTimeout(400)
     await check(page)
   } finally {

@@ -102,9 +102,9 @@ test('the screenshot is of the saved diff, and excludes the app chrome', async (
   await expect(page.getByText('yankee').first()).toBeVisible()
   await expect(page.getByText('BRAVO!')).toHaveCount(0)
 
-  // The toast and the shortcut bar float INSIDE the captured column. The store
-  // test proves the flag is up while the shutter is open; this proves the flag
-  // actually removes them, which only real CSS can answer.
+  // The toast and the pane labels float INSIDE the captured column. The store
+  // tests prove the flags are up while the shutter is open; this proves they
+  // actually remove them, which only real CSS can answer.
   const hidden = await page.evaluate(() => {
     const content = document.querySelector('.content')
     const seen = (sel) => {
@@ -112,12 +112,15 @@ test('the screenshot is of the saved diff, and excludes the app chrome', async (
       return el ? getComputedStyle(el).display !== 'none' : false
     }
     content.classList.add('capturing')
-    const during = { notice: seen('.notice'), bar: seen('.shortcut-bar') }
-    content.classList.remove('capturing')
-    return { during, barNormally: seen('.shortcut-bar') }
+    const first = { notice: seen('.notice'), labels: seen('.pane-labels') }
+    content.classList.add('capturing-tail')
+    const rest = seen('.pane-labels')
+    content.classList.remove('capturing', 'capturing-tail')
+    return { first, rest, labelsNormally: seen('.pane-labels') }
   })
-  expect(hidden.during).toEqual({ notice: false, bar: false })
-  expect(hidden.barNormally).toBe(true) // and it comes back afterwards
+  expect(hidden.first).toEqual({ notice: false, labels: true })
+  expect(hidden.rest).toBe(false)
+  expect(hidden.labelsNormally).toBe(true)
 })
 
 test('the capture is cropped to the diff, not to the empty pane below it', async ({ page }) => {
@@ -296,7 +299,7 @@ test('selected lines are exported on their own, not the whole diff', async ({ pa
   await page.getByRole('button', { name: 'Capture', exact: true }).click()
   const selected = await shotHeight(page)
 
-  // The picture is the file-slots header plus exactly the six chosen lines.
+  // The picture is whatever sits above the editor plus exactly the six chosen lines.
   expect(selected).toBeCloseTo((header + 6 * lineHeight) * dpr, -1)
   // And nothing like the whole 300-line diff.
   expect(selected).toBeLessThan(whole / 4)

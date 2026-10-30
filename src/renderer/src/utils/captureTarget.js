@@ -4,16 +4,15 @@
 // capturing a frame too early photographs the previous diff, which is the one
 // failure mode a screenshot feature cannot have.
 
-// The comparison column: the file-slots row, the format banner and the viewer.
+// The comparison column: the format banner and the viewer, with its pane labels.
 // The toolbar, the sidebar and any dialog are deliberately outside it.
 export const CAPTURE_SELECTOR = '.content'
 // A subject that is not a diff — a snippet, a diagram — claims the region for
 // the length of one shot by putting a stage over that column (SnippetShot.vue).
 export const STAGE_SELECTOR = '[data-capture-stage]'
 // The scrolling viewer inside that column — Monaco's host, or the streamed
-// viewer's row list. The strip above it (file slots, format banner, the
-// streamed marker) belongs in the picture once, at the top, never repeated per
-// slice.
+// viewer's row list. The strip above it (format banner, streamed marker) belongs
+// in the picture once, at the top, never repeated per slice.
 export const EDITOR_SELECTOR = '.diff-container, .stream-rows'
 // One per rendered line: Monaco's own, a streamed row, or a snippet line — plus
 // the diagram figure, which is a single box standing in for all of them.
@@ -80,8 +79,8 @@ export function afterFrames(frames = 3, win = window) {
 
 /**
  * The column and, within it, the scrolling viewport — the two boxes a stitched
- * export is cut from. The strip above the viewport (file slots, format banner,
- * sheet tabs) belongs in the picture once, at the top.
+ * export is cut from. The strip above the viewport (format banner, sheet tabs)
+ * belongs in the picture once, at the top.
  *
  * The viewport is whatever the registered scroller says it is, so this works
  * for Monaco, the spreadsheet grids and the structure list alike; the selector
@@ -143,13 +142,30 @@ export function planSlices({ contentHeight, viewportHeight, maxHeight = Infinity
   const total = Math.min(available, maxHeight)
   const maxScroll = Math.max(0, contentHeight - viewportHeight)
   const slices = []
-  for (let covered = 0; covered < total;) {
-    const height = Math.min(viewportHeight, total - covered)
+  let covered = 0
+  for (const height of sliceHeights(total, viewportHeight)) {
     const scrollTop = Math.min(start + covered, maxScroll)
     slices.push({ scrollTop, offsetY: start + covered - scrollTop, height })
     covered += height
   }
   return { slices, truncated: available > total }
+}
+
+// Main refuses a side shorter than this (MIN_CAPTURE_SIDE in src/main/captureRect.js),
+// and one refused strip fails the whole picture.
+const MIN_SLICE = 32
+
+function sliceHeights(total, viewportHeight) {
+  const heights = []
+  for (let covered = 0; covered < total; covered += heights.at(-1)) {
+    heights.push(Math.min(viewportHeight, total - covered))
+  }
+  const short = MIN_SLICE - heights.at(-1)
+  if (heights.length > 1 && short > 0) {
+    heights[heights.length - 2] -= short
+    heights[heights.length - 1] += short
+  }
+  return heights
 }
 
 /**

@@ -1,0 +1,7 @@
+/* Tabs and actions share one keyline, so the strip reads as a single band. */
+.topbar {
+  flex: none;
+  min-width: 0;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}

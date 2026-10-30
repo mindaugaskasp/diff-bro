@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, closeSnippet, docActions } from './fixtures.mjs'
+import { test, expect, openNewSnippet, closeSnippet, docActions, markSecret } from './fixtures.mjs'
 
 // A secret snippet is a claim about what is DRAWN, so it can only be checked in
 // a launched app: the contents must be absent from the editor, the hover card
@@ -13,12 +13,12 @@ async function createSecret(page, name = 'Prod API key') {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await editor.locator('.editor').click()
   await page.keyboard.type(SECRET)
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, name)
   // Save closes the editor, so the read-only view is reached the way a reader
   // reaches it: by opening the row.
   await expect(editor).toBeHidden()
-  await page.locator('.snippets-section .row', { hasText: name }).locator('.entry').click()
+  await page.locator('.snippets-section .row', { hasText: name }).first().locator('.entry').click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   return view
@@ -42,7 +42,7 @@ test('a saved secret is masked on screen but copies in full', async ({ app, page
   await copy.click()
   // The NAME is stable across the flash — only the visible word swaps — so the
   // acknowledgement is read off the text, not off a second accessible name.
-  await expect(copy).toHaveText(/Copied/)
+  await expect(copy).toHaveClass(/copied/)
   expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(SECRET)
 })
 
@@ -65,7 +65,7 @@ test('reopening a revealed secret starts masked again', async ({ page }) => {
   await closeSnippet(page)
 
   // Reveal is per-open and never stored, so the next look is hidden again.
-  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first().click()
   const reopened = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(reopened.locator('.secret-mask')).toBeVisible()
   await expect(page.locator('body')).not.toContainText(SECRET)
@@ -75,7 +75,7 @@ test('the hover card masks a secret and never decrypts it', async ({ page }) => 
   await createSecret(page)
   await closeSnippet(page)
 
-  const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
+  const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()
   await expect(row.locator('.secret-mark')).toBeVisible() // the lock marker
   // The card opens on mouseenter, which never fires if the pointer is already
   // resting on the row — park it away first so the hover is a real arrival.
@@ -97,7 +97,11 @@ test('an ordinary snippet is untouched by the feature', async ({ page }) => {
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
-  await page.locator('.snippets-section .row', { hasText: 'Plain note' }).locator('.entry').click()
+  await page
+    .locator('.snippets-section .row', { hasText: 'Plain note' })
+    .first()
+    .locator('.entry')
+    .click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(view.locator('.secret-mask')).toHaveCount(0)

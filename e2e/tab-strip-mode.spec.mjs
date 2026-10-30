@@ -1,4 +1,4 @@
-import { test, expect, stubOpenDialog } from './fixtures.mjs'
+import { test, expect, openSide } from './fixtures.mjs'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -19,10 +19,8 @@ test('switching to paste mode on a file comparison keeps its tab, and + opens a 
   try {
     writeFileSync(join(dir, 'alpha.txt'), 'one\ntwo\n')
     writeFileSync(join(dir, 'beta.txt'), 'one\nthree\n')
-    await stubOpenDialog(app, join(dir, 'alpha.txt'))
-    await page.locator('.slot[data-side="left"] .open').click()
-    await stubOpenDialog(app, join(dir, 'beta.txt'))
-    await page.locator('.slot[data-side="right"] .open').click()
+    await openSide(app, page, 'left', join(dir, 'alpha.txt'))
+    await openSide(app, page, 'right', join(dir, 'beta.txt'))
     await expect(page.locator('.diff-container')).toBeVisible()
     await expect(tabs(page)).toHaveCount(1)
 

@@ -30,7 +30,11 @@ const SRGB = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i
 // take the viewer down with it — so anything unreadable is left out instead.
 const channels = (parts) =>
   `#${parts
-    .map((n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'))
+    .map((n) =>
+      Math.max(0, Math.min(255, Math.round(n)))
+        .toString(16)
+        .padStart(2, '0')
+    )
     .join('')}`
 
 function hexOf(value) {

@@ -11,7 +11,7 @@
  * instead — the adapter registry keys off that (see adapters/).
  * @typedef {object} LoadedFile
  * @property {string} path      absolute path it was read from
- * @property {string} name      basename, shown in the slot
+ * @property {string} name      basename, shown in the pane label
  * @property {string} [content] decoded text (text files; absent for spreadsheets)
  * @property {'spreadsheet'} [kind]  non-text format, set by main
  * @property {SheetGrid[]} [sheets]  parsed worksheets when kind === 'spreadsheet'
@@ -157,12 +157,23 @@
  */
 
 /**
+ * One section of the tag tree (see utils/tagTree).
+ * @typedef {object} TagNode
+ * @property {string} path     the tag as written, `a/b/c`
+ * @property {string} label    its last part
+ * @property {object[]} items  what carries exactly this tag
+ * @property {number} count    everything inside it, each once
+ * @property {TagNode[]} children
+ */
+
+/**
  * The decrypted hover preview of a snippet (see useSnippetPreview).
  * @typedef {object} SnippetPreview
  * @property {string} id
  * @property {string} name
  * @property {string[]} tags
  * @property {string} lang                 '' when it's plain text
+ * @property {string} age                  compact age, e.g. "3d" (utils/relativeTime)
  * @property {string} text                 truncated plaintext
  * @property {{left: string, top: string}} style  fixed-position placement
  */
@@ -222,6 +233,7 @@
  * @typedef {object} TagField
  * @property {string[]} tags
  * @property {string} input
+ * @property {string} tooDeep        the deepest a refused four-level tag could be, or ''
  * @property {HTMLInputElement|null} inputEl
  * @property {boolean} canAddMore
  * @property {string[]} suggestions

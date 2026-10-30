@@ -4,11 +4,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useUiStore } from '../stores/uiStore'
 import { useVaultStore } from '../stores/vaultStore'
 
-// Diffs and snippets are what the sidebar is FOR; an unbounded tag bar pushed
-// them into a sliver the moment a library grew past a few dozen tags. What the
-// shelf cannot hold at its dragged depth lives behind the picker, which is
-// searchable and so is better at fifty tags than the flat wall ever was.
-// How deep it is dragged and what fits there belong to useTagShelf.
+// The sidebar's tag filter, which the search box's # chip sets (#121).
 
 /** One tag filter across the whole sidebar: the union of diff + snippet tags. */
 export function useSidebarTags() {
@@ -30,9 +26,12 @@ export function useSidebarTags() {
       .sort((a, b) => b.count - a.count)
   })
 
+  const unique = (entries) => [...new Set(entries.flatMap((e) => e.tags ?? []))]
   return {
     active,
     all,
+    /** The tags carried in one list, for the search box's # scope. */
+    namesIn: (panel) => unique(panel === 'snippets' ? snippets.entries : vault.entries),
     pick: (name) => (ui.sidebarTags = toggleTag(ui.sidebarTags, name)),
     clear: () => (ui.sidebarTags = [])
   }

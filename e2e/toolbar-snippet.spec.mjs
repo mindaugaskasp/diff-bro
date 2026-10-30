@@ -4,7 +4,7 @@ test('with a snippet in front, the toolbar holds its actions and none of a compa
   page
 }) => {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
 
   const bar = page.locator('.toolbar')
@@ -18,7 +18,7 @@ test('with a snippet in front, the toolbar holds its actions and none of a compa
 
 test('back on a comparison, the controls come back', async ({ page }) => {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
   await page.getByRole('button', { name: 'New comparison' }).click()
   await expect(
     page.locator('.toolbar').getByRole('button', { name: 'Paste mode', exact: true })

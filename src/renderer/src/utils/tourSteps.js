@@ -16,13 +16,13 @@ import { TOUR_COPY } from './tourCopy'
 export const TOUR_VERSION = '0.5.0'
 
 // Behaviour only. The hole a step cuts is BLOCKED unless it says `live`: a click
-// on a file slot mid-tour opens a picker over the card that is pointing at it,
+// on a start link mid-tour opens a picker over the card that is pointing at it,
 // and every step but one is showing a control rather than asking for it.
 const STEPS = [
   {
     id: 'compare',
     since: '0.5.0',
-    target: '[data-tour="slots"]',
+    target: '[data-tour="start"]',
     side: 'bottom',
     advance: 'tour-demo-diff',
     reveal: true

@@ -134,4 +134,20 @@ describe('hovering a row', () => {
     expect(preview.preview.value?.id).toBe(id)
     vi.useRealTimers()
   })
+
+  // The row no longer prints its age (#144); the card it opens says it instead.
+  it('carries the snippet age for the card to show', async () => {
+    vi.useFakeTimers()
+    const store = useSnippetStore()
+    const id = await store.add({ name: 'Aged one', content: 'body', marks: false })
+    useTabsStore().init()
+    const preview = useSnippetPreview()
+    await preview.onRowEnter(
+      store.entries.find((e) => e.id === id),
+      rowEvent()
+    )
+    await vi.runAllTimersAsync()
+    expect(preview.preview.value?.age).toBe('now')
+    vi.useRealTimers()
+  })
 })

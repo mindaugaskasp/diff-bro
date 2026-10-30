@@ -15,7 +15,7 @@ import {
 // `color-mix`, so the contrast claims are measured here rather than asserted
 // against a stylesheet.
 
-const row = (page, name) => page.locator('.snippets-section .row', { hasText: name })
+const row = (page, name) => page.locator('.snippets-section .row', { hasText: name }).first()
 const menu = (page) => page.locator('.rcm')
 
 async function seedSnippet(page, name) {

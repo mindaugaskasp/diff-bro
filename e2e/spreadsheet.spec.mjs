@@ -1,4 +1,12 @@
-import { test, expect, stubOpenDialog, stubSaveDialog, closeComparison } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  stubSaveDialog,
+  closeComparison,
+  paneLabel,
+  openSide,
+  pickSide
+} from './fixtures.mjs'
 import { zipSync, strToU8 } from 'fflate'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -94,10 +102,8 @@ test('the status bar is the same height for a grid diff as for a text diff', asy
 
     // Same window, now a grid diff.
     await closeComparison(page)
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
 
     const gridBand = page.locator('.status-band')
     await expect(gridBand).toBeVisible()
@@ -119,12 +125,10 @@ test('opens two .xlsx files and renders the aligned grid diff', async ({ app, pa
 
   try {
     // Open left, then right, through the real file:open -> readXlsx path.
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await expect(page.locator('.slot[data-side="left"] .name')).toHaveText('budget-left.xlsx')
+    await openSide(app, page, 'left', [leftPath])
+    await expect(paneLabel(page, 'left')).toHaveText('budget-left.xlsx')
 
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'right', [rightPath])
 
     // The grid viewer took over (not Monaco): its sheet tab is present.
     const tab = page.locator('.sheet-tabs .tab', { hasText: 'Budget' })
@@ -162,10 +166,8 @@ test('catches a formula overwritten by its own value, and dates as dates', async
   writeFileSync(rightPath, DATED_RIGHT)
 
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
     await expect(page.locator('.grids')).toBeVisible()
 
     // styles.xml is read, so the serial renders as a date rather than 45870.
@@ -211,10 +213,8 @@ test('aligns columns across an insert and forgives sub-material noise', async ({
   writeFileSync(rightPath, COL_RIGHT)
 
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
     await expect(page.locator('.grids')).toBeVisible()
 
     // The inserted column is reported once, and Q2 still lines up with Q2 —
@@ -265,10 +265,8 @@ test('exports the change register as a CSV', async ({ app, page }) => {
   writeFileSync(rightPath, COL_RIGHT)
 
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
     await expect(page.locator('.grids')).toBeVisible()
 
     await stubSaveDialog(app, out)
@@ -293,11 +291,10 @@ test('rejects a corrupt .xlsx with a notice instead of loading it', async ({ app
   writeFileSync(badPath, Buffer.from(zipSync({ 'junk.txt': strToU8('nope') })))
 
   try {
-    await stubOpenDialog(app, [badPath])
-    await page.locator('.slot[data-side="left"]').click()
-    // Nothing loads into the slot; a notice explains why.
+    await pickSide(app, 'left', [badPath])
+    // Nothing loads into the side; a notice explains why.
     await expect(page.locator('.notice')).toContainText('broken.xlsx')
-    await expect(page.locator('.slot[data-side="left"] .name')).toHaveCount(0)
+    await expect(paneLabel(page, 'left')).toHaveCount(0)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -313,10 +310,8 @@ test('exports the spreadsheet grid as a stitched picture', async ({ app, page })
   writeFileSync(leftPath, LEFT)
   writeFileSync(rightPath, RIGHT)
   try {
-    await stubOpenDialog(app, [leftPath])
-    await page.locator('.slot[data-side="left"]').click()
-    await stubOpenDialog(app, [rightPath])
-    await page.locator('.slot[data-side="right"]').click()
+    await openSide(app, page, 'left', [leftPath])
+    await openSide(app, page, 'right', [rightPath])
     await expect(page.locator('.grids')).toBeVisible()
 
     const image = page.getByRole('button', { name: /^Capture/ })
@@ -363,10 +358,8 @@ async function openLedger(app, page, dir) {
   const rightPath = join(dir, 'ledger-after.xlsx')
   writeFileSync(leftPath, LEDGER_LEFT)
   writeFileSync(rightPath, LEDGER_RIGHT)
-  await stubOpenDialog(app, [leftPath])
-  await page.locator('.slot[data-side="left"]').click()
-  await stubOpenDialog(app, [rightPath])
-  await page.locator('.slot[data-side="right"]').click()
+  await openSide(app, page, 'left', [leftPath])
+  await openSide(app, page, 'right', [rightPath])
   await expect(page.locator('.grids')).toBeVisible()
 }
 

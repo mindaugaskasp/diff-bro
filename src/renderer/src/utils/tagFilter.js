@@ -1,6 +1,7 @@
 // The sidebar's tag filter. Several tags can be active at once, and picking two
 // means "either" — the rows carrying alpha OR beta. Requiring both would hide a
 // row tagged only alpha, which is the opposite of what picking alpha asked for.
+// A tag is a path (#121), so a scope also takes in everything nested under it.
 
 /**
  * @param {string[]} [entryTags] the tags on one row
@@ -9,8 +10,8 @@
  */
 export function matchesTags(entryTags, active) {
   if (!active?.length) return true
-  const has = new Set(entryTags ?? [])
-  return active.some((t) => has.has(t))
+  const tags = entryTags ?? []
+  return active.some((scope) => tags.some((t) => t === scope || t.startsWith(`${scope}/`)))
 }
 
 /**

@@ -35,9 +35,7 @@ export const copyActions = {
   },
   /**
    * One side, verbatim — not the patch. Declines silently when that side has no
-   * text to give: the slot hides its copy control in the same case, so reaching
-   * here means a shortcut or menu fired against a spreadsheet or a streamed
-   * file, and a notice about an action nothing offered would be noise.
+   * text to give: a spreadsheet or a streamed file.
    * @param {'left'|'right'} side
    */
   async copySide(side) {

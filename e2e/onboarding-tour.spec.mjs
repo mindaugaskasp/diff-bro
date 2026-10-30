@@ -31,22 +31,22 @@ const finishRun = async (page) =>
 const stepNumber = async (page) =>
   Number((await callout(page).locator('.tour-step-n').textContent()).split(' ')[1])
 
-test('Start tour opens step one on the file slots', async ({ page }) => {
+test('Start tour opens step one on the start links', async ({ page }) => {
   await expect(callout(page)).toBeVisible()
   await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 1 of \d+$/)
 
   // The ring must actually cover what the step points at — the failure this
   // guards is a tour that keeps pointing after the layout moves under it.
   const ringBox = await ring(page).boundingBox()
-  const slots = await page.locator('[data-tour="slots"]').boundingBox()
-  expect(Math.abs(ringBox.x - slots.x)).toBeLessThanOrEqual(2)
-  expect(Math.abs(ringBox.width - slots.width)).toBeLessThanOrEqual(2)
+  const links = await page.locator('[data-tour="start"]').boundingBox()
+  expect(Math.abs(ringBox.x - links.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(ringBox.width - links.width)).toBeLessThanOrEqual(2)
 })
 
 // Nothing happens until the user asks for it. The demo pair arrives because
 // Next said it would, not because arriving at a step opened something.
 test('the demo pair loads on Next, and is shown before the tour moves on', async ({ page }) => {
-  await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
+  await expect(page.locator('.content')).not.toContainText('demo-config-v1.json')
   await expect(next(page)).toHaveText('Load a demo pair')
 
   // Watched from before the click, not asserted after: the load below outlasts
@@ -62,8 +62,8 @@ test('the demo pair loads on Next, and is shown before the tour moves on', async
 
   // The veil is down for the reveal beat: the comparison it just loaded is on
   // screen, unblurred, before the next step covers it again.
-  await expect(page.locator('[data-tour="slots"]')).toContainText('demo-config-v1.json')
-  await expect(page.locator('[data-tour="slots"]')).toContainText('demo-config-v2.json')
+  await expect(page.locator('.pane-labels')).toContainText('demo-config-v1.json')
+  await expect(page.locator('.pane-labels')).toContainText('demo-config-v2.json')
   await expect.poll(() => page.evaluate(() => window.calloutLeft)).toBe(true)
   await expect(callout(page)).toBeVisible()
   await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 2 of \d+$/)
@@ -88,21 +88,21 @@ test('the veil takes the pointer everywhere the step does not want it', async ({
     )
 
   // Outside: the tint is in front, so the app underneath cannot be clicked away.
-  expect(await at('[data-tour="slots"]', 30, 300)).toBe('veiled')
+  expect(await at('[data-tour="start"]', 30, 300)).toBe('veiled')
   // Inside an INERT hole the target is visible but not reachable: a click here
   // would open a file dialog over the tour that is pointing at it.
-  expect(await at('[data-tour="slots"]', 120, 4)).toBe('blocked')
+  expect(await at('[data-tour="start"]', 60, 4)).toBe('blocked')
 
   // A live step leaves its control alone: the editor step invites you to press
   // the Save it rings, so that one hole really is open.
   await advance(page, 5)
   expect(await at('[data-tour="snippet-save"]', 6, 6)).toBe('live')
 
-  // The diagram step's hole is the whole pane, file slots and all — a click
-  // there would open a picker over a step about reading the picture.
+  // The diagram step's hole is the whole pane, labels and all — a click there
+  // would open a picker over a step about reading the picture.
   await advance(page, 2)
   await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
-  expect(await at('[data-tour="slots"]', 120, 4)).toBe('blocked')
+  expect(await at('[data-tour="pane"]', 120, 4)).toBe('blocked')
 })
 
 // The library step drives the search itself. The hole stays cut so the list is
@@ -163,7 +163,8 @@ test('Skip tips ends it, and Help ▸ Show Tour brings it back', async ({ app, p
 test('every step still shows a card with the sidebar collapsed', async ({ app, page }) => {
   await expect(callout(page)).toBeVisible()
   await callout(page).getByRole('button', { name: 'Skip tips' }).click()
-  await page.getByRole('button', { name: 'Collapse the sidebar' }).click()
+  await page.locator('.usb-grip').hover()
+  await page.getByRole('button', { name: 'Hide the sidebar' }).click()
 
   await clickAppMenuItem(app, 'Show Tour')
   const total = await stepCount(page)
@@ -223,7 +224,7 @@ test('the last step rings the Mermaid snippet, even behind a tag filter', async 
 
   // And the filter it cleared to get there is the user's, so it comes back.
   await advance(page, 2)
-  await expect(page.locator('.usb-tag.on', { hasText: 'prompt' })).toBeVisible()
+  await expect(page.locator('.usb-top .scope-chip')).toContainText('prompt')
 })
 
 // A blocked control has to say why. The shared tooltip could not: it anchors
@@ -250,7 +251,7 @@ test('the tour ends on a real diagram comparison', async ({ page }) => {
   await advance(page, (await stepCount(page)) - 1)
 
   await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
-  await expect(page.locator('[data-tour="slots"]')).toContainText('demo-flow-v1.mmd')
+  await expect(page.locator('.pane-labels')).toContainText('demo-flow-v1.mmd')
   await expect(page.locator('.diagram-diff, .dg-stage, [class*="diagram"]').first()).toBeVisible()
 })
 
@@ -264,8 +265,8 @@ test('a replay swaps the demo pair rather than keeping the first one', async ({ 
 
   await advance(page, (await stepCount(page)) - 1)
   await expect(callout(page).locator('h6')).toHaveText('A diagram change, as a diagram')
-  await expect(page.locator('[data-tour="slots"]')).toContainText('demo-flow-v1.mmd')
-  await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
+  await expect(page.locator('.pane-labels')).toContainText('demo-flow-v1.mmd')
+  await expect(page.locator('.content')).not.toContainText('demo-config-v1.json')
   // One scratch tab, not two: the second pair replaced the first in place. The
   // reader's own start tab is blank, which the strip does not draw.
   await expect(page.locator('.diff-tabs .tab')).toHaveCount(1)
@@ -275,19 +276,23 @@ test('a replay swaps the demo pair rather than keeping the first one', async ({ 
 // saved both go when it ends, rather than becoming a library the user has to
 // tidy up after something they were only shown.
 test('the demo comparison and the demo snippet leave with the tour', async ({ page }) => {
-  const rows = page.locator('[data-tour="snippets"] .rows li, [data-tour="snippets"] .rows > *')
+  // Distinct snippets, not rows: one with two tags is listed under both (#121).
+  const library = () =>
+    page
+      .locator('[data-tour="snippets"] .tag-tree .row .nm')
+      .evaluateAll((els) => new Set(els.map((el) => el.textContent.trim())).size)
 
   await advance(page, 5)
   // The tour opened Snippets for this step, so the library is on screen.
-  const seeded = await rows.count()
+  const seeded = await library()
   // The ringed Save is the live one, and pressing it is the only way the
   // example is kept — so this is also the path cleanup has to catch.
   await page.locator('[data-tour="snippet-save"]').click()
-  await expect(rows).toHaveCount(seeded + 1)
+  await expect.poll(library).toBe(seeded + 1)
 
   await finishRun(page)
   await expect(page.locator('.tour-callout')).toBeHidden()
   await showPanel(page, 'snippets')
-  await expect(rows).toHaveCount(seeded)
-  await expect(page.locator('[data-tour="slots"]')).not.toContainText('demo-config-v1.json')
+  await expect.poll(library).toBe(seeded)
+  await expect(page.locator('.content')).not.toContainText('demo-config-v1.json')
 })

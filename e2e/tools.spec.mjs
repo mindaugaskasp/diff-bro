@@ -59,7 +59,9 @@ test('a tool output is kept as a snippet, named by the user', async ({ page }) =
 
   await editor.getByRole('textbox', { name: 'Name', exact: true }).fill('Encoded thing')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.locator('.snippets-section .row', { hasText: 'Encoded thing' })).toBeVisible()
+  await expect(
+    page.locator('.snippets-section .row', { hasText: 'Encoded thing' }).first()
+  ).toBeVisible()
 })
 
 // An empty tool has nothing worth keeping, and a button that is nearly always

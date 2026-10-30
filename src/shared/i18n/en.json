@@ -251,22 +251,10 @@
     "uuid": "UUID convert",
     "lines": "Lines (split, sort, replace)",
     "crypt": "Encrypt / decrypt text",
-    "bar": {
-      "openLeft": "open left",
-      "openRight": "open right",
-      "saveDiff": "save diff",
-      "swap": "swap",
-      "pasteText": "paste text",
-      "splitView": "split view"
-    },
     "quickLookAppWide": "Quick look-up (works app-wide)",
     "copyLeft": "Copy left side",
     "copyRight": "Copy right side",
     "presentation": "Presentation mode (Esc leaves)"
-  },
-  "shortcutBar": {
-    "hideTip": "Hide this bar — bring it back in Settings",
-    "hideLabel": "Hide shortcuts"
   },
   "shortcutsDialog": {
     "title": "Keyboard shortcuts"
@@ -426,7 +414,7 @@
   "tour": {
     "compare": {
       "title": "Two files, any way you like",
-      "body": "Drop them anywhere on this window, or click a slot to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.",
+      "body": "Drop them anywhere on this window, or choose Two files to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.",
       "nextLabel": "Load a demo pair"
     },
     "share": {
@@ -486,6 +474,9 @@
     "go": "Go",
     "rust": "Rust",
     "java": "Java"
+  },
+  "menuBar": {
+    "menu": "Menu"
   },
   "appToolbar": {
     "splitView": "Split view",
@@ -823,19 +814,11 @@
     "openTip": "Open \"{name}\"{from}{loc}"
   },
   "savedDiffs": {
-    "showOnlyStarredDiffsAnd": "Show only starred diffs and snippets",
     "dragToWidenTheSidebar": "Drag to widen the sidebar",
-    "showOnlyDiffsAndSnippets": "Show only diffs and snippets you starred",
-    "collapsedTagsSearchable": "Collapsed tags, searchable",
-    "dropEveryTagFilter": "Clear every tag filter",
-    "clear": "Clear",
-    "plusMore": "+{n} more",
-    "tagsSelected": "{n} tag selected | {n} tags selected",
-    "filterByTag": "Filter by {name} · right-click to manage",
     "searchIn": {
       "home": "Search everything",
-      "diffs": "Search diffs",
-      "snippets": "Search snippets",
+      "diffs": "Search diffs, or # for a tag",
+      "snippets": "Search snippets, or # for a tag",
       "tools": "Find a tool",
       "keys": "Search trusted keys"
     }
@@ -861,7 +844,6 @@
     "settings": "Settings",
     "settingsSections": "Settings sections",
     "theme": "Theme",
-    "showTheKeyboardShortcutBar": "Show the keyboard-shortcut bar over diffs",
     "showTagsOnSidebarRows": "Show tags on sidebar rows",
     "playAShutterSoundWhen": "Play a shutter sound when a diff image is captured",
     "showTipsAfterAnUpdate": "Show tips after an update",
@@ -909,18 +891,27 @@
     "unusable": "That shortcut can’t be used — try another.",
     "holdAModifier": "Hold a modifier (Ctrl/Cmd, Alt, or Shift) and press a key."
   },
-  "sidebarRail": {
-    "expandTheSidebar": "Expand the sidebar",
-    "tools": "Tools",
+  "tagTree": {
+    "favorites": "Favorites",
+    "untagged": "Untagged"
+  },
+  "sidebarNav": {
     "label": "Sidebar",
     "home": "Home",
     "diffs": "Diffs",
     "snippets": "Snippets",
-    "keys": "Keys"
+    "tools": "Tools",
+    "hide": "Hide the sidebar",
+    "hideTip": "Hide the sidebar ({mod}+B)",
+    "show": "Show the sidebar",
+    "showTip": "Show the sidebar ({mod}+B)",
+    "waiting": "{place}, {n} from Claude"
   },
   "sidebarSearch": {
+    "clearScope": "Clear the {tag} scope",
+    "scope": "Search inside a tag",
+    "scopeTip": "Search inside a tag (#)",
     "clearSearch": "Clear search",
-    "collapseTheSidebar": "Collapse the sidebar",
     "clearTheSearchBox": "Clear the search box"
   },
   "snippetDeleteDialog": {
@@ -950,11 +941,10 @@
     "hide": "Hide",
     "copiedToClipboard": "Copied to clipboard",
     "copyTheContents": "Copy the contents to the clipboard",
-    "prettyPrintAs": "Pretty-print as {format}",
-    "formatUnavailable": "Formatting is available for JSON, XML, SQL or Mermaid",
-    "unmangleTip": "Put back the arrows, quotes and spaces a paste broke",
     "history": "History",
-    "historyTip": "Every past edit, each diffed against the one before it"
+    "historyTip": "Every past edit, each diffed against the one before it",
+    "format": "Format",
+    "repair": "Repair"
   },
   "snippetHistoryDialog": {
     "title": "History — {name}",
@@ -971,17 +961,12 @@
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",
     "viewMode": "View mode",
-    "keepTheContentsMaskedEverywhere": "Keep the contents masked everywhere; copying still works",
     "name": "Name",
     "aSnippetNeedsAName": "A snippet needs a name to save.",
-    "secret": "Secret",
-    "content": "Content",
     "rendered": "Rendered",
     "plain": "Plain",
     "syntax": "Syntax",
     "aSnippetNeedsContentTo": "A snippet needs content to save.",
-    "secretHint": "{label} — hide the contents behind ****",
-    "orDropAFile": "— or drop a file here",
     "renderedEditor": "Rendered content, editable",
     "newSnippetTitle": "New snippet",
     "editSnippet": "Edit snippet",
@@ -1035,12 +1020,11 @@
   "snippetsPanel": {
     "snippets": "Snippets",
     "openFile": "Open a text file as a snippet",
+    "moreActions": "Snippet library actions",
     "newSnippet": "New snippet",
     "exportAllSnippetsToA": "Export all snippets to a passphrase-protected file",
     "importSnippetsFromAFile": "Import snippets from a file",
     "new": "New",
-    "export": "Export",
-    "import": "Import",
     "empty": "Empty",
     "noSnippetsMatchTryRemoving": "No snippets match — try removing a filter.",
     "newSnippetCta": "New snippet"
@@ -1112,14 +1096,11 @@
     "structuredData": "structured data",
     "firstRowsShown": "first {n} rows shown"
   },
-  "supportedFormats": {
-    "andAnyText": "…and any text or code file — binary files aren’t supported",
-    "openFormatFile": "Open {format} file"
-  },
   "tabContextMenu": {
     "tabActions": "Tab actions"
   },
   "tagChipsField": {
+    "tooDeep": "Tags nest up to 3 levels. \"{path}\" is the deepest this can go.",
     "tags": "Tags",
     "default": "Default",
     "upTo": "— up to {max}, or leave empty for Default",
@@ -1140,12 +1121,6 @@
     "export": "Export…",
     "rename": "Rename",
     "useColour": "Use colour {colour}"
-  },
-  "tagPickerPopover": {
-    "findATag": "Find a tag…",
-    "collapsedTags": "Collapsed tags",
-    "findATag2": "Find a tag",
-    "noTagMatches": "No tag matches “{q}”"
   },
   "textToolDialog": {
     "keepThisInYourSnippet": "Keep this in your snippet library — you name it",
@@ -1540,12 +1515,10 @@
       "loaded": "Loaded",
       "title": "Waiting for file",
       "dropSide": "Drop or choose the {side} file",
-      "hint": "Drag a file or a snippet here, or use the field above.",
+      "hint": "Drop a file or a snippet here, or click to choose one.",
       "chooseSide": "Choose the {side} file"
     },
-    "dropADiffTo": "Drop to open this comparison",
-    "swapTip": "Swap the left and right files ({mod}+Shift+S)",
-    "swapSides": "Swap sides"
+    "dropADiffTo": "Drop to open this comparison"
   },
   "tabCloseDialog": {
     "closeComparisons": "Close comparisons?",
@@ -1629,9 +1602,8 @@
     "badge": "New",
     "hiddenByFilter": "\"{name}\" was added, but the current filter hides it."
   },
-  "fileSlot": {
-    "chooseSideFile": "Choose {side} file",
-    "copySide": "Copy {name}"
+  "paneLabels": {
+    "replace": "Replace the {side} file ({name})"
   },
   "sectionHeader": {
     "dragToReorder": "Drag to reorder"
@@ -1728,7 +1700,9 @@
     "teal": "Teal",
     "blue": "Blue",
     "violet": "Violet",
-    "none": "No colour"
+    "none": "No colour",
+    "secret": "Secret",
+    "secretTip": "Keep the contents masked everywhere; copying still works"
   },
   "homePanel": {
     "pinned": "Pinned",
@@ -1805,15 +1779,28 @@
       "empty": "Claude hasn’t asked for anything yet.",
       "clear": "Delete activity"
     },
-    "inbox": {
-      "heading": "From Claude · {n} to review",
-      "kind": {
-        "snippet": "Snippet",
-        "comparison": "Comparison"
-      },
-      "preview": "Preview",
-      "accept": "Accept",
-      "discard": "Discard"
+    "proposals": {
+      "label": "From Claude",
+      "title": "From Claude · {n}",
+      "select": "Select",
+      "done": "Done",
+      "selected": "{n} selected",
+      "acceptN": "Accept {n}",
+      "discardN": "Discard {n}"
+    },
+    "bar": {
+      "title": "Proposed by Claude",
+      "note": "· {note}",
+      "discard": "Discard",
+      "acceptSnippet": "Accept · add to Snippets",
+      "acceptDiff": "Accept · save diff"
+    },
+    "undo": {
+      "acceptedOne": "Added {name}",
+      "acceptedMany": "Accepted {n} proposals",
+      "discardedOne": "Discarded {name}",
+      "discardedMany": "Discarded {n} proposals",
+      "undo": "Undo"
     }
   },
   "presentation": {
@@ -1831,11 +1818,8 @@
     "title": "What are you comparing?",
     "subtitle": "Drop files anywhere in this window, or start one of these.",
     "twoFiles": "Two files",
-    "twoFilesHint": "Spreadsheets, data and any text file, side by side.",
     "pastedText": "Pasted text",
-    "pastedTextHint": "Two blocks from the clipboard, a chat or a log.",
-    "newSnippet": "New snippet",
-    "newSnippetHint": "Write or paste something worth keeping in your library."
+    "newSnippet": "New snippet"
   },
   "snippetDocument": {
     "compareWith": "Compare with…",

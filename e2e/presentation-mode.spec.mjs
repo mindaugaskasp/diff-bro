@@ -11,7 +11,7 @@ async function loadDiff(page) {
 }
 
 const chrome = (page) => ({
-  toolbar: page.locator('.app > .toolbar'),
+  toolbar: page.locator('.topbar'),
   sidebar: page.locator('.saved'),
   tabs: page.locator('.diff-tabs')
 })
@@ -72,17 +72,17 @@ const exitButton = (page) => page.getByRole('button', { name: 'Exit presentation
 test('presenting shows only the comparison, with an Exit button that leaves', async ({ page }) => {
   await loadDiff(page)
   await page.getByTestId('toolbar-present').click()
-  await expect(page.locator('.file-slots-row')).toBeHidden()
+  await expect(page.locator('.topbar')).toBeHidden()
   const exit = exitButton(page)
   await expect(exit).toBeVisible()
   await exit.click()
-  await expect(page.locator('.app > .toolbar')).toBeVisible()
+  await expect(page.locator('.topbar')).toBeVisible()
   await expect(exit).toHaveCount(0)
 })
 
 test('a snippet tab can be presented: its content only', async ({ page }) => {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Claude review' }).click()
+  await page.locator('li.row', { hasText: 'Example — Claude review' }).first().click()
   const doc = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(doc).toBeVisible()
 
@@ -90,10 +90,9 @@ test('a snippet tab can be presented: its content only', async ({ page }) => {
   await expect(present).toBeEnabled()
   await present.click()
 
-  await expect(page.locator('.app > .toolbar')).toBeHidden()
+  await expect(page.locator('.topbar')).toBeHidden()
   await expect(page.locator('.diff-tabs')).toBeHidden()
   await expect(doc.locator('.doc-head')).toBeHidden()
-  await expect(doc.locator('.editor-header')).toBeHidden()
   await expect(doc.locator('.editor-status')).toBeHidden()
   await expect(doc.locator('.monaco-editor')).toBeVisible()
   await expect(exitButton(page)).toBeVisible()

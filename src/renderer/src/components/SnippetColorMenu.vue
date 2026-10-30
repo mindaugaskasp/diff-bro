@@ -8,6 +8,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useUiStore } from '../stores/uiStore'
 import { useRowColorMenu } from '../composables/useRowColorMenu'
 import { clampMenu } from '../utils/tabMenu'
+import { isSecret } from '../utils/secretSnippet'
 import { t } from '../i18n'
 import AppIcon from './AppIcon.vue'
 
@@ -24,9 +25,16 @@ function pick(color) {
   close()
 }
 
+const isSecretEntry = computed(() => isSecret(entry.value))
+function toggleSecret() {
+  store.setSnippetSecret(at.value.id, !isSecretEntry.value)
+  close()
+}
+
 const menu = useRowColorMenu({
   current: () => entry.value?.color ?? null,
   onPick: pick,
+  onSecret: toggleSecret,
   onClose: close
 })
 
@@ -98,6 +106,21 @@ const label = (c) => t(c.labelKey)
           <AppIcon v-if="!entry?.color" class="rcm-tick" name="check" />
         </button>
       </div>
+      <div class="ctx-sep" role="separator"></div>
+      <button
+        type="button"
+        class="ctx-item"
+        role="menuitemcheckbox"
+        :class="{ hot: menu.cursor.value === menu.secretIndex }"
+        :aria-checked="isSecretEntry"
+        :data-tip="$t('rowColor.secretTip')"
+        @click="toggleSecret"
+        @mousemove="menu.point(menu.secretIndex)"
+      >
+        <AppIcon name="lock" />
+        <span class="ctx-label">{{ $t('rowColor.secret') }}</span>
+        <AppIcon v-if="isSecretEntry" name="check" />
+      </button>
     </div>
   </div>
 </template>

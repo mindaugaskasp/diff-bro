@@ -3,7 +3,7 @@ import { test, expect } from './fixtures.mjs'
 // The strip's floor and its scrolling are layout, so only a real window can
 // answer them: jsdom has no widths to shrink and no scrollWidth to overflow.
 
-const bar = (page) => page.locator('.diff-tabs')
+const bar = (page) => page.locator('.topbar')
 const track = (page) => page.locator('.diff-tabs .track')
 const tabs = (page) => page.locator('.diff-tabs .tab')
 const chevrons = (page) => page.locator('.diff-tabs .scroll')
@@ -136,13 +136,14 @@ test('the bar keeps one unbroken keyline under the whole strip', async ({ page }
 // the name belonged to the ROW rather than to the button — so clicking a tab
 // anywhere but on its text did nothing at all.
 test('clicking anywhere on a tab activates it', async ({ page }) => {
-  await addTabs(page, 5)
+  // Three, so all of them fit beside the actions without the strip scrolling.
+  await addTabs(page, 3)
   const activeIdx = () =>
     tabs(page).evaluateAll((els) => els.findIndex((e) => e.classList.contains('active')))
 
   // Click each tab on its far edge — the part that used to belong to the row
   // rather than to the button.
-  for (const i of [0, 3, 1, 4]) {
+  for (const i of [0, 2, 1]) {
     const box = await tabs(page).nth(i).boundingBox()
     await page.mouse.click(box.x + 6, box.y + box.height / 2)
     await expect.poll(activeIdx).toBe(i)

@@ -21,40 +21,6 @@
  *   drawn
  * @returns {string[]} ids to fold, in `order`
  */
-/**
- * The bar sheds in three rungs, never two: a labelled row first drops to icons
- * (every control still one press away), and only a row that does not fit even
- * as icons starts folding into the overflow menu.
- *
- * The compact width is not measured, it is `--control-h` — a `.btn-square` is
- * exactly that wide by definition. Measuring it would mean rendering the
- * compact row to find out whether to render it, and a control that is not drawn
- * measures 0.
- *
- * @param {object} opts
- * @param {Record<string, number>} opts.labelled measured width per id, labelled
- * @param {number} opts.compactWidth what any one control costs as an icon
- * @param {number} opts.available width the row has to fill
- * @param {string[]} opts.order fold order, least-important first
- * @param {string[]} [opts.pinned] ids that never fold
- * @param {number} [opts.trigger] width of the overflow control
- * @returns {{compact: boolean, folded: string[]}}
- */
-export function barLayout({ labelled, compactWidth, available, order, pinned = [], trigger }) {
-  const ids = Object.keys(labelled)
-  const labelledTotal = ids.reduce((sum, id) => sum + labelled[id], 0)
-  // Nothing measured yet: stay labelled, and let the first real pass decide.
-  if (!ids.length) return { compact: false, folded: [] }
-  // A budget of nothing is the moment there is LEAST room, so the safe fallback
-  // is the tersest layout, not the widest one. Returning `compact: false` here
-  // would draw every label at exactly the width that cannot hold them.
-  if (!(available > 0)) return { compact: true, folded: order.filter((id) => !pinned.includes(id)) }
-  if (labelledTotal <= available) return { compact: false, folded: [] }
-
-  const widths = Object.fromEntries(ids.map((id) => [id, compactWidth]))
-  return { compact: true, folded: foldedIds({ widths, available, order, pinned, trigger }) }
-}
-
 export function foldedIds({ widths, available, order, pinned = [], trigger = 0 }) {
   const total = (ids) => ids.reduce((sum, id) => sum + (widths[id] ?? 0), 0)
   const all = Object.keys(widths)
@@ -72,4 +38,19 @@ export function foldedIds({ widths, available, order, pinned = [], trigger = 0 }
     shown -= widths[id]
   }
   return folded
+}
+
+/**
+ * What each action costs in the bar. Every action is an icon, a `.btn-square`
+ * exactly one `unit` wide, so it is never measured; only a labelled primary is.
+ * An unmeasured primary costs a unit until its first measurement.
+ *
+ * @param {object} opts
+ * @param {string[]} opts.ids actions in the row
+ * @param {number} opts.unit one icon control plus its gap
+ * @param {Record<string, number>} opts.labelled measured width of labelled ids
+ * @returns {Record<string, number>}
+ */
+export function iconBarWidths({ ids, unit, labelled }) {
+  return Object.fromEntries(ids.map((id) => [id, labelled[id] ?? unit]))
 }

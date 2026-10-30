@@ -24,7 +24,9 @@ export function useTabOverflow(track, activeId) {
   let observer = null
   onMounted(() => {
     measure()
-    observer = new ResizeObserver(measure)
+    // A narrower track (the actions beside it changed, the chevrons appeared)
+    // can leave the active tab half under the edge.
+    observer = new ResizeObserver(revealActive)
     if (track.value) observer.observe(track.value)
   })
   onBeforeUnmount(() => observer?.disconnect())

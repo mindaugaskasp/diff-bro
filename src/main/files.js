@@ -3,7 +3,6 @@ import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, resolve, sep } from 'path'
 import { readSettings } from './appData'
 import { readXlsx } from './xlsx/index'
-import { filtersFor } from './fileFilters'
 import { clipboardFilePaths } from './clipboardFiles'
 import { decodeText } from './decodeText'
 import { t } from './i18n'
@@ -153,12 +152,11 @@ async function readFileForRenderer(win, filePath, opts = {}) {
 // File access lives in the main process only — the renderer never touches fs.
 export function registerFileIpc() {
   // Open dialog + read file. side: 'left' | 'right' (dialog title only)
-  ipcMain.handle('file:open', async (e, side, format) => {
+  ipcMain.handle('file:open', async (e, side) => {
     const win = BrowserWindow.fromWebContents(e.sender)
     const { canceled, filePaths } = await dialog.showOpenDialog(win, {
       title: `Select ${side} file`,
-      properties: ['openFile'],
-      filters: filtersFor(format)
+      properties: ['openFile']
     })
     if (canceled || !filePaths.length) return null
     allow(filePaths[0]) // the user picked it — now it (and quiet re-reads) may be read

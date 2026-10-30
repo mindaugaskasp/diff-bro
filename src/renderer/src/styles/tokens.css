@@ -13,9 +13,9 @@
   /* Type ramp: micro labels → dialog titles. Nothing outside this list;
      scripts/check-style-tokens.mjs enforces it. */
   --font-2xs: 9px;
-  --font-xs: 10.5px;
-  --font-sm: 11.5px;
-  --font-md: 12.5px;
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-md: 13px;
   --font-lg: 14px;
   --font-xl: 16px;
   --font-2xl: 20px;
@@ -35,8 +35,8 @@
      document's Content bar, so they line up across the divider. See .band in
      ui.css. */
   --band-row: 52px;
-  /* The sidebar's search band (80) less the tab strip (31): a document head and
-     the file-slots row end on the same line as that band. */
+  /* Below the top bar (31): a document head, the file-slots row and the
+     sidebar's search band all end on the same line. */
   --head-band: 49px;
   /* Spacing rhythm. Prefer these over ad-hoc pixel padding so panels and
      buttons share one rhythm and never drift apart. */
@@ -91,6 +91,10 @@
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
   --btn-edge: color-mix(in srgb, var(--border) 50%, var(--text));
+  /* A resting .btn is plain (no face, keyline or lift); hover brings face and edge. */
+  --btn-rest-face: transparent;
+  --btn-rest-edge: transparent;
+  --btn-off-edge: transparent;
   /* A control that floats ON a tinted band rather than on a surface — the merge
      view's take buttons, which sit over a conflict band. The band closes the
      gap --btn-edge was tuned for: it lands at 2.99 on sepia and exactly 3.00 on
@@ -198,8 +202,6 @@
   --glyph-generate: color-mix(in srgb, var(--hue-generate) 30%, var(--text));
   --glyph-inspect: color-mix(in srgb, var(--hue-inspect) 30%, var(--text));
   --glyph-secure: color-mix(in srgb, var(--hue-secure) 30%, var(--text));
-  --rail-w: 56px;
-  --rail-item: 52px;
   --select-wash: color-mix(in srgb, var(--accent) 12%, var(--bg-panel));
   --row-hover: color-mix(in srgb, var(--text) 8%, var(--bg-panel));
   --tile-h: 44px;

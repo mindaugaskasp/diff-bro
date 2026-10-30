@@ -39,8 +39,14 @@ const dragKindOf = (e) => {
 }
 const isRowDrag = (e) => dragKindOf(e) !== 'files'
 const hasDroppablePayload = (e) => hasFiles(e) || isRowDrag(e)
-// A drop released over a file slot targets that side.
-const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? null
+// A drop on a pane label, or on either half of an open comparison, targets that side.
+const halfUnder = (e) => {
+  const halves = e.target.closest?.('[data-drop-halves]')
+  if (!halves) return null
+  const { left, width } = halves.getBoundingClientRect()
+  return e.clientX < left + width / 2 ? 'left' : 'right'
+}
+const sideUnder = (e) => e.target.closest?.('[data-side]')?.dataset.side ?? halfUnder(e)
 // A snippet BECOMES the comparison, so it has to be released on the thing it
 // will be compared in. Bound to the window, this handler accepted one dropped
 // anywhere — over the sidebar, over the toolbar, or from a drag that never

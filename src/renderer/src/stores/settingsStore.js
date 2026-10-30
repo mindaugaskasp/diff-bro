@@ -10,7 +10,6 @@ import {
   NUMERIC_LIMITS,
   clampBackupHours,
   clampNumber,
-  railOrderOf,
   sanitizeSize,
   settingsStateFrom
 } from '../utils/settingsDefaults'
@@ -33,7 +32,6 @@ export const useSettingsStore = defineStore('settings', {
   getters: {
     // Sections in the user's chosen order (always every one, sanitized).
     orderedSections: (s) => s.sectionOrder,
-    railOrder: (s) => railOrderOf(s.sectionOrder),
     maxSnippetSizeBytes: (s) => s.maxSnippetSizeKb * 1024,
     // The remembered size for a resizable dialog, or null for its default.
     dialogSize: (s) => (key) => s.dialogSizes[key] ?? null,
@@ -85,13 +83,11 @@ export const useSettingsStore = defineStore('settings', {
         JSON.stringify({
           sectionOrder: this.sectionOrder,
           shelfOrder: this.shelfOrder,
-          showShortcutBar: this.showShortcutBar,
           showRowTags: this.showRowTags,
           rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
           maxExportHeightPx: this.maxExportHeightPx,
-          tagShelfHeight: this.tagShelfHeight,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
           locale: this.locale,
@@ -156,10 +152,6 @@ export const useSettingsStore = defineStore('settings', {
       const kept = stored.filter((id) => presentIds.includes(id))
       for (const id of presentIds) if (!kept.includes(id)) kept.push(id)
       return kept
-    },
-    setShowShortcutBar(value) {
-      this.showShortcutBar = !!value
-      this.persist()
     },
     setShowRowTags(value) {
       this.showRowTags = !!value

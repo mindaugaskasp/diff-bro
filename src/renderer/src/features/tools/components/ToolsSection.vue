@@ -18,8 +18,7 @@ const props = defineProps({
   panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
-  tags: { type: Array, default: () => [] },
-  favOnly: { type: Boolean, default: false }
+  tags: { type: Array, default: () => [] }
 })
 
 const RESTING_ROWS = 6
@@ -36,8 +35,7 @@ const filtering = computed(() => !!q.value || props.tags.length > 0)
 // visible and reports zero — that IS the answer to "why is this empty".
 const matches = computed(() => {
   if (props.tags.length) return []
-  const all = namedTools(store.rows, t)
-  const rows = props.favOnly ? all.filter((row) => row.pinned) : all
+  const rows = namedTools(store.rows, t)
   if (!q.value) return rows
   return rows.filter(
     (row) => row.name.toLowerCase().includes(q.value) || row.kind.toLowerCase().includes(q.value)

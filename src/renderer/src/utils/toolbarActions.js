@@ -18,6 +18,7 @@ import { STREAMED_LIMITS } from './streamedLimits'
  * @property {boolean} isPaste
  * @property {boolean} canExportImage
  * @property {boolean} isSpreadsheet
+ * @property {boolean} [isProposal] the tab is reviewing a Claude proposal (#121)
  */
 
 /**
@@ -25,8 +26,9 @@ import { STREAMED_LIMITS } from './streamedLimits'
  * @property {string}  id       also the commands.js id it runs
  * @property {string}  labelKey
  * @property {string}  tipKey
- * @property {string}  icon     icons.js name — every row has one, because the
- *   bar drops to icons before it folds anything away
+ * @property {string}  icon     icons.js name — every row has one; it is all
+ *   an unlabelled action draws
+ * @property {boolean} [labelled] draws its word beside the icon (the primary only)
  * @property {boolean} disabled
  * @property {boolean} [active] the control is IN the state it switches to, so
  *   the bar can show an on-state rather than an unlabelled press
@@ -75,6 +77,16 @@ const pasteRow = (s) => ({
   pinned: false
 })
 
+const saveRow = (s) => ({
+  id: 'save',
+  labelKey: 'common.save',
+  tipKey: saveTipKey(s),
+  icon: 'save',
+  disabled: !s.hasUnsavedWork,
+  labelled: true,
+  pinned: true
+})
+
 /**
  * @param {ToolbarState} s
  * @returns {ToolbarAction[]} in bar order, left to right
@@ -83,14 +95,7 @@ export function toolbarActions(s) {
   const setup = !s.isSavedDiff
   return [
     ...(setup ? [pasteRow(s)] : []),
-    {
-      id: 'save',
-      labelKey: 'common.save',
-      tipKey: saveTipKey(s),
-      icon: 'save',
-      disabled: !s.hasUnsavedWork,
-      pinned: true
-    },
+    ...(s.isProposal ? [] : [saveRow(s)]),
     {
       id: 'share-current',
       labelKey: 'appToolbar.share',

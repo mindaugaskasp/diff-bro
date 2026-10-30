@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 contextBridge.exposeInMainWorld('api', {
-  openFile: (side, format) => ipcRenderer.invoke('file:open', side, format),
+  openFile: (side) => ipcRenderer.invoke('file:open', side),
   readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),
   writeMerged: (text) => ipcRenderer.invoke('merge:write', text),

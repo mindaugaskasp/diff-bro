@@ -1,0 +1,64 @@
+/* Nesting reads by indent alone: each level steps in by one spacing unit. */
+.tag-section {
+  list-style: none;
+}
+.ts-head {
+  width: 100%;
+  height: var(--control-h-sm);
+  gap: var(--space-2);
+  padding: 0 var(--space-3) 0 calc(var(--space-3) + var(--depth) * var(--space-4));
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+/* A control's face, not the row wash: --row-hover steps only 1.14 on sepia. */
+.ts-head:hover {
+  background: var(--btn-face);
+}
+.ts-head:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.ts-chev {
+  flex: none;
+  color: var(--text-meta);
+}
+.ts-star {
+  flex: none;
+  color: var(--favorite);
+}
+.ts-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+}
+.ts-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-count {
+  flex: none;
+  color: var(--text-meta);
+  font-weight: 400;
+}
+.ts-rows,
+.ts-children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* The content steps in, the hover wash does not: indenting the list cut a
+   notch out of every highlighted row. */
+.ts-rows > :deep(.row),
+.ts-rows > :deep(.diff) {
+  padding-left: calc(var(--depth) * var(--space-4));
+}

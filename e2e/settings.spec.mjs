@@ -7,9 +7,9 @@ test.describe('Settings domain panes', () => {
   test('opens on Appearance and switches panes from the left rail', async ({ page }) => {
     await openSettings(page)
 
-    // Appearance is the default pane: theme swatches + the shortcut-bar toggle.
+    // Appearance is the default pane: theme swatches and the row-tags toggle.
     await expect(page.getByRole('button', { name: 'Use the Light theme' })).toBeVisible()
-    await expect(page.getByText('Show the keyboard-shortcut bar over diffs')).toBeVisible()
+    await expect(page.getByText('Show tags on sidebar rows')).toBeVisible()
     // Other panes' content is not mounted yet.
     await expect(page.getByRole('heading', { name: 'Data folder' })).toBeHidden()
 

@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { SHORTCUT_GROUPS, SHORTCUT_BAR } from '../../../src/renderer/src/utils/shortcuts'
+import { SHORTCUT_GROUPS } from '../../../src/renderer/src/utils/shortcuts'
 import { buildMenus } from '../../../src/renderer/src/menus'
 
 describe('shortcuts', () => {
@@ -23,14 +23,6 @@ describe('shortcuts', () => {
       (i) => i.labelKey === 'shortcuts.saveDiff'
     )
     expect(save.keys).toBe(`${mod}+S`)
-  })
-
-  it('the compact bar list carries keys and a catalogue label', () => {
-    expect(SHORTCUT_BAR.length).toBeGreaterThan(0)
-    for (const { keys, labelKey } of SHORTCUT_BAR) {
-      expect(keys).toBeTruthy()
-      expect(labelKey).toMatch(/^shortcuts\.bar\./)
-    }
   })
 })
 

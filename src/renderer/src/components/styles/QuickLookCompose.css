@@ -28,20 +28,6 @@
   color: var(--text);
 }
 
-/* --text-meta, not the accent: the accent as ink misses 4.5:1 on some themes. */
-.ql-compose-lang {
-  height: var(--control-h-sm);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-meta);
-  font-family: inherit;
-  font-size: var(--font-sm);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
 .ql-compose-foot {
   gap: var(--space-3);
   padding: var(--space-1) var(--space-4) var(--space-3);

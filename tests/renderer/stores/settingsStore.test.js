@@ -20,7 +20,6 @@ describe('settingsStore', () => {
   it('starts from safe defaults', () => {
     const s = useSettingsStore()
     expect(s.sectionOrder).toEqual(SECTIONS)
-    expect(s.showShortcutBar).toBe(true)
     expect(s.fileSizeLimitMb('text')).toBe(FILE_TYPE_LIMITS.text.default)
     expect(s.fileSizeLimitMb('spreadsheet')).toBe(FILE_TYPE_LIMITS.spreadsheet.default)
     expect(s.fileSizeLimitBytes('spreadsheet')).toBe(
@@ -77,9 +76,9 @@ describe('settingsStore', () => {
     expect(s.shelfOrderFor('external', ['x'])).toEqual(['x'])
   })
 
-  it('ignores the old localStorage shortcut-bar dismissal', () => {
-    localStorage.setItem('diffbro.shortcutBarDismissed', '1')
-    expect(useSettingsStore().showShortcutBar).toBe(true)
+  it('ignores a stored shortcut-bar setting: the bar is gone', () => {
+    localStorage.setItem('diffbro.settings', JSON.stringify({ showShortcutBar: false }))
+    expect('showShortcutBar' in useSettingsStore().$state).toBe(false)
   })
 
   it('clamps each file-type size guard to its own cap, independently', () => {
@@ -144,12 +143,6 @@ describe('settingsStore', () => {
     s.setRotateThemeDaily(true)
     setActivePinia(createPinia())
     expect(useSettingsStore().rotateThemeDaily).toBe(true)
-  })
-
-  it('toggles the shortcut bar and persists it', () => {
-    useSettingsStore().setShowShortcutBar(false)
-    setActivePinia(createPinia())
-    expect(useSettingsStore().showShortcutBar).toBe(false)
   })
 
   // The tag word beside a name on every sidebar row. On unless it has been
@@ -465,17 +458,5 @@ describe('sidebar panel', () => {
     localStorage.setItem('diffbro.settings', JSON.stringify({ sidebarPanel: 'saved' }))
     setActivePinia(createPinia())
     expect(useSettingsStore().sidebarPanel).toBe('home')
-  })
-
-  it('orders the rail by the stored section order, Home first, external folded into diffs', () => {
-    const s = useSettingsStore()
-    s.moveSection('tools', -3)
-    expect(s.railOrder).toEqual(['home', 'tools', 'diffs', 'snippets'])
-  })
-
-  it('places Diffs where saved diffs sit, whatever the received section order says', () => {
-    const s = useSettingsStore()
-    s.moveSection('saved', 3)
-    expect(s.railOrder).toEqual(['home', 'snippets', 'tools', 'diffs'])
   })
 })

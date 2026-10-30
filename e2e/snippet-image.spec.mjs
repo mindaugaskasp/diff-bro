@@ -5,7 +5,8 @@ import {
   showPanel,
   closeSnippet,
   editInPlace,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 import { focusEditor } from './monaco.mjs'
 
@@ -24,7 +25,7 @@ const DIAGRAM = 'Example — Mermaid diagram'
 // Capture lives in the snippet's view window — the row's hover actions carry
 // copy/delete only, so the shot starts from where the contents are shown.
 async function shoot(page, name) {
-  await page.locator('.snippets-section .row', { hasText: name }).click()
+  await page.locator('.snippets-section .row', { hasText: name }).first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   await docActions(page).getByRole('button', { name: 'Capture', exact: true }).click()
   return page.getByRole('dialog', { name: 'Export as image' })
@@ -180,11 +181,11 @@ test('a secret snippet offers no capture action', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
+  await markSecret(page, 'Prod API key')
 
-  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first().click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toHaveCount(
@@ -193,14 +194,14 @@ test('a secret snippet offers no capture action', async ({ page }) => {
   // ...while an ordinary snippet's view offers it. The ghost Close by its
   // text — the header × carries the same accessible name.
   await closeSnippet(page)
-  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).first().click()
   await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toBeVisible()
 })
 
 // Capture moved into the view window; the hover row keeps copy/delete only, so
 // the common action never shares a narrow strip with the rare one.
 test('the row hover actions carry no capture button', async ({ page }) => {
-  const row = page.locator('.snippets-section .row', { hasText: DIAGRAM })
+  const row = page.locator('.snippets-section .row', { hasText: DIAGRAM }).first()
   await row.hover()
   await expect(row.getByRole('button', { name: 'Copy to clipboard' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Export as image' })).toHaveCount(0)
@@ -238,7 +239,7 @@ test('a snippet is captured from the view its contents are shown in', async ({ p
 })
 
 test('the capture action is disabled while editing', async ({ page }) => {
-  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).click()
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   const capture = docActions(page).getByRole('button', { name: 'Capture', exact: true })
   await expect(capture).toBeEnabled()
@@ -256,7 +257,7 @@ test('only a Mermaid snippet offers capture', async ({ page }) => {
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 
-  await page.locator('.snippets-section .row', { hasText: 'Just some prose' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Just some prose' }).first().click()
   const view = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(view).toBeVisible()
   await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toHaveCount(

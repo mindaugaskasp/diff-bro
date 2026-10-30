@@ -6,8 +6,14 @@ import {
   closeSnippet,
   closeComparison,
   editInPlace,
-  docActions
+  docActions,
+  markSecret,
+  paneLabel,
+  openSide
 } from './fixtures.mjs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -24,7 +30,7 @@ const PROMPT = 'Example — Claude review prompt'
 // elements reliably, so the drag is driven the way the browser does it: one
 // DataTransfer shared by dragstart and drop.
 async function dragRowTo(page, name, targetSelector) {
-  await page.locator('.snippets-section .row', { hasText: name }).hover()
+  await page.locator('.snippets-section .row', { hasText: name }).first().hover()
   await page.evaluate(
     ({ name: rowName, target }) => {
       const row = [...document.querySelectorAll('.snippets-section .row')].find((r) =>
@@ -41,13 +47,13 @@ async function dragRowTo(page, name, targetSelector) {
 }
 
 test('two dropped snippets open as an ordinary comparison', async ({ page }) => {
-  await dragRowTo(page, DIAGRAM, '.slot[data-side="left"]')
-  await expect(page.locator('.slot[data-side="left"]')).toContainText(DIAGRAM, { timeout: 15000 })
+  await dragRowTo(page, DIAGRAM, '.start-surface')
+  await expect(paneLabel(page, 'left')).toContainText(DIAGRAM, { timeout: 15000 })
   // One snippet fills a side and waits, exactly as one file does.
   await expect(page.locator('.monaco-diff-editor')).toHaveCount(0)
 
-  await dragRowTo(page, PROMPT, '.slot[data-side="right"]')
-  await expect(page.locator('.slot[data-side="right"]')).toContainText(PROMPT, { timeout: 15000 })
+  await dragRowTo(page, PROMPT, '.wait-slot.open')
+  await expect(paneLabel(page, 'right')).toContainText(PROMPT, { timeout: 15000 })
   await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
 })
 
@@ -68,14 +74,14 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   await save.click()
   await closeSnippet(page)
 
-  await dragRowTo(page, 'Live target', '.slot[data-side="left"]')
-  await expect(page.locator('.slot[data-side="left"]')).toContainText('Live target', {
+  await dragRowTo(page, 'Live target', '.start-surface')
+  await expect(paneLabel(page, 'left')).toContainText('Live target', {
     timeout: 15000
   })
-  await dragRowTo(page, DIAGRAM, '.slot[data-side="right"]')
+  await dragRowTo(page, DIAGRAM, '.wait-slot.open')
   await expect(page.locator('.monaco-diff-editor')).toBeVisible({ timeout: 15000 })
 
-  await page.locator('.snippets-section .row', { hasText: 'Live target' }).click()
+  await page.locator('.snippets-section .row', { hasText: 'Live target' }).first().click()
   await editInPlace(page)
   const edit = page.getByRole('region', { name: 'Edit snippet' })
   await edit.locator('.editor').click()
@@ -97,8 +103,8 @@ test('closing the comparison leaves both snippets alone', async ({ page }) => {
   const rows = () => page.locator('.snippets-section .row')
   const before = await rows().count()
 
-  await dragRowTo(page, DIAGRAM, '.slot[data-side="left"]')
-  await expect(page.locator('.slot[data-side="left"]')).toContainText(DIAGRAM, { timeout: 15000 })
+  await dragRowTo(page, DIAGRAM, '.start-surface')
+  await expect(paneLabel(page, 'left')).toContainText(DIAGRAM, { timeout: 15000 })
   await closeComparison(page)
 
   await expect(rows()).toHaveCount(before)
@@ -111,19 +117,21 @@ test('a secret snippet is not draggable', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, 'Prod API key')
   await closeSnippet(page)
 
-  const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' })
+  const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()
   await expect(secret).toHaveAttribute('draggable', 'false')
-  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM })
+  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM }).first()
   await expect(ordinary).toHaveAttribute('draggable', 'true')
 })
 
 const paneOrder = (waiting) =>
   waiting.evaluate((el) =>
-    [...el.children].map((s) => (s.classList.contains('loaded') ? 'loaded' : 'open'))
+    [...el.querySelectorAll(':scope > .wait-pane')].map((s) =>
+      s.classList.contains('loaded') ? 'loaded' : 'open'
+    )
   )
 
 test('one side loaded shows its contents and an empty pane, in pane order', async ({ page }) => {
@@ -149,19 +157,20 @@ test('one side loaded shows its contents and an empty pane, in pane order', asyn
   await expect(open).toHaveAttribute('aria-label', /Choose the Right file/)
 })
 
-test('the empty pane sits on the left when the LEFT side is missing', async ({ page }) => {
-  const row = page.locator('.row', { hasText: DIAGRAM }).first()
-  const rb = await row.boundingBox()
-  const right = await page.locator('[data-side="right"]').first().boundingBox()
-  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(right.x + right.width / 2, right.y + right.height / 2, { steps: 10 })
-  await page.mouse.up()
+test('the empty pane sits on the left when the LEFT side is missing', async ({ app, page }) => {
+  const dir = mkdtempSync(join(tmpdir(), 'diffbro-right-only-'))
+  try {
+    const right = join(dir, 'right.txt')
+    writeFileSync(right, 'only the right\n')
+    await openSide(app, page, 'right', right)
 
-  const waiting = page.locator('.waiting')
-  await expect(waiting).toBeVisible()
-  await expect(waiting.locator('.wait-label')).toContainText('Left')
-  expect(await paneOrder(waiting)).toEqual(['open', 'loaded'])
+    const waiting = page.locator('.waiting')
+    await expect(waiting).toBeVisible()
+    await expect(waiting.locator('.wait-label')).toContainText('Left')
+    expect(await paneOrder(waiting)).toEqual(['open', 'loaded'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 // The hover preview is anchored to the row you start the drag from, so it sat

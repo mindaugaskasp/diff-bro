@@ -1,7 +1,7 @@
 import { test as base, _electron as electron, expect } from '@playwright/test'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workerEnv } from './workerEnv.mjs'
 
@@ -140,8 +140,7 @@ export async function openSettings(page) {
   if (usesNativeMenu()) {
     await clickAppMenuItem(page.electronApp, 'Settings')
   } else {
-    await page.getByRole('button', { name: 'File', exact: true }).click()
-    await page.getByText('Settings…', { exact: true }).click()
+    await openMenu(page, 'File', 'Settings…')
   }
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
 }
@@ -204,14 +203,16 @@ export async function openMenu(page, top, sub, leaf) {
   // The native bar is addressed by leaf label, so the path through it needs no
   // knowledge of which top menu or submenu the item lives under.
   if (usesNativeMenu()) return clickAppMenuItem(page.electronApp, leaf ?? sub)
-  await page.locator('.menubar').getByRole('button', { name: top, exact: true }).click()
+  // Flyouts open on hover; clicking a toggle would fire mouseenter (opens) then
+  // the click handler (toggles shut), so every level but the last is hovered.
+  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
+  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
+  const menu = page.locator('.menubar > .dropdown > .submenu > .flyout')
   if (leaf) {
-    // The submenu opens its flyout on hover; clicking the toggle would fire
-    // mouseenter (opens) then the click handler (toggles shut), so hover only.
-    await page.locator('.submenu', { hasText: sub }).hover()
-    await page.locator('.flyout .item', { hasText: leaf }).click()
+    await menu.locator(':scope > .submenu > .item', { hasText: sub }).hover()
+    await menu.locator('.flyout .item', { hasText: leaf }).click()
   } else {
-    await page.locator('.dropdown .item', { hasText: sub }).click()
+    await menu.locator(':scope > .item', { hasText: sub }).click()
   }
 }
 
@@ -262,6 +263,18 @@ export async function stubOpenDialog(app, filePaths) {
   )
 }
 
+export const paneLabel = (page, side) => page.locator(`.pane-label[data-side="${side}"]`)
+
+export async function pickSide(app, side, filePath) {
+  await stubOpenDialog(app, filePath)
+  await clickAppMenuItem(app, side === 'left' ? 'Open Left' : 'Open Right')
+}
+
+export async function openSide(app, page, side, filePath) {
+  await pickSide(app, side, filePath)
+  await expect(paneLabel(page, side)).toHaveText(basename([filePath].flat()[0]))
+}
+
 export { expect }
 
 // The sidebar's New-snippet control. NOT getByRole('button', { name: 'New
@@ -271,23 +284,46 @@ export { expect }
 // took until a CI runner to fire.
 export const newSnippetButton = (page) => page.locator('[data-tour="snippet-new"]')
 
+// Keys has no segment (#144): it is reached from Security ▸ Trusted Keys.
 export async function showPanel(page, panel) {
-  const item = page.locator(`.rail-item[data-panel="${panel}"]`)
+  if (panel === 'keys') {
+    if (await page.locator('.usb-panel[data-panel="keys"]').isVisible()) return
+    return openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys…')
+  }
+  const show = page.getByRole('button', { name: 'Show the sidebar' })
+  if (await show.count()) {
+    await page.locator('.sidebar-strip').hover()
+    await show.click()
+  }
+  const item = page.locator(`.sidebar-nav [data-value="${panel}"]`)
   if ((await item.getAttribute('aria-pressed')) !== 'true') await item.click()
 }
 
-// The one-line shelf may hold a tag behind "+N more".
+// The # scope in the sidebar search (#121): picking the scoped tag again clears it.
 export async function pickTag(page, name) {
-  const chip = page.locator('.usb-shelf .usb-tag', { hasText: name }).first()
-  if (await chip.isVisible()) return chip.click()
-  await page.locator('.usb-more').click()
-  const picker = page.getByRole('dialog', { name: 'Collapsed tags' })
-  await picker.getByLabel('Find a tag').fill(name)
-  await picker.locator('.usb-tag', { hasText: name }).first().click()
-  await page.locator('.picker-backdrop').click({ position: { x: 5, y: 5 } })
+  const chip = page.locator('.usb-top .scope-chip')
+  if ((await chip.count()) && (await chip.locator('.scope-text').innerText()) === name) {
+    return chip.getByRole('button').click()
+  }
+  const box = page.locator('.usb-top input[type="search"]')
+  await box.fill(`#${name}`)
+  await page.locator('.usb-top .scope-list li', { hasText: new RegExp(`^${name}$`) }).click()
+  await expect(chip.locator('.scope-text')).toHaveText(name)
 }
 
 export const docActions = (page) => page.locator('#toolbar-doc-actions')
+
+export const snippetMoreMenu = (page) =>
+  docActions(page).getByRole('button', { name: 'More snippet actions' })
+
+// Secret lives in the row's right-click menu, so a snippet is saved before it is marked.
+export async function markSecret(page, name, on = true) {
+  await page.locator('.snippets-section .row', { hasText: name }).first().click({ button: 'right' })
+  const item = page.getByRole('menuitemcheckbox', { name: 'Secret' })
+  await expect(item).toHaveAttribute('aria-checked', String(!on))
+  await item.click()
+  await expect(item).toHaveCount(0)
+}
 
 // It re-titles itself (New / Edit / Snippet); only the active tab's is visible.
 export const snippetDoc = (page) => page.locator('.snippet-doc:visible')

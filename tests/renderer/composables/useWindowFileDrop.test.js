@@ -51,6 +51,23 @@ describe('useWindowFileDrop — where a snippet may be dropped', () => {
     expect(s.dropSnippets).toHaveBeenCalledWith(['snip-1'], null)
   })
 
+  it('replaces the side under the pointer when the comparison splits into halves', async () => {
+    const halves = { getBoundingClientRect: () => ({ left: 300, width: 800 }) }
+    const at = (clientX) => ({
+      ...snippetDrop(true),
+      clientX,
+      target: {
+        closest: (sel) =>
+          sel.includes('drop-halves') ? halves : sel.includes('drop-region') ? {} : null
+      }
+    })
+    const s = store()
+    const drop = useWindowFileDrop(s, ref(false))
+    await drop.onDrop(at(320))
+    await drop.onDrop(at(1080))
+    expect(s.dropSnippets.mock.calls.map((c) => c[1])).toEqual(['left', 'right'])
+  })
+
   it('clears the overlay either way, so nothing is left lit', async () => {
     const drop = useWindowFileDrop(store(), ref(false))
     // Light it FIRST: asserting false on something already false proved only

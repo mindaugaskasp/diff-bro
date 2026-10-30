@@ -1,4 +1,4 @@
-import { test, expect, editInPlace, docActions } from './fixtures.mjs'
+import { test, expect, editInPlace, docActions, paneLabel } from './fixtures.mjs'
 
 const strip = (page) => page.getByRole('tablist', { name: 'Open comparisons' })
 
@@ -38,7 +38,7 @@ test('Compare with… opens a comparison with the snippet on the left', async ({
   await newSnippet(page, 'Left side', 'alpha')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await page.getByRole('button', { name: 'Compare with…' }).click()
-  await expect(page.locator('.slot[data-side="left"]')).toContainText('Left side')
+  await expect(paneLabel(page, 'left')).toContainText('Left side')
   await expect(strip(page).getByRole('tab', { name: /Left side/ })).toHaveCount(2)
 })
 

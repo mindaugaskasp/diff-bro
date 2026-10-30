@@ -13,13 +13,7 @@ export const backupActions = {
   },
   restoreState(state) {
     if (!state || typeof state !== 'object') return
-    Object.assign(
-      this,
-      settingsStateFrom(state, {
-        showShortcutBar: state.showShortcutBar !== false,
-        theme: state.theme
-      })
-    )
+    Object.assign(this, settingsStateFrom(state, { theme: state.theme }))
     this.persist()
     this.resolveActiveTheme()
   }

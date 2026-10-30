@@ -66,33 +66,6 @@
 .editor-area.editing .editor :deep(.monaco-editor .current-line) {
   background: color-mix(in srgb, var(--text) 6%, transparent);
 }
-.editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--font-md);
-  color: var(--text-meta);
-}
-.drop-hint {
-  color: var(--text-hint);
-  font-size: var(--font-sm);
-}
-.lang-picker {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-}
-.lang-picker select {
-  padding: 2px 6px;
-  font-size: var(--font-md);
-}
-.lang-detected {
-  font-family: var(--font-mono);
-  font-size: var(--font-sm);
-  color: var(--text-hint);
-}
 /* The editor slot: grows to absorb the panel's extra height when the dialog is
    dragged taller (Monaco's automaticLayout follows), with 280px as the default
    basis and a floor so a small drag can't collapse it. It holds either the
@@ -112,31 +85,6 @@
   overflow: auto;
   background: var(--bg);
 }
-.editor-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-/* Segmented Rendered/Plain switch for the wiki-markup view. */
-.view-toggle {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.view-toggle button {
-  padding: 2px 8px;
-  border: none;
-  background: var(--bg);
-  color: var(--text-meta);
-  font-family: inherit;
-  font-size: var(--font-sm);
-  cursor: pointer;
-}
-.view-toggle button.active {
-  background: var(--accent);
-  color: var(--text-on-accent);
-}
 .spacer {
   flex: 1;
 }
@@ -153,25 +101,4 @@
   padding-left: 9px;
   color: var(--danger-bg);
   font-size: var(--font-sm);
-}
-
-/* Secret toggle: an inline checkbox row, overriding the stacked column layout
-   the dialog gives its other labels (same shape as the save dialog's Secure). */
-.secret-toggle {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text);
-  font-size: var(--font-sm);
-  cursor: pointer;
-}
-.secret-toggle input[type='checkbox'] {
-  width: auto;
-  min-width: 0;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-.secret-toggle strong {
-  font-weight: 700;
 }

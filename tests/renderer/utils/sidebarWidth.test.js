@@ -13,12 +13,19 @@ describe('clampSidebarWidth', () => {
     expect(clampSidebarWidth(4000)).toBe(SIDEBAR_MAX)
   })
 
-  // The sidebar widens or it collapses to the rail; there is no in-between,
+  // The sidebar widens or it collapses away; there is no in-between,
   // because a half-narrow list truncates every name without freeing real space.
   it('never narrows below the designed width', () => {
     expect(clampSidebarWidth(SIDEBAR_W - 1)).toBe(SIDEBAR_W)
     expect(clampSidebarWidth(0)).toBe(SIDEBAR_W)
     expect(clampSidebarWidth(-500)).toBe(SIDEBAR_W)
+  })
+
+  // The width is the whole sidebar since the rail went (#144): 312, what the
+  // 56px rail and the 256px panel made together, so nobody's sidebar shrinks.
+  it('is the old rail and panel together, so the sidebar keeps its width', () => {
+    expect(SIDEBAR_W).toBe(312)
+    expect(readSidebarWidth(JSON.stringify({ width: 256 }))).toBe(312)
   })
 
   it('is half again the default at most', () => {

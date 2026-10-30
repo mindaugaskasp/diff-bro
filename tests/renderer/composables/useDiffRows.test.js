@@ -18,7 +18,7 @@ beforeEach(() => {
     entry('beta', { favorite: true }),
     entry('gamma', { from: 'fp', tags: ['finance'] })
   ]
-  filter = reactive({ search: '', tags: [], favOnly: false })
+  filter = reactive({ search: '', tags: [] })
 })
 
 const names = (rows) => rows.value.map((r) => r.entry.name)
@@ -37,11 +37,6 @@ describe('useDiffRows', () => {
     filter.tags = []
     filter.search = ' BET '
     expect(names(own.rows)).toEqual(['beta'])
-  })
-
-  it('keeps only the starred group under the ★ filter', () => {
-    filter.favOnly = true
-    expect(names(useDiffRows(() => filter, OWN_GROUPS).rows)).toEqual(['beta'])
   })
 
   it('places each row by its index in the full group', () => {

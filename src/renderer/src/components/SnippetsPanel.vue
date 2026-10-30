@@ -3,7 +3,7 @@
 // useSnippetPreview, rows SnippetRow.
 import { computed, ref, watch } from 'vue'
 import { matchesTags } from '../utils/tagFilter'
-import { useSnippetStore } from '../stores/snippetStore'
+import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
 import { useSnippetPreview } from '../composables/useSnippetPreview'
 import { useNewRowMarker } from '../composables/useNewRowMarker'
@@ -11,12 +11,13 @@ import { provideRowReorder } from '../composables/useRowReorder'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
-import { MOD } from '../keys'
-import { useCommands } from '../composables/useCommands'
 import SnippetRow from './SnippetRow.vue'
 import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
 import AppIcon from './AppIcon.vue'
+import SnippetsMoreMenu from './SnippetsMoreMenu.vue'
+import TagTree from './TagTree.vue'
+import { ProposalsGroup } from '../features/claude'
 
 const props = defineProps({
   first: { type: Boolean, default: false },
@@ -24,10 +25,10 @@ const props = defineProps({
   panel: { type: Boolean, default: false },
   search: { type: String, default: '' },
   /** @type {import('vue').PropType<string[]>} */
-  tags: { type: Array, default: () => [] },
-  favOnly: { type: Boolean, default: false }
+  tags: { type: Array, default: () => [] }
 })
 
+defineEmits(['manageTag'])
 const store = useSnippetStore()
 const ui = useUiStore()
 const sectionOpen = ref(true)
@@ -44,19 +45,18 @@ watch(
   { immediate: true }
 )
 const byTag = (list) => list.filter((e) => matchesTags(e.tags, props.tags))
-// A row carries its place in the FULL group, not in the filtered view: dropping
-// A in front of B has to mean the same thing whether or not a filter is hiding
-// the rows between them.
-const placed = (list, group) =>
-  byTag(list).map((entry) => ({ entry, group, index: store[group].indexOf(entry) }))
-// One list, favorites first; the ★ filter keeps only them.
-const rows = computed(() => {
-  const favs = placed(visibleFavorites.value, 'favorites')
-  return props.favOnly ? favs : [...favs, ...placed(visibleListed.value, 'listed')]
-})
+// Favorites first; TagTree sorts them into sections.
+const items = computed(() => [...byTag(visibleFavorites.value), ...byTag(visibleListed.value)])
+// A row's place is in the FULL store group, so a drop means the same thing
+// whatever a filter hides; the section in the group key confines the drag to it.
+const storeGroup = (entry) => (entry.favorite ? 'favorites' : 'listed')
+const groupOf = (entry, section) => `${storeGroup(entry)}|${section}`
+const indexOf = (entry) => store[storeGroup(entry)].indexOf(entry)
+// The automatic format tag stays findable but makes no section of its own.
+const ownTags = (entry) => entry.tags.filter((t) => t !== languageOf(entry))
 
 const reorder = provideRowReorder((group, from, to) =>
-  ui.markMovedRow(store.reorder(group, from, to))
+  ui.markMovedRow(store.reorder(group.split('|')[0], from, to))
 )
 
 // A filter is on when there is a search term or a tag selected — the only time
@@ -68,7 +68,7 @@ const filtering = computed(() => !!props.search.trim() || props.tags.length > 0)
 useNewRowMarker({
   markedId: () => ui.lastCreatedRowId,
   locate: (id) =>
-    rows.value.some((r) => r.entry.id === id)
+    items.value.some((e) => e.id === id)
       ? 'visible'
       : store.entries.some((e) => e.id === id)
         ? 'filtered'
@@ -86,7 +86,6 @@ function newSnippet() {
   sectionOpen.value = true
   store.editingSnippet = { id: null }
 }
-const { run } = useCommands()
 </script>
 
 <template>
@@ -99,7 +98,7 @@ const { run } = useCommands()
       :first="first"
       :unified="unified"
       :panel="panel"
-      :count="rows.length"
+      :count="items.length"
       :filtering="filtering"
       @toggle="sectionOpen = !sectionOpen"
     >
@@ -113,34 +112,12 @@ const { run } = useCommands()
         >
           <AppIcon name="plus" />
         </button>
-        <button
-          class="btn btn-icon"
-          :data-tip="`${$t('snippetsPanel.openFile')}  ${MOD}+O`"
-          :aria-label="$t('snippetsPanel.openFile')"
-          @click.stop="run('open-file-as-snippet')"
-        >
-          <AppIcon name="folder-open" />
-        </button>
-        <button
-          class="btn btn-icon"
-          :data-tip="$t('snippetsPanel.export')"
-          :aria-label="$t('snippetsPanel.exportAllSnippetsToA')"
-          @click.stop="store.pendingExport = { all: true }"
-        >
-          <AppIcon name="arrow-up" />
-        </button>
-        <button
-          class="btn btn-icon"
-          :data-tip="$t('snippetsPanel.import')"
-          :aria-label="$t('snippetsPanel.importSnippetsFromAFile')"
-          @click.stop="store.pendingImport = true"
-        >
-          <AppIcon name="arrow-down" />
-        </button>
+        <span class="more-wrap" @click.stop><SnippetsMoreMenu /></span>
       </template>
     </SectionHeader>
 
     <div v-show="sectionOpen || panel" class="section-body">
+      <ProposalsGroup kind="snippet" />
       <div v-if="!store.entries.length" class="empty empty-cta">
         <p><AppIcon name="inbox" /> {{ $t('snippetsPanel.empty') }}</p>
         <button class="btn btn-primary btn-sm" @click.stop="newSnippet">
@@ -148,26 +125,32 @@ const { run } = useCommands()
         </button>
       </div>
 
-      <ul
-        v-if="store.entries.length"
-        class="rows"
+      <p v-if="store.entries.length && !items.length" class="empty small">
+        {{ $t('snippetsPanel.noSnippetsMatchTryRemoving') }}
+      </p>
+      <TagTree
+        v-if="items.length"
+        :items="items"
+        list="snippets"
+        :searching="filtering"
+        :scope="tags[0] ?? ''"
+        :color-of="store.colorOf"
+        :tags-of="ownTags"
         :class="{ reordering: reorder.isReordering.value }"
+        @manage="$emit('manageTag', $event)"
       >
-        <li v-if="!rows.length" class="empty small">
-          {{ $t('snippetsPanel.noSnippetsMatchTryRemoving') }}
-        </li>
-        <SnippetRow
-          v-for="row in rows"
-          :key="row.entry.id"
-          :entry="row.entry"
-          :favorite="row.entry.favorite"
-          :group="row.group"
-          :index="row.index"
-          @hover-title="onRowEnter(row.entry, $event)"
-          @leave-title="onRowLeave"
-          @dragging="dismiss"
-        />
-      </ul>
+        <template #row="{ item, section }">
+          <SnippetRow
+            :entry="item"
+            :favorite="item.favorite"
+            :group="groupOf(item, section)"
+            :index="indexOf(item)"
+            @hover-title="onRowEnter(item, $event)"
+            @leave-title="onRowLeave"
+            @dragging="dismiss"
+          />
+        </template>
+      </TagTree>
     </div>
 
     <!-- Fixed-positioned (escapes the sidebar scroll), so it lives INSIDE the

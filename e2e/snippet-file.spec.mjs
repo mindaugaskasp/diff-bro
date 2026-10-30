@@ -9,7 +9,8 @@ import {
   showPanel,
   stubOpenDialog,
   stubSaveDialog,
-  openMenu
+  openMenu,
+  markSecret
 } from './fixtures.mjs'
 
 const more = (page) => docActions(page).getByRole('button', { name: 'More snippet actions' })
@@ -20,7 +21,10 @@ async function newSnippet(page, { name, body, secret = false }) {
   await doc.getByPlaceholder('Snippet name…').fill(name)
   await doc.locator('.editor').click()
   await page.keyboard.type(body)
-  if (secret) await doc.getByRole('checkbox', { name: 'Secret' }).check()
+  if (secret) {
+    await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+    await markSecret(page, name)
+  }
   return doc
 }
 
@@ -79,8 +83,7 @@ test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab'
   const { dir, path } = textFile('notes.md', '# heading')
   try {
     await stubOpenDialog(app, path)
-    await page.getByRole('button', { name: 'File', exact: true }).click()
-    await page.getByText('Open File as Snippet…', { exact: true }).click()
+    await openMenu(page, 'File', 'Open File as Snippet…')
     const doc = page.getByRole('region', { name: 'New snippet' })
     await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('notes.md')
     await expect(doc.locator('.view-lines')).toContainText('# heading')
@@ -89,12 +92,13 @@ test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab'
   }
 })
 
-test('the Snippets panel opens a file as a snippet from its header', async ({ app, page }) => {
+test('the Snippets panel opens a file as a snippet from its ⋯ menu', async ({ app, page }) => {
   const { dir, path } = textFile('query.sql', 'SELECT 1')
   try {
     await stubOpenDialog(app, path)
     await showPanel(page, 'snippets')
-    await page.getByRole('button', { name: 'Open a text file as a snippet' }).click()
+    await page.getByRole('button', { name: 'Snippet library actions' }).click()
+    await page.getByRole('menuitem', { name: /Open a text file as a snippet/ }).click()
     await expect(
       page.getByRole('region', { name: 'New snippet' }).getByPlaceholder('Snippet name…')
     ).toHaveValue('query.sql')
