@@ -366,27 +366,28 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   accent-tinted glow into a halo. A finished proposal carries the per-theme
   verdict, the exact token-driven CSS, and the trade-offs; a single-theme mockup
   is not a proposal.
-- **A tile carries its own resting cues.** `.tile` (ui.css) is
-  for a grid of destinations — the Tools panel, Home's pinned and quick-tool
-  cards — where twelve outlined boxes read as a keyboard. Its resting
-  affordance is three other cues: a hue-tinted `.glyph-well`, the `--bg-card`
-  surface and `--shadow-1`. The three hard-keyline themes keep an edge through
-  `--line`. `check-theme-depth.mjs` holds the replacement to floors: glyph on its
-  well ≥ 4.5, card lighter than the panel on every light ground. Colour lives in
-  the well, legibility in the glyph (`--glyph-*` is 30% hue, 70% ink).
-- **Hover changes two things: the face and the edge or lift.** A shadow step
-  alone is not a hover; on the dark grounds `--shadow-2` barely moves. A tile
-  steps to `--tile-face-hover` with a `--btn-edge-strong` keyline; a text
-  toggle gains the `--btn-face` wash; the accent never goes on a hovered label.
-  The theme sweep's `hover` channel holds the face step to 1.15 (`.btn`'s own
-  hover bar) and the hovered label and edge to their usual floors on all 20.
+- **A tile is an icon over its name, and nothing else at rest.** `.tile`
+  (ui.css) is for a grid of destinations: the Tools panel, and Home's pinned and
+  quick-tool tiles, three to a row. It has no face, edge or shadow at rest (#144,
+  Q7); the hue-tinted `.glyph-well` is its affordance. Colour lives in the well,
+  legibility in the glyph (`--glyph-*` is 30% hue, 70% ink), and the theme sweep
+  holds the glyph on its well to 4.5. The name is one line, cut with an
+  ellipsis, so every tile in a row is the same height; a name that can run long
+  carries itself in `data-tip`. The three hard-keyline themes keep an edge
+  through `--tile-edge`.
+- **Hover changes the face, and on a raised control the edge or lift too.** A
+  shadow step alone is not a hover; on the dark grounds `--shadow-2` barely
+  moves. A row gains the `--row-hover` wash and a tile the slightly firmer
+  `--tile-face-hover`; a text toggle gains the
+  `--btn-face` wash; the accent never goes on a hovered label. The theme sweep's
+  `hover` channel holds the face step to 1.15 (`.btn`'s own hover bar) and the
+  hovered label and edge to their usual floors on all 20.
 - **Secondary text is `--text-meta`, not `--text-dim`.** Ages, counts and tag
   words in a row are 10.5–11.5px and answer to 4.5:1; `--text-dim` misses that
   on solar, sepia, nord and bloom. `--text-dim` stays for what it was tuned for.
 - **Controls and glyphs use the predefined size scale — never a bespoke box.**
   `--control-h` (30px), `--control-h-sm` (26px) and `--chip-h` (20px) in
-  `tokens.css` are the only heights a button, icon button or key chip may take
-  (plus `--tile-h` for a `.tile`),
+  `tokens.css` are the only heights a button, icon button or key chip may take,
   and `ui.css` already ships `.btn`, `.btn-sm`, `.btn-icon` and `.ql-kbd` for
   them. Never let a control's height fall out of padding + font-size: that is how
   the Esc chip drifted to 19px beside a 26px button, and it silently re-breaks on

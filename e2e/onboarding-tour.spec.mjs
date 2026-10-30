@@ -96,7 +96,8 @@ test('the veil takes the pointer everywhere the step does not want it', async ({
   // A live step leaves its control alone: the editor step invites you to press
   // the Save it rings, so that one hole really is open.
   await advance(page, 5)
-  expect(await at('[data-tour="snippet-save"]', 6, 6)).toBe('live')
+  await expect(callout(page).locator('.tour-step-n')).toHaveText(/^Step 6 of \d+$/)
+  await expect.poll(() => at('[data-tour="snippet-save"]', 6, 6)).toBe('live')
 
   // The diagram step's hole is the whole pane, labels and all — a click there
   // would open a picker over a step about reading the picture.

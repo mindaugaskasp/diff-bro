@@ -88,7 +88,7 @@ const isEmpty = computed(() => !pinned.value.length && !recent.value.length && !
       <h3 class="home-head">{{ $t('homePanel.pinned') }}</h3>
       <div class="home-grid">
         <div v-for="item in pinned" :key="`${item.kind}-${item.id}`" class="home-item home-pin">
-          <button type="button" class="tile" @click="openItem(item)">
+          <button type="button" class="tile" :data-tip="item.name" @click="openItem(item)">
             <span class="glyph-well" :data-hue="item.hue">
               <template v-if="item.glyph">{{ item.glyph.text }}</template>
               <AppIcon v-else :name="item.icon" />
