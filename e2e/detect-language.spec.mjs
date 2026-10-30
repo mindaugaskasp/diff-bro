@@ -1,26 +1,17 @@
 import { test, expect, openNewSnippet } from './fixtures.mjs'
 
-// Auto-detect drives the snippet editor's syntax indicator live as you type: on
-// 'Auto-detect', the picker shows "→ <detected>" recomputed from the Monaco
-// content. Only a real launch exercises this end to end — Monaco typing feeding
-// the detector feeding the reactive label — so this guards the wiring the unit
-// tests can't (they call the pure detector directly, never through the editor).
-test('the editor shows and updates the auto-detected syntax as you type', async ({ page }) => {
+// Monaco typing → detector → the footer's Auto label: only a real launch has that wiring.
+test('the footer names the auto-detected syntax as you type', async ({ page }) => {
   await openNewSnippet(page)
-  const dialog = page.getByRole('region', { name: 'New snippet' })
-  await expect(dialog).toBeVisible()
+  const doc = page.getByRole('region', { name: 'New snippet' })
+  const syntax = doc.locator('.editor-status').getByRole('combobox', { name: 'Syntax' })
+  await expect(syntax.locator('option:checked')).toHaveText('Auto-detect · Plain text')
 
-  // A blank draft detects as plaintext — the baseline the indicator starts on.
-  const detected = dialog.locator('.lang-detected')
-  await expect(detected).toHaveText('→ plaintext')
-
-  // Type a shebang (bracket-free, so Monaco's auto-closing can't perturb it):
-  // the detector reads the interpreter and the label flips to shell.
-  await dialog.locator('.editor').click()
+  // Bracket-free, so Monaco's auto-closing can't perturb it.
+  await doc.locator('.editor').click()
   await page.keyboard.type('#!/bin/bash')
-  await expect(detected).toHaveText('→ shell')
+  await expect(syntax.locator('option:checked')).toHaveText('Auto-detect · Bash / Shell')
 
-  // Choosing an explicit syntax overrides auto-detect, and the "→" hint hides.
-  await dialog.getByLabel('Syntax').selectOption('python')
-  await expect(detected).toBeHidden()
+  await syntax.selectOption('python')
+  await expect(syntax.locator('option:checked')).toHaveText('Python')
 })

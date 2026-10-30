@@ -1,4 +1,12 @@
-import { test, expect, openNewSnippet, snippetDoc, editInPlace, docActions } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openNewSnippet,
+  snippetDoc,
+  editInPlace,
+  docActions,
+  markSecret
+} from './fixtures.mjs'
 
 // jsdom has no editing host, so only a launch proves a person typing into the
 // rendered view and the snippet actually changing.
@@ -12,7 +20,10 @@ async function startSnippet(page, { name, language, body }) {
   await openNewSnippet(page)
   const editor = editorDialog(page)
   await editor.getByPlaceholder('Snippet name…').fill(name)
-  await editor.locator('.lang-picker select').selectOption(language)
+  await editor
+    .locator('.editor-status')
+    .getByRole('combobox', { name: 'Syntax' })
+    .selectOption(language)
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
   return editor
@@ -123,13 +134,13 @@ test('an edit in the rendered view survives a save and reopen', async ({ page })
 })
 
 test('a secret snippet shows no plaintext in the rendered view while masked', async ({ page }) => {
-  const editor = await startSnippet(page, {
+  await startSnippet(page, {
     name: 'WYSIWYG Secret',
     language: 'markdown',
     body: '# classified'
   })
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, 'WYSIWYG Secret')
 
   const row = page.locator('.snippets-section .row', { hasText: 'WYSIWYG Secret' }).first()
   await row.locator('.entry').click()

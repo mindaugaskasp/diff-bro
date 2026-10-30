@@ -954,11 +954,10 @@
     "hide": "Hide",
     "copiedToClipboard": "Copied to clipboard",
     "copyTheContents": "Copy the contents to the clipboard",
-    "prettyPrintAs": "Pretty-print as {format}",
-    "formatUnavailable": "Formatting is available for JSON, XML, SQL or Mermaid",
-    "unmangleTip": "Put back the arrows, quotes and spaces a paste broke",
     "history": "History",
-    "historyTip": "Every past edit, each diffed against the one before it"
+    "historyTip": "Every past edit, each diffed against the one before it",
+    "format": "Format",
+    "repair": "Repair"
   },
   "snippetHistoryDialog": {
     "title": "History — {name}",
@@ -975,17 +974,12 @@
   "snippetEditorDialog": {
     "snippetName": "Snippet name…",
     "viewMode": "View mode",
-    "keepTheContentsMaskedEverywhere": "Keep the contents masked everywhere; copying still works",
     "name": "Name",
     "aSnippetNeedsAName": "A snippet needs a name to save.",
-    "secret": "Secret",
-    "content": "Content",
     "rendered": "Rendered",
     "plain": "Plain",
     "syntax": "Syntax",
     "aSnippetNeedsContentTo": "A snippet needs content to save.",
-    "secretHint": "{label} — hide the contents behind ****",
-    "orDropAFile": "— or drop a file here",
     "renderedEditor": "Rendered content, editable",
     "newSnippetTitle": "New snippet",
     "editSnippet": "Edit snippet",
@@ -1726,7 +1720,9 @@
     "teal": "Teal",
     "blue": "Blue",
     "violet": "Violet",
-    "none": "No colour"
+    "none": "No colour",
+    "secret": "Secret",
+    "secretTip": "Keep the contents masked everywhere; copying still works"
   },
   "homePanel": {
     "pinned": "Pinned",

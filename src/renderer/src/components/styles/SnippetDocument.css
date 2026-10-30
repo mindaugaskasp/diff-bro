@@ -21,18 +21,6 @@
   flex: 1;
   min-width: 140px;
 }
-/* Gives way first: the explanation ellipses down to the checkbox and its word. */
-.doc-secret {
-  flex: 0 100 auto;
-  min-width: 5.5em;
-  overflow: hidden;
-  margin-left: auto;
-}
-.doc-secret > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 /* Both layers: the completion ghost drifts off the caret if their type differs. */
 .doc-name :deep(.ghost-field input),
 .doc-name :deep(.ghost-layer) {
@@ -42,14 +30,24 @@
 .doc-name :deep(.ghost-field input) {
   width: 100%;
 }
-/* The document's title, not a greyed form field: view mode is the fill, not the ink. */
+/* A title, not a form field: the box shows on hover and focus only. */
+.doc-name :deep(.ghost-field),
+.doc-name :deep(.ghost-field.ro) {
+  border-color: var(--field-edge);
+  background: transparent;
+}
 .doc-name :deep(.ghost-field.ro > input) {
   color: var(--text);
-  background: var(--bg);
   cursor: text;
 }
-.doc-name :deep(.ghost-field.ro > input:hover) {
+.doc-name :deep(.ghost-field.ro:hover) {
   border-color: var(--btn-edge);
+}
+.doc-name :deep(.ghost-field:focus-within) {
+  border-color: var(--accent);
+}
+.doc-name :deep(.ghost-field.invalid) {
+  border-color: var(--danger-border);
 }
 .doc-body {
   flex: 1;

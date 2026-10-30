@@ -9,7 +9,8 @@ import {
   showPanel,
   stubOpenDialog,
   stubSaveDialog,
-  openMenu
+  openMenu,
+  markSecret
 } from './fixtures.mjs'
 
 const more = (page) => docActions(page).getByRole('button', { name: 'More snippet actions' })
@@ -20,7 +21,10 @@ async function newSnippet(page, { name, body, secret = false }) {
   await doc.getByPlaceholder('Snippet name…').fill(name)
   await doc.locator('.editor').click()
   await page.keyboard.type(body)
-  if (secret) await doc.getByRole('checkbox', { name: 'Secret' }).check()
+  if (secret) {
+    await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+    await markSecret(page, name)
+  }
   return doc
 }
 

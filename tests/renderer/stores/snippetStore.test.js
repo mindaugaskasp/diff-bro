@@ -953,3 +953,31 @@ describe('snippetStore — row colour', () => {
     await expect(store.load(id)).resolves.toBe('SELECT 1')
   })
 })
+
+// Secret is set from the row menu: metadata only, so it never re-encrypts.
+describe('snippetStore — marking secret', () => {
+  const seed = (store) => store.add({ name: 'key', content: 'sk-1', tags: [] })
+
+  it('marks and unmarks, and persists it', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    store.setSnippetSecret(id, true)
+    expect(store.entries[0].secret).toBe(true)
+    setActivePinia(createPinia())
+    expect(useSnippetStore().entries[0].secret).toBe(true)
+
+    useSnippetStore().setSnippetSecret(id, false)
+    expect(useSnippetStore().entries[0].secret).toBe(false)
+  })
+
+  it('leaves the content and its history untouched, and ignores an unknown id', async () => {
+    const store = useSnippetStore()
+    const id = await seed(store)
+    const before = { ...store.entries[0] }
+    store.setSnippetSecret(id, true)
+    expect(store.entries[0].data).toBe(before.data)
+    expect(store.entries[0].updatedAt).toBe(before.updatedAt)
+    expect(store.entries[0].history ?? []).toEqual(before.history ?? [])
+    expect(() => store.setSnippetSecret('no-such-id', true)).not.toThrow()
+  })
+})

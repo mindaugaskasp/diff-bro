@@ -31,7 +31,10 @@ async function saveJsonSnippet(page, name) {
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill(name)
-  await editor.locator('.lang-picker select').selectOption('json')
+  await editor
+    .locator('.editor-status')
+    .getByRole('combobox', { name: 'Syntax' })
+    .selectOption('json')
   await editor.locator('.editor').click()
   await page.keyboard.type('{ "keep": true, "count": 42 }')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()

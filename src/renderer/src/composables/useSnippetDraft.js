@@ -9,6 +9,7 @@ import { formatJson, formatXml } from '../utils/textFormats'
 import { formatSql } from '../utils/sqlFormat'
 import { repairMermaid } from '../utils/mermaid'
 import { useUiStore } from '../stores/uiStore'
+import { isSecret } from '../utils/secretSnippet'
 
 // Mermaid's entry repairs rather than pretty-prints — see repairMermaid.
 const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql, mermaid: repairMermaid }
@@ -21,16 +22,14 @@ function initialFields(editing, existing) {
       name: editing.initialName ?? '',
       content: editing.initialContent ?? '',
       tags: editing.initialTags ?? [],
-      language: editing.initialLanguage ?? 'auto',
-      secret: false
+      language: editing.initialLanguage ?? 'auto'
     }
   }
   return {
     name: existing.name ?? '',
     content: '',
     tags: existing.tags ?? [],
-    language: existing.language || 'auto',
-    secret: existing.secret === true
+    language: existing.language || 'auto'
   }
 }
 
@@ -48,7 +47,10 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
 
   const name = ref(initial.name)
   const content = ref(initial.content)
-  const secret = ref(initial.secret)
+  // Set from the row menu, so it is read from the library, never edited here.
+  const secret = computed(
+    () => editing.id != null && isSecret(store.entries.find((e) => e.id === editing.id))
+  )
   // A new snippet is being typed, so it starts shown; an existing secret opens
   // masked and only un-masks when its owner asks. Reveal is per-open, never
   // stored — reopening a secret always starts hidden again.
@@ -86,12 +88,8 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
   const close = onClose
 
   // Unsaved-changes guard: a dirty draft confirms before closing.
-  const baselineSecret = ref(initial.secret)
   const isDirty = computed(
-    () =>
-      name.value !== baselineName.value ||
-      content.value !== baselineContent.value ||
-      secret.value !== baselineSecret.value
+    () => name.value !== baselineName.value || content.value !== baselineContent.value
   )
   const confirmingDiscard = ref(false)
   function requestClose() {
@@ -123,7 +121,6 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
       name: name.value,
       content: content.value,
       language: chosenLanguage.value,
-      secret: secret.value,
       contentChanged: content.value !== baselineContent.value,
       tags,
       tagColors
@@ -140,7 +137,6 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     }
     baselineName.value = name.value
     baselineContent.value = content.value
-    baselineSecret.value = secret.value
     onSaved(editing.id)
   }
 

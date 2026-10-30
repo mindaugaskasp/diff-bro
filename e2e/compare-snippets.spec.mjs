@@ -6,7 +6,8 @@ import {
   closeSnippet,
   closeComparison,
   editInPlace,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
@@ -111,8 +112,8 @@ test('a secret snippet is not draggable', async ({ page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Prod API key')
   await editor.locator('.editor').click()
   await page.keyboard.type('sk-live-DEADBEEF')
-  await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
+  await markSecret(page, 'Prod API key')
   await closeSnippet(page)
 
   const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()

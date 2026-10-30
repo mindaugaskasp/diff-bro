@@ -1,0 +1,15 @@
+/* --text-meta, not the accent: the accent as ink misses 4.5:1 on some themes. */
+.lang-select {
+  field-sizing: content;
+  appearance: none;
+  height: var(--control-h-sm);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-meta);
+  font-family: inherit;
+  font-size: var(--font-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

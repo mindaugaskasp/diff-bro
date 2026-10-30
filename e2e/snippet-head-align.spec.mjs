@@ -5,7 +5,6 @@ const bottomOf = async (locator) => {
   return Math.round(box.y + box.height)
 }
 const topBand = (page) => page.locator('.usb-controls:visible')
-const sectionHead = (page) => page.locator('.section-head.band-row:visible').first()
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1400, height: 860 })
@@ -16,20 +15,8 @@ test('the snippet head ends on the sidebar search band', async ({ page }) => {
   await page.locator('.snippets-section .row').first().click()
   const doc = page.getByRole('region', { name: 'Snippet', exact: true })
   const head = await bottomOf(doc.locator('.doc-head'))
-  // Home has no tag shelf under its search (the shelf goes in slice 6 of #144).
   await showPanel(page, 'home')
   expect(head).toBe(await bottomOf(topBand(page)))
-})
-
-test('the Content bar lines up with the section header', async ({ page }) => {
-  test.fixme(
-    true,
-    '#144 slice 6: the tag shelf pushes the header down until the tag tree replaces it'
-  )
-  await showPanel(page, 'snippets')
-  await page.locator('.snippets-section .row').first().click()
-  const doc = page.getByRole('region', { name: 'Snippet', exact: true })
-  expect(await bottomOf(doc.locator('.editor-header'))).toBe(await bottomOf(sectionHead(page)))
 })
 
 test('the comparison file slots end on the sidebar top band', async ({ page }) => {

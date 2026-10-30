@@ -301,6 +301,18 @@ export async function pickTag(page, name) {
 
 export const docActions = (page) => page.locator('#toolbar-doc-actions')
 
+export const snippetMoreMenu = (page) =>
+  docActions(page).getByRole('button', { name: 'More snippet actions' })
+
+// Secret lives in the row's right-click menu, so a snippet is saved before it is marked.
+export async function markSecret(page, name, on = true) {
+  await page.locator('.snippets-section .row', { hasText: name }).first().click({ button: 'right' })
+  const item = page.getByRole('menuitemcheckbox', { name: 'Secret' })
+  await expect(item).toHaveAttribute('aria-checked', String(!on))
+  await item.click()
+  await expect(item).toHaveCount(0)
+}
+
 // It re-titles itself (New / Edit / Snippet); only the active tab's is visible.
 export const snippetDoc = (page) => page.locator('.snippet-doc:visible')
 

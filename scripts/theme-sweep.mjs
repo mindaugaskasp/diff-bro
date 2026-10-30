@@ -458,10 +458,7 @@ const SURFACES = [
     probes: {
       'click-to-edit cue': ['.edit-cue', TEXT],
       'cue keyline': ['.edit-cue', DIM, 'border'],
-      'hover ring': ['.editor-area:not(.editing) .editor', DIM, 'outline'],
-      'drop hint': ['.snippet-doc .drop-hint', TEXT],
-      // Disabled here (nothing to format in this syntax): an inactive control, held to DIM.
-      'format button (disabled)': ['.snippet-doc .editor-header .btn:disabled', DIM]
+      'hover ring': ['.editor-area:not(.editing) .editor', DIM, 'outline']
     }
   },
   {
@@ -501,6 +498,7 @@ const SURFACES = [
     probes: {
       'status text': ['.snippet-doc .editor-status', TEXT],
       'zoom level': ['.snippet-doc .es-level', TEXT],
+      'syntax picker': ['.snippet-doc .es-lang', TEXT],
       'line number': ['.snippet-doc .editor .line-numbers', TEXT],
       'popover hint': ['.tt-pop .tt-hint', TEXT],
       'built-in tag': ['.tt-pop .tt-tag', TEXT],
@@ -749,7 +747,10 @@ const SURFACES = [
       await page.getByRole('button', { name: 'New snippet', exact: true }).click()
       const editor = page.getByRole('region', { name: 'New snippet' })
       await editor.getByPlaceholder('Snippet name…').fill('Rendered')
-      await editor.locator('.lang-picker select').selectOption('markdown')
+      await editor
+        .locator('.editor-status')
+        .getByRole('combobox', { name: 'Syntax' })
+        .selectOption('markdown')
       await editor.locator('.editor').click()
       // Both box states: accent-color only paints once a box is TICKED.
       await page.keyboard.type(
@@ -765,7 +766,9 @@ const SURFACES = [
       heading: ['.rendered-editor .ji-h', TEXT],
       // Quote ink gives way deliberately, so it answers to the 3:1 floor.
       quoted: ['.rendered-editor .ji-quote', DIM],
-      'task label': ['.rendered-editor .ji-task', TEXT]
+      'task label': ['.rendered-editor .ji-task', TEXT],
+      'view switch (on)': ['.es-view .es-btn.on', TEXT],
+      'view switch (off)': ['.es-view .es-btn:not(.on)', TEXT]
     }
   },
   {
@@ -882,7 +885,8 @@ const SURFACES = [
       await page.getByRole('button', { name: /^Close Example — Claude review/ }).click()
     },
     probes: {
-      'menu item': ['.ctx .ctx-item', TEXT],
+      'menu item': ['.ctx .ctx-item:not(:disabled)', TEXT],
+      'menu item, disabled': ['.ctx .ctx-item:disabled', DIM],
       'shortcut hint': ['.ctx .ctx-keys', TEXT],
       'menu keyline': ['.ctx', SEPARATOR, 'border']
     }
@@ -952,8 +956,7 @@ const SURFACES = [
     probes: {
       'tab name': ['.diff-tabs .tab.active .name', TEXT],
       'tab kind glyph': ['.diff-tabs .tab.active .kind', DIM],
-      'snippet name': ['.snippet-doc .doc-name input', TEXT],
-      'editor header': ['.snippet-doc .editor-header', TEXT]
+      'snippet name': ['.snippet-doc .doc-name input', TEXT]
     }
   },
   {
@@ -1282,7 +1285,8 @@ const SURFACES = [
       'menu keyline': ['.rcm', SEPARATOR, 'border'],
       // The cursor's mark: an accent keyline is the only thing saying which
       // target a keypress would take.
-      'cursor keyline': ['.rcm-sw.hot', DIM, 'border']
+      'cursor keyline': ['.rcm-sw.hot', DIM, 'border'],
+      'secret item': ['.rcm .ctx-item', TEXT]
     }
   },
   {

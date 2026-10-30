@@ -1,4 +1,4 @@
-import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
+import { test, expect, openNewSnippet, docActions, snippetMoreMenu } from './fixtures.mjs'
 
 // Only a real launch has Mermaid's parser, so "the diagram was broken and now
 // renders" can only be answered here. The input is exactly what Word and
@@ -18,17 +18,19 @@ test('a diagram broken by a paste is repaired by its own button', async ({ page 
   await expect(editor.locator('.mmd-preview .err')).toBeVisible()
   await expect(editor.locator('.mmd-preview .mermaid-diagram svg')).toHaveCount(0)
 
-  // The editor's own button, named for what it does to a diagram.
-  const repair = editor.getByRole('button', { name: 'Repair', exact: true })
-  await expect(repair).toBeEnabled()
-  await repair.click()
+  // The ⋯ menu's Format, named for what it does to a diagram.
+  const repair = async () => {
+    await snippetMoreMenu(page).click()
+    await page.getByRole('menuitem', { name: 'Repair', exact: true }).click()
+  }
+  await repair()
 
   await expect(page.getByText('Repaired the diagram.')).toBeVisible()
   await expect(editor.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
   await expect(editor.locator('.mmd-preview .err')).toHaveCount(0)
 
   // Pressing it again has nothing left to do, and says so rather than going quiet.
-  await repair.click()
+  await repair()
   await expect(page.getByText('Nothing to repair.')).toBeVisible()
 })
 
@@ -40,7 +42,8 @@ test('the repair is what gets saved', async ({ app, page }) => {
   await editor.getByPlaceholder('Snippet name…').fill('Saved flow')
   await editor.locator('.editor').click()
   await page.keyboard.insertText(BROKEN)
-  await editor.getByRole('button', { name: 'Repair', exact: true }).click()
+  await snippetMoreMenu(page).click()
+  await page.getByRole('menuitem', { name: 'Repair', exact: true }).click()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(editor).toBeHidden()
 

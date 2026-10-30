@@ -21,7 +21,7 @@ import { sentenceCaseName, untitledName } from '../utils/snippetName'
 import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
 import { forgetTag, tagActions } from './snippetTags'
-import { colorActions } from './snippetColor'
+import { markActions } from './snippetMarks'
 import { EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET } from '../utils/snippetExamples'
 import { historyActions } from './snippetHistory'
 import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
@@ -299,7 +299,7 @@ export const useSnippetStore = defineStore('snippets', {
     // list cannot cross the boundary — no guard needed, and none to drift.
     reorder: reorderAction((s, name) => (name in GROUPS ? group(s.entries, name) : null)),
     ...tagActions,
-    ...colorActions,
+    ...markActions,
     ...historyActions,
     /**
      * Remove a tag from the registry. By default the records keep living and

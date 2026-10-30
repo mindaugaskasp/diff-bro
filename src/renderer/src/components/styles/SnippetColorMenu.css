@@ -90,3 +90,10 @@
   background: var(--bg-raised);
   border-radius: var(--radius-pill);
 }
+.rcm .ctx-sep {
+  margin: var(--space-2) 0;
+}
+.rcm .ctx-item {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+}

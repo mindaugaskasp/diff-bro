@@ -9,7 +9,8 @@ import {
   snippetDoc,
   editInPlace,
   closeSnippet,
-  docActions
+  docActions,
+  markSecret
 } from './fixtures.mjs'
 import { rmSync } from 'node:fs'
 import { focusEditor } from './monaco.mjs'
@@ -25,9 +26,9 @@ async function createSnippet(page, name, body, { secret = false } = {}) {
   await editor.getByPlaceholder('Snippet name…').fill(name)
   await focusEditor(editor)
   await page.keyboard.type(body)
-  if (secret) await editor.locator('.secret-toggle input[type="checkbox"]').check()
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
+  if (secret) await markSecret(page, name)
 }
 
 async function editSnippet(page, name, body) {
