@@ -137,7 +137,9 @@ const isEmpty = computed(() => !pinned.value.length && !recent.value.length && !
       </div>
     </section>
 
-    <p v-if="isEmpty" class="home-empty">{{ $t('homePanel.nothingMatches') }}</p>
+    <p v-if="isEmpty" class="home-empty">
+      {{ q ? $t('homePanel.noSearchResults') : $t('homePanel.nothingMatches') }}
+    </p>
   </div>
 </template>
 

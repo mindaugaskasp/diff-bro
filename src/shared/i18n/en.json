@@ -412,7 +412,7 @@
     },
     "share": {
       "title": "Send it sealed, not screenshotted",
-      "body": "Share seals this comparison so only the people you pick can open it, for as long as you choose. The first time with someone, swap keys in Keys, at the bottom of the rail."
+      "body": "Share seals this comparison so only the people you pick can open it, for as long as you choose. The first time with someone, swap keys in Security ▸ Trusted Keys."
     },
     "library": {
       "title": "Search narrows as you type",
@@ -1699,6 +1699,7 @@
     "recent": "Recent",
     "quickTools": "Quick tools",
     "nothingMatches": "Nothing here yet — save a diff or a snippet and it shows up.",
+    "noSearchResults": "Nothing matches that search.",
     "day": {
       "today": "Today",
       "yesterday": "Yesterday",

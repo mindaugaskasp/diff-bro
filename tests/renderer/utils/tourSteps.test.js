@@ -7,6 +7,7 @@ import {
 } from '../../../src/renderer/src/utils/tourSteps'
 import { COMMANDS } from '../../../src/renderer/src/utils/commands'
 import { createTranslator } from '../../../src/shared/i18n'
+import { MENU_MAP } from '../../menuMap.fixture'
 
 const t = createTranslator('en')
 
@@ -58,11 +59,11 @@ describe('TOUR_STEPS', () => {
     }
   })
 
-  // The keys were moved to a rail panel; a step naming the old menu path sends
-  // people to something that is not there.
   it('names no menu path that no longer exists', () => {
     const copy = TOUR_STEPS.map((s) => t(s.bodyKey)).join(' ')
-    expect(copy).not.toMatch(/Security ▸|Fourteen themes/)
+    expect(copy).not.toMatch(/Fourteen themes/)
+    const paths = copy.match(/[A-Z][\w ]*(?: ▸ [A-Z][\w ]*)+/g) ?? []
+    for (const path of paths) expect(MENU_MAP.join('\n')).toContain(path)
   })
 })
 
