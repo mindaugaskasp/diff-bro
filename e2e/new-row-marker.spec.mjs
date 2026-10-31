@@ -74,9 +74,11 @@ test('a newly created snippet marks itself with a soft rail and a quiet badge', 
     const wash = el
       .getAnimations({ subtree: true })
       .find((a) => a.effect.pseudoElement === '::before')
-    return wash.effect.getKeyframes()[0].background
+    wash.pause()
+    wash.currentTime = 0
+    return getComputedStyle(el, '::before').backgroundColor
   })
-  expect(peak, 'the wash peaks at a soft 10%').toContain('10%')
+  expect(peak, 'the wash peaks at a soft 10%').toMatch(/\/ 0\.1\)$/)
 })
 
 // The wash is the part a reader sees from across the screen, and the first
