@@ -1,6 +1,6 @@
 <script setup>
 import { t } from '../i18n'
-import { computed, ref, onMounted } from 'vue'
+import { computed, nextTick, ref, onMounted } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { TTL_OPTIONS } from '../stores/vaultStore'
 import { useSnippetStore } from '../stores/snippetStore'
@@ -25,13 +25,14 @@ const startTags = ref([])
 const nameInput = ref(null)
 const tagField = ref(null)
 
-onMounted(() => {
+onMounted(async () => {
   const start = initial()
   name.value = start.name
   secure.value = start.secure
   ttl.value = start.ttl
   startTags.value = start.tags
   nameInput.value?.focus()
+  await nextTick()
   nameInput.value?.select()
 })
 

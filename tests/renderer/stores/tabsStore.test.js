@@ -325,6 +325,24 @@ describe('a tab holding a saved diff', () => {
     expect(vault.entries.find((e) => e.id === id).name).toBe('Renamed in the tab')
   })
 
+  it("keeps a saved diff's name as written, in the vault and on the tab", async () => {
+    const vault = useVaultStore()
+    window.api = {
+      vaultEncrypt: async (plaintext) => ({ iv: 'iv', data: plaintext }),
+      vaultDecrypt: async (box) => box.data,
+      storeSave: () => {}
+    }
+    const name = 'Release 2.0 (payments) ↔ app.config.json and everything downstream of it'
+    const id = await vault.save(name, null, { mode: 'files' })
+    const tabs = withTabs(comparison('a.txt', 'b.txt'))
+    tabs.open(comparison('a.txt', 'b.txt'), { diffSaved: true, entryId: id, name })
+    expect(tabLabel(tabs.active)).toBe(name)
+
+    tabs.rename(tabs.activeId, name)
+    expect(vault.entries.find((e) => e.id === id).name).toBe(name)
+    expect(tabLabel(tabs.active)).toBe(name)
+  })
+
   it('leaves the vault alone for a tab that was never saved', () => {
     const vault = useVaultStore()
     const tabs = withTabs(comparison('a.txt', 'b.txt'))

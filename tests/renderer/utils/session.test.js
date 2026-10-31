@@ -7,7 +7,8 @@ import {
   packSession,
   readEnvelope,
   readSession,
-  readSnapshot
+  readSnapshot,
+  tabFromStored
 } from '../../../src/renderer/src/utils/session'
 import { MAX_TABS, blankSnapshot, isHalfLoaded } from '../../../src/renderer/src/utils/tabs'
 
@@ -341,5 +342,13 @@ describe('readSession — the view a snapshot never recorded', () => {
 
   it('still refuses a value that is not a boolean', () => {
     expect(withView('yes')).toBeUndefined()
+  })
+})
+
+describe('tabFromStored — names', () => {
+  it("keeps a saved diff's name and still cleans an unsaved tab's", () => {
+    const stored = { snapshot: blankSnapshot(), customTitle: 'a.json ↔ b.json' }
+    expect(tabFromStored({ ...stored, entryId: 'e1' }).customTitle).toBe('a.json ↔ b.json')
+    expect(tabFromStored(stored).customTitle).toBe('ajson bjson')
   })
 })
