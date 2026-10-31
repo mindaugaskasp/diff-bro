@@ -246,26 +246,26 @@ export const useDiffStore = defineStore('diff', {
     async _place(side, source) {
       this.receive(side, typeof source === 'string' ? await window.api.readFile(source) : source)
     },
-    // Apply a unified .patch to a chosen base file and open base ↔ patched in
-    // the diff view, so the change is shown, not just written.
-    async applyPatch() {
+    // Apply a unified .patch to a chosen base file and hand back base ↔ patched,
+    // so the change is shown, not just written. Null when there is nothing to show.
+    async patchedSides() {
       const base = await window.api.openFile('base')
-      if (!base || base.error || typeof base.content !== 'string') return
+      if (!base || base.error || typeof base.content !== 'string') return null
       const patchFile = await window.api.openFile('patch')
-      if (!patchFile || patchFile.error || typeof patchFile.content !== 'string') return
+      if (!patchFile || patchFile.error || typeof patchFile.content !== 'string') return null
       const { output, rejected, error } = applyUnifiedDiff(base.content, patchFile.content)
       if (error) {
         this.showNotice(`"${patchFile.name}" is not a unified diff.`)
-        return
+        return null
       }
-      this.left = { path: base.path, name: base.name, content: base.content }
-      this.right = { path: null, name: `${base.name} (patched)`, content: output }
-      this.mode = 'files'
-      this.diffSaved = false
       if (rejected.length) {
         this.showNotice(
           `Applied — ${rejected.length} hunk(s) didn't match the base and were skipped.`
         )
+      }
+      return {
+        left: { path: base.path, name: base.name, content: base.content },
+        right: { path: null, name: `${base.name} (patched)`, content: output }
       }
     },
     // Export the current comparison as a self-contained HTML file for a ticket

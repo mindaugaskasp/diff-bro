@@ -37,7 +37,7 @@ const stores = () => ({
     copyDiff: spy(),
     copyDiffAsFile: spy(),
     copySide: spy(),
-    applyPatch: spy(),
+    patchedSides: spy(),
     exportDiff: spy(),
     importSnippets: spy(),
     togglePasteMode: spy(),

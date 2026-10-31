@@ -9,36 +9,40 @@ beforeEach(() => {
   window.api = {}
 })
 
-describe('applyPatch', () => {
+describe('patchedSides', () => {
   const PATCH = '--- original\n+++ changed\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n'
   const pick = (base, patch) => async (side) =>
     side === 'base'
       ? { path: '/tmp/config.js', name: 'config.js', content: base }
       : { name: 'change.patch', content: patch }
 
-  it('opens base ↔ patched from the chosen files', async () => {
+  it('hands back base ↔ patched, and loads nothing itself', async () => {
     const store = useDiffStore()
     window.api.openFile = pick('a\nb\nc\n', PATCH)
-    await store.applyPatch()
-    expect(store.left).toEqual({ path: '/tmp/config.js', name: 'config.js', content: 'a\nb\nc\n' })
-    expect(store.right).toEqual({ path: null, name: 'config.js (patched)', content: 'a\nB\nc\n' })
-    expect(store.mode).toBe('files')
+    const sides = await store.patchedSides()
+    expect(sides.left).toEqual({
+      path: '/tmp/config.js',
+      name: 'config.js',
+      content: 'a\nb\nc\n'
+    })
+    expect(sides.right).toEqual({
+      path: null,
+      name: 'config.js (patched)',
+      content: 'a\nB\nc\n'
+    })
+    expect(store.left).toBeNull()
   })
 
-  it('does nothing when the base pick is cancelled', async () => {
+  it('has nothing to show when the base pick is cancelled', async () => {
     const store = useDiffStore()
     window.api.openFile = async () => null
-    await store.applyPatch()
-    expect(store.left).toBeNull()
-    expect(store.right).toBeNull()
+    expect(await store.patchedSides()).toBeNull()
   })
 
-  it('rejects a file that is not a unified diff without loading anything', async () => {
+  it('has nothing to show for a file that is not a unified diff', async () => {
     const store = useDiffStore()
     window.api.openFile = pick('a\nb\nc\n', 'not a patch')
-    await store.applyPatch()
-    expect(store.left).toBeNull()
-    expect(store.right).toBeNull()
+    expect(await store.patchedSides()).toBeNull()
   })
 })
 
