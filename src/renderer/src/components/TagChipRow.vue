@@ -45,7 +45,7 @@ defineExpose({ ...tagInput, focus: () => field.inputEl?.focus() })
       class="tag-word etag"
       :style="{ '--tc': field.colorFor(t) }"
     >
-      <span class="tw-dot"></span>{{ t }}
+      <span class="tw-dot"></span><span class="tw-label" :data-tip="t">{{ t }}</span>
       <button
         v-if="!readonly"
         type="button"
