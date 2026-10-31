@@ -21,7 +21,8 @@ const RETIRED = [
   [/\bsend my (public )?key\b/i, 'Share is the verb for your key'],
   [/\bexport my public key\b/i, 'Share is the verb for your key'],
   [/\bpaste text mode\b/i, 'it is Paste mode'],
-  [/\bsave (snippet )?as file\b/i, 'writing to disk is Export']
+  [/\bsave (snippet )?as file\b/i, 'writing to disk is Export'],
+  [/\bbottom of the rail\b/i, 'Keys moved to Security ▸ Trusted Keys']
 ]
 
 const isTitleCase = (label) =>

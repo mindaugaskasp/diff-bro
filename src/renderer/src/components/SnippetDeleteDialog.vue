@@ -44,6 +44,7 @@ const destructive = computed(() => !isTag.value || (withEntries.value && total.v
           ><strong>“{{ pending.name }}”</strong></template
         >
       </i18n-t>
+      {{ ' ' }}
       <template v-if="isTag && total">
         {{ $t('snippetDeleteDialog.itsOn', { carrying }) }}
         <template v-if="!withEntries">{{ $t('snippetDeleteDialog.theyKeepTheRestOf') }}</template>

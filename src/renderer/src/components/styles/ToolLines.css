@@ -1,6 +1,5 @@
 .tln {
-  flex: 1;
-  min-height: 0;
+  flex: none;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

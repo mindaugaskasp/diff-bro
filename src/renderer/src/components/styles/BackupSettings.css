@@ -1,5 +1,6 @@
 .every {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: var(--space-3);
   margin: var(--space-3) 0 var(--space-2);
@@ -13,6 +14,11 @@
   color: var(--text);
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-sm);
+}
+.hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-sm);
+  color: var(--text-hint);
 }
 .restore {
   display: flex;
