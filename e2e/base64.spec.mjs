@@ -34,3 +34,13 @@ test('URL-safe strips padding, and invalid Base64 is reported', async ({ page })
   await dlg.getByLabel('Base64 input').fill('%%% not base64 %%%')
   await expect(dlg.locator('.tb-err')).toBeVisible()
 })
+
+test('decode reads the Base64 inside mixed text and counts the input', async ({ page }) => {
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
+  const dlg = page.getByRole('dialog', { name: 'Base64' })
+  await dlg.locator('.seg-opt', { hasText: 'Decode' }).click()
+  const mixed = 'token: aGVsbG8gd29ybGQ= stays'
+  await dlg.getByLabel('Base64 input').fill(mixed)
+  await expect(dlg.locator('.tb-text')).toHaveText('token: hello world stays')
+  await expect(dlg.locator('.tb-count')).toContainText(`${mixed.length} chars`)
+})

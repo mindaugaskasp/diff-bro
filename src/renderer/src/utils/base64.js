@@ -29,6 +29,39 @@ export function base64Decode(text) {
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
 }
 
+const BASE64_RUN = /[A-Za-z0-9+/_-]{8,}={0,2}/g
+const UNPRINTABLE = /[^\P{Cc}\t\n\r]|[\p{Cn}\p{Co}\p{Cs}]/u
+
+function decodedRun(run) {
+  try {
+    const decoded = base64Decode(run)
+    return UNPRINTABLE.test(decoded) ? null : decoded
+  } catch {
+    return null
+  }
+}
+
+// Throws when nothing decodes, like base64Decode, so callers report one way.
+/**
+ * @param {string} text
+ * @returns {string} `text` with each Base64 part decoded and the rest untouched
+ */
+export function base64DecodeParts(text) {
+  try {
+    return base64Decode(text)
+  } catch (wholeInputError) {
+    let found = false
+    const out = text.replace(BASE64_RUN, (run) => {
+      const decoded = decodedRun(run)
+      if (decoded === null) return run
+      found = true
+      return decoded
+    })
+    if (!found) throw wholeInputError
+    return out
+  }
+}
+
 /**
  * @param {string} text
  * @returns {number} UTF-8 byte length
