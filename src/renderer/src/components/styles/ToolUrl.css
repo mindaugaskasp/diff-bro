@@ -118,3 +118,7 @@
 .tur-add {
   align-self: flex-start;
 }
+/* Kept in the row so the box holds its height before there is anything to copy. */
+.tur-copy.waiting {
+  visibility: hidden;
+}

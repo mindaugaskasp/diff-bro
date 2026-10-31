@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 1 / 7 steps |
+| **Progress** | 2 / 7 steps |
 | **Branch** | stack below, from `fix/base64-partial-decode` |
 | **Started** | 2026-10-31 |
 | **Finished** | |
-| **Bugs found and fixed this iteration** | 2 / 5 |
+| **Bugs found and fixed this iteration** | 4 / 5 |
 | **Token baseline** | 2026-10-31T07:11:09Z |
 | **Claude tokens used** | |
 
@@ -126,7 +126,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 
 | # | slice | branch | base | PR | status |
 |---|---|---|---|---|---|
-| 1 | Base64 partial decode and summary count | `fix/base64-partial-decode` | `main` | | |
+| 1 | Base64 partial decode and summary count | `fix/base64-partial-decode` | `main` | #160 | open |
 | 2 | Tool checkboxes and a steady result box | `fix/tool-dialog-controls` | 1 | | |
 | 3 | Snippet bar, and the add-tag popup | `improvement/snippet-bar` | 2 | | |
 | 4 | Editor gutter | `improvement/editor-gutter` | 3 | | |
@@ -136,7 +136,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 ## Implementation plan
 
 - [x] 1. Slice 1: red unit tests, partial decode, the count; PR.
-- [ ] 2. Slice 2: red e2e, checkbox row across tools, stable result height across tools; PR.
+- [x] 2. Slice 2: red e2e, checkbox row across tools, stable result height across tools; PR.
 - [ ] 3. Slice 3: red e2e, name, tags, three then +N, bar ground, popup bounds; sweep surface; standards; PR.
 - [ ] 4. Slice 4: red e2e, gutter; PR.
 - [ ] 5. Slice 5: red e2e, New row; PR.

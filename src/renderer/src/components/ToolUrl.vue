@@ -76,8 +76,8 @@ offerToolOutput(
     <div class="tur-out">
       <span class="tur-out-v">{{ output || '—' }}</span>
       <button
-        v-if="output"
         class="tur-copy"
+        :class="{ waiting: !output }"
         :aria-label="$t('toolUrl.copyResult')"
         :data-tip="$t('common.copy')"
         @click="copy(output)"
