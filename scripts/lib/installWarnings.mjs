@@ -3,9 +3,8 @@
 // finds out it is wrong today, and only during a release build.
 
 // Each entry is a substring matched against a warning line. All are DEV or
-// BUILD-TIME-ONLY transitives: nothing here is reachable from the packaged app,
-// and `npm audit` reports zero vulnerabilities against the locked tree. Two
-// separate toolchains feed this list, so the reason differs per entry.
+// BUILD-TIME-ONLY transitives: nothing here is reachable from the packaged app.
+// Two separate toolchains feed this list, so the reason differs per entry.
 export const ACKNOWLEDGED = [
   // electron-builder's native-rebuild toolchain (@electron/rebuild → node-gyp).
   // The app ships no native modules, so it never runs at app runtime and the
