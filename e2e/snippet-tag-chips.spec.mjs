@@ -42,3 +42,16 @@ test('Enter adds a chip and × removes it', async ({ page }) => {
   await doc.getByRole('button', { name: /Remove tag freshtag/i }).click()
   await expect(doc.locator('.tag-row .etag', { hasText: 'freshtag' })).toHaveCount(0)
 })
+
+test('at the tag cap the field keeps focus and says to remove one first', async ({ page }) => {
+  await openNewSnippet(page)
+  const doc = page.getByRole('region', { name: 'New snippet' })
+  const input = doc.locator('.taginput')
+  for (let i = 1; i <= 20; i += 1) {
+    await input.fill(`tag-${i}`)
+    await input.press('Enter')
+  }
+  await expect(input).toBeFocused()
+  await expect(doc.locator('.tag-pop .cap')).toContainText('remove one to add another')
+  await expect(input).not.toBeEditable()
+})

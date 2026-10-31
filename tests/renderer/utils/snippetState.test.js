@@ -2,7 +2,12 @@
 // computed while it is decrypted, so getting the rule wrong here is a verdict
 // the library then carries around until someone re-saves the snippet.
 import { describe, expect, it } from 'vitest'
-import { derivedFrom, isSameTagSet, promptVars } from '../../../src/renderer/src/utils/snippetState'
+import {
+  cleanTag,
+  derivedFrom,
+  isSameTagSet,
+  promptVars
+} from '../../../src/renderer/src/utils/snippetState'
 
 const PHP = '$appId = "ABCD";\n$apiToken = "EFGH";'
 
@@ -66,5 +71,14 @@ describe('isSameTagSet', () => {
     expect(isSameTagSet(['a'], ['a', 'b'])).toBe(false)
     expect(isSameTagSet(['a', 'b'], ['a', 'c'])).toBe(false)
     expect(isSameTagSet([], [])).toBe(true)
+  })
+})
+
+describe('cleanTag', () => {
+  it('never leaves a trailing separator, typed or made by the cut', () => {
+    expect(cleanTag('infra/prod/')).toBe('infra/prod')
+    expect(cleanTag(`${'x'.repeat(39)}/more`)).toBe('x'.repeat(39))
+    expect(cleanTag(`${'x'.repeat(38)} /more`)).toBe('x'.repeat(38))
+    expect(cleanTag('/')).toBe('')
   })
 })

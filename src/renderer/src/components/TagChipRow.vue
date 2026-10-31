@@ -20,7 +20,7 @@ const props = defineProps({
 const emit = defineEmits(['requestEdit', 'change'])
 
 const store = useSnippetStore()
-const tagInput = useTagInput(props.initial)
+const tagInput = useTagInput(props.initial, { visibleTags: TAGS_BEFORE_MORE })
 const field = reactive(tagInput)
 const focused = ref(false)
 const hidden = computed(() => Math.max(0, field.tags.length - TAGS_BEFORE_MORE))
@@ -74,7 +74,7 @@ defineExpose({ ...tagInput, focus: () => field.inputEl?.focus() })
         v-model="field.input"
         class="taginput"
         :placeholder="field.canAddMore ? $t('tagChipsField.addPlaceholder') : ''"
-        :disabled="!field.canAddMore"
+        :readonly="!field.canAddMore"
         :aria-label="$t('tagChipsField.addTag')"
         spellcheck="false"
         @focus="focused = true"

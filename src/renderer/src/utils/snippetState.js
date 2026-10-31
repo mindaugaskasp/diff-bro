@@ -48,6 +48,7 @@ export const cleanTag = (name) =>
     .trim()
     .toLowerCase()
     .slice(0, 40)
+    .replace(/[\s/]+$/, '')
 
 // Next unused palette color; cycles once every color is taken.
 export function nextColor(tags) {
