@@ -1,15 +1,15 @@
 # Fixes from QA before v0.15.1
 
-|                                         |                                           |
-| --------------------------------------- | ----------------------------------------- |
-| **Status**                              | in-progress                               |
-| **Progress**                            | 0 / 9 steps                               |
-| **Branch**                              | stack below, from `fix/snippet-tags-save` |
-| **Started**                             | 2026-10-31                                |
-| **Finished**                            |                                           |
-| **Bugs found and fixed this iteration** | 0 / 21                                    |
-| **Token baseline**                      | 2026-10-31T14:39:45Z                      |
-| **Claude tokens used**                  | not measured yet                          |
+|                                         |                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| **Status**                              | shipped                                                                  |
+| **Progress**                            | 9 / 9 steps                                                              |
+| **Branch**                              | stack below, from `fix/snippet-tags-save`                                |
+| **Started**                             | 2026-10-31                                                               |
+| **Finished**                            | 2026-10-31                                                               |
+| **Bugs found and fixed this iteration** | 21 / 21                                                                  |
+| **Token baseline**                      | 2026-10-31T14:39:45Z                                                     |
+| **Claude tokens used**                  | 11,811,976 processed, mostly cache reads, up to the last PR's submission |
 
 ## Problem
 
@@ -67,28 +67,28 @@ No new look. Everything follows the Approved design for #144 and the snippet bar
 
 ## Delivery
 
-| #   | slice                                      | branch                  | base   | PR  | status |
-| --- | ------------------------------------------ | ----------------------- | ------ | --- | ------ |
-| 1   | Tags are part of a snippet's draft (1, 2)  | `fix/snippet-tags-save` | `main` |     | open   |
-| 2   | Tag row and +N stay in the window (3, 4)   | `fix/tag-row-overflow`  | 1      |     |        |
-| 3   | Tag field edges (14–17)                    | `fix/tag-field-edges`   | 2      |     |        |
-| 4   | Saved diff names (5, 18)                   | `fix/saved-diff-name`   | 3      |     |        |
-| 5   | Hover faces (6, 7)                         | `fix/hover-faces`       | 4      |     |        |
-| 6   | Patch opens in its own tab (8)             | `fix/patch-own-tab`     | 5      |     |        |
-| 7   | Keyboard focus (9, 10, 19)                 | `fix/keyboard-focus`    | 6      |     |        |
-| 8   | Copy and small layout (11, 12, 13, 20, 21) | `fix/small-copy-layout` | 7      |     |        |
+| #   | slice                                      | branch                  | base   | PR   | status |
+| --- | ------------------------------------------ | ----------------------- | ------ | ---- | ------ |
+| 1   | Tags are part of a snippet's draft (1, 2)  | `fix/snippet-tags-save` | `main` | #167 | merged |
+| 2   | Tag row and +N stay in the window (3, 4)   | `fix/tag-row-overflow`  | 1      | #168 | merged |
+| 3   | Tag field edges (14–17)                    | `fix/tag-field-edges`   | 2      | #169 | merged |
+| 4   | Saved diff names (5, 18)                   | `fix/saved-diff-name`   | 3      | #170 | merged |
+| 5   | Hover faces (6, 7)                         | `fix/hover-faces`       | 4      | #171 | merged |
+| 6   | Patch opens in its own tab (8)             | `fix/patch-own-tab`     | 5      | #172 | merged |
+| 7   | Keyboard focus (9, 10, 19)                 | `fix/keyboard-focus`    | 6      | #173 | merged |
+| 8   | Copy and small layout (11, 12, 13, 20, 21) | `fix/small-copy-layout` | 7      | #174 | merged |
 
 ## Implementation plan
 
-- [ ] 1. Slice 1
-- [ ] 2. Slice 2
-- [ ] 3. Slice 3
-- [ ] 4. Slice 4
-- [ ] 5. Slice 5
-- [ ] 6. Slice 6
-- [ ] 7. Slice 7
-- [ ] 8. Slice 8
-- [ ] 9. Gates, merge the stack, tag v0.15.1.
+- [x] 1. Slice 1
+- [x] 2. Slice 2
+- [x] 3. Slice 3
+- [x] 4. Slice 4
+- [x] 5. Slice 5
+- [x] 6. Slice 6
+- [x] 7. Slice 7
+- [x] 8. Slice 8
+- [x] 9. Gates, merge the stack, tag v0.15.1.
 
 ## Decisions
 
@@ -102,6 +102,19 @@ No new look. Everything follows the Approved design for #144 and the snippet bar
 
 ## Validation
 
-- [ ] `npm run check` 0.
-- [ ] `make e2e`.
-- [ ] `make theme-sweep`.
+- [x] `npm run check` 0 (3987 passed, 2 skipped).
+- [x] `make e2e` 679 passed, 4 skipped, before the last two test and token corrections; `hover-faces`, the tour test and the sweep were rerun after them.
+- [x] `make theme-sweep` ok, 3600 measurements across 20 themes.
+- [x] Real-app renders checked on light, dark, contrast and matrix at 1120x640.
+
+### Token usage
+
+The window starts when the fixes started, so the QA pass isn't counted.
+
+| category    |         tokens |
+| ----------- | -------------: |
+| input       |             98 |
+| output      |         75,957 |
+| cache write |        116,701 |
+| cache read  |     11,619,220 |
+| **total**   | **11,811,976** |
