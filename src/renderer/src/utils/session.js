@@ -3,7 +3,7 @@
 // and hands back a shape restore can trust.
 import {
   MAX_TABS,
-  cleanTabName,
+  tabNameFor,
   createSnippetTab,
   createTab,
   isBlank,
@@ -204,6 +204,6 @@ export function tabFromStored(stored) {
   if (stored.kind === 'snippet') return createSnippetTab({ snippetId: stored.snippetId })
   const tab = createTab(stored.snapshot, { diffSaved: stored.diffSaved })
   tab.entryId = stored.entryId
-  tab.customTitle = cleanTabName(stored.customTitle)
+  tab.customTitle = tabNameFor(tab, stored.customTitle)
   return tab
 }

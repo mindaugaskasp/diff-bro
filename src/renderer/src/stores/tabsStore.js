@@ -5,7 +5,7 @@ import {
   blankSnapshot,
   canAddTab,
   createTab,
-  cleanTabName,
+  tabNameFor,
   holdsContent,
   isBlank,
   isSnippetTab,
@@ -126,7 +126,7 @@ export const useTabsStore = defineStore('tabs', {
       tab.title = tabTitle(snapshot)
       // A saved diff arrives already named; the tab and the entry are the same
       // comparison, so they carry the same name.
-      tab.customTitle = cleanTabName(name)
+      tab.customTitle = tabNameFor(tab, name)
       this._show(tab)
       return tab.id
     },
@@ -232,7 +232,7 @@ export const useTabsStore = defineStore('tabs', {
     rename(id, name) {
       const tab = this.tabs.find((t) => t.id === id)
       if (!tab) return
-      tab.customTitle = cleanTabName(name)
+      tab.customTitle = tabNameFor(tab, name)
       // A tab holding a saved diff IS that diff, so the sidebar follows the
       // name rather than drifting from it.
       if (tab.entryId && tab.customTitle) useVaultStore().rename(tab.entryId, tab.customTitle)

@@ -110,9 +110,7 @@ export const tabForSnippet = (tabs, snippetId) =>
 // Long enough for "prod vs staging", short enough not to overrun the bar.
 export const MAX_TAB_NAME = 40
 
-/** A typed tab name, tidied — or '' to mean "go back to the derived one". */
-// Unicode letters, never ASCII \w: the app is localised, and \w would make a
-// Lithuanian or Japanese tab name unwritable.
+// Unicode letters, never \w: a Lithuanian or Japanese tab name must stay writable.
 const NOT_A_NAME = /[^\p{L}\p{M}\p{N}_ -]+/gu
 
 export const cleanTabName = (name) =>
@@ -121,6 +119,10 @@ export const cleanTabName = (name) =>
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_TAB_NAME)
+
+/** A saved diff's name is the library's, so only a tab's own name gets tidied. */
+export const tabNameFor = (tab, name) =>
+  tab.entryId ? String(name ?? '').trim() : cleanTabName(name)
 
 /** What the bar shows: a typed name outranks the one derived from the files. */
 export const tabLabel = (tab) => tab?.customTitle || tab?.title || UNTITLED

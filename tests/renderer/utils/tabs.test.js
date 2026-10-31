@@ -7,6 +7,7 @@ import {
   tabsCost,
   MAX_TAB_NAME,
   cleanTabName,
+  tabNameFor,
   tabLabel,
   canAddTab,
   createTab,
@@ -339,5 +340,13 @@ describe('adjacentTabId', () => {
     expect(adjacentTabId([{ id: 'a' }], 'a', 1)).toBe(null)
     expect(adjacentTabId([], 'a', 1)).toBe(null)
     expect(adjacentTabId(three, 'nope', 1)).toBe(null)
+  })
+})
+
+describe('tabNameFor', () => {
+  it("cleans a name for a tab of its own, and keeps a saved diff's as saved", () => {
+    expect(tabNameFor({}, 'a.json ↔ b.json')).toBe('ajson bjson')
+    expect(tabNameFor({ entryId: 'e1' }, ' a.json ↔ b.json ')).toBe('a.json ↔ b.json')
+    expect(tabNameFor({ entryId: 'e1' }, undefined)).toBe('')
   })
 })
