@@ -97,6 +97,7 @@ No new look. Everything follows the Approved design for #144 and the snippet bar
 | 2026-10-31 | Fix all 21 before tagging                                                                                    | the user asked for what QA found to be fixed                                            | fixing only the data-loss ones             |
 | 2026-10-31 | Patch always opens its own tab                                                                               | nothing to lose, and no new prompt                                                      | a Replace prompt, as picking a file has    |
 | 2026-10-31 | A tab linked to a saved diff keeps the library's name verbatim; an unsaved tab's typed name is still cleaned | cleaning a label is a deliberate rule (#60), overwriting the user's name with it is not | relaxing `cleanTabName` for every tab      |
+| 2026-10-31 | File ▸ New Snippet joins the menu map, with no shortcut                                                      | the palette lists menu items, so a command without one cannot be found                  | a palette-only row                         |
 | 2026-10-31 | Backspace stops at the tags in view rather than opening +N                                                   | a keystroke should not remove what you cannot see                                       | removing the Backspace shortcut everywhere |
 
 ## Validation

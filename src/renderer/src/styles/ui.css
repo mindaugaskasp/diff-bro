@@ -1310,6 +1310,9 @@ button.tag-chip:hover .usb-tct {
   inset: 0;
   z-index: 60;
 }
+.ctx:focus {
+  outline: none;
+}
 .ctx {
   position: fixed;
   min-width: 232px;

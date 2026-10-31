@@ -13,6 +13,7 @@ export const MENU_MAP = [
   'File ▸ Export ▸ Snippet as File…',
   'File ▸ Export ▸ All Snippets…',
   'File ▸ New Comparison',
+  'File ▸ New Snippet',
   'File ▸ Close Comparison',
   'File ▸ Next Comparison',
   'File ▸ Previous Comparison',

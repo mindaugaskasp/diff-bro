@@ -171,6 +171,7 @@ const fileMenu = (send, isMac) => ({
     },
     { type: 'separator' },
     fileItem(send, 'newComparison', 'CmdOrCtrl+Shift+T', 'tab-new'),
+    fileItem(send, 'newSnippet', null, 'open-new-snippet'),
     fileItem(send, 'closeComparison', 'CmdOrCtrl+Shift+W', 'tab-close'),
     fileItem(send, 'nextComparison', 'Ctrl+Tab', 'tab-next'),
     fileItem(send, 'prevComparison', 'Ctrl+Shift+Tab', 'tab-prev'),

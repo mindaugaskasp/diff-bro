@@ -1,12 +1,15 @@
 <script setup>
 // Paste-compare with partial paste: each side is a textarea or a loaded file,
 // independently. Each pane captures its own drop.
+import { onMounted, ref } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useFileTextDrop } from '../composables/useFileDrop'
 import AppIcon from './AppIcon.vue'
 import { MAX_SIDE_NAME } from '../utils/pasteNames'
 
 const store = useDiffStore()
+const root = ref(null)
+onMounted(() => root.value?.querySelector('textarea')?.focus())
 
 const leftDrop = useFileTextDrop((content, name, path) =>
   store.receivePasteFile('left', { name, content, path })
@@ -17,7 +20,7 @@ const rightDrop = useFileTextDrop((content, name, path) =>
 </script>
 
 <template>
-  <div class="paste">
+  <div ref="root" class="paste">
     <div class="panes">
       <div
         class="pane-col"

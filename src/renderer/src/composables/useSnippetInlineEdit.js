@@ -1,4 +1,4 @@
-import { computed, nextTick, watch } from 'vue'
+import { computed, nextTick, onMounted, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { useUiStore } from '../stores/uiStore'
 import { useInlineEdit } from './useInlineEdit'
@@ -30,6 +30,10 @@ export function useSnippetInlineEdit({ draft, tab, head, save, onDropFile }) {
       !draft.saving.value &&
       (draft.isDirty.value || draft.isNew.value)
   )
+
+  onMounted(() => {
+    if (draft.isNew.value && !draft.name.value && tabs.activeId === tab.id) head.value?.focusName()
+  })
 
   async function editThen(focus) {
     draft.startEditing()
