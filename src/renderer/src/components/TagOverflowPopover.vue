@@ -45,14 +45,13 @@ const { open, toggle, onKeydown, backdrop } = usePopover()
       </span>
     </div>
   </span>
-  <Teleport to="body">
-    <div
-      v-if="open"
-      class="popover-backdrop"
-      @pointerdown="backdrop.onPointerDown"
-      @click="backdrop.onClick"
-    />
-  </Teleport>
+  <!-- Not teleported: `.content` isolates, so a body-level backdrop covers this panel. -->
+  <div
+    v-if="open"
+    class="popover-backdrop"
+    @pointerdown="backdrop.onPointerDown"
+    @click="backdrop.onClick"
+  />
 </template>
 
 <style scoped src="./styles/TagOverflowPopover.css"></style>

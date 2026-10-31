@@ -7,6 +7,7 @@
 }
 .tag-row .etag {
   position: relative;
+  flex: 0 1 auto;
   height: var(--chip-h);
   padding: 0 var(--space-1);
   color: var(--text-meta);
@@ -28,6 +29,7 @@
   opacity: 1;
 }
 .add-pill {
+  flex: none;
   min-width: 8.5em;
   display: inline-flex;
   align-items: center;

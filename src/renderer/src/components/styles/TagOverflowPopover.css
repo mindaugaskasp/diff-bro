@@ -1,7 +1,10 @@
+/* Static, so the list anchors to the row, which spans the document. */
 .more-anchor {
+  position: static;
   flex: none;
 }
 .more-chip {
+  position: relative;
   height: var(--chip-h);
   padding: 0 var(--space-1);
   border: 1px solid var(--btn-rest-edge);
@@ -16,6 +19,9 @@
   background: var(--row-hover);
   color: var(--text);
 }
+.more-anchor:has(> .popover) .more-chip {
+  z-index: 21;
+}
 .tag-more-pop {
   left: 0;
   right: auto;
@@ -23,7 +29,7 @@
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-3);
   width: max-content;
-  max-width: 360px;
+  max-width: min(360px, 100%);
 }
 .tag-more-pop .etag {
   position: relative;
