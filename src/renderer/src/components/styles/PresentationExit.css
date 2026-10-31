@@ -13,7 +13,7 @@
 }
 .present-exit:hover,
 .present-exit:focus-visible {
-  background: var(--btn-face-hover);
+  background: var(--btn-face-hover-floating);
   border-color: var(--btn-edge);
   color: var(--text);
 }

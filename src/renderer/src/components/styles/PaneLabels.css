@@ -46,7 +46,7 @@
   cursor: pointer;
 }
 .pane-label:hover {
-  background: var(--btn-face-hover);
+  background: var(--btn-face-hover-floating);
   color: var(--text);
 }
 .pane-sep {

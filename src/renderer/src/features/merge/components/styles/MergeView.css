@@ -31,7 +31,7 @@
   gap: var(--space-1);
   border: 1px solid var(--btn-edge);
   border-radius: var(--radius-pill);
-  background: var(--btn-face);
+  background: none;
   color: var(--text);
   font: inherit;
   font-size: var(--font-xs);
@@ -41,6 +41,9 @@
 }
 .merge-walk:hover:not(:disabled) {
   background: var(--btn-face-hover);
+}
+.merge-walk:active:not(:disabled) {
+  background: var(--btn-face-press);
 }
 .merge-walk:focus-visible {
   outline: 2px solid var(--focus-ring);

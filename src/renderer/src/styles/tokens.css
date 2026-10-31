@@ -87,6 +87,8 @@
   --btn-face: color-mix(in srgb, var(--text) 14%, transparent);
   --btn-face-hover: color-mix(in srgb, var(--text) 10%, transparent);
   --btn-face-press: color-mix(in srgb, var(--text) 16%, transparent);
+  /* For a control floating over code, which would show through the wash alone. */
+  --btn-face-hover-floating: color-mix(in srgb, var(--text) 10%, var(--bg));
   /* Control keyline. A bare --border scores 1.20 against the panel on light and
      1.24 on bloom — no edge at all; halfway to --text clears the 3:1 non-text
      floor on all 14 (weakest sepia 3.19). */
