@@ -2,7 +2,7 @@
 import { useToolDraft } from '../composables/useToolDraft'
 import { computed, ref } from 'vue'
 import { t } from '../i18n'
-import { base64Decode, base64Encode, byteLength } from '../utils/base64'
+import { base64DecodeParts, base64Encode, byteLength } from '../utils/base64'
 import SegmentedControl from './SegmentedControl.vue'
 import AppIcon from './AppIcon.vue'
 import { offerToolOutput } from '../composables/useToolOutput'
@@ -25,7 +25,7 @@ const result = computed(() => {
   try {
     if (mode.value === 'encode')
       return { output: base64Encode(text, { urlSafe: urlSafe.value, wrap: wrap.value }) }
-    return { output: base64Decode(text) }
+    return { output: base64DecodeParts(text) }
   } catch {
     return { error: t('toolBase64.invalid') }
   }
@@ -35,7 +35,7 @@ const summary = computed(() => {
   const out = result.value.output || ''
   return mode.value === 'encode'
     ? `${byteLength(text)} B → ${out.length} chars`
-    : `${t.length} chars → ${byteLength(out)} B`
+    : `${text.length} chars → ${byteLength(out)} B`
 })
 
 const { copied, flash } = useCopyFeedback()
