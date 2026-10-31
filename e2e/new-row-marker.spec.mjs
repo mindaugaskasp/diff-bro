@@ -46,7 +46,9 @@ const snippetRow = (page, name) =>
     .locator('.row')
     .filter({ hasText: name })
 
-test('a newly created snippet marks itself with a rail and a NEW badge', async ({ page }) => {
+test('a newly created snippet marks itself with a soft rail and a quiet badge', async ({
+  page
+}) => {
   await addSnippet(page, 'E2E new row target')
   const row = snippetRow(page, 'E2E new row target')
   await expect(row).toHaveClass(/is-new/)
@@ -54,9 +56,9 @@ test('a newly created snippet marks itself with a rail and a NEW badge', async (
   const accent = await accentOf(page)
 
   const bar = await rail(row)
-  expect(bar.width, 'the rail is 3px wide').toBe('3px')
+  expect(bar.width, 'the rail is a thin 2px').toBe('2px')
   expect(bar.right, 'the rail sits on the RIGHT edge — the left carries the pin bar').toBe('0px')
-  expect(bar.background, 'the rail is --accent, never a literal').toBe(accent)
+  expect(bar.background, 'the rail is faded, not full --accent').not.toBe(accent)
 
   // The badge: the word carries the identification, so hue cannot fail it.
   const badge = row.locator('.new-badge')
@@ -66,8 +68,17 @@ test('a newly created snippet marks itself with a rail and a NEW badge', async (
     return { border: s.borderTopColor, color: s.color, text: el.textContent.trim() }
   })
   expect(chip.text.length, 'the badge says it in words').toBeGreaterThan(0)
-  expect(chip.border, 'the accent goes on the keyline').toBe(accent)
+  expect(chip.border, 'the badge stays neutral').not.toBe(accent)
   expect(chip.color, 'never on the label — it fails 4.5:1 on five themes').not.toBe(accent)
+  const peak = await row.evaluate((el) => {
+    const wash = el
+      .getAnimations({ subtree: true })
+      .find((a) => a.effect.pseudoElement === '::before')
+    wash.pause()
+    wash.currentTime = 0
+    return getComputedStyle(el, '::before').backgroundColor
+  })
+  expect(peak, 'the wash peaks at a soft 10%').toMatch(/\/ 0\.1\)$/)
 })
 
 // The wash is the part a reader sees from across the screen, and the first
@@ -96,7 +107,7 @@ test('a starred new row keeps its star AND the new rail', async ({ page }) => {
   )
   await page.mouse.move(0, 0)
   await expect(row.locator('.star.on'), 'the star survives the new-row marker').toBeVisible()
-  expect((await rail(row)).width, 'and the rail survives the star').toBe('3px')
+  expect((await rail(row)).width, 'and the rail survives the star').toBe('2px')
 })
 
 test('opening the row retires the marker', async ({ page }) => {

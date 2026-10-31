@@ -799,7 +799,7 @@ button.tag-chip:hover .usb-tct {
 @keyframes new-wash {
   0%,
   35% {
-    background: color-mix(in srgb, var(--accent) 26%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
   }
   100% {
     background: transparent;
@@ -811,8 +811,8 @@ button.tag-chip:hover .usb-tct {
   content: '';
   position: absolute;
   inset: 0 0 0 auto;
-  width: 3px;
-  background: var(--accent);
+  width: 2px;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
   transform-origin: top;
   animation: new-rail 900ms cubic-bezier(0.2, 0, 0.1, 1);
 }
@@ -832,20 +832,18 @@ button.tag-chip:hover .usb-tct {
     opacity: 1;
   }
 }
-/* A keyline, never a fill: --bg-raised resolves to var(--bg) while the row's
-   ground is --bg-panel, so a filled chip does not lift. The label is --text
-   because --accent as text fails 4.5:1 on solar, meridian, sepia, bloom, light. */
+/* Neutral: with a wash and a rail beside it, the word needs no more colour. */
 .new-badge {
   flex: none;
   height: var(--chip-h);
   display: inline-flex;
   align-items: center;
   padding: 0 var(--space-2);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  color: var(--text);
+  color: var(--text-meta);
   font-size: var(--font-2xs);
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   white-space: nowrap;

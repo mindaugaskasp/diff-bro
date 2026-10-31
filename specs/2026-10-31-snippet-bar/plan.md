@@ -129,8 +129,8 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 | 1   | Base64 partial decode and summary count | `fix/base64-partial-decode` | `main` | #160 | open   |
 | 2   | Tool checkboxes and a steady result box | `fix/tool-dialog-controls`  | 1      | #161 | open   |
 | 3   | Snippet bar, and the add-tag popup      | `improvement/snippet-bar`   | 2      | #163 | open   |
-| 4   | Editor gutter                           | `improvement/editor-gutter` | 3      |      |        |
-| 5   | Softer New row                          | `improvement/new-row-quiet` | 4      |      |        |
+| 4   | Editor gutter                           | `improvement/editor-gutter` | 3      | #164 | open   |
+| 5   | Softer New row                          | `improvement/new-row-quiet` | 4      | #165 | open   |
 | 6   | Button hover, screenshots               | `improvement/button-hover`  | 5      |      |        |
 
 ## Implementation plan
@@ -139,7 +139,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 - [x] 2. Slice 2: red e2e, checkbox row across tools, stable result height across tools; PR.
 - [x] 3. Slice 3: red e2e, name, tags, three then +N, bar ground, popup bounds; sweep surface; standards; PR.
 - [x] 4. Slice 4: red e2e, gutter; PR.
-- [ ] 5. Slice 5: red e2e, New row; PR.
+- [x] 5. Slice 5: red e2e, New row; PR.
 - [ ] 6. Slice 6: guard floors, hover tokens, standards, features and screenshots; PR.
 - [ ] 7. `/validate`, merge the stack bottom-up.
 
