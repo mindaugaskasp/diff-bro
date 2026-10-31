@@ -60,7 +60,7 @@ test('two dropped snippets open as an ordinary comparison', async ({ page }) => 
 // The point of the link: a pasted copy would go stale the moment the snippet
 // moved on. Plaintext on purpose — a snippet with a preview (claude, mermaid)
 // renders no raw editor to type into.
-test('editing a compared snippet updates the diff without a reload', async ({ app, page }) => {
+test('editing a compared snippet updates the diff without a reload', async ({ page }) => {
   await openNewSnippet(page)
   const make = page.getByRole('region', { name: 'New snippet' })
   await make.getByPlaceholder('Snippet name…').fill('Live target')
@@ -86,10 +86,7 @@ test('editing a compared snippet updates the diff without a reload', async ({ ap
   const edit = page.getByRole('region', { name: 'Edit snippet' })
   await edit.locator('.editor').click()
   await page.keyboard.press('ControlOrMeta+a')
-  await app.evaluate(({ clipboard }) => clipboard.writeText('LIVE-EDIT-MARKER'))
-  await app.evaluate(({ BrowserWindow }) =>
-    (BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]).webContents.paste()
-  )
+  await page.keyboard.type('LIVE-EDIT-MARKER')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()
   await closeSnippet(page)
 
