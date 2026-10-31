@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useSnippetStore, MAX_TAGS, TAG_PALETTE, cleanTag } from '../stores/snippetStore'
 import { MAX_TAG_DEPTH, isTagTooDeep, tagPath } from '../utils/tagTree'
 
@@ -28,9 +28,10 @@ const withTypedTag = (applied, typed) => {
 
 /**
  * @param {string[]} initial tags the snippet already carries
+ * @param {{ visibleTags?: number }} [opts] past this many, the last tag is out of sight
  * @returns {import('../types').TagField}
  */
-export function useTagInput(initial = []) {
+export function useTagInput(initial = [], { visibleTags = Infinity } = {}) {
   const store = useSnippetStore()
   const tags = ref([...initial])
   const input = ref('')
@@ -38,6 +39,7 @@ export function useTagInput(initial = []) {
   const tentativeColors = ref({})
   // The deepest the refused path could go, while a fourth level is refused.
   const tooDeep = ref('')
+  watch(input, () => (tooDeep.value = ''))
 
   const canAddMore = computed(() => tags.value.length < MAX_TAGS)
 
@@ -46,9 +48,7 @@ export function useTagInput(initial = []) {
   const tagsWithTyped = computed(() => withTypedTag(tags.value, input.value))
 
   // Display color: the registry color if the tag exists, else its tentative one.
-  function colorFor(t) {
-    return store.colorOf(t) || tentativeColors.value[t] || 'var(--text-dim)'
-  }
+  const colorFor = (t) => store.colorOf(t) || tentativeColors.value[t] || 'var(--text-dim)'
 
   function add(raw) {
     if (!canAddMore.value) return
@@ -75,7 +75,7 @@ export function useTagInput(initial = []) {
     if (e.key === 'Enter' || e.key === ' ' || e.key === ',') {
       e.preventDefault()
       if (input.value.trim()) add(input.value)
-    } else if (e.key === 'Backspace' && !input.value && tags.value.length) {
+    } else if (e.key === 'Backspace' && !input.value && tags.value.length <= visibleTags) {
       tags.value.pop()
     }
   }

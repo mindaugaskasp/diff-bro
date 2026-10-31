@@ -5,6 +5,7 @@
 // exercises it. Suggestions need the real tag registry, so the store's crypto
 // is wired through the same mock the store tests use.
 import { beforeEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { randomBytes } from 'crypto'
 import { vaultDecrypt, vaultEncrypt } from '../../../src/main/vaultCrypt'
@@ -145,5 +146,35 @@ describe('useTagInput — what the field holds right now', () => {
     expect(field.tagsWithTyped.value).toEqual(['backend'])
     field.input.value = '   '
     expect(field.tagsWithTyped.value).toEqual(['backend'])
+  })
+})
+
+describe('useTagInput — Backspace only takes a tag you can see', () => {
+  it('leaves the tags alone while the last one is behind +N', () => {
+    const field = useTagInput(['a', 'b', 'c', 'd'], { visibleTags: 3 })
+    field.onKey(press('Backspace'))
+    expect(field.tags.value).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('removes the last tag when every tag is in view', () => {
+    const field = useTagInput(['a', 'b', 'c'], { visibleTags: 3 })
+    field.onKey(press('Backspace'))
+    expect(field.tags.value).toEqual(['a', 'b'])
+  })
+})
+
+describe('useTagInput — the too-deep alert', () => {
+  it('goes when the text it was about changes', async () => {
+    const field = useTagInput()
+    field.input.value = 'a/b/c/d'
+    await nextTick()
+    field.add(field.input.value)
+    expect(field.tooDeep.value).toBe('a/b/c')
+    await nextTick()
+    expect(field.tooDeep.value).toBe('a/b/c')
+
+    field.input.value = ''
+    await nextTick()
+    expect(field.tooDeep.value).toBe('')
   })
 })
