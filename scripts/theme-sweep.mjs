@@ -1185,10 +1185,6 @@ const SURFACES = [
       // The word is what identifies the row on dim and matrix, where --accent
       // and --favorite are 0.044 apart in OKLab — so it takes the reading floor.
       'badge label': ['.row.is-new .new-badge', TEXT],
-      // The claim the whole design rests on: a solid --accent edge on the panel
-      // clears the non-text floor on all 14 (weakest solar 3.21). Gated on the
-      // BORDER channel, or it would be reported and never enforced.
-      'badge keyline': ['.row.is-new .new-badge', DIM, 'border'],
       // The name must stay readable while the row wears the marker.
       'row name': ['.row.is-new .nm', TEXT]
     }

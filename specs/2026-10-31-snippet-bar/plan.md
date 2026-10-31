@@ -139,7 +139,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 - [x] 2. Slice 2: red e2e, checkbox row across tools, stable result height across tools; PR.
 - [x] 3. Slice 3: red e2e, name, tags, three then +N, bar ground, popup bounds; sweep surface; standards; PR.
 - [x] 4. Slice 4: red e2e, gutter; PR.
-- [ ] 5. Slice 5: red e2e, New row; PR.
+- [x] 5. Slice 5: red e2e, New row; PR.
 - [ ] 6. Slice 6: guard floors, hover tokens, standards, features and screenshots; PR.
 - [ ] 7. `/validate`, merge the stack bottom-up.
 
