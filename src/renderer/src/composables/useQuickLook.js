@@ -11,6 +11,29 @@ import { t } from '../i18n'
 // Monaco/Mermaid) so a summon is instant — it lists snippets and the inline
 // convert tools only; diffs stay in the main window.
 
+// → drills into the tools section, or into a tool; ← closes the section again.
+function toolsDrill({ current, selected, toolsOpen, toggleTools, choose }) {
+  function onExpand() {
+    const it = current.value
+    if (it?.kind === 'tools') {
+      toolsOpen.value = true
+      selected.value += 1
+      return true
+    }
+    if (it?.kind === 'command') {
+      choose(selected.value)
+      return true
+    }
+    return false
+  }
+  function onCollapse() {
+    if (!toolsOpen.value) return false
+    toggleTools()
+    return true
+  }
+  return { onExpand, onCollapse }
+}
+
 export function useQuickLook() {
   const snippets = useSnippetStore()
   const query = ref('')
@@ -123,20 +146,7 @@ export function useQuickLook() {
     onCopy: copy,
     onOpen: open,
     onNew: startCompose,
-    // → drills into the tools section, or into a tool.
-    onExpand: () => {
-      const it = current.value
-      if (it?.kind === 'tools') {
-        toolsOpen.value = true
-        selected.value += 1
-        return true
-      }
-      if (it?.kind === 'command') {
-        choose(selected.value)
-        return true
-      }
-      return false
-    }
+    ...toolsDrill({ current, selected, toolsOpen, toggleTools, choose })
   })
 
   return {

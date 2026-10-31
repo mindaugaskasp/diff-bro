@@ -79,3 +79,21 @@ test('a summon with nothing typed into it still starts clean', async ({ app, pag
   await expect(ql.locator('.ql-compose')).toBeHidden()
   await expect(ql.locator('.ql-input')).toHaveValue('')
 })
+
+test('the ← key leaves an untouched sheet for the list', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await ql.locator('.ql-add').click()
+  await expect(ql.locator('.ql-compose-text')).toBeFocused()
+  await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.ql-compose')).toBeHidden()
+  await expect(ql.locator('.ql-input')).toBeFocused()
+})
+
+test('the ← key never leaves a sheet with unsaved work', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await ql.locator('.ql-add').click()
+  await ql.locator('.ql-compose-text').fill('half a thought')
+  await ql.locator('.ql-compose-text').press('Home')
+  await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.ql-compose-text')).toHaveValue('half a thought')
+})
