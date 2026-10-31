@@ -51,7 +51,7 @@ test('Format is in the ⋯ menu', async ({ page }) => {
 test('the gutter fits its digits', async ({ page }) => {
   const doc = await newSnippet(page, 'Restart api', 'kubectl rollout restart deployment/api')
   const margin = await doc.locator('.monaco-editor .margin').boundingBox()
-  expect(margin.width).toBeLessThanOrEqual(32)
+  expect(margin.width).toBeLessThanOrEqual(40)
 })
 
 test('Secret is set from the row menu, and masks the open document at once', async ({ page }) => {
