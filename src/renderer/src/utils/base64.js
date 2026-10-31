@@ -30,15 +30,50 @@ export function base64Decode(text) {
 }
 
 const BASE64_RUN = /[A-Za-z0-9+/_-]{8,}={0,2}/g
+const RUN_SYMBOL = /[-_+/]/g
+const MIN_RUN_CHARS = 8
+const MIN_SPLIT_PART_CHARS = 12
+const MAX_SYMBOLS_SEARCHED = 16
 const UNPRINTABLE = /[^\P{Cc}\t\n\r]|[\p{Cn}\p{Co}\p{Cs}]/u
 
-function decodedRun(run) {
+function decodedPart(part, minChars) {
+  if (part.replace(/=+$/, '').length < minChars) return null
   try {
-    const decoded = base64Decode(run)
+    const decoded = base64Decode(part)
     return UNPRINTABLE.test(decoded) ? null : decoded
   } catch {
     return null
   }
+}
+
+function partBounds(run) {
+  const symbols = [...run.matchAll(RUN_SYMBOL)].map((match) => match.index)
+  const searched = symbols.length > MAX_SYMBOLS_SEARCHED ? [] : symbols
+  return {
+    starts: [0, ...searched.map((index) => index + 1)],
+    ends: [run.length, ...searched.toReversed()]
+  }
+}
+
+// A symbol may be data or a joiner like TEST-<part>, so the longest span that decodes wins.
+function firstPart(run) {
+  const { starts, ends } = partBounds(run)
+  for (const start of starts) {
+    for (const end of ends) {
+      const part = run.slice(start, end)
+      const decoded = decodedPart(part, part === run ? MIN_RUN_CHARS : MIN_SPLIT_PART_CHARS)
+      if (decoded !== null) return { start, end, decoded }
+    }
+  }
+  return null
+}
+
+function decodedRunParts(run) {
+  const found = firstPart(run)
+  if (!found) return run
+  const joiner = run.slice(found.end, found.end + 1)
+  const rest = decodedRunParts(run.slice(found.end + 1))
+  return run.slice(0, found.start) + found.decoded + joiner + rest
 }
 
 // Throws when nothing decodes, like base64Decode, so callers report one way.
@@ -50,14 +85,8 @@ export function base64DecodeParts(text) {
   try {
     return base64Decode(text)
   } catch (wholeInputError) {
-    let found = false
-    const out = text.replace(BASE64_RUN, (run) => {
-      const decoded = decodedRun(run)
-      if (decoded === null) return run
-      found = true
-      return decoded
-    })
-    if (!found) throw wholeInputError
+    const out = text.replace(BASE64_RUN, (run) => decodedRunParts(run))
+    if (out === text) throw wholeInputError
     return out
   }
 }

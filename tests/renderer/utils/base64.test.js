@@ -84,6 +84,49 @@ describe('base64DecodeParts', () => {
     expect(base64DecodeParts(`${binary} ${hello}`)).toBe(`${binary} hello world`)
   })
 
+  it('decodes the part after a prefix joined by a Base64 symbol', () => {
+    expect(base64DecodeParts('TEST-ZGZkZmZkZmRmZmZmZmRkZGZmZGZkZg==')).toBe(
+      'TEST-dfdffdfdfffffdddffdfdf'
+    )
+  })
+
+  it.each(['-', '_', '+', '/'])('splits a run at %s', (symbol) => {
+    expect(base64DecodeParts(`TEST${symbol}${hello}`)).toBe(`TEST${symbol}hello world`)
+  })
+
+  it('keeps a suffix after the part', () => {
+    expect(base64DecodeParts('TEST-aGVsbG8gd29ybGQh-end')).toBe('TEST-hello world!-end')
+  })
+
+  it('keeps a URL-safe part whole when it carries the same symbol', () => {
+    const safe = base64Encode('hello>>> world', { urlSafe: true })
+    expect(safe).toContain('-')
+    expect(base64DecodeParts(`TEST-${safe}`)).toBe('TEST-hello>>> world')
+  })
+
+  it('decodes two parts joined by a symbol', () => {
+    const notes = base64Encode('release notes', { urlSafe: true })
+    const greeting = base64Encode('hello world!', { urlSafe: true })
+    expect(base64DecodeParts(`${greeting}-${notes}`)).toBe('hello world!-release notes')
+  })
+
+  it.each([
+    '550e8400-e29b-41d4-a716-446655440000',
+    'd0193b96-1b64-d94e-0783-9b200b390733',
+    '6baf5ba8-01b7-48f1-7d39-ae1a63173b7f',
+    'czJoPWopZWE-jQNh4or7ic0uLzNuhkwAc8uvn1vc5a-',
+    'sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==',
+    'some-important-configuration-settings',
+    '/usr/local/share/applications/settings'
+  ])('leaves %s alone', (word) => {
+    expect(base64DecodeParts(`${word} ${hello}`)).toBe(`${word} hello world`)
+  })
+
+  it('tries only the whole run when symbols are too many to search', () => {
+    const crowded = `${'x-'.repeat(17)}${hello}`
+    expect(() => base64DecodeParts(crowded)).toThrow()
+  })
+
   it('throws when nothing decodes, so the tool can say so', () => {
     expect(() => base64DecodeParts('plain words only, nothing encoded!')).toThrow()
   })
