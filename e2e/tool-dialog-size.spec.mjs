@@ -91,3 +91,51 @@ test('a form dialog keeps its buttons in view on a short window', async ({ page 
   expect(shape.scrolls).toBe(false)
   expect(shape.actionsInside).toBe(true)
 })
+
+const openTool = async (page, name) => {
+  await page.locator('.tt-tile').filter({ hasText: name }).first().click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
+const toggleRows = (dialog) =>
+  dialog.evaluate((el) =>
+    [...el.querySelectorAll('.dialog-body label:has(> input[type="checkbox"])')].map((label) => {
+      const box = label.querySelector('input').getBoundingClientRect()
+      const range = document.createRange()
+      range.selectNodeContents(label.lastChild)
+      const word = range.getBoundingClientRect()
+      return {
+        text: label.textContent.trim(),
+        beside: box.right <= word.left,
+        sameLine: box.top < word.bottom && word.top < box.bottom
+      }
+    })
+  )
+
+for (const name of ['Base64', 'Checksum', 'Lines']) {
+  test(`${name}'s checkboxes sit beside their labels`, async ({ page }) => {
+    await showPanel(page, 'tools')
+    const rows = await toggleRows(await openTool(page, name))
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) expect(row, row.text).toMatchObject({ beside: true, sameLine: true })
+  })
+}
+
+for (const [name, box] of [
+  ['Base64', '.tb-text'],
+  ['Lines', '.tln-text'],
+  ['URL', '.tur-out']
+]) {
+  test(`${name}'s result keeps its height from empty to one line`, async ({ page }) => {
+    await showPanel(page, 'tools')
+    const dialog = await openTool(page, name)
+    const output = dialog.locator(box)
+    const empty = await output.evaluate((el) => el.getBoundingClientRect().height)
+    await dialog.locator('textarea').first().fill('a')
+    await expect(output).not.toBeEmpty()
+    const filled = await output.evaluate((el) => el.getBoundingClientRect().height)
+    expect(filled).toBe(empty)
+  })
+}

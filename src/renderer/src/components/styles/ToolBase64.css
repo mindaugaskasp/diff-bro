@@ -88,6 +88,7 @@
 }
 .tb-text {
   margin: 0;
+  min-height: calc(1lh + 2 * var(--space-3));
   max-height: 220px;
   overflow: auto;
   padding: var(--space-3);
