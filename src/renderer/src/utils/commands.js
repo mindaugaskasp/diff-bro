@@ -6,7 +6,7 @@
 import { saveTabAsFile } from './snippetFileSave'
 import { TOOLS } from './tools'
 import { showsSplitView, showsWhitespaceToggle } from './viewChrome'
-import { MAX_TABS, isSnippetTab } from './tabs'
+import { MAX_TABS, blankSnapshot, isSnippetTab } from './tabs'
 import { tabsFullMessage } from './cliCommand'
 import { openFileAsSnippet, openWithFromCli } from './openWithFlow'
 
@@ -43,7 +43,10 @@ export const COMMANDS = {
   // hiding its copy control — so no surface can offer what another refuses.
   'copy-left': ({ diff }) => diff.copySide('left'),
   'copy-right': ({ diff }) => diff.copySide('right'),
-  'apply-patch': ({ diff }) => diff.applyPatch(),
+  'apply-patch': async ({ diff, tabs }) => {
+    const sides = await diff.patchedSides()
+    if (sides) tabs.open({ ...blankSnapshot(), ...sides })
+  },
   'save-snippet-as-file': ({ tabs }) => saveTabAsFile(tabs.activeId),
   'open-file-as-snippet': ({ diff, tabs, openWith }) => openFileAsSnippet({ diff, tabs, openWith }),
   'export-html': ({ diff }) => diff.exportDiff(),
