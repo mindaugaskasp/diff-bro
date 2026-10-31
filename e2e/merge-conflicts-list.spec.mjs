@@ -162,7 +162,21 @@ test('closing the list keeps the merge alive, and the walk chip reopens it', asy
     // The merge is still under way — Escape closed a list, not a session.
     await expect(page.locator('.merge-view')).toBeVisible()
 
-    await page.getByTestId('merge-walk').click()
+    const chip = page.getByTestId('merge-walk')
+    const faceAlpha = () =>
+      chip.evaluate((el) => {
+        const color = getComputedStyle(el).backgroundColor
+        const alpha = color.match(/[/,]\s*([\d.]+)\)$/)
+        return alpha ? Number(alpha[1]) : 1
+      })
+    await page.mouse.move(640, 500)
+    expect(await faceAlpha()).toBe(0)
+    await chip.hover()
+    const hovered = await faceAlpha()
+    expect(hovered).toBeGreaterThan(0)
+    await page.mouse.down()
+    expect(await faceAlpha()).toBeGreaterThan(hovered)
+    await page.mouse.up()
     await expect(dialog).toBeVisible()
 
     await page.getByTestId('conflicts-close').click()
