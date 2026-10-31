@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -10,6 +10,7 @@ import { formatSql } from '../utils/sqlFormat'
 import { repairMermaid } from '../utils/mermaid'
 import { useUiStore } from '../stores/uiStore'
 import { isSecret } from '../utils/secretSnippet'
+import { isSameTagSet } from '../utils/snippetState'
 
 // Mermaid's entry repairs rather than pretty-prints — see repairMermaid.
 const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql, mermaid: repairMermaid }
@@ -31,6 +32,24 @@ function initialFields(editing, existing) {
     tags: existing.tags ?? [],
     language: existing.language || 'auto'
   }
+}
+
+// For an existing snippet the baseline's content updates when the decrypted
+// content lands, so an untouched snippet is never "dirty".
+function useDraftBaseline(initial, { name, content }) {
+  const baseline = reactive({
+    name: initial.name,
+    content: initial.content,
+    tags: [...initial.tags]
+  })
+  const tags = ref([...initial.tags])
+  const isDirty = computed(
+    () =>
+      name.value !== baseline.name ||
+      content.value !== baseline.content ||
+      !isSameTagSet(tags.value, baseline.tags)
+  )
+  return { baseline, tags, setTags: (next) => (tags.value = next), isDirty }
 }
 
 /**
@@ -64,15 +83,12 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
   const editMode = ref(isNew.value)
   const startEditing = () => (editMode.value = true)
 
-  // Dirty-guard baseline; for an existing snippet it updates when the decrypted
-  // content lands, so an untouched snippet is never "dirty".
-  const baselineName = ref(initial.name)
-  const baselineContent = ref(initial.content)
+  const { baseline, tags, setTags, isDirty } = useDraftBaseline(initial, { name, content })
 
   if (!isNew.value)
     store.load(editing.id).then((text) => {
       content.value = text ?? ''
-      baselineContent.value = text ?? ''
+      baseline.content = text ?? ''
     })
 
   // 'auto' defers to the content detector; any other value is the user's pick.
@@ -88,9 +104,6 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
   const close = onClose
 
   // Unsaved-changes guard: a dirty draft confirms before closing.
-  const isDirty = computed(
-    () => name.value !== baselineName.value || content.value !== baselineContent.value
-  )
   const confirmingDiscard = ref(false)
   function requestClose() {
     if (isDirty.value) confirmingDiscard.value = true
@@ -102,10 +115,11 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     close()
   }
 
-  // `tags` and `tagColors` come from the tag field, which owns them.
-  async function save({ tags, tagColors }) {
+  // `tagValues` comes from the tag field, which owns them; null when it refused
+  // what was typed.
+  async function save(tagValues) {
     // Guards the Enter/programmatic path + a fast double-click.
-    if (!name.value.trim() || !content.value.trim() || saving.value) return
+    if (!tagValues || !name.value.trim() || !content.value.trim() || saving.value) return
     const bytes = new TextEncoder().encode(content.value).length
     if (bytes > settings.maxSnippetSizeBytes) {
       diff.showNotice(
@@ -121,9 +135,9 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
       name: name.value,
       content: content.value,
       language: chosenLanguage.value,
-      contentChanged: content.value !== baselineContent.value,
-      tags,
-      tagColors
+      contentChanged: content.value !== baseline.content,
+      tags: tagValues.tags,
+      tagColors: tagValues.tagColors
     }
     if (isNew.value) {
       const id = await store.add(fields)
@@ -135,8 +149,12 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
       await store.update(editing.id, fields)
       saving.value = false
     }
-    baselineName.value = name.value
-    baselineContent.value = content.value
+    Object.assign(baseline, {
+      name: name.value,
+      content: content.value,
+      tags: [...tagValues.tags]
+    })
+    tags.value = [...tagValues.tags]
     onSaved(editing.id)
   }
 
@@ -182,6 +200,7 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     toggleReveal,
     saving,
     initialTags,
+    setTags,
     chosenLanguage,
     language,
     isMermaid,

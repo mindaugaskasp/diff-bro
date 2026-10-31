@@ -41,6 +41,8 @@ export const TAG_PALETTE = [
 export const MAX_TAGS = 20
 export const TAGS_BEFORE_MORE = 3
 
+export const isSameTagSet = (a, b) => a.length === b.length && a.every((t) => b.includes(t))
+
 export const cleanTag = (name) =>
   String(name ?? '')
     .trim()

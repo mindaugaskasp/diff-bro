@@ -11,12 +11,20 @@ defineProps({
   readOnly: { type: Boolean, default: true }
 })
 const name = defineModel('name', { type: String, default: '' })
-const emit = defineEmits(['editTags', 'editName'])
+const emit = defineEmits(['editTags', 'editName', 'tagsChange'])
 const nameLabel = ref(null)
 
 const tagField = ref(null)
 defineExpose({
-  tagValues: () => ({ tags: tagField.value.tags, tagColors: tagField.value.newColors() }),
+  tagValues() {
+    const field = tagField.value
+    field.onBlur()
+    if (field.tooDeep) {
+      field.focus()
+      return null
+    }
+    return { tags: [...field.tags], tagColors: field.newColors() }
+  },
   focusTags: () => tagField.value?.focus(),
   focusName: () => nameLabel.value?.querySelector('input')?.focus()
 })
@@ -45,6 +53,7 @@ defineExpose({
       :initial="initialTags"
       :readonly="readOnly"
       @request-edit="emit('editTags')"
+      @change="emit('tagsChange', $event)"
     />
   </header>
 </template>

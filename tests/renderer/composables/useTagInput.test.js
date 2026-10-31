@@ -134,3 +134,16 @@ describe('useTagInput — suggestions', () => {
     expect(field.suggestions.value).not.toContain('backend')
   })
 })
+
+describe('useTagInput — what the field holds right now', () => {
+  it('counts a tag still being typed, cleaned, without repeating one already applied', () => {
+    const field = useTagInput(['backend'])
+    expect(field.tagsWithTyped.value).toEqual(['backend'])
+    field.input.value = ' Infra '
+    expect(field.tagsWithTyped.value).toEqual(['backend', 'infra'])
+    field.input.value = 'backend'
+    expect(field.tagsWithTyped.value).toEqual(['backend'])
+    field.input.value = '   '
+    expect(field.tagsWithTyped.value).toEqual(['backend'])
+  })
+})

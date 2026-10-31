@@ -3,7 +3,7 @@
 |                                         |                                                                           |
 | --------------------------------------- | ------------------------------------------------------------------------- |
 | **Status**                              | shipped                                                                   |
-| **Progress**                            | 4 / 7 steps                                                               |
+| **Progress**                            | 7 / 7 steps                                                               |
 | **Branch**                              | stack below, from `fix/base64-partial-decode`                             |
 | **Started**                             | 2026-10-31                                                                |
 | **Finished**                            | 2026-10-31                                                                |
@@ -126,12 +126,12 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 
 | #   | slice                                   | branch                      | base   | PR   | status |
 | --- | --------------------------------------- | --------------------------- | ------ | ---- | ------ |
-| 1   | Base64 partial decode and summary count | `fix/base64-partial-decode` | `main` | #160 | open   |
-| 2   | Tool checkboxes and a steady result box | `fix/tool-dialog-controls`  | 1      | #161 | open   |
-| 3   | Snippet bar, and the add-tag popup      | `improvement/snippet-bar`   | 2      | #163 | open   |
-| 4   | Editor gutter                           | `improvement/editor-gutter` | 3      | #164 | open   |
-| 5   | Softer New row                          | `improvement/new-row-quiet` | 4      | #165 | open   |
-| 6   | Button hover, screenshots               | `improvement/button-hover`  | 5      |      |        |
+| 1   | Base64 partial decode and summary count | `fix/base64-partial-decode` | `main` | #160 | merged |
+| 2   | Tool checkboxes and a steady result box | `fix/tool-dialog-controls`  | 1      | #161 | merged |
+| 3   | Snippet bar, and the add-tag popup      | `improvement/snippet-bar`   | 2      | #163 | merged |
+| 4   | Editor gutter                           | `improvement/editor-gutter` | 3      | #164 | merged |
+| 5   | Softer New row                          | `improvement/new-row-quiet` | 4      | #165 | merged |
+| 6   | Button hover, screenshots               | `improvement/button-hover`  | 5      | #166 | merged |
 
 ## Implementation plan
 

@@ -1,6 +1,6 @@
 <script setup>
 // Suggestions float, so nothing below moves while typing a tag.
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useSnippetStore, MAX_TAGS } from '../stores/snippetStore'
 import { TAGS_BEFORE_MORE } from '../utils/snippetState'
 import { useTagInput } from '../composables/useTagInput'
@@ -17,18 +17,24 @@ const props = defineProps({
   },
   readonly: { type: Boolean, default: false }
 })
-const emit = defineEmits(['requestEdit'])
+const emit = defineEmits(['requestEdit', 'change'])
 
 const store = useSnippetStore()
-const field = reactive(useTagInput(props.initial))
+const tagInput = useTagInput(props.initial)
+const field = reactive(tagInput)
 const focused = ref(false)
 const hidden = computed(() => Math.max(0, field.tags.length - TAGS_BEFORE_MORE))
+watch(
+  () => field.tagsWithTyped,
+  (next) => emit('change', next)
+)
 
 function onBlur() {
   focused.value = false
   field.onBlur()
 }
-defineExpose({ ...field, focus: () => field.inputEl?.focus() })
+// The refs, not `...field`: a spread freezes what `remove` later reassigns.
+defineExpose({ ...tagInput, focus: () => field.inputEl?.focus() })
 </script>
 
 <template>

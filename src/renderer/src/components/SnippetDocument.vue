@@ -119,6 +119,7 @@ const compareWith = () =>
       :read-only="readOnly"
       @edit-tags="inline.editTags"
       @edit-name="inline.editName"
+      @tags-change="draft.setTags"
     />
     <Teleport v-if="inFront" to="#toolbar-doc-actions" defer>
       <SnippetEditorActions
