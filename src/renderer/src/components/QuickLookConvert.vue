@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { usePanelScroll } from '../composables/usePanelScroll'
+import { isStepBack } from '../composables/useQuickLookKeys'
 import AppIcon from './AppIcon.vue'
 import ToolEpoch from './ToolEpoch.vue'
 import ToolUuid from './ToolUuid.vue'
@@ -18,7 +19,7 @@ const props = defineProps({
   // The panel stays mounted while the list is showing, so it needs telling.
   visible: { type: Boolean, default: true }
 })
-defineEmits(['back', 'dismiss'])
+const emit = defineEmits(['back', 'dismiss'])
 
 const PANEL_ICONS = {
   epoch: 'clock',
@@ -37,6 +38,11 @@ const headIcon = computed(() => PANEL_ICONS[props.tool.panel] || 'wrench')
 // Focus a field, or Escape fires on body and never reaches the handler here.
 const panelEl = ref(null)
 const { onKeydown: onPanelKeys } = usePanelScroll(panelEl)
+function stepBack(e) {
+  if (!isStepBack(e)) return
+  e.preventDefault()
+  emit('back')
+}
 function focusFirstField() {
   nextTick(() => {
     const field = panelEl.value?.querySelector('input, textarea')
@@ -51,7 +57,7 @@ watch(
 </script>
 
 <template>
-  <div class="qc" @keydown.escape="$emit('dismiss')">
+  <div class="qc" @keydown.escape="$emit('dismiss')" @keydown.left="stepBack">
     <div class="qc-head band">
       <button
         class="btn btn-icon qc-back"

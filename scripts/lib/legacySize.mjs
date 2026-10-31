@@ -13,7 +13,7 @@ export const LEGACY_SIZE = {
   'src/main/window.js': { fn: 69 },
   'src/renderer/src/composables/useMatrixRain.js': { fn: 96 },
   'src/renderer/src/composables/useMonacoInput.js': { fn: 71 },
-  'src/renderer/src/composables/useQuickLook.js': { fn: 151 },
+  'src/renderer/src/composables/useQuickLook.js': { fn: 138 },
   'src/renderer/src/composables/useSnippetDraft.js': { fn: 167 },
   'src/renderer/src/composables/useSnippetPreview.js': { fn: 73 },
   'src/renderer/src/composables/useSpreadsheetDiff.js': { fn: 69 },

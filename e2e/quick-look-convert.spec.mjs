@@ -52,13 +52,46 @@ test('Escape closes the launcher from a tool with no click first', async ({ app,
   await expect.poll(() => launcherVisible(app), { timeout: 6000 }).toBe(false)
 })
 
-// The ← key is only ever a caret move, even in an empty field.
-test('the ← key never leaves the panel', async ({ app, page }) => {
+test('the ← key returns from an empty field to the list, and → comes back', async ({
+  app,
+  page
+}) => {
   const ql = await summon(app, page)
   await enterBase64(ql)
   await ql.getByLabel('Base64 input').fill('')
   await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.ql-input')).toBeFocused()
+  await expect(ql.locator('.qc-name')).toBeHidden()
+  await ql.locator('.ql-input').press('ArrowRight')
   await expect(ql.locator('.qc-name')).toHaveText('Base64')
+})
+
+test('the ← key moves the caret until it reaches the start, and the input survives', async ({
+  app,
+  page
+}) => {
+  const ql = await summon(app, page)
+  await enterBase64(ql)
+  const input = ql.getByLabel('Base64 input')
+  await input.fill('hi')
+  await ql.keyboard.press('ArrowLeft')
+  await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.qc-name')).toBeVisible()
+  await expect.poll(() => input.evaluate((el) => el.selectionStart)).toBe(0)
+  await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.ql-input')).toBeFocused()
+  await ql.locator('.ql-input').press('ArrowRight')
+  await expect(input).toHaveValue('hi')
+})
+
+test('the ← key closes the Tools section back to its row', async ({ app, page }) => {
+  const ql = await summon(app, page)
+  await expect(ql.locator('.ql-res.sel')).toContainText('Tools')
+  await ql.locator('.ql-input').press('ArrowRight')
+  await expect(ql.locator('.ql-res.sel')).not.toContainText('Tools')
+  await ql.locator('.ql-input').press('ArrowLeft')
+  await expect(ql.locator('.ql-res.sel')).toContainText('Tools')
+  await expect(ql.locator('.ql-res', { hasText: 'Base64' })).toHaveCount(0)
 })
 
 test('the back button returns to the list and navigation resumes', async ({ app, page }) => {
