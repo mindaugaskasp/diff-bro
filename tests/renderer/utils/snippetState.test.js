@@ -2,7 +2,7 @@
 // computed while it is decrypted, so getting the rule wrong here is a verdict
 // the library then carries around until someone re-saves the snippet.
 import { describe, expect, it } from 'vitest'
-import { derivedFrom, promptVars } from '../../../src/renderer/src/utils/snippetState'
+import { derivedFrom, isSameTagSet, promptVars } from '../../../src/renderer/src/utils/snippetState'
 
 const PHP = '$appId = "ABCD";\n$apiToken = "EFGH";'
 
@@ -57,5 +57,14 @@ describe('derivedFrom — prompt variables', () => {
     expect(derivedFrom(stale, '# Notes\n\nSome prose.').vars).toEqual([])
     const settled = { language: 'auto', detected: 'markdown', vars: ['stale'] }
     expect(derivedFrom(settled, '# Notes\n\nSome prose.').vars).toEqual(['stale'])
+  })
+})
+
+describe('isSameTagSet', () => {
+  it('ignores order and notices any tag gained or lost', () => {
+    expect(isSameTagSet(['a', 'b'], ['b', 'a'])).toBe(true)
+    expect(isSameTagSet(['a'], ['a', 'b'])).toBe(false)
+    expect(isSameTagSet(['a', 'b'], ['a', 'c'])).toBe(false)
+    expect(isSameTagSet([], [])).toBe(true)
   })
 })

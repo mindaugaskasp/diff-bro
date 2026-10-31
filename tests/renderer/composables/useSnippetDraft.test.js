@@ -203,3 +203,38 @@ describe('useSnippetDraft — repairing a diagram', () => {
     expect(useDiffStore().notice).toContain('Nothing to repair')
   })
 })
+
+describe('useSnippetDraft — tags are part of the draft', () => {
+  async function savedDraft(tags) {
+    const snippets = useSnippetStore()
+    window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
+    window.api.vaultDecrypt = async () => 'body'
+    const id = await snippets.add({ name: 'Original', content: 'body', tags })
+    const draft = useSnippetDraft(hostFor({ id }))
+    await new Promise((settled) => setTimeout(settled))
+    return { snippets, id, draft }
+  }
+
+  it('a changed tag alone makes the draft dirty, and undoing it makes it clean', async () => {
+    const { draft } = await savedDraft(['alpha'])
+    draft.setTags(['alpha', 'beta'])
+    expect(draft.isDirty.value).toBe(true)
+    draft.setTags(['alpha'])
+    expect(draft.isDirty.value).toBe(false)
+  })
+
+  it('saving takes the tags as the new baseline', async () => {
+    const { snippets, id, draft } = await savedDraft(['alpha'])
+    draft.setTags(['beta'])
+    await draft.save({ tags: ['beta'], tagColors: {} })
+    expect(draft.isDirty.value).toBe(false)
+    expect(snippets.entries.find((e) => e.id === id).tags).toEqual(['beta'])
+  })
+
+  it('saves nothing when the tag field refused what was typed', async () => {
+    const { snippets, id, draft } = await savedDraft(['alpha'])
+    draft.name.value = 'Renamed'
+    await draft.save(null)
+    expect(snippets.entries.find((e) => e.id === id).name).toBe('Original')
+  })
+})

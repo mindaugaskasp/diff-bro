@@ -12,6 +12,20 @@ function nextTentativeColor(registry, tentative) {
   return TAG_PALETTE.find((c) => !used.has(c)) ?? TAG_PALETTE[0]
 }
 
+// Existing tags not already applied, matching what's typed, recent-first.
+const tagSuggestions = (tagList, applied, typed) => {
+  const q = typed.trim().toLowerCase()
+  return tagList
+    .map((t) => t.name)
+    .filter((n) => !applied.includes(n) && n.includes(q))
+    .slice(0, 8)
+}
+
+const withTypedTag = (applied, typed) => {
+  const tag = cleanTag(typed)
+  return tag && !applied.includes(tag) ? [...applied, tag] : [...applied]
+}
+
 /**
  * @param {string[]} initial tags the snippet already carries
  * @returns {import('../types').TagField}
@@ -27,14 +41,9 @@ export function useTagInput(initial = []) {
 
   const canAddMore = computed(() => tags.value.length < MAX_TAGS)
 
-  // Existing tags not already applied, matching what's typed, recent-first.
-  const suggestions = computed(() => {
-    const q = input.value.trim().toLowerCase()
-    return store.tagList
-      .map((t) => t.name)
-      .filter((n) => !tags.value.includes(n) && n.includes(q))
-      .slice(0, 8)
-  })
+  const suggestions = computed(() => tagSuggestions(store.tagList, tags.value, input.value))
+
+  const tagsWithTyped = computed(() => withTypedTag(tags.value, input.value))
 
   // Display color: the registry color if the tag exists, else its tentative one.
   function colorFor(t) {
@@ -91,6 +100,7 @@ export function useTagInput(initial = []) {
     inputEl,
     canAddMore,
     suggestions,
+    tagsWithTyped,
     colorFor,
     add,
     remove,
