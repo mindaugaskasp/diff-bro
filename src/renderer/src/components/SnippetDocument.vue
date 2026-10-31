@@ -54,7 +54,7 @@ const { applySelectionEdit, layout, openFind, cursor } = useMonacoInput({
   content,
   language,
   readOnly,
-  options: { lineNumbersMinChars: 2, lineDecorationsWidth: 8, folding: false }
+  options: { lineNumbersMinChars: 2, lineDecorationsWidth: 22, folding: false }
 })
 const docRoot = ref(null)
 useSnippetFindKeys({ root: docRoot, editing: editMode, openFind })

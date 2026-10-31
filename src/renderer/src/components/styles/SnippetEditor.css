@@ -46,13 +46,13 @@
 .editor-area:not(.editing) .editor :deep(.monaco-editor-background) {
   background: var(--bg);
 }
-/* The gutter steps off the code and is ruled from it; the status bar below shares it. */
+/* Monaco has no inset setting: the numbers borrow theirs from lineDecorationsWidth. */
 .editor-area .editor :deep(.monaco-editor .margin) {
-  background: var(--editor-gutter);
-  box-shadow: inset -1px 0 var(--border);
+  background: var(--bg);
 }
 /* --text-dim misses 4.5:1 on sepia and solar; the meta ink clears it on all 20. */
 .editor-area .editor :deep(.monaco-editor .line-numbers) {
+  margin-left: var(--space-2);
   color: var(--text-meta);
 }
 .editor-area .editor :deep(.monaco-editor .line-numbers.active-line-number) {
