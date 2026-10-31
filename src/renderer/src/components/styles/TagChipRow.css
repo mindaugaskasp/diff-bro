@@ -1,25 +1,26 @@
 .tag-row {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: var(--space-1);
-  min-height: var(--control-h);
+  gap: var(--space-2);
 }
-.tag-row .tag-chip {
+.tag-row .etag {
   position: relative;
   height: var(--chip-h);
-  border-radius: calc(var(--chip-h) / 2);
+  padding: 0 var(--space-1);
+  color: var(--text-meta);
+  white-space: nowrap;
 }
-/* Overlaid on the chip's end, never in the flow: entering edit mode must not
-   resize a pill or shift the row. */
+/* Overlaid on the tag's end, never in the flow: entering edit mode must not
+   resize a tag or shift the row. */
 .tag-row .etag .x {
   position: absolute;
   inset: 0 0 0 auto;
   display: inline-flex;
   align-items: center;
   padding: 0 var(--space-1);
-  border-radius: 0 calc(var(--chip-h) / 2) calc(var(--chip-h) / 2) 0;
-  background: inherit;
+  background: var(--bg);
   opacity: 0;
 }
 .tag-row .etag:hover .x,
@@ -27,18 +28,18 @@
   opacity: 1;
 }
 .add-pill {
-  position: relative;
   min-width: 8.5em;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: var(--chip-h);
-  padding: 0 var(--space-2);
-  border: 1px dashed var(--btn-edge);
-  border-radius: calc(var(--chip-h) / 2);
-  background: transparent;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--btn-rest-edge);
+  border-radius: var(--radius);
+  background: none;
   color: var(--text-meta);
-  font-size: var(--font-sm);
+  font-size: var(--font-xs);
+  white-space: nowrap;
   cursor: pointer;
 }
 .add-pill:hover {
@@ -57,14 +58,16 @@
   width: 0;
   min-width: 0;
   padding: 0;
-  font-size: var(--font-sm);
+  font-size: var(--font-xs);
 }
+/* Anchored to the row, which spans the document, so it cannot leave the window. */
 .tag-pop {
   position: absolute;
   top: calc(100% + var(--space-1));
   left: 0;
   z-index: 20;
   width: 20rem;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -77,16 +80,6 @@
 .tag-pop .cap {
   color: var(--text-meta);
 }
-.tag-row.fold {
-  position: relative;
-  flex-wrap: nowrap;
-}
-.tag-row .etag.folded {
-  position: absolute;
-  visibility: hidden;
-  pointer-events: none;
-}
-
 /* #121: a fourth tag level is refused, with the deepest the path can go. */
 .too-deep {
   display: block;

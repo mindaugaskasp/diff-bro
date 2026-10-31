@@ -713,7 +713,7 @@ const SURFACES = [
   },
   {
     name: 'snippet-head-row',
-    // Applied tag labels are oklch(), which this parser cannot read; check:themes holds them.
+    // A tag's dot is oklch(), which this parser cannot read; check:themes holds it.
     open: async (page) => {
       await showPanel(page, 'snippets')
       await page.locator('[data-tour="snippet-new"]').click()
@@ -733,8 +733,8 @@ const SURFACES = [
     },
     probes: {
       'saves-as hint': ['.name-templates .preview', DIM],
-      '+N label': ['.more-chip', TEXT],
-      '+N keyline': ['.more-chip', DIM, 'border']
+      'tag word': ['.tag-row > .etag', TEXT],
+      '+N label': ['.more-chip', TEXT]
     }
   },
   {

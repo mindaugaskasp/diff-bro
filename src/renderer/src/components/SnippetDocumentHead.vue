@@ -42,7 +42,6 @@ defineExpose({
     <TagChipRow
       ref="tagField"
       class="doc-tags"
-      fold
       :initial="initialTags"
       :readonly="readOnly"
       @request-edit="emit('editTags')"

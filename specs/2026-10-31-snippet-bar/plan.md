@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 2 / 7 steps |
+| **Progress** | 3 / 7 steps |
 | **Branch** | stack below, from `fix/base64-partial-decode` |
 | **Started** | 2026-10-31 |
 | **Finished** | |
-| **Bugs found and fixed this iteration** | 4 / 5 |
+| **Bugs found and fixed this iteration** | 5 / 5 |
 | **Token baseline** | 2026-10-31T07:11:09Z |
 | **Claude tokens used** | |
 
@@ -108,7 +108,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
   - `e2e/tool-dialog-size.spec.mjs`: the Base64 dialog keeps its height from empty to one line; every tool's checkbox sits beside its label; decode's count is the input's length.
   - `e2e/snippet-tag-chips.spec.mjs`: three tags then +N; +N lists them all; the add popup stays inside a narrow window with no page scroll.
   - `e2e/new-row-marker.spec.mjs` and a gutter spec: the computed values above, and a gap of at least 8px between number and text at 4 digits.
-- **Guards:** `npm run check:themes` for the hover ladder; a `.doc-head` tag surface in `SURFACES` for the theme sweep.
+- **Guards:** `npm run check:themes` for the hover ladder; the tag word and +N in the sweep's `snippet-head-row` surface.
 - **Seed fixtures:** no change; no format or data shape changes.
 
 ## Docs impact
@@ -127,7 +127,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 | # | slice | branch | base | PR | status |
 |---|---|---|---|---|---|
 | 1 | Base64 partial decode and summary count | `fix/base64-partial-decode` | `main` | #160 | open |
-| 2 | Tool checkboxes and a steady result box | `fix/tool-dialog-controls` | 1 | | |
+| 2 | Tool checkboxes and a steady result box | `fix/tool-dialog-controls` | 1 | #161 | open |
 | 3 | Snippet bar, and the add-tag popup | `improvement/snippet-bar` | 2 | | |
 | 4 | Editor gutter | `improvement/editor-gutter` | 3 | | |
 | 5 | Softer New row | `improvement/new-row-quiet` | 4 | | |
@@ -137,7 +137,7 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 
 - [x] 1. Slice 1: red unit tests, partial decode, the count; PR.
 - [x] 2. Slice 2: red e2e, checkbox row across tools, stable result height across tools; PR.
-- [ ] 3. Slice 3: red e2e, name, tags, three then +N, bar ground, popup bounds; sweep surface; standards; PR.
+- [x] 3. Slice 3: red e2e, name, tags, three then +N, bar ground, popup bounds; sweep surface; standards; PR.
 - [ ] 4. Slice 4: red e2e, gutter; PR.
 - [ ] 5. Slice 5: red e2e, New row; PR.
 - [ ] 6. Slice 6: guard floors, hover tokens, standards, features and screenshots; PR.

@@ -11,7 +11,7 @@ async function openSnippet(page) {
 test('tags sit in a row with no frame, and + Add tag starts editing', async ({ page }) => {
   const doc = await openSnippet(page)
   await expect(doc.locator('.tagfield')).toHaveCount(0)
-  await expect(doc.locator('.tag-row .tag-chip')).toHaveCount(3)
+  await expect(doc.locator('.tag-row .etag')).toHaveCount(3)
 
   await doc.getByRole('button', { name: 'Add tag' }).click()
   await expect(page.getByRole('region', { name: 'Edit snippet' })).toBeVisible()
@@ -32,13 +32,13 @@ test('suggestions open over the editor without moving it', async ({ page }) => {
   expect(await editorTop()).toBe(before)
 })
 
-// Its own untagged snippet: beside the seeded three, a fourth chip may fold into +N.
+// Its own untagged snippet: beside the seeded three, a fourth tag would wait behind +N.
 test('Enter adds a chip and × removes it', async ({ page }) => {
   await openNewSnippet(page)
   const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.getByPlaceholder('add a tag…').fill('freshtag')
   await doc.getByPlaceholder('add a tag…').press('Enter')
-  await expect(doc.locator('.tag-row .tag-chip', { hasText: 'freshtag' })).toBeVisible()
+  await expect(doc.locator('.tag-row .etag', { hasText: 'freshtag' })).toBeVisible()
   await doc.getByRole('button', { name: /Remove tag freshtag/i }).click()
-  await expect(doc.locator('.tag-row .tag-chip', { hasText: 'freshtag' })).toHaveCount(0)
+  await expect(doc.locator('.tag-row .etag', { hasText: 'freshtag' })).toHaveCount(0)
 })

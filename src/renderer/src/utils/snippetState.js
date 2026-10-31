@@ -39,6 +39,7 @@ export const TAG_PALETTE = [
 
 // Per-entry tag cap (one slot is often the auto-added format tag).
 export const MAX_TAGS = 20
+export const TAGS_BEFORE_MORE = 3
 
 export const cleanTag = (name) =>
   String(name ?? '')
