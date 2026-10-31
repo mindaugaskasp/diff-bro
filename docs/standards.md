@@ -660,8 +660,7 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   which genuinely require it. Fix the local Node (`nvm use`); never widen
   `engines` to silence it.
 - Four deprecation warnings on install are transitive DEV-only dependencies whose
-  own packages are already at their latest — `npm audit` reports zero
-  vulnerabilities and nothing we import reaches them. `inflight`, `rimraf@2` and
+  own packages are already at their latest, and nothing we import reaches them. `inflight`, `rimraf@2` and
   `glob@7` come from `electron-builder`; `glob@10` from
   `@intlify/eslint-plugin-vue-i18n`. They are upstream's to fix: do NOT add
   `overrides` to force newer versions into someone else's tool, which risks the

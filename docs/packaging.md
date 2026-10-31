@@ -186,8 +186,14 @@ deps of electron-builder's native-rebuild toolchain, which this app never runs).
 
 ## CI vulnerability gate
 
-A dedicated `audit` job runs `npm audit --audit-level=moderate` on a cheap
-runner before any packaging, and `build` `needs:` it — so a tag push with a
-known moderate/high/critical vulnerability in the dependency tree fails the
-release fast, before spending Windows/macOS build minutes. Tighten the threshold
-to `--audit-level=low` to block on any advisory at all.
+The `check` job runs `npm audit --package-lock-only --omit=dev --audit-level=moderate`
+first, and `build` `needs:` it — so a tag push with a known moderate/high/critical
+vulnerability in what the app ships fails the release fast, before spending
+Windows/macOS build minutes. Tighten the threshold to `--audit-level=low` to block
+on any advisory at all.
+
+**Dev tools are outside this gate, at every severity.** v0.15.1 was blocked by
+`minimatch` and `glob` advisories reachable only through `eslint` and
+`electron-builder`, with no fix short of a major version those tools cannot take.
+Nothing in the release now reports an advisory in the build toolchain, so run
+`npm audit` by hand before a release to see them.

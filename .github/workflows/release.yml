@@ -91,16 +91,18 @@ jobs:
           cache: npm
 
       # Blocks the release when npm audit finds a vulnerability at or above the
-      # threshold. `moderate` covers the actionable set (moderate / high /
-      # critical) while ignoring unfixable low-severity dev-tool noise; change
-      # to `--audit-level=low` to fail on any advisory at all.
+      # threshold in what the app SHIPS. Dev tools are deliberately out: a build
+      # tool's advisory can have no fix but a major its dependents cannot take,
+      # and overriding those is ruled out (docs/standards.md). So nothing here
+      # sees an advisory in eslint or electron-builder, at any severity.
+      # `--audit-level=low` fails on any advisory at all.
       #
       # FIRST, and --package-lock-only: this reads the lock and needs no
       # node_modules at all. It used to be its own job that installed the whole
       # 872MB tree to run a one-second check. Here it still fails the release
       # before a single build minute is spent, ~15s in.
       - name: Audit dependencies for known vulnerabilities
-        run: npm audit --package-lock-only --audit-level=moderate
+        run: npm audit --package-lock-only --omit=dev --audit-level=moderate
 
       - run: npm install -g npm@11 --no-fund --no-audit
       - run: npm ci --no-fund
