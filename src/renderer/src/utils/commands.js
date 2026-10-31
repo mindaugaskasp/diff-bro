@@ -52,6 +52,7 @@ export const COMMANDS = {
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),
   'tab-new': ({ tabs }) => tabs.showStart(),
+  'open-new-snippet': ({ snippets }) => (snippets.editingSnippet = { id: null }),
   'tab-next': ({ tabs }) => tabs.step(1),
   'tab-prev': ({ tabs }) => tabs.step(-1),
   'tab-close': ({ tabs }) => tabs.requestActiveClose(),

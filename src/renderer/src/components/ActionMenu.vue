@@ -26,7 +26,8 @@ async function toggle() {
   const r = trigger.value.getBoundingClientRect()
   at.value = { x: Math.max(8, r.right - MENU_W), y: r.bottom + 4 }
   await nextTick()
-  menu.value?.querySelector('button:not(:disabled)')?.focus()
+  const firstEnabled = menu.value?.querySelector('button:not(:disabled)')
+  ;(firstEnabled ?? menu.value)?.focus()
 }
 function close() {
   at.value = null
@@ -56,6 +57,7 @@ function pick(action) {
         ref="menu"
         class="ctx"
         role="menu"
+        tabindex="-1"
         :aria-label="label"
         :style="{ left: `${at.x}px`, top: `${at.y}px` }"
         @pointerdown.stop

@@ -155,11 +155,8 @@ const fileSection = (run) => ({
       ]
     },
     { sep: true },
-    {
-      label: t('menu.file.newComparison'),
-      keys: `${MOD}+Shift+T`,
-      run: () => run('tab-new')
-    },
+    { label: t('menu.file.newComparison'), keys: `${MOD}+Shift+T`, run: () => run('tab-new') },
+    { label: t('menu.file.newSnippet'), run: () => run('open-new-snippet') },
     {
       label: t('menu.file.closeComparison'),
       keys: `${MOD}+Shift+W`,
