@@ -1,4 +1,4 @@
-import { test, expect, newSnippetButton, openNewSnippet, showPanel } from './fixtures.mjs'
+import { test, expect, newSnippetButton, openMenu, openNewSnippet, showPanel } from './fixtures.mjs'
 
 // Regression cover for UI defects found by eye. Each of these shipped once, so
 // each gets a test that fails if it comes back.
@@ -346,4 +346,21 @@ test('hovering the primary button moves its keyline, not its fill', async ({ pag
   // The bar is the neutral .btn's own shipped hover step (1.16 at worst): a
   // primary must move at least as visibly as the quiet button beside it.
   expect(hover.edgeVsFill, `keyline ${hover.edge} on fill ${hover.fill}`).toBeGreaterThan(1.16)
+})
+
+test('a hovered button is a soft wash with no coloured ring', async ({ page }) => {
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
+  const dlg = page.getByRole('dialog', { name: 'Base64' })
+  await dlg.getByLabel('Base64 input').fill('Diff Bro')
+  const save = dlg.getByRole('button', { name: 'Save as snippet' })
+  await save.hover()
+  const face = () => save.evaluate((el) => getComputedStyle(el).backgroundColor)
+  await expect.poll(face).toMatch(/\/ 0\.1\)$/)
+  await expect(save).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)')
+
+  await page.evaluate(() => (document.documentElement.dataset.theme = 'contrast'))
+  await expect(save, "a hard edge is contrast's contract").not.toHaveCSS(
+    'border-top-color',
+    'rgba(0, 0, 0, 0)'
+  )
 })

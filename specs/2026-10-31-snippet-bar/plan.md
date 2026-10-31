@@ -1,15 +1,15 @@
 # Snippet bar and quieter details
 
-|                                         |                                               |
-| --------------------------------------- | --------------------------------------------- |
-| **Status**                              | in-progress                                   |
-| **Progress**                            | 4 / 7 steps                                   |
-| **Branch**                              | stack below, from `fix/base64-partial-decode` |
-| **Started**                             | 2026-10-31                                    |
-| **Finished**                            |                                               |
-| **Bugs found and fixed this iteration** | 5 / 5                                         |
-| **Token baseline**                      | 2026-10-31T07:11:09Z                          |
-| **Claude tokens used**                  |                                               |
+|                                         |                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------- |
+| **Status**                              | shipped                                                                   |
+| **Progress**                            | 4 / 7 steps                                                               |
+| **Branch**                              | stack below, from `fix/base64-partial-decode`                             |
+| **Started**                             | 2026-10-31                                                                |
+| **Finished**                            | 2026-10-31                                                                |
+| **Bugs found and fixed this iteration** | 5 / 5                                                                     |
+| **Token baseline**                      | 2026-10-31T07:11:09Z                                                      |
+| **Claude tokens used**                  | 14,756,885 processed, mostly cache reads, measured from the build's start |
 
 ## Problem
 
@@ -67,7 +67,7 @@ Reuse what exists: the sidebar's dot and word tag and its three-then-+N rule, an
 - **Bar:** two lines in `--head-band` (49px), flush left.
 - **Gutter:** `--bg`, no rule, a 16px gap and a `--space-2` inset. Monaco has no inset setting, so `lineDecorationsWidth` is 22 and the numbers take a `--space-2` margin from it.
 - **New row:** wash `color-mix(--accent 10%)`, 2px bar at `--accent` 55%, pill with a `--border` edge and `--text-meta` label at 500. The 60s lifetime is unchanged.
-- **Hover:** `--btn-face-hover` is `--text` at 10%; no accent ring. Focus keeps `--focus-ring`.
+- **Hover:** `--btn-face-hover` is `--text` at 10% and `--btn-face-press` 16%, so press doesn't jump back to dark on dark; no accent ring. Focus keeps `--focus-ring`, and an open toggle keeps its accent keyline.
 
 ### Theme verdict: all 20
 
@@ -113,14 +113,14 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 
 ## Docs impact
 
-| surface                  | needed? | what changes                                                  |
-| ------------------------ | ------- | ------------------------------------------------------------- |
-| `README.md`              | no      | no feature or architecture change                             |
-| `docs/screenshots/*.png` | yes     | the hover, bar and gutter appear in captured states           |
-| `docs/roadmap.md`        | no      | polish on a shipped track                                     |
-| `docs/brand/roadmap.svg` | no      | same                                                          |
-| `docs/standards.md`      | yes     | the hover rule, the document head under Alignment             |
-| `docs/features.md`       | yes     | Base64 partial decode (slice 1); three tags then +N (slice 3) |
+| surface                  | needed? | what changes                                                                                     |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------ |
+| `README.md`              | no      | no feature or architecture change                                                                |
+| `docs/screenshots/*.png` | yes     | `make screenshots` run; 2 frames changed. None captures a hovered button or the snippet document |
+| `docs/roadmap.md`        | no      | polish on a shipped track                                                                        |
+| `docs/brand/roadmap.svg` | no      | same                                                                                             |
+| `docs/standards.md`      | yes     | the hover rule, the document head under Alignment                                                |
+| `docs/features.md`       | yes     | Base64 partial decode (slice 1); three tags then +N (slice 3)                                    |
 
 ## Delivery
 
@@ -140,8 +140,8 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 - [x] 3. Slice 3: red e2e, name, tags, three then +N, bar ground, popup bounds; sweep surface; standards; PR.
 - [x] 4. Slice 4: red e2e, gutter; PR.
 - [x] 5. Slice 5: red e2e, New row; PR.
-- [ ] 6. Slice 6: guard floors, hover tokens, standards, features and screenshots; PR.
-- [ ] 7. `/validate`, merge the stack bottom-up.
+- [x] 6. Slice 6: guard floors, hover tokens, standards, features and screenshots; PR.
+- [x] 7. `/validate`, merge the stack bottom-up.
 
 ## Decisions
 
@@ -158,8 +158,22 @@ None: no IPC, no fs, no crypto, no new dependency, no external link. Base64 deco
 
 ## Validation
 
-- [ ] `/validate`
-- [ ] `npm run check`
-- [ ] UI seen running (`make e2e`, theme sweep)
-- [ ] every Docs-impact "yes" done
-- [ ] token usage measured, header row filled
+- [x] `/validate`: comments swept, conventions and hard rules checked; see `quality-audit.md`.
+- [x] `npm run check` 0.
+- [x] UI seen running: `make e2e` 653 passed, 4 skipped, and 1 failed on a stale 32px gutter cap, since fixed in slice 4. Theme sweep ok, 3600 measurements across 20 themes. Real-app renders checked in light and dark.
+- [x] every Docs-impact "yes" done.
+- [x] token usage measured, header row filled.
+
+### Token usage
+
+The window starts when the build started, so the design rounds aren't counted.
+
+| category    |         tokens |
+| ----------- | -------------: |
+| input       |             94 |
+| output      |         62,764 |
+| cache write |        106,040 |
+| cache read  |     14,587,987 |
+| **total**   | **14,756,885** |
+
+**Outcome:** the snippet bar is a quiet title over its tags and part of the document. The gutter has room, New rows and button hovers are softer, and five bugs are fixed.
