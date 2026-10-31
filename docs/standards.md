@@ -330,9 +330,10 @@ directory move passes CI while silently removing enforcement.
   resting `.btn` down to its label: `--btn-rest-face` and `--btn-rest-edge` are
   transparent and there is no lift. What says "this is a button" is position (a
   toolbar, a dialog's action row), the label or icon at full ink, and the hover
-  face, which steps the `--btn-face-hover` / `--btn-face-press` ladder with the
-  accent on the keyline and NEVER on the label (it scores below 4.5:1 on five
-  themes). `.btn-primary` keeps its fill and lift: at most one per group. A
+  face, a soft wash of the theme's ink that steps the `--btn-face-hover` (10%) /
+  `--btn-face-press` (16%) ladder. The accent stays off a plain hover: no ring,
+  and NEVER on the label (it scores below 4.5:1 on five themes). An open toggle
+  (`.btn.active`) keeps the accent keyline. `.btn-primary` keeps its fill and lift: at most one per group. A
   Cancel or Close beside a primary is `.btn-ghost` (dim ink); a neutral action
   with no primary beside it is a plain `.btn`. Off is dim ink, no hover and
   reduced opacity. contrast and beacon keep the resting keyline

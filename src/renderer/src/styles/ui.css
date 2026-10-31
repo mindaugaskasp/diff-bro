@@ -130,10 +130,9 @@
     background 0.12s,
     box-shadow 0.12s;
 }
-/* The accent goes on the keyline, never the label — as label colour it is under
-   4.5:1 on five themes (solar 3.21 … light 4.49), and over a face on ten. */
+/* The face alone says hover. The accent stays off it: as a label colour it is
+   under 4.5:1 on five themes, and as a ring it adds a second colour to a wash. */
 .btn:hover:not(:disabled) {
-  border-color: var(--accent);
   background: var(--btn-face-hover);
 }
 .btn:active:not(:disabled) {
@@ -149,11 +148,7 @@
   outline-offset: 2px;
 }
 /* A toggle that is ON — AppToolbar bound .active for a long time with no rule.
-   The face steps to --btn-face-hover, NOT --btn-face-press: press is --text at
-   30%, which on nord lands close enough to the ink that the label itself scores
-   3.96 — under the reading floor, in a state that PERSISTS for as long as a
-   popover is open, unlike the momentary :active it borrowed the face from. The
-   accent keyline is what says "open"; the face only has to say "not at rest". */
+   The accent keyline is what says "open"; the face only has to say "not at rest". */
 .btn.active {
   background: var(--btn-face-hover);
   border-color: var(--accent);
@@ -268,7 +263,7 @@
 /* How many of the things behind this button are set — the View options a reader
    has changed, the columns keying the grid's rows. Height comes from --chip-h,
    never from padding: that is how the Esc chip drifted to 19px beside a 26px
-   button. Face is the theme's own ink at 30%, the same step .btn.active takes —
+   button. Face is the theme's own ink at the press step —
    --accent as a fill under a label scores under 4.5:1 on five themes. */
 .btn-count {
   min-width: var(--chip-h);
