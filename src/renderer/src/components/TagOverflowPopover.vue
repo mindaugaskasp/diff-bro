@@ -1,6 +1,5 @@
 <script setup>
 import { usePopover } from '../composables/usePopover'
-import TagGlyph from './TagGlyph.vue'
 import AppIcon from './AppIcon.vue'
 
 defineProps({
@@ -18,7 +17,7 @@ const { open, toggle, onKeydown, backdrop } = usePopover()
   <span class="anchor more-anchor" @keydown="onKeydown">
     <button
       type="button"
-      class="tag-chip more-chip"
+      class="more-chip"
       :aria-expanded="open"
       aria-haspopup="true"
       :aria-label="$t('tagChipsField.moreTags', { count: hidden })"
@@ -32,8 +31,8 @@ const { open, toggle, onKeydown, backdrop } = usePopover()
       role="group"
       :aria-label="$t('tagChipsField.allTags')"
     >
-      <span v-for="t in tags" :key="t" class="tag-chip etag" :style="{ '--tc': colorFor(t) }">
-        <TagGlyph :color="colorFor(t)" />{{ t }}
+      <span v-for="t in tags" :key="t" class="tag-word etag" :style="{ '--tc': colorFor(t) }">
+        <span class="tw-dot"></span>{{ t }}
         <button
           v-if="!readonly"
           type="button"

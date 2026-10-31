@@ -1,5 +1,6 @@
 <script setup>
 import { useSnippetStore } from '../stores/snippetStore'
+import { TAGS_BEFORE_MORE } from '../utils/snippetState'
 import AppIcon from './AppIcon.vue'
 
 defineProps({
@@ -9,7 +10,6 @@ defineProps({
   tags: { type: Array, default: () => [] }
 })
 
-const MAX_TAGS = 3
 const store = useSnippetStore()
 </script>
 
@@ -27,7 +27,7 @@ const store = useSnippetStore()
       <AppIcon name="braces" />{{ vars.length }}
     </span>
     <span
-      v-for="tag in tags.slice(0, MAX_TAGS)"
+      v-for="tag in tags.slice(0, TAGS_BEFORE_MORE)"
       :key="tag"
       class="tag-word"
       :style="{ '--tc': store.colorOf(tag) }"
@@ -35,7 +35,7 @@ const store = useSnippetStore()
       <span class="tw-dot"></span>
       <span class="tw-label">{{ tag }}</span>
     </span>
-    <span v-if="tags.length > MAX_TAGS" class="tw-more">+{{ tags.length - MAX_TAGS }}</span>
+    <span v-if="tags.length > TAGS_BEFORE_MORE" class="tw-more">+{{ tags.length - TAGS_BEFORE_MORE }}</span>
   </span>
 </template>
 

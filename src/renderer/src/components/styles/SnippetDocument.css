@@ -7,24 +7,26 @@
 }
 .doc-head {
   flex: none;
-  gap: var(--space-3);
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
   padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--border);
+  background: var(--bg);
 }
 .doc-name {
   position: relative;
-  flex: 0 1 400px;
-  min-width: 120px;
+  flex: none;
 }
-/* Room for the +N chip and the add pill, so folding never pushes them out. */
+/* The name's first letter sits 9px in: the field's edge plus its padding. */
 .doc-tags {
-  flex: 1;
-  min-width: 140px;
+  flex: none;
+  margin-left: 5px;
 }
 /* Both layers: the completion ghost drifts off the caret if their type differs. */
 .doc-name :deep(.ghost-field input),
 .doc-name :deep(.ghost-layer) {
-  font-size: var(--font-xl);
+  padding-block: 1px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 .doc-name :deep(.ghost-field input) {
@@ -33,7 +35,7 @@
 /* A title, not a form field: the box shows on hover and focus only. */
 .doc-name :deep(.ghost-field),
 .doc-name :deep(.ghost-field.ro) {
-  border-color: var(--field-edge);
+  border-color: transparent;
   background: transparent;
 }
 .doc-name :deep(.ghost-field.ro > input) {

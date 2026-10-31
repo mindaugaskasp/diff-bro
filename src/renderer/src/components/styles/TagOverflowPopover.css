@@ -3,28 +3,36 @@
 }
 .more-chip {
   height: var(--chip-h);
-  border-radius: calc(var(--chip-h) / 2);
-  border: 1px solid var(--btn-edge-strong);
-  background: var(--btn-face);
-  color: var(--text);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--btn-rest-edge);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-meta);
   font: inherit;
   font-size: var(--font-xs);
   cursor: pointer;
 }
 .more-chip:hover {
-  background: var(--btn-face-hover);
+  background: var(--row-hover);
+  color: var(--text);
 }
 .tag-more-pop {
   left: 0;
   right: auto;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-1) var(--space-3);
   width: max-content;
   max-width: 360px;
 }
 .tag-more-pop .etag {
   position: relative;
-  height: var(--chip-h);
-  border-radius: calc(var(--chip-h) / 2);
+  color: var(--text-meta);
+}
+.tag-more-pop .x {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
 }

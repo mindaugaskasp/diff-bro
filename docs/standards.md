@@ -417,7 +417,10 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   their content lines up by construction. Every sidebar section header adds
   `.band-row` (`--band-row`); the snippet document head adds `.head-band`
   (`--head-band`, the sidebar's search band less the tab strip), so that line
-  runs straight across the divider. A comparison has no band of its own: each
+  runs straight across the divider. That head is part of the document: `--bg`
+  with no rule, a `--font-md` title over its tags, both flush left. A tag there
+  is the sidebar's dot and word (`.tag-word`), three then a plain +N, the same
+  rule as a row (`TAGS_BEFORE_MORE`). A comparison has no band of its own: each
   pane names its side in a label at its top right (`PaneLabels`), a zero-height
   strip placed before the viewer's body so it sits under any band the viewer
   draws. A grid gives the strip its own row, because its top right is a column

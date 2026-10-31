@@ -1,14 +1,14 @@
 import { test, expect, openNewSnippet, snippetDoc, editInPlace, docActions } from './fixtures.mjs'
 
 const boxes = (doc) =>
-  doc.locator('.tag-row .tag-chip, .tag-row .add-pill').evaluateAll((els) =>
+  doc.locator('.tag-row .etag, .tag-row .add-pill').evaluateAll((els) =>
     els.map((el) => {
       const r = el.getBoundingClientRect()
       return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]
     })
   )
 
-test('entering edit mode moves and resizes no tag pill', async ({ page }) => {
+test('entering edit mode moves and resizes no tag', async ({ page }) => {
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Steady pills')
