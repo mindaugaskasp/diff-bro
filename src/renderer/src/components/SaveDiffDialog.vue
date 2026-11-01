@@ -116,20 +116,19 @@ function cancel() {
           >
         </i18n-t>
       </label>
-      <label v-if="secure">
+      <label>
         {{ $t('saveDiffDialog.expiresAfter') }}
-        <select v-model.number="ttl">
+        <select v-model.number="ttl" :disabled="!secure">
           <option v-for="opt in TTL_OPTIONS" :key="opt.hours" :value="opt.hours">
             {{ opt.label }}
           </option>
         </select>
       </label>
-      <p class="dialog-note">
-        {{
-          secure
-            ? $t('saveDiffDialog.deletesItselfAutomaticallyA')
-            : $t('saveDiffDialog.keptUntilYouDelete')
-        }}
+      <p class="dialog-note secure-note">
+        <span :class="{ off: !secure }">{{
+          $t('saveDiffDialog.deletesItselfAutomaticallyA')
+        }}</span>
+        <span :class="{ off: secure }">{{ $t('saveDiffDialog.keptUntilYouDelete') }}</span>
       </p>
       <div class="dialog-actions">
         <button type="submit" class="btn btn-primary">
