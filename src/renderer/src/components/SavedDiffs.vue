@@ -11,6 +11,7 @@ import { KeysPanel } from '../features/share'
 import TagManagePopover from './TagManagePopover.vue'
 import AppIcon from './AppIcon.vue'
 import SidebarNav from './SidebarNav.vue'
+import SidebarNotice from './SidebarNotice.vue'
 import SidebarEdge from './SidebarEdge.vue'
 import SidebarSearch from './SidebarSearch.vue'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -109,6 +110,7 @@ const scope = computed({
       <div class="usb-scroll">
         <component :is="PANEL_VIEW[panel]" v-bind="panelProps" @manage-tag="managing = $event" />
       </div>
+      <SidebarNotice />
       <SidebarEdge @resize="size.start" />
     </div>
   </aside>

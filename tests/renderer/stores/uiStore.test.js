@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { MOVED_ROW_MS, useUiStore } from '../../../src/renderer/src/stores/uiStore'
+import {
+  MOVED_ROW_MS,
+  SIDEBAR_NOTICE_MS,
+  useUiStore
+} from '../../../src/renderer/src/stores/uiStore'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 
 beforeEach(() => {
@@ -91,5 +95,20 @@ describe('a newly created row', () => {
     settings.setSidebarPanel('tools')
     useUiStore().markNewRow('x')
     expect(settings.sidebarPanel).toBe('tools')
+  })
+})
+
+describe('uiStore — the sidebar notice', () => {
+  it('clears itself, and a repeat restarts the wait', () => {
+    vi.useFakeTimers()
+    const ui = useUiStore()
+    ui.showSidebarNotice('first')
+    vi.advanceTimersByTime(SIDEBAR_NOTICE_MS - 1)
+    ui.showSidebarNotice('second')
+    vi.advanceTimersByTime(SIDEBAR_NOTICE_MS - 1)
+    expect(ui.sidebarNotice).toBe('second')
+    vi.advanceTimersByTime(1)
+    expect(ui.sidebarNotice).toBe('')
+    vi.useRealTimers()
   })
 })
