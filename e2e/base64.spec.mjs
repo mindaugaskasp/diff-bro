@@ -44,3 +44,11 @@ test('decode reads the Base64 inside mixed text and counts the input', async ({ 
   await expect(dlg.locator('.tb-text')).toHaveText('token: hello world stays')
   await expect(dlg.locator('.tb-count')).toContainText(`${mixed.length} chars`)
 })
+
+test('decode reads the part after a prefix joined by a dash', async ({ page }) => {
+  await openMenu(page, 'Tools', 'Encode', 'Base64')
+  const dlg = page.getByRole('dialog', { name: 'Base64' })
+  await dlg.locator('.seg-opt', { hasText: 'Decode' }).click()
+  await dlg.getByLabel('Base64 input').fill('TEST-ZGZkZmZkZmRmZmZmZmRkZGZmZGZkZg==')
+  await expect(dlg.locator('.tb-text')).toHaveText('TEST-dfdffdfdfffffdddffdfdf')
+})
