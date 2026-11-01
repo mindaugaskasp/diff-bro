@@ -1,7 +1,6 @@
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
-import { useCopyFeedback } from './useCopyFeedback'
 import { firstClaudeUrl } from '../utils/claudeLink'
 import { parseTemplateVars } from '../utils/templateVars'
 import { t } from '../i18n'
@@ -11,13 +10,12 @@ import { t } from '../i18n'
 
 /**
  * @param {() => import('../types').SnippetEntry} entry  the row's snippet
- * @returns {object} the row's actions plus the copy-flash state
+ * @returns {object} the row's actions
  */
 export function useSnippetRowActions(entry) {
   const store = useSnippetStore()
   const diff = useDiffStore()
   const ui = useUiStore()
-  const { copied, flash } = useCopyFeedback()
 
   async function copySnippet() {
     const content = await store.load(entry().id)
@@ -28,7 +26,7 @@ export function useSnippetRowActions(entry) {
     }
     const res = await window.api.copyText(content)
     if (!res?.ok) return diff.showNotice(t('snippetRow.copyFailed'))
-    flash()
+    ui.showSidebarNotice(t('snippetRow.copiedNotice', { name: entry().name }))
   }
 
   async function viewDiagram() {
@@ -53,5 +51,5 @@ export function useSnippetRowActions(entry) {
     else diff.showNotice(t('snippetRow.noClaudeLink'))
   }
 
-  return { copied, copySnippet, viewDiagram, openUrl, openLink }
+  return { copySnippet, viewDiagram, openUrl, openLink }
 }

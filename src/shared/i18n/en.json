@@ -994,6 +994,7 @@
     "copyTip": "Copy the snippet's full contents"
   },
   "snippetRow": {
+    "copiedNotice": "Copied Snippet - {name}",
     "viewDiagram": "View diagram",
     "openLinkInBrowser": "Open link in browser",
     "openClaudeLink": "Open Claude link",

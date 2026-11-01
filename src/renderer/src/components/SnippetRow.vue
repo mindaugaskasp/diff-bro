@@ -27,9 +27,7 @@ const props = defineProps({
 
 const store = useSnippetStore()
 const ui = useUiStore()
-const { copied, copySnippet, viewDiagram, openUrl, openLink } = useSnippetRowActions(
-  () => props.entry
-)
+const { copySnippet, viewDiagram, openUrl, openLink } = useSnippetRowActions(() => props.entry)
 const { startDrag } = useSnippetDrag()
 const reorder = injectRowReorder()
 const rowState = computed(() => ({
@@ -79,9 +77,6 @@ function onDragStart(e) {
     @contextmenu.prevent="openColorMenu($event)"
     v-on="reorder.handlersFor(group, index)"
   >
-    <Transition name="flash">
-      <span v-if="copied" class="copied-flash" aria-live="polite">{{ $t('common.copied') }}</span>
-    </Transition>
     <button
       class="entry"
       draggable="false"

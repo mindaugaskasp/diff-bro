@@ -27,11 +27,11 @@ const withContent = (entry, content) => {
 }
 
 describe('useSnippetRowActions', () => {
-  it('copies the decrypted body and flashes', async () => {
-    const { actions } = withContent({ id: 'a', name: 'n', language: 'sql' }, 'SELECT 1')
+  it('copies the decrypted body and names it at the foot of the sidebar', async () => {
+    const { actions } = withContent({ id: 'a', name: 'Query', language: 'sql' }, 'SELECT 1')
     await actions.copySnippet()
     expect(api.copyText).toHaveBeenCalledWith('SELECT 1')
-    expect(actions.copied.value).toBe(true)
+    expect(useUiStore().sidebarNotice).toBe('Copied Snippet - Query')
   })
 
   it('never copies when the body cannot be read', async () => {
