@@ -2,21 +2,20 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { buildMenus } from '../menus'
 import { useCommands } from '../composables/useCommands'
-import AppIcon from './AppIcon.vue'
 import MenuList from './MenuList.vue'
 
-// The ≡ menu for Windows/Linux (macOS keeps the native bar); mirrors the hidden
+// The menu strip for Windows/Linux (macOS keeps the native bar); mirrors the hidden
 // app menu, which still binds the accelerators.
 const { runFromMenu: run } = useCommands()
 // Computed, not called once: the labels come from t(), so switching language
 // has to rebuild the list rather than leave the old strings on screen.
 const menus = computed(() => buildMenus(run))
-const open = ref(false)
+const open = ref(null)
 // DevTools is dev-only; hidden in packaged builds.
 const isPackaged = ref(true)
 
 function close() {
-  open.value = false
+  open.value = null
 }
 
 function activate(item) {
@@ -35,19 +34,25 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <nav class="menubar" data-tour="menubar">
-    <button
-      class="btn btn-sm btn-square"
-      :class="{ active: open }"
-      aria-haspopup="menu"
-      :aria-expanded="open"
-      :aria-label="$t('menuBar.menu')"
-      :data-tip="$t('menuBar.menu')"
-      @click="open = !open"
-    >
-      <AppIcon name="menu" />
-    </button>
-    <MenuList v-if="open" :items="menus" :is-packaged="isPackaged" @pick="activate" />
+  <nav class="menubar band" data-tour="menubar">
+    <div v-for="menu in menus" :key="menu.id" class="menu">
+      <button
+        class="btn btn-sm"
+        :class="{ active: open === menu.id }"
+        aria-haspopup="menu"
+        :aria-expanded="open === menu.id"
+        @click="open = open === menu.id ? null : menu.id"
+        @mouseenter="open && (open = menu.id)"
+      >
+        {{ menu.label }}
+      </button>
+      <MenuList
+        v-if="open === menu.id"
+        :items="menu.items"
+        :is-packaged="isPackaged"
+        @pick="activate"
+      />
+    </div>
   </nav>
   <!-- Click-catcher: clicking anywhere closes the
        open menu without dimming the app behind it. -->

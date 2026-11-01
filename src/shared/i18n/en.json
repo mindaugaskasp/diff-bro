@@ -468,10 +468,8 @@
     "rust": "Rust",
     "java": "Java"
   },
-  "menuBar": {
-    "menu": "Menu"
-  },
   "appToolbar": {
+    "settings": "Settings",
     "splitView": "Split view",
     "ignoreWhitespace": "Ignore whitespace",
     "focusOnChanges": "Focus on changes",
@@ -485,6 +483,7 @@
     "structureDiagram": "Diagram",
     "structureDeps": "Dependencies",
     "tips": {
+      "settings": "Settings ({mod}+,)",
       "view": "Split view, structure and whitespace — everything that changes how the comparison is drawn",
       "more": "Actions the bar has no room for",
       "save": "Save this diff to the sidebar ({mod}+S)",

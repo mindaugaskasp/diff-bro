@@ -7,7 +7,7 @@
 // from ToolbarOverflow, both drawing on utils/toolbarActions. That is what keeps
 // this file inside its size caps and the width inside the window's minimum.
 import { computed } from 'vue'
-import { MOD } from '../keys'
+import { MOD, isMac } from '../keys'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { useTabsStore } from '../stores/tabsStore'
@@ -95,6 +95,16 @@ const actionState = computed(() => ({
       <span class="divider" />
       <div id="toolbar-doc-actions" class="group doc-actions" />
       <ToolbarOverflow v-if="!onSnippet" :state="actionState" />
+      <button
+        v-if="isMac"
+        class="btn btn-sm btn-square"
+        data-testid="toolbar-settings"
+        :aria-label="$t('appToolbar.settings')"
+        :data-tip="$t('appToolbar.tips.settings', { mod: MOD })"
+        @click="run('settings')"
+      >
+        <AppIcon name="settings" />
+      </button>
     </div>
   </header>
 </template>

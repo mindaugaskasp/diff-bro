@@ -1,8 +1,14 @@
 .menubar {
   position: relative;
   z-index: 30;
-  display: inline-flex;
   flex: none;
+  gap: 2px;
+  padding: 1px var(--space-1);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.menu {
+  position: relative;
 }
 .menu-backdrop {
   position: fixed;
