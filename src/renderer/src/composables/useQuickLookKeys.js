@@ -25,6 +25,17 @@ function copyChord({ count, selected, onCopy }) {
   }
 }
 
+const hasModifier = (e) => e.shiftKey || e.altKey || e.metaKey || e.ctrlKey
+const MOVES_WITHOUT_CARET = 'select, input:not([type="checkbox"]), [contenteditable]'
+
+// ← is a cursor key until the caret has nowhere left to go, and a held key stops there.
+export function isStepBack(e) {
+  if (e.key !== 'ArrowLeft' || e.repeat || e.isComposing || hasModifier(e)) return false
+  const t = e.target
+  if (t?.selectionStart != null) return t.selectionStart === 0 && t.selectionEnd === 0
+  return !t?.closest?.(MOVES_WITHOUT_CARET)
+}
+
 /**
  * @param {object} o
  * @param {() => number} o.count           current result count
@@ -35,6 +46,7 @@ function copyChord({ count, selected, onCopy }) {
  * @param {(index: number) => void} [o.onOpen]  Cmd/Ctrl+Enter: open it in the main window
  * @param {() => void} [o.onNew]                Cmd/Ctrl+N: start a new snippet
  * @param {() => boolean} [o.onExpand]  → on a tools row or a tool: true if it handled it
+ * @param {() => boolean} [o.onCollapse]  ← with the tools open: true if it handled it
  * @returns {{ onKeydown: (e: KeyboardEvent) => void }}
  */
 export function useQuickLookKeys({
@@ -45,7 +57,8 @@ export function useQuickLookKeys({
   onCopy = () => {},
   onOpen = () => {},
   onNew = () => {},
-  onExpand = () => false
+  onExpand = () => false,
+  onCollapse = () => false
 }) {
   const clamp = (i) => Math.max(0, Math.min(i, count() - 1))
   const tryCopy = copyChord({ count, selected, onCopy })
@@ -63,6 +76,9 @@ export function useQuickLookKeys({
   function expand(e) {
     if (caretAtEnd(e) && onExpand()) e.preventDefault()
   }
+  function collapse(e) {
+    if (isStepBack(e) && onCollapse()) e.preventDefault()
+  }
   function commit(e) {
     e.preventDefault()
     if (count() === 0) return
@@ -78,6 +94,7 @@ export function useQuickLookKeys({
     ArrowDown: (e) => move(e, 1),
     ArrowUp: (e) => move(e, -1),
     ArrowRight: expand,
+    ArrowLeft: collapse,
     Enter: commit,
     Escape: leave
   }

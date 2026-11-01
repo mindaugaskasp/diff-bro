@@ -35,6 +35,7 @@ const {
   language: composeLanguage,
   resolvedLanguage: composeResolved,
   canSave: composeCanSave,
+  dirty: composeDirty,
   saving: composeSaving,
   open: openCompose,
   cancel: cancelCompose,
@@ -83,6 +84,7 @@ onMounted(() => {
         v-model:language="composeLanguage"
         :resolved-language="composeResolved"
         :can-save="composeCanSave"
+        :can-step-back="!composeDirty"
         :saving="composeSaving"
         @save="saveCompose"
         @back="cancelCompose"

@@ -80,10 +80,6 @@ test('Enter opens a snippet in the sheet, and the ← button goes back', async (
   await expect(ql.locator('.ql-compose')).toBeVisible()
   await expect(ql.locator('.ql-compose-name')).toHaveValue('Sheet probe')
 
-  await ql.locator('.ql-compose-name').press('Home')
-  await ql.locator('.ql-compose-name').press('ArrowLeft')
-  await expect(ql.locator('.ql-compose')).toBeVisible()
-
   await ql.locator('.ql-compose-back').click()
   await expect(ql.locator('.ql-compose')).toBeHidden()
   await expect(ql.locator('.ql-input')).toHaveValue('Sheet probe')

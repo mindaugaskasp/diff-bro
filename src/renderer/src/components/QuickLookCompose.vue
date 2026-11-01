@@ -3,6 +3,7 @@
 import { computed, nextTick, toRef } from 'vue'
 import { useHighlightedInput } from '../composables/useHighlightedInput'
 import { useFormatToolbar } from '../composables/useFormatToolbar'
+import { isStepBack } from '../composables/useQuickLookKeys'
 import { useTextareaMarkup } from '../composables/useTextareaMarkup'
 import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
@@ -14,6 +15,7 @@ import AppIcon from './AppIcon.vue'
 const props = defineProps({
   canSave: { type: Boolean, default: false },
   saving: { type: Boolean, default: false },
+  canStepBack: { type: Boolean, default: false },
   resolvedLanguage: { type: String, default: 'plaintext' }
 })
 const name = defineModel('name', { type: String, required: true })
@@ -35,6 +37,10 @@ const { actions: markupActions, applyAction } = useFormatToolbar({ isMarkdown, a
 const chord = (e) => (e.metaKey || e.ctrlKey) && !e.altKey
 function onKeydown(e) {
   if (e.key === 'Escape') return emit('dismiss')
+  if (props.canStepBack && isStepBack(e)) {
+    e.preventDefault()
+    return emit('back')
+  }
   if (chord(e) && e.key === 'Enter') {
     e.preventDefault()
     return emit('open')

@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { useQuickLookKeys } from '../../../src/renderer/src/composables/useQuickLookKeys'
+import {
+  isStepBack,
+  useQuickLookKeys
+} from '../../../src/renderer/src/composables/useQuickLookKeys'
 
 // A plain {value} stands in for the Vue ref; count() is a getter over the list
 // length. The KeyboardEvent is faked down to the two things the driver reads.
@@ -129,12 +132,94 @@ describe('useQuickLookKeys — leaving', () => {
     expect(prevented).toHaveBeenCalled()
   })
 
-  it('ArrowLeft never navigates or dismisses, wherever the caret is', () => {
+  it('ArrowLeft never dismisses', () => {
     const h = harness(3, 1)
-    const atStart = { selectionStart: 0, selectionEnd: 0, value: 'auth' }
-    const prevented = h.press('ArrowLeft', { target: atStart })
+    h.press('ArrowLeft', { target: { selectionStart: 0, selectionEnd: 0, value: 'auth' } })
     expect(h.onDismiss).not.toHaveBeenCalled()
-    expect(prevented).not.toHaveBeenCalled()
+  })
+})
+
+describe('isStepBack', () => {
+  const left = (target, extra = {}) => ({ key: 'ArrowLeft', target, ...extra })
+  const field = (start, end = start, value = 'auth') => ({
+    selectionStart: start,
+    selectionEnd: end,
+    value
+  })
+  const element = (tag, type) => {
+    const el = document.createElement(tag)
+    if (type) el.type = type
+    return el
+  }
+
+  it('steps back from a caret at the start, or an empty field', () => {
+    expect(isStepBack(left(field(0)))).toBe(true)
+    expect(isStepBack(left(field(0, 0, '')))).toBe(true)
+  })
+
+  it('leaves a caret with room to move, or a selection to collapse', () => {
+    expect(isStepBack(left(field(2)))).toBe(false)
+    expect(isStepBack(left(field(0, 4)))).toBe(false)
+  })
+
+  it('stops at the start when the key is held', () => {
+    expect(isStepBack(left(field(0), { repeat: true }))).toBe(false)
+  })
+
+  it('leaves text mid-composition to the input method', () => {
+    expect(isStepBack(left(field(0), { isComposing: true }))).toBe(false)
+  })
+
+  it.each(['shiftKey', 'altKey', 'metaKey', 'ctrlKey'])('leaves %s chords alone', (modifier) => {
+    expect(isStepBack(left(field(0), { [modifier]: true }))).toBe(false)
+  })
+
+  it('steps back from a control that has no use for the key', () => {
+    expect(isStepBack(left(element('button')))).toBe(true)
+    expect(isStepBack(left(element('input', 'checkbox')))).toBe(true)
+    expect(isStepBack(left(element('div')))).toBe(true)
+  })
+
+  it('leaves a control that moves with ← without reporting a caret', () => {
+    expect(isStepBack(left(element('select')))).toBe(false)
+    expect(isStepBack(left(element('input', 'datetime-local')))).toBe(false)
+  })
+
+  it('answers no for any other key', () => {
+    expect(isStepBack({ key: 'ArrowRight', target: field(0) })).toBe(false)
+  })
+})
+
+describe('useQuickLookKeys — ArrowLeft', () => {
+  function collapseHarness(handles) {
+    const onCollapse = vi.fn(() => handles)
+    const { onKeydown } = useQuickLookKeys({
+      count: () => 3,
+      selected: { value: 0 },
+      onChoose: vi.fn(),
+      onDismiss: vi.fn(),
+      onCollapse
+    })
+    return { onCollapse, press: presser(onKeydown) }
+  }
+  const atStart = { selectionStart: 0, selectionEnd: 0, value: '' }
+
+  it('steps back a level from the start of the query', () => {
+    const h = collapseHarness(true)
+    expect(h.press('ArrowLeft', { target: atStart })).toHaveBeenCalled()
+    expect(h.onCollapse).toHaveBeenCalledTimes(1)
+  })
+
+  it('stays a cursor key when there is no level to step back to', () => {
+    const h = collapseHarness(false)
+    expect(h.press('ArrowLeft', { target: atStart })).not.toHaveBeenCalled()
+  })
+
+  it('stays a cursor key mid-query', () => {
+    const h = collapseHarness(true)
+    const midQuery = { selectionStart: 2, selectionEnd: 2, value: 'auth' }
+    expect(h.press('ArrowLeft', { target: midQuery })).not.toHaveBeenCalled()
+    expect(h.onCollapse).not.toHaveBeenCalled()
   })
 })
 

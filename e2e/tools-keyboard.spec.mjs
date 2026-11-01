@@ -87,8 +87,10 @@ test('the launcher arrow chain reaches a tool, and the back button returns', asy
   await expect(ql.locator('.qc-name')).toBeVisible()
   await expect(ql.locator('.qc-panel input, .qc-panel textarea').first()).toBeFocused()
 
-  // The ← key stays a caret move; the ← button goes back, and arrows still work.
+  // From an empty field the ← key goes back, → returns, and so does the ← button.
   await ql.keyboard.press('ArrowLeft')
+  await expect(ql.locator('.ql-input')).toBeFocused()
+  await ql.keyboard.press('ArrowRight')
   await expect(ql.locator('.qc-name')).toBeVisible()
   await ql.locator('.qc-back').click()
   await expect(ql.locator('.ql-input')).toBeFocused()
