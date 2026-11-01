@@ -13,6 +13,7 @@ import { allowCliPath } from './files'
 import { fileAtRevision, isRevisionSide, REVISION_ERROR_KEYS } from './gitCliFiles'
 import { registerMergeIpc, routeMerge } from './mergeRoute'
 import { t } from './i18n'
+import { appendLog } from './logger'
 
 // A command can arrive before any window exists (a cold `diffbro compare …`),
 // so it waits here until the renderer says it is listening.
@@ -22,7 +23,9 @@ let listener = null
 function deliver(command) {
   if (!command) return
   const win = ensureMainWindow()
-  if (listener && !listener.isDestroyed()) listener.send('cli:command', command)
+  const live = !!listener && !listener.isDestroyed()
+  appendLog({ source: 'cli', message: `deliver ${command.name}`, context: { live, win: !!win } })
+  if (live) listener.send('cli:command', command)
   else pending = command
   win?.focus()
 }

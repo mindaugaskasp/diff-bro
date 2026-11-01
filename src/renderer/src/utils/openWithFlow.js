@@ -16,11 +16,14 @@ function blockedBy({ diff, tabs }, path) {
   return true
 }
 
+const noticeCouldNotOpen = (diff, path) =>
+  diff.showNotice(`Could not open "${String(path).split(/[\\/]/).pop()}".`)
+
 async function readOrNotify(diff, path) {
   try {
     return await window.api.readFile(path)
   } catch {
-    diff.showNotice(`Could not open "${String(path).split(/[\\/]/).pop()}".`)
+    noticeCouldNotOpen(diff, path)
     return null
   }
 }
@@ -86,10 +89,9 @@ export function openFileAsSnippet(stores) {
  */
 export function openWithFromCli(stores, files) {
   const paths = files ?? []
-  const steps =
-    paths.length === 1
-      ? [() => openOne(stores, paths[0])]
-      : paths.map((path) => () => place(stores, path))
-  for (const step of steps) queue = queue.then(step).catch(() => {})
+  const open = paths.length === 1 ? openOne : place
+  for (const path of paths) {
+    queue = queue.then(() => open(stores, path)).catch(() => noticeCouldNotOpen(stores.diff, path))
+  }
   return queue
 }

@@ -63,6 +63,25 @@ describe('openWithFromCli', () => {
     ])
   })
 
+  it('says so when an opened file cannot become a tab, rather than doing nothing', async () => {
+    const stores = fakeStores()
+    stores.tabs.openSnippet.mockImplementation(() => {
+      throw new Error('boom')
+    })
+    await openWithFromCli(stores, ['C:\\Users\\m\\notes.txt'])
+    expect(stores.diff.showNotice).toHaveBeenCalledWith('Could not open "notes.txt".')
+  })
+
+  it('still opens the next file after one fails', async () => {
+    const stores = fakeStores()
+    stores.tabs.openSnippet.mockImplementationOnce(() => {
+      throw new Error('boom')
+    })
+    await openWithFromCli(stores, ['/a.txt'])
+    await openWithFromCli(stores, ['/b.txt'])
+    expect(stores.tabs.openSnippet).toHaveBeenCalledTimes(2)
+  })
+
   it('a binary file goes to the comparison view, never a snippet', async () => {
     window.api.readFile = vi.fn(async (path) => ({ error: 'binary', name: 'x.bin', path }))
     const stores = fakeStores()
