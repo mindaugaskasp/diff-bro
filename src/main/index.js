@@ -24,7 +24,7 @@ import { ensureMainWindow, registerQuickLook, destroyQuickLook, toggleQuickLook 
 import { attachCloseToTray, installTray, markQuitting, registerTrayIpc } from './tray'
 import { startsHidden } from './trayCore'
 import { registerLinkIpc } from './links'
-import { installCrashHooks, registerLoggerIpc } from './logger'
+import { appendLog, installCrashHooks, registerLoggerIpc } from './logger'
 import { registerCliIpc, routeCliArgv, routeOpenWith } from './cliRoute'
 import { cliUsage, helpText, parseCli, parseOpenWith } from './cli'
 import { handoffLine, promptSnippet } from './cliPrompt'
@@ -104,12 +104,14 @@ async function boot() {
     // Quitting the instant the lock is lost raced the payload out of the door:
     // the owner intermittently never saw `second-instance`, and the draft was
     // dropped. A tick lets the singleton finish handing over before we go.
+    appendLog({ source: 'cli', message: 'lock lost, handing over to the running app' })
     setTimeout(() => app.quit(), 150)
     return
   }
   // A `diffbro …` launch is a second instance: the lock hands us its argv and
   // cwd, so the command runs here rather than starting a second app.
   app.on('second-instance', (_event, argv, cwd, additionalData) => {
+    appendLog({ source: 'cli', message: 'second launch received', context: { args: argv.length } })
     if (additionalData?.version && additionalData.version !== app.getVersion()) {
       app.relaunch()
       app.exit(0)

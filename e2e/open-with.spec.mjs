@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -77,6 +77,22 @@ test('one file opened from the OS opens as an unsaved snippet, not half a compar
   await expect(doc.locator('.view-lines')).toContainText('two')
   await expect(doc.locator('.editor-status')).toContainText('not in your library yet')
   await expect(page.locator('.waiting')).toHaveCount(0)
+  await done()
+})
+
+test('the hand-off to a running app leaves a trail in the log, with no paths', async () => {
+  const { userDataDir, files, page, done } = await launchWithFiles()
+  await openWith(userDataDir, [files.alpha])
+  await expect(newSnippet(page)).toBeVisible()
+
+  const logs = join(userDataDir, 'logs')
+  const log = readdirSync(logs)
+    .map((name) => readFileSync(join(logs, name), 'utf-8'))
+    .join('')
+  for (const step of ['lock lost', 'second launch received', 'deliver open-with']) {
+    expect(log).toContain(step)
+  }
+  expect(log).not.toContain('alpha.txt')
   await done()
 })
 
