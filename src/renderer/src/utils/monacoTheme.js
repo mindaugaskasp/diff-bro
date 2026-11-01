@@ -64,7 +64,7 @@ export function monacoThemeData(resolved, { dark }) {
     'editorLineNumber.activeForeground': '--text',
     'editorIndentGuide.background': '--border',
     'editorWhitespace.foreground': '--border',
-    'editorCursor.foreground': '--accent',
+    'editorCursor.foreground': '--text',
     'diffEditor.insertedLineBackground': '--diff-add-line',
     'diffEditor.removedLineBackground': '--diff-del-line',
     'diffEditor.insertedTextBackground': '--diff-add-text',
