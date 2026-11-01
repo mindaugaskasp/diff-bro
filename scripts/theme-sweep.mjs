@@ -442,6 +442,28 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'save-diff-insecure',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Paste mode' }).click()
+      await page.getByPlaceholder('Paste or type the original text').fill('a\n')
+      await page.getByPlaceholder('Paste or type the changed text').fill('b\n')
+      await page.getByRole('button', { name: 'Compare', exact: true }).click()
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      const dlg = page.getByRole('dialog', { name: 'Save diff' })
+      await dlg.getByRole('checkbox', { name: /Secure/ }).uncheck()
+    },
+    close: async (page) => {
+      const dlg = page.getByRole('dialog', { name: 'Save diff' })
+      await dlg.getByRole('button', { name: 'Cancel' }).click()
+      await dlg.waitFor({ state: 'detached' })
+      await clearComparison(page)
+    },
+    probes: {
+      'expiry, disabled': ['.dialog select:disabled', DIM],
+      note: ['.secure-note span:not(.off)', TEXT]
+    }
+  },
+  {
     name: 'placeholder-tip',
     open: async (page) => {
       await showPanel(page, 'snippets')

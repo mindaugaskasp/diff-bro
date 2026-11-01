@@ -21,3 +21,18 @@
 .toggle strong {
   font-weight: 600;
 }
+select:disabled {
+  color: var(--text-dim);
+  opacity: 0.7;
+  cursor: default;
+}
+/* Both notes hold their place, so the longer one sizes the dialog in any language. */
+.secure-note {
+  display: grid;
+}
+.secure-note span {
+  grid-area: 1 / 1;
+}
+.secure-note .off {
+  visibility: hidden;
+}
