@@ -442,6 +442,40 @@ async function seedClaudeInbox(page, userDataDir) {
 
 const SURFACES = [
   {
+    name: 'placeholder-tip',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      await page.locator('[data-tour="snippet-new"]').click()
+      await page.locator('.placeholder-tip').waitFor()
+    },
+    close: async (page) => {
+      await page.locator('.diff-tabs .tab.active .tab-close').click()
+      await page.locator('.placeholder-tip').waitFor({ state: 'detached' })
+    },
+    probes: {
+      tip: ['.placeholder-tip', TEXT],
+      token: ['.placeholder-tip code', TEXT],
+      exit: ['.tip-exit', TEXT]
+    }
+  },
+  {
+    name: 'sidebar-notice',
+    open: async (page) => {
+      await showPanel(page, 'snippets')
+      const row = page.locator('li.row', { hasText: 'Example — Mermaid diagram' }).first()
+      await row.hover()
+      await row.getByRole('button', { name: 'Copy to clipboard' }).click()
+      await page.locator('.sidebar-notice').waitFor()
+    },
+    close: async (page) => {
+      await page.mouse.move(0, 0)
+      await page.locator('.sidebar-notice').waitFor({ state: 'detached' })
+    },
+    probes: {
+      notice: ['.sidebar-notice', TEXT]
+    }
+  },
+  {
     name: 'snippet-inline-edit',
     open: async (page) => {
       await showPanel(page, 'snippets')

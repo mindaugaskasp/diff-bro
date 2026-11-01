@@ -27,11 +27,11 @@ const withContent = (entry, content) => {
 }
 
 describe('useSnippetRowActions', () => {
-  it('copies the decrypted body and flashes', async () => {
-    const { actions } = withContent({ id: 'a', name: 'n', language: 'sql' }, 'SELECT 1')
+  it('copies the decrypted body and names it at the foot of the sidebar', async () => {
+    const { actions } = withContent({ id: 'a', name: 'Query', language: 'sql' }, 'SELECT 1')
     await actions.copySnippet()
     expect(api.copyText).toHaveBeenCalledWith('SELECT 1')
-    expect(actions.copied.value).toBe(true)
+    expect(useUiStore().sidebarNotice).toBe('Copied Snippet - Query')
   })
 
   it('never copies when the body cannot be read', async () => {
@@ -40,13 +40,9 @@ describe('useSnippetRowActions', () => {
     expect(api.copyText).not.toHaveBeenCalled()
   })
 
-  // A Claude prompt with placeholders goes through the fill dialog first —
-  // copying it raw would hand out `{{variables}}`.
-  it('routes a placeholder prompt to the fill dialog instead of the clipboard', async () => {
-    const { store, actions } = withContent(
-      { id: 'a', name: 'Review', language: 'claude' },
-      'Review {{file}}'
-    )
+  // Copying it raw would hand out `{{variables}}`.
+  it.each(['claude', 'javascript', 'jira'])('asks to fill a %s snippet first', async (language) => {
+    const { store, actions } = withContent({ id: 'a', name: 'Review', language }, 'Review {{file}}')
     await actions.copySnippet()
     expect(api.copyText).not.toHaveBeenCalled()
     expect(store.pendingFill).toEqual({ name: 'Review', content: 'Review {{file}}' })

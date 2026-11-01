@@ -2,15 +2,18 @@
 // specs start reading each other's copies, intermittently and elsewhere.
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { test, expect, launchApp, freshUserDataDir } from './fixtures.mjs'
+import { test, expect, firstReadyPage, launchApp, freshUserDataDir } from './fixtures.mjs'
 import { displayFor, isX11 } from './workerEnv.mjs'
 
-const launchedEnv = (app) =>
-  app.evaluate(({ app: electronApp }) => ({
+// Evaluating mid-startup can lose the call's promise to V8's GC. Wait out the startup.
+const launchedEnv = async (app) => {
+  await firstReadyPage(app)
+  return app.evaluate(({ app: electronApp }) => ({
     display: process.env.DISPLAY,
     temp: electronApp.getPath('temp'),
     home: process.env.HOME
   }))
+}
 
 // Its own profile, so the paths can be asserted exactly rather than by shape.
 test('the app scratch dirs are its own profile, not the worker', async () => {

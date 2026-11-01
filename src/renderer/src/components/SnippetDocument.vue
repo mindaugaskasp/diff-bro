@@ -113,6 +113,7 @@ const compareWith = () =>
     <SnippetDocumentHead
       ref="head"
       v-model:name="name"
+      :is-new="!editing.id && !editing.openedPath"
       :initial-tags="draft.initialTags"
       :edit-mode="editMode"
       :needs-name="editMode && !!content.trim() && !name.trim()"
