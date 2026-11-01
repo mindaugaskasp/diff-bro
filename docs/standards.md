@@ -68,6 +68,14 @@ regression test from decoration.
    proposes, never writes the library. See `specs/2026-10-23-claude-mcp/plan.md`
    and docs/security.md. HTTP/SSE and a local socket were rejected.
 
+   **Running a snippet keeps the app itself offline, and says plainly what it
+   does not cover.** Main still opens no socket. But the interpreter the user
+   picked is a general-purpose program, not a fixed vocabulary like git's: a
+   script they run has their access to files and the network, and nothing here
+   fences it. That is the user's own act, off until they enable a language and
+   pick the program. See `specs/2026-11-01-snippet-runner/plan.md` and
+   docs/security.md.
+
 2. **New dependencies need a network audit.** Before adding any package:
    confirm it makes no runtime network calls, then run `npm audit`. Prefer
    zero new production dependencies. `yaml` (structure-aware comparison) passed
@@ -177,6 +185,16 @@ regression test from decoration.
      over a file that did not parse.
 
    The renderer names only the target, never a command or a path.
+
+   **Running a snippet** (`runner.js`, `runnerCore.js`) spawns the interpreter
+   the user chose. The executable is picked in main's own file dialog after a
+   confirm in main, and kept in a main-only file no `store:save` can reach. The
+   renderer sends a language and code, never a path, an argument or a command;
+   the argv is fixed per language, there is no shell, and the code goes over
+   stdin with no temp file. Main refuses a language that is not enabled and a
+   snippet id that is secret. The first run ever is confirmed in main. Because
+   the code comes from the renderer, a compromised renderer can run what it
+   writes once a language is enabled: enabling is the fence, not the text.
 
 8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only

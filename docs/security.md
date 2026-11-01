@@ -27,6 +27,10 @@ leaves through the Claude app the user configured, the way an emailed diff
 leaves through their mail client. It is off until the user turns it on. See
 [The Claude connection](#the-claude-connection-diffbro-mcp).
 
+**Running a snippet leaves the app offline, but not what you run.** Diff Bro opens
+no socket to do it. The interpreter you pick can, and so can your script. It is
+off until you enable a language. See [Running a snippet](#running-a-snippet).
+
 **Reading a file out of git does not change it either.** `src/main/gitRepo.js`
 spawns `git` to answer two questions — where the repository begins, and what a
 file looked like at a revision — the same way `gitTool.js` already spawns it to
@@ -372,6 +376,37 @@ It passes the launch on with `/usr/bin/open -n -a <its own bundle>` through
 `execFile`, no shell. The bundle comes from its own executable path, and the
 only arguments are the paths macOS sent in `open-file`. Nothing from the Claude
 app reaches that command.
+
+## Running a snippet
+
+Off by default. Settings ▸ Integrations ▸ Languages enables PHP or Python: main
+asks first, then opens its own file dialog for the program. A pick must answer
+`--version` as that language, which also turns away the Windows Store's
+`python.exe` stub.
+
+**What a script can do:** anything you can. It reads and writes your files and
+uses the network with your access. Nothing sandboxes it, and this is not covered
+by the offline guarantee: the app makes no request, the program you chose might.
+The first run ever says so in a dialog from main, then never asks again.
+
+**The fence:**
+
+- The renderer sends a language and code. It never names a path, an argument or
+  a command, and it cannot change the executable, which lives in a main-only file
+  outside the stores `store:save` accepts.
+- `spawn` with a fixed argv per language and no shell. Code goes over stdin, so
+  no plaintext lands in a temp file.
+- Secret snippets do not run: main refuses a secret's id, because a script could
+  print or write what it holds.
+- A run is stopped after 30 seconds or 1 MB of output, and on tab close and quit,
+  with the process tree killed.
+
+**What it does not stop.** Any snippet that is not secret can run, including a
+Claude proposal or an import, so after the first confirmation code from elsewhere
+is one click away. And since the code comes from the renderer, a compromised
+renderer can run what it writes once a language is enabled, and can leave out a
+secret's id. Enabling a language is the fence for that case, which is why it
+belongs to main and is off by default.
 
 ## Copy as file, and the plaintext window it opens
 
