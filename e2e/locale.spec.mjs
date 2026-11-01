@@ -26,10 +26,7 @@ const chooseLocale = async (page, id) => {
 
 const closeDialog = (page) => saveSettings(page)
 
-async function firstTopMenu(page) {
-  await page.locator('.menubar').getByRole('button').first().click()
-  return page.locator('.menubar > .dropdown > .submenu > .item').first()
-}
+const firstTopMenu = (page) => page.locator('.menubar').getByRole('button').first()
 
 test('switching language re-renders the chrome and survives a relaunch', async () => {
   const dir = freshUserDataDir()

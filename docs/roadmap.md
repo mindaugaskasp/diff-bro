@@ -435,8 +435,8 @@ Shipped (#144, folding in #121 and #142), in eleven slices. See
 `specs/2026-10-28-minimalist-redesign/plan.md`.
 
 - Plain controls, one type stack and three weights
-- One top row: the ≡ menu, tabs and icon actions; a segmented control instead of
-  the rail
+- One top row: tabs and icon actions, under a menu strip on Windows and Linux; a
+  segmented control instead of the rail
 - Nested tag sections with `#` search; Claude's proposals atop Snippets and Diffs
 - A document is its name, its tags and its text; a comparison names its panes at
   their top right, with no slot band or hint bar

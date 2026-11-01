@@ -30,6 +30,8 @@ import AppDialogs from './components/AppDialogs.vue'
 import AppTooltip from './components/AppTooltip.vue'
 import SavedDiffs from './components/SavedDiffs.vue'
 import TopBar from './components/TopBar.vue'
+import MenuBar from './components/MenuBar.vue'
+import { isMac } from './keys'
 import { ProposalBar, ProposalUndoNotice } from './features/claude'
 import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
@@ -99,6 +101,7 @@ useWindowFocusRefresh()
   <div class="app" :class="{ presenting: ui.presenting }" v-on="dropHandlers">
     <!-- Nyan theme only. -->
     <NyanLane v-if="settings.theme === 'nyan'" />
+    <MenuBar v-if="!isMac && !ui.presenting" />
 
     <div class="body">
       <SavedDiffs />

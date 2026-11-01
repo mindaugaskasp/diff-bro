@@ -131,9 +131,8 @@ function writeXlsxFixtures() {
 // files, so a reload brings the app up already full of data.
 // Through the ≡ menu, the only in-window menu since #144.
 async function pickMenuItem(page, top, label) {
-  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
-  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
-  await page.locator('.menubar .flyout').getByText(label, { exact: true }).click()
+  await page.locator('.menubar').getByRole('button', { name: top, exact: true }).click()
+  await page.locator('.menubar .menu > .dropdown').getByText(label, { exact: true }).click()
 }
 
 async function seed(page) {

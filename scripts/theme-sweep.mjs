@@ -52,11 +52,9 @@ const SEPARATOR = 1.11
 // The resting-to-hovered face step; the bar is .btn's own shipped hover (1.16 on sepia).
 const HOVER_STEP = 1.15
 
-// Through the ≡ menu, the only in-window menu since #144.
 async function pickMenuItem(page, top, label) {
-  await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
-  await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: top }).hover()
-  await page.locator('.menubar .flyout').getByText(label, { exact: true }).click()
+  await page.locator('.menubar').getByRole('button', { name: top, exact: true }).click()
+  await page.locator('.menubar .menu > .dropdown').getByText(label, { exact: true }).click()
 }
 
 async function setOnboarding(page, state) {
@@ -66,10 +64,12 @@ async function setOnboarding(page, state) {
 
 async function showPanel(page, panel) {
   if (panel === 'keys') {
-    await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
-    await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: 'Security' }).hover()
-    await page.locator('.menubar .flyout > .submenu', { hasText: 'Trusted Keys' }).hover()
-    await page.locator('.flyout .flyout').getByText('Manage Trusted Keys…', { exact: true }).click()
+    await page.locator('.menubar').getByRole('button', { name: 'Security', exact: true }).click()
+    await page.locator('.menubar .dropdown > .submenu', { hasText: 'Trusted Keys' }).hover()
+    await page
+      .locator('.dropdown .flyout')
+      .getByText('Manage Trusted Keys…', { exact: true })
+      .click()
     return
   }
   const item = page.locator(`.sidebar-nav [data-value="${panel}"]`)
@@ -495,6 +495,21 @@ const SURFACES = [
     },
     probes: {
       notice: ['.sidebar-notice', TEXT]
+    }
+  },
+  {
+    name: 'menu-strip',
+    open: async (page) => {
+      await page.locator('.menubar').getByRole('button', { name: 'File', exact: true }).click()
+      await page.locator('.menubar .dropdown').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.locator('.menubar .dropdown').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'menu name': ['.menubar .btn:not(.active)', TEXT],
+      'open menu name': ['.menubar .btn.active', TEXT]
     }
   },
   {
@@ -1391,11 +1406,10 @@ const SURFACES = [
     // the input box. It is a read sentence, so it takes the reading floor —
     // --text-hint on the dialog panel, the pair the tokens alone cannot prove.
     open: async (page) => {
-      await page.locator('.menubar').getByRole('button', { name: 'Menu', exact: true }).click()
-      await page.locator('.menubar > .dropdown > .submenu > .item', { hasText: 'Tools' }).hover()
-      await page.locator('.menubar .flyout > .submenu', { hasText: 'Format' }).hover()
+      await page.locator('.menubar').getByRole('button', { name: 'Tools', exact: true }).click()
+      await page.locator('.menubar .dropdown > .submenu', { hasText: 'Format' }).hover()
       // Scoped to the flyout: the loaded diff can also say "JSON".
-      await page.locator('.flyout .flyout').getByText('JSON', { exact: true }).click()
+      await page.locator('.dropdown .flyout').getByText('JSON', { exact: true }).click()
       await page.locator('.tt-desc').waitFor()
       await page.getByRole('dialog', { name: 'JSON' }).getByRole('textbox').first().fill('{"a":1}')
     },
