@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":semanticCommitTypeAll(chore)"],
   "schedule": ["before 6am on monday"],
-  "prConcurrentLimit": 8,
+  "prConcurrentLimit": 6,
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
   "minimumReleaseAge": "7 days",
@@ -17,7 +17,7 @@
   },
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on the first day of the month"]
+    "schedule": ["* 0-5 1-7 * 1"]
   },
   "postUpdateOptions": ["npmDedupe"],
   "packageRules": [
@@ -35,9 +35,16 @@
       "matchPackageNames": ["!electron", "!monaco-editor"]
     },
     {
-      "description": "Ships in the app: one PR per package so each is audited on its own.",
+      "description": "Ships in the app.",
       "matchDepTypes": ["dependencies"],
       "addLabels": ["runtime"]
+    },
+    {
+      "description": "Ships in the app, minor and patch, as one PR. A major still waits for approval on its own.",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "runtime dependencies",
+      "matchPackageNames": ["!electron", "!monaco-editor"]
     },
     {
       "description": "allowScripts in package.json is version-pinned: the new version must be re-approved with `npm install-scripts approve` in the same PR.",
