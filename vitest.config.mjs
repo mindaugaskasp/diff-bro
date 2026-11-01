@@ -49,6 +49,7 @@ export default defineConfig({
         lines: 96
       },
       include: [
+        'src/main/runnerCore.js',
         'src/main/sealing.js',
         'src/main/shareCore.js',
         'src/main/dataFiles.js',
