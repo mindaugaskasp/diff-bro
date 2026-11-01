@@ -300,7 +300,7 @@ official SDK carries an HTTP server stack and 17 runtime dependencies). An
 HTTP/SSE transport or a local socket into the running app were rejected, because
 either one opens a socket in Diff Bro.
 
-**Consent is a signed grant, not a setting.** Settings ▸ Claude holds a master
+**Consent is a signed grant, not a setting.** Settings ▸ Integrations holds a master
 checkbox, **Enable Claude MCP connection**. Ticking it shows what the
 connection means and takes effect only on **Enable**. The switch and its five
 scopes are written by main to `claude-grant.json` with an HMAC under a key
@@ -362,7 +362,7 @@ others:
   Diff Bro.
 
 **Activity.** Every call is logged to `claude-activity.jsonl` with its time,
-tool and the name of the item it touched, never contents. Settings ▸ Claude
+tool and the name of the item it touched, never contents. Settings ▸ Integrations
 shows the most recent 200 and can clear them.
 
 **Reach.** Any process running as the same OS user can launch `diffbro mcp`. On

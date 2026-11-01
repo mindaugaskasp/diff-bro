@@ -179,7 +179,7 @@ export function callTool(name, args, ctx) {
   const tool = TOOLS.find((t) => t.name === name)
   if (!tool) return { result: refusal(`Unknown tool: ${name}`), touched: null }
   if (!ctx.grant.scopes[tool.scope]) {
-    return { result: refusal('This is turned off in DiffBro Settings → Claude.'), touched: null }
+    return { result: refusal('This is turned off in DiffBro Settings → Integrations.'), touched: null }
   }
   try {
     const { touched = null, ...result } = tool.run(args, ctx)

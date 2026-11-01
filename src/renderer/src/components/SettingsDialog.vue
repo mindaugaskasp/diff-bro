@@ -14,6 +14,7 @@ import SettingsLimits from './SettingsLimits.vue'
 import StorageSettings from './StorageSettings.vue'
 import { EmailSettings } from '../features/email'
 import { ClaudeSettings } from '../features/claude'
+import { LanguagesSettings } from '../features/runner'
 import { useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
 import { useSettingsDraft } from '../composables/useSettingsDraft'
@@ -36,7 +37,7 @@ const TABS = [
   { id: 'logs', labelKey: 'settingsDialog.tab.logs' },
   { id: 'email', labelKey: 'settingsDialog.tab.email' },
   { id: 'cli', labelKey: 'settingsDialog.tab.cli' },
-  { id: 'claude', labelKey: 'settingsDialog.tab.claude' },
+  { id: 'integrations', labelKey: 'settingsDialog.tab.integrations' },
   { id: 'fun', labelKey: 'settingsDialog.tab.fun' }
 ].filter((t) => isWindows || !t.windowsOnly)
 
@@ -123,7 +124,10 @@ const draft = useSettingsDraft({ close: () => (ui.showSettingsDialog = false) })
 
         <EmailSettings v-else-if="tab === 'email'" />
 
-        <ClaudeSettings v-else-if="tab === 'claude'" />
+        <section v-else-if="tab === 'integrations'">
+          <LanguagesSettings />
+          <ClaudeSettings />
+        </section>
 
         <template v-else-if="tab === 'cli'">
           <CliSettings />

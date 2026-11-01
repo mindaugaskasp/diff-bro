@@ -22,7 +22,6 @@ const onMaster = (on) => (on ? claude.requestEnable() : claude.disable())
 <template>
   <section class="claude-settings">
     <h4>{{ $t('claude.settings.title') }}</h4>
-    <p class="dialog-note">{{ $t('claude.settings.intro') }}</p>
 
     <SettingToggle
       :checked="claude.enabled || claude.confirming"

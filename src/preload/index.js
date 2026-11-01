@@ -155,6 +155,11 @@ contextBridge.exposeInMainWorld('api', {
   cliStatus: () => ipcRenderer.invoke('cli:status'),
   cliInstall: () => ipcRenderer.invoke('cli:install'),
   cliRemove: () => ipcRenderer.invoke('cli:remove'),
+  // Running a snippet (src/main/runner.js). A language only: main picks the program.
+  runStatus: () => ipcRenderer.invoke('run:status'),
+  runEnable: (language) => ipcRenderer.invoke('run:enable', language),
+  runChange: (language) => ipcRenderer.invoke('run:change', language),
+  runDisable: (language) => ipcRenderer.invoke('run:disable', language),
   // Rolling local backups of snippets and kept diffs (src/main/autoBackup.js).
   listBackups: () => ipcRenderer.invoke('backup:list'),
   restoreBackup: (name) => ipcRenderer.invoke('backup:restore', name),

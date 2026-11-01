@@ -50,6 +50,7 @@ export default defineConfig({
       },
       include: [
         'src/main/runnerCore.js',
+        'src/main/runnerConfig.js',
         'src/main/sealing.js',
         'src/main/shareCore.js',
         'src/main/dataFiles.js',

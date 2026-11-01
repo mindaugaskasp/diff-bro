@@ -1,4 +1,4 @@
-// The Claude connection: Settings → Claude, and the proposals it sends (#121).
+// The Claude connection: Settings → Integrations, and the proposals it sends (#121).
 export { useClaudeStore, CLAUDE_SCOPES } from './claudeStore'
 export { default as ClaudeSettings } from './components/ClaudeSettings.vue'
 export { default as ProposalsGroup } from './components/ProposalsGroup.vue'
