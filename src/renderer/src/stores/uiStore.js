@@ -10,8 +10,13 @@ import { useSettingsStore } from './settingsStore'
 export const MOVED_ROW_MS = 4000
 let movedTimer = null
 
+export const SIDEBAR_NOTICE_MS = 2500
+let sidebarNoticeTimer = null
+
 export const useUiStore = defineStore('ui', {
   state: () => ({
+    // A quiet line at the foot of the sidebar; empty when there is none.
+    sidebarNotice: '',
     // Which tool panel is open (a registry id), null when none.
     textTool: null,
     // Encrypt/Decrypt tool dialog visibility.
@@ -67,6 +72,13 @@ export const useUiStore = defineStore('ui', {
     settingsTab: null
   }),
   actions: {
+    showSidebarNotice(text) {
+      this.sidebarNotice = text
+      clearTimeout(sidebarNoticeTimer)
+      sidebarNoticeTimer = setTimeout(() => {
+        this.sidebarNotice = ''
+      }, SIDEBAR_NOTICE_MS)
+    },
     togglePresenting() {
       return this.presenting ? this.exitPresenting() : this.enterPresenting()
     },

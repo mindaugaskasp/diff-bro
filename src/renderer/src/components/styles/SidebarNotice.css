@@ -1,0 +1,26 @@
+/* Over the list rather than in its flow, so a copy never moves the rows. */
+.sidebar-notice {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  overflow: hidden;
+  font-size: var(--font-xs);
+  color: var(--text-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+.sidebar-notice-enter-active,
+.sidebar-notice-leave-active {
+  transition: opacity 0.15s ease;
+}
+.sidebar-notice-enter-from,
+.sidebar-notice-leave-to {
+  opacity: 0;
+}
