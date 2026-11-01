@@ -32,15 +32,15 @@ export function useSnippetPreviewActions({ preview, dismiss }) {
   }
 
   // Copy from the card — the moment "is this the one?" was just answered. The
-  // FULL contents (the card's text is truncated for display); a Claude prompt
-  // with placeholders routes through the fill dialog, like the row's copy.
+  // FULL contents (the card's text is truncated for display); placeholders route
+  // through the fill dialog, like the row's copy.
   const { copied, flash } = useCopyFeedback()
   async function copyPreview() {
     const card = preview.value
     if (!card) return
     const content = await store.load(card.id)
     if (content == null) return
-    if (card.lang === 'claude' && parseTemplateVars(content).length) {
+    if (parseTemplateVars(content).length) {
       store.pendingFill = { name: card.name, content }
       return dismiss()
     }

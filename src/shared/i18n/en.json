@@ -966,7 +966,7 @@
     "snippet": "Snippet"
   },
   "snippetFillDialog": {
-    "thisPromptHasPlaceholdersFill": "This prompt has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
+    "thisPromptHasPlaceholdersFill": "This snippet has placeholders. Fill them in and it's copied ready to paste; leave one blank to keep its",
     "copyFilled": "Copy filled",
     "marker": "marker.",
     "fillInTitle": "Fill in — {name}",
@@ -1813,6 +1813,8 @@
     "newSnippet": "New snippet"
   },
   "snippetDocument": {
+    "placeholderTip": "Did you know you can use {token} to replace text when copying a snippet!",
+    "dontShowThisAgain": "Don't show this again",
     "compareWith": "Compare with…",
     "clickToEdit": "Click to edit"
   },

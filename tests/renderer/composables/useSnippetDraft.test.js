@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSnippetDraft } from '../../../src/renderer/src/composables/useSnippetDraft'
 import { useSnippetStore } from '../../../src/renderer/src/stores/snippetStore'
@@ -236,5 +236,34 @@ describe('useSnippetDraft — tags are part of the draft', () => {
     draft.name.value = 'Renamed'
     await draft.save(null)
     expect(snippets.entries.find((e) => e.id === id).name).toBe('Original')
+  })
+})
+
+describe('useSnippetDraft — copy', () => {
+  function draftWith(content, name = 'Review') {
+    window.api.copyText = vi.fn(async () => ({ ok: true }))
+    const { snippets, draft } = newDraft()
+    draft.name.value = name
+    draft.content.value = content
+    return { snippets, draft }
+  }
+
+  it('copies plain text straight away', async () => {
+    const { draft } = draftWith('plain words')
+    expect(await draft.copyContent()).toBe(true)
+    expect(window.api.copyText).toHaveBeenCalledWith('plain words')
+  })
+
+  it('asks to fill placeholders first, and does not report a copy', async () => {
+    const { snippets, draft } = draftWith('Review {{file}}')
+    expect(await draft.copyContent()).toBe(false)
+    expect(window.api.copyText).not.toHaveBeenCalled()
+    expect(snippets.pendingFill).toEqual({ name: 'Review', content: 'Review {{file}}' })
+  })
+
+  it('has nothing to copy from an empty draft', async () => {
+    const { draft } = draftWith('')
+    expect(await draft.copyContent()).toBe(false)
+    expect(window.api.copyText).not.toHaveBeenCalled()
   })
 })
