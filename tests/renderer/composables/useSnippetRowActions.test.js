@@ -40,13 +40,9 @@ describe('useSnippetRowActions', () => {
     expect(api.copyText).not.toHaveBeenCalled()
   })
 
-  // A Claude prompt with placeholders goes through the fill dialog first —
-  // copying it raw would hand out `{{variables}}`.
-  it('routes a placeholder prompt to the fill dialog instead of the clipboard', async () => {
-    const { store, actions } = withContent(
-      { id: 'a', name: 'Review', language: 'claude' },
-      'Review {{file}}'
-    )
+  // Copying it raw would hand out `{{variables}}`.
+  it.each(['claude', 'javascript', 'jira'])('asks to fill a %s snippet first', async (language) => {
+    const { store, actions } = withContent({ id: 'a', name: 'Review', language }, 'Review {{file}}')
     await actions.copySnippet()
     expect(api.copyText).not.toHaveBeenCalled()
     expect(store.pendingFill).toEqual({ name: 'Review', content: 'Review {{file}}' })

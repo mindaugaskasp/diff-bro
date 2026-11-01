@@ -26,7 +26,8 @@ const BASE_OPTIONS = {
   hideCursorInOverviewRuler: true,
   scrollbar: { useShadows: false },
   scrollBeyondLastLine: false,
-  contextmenu: false
+  contextmenu: false,
+  cursorWidth: 1
 }
 
 /** Open Monaco's find widget, with the replace row when asked. */
