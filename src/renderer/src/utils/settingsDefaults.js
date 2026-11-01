@@ -137,6 +137,7 @@ export function settingsStateFrom(parsed, outside) {
     ...readNumericLimits(parsed),
     dialogSizes: readDialogSizes(parsed),
     maximizeDialogs: parsed.maximizeDialogs === true,
+    placeholderTip: parsed.placeholderTip !== false,
     // NULL until the user picks one: persist() writes every key, so defaulting
     // to 'en' here would bake it in the first time any setting is touched and
     // "follow the OS" would hold for exactly one session.

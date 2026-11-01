@@ -1,5 +1,4 @@
-import { computed } from 'vue'
-import { useSnippetStore, languageOf } from '../stores/snippetStore'
+import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { useCopyFeedback } from './useCopyFeedback'
@@ -19,13 +18,11 @@ export function useSnippetRowActions(entry) {
   const diff = useDiffStore()
   const ui = useUiStore()
   const { copied, flash } = useCopyFeedback()
-  const lang = computed(() => languageOf(entry()))
 
   async function copySnippet() {
     const content = await store.load(entry().id)
     if (content == null) return
-    // A Claude prompt with placeholders routes through the fill dialog first.
-    if (lang.value === 'claude' && parseTemplateVars(content).length) {
+    if (parseTemplateVars(content).length) {
       store.pendingFill = { name: entry().name, content }
       return
     }

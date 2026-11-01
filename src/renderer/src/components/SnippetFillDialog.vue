@@ -1,7 +1,6 @@
 <script setup>
-// Fill a Claude prompt's {{variables}} before copying it. Opened from the snippet
-// copy action when the content has placeholders (SnippetRow); the resolved text
-// goes straight to the clipboard.
+// Fill a snippet's {{variables}} before copying it; the resolved text goes straight
+// to the clipboard. A placeholder left blank is copied as written.
 import { ref } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
