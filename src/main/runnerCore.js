@@ -1,6 +1,8 @@
 // Runs a snippet with the interpreter the user picked. No Electron here, so the
 // spawning, limits and kills are tested against real child processes.
 import { execFile as nodeExecFile, spawn as nodeSpawn } from 'node:child_process'
+import { homedir } from 'node:os'
+import { win32 } from 'node:path'
 
 const LANGUAGES = new Map([
   ['php', { args: [], version: /^PHP (\d+\.\d+\.\d+)/m }],
@@ -31,23 +33,32 @@ export function parseVersion(language, output) {
   return LANGUAGES.get(language)?.version.exec(output)?.[1] ?? null
 }
 
+export function childEnv(env) {
+  return Object.fromEntries(Object.entries(env).filter(([key]) => !key.startsWith('ELECTRON_')))
+}
+
+// Python puts its working directory first on sys.path; the folder the app was
+// started from must not be able to plant a module.
+const childPlacement = () => ({ env: childEnv(process.env), cwd: homedir() })
+
 // Null also turns away the Windows Store's python.exe stub, which exits non-zero.
 export function readVersion({ exe, language, execFile = nodeExecFile }) {
   return new Promise((resolve) => {
-    const options = { timeout: VERSION_TIMEOUT_MS, windowsHide: true }
+    const options = { ...childPlacement(), timeout: VERSION_TIMEOUT_MS, windowsHide: true }
     execFile(exe, ['--version'], options, (error, stdout, stderr) => {
       resolve(error ? null : parseVersion(language, `${stdout}\n${stderr}`))
     })
   })
 }
 
-export function childEnv(env) {
-  return Object.fromEntries(Object.entries(env).filter(([key]) => !key.startsWith('ELECTRON_')))
-}
+// By absolute path: a bare name is searched for in the working directory first.
+const TASKKILL = win32.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'taskkill.exe')
 
-function killTree({ child, platform, spawn }) {
+function killTree({ child, platform, spawn, exited }) {
   if (platform === 'win32') {
-    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true })
+    if (exited) return
+    const killer = spawn(TASKKILL, ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true })
+    killer.on('error', () => {})
     return
   }
   try {
@@ -100,11 +111,12 @@ export function startRun({
   const startedAt = Date.now()
   let reason = 'exit'
   let finished = false
+  let exited = false
   let timer = null
 
   const child = spawn(exe, args, {
+    ...childPlacement(),
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: childEnv(process.env),
     windowsHide: true,
     detached: platform !== 'win32'
   })
@@ -119,7 +131,7 @@ export function startRun({
     if (finished || reason !== 'exit') return
     reason = why
     clearTimeout(timer)
-    killTree({ child, platform, spawn })
+    killTree({ child, platform, spawn, exited })
     timer = setTimeout(() => finish({}), KILL_GRACE_MS)
   }
 
@@ -135,6 +147,7 @@ export function startRun({
     reason = 'spawn-error'
     finish({})
   })
+  child.on('exit', () => (exited = true))
   child.on('close', (exitCode, signal) => finish({ code: exitCode, signal }))
   // A script that exits without reading stdin closes the pipe under us.
   child.stdin.on('error', () => {})

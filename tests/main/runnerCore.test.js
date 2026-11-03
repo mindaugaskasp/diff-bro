@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import {
   childEnv,
   interpreterArgs,
@@ -141,30 +142,58 @@ describe('startRun', () => {
     child.emit('close', 0, null)
   })
 
-  it('kills a Windows tree with taskkill', () => {
-    const child = Object.assign(new EventEmitter(), {
+  const fakeChild = () =>
+    Object.assign(new EventEmitter(), {
       pid: 42,
       stdin: { on: vi.fn(), end: vi.fn() },
       stdout: Object.assign(new EventEmitter(), { setEncoding: vi.fn() }),
       stderr: Object.assign(new EventEmitter(), { setEncoding: vi.fn() })
     })
-    const spawn = vi.fn(() => child)
+  function startFake(platform = 'win32') {
+    const child = fakeChild()
+    const killer = new EventEmitter()
+    const spawn = vi.fn((exe) => (exe.endsWith('taskkill.exe') ? killer : child))
     const handle = startRun({
       ...NODE,
       code: '',
       onOutput: () => {},
       onExit: () => {},
       spawn,
-      platform: 'win32'
+      platform
     })
+    return { child, killer, spawn, handle }
+  }
+
+  it('kills a Windows tree with the system taskkill, not one found on PATH', () => {
+    const { child, spawn, handle } = startFake()
     expect(spawn.mock.calls[0][2].detached).toBe(false)
     handle.stop()
-    expect(spawn).toHaveBeenLastCalledWith(
-      'taskkill',
-      ['/pid', '42', '/T', '/F'],
-      expect.objectContaining({ windowsHide: true })
-    )
+    const [exe, args, options] = spawn.mock.calls.at(-1)
+    expect(exe).toMatch(/[\\/]System32[\\/]taskkill\.exe$/i)
+    expect(args).toEqual(['/pid', '42', '/T', '/F'])
+    expect(options.windowsHide).toBe(true)
     child.emit('close', null, 'SIGTERM')
+  })
+
+  it('survives taskkill failing to start', () => {
+    const { killer, handle } = startFake()
+    handle.stop()
+    expect(() => killer.emit('error', new Error('ENOENT'))).not.toThrow()
+  })
+
+  // Windows reuses a PID once its process is gone, so a late kill could hit a stranger.
+  it('sends no Windows kill once the process has exited', () => {
+    const { child, spawn, handle } = startFake()
+    child.emit('exit', 0, null)
+    handle.stop()
+    expect(spawn).toHaveBeenCalledTimes(1)
+  })
+
+  // Python puts its working directory first on sys.path, so a launch folder could plant modules.
+  it('runs in the home folder, never the folder the app was started from', () => {
+    const { spawn, child } = startFake('linux')
+    expect(spawn.mock.calls[0][2].cwd).toBe(homedir())
+    child.emit('close', 0, null)
   })
 })
 
@@ -213,6 +242,16 @@ describe('version check', () => {
     expect([exe, args]).toEqual(['/bin/php', ['--version']])
     expect(options.shell).toBeFalsy()
     expect(options.timeout).toBeGreaterThan(0)
+  })
+
+  it('asks with the same environment and folder a run gets', async () => {
+    const execFile = fakeExec(null, 'PHP 8.3.6 (cli)')
+    process.env.ELECTRON_RUN_AS_NODE = '1'
+    await readVersion({ exe: '/bin/php', language: 'php', execFile })
+    delete process.env.ELECTRON_RUN_AS_NODE
+    const options = execFile.mock.calls[0][2]
+    expect(options.env.ELECTRON_RUN_AS_NODE).toBeUndefined()
+    expect(options.cwd).toBe(homedir())
   })
 
   it('reads a version printed on stderr, as Python 2 did', async () => {
