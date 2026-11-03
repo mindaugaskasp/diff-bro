@@ -73,9 +73,7 @@ test('a Mermaid hexagon is not a template tag, and copies without a fill-in', as
   await openNewSnippet(page)
   const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.locator('.editor').click()
-  await page.keyboard.type('flowchart TD')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('A{{Decide}} --> B')
+  await page.keyboard.insertText('flowchart TD\n  A{{Decide}} --> B')
   await expect(bar(page)).toContainText('Mermaid')
   await expect(bar(page).getByRole('button', { name: /template tag/i })).toHaveCount(0)
 

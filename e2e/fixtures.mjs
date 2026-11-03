@@ -90,7 +90,9 @@ export const test = base.extend({
     await use(page)
     // The app catches renderer errors and shows this dialog rather than letting
     // them reach `pageerror`, so both have to be looked at.
+    // Scoped to the dialog: a diagram's own error card reuses the class.
     const shown = await page
+      .getByRole('dialog', { name: 'Something went wrong' })
       .locator('.err-msg')
       .allTextContents()
       .catch(() => [])

@@ -1,4 +1,4 @@
-import { test, expect, showPanel } from './fixtures.mjs'
+import { test, expect, showPanel, openNewSnippet } from './fixtures.mjs'
 
 test.beforeEach(async ({ page }) => {
   await showPanel(page, 'snippets')
@@ -62,4 +62,14 @@ test('dragging the preview up makes the diagram bigger', async ({ page }) => {
 
   await expect.poll(bodyHeight).toBe(before.body + 150)
   await expect.poll(svgHeight).toBeGreaterThan(before.svg)
+})
+
+test('an invalid diagram shows its error in the preview, not the error dialog', async ({
+  page
+}) => {
+  await openNewSnippet(page)
+  await page.getByRole('region', { name: 'New snippet' }).locator('.editor').click()
+  await page.keyboard.insertText('flowchart T')
+  await expect(page.locator('.mmd-preview .err')).toContainText('Lexical error')
+  await expect(page.getByRole('dialog', { name: 'Something went wrong' })).toHaveCount(0)
 })
