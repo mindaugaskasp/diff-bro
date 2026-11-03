@@ -16,6 +16,20 @@ beforeEach(() => {
 // only commands.js widens it again — a pairing nothing asserted, so a palette
 // permanently stuck in tools-only scope after one press would have shipped.
 describe('uiStore', () => {
+  it('knows while any dialog is open, however many are stacked', () => {
+    const ui = useUiStore()
+    expect(ui.hasOpenDialog).toBe(false)
+    ui.noteDialog(true)
+    ui.noteDialog(true)
+    ui.noteDialog(false)
+    expect(ui.hasOpenDialog).toBe(true)
+    ui.noteDialog(false)
+    ui.noteDialog(false)
+    expect(ui.hasOpenDialog).toBe(false)
+    ui.showCommandPalette = true
+    expect(ui.hasOpenDialog).toBe(true)
+  })
+
   it('opens the Mermaid viewer with the diagram it was given', () => {
     const ui = useUiStore()
     expect(ui.mermaidView).toBeNull()

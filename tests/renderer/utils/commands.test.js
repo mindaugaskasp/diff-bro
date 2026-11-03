@@ -70,8 +70,7 @@ const stores = () => ({
   snippets: { startNewSnippetFrom: spy() },
   share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy(), openKeysPanel: spy() },
   imageExport: { exportCurrentImage: spy() },
-  configBackup: { open: spy(), pendingPath: null },
-  onboarding: { replay: spy() }
+  configBackup: { open: spy(), pendingPath: null }
 })
 
 describe('the registry covers every surface that dispatches into it', () => {

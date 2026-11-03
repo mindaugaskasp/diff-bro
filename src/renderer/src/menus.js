@@ -199,7 +199,7 @@ export function buildMenus(run) {
         { label: `Diff Bro v${window.api.appVersion}`, info: true },
         { sep: true },
         { label: t('menu.help.shortcuts'), run: () => run('shortcuts') },
-        { label: t('menu.help.showTour'), run: () => run('show-tour') },
+        { label: t('menu.help.tours'), run: () => run('settings-tours') },
         { label: t('menu.help.terminal'), run: () => run('settings-cli') },
         { sep: true },
         { label: t('menu.help.reportIssue'), run: () => window.api.reportIssue() }

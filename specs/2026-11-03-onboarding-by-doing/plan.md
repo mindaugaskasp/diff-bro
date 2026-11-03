@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 20 / 35 steps |
+| **Progress** | 24 / 35 steps |
 | **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips` (see Delivery) |
 | **Started** | 2026-11-03 |
 | **Finished** | — |
@@ -240,7 +240,7 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`, and ea
 | 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | | committed |
 | 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | committed |
 | 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | committed |
-| 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | |
+| 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | committed |
 | 6 | Daily tips | `feat/daily-tips` | slice 5 | | |
 
 Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replaces it, so no slice leaves the tour unreachable.
@@ -276,10 +276,10 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 - [x] 20. `e2e/onboarding-snippets.spec.mjs` and `e2e/onboarding-diagrams.spec.mjs`.
 
 **Slice 5: Tours page + release offer**
-- [ ] 21. `ToursSettings.vue` at General ▸ Tours: rows with Start / Replay, Done, and New.
-- [ ] 22. *Offer new tours after an update* (on by default); remove Show tour and *Show tips after an update* from Behaviour.
-- [ ] 23. `ReleaseTourCard.vue`: shown once, merged across skipped versions; Later keeps it New; never on a fresh install. Tests first.
-- [ ] 24. `e2e/tours-settings.spec.mjs`; sweep `tours-page` and `release-card`.
+- [x] 21. `ToursSettings.vue` at General ▸ Tours: rows with Start / Replay, Done, and New.
+- [x] 22. *Offer new tours after an update* (on by default); remove Show tour and *Show tips after an update* from Behaviour.
+- [x] 23. `ReleaseTourCard.vue`: shown once, merged across skipped versions; Later keeps it New; never on a fresh install. Tests first.
+- [x] 24. `e2e/tours-settings.spec.mjs`; sweep `tours-page` and `release-card`.
 
 **Slice 6: Daily tips**
 - [ ] 25. `features/onboarding/tips.js`: the five tips in order (hash-scope-search, snippet-colour, name-placeholders, quick-look-tools, mermaid-repair), each with copy keys and a Show me target.
@@ -356,7 +356,7 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 | 2026-11-03 | v2 is seeded before the original, so the newest-first list shows the original above it; the first-run seed moved out of `App.vue` into `composables/useFirstRunExamples.js`, and a profile already marked `examplesSeeded` never gains v2 | the seed order is the display order, and the fresh-only rule is now tested | seeding v2 last, which lists it on top |
 | 2026-11-03 | Starting the Diagrams tour puts either example back if it is missing, found by its name in the current locale and the `example` tag | a profile without v2 (an existing user starting it from slice 5's Tours page) can still take the tour | hide the tour; let step 1 wait for a row that is not there |
 | 2026-11-03 | Starting Snippets or Diagrams closes Settings, opens the sidebar on the Snippets panel and clears the search and tag filter | the core tour ends with `conf` typed in the search, which hides every snippet a step rings | leave the sidebar as it was |
-| 2026-11-03 | The Fill in dialog fills date and clock tokens (`{{today}}`, `{{now}}` …) in for every snippet, still editable; its logic moved to `composables/useSnippetFill.js` | the design's "The date is already there"; until now `{{today}}` was asked for like any blank | prefill only during the tour |
+| 2026-11-04 | The Fill in dialog prefills date and clock tokens (`{{today}}`, `{{now}}` …) only while the Snippets tour runs, still editable; outside it every blank starts empty. The tour sets `ui.prefillFillDates` on start and clears it on end; the logic is in `composables/useSnippetFill.js` (maintainer's call, fixed in slice 4, commit 0a69559) | the design's "The date is already there" is a tour moment, not a change to Fill in for everyone | prefill for every snippet |
 | 2026-11-03 | Copy filled is told to the tour through `ui.lastSnippetFill = { snippetId }`; `pendingFill` now carries the snippet id; only a fill of the snippet saved in step 3 finishes the tour, and Cancel records nothing, so the step waits | state, not DOM, and the core may not import a slice | finish on any Copy filled |
 | 2026-11-03 | Step 2 reads the editor through the tab-content registry, which gained a writer for *Use a sample*; the check waits until the tab is dirty, because the registry is not reactive before the document mounts | no second copy of the draft text, no polling | a draft-text field on the tab; reading it in the frame loop |
 | 2026-11-03 | `onTab` replaces `onSample`. For Snippets and Diagrams, closing the tab the current step needs (the snippet for Snippets 2 to 4, the example for Diagrams 2, the comparison for Diagrams 3) ends the tour as skipped, the last step included | each of those steps happens in that tab; the core's last step does not need its tab, so it keeps its rule | the core's "before the last step" for every tour |
@@ -369,6 +369,19 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 | 2026-11-03 | The blank step's braces are `<i18n-t>` slots (`{service}`, `{today}`) drawn as `.ql-kbd` chips; each tour has its own step label (`Snippets · 2 of 4`) | no literal `{{` in the catalogue, where it would be interpolation | vue-i18n literal escapes |
 | 2026-11-03 | The sample offer's link style became the shared `.link-btn` in `ui.css`, used by *Use a sample* too | a class two components need lives in `ui.css` | a second scoped copy |
 | 2026-11-03 | The theme sweep gains `snippets-coach-mark` (step 2: label, title, body, blank chip, *Use a sample* at rest and hovered, keyline) and `tour-drop-zone` (the dashed zone, the v2 row ring, the mark's copy); `tour-done-card` also measures the line and the chips | every new colour pair, on all 20 themes | — |
+| 2026-11-04 | Help ▸ Show Tour becomes **Help ▸ Tours…** (`settings-tours`), which opens Settings ▸ General ▸ Tours, in both menus | one place for every tour; a menu item that replays only the core tour hides the other two | keep it replaying the core tour |
+| 2026-11-04 | `showTips` is dropped and **`offerTours`** replaces it, on by default; no migration (#113). `onboarding.json` is now `{ schema: 2, offerTours, tours, offer, version, known }` | the old switch gated nothing; the new one names what it does | carry `showTips` over as `offerTours` |
+| 2026-11-04 | A release tour is marked `release: true` in the registry; the three v1 tours are not, so they never show as New and sit above the per-release groups | `introducedIn` alone cannot tell a v1 tour from a release's while the app is still 0.15.x | a baseline version constant |
+| 2026-11-04 | `version` is the version the user was last **offered** tours at: written on first launch (fresh install or older file, with every release tour so far added to `known`), when the card shows, and on launch while the switch is off. Pending = release tours after `version`, up to the app's, never taken, not in `known` | the card is a getter over stored state, so it waits across a quit and shows once; turning the switch back on offers nothing from the past | bumping `version` on every launch, which loses a card that was still waiting |
+| 2026-11-04 | × adds the card's tours to `known`, so they lose New; Later only closes the card and they stay New; Show me starts the tour; a merged card's button, **Show tours**, opens Settings ▸ Tours and keeps them New | "× or finishing marks it seen, Later keeps it New" | × keeping New |
+| 2026-11-04 | One card for two or more pending tours, from one release or several: kicker *New in* the newest version, title "{n} new tours since you last opened Diff Bro", body the tour names joined by `Intl.ListFormat` | one card however many; the names say what is waiting | a card per release |
+| 2026-11-04 | The card waits while a tour runs, a done card is up or a dialog is open: BaseDialog counts itself into `ui.openDialogs`, and `hasOpenDialog` also covers the palette and the Mermaid viewer. A card already up hides under a dialog and returns | one reactive signal that slice 6's tip can reuse | a DOM query for `[role=dialog]` |
+| 2026-11-04 | The registry lives in the store (`registry`), and e2e and the theme sweep push fixture release tours into it through the Vue app's Pinia (`#app.__vue_app__`), the seam the design scripts already use; no fake tour ships | the logic is tested on a real launch with no test-only code shipped | an env var or a build flag that loads fixture tours |
+| 2026-11-04 | Each tour gains `nameKey`, `summaryKey`, `hue` and `icon` for its Tours row; the core's line is "{count} steps · about 20 seconds", and a release tour's line is also its card body. The core done card gains "Every tour is in Settings ▸ Tours." | one source per row and card | separate card copy |
+| 2026-11-04 | Start is disabled while a tour runs; Done shows only for `done`, and a skipped tour shows nothing and Start | the design's three states | showing Skipped |
+| 2026-11-04 | The DAILY TIPS controls are left to slice 6, which adds its section after *After an update* in `ToursSettings.vue` | no dead controls ship | disabled placeholders |
+| 2026-11-04 | The theme sweep starts the core tour from Settings ▸ Tours, and its tour surfaces delete the saved sample on close (found while sweeping: from the second theme on, the saved sample filled the Diffs section `sidebar-affordances` needs empty, a break since slice 3) | the full 20-theme sweep runs to the end again | sweeping the tour surfaces alone |
+| 2026-11-04 | `useCommands().runFromMenu` loses its guard on the old tour's `active`, which no longer existed, so the guard never fired | dead code left by slice 3 | keep the import alive |
 
 ## Validation
 

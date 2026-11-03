@@ -23,6 +23,7 @@ describe('settingsGroups', () => {
     expect(ids).toEqual([
       'appearance',
       'behaviour',
+      'tours',
       'shortcuts',
       'desktop',
       'languages',
@@ -42,7 +43,7 @@ describe('settingsGroups', () => {
 
   it('gives every group and page a catalogue key', () => {
     const groups = settingsGroups({ windows: true })
-    expect(groups.flatMap((g) => g.pages)).toHaveLength(11)
+    expect(groups.flatMap((g) => g.pages)).toHaveLength(12)
     for (const group of groups) {
       expect(group.labelKey).toBe(`settingsDialog.group.${group.id}`)
       for (const page of group.pages) expect(page.labelKey).toMatch(/^settingsDialog\.tab\./)
@@ -62,6 +63,7 @@ describe('groupOfPage', () => {
 
   it('names the group a page sits in', () => {
     expect(groupOfPage(groups, 'behaviour')).toBe('general')
+    expect(groupOfPage(groups, 'tours')).toBe('general')
     expect(groupOfPage(groups, 'cli')).toBe('integrations')
     expect(groupOfPage(groups, 'logs')).toBe('data')
   })
@@ -79,6 +81,7 @@ describe('navForPage', () => {
   it('opening a page opens its group', () => {
     expect(navForPage(groups, 'cli')).toEqual({ page: 'cli', open: 'integrations' })
     expect(navForPage(groups, 'storage')).toEqual({ page: 'storage', open: 'data' })
+    expect(navForPage(groups, 'tours')).toEqual({ page: 'tours', open: 'general' })
   })
 
   it('falls back to Appearance for no page or an unknown one', () => {

@@ -126,7 +126,7 @@ export const COMMANDS = {
   'tools-lines': openTool('lines'),
   'tools-crypt': ({ ui }) => (ui.showCryptDialog = true),
   shortcuts: ({ ui }) => (ui.showShortcutsDialog = true),
-  'show-tour': ({ onboarding }) => onboarding.replay()
+  'settings-tours': ({ ui }) => ui.openSettings('tours')
 }
 
 export const commandActions = () => Object.keys(COMMANDS)

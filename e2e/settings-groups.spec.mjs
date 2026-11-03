@@ -47,6 +47,7 @@ test('a child page sits indented under its group, at the small control height', 
 const CONTENT = {
   Appearance: (d) => d.getByRole('button', { name: 'Use the Light theme' }),
   Behaviour: (d) => d.getByText('Show tags on sidebar rows'),
+  Tours: (d) => d.getByRole('heading', { name: 'Tours', exact: true }),
   Shortcuts: (d) => d.getByRole('heading', { name: 'Quick look-up' }),
   Languages: (d) => d.getByRole('heading', { name: 'Languages', exact: true }),
   Claude: (d) => d.getByRole('checkbox', { name: 'Enable Claude MCP connection' }),
@@ -64,10 +65,8 @@ test('every former tab is reachable as a page', async ({ page }) => {
   }
 })
 
-test('the Behaviour page keeps the tips switch and Show tour', async ({ page }) => {
+test('the Behaviour page holds the sound and window switches', async ({ page }) => {
   const dialog = await openSettingsPage(page, 'Behaviour')
-  await expect(dialog.getByText('Show tips after an update')).toBeVisible()
-  await expect(dialog.getByRole('button', { name: 'Show tour' })).toBeEnabled()
   await expect(dialog.getByText('Play a shutter sound when a diff image is captured')).toBeVisible()
   await expect(dialog.getByText(/^Maximize tool & snippet windows/)).toBeVisible()
 })

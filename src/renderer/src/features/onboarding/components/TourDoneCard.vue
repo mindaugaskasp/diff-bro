@@ -1,15 +1,16 @@
 <script setup>
 import { computed } from 'vue'
 import AppIcon from '../../../components/AppIcon.vue'
-import { tourById } from '../tourRegistry'
+import { useOnboardingStore } from '../onboardingStore'
 
 const props = defineProps({
   tourId: { type: String, required: true }
 })
 defineEmits(['close', 'start'])
 
-const card = computed(() => tourById(props.tourId)?.doneCard ?? null)
-const nextTours = computed(() => (card.value?.next ?? []).map(tourById).filter(Boolean))
+const tour = useOnboardingStore()
+const card = computed(() => tour.tourOf(props.tourId)?.doneCard ?? null)
+const nextTours = computed(() => (card.value?.next ?? []).map(tour.tourOf).filter(Boolean))
 </script>
 
 <template>
@@ -38,6 +39,7 @@ const nextTours = computed(() => (card.value?.next ?? []).map(tourById).filter(B
         {{ $t(next.nameKey) }}
       </button>
     </p>
+    <p v-if="card.footKey" class="td-foot">{{ $t(card.footKey) }}</p>
   </div>
 </template>
 

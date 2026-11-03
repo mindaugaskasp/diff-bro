@@ -17,6 +17,8 @@ const isOwnSnippet = (entry) => !(entry.tags ?? []).includes(EXAMPLE_TAG)
 export const isFreshProfile = (stored, library) =>
   !stored && library.diffs === 0 && !library.snippets.some(isOwnSnippet)
 
+const isText = (v) => typeof v === 'string'
+
 const readTours = (raw) =>
   Object.fromEntries(
     Object.entries(raw && typeof raw === 'object' ? raw : {}).filter(([, v]) => ENDED.includes(v))
@@ -25,22 +27,31 @@ const readTours = (raw) =>
 /**
  * @param {object|null} stored  the parsed onboarding file, null when there is none
  * @param {{ diffs: number, snippets: { tags?: string[] }[] }} library
- * @returns {{ showTips: boolean, tours: Record<string, string>, offer: boolean, current: boolean }}
+ * @returns {import('../../types').OnboardingState & { current: boolean }}
  */
 export function readOnboarding(stored, library) {
-  const showTips = stored?.showTips !== false
-  if (stored?.schema === SCHEMA) {
-    return { showTips, tours: readTours(stored.tours), offer: stored.offer === true, current: true }
+  if (stored?.schema !== SCHEMA) {
+    const offer = isFreshProfile(stored, library)
+    return { offerTours: true, tours: {}, offer, version: null, known: [], current: false }
   }
-  return { showTips, tours: {}, offer: isFreshProfile(stored, library), current: false }
+  return {
+    offerTours: stored.offerTours !== false,
+    tours: readTours(stored.tours),
+    offer: stored.offer === true,
+    version: isText(stored.version) ? stored.version : null,
+    known: Array.isArray(stored.known) ? stored.known.filter(isText) : [],
+    current: true
+  }
 }
 
-/** @param {{ showTips: boolean, tours: Record<string, string>, offer: boolean }} state */
-export const storedOnboarding = ({ showTips, tours, offer }) => ({
+/** @param {import('../../types').OnboardingState} state */
+export const storedOnboarding = ({ offerTours, tours, offer, version, known }) => ({
   schema: SCHEMA,
-  showTips,
+  offerTours,
   tours,
-  offer
+  offer,
+  version,
+  known
 })
 
 /** @returns {'done'|'skipped'|'never'} */
@@ -65,4 +76,76 @@ export function isSampleFound({ query, panel, name }) {
     .toLowerCase()
   if (!typed || typed.startsWith('#') || !name) return false
   return DIFF_PANELS.includes(panel) && name.toLowerCase().includes(typed)
+}
+
+const versionParts = (v) =>
+  String(v)
+    .split('.')
+    .map((n) => Number.parseInt(n, 10) || 0)
+
+/** Negative, zero or positive, as `a` is older than, the same as or newer than `b`. */
+export function compareVersions(a, b) {
+  const [x, y] = [versionParts(a), versionParts(b)]
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0)
+  }
+  return 0
+}
+
+const installedReleases = (registry, appVersion) =>
+  registry.filter((t) => t.release && compareVersions(t.introducedIn, appVersion) <= 0)
+
+// A profile with no version yet knows every release tour so far; with the switch off the version moves on.
+/** @returns {{ version: string|null, known: string[] }} */
+export function settledReleases({ version, known, offerTours }, registry, appVersion) {
+  if (!version) {
+    const ids = installedReleases(registry, appVersion).map((t) => t.id)
+    return { version: appVersion, known: [...new Set([...known, ...ids])] }
+  }
+  return { version: offerTours ? version : appVersion, known }
+}
+
+/** @returns {string[]} release tours shipped after the version tours were last offered at */
+export function pendingReleases(state, registry, appVersion) {
+  if (!state.offerTours || !state.version) return []
+  return installedReleases(registry, appVersion)
+    .filter((t) => compareVersions(t.introducedIn, state.version) > 0)
+    .filter((t) => tourStatus(state.tours, t.id) === 'never' && !state.known.includes(t.id))
+    .map((t) => t.id)
+}
+
+/**
+ * @param {string[]} pending
+ * @param {{ running: boolean, dialogOpen: boolean, doneCard: boolean }} busy
+ */
+export const releaseOffer = (pending, { running, dialogOpen, doneCard }) =>
+  running || dialogOpen || doneCard ? [] : pending
+
+export const isNewTour = (state, tour, appVersion) =>
+  !!tour.release &&
+  compareVersions(tour.introducedIn, appVersion) <= 0 &&
+  tourStatus(state.tours, tour.id) === 'never' &&
+  !state.known.includes(tour.id)
+
+/** @returns {import('../../types').TourRows} */
+export function tourRows(state, registry, appVersion) {
+  const row = (tour) => ({
+    id: tour.id,
+    nameKey: tour.nameKey,
+    summaryKey: tour.summaryKey,
+    hue: tour.hue,
+    icon: tour.icon,
+    steps: tour.steps.length,
+    done: tourStatus(state.tours, tour.id) === 'done',
+    isNew: isNewTour(state, tour, appVersion)
+  })
+  const releases = installedReleases(registry, appVersion)
+  const versions = [...new Set(releases.map((t) => t.introducedIn))].sort(compareVersions).reverse()
+  return {
+    tours: registry.filter((t) => !t.release).map(row),
+    releases: versions.map((version) => ({
+      version,
+      rows: releases.filter((t) => t.introducedIn === version).map(row)
+    }))
+  }
 }

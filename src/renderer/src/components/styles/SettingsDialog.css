@@ -147,16 +147,6 @@ h4:not(:first-child) {
 }
 /* The tips toggle and its replay button share a row, so the way out and the way
    back in sit together — the tour's last step rings this row. */
-.tips-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
-}
-.tips-row .btn {
-  margin-left: auto;
-  flex: none;
-}
 
 /* The `diffbro` subcommands. A definition list, not a table: the usage line is
    the term and the summary defines it, which is what a reader is scanning for.

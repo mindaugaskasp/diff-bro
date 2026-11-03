@@ -15,9 +15,9 @@ const MAIN = join(ROOT, 'build', 'main', 'index.js')
 // Diff Bro that's already open.
 //
 // Every profile is cold, which is what the core tour's inline offer is for, so
-// by default it starts as an existing user's: no offer, tips off.
+// by default it starts as an existing user's: no offer.
 // `{ tips: true }` leaves it a fresh install.
-export const SEEN_ONBOARDING = { schema: 2, showTips: false, tours: {}, offer: false }
+export const SEEN_ONBOARDING = { schema: 2, offerTours: true, tours: {}, offer: false }
 
 export const freshUserDataDir = ({ tips = false } = {}) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))

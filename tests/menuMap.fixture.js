@@ -56,7 +56,7 @@ export const MENU_MAP = [
   'Tools ▸ Inspect ▸ Regex Tester',
   'Tools ▸ Secure ▸ Encrypt / Decrypt',
   'Help ▸ Keyboard Shortcuts',
-  'Help ▸ Show Tour',
+  'Help ▸ Tours…',
   'Help ▸ Terminal Commands & Setup…',
   'Help ▸ Report an Issue…'
 ]

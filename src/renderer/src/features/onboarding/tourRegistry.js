@@ -8,10 +8,15 @@ export const SAMPLE_LINE = 'Deploying {{service}} to staging on {{today}}'
 const CORE = {
   id: 'core',
   introducedIn: '0.16.0',
+  nameKey: 'onboarding.core.name',
+  summaryKey: 'onboarding.core.summary',
+  hue: 'diff',
+  icon: 'diff',
   labelKey: 'onboarding.tryIt',
   doneCard: {
     titleKey: 'onboarding.core.done.title',
     bodyKey: 'onboarding.core.done.more',
+    footKey: 'onboarding.core.done.where',
     next: ['snippets', 'diagrams']
   },
   steps: [
@@ -46,6 +51,9 @@ const SNIPPETS = {
   id: 'snippets',
   introducedIn: '0.16.0',
   nameKey: 'onboarding.snippets.name',
+  summaryKey: 'onboarding.snippets.summary',
+  hue: 'snippet',
+  icon: 'code',
   labelKey: 'onboarding.snippets.label',
   steps: [
     {
@@ -100,6 +108,9 @@ const DIAGRAMS = {
   id: 'diagrams',
   introducedIn: '0.16.0',
   nameKey: 'onboarding.diagrams.name',
+  summaryKey: 'onboarding.diagrams.summary',
+  hue: 'inspect',
+  icon: 'diagram',
   labelKey: 'onboarding.diagrams.label',
   doneCard: {
     titleKey: 'onboarding.diagrams.done.title',

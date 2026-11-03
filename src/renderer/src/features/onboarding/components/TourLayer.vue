@@ -8,6 +8,7 @@ import { MOD, isMac } from '../../../keys'
 import CoachMark from './CoachMark.vue'
 import TargetRing from './TargetRing.vue'
 import TourDoneCard from './TourDoneCard.vue'
+import ReleaseTourCard from './ReleaseTourCard.vue'
 
 const tour = useOnboardingStore()
 const settings = useSettingsStore()
@@ -37,4 +38,5 @@ const keys = computed(() =>
     @close="tour.dismissDone()"
     @start="tour.startTour($event)"
   />
+  <ReleaseTourCard />
 </template>

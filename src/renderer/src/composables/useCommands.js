@@ -11,7 +11,6 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useConfigBackupStore } from '../features/configBackup'
 import { useImageExportStore } from '../features/imageExport'
 import { useShareStore } from '../features/share'
-import { useOnboardingStore } from '../features/onboarding'
 import { useConflictsStore, useMergeStore } from '../features/merge'
 import { useOpenWithStore } from '../features/openWith'
 
@@ -24,7 +23,6 @@ const bundle = () => ({
   configBackup: useConfigBackupStore(),
   imageExport: useImageExportStore(),
   share: useShareStore(),
-  onboarding: useOnboardingStore(),
   merge: useMergeStore(),
   conflicts: useConflictsStore(),
   openWith: useOpenWithStore()
@@ -34,11 +32,7 @@ export function useCommands() {
   const run = (action) => runCommand(action, bundle())
   return {
     run,
-    // Menus, the in-app bar and the palette all come through here. While the
-    // tour is running they are ignored: the veil takes every click, but the OS
-    // menu sits outside the window and was the one way to open a dialog the
-    // tour then covered. The tour's own dispatch uses `run` directly.
-    runFromMenu: (action) => !useOnboardingStore().active && run(action),
+    runFromMenu: run,
     runCli: (command) => runCliCommand(command, bundle())
   }
 }

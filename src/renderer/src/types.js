@@ -327,10 +327,42 @@
  * @typedef {object} Tour
  * @property {string} id
  * @property {string} introducedIn  the release that shipped it
+ * @property {boolean} [release]   a release's own tour, offered once after an update
  * @property {string} labelKey      "Try it · 1 of 3"
- * @property {string} [nameKey]     its name on a chip that starts it
- * @property {{ titleKey: string, bodyKey?: string, next?: string[] }} [doneCard]
+ * @property {string} nameKey       its name on the Tours page and on a chip that starts it
+ * @property {string} summaryKey    its one line on the Tours page and the release card
+ * @property {'diff'|'snippet'|'inspect'} hue
+ * @property {string} icon          an `icons.js` name
+ * @property {{ titleKey: string, bodyKey?: string, footKey?: string, next?: string[] }} [doneCard]
  * @property {TourStep[]} steps
+ */
+
+/**
+ * What `onboarding.json` holds, less its schema.
+ * @typedef {object} OnboardingState
+ * @property {boolean} offerTours   the card after an update
+ * @property {Record<string, 'done'|'skipped'>} tours
+ * @property {boolean} offer        the core tour's inline offer on a fresh install
+ * @property {string|null} version  the version the user was last offered release tours at
+ * @property {string[]} known       release tours closed with ×, or there before the install
+ */
+
+/**
+ * @typedef {object} TourRow
+ * @property {string} id
+ * @property {string} nameKey
+ * @property {string} summaryKey
+ * @property {string} hue
+ * @property {string} icon
+ * @property {number} steps
+ * @property {boolean} done
+ * @property {boolean} isNew
+ */
+
+/**
+ * @typedef {object} TourRows
+ * @property {TourRow[]} tours
+ * @property {{ version: string, rows: TourRow[] }[]} releases  newest first
  */
 
 /**

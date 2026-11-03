@@ -70,11 +70,18 @@ export const useUiStore = defineStore('ui', {
     // new. Self-clearing, because a move has no follow-up gesture to retire it
     // the way a create's does.
     lastMovedRowId: null,
-    // Which pane Settings opens on. Null means "wherever it opens by default" —
-    // a menu item that documents the CLI has to land on the CLI pane.
-    settingsTab: null
+    // Which pane Settings opens on; null is its default.
+    settingsTab: null,
+    openDialogs: 0
   }),
+  getters: {
+    hasOpenDialog: (s) => s.openDialogs > 0 || s.showCommandPalette || !!s.mermaidView
+  },
   actions: {
+    /** @param {boolean} open */
+    noteDialog(open) {
+      this.openDialogs = Math.max(0, this.openDialogs + (open ? 1 : -1))
+    },
     showSidebarNotice(text) {
       this.sidebarNotice = text
       clearTimeout(sidebarNoticeTimer)

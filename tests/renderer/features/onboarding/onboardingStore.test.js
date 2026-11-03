@@ -18,6 +18,7 @@ function setup(onboarding) {
     localStorage.setItem('diffbro.onboarding', JSON.stringify(onboarding))
   }
   window.api = {
+    appVersion: '0.18.0',
     demoFiles: async () => SAMPLE.map((f) => ({ ...f })),
     vaultEncrypt: async (plaintext) => ({ iv: 'iv', data: plaintext })
   }
@@ -40,7 +41,14 @@ describe('the offer', () => {
 
   it('rewrites an old onboarding file in the new shape on init', () => {
     setup({ showTips: false, tourStep: 2, seenVersion: '0.5.0' }).init()
-    expect(stored()).toEqual({ schema: 2, showTips: false, tours: {}, offer: false })
+    expect(stored()).toEqual({
+      schema: 2,
+      offerTours: true,
+      tours: {},
+      offer: false,
+      version: '0.18.0',
+      known: []
+    })
   })
 
   it('records a fresh install’s offer on init, so a relaunch keeps it', () => {
@@ -202,7 +210,7 @@ describe('the tours after the core one', () => {
 
 describe('replaying', () => {
   it('closes Settings, shows the start screen and starts at the offer', async () => {
-    const tour = setup({ schema: 2, showTips: true, tours: { core: 'done' }, offer: false })
+    const tour = setup({ schema: 2, tours: { core: 'done' }, offer: false })
     const ui = useUiStore()
     ui.showSettingsDialog = true
     await useDiffStore().dropFiles([
@@ -223,9 +231,102 @@ describe('replaying', () => {
     expect(stored().tours).toEqual({ core: 'done' })
   })
 
-  it('setShowTips writes the switch', () => {
+  it('setOfferTours writes the switch', () => {
     const tour = setup()
-    tour.setShowTips(false)
-    expect(stored().showTips).toBe(false)
+    tour.setOfferTours(false)
+    expect(stored().offerTours).toBe(false)
+  })
+})
+
+describe('taking a tour from the Tours page', () => {
+  it('replays the core tour on the start screen', () => {
+    const tour = setup({ schema: 2, tours: { core: 'done' }, offer: false })
+    tour.take('core')
+    expect(tour.step.id).toBe('drop')
+  })
+
+  it('starts any other tour where it runs', async () => {
+    const tour = setup({ schema: 2, tours: {}, offer: false })
+    await tour.take('snippets')
+    expect(tour.running).toMatchObject({ id: 'snippets', index: 0 })
+  })
+})
+
+const release = (id, introducedIn) => ({
+  id,
+  introducedIn,
+  release: true,
+  nameKey: 'onboarding.snippets.name',
+  labelKey: 'onboarding.snippets.label',
+  steps: [
+    { id: 'one', advanceOn: 'fixture-one', target: '[data-tour="search"]' },
+    { id: 'two', advanceOn: 'fixture-two', target: '[data-tour="search"]' }
+  ]
+})
+const EXISTING = { schema: 2, offerTours: true, tours: {}, offer: false, version: '0.16.0' }
+
+describe('the release offer', () => {
+  function offered(ids = ['run']) {
+    const tour = setup(EXISTING)
+    tour.init()
+    tour.registry.push(release('run', '0.17.0'), release('share', '0.18.0'))
+    tour.presentReleases(ids)
+    return tour
+  }
+
+  it('lists the tours shipped since the version the user was offered up to', () => {
+    const tour = setup(EXISTING)
+    tour.init()
+    tour.registry.push(release('run', '0.17.0'), release('share', '0.18.0'))
+    expect(tour.pendingReleases).toEqual(['run', 'share'])
+  })
+
+  it('a fresh install knows every release tour up to its version', () => {
+    const tour = setup()
+    tour.registry.push(release('run', '0.17.0'))
+    tour.init()
+    expect(tour.pendingReleases).toEqual([])
+    expect(stored()).toMatchObject({ version: '0.18.0', known: ['run'] })
+  })
+
+  it('shows once: presenting moves the stored version on', () => {
+    const tour = offered()
+    expect(tour.releaseCard).toEqual(['run'])
+    expect(stored().version).toBe('0.18.0')
+    expect(tour.pendingReleases).toEqual([])
+  })
+
+  it('Later closes the card and keeps the tour New', () => {
+    const tour = offered()
+    tour.laterReleases()
+    expect(tour.releaseCard).toBeNull()
+    expect(tour.tourRows.releases[1].rows[0]).toMatchObject({ id: 'run', isNew: true })
+  })
+
+  it('× closes the card and the tour is no longer New', () => {
+    const tour = offered()
+    tour.dismissReleases()
+    expect(tour.releaseCard).toBeNull()
+    expect(stored().known).toEqual(['run'])
+    expect(tour.tourRows.releases[1].rows[0].isNew).toBe(false)
+  })
+
+  it('Show me starts the tour, and finishing it records it done', async () => {
+    const tour = offered()
+    await tour.showReleaseTour()
+    expect(tour.releaseCard).toBeNull()
+    expect(tour.running).toMatchObject({ id: 'run', index: 0 })
+    expect(tour.stepCount).toBe(2)
+    tour.advance('fixture-one')
+    tour.advance('fixture-two')
+    expect(stored().tours).toEqual({ run: 'done' })
+  })
+
+  it('the merged card opens Settings ▸ Tours and keeps them New', () => {
+    const tour = offered(['run', 'share'])
+    tour.openReleaseTours()
+    expect(tour.releaseCard).toBeNull()
+    expect(useUiStore()).toMatchObject({ showSettingsDialog: true, settingsTab: 'tours' })
+    expect(tour.tourRows.releases.flatMap((g) => g.rows.map((r) => r.isNew))).toEqual([true, true])
   })
 })

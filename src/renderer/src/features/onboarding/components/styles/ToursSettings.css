@@ -1,0 +1,18 @@
+.tours-settings h4 {
+  margin: 0 0 2px;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+.ts-intro {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+}
+.ts-sub {
+  margin: var(--space-4) 0 var(--space-1);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-meta);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
