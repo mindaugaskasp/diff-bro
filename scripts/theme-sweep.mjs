@@ -404,7 +404,7 @@ async function openRunPane(page, { app }) {
   if (!(await pythonToggle.isChecked())) await pythonToggle.click()
   await settings
     .locator('.lang-row', { hasText: 'Python' })
-    .getByRole('button', { name: 'Change…' })
+    .locator('.lang-path:not(.is-off)')
     .waitFor()
   await page.keyboard.press('Escape')
   await settings.waitFor({ state: 'detached' })
@@ -556,7 +556,26 @@ const SURFACES = [
     },
     probes: {
       'language name': ['.lang-row .setting-toggle', TEXT],
-      'program path': ['.lang-path', TEXT]
+      'program path, off': ['.lang-path.is-off', TEXT]
+    }
+  },
+  {
+    name: 'settings-program-picker',
+    open: async (page) => {
+      const settings = await openIntegrationsPane(page)
+      await settings
+        .locator('.lang-row', { hasText: 'PHP' })
+        .getByRole('button', { name: 'Change…' })
+        .click()
+      await page.locator('.program-picker input').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+    },
+    probes: {
+      'typed path': ['.program-picker input', TEXT],
+      'open Change…': ['.lang-row .btn.active', TEXT]
     }
   },
   {

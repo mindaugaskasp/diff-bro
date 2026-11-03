@@ -29,8 +29,14 @@ export function withLanguage(config, language, patch) {
   }
 }
 
-// What the renderer may see: each language, never whether the warning was seen.
-export const rendererStatus = (config) => config.languages
+// What the renderer may see: never whether the warning was seen.
+export const rendererStatus = (config, candidates = {}) =>
+  Object.fromEntries(
+    Object.entries(config.languages).map(([language, status]) => [
+      language,
+      { ...status, candidates: candidates[language] ?? [] }
+    ])
+  )
 export const isEnabled = (config, language) => config.languages[language]?.enabled === true
 
 export function readConfig(file) {

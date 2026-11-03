@@ -1,77 +1,11 @@
-// Electron glue over runnerCore.js and runnerConfig.js. The renderer names a
-// language only: the program is picked here, in main's own dialogs.
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { join } from 'node:path'
-import { isEnabled, readConfig, rendererStatus, withLanguage, writeConfig } from './runnerConfig'
-import { isRunnableLanguage, readVersion } from './runnerCore'
+// Electron glue over runnerCore.js: runs a snippet with the program main holds for its language.
+import { app, dialog, ipcMain } from 'electron'
+import { readConfig, writeConfig } from './runnerConfig'
 import { createRuns, refusalFor } from './runnerRuns'
+import { configFile, registerRunnerSettingsIpc, windowOf } from './runnerSettings'
 import { readSnippetStore } from './appData'
 import { parseStore } from './storeEntries'
-import { labelKeyOf } from '../shared/snippetLanguages'
 import { t } from './i18n'
-
-const configFile = () => join(app.getPath('userData'), 'runners.json')
-const windowOf = (e) => BrowserWindow.fromWebContents(e.sender)
-const statusReply = (config) => ({ ok: true, status: rendererStatus(config) })
-const nameOf = (language) => t(labelKeyOf(language))
-
-async function confirmEnable(win, language) {
-  const name = nameOf(language)
-  const { response } = await dialog.showMessageBox(win, {
-    type: 'warning',
-    message: t('runner.enableTitle', { language: name }),
-    detail: t('runner.enableDetail', { language: name }),
-    buttons: [t('common.cancel'), t('runner.continue')],
-    defaultId: 1,
-    cancelId: 0
-  })
-  return response === 1
-}
-
-async function pickProgram(win, language) {
-  const { canceled, filePaths } = await dialog.showOpenDialog(win, {
-    title: t('runner.pickTitle', { language: nameOf(language) }),
-    properties: ['openFile']
-  })
-  return canceled ? null : (filePaths[0] ?? null)
-}
-
-// Refuses a program whose --version is not this language.
-async function adoptProgram(language, path) {
-  const version = await readVersion({ exe: path, language })
-  if (!version) return { error: 'not-that-language' }
-  const config = withLanguage(readConfig(configFile()), language, {
-    enabled: true,
-    path,
-    version
-  })
-  writeConfig(configFile(), config)
-  return statusReply(config)
-}
-
-const adoptPicked = (language, path) => (path ? adoptProgram(language, path) : { canceled: true })
-
-async function enable(e, language) {
-  if (!isRunnableLanguage(language)) return { error: 'bad-request' }
-  const win = windowOf(e)
-  if (!(await confirmEnable(win, language))) return { canceled: true }
-  const known = readConfig(configFile()).languages[language].path
-  return adoptPicked(language, known ?? (await pickProgram(win, language)))
-}
-
-// Only swaps the program of a language already on: turning one on goes through enable's warning.
-async function change(e, language) {
-  if (!isRunnableLanguage(language)) return { error: 'bad-request' }
-  if (!isEnabled(readConfig(configFile()), language)) return { error: 'not-enabled' }
-  return adoptPicked(language, await pickProgram(windowOf(e), language))
-}
-
-function disable(_e, language) {
-  if (!isRunnableLanguage(language)) return { error: 'bad-request' }
-  const config = withLanguage(readConfig(configFile()), language, { enabled: false })
-  writeConfig(configFile(), config)
-  return statusReply(config)
-}
 
 const runs = createRuns()
 
@@ -137,8 +71,5 @@ export function registerRunnerIpc() {
   app.on('will-quit', runs.stopAll)
   ipcMain.handle('run:start', start)
   ipcMain.handle('run:stop', (e, runId) => runs.stopIfOwner(runId, e.sender.id))
-  ipcMain.handle('run:status', () => rendererStatus(readConfig(configFile())))
-  ipcMain.handle('run:enable', enable)
-  ipcMain.handle('run:change', change)
-  ipcMain.handle('run:disable', disable)
+  registerRunnerSettingsIpc()
 }

@@ -12,15 +12,17 @@ export const useRunnerStore = defineStore('runner', {
   state: () => ({
     /** @type {Record<string, import('../../types').LanguageStatus>|null} */
     status: null,
-    /** @type {{ language: string, error: string }|null} */
-    settingsError: null,
+    /** @type {{ language: string, error: string|null, notice: string|null }|null} */
+    settingsMessage: null,
     /** @type {Record<string, import('../../types').RunState>} one per tab */
     runs: {},
     listening: false
   }),
   getters: {
     errorFor: (s) => (language) =>
-      s.settingsError?.language === language ? s.settingsError.error : null,
+      s.settingsMessage?.language === language ? s.settingsMessage.error : null,
+    noticeFor: (s) => (language) =>
+      s.settingsMessage?.language === language ? s.settingsMessage.notice : null,
     isEnabled: (s) => (language) => s.status?.[language]?.enabled === true,
     runFor: (s) => (key) => s.runs[key] ?? null,
     // A run still waiting for main has no id yet, and its output can arrive first.
@@ -36,13 +38,24 @@ export const useRunnerStore = defineStore('runner', {
     },
     applySettingsReply(language, reply) {
       if (reply?.status) this.status = reply.status
-      this.settingsError = reply?.error ? { language, error: reply.error } : null
+      const error = reply?.error ?? null
+      const notice = reply?.notice ?? null
+      this.settingsMessage = error || notice ? { language, error, notice } : null
     },
     async enable(language) {
       this.applySettingsReply(language, await window.api.runEnable(language))
     },
     async change(language) {
       this.applySettingsReply(language, await window.api.runChange(language))
+    },
+    async choose(language, index) {
+      this.applySettingsReply(language, await window.api.runChoose(language, index))
+    },
+    async usePath(language, path) {
+      this.applySettingsReply(language, await window.api.runUsePath(language, path))
+    },
+    async findAgain(language) {
+      this.applySettingsReply(language, await window.api.runFindAgain(language))
     },
     async disable(language) {
       this.applySettingsReply(language, await window.api.runDisable(language))

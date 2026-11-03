@@ -52,6 +52,8 @@ export default defineConfig({
         'src/main/runnerCore.js',
         'src/main/runnerConfig.js',
         'src/main/runnerRuns.js',
+        'src/main/runnerDetect.js',
+        'src/main/runnerProgram.js',
         'src/main/sealing.js',
         'src/main/shareCore.js',
         'src/main/dataFiles.js',

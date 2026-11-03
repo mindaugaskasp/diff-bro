@@ -70,7 +70,14 @@ describe('isEnabled', () => {
 describe('rendererStatus', () => {
   it('shows the renderer each language, and not whether the warning was seen', () => {
     const status = rendererStatus(sanitizeConfig({ confirmed: true }))
-    expect(status).toEqual({ php: OFF, python: OFF })
+    expect(status).toEqual({ php: { ...OFF, candidates: [] }, python: { ...OFF, candidates: [] } })
+  })
+
+  it('adds the programs main found for each language', () => {
+    const found = [{ path: '/usr/bin/python3', version: '3.11.2' }]
+    const status = rendererStatus(sanitizeConfig(null), { python: found })
+    expect(status.python.candidates).toEqual(found)
+    expect(status.php.candidates).toEqual([])
   })
 })
 
