@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   cleanTag,
   derivedFrom,
+  docTitleKey,
   isSameTagSet,
   promptVars
 } from '../../../src/renderer/src/utils/snippetState'
@@ -80,5 +81,13 @@ describe('cleanTag', () => {
     expect(cleanTag(`${'x'.repeat(39)}/more`)).toBe('x'.repeat(39))
     expect(cleanTag(`${'x'.repeat(38)} /more`)).toBe('x'.repeat(38))
     expect(cleanTag('/')).toBe('')
+  })
+})
+
+describe('docTitleKey', () => {
+  it('names a new snippet, one being edited, and one being read', () => {
+    expect(docTitleKey(true, true)).toBe('snippetEditorDialog.newSnippetTitle')
+    expect(docTitleKey(false, true)).toBe('snippetEditorDialog.editSnippet')
+    expect(docTitleKey(false, false)).toBe('snippetEditorDialog.snippet')
   })
 })

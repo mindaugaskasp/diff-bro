@@ -182,6 +182,16 @@ export const ICONS = {
     { t: 'path', d: 'M16 21v-3a2 2 0 0 1 2-2h3' }
   ],
   check: [{ t: 'path', d: 'M20 6 9 17l-5-5' }],
+  play: [{ t: 'path', d: 'M6 4l14 8-14 8z' }],
+  stop: [{ t: 'path', d: 'M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z' }],
+  clear: [
+    { t: 'circle', cx: 12, cy: 12, r: 9 },
+    { t: 'path', d: 'M5.6 5.6l12.8 12.8' }
+  ],
+  alert: [
+    { t: 'circle', cx: 12, cy: 12, r: 9 },
+    { t: 'path', d: 'M12 8v5M12 16h.01' }
+  ],
   minus: [{ t: 'path', d: 'M5 12h14' }],
   plus: [
     { t: 'path', d: 'M5 12h14' },

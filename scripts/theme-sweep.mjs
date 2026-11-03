@@ -392,6 +392,32 @@ async function openClaudePane(page) {
   return dlg
 }
 
+// A real failing run, so the pane is measured with stderr on its wash.
+async function openRunPane(page, { app }) {
+  const python = execFileSync('/bin/sh', ['-c', 'command -v python3']).toString().trim()
+  await app.evaluate(({ dialog }, path) => {
+    dialog.showMessageBox = async () => ({ response: 1 })
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] })
+  }, python)
+  const settings = await openClaudePane(page)
+  const python3 = settings.locator('.lang-row', { hasText: 'Python' }).getByRole('checkbox')
+  if (!(await python3.isChecked())) await python3.click()
+  await settings
+    .locator('.lang-row', { hasText: 'Python' })
+    .getByRole('button', { name: 'Change…' })
+    .waitFor()
+  await page.keyboard.press('Escape')
+  await settings.waitFor({ state: 'detached' })
+  await showPanel(page, 'snippets')
+  await page.locator('[data-tour="snippet-new"]').click()
+  const doc = page.getByRole('region', { name: 'New snippet' })
+  await doc.locator('.monaco-editor').first().click()
+  await page.keyboard.insertText('#!/usr/bin/env python3\nprint("ok")\nraise ValueError("nope")')
+  const run = page.locator('#toolbar-doc-actions').getByRole('button', { name: 'Run', exact: true })
+  await run.click()
+  await page.locator('.run-state.failed').waitFor()
+}
+
 // Retried while the grant the pane just signed is still on its way to disk.
 async function proposeOverMcp(userDataDir) {
   const env = { ...process.env }
@@ -519,13 +545,30 @@ const SURFACES = [
       await page.locator('.lang-row').first().waitFor()
     },
     close: async (page) => {
-      const dialog = page.getByRole('dialog', { name: 'Settings' })
-      await dialog.getByRole('button', { name: 'Close', exact: true }).click()
-      await dialog.waitFor({ state: 'detached' })
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
     },
     probes: {
       'language name': ['.lang-row .setting-toggle', TEXT],
       'program path': ['.lang-path', TEXT]
+    }
+  },
+  {
+    name: 'run-pane',
+    open: openRunPane,
+    close: async (page) => {
+      await page
+        .getByRole('region', { name: 'Output' })
+        .getByRole('button', { name: 'Close' })
+        .click()
+      await closeSnippetTab(page)
+    },
+    probes: {
+      output: ['.run-out', TEXT],
+      'error text': ['.run-err', TEXT],
+      details: ['.run-details', TEXT],
+      'state word': ['.run-state', TEXT],
+      'failed icon': ['.run-state.failed svg', DIM]
     }
   },
   {

@@ -21,6 +21,8 @@ import MarkdownRendered from './MarkdownRendered.vue'
 import RenderedEditor from './RenderedEditor.vue'
 import { useTabContent } from '../composables/useTabContent'
 import { t } from '../i18n'
+import { docTitleKey } from '../utils/snippetState'
+import { RunButton, RunPane, useSnippetRun } from '../features/runner'
 
 const props = defineProps({ tab: { type: Object, required: true } })
 const tabs = useTabsStore()
@@ -82,18 +84,11 @@ const { onDropFile } = useFileTextDrop((text, fileName) => {
 })
 const saveSnippet = () => draft.save(head.value.tagValues())
 
-const docLabel = computed(() =>
-  t(
-    draft.isNew.value
-      ? 'snippetEditorDialog.newSnippetTitle'
-      : editMode.value
-        ? 'snippetEditorDialog.editSnippet'
-        : 'snippetEditorDialog.snippet'
-  )
-)
+const docLabel = computed(() => t(docTitleKey(draft.isNew.value, editMode.value)))
 
 const inline = useSnippetInlineEdit({ draft, tab: props.tab, head, save: saveSnippet, onDropFile })
 
+const run = useSnippetRun({ tab: props.tab, draft, editing })
 const showHistory = ref(false)
 const compareWith = () =>
   editing.id
@@ -123,6 +118,7 @@ const compareWith = () =>
       @tags-change="draft.setTags"
     />
     <Teleport v-if="inFront" to="#toolbar-doc-actions" defer>
+      <RunButton :run="run" />
       <SnippetEditorActions
         ref="actions"
         :edit-mode="editMode"
@@ -177,6 +173,7 @@ const compareWith = () =>
           </template>
           <SnippetSecretMask v-if="masked" />
         </div>
+        <RunPane :tab-key="tab.id" @run-again="run.start()" />
         <p v-if="editMode && !content.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
         </p>

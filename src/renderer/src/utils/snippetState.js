@@ -143,3 +143,13 @@ export function readLibrary(parsed, untitled) {
     entries: parsed.entries.map((e) => normalizeEntry(e, untitled))
   }
 }
+
+/**
+ * @param {boolean} isNew
+ * @param {boolean} editing
+ * @returns {string} the document's title key
+ */
+export function docTitleKey(isNew, editing) {
+  if (isNew) return 'snippetEditorDialog.newSnippetTitle'
+  return editing ? 'snippetEditorDialog.editSnippet' : 'snippetEditorDialog.snippet'
+}
