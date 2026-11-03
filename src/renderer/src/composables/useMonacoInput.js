@@ -32,16 +32,28 @@ const BASE_OPTIONS = {
 }
 
 // The language's indent unless the code already has one, which detectIndentation keeps.
-function setLanguage(editor, language) {
-  const model = editor.getModel()
-  monaco.editor.setModelLanguage(model, language)
+function detectIndent(editor, language) {
   const { insertSpaces, tabSize } = indentStyleFor(language)
-  model.detectIndentation(insertSpaces, tabSize)
+  editor.getModel().detectIndentation(insertSpaces, tabSize)
 }
 
-function attachEditor(editor, { text, language }) {
+function setLanguage(editor, language) {
+  monaco.editor.setModelLanguage(editor.getModel(), language)
+  detectIndent(editor, language)
+}
+
+function attachEditor(editor, { text, content, language, cursor }) {
   text.attach(editor)
-  setLanguage(editor, language)
+  setLanguage(editor, language.value)
+  editor.onDidChangeCursorPosition(({ position }) => {
+    cursor.value = { line: position.lineNumber, column: position.column }
+  })
+  editor.onDidChangeModelContent(({ isFlush }) => {
+    content.value = editor.getValue()
+    if (isFlush) detectIndent(editor, language.value)
+  })
+  // Text can land after the language was picked: the menu's paste is async, a snippet loads late.
+  editor.onDidPaste(() => detectIndent(editor, language.value))
 }
 
 /** Open Monaco's find widget, with the replace row when asked. */
@@ -97,14 +109,8 @@ export function useMonacoInput({ container, content, language, readOnly, options
       readOnly: isReadOnly(),
       ...options
     })
-    attachEditor(editor, { text, language: language.value })
+    attachEditor(editor, { text, content, language, cursor })
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => openFind(!isReadOnly()))
-    editor.onDidChangeCursorPosition(({ position }) => {
-      cursor.value = { line: position.lineNumber, column: position.column }
-    })
-    editor.onDidChangeModelContent(() => {
-      content.value = editor.getValue()
-    })
     ready.value = true
   }
 
