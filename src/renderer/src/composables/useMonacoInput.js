@@ -12,7 +12,7 @@ import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
  * @param {import('vue').Ref<string>} args.content              two-way bound text
  * @param {import('vue').Ref<string>} args.language             Monaco language id
  * @param {object} [args.options]                               extra editor options
- * @returns {{ ready: import('vue').Ref<boolean>, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void, openFind: (withReplace: boolean) => void, cursor: import('vue').Ref<{line: number, column: number}|null> }}
+ * @returns {{ ready: import('vue').Ref<boolean>, editorInstance: () => object|null, reset: (value?: string) => void, applySelectionEdit: (transform: (m: {text: string, start: number, end: number}) => ({text: string, start: number, end: number}|null)) => void, layout: () => void, openFind: (withReplace: boolean) => void, cursor: import('vue').Ref<{line: number, column: number}|null> }}
  */
 const FONT_PX = 12.5
 const BASE_OPTIONS = {
@@ -126,9 +126,8 @@ export function useMonacoInput({ container, content, language, readOnly, options
   const openFind = (withReplace) => runFind(editor, withReplace && !isReadOnly())
 
   // Re-layout after the editor was created in a hidden container and then shown.
-  function layout() {
-    editor?.layout()
-  }
+  const layout = () => editor?.layout()
+  const editorInstance = () => editor
 
-  return { ready, cursor, reset, applySelectionEdit, layout, openFind }
+  return { ready, cursor, reset, applySelectionEdit, layout, openFind, editorInstance }
 }

@@ -418,3 +418,14 @@ export {}
  * @property {boolean} available  installed on this computer
  * @property {'absent'|'current'|'stale'|'unknown'} status  whether its config launches this app
  */
+
+/**
+ * Where the run-a-line button sits: on the hovered line's number, in viewport px.
+ * @typedef {object} RunGutterSpot
+ * @property {number} line   the line pressed
+ * @property {number|null} reach  the last line a press runs
+ * @property {number} top
+ * @property {number} left
+ * @property {number} width
+ * @property {number} height  the editor's line height, so the button fills the number's box
+ */

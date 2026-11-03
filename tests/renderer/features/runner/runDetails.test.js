@@ -23,6 +23,17 @@ describe('runDetails', () => {
     ])
   })
 
+  it('leads with the last line a gutter run reached', () => {
+    expect(runDetails({ reason: 'exit', code: 0, ms: 3, upTo: 8 })[0]).toEqual({
+      key: 'runner.pane.upToLine',
+      params: { n: 8 }
+    })
+  })
+
+  it('names the line while the run is still going', () => {
+    expect(runDetails({ upTo: 8 })).toEqual([{ key: 'runner.pane.upToLine', params: { n: 8 } }])
+  })
+
   it('has nothing before a run has ended', () => {
     expect(runDetails({})).toEqual([])
   })

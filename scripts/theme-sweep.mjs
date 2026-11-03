@@ -418,6 +418,12 @@ async function openRunPane(page, { app }) {
   await page.locator('.run-state.failed').waitFor()
 }
 
+async function openRunGutter(page, ctx) {
+  await openRunPane(page, ctx)
+  await page.locator('.snippet-doc:visible .line-numbers').filter({ hasText: /^2$/ }).hover()
+  await page.locator('.run-gutter').waitFor()
+}
+
 // Retried while the grant the pane just signed is still on its way to disk.
 async function proposeOverMcp(userDataDir) {
   const env = { ...process.env }
@@ -570,6 +576,19 @@ const SURFACES = [
       'state word': ['.run-state', TEXT],
       'failed icon': ['.run-state.failed svg', DIM]
     }
+  },
+  {
+    name: 'run-gutter',
+    open: openRunGutter,
+    close: async (page) => {
+      await page.mouse.move(0, 0)
+      await page
+        .getByRole('region', { name: 'Output' })
+        .getByRole('button', { name: 'Close' })
+        .click()
+      await closeSnippetTab(page)
+    },
+    probes: { 'play icon': ['.run-gutter svg', DIM] }
   },
   {
     name: 'snippet-inline-edit',
