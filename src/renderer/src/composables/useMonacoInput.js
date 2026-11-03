@@ -3,6 +3,7 @@ import * as monaco from 'monaco-editor'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useEditorText } from './useEditorText'
 import { MONACO_THEME, applyMonacoTheme } from './useMonacoTheme'
+import { indentStyleFor } from '../utils/indentStyle'
 
 // A Monaco editor bound to a `content` ref: two-way sync, live language switching,
 // theme mirrored in.
@@ -28,6 +29,19 @@ const BASE_OPTIONS = {
   scrollBeyondLastLine: false,
   contextmenu: false,
   cursorWidth: 1
+}
+
+// The language's indent unless the code already has one, which detectIndentation keeps.
+function setLanguage(editor, language) {
+  const model = editor.getModel()
+  monaco.editor.setModelLanguage(model, language)
+  const { insertSpaces, tabSize } = indentStyleFor(language)
+  model.detectIndentation(insertSpaces, tabSize)
+}
+
+function attachEditor(editor, { text, language }) {
+  text.attach(editor)
+  setLanguage(editor, language)
 }
 
 /** Open Monaco's find widget, with the replace row when asked. */
@@ -83,7 +97,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
       readOnly: isReadOnly(),
       ...options
     })
-    text.attach(editor)
+    attachEditor(editor, { text, language: language.value })
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => openFind(!isReadOnly()))
     editor.onDidChangeCursorPosition(({ position }) => {
       cursor.value = { line: position.lineNumber, column: position.column }
@@ -107,7 +121,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
     if (editor && editor.getValue() !== value) editor.setValue(value)
   })
   watch(language, (lang) => {
-    if (editor) monaco.editor.setModelLanguage(editor.getModel(), lang)
+    if (editor) setLanguage(editor, lang)
   })
   if (readOnly) watch(readOnly, (ro) => editor?.updateOptions({ readOnly: !!ro }))
   // post-flush: applyMonacoTheme probes the live palette, after data-theme is stamped.
