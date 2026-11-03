@@ -29,6 +29,12 @@
 brew tap mindaugaskasp/tap && brew install --cask diff-bro
 ```
 
+Installed with Homebrew? Uninstall with Homebrew too. Homebrew keeps its own
+record of the install, and moving the app to the Bin does not clear it, so
+`brew` still lists Diff Bro as installed. `brew uninstall --cask diff-bro`
+clears that record even after the app is gone. Add `--zap` to remove your
+library as well.
+
 Builds are not yet signed, so Windows and macOS warn the first time you open the
 app — see [packaging](docs/packaging.md).
 

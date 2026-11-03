@@ -3,6 +3,7 @@ import { app } from 'electron'
 import { createInterface } from 'readline'
 import { createReadStream } from 'fs'
 import { join } from 'path'
+import { execFile } from 'child_process'
 import { installNetworkKillSwitch } from './security'
 import { readSnippetStore, readVaultStore } from './appData'
 import { readExistingVaultKey } from './vault'
@@ -13,6 +14,7 @@ import { callTool, toolList } from './mcpTools'
 import { resourceList, resourceRead } from './mcpResources'
 import { writeProposal } from './inboxStore'
 import { appendActivity, claudePaths, readGrantRecord } from './claudeFiles'
+import { forwardLaunchesToGui } from './mcpHandover'
 
 const parsed = (raw) => {
   try {
@@ -80,6 +82,13 @@ export function startMcp() {
   // stdout is the protocol channel; a stray log line would corrupt it.
   console.log = console.info = console.warn = console.error
   app.dock?.hide()
+  if (process.platform === 'darwin') {
+    forwardLaunchesToGui({
+      app,
+      execPath: process.execPath,
+      launch: (file, args) => execFile(file, args, () => {})
+    })
+  }
   app.setPath('sessionData', join(app.getPath('userData'), 'mcp-session'))
   app.whenReady().then(serve)
 }

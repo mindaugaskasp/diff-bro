@@ -365,6 +365,14 @@ shows the most recent 200 and can clear them.
 macOS that process still needs the keychain item the app's code signature
 unlocks, and without a valid grant it answers nothing.
 
+**Launches it is handed** (`mcpHandover.js`, macOS). It is a process of the
+same bundle, so LaunchServices may deliver a Dock, Spotlight or Finder launch
+to it instead of starting the app, which left Diff Bro running with no window.
+It passes the launch on with `/usr/bin/open -n -a <its own bundle>` through
+`execFile`, no shell. The bundle comes from its own executable path, and the
+only arguments are the paths macOS sent in `open-file`. Nothing from the Claude
+app reaches that command.
+
 ## Copy as file, and the plaintext window it opens
 
 **Copy as file** puts a real file on the clipboard. A file on the clipboard is a
