@@ -1,6 +1,7 @@
 <script setup>
 // The snippet editor's live Mermaid preview + an "expand to full viewer" button.
 import { ref } from 'vue'
+import { usePreviewResize } from '../composables/usePreviewResize'
 import { DIAGRAM_THEME_OPTIONS } from '../utils/mermaid'
 import MermaidDiagram from './MermaidDiagram.vue'
 import SegmentedControl from './SegmentedControl.vue'
@@ -16,10 +17,21 @@ const diagramTheme = ref('auto')
 // of the app's own ground. Same rule as the full viewer: whatever CLIPS the
 // diagram wears the paper.
 const paper = ref('')
+const root = ref(null)
+const size = usePreviewResize(() => root.value?.parentElement?.clientHeight ?? Infinity)
 </script>
 
 <template>
-  <div class="mmd-preview">
+  <div ref="root" class="mmd-preview" :class="{ resizing: size.resizing.value }">
+    <div
+      class="mmd-grip"
+      role="separator"
+      aria-orientation="horizontal"
+      :aria-label="$t('mermaidPreview.dragToResize')"
+      :data-tip="$t('mermaidPreview.dragToResizeTip')"
+      @pointerdown="size.start"
+      @dblclick="size.reset"
+    ></div>
     <div class="mmd-preview-head">
       <span>{{ $t('mermaidPreview.diagramPreview') }}</span>
       <SegmentedControl
@@ -38,7 +50,11 @@ const paper = ref('')
         <AppIcon name="expand" /> {{ $t('mermaidPreview.expand') }}
       </button>
     </div>
-    <div class="mmd-preview-body" :data-paper="paper || null">
+    <div
+      class="mmd-preview-body"
+      :data-paper="paper || null"
+      :style="{ height: `${size.height.value}px` }"
+    >
       <MermaidDiagram :code="code" :theme="diagramTheme" @paper="paper = $event" />
     </div>
   </div>

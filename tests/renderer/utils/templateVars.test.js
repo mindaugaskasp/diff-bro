@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseTemplateVars, fillTemplate } from '../../../src/renderer/src/utils/templateVars'
+import { parseTemplateVars, fillTemplate, fillVars, acceptsFills } from '../../../src/renderer/src/utils/templateVars'
 
 describe('parseTemplateVars', () => {
   it('returns distinct names in first-seen order, tolerating inner whitespace', () => {
@@ -11,6 +11,20 @@ describe('parseTemplateVars', () => {
     expect(parseTemplateVars('no vars here')).toEqual([])
     expect(parseTemplateVars('')).toEqual([])
     expect(parseTemplateVars(null)).toEqual([])
+  })
+})
+
+describe('fillVars', () => {
+  const diagram = 'flowchart TD\n  A{{Decide}} --> B{{ Ship }}'
+
+  it('reads no fill-ins from Mermaid, where {{ }} draws a hexagon', () => {
+    expect(acceptsFills('mermaid')).toBe(false)
+    expect(fillVars('mermaid', diagram)).toEqual([])
+  })
+
+  it('reads them from every other language', () => {
+    expect(acceptsFills('claude')).toBe(true)
+    expect(fillVars('plaintext', 'Hi {{name}}')).toEqual(['name'])
   })
 })
 

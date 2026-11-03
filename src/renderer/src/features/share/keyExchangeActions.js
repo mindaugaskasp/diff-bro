@@ -12,6 +12,8 @@ const KEY_NAME_NOTICES = {
   'name-empty': () => t('keyName.empty')
 }
 
+const KEY_EMAIL_ERRORS = { 'no-mail-app': 'shareNotices.keyEmailNoMailApp' }
+
 const pendingFrom = (res, source) => ({
   key: res.key,
   fingerprint: res.fingerprint,
@@ -29,11 +31,11 @@ export const keyExchangeActions = {
       label,
       reveal: useEmailStore().revealAfterCreate
     })
-    if (res?.canceled) return
+    if (res?.canceled || this.reopenForKeyName(res?.error)) return
     this.showShareKeyDialog = false
     if (res?.ok) diff.showNotice(t('shareNotices.keyEmailOpened'))
-    else if (res?.error === 'no-mail-app') diff.showNotice(t('shareNotices.keyEmailNoMailApp'))
-    else if (res?.error) diff.showNotice(t('shareNotices.keyEmailFailed'))
+    else if (res?.error)
+      diff.showNotice(t(KEY_EMAIL_ERRORS[res.error] ?? 'shareNotices.keyEmailFailed'))
   },
 
   /** @returns {boolean} whether the error was about the key's name, and said */
@@ -41,6 +43,13 @@ export const keyExchangeActions = {
     const notice = KEY_NAME_NOTICES[error]
     if (notice) useDiffStore().showNotice(notice())
     return !!notice
+  },
+
+  /** @returns {boolean} whether main refused the name, so the naming dialog is back to fix it */
+  reopenForKeyName(error) {
+    const refused = this.noticeKeyName(error)
+    if (refused) this.showShareKeyDialog = true
+    return refused
   },
 
   // Asked for outright, so a miss is said aloud rather than opening a file picker.

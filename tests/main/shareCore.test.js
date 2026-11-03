@@ -25,6 +25,13 @@ describe('guardIdentity', () => {
     await expect(guarded()).resolves.toEqual({ error: 'identity-unavailable' })
   })
 
+  it('turns a refused key name into its error code', async () => {
+    const guarded = guardIdentity(async () => {
+      throw new Error('name-too-long')
+    })
+    await expect(guarded()).resolves.toEqual({ error: 'name-too-long' })
+  })
+
   it('passes every other failure through untouched', async () => {
     const boom = new Error('disk on fire')
     const guarded = guardIdentity(async () => {

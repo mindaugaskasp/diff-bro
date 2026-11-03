@@ -11,8 +11,10 @@ export class IdentityUnavailable extends Error {
   }
 }
 
+const KEY_NAME_REFUSALS = new Set(['name-empty', 'name-too-long'])
+
 /**
- * Surface an unloadable identity as a plain error object rather than a rejected
+ * Surface an unloadable identity or a refused key name as a plain error object rather than a rejected
  * IPC promise — the renderer has no catch on these calls, so a rejection shows
  * the user nothing at all.
  * @template {(...args: any[]) => Promise<any>} F
@@ -26,6 +28,7 @@ export const guardIdentity =
       return await fn(...args)
     } catch (err) {
       if (err instanceof IdentityUnavailable) return { error: 'identity-unavailable' }
+      if (KEY_NAME_REFUSALS.has(err?.message)) return { error: err.message }
       throw err
     }
   }

@@ -4,14 +4,15 @@ import { useShareStore } from '../shareStore'
 import KeyIdenticon from '../../../components/KeyIdenticon.vue'
 import AppIcon from '../../../components/AppIcon.vue'
 import TrustedKeyList from './TrustedKeyList.vue'
+import { keyNameProblem } from '../../../../../shared/keyName'
 
 defineProps({ search: { type: String, default: '' } })
 const share = useShareStore()
 const fingerprint = ref('')
 const label = ref('')
-// A key goes out with a name; until it has one, the naming dialog comes first.
+// A key goes out with a valid name; until it has one, the naming dialog comes first.
 function sendKey(run) {
-  if (label.value) run(label.value)
+  if (!keyNameProblem(label.value)) run(label.value)
   else share.showShareKeyDialog = true
 }
 onMounted(async () => {

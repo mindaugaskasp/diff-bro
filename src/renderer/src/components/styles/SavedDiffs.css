@@ -10,6 +10,7 @@
      the sidebar shares the canvas tint, so the hairline alone is too quiet; the
      directional drop makes the chrome read as raised on every theme. */
   box-shadow: 3px 0 12px -6px rgb(var(--shadow-rgb) / 0.22);
+  position: relative;
   display: flex;
   overflow: hidden; /* the body scrolls, not the whole aside */
 }
@@ -22,6 +23,7 @@
 }
 /* Collapsed away entirely; SidebarEdge leaves a strip to bring it back. */
 .saved.collapsed {
+  overflow: visible;
   width: 0;
   border-right: 0;
   box-shadow: none;

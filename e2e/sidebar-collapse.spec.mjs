@@ -1,5 +1,12 @@
 import { rmSync } from 'node:fs'
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  showPanel
+} from './fixtures.mjs'
 
 // Collapsing is layout and persistence, so it only answers in a real window:
 // jsdom has no widths to animate and no relaunch to survive.
@@ -113,4 +120,18 @@ test('the sidebar drags wider, stops at the cap, and comes back that way', async
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('the show button is centred on the collapsed sidebar, with a snippet open', async ({
+  page
+}) => {
+  await showPanel(page, 'snippets')
+  await page.locator('li.row', { hasText: 'Example — Mermaid diagram' }).first().click()
+  await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
+  await collapse(page)
+  await expect.poll(() => widthOf(page)).toBeLessThan(2)
+  const centreY = (box) => box.y + box.height / 2
+  const sidebar = await aside(page).boundingBox()
+  const pill = await page.getByRole('button', { name: 'Show the sidebar' }).boundingBox()
+  expect(Math.abs(centreY(pill) - centreY(sidebar))).toBeLessThan(1)
 })

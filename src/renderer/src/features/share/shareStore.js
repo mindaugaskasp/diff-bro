@@ -160,6 +160,7 @@ export const useShareStore = defineStore('share', {
     async runExportKey(label) {
       const diff = useDiffStore()
       const res = await window.api.exportPublicKey(label)
+      if (this.reopenForKeyName(res.error)) return
       if (res.ok) {
         this.showShareKeyDialog = false
         diff.showNotice(
@@ -170,6 +171,7 @@ export const useShareStore = defineStore('share', {
     async runCopyKey(label) {
       const diff = useDiffStore()
       const res = await window.api.copyPublicKey(label)
+      if (this.reopenForKeyName(res.error)) return
       if (res.ok) {
         this.showShareKeyDialog = false
         diff.showNotice(

@@ -2,7 +2,7 @@ import { useSnippetStore } from '../stores/snippetStore'
 import { useUiStore } from '../stores/uiStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useCopyFeedback } from './useCopyFeedback'
-import { parseTemplateVars } from '../utils/templateVars'
+import { fillVars } from '../utils/templateVars'
 import { t } from '../i18n'
 
 // The hover card's actions, split from useSnippetPreview (which owns the
@@ -40,7 +40,7 @@ export function useSnippetPreviewActions({ preview, dismiss }) {
     if (!card) return
     const content = await store.load(card.id)
     if (content == null) return
-    if (parseTemplateVars(content).length) {
+    if (fillVars(card.lang, content).length) {
       store.pendingFill = { name: card.name, content }
       return dismiss()
     }
