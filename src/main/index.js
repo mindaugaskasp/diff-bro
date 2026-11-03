@@ -34,6 +34,7 @@ import { discardDraftFile, readDraftFile, sweepDraftFiles, writeDraftFile } from
 import { loadLocale, t } from './i18n'
 import { startMcp } from './mcp'
 import { registerClaudeIpc } from './claude'
+import { registerRunnerIpc } from './runner'
 import { watchForBundleUpdate } from './bundleUpdate'
 import { batchOpenFiles } from './openFileBatch'
 
@@ -152,6 +153,7 @@ function startApp(draftPath) {
   registerSnippetIpc()
   registerLoggerIpc()
   registerLinkIpc()
+  registerRunnerIpc()
   registerCliIpc()
   registerTrayIpc()
   registerClaudeIpc()

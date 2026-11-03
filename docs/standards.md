@@ -177,7 +177,7 @@ regression test from decoration.
    `mcpHandover.js` passes it to `/usr/bin/open -n -a` for its own bundle,
    through `execFile`, with only the `open-file` paths macOS sent and nothing
    from the Claude app.
-   **Connect** in Settings ▸ Claude adds two, both confirmed in main
+   **Connect** in Settings ▸ Integrations adds two, both confirmed in main
    (`claudeConnect.js`):
    - an `execFile` of the user's `claude` CLI, found at fixed install paths,
      with an argv built in main;

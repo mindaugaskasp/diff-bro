@@ -25,7 +25,7 @@ fi
 async function openClaudeSettings(page) {
   await openSettings(page)
   const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await dialog.getByRole('button', { name: 'Claude', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Integrations', exact: true }).click()
   await dialog.getByLabel('Enable Claude MCP connection').check()
   await dialog.getByRole('alertdialog').getByRole('button', { name: 'Enable', exact: true }).click()
   return dialog

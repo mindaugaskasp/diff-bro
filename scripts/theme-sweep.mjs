@@ -388,7 +388,7 @@ async function openConflictList(page, userDataDir) {
 async function openClaudePane(page) {
   await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings' })
-  await dlg.getByRole('button', { name: 'Claude', exact: true }).click()
+  await dlg.getByRole('button', { name: 'Integrations', exact: true }).click()
   return dlg
 }
 
@@ -510,6 +510,22 @@ const SURFACES = [
     probes: {
       'menu name': ['.menubar .btn:not(.active)', TEXT],
       'open menu name': ['.menubar .btn.active', TEXT]
+    }
+  },
+  {
+    name: 'settings-languages',
+    open: async (page) => {
+      await openClaudePane(page)
+      await page.locator('.lang-row').first().waitFor()
+    },
+    close: async (page) => {
+      const dialog = page.getByRole('dialog', { name: 'Settings' })
+      await dialog.getByRole('button', { name: 'Close', exact: true }).click()
+      await dialog.waitFor({ state: 'detached' })
+    },
+    probes: {
+      'language name': ['.lang-row .setting-toggle', TEXT],
+      'program path': ['.lang-path', TEXT]
     }
   },
   {

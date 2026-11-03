@@ -866,7 +866,7 @@
       "email": "Email",
       "cli": "Terminal",
       "fun": "Fun",
-      "claude": "Claude"
+      "integrations": "Integrations"
     }
   },
   "settingsLimits": {
@@ -1653,7 +1653,7 @@
     },
     "mcp": {
       "summary": "serve your library to a Claude app over stdio",
-      "detail": "Started by a Claude app, not by hand: it reads requests on stdin and\nanswers on stdout, and opens no window.\n\nIt answers nothing until Settings → Claude has the connection turned on,\nand only for the parts of the library you allowed there. Secret snippets\nand received diffs are never shared. Anything Claude proposes waits on\nHome until you accept or discard it."
+      "detail": "Started by a Claude app, not by hand: it reads requests on stdin and\nanswers on stdout, and opens no window.\n\nIt answers nothing until Settings → Integrations has the connection turned on,\nand only for the parts of the library you allowed there. Secret snippets\nand received diffs are never shared. Anything Claude proposes waits on\nHome until you accept or discard it."
     },
     "help": {
       "summary": "list the commands, or explain one",
@@ -1731,8 +1731,7 @@
   },
   "claude": {
     "settings": {
-      "title": "Claude connection",
-      "intro": "Let a Claude app on this computer read the parts of your library you allow below, and offer snippets and comparisons for you to review.",
+      "title": "Claude",
       "enable": "Enable Claude MCP connection",
       "warningTitle": "Before you turn this on",
       "warningRead": "Claude can read the snippets and saved diffs you allow below. Your Claude app sends what it reads to Anthropic.",
@@ -1813,6 +1812,20 @@
     "twoFiles": "Two files",
     "pastedText": "Pasted text",
     "newSnippet": "New snippet"
+  },
+  "runner": {
+    "enableTitle": "Run {language} snippets?",
+    "enableDetail": "Snippets run with {language} on this computer, with your access to files and the network. You pick the program next.",
+    "continue": "Continue",
+    "pickTitle": "Choose the {language} program",
+    "settings": {
+      "languages": "Languages",
+      "intro": "Run snippets with a program on this computer. They run with your access to files and the network.",
+      "off": "Off",
+      "change": "Change…",
+      "choose": "Choose…",
+      "notThatLanguage": "That program isn't {language}."
+    }
   },
   "snippetDocument": {
     "placeholderTip": "Did you know you can use {token} to replace text when copying a snippet!",

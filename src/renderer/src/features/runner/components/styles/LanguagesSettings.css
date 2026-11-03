@@ -1,0 +1,31 @@
+.languages {
+  margin-bottom: var(--space-4);
+}
+h4 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.lang-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.lang-path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.lang-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--text);
+}

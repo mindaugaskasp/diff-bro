@@ -326,7 +326,7 @@ Done. Diff Bro is in the OS "Open with" list for text and data files.
 ## Claude connection
 
 **Built**: `diffbro mcp`, a windowless stdio MCP server in the app binary.
-Behind a signed grant in Settings ▸ Claude it offers:
+Behind a signed grant in Settings ▸ Integrations it offers:
 
 - list and read snippets and saved diffs (never secrets, never received diffs);
 - a unified diff of two texts;
