@@ -31,7 +31,7 @@ describe('runnerStore settings', () => {
   })
 
   it('stays off when you cancel, without calling it an error', async () => {
-    window.api.runEnable = vi.fn(async () => ({ cancelled: true }))
+    window.api.runEnable = vi.fn(async () => ({ canceled: true }))
     const store = useRunnerStore()
     await store.load()
     await store.enable('php')
@@ -65,6 +65,18 @@ describe('runnerStore settings', () => {
   })
 })
 
+describe('runnerStore isEnabled', () => {
+  it('knows whether a language is turned on', async () => {
+    const store = useRunnerStore()
+    await store.load()
+    expect(store.isEnabled('php')).toBe(false)
+    window.api.runStatus = vi.fn(async () => ({ php: PHP, python: OFF }))
+    await store.load()
+    expect(store.isEnabled('php')).toBe(true)
+    expect(store.isEnabled('shell')).toBe(false)
+  })
+})
+
 describe('runnerStore runs', () => {
   let output
   let exit
@@ -75,7 +87,7 @@ describe('runnerStore runs', () => {
     window.api.runStop = vi.fn()
   })
   const start = (store, key = 'tab') =>
-    store.run(key, { language: 'php', code: 'x', snippetId: 'mine' })
+    store.start(key, { language: 'php', code: 'x', snippetId: 'mine' })
 
   it('asks main to run what it was given, and shows as running', async () => {
     const store = useRunnerStore()
@@ -91,8 +103,8 @@ describe('runnerStore runs', () => {
 
   it('remembers the line a gutter run came from and the line it reached, sending main only code', async () => {
     const store = useRunnerStore()
-    await store.run('tab', { language: 'php', code: 'x', snippetId: null, line: 4, upTo: 6 })
-    expect(store.runFor('tab')).toMatchObject({ line: 4, upTo: 6 })
+    await store.start('tab', { language: 'php', code: 'x', snippetId: null, line: 4, lastLine: 6 })
+    expect(store.runFor('tab')).toMatchObject({ line: 4, lastLine: 6 })
     expect(window.api.runStart).toHaveBeenCalledWith({
       key: 'tab',
       language: 'php',
@@ -157,7 +169,7 @@ describe('runnerStore runs', () => {
 
   it('shows nothing when you cancel, or main refuses', async () => {
     const store = useRunnerStore()
-    window.api.runStart = vi.fn(async () => ({ cancelled: true }))
+    window.api.runStart = vi.fn(async () => ({ canceled: true }))
     await start(store)
     expect(store.runFor('tab')).toBeNull()
     window.api.runStart = vi.fn(async () => ({ error: 'not-enabled' }))
@@ -175,7 +187,7 @@ describe('runnerStore runs', () => {
     expect(store.runFor('tab')).toBeNull()
   })
 
-  // runStart answers only after the first-run dialog, and a Stop in between used to do nothing.
+  // runStart answers only after the first-run dialog, and a Stop can come in between.
   function deferredStart() {
     let answer
     window.api.runStart = vi.fn(() => new Promise((resolve) => (answer = resolve)))
@@ -211,15 +223,5 @@ describe('runnerStore runs', () => {
     store.clear('tab')
     expect(store.outputText('tab')).toBe('')
     expect(store.runFor('tab')).not.toBeNull()
-  })
-
-  it('knows whether a language can run', async () => {
-    const store = useRunnerStore()
-    await store.load()
-    expect(store.canRun('php')).toBe(false)
-    window.api.runStatus = vi.fn(async () => ({ php: PHP, python: OFF }))
-    await store.load()
-    expect(store.canRun('php')).toBe(true)
-    expect(store.canRun('shell')).toBe(false)
   })
 })

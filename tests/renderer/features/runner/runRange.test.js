@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   codeThrough,
   lastLineFor,
+  lineScanFor,
   runnableLines
 } from '../../../../src/renderer/src/features/runner/runRange'
 
@@ -38,12 +39,12 @@ describe('codeThrough — python', () => {
   it('runs lines 1 to N', () => {
     expect(codeThrough('python', ORDERS, 5)).toEqual({
       code: ORDERS.split('\n').slice(0, 5).join('\n'),
-      last: 5
+      lastLine: 5
     })
   })
 
   it('runs a block to its end from the line that opens it', () => {
-    expect(codeThrough('python', ORDERS, 6).last).toBe(7)
+    expect(codeThrough('python', ORDERS, 6).lastLine).toBe(7)
   })
 
   it('runs a block line to the end of what sits deeper under it', () => {
@@ -54,29 +55,29 @@ describe('codeThrough — python', () => {
       '    print("-")',
       'print("end")'
     )
-    expect(codeThrough('python', text, 2).last).toBe(3)
-    expect(codeThrough('python', text, 4).last).toBe(4)
+    expect(codeThrough('python', text, 2).lastLine).toBe(3)
+    expect(codeThrough('python', text, 4).lastLine).toBe(4)
   })
 
   it('crosses blank lines inside a block but stops before trailing ones', () => {
     const text = py('for x in xs:', '    a = x', '', '    print(a)', '', 'print("end")')
-    expect(codeThrough('python', text, 1).last).toBe(4)
+    expect(codeThrough('python', text, 1).lastLine).toBe(4)
   })
 
   it('carries an open bracket through to its close', () => {
     const text = py('total = sum(', '    x for x in nums', ')', 'print(total)')
-    expect(codeThrough('python', text, 1).last).toBe(3)
-    expect(codeThrough('python', text, 2).last).toBe(3)
+    expect(codeThrough('python', text, 1).lastLine).toBe(3)
+    expect(codeThrough('python', text, 2).lastLine).toBe(3)
   })
 
   it('carries a decorator through the definition under it', () => {
     const text = py('@dataclass', 'class Order:', '    id: str', 'print(Order)')
-    expect(codeThrough('python', text, 1).last).toBe(3)
+    expect(codeThrough('python', text, 1).lastLine).toBe(3)
   })
 
   it('carries a triple-quoted string to its close', () => {
     const text = py('note = """', 'not code', '"""', 'print(note)')
-    expect(codeThrough('python', text, 1).last).toBe(3)
+    expect(codeThrough('python', text, 1).lastLine).toBe(3)
   })
 
   it('answers null for a line with no code', () => {
@@ -110,22 +111,22 @@ describe('runnableLines — php', () => {
 
 describe('codeThrough — php', () => {
   it('runs a braced block to its close, from inside it too', () => {
-    expect(codeThrough('php', PHP, 4).last).toBe(6)
-    expect(codeThrough('php', PHP, 5).last).toBe(6)
+    expect(codeThrough('php', PHP, 4).lastLine).toBe(6)
+    expect(codeThrough('php', PHP, 5).lastLine).toBe(6)
   })
 
   it('ignores braces inside a string', () => {
-    expect(codeThrough('php', PHP, 9).last).toBe(9)
+    expect(codeThrough('php', PHP, 9).lastLine).toBe(9)
   })
 
   it('carries a statement with no braces until its semicolon', () => {
     const text = py('<?php', 'if ($x)', '    echo 1;', 'echo 2;')
-    expect(codeThrough('php', text, 2).last).toBe(3)
+    expect(codeThrough('php', text, 2).lastLine).toBe(3)
   })
 
   it('stops at the last line when a block never closes', () => {
     const text = py('<?php', 'foreach ($a as $b) {', '    echo $b;')
-    expect(codeThrough('php', text, 2).last).toBe(3)
+    expect(codeThrough('php', text, 2).lastLine).toBe(3)
   })
 })
 
@@ -136,19 +137,20 @@ describe('other languages', () => {
   })
 })
 
-// Hovering asks on every mouse move; a rescan per ask jammed a large snippet.
-describe('a large snippet', () => {
-  const big = Array.from({ length: 40_000 }, (_, i) => `print("line ${i} of a long script")`).join(
-    '\n'
-  )
-
-  it('answers hover after hover without rescanning', () => {
-    const t0 = performance.now()
-    for (let line = 1; line <= 200; line++) lastLineFor('python', big, line)
-    expect(performance.now() - t0).toBeLessThan(1000)
+// Hovering asks on every mouse move; one scan per text keeps that cheap.
+describe('scanning', () => {
+  it('scans a text once, however often it is asked about', () => {
+    const text = 'print(1)\nprint(2)'
+    expect(lineScanFor('python', text)).toBe(lineScanFor('python', text))
   })
 
-  it('says how far a press runs without building the code', () => {
+  it('scans again once the text changes', () => {
+    expect(lineScanFor('python', 'print(1)')).not.toBe(lineScanFor('python', 'print(2)'))
+  })
+})
+
+describe('lastLineFor', () => {
+  it('answers the last line a press runs, or null for a line with no button', () => {
     expect(lastLineFor('python', ORDERS, 6)).toBe(7)
     expect(lastLineFor('python', ORDERS, 2)).toBeNull()
   })

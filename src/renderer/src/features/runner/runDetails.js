@@ -5,14 +5,23 @@ const OUTCOME = {
   'spawn-error': { key: 'runner.pane.couldNotStart' }
 }
 
-/**
- * @param {{ reason?: string, code?: number|null, ms?: number, upTo?: number|null }} run
- * @returns {{ key: string, params?: object }[]}
- */
-export function runDetails({ reason, code, ms, upTo }) {
-  const details = upTo ? [{ key: 'runner.pane.upToLine', params: { n: upTo } }] : []
+function outcomeDetails({ reason, code, ms }) {
+  const details = []
   if (reason === 'exit') details.push({ key: 'runner.pane.exit', params: { code } })
   else if (OUTCOME[reason]) details.push(OUTCOME[reason])
   if (ms != null) details.push({ key: 'runner.pane.ms', params: { ms } })
   return details
+}
+
+/**
+ * @param {import('../../types').RunState} run
+ * @param {{ elapsedSeconds?: number }} [clock]  seconds so far, while it runs
+ * @returns {{ key: string, params?: object }[]}
+ */
+export function runDetails(run, { elapsedSeconds = 0 } = {}) {
+  const scope = run.lastLine ? [{ key: 'runner.pane.upToLine', params: { n: run.lastLine } }] : []
+  if (run.state === 'running') {
+    return [...scope, { key: 'runner.pane.seconds', params: { seconds: elapsedSeconds } }]
+  }
+  return [...scope, ...outcomeDetails(run)]
 }

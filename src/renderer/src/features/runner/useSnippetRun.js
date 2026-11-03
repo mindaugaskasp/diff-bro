@@ -5,9 +5,15 @@ import { useRunGutter } from './useRunGutter'
 
 /**
  * Running one snippet tab: what is on screen, saved or not.
- * @param {{ tab: { id: string }, draft: object, editing: { id?: string|null }, editor?: { editorInstance: () => object|null, ready: import('vue').Ref<boolean> } }} o
+ * @param {object} o
+ * @param {{ id: string }} o.tab
+ * @param {object} o.draft  useSnippetDraft's return
+ * @param {{ id?: string|null }} o.editing
+ * @param {() => object|null} o.editorInstance  the Monaco editor, once created
+ * @param {import('vue').Ref<boolean>} o.ready
+ * @returns {import('../../types').SnippetRun}
  */
-export function useSnippetRun({ tab, draft, editing, editor }) {
+export function useSnippetRun({ tab, draft, editing, editorInstance, ready }) {
   const runner = useRunnerStore()
   onMounted(() => {
     if (!runner.status) runner.load()
@@ -15,39 +21,44 @@ export function useSnippetRun({ tab, draft, editing, editor }) {
   onBeforeUnmount(() => runner.close(tab.id))
 
   const current = computed(() => runner.runFor(tab.id))
-  const available = computed(() => runner.canRun(draft.language.value))
-  const secret = computed(() => !!draft.secret.value)
-  const launch = (code, scope = {}) =>
-    runner.run(tab.id, {
+  const canRun = computed(() => runner.isEnabled(draft.language.value))
+  const isSecret = computed(() => !!draft.secret.value)
+  const launch = (code, origin = {}) =>
+    runner.start(tab.id, {
       language: draft.language.value,
       code,
       snippetId: editing.id ?? null,
-      ...scope
+      ...origin
     })
   const start = () => launch(draft.content.value)
   function startLine(line) {
     const range = codeThrough(draft.language.value, draft.content.value, line)
-    if (range) launch(range.code, { line, upTo: range.last })
+    if (range) launch(range.code, { line, lastLine: range.lastLine })
   }
+  const runnable = computed(() =>
+    canRun.value && !isSecret.value
+      ? runnableLines(draft.language.value, draft.content.value)
+      : new Set()
+  )
+  const lastLineOf = (line) => lastLineFor(draft.language.value, draft.content.value, line)
 
-  const api = {
-    key: tab.id,
-    available,
-    secret,
-    runnable: computed(() =>
-      available.value && !secret.value
-        ? runnableLines(draft.language.value, draft.content.value)
-        : new Set()
-    ),
-    reachOf: (line) => lastLineFor(draft.language.value, draft.content.value, line),
-    startLine,
-    again: () => (current.value?.line ? startLine(current.value.line) : start()),
+  return {
+    canRun,
+    isSecret,
     hasCode: computed(() => !!draft.content.value.trim()),
-    running: computed(() => current.value?.state === 'running'),
-    showing: computed(() => !!current.value),
+    isRunning: computed(() => current.value?.state === 'running'),
+    runnableLines: runnable,
+    lastLineFor: lastLineOf,
     start,
-    stop: () => runner.stop(tab.id)
+    startLine,
+    runAgain: () => (current.value?.line ? startLine(current.value.line) : start()),
+    stop: () => runner.stop(tab.id),
+    gutter: useRunGutter({
+      editorInstance,
+      ready,
+      runnableLines: runnable,
+      lastLineFor: lastLineOf,
+      startLine
+    })
   }
-  if (editor) api.gutter = useRunGutter({ ...editor, run: api })
-  return api
 }

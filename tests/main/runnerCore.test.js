@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
+import { RUNNABLE_LANGUAGES } from '../../src/shared/snippetLanguages'
 import {
   childEnv,
   interpreterArgs,
@@ -43,6 +44,21 @@ function isRunning(pid) {
     }
   }
 }
+const fakeChild = () =>
+  Object.assign(new EventEmitter(), {
+    pid: 42,
+    kill: vi.fn(),
+    stdin: { on: vi.fn(), end: vi.fn() },
+    stdout: Object.assign(new EventEmitter(), { setEncoding: vi.fn() }),
+    stderr: Object.assign(new EventEmitter(), { setEncoding: vi.fn() })
+  })
+
+async function waitUntil(isDone, deadlineMs = 2000) {
+  const end = Date.now() + deadlineMs
+  while (!isDone() && Date.now() < end) await new Promise((resolve) => setTimeout(resolve, 20))
+  return isDone()
+}
+
 const textOf = (chunks, stream) =>
   chunks
     .filter((c) => c.stream === stream)
@@ -99,6 +115,13 @@ describe('startRun', () => {
     expect(exit.reason).toBe('timeout')
   })
 
+  it('cuts flooding output at a whole character, never through one', async () => {
+    const { chunks } = await run('process.stdout.write("é".repeat(10))', {
+      limits: { maxOutputBytes: 5 }
+    })
+    expect(textOf(chunks, 'out')).toBe('éé')
+  })
+
   it('stops a run that floods its output, and keeps only what fits', async () => {
     const { chunks, exit } = await run('setInterval(() => console.log("x".repeat(1000)), 1)', {
       limits: { maxOutputBytes: 2000 }
@@ -114,25 +137,18 @@ describe('startRun', () => {
       console.log(kid.pid)
       setInterval(() => {}, 1000)`
     let pid = null
-    const { chunks } = await run(child, {
+    await run(child, {
       onOutput: (chunk) => {
         pid = Number(chunk.text)
       },
       limits: { timeoutMs: 400 }
     })
-    expect(chunks).toEqual([])
-    await new Promise((resolve) => setTimeout(resolve, 100))
     expect(pid).toBeGreaterThan(0)
-    expect(isRunning(pid)).toBe(false)
+    expect(await waitUntil(() => !isRunning(pid))).toBe(true)
   })
 
   it('never asks for a shell, and keeps the console window hidden', () => {
-    const child = Object.assign(new EventEmitter(), {
-      pid: 7,
-      stdin: { on: vi.fn(), end: vi.fn() },
-      stdout: Object.assign(new EventEmitter(), { setEncoding: vi.fn() }),
-      stderr: Object.assign(new EventEmitter(), { setEncoding: vi.fn() })
-    })
+    const child = fakeChild()
     const spawn = vi.fn(() => child)
     startRun({ ...NODE, language: 'php', code: 'x', onOutput: () => {}, onExit: () => {}, spawn })
     const [, , options] = spawn.mock.calls[0]
@@ -142,13 +158,6 @@ describe('startRun', () => {
     child.emit('close', 0, null)
   })
 
-  const fakeChild = () =>
-    Object.assign(new EventEmitter(), {
-      pid: 42,
-      stdin: { on: vi.fn(), end: vi.fn() },
-      stdout: Object.assign(new EventEmitter(), { setEncoding: vi.fn() }),
-      stderr: Object.assign(new EventEmitter(), { setEncoding: vi.fn() })
-    })
   function startFake(platform = 'win32') {
     const child = fakeChild()
     const killer = new EventEmitter()
@@ -198,6 +207,10 @@ describe('startRun', () => {
 })
 
 describe('languages', () => {
+  it('can run every language the shared table offers to run', () => {
+    expect(RUNNABLE_LANGUAGES.every(isRunnableLanguage)).toBe(true)
+  })
+
   it('knows only what it can run', () => {
     expect(isRunnableLanguage('php')).toBe(true)
     expect(isRunnableLanguage('python')).toBe(true)
@@ -246,9 +259,9 @@ describe('version check', () => {
 
   it('asks with the same environment and folder a run gets', async () => {
     const execFile = fakeExec(null, 'PHP 8.3.6 (cli)')
-    process.env.ELECTRON_RUN_AS_NODE = '1'
+    vi.stubEnv('ELECTRON_RUN_AS_NODE', '1')
     await readVersion({ exe: '/bin/php', language: 'php', execFile })
-    delete process.env.ELECTRON_RUN_AS_NODE
+    vi.unstubAllEnvs()
     const options = execFile.mock.calls[0][2]
     expect(options.env.ELECTRON_RUN_AS_NODE).toBeUndefined()
     expect(options.cwd).toBe(homedir())
@@ -270,6 +283,10 @@ describe('output hygiene', () => {
   it('strips colour and cursor sequences, and leaves text alone', () => {
     expect(stripAnsi('\u001b[1;31mbold\u001b[0m plain \u001b[2K')).toBe('bold plain ')
     expect(stripAnsi('50% [ok]')).toBe('50% [ok]')
+  })
+
+  it('strips a window-title escape whose title has spaces', () => {
+    expect(stripAnsi('\u001b]0;my title\u0007after')).toBe('after')
   })
 
   it('does not hand Electron switches down to the script', () => {

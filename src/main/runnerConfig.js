@@ -1,8 +1,8 @@
 // Which interpreters the user enabled. A main-only file outside the stores
 // store:save accepts, so the renderer can't point a language at a program.
 import { readFileSync, writeFileSync } from 'node:fs'
+import { RUNNABLE_LANGUAGES } from '../shared/snippetLanguages'
 
-const LANGUAGES = ['php', 'python']
 const OFF = { enabled: false, path: null, version: null }
 
 function sanitizeLanguage(raw) {
@@ -16,7 +16,7 @@ function sanitizeLanguage(raw) {
 
 export function sanitizeConfig(raw) {
   const languages = Object.fromEntries(
-    LANGUAGES.map((language) => [language, sanitizeLanguage(raw?.languages?.[language])])
+    RUNNABLE_LANGUAGES.map((language) => [language, sanitizeLanguage(raw?.languages?.[language])])
   )
   return { languages, confirmed: raw?.confirmed === true }
 }
@@ -29,7 +29,8 @@ export function withLanguage(config, language, patch) {
   }
 }
 
-export const languageStatus = (config) => config.languages
+// What the renderer may see: each language, never whether the warning was seen.
+export const rendererStatus = (config) => config.languages
 export const isEnabled = (config, language) => config.languages[language]?.enabled === true
 
 export function readConfig(file) {

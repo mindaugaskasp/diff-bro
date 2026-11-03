@@ -6,126 +6,159 @@ const SYNTAX = {
     comments: ['#'],
     block: null,
     quotes: ['"""', "'''", '"', "'"],
-    spanning: ['"""', "'''"]
+    multilineQuotes: ['"""', "'''"]
   },
-  php: { comments: ['//', '#'], block: ['/*', '*/'], quotes: ['"', "'"], spanning: ['"', "'"] }
+  php: {
+    comments: ['//', '#'],
+    block: ['/*', '*/'],
+    quotes: ['"', "'"],
+    multilineQuotes: ['"', "'"]
+  }
 }
 const OPENERS = '([{'
 const CLOSERS = ')]}'
 const PHP_OPEN_TAG = /^\s*<\?php\b/
 
-const startsAt = (line, i, tokens) => tokens.find((t) => line.startsWith(t, i))
+/**
+ * What one line leaves behind for the next.
+ * @typedef {object} LineScan
+ * @property {string} text
+ * @property {number} indent
+ * @property {boolean} startsInside  begins inside a string or block comment
+ * @property {boolean} hasCode       carries code outside strings and comments
+ * @property {string} lastChar       the last code character
+ * @property {number} depth          brackets still open at its end
+ * @property {boolean} openAtEnd     ends inside a string or block comment
+ */
 
+const tokenAt = (line, i, tokens) => tokens.find((t) => line.startsWith(t, i))
+
+// Inside a string or comment: skip escapes, look for its end.
 function stepInside(line, i, inside) {
-  if (inside.escapes && line[i] === '\\') return { i: i + 2, inside }
-  if (line.startsWith(inside.close, i)) return { i: i + inside.close.length, inside: null }
-  return { i: i + 1, inside }
+  if (inside.escapes && line[i] === '\\') return { next: i + 2, inside }
+  if (line.startsWith(inside.close, i)) return { next: i + inside.close.length, inside: null }
+  return { next: i + 1, inside }
 }
 
-function stepOutside(line, i, syntax, info) {
-  if (startsAt(line, i, syntax.comments)) return { i: line.length, inside: null }
+// Outside one: record code and brackets on `facts`, or enter a string or comment.
+function stepOutside(line, i, syntax, facts) {
+  if (tokenAt(line, i, syntax.comments)) return { next: line.length, inside: null }
   if (syntax.block && line.startsWith(syntax.block[0], i)) {
-    return { i: i + 2, inside: { close: syntax.block[1], escapes: false } }
+    return { next: i + 2, inside: { close: syntax.block[1], escapes: false } }
   }
-  const quote = startsAt(line, i, syntax.quotes)
   const ch = line[i]
-  if (ch.trim()) Object.assign(info, { hasCode: true, lastChar: ch })
-  if (quote) return { i: i + quote.length, inside: { close: quote, escapes: true } }
-  if (OPENERS.includes(ch)) info.depth++
-  if (CLOSERS.includes(ch)) info.depth = Math.max(0, info.depth - 1)
-  return { i: i + 1, inside: null }
+  if (ch.trim()) Object.assign(facts, { hasCode: true, lastChar: ch })
+  const quote = tokenAt(line, i, syntax.quotes)
+  if (quote) return { next: i + quote.length, inside: { close: quote, escapes: true } }
+  if (OPENERS.includes(ch)) facts.depth++
+  if (CLOSERS.includes(ch)) facts.depth = Math.max(0, facts.depth - 1)
+  return { next: i + 1, inside: null }
 }
+
+const canSpanLines = (syntax, inside) =>
+  syntax.multilineQuotes.includes(inside.close) || inside.close === syntax.block?.[1]
 
 function scanLine(line, syntax, carried) {
-  const info = {
+  const facts = {
     startsInside: !!carried.inside,
     hasCode: false,
     lastChar: '',
     depth: carried.depth
   }
   let { inside } = carried
-  let i = 0
-  while (i < line.length) {
-    ;({ i, inside } = inside ? stepInside(line, i, inside) : stepOutside(line, i, syntax, info))
+  for (let i = 0; i < line.length;) {
+    const step = inside ? stepInside(line, i, inside) : stepOutside(line, i, syntax, facts)
+    i = step.next
+    inside = step.inside
   }
-  if (inside && !syntax.spanning.includes(inside.close) && inside.close !== syntax.block?.[1]) {
-    inside = null
+  if (inside && !canSpanLines(syntax, inside)) inside = null
+  /** @type {LineScan} */
+  const scan = {
+    ...facts,
+    openAtEnd: !!inside,
+    indent: line.length - line.trimStart().length,
+    text: line
   }
-  info.openAtEnd = !!inside
-  info.indent = line.length - line.trimStart().length
-  info.text = line
-  return { info, carried: { inside, depth: info.depth } }
+  return { scan, carried: { inside, depth: facts.depth } }
 }
 
-/** @returns {object[]} one entry per line, 1-based (index 0 unused) */
-function scan(text, syntax) {
-  const infos = [null]
+/** @returns {LineScan[]} one per line, 1-based: index 0 is unused */
+function scanText(text, syntax) {
+  const scans = [null]
   let carried = { inside: null, depth: 0 }
   for (const line of text.split('\n')) {
     const step = scanLine(line, syntax, carried)
-    infos.push(step.info)
+    scans.push(step.scan)
     carried = step.carried
   }
-  return infos
+  return scans
 }
 
-const isRunnable = (language, infos, n) => {
-  const info = infos[n]
-  if (!info?.hasCode || info.startsInside) return false
-  return !(language === 'php' && PHP_OPEN_TAG.test(info.text))
+// One snippet is hovered many times between edits; scanning once per text keeps that cheap.
+let memo = { language: null, text: null, scans: null }
+
+/** @returns {LineScan[]} */
+export function lineScanFor(language, text) {
+  if (memo.language !== language || memo.text !== text) {
+    memo = { language, text, scans: scanText(text, SYNTAX[language]) }
+  }
+  return memo.scans
 }
 
-const isOpen = (info) => info.depth > 0 || info.openAtEnd || info.text.trimEnd().endsWith('\\')
-
-function closeOpen(infos, from) {
-  let j = from
-  while (j < infos.length - 1 && isOpen(infos[j])) j++
-  return j
+function isRunnable(language, scans, n) {
+  const scan = scans[n]
+  if (!scan?.hasCode || scan.startsInside) return false
+  return !(language === 'php' && PHP_OPEN_TAG.test(scan.text))
 }
 
-function nextCodeLine(infos, after) {
-  for (let j = after + 1; j < infos.length; j++) if (infos[j].hasCode) return j
+const isOpen = (scan) => scan.depth > 0 || scan.openAtEnd || scan.text.trimEnd().endsWith('\\')
+
+function continuationEnd(scans, from) {
+  let n = from
+  while (n < scans.length - 1 && isOpen(scans[n])) n++
+  return n
+}
+
+function nextCodeLine(scans, after) {
+  for (let n = after + 1; n < scans.length; n++) if (scans[n].hasCode) return n
   return null
 }
 
-function pythonLast(infos, n) {
-  let start = n
-  while (start > 1 && (infos[start].startsInside || isOpen(infos[start - 1]))) start--
-  let last = closeOpen(infos, n)
-  while (infos[start].text.trim().startsWith('@')) {
-    const next = nextCodeLine(infos, last)
+// A decorator runs with the definition under it.
+function pastDecorators(scans, head, last) {
+  while (scans[head].text.trim().startsWith('@')) {
+    const next = nextCodeLine(scans, last)
     if (!next) break
-    start = next
-    last = closeOpen(infos, next)
+    head = next
+    last = continuationEnd(scans, next)
   }
-  const indent = infos[start].indent
-  for (let j = last + 1; j < infos.length; j++) {
-    if (!infos[j].hasCode) continue
-    if (infos[j].indent <= indent) break
-    last = closeOpen(infos, j)
+  return { head, last }
+}
+
+function pythonStatementEnd(scans, n) {
+  let start = n
+  while (start > 1 && (scans[start].startsInside || isOpen(scans[start - 1]))) start--
+  const decorated = pastDecorators(scans, start, continuationEnd(scans, n))
+  const blockIndent = scans[decorated.head].indent
+  let last = decorated.last
+  for (let j = last + 1; j < scans.length; j++) {
+    if (!scans[j].hasCode) continue
+    if (scans[j].indent <= blockIndent) break
+    last = continuationEnd(scans, j)
     j = last
   }
   return last
 }
 
-const endsStatement = (info) => info.hasCode && (info.lastChar === ';' || info.lastChar === '}')
+const endsStatement = (scan) => scan.hasCode && (scan.lastChar === ';' || scan.lastChar === '}')
 
-function phpLast(infos, n) {
-  let j = n
-  while (j < infos.length - 1 && (isOpen(infos[j]) || !endsStatement(infos[j]))) j++
-  return j
+function phpStatementEnd(scans, n) {
+  let last = n
+  while (last < scans.length - 1 && (isOpen(scans[last]) || !endsStatement(scans[last]))) last++
+  return last
 }
 
-const LAST_LINE = { python: pythonLast, php: phpLast }
-
-// One snippet is hovered many times between edits; scanning once per text keeps that cheap.
-let memo = { language: null, text: null, infos: null }
-function scanned(language, text) {
-  if (memo.language !== language || memo.text !== text) {
-    memo = { language, text, infos: scan(text, SYNTAX[language]) }
-  }
-  return memo.infos
-}
+const STATEMENT_END = { python: pythonStatementEnd, php: phpStatementEnd }
 
 /**
  * @param {string} language
@@ -134,9 +167,9 @@ function scanned(language, text) {
  */
 export function runnableLines(language, text) {
   if (!SYNTAX[language]) return new Set()
-  const infos = scanned(language, text)
+  const scans = lineScanFor(language, text)
   const lines = new Set()
-  for (let n = 1; n < infos.length; n++) if (isRunnable(language, infos, n)) lines.add(n)
+  for (let n = 1; n < scans.length; n++) if (isRunnable(language, scans, n)) lines.add(n)
   return lines
 }
 
@@ -148,18 +181,18 @@ export function runnableLines(language, text) {
  */
 export function lastLineFor(language, text, line) {
   if (!SYNTAX[language]) return null
-  const infos = scanned(language, text)
-  return isRunnable(language, infos, line) ? LAST_LINE[language](infos, line) : null
+  const scans = lineScanFor(language, text)
+  return isRunnable(language, scans, line) ? STATEMENT_END[language](scans, line) : null
 }
 
 /**
  * @param {string} language
  * @param {string} text
  * @param {number} line  the 1-based line pressed
- * @returns {{ code: string, last: number } | null} null when that line gets no button
+ * @returns {{ code: string, lastLine: number } | null} null when that line gets no button
  */
 export function codeThrough(language, text, line) {
-  const last = lastLineFor(language, text, line)
-  if (last === null) return null
-  return { code: text.split('\n').slice(0, last).join('\n'), last }
+  const lastLine = lastLineFor(language, text, line)
+  if (lastLine === null) return null
+  return { code: text.split('\n').slice(0, lastLine).join('\n'), lastLine }
 }

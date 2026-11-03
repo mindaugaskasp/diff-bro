@@ -84,11 +84,13 @@ const { onDropFile } = useFileTextDrop((text, fileName) => {
 })
 const saveSnippet = () => draft.save(head.value.tagValues())
 
-const docLabel = computed(() => t(docTitleKey(draft.isNew.value, editMode.value)))
+const docLabel = computed(() =>
+  t(docTitleKey({ isNew: draft.isNew.value, editing: editMode.value }))
+)
 
 const inline = useSnippetInlineEdit({ draft, tab: props.tab, head, save: saveSnippet, onDropFile })
 
-const run = useSnippetRun({ tab: props.tab, draft, editing, editor: { editorInstance, ready } })
+const snippetRun = useSnippetRun({ tab: props.tab, draft, editing, editorInstance, ready })
 const showHistory = ref(false)
 const compareWith = () =>
   editing.id
@@ -118,7 +120,7 @@ const compareWith = () =>
       @tags-change="draft.setTags"
     />
     <Teleport v-if="inFront" to="#toolbar-doc-actions" defer>
-      <RunButton :run="run" />
+      <RunButton :snippet-run="snippetRun" />
       <SnippetEditorActions
         ref="actions"
         :edit-mode="editMode"
@@ -174,12 +176,12 @@ const compareWith = () =>
           <SnippetSecretMask v-if="masked" />
         </div>
         <RunGutterButton
-          :spot="run.gutter.spot.value"
-          @run="run.gutter.press()"
-          @enter="run.gutter.enter()"
-          @leave="run.gutter.leave()"
+          :spot="snippetRun.gutter.spot.value"
+          @run="snippetRun.gutter.press()"
+          @enter="snippetRun.gutter.enter()"
+          @leave="snippetRun.gutter.leave()"
         />
-        <RunPane :tab-key="tab.id" @run-again="run.again()" />
+        <RunPane :tab-key="tab.id" :snippet-run="snippetRun" />
         <p v-if="editMode && !content.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
         </p>

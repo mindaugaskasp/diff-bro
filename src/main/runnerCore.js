@@ -13,6 +13,7 @@ const DEFAULT_LIMITS = { timeoutMs: 30_000, maxOutputBytes: 1024 * 1024 }
 const VERSION_TIMEOUT_MS = 5000
 // A grandchild can hold the pipes open past a kill, and `close` would never come.
 const KILL_GRACE_MS = 1000
+// Not util.stripVTControlCharacters: it leaves an OSC title with spaces half-stripped.
 const ESC = '\\u001b'
 const ANSI = new RegExp(
   `${ESC}\\[[0-9;?]*[ -/]*[@-~]|${ESC}\\][^\\u0007${ESC}]*(?:\\u0007|${ESC}\\\\)`,
@@ -64,9 +65,13 @@ function killTree({ child, platform, spawn, exited }) {
   try {
     process.kill(-child.pid, 'SIGKILL')
   } catch {
-    child.kill?.('SIGKILL')
+    child.kill('SIGKILL')
   }
 }
+
+// Cut at a character boundary: a byte cut through UTF-8 shows as U+FFFD.
+const wholeCharsIn = (text, bytes) =>
+  new TextDecoder().decode(Buffer.from(text).subarray(0, bytes), { stream: true })
 
 function outputMeter({ maxOutputBytes, onOutput, onFull }) {
   let used = 0
@@ -75,11 +80,20 @@ function outputMeter({ maxOutputBytes, onOutput, onFull }) {
     if (room <= 0) return
     const text = stripAnsi(raw)
     const size = Buffer.byteLength(text)
-    const fits = size <= room
-    const kept = fits ? text : Buffer.from(text).subarray(0, room).toString()
+    const kept = size <= room ? text : wholeCharsIn(text, room)
     used += Math.min(size, room)
     if (kept) onOutput({ stream, text: kept })
-    if (!fits || used >= maxOutputBytes) onFull()
+    if (used >= maxOutputBytes) onFull()
+  }
+}
+
+function pipeOutput(child, meter) {
+  for (const [name, stream] of [
+    ['out', child.stdout],
+    ['err', child.stderr]
+  ]) {
+    stream.setEncoding('utf8')
+    stream.on('data', (raw) => meter(name, raw))
   }
 }
 
@@ -110,7 +124,8 @@ export function startRun({
   const { timeoutMs, maxOutputBytes } = { ...DEFAULT_LIMITS, ...limits }
   const startedAt = Date.now()
   let reason = 'exit'
-  let finished = false
+  let reported = false
+  let killRequested = false
   let exited = false
   let timer = null
 
@@ -121,38 +136,35 @@ export function startRun({
     detached: platform !== 'win32'
   })
 
-  function finish(result) {
-    if (finished) return
-    finished = true
+  function reportExit(result) {
+    if (reported) return
+    reported = true
     clearTimeout(timer)
     onExit({ reason, code: null, signal: null, ...result, ms: Date.now() - startedAt })
   }
-  function end(why) {
-    if (finished || reason !== 'exit') return
+  function terminate(why) {
+    if (reported || killRequested) return
+    killRequested = true
     reason = why
     clearTimeout(timer)
     killTree({ child, platform, spawn, exited })
-    timer = setTimeout(() => finish({}), KILL_GRACE_MS)
+    timer = setTimeout(() => reportExit({}), KILL_GRACE_MS)
   }
 
-  const meter = outputMeter({ maxOutputBytes, onOutput, onFull: () => end('output-limit') })
-  for (const [name, stream] of [
-    ['out', child.stdout],
-    ['err', child.stderr]
-  ]) {
-    stream.setEncoding('utf8')
-    stream.on('data', (raw) => meter(name, raw))
-  }
+  pipeOutput(
+    child,
+    outputMeter({ maxOutputBytes, onOutput, onFull: () => terminate('output-limit') })
+  )
   child.on('error', () => {
     reason = 'spawn-error'
-    finish({})
+    reportExit({})
   })
   child.on('exit', () => (exited = true))
-  child.on('close', (exitCode, signal) => finish({ code: exitCode, signal }))
+  child.on('close', (exitCode, signal) => reportExit({ code: exitCode, signal }))
   // A script that exits without reading stdin closes the pipe under us.
   child.stdin.on('error', () => {})
   child.stdin.end(preparedCode(language, code))
-  timer = setTimeout(() => end('timeout'), timeoutMs)
+  timer = setTimeout(() => terminate('timeout'), timeoutMs)
 
-  return { stop: () => end('stopped') }
+  return { stop: () => terminate('stopped') }
 }

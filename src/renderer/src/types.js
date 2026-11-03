@@ -423,9 +423,49 @@ export {}
  * Where the run-a-line button sits: on the hovered line's number, in viewport px.
  * @typedef {object} RunGutterSpot
  * @property {number} line   the line pressed
- * @property {number|null} reach  the last line a press runs
+ * @property {number|null} lastLine  the last line a press runs
  * @property {number} top
  * @property {number} left
  * @property {number} width
  * @property {number} height  the editor's line height, so the button fills the number's box
+ */
+
+/**
+ * One language as main reports it to the renderer.
+ * @typedef {object} LanguageStatus
+ * @property {boolean} enabled
+ * @property {string|null} path     the program the user picked
+ * @property {string|null} version  what it answered to --version
+ */
+
+/**
+ * One tab's run, from Run until its pane is closed.
+ * @typedef {object} RunState
+ * @property {string|null} runId  null until main has answered
+ * @property {'running'|'finished'|'failed'|'stopped'} state
+ * @property {string} language
+ * @property {{ stream: 'out'|'err', text: string }[]} blocks
+ * @property {string|null} version
+ * @property {number|null} line      the gutter line pressed, null for the whole snippet
+ * @property {number|null} lastLine  the last line that ran, null for the whole snippet
+ * @property {boolean} [stopAsked]   Stop came before main answered
+ * @property {string} [reason]       why it ended: exit, stopped, timeout, output-limit, spawn-error
+ * @property {number|null} [code]    the exit code
+ * @property {number} [ms]           how long it ran
+ */
+
+/**
+ * One snippet tab's handle on running, from useSnippetRun.
+ * @typedef {object} SnippetRun
+ * @property {import('vue').ComputedRef<boolean>} canRun     its language is enabled
+ * @property {import('vue').ComputedRef<boolean>} isSecret
+ * @property {import('vue').ComputedRef<boolean>} hasCode
+ * @property {import('vue').ComputedRef<boolean>} isRunning
+ * @property {import('vue').ComputedRef<Set<number>>} runnableLines  lines that get a play button
+ * @property {(line: number) => number|null} lastLineFor
+ * @property {() => void} start
+ * @property {(line: number) => void} startLine
+ * @property {() => void} runAgain  the way it ran last: whole, or up to the same line
+ * @property {() => void} stop
+ * @property {{ spot: import('vue').Ref<RunGutterSpot|null>, press: () => void, enter: () => void, leave: () => void }} gutter
  */

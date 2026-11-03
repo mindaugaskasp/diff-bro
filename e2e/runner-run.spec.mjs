@@ -1,12 +1,17 @@
-import { execSync } from 'node:child_process'
-import { test, expect, markSecret, showPanel, stubMessageBox, stubOpenDialog } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  enablePython as enable,
+  markSecret,
+  PYTHON,
+  showPanel,
+  stubMessageBox
+} from './fixtures.mjs'
 
-const PYTHON = execSync('command -v python3', { shell: '/bin/sh' }).toString().trim()
+test.skip(!PYTHON, 'needs python3 on the machine')
 
 async function enablePython(app, page) {
-  await stubMessageBox(app, 1)
-  await stubOpenDialog(app, PYTHON)
-  const reply = await page.evaluate(() => window.api.runEnable('python'))
+  const reply = await enable(app, page)
   expect(reply.status.python.enabled).toBe(true)
 }
 
@@ -59,7 +64,7 @@ test('cancelling the warning runs nothing, and it asks again next time', async (
   await enablePython(app, page)
   await stubMessageBox(app, 0)
   const { reply } = await runPython(page, 'print(1)')
-  expect(reply.cancelled).toBe(true)
+  expect(reply.canceled).toBe(true)
   await stubMessageBox(app, 1)
   const { chunks } = await runPython(page, 'print(2)')
   expect(chunks.map((c) => c.text).join('')).toBe('2\n')

@@ -1845,7 +1845,6 @@
       "intro": "Run snippets with a program on this computer. They run with your access to files and the network.",
       "off": "Off",
       "change": "Change…",
-      "choose": "Choose…",
       "notThatLanguage": "That program isn't {language}."
     },
     "runUpToLine": "Run up to line {n}"
