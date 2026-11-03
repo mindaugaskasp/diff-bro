@@ -1,4 +1,4 @@
-import { test, expect, openMenu, openSettings, saveSettings } from './fixtures.mjs'
+import { test, expect, openMenu, openSettingsPage, saveSettings } from './fixtures.mjs'
 import { MAX_TABS } from '../src/renderer/src/utils/tabs.js'
 
 // Past the cap `open()` refuses, which for a reader who treats tabs as
@@ -42,8 +42,7 @@ test('the full strip still refuses while the setting is off', async ({ page }) =
 })
 
 async function turnOn(page) {
-  await openSettings(page)
-  await page.getByRole('button', { name: 'Storage' }).click()
+  await openSettingsPage(page, 'Storage')
   await page.getByRole('checkbox', { name: /close the oldest comparison/i }).check()
   await saveSettings(page)
 }

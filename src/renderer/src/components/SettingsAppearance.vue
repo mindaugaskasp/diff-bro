@@ -1,6 +1,4 @@
 <script setup>
-// The Appearance pane: theme grid, language, and the toggles that go with them.
-// Its own component so SettingsDialog's template stays inside its cap.
 import { computed } from 'vue'
 import { useSettingsStore } from '../stores/settingsStore'
 import { t } from '../i18n'
@@ -23,6 +21,11 @@ const groups = computed(() => [
   },
   { key: 'dark', label: t('settingsAppearance.groundDark'), themes: THEMES.filter((x) => x.dark) }
 ])
+
+function toggleDailyTheme(on) {
+  settings.setRotateThemeDaily(on)
+  settings.resolveActiveTheme()
+}
 </script>
 
 <template>
@@ -47,6 +50,10 @@ const groups = computed(() => [
         />
       </div>
     </template>
+    <SettingToggle :checked="settings.rotateThemeDaily" @change="toggleDailyTheme">
+      {{ $t('settingsDialog.rotateTheAppThemeDaily') }}
+    </SettingToggle>
+    <p class="hint">{{ $t('settingsDialog.offByDefaultWhenOff') }}</p>
 
     <h4>{{ $t('settings.language.label') }}</h4>
     <label class="row">
@@ -62,19 +69,6 @@ const groups = computed(() => [
     <p class="hint">{{ $t('settings.language.hint') }}</p>
 
     <EditorTextSetting />
-
-    <h4>{{ $t('settingsAppearance.behaviour') }}</h4>
-    <SettingToggle :checked="settings.showRowTags" @change="settings.setShowRowTags">
-      {{ $t('settingsDialog.showTagsOnSidebarRows') }}
-    </SettingToggle>
-    <p class="hint">{{ $t('settingsAppearance.rowTagsHint') }}</p>
-    <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
-      {{ $t('settingsDialog.playAShutterSoundWhen') }}
-    </SettingToggle>
-    <SettingToggle :checked="settings.maximizeDialogs" @change="settings.setMaximizeDialogs">
-      {{ $t('settingsDialog.maximizeToolSnippet') }}
-    </SettingToggle>
-    <slot name="tips" />
   </section>
 </template>
 

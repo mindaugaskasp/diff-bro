@@ -13,44 +13,16 @@
   gap: var(--space-4);
   align-items: stretch;
 }
-.settings-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex-shrink: 0;
-  width: 128px;
-  border-right: 1px solid var(--border);
-  padding-right: var(--space-3);
-}
-.nav-item {
-  text-align: left;
-  padding: 7px 10px;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--font-md);
-}
-.nav-item:hover {
-  background: var(--bg-hover);
-  color: var(--text);
-}
-.nav-item.active {
-  background: var(--bg-hover);
-  color: var(--text);
-  font-weight: 600;
-}
 /* ONE height for every domain, so moving down the rail never resizes the window
    under the pointer — the rail is a fixed target, and the dialog used to swing
-   364px (Fun) to 720px (Storage) between two clicks, moving the next item out
+   364px (the old Fun pane) to 720px (Storage) between two clicks, moving the next item out
    from under the cursor.
 
    A fixed height that SCROLLS, not a min-height sized to the tallest pane: a
    min-height is only correct until a pane outgrows it, which is exactly how the
    previous 232px stopped working (every pane shipping today is taller). 380
    clears the second-tallest pane (Email, 365) so seven of the eight never
-   scroll, and is as short as that allows — the sparse panes (Fun, Logs) pay for
+   scroll, and is as short as that allows — the sparse panes (Shortcuts, Logs) pay for
    this in whitespace, so the box is sized to the runner-up rather than to
    Storage's 610. Storage scrolls, and so does any pane that grows past it,
    instead of silently re-breaking the invariant.

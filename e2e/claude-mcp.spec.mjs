@@ -11,7 +11,7 @@ import {
   freshUserDataDir,
   launchApp,
   openNewSnippet,
-  openSettings,
+  openSettingsPage,
   showPanel,
   docActions,
   markSecret
@@ -65,10 +65,7 @@ async function createSnippet(page, name, body, { secret = false } = {}) {
 }
 
 async function openClaudeSettings(page) {
-  await openSettings(page)
-  const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await dialog.getByRole('button', { name: 'Integrations', exact: true }).click()
-  return dialog
+  return openSettingsPage(page, 'Claude')
 }
 
 async function enableWith(page, scopes) {
@@ -240,8 +237,8 @@ test('the activity list names what Claude touched', async ({ page, userDataDir }
   } finally {
     client.close()
   }
-  await dialog.getByRole('button', { name: 'Logs', exact: true }).click()
-  await dialog.getByRole('button', { name: 'Integrations', exact: true }).click()
+  await openSettingsPage(page, 'Logs')
+  await openSettingsPage(page, 'Claude')
   const activity = dialog.locator('.activity-list')
   await expect(activity.locator('li').first()).toContainText('get_snippet')
   await expect(activity.locator('li').first()).toContainText('Deploy notes')

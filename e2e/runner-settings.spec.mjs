@@ -5,7 +5,7 @@ import {
   firstReadyPage,
   freshUserDataDir,
   launchApp,
-  openSettings,
+  openSettingsPage,
   PYTHON,
   stubMessageBox,
   stubOpenDialog
@@ -14,25 +14,25 @@ import {
   failOpenDialog,
   fakeProgram,
   languageRow as row,
-  openIntegrations
+  openLanguages
 } from './runnerPrograms.mjs'
 
 test.skip(process.platform === 'win32', 'the fake interpreters are shell scripts')
 
-test('Claude lives under Integrations, with no subheading or description', async ({ page }) => {
-  await openSettings(page)
-  const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await expect(dialog.getByRole('button', { name: 'Claude', exact: true })).toHaveCount(0)
-  await dialog.getByRole('button', { name: 'Integrations', exact: true }).click()
+test('Languages and Claude are their own pages under Integrations', async ({ page }) => {
+  let dialog = await openLanguages(page)
   await expect(dialog.getByRole('heading', { name: 'Languages', exact: true })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Claude', exact: true })).toHaveCount(0)
+  dialog = await openSettingsPage(page, 'Claude')
   await expect(dialog.getByRole('heading', { name: 'Claude', exact: true })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Languages', exact: true })).toHaveCount(0)
   await expect(dialog.getByText('Claude connection', { exact: true })).toHaveCount(0)
   await expect(dialog.getByText(/Let a Claude app/)).toHaveCount(0)
   await expect(dialog.getByRole('checkbox', { name: 'Enable Claude MCP connection' })).toBeVisible()
 })
 
 test('every language starts off', async ({ page }) => {
-  const dialog = await openIntegrations(page)
+  const dialog = await openLanguages(page)
   await expect(row(dialog, 'PHP').getByRole('checkbox')).not.toBeChecked()
   await expect(row(dialog, 'Python').getByRole('checkbox')).not.toBeChecked()
   await expect(row(dialog, 'PHP').locator('.lang-path')).toHaveText('Off')
@@ -42,7 +42,7 @@ test('enabling asks in main, then finds the program itself', async ({ app, page 
   test.skip(!PYTHON, 'needs python3 on the machine')
   await stubMessageBox(app, 1)
   await failOpenDialog(app)
-  const dialog = await openIntegrations(page)
+  const dialog = await openLanguages(page)
   await row(dialog, 'Python').getByRole('checkbox').check()
   await expect(row(dialog, 'Python').getByRole('checkbox')).toBeChecked()
   await expect(row(dialog, 'Python').locator('.lang-path')).toContainText(/python3 · 3\.\d+\.\d+/)
@@ -52,7 +52,7 @@ test('Browse… takes the program you pick in main', async ({ app, page }) => {
   const program = fakeProgram('PHP 8.3.6 (cli)')
   try {
     await stubOpenDialog(app, program.file)
-    const dialog = await openIntegrations(page)
+    const dialog = await openLanguages(page)
     await row(dialog, 'PHP').getByRole('button', { name: 'Change…' }).click()
     await row(dialog, 'PHP').getByRole('button', { name: 'Browse…' }).click()
     await expect(row(dialog, 'PHP')).toContainText(`${program.file} · 8.3.6`)
@@ -64,7 +64,7 @@ test('Browse… takes the program you pick in main', async ({ app, page }) => {
 
 test('cancelling leaves the language off, and the box unticked', async ({ app, page }) => {
   await stubMessageBox(app, 0)
-  const dialog = await openIntegrations(page)
+  const dialog = await openLanguages(page)
   await row(dialog, 'Python').getByRole('checkbox').click()
   await expect(row(dialog, 'Python').getByRole('checkbox')).not.toBeChecked()
   await expect(row(dialog, 'Python').locator('.lang-path')).toHaveText('Off')
@@ -74,7 +74,7 @@ test('a program that is not that language is turned away, and says so', async ({
   const program = fakeProgram('Python 3.12.1')
   try {
     await stubOpenDialog(app, program.file)
-    const dialog = await openIntegrations(page)
+    const dialog = await openLanguages(page)
     await row(dialog, 'PHP').getByRole('button', { name: 'Change…' }).click()
     await row(dialog, 'PHP').getByRole('button', { name: 'Browse…' }).click()
     await expect(dialog.getByText("That program isn't PHP.")).toBeVisible()
@@ -99,7 +99,7 @@ test('a language stays on across a relaunch, and keeps its program when turned o
     let page = await firstReadyPage(app)
     await stubMessageBox(app, 1)
     await stubOpenDialog(app, program.file)
-    let dialog = await openIntegrations(page)
+    let dialog = await openLanguages(page)
     await row(dialog, 'Python').getByRole('button', { name: 'Change…' }).click()
     await row(dialog, 'Python').getByRole('button', { name: 'Browse…' }).click()
     await expect(row(dialog, 'Python')).toContainText('3.12.1')
@@ -109,7 +109,7 @@ test('a language stays on across a relaunch, and keeps its program when turned o
 
     app = await launchApp(dir)
     page = await firstReadyPage(app)
-    dialog = await openIntegrations(page)
+    dialog = await openLanguages(page)
     await expect(row(dialog, 'Python').getByRole('checkbox')).toBeChecked()
     await row(dialog, 'Python').getByRole('checkbox').uncheck()
     await expect(row(dialog, 'Python').locator('.lang-path')).toHaveText(`${program.file} · 3.12.1`)

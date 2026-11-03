@@ -1,6 +1,6 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { test, expect, openSettings, stubMessageBox } from './fixtures.mjs'
+import { test, expect, openSettingsPage, stubMessageBox } from './fixtures.mjs'
 
 // A stand-in `claude` in this profile's HOME: records argv, and on `mcp add` writes the entry.
 function installFakeClaude(userDataDir) {
@@ -23,9 +23,7 @@ fi
 }
 
 async function openClaudeSettings(page) {
-  await openSettings(page)
-  const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await dialog.getByRole('button', { name: 'Integrations', exact: true }).click()
+  const dialog = await openSettingsPage(page, 'Claude')
   await dialog.getByLabel('Enable Claude MCP connection').check()
   await dialog.getByRole('alertdialog').getByRole('button', { name: 'Enable', exact: true }).click()
   return dialog

@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openSettings } from './fixtures.mjs'
+import { openSettingsPage } from './fixtures.mjs'
 
 // A shell script that answers --version, and leaves a mark once it has been run.
 export function fakeProgram(answer) {
@@ -17,12 +17,7 @@ export function rememberProgram(userDataDir, languages) {
   writeFileSync(join(userDataDir, 'runners.json'), JSON.stringify({ languages }))
 }
 
-export async function openIntegrations(page) {
-  await openSettings(page)
-  const dialog = page.getByRole('dialog', { name: 'Settings' })
-  await dialog.getByRole('button', { name: 'Integrations', exact: true }).click()
-  return dialog
-}
+export const openLanguages = (page) => openSettingsPage(page, 'Languages')
 
 export const languageRow = (dialog, name) => dialog.locator('.lang-row', { hasText: name })
 

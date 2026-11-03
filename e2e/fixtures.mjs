@@ -1,10 +1,11 @@
 import { test as base, _electron as electron, expect } from '@playwright/test'
 import { execSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workerEnv } from './workerEnv.mjs'
+import { settingsGroups } from '../src/renderer/src/utils/settingsNav.js'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const MAIN = join(ROOT, 'build', 'main', 'index.js')
@@ -147,6 +148,29 @@ export async function openSettings(page) {
     await openMenu(page, 'File', 'Settings…')
   }
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+}
+
+const EN = JSON.parse(readFileSync(new URL('../src/shared/i18n/en.json', import.meta.url), 'utf8'))
+const enLabel = (key) => key.split('.').reduce((node, part) => node[part], EN)
+const SETTINGS_GROUP_OF = Object.fromEntries(
+  settingsGroups({ windows: true }).flatMap((group) =>
+    group.pages.map((p) => [enLabel(p.labelKey), enLabel(group.labelKey)])
+  )
+)
+
+// Settings pages sit in collapsible groups: open Settings if needed, unfold the
+// page's group, then show the page.
+export async function openSettingsPage(page, name) {
+  const group = SETTINGS_GROUP_OF[name]
+  if (!group) throw new Error(`no Settings page named ${name}`)
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  if (!(await dialog.isVisible())) await openSettings(page)
+  const nav = dialog.locator('.settings-nav')
+  const item = nav.getByRole('button', { name, exact: true })
+  if (!(await item.isVisible())) await nav.getByRole('button', { name: group, exact: true }).click()
+  await item.click()
+  await expect(item).toHaveAttribute('aria-current', 'page')
+  return dialog
 }
 
 // Settings edits are a draft: Save writes them and the dialog then closes

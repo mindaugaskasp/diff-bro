@@ -1,4 +1,4 @@
-import { test, expect, openMenu, openSettings } from './fixtures.mjs'
+import { test, expect, openMenu, openSettingsPage } from './fixtures.mjs'
 import { THEMES } from '../src/renderer/src/utils/themes.js'
 import { COMMANDS } from '../src/shared/cliCommands.js'
 
@@ -9,8 +9,7 @@ import { COMMANDS } from '../src/shared/cliCommands.js'
 // horizontally. Assertions, not a screenshot.
 
 const openAppearance = async (page) => {
-  await openSettings(page)
-  await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
+  await openSettingsPage(page, 'Appearance')
   await page.locator('.theme-tile').first().waitFor()
 }
 
@@ -97,6 +96,7 @@ test('the Terminal menu opens Settings on the pane that documents the CLI', asyn
   await openMenu(page, 'Help', 'Terminal Commands & Setup')
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
   await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Terminal')
+  await expect(page.locator('.settings-nav [aria-expanded="true"]')).toHaveText('Integrations')
 
   const usages = await page.locator('.cli-list dt code').allTextContents()
   expect(usages).toContain('diffbro compare <file> [<file>]')
@@ -115,8 +115,7 @@ test('the Terminal menu switches panes when Settings is already open', async ({ 
   // the window, behind the dialog's modal backdrop, so this is not a state a
   // reader can reach. On macOS the menu is the platform's own and stays live.
   test.skip(process.platform !== 'darwin', 'the in-window menu bar is behind the modal backdrop')
-  await openSettings(page)
-  await page.locator('.settings-nav .nav-item', { hasText: 'Storage' }).click()
+  await openSettingsPage(page, 'Storage')
   await expect(page.locator('.settings-nav .nav-item.active')).toHaveText('Storage')
 
   await openMenu(page, 'Help', 'Terminal Commands & Setup')

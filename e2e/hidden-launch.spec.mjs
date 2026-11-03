@@ -56,6 +56,7 @@ test('the Desktop settings pane is absent where there is no tray', async ({ app,
   await clickAppMenuItem(app, 'Settings…')
   const dialog = page.getByRole('dialog', { name: 'Settings' })
   await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Shortcuts', exact: true })).toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Desktop', exact: true })).toHaveCount(0)
 
   // Main agrees, so the hidden pane and the absent capability cannot disagree.

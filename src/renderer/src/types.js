@@ -458,3 +458,26 @@ export {}
  * @property {() => void} stop
  * @property {{ spot: import('vue').Ref<RunGutterSpot|null>, press: () => void, enter: () => void, leave: () => void }} gutter
  */
+
+/**
+ * A Settings page, as the nav lists it.
+ * @typedef {object} SettingsPage
+ * @property {string} id
+ * @property {string} labelKey
+ * @property {boolean} [windowsOnly]
+ */
+
+/**
+ * A collapsible group of Settings pages.
+ * @typedef {object} SettingsGroup
+ * @property {string} id
+ * @property {string} labelKey
+ * @property {SettingsPage[]} pages
+ */
+
+/**
+ * Which Settings page is shown, and which group is unfolded (null when all are folded).
+ * @typedef {object} SettingsNavState
+ * @property {string} page
+ * @property {string|null} open
+ */

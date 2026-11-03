@@ -844,9 +844,8 @@
     "showTour": "Show tour",
     "quickLookUp": "Quick look-up",
     "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window — it works even when Diff Bro is minimized. Click the field, then press the key combination you want.",
-    "fun": "Fun",
     "rotateTheAppThemeDaily": "Rotate the app theme daily — a new random theme each day",
-    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked under Appearance. The daily theme is the same all day and changes at midnight.",
+    "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked above. The daily theme is the same all day and changes at midnight.",
     "theTourIsRunning": "The tour is running",
     "runTheTourAgain": "Run the tour again from the start",
     "useTheme": "Use the {name} theme",
@@ -856,17 +855,23 @@
     "keepRunningHint": "Diff Bro stays in the notification area, so the quick look-up shortcut keeps working. Right-click its icon to exit.",
     "startWhenISignIn": "Start Diff Bro when I sign in",
     "startWhenISignInHint": "Starts in the notification area with no window on screen.",
+    "group": {
+      "general": "General",
+      "integrations": "Integrations",
+      "data": "Data"
+    },
     "tab": {
       "appearance": "Appearance",
+      "behaviour": "Behaviour",
       "shortcuts": "Shortcuts",
       "desktop": "Desktop",
+      "languages": "Languages",
+      "claude": "Claude",
+      "cli": "Terminal",
+      "email": "Email",
       "storage": "Storage",
       "limits": "Limits",
-      "logs": "Logs",
-      "email": "Email",
-      "cli": "Terminal",
-      "fun": "Fun",
-      "integrations": "Integrations"
+      "logs": "Logs"
     }
   },
   "settingsLimits": {
