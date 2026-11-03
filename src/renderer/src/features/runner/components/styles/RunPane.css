@@ -24,8 +24,9 @@
 .run-state :deep(svg) {
   color: var(--text-meta);
 }
+/* Pulled toward the ink: --danger-border alone is 1.8:1 on Nord's panel. */
 .run-state.failed :deep(svg) {
-  color: var(--danger-border);
+  color: color-mix(in srgb, var(--danger-border) 60%, var(--text));
 }
 .run-spin {
   width: 11px;
