@@ -12,6 +12,8 @@ export const RUNNER_LANGUAGES = [
  * @property {string} language
  * @property {{ stream: 'out'|'err', text: string }[]} blocks
  * @property {string|null} version
+ * @property {number|null} line  the gutter line pressed, null for the whole snippet
+ * @property {number|null} upTo  the last line that ran, null for the whole snippet
  */
 
 function stateOf(reason, code) {
@@ -59,10 +61,11 @@ export const useRunnerStore = defineStore('runner', {
       window.api.onRunOutput((chunk) => this.receive(chunk))
       window.api.onRunExit((exit) => this.finish(exit))
     },
-    async run(key, { language, code, snippetId }) {
+    async run(key, { language, code, snippetId, line = null, upTo = null }) {
       this.listen()
       this.stop(key)
-      this.runs[key] = { runId: null, state: 'running', language, blocks: [], version: null }
+      const run = { runId: null, state: 'running', language, blocks: [], version: null }
+      this.runs[key] = { ...run, line, upTo }
       const mine = this.runs[key]
       const reply = await window.api.runStart({ key, language, code, snippetId })
       this.adopt(key, mine, reply)

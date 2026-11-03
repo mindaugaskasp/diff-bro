@@ -3,7 +3,7 @@
 |                    |                                        |
 | ------------------ | -------------------------------------- |
 | **Status**         | approved                               |
-| **Progress**       | 5 / 5 slices                           |
+| **Progress**       | 6 / 6 slices                           |
 | **Branch**         | `feat/snippet-runner-*`, one per slice |
 | **Started**        | 2026-11-01                             |
 | **Token baseline** | not measured                           |
@@ -68,6 +68,7 @@ main      refuses a secret snippetId and any language not enabled, reads the
 | 3   | Settings ▸ Integrations: Claude moved in; Languages toggle, picker, version check | M    |
 | 4   | IPC glue: id to code, the confirmation, streaming                                 | M    |
 | 5   | Pane, Run, Save as snippet, i18n, 20-theme sweep, E2E                             | L    |
+| 6   | Run a line from the gutter (#195): run-range lexer, gutter button, Up to line N   | M    |
 
 Roughly 2–3 weeks. These are estimates; nothing has been built. `SnippetDocument.vue`'s script is at its 100-line cap, so slice 5 extracts first.
 

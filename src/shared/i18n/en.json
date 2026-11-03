@@ -1837,7 +1837,8 @@
       "couldNotStart": "the program could not start",
       "runAgain": "Run again",
       "copyOutput": "Copy output",
-      "clear": "Clear"
+      "clear": "Clear",
+      "upToLine": "Up to line {n}"
     },
     "settings": {
       "languages": "Languages",
@@ -1846,7 +1847,8 @@
       "change": "Change…",
       "choose": "Choose…",
       "notThatLanguage": "That program isn't {language}."
-    }
+    },
+    "runUpToLine": "Run up to line {n}"
   },
   "snippetDocument": {
     "placeholderTip": "Did you know you can use {token} to replace text when copying a snippet!",

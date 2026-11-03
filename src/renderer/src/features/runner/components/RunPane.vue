@@ -41,9 +41,12 @@ const details = computed(() => {
   const r = run.value
   const name = [t(NAMES[r.language]), r.version].filter(Boolean).join(' ')
   const rest = running.value
-    ? [t('runner.pane.seconds', { seconds: elapsed.value })]
-    : runDetails(r).map((d) => t(d.key, d.params))
-  return [name, ...rest].join(' · ')
+    ? [
+        ...runDetails({ upTo: r.upTo }),
+        { key: 'runner.pane.seconds', params: { seconds: elapsed.value } }
+      ]
+    : runDetails(r)
+  return [name, ...rest.map((d) => t(d.key, d.params))].join(' · ')
 })
 
 // Follows the output, unless you have scrolled up to read it.

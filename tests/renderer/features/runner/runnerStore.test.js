@@ -89,6 +89,18 @@ describe('runnerStore runs', () => {
     expect(store.runFor('tab')).toMatchObject({ state: 'running', version: '8.3.6' })
   })
 
+  it('remembers the line a gutter run came from and the line it reached, sending main only code', async () => {
+    const store = useRunnerStore()
+    await store.run('tab', { language: 'php', code: 'x', snippetId: null, line: 4, upTo: 6 })
+    expect(store.runFor('tab')).toMatchObject({ line: 4, upTo: 6 })
+    expect(window.api.runStart).toHaveBeenCalledWith({
+      key: 'tab',
+      language: 'php',
+      code: 'x',
+      snippetId: null
+    })
+  })
+
   it('listens once, however many runs there are', async () => {
     const store = useRunnerStore()
     await start(store)

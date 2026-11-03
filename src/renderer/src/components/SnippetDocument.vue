@@ -22,7 +22,7 @@ import RenderedEditor from './RenderedEditor.vue'
 import { useTabContent } from '../composables/useTabContent'
 import { t } from '../i18n'
 import { docTitleKey } from '../utils/snippetState'
-import { RunButton, RunPane, useSnippetRun } from '../features/runner'
+import { RunButton, RunGutterButton, RunPane, useSnippetRun } from '../features/runner'
 
 const props = defineProps({ tab: { type: Object, required: true } })
 const tabs = useTabsStore()
@@ -51,7 +51,7 @@ watch(draft.isDirty, (d) => tabs.setSnippetMeta(props.tab.id, { dirty: d }), { i
 const container = ref(null)
 const head = ref(null)
 const readOnly = computed(() => !editMode.value)
-const { applySelectionEdit, layout, openFind, cursor } = useMonacoInput({
+const { applySelectionEdit, layout, openFind, cursor, ready, editorInstance } = useMonacoInput({
   container,
   content,
   language,
@@ -88,7 +88,7 @@ const docLabel = computed(() => t(docTitleKey(draft.isNew.value, editMode.value)
 
 const inline = useSnippetInlineEdit({ draft, tab: props.tab, head, save: saveSnippet, onDropFile })
 
-const run = useSnippetRun({ tab: props.tab, draft, editing })
+const run = useSnippetRun({ tab: props.tab, draft, editing, editor: { editorInstance, ready } })
 const showHistory = ref(false)
 const compareWith = () =>
   editing.id
@@ -173,7 +173,13 @@ const compareWith = () =>
           </template>
           <SnippetSecretMask v-if="masked" />
         </div>
-        <RunPane :tab-key="tab.id" @run-again="run.start()" />
+        <RunGutterButton
+          :spot="run.gutter.spot.value"
+          @run="run.gutter.press()"
+          @enter="run.gutter.enter()"
+          @leave="run.gutter.leave()"
+        />
+        <RunPane :tab-key="tab.id" @run-again="run.again()" />
         <p v-if="editMode && !content.trim()" class="required-hint">
           {{ $t('snippetEditorDialog.aSnippetNeedsContentTo') }}
         </p>
