@@ -8,12 +8,18 @@ import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import { registerMermaidLanguage } from './monaco-mermaid'
 import { registerJiraLanguage } from './monaco-jira'
+import { EXPLICIT_LANGUAGES } from '../../shared/snippetLanguages'
 
 // Mermaid and Jira/Confluence wiki markup have no built-in Monaco grammar;
 // register ours so snippet code highlights (the 'mermaid' and 'jira' language
 // ids come from utils/detectLanguage.js).
 registerMermaidLanguage(monaco)
 registerJiraLanguage(monaco)
+
+// Monaco loads a language's rules, indent-on-Enter among them, on its first model. The
+// keystroke that reveals a snippet's language comes just before Enter, so load them now.
+const known = new Set(monaco.languages.getLanguages().map((l) => l.id))
+for (const id of EXPLICIT_LANGUAGES) if (known.has(id)) monaco.editor.createModel('', id).dispose()
 
 // Disable the Command Palette (F1 / Ctrl+Shift+P) across every editor: the app
 // never uses it and it exposes internal editor commands we don't want reachable
