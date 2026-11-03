@@ -395,11 +395,18 @@ The first run ever says so in a dialog from main, then never asks again.
   a command, and it cannot change the executable, which lives in a main-only file
   outside the stores `store:save` accepts.
 - `spawn` with a fixed argv per language and no shell. Code goes over stdin, so
-  no plaintext lands in a temp file.
+  no plaintext lands in a temp file. It starts in your home folder, never the
+  folder the app was launched from: Python puts its working directory first on
+  `sys.path`, so a launch folder could otherwise plant a module.
+- Change… only swaps the program of a language already on; turning one on is
+  always main's warning first.
+- A run belongs to the window that started it, which alone can stop it.
 - Secret snippets do not run: main refuses a secret's id, because a script could
   print or write what it holds.
 - A run is stopped after 30 seconds or 1 MB of output, and on tab close and quit,
-  with the process tree killed.
+  with the process tree killed: a process group on macOS and Linux, `taskkill`
+  from System32 on Windows. A grandchild that leaves its group, or any child
+  when the app crashes, can outlive it.
 
 **What it does not stop.** Any snippet that is not secret can run, including a
 Claude proposal or an import, so after the first confirmation code from elsewhere
