@@ -1818,6 +1818,9 @@
     "enableDetail": "Snippets run with {language} on this computer, with your access to files and the network. You pick the program next.",
     "continue": "Continue",
     "pickTitle": "Choose the {language} program",
+    "confirmTitle": "Run this snippet?",
+    "confirmDetail": "It runs with your access to files and the network. Diff Bro takes no responsibility for any code run from a snippet window.",
+    "run": "Run",
     "settings": {
       "languages": "Languages",
       "intro": "Run snippets with a program on this computer. They run with your access to files and the network.",

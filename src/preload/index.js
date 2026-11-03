@@ -160,6 +160,14 @@ contextBridge.exposeInMainWorld('api', {
   runEnable: (language) => ipcRenderer.invoke('run:enable', language),
   runChange: (language) => ipcRenderer.invoke('run:change', language),
   runDisable: (language) => ipcRenderer.invoke('run:disable', language),
+  runStart: (request) => ipcRenderer.invoke('run:start', request),
+  runStop: (runId) => ipcRenderer.invoke('run:stop', runId),
+  onRunOutput: (handler) => {
+    ipcRenderer.on('run:output', (_e, chunk) => handler(chunk))
+  },
+  onRunExit: (handler) => {
+    ipcRenderer.on('run:exit', (_e, exit) => handler(exit))
+  },
   // Rolling local backups of snippets and kept diffs (src/main/autoBackup.js).
   listBackups: () => ipcRenderer.invoke('backup:list'),
   restoreBackup: (name) => ipcRenderer.invoke('backup:restore', name),

@@ -4,6 +4,8 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { isEnabled, languageStatus, readConfig, withLanguage, writeConfig } from './runnerConfig'
 import { isRunnableLanguage, readVersion } from './runnerCore'
+import { createRuns, refusalFor } from './runnerRuns'
+import { readSnippetStore } from './appData'
 import { t } from './i18n'
 
 const LANGUAGE_NAMES = { php: 'PHP', python: 'Python' }
@@ -70,7 +72,76 @@ function disable(_e, language) {
   return statusReply(config)
 }
 
+const runs = createRuns()
+
+function parsedSnippets() {
+  try {
+    return JSON.parse(readSnippetStore() ?? 'null')
+  } catch {
+    return null
+  }
+}
+
+// Once ever, in main, so code in the window can neither skip it nor answer it.
+async function confirmFirstRun(win, config) {
+  if (config.confirmed) return true
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    message: t('runner.confirmTitle'),
+    detail: t('runner.confirmDetail'),
+    buttons: [t('common.cancel'), t('runner.run')],
+    defaultId: 1,
+    cancelId: 0
+  })
+  if (response !== 1) return false
+  writeConfig(configFile(), { ...readConfig(configFile()), confirmed: true })
+  return true
+}
+
+function deliverTo(sender, payload, channel) {
+  if (!sender.isDestroyed()) sender.send(channel, payload)
+}
+
+// Settings are read again after the dialog: the language may have been turned off meanwhile.
+const checked = (request) => {
+  const config = readConfig(configFile())
+  return { config, refusal: refusalFor({ ...request, config, store: parsedSnippets() }) }
+}
+
+const watched = new WeakSet()
+function stopRunsWhenGone(sender) {
+  if (watched.has(sender)) return
+  watched.add(sender)
+  sender.once('destroyed', () => runs.stopOwnedBy(sender.id))
+}
+
+async function start(e, { key, language, code, snippetId } = {}) {
+  const request = { language, code, snippetId }
+  const before = checked(request)
+  if (before.refusal) return { error: before.refusal }
+  if (!(await confirmFirstRun(windowOf(e), before.config))) return { cancelled: true }
+  const { config, refusal } = checked(request)
+  if (refusal) return { error: refusal }
+
+  const { sender } = e
+  const { path, version } = config.languages[language]
+  stopRunsWhenGone(sender)
+  const runId = runs.begin({
+    owner: sender.id,
+    key,
+    exe: path,
+    language,
+    code,
+    onOutput: (chunk) => deliverTo(sender, { key, runId, ...chunk }, 'run:output'),
+    onExit: (exit) => deliverTo(sender, { key, runId, ...exit }, 'run:exit')
+  })
+  return { runId, version }
+}
+
 export function registerRunnerIpc() {
+  app.on('will-quit', runs.stopAll)
+  ipcMain.handle('run:start', start)
+  ipcMain.handle('run:stop', (e, runId) => runs.stop(runId, e.sender.id))
   ipcMain.handle('run:status', () => languageStatus(readConfig(configFile())))
   ipcMain.handle('run:enable', enable)
   ipcMain.handle('run:change', change)
