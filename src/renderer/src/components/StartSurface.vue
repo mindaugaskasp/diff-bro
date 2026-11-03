@@ -2,6 +2,7 @@
 // A blank comparison, drawn as a place to start rather than a tab of work.
 import { useDiffStore } from '../stores/diffStore'
 import { useSnippetStore } from '../stores/snippetStore'
+import { SampleFileChips } from '../features/onboarding'
 
 const store = useDiffStore()
 const snippets = useSnippetStore()
@@ -26,6 +27,7 @@ const newSnippet = () => (snippets.editingSnippet = { id: null })
         {{ $t('startSurface.newSnippet') }}
       </button>
     </div>
+    <SampleFileChips />
   </div>
 </template>
 

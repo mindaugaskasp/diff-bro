@@ -34,6 +34,30 @@ async function openSaved({ ttlHours = 1, tags = [] } = {}) {
 }
 
 describe('where a save lands', () => {
+  it('offers the tour’s sample with the example tag', () => {
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(snapshot('config-v1.json', 'config-v2.json'))
+    tabs.active.sample = true
+    expect(useSaveDiffTarget().initial().tags).toEqual(['example'])
+  })
+
+  it('offers the tour’s sample kept until deleted, not expiring', () => {
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(snapshot('config-v1.json', 'config-v2.json'))
+    tabs.active.sample = true
+    expect(useSaveDiffTarget().initial().secure).toBe(false)
+  })
+
+  it('offers any other new comparison with no tags', () => {
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.open(snapshot('a.txt', 'b.txt'))
+    expect(useSaveDiffTarget().initial().tags).toEqual([])
+    expect(useSaveDiffTarget().initial().secure).toBe(true)
+  })
+
   it('rewrites the diff the tab already is, instead of adding a second one', async () => {
     const { vault, id } = await openSaved()
     const target = useSaveDiffTarget()

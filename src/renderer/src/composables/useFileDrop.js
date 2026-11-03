@@ -1,9 +1,10 @@
 import { computed, ref } from 'vue'
-import { DIFF_DRAG_TYPE, TAB_DRAG_TYPE, dragIdsFrom } from '../utils/snippetSource'
+import { DIFF_DRAG_TYPE, TAB_DRAG_TYPE, dragIdsFrom, isSampleDrag } from '../utils/snippetSource'
 import { tabSnippetSource } from './useTabContent'
 import { openSavedDiff } from './useSavedDiffOpen'
 import { isSnippetDragType } from './useSnippetDrag'
 import { useShareStore } from '../features/share'
+import { useOnboardingStore } from '../features/onboarding'
 import { t } from '../i18n'
 import { useCommands } from './useCommands'
 import { useTabsStore } from '../stores/tabsStore'
@@ -38,7 +39,7 @@ const dragKindOf = (e) => {
   return 'files'
 }
 const isRowDrag = (e) => dragKindOf(e) !== 'files'
-const hasDroppablePayload = (e) => hasFiles(e) || isRowDrag(e)
+const hasDroppablePayload = (e) => hasFiles(e) || isRowDrag(e) || isSampleDrag(e.dataTransfer)
 // A drop on a pane label, or on either half of an open comparison, targets that side.
 const halfUnder = (e) => {
   const halves = e.target.closest?.('[data-drop-halves]')
@@ -84,6 +85,7 @@ async function dropTab(e, store) {
 // comparison wholesale; a dropped snippet fills one side; a file may be either.
 // Both row flavours only count inside the column that will host them.
 async function routeDrop(e, store) {
+  if (isSampleDrag(e.dataTransfer)) return useOnboardingStore().loadSample()
   const dropped = diffIds(e)
   if (dropped.length) {
     if (!isInDiffRegion(e)) return

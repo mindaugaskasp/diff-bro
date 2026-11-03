@@ -14,13 +14,14 @@ const MAIN = join(ROOT, 'build', 'main', 'index.js')
 // vault/keys/snippets, and its single-instance lock never collides with a
 // Diff Bro that's already open.
 //
-// Tips are OFF in it by default. Every profile here is cold, which is exactly
-// what the onboarding tour fires on, and its veil takes the pointer for the
-// whole window — left on, it intercepts the first click of nearly every spec in
-// this suite. `{ tips: true }` asks for it back; only the tour's own spec does.
+// Every profile is cold, which is what the core tour's inline offer is for, so
+// by default it starts as an existing user's: no offer, tips off.
+// `{ tips: true }` leaves it a fresh install.
+export const SEEN_ONBOARDING = { schema: 2, showTips: false, tours: {}, offer: false }
+
 export const freshUserDataDir = ({ tips = false } = {}) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))
-  if (!tips) writeFileSync(join(dir, 'onboarding.json'), JSON.stringify({ showTips: false }))
+  if (!tips) writeFileSync(join(dir, 'onboarding.json'), JSON.stringify(SEEN_ONBOARDING))
   return dir
 }
 
@@ -59,7 +60,7 @@ export async function firstReadyPage(app) {
 // Fixtures for the common case: one fresh app + its window, torn down (and the
 // temp profile removed) after the test.
 export const test = base.extend({
-  // Per-file: `test.use({ tips: true })` launches with the onboarding tour armed.
+  // Per-file: `test.use({ tips: true })` launches as a fresh install.
   tips: [false, { option: true }],
   userDataDir: async ({ tips }, use) => {
     const dir = freshUserDataDir({ tips })

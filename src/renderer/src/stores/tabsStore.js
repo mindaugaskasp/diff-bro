@@ -55,7 +55,7 @@ export const useTabsStore = defineStore('tabs', {
     // screen it is stale by definition — that one is asked of the live document.
     /** @returns {(tab: import('../utils/tabs').DiffTab) => boolean} */
     unsaved: (s) => (tab) => {
-      if (!tab) return false
+      if (!tab || tab.sample) return false
       if (isSnippetTab(tab)) return !!tab.dirty
       if (tab.id !== s.activeId) return !tab.diffSaved && !isBlank(tab)
       const diff = useDiffStore()

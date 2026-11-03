@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { useDiffStore } from '../stores/diffStore'
 import { useVaultStore, DEFAULT_TTL_HOURS } from '../stores/vaultStore'
 import { useTabsStore } from '../stores/tabsStore'
+import { EXAMPLE_TAG } from '../utils/snippetExamples'
 
 // Where a save lands. A tab and the diff it was opened from are the same
 // comparison (renaming the tab already renames the diff), so an edited one is
@@ -50,9 +51,9 @@ export function useSaveDiffTarget() {
     }
     return {
       name: tabs.active?.customTitle || derivedName(),
-      secure: true,
+      secure: !tabs.active?.sample,
       ttl: DEFAULT_TTL_HOURS,
-      tags: []
+      tags: tabs.active?.sample ? [EXAMPLE_TAG] : []
     }
   }
 

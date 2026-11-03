@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useDiffStore } from './stores/diffStore'
 import { SnippetShot, useImageExportStore } from './features/imageExport'
-import { TourConsentDialog, TourOverlay } from './features/onboarding'
+import { TourLayer } from './features/onboarding'
 import { usePasteToCompareStore } from './features/pasteToCompare'
 import { useCommands } from './composables/useCommands'
 import { useSettingsStore } from './stores/settingsStore'
@@ -10,7 +10,6 @@ import { useWindowFileDrop } from './composables/useFileDrop'
 import { useSnippetDiffSync } from './composables/useSnippetDiffSync'
 import { usePasteShortcut } from './composables/usePasteShortcut'
 import { useSessionPersistence } from './composables/useSessionPersistence'
-import { useTourCommands } from './composables/useTourCommands'
 import DiffViewer from './components/DiffViewer.vue'
 import SpreadsheetDiffViewer from './components/SpreadsheetDiffViewer.vue'
 import DiagramDiffViewer from './components/DiagramDiffViewer.vue'
@@ -61,7 +60,6 @@ window.api.onMenuAction((action) => runFromMenu(action))
 window.api.onQuickLookOpen((payload) => store.openFromQuickLook(payload))
 // Main holds a diffbro command until the restored session is in place (below).
 window.api.onCliCommand((command) => runCli(command))
-useTourCommands()
 usePasteShortcut(() => usePasteToCompareStore().request())
 // Writes only after the session is read back, so a blank window cannot overwrite it.
 useSessionPersistence()
@@ -188,8 +186,7 @@ useWindowFocusRefresh()
 
     <AppDialogs />
     <AppTooltip />
-    <TourConsentDialog />
-    <TourOverlay />
+    <TourLayer />
 
     <transition name="fade">
       <div v-if="dragActive && !needsDiffRegion" class="drop-overlay">

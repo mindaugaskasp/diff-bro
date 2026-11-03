@@ -120,6 +120,8 @@
      ink it clears all twenty (worst 4.52, sepia) and keeps the hue.
      NEVER for a keyline or a fill — --accent itself is right there. */
   --accent-ink: color-mix(in srgb, var(--accent) 80%, var(--text));
+  /* neon, nyan and matrix turn it off: on their accents it reads as a glow. */
+  --tour-halo: color-mix(in srgb, var(--accent) 22%, transparent);
   /* Keyboard focus. A bare --accent ring scores 2.58 on solar and 2.98 on
      meridian against --bg-elevated, under the 3:1 non-text floor; mixing toward
      the ink lifts the worst case to 3.34 and keeps the hue. Same trick as

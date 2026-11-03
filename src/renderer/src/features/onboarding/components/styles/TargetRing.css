@@ -1,0 +1,8 @@
+.target-ring {
+  position: fixed;
+  z-index: 25;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 5px var(--tour-halo);
+  pointer-events: none;
+}

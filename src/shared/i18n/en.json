@@ -404,46 +404,6 @@
     "label": "Formatting",
     "tip": "{label}  {syntax}"
   },
-  "tour": {
-    "compare": {
-      "title": "Two files, any way you like",
-      "body": "Drop them anywhere on this window, or choose Two files to browse. Diff Bro picks the viewer for you — text, JSON tree, spreadsheet grid or diagram.",
-      "nextLabel": "Load a demo pair"
-    },
-    "share": {
-      "title": "Send it sealed, not screenshotted",
-      "body": "Share seals this comparison so only the people you pick can open it, for as long as you choose. The first time with someone, swap keys in Security ▸ Trusted Keys."
-    },
-    "library": {
-      "title": "Search narrows as you type",
-      "body": "Each panel — Diffs, Snippets, Tools — has its own search. Watch this list filter as it fills in."
-    },
-    "quick-look": {
-      "title": "The same search, over any app",
-      "body": "Press {shortcut} and this box opens on top of whatever you are working in — even while Diff Bro is minimised. Find a snippet, copy it, press Escape. Try it now."
-    },
-    "snippet-new": {
-      "title": "Save commonly used text or code",
-      "body": "A deploy payload, a prompt, a config block — the + here starts one, and the search finds it again next week.",
-      "nextLabel": "Open the editor"
-    },
-    "snippet-save": {
-      "title": "Name it, tag it, save it",
-      "body": "This one is filled in already. Press the ringed Save to keep it — the sidebar and the quick look-up both find it afterwards. Next moves on either way."
-    },
-    "diagram-open": {
-      "title": "A Mermaid snippet draws itself",
-      "body": "This one is a diagram — it previews live as you type it. Two versions of one compare as a picture rather than as text.",
-      "nextLabel": "Compare two versions"
-    },
-    "diagram": {
-      "title": "A diagram change, as a diagram",
-      "body": "Here it is: the same flow, one revision apart. Every added, removed or changed node is marked on the picture, so you read the change instead of hunting for it in the text."
-    },
-    "next": "Next",
-    "done": "Done",
-    "stepOf": "Step {step} of {count}"
-  },
   "language": {
     "auto": "Auto-detect",
     "plaintext": "Plain text",
@@ -1286,24 +1246,25 @@
     }
   },
   "onboarding": {
-    "tourConsent": {
-      "title": "Take a one-minute tour?",
-      "updateTitle": "{n} new tip since your last update | {n} new tips since your last update",
-      "intro": "{n} short steps over the real app.",
-      "topicCompare": "Compare two files, any format",
-      "topicShare": "Share a comparison sealed",
-      "topicFind": "Find anything again, from any app",
-      "topicSnippets": "Keep snippets and diagrams",
-      "later": "You can start it later with Show tour, in Settings.",
-      "noThanks": "No thanks",
-      "start": "Start tour"
-    },
-    "tourCallout": {
-      "back": "Back",
-      "skipTips": "Skip tips"
-    },
-    "tourOverlay": {
-      "notWhileTheTourIs": "Not while the tour is running"
+    "tryIt": "Try it · {step} of {count}",
+    "skip": "Skip",
+    "core": {
+      "drop": {
+        "title": "No files handy? Drag these two into the window.",
+        "load": "Load them for me"
+      },
+      "save": {
+        "title": "Keep this comparison",
+        "body": "Red went, green arrived. Press Save, or {keys}, to keep it in your library."
+      },
+      "find": {
+        "title": "Find it again",
+        "body": "Type a few letters of its name. {keys} opens the same search over any app."
+      },
+      "done": {
+        "title": "That’s the core: compare, keep, find.",
+        "close": "Close"
+      }
     }
   },
   "pasteToCompare": {

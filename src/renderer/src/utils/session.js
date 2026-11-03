@@ -92,9 +92,8 @@ const packTab = (tab, snapshot, diffSaved) => ({
  * @param {string} activeId
  * @param {{ snapshot: object, diffSaved: boolean }} [live]
  */
-// `ephemeral` is the onboarding tour's scratch tab: a tour interrupted by a quit
-// would otherwise leave its demo comparison behind on the next launch.
-const isSkipped = (tab, snapshot) => !!tab.ephemeral || isBlank({ snapshot })
+// The tour's sample tab is never restored, saved or not.
+const isSkipped = (tab, snapshot) => !!tab.sample || isBlank({ snapshot })
 
 // Reset on the way OUT, so the writer cannot produce a tab the reader discards.
 const storedSnapshot = (snapshot) =>

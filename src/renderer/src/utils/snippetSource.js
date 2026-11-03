@@ -13,6 +13,17 @@ export const DRAG_TYPE = 'application/x-diffbro-snippet'
 export const DIFF_DRAG_TYPE = 'application/x-diffbro-diff'
 // An open snippet tab dragged off the strip; carries the tab id.
 export const TAB_DRAG_TYPE = 'application/x-diffbro-snippet-tab'
+// The core tour's sample chips. Carries no data: main supplies the pair.
+export const SAMPLE_DRAG_TYPE = 'application/x-diffbro-sample'
+
+/** @param {DataTransfer} transfer */
+export function setSampleDragPayload(transfer) {
+  transfer.setData(SAMPLE_DRAG_TYPE, 'core')
+  transfer.effectAllowed = 'copy'
+}
+
+export const isSampleDrag = (transfer) =>
+  Array.from(transfer?.types ?? []).includes(SAMPLE_DRAG_TYPE)
 
 // A comparison has two sides, and an id is a uuid. Both caps exist so a crafted
 // drag cannot make the app decrypt an unbounded list of anything.

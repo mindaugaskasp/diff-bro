@@ -204,8 +204,7 @@ async function seed(page) {
       await window.api.storeSave('snippets', JSON.stringify({ tags, entries: snippetEntries }))
       await window.api.storeSave('vault', JSON.stringify({ entries: vaultEntries }))
       await window.api.storeSave('theme', 'dark')
-      // This runs on a throwaway profile, which is exactly what the onboarding
-      // tour fires on — without this, every captured frame wears a scrim.
+      // A throwaway profile is a fresh install; this makes it an existing one.
       await window.api.storeSave('onboarding', JSON.stringify({ showTips: false }))
     },
     { snippets: SNIPPETS, diffs: [...savedDiffs(now), ...externalDiffs(now)], palette: TAG_PALETTE }
@@ -214,8 +213,8 @@ async function seed(page) {
   await page.locator('.home-row').first().waitFor({ state: 'visible' })
   // Fail loudly rather than shipping a set of veiled frames that look plausible
   // in the terminal and wrong in the README.
-  if (await page.locator('.tour').count()) {
-    throw new Error('onboarding tour is showing — screenshots would be captured through its scrim')
+  if (await page.locator('.coach-mark, .sample-offer').count()) {
+    throw new Error('the onboarding tour is showing — screenshots would carry it')
   }
 }
 

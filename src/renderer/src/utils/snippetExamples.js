@@ -3,11 +3,13 @@
 // `nameKey` rather than a name: the seed runs at first launch, in whatever
 // locale the app started in.
 
+export const EXAMPLE_TAG = 'example'
+
 /** Seeded into an empty library so a first-time user sees a real snippet. */
 export const EXAMPLE_SNIPPET = {
   nameKey: 'snippetNotices.exampleMermaidDiagram',
   language: 'mermaid',
-  tags: ['example'],
+  tags: [EXAMPLE_TAG],
   content: `flowchart TD
     A[New snippet] --> B{Syntax?}
     B -- Mermaid --> C[Live diagram preview]
@@ -24,7 +26,7 @@ export const EXAMPLE_SNIPPET = {
 export const CLAUDE_EXAMPLE_SNIPPET = {
   nameKey: 'snippetNotices.exampleClaudeReviewPrompt',
   language: 'claude',
-  tags: ['example', 'prompt'],
+  tags: [EXAMPLE_TAG, 'prompt'],
   content: `Review the {{language}} changes in {{file}} for correctness, edge cases, and {{concern}}.
 
 Reply with a prioritized list — most critical first — and suggest a fix for each.`

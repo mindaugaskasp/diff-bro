@@ -81,7 +81,17 @@ export function isValidAccelerator(str) {
  * @returns {string}
  */
 export function acceleratorLabel(str, mac) {
-  if (typeof str !== 'string' || !str) return ''
+  return acceleratorKeys(str, mac).join(mac ? ' ' : '+')
+}
+
+/**
+ * The keys of an accelerator, one label each, for drawing as key chips.
+ * @param {string} str
+ * @param {boolean} mac
+ * @returns {string[]}
+ */
+export function acceleratorKeys(str, mac) {
+  if (typeof str !== 'string' || !str) return []
   const token = (p) => {
     if (p === 'CommandOrControl') return mac ? '⌘' : 'Ctrl'
     if (p === 'Alt') return mac ? '⌥' : 'Alt'
@@ -89,8 +99,5 @@ export function acceleratorLabel(str, mac) {
     if (p === 'Super') return mac ? '⌘' : 'Super'
     return p
   }
-  return str
-    .split('+')
-    .map(token)
-    .join(mac ? ' ' : '+')
+  return str.split('+').map(token)
 }
