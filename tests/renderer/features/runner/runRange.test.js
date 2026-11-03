@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { codeThrough, runnableLines } from '../../../../src/renderer/src/features/runner/runRange'
+import {
+  codeThrough,
+  lastLineFor,
+  runnableLines
+} from '../../../../src/renderer/src/features/runner/runRange'
 
 const py = (...lines) => lines.join('\n')
 
@@ -129,5 +133,23 @@ describe('other languages', () => {
   it('offer no lines', () => {
     expect([...runnableLines('javascript', 'console.log(1)')]).toEqual([])
     expect(codeThrough('javascript', 'console.log(1)', 1)).toBeNull()
+  })
+})
+
+// Hovering asks on every mouse move; a rescan per ask jammed a large snippet.
+describe('a large snippet', () => {
+  const big = Array.from({ length: 40_000 }, (_, i) => `print("line ${i} of a long script")`).join(
+    '\n'
+  )
+
+  it('answers hover after hover without rescanning', () => {
+    const t0 = performance.now()
+    for (let line = 1; line <= 200; line++) lastLineFor('python', big, line)
+    expect(performance.now() - t0).toBeLessThan(1000)
+  })
+
+  it('says how far a press runs without building the code', () => {
+    expect(lastLineFor('python', ORDERS, 6)).toBe(7)
+    expect(lastLineFor('python', ORDERS, 2)).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
 import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRunnerStore } from './runnerStore'
-import { codeThrough, runnableLines } from './runRange'
+import { codeThrough, lastLineFor, runnableLines } from './runRange'
 import { useRunGutter } from './useRunGutter'
 
 /**
@@ -25,9 +25,8 @@ export function useSnippetRun({ tab, draft, editing, editor }) {
       ...scope
     })
   const start = () => launch(draft.content.value)
-  const rangeFor = (line) => codeThrough(draft.language.value, draft.content.value, line)
   function startLine(line) {
-    const range = rangeFor(line)
+    const range = codeThrough(draft.language.value, draft.content.value, line)
     if (range) launch(range.code, { line, upTo: range.last })
   }
 
@@ -40,7 +39,7 @@ export function useSnippetRun({ tab, draft, editing, editor }) {
         ? runnableLines(draft.language.value, draft.content.value)
         : new Set()
     ),
-    reachOf: (line) => rangeFor(line)?.last ?? null,
+    reachOf: (line) => lastLineFor(draft.language.value, draft.content.value, line),
     startLine,
     again: () => (current.value?.line ? startLine(current.value.line) : start()),
     hasCode: computed(() => !!draft.content.value.trim()),

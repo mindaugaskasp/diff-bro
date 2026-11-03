@@ -118,15 +118,23 @@ function phpLast(infos, n) {
 
 const LAST_LINE = { python: pythonLast, php: phpLast }
 
+// One snippet is hovered many times between edits; scanning once per text keeps that cheap.
+let memo = { language: null, text: null, infos: null }
+function scanned(language, text) {
+  if (memo.language !== language || memo.text !== text) {
+    memo = { language, text, infos: scan(text, SYNTAX[language]) }
+  }
+  return memo.infos
+}
+
 /**
  * @param {string} language
  * @param {string} text
  * @returns {Set<number>} the 1-based lines that get a play button
  */
 export function runnableLines(language, text) {
-  const syntax = SYNTAX[language]
-  if (!syntax) return new Set()
-  const infos = scan(text, syntax)
+  if (!SYNTAX[language]) return new Set()
+  const infos = scanned(language, text)
   const lines = new Set()
   for (let n = 1; n < infos.length; n++) if (isRunnable(language, infos, n)) lines.add(n)
   return lines
@@ -136,13 +144,22 @@ export function runnableLines(language, text) {
  * @param {string} language
  * @param {string} text
  * @param {number} line  the 1-based line pressed
+ * @returns {number|null} the last line a press runs, null when that line gets no button
+ */
+export function lastLineFor(language, text, line) {
+  if (!SYNTAX[language]) return null
+  const infos = scanned(language, text)
+  return isRunnable(language, infos, line) ? LAST_LINE[language](infos, line) : null
+}
+
+/**
+ * @param {string} language
+ * @param {string} text
+ * @param {number} line  the 1-based line pressed
  * @returns {{ code: string, last: number } | null} null when that line gets no button
  */
 export function codeThrough(language, text, line) {
-  const syntax = SYNTAX[language]
-  if (!syntax) return null
-  const infos = scan(text, syntax)
-  if (!isRunnable(language, infos, line)) return null
-  const last = LAST_LINE[language](infos, line)
+  const last = lastLineFor(language, text, line)
+  if (last === null) return null
   return { code: text.split('\n').slice(0, last).join('\n'), last }
 }
