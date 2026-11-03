@@ -23,7 +23,7 @@ async function newScript(app, page, code) {
   const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.locator('.monaco-editor').first().click()
   await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), SHEBANG + code)
-  await page.keyboard.press('Control+v')
+  await page.keyboard.press('ControlOrMeta+v')
   await expect(doc.locator('.view-lines')).toContainText('python3')
   return doc
 }

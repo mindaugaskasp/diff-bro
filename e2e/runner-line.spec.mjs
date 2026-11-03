@@ -33,7 +33,7 @@ async function openScript(app, page) {
   const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.locator('.monaco-editor').first().click()
   await app.evaluate(({ clipboard }, text) => clipboard.writeText(text), SCRIPT)
-  await page.keyboard.press('Control+v')
+  await page.keyboard.press('ControlOrMeta+v')
   await expect(docActions(page).getByRole('button', { name: 'Run', exact: true })).toBeVisible()
 }
 
