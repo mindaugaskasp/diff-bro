@@ -1815,9 +1815,12 @@
   },
   "runner": {
     "enableTitle": "Run {language} snippets?",
-    "enableDetail": "Snippets run with {language} on this computer, with your access to files and the network. You pick the program next.",
+    "enableDetail": "Snippets run with {language} on this computer, with your access to files and the network. Diff Bro looks for the program next, and asks you to pick it if none is found.",
     "continue": "Continue",
     "pickTitle": "Choose the {language} program",
+    "useTitle": "Use this program for {language}?",
+    "useDetail": "Snippets will run with {path}",
+    "use": "Use",
     "confirmTitle": "Run this snippet?",
     "confirmDetail": "It runs with your access to files and the network. Diff Bro takes no responsibility for any code run from a snippet window.",
     "run": "Run",
@@ -1845,7 +1848,16 @@
       "intro": "Run snippets with a program on this computer. They run with your access to files and the network.",
       "off": "Off",
       "change": "Change…",
-      "notThatLanguage": "That program isn't {language}."
+      "found": "Found on this computer",
+      "typedPath": "Path to the program",
+      "use": "Use",
+      "browse": "Browse…",
+      "findAgain": "Find again",
+      "redetected": "The program you had picked is gone, so Diff Bro found this one.",
+      "notThatLanguage": "That program isn't {language}.",
+      "notAbsolute": "Type the full path to the program.",
+      "notAProgram": "There's no program Diff Bro can run at that path.",
+      "noneFound": "Diff Bro found no {language} on this computer."
     },
     "runUpToLine": "Run up to line {n}"
   },

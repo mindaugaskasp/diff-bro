@@ -380,9 +380,20 @@ app reaches that command.
 ## Running a snippet
 
 Off by default. Settings ▸ Integrations ▸ Languages enables PHP or Python: main
-asks first, then opens its own file dialog for the program. A pick must answer
-`--version` as that language, which also turns away the Windows Store's
-`python.exe` stub.
+asks first, then looks for the program itself and takes the newest version it
+finds, or opens its own file dialog when it finds none. Every program must
+answer `--version` as that language.
+
+Detection runs only after that confirm, or from Find again while the language is
+on, never at launch or when Settings opens, because it runs `--version` on each
+candidate. Main reads the `PATH` dirs and fixed per-OS dirs with `fs` (Homebrew
+included, since an app started from the macOS Dock gets a minimal `PATH`); it
+never starts a shell to search. It skips, without running them, the Windows
+Store's `WindowsApps\python.exe` alias and macOS's `/usr/bin/python3` when the
+Command Line Tools are missing: each opens an installer.
+
+Turning a language off keeps its program, and turning it on again reuses it. If
+it has gone, main looks again and says which one it found.
 
 **What a script can do:** anything you can. It reads and writes your files and
 uses the network with your access. Nothing sandboxes it, and this is not covered
@@ -391,14 +402,18 @@ The first run ever says so in a dialog from main, then never asks again.
 
 **The fence:**
 
-- The renderer sends a language and code. It never names a path, an argument or
-  a command, and it cannot change the executable, which lives in a main-only file
-  outside the stores `store:save` accepts.
+- A run sends a language and code, never a path, an argument or a command. The
+  executable lives in a main-only file outside the stores `store:save` accepts.
+- The window can name a program in two ways only. It picks a detected one by
+  its index in main's own list. Or it sends a typed path, which main refuses
+  unless it is absolute, not a network (UNC) path, and an existing executable
+  file, then shows in a native confirm before running anything, and adopts only
+  if it answers `--version` as that language. Browse… is main's own dialog.
 - `spawn` with a fixed argv per language and no shell. Code goes over stdin, so
   no plaintext lands in a temp file. It starts in your home folder, never the
   folder the app was launched from: Python puts its working directory first on
   `sys.path`, so a launch folder could otherwise plant a module.
-- Change… only swaps the program of a language already on; turning one on is
+- Changing the program never turns a language on, on or off; turning one on is
   always main's warning first.
 - A run belongs to the window that started it, which alone can stop it.
 - Secret snippets do not run: main refuses a secret's id, because a script could

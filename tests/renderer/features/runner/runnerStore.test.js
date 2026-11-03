@@ -65,6 +65,51 @@ describe('runnerStore settings', () => {
   })
 })
 
+describe('runnerStore choosing a program', () => {
+  it('picks one of the programs main found by its index', async () => {
+    window.api.runChoose = vi.fn(async () => ({ ok: true, status: { php: PHP, python: OFF } }))
+    const store = useRunnerStore()
+    await store.choose('php', 1)
+    expect(window.api.runChoose).toHaveBeenCalledWith('php', 1)
+    expect(store.status.php).toEqual(PHP)
+  })
+
+  it('hands a typed path to main, and shows why it was turned away', async () => {
+    window.api.runUsePath = vi.fn(async () => ({ error: 'not-absolute' }))
+    const store = useRunnerStore()
+    await store.usePath('python', 'python3')
+    expect(window.api.runUsePath).toHaveBeenCalledWith('python', 'python3')
+    expect(store.errorFor('python')).toBe('not-absolute')
+  })
+
+  it('looks again through main, keeping the status it answers with', async () => {
+    const found = { ...PHP, candidates: [] }
+    window.api.runFindAgain = vi.fn(async () => ({
+      status: { php: found, python: OFF },
+      error: 'none-found'
+    }))
+    const store = useRunnerStore()
+    await store.findAgain('php')
+    expect(window.api.runFindAgain).toHaveBeenCalledWith('php')
+    expect(store.status.php).toEqual(found)
+    expect(store.errorFor('php')).toBe('none-found')
+  })
+
+  it('says when enabling found another program, for that language only', async () => {
+    window.api.runEnable = vi.fn(async () => ({
+      ok: true,
+      status: { php: PHP, python: OFF },
+      notice: 'redetected'
+    }))
+    const store = useRunnerStore()
+    await store.enable('php')
+    expect(store.noticeFor('php')).toBe('redetected')
+    expect(store.noticeFor('python')).toBeNull()
+    await store.disable('php')
+    expect(store.noticeFor('php')).toBeNull()
+  })
+})
+
 describe('runnerStore isEnabled', () => {
   it('knows whether a language is turned on', async () => {
     const store = useRunnerStore()

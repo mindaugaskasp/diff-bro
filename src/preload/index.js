@@ -155,10 +155,14 @@ contextBridge.exposeInMainWorld('api', {
   cliStatus: () => ipcRenderer.invoke('cli:status'),
   cliInstall: () => ipcRenderer.invoke('cli:install'),
   cliRemove: () => ipcRenderer.invoke('cli:remove'),
-  // Running a snippet (src/main/runner.js). A language only: main picks the program.
+  // Running a snippet (src/main/runner.js). A program is an index into what main
+  // found, or a typed path main checks and confirms in its own dialog.
   runStatus: () => ipcRenderer.invoke('run:status'),
   runEnable: (language) => ipcRenderer.invoke('run:enable', language),
   runChange: (language) => ipcRenderer.invoke('run:change', language),
+  runChoose: (language, index) => ipcRenderer.invoke('run:choose', language, index),
+  runUsePath: (language, path) => ipcRenderer.invoke('run:usePath', language, path),
+  runFindAgain: (language) => ipcRenderer.invoke('run:findAgain', language),
   runDisable: (language) => ipcRenderer.invoke('run:disable', language),
   runStart: (request) => ipcRenderer.invoke('run:start', request),
   runStop: (runId) => ipcRenderer.invoke('run:stop', runId),

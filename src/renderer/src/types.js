@@ -436,6 +436,7 @@ export {}
  * @property {boolean} enabled
  * @property {string|null} path     the program the user picked
  * @property {string|null} version  what it answered to --version
+ * @property {{ path: string, version: string }[]} candidates  what main found, newest first
  */
 
 /**

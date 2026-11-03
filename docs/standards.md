@@ -187,14 +187,32 @@ regression test from decoration.
    The renderer names only the target, never a command or a path.
 
    **Running a snippet** (`runner.js`, `runnerCore.js`) spawns the interpreter
-   the user chose. The executable is picked in main's own file dialog after a
-   confirm in main, and kept in a main-only file no `store:save` can reach. The
-   renderer sends a language and code, never a path, an argument or a command;
-   the argv is fixed per language, there is no shell, and the code goes over
-   stdin with no temp file. Main refuses a language that is not enabled and a
-   snippet id that is secret. The first run ever is confirmed in main. Because
-   the code comes from the renderer, a compromised renderer can run what it
-   writes once a language is enabled: enabling is the fence, not the text.
+   the user chose, and `runnerSettings.js` is where it is chosen. The program
+   reaches main one of three ways, and the renderer never hands main a path it
+   adopts unchecked:
+   - **Detected**, only after the user confirms enabling (or presses Find again
+     while the language is on): main scans the `PATH` dirs plus fixed per-OS
+     dirs (`runnerDetect.js`; Homebrew is listed outright, because a Dock launch
+     has a minimal `PATH`) with `fs`, never a shell, and asks each candidate
+     `--version` through `readVersion`'s `execFile`. The Windows Store alias and
+     macOS's `/usr/bin/python3` without the Command Line Tools are skipped
+     unrun: both open an installer. The renderer picks one by **index** into
+     main's own list, never by path.
+   - **Browsed**, in main's own file dialog.
+   - **Typed**: main refuses it unless it is absolute, not a UNC path, and an
+     existing executable regular file (`runnerProgram.js`), then confirms it in
+     a native dialog that shows the path BEFORE anything runs, and only then
+     asks it `--version`.
+
+   Every route must answer `--version` as that language, and only `run:enable`,
+   after main's warning, turns a language on. The choice is kept in a main-only
+   file no `store:save` can reach. A run sends a language and code, never a
+   path, an argument or a command; the argv is fixed per language, there is no
+   shell, and the code goes over stdin with no temp file. Main refuses a
+   language that is not enabled and a snippet id that is secret. The first run
+   ever is confirmed in main. Because the code comes from the renderer, a
+   compromised renderer can run what it writes once a language is enabled:
+   enabling is the fence, not the text.
 
 8. **No injection sinks.** `v-html`, `eval`, `new Function`, `innerHTML`
    are banned (ESLint-enforced). User-influenced strings render only
