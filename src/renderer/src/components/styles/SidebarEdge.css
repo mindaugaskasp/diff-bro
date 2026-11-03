@@ -55,10 +55,10 @@
   pointer-events: auto;
 }
 
-/* Collapsed: a thin hover zone at the window's left edge, under the top bar. */
+/* Collapsed: a thin hover zone spanning the zero-width sidebar it brings back. */
 .sidebar-strip {
-  position: fixed;
-  top: calc(var(--control-h) + 1px);
+  position: absolute;
+  top: 0;
   bottom: 0;
   left: 0;
   z-index: 40;

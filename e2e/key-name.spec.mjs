@@ -1,4 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { KEY_FORMAT, encodePublicKey } from '../src/main/sealing.js'
 import { test, expect, showPanel } from './fixtures.mjs'
 
@@ -56,4 +58,26 @@ test('a second key with a name already in use is offered a distinct one', async 
   await expect(confirmDialog.getByText(/You already have a key named “Alex”/)).toBeVisible()
   await field.fill('alex')
   await expect(confirmDialog.getByRole('button', { name: 'Add', exact: true })).toBeDisabled()
+})
+
+test('a key name stored before the 40-character cap reopens the naming dialog', async ({
+  app,
+  page
+}) => {
+  await page.evaluate(() => window.api.myFingerprint())
+  const userData = await app.evaluate(({ app: electron }) => electron.getPath('userData'))
+  const pubPath = join(userData, 'identity.pub')
+  const pub = JSON.parse(readFileSync(pubPath, 'utf-8'))
+  writeFileSync(pubPath, JSON.stringify({ ...pub, label: 'x'.repeat(45) }))
+
+  await openKeys(page)
+  const dialog = page.getByRole('dialog', { name: 'Share my public key' })
+  for (const action of ['Email', 'Copy', 'Export as file']) {
+    await page.locator('.keys-panel').getByRole('button', { name: action, exact: true }).click()
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText('Keep the name to 40 characters or fewer')).toBeVisible()
+    await expect(page.getByText('Something went wrong')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+  }
 })

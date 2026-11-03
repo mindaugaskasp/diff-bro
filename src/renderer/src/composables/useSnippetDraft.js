@@ -11,7 +11,7 @@ import { repairMermaid } from '../utils/mermaid'
 import { useUiStore } from '../stores/uiStore'
 import { isSecret } from '../utils/secretSnippet'
 import { isSameTagSet } from '../utils/snippetState'
-import { parseTemplateVars } from '../utils/templateVars'
+import { fillVars } from '../utils/templateVars'
 
 // Mermaid's entry repairs rather than pretty-prints — see repairMermaid.
 const FORMATTERS = { json: formatJson, xml: formatXml, sql: formatSql, mermaid: repairMermaid }
@@ -54,9 +54,9 @@ function useDraftBaseline(initial, { name, content }) {
 }
 
 // Returns whether it copied, so the button flashes only on success.
-async function copyOrAskToFill(name, content) {
+async function copyOrAskToFill(name, content, language) {
   if (!content) return false
-  if (parseTemplateVars(content).length) {
+  if (fillVars(language, content).length) {
     useSnippetStore().pendingFill = { name: name.trim() || undefined, content }
     return false
   }
@@ -186,7 +186,7 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     }
   }
 
-  const copyContent = () => copyOrAskToFill(name.value, content.value)
+  const copyContent = () => copyOrAskToFill(name.value, content.value, language.value)
 
   function captureImage() {
     if (editing.id) useImageExportStore().exportSnippetImage(editing.id)

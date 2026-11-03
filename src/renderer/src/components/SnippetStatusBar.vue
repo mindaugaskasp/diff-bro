@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { MOD } from '../keys'
 import { useUiStore } from '../stores/uiStore'
 import { contentStats } from '../utils/contentStats'
-import { parseTemplateVars } from '../utils/templateVars'
+import { acceptsFills, fillVars } from '../utils/templateVars'
 import { zoomLabel } from '../utils/diffZoom'
 import AppIcon from './AppIcon.vue'
 import TemplateTagsPopover from './TemplateTagsPopover.vue'
@@ -24,7 +24,7 @@ const plain = defineModel('plain', { type: Boolean, default: false })
 
 const ui = useUiStore()
 const stats = computed(() => contentStats(props.content))
-const fills = computed(() => parseTemplateVars(props.content))
+const fills = computed(() => fillVars(props.language, props.content))
 </script>
 
 <template>
@@ -38,7 +38,7 @@ const fills = computed(() => parseTemplateVars(props.content))
         {{ $t('statusBar.lines', stats.lines) }} ·
         {{ $t('statusBar.characters', stats.characters) }} ·
       </span>
-      <TemplateTagsPopover :fills="fills" />
+      <TemplateTagsPopover v-if="acceptsFills(language)" :fills="fills" />
     </span>
     <span class="es-side">
       <span

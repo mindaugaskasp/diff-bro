@@ -694,7 +694,9 @@
     "openTheFullResizableDiagram": "Open the full, resizable diagram viewer",
     "theme": "Theme",
     "diagramPreview": "Diagram preview",
-    "expand": "Expand"
+    "expand": "Expand",
+    "dragToResize": "Drag to resize the preview",
+    "dragToResizeTip": "Drag to resize · double-click to reset"
   },
   "mermaidViewerDialog": {
     "zoomOut": "Zoom out",

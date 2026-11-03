@@ -1,8 +1,8 @@
-import { useSnippetStore } from '../stores/snippetStore'
+import { languageOf, useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { firstClaudeUrl } from '../utils/claudeLink'
-import { parseTemplateVars } from '../utils/templateVars'
+import { fillVars } from '../utils/templateVars'
 import { t } from '../i18n'
 
 // What a snippet row's buttons DO, out of the row that draws them. Every one of
@@ -20,7 +20,7 @@ export function useSnippetRowActions(entry) {
   async function copySnippet() {
     const content = await store.load(entry().id)
     if (content == null) return
-    if (parseTemplateVars(content).length) {
+    if (fillVars(languageOf(entry()), content).length) {
       store.pendingFill = { name: entry().name, content }
       return
     }

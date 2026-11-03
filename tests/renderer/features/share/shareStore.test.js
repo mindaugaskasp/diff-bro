@@ -154,6 +154,22 @@ describe('shareStore.runEmailKey', () => {
   })
 })
 
+// A name stored before the 40-character cap is refused by main; every send path
+// reopens the naming dialog to fix it instead of failing.
+describe.each([
+  ['runExportKey', 'exportPublicKey'],
+  ['runCopyKey', 'copyPublicKey'],
+  ['runEmailKey', 'emailKey']
+])('shareStore.%s — a refused key name', (action, api) => {
+  it('says the name is too long and opens the naming dialog', async () => {
+    window.api = { [api]: vi.fn().mockResolvedValue({ error: 'name-too-long' }) }
+    const share = useShareStore()
+    await share[action]('x'.repeat(41))
+    expect(notices()).toMatch(/40/)
+    expect(share.showShareKeyDialog).toBe(true)
+  })
+})
+
 // The clipboard peek: a key copied out of a chat app lands in the SAME naming
 // dialog a picked file does — offered, never silently added.
 describe('shareStore.addTrustedKey — clipboard peek', () => {

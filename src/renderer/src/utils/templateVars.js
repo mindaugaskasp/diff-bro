@@ -18,6 +18,16 @@ export function parseTemplateVars(text) {
   return seen
 }
 
+// Mermaid draws a hexagon with {{label}}, so there the braces are the diagram.
+export const acceptsFills = (language) => language !== 'mermaid'
+
+/**
+ * @param {string} language the snippet's effective language
+ * @param {string} text
+ * @returns {string[]} the fill-ins a copy asks for
+ */
+export const fillVars = (language, text) => (acceptsFills(language) ? parseTemplateVars(text) : [])
+
 /**
  * Substitute the provided values. A placeholder with no value is left intact, so
  * a partial fill is visible rather than silently blanked.

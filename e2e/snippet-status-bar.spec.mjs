@@ -1,4 +1,4 @@
-import { test, expect, showPanel, editInPlace } from './fixtures.mjs'
+import { test, expect, showPanel, editInPlace, openNewSnippet, docActions } from './fixtures.mjs'
 
 async function openSnippet(page) {
   await showPanel(page, 'snippets')
@@ -67,4 +67,18 @@ test('the name field no longer carries its own template-tags link', async ({ pag
   await openSnippet(page)
   await editInPlace(page)
   await expect(page.locator('.snippet-doc:visible .tokens-hint')).toHaveCount(0)
+})
+
+test('a Mermaid hexagon is not a template tag, and copies without a fill-in', async ({ page }) => {
+  await openNewSnippet(page)
+  const doc = page.getByRole('region', { name: 'New snippet' })
+  await doc.locator('.editor').click()
+  await page.keyboard.type('flowchart TD')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('A{{Decide}} --> B')
+  await expect(bar(page)).toContainText('Mermaid')
+  await expect(bar(page).getByRole('button', { name: /template tag/i })).toHaveCount(0)
+
+  await docActions(page).getByRole('button', { name: 'Copy', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: /Fill in/ })).toHaveCount(0)
 })
