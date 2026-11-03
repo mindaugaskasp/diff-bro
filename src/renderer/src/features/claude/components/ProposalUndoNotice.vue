@@ -16,10 +16,14 @@ const message = computed(() => {
 </script>
 
 <template>
-  <div v-if="message" class="notice proposal-undo" role="status">
-    <span>{{ $t(message.key, message.params) }}</span>
-    <button type="button" class="btn btn-sm" @click="claude.undo()">
-      {{ $t('claude.undo.undo') }}
-    </button>
-  </div>
+  <transition name="fade">
+    <div v-if="message" class="notice proposal-undo" role="status">
+      <span>{{ $t(message.key, message.params) }}</span>
+      <button type="button" class="btn btn-sm" @click="claude.undo()">
+        {{ $t('claude.undo.undo') }}
+      </button>
+    </div>
+  </transition>
 </template>
+
+<style scoped src="./styles/ProposalUndoNotice.css"></style>
