@@ -1,0 +1,69 @@
+.run-pane {
+  height: 224px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+.run-head {
+  flex: none;
+  gap: var(--space-2);
+  height: var(--control-h);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  font-size: var(--font-xs);
+  color: var(--text-meta);
+}
+.run-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 500;
+  color: var(--text);
+}
+.run-state :deep(svg) {
+  color: var(--text-meta);
+}
+.run-state.failed :deep(svg) {
+  color: var(--danger-border);
+}
+.run-spin {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: run-spin 0.8s linear infinite;
+}
+@keyframes run-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.run-details {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.run-gap {
+  flex: 1;
+}
+.run-out {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-1) var(--space-3) var(--space-3);
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--font-sm);
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.run-err {
+  display: block;
+  margin: var(--space-1) calc(var(--space-3) * -1) 0;
+  padding: var(--space-1) var(--space-3);
+  background: color-mix(in srgb, var(--danger-bg) 14%, transparent);
+}
