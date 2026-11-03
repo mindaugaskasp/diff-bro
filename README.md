@@ -35,6 +35,11 @@ record of the install, and moving the app to the Bin does not clear it, so
 clears that record even after the app is gone. Add `--zap` to remove your
 library as well.
 
+The same record is why `brew upgrade` stops with "It seems the App source
+'/Applications/Diff Bro.app' is not there" after the app was deleted by hand:
+an upgrade moves the old app out first. Clear the record with
+`brew uninstall --cask diff-bro`, then install again.
+
 Builds are not yet signed, so Windows and macOS warn the first time you open the
 app — see [packaging](docs/packaging.md).
 
