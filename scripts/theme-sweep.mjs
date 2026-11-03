@@ -397,20 +397,24 @@ async function openSettingsPage(page, group, name) {
 const openLanguagesPane = (page) => openSettingsPage(page, 'Integrations', 'Languages')
 const openClaudePane = (page) => openSettingsPage(page, 'Integrations', 'Claude')
 
-// A real failing run, so the pane is measured with stderr on its wash.
-async function openRunPane(page, { app }) {
+async function enablePythonInSettings(page, app) {
   const python = execFileSync('/bin/sh', ['-c', 'command -v python3']).toString().trim()
   await app.evaluate(({ dialog }, path) => {
     dialog.showMessageBox = async () => ({ response: 1 })
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] })
   }, python)
   const settings = await openLanguagesPane(page)
-  const pythonToggle = settings.locator('.lang-row', { hasText: 'Python' }).getByRole('checkbox')
-  if (!(await pythonToggle.isChecked())) await pythonToggle.click()
-  await settings
-    .locator('.lang-row', { hasText: 'Python' })
-    .locator('.lang-path:not(.is-off)')
-    .waitFor()
+  const pythonRow = settings.locator('.lang-row', { hasText: 'Python' })
+  if (!(await pythonRow.getByRole('checkbox').isChecked())) {
+    await pythonRow.getByRole('checkbox').click()
+  }
+  await settings.locator('.lang-row:not(.is-off) .lang-version').waitFor()
+  return { settings, pythonRow }
+}
+
+// A real failing run, so the pane is measured with stderr on its wash.
+async function openRunPane(page, { app }) {
+  const { settings } = await enablePythonInSettings(page, app)
   await page.keyboard.press('Escape')
   await settings.waitFor({ state: 'detached' })
   await showPanel(page, 'snippets')
@@ -553,7 +557,7 @@ const SURFACES = [
     name: 'settings-languages',
     open: async (page) => {
       await openLanguagesPane(page)
-      await page.locator('.lang-row').first().waitFor()
+      await page.locator('.lang-row.is-off').first().waitFor()
     },
     close: async (page) => {
       await page.keyboard.press('Escape')
@@ -561,26 +565,33 @@ const SURFACES = [
     },
     probes: {
       'language name': ['.lang-row .setting-toggle', TEXT],
-      'program path, off': ['.lang-path.is-off', TEXT]
+      'program path field, off': ['.lang-row.is-off .lang-path', TEXT],
+      'Browse…, off': ['.lang-row.is-off .lang-browse', TEXT],
+      'stop after label': ['.lang-row .lang-limit', TEXT],
+      'stop after minutes': ['.lang-row .lang-minutes', TEXT]
     }
   },
   {
-    name: 'settings-program-picker',
-    open: async (page) => {
-      const settings = await openLanguagesPane(page)
-      await settings
-        .locator('.lang-row', { hasText: 'PHP' })
-        .getByRole('button', { name: 'Change…' })
-        .click()
-      await page.locator('.program-picker input').waitFor()
+    name: 'settings-program-menu',
+    open: async (page, { app }) => {
+      const { pythonRow } = await enablePythonInSettings(page, app)
+      await pythonRow.getByRole('button', { name: 'Found on this computer' }).click()
+      await page.locator('.program-menu').waitFor()
     },
     close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.locator('.program-menu').waitFor({ state: 'detached' })
       await page.keyboard.press('Escape')
       await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
     },
     probes: {
-      'typed path': ['.program-picker input', TEXT],
-      'open Change…': ['.lang-row .btn.active', TEXT]
+      'program path field, on': ['.lang-row:not(.is-off) .lang-path', TEXT],
+      'version in the field': ['.lang-row:not(.is-off) .lang-version', TEXT],
+      chevron: ['.lang-row:not(.is-off) .lang-chevron', DIM],
+      'found version': ['.program-menu .popover-row .version', TEXT],
+      'found path': ['.program-menu .popover-row .path', TEXT],
+      'Find again': ['.program-menu .popover-row[role="menuitem"]', TEXT],
+      'current mark': ['.program-menu .mark.is-current', DIM]
     }
   },
   {

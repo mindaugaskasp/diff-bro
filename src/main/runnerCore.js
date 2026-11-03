@@ -3,13 +3,17 @@
 import { execFile as nodeExecFile, spawn as nodeSpawn } from 'node:child_process'
 import { homedir } from 'node:os'
 import { win32 } from 'node:path'
+import { STOP_AFTER_MINUTES } from '../shared/snippetLanguages'
 
 const LANGUAGES = new Map([
   ['php', { args: [], version: /^PHP (\d+\.\d+\.\d+)/m }],
   ['python', { args: ['-u', '-'], version: /^Python (\d+\.\d+\.\d+)/m }]
 ])
 
-const DEFAULT_LIMITS = { timeoutMs: 30_000, maxOutputBytes: 1024 * 1024 }
+const DEFAULT_LIMITS = {
+  timeoutMs: STOP_AFTER_MINUTES.fallback * 60_000,
+  maxOutputBytes: 1024 * 1024
+}
 const VERSION_TIMEOUT_MS = 5000
 // A grandchild can hold the pipes open past a kill, and `close` would never come.
 const KILL_GRACE_MS = 1000
@@ -105,7 +109,7 @@ function pipeOutput(child, meter) {
  * @param {(chunk: { stream: 'out'|'err', text: string }) => void} o.onOutput
  * @param {(exit: { reason: string, code: number|null, signal: string|null, ms: number }) => void} o.onExit
  * @param {string[]} [o.args]  defaults to the language's own
- * @param {{ timeoutMs?: number, maxOutputBytes?: number }} [o.limits]
+ * @param {{ timeoutMs?: number, maxOutputBytes?: number }} [o.limits]  timeoutMs 0 is no limit
  * @param {typeof nodeSpawn} [o.spawn]
  * @param {string} [o.platform]
  * @returns {{ stop: () => void }}
@@ -164,7 +168,7 @@ export function startRun({
   // A script that exits without reading stdin closes the pipe under us.
   child.stdin.on('error', () => {})
   child.stdin.end(preparedCode(language, code))
-  timer = setTimeout(() => terminate('timeout'), timeoutMs)
+  if (timeoutMs > 0) timer = setTimeout(() => terminate('timeout'), timeoutMs)
 
   return { stop: () => terminate('stopped') }
 }

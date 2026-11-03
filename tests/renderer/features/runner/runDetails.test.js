@@ -11,8 +11,12 @@ describe('runDetails', () => {
     ])
   })
 
+  it('says after how many minutes a run was stopped', () => {
+    const run = ended({ state: 'failed', reason: 'timeout', code: null, ms: 5, stopAfterMinutes: 5 })
+    expect(runDetails(run)[0]).toEqual({ key: 'runner.pane.timeout', params: { minutes: 5 } })
+  })
+
   it.each([
-    ['timeout', 'runner.pane.timeout'],
     ['output-limit', 'runner.pane.outputLimit'],
     ['spawn-error', 'runner.pane.couldNotStart']
   ])('says why a %s run ended', (reason, key) => {

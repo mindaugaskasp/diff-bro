@@ -270,3 +270,23 @@ describe('runnerStore runs', () => {
     expect(store.runFor('tab')).not.toBeNull()
   })
 })
+
+describe('runnerStore stop after', () => {
+  it('sets the minutes through main and takes the status it answers', async () => {
+    const status = { php: { ...PHP, stopAfterMinutes: 0 }, python: OFF }
+    window.api.runSetStopAfter = vi.fn(async () => ({ ok: true, status }))
+    const store = useRunnerStore()
+    await store.setStopAfter('php', 0)
+    expect(window.api.runSetStopAfter).toHaveBeenCalledWith('php', 0)
+    expect(store.status.php.stopAfterMinutes).toBe(0)
+  })
+
+  it('keeps how long a run may go on from main’s answer to Run', async () => {
+    window.api.runStart = vi.fn(async () => ({ runId: 'r1', version: '8.3.6', stopAfterMinutes: 5 }))
+    window.api.onRunOutput = vi.fn()
+    window.api.onRunExit = vi.fn()
+    const store = useRunnerStore()
+    await store.start('tab', { language: 'php', code: 'echo 1;' })
+    expect(store.runFor('tab').stopAfterMinutes).toBe(5)
+  })
+})

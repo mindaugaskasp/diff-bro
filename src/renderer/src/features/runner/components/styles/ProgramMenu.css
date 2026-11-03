@@ -1,0 +1,29 @@
+.program-menu {
+  left: 0;
+  max-width: 100%;
+}
+.popover-row {
+  min-height: var(--control-h-sm);
+  font-size: var(--font-sm);
+}
+.mark {
+  flex: none;
+  visibility: hidden;
+}
+.mark.is-current {
+  visibility: visible;
+}
+.version {
+  flex: none;
+  font-family: var(--font-mono);
+}
+.path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+}
+.sep {
+  height: 1px;
+  margin: 2px 0;
+  background: var(--border);
+}

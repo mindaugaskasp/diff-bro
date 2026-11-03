@@ -3,7 +3,14 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { isEnabled, readConfig, rendererStatus, withLanguage, writeConfig } from './runnerConfig'
+import {
+  isEnabled,
+  isStopAfterMinutes,
+  readConfig,
+  rendererStatus,
+  withLanguage,
+  writeConfig
+} from './runnerConfig'
 import { isRunnableLanguage, readVersion } from './runnerCore'
 import { detectPrograms, isTrap } from './runnerDetect'
 import { programForEnable, programFs, typedPathRefusal } from './runnerProgram'
@@ -126,6 +133,13 @@ async function findAgain(_e, language) {
   return { ...statusReply(config), ...(programs.length ? {} : { error: 'none-found' }) }
 }
 
+function setStopAfter(_e, language, minutes) {
+  if (!isRunnableLanguage(language) || !isStopAfterMinutes(minutes)) return { error: 'bad-request' }
+  const config = withLanguage(readConfig(configFile()), language, { stopAfterMinutes: minutes })
+  writeConfig(configFile(), config)
+  return statusReply(config)
+}
+
 function disable(_e, language) {
   if (!isRunnableLanguage(language)) return { error: 'bad-request' }
   const config = withLanguage(readConfig(configFile()), language, { enabled: false })
@@ -141,4 +155,5 @@ export function registerRunnerSettingsIpc() {
   ipcMain.handle('run:usePath', usePath)
   ipcMain.handle('run:findAgain', findAgain)
   ipcMain.handle('run:disable', disable)
+  ipcMain.handle('run:setStopAfter', setStopAfter)
 }
