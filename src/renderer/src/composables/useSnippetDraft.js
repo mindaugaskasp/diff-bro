@@ -54,10 +54,10 @@ function useDraftBaseline(initial, { name, content }) {
 }
 
 // Returns whether it copied, so the button flashes only on success.
-async function copyOrAskToFill(name, content, language) {
+async function copyOrAskToFill(name, content, language, snippetId) {
   if (!content) return false
   if (fillVars(language, content).length) {
-    useSnippetStore().pendingFill = { name: name.trim() || undefined, content }
+    useSnippetStore().pendingFill = { name: name.trim() || undefined, content, snippetId }
     return false
   }
   await window.api.copyText(content)
@@ -186,7 +186,7 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     }
   }
 
-  const copyContent = () => copyOrAskToFill(name.value, content.value, language.value)
+  const copyContent = () => copyOrAskToFill(name.value, content.value, language.value, editing.id)
 
   function captureImage() {
     if (editing.id) useImageExportStore().exportSnippetImage(editing.id)

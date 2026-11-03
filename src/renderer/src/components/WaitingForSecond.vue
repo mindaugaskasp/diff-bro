@@ -33,7 +33,7 @@ const isViewable = computed(
           <span class="wait-name">{{ name }}</span>
         </div>
       </section>
-      <section v-else class="wait-pane open">
+      <section v-else class="wait-pane open" :data-tour="`pane-${missing}`">
         <button
           type="button"
           class="wait-slot open"

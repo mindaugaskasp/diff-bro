@@ -59,7 +59,7 @@ test('a diagram pins light while the app stays dark, and brings its own paper', 
 
   await showPanel(page, 'snippets')
 
-  const row = page.getByText('Example — Mermaid diagram')
+  const row = page.getByText('Example — Mermaid diagram', { exact: true })
   await row.hover()
   await page.getByRole('button', { name: 'View diagram' }).click()
   const viewer = page.locator('.viewer-backdrop')
@@ -126,7 +126,11 @@ test('the editor preview theme does not outlive the editor', async () => {
     let app = await launchApp(userDataDir)
     let page = await firstReadyPage(app)
 
-    await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+    await page
+      .locator('aside.saved')
+      .getByText('Example — Mermaid diagram', { exact: true })
+      .first()
+      .click()
     const editor = page.getByRole('region', { name: 'Snippet', exact: true })
     const host = editor.locator('.mmd-preview .mermaid-diagram .host')
     await expect(editor.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
@@ -139,7 +143,11 @@ test('the editor preview theme does not outlive the editor', async () => {
 
     app = await launchApp(userDataDir)
     page = await firstReadyPage(app)
-    await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+    await page
+      .locator('aside.saved')
+      .getByText('Example — Mermaid diagram', { exact: true })
+      .first()
+      .click()
     const reopened = page.getByRole('region', { name: 'Snippet', exact: true })
     await expect(reopened.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
     // Back to Auto, which on a light app means no paper of its own.
@@ -165,7 +173,11 @@ test('the diagram never sits on a ground it was not drawn for', async ({ app, pa
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await saveSettings(page)
 
-  await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+  await page
+    .locator('aside.saved')
+    .getByText('Example — Mermaid diagram', { exact: true })
+    .first()
+    .click()
   const editor = page.getByRole('region', { name: 'Snippet', exact: true })
   const host = editor.locator('.mmd-preview .host')
   await expect(editor.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
@@ -243,7 +255,7 @@ test('the diagram renderer is ready before anything needs it', async ({ page }) 
 test('a diagram theme lasts for that viewer only, and does not persist', async ({ page }) => {
   const openViewer = async () => {
     await showPanel(page, 'snippets')
-    await page.getByText('Example — Mermaid diagram').hover()
+    await page.getByText('Example — Mermaid diagram', { exact: true }).hover()
     await page.getByRole('button', { name: 'View diagram' }).click()
     const viewer = page.locator('.viewer-backdrop')
     await expect(viewer.locator('.mermaid-diagram svg').first()).toBeVisible()
@@ -285,7 +297,7 @@ test('an Auto diagram redraws when the app theme flips', async ({ app, page }) =
 
   await showPanel(page, 'snippets')
 
-  await page.getByText('Example — Mermaid diagram').hover()
+  await page.getByText('Example — Mermaid diagram', { exact: true }).hover()
   await page.getByRole('button', { name: 'View diagram' }).click()
   const viewer = page.locator('.viewer-backdrop')
   await expect(viewer.locator('.mermaid-diagram svg').first()).toBeVisible()
@@ -322,7 +334,7 @@ test('a pinned diagram grounds the whole stage, not a box that pans away', async
   // surface that used to show through was white.
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await showPanel(page, 'snippets')
-  await page.getByText('Example — Mermaid diagram').hover()
+  await page.getByText('Example — Mermaid diagram', { exact: true }).hover()
   await page.getByRole('button', { name: 'View diagram' }).click()
   const viewer = page.locator('.viewer-backdrop')
   await expect(viewer.locator('.mermaid-diagram svg').first()).toBeVisible()

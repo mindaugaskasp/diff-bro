@@ -5,6 +5,8 @@ import { test, expect } from './fixtures.mjs'
 // row all looked broken to anyone who reached for the pointer. One click now
 // does exactly what ↵ does on that row.
 const EXAMPLE = 'Example — Mermaid diagram'
+// Not its v2, whose name starts the same.
+const EXAMPLE_ROW = /Example — Mermaid diagram(?!, v2)/
 
 async function summon(app, page) {
   const [ql] = await Promise.all([
@@ -39,11 +41,11 @@ test('one click on the create row opens the compose panel', async ({ app, page }
 })
 
 test('one click on a snippet hands it to the main window', async ({ app, page }) => {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   const ql = await summon(app, page)
 
   await ql.locator('.ql-input').fill('Mermaid')
-  await row(ql, EXAMPLE).click()
+  await row(ql, EXAMPLE_ROW).click()
 
   // The same hand-off ↵ performs: the main window opens that snippet.
   const opened = page.getByRole('region', { name: 'Snippet', exact: true })

@@ -22,7 +22,7 @@ import { errorMessage } from '../utils/shareErrors'
 import { t } from '../i18n'
 import { forgetTag, tagActions } from './snippetTags'
 import { markActions } from './snippetMarks'
-import { EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET } from '../utils/snippetExamples'
+import { EXAMPLE_SNIPPETS } from '../utils/snippetExamples'
 import { historyActions } from './snippetHistory'
 import { NEW_ENTRY_ORDER, orderedBy, reorderAction } from '../utils/rowOrder'
 
@@ -154,7 +154,7 @@ export const useSnippetStore = defineStore('snippets', {
     // False when the vault key is unavailable, so the caller retries next launch.
     // Never marks: a seeded row is not one the user made.
     async seedExamples() {
-      for (const { nameKey, ...rest } of [EXAMPLE_SNIPPET, CLAUDE_EXAMPLE_SNIPPET]) {
+      for (const { nameKey, ...rest } of EXAMPLE_SNIPPETS) {
         if (!(await this.add({ ...rest, name: t(nameKey), marks: false }))) return false
       }
       return true

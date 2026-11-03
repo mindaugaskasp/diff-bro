@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 // window.api.copyText -> clipboard:write (main). Reading the clipboard back
 // from the main process proves that whole round-trip, not just the timer.
 test('copying a snippet writes its content to the OS clipboard', async ({ app, page }) => {
-  const row = page.getByText('Example — Mermaid diagram')
+  const row = page.getByText('Example — Mermaid diagram', { exact: true })
   await expect(row).toBeVisible() // the seeded first-run example
 
   await row.hover()

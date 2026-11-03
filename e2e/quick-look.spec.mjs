@@ -8,6 +8,8 @@ import { test, expect, openNewSnippet, docActions } from './fixtures.mjs'
 // transparent / always-on-top / hides on blur, because Playwright reads the
 // page, not the OS window.
 const EXAMPLE = 'Example — Mermaid diagram'
+// Not its v2, whose name starts the same.
+const EXAMPLE_ROW = /Example — Mermaid diagram(?!, v2)/
 
 // Summon the launcher and return its page, once its search box is up.
 async function summon(app, page) {
@@ -23,7 +25,7 @@ async function summon(app, page) {
 // The seeded example snippet must have persisted from the main window before the
 // launcher (a separate Pinia instance) re-reads the shared library.
 async function seededReady(page) {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
 }
 
 // The seeded examples are mermaid and claude, which open in the main window.
@@ -48,7 +50,7 @@ test('summons the launcher with the seeded snippet', async ({ app, page }) => {
   // Filter to the Mermaid example so the test is independent of how many
   // snippets are seeded / their order (the top result is auto-selected).
   await ql.locator('.ql-input').fill('Mermaid')
-  await expect(ql.locator('.ql-res.sel', { hasText: EXAMPLE })).toBeVisible()
+  await expect(ql.locator('.ql-res.sel', { hasText: EXAMPLE_ROW })).toBeVisible()
   await expect(ql.locator('.ql-preview')).toHaveCount(0)
 })
 
@@ -90,7 +92,7 @@ test('copying names the snippet, flashes on its row, then closes', async ({ app,
   const ql = await summon(app, page)
 
   await ql.locator('.ql-input').fill('Mermaid')
-  await expect(ql.locator('.ql-res.sel', { hasText: EXAMPLE })).toBeVisible()
+  await expect(ql.locator('.ql-res.sel', { hasText: EXAMPLE_ROW })).toBeVisible()
   await ql.keyboard.press('Control+c')
 
   // The confirmation names what was taken…

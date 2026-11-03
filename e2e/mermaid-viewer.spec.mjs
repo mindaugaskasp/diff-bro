@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 // All ride on the seeded example diagram.
 
 async function openViewer(page) {
-  const row = page.getByText('Example — Mermaid diagram')
+  const row = page.getByText('Example — Mermaid diagram', { exact: true })
   await expect(row).toBeVisible()
   await row.hover() // row actions reveal on hover
   await page.getByRole('button', { name: 'View diagram' }).click()

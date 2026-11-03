@@ -34,7 +34,12 @@ defineExpose({
 
 <template>
   <header class="doc-head band head-band">
-    <label ref="nameLabel" class="doc-name" @mousedown="readOnly && emit('editName')">
+    <label
+      ref="nameLabel"
+      class="doc-name"
+      data-tour="snippet-name"
+      @mousedown="readOnly && emit('editName')"
+    >
       <span class="visually-hidden">{{ $t('snippetEditorDialog.name') }}</span>
       <SnippetNameField
         v-model="name"

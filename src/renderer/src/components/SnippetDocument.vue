@@ -154,6 +154,7 @@ const compareWith = () =>
         />
         <div
           class="editor-area"
+          data-tour="snippet-body"
           :class="{ editing: editMode }"
           @mousedown.capture="inline.onContentPointerDown"
           @dragover.capture.prevent.stop

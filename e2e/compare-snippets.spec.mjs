@@ -24,6 +24,8 @@ test.beforeEach(async ({ page }) => {
 // through vault:decrypt over IPC. jsdom has none of the three.
 
 const DIAGRAM = 'Example — Mermaid diagram'
+// Not its v2, whose name starts the same.
+const DIAGRAM_ROW = /Example — Mermaid diagram(?!, v2)/
 const PROMPT = 'Example — Claude review prompt'
 
 // Playwright's dragTo does not carry a custom DataTransfer type between two
@@ -105,7 +107,7 @@ test('closing the comparison leaves both snippets alone', async ({ page }) => {
   await closeComparison(page)
 
   await expect(rows()).toHaveCount(before)
-  await expect(rows().filter({ hasText: DIAGRAM })).toHaveCount(1)
+  await expect(rows().filter({ hasText: DIAGRAM_ROW })).toHaveCount(1)
 })
 
 test('a secret snippet is not draggable', async ({ page }) => {
@@ -120,7 +122,7 @@ test('a secret snippet is not draggable', async ({ page }) => {
 
   const secret = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()
   await expect(secret).toHaveAttribute('draggable', 'false')
-  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM }).first()
+  const ordinary = page.locator('.snippets-section .row', { hasText: DIAGRAM_ROW }).first()
   await expect(ordinary).toHaveAttribute('draggable', 'true')
 })
 
@@ -132,7 +134,7 @@ const paneOrder = (waiting) =>
   )
 
 test('one side loaded shows its contents and an empty pane, in pane order', async ({ page }) => {
-  const row = page.locator('.row', { hasText: DIAGRAM }).first()
+  const row = page.locator('.row', { hasText: DIAGRAM_ROW }).first()
   const rb = await row.boundingBox()
   const pb = await page.locator('.pane').boundingBox()
   await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2)

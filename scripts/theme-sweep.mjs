@@ -263,6 +263,66 @@ async function leaveTour(page) {
   await page.locator('.status-band').waitFor()
 }
 
+async function finishCoreTour(page) {
+  await showSaveStep(page)
+  await page.locator('[data-tour="save"]').click()
+  const dialog = page.getByRole('dialog', { name: 'Save diff' })
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+  await dialog.waitFor({ state: 'detached' })
+  await page.locator('.usb-top input[type="search"]').fill('conf')
+  await page.locator('.tour-done').waitFor()
+}
+
+// A follow-on tour, started from the core done card's chip, which clears the
+// search and shows the Snippets panel itself.
+async function startFollowOnTour(page, name) {
+  await finishCoreTour(page)
+  await page.locator('.tour-done').getByRole('button', { name, exact: true }).click()
+  await page.locator('.coach-mark').waitFor()
+}
+
+async function showBlankStep(page) {
+  await startFollowOnTour(page, 'Snippets')
+  await page.locator('[data-tour="snippet-new"]').click()
+  await page.locator('.coach-mark .cm-token').first().waitFor()
+}
+
+async function showDropZone(page) {
+  await startFollowOnTour(page, 'Diagrams')
+  await page
+    .locator('.snippets-section .row')
+    .filter({ has: page.locator('.nm', { hasText: /^Example — Mermaid diagram$/ }) })
+    .locator('.entry')
+    .click()
+  await page.locator('#toolbar-doc-actions').getByRole('button', { name: 'Compare with…' }).click()
+  await page.locator('.target-ring.zone').waitFor()
+}
+
+// Skip, then close every tab the tours opened: the core sample stays open
+// behind a follow-on tour, and twenty themes of them would fill the strip.
+async function leaveFollowOnTour(page) {
+  await page.locator('.coach-mark').getByRole('button', { name: 'Skip' }).click()
+  const opened = page.locator('.diff-tabs .tab', {
+    hasText: /config-v1\.json|Example —|Untitled/
+  })
+  while (await opened.count()) {
+    await opened.first().click()
+    await page.locator('.diff-tabs .tab.active .tab-close').click()
+    const ask = page.getByRole('dialog')
+    const asked = await ask.waitFor({ timeout: 800 }).then(
+      () => true,
+      () => false
+    )
+    if (asked)
+      await ask
+        .getByRole('button', { name: /^Close/ })
+        .first()
+        .click()
+    await page.waitForTimeout(150)
+  }
+  await page.locator('.status-band').waitFor()
+}
+
 // Each surface: how to open it, and the pairs that carry meaning once open.
 const LOCKFILE = (version) =>
   JSON.stringify(
@@ -1563,8 +1623,8 @@ const SURFACES = [
       'chip name': ['.sample-offer .so-chip', TEXT],
       'chip glyph': ['.sample-offer .so-chip svg', DIM],
       'chip keyline': ['.sample-offer .so-chip', SEPARATOR, 'border'],
-      'load link': ['.sample-offer .so-link', TEXT],
-      'load link, hovered': ['.sample-offer .so-link', TEXT, 'text', 'hover']
+      'load link': ['.sample-offer .link-btn', TEXT],
+      'load link, hovered': ['.sample-offer .link-btn', TEXT, 'text', 'hover']
     }
   },
   {
@@ -1591,15 +1651,7 @@ const SURFACES = [
   },
   {
     name: 'tour-done-card',
-    open: async (page) => {
-      await showSaveStep(page)
-      await page.locator('[data-tour="save"]').click()
-      const dialog = page.getByRole('dialog', { name: 'Save diff' })
-      await dialog.getByRole('button', { name: 'Save', exact: true }).click()
-      await dialog.waitFor({ state: 'detached' })
-      await page.locator('.usb-top input[type="search"]').fill('conf')
-      await page.locator('.tour-done').waitFor()
-    },
+    open: finishCoreTour,
     close: async (page) => {
       await page.locator('.tour-done').getByRole('button', { name: 'Close' }).click()
       await page.locator('.usb-top input[type="search"]').fill('')
@@ -1607,7 +1659,36 @@ const SURFACES = [
     },
     probes: {
       title: ['.tour-done .td-title', TEXT],
+      line: ['.tour-done .td-body', TEXT],
+      'tour chip': ['.tour-done .td-next .btn', TEXT],
+      'tour chip, hovered': ['.tour-done .td-next .btn', TEXT, 'text', 'hover'],
       close: ['.tour-done .btn-icon', DIM]
+    }
+  },
+  {
+    name: 'snippets-coach-mark',
+    open: showBlankStep,
+    close: leaveFollowOnTour,
+    probes: {
+      'step label': ['.coach-mark .cm-label', TEXT],
+      title: ['.coach-mark .cm-title', TEXT],
+      body: ['.coach-mark .cm-body', TEXT],
+      'blank chip': ['.coach-mark .cm-token', TEXT],
+      'sample link': ['.coach-mark .cm-link', TEXT],
+      'sample link, hovered': ['.coach-mark .cm-link', TEXT, 'text', 'hover'],
+      keyline: ['.coach-mark', DIM, 'border']
+    }
+  },
+  {
+    name: 'tour-drop-zone',
+    open: showDropZone,
+    close: leaveFollowOnTour,
+    probes: {
+      zone: ['.target-ring.zone', DIM, 'border'],
+      'row ring': ['.target-ring:not(.zone)', DIM, 'border'],
+      title: ['.coach-mark .cm-title', TEXT],
+      'snippet name': ['.coach-mark .cm-name', TEXT],
+      body: ['.coach-mark .cm-body', TEXT]
     }
   }
 ]

@@ -6,7 +6,7 @@ import { test, expect, openNewSnippet } from './fixtures.mjs'
 const EXAMPLE = 'Example — Mermaid diagram'
 
 async function summon(app, page) {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   const [ql] = await Promise.all([
     app.waitForEvent('window'),
     page.evaluate(() => window.api.quickLookToggle())
@@ -80,7 +80,7 @@ test('offers nothing for a name nothing matches', async ({ app, page }) => {
 
 // The editor has its own name field; the template tags moved to the status bar.
 test('the editor completes too, and the template tags are still offered', async ({ page }) => {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New snippet' })
 
@@ -123,7 +123,7 @@ const fieldGeometry = (field) =>
   })
 
 test('the ghost is actually visible, on both surfaces', async ({ app, page }) => {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New snippet' })
   await editor.getByPlaceholder('Snippet name…').fill('Exam')
@@ -147,8 +147,8 @@ test('the ghost is actually visible, on both surfaces', async ({ app, page }) =>
 // A read-only field has nothing to offer, and a read-only input still fires
 // keydown — so the ghost must be empty at the source, not merely hidden.
 test('a read-only name offers no completion', async ({ page }) => {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
-  await page.getByText(EXAMPLE).click()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
+  await page.getByText(EXAMPLE, { exact: true }).click()
   const editor = page.getByRole('region', { name: /snippet/i }).first()
   await expect(editor.locator('.ghost-field.ro')).toBeVisible()
   await expect(editor.locator('.name-ghost')).toHaveText('')

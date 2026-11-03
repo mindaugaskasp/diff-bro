@@ -306,11 +306,19 @@
  * One step of a tour: it rings `target` and moves on when `advanceOn` fires.
  * @typedef {object} TourStep
  * @property {string} id
- * @property {'sample-opened'|'sample-saved'|'sample-found'} advanceOn
- * @property {string} target        a `[data-tour="…"]` selector
- * @property {'top'|'bottom'|'left'|'right'} [side]  where the coach mark sits
+ * @property {string} advanceOn     the event that completes it
+ * @property {string} target        a `[data-tour="…"]` or `[data-snippet-id="{example}"]` selector
+ * @property {string[]} [also]      more controls ringed beside the target
+ * @property {'bottom'|'right'|'inside'|'zone'} [side]  where the coach mark sits
  * @property {boolean} [inline]     drawn by its own surface, not as a coach mark
- * @property {boolean} [onSample]   shown only while the sample tab is on screen
+ * @property {boolean} [onTab]      shown only while the tour's tab is on screen; closing it skips
+ * @property {boolean} [ring]       false draws no ring around the target
+ * @property {boolean} [zone]       the target is a drop zone, outlined dashed
+ * @property {string[]} [tokens]    blanks the body shows as `{{token}}` chips
+ * @property {string} [actionKey]   a link under the body
+ * @property {string} [nameKey]     a name the body shows in bold
+ * @property {{ target: string, side?: string, titleKey: string, bodyKey: string }} [alt]
+ *   where the mark moves, with other copy, while that target is on screen
  * @property {string} titleKey
  * @property {string} [bodyKey]
  */
@@ -319,6 +327,9 @@
  * @typedef {object} Tour
  * @property {string} id
  * @property {string} introducedIn  the release that shipped it
+ * @property {string} labelKey      "Try it · 1 of 3"
+ * @property {string} [nameKey]     its name on a chip that starts it
+ * @property {{ titleKey: string, bodyKey?: string, next?: string[] }} [doneCard]
  * @property {TourStep[]} steps
  */
 

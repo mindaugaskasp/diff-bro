@@ -104,6 +104,7 @@ defineExpose({ flash: () => flash('text') })
     v-if="canCompare"
     type="button"
     class="btn btn-sm btn-square"
+    data-tour="snippet-compare"
     :aria-label="$t('snippetDocument.compareWith')"
     :data-tip="$t('snippetDocument.compareWith')"
     @click="emit('compare')"
@@ -127,6 +128,7 @@ defineExpose({ flash: () => flash('text') })
   <button
     class="btn btn-sm btn-square"
     :class="{ copied: copiedText }"
+    data-tour="snippet-copy"
     :disabled="!hasContent"
     :data-tip="copiedText ? $t('common.copied') : copyTip"
     :aria-label="$t('common.copy')"

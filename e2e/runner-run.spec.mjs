@@ -78,7 +78,7 @@ test('a language that is off refuses', async ({ page }) => {
 test('a secret snippet refuses', async ({ app, page }) => {
   await enablePython(app, page)
   await showPanel(page, 'snippets')
-  await markSecret(page, 'Example — Mermaid diagram')
+  await markSecret(page, /Example — Mermaid diagram(?!, v2)/)
   await expect
     .poll(() => page.evaluate(() => window.api.storeLoad('snippets')))
     .toContain('"secret":true')

@@ -1393,3 +1393,25 @@ button.tag-chip:hover .usb-tct {
   gap: var(--space-3);
   box-shadow: var(--shadow-3);
 }
+
+/* A quiet text action that reads as a link. */
+.link-btn {
+  height: var(--control-h-sm);
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-meta);
+  font: inherit;
+  font-size: var(--font-md);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.link-btn:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+.link-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
