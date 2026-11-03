@@ -986,14 +986,6 @@
     "exportFailed": "Export failed.",
     "imported": "Snippets imported. {note}"
   },
-  "snippetPreviewCard": {
-    "viewThisDiagramFullScreen": "View this diagram full screen",
-    "viewFullScreen": "View full screen",
-    "openInEditor": "Open in editor",
-    "title": "Title",
-    "untagged": "Untagged",
-    "copyTip": "Copy the snippet's full contents"
-  },
   "snippetRow": {
     "copiedNotice": "Copied Snippet - {name}",
     "viewDiagram": "View diagram",

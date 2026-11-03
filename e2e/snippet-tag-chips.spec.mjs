@@ -11,7 +11,7 @@ async function openSnippet(page) {
 test('tags sit in a row with no frame, and + Add tag starts editing', async ({ page }) => {
   const doc = await openSnippet(page)
   await expect(doc.locator('.tagfield')).toHaveCount(0)
-  await expect(doc.locator('.tag-row .etag')).toHaveCount(3)
+  await expect(doc.locator('.tag-row .etag')).toHaveText(['example', 'prompt'])
 
   await doc.getByRole('button', { name: 'Add tag' }).click()
   await expect(page.getByRole('region', { name: 'Edit snippet' })).toBeVisible()
@@ -28,7 +28,7 @@ test('suggestions open over the editor without moving it', async ({ page }) => {
   await doc.getByPlaceholder('add a tag…').focus()
   const pop = doc.locator('.tag-pop')
   await expect(pop).toBeVisible()
-  await expect(pop).toContainText('3 of 20')
+  await expect(pop).toContainText('2 of 20')
   expect(await editorTop()).toBe(before)
 })
 

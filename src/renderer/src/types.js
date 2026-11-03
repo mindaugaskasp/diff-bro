@@ -167,18 +167,6 @@
  */
 
 /**
- * The decrypted hover preview of a snippet (see useSnippetPreview).
- * @typedef {object} SnippetPreview
- * @property {string} id
- * @property {string} name
- * @property {string[]} tags
- * @property {string} lang                 '' when it's plain text
- * @property {string} age                  compact age, e.g. "3d" (utils/relativeTime)
- * @property {string} text                 truncated plaintext
- * @property {{left: string, top: string}} style  fixed-position placement
- */
-
-/**
  * A snippet or saved diff normalized into one searchable shape for the quick
  * look-up (see utils/quickLook and composables/useQuickLook).
  * @typedef {object} QuickLookItem

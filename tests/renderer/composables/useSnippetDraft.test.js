@@ -93,6 +93,15 @@ describe('useSnippetDraft — view/edit mode', () => {
     draft.startEditing()
     expect(draft.editMode.value).toBe(true)
   })
+
+  // #218: the sidebar files a snippet by its own tags, so the head must not show the format tag.
+  it("shows an existing snippet's own tags, not its automatic format tag", () => {
+    const snippets = useSnippetStore()
+    snippets.entries = [{ id: 'p', name: 'Test', tags: ['php', 'work'], language: 'php' }]
+    snippets.load = async () => '<?php echo 1;'
+    const draft = useSnippetDraft(hostFor({ id: 'p' }))
+    expect(draft.initialTags).toEqual(['work'])
+  })
 })
 
 // Pasted Mermaid arrives with autocorrected arrows and rich-text spaces. Repair

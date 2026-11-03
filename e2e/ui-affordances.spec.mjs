@@ -34,56 +34,6 @@ test('a tool panel copy button has a hover tooltip, not just an aria-label', asy
   await expect(page.locator('.tip-bubble')).toHaveText('Copy')
 })
 
-// The preview used to open from anywhere on the row, so it appeared while you
-// were only reaching for the row's buttons.
-test('the snippet preview opens from the row, but not from its controls', async ({ page }) => {
-  await showPanel(page, 'snippets')
-  const row = page.locator('li.row').first()
-  await expect(row).toBeVisible()
-
-  // The star and the row actions keep their own tooltips; they summon no preview.
-  const box = await row.boundingBox()
-  await row.hover({ position: { x: box.width - 4, y: box.height / 2 } })
-  await row.locator('.star').hover()
-  await page.waitForTimeout(500)
-  await expect(page.locator('.preview')).toHaveCount(0)
-
-  await row.locator('.nm').hover({ position: { x: 4, y: 4 } })
-  await expect(page.locator('.preview')).toBeVisible()
-
-  // Anchored to the title instead of the row, the card covered the row buttons.
-  const [card, rowBox] = await Promise.all([
-    page.locator('.preview').boundingBox(),
-    row.boundingBox()
-  ])
-  const overlaps = card.x < rowBox.x + rowBox.width && card.x + card.width > rowBox.x
-  expect(overlaps, 'the preview must not sit on top of the row').toBe(false)
-})
-
-// The trigger used to be the name SPAN, which is only as tall as its glyphs: a
-// few pixels of vertical drift left it and the card vanished mid-reach.
-test('the preview target is the full height of the row', async ({ page }) => {
-  await showPanel(page, 'snippets')
-  const row = page.locator('li.row').first()
-  const entry = row.locator('.entry')
-  await expect(entry).toBeVisible()
-
-  const box = await entry.boundingBox()
-  const name = await row.locator('.nm').boundingBox()
-  // The name text does not fill the row, so a taller target is a real gain.
-  expect(box.height).toBeGreaterThan(name.height + 2)
-
-  // Near the top edge of the row's main area.
-  await page.mouse.move(0, 0)
-  await entry.hover({ position: { x: Math.round(box.width / 2), y: 2 } })
-  await expect(page.locator('.preview')).toBeVisible()
-
-  // And drifting down to the bottom edge keeps it open.
-  await entry.hover({ position: { x: Math.round(box.width / 2), y: box.height - 2 } })
-  await page.waitForTimeout(300)
-  await expect(page.locator('.preview')).toBeVisible()
-})
-
 // The first section label is a pseudo-element above its row; too small a margin
 // clipped "Recent" against the search bar.
 test('the palette section label has room above its first row', async ({ page }) => {
@@ -165,26 +115,6 @@ test('every icon-only button carries an accessible name', async ({ page }) => {
       .map((b) => b.className || b.getAttribute('data-tip') || '(anonymous)')
   )
   expect(unnamed).toEqual([])
-})
-
-// Reaching the card means crossing the gap between the sidebar and the card,
-// where neither is hovered — the close delay has to outlast that trip.
-test('the preview survives the pointer travelling into it', async ({ page }) => {
-  await showPanel(page, 'snippets')
-  const row = page.locator('li.row').first()
-  await row.locator('.entry').hover()
-  const card = page.locator('.preview')
-  await expect(card).toBeVisible()
-
-  const box = await card.boundingBox()
-  // Few steps on purpose. Each one is a CDP round trip, and twelve of them over
-  // a ~28px move measures harness latency rather than the app: on a loaded
-  // runner they outlast the 160ms close delay and the card shuts mid-trip,
-  // which cost two release builds. Four still puts the pointer down inside the
-  // gap — the thing being tested — over the same distance a user crosses.
-  await page.mouse.move(box.x + 20, box.y + 20, { steps: 4 })
-  await page.waitForTimeout(400)
-  await expect(card).toBeVisible()
 })
 
 // A control's painted surface and its ratio against the band behind it.

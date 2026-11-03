@@ -77,6 +77,10 @@ export const dropTag = (entries, name) => {
 export const effectiveLanguage = (language, detected) =>
   language && language !== 'auto' ? language : detected
 
+// The automatic format tag stays on the entry so search finds it, but it is no tag of the user's.
+export const ownTags = (entry) =>
+  (entry.tags ?? []).filter((tag) => tag !== effectiveLanguage(entry.language, entry.detected))
+
 // Distinct {{variables}} in a claude prompt, stored as plaintext metadata so the
 // sidebar row can flag "fillable on copy" without decrypting. Empty for every
 // other language (where {{ }} is template code, not a fill placeholder).

@@ -14,7 +14,7 @@ defineProps({
 
 <template>
   <button
-    v-if="snippetRun.canRun.value && snippetRun.isRunning.value"
+    v-if="snippetRun.isRunning.value"
     type="button"
     class="btn btn-sm btn-square"
     :aria-label="$t('runner.stop')"

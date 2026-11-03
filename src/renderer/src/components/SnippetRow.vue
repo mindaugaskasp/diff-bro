@@ -4,6 +4,7 @@
 import { computed } from 'vue'
 import { useSnippetStore, languageOf } from '../stores/snippetStore'
 import { languageMonogram } from '../utils/languageMonogram'
+import { ownTags } from '../utils/snippetState'
 import { shaped } from '../utils/props'
 import AppIcon from './AppIcon.vue'
 import ShowInFolderButton from './ShowInFolderButton.vue'
@@ -42,22 +43,13 @@ const mono = computed(() => languageMonogram(lang.value))
 const isDiagram = computed(() => lang.value === 'mermaid')
 const isClaude = computed(() => lang.value === 'claude')
 const isUrl = computed(() => lang.value === 'url')
-// Drop the tag that just restates the monogram (the auto format tag), so the
-// tag word carries information the type anchor doesn't already.
-const { shown: shownTags } = useRowTags(() => props.entry.tags.filter((t) => t !== lang.value))
+const { shown: shownTags } = useRowTags(() => ownTags(props.entry))
 const colorHex = computed(() => rowColorHex(props.entry.color))
 const openColorMenu = (e) => (ui.rowColorMenu = { id: props.entry.id, x: e.clientX, y: e.clientY })
 
-// Hovering the name previews the snippet — not the whole row, which made the
-// card appear while you were only reaching for the row's buttons.
-const emit = defineEmits(['hoverTitle', 'leaveTitle', 'dragging'])
-
-// The preview is anchored to this row, so it sits over the area the drag is
-// heading for. Nothing else closes it — the pointer never leaves the row.
 // Both payloads on one drag: the pane reads the compare type, a sibling row
 // reads the reorder one. Which gesture it was is decided by where it lands.
 function onDragStart(e) {
-  emit('dragging')
   startDrag(e, props.entry)
   reorder.onDragStart(e, { group: props.group, index: props.index })
 }
@@ -71,7 +63,6 @@ function onDragStart(e) {
     :data-tour="isDiagram ? 'snippet-diagram' : null"
     :data-color="rowColorId(entry.color)"
     :style="colorHex ? { '--snip-color': colorHex } : null"
-    data-preview-anchor
     :draggable="!isSecret(entry)"
     @dragstart="onDragStart($event)"
     @contextmenu.prevent="openColorMenu($event)"
@@ -82,8 +73,6 @@ function onDragStart(e) {
       draggable="false"
       @pointerdown="ui.clearNewRow(entry.id)"
       @click="store.editingSnippet = { id: entry.id }"
-      @mouseenter="$emit('hoverTitle', $event)"
-      @mouseleave="$emit('leaveTitle')"
     >
       <span
         class="monogram glyph-well"

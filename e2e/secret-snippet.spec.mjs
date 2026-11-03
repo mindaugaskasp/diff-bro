@@ -1,8 +1,8 @@
 import { test, expect, openNewSnippet, closeSnippet, docActions, markSecret } from './fixtures.mjs'
 
 // A secret snippet is a claim about what is DRAWN, so it can only be checked in
-// a launched app: the contents must be absent from the editor, the hover card
-// and the launcher, yet still reach the OS clipboard intact. jsdom has neither
+// a launched app: the contents must be absent from the editor and the
+// launcher, yet still reach the OS clipboard intact. jsdom has neither
 // a real Monaco nor a clipboard.
 
 const SECRET = 'sk-live-DEADBEEF-0123456789'
@@ -69,23 +69,6 @@ test('reopening a revealed secret starts masked again', async ({ page }) => {
   const reopened = page.getByRole('region', { name: 'Snippet', exact: true })
   await expect(reopened.locator('.secret-mask')).toBeVisible()
   await expect(page.locator('body')).not.toContainText(SECRET)
-})
-
-test('the hover card masks a secret and never decrypts it', async ({ page }) => {
-  await createSecret(page)
-  await closeSnippet(page)
-
-  const row = page.locator('.snippets-section .row', { hasText: 'Prod API key' }).first()
-  await expect(row.locator('.secret-mark')).toBeVisible() // the lock marker
-  // The card opens on mouseenter, which never fires if the pointer is already
-  // resting on the row — park it away first so the hover is a real arrival.
-  await page.mouse.move(0, 0)
-  await row.locator('.nm').hover()
-
-  const card = page.locator('.preview')
-  await expect(card).toBeVisible()
-  await expect(card.locator('.secret-mask')).toBeVisible()
-  await expect(card).not.toContainText(SECRET)
 })
 
 test('an ordinary snippet is untouched by the feature', async ({ page }) => {
