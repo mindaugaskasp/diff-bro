@@ -145,11 +145,10 @@ export function readLibrary(parsed, untitled) {
 }
 
 /**
- * @param {boolean} isNew
- * @param {boolean} editing
+ * @param {{ isNew: boolean, editing: boolean }} doc
  * @returns {string} the document's title key
  */
-export function docTitleKey(isNew, editing) {
+export function docTitleKey({ isNew, editing }) {
   if (isNew) return 'snippetEditorDialog.newSnippetTitle'
   return editing ? 'snippetEditorDialog.editSnippet' : 'snippetEditorDialog.snippet'
 }

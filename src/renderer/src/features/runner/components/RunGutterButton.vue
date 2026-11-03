@@ -4,7 +4,11 @@ import { shaped } from '../../../utils/props'
 
 defineProps({
   /** @type {import('vue').PropType<import('../../../types').RunGutterSpot|null>} */
-  spot: { type: Object, default: null, validator: (v) => v === null || shaped('line', 'top')(v) }
+  spot: {
+    type: Object,
+    default: null,
+    validator: (v) => v === null || shaped('line', 'lastLine', 'top')(v)
+  }
 })
 defineEmits(['run', 'enter', 'leave'])
 </script>
@@ -20,8 +24,8 @@ defineEmits(['run', 'enter', 'leave'])
       width: `${spot.width}px`,
       height: `${spot.height}px`
     }"
-    :aria-label="$t('runner.runUpToLine', { n: spot.reach })"
-    :data-tip="$t('runner.runUpToLine', { n: spot.reach })"
+    :aria-label="$t('runner.runUpToLine', { n: spot.lastLine })"
+    :data-tip="$t('runner.runUpToLine', { n: spot.lastLine })"
     @mouseenter="$emit('enter')"
     @mouseleave="$emit('leave')"
     @click="$emit('run')"

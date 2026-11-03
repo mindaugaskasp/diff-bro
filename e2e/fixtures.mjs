@@ -1,4 +1,5 @@
 import { test as base, _electron as electron, expect } from '@playwright/test'
+import { execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -355,3 +356,20 @@ export async function openNewSnippet(page) {
   await showPanel(page, 'snippets')
   await newSnippetButton(page).click()
 }
+
+// The runner specs drive the system's python3; without one they skip rather than fail to load.
+export const PYTHON = (() => {
+  try {
+    return execSync('command -v python3', { shell: '/bin/sh' }).toString().trim() || null
+  } catch {
+    return null
+  }
+})()
+
+export async function enablePython(app, page) {
+  await stubMessageBox(app, 1)
+  await stubOpenDialog(app, PYTHON)
+  return page.evaluate(() => window.api.runEnable('python'))
+}
+
+export const outputPane = (page) => page.getByRole('region', { name: 'Output' })

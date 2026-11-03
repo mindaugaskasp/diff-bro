@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process'
 import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -6,21 +5,17 @@ import {
   test,
   expect,
   docActions,
+  enablePython,
   markSecret,
   newSnippetButton,
-  showPanel,
-  stubMessageBox,
-  stubOpenDialog
+  outputPane,
+  PYTHON,
+  showPanel
 } from './fixtures.mjs'
 
-const PYTHON = execSync('command -v python3', { shell: '/bin/sh' }).toString().trim()
-const SHEBANG = '#!/usr/bin/env python3\n'
+test.skip(!PYTHON, 'needs python3 on the machine')
 
-async function enablePython(app, page) {
-  await stubMessageBox(app, 1)
-  await stubOpenDialog(app, PYTHON)
-  await page.evaluate(() => window.api.runEnable('python'))
-}
+const SHEBANG = '#!/usr/bin/env python3\n'
 
 async function newScript(app, page, code) {
   await showPanel(page, 'snippets')
@@ -34,7 +29,7 @@ async function newScript(app, page, code) {
 }
 
 const runButton = (page) => docActions(page).getByRole('button', { name: 'Run', exact: true })
-const pane = (page) => page.getByRole('region', { name: 'Output' })
+const pane = outputPane
 
 test('Run shows the output in a pane under the editor', async ({ app, page }) => {
   await enablePython(app, page)
@@ -140,23 +135,22 @@ test('a secret snippet cannot run', async ({ app, page }) => {
   await expect(runButton(page)).toBeDisabled()
 })
 
+const SCRIPT_SLEEP_MS = 1500
+
 test('closing the tab stops the run', async ({ app, page }) => {
   const dir = mkdtempSync(join(tmpdir(), 'runner-pane-'))
   const marker = join(dir, 'ran-too-long')
   try {
     await enablePython(app, page)
-    const code = `import time\nprint("started", flush=True)\ntime.sleep(1.5)\nopen(${JSON.stringify(marker)}, "w").close()`
+    const code = `import time\nprint("started", flush=True)\ntime.sleep(${SCRIPT_SLEEP_MS / 1000})\nopen(${JSON.stringify(marker)}, "w").close()`
     await newScript(app, page, code)
     await runButton(page).click()
     await expect(pane(page)).toContainText('started')
     await page.locator('.diff-tabs .tab.active .tab-close').click()
     const ask = page.getByRole('dialog', { name: /^Close/ })
-    await ask
-      .getByRole('button', { name: /^(Close it|Discard|Close)/ })
-      .first()
-      .click()
+    await ask.getByRole('button', { name: 'Close it', exact: true }).click()
     await expect(page.locator('.diff-tabs .tab', { hasText: 'python' })).toHaveCount(0)
-    await page.waitForTimeout(2500)
+    await page.waitForTimeout(SCRIPT_SLEEP_MS + 1000)
     expect(existsSync(marker)).toBe(false)
   } finally {
     rmSync(dir, { recursive: true, force: true })

@@ -385,7 +385,7 @@ async function openConflictList(page, userDataDir) {
   await page.locator('.cf-row.done').first().waitFor({ timeout: 10000 })
 }
 
-async function openClaudePane(page) {
+async function openIntegrationsPane(page) {
   await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings' })
   await dlg.getByRole('button', { name: 'Integrations', exact: true }).click()
@@ -399,9 +399,9 @@ async function openRunPane(page, { app }) {
     dialog.showMessageBox = async () => ({ response: 1 })
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] })
   }, python)
-  const settings = await openClaudePane(page)
-  const python3 = settings.locator('.lang-row', { hasText: 'Python' }).getByRole('checkbox')
-  if (!(await python3.isChecked())) await python3.click()
+  const settings = await openIntegrationsPane(page)
+  const pythonToggle = settings.locator('.lang-row', { hasText: 'Python' }).getByRole('checkbox')
+  if (!(await pythonToggle.isChecked())) await pythonToggle.click()
   await settings
     .locator('.lang-row', { hasText: 'Python' })
     .getByRole('button', { name: 'Change…' })
@@ -462,7 +462,7 @@ async function proposeOverMcp(userDataDir) {
 let claudeInboxSeeded = false
 async function seedClaudeInbox(page, userDataDir) {
   if (claudeInboxSeeded) return
-  const dlg = await openClaudePane(page)
+  const dlg = await openIntegrationsPane(page)
   await dlg.getByLabel('Enable Claude MCP connection').check()
   await dlg.getByRole('alertdialog').getByRole('button', { name: 'Enable', exact: true }).click()
   await dlg.getByLabel('Offer new snippets').check()
@@ -547,7 +547,7 @@ const SURFACES = [
   {
     name: 'settings-languages',
     open: async (page) => {
-      await openClaudePane(page)
+      await openIntegrationsPane(page)
       await page.locator('.lang-row').first().waitFor()
     },
     close: async (page) => {
@@ -1123,7 +1123,7 @@ const SURFACES = [
   {
     name: 'claude-settings',
     open: async (page) => {
-      const dlg = await openClaudePane(page)
+      const dlg = await openIntegrationsPane(page)
       const master = dlg.getByLabel('Enable Claude MCP connection')
       if (await master.isChecked()) await master.uncheck()
       await master.check()
@@ -1144,7 +1144,7 @@ const SURFACES = [
   {
     name: 'claude-connect',
     open: async (page) => {
-      const dlg = await openClaudePane(page)
+      const dlg = await openIntegrationsPane(page)
       const master = dlg.getByLabel('Enable Claude MCP connection')
       if (!(await master.isChecked())) {
         await master.check()

@@ -1,15 +1,16 @@
-import { execSync } from 'node:child_process'
 import {
   test,
   expect,
   docActions,
+  enablePython,
   newSnippetButton,
-  showPanel,
-  stubMessageBox,
-  stubOpenDialog
+  outputPane,
+  PYTHON,
+  showPanel
 } from './fixtures.mjs'
 
-const PYTHON = execSync('command -v python3', { shell: '/bin/sh' }).toString().trim()
+test.skip(!PYTHON, 'needs python3 on the machine')
+
 const SCRIPT = [
   '#!/usr/bin/env python3',
   '# totals',
@@ -21,14 +22,12 @@ const SCRIPT = [
   'print("sent")'
 ].join('\n')
 
-const pane = (page) => page.getByRole('region', { name: 'Output' })
+const pane = outputPane
 const lineNumber = (page, n) =>
   page.locator('.snippet-doc:visible .line-numbers').filter({ hasText: new RegExp(`^${n}$`) })
 
 async function openScript(app, page) {
-  await stubMessageBox(app, 1)
-  await stubOpenDialog(app, PYTHON)
-  await page.evaluate(() => window.api.runEnable('python'))
+  await enablePython(app, page)
   await showPanel(page, 'snippets')
   await newSnippetButton(page).click()
   const doc = page.getByRole('region', { name: 'New snippet' })
@@ -49,7 +48,9 @@ test('hovering a block line offers to run up to its end, and runs exactly that',
   await play.click()
   await expect(pane(page)).toContainText('Finished')
   await expect(pane(page)).toContainText('Up to line 6')
-  await expect(pane(page).locator('.run-out')).toHaveText('3\n30\n10\n20\n', { useInnerText: false })
+  await expect(pane(page).locator('.run-out')).toHaveText('3\n30\n10\n20\n', {
+    useInnerText: false
+  })
 })
 
 test('a comment or blank line gets no button', async ({ app, page }) => {

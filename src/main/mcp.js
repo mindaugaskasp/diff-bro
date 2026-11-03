@@ -15,21 +15,14 @@ import { resourceList, resourceRead } from './mcpResources'
 import { writeProposal } from './inboxStore'
 import { appendActivity, claudePaths, readGrantRecord } from './claudeFiles'
 import { forwardLaunchesToGui } from './mcpHandover'
-
-const parsed = (raw) => {
-  try {
-    return JSON.parse(raw ?? '{}') ?? {}
-  } catch {
-    return {}
-  }
-}
+import { parseStore } from './storeEntries'
 
 function toolContext(key, paths) {
   const grant = key ? verifyGrant(key, readGrantRecord(paths.grant)) : GRANT_OFF
   return {
     grant,
-    snippets: () => parsed(readSnippetStore()),
-    vault: () => parsed(readVaultStore()),
+    snippets: () => parseStore(readSnippetStore()),
+    vault: () => parseStore(readVaultStore()),
     decrypt: (box, aad) => vaultDecrypt(key, box, aad),
     propose: (kind, body) => writeProposal(paths.inbox, key, { kind, body, now: Date.now() }),
     now: Date.now()

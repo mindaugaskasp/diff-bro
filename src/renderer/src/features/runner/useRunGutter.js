@@ -4,12 +4,12 @@ import * as monaco from 'monaco-editor'
 const LEAVE_GRACE_MS = 120
 
 /** @returns {import('../../types').RunGutterSpot} where the line's number sits on screen */
-function spotFor(editor, line, reach) {
+function spotFor(editor, line, lastLine) {
   const box = editor.getDomNode().getBoundingClientRect()
   const layout = editor.getLayoutInfo()
   return {
     line,
-    reach,
+    lastLine,
     top: box.top + editor.getTopForLineNumber(line) - editor.getScrollTop(),
     left: box.left + layout.lineNumbersLeft,
     width: layout.lineNumbersWidth,
@@ -19,24 +19,31 @@ function spotFor(editor, line, reach) {
 
 /**
  * The play button that takes the hovered line's number while that line can run.
- * @param {{ editorInstance: () => object|null, ready: import('vue').Ref<boolean>, run: object }} o
+ * @param {object} o
+ * @param {() => object|null} o.editorInstance
+ * @param {import('vue').Ref<boolean>} o.ready
+ * @param {import('vue').Ref<Set<number>>} o.runnableLines
+ * @param {(line: number) => number|null} o.lastLineFor
+ * @param {(line: number) => void} o.startLine
  */
-export function useRunGutter({ editorInstance, ready, run }) {
+export function useRunGutter({ editorInstance, ready, runnableLines, lastLineFor, startLine }) {
   const spot = ref(null)
   let subscriptions = []
-  let onButton = false
+  let isPointerOnButton = false
   let timer = null
 
   const hide = () => (spot.value = null)
   function onMove(e) {
     const line = e.target?.position?.lineNumber
-    if (line && run.runnable.value.has(line)) {
-      spot.value = spotFor(editorInstance(), line, run.reachOf(line))
-    } else if (!onButton) hide()
+    if (line && runnableLines.value.has(line)) {
+      spot.value = spotFor(editorInstance(), line, lastLineFor(line))
+    } else if (!isPointerOnButton) hide()
   }
   function onLeave() {
     clearTimeout(timer)
-    timer = setTimeout(() => onButton || hide(), LEAVE_GRACE_MS)
+    timer = setTimeout(() => {
+      if (!isPointerOnButton) hide()
+    }, LEAVE_GRACE_MS)
   }
   function detach() {
     subscriptions.forEach((s) => s.dispose())
@@ -53,16 +60,26 @@ export function useRunGutter({ editorInstance, ready, run }) {
     ]
   }
 
-  watch(ready, (on) => (on ? attach() : (detach(), hide())), { immediate: true })
+  watch(
+    ready,
+    (isReady) => {
+      if (isReady) return attach()
+      detach()
+      hide()
+    },
+    { immediate: true }
+  )
   onBeforeUnmount(detach)
 
   return {
     spot,
-    enter: () => (onButton = true),
+    enter: () => (isPointerOnButton = true),
     leave: () => {
-      onButton = false
+      isPointerOnButton = false
       hide()
     },
-    press: () => spot.value && run.startLine(spot.value.line)
+    press: () => {
+      if (spot.value) startLine(spot.value.line)
+    }
   }
 }

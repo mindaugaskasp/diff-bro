@@ -31,8 +31,8 @@ beforeEach(async () => {
   vi.useFakeTimers()
   editor = fakeEditor()
   ready = ref(false)
-  run = { runnable: ref(new Set([2, 3])), reachOf: (n) => n + 1, startLine: vi.fn() }
-  gutter = useRunGutter({ editorInstance: () => editor, ready, run })
+  run = { runnableLines: ref(new Set([2, 3])), lastLineFor: (n) => n + 1, startLine: vi.fn() }
+  gutter = useRunGutter({ editorInstance: () => editor, ready, ...run })
   ready.value = true
   await nextTick()
 })
@@ -41,11 +41,15 @@ afterEach(() => vi.useRealTimers())
 describe('useRunGutter', () => {
   it('sits on the hovered line number when that line can run', () => {
     hover(editor, 2)
+    const editorTop = 100
+    const lineTwoOffset = 19
+    const editorLeft = 300
+    const numbersLeft = 4
     expect(gutter.spot.value).toEqual({
       line: 2,
-      reach: 3,
-      top: 119,
-      left: 304,
+      lastLine: 3,
+      top: editorTop + lineTwoOffset,
+      left: editorLeft + numbersLeft,
       width: 20,
       height: 19
     })

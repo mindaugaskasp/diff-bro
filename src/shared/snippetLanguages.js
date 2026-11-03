@@ -30,5 +30,10 @@ export const SNIPPET_LANGUAGES = [
   { id: 'java', labelKey: 'language.java' }
 ]
 
+// The ones a snippet can be run in; main keeps each one's argv and version check.
+export const RUNNABLE_LANGUAGES = ['php', 'python']
+
+export const labelKeyOf = (id) => SNIPPET_LANGUAGES.find((l) => l.id === id)?.labelKey
+
 // 'auto' is the request to detect, not a syntax to offer.
 export const EXPLICIT_LANGUAGES = SNIPPET_LANGUAGES.map((l) => l.id).filter((id) => id !== 'auto')

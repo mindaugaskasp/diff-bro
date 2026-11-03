@@ -1,31 +1,36 @@
 <script setup>
 import AppIcon from '../../../components/AppIcon.vue'
+import { shaped } from '../../../utils/props'
 
 defineProps({
-  // useSnippetRun's return; its refs are unwrapped by the template's reactive read.
-  run: { type: Object, required: true }
+  /** @type {import('vue').PropType<import('../../../types').SnippetRun>} */
+  snippetRun: {
+    type: Object,
+    required: true,
+    validator: shaped('canRun', 'isRunning', 'start', 'stop')
+  }
 })
 </script>
 
 <template>
   <button
-    v-if="run.available.value && run.running.value"
+    v-if="snippetRun.canRun.value && snippetRun.isRunning.value"
     type="button"
     class="btn btn-sm btn-square"
     :aria-label="$t('runner.stop')"
     :data-tip="$t('runner.stop')"
-    @click="run.stop()"
+    @click="snippetRun.stop()"
   >
     <AppIcon name="stop" />
   </button>
   <button
-    v-else-if="run.available.value"
+    v-else-if="snippetRun.canRun.value"
     type="button"
     class="btn btn-sm btn-square"
-    :disabled="run.secret.value || !run.hasCode.value"
+    :disabled="snippetRun.isSecret.value || !snippetRun.hasCode.value"
     :aria-label="$t('runner.run')"
-    :data-tip="run.secret.value ? $t('runner.secretTip') : $t('runner.run')"
-    @click="run.start()"
+    :data-tip="snippetRun.isSecret.value ? $t('runner.secretTip') : $t('runner.run')"
+    @click="snippetRun.start()"
   >
     <AppIcon name="play" />
   </button>

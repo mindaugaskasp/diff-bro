@@ -46,7 +46,7 @@ test('every language starts off', async ({ page }) => {
   const dialog = await openIntegrations(page)
   await expect(row(dialog, 'PHP').getByRole('checkbox')).not.toBeChecked()
   await expect(row(dialog, 'Python').getByRole('checkbox')).not.toBeChecked()
-  await expect(row(dialog, 'PHP').getByRole('button', { name: 'Choose…' })).toBeDisabled()
+  await expect(row(dialog, 'PHP').getByRole('button', { name: 'Change…' })).toHaveCount(0)
 })
 
 test('enabling asks in main, then takes the program you pick', async ({ app, page }) => {
@@ -70,7 +70,7 @@ test('cancelling leaves the language off, and the box unticked', async ({ app, p
   const dialog = await openIntegrations(page)
   await row(dialog, 'Python').getByRole('checkbox').click()
   await expect(row(dialog, 'Python').getByRole('checkbox')).not.toBeChecked()
-  await expect(row(dialog, 'Python').getByRole('button', { name: 'Choose…' })).toBeDisabled()
+  await expect(row(dialog, 'Python').getByRole('button', { name: 'Change…' })).toHaveCount(0)
 })
 
 test('a program that is not that language is turned away, and says so', async ({ app, page }) => {
@@ -112,7 +112,7 @@ test('a language stays on across a relaunch, and off when turned off', async () 
     dialog = await openIntegrations(page)
     await expect(row(dialog, 'Python').getByRole('checkbox')).toBeChecked()
     await row(dialog, 'Python').getByRole('checkbox').uncheck()
-    await expect(row(dialog, 'Python').getByRole('button', { name: 'Choose…' })).toBeDisabled()
+    await expect(row(dialog, 'Python').getByRole('button', { name: 'Change…' })).toHaveCount(0)
   } finally {
     await app.close()
     rmSync(dir, { recursive: true, force: true })

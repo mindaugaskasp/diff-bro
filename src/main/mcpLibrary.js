@@ -1,11 +1,10 @@
 // Secret snippets and received diffs are never visible to Claude, whatever the scopes.
 import { diffAad, snippetAad } from '../shared/entryAad'
+import { entriesOf, isSecretEntry } from './storeEntries'
 
-const isSecret = (entry) => entry?.secret === true
 const isReceived = (entry) => entry?.from != null
 const isLive = (entry, now) => entry.expiresAt === null || entry.expiresAt > now
 
-const entriesOf = (store) => (Array.isArray(store?.entries) ? store.entries : [])
 const tagsOf = (entry) => (Array.isArray(entry.tags) ? entry.tags : [])
 
 /**
@@ -20,7 +19,7 @@ function matches({ query, tags }) {
       .includes(needle) && (tags ?? []).every((t) => tagsOf(entry).includes(t))
 }
 
-const visibleSnippets = (store) => entriesOf(store).filter((e) => !isSecret(e))
+const visibleSnippets = (store) => entriesOf(store).filter((e) => !isSecretEntry(e))
 
 const visibleDiffs = (store, now) =>
   entriesOf(store).filter((e) => !isReceived(e) && isLive(e, now))

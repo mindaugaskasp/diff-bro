@@ -86,8 +86,8 @@ describe('cleanTag', () => {
 
 describe('docTitleKey', () => {
   it('names a new snippet, one being edited, and one being read', () => {
-    expect(docTitleKey(true, true)).toBe('snippetEditorDialog.newSnippetTitle')
-    expect(docTitleKey(false, true)).toBe('snippetEditorDialog.editSnippet')
-    expect(docTitleKey(false, false)).toBe('snippetEditorDialog.snippet')
+    expect(docTitleKey({ isNew: true, editing: true })).toBe('snippetEditorDialog.newSnippetTitle')
+    expect(docTitleKey({ isNew: false, editing: true })).toBe('snippetEditorDialog.editSnippet')
+    expect(docTitleKey({ isNew: false, editing: false })).toBe('snippetEditorDialog.snippet')
   })
 })

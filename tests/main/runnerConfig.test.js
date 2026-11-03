@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   isEnabled,
-  languageStatus,
+  rendererStatus,
   readConfig,
   sanitizeConfig,
   withLanguage,
@@ -67,9 +67,9 @@ describe('isEnabled', () => {
   })
 })
 
-describe('languageStatus', () => {
+describe('rendererStatus', () => {
   it('shows the renderer each language, and not whether the warning was seen', () => {
-    const status = languageStatus(sanitizeConfig({ confirmed: true }))
+    const status = rendererStatus(sanitizeConfig({ confirmed: true }))
     expect(status).toEqual({ php: OFF, python: OFF })
   })
 })
