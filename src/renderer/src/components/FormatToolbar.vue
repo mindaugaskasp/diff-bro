@@ -8,7 +8,8 @@ import { t } from '../i18n'
 
 defineProps({
   /** @type {import('../types').MarkupAction[]} */
-  actions: { type: Array, required: true, validator: arrayOfShape('id') }
+  actions: { type: Array, required: true, validator: arrayOfShape('id') },
+  disabled: { type: Boolean, default: false }
 })
 defineEmits(['action'])
 
@@ -27,6 +28,7 @@ const tip = (a) => t('formatToolbar.tip', { label: t(a.labelKey), syntax: a.synt
       :class="{ 'fmt-btn-text': a.text }"
       :data-tip="tip(a)"
       :aria-label="tip(a)"
+      :disabled="disabled"
       @mousedown.prevent
       @click="$emit('action', a.id)"
     >
