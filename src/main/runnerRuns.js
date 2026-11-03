@@ -20,27 +20,66 @@ export function refusalFor({ language, code, snippetId, config, store }) {
   return null
 }
 
-/** One run per key (a tab): starting another stops the one still going. */
+const BATCH_MS = 50
+const BATCH_BYTES = 64 * 1024
+
+/**
+ * Output in batches: a tight print loop otherwise sends one IPC message, and
+ * costs one re-render, per line. Order across streams is kept.
+ * @param {{ send: (chunk: { stream: string, text: string }) => void, intervalMs?: number, maxBytes?: number }} o
+ */
+export function createOutputBatch({ send, intervalMs = BATCH_MS, maxBytes = BATCH_BYTES }) {
+  let held = []
+  let bytes = 0
+  let timer = null
+
+  function flush() {
+    clearTimeout(timer)
+    timer = null
+    const out = held
+    held = []
+    bytes = 0
+    out.forEach(send)
+  }
+  function add({ stream, text }) {
+    const last = held.at(-1)
+    if (last?.stream === stream) last.text += text
+    else held.push({ stream, text })
+    bytes += text.length
+    if (bytes >= maxBytes) flush()
+    else timer ??= setTimeout(flush, intervalMs)
+  }
+  return { add, flush }
+}
+
+/** One run per tab of a window: starting another stops the one still going. */
 export function createRuns({ start = startRun } = {}) {
   const going = new Map()
 
-  function stop(runId) {
-    going.get(runId)?.handle.stop()
+  // An owner, when given, must match: a window stops only its own runs.
+  function stop(runId, owner) {
+    const run = going.get(runId)
+    if (run && (owner === undefined || run.owner === owner)) run.handle.stop()
   }
-  function begin({ key, onExit, ...options }) {
-    for (const [runId, run] of going) if (run.key === key) stop(runId)
+  function begin({ owner, key, onOutput, onExit, ...options }) {
+    for (const [runId, run] of going) if (run.key === key && run.owner === owner) stop(runId)
     const runId = randomUUID()
+    const batch = createOutputBatch({ send: onOutput })
     const handle = start({
       ...options,
+      onOutput: batch.add,
       onExit: (exit) => {
+        batch.flush()
         going.delete(runId)
         onExit(exit)
       }
     })
-    going.set(runId, { key, handle })
+    going.set(runId, { owner, key, handle })
     return runId
   }
-  const stopAll = () => [...going.keys()].forEach(stop)
+  const stopAll = () => [...going.keys()].forEach((runId) => stop(runId))
+  const stopOwnedBy = (owner) =>
+    [...going].filter(([, run]) => run.owner === owner).forEach(([runId]) => stop(runId))
 
-  return { begin, stop, stopAll }
+  return { begin, stop, stopAll, stopOwnedBy }
 }

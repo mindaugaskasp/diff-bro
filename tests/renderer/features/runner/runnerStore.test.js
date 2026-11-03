@@ -163,6 +163,35 @@ describe('runnerStore runs', () => {
     expect(store.runFor('tab')).toBeNull()
   })
 
+  // runStart answers only after the first-run dialog, and a Stop in between used to do nothing.
+  function deferredStart() {
+    let answer
+    window.api.runStart = vi.fn(() => new Promise((resolve) => (answer = resolve)))
+    return (reply = { runId: 'late', version: '8.3.6' }) => answer(reply)
+  }
+
+  it('stops a run asked to stop before main had answered', async () => {
+    const store = useRunnerStore()
+    const answer = deferredStart()
+    const pending = start(store)
+    store.stop('tab')
+    expect(window.api.runStop).not.toHaveBeenCalled()
+    answer()
+    await pending
+    expect(window.api.runStop).toHaveBeenCalledWith('late')
+  })
+
+  it('stops a run whose pane closed before main had answered, and keeps it closed', async () => {
+    const store = useRunnerStore()
+    const answer = deferredStart()
+    const pending = start(store)
+    store.close('tab')
+    answer()
+    await expect(pending).resolves.toBeUndefined()
+    expect(window.api.runStop).toHaveBeenCalledWith('late')
+    expect(store.runFor('tab')).toBeNull()
+  })
+
   it('clears the output and keeps the pane', async () => {
     const store = useRunnerStore()
     await start(store)

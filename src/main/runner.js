@@ -94,7 +94,7 @@ async function confirmFirstRun(win, config) {
     cancelId: 0
   })
   if (response !== 1) return false
-  writeConfig(configFile(), { ...config, confirmed: true })
+  writeConfig(configFile(), { ...readConfig(configFile()), confirmed: true })
   return true
 }
 
@@ -102,15 +102,32 @@ function deliverTo(sender, payload, channel) {
   if (!sender.isDestroyed()) sender.send(channel, payload)
 }
 
-async function start(e, { key, language, code, snippetId } = {}) {
+// Settings are read again after the dialog: the language may have been turned off meanwhile.
+const checked = (request) => {
   const config = readConfig(configFile())
-  const refusal = refusalFor({ language, code, snippetId, config, store: parsedSnippets() })
+  return { config, refusal: refusalFor({ ...request, config, store: parsedSnippets() }) }
+}
+
+const watched = new WeakSet()
+function stopRunsWhenGone(sender) {
+  if (watched.has(sender)) return
+  watched.add(sender)
+  sender.once('destroyed', () => runs.stopOwnedBy(sender.id))
+}
+
+async function start(e, { key, language, code, snippetId } = {}) {
+  const request = { language, code, snippetId }
+  const before = checked(request)
+  if (before.refusal) return { error: before.refusal }
+  if (!(await confirmFirstRun(windowOf(e), before.config))) return { cancelled: true }
+  const { config, refusal } = checked(request)
   if (refusal) return { error: refusal }
-  if (!(await confirmFirstRun(windowOf(e), config))) return { cancelled: true }
 
   const { sender } = e
   const { path, version } = config.languages[language]
+  stopRunsWhenGone(sender)
   const runId = runs.begin({
+    owner: sender.id,
     key,
     exe: path,
     language,
@@ -118,14 +135,13 @@ async function start(e, { key, language, code, snippetId } = {}) {
     onOutput: (chunk) => deliverTo(sender, { key, runId, ...chunk }, 'run:output'),
     onExit: (exit) => deliverTo(sender, { key, runId, ...exit }, 'run:exit')
   })
-  sender.once('destroyed', () => runs.stop(runId))
   return { runId, version }
 }
 
 export function registerRunnerIpc() {
   app.on('will-quit', runs.stopAll)
   ipcMain.handle('run:start', start)
-  ipcMain.handle('run:stop', (_e, runId) => runs.stop(runId))
+  ipcMain.handle('run:stop', (e, runId) => runs.stop(runId, e.sender.id))
   ipcMain.handle('run:status', () => languageStatus(readConfig(configFile())))
   ipcMain.handle('run:enable', enable)
   ipcMain.handle('run:change', change)

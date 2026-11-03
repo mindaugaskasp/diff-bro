@@ -63,12 +63,19 @@ export const useRunnerStore = defineStore('runner', {
       this.listen()
       this.stop(key)
       this.runs[key] = { runId: null, state: 'running', language, blocks: [], version: null }
+      const mine = this.runs[key]
       const reply = await window.api.runStart({ key, language, code, snippetId })
+      this.adopt(key, mine, reply)
+    },
+    // Main answers after the first-run dialog: a Stop or a close may already have come.
+    adopt(key, mine, reply) {
+      const stillShown = this.runs[key] === mine
       if (!reply?.runId) {
-        delete this.runs[key]
+        if (stillShown) delete this.runs[key]
         return
       }
-      Object.assign(this.runs[key], { runId: reply.runId, version: reply.version })
+      if (!stillShown || mine.stopAsked) window.api.runStop(reply.runId)
+      if (stillShown) Object.assign(mine, { runId: reply.runId, version: reply.version })
     },
     // Null before main has answered: output can overtake the reply.
     current(key, runId) {
@@ -88,7 +95,9 @@ export const useRunnerStore = defineStore('runner', {
     },
     stop(key) {
       const run = this.runs[key]
-      if (run?.runId && run.state === 'running') window.api.runStop(run.runId)
+      if (run?.state !== 'running') return
+      if (run.runId) window.api.runStop(run.runId)
+      else run.stopAsked = true
     },
     clear(key) {
       if (this.runs[key]) this.runs[key].blocks = []
