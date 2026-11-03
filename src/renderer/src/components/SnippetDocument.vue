@@ -147,8 +147,9 @@ const compareWith = () =>
     <div class="doc-body">
       <div class="doc-main">
         <FormatToolbar
-          v-if="hasPreview && editMode"
+          v-if="hasPreview"
           :actions="toolbarActions"
+          :disabled="!editMode"
           @action="applyAction"
         />
         <div
