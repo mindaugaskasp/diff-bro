@@ -174,8 +174,8 @@ useWindowFocusRefresh()
           <!-- Notices sit centred over the diff area (anchored to .content). -->
           <transition name="fade">
             <div v-if="store.notice" class="notice">{{ store.notice }}</div>
-            <ProposalUndoNotice />
           </transition>
+          <ProposalUndoNotice />
 
           <DiskChangeNotice />
           <AppUpdatedNotice />
