@@ -1,18 +1,16 @@
 <script setup>
-// Snippets sidebar layout; filtering is useSnippetFilters, previews
-// useSnippetPreview, rows SnippetRow.
+// Snippets sidebar layout; filtering is useSnippetFilters, rows SnippetRow.
 import { computed, watch } from 'vue'
 import { matchesTags } from '../utils/tagFilter'
-import { useSnippetStore, languageOf } from '../stores/snippetStore'
+import { useSnippetStore } from '../stores/snippetStore'
+import { ownTags } from '../utils/snippetState'
 import { useSnippetFilters } from '../composables/useSnippetFilters'
-import { useSnippetPreview } from '../composables/useSnippetPreview'
 import { useNewRowMarker } from '../composables/useNewRowMarker'
 import { provideRowReorder } from '../composables/useRowReorder'
 import { useDiffStore } from '../stores/diffStore'
 import { useUiStore } from '../stores/uiStore'
 import { t } from '../i18n'
 import SnippetRow from './SnippetRow.vue'
-import SnippetPreviewCard from './SnippetPreviewCard.vue'
 import SectionHeader from './SectionHeader.vue'
 import AppIcon from './AppIcon.vue'
 import SnippetsMoreMenu from './SnippetsMoreMenu.vue'
@@ -31,9 +29,6 @@ const ui = useUiStore()
 
 // Tag filtering + search live in the shell (props); this just mirrors the query.
 const { query, visibleFavorites, visibleListed } = useSnippetFilters()
-const snippetPreview = useSnippetPreview()
-const { preview, onRowEnter, onRowLeave, onCardEnter, onCardLeave, dismiss } = snippetPreview
-const { openEditor, openDiagram, copyPreview, copied } = snippetPreview
 
 watch(
   () => props.search,
@@ -48,8 +43,6 @@ const items = computed(() => [...byTag(visibleFavorites.value), ...byTag(visible
 const storeGroup = (entry) => (entry.favorite ? 'favorites' : 'listed')
 const groupOf = (entry, section) => `${storeGroup(entry)}|${section}`
 const indexOf = (entry) => store[storeGroup(entry)].indexOf(entry)
-// The automatic format tag stays findable but makes no section of its own.
-const ownTags = (entry) => entry.tags.filter((t) => t !== languageOf(entry))
 
 const reorder = provideRowReorder((group, from, to) =>
   ui.markMovedRow(store.reorder(group.split('|')[0], from, to))
@@ -128,26 +121,10 @@ function newSnippet() {
             :favorite="item.favorite"
             :group="groupOf(item, section)"
             :index="indexOf(item)"
-            @hover-title="onRowEnter(item, $event)"
-            @leave-title="onRowLeave"
-            @dragging="dismiss"
           />
         </template>
       </TagTree>
     </div>
-
-    <!-- Fixed-positioned (escapes the sidebar scroll), so it lives INSIDE the
-         single section root — a second root node breaks the parent's v-show. -->
-    <SnippetPreviewCard
-      v-if="preview"
-      :preview="preview"
-      :copied="!!copied"
-      @mouseenter="onCardEnter"
-      @mouseleave="onCardLeave"
-      @edit="openEditor"
-      @view="openDiagram"
-      @copy="copyPreview"
-    />
   </section>
 </template>
 

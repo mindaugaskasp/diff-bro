@@ -262,8 +262,28 @@ describe('snippetStore — tags model', () => {
     const e = store.entries[0]
     expect(e.name).toBe('Renamed')
     expect(e.language).toBe('python')
-    expect(e.tags).toEqual(['b', 'c'])
+    expect(e.tags).toEqual(['b', 'c', 'python'])
     await expect(store.load(id)).resolves.toBe('new content')
+  })
+
+  // #218: the document head hands back only the user's own tags, so update() re-applies the format tag.
+  it("update() keeps the format tag when given only the snippet's own tags", async () => {
+    const store = useSnippetStore()
+    const content = '<?php echo 1;'
+    const id = await store.add({ name: 'Test', content, language: 'php', tags: ['work'] })
+    expect(store.entries[0].tags).toEqual(['work', 'php'])
+    await store.update(id, { name: 'Test', content, language: 'php', tags: ['work', 'new'] })
+    expect(store.entries[0].tags).toEqual(['work', 'new', 'php'])
+  })
+
+  it('a full set of own tags is kept whole; the format tag is the one the cap drops', async () => {
+    const store = useSnippetStore()
+    const own = Array.from({ length: MAX_TAGS }, (_, i) => `t${i}`)
+    const content = '<?php echo 1;'
+    const id = await store.add({ name: 'Full', content, language: 'php', tags: own })
+    expect(store.entries[0].tags).toEqual(own)
+    await store.update(id, { name: 'Full', content, language: 'php', tags: own })
+    expect(store.entries[0].tags).toEqual(own)
   })
 
   // Names are sentence-cased on the way in so the library reads uniformly no

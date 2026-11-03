@@ -189,8 +189,7 @@ export const useSnippetStore = defineStore('snippets', {
         this.keyError = box.error
         return null
       }
-      const ft = formatTagFor(language, content)
-      const applied = this.registerTags(ft ? [ft, ...tags] : tags, tagColors)
+      const applied = this.registerTags([...tags, formatTagFor(language, content)], tagColors)
       const detected = detectSnippetLanguage(content)
       const eff = effectiveLanguage(language, detected)
       this.entries.push({
@@ -276,7 +275,8 @@ export const useSnippetStore = defineStore('snippets', {
       entry.detected = detectSnippetLanguage(content)
       if (language) entry.language = language
       entry.vars = promptVars(languageOf(entry), content)
-      if (tags !== undefined) entry.tags = this.registerTags(tags, tagColors)
+      if (tags !== undefined)
+        entry.tags = this.registerTags([...tags, formatTagFor(entry.language, content)], tagColors)
       if (secret !== undefined) entry.secret = secret === true
       entry.iv = box.iv
       entry.data = box.data

@@ -170,23 +170,6 @@ test('the empty pane sits on the left when the LEFT side is missing', async ({ a
   }
 })
 
-// The hover preview is anchored to the row you start the drag from, so it sat
-// directly over the area being dragged TO. Nothing else closed it: the pointer
-// never leaves the row before the drag takes over.
-test('the hover preview gets out of the way once a drag starts', async ({ page }) => {
-  const row = page.locator('.row', { hasText: DIAGRAM }).first()
-  const anchor = row.locator('[data-preview-anchor]').first()
-  await ((await anchor.count()) ? anchor : row).hover()
-  await expect(page.locator('.preview')).toBeVisible({ timeout: 5000 })
-
-  // dragstart with the pointer STILL on the row: no hover-out fires, so the
-  // @dragging wiring is the only thing that can close the card. Moving the
-  // mouse away first made this pass with the feature deleted.
-  await row.dispatchEvent('dragstart')
-  await expect(page.locator('.preview')).toHaveCount(0, { timeout: 1000 })
-  expect(await row.evaluate((el) => el.matches(':hover'))).toBe(true)
-})
-
 // The card said what would happen; nothing said WHERE. The pane draws the
 // landing area itself while a row is over it — measured, because "is the drop
 // zone visible" is a rendered property, not a state flag.

@@ -10,7 +10,7 @@ import { formatSql } from '../utils/sqlFormat'
 import { repairMermaid } from '../utils/mermaid'
 import { useUiStore } from '../stores/uiStore'
 import { isSecret } from '../utils/secretSnippet'
-import { isSameTagSet } from '../utils/snippetState'
+import { isSameTagSet, ownTags } from '../utils/snippetState'
 import { fillVars } from '../utils/templateVars'
 
 // Mermaid's entry repairs rather than pretty-prints — see repairMermaid.
@@ -30,7 +30,7 @@ function initialFields(editing, existing) {
   return {
     name: existing.name ?? '',
     content: '',
-    tags: existing.tags ?? [],
+    tags: ownTags(existing),
     language: existing.language || 'auto'
   }
 }
