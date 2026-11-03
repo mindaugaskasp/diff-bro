@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  isEnabled,
   languageStatus,
   readConfig,
   sanitizeConfig,
@@ -54,6 +55,15 @@ describe('withLanguage', () => {
     const next = withLanguage(sanitizeConfig(null), 'php', { enabled: true, path: '/bin/php' })
     expect(next.languages.php).toMatchObject({ enabled: true, path: '/bin/php' })
     expect(next.languages.python).toEqual(OFF)
+  })
+})
+
+// Change… swaps the program of a language already on; it must never be the way one turns on.
+describe('isEnabled', () => {
+  it('answers for the language asked about', () => {
+    const config = withLanguage(sanitizeConfig(null), 'php', { enabled: true, path: '/bin/php' })
+    expect(isEnabled(config, 'php')).toBe(true)
+    expect(isEnabled(config, 'python')).toBe(false)
   })
 })
 

@@ -30,6 +30,7 @@ export function withLanguage(config, language, patch) {
 }
 
 export const languageStatus = (config) => config.languages
+export const isEnabled = (config, language) => config.languages[language]?.enabled === true
 
 export function readConfig(file) {
   try {
