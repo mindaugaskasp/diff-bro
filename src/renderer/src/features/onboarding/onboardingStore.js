@@ -56,6 +56,7 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.examples = null
       this.snippetId = null
       this.doneCard = null
+      useUiStore().prefillFillDates = id === 'snippets'
     },
     replay() {
       useUiStore().showSettingsDialog = false
@@ -115,6 +116,7 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.tours = endedTours(this.tours, this.running?.id ?? 'core', outcome)
       if (!this.running || this.running.id === 'core') this.offer = false
       this.running = null
+      useUiStore().prefillFillDates = false
       this.persist()
     },
     noteOwnComparison() {

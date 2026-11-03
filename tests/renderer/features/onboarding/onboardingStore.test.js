@@ -176,6 +176,22 @@ describe('the tours after the core one', () => {
     expect(tour.running?.id).toBe('snippets')
   })
 
+  it('the Snippets tour fills the date in for its blanks, and stops once it ends', async () => {
+    const tour = await finishedCore()
+    const ui = useUiStore()
+    expect(ui.prefillFillDates).toBe(false)
+    await tour.startTour('snippets')
+    expect(ui.prefillFillDates).toBe(true)
+    tour.skip()
+    expect(ui.prefillFillDates).toBe(false)
+  })
+
+  it('other tours leave the Fill in dialog as it is', async () => {
+    const tour = await finishedCore()
+    await tour.startTour('diagrams')
+    expect(useUiStore().prefillFillDates).toBe(false)
+  })
+
   it('records the outcome under the tour that ran', async () => {
     const tour = await finishedCore()
     await tour.startTour('snippets')

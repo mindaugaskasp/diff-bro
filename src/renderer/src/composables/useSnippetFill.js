@@ -13,7 +13,12 @@ export function useSnippetFill() {
   const pending = store.pendingFill ?? { content: '' }
   const name = pending.name ?? 'snippet'
   const vars = parseTemplateVars(pending.content)
-  const values = ref(presetFills(vars, { locale: useSettingsStore().activeLocale }))
+  const blanks = Object.fromEntries(vars.map((v) => [v, '']))
+  const values = ref(
+    useUiStore().prefillFillDates
+      ? presetFills(vars, { locale: useSettingsStore().activeLocale })
+      : blanks
+  )
 
   const close = () => (store.pendingFill = null)
   async function copyFilled() {

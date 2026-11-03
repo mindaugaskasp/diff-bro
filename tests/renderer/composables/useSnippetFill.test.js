@@ -15,13 +15,20 @@ beforeEach(() => {
 })
 
 describe('useSnippetFill', () => {
-  it('asks for every blank, with the date already in', () => {
+  it('outside the Snippets tour, every blank starts empty', () => {
+    const fill = useSnippetFill()
+    expect(fill.values.value).toEqual({ service: '', today: '' })
+  })
+
+  it('during the Snippets tour, asks for every blank with the date already in', () => {
+    useUiStore().prefillFillDates = true
     const fill = useSnippetFill()
     expect(fill.vars).toEqual(['service', 'today'])
     expect(fill.values.value).toEqual({ service: '', today: iso(new Date()) })
   })
 
   it('Copy filled copies the finished line, closes, and says which snippet it was', async () => {
+    useUiStore().prefillFillDates = true
     const fill = useSnippetFill()
     fill.values.value.service = 'billing'
     await fill.copyFilled()
