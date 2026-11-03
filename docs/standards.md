@@ -165,6 +165,10 @@ regression test from decoration.
 
    The Claude connection's MCP server adds no sandbox exit: no `openExternal`,
    and no path handed to the OS. Its inbox and grant paths are computed in main.
+   The one exception is the launch macOS delivers to it by mistake:
+   `mcpHandover.js` passes it to `/usr/bin/open -n -a` for its own bundle,
+   through `execFile`, with only the `open-file` paths macOS sent and nothing
+   from the Claude app.
    **Connect** in Settings ▸ Claude adds two, both confirmed in main
    (`claudeConnect.js`):
    - an `execFile` of the user's `claude` CLI, found at fixed install paths,
