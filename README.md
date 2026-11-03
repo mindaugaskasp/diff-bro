@@ -58,7 +58,7 @@ Everything in detail: [features](docs/features.md).
 
 ## Private by design
 
-- **Nothing leaves your computer.** The app makes no network requests at all.
+- **Nothing leaves your computer.** The app makes no network requests on its own.
 - **Encrypted at rest.** Saved work is locked with a key your operating system keeps.
 - **Shared only with who you pick.** Details in the [security model](docs/security.md).
 
