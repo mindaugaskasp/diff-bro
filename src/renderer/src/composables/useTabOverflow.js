@@ -30,7 +30,8 @@ export function useTabOverflow(track, activeId) {
     if (track.value) observer.observe(track.value)
   })
   onBeforeUnmount(() => observer?.disconnect())
-  watch(activeId, () => requestAnimationFrame(revealActive))
+  // Post-flush, not a frame later: in between, the tab read as active yet off-screen (#223).
+  watch(activeId, revealActive, { flush: 'post' })
 
   return { overflowing, measure, revealActive }
 }

@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createApp, h, ref } from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { createApp, h, nextTick, ref } from 'vue'
 import { useTabOverflow } from '../../../src/renderer/src/composables/useTabOverflow'
 
 let onResize = null
@@ -10,7 +10,7 @@ afterEach(() => {
   delete globalThis.ResizeObserver
 })
 
-function mountStrip() {
+function mountStrip(activeId) {
   globalThis.ResizeObserver = class {
     constructor(cb) {
       onResize = cb
@@ -18,28 +18,44 @@ function mountStrip() {
     observe() {}
     disconnect() {}
   }
-  const track = document.createElement('div')
-  const active = document.createElement('div')
-  active.dataset.active = 'true'
-  active.scrollIntoView = vi.fn()
-  track.append(active)
-  document.body.append(track)
+  const scrolled = []
   app = createApp({
     setup() {
-      useTabOverflow(ref(track), () => 'a')
-      return () => h('div')
+      const track = ref(null)
+      useTabOverflow(track, () => activeId.value)
+      return () =>
+        h(
+          'div',
+          { ref: track },
+          ['a', 'b'].map((id) =>
+            h('div', {
+              key: id,
+              'data-active': String(id === activeId.value),
+              onVnodeMounted: ({ el }) => (el.scrollIntoView = (opts) => scrolled.push([id, opts]))
+            })
+          )
+        )
     }
   })
-  app.mount(document.createElement('div'))
-  return active
+  app.mount(document.body.appendChild(document.createElement('div')))
+  return scrolled
 }
 
 describe('useTabOverflow', () => {
   // The track narrows when the actions beside it change or the chevrons appear;
   // the tab the reader is on must not be left half under the edge.
   it('brings the active tab back into view when the track resizes', () => {
-    const active = mountStrip()
+    const scrolled = mountStrip(ref('a'))
     onResize()
-    expect(active.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
+    expect(scrolled).toEqual([['a', { block: 'nearest', inline: 'nearest' }]])
+  })
+
+  // #223: a frame between the patch and the reveal showed the new tab active but off-screen.
+  it('reveals the newly active tab in the same flush that marks it active', async () => {
+    const activeId = ref('a')
+    const scrolled = mountStrip(activeId)
+    activeId.value = 'b'
+    await nextTick()
+    expect(scrolled.map(([id]) => id)).toEqual(['b'])
   })
 })
