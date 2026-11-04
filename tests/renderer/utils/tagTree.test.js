@@ -17,6 +17,47 @@ describe('tagPath', () => {
   })
 })
 
+describe('buildTagTree — nest', () => {
+  const items = [
+    item('scale', ['prod', 'kubernetes']),
+    item('restart', ['kubernetes']),
+    item('vacuum', ['data/prod', 'ops/k8s/prod']),
+    item('rollout', ['ops/k8s', 'ops/k8s/prod'])
+  ]
+  const tree = buildTagTree(items, { nest: true })
+  const at = (path) => {
+    let nodes = tree.sections
+    let node = null
+    for (const part of path.split('/')) {
+      node = nodes.find((n) => n.label === part)
+      nodes = node?.children ?? []
+    }
+    return node
+  }
+
+  it('lists an item with several tags once, under its tags nested in name order', () => {
+    expect(ids(at('kubernetes').items)).toEqual(['restart'])
+    expect(ids(at('kubernetes/prod').items)).toEqual(['scale'])
+    expect(at('prod')).toBeUndefined()
+  })
+
+  it('nests whole tag paths, deeper than one tag may be written', () => {
+    expect(ids(at('data/prod/ops/k8s/prod').items)).toEqual(['vacuum'])
+    expect(ids(at('ops/k8s/prod').items)).toEqual(['rollout'])
+  })
+
+  it('a tag that is a parent of another of the same item adds no level', () => {
+    const k8s = buildTagTree([items[3]], { nest: true }).sections[0]
+    expect(k8s.children[0].children[0].path).toBe('ops/k8s/prod')
+    expect(ids(k8s.children[0].children[0].items)).toEqual(['rollout'])
+    expect(ids(k8s.children[0].items)).toEqual([])
+  })
+
+  it('is off by default', () => {
+    expect(buildTagTree(items).sections.map((s) => s.label)).toContain('prod')
+  })
+})
+
 describe('isTagTooDeep', () => {
   it('allows three levels and refuses a fourth', () => {
     expect(MAX_TAG_DEPTH).toBe(3)

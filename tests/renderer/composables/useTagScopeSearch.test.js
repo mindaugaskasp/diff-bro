@@ -50,4 +50,43 @@ describe('useTagScopeSearch', () => {
     expect(s.scope.value).toBe('ops')
     expect(e.preventDefault).not.toHaveBeenCalled()
   })
+
+  it('focusing the empty box lists every tag scope without a #', () => {
+    const s = setup()
+    s.openList()
+    expect(s.options.value).toEqual(['data', 'ops', 'ops/k8s', 'ops/k8s/prod'])
+  })
+
+  it('typing keeps the opened list and narrows it', () => {
+    const s = setup()
+    s.openList()
+    s.query.value = 'k8'
+    expect(s.options.value).toEqual(['ops/k8s', 'ops/k8s/prod'])
+  })
+
+  it('Escape and blur close the opened list without touching the query', () => {
+    const s = setup()
+    s.openList()
+    s.query.value = 'op'
+    s.onKeydown(key('Escape'))
+    expect(s.options.value).toEqual([])
+    expect(s.query.value).toBe('op')
+    s.openList()
+    s.closeList()
+    expect(s.options.value).toEqual([])
+  })
+
+  it('does not open while a scope is already set', () => {
+    const s = setup('', 'ops')
+    s.openList()
+    expect(s.options.value).toEqual([])
+  })
+
+  it('picking from the opened list scopes and closes it', () => {
+    const s = setup()
+    s.openList()
+    s.pick('data')
+    expect(s.scope.value).toBe('data')
+    expect(s.options.value).toEqual([])
+  })
 })

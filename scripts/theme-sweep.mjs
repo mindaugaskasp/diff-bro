@@ -843,7 +843,7 @@ const SURFACES = [
       const doc = page.locator('.snippet-doc:visible')
       const actions = page.locator('#toolbar-doc-actions')
       const history = actions.getByRole('button', { name: 'History', exact: true })
-      if (!(await history.isVisible())) {
+      if (!(await history.isEnabled())) {
         await doc.locator('.editor').click()
         await page.keyboard.press('ControlOrMeta+End')
         await page.keyboard.type(' ')
@@ -1224,6 +1224,8 @@ const SURFACES = [
     probes: {
       'tab name': ['.diff-tabs .tab.active .name', TEXT],
       'tab kind glyph': ['.diff-tabs .tab.active .kind', DIM],
+      'new-tab +': ['.diff-tabs .add', TEXT],
+      'new-tab keyline': ['.diff-tabs .add', DIM, 'border'],
       'snippet name': ['.snippet-doc .doc-name input', TEXT]
     }
   },

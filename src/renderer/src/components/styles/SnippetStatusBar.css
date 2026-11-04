@@ -21,7 +21,11 @@
 /* The counts give way at narrow widths; the controls on the right never do. */
 .es-side:first-child {
   flex: 0 1 auto;
+}
+.es-counts {
+  min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 .es-side:last-child {
   flex: none;

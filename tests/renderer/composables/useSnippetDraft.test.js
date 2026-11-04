@@ -156,6 +156,60 @@ describe('useSnippetDraft — saving reports to its host', () => {
   })
 })
 
+describe('useSnippetDraft — autosave keeps one version per editing session', () => {
+  async function savedDraft() {
+    const snippets = useSnippetStore()
+    window.api.vaultEncrypt = async () => ({ iv: 'iv', data: 'data' })
+    const id = await snippets.add({ name: 'Notes', content: 'v1' })
+    window.api.vaultDecrypt = async () => 'v1'
+    const host = hostFor({ id })
+    const draft = useSnippetDraft(host)
+    await vi.waitFor(() => expect(draft.content.value).toBe('v1'))
+    draft.startEditing()
+    return { snippets, host, draft, entry: () => snippets.entries[0] }
+  }
+  const tags = { tags: [], tagColors: {} }
+
+  it('autosaves without reporting a save, so editing carries on', async () => {
+    const { host, draft } = await savedDraft()
+    draft.content.value = 'v2'
+    await draft.save(tags, { auto: true })
+    expect(host.saved).toBeNull()
+    expect(draft.isDirty.value).toBe(false)
+  })
+
+  it('records the pre-edit version once, however many autosaves follow', async () => {
+    const { draft, entry } = await savedDraft()
+    draft.content.value = 'v2'
+    await draft.save(tags, { auto: true })
+    draft.content.value = 'v3'
+    await draft.save(tags, { auto: true })
+    expect(entry().history).toHaveLength(1)
+  })
+
+  it('a new editing session records again', async () => {
+    const { draft, entry } = await savedDraft()
+    draft.content.value = 'v2'
+    await draft.save(tags, { auto: true })
+    draft.editMode.value = false
+    await Promise.resolve()
+    draft.startEditing()
+    await Promise.resolve()
+    draft.content.value = 'v3'
+    await draft.save(tags, { auto: true })
+    expect(entry().history).toHaveLength(2)
+  })
+
+  it('a manual save still records a version, as before', async () => {
+    const { draft, entry } = await savedDraft()
+    draft.content.value = 'v2'
+    await draft.save(tags, { auto: true })
+    draft.content.value = 'v3'
+    await draft.save(tags)
+    expect(entry().history).toHaveLength(2)
+  })
+})
+
 // Secret is set from the row menu, so an open document follows the library.
 describe('useSnippetDraft — secret follows the library', () => {
   it('masks the moment the entry is marked secret, and never counts as an edit', async () => {

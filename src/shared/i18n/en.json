@@ -523,6 +523,7 @@
     "zoomOut": "Zoom out",
     "zoomIn": "Zoom in",
     "resetToFit": "Reset to fit",
+    "laidOutApart": "Each side laid out on its own",
     "alignedAtTheFirstNode": "Aligned at the first node — below it each revision was laid out on its own, so an unchanged node can still sit at a different height.",
     "nodes": "Nodes",
     "edges": "Edges",
@@ -799,6 +800,7 @@
     "settingsSections": "Settings sections",
     "theme": "Theme",
     "showTagsOnSidebarRows": "Show tags on sidebar rows",
+    "nestMultiTag": "List an item with several tags once, nested by its tags",
     "playAShutterSoundWhen": "Play a shutter sound when a diff image is captured",
     "quickLookUp": "Quick look-up",
     "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window — it works even when Diff Bro is minimized. Click the field, then press the key combination you want.",
@@ -911,6 +913,7 @@
     "resizeTip": "Drag to resize · double-click to reset",
     "toCurrent": "→ Current",
     "isCurrent": "This is the current version",
+    "noEarlier": "No earlier versions yet. The next change keeps this one.",
     "added": "+{n}",
     "removed": "−{n}"
   },
@@ -1011,6 +1014,9 @@
     "useDefault": "Use default",
     "changeFolder": "Change folder…",
     "changingTheFolderRestartsDiff": "Changing the folder restarts Diff Bro.",
+    "restartTitle": "App will restart to change file location",
+    "restartDetail": "Your data is copied to {dir}, then Diff Bro restarts there.",
+    "proceed": "Proceed",
     "onLaunch": "On launch",
     "reopenTheComparisonsThatWere": "Reopen the comparisons that were open when I quit",
     "onByDefaultTurningIt": "On by default. Turning it off also forgets the ones already stored.",
@@ -1639,7 +1645,8 @@
     "groundDark": "Dark",
     "interfaceLanguage": "Interface language",
     "behaviour": "Behaviour",
-    "rowTagsHint": "The tag shelf and the search box still filter by tag."
+    "rowTagsHint": "The tag shelf and the search box still filter by tag.",
+    "nestMultiTagHint": "Off: it is listed under each of its tags."
   },
   "settingsTours": {
     "title": "Tours",
@@ -1893,7 +1900,10 @@
   },
   "snippetDocument": {
     "compareWith": "Compare with…",
-    "clickToEdit": "Click to edit"
+    "clickToEdit": "Click to edit",
+    "formatTitle": "Format this snippet?",
+    "formatNote": "{name} is saved. Formatting replaces its content; {undo} undoes it.",
+    "format": "Format"
   },
   "keysPanel": {
     "addFromClipboard": "Add from clipboard",

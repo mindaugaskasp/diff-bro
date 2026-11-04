@@ -152,6 +152,13 @@ where the concept lives in this repo.
   tours, cards and dialogs. Knew this already drops it for good; **Show me**
   rings the control it means (`features/onboarding/tips.js`).
 
+## Editing session
+
+From clicking into a saved snippet until leaving edit mode. Autosave writes
+every five seconds within it, but History keeps one version per session — the
+text as it was when the session began — so the 20-version cap is not spent on
+keystrokes. A manual Save still keeps a version, as before.
+
 ## Union view
 
 The Mermaid comparison renders **one** diagram carrying both revisions rather

@@ -1,4 +1,12 @@
-import { test, expect, openNewSnippet, showPanel, docActions } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  openNewSnippet,
+  showPanel,
+  docActions,
+  openSettingsPage,
+  saveSettings
+} from './fixtures.mjs'
 
 // #121: tags are paths, and the Snippets list is sections by tag, nested three deep.
 async function snippetWith(page, name, tags) {
@@ -64,6 +72,43 @@ test('# scopes the list to one branch, and the chip takes it off', async ({ page
 
   await chip.getByRole('button').click()
   await expect(section(page, 'ops')).toBeVisible()
+})
+
+test('clicking the empty search lists the tags; typing narrows them and the rows', async ({
+  page
+}) => {
+  const box = page.locator('.usb-top input[type="search"]')
+  await box.click()
+  const list = page.locator('.scope-list')
+  await expect(list).toBeVisible()
+  await expect(list.locator('li', { hasText: /^data$/ })).toBeVisible()
+
+  await page.keyboard.type('restart')
+  await expect(page.locator('.snippets-section .row')).toHaveCount(1)
+  await expect(list).toHaveCount(0)
+  await box.fill('dat')
+  await expect(list.locator('li')).toHaveText(['data', 'data/prod'])
+
+  await page.keyboard.press('Escape')
+  await expect(list).toHaveCount(0)
+  await expect(box).toHaveValue('dat')
+})
+
+test('with nesting on, an item with several tags is listed once, under them nested', async ({
+  page
+}) => {
+  test.setTimeout(120_000)
+  const vacuum = page.locator('.snippets-section .row', { hasText: 'Postgres vacuum' })
+  await expect(vacuum).toHaveCount(2)
+
+  const dialog = await openSettingsPage(page, 'Behaviour')
+  await dialog
+    .getByRole('checkbox', { name: 'List an item with several tags once, nested by its tags' })
+    .check()
+  await saveSettings(page)
+
+  await expect(vacuum).toHaveCount(1)
+  await expect(rowsUnder(page, 'data/prod/ops/k8s/prod')).toHaveText(/Postgres vacuum/)
 })
 
 test('a closed section stays closed after a reload', async ({ page }) => {

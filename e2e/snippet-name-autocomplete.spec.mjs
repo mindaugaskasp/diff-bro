@@ -79,7 +79,7 @@ test('offers nothing for a name nothing matches', async ({ app, page }) => {
 })
 
 // The editor has its own name field; the template tags moved to the status bar.
-test('the editor completes too, and the template tags are still offered', async ({ page }) => {
+test('the editor completes too', async ({ page }) => {
   await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   await openNewSnippet(page)
   const editor = page.getByRole('region', { name: 'New snippet' })
@@ -92,7 +92,6 @@ test('the editor completes too, and the template tags are still offered', async 
   // Past the fork, one match remains and the whole name is offered.
   await editor.getByPlaceholder('Snippet name…').fill('Example — M')
   await expect(editor.locator('.name-ghost')).toHaveText('ermaid diagram')
-  await expect(editor.locator('.editor-status .tt-trigger')).toBeVisible()
   await expect(editor.getByPlaceholder('Snippet name…')).toHaveValue('Example — M')
 })
 

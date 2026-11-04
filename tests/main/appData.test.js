@@ -21,7 +21,7 @@ let dataDir
 
 vi.mock('electron', () => ({
   app: { getPath: () => dataDir, relaunch: vi.fn(), exit: vi.fn() },
-  dialog: { showOpenDialog: vi.fn() },
+  dialog: { showOpenDialog: vi.fn(), showMessageBox: vi.fn() },
   ipcMain: {
     on: (channel, fn) => syncHandlers.set(channel, fn),
     handle: (channel, fn) => handlers.set(channel, fn)
@@ -29,6 +29,7 @@ vi.mock('electron', () => ({
   shell: { openPath: vi.fn() }
 }))
 
+const { dialog } = await import('electron')
 const { readSettings, registerAppDataIpc } = await import('../../src/main/appData')
 const { STORE_NAMES } = await import('../../src/main/dataFiles')
 
@@ -121,5 +122,41 @@ describe('the real stores', () => {
   it('lets main read the settings the renderer saved', () => {
     save('settings', JSON.stringify({ fileSizeLimitsMb: { text: 12 } }))
     expect(readSettings()).toEqual({ fileSizeLimitsMb: { text: 12 } })
+  })
+})
+
+// Moving the data folder restarts the app, so it is confirmed in main between
+// the pick and the move: a confirm after the move would be too late.
+describe('datadir:choose and datadir:reset', () => {
+  const pointer = () => join(dataDir, 'data-location.json')
+  const choose = () => handlers.get('datadir:choose')()
+  const reset = () => handlers.get('datadir:reset')()
+  beforeEach(() => {
+    dialog.showOpenDialog.mockReset()
+    dialog.showMessageBox.mockReset()
+  })
+
+  it('asks before moving, naming the folder, and Cancel moves nothing', async () => {
+    const target = join(root, 'elsewhere')
+    dialog.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [target] })
+    dialog.showMessageBox.mockResolvedValue({ response: 1 })
+    expect(await choose()).toEqual({ canceled: true })
+    expect(dialog.showMessageBox.mock.calls[0][0].detail).toContain(target)
+    expect(existsSync(pointer())).toBe(false)
+    expect(existsSync(target)).toBe(false)
+  })
+
+  it('Proceed moves the data and records the new folder', async () => {
+    const target = join(root, 'moved')
+    dialog.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [target] })
+    dialog.showMessageBox.mockResolvedValue({ response: 0 })
+    expect(await choose()).toEqual({ ok: true, dir: target })
+    expect(JSON.parse(readFileSync(pointer(), 'utf-8')).dir).toBe(target)
+  })
+
+  it('Use default asks too, and Cancel leaves the folder where it is', async () => {
+    dialog.showMessageBox.mockResolvedValue({ response: 1 })
+    expect(await reset()).toEqual({ canceled: true })
+    expect(dialog.showMessageBox).toHaveBeenCalledTimes(1)
   })
 })

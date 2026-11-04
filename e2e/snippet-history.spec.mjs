@@ -54,17 +54,27 @@ async function openHistory(page, name) {
   return page.getByRole('complementary', { name: /^History — / })
 }
 
+test('History is in the ⋯ menu of a snippet with no versions yet', async ({ page }) => {
+  await createSnippet(page, 'Fresh note', 'replicas: 1')
+  await page.locator('.snippets-section .row', { hasText: 'Fresh note' }).first().click()
+  await docActions(page).getByRole('button', { name: 'More snippet actions' }).click()
+  await page.getByRole('menuitem', { name: 'History' }).click()
+  const panel = page.getByRole('complementary', { name: /^History — / })
+  await expect(panel).toBeVisible()
+  await expect(panel).toContainText('No earlier versions yet')
+})
+
 test('two edits become two versions, each diffed against its predecessor', async ({
   app,
   page
 }) => {
   await createSnippet(page, 'Rollout plan', 'replicas: 1')
-  // A snippet with no history yet offers no History button.
+  // A snippet with no history yet keeps the History button's place, disabled.
   await page.locator('.snippets-section .row', { hasText: 'Rollout plan' }).first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
-  await expect(docActions(page).getByRole('button', { name: 'History', exact: true })).toHaveCount(
-    0
-  )
+  await expect(
+    docActions(page).getByRole('button', { name: 'History', exact: true })
+  ).toBeDisabled()
   // The ghost Close by its text — the header × carries the same accessible name.
   await closeSnippet(page)
 

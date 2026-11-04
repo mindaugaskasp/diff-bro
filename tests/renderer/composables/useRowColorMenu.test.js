@@ -90,6 +90,19 @@ describe('useRowColorMenu — the keyboard', () => {
     expect(b.picked).toEqual([null])
   })
 
+  it('↵ on the colour the row already has clears it', () => {
+    const { menu, picked } = harness('blue')
+    press(menu, 'Enter')
+    expect(picked).toEqual([null])
+  })
+
+  it('choosing the applied colour by pointer clears it; another colour applies', () => {
+    const { menu, picked } = harness('green')
+    menu.choose('green')
+    menu.choose('blue')
+    expect(picked).toEqual([null, 'blue'])
+  })
+
   it('Escape closes without applying', () => {
     const { menu, picked, closed } = harness('blue')
     press(menu, 'Escape')

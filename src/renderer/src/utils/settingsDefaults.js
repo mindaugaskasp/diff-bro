@@ -132,6 +132,7 @@ export function settingsStateFrom(parsed, outside) {
     // a library where nearly everything carries the same tags, and it hides the
     // WORD only — the tag sections and the search still find by them.
     showRowTags: parsed.showRowTags !== false,
+    nestMultiTag: parsed.nestMultiTag === true,
     rotateThemeDaily: parsed.rotateThemeDaily === true,
     fileSizeLimitsMb: readFileLimits(parsed),
     ...readNumericLimits(parsed),

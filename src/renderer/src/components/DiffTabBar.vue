@@ -154,15 +154,16 @@ function onTabKey(e, tab) {
           @auxclick.middle.prevent="tabs.requestClose(tab.id)"
           @keydown="onTabKey($event, tab)"
         >
-          <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
           <AppIcon v-if="isSnippetTab(tab)" name="code" class="kind" />
           <span class="name">{{ tabLabel(tab) }}</span>
         </button>
         <button
           class="tab-close"
+          :class="{ unsaved: tabs.unsaved(tab) }"
           :aria-label="$t('diffTabBar.closeTab', { name: tabLabel(tab) })"
           @click="tabs.requestClose(tab.id)"
         >
+          <span v-if="tabs.unsaved(tab)" class="dirty" aria-hidden="true"></span>
           <AppIcon name="x" />
         </button>
       </div>

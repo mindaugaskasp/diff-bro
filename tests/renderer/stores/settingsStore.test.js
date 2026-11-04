@@ -107,6 +107,14 @@ describe('settingsStore', () => {
 
   // The tag word beside a name on every sidebar row. On unless it has been
   // turned off — a missing key is a library that never asked, not a hidden one.
+  it('lists a multi-tag item under each tag by default, and remembers nesting', () => {
+    const s = useSettingsStore()
+    expect(s.nestMultiTag).toBe(false)
+    s.setNestMultiTag(true)
+    setActivePinia(createPinia())
+    expect(useSettingsStore().nestMultiTag).toBe(true)
+  })
+
   it('shows row tags by default, and remembers being told not to', () => {
     const s = useSettingsStore()
     expect(s.showRowTags).toBe(true)

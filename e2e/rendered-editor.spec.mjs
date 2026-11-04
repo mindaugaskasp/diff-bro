@@ -24,6 +24,7 @@ async function startSnippet(page, { name, language, body }) {
     .locator('.editor-status')
     .getByRole('combobox', { name: 'Syntax' })
     .selectOption(language)
+  await plainButton(page).click()
   await editor.locator('.editor').click()
   await page.keyboard.type(body)
   return editor
@@ -43,6 +44,18 @@ async function readSource(page) {
   await expect(page.locator('.monaco-editor')).toBeVisible()
   return sourceText(page)
 }
+
+test('picking Jira on an unsaved snippet shows the rendered editor at once', async ({ page }) => {
+  await openNewSnippet(page)
+  const editor = editorDialog(page)
+  await editor.getByPlaceholder('Snippet name…').fill('Release notes')
+  await editor
+    .locator('.editor-status')
+    .getByRole('combobox', { name: 'Syntax' })
+    .selectOption('jira')
+  await expect(renderedView(page)).toBeVisible()
+  await expect(renderedView(page)).toHaveAttribute('contenteditable', 'true')
+})
 
 test('the rendered Markdown view takes a caret and writes back to the source', async ({ page }) => {
   await startSnippet(page, { name: 'WYSIWYG MD', language: 'markdown', body: '# Title' })

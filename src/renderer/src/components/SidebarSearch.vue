@@ -22,7 +22,7 @@ const query = computed({
   set: (v) => emit('update:modelValue', v)
 })
 const scope = computed({ get: () => props.scope, set: (v) => emit('update:scope', v) })
-const { options, cursor, pick, startHash, onKeydown } = useTagScopeSearch({
+const { options, cursor, pick, startHash, openList, closeList, onKeydown } = useTagScopeSearch({
   query,
   scope,
   tags: () => props.tags
@@ -56,6 +56,9 @@ function hash() {
         :aria-expanded="options.length > 0"
         :placeholder="placeholder"
         spellcheck="false"
+        @focus="openList"
+        @click="openList"
+        @blur="closeList"
         @keydown="onKeydown"
       />
       <button

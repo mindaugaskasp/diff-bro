@@ -86,7 +86,7 @@ test('File ▸ Open File as Snippet… opens the file as an unsaved snippet tab'
     await openMenu(page, 'File', 'Open File as Snippet…')
     const doc = page.getByRole('region', { name: 'New snippet' })
     await expect(doc.getByPlaceholder('Snippet name…')).toHaveValue('notes.md')
-    await expect(doc.locator('.view-lines')).toContainText('# heading')
+    await expect(doc.locator('.rendered-editor h1')).toHaveText('heading')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
