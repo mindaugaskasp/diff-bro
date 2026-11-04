@@ -48,6 +48,27 @@ test('Format is in the ⋯ menu', async ({ page }) => {
   await expect(doc.locator('.view-lines')).toContainText('"replicas": 3')
 })
 
+test('Format on a saved snippet asks first, and Cmd+Z undoes it', async ({ page }) => {
+  await newSnippet(page, 'Config', '{"replicas":3}')
+  await save(page)
+  const view = page.getByRole('region', { name: 'Snippet', exact: true })
+  await snippetMoreMenu(page).click()
+  await page.getByRole('menuitem', { name: 'Format' }).click()
+  const ask = page.getByRole('dialog', { name: 'Format this snippet?' })
+  await expect(ask).toBeVisible()
+  await ask.getByRole('button', { name: 'Cancel' }).click()
+  await expect(view.locator('.view-lines')).toContainText('{"replicas":3}')
+
+  await snippetMoreMenu(page).click()
+  await page.getByRole('menuitem', { name: 'Format' }).click()
+  await ask.getByRole('button', { name: 'Format', exact: true }).click()
+  const edit = page.getByRole('region', { name: 'Edit snippet' })
+  await expect(edit.locator('.view-lines')).toContainText('"replicas": 3')
+  await edit.locator('.editor .view-lines').click()
+  await page.keyboard.press('ControlOrMeta+z')
+  await expect(edit.locator('.view-lines')).toContainText('{"replicas":3}')
+})
+
 test('the gutter fits its digits', async ({ page }) => {
   const doc = await newSnippet(page, 'Restart api', 'kubectl rollout restart deployment/api')
   const margin = await doc.locator('.monaco-editor .margin').boundingBox()

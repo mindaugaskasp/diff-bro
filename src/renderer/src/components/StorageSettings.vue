@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { useTabsStore } from '../stores/tabsStore'
 import SettingToggle from './SettingToggle.vue'
 import BackupSettings from './BackupSettings.vue'
+import { useDataDirMove } from '../composables/useDataDirMove'
 
 // The "Storage" settings pane: where this install's data lives, and what comes
 // back the next time the app opens.
@@ -21,24 +22,17 @@ async function refresh() {
 onMounted(refresh)
 
 // Moving the data folder restarts so key caches rebuild from the new location.
-async function choose() {
+const move = useDataDirMove()
+async function run(action) {
   busy.value = true
   try {
-    const res = await window.api.dataDirChoose()
-    if (res.ok) await window.api.relaunch()
+    await action()
   } finally {
     busy.value = false
   }
 }
-async function reset() {
-  busy.value = true
-  try {
-    const res = await window.api.dataDirReset()
-    if (res.ok) await window.api.relaunch()
-  } finally {
-    busy.value = false
-  }
-}
+const choose = () => run(move.choose)
+const reset = () => run(move.reset)
 function reveal() {
   window.api.dataDirReveal()
 }

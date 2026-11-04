@@ -2,6 +2,7 @@ import { computed, nextTick, onMounted, watch } from 'vue'
 import { useTabsStore } from '../stores/tabsStore'
 import { useUiStore } from '../stores/uiStore'
 import { useInlineEdit } from './useInlineEdit'
+import { useSnippetAutosave } from './useSnippetAutosave'
 
 /**
  * The snippet document's ways into editing (content, name, tags, Format,
@@ -45,6 +46,13 @@ export function useSnippetInlineEdit({ draft, tab, head, save, onDropFile }) {
     () => ui.snippetSaveRequest,
     () => tabs.activeId === tab.id && canSave.value && save()
   )
+  useSnippetAutosave({
+    isNew: draft.isNew,
+    isDirty: draft.isDirty,
+    editMode: draft.editMode,
+    canSave,
+    save: () => draft.save({ tags: draft.tags.value, tagColors: {} }, { auto: true })
+  })
 
   return {
     canSave,
@@ -60,10 +68,6 @@ export function useSnippetInlineEdit({ draft, tab, head, save, onDropFile }) {
       draft.startEditing()
       draft.chosenLanguage.value = value
     },
-    dropFile(e) {
-      if (draft.masked.value) return
-      draft.startEditing()
-      onDropFile(e)
-    }
+    dropFile: onDropFile
   }
 }

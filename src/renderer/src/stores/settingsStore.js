@@ -94,6 +94,7 @@ export const useSettingsStore = defineStore('settings', {
         'settings',
         JSON.stringify({
           showRowTags: this.showRowTags,
+          nestMultiTag: this.nestMultiTag,
           rotateThemeDaily: this.rotateThemeDaily,
           fileSizeLimitsMb: this.fileSizeLimitsMb,
           maxSnippetSizeKb: this.maxSnippetSizeKb,
@@ -130,6 +131,10 @@ export const useSettingsStore = defineStore('settings', {
     },
     setShowRowTags(value) {
       this.showRowTags = !!value
+      this.persist()
+    },
+    setNestMultiTag(value) {
+      this.nestMultiTag = !!value
       this.persist()
     },
     setRotateThemeDaily(value) {

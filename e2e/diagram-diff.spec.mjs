@@ -81,7 +81,7 @@ test('two Mermaid files offer a Diagram view that renders one stitched picture',
     await closeViewMenu(page)
     await expect(page.locator('.dg-stage svg')).toHaveCount(2, { timeout: 20000 })
     await expect(page.locator('.dg-pane .dg-ttl').first()).toContainText('before')
-    await expect(page.locator('.dg-drift')).toBeVisible()
+    await expect(page.locator('.status-band .dg-drift')).toBeVisible()
 
     // Turning it off gives ONE layout carrying both revisions, which is what
     // stops an unchanged node drifting between two independent renders.
@@ -224,6 +224,29 @@ test('the Diagram toggle keeps its position when pressed', async () => {
     await toggle.check()
     await expect(panel.getByRole('checkbox', { name: 'Focus on changes' })).toBeVisible()
     expect(Math.abs((await x()) - on)).toBeLessThanOrEqual(1)
+  } finally {
+    await app.close()
+    rmSync(work, { recursive: true, force: true })
+    rmSync(userDataDir, { recursive: true, force: true })
+  }
+})
+
+test('switching Split view does not move the diagram', async () => {
+  const userDataDir = freshUserDataDir()
+  const app = await launchApp(userDataDir)
+  const page = await firstReadyPage(app)
+  const work = await openPair(userDataDir)
+  try {
+    await expect(paneLabel(page, 'right')).toContainText('pipeline-v2.mmd', { timeout: 15000 })
+    await setViewOption(page, /^Diagram$/i)
+    await expect(page.locator('.dg-stage svg')).toHaveCount(2, { timeout: 20000 })
+    const top = async () => Math.round((await page.locator('.dg-stage').boundingBox()).y)
+    const split = await top()
+    await expect(page.locator('.status-band')).toContainText('laid out')
+
+    await setViewOption(page, 'Split view', false)
+    await expect(page.locator('.dg-stage svg')).toHaveCount(1, { timeout: 20000 })
+    expect(await top()).toBe(split)
   } finally {
     await app.close()
     rmSync(work, { recursive: true, force: true })

@@ -136,16 +136,23 @@
    close the active comparison with the accelerator instead of tabbing to an ×
    they cannot see. Reaching it requires hovering the tab. */
 .diff-tabs .tab:hover .tab-close,
-.diff-tabs .tab.active .tab-close {
+.diff-tabs .tab.active .tab-close,
+.diff-tabs .tab-close.unsaved {
   visibility: visible;
+}
+/* The unsaved dot holds the × slot, so marking a tab never widens it. */
+.diff-tabs .tab-close.unsaved .app-icon,
+.diff-tabs .tab-close.unsaved:is(:hover, :focus-visible) .dirty {
+  display: none;
+}
+.diff-tabs .tab-close.unsaved:is(:hover, :focus-visible) .app-icon {
+  display: inline-block;
 }
 .diff-tabs .tab-close:hover {
   background: var(--bg-hover);
   color: var(--text);
 }
 .diff-tabs .scroll {
-  /* Same geometry and skin as .add, which this bar already proves on all 14
-     themes — so the chevrons inherit its contrast rather than adding a pair. */
   border: 0;
   display: inline-flex;
   align-items: center;
@@ -173,24 +180,21 @@
 }
 
 .diff-tabs .add {
-  /* border:0 first — a <button> keeps the UA's 2px black border on any side an
-     override does not name, which painted a black box around the + on every
-     theme. */
-  border: 0;
-  border-left: 1px solid var(--border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: var(--control-h);
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  margin: calc((var(--control-h) - var(--control-h-sm)) / 2) var(--space-2);
   flex: none;
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-dim);
+  color: var(--text);
   cursor: pointer;
 }
 .diff-tabs .add:hover:not(:disabled) {
-  color: var(--text);
-  background: var(--bg-hover);
+  background: var(--btn-face-hover);
 }
 .diff-tabs .add:disabled {
   opacity: 0.4;

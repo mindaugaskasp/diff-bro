@@ -60,6 +60,9 @@ const formatItem = computed(() =>
 const menuItems = computed(() => {
   const off = !props.hasContent || props.secret
   return [
+    ...(props.snippetId
+      ? [{ action: 'history', label: t('snippetEditorActions.history'), icon: 'clock' }]
+      : []),
     { ...formatItem.value, disabled: !props.canFormat },
     ...(canCopyFile.value
       ? [
@@ -80,9 +83,8 @@ const menuItems = computed(() => {
     }
   ]
 })
-const onMenuAction = (action) =>
-  action === 'copy-file' ? copyAsFile() : emit(action === 'format' ? 'format' : 'saveAsFile')
-
+const MENU_EMITS = { format: 'format', history: 'history', 'save-file': 'saveAsFile' }
+const onMenuAction = (action) => (action === 'copy-file' ? copyAsFile() : emit(MENU_EMITS[action]))
 const store = useSnippetStore()
 const hasHistory = computed(
   () => (store.entries.find((e) => e.id === props.snippetId)?.history?.length ?? 0) > 0
@@ -100,17 +102,7 @@ defineExpose({ flash: () => flash('text') })
 </script>
 
 <template>
-  <button
-    v-if="canCompare"
-    type="button"
-    class="btn btn-sm btn-square"
-    data-tour="snippet-compare"
-    :aria-label="$t('snippetDocument.compareWith')"
-    :data-tip="$t('snippetDocument.compareWith')"
-    @click="emit('compare')"
-  >
-    <AppIcon name="compare" />
-  </button>
+  <!-- Buttons that only some snippets have sit leftmost: the row is right-aligned. -->
   <button
     v-if="secret"
     class="btn btn-sm btn-square"
@@ -123,6 +115,28 @@ defineExpose({ flash: () => flash('text') })
     @click="emit('reveal')"
   >
     <AppIcon :name="masked ? 'eye' : 'eye-off'" />
+  </button>
+  <!-- Never for a secret: the store refuses it too. -->
+  <button
+    v-if="!secret && isMermaid"
+    class="btn btn-sm btn-square"
+    :disabled="editMode"
+    :aria-label="$t('snippetEditorActions.capture')"
+    :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
+    @click="emit('capture')"
+  >
+    <AppIcon name="image" />
+  </button>
+  <button
+    type="button"
+    class="btn btn-sm btn-square"
+    data-tour="snippet-compare"
+    :disabled="!canCompare"
+    :aria-label="$t('snippetDocument.compareWith')"
+    :data-tip="$t('snippetDocument.compareWith')"
+    @click="emit('compare')"
+  >
+    <AppIcon name="compare" />
   </button>
   <!-- aria-label is the STABLE name: only the glyph swaps for the flash. -->
   <button
@@ -144,24 +158,13 @@ defineExpose({ flash: () => flash('text') })
     @pick="onMenuAction"
   />
   <button
-    v-if="hasHistory"
     class="btn btn-sm btn-square"
+    :disabled="!hasHistory"
     :aria-label="$t('snippetEditorActions.history')"
     :data-tip="$t('snippetEditorActions.historyTip')"
     @click="emit('history')"
   >
     <AppIcon name="clock" />
-  </button>
-  <!-- Never for a secret: the store refuses it too. -->
-  <button
-    v-if="!secret && isMermaid"
-    class="btn btn-sm btn-square"
-    :disabled="editMode"
-    :aria-label="$t('snippetEditorActions.capture')"
-    :data-tip="$t('snippetEditorActions.aPictureOfThisSnippet')"
-    @click="emit('capture')"
-  >
-    <AppIcon name="image" />
   </button>
   <button
     v-if="!proposed"

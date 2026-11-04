@@ -116,6 +116,18 @@ test('None takes it off again', async ({ page }) => {
   await expect(row(page, 'Standup notes')).not.toHaveAttribute('data-color', /./)
 })
 
+test('picking the colour a row already has takes it off', async ({ page }) => {
+  test.setTimeout(120_000)
+  await seedSnippet(page, 'Release checklist')
+  await openMenu(page, 'Release checklist')
+  await pick(page, 'green')
+  await expect(row(page, 'Release checklist')).toHaveAttribute('data-color', 'green')
+
+  await openMenu(page, 'Release checklist')
+  await pick(page, 'green')
+  await expect(row(page, 'Release checklist')).not.toHaveAttribute('data-color', /./)
+})
+
 test('the keyboard drives the menu without the pointer', async ({ page }) => {
   test.setTimeout(120_000)
   await seedSnippet(page, 'Kafka lag query')

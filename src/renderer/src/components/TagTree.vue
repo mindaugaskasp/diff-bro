@@ -4,6 +4,7 @@
 import { computed, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { buildTagTree } from '../utils/tagTree'
+import { useSettingsStore } from '../stores/settingsStore'
 import { useTagSections } from '../composables/useTagSections'
 import TagSection from './TagSection.vue'
 
@@ -20,9 +21,14 @@ const props = defineProps({
 defineEmits(['manage'])
 
 const { t } = useI18n()
+const settings = useSettingsStore()
 const sections = useTagSections(props.list, toRef(props, 'searching'))
 const tree = computed(() =>
-  buildTagTree(props.items, { within: props.scope, tagsOf: props.tagsOf })
+  buildTagTree(props.items, {
+    within: props.scope,
+    nest: settings.nestMultiTag,
+    tagsOf: props.tagsOf
+  })
 )
 const special = (path, labelKey, items) => ({
   path,

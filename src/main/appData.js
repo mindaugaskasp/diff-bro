@@ -112,6 +112,19 @@ function setDataDir(newDir, { sourceWins = false } = {}) {
   return resolved
 }
 
+// Asked between the pick and the move: a confirm after it would be too late.
+async function confirmsRestart(dir) {
+  const { response } = await dialog.showMessageBox({
+    type: 'question',
+    buttons: [t('storageSettings.proceed'), t('common.cancel')],
+    defaultId: 0,
+    cancelId: 1,
+    message: t('storageSettings.restartTitle'),
+    detail: t('storageSettings.restartDetail', { dir })
+  })
+  return response === 0
+}
+
 let backupIfDue = () => {}
 /** @param {() => void} fn  set by backupRoute, which imports from here */
 export function setBackupHook(fn) {
@@ -143,16 +156,18 @@ export function registerAppDataIpc() {
       title: t('dialog.chooseDataFolder'),
       properties: ['openDirectory', 'createDirectory']
     })
-    if (canceled || !filePaths.length) return { canceled: true }
+    if (canceled || !filePaths.length || !(await confirmsRestart(filePaths[0])))
+      return { canceled: true }
     return { ok: true, dir: setDataDir(filePaths[0]) }
   })
 
   // Reset to the default (userData) location, carrying the data in use back with
   // it — anything stale already sitting there is moved aside, never obeyed.
-  ipcMain.handle('datadir:reset', () => ({
-    ok: true,
-    dir: setDataDir(app.getPath('userData'), { sourceWins: true })
-  }))
+  ipcMain.handle('datadir:reset', async () => {
+    const home = app.getPath('userData')
+    if (!(await confirmsRestart(home))) return { canceled: true }
+    return { ok: true, dir: setDataDir(home, { sourceWins: true }) }
+  })
 
   ipcMain.handle('datadir:reveal', () => {
     shell.openPath(getDataDir())

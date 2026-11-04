@@ -22,8 +22,7 @@ function nodeAt(level, parts) {
   return node
 }
 
-function place(roots, entry, tag) {
-  const parts = tagPath(tag).slice(0, MAX_TAG_DEPTH)
+function place(roots, entry, parts) {
   if (!parts.length) return false
   const leaf = nodeAt(roots, parts)
   if (!leaf.items.includes(entry)) leaf.items.push(entry)
@@ -34,6 +33,21 @@ function place(roots, entry, tag) {
     nodes = node.children
   }
   return true
+}
+
+const partsOf = (tag) => tagPath(tag).slice(0, MAX_TAG_DEPTH)
+
+// One path from all of an item's tags, in name order; a tag that another one
+// extends adds no level of its own.
+function nestedParts(tags) {
+  const paths = [...new Set(tags.map((t) => partsOf(t).join('/')))].filter(Boolean).sort()
+  const leaves = paths.filter((p) => !paths.some((q) => q.startsWith(`${p}/`)))
+  return leaves.flatMap((p) => p.split('/'))
+}
+
+function placeEntry(roots, entry, tags, nest) {
+  if (nest && tags.length > 1) return [place(roots, entry, nestedParts(tags))]
+  return tags.map((tag) => place(roots, entry, partsOf(tag)))
 }
 
 function finish(nodes) {
@@ -50,15 +64,19 @@ function finish(nodes) {
 
 /**
  * Starred items sit in Favorites only; the rest under every tag they carry, in
- * the order given; anything with no tag in Untagged. `within` (the # scope)
+ * the order given (or, with `nest`, once, under all their tags nested in name
+ * order); anything with no tag in Untagged. `within` (the # scope)
  * keeps one branch: an item is placed only under its tags inside it. `tagsOf`
  * picks which of an item's tags place it (a snippet's format tag does not).
  * @template {{ tags?: string[], favorite?: boolean }} T
  * @param {T[]} items
- * @param {{ within?: string, tagsOf?: (item: T) => string[] }} [opts]
+ * @param {{ within?: string, nest?: boolean, tagsOf?: (item: T) => string[] }} [opts]
  * @returns {{ favorites: T[], sections: object[], untagged: T[] }}
  */
-export function buildTagTree(items, { within = '', tagsOf = (e) => e.tags ?? [] } = {}) {
+export function buildTagTree(
+  items,
+  { within = '', nest = false, tagsOf = (e) => e.tags ?? [] } = {}
+) {
   const roots = new Map()
   const favorites = []
   const untagged = []
@@ -71,9 +89,7 @@ export function buildTagTree(items, { within = '', tagsOf = (e) => e.tags ?? [] 
       favorites.push(entry)
       continue
     }
-    const placed = tagsOf(entry)
-      .filter(inScope)
-      .map((tag) => place(roots, entry, tag))
+    const placed = placeEntry(roots, entry, tagsOf(entry).filter(inScope), nest)
     if (!within && !placed.some(Boolean)) untagged.push(entry)
   }
   return { favorites, sections: finish(roots), untagged }

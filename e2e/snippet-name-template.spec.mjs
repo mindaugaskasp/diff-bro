@@ -43,11 +43,15 @@ test('a templated name is resolved when the snippet is saved', async ({ page }) 
   await expect(page.locator('.snippets-section .row', { hasText: '{{today}}' })).toHaveCount(0)
 })
 
-// Always offered, now from the editor's status bar: the name field carries
-// only the "Saves as" preview, and only while the name holds a tag.
-test('the template tags are always offered, with what each saves as', async ({ page }) => {
+// Offered from the status bar once the text holds a fill-in (#233): the name
+// field carries only the "Saves as" preview, and only while the name holds a tag.
+test('the template tags list what each saves as, once the text holds a fill-in', async ({
+  page
+}) => {
   const dialog = await newSnippet(page, 'Just a name')
   await expect(dialog.locator('.name-templates')).toHaveCount(0)
+  await dialog.locator('.editor').click()
+  await page.keyboard.insertText('Ping {{who}}')
 
   const trigger = dialog.locator('.editor-status .tt-trigger')
   await expect(trigger).toBeVisible()

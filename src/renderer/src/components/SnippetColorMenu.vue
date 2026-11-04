@@ -84,7 +84,7 @@ const label = (c) => t(c.labelKey)
           :aria-label="label(c)"
           :data-tip="label(c)"
           :data-color="c.id"
-          @click="pick(c.id)"
+          @click="menu.choose(c.id)"
           @mousemove="menu.point(i)"
         >
           <span class="rcm-dot"></span>

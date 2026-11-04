@@ -148,10 +148,6 @@ watch(
       </span>
     </div>
 
-    <p v-if="store.renderSideBySide && !error" class="dg-drift">
-      {{ $t('diagramDiffViewer.alignedAtTheFirstNode') }}
-    </p>
-
     <PaneLabels />
     <div class="dg-body">
       <div
@@ -202,6 +198,13 @@ watch(
         <span class="del">{{ $t('count.removed', tally(full.edges, 'removed')) }}</span>
       </span>
       <span class="band-end">
+        <span
+          v-if="store.renderSideBySide && !error"
+          class="dg-drift"
+          :data-tip="$t('diagramDiffViewer.alignedAtTheFirstNode')"
+        >
+          {{ $t('diagramDiffViewer.laidOutApart') }}
+        </span>
         <span v-if="hidden" class="dg-hidden">{{ $t('count.unchangedHidden', hidden) }}</span>
       </span>
     </div>

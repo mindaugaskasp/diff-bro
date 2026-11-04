@@ -87,6 +87,18 @@ function applyTransform(editor, transform) {
   editor.focus()
 }
 
+// setValue wipes the undo stack; a replacement over existing text stays undoable.
+function replaceKeepingUndo(editor, value) {
+  const model = editor.getModel()
+  if (!model?.getValue()) return editor.setValue(value)
+  editor.pushUndoStop()
+  const applied = editor.executeEdits('replace', [
+    { range: model.getFullModelRange(), text: value }
+  ])
+  if (applied) editor.pushUndoStop()
+  else editor.setValue(value)
+}
+
 export function useMonacoInput({ container, content, language, readOnly, options = {} }) {
   const settings = useSettingsStore()
   const text = useEditorText({ basePx: FONT_PX })
@@ -124,7 +136,7 @@ export function useMonacoInput({ container, content, language, readOnly, options
   watch(container, (el) => (el ? createEditor() : destroyEditor()))
 
   watch(content, (value) => {
-    if (editor && editor.getValue() !== value) editor.setValue(value)
+    if (editor && editor.getValue() !== value) replaceKeepingUndo(editor, value)
   })
   watch(language, (lang) => {
     if (editor) setLanguage(editor, lang)

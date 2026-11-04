@@ -6,7 +6,7 @@ import { useSnippetDraft } from '../composables/useSnippetDraft'
 import { useFormatToolbar } from '../composables/useFormatToolbar'
 import { useSnippetEditorView } from '../composables/useSnippetEditorView'
 import { useMonacoInput } from '../composables/useMonacoInput'
-import { useFileTextDrop } from '../composables/useFileDrop'
+import { useSnippetFileDrop } from '../composables/useSnippetFileDrop'
 import { useSnippetFindKeys } from '../composables/useSnippetFindKeys'
 import { useSnippetInlineEdit } from '../composables/useSnippetInlineEdit'
 import SnippetDocumentHead from './SnippetDocumentHead.vue'
@@ -14,6 +14,8 @@ import SnippetEditorActions from './SnippetEditorActions.vue'
 import SnippetSecretMask from './SnippetSecretMask.vue'
 import SnippetHistoryPanel from './SnippetHistoryPanel.vue'
 import SnippetStatusBar from './SnippetStatusBar.vue'
+import SnippetFormatConfirm from './SnippetFormatConfirm.vue'
+import { useFormatConfirm } from '../composables/useFormatConfirm'
 import MermaidPreview from './MermaidPreview.vue'
 import FormatToolbar from './FormatToolbar.vue'
 import JiraRendered from './JiraRendered.vue'
@@ -62,7 +64,6 @@ const docRoot = ref(null)
 useSnippetFindKeys({ root: docRoot, editing: editMode, openFind })
 const hasPreview = computed(() => isJira.value || isMarkdown.value)
 const { plain, revealAndLayout } = useSnippetEditorView({
-  editMode,
   layout,
   toggleReveal: draft.toggleReveal
 })
@@ -78,10 +79,7 @@ const actions = ref(null)
 async function copyAndFlash() {
   if (await draft.copyContent()) actions.value?.flash()
 }
-const { onDropFile } = useFileTextDrop((text, fileName) => {
-  content.value = text
-  if (!name.value.trim()) name.value = fileName
-})
+const { onDropFile } = useSnippetFileDrop(tabs)
 const saveSnippet = () => draft.save(head.value.tagValues())
 
 const docLabel = computed(() =>
@@ -89,6 +87,10 @@ const docLabel = computed(() =>
 )
 
 const inline = useSnippetInlineEdit({ draft, tab: props.tab, head, save: saveSnippet, onDropFile })
+const formatting = useFormatConfirm({
+  isSaved: computed(() => !draft.isNew.value),
+  run: inline.format
+})
 
 const snippetRun = useSnippetRun({ tab: props.tab, draft, editing, editorInstance, ready })
 const showHistory = ref(false)
@@ -133,7 +135,7 @@ const compareWith = () =>
         :snippet-id="editing.id"
         :can-compare="!!(editing.id || editing.openedPath) && !draft.secret.value"
         :can-format="draft.canFormat.value"
-        @format="inline.format"
+        @format="formatting.request"
         @compare="compareWith"
         @copy="copyAndFlash"
         @capture="draft.captureImage"
@@ -206,6 +208,12 @@ const compareWith = () =>
         @close="showHistory = false"
       />
     </div>
+    <SnippetFormatConfirm
+      v-if="formatting.asking.value"
+      :name="name"
+      @confirm="formatting.confirm"
+      @cancel="formatting.cancel"
+    />
   </section>
 </template>
 

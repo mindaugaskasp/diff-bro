@@ -5,6 +5,7 @@ async function savedSnippet(page, language) {
   const doc = page.getByRole('region', { name: 'New snippet' })
   await doc.getByPlaceholder('Snippet name…').fill(`A ${language} note`)
   await page.locator('.snippet-doc:visible select.lang-select').selectOption(language)
+  await doc.getByRole('button', { name: 'Plain', exact: true }).click()
   await doc.locator('.editor').click()
   await page.keyboard.type('Some text to format')
   await docActions(page).getByRole('button', { name: 'Save', exact: true }).click()

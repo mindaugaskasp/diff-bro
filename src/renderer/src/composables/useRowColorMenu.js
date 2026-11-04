@@ -30,7 +30,8 @@ export function useRowColorMenu({ current, onPick, onSecret, onClose }) {
   const cursor = ref(indexOf(current()))
   const colorAt = (i) => (i === CLEAR_INDEX ? null : ROW_COLORS[i].id)
 
-  const apply = () => (cursor.value === SECRET_INDEX ? onSecret() : onPick(colorAt(cursor.value)))
+  const choose = (color) => onPick(color === rowColorId(current()) ? null : color)
+  const apply = () => (cursor.value === SECRET_INDEX ? onSecret() : choose(colorAt(cursor.value)))
 
   const move = (by) => {
     cursor.value = (cursor.value + by + TARGETS) % TARGETS
@@ -64,6 +65,7 @@ export function useRowColorMenu({ current, onPick, onSecret, onClose }) {
     secretIndex: SECRET_INDEX,
     colors: ROW_COLORS,
     onKeydown,
+    choose,
     point: (i) => (cursor.value = i)
   }
 }

@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useSnippetStore } from '../stores/snippetStore'
 import { useDiffStore } from '../stores/diffStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -64,6 +64,15 @@ async function copyOrAskToFill(name, content, language, snippetId) {
   return true
 }
 
+function refuseOversize(text, settings, diff) {
+  const bytes = new TextEncoder().encode(text).length
+  if (bytes <= settings.maxSnippetSizeBytes) return false
+  diff.showNotice(
+    `That snippet is ${(bytes / 1024).toFixed(0)} KB — over the ${settings.maxSnippetSizeKb} KB limit. Raise it in Settings if you really need to.`
+  )
+  return true
+}
+
 /**
  * @param {{ editing: { id: string|null }, onClose: () => void, onSaved: (id: string) => void }} host
  */
@@ -94,6 +103,9 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
   // Existing snippets open read-only so a glance can't become an accidental edit.
   const editMode = ref(isNew.value)
   const startEditing = () => (editMode.value = true)
+  // An editing session keeps one version however often it autosaves.
+  let versionedThisSession = false
+  watch(editMode, () => (versionedThisSession = false))
 
   const { baseline, tags, setTags, isDirty } = useDraftBaseline(initial, { name, content })
 
@@ -127,47 +139,43 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     close()
   }
 
+  // Guards the Enter/programmatic path + a fast double-click.
+  const canWrite = (tagValues) =>
+    !!tagValues && !!name.value.trim() && !!content.value.trim() && !saving.value
+
+  // False when the vault key was unavailable, so the draft stays open to retry.
+  async function writeDraft(fields) {
+    if (!isNew.value) return store.update(editing.id, fields).then(() => true)
+    const id = await store.add(fields)
+    if (id == null) return false
+    editing.id = id
+    isNew.value = false
+    return true
+  }
+
   // `tagValues` comes from the tag field, which owns them; null when it refused
-  // what was typed.
-  async function save(tagValues) {
-    // Guards the Enter/programmatic path + a fast double-click.
-    if (!tagValues || !name.value.trim() || !content.value.trim() || saving.value) return
-    const bytes = new TextEncoder().encode(content.value).length
-    if (bytes > settings.maxSnippetSizeBytes) {
-      diff.showNotice(
-        `That snippet is ${(bytes / 1024).toFixed(0)} KB — over the ${settings.maxSnippetSizeKb} KB limit. Raise it in Settings if you really need to.`
-      )
-      return
-    }
+  // what was typed. An autosave keeps editing going and one version per session.
+  async function save(tagValues, { auto = false } = {}) {
+    if (!canWrite(tagValues) || refuseOversize(content.value, settings, diff)) return
     saving.value = true
     // Resolved ONCE, and into the field too, so the editor and the library hold
     // the same string — re-evaluating on read would rename yesterday's note.
     name.value = expandTemplates(name.value, { locale: settings.activeLocale })
-    const fields = {
+    const changed = content.value !== baseline.content
+    const written = await writeDraft({
       name: name.value,
       content: content.value,
       language: chosenLanguage.value,
-      contentChanged: content.value !== baseline.content,
+      contentChanged: changed && !(auto && versionedThisSession),
       tags: tagValues.tags,
       tagColors: tagValues.tagColors
-    }
-    if (isNew.value) {
-      const id = await store.add(fields)
-      saving.value = false
-      if (id == null) return // key unavailable — keep the draft open so it can retry
-      editing.id = id
-      isNew.value = false
-    } else {
-      await store.update(editing.id, fields)
-      saving.value = false
-    }
-    Object.assign(baseline, {
-      name: name.value,
-      content: content.value,
-      tags: [...tagValues.tags]
     })
+    saving.value = false
+    if (!written) return
+    if (changed) versionedThisSession = true
+    Object.assign(baseline, { name: name.value, content: content.value, tags: [...tagValues.tags] })
     tags.value = [...tagValues.tags]
-    onSaved(editing.id)
+    if (!auto) onSaved(editing.id)
   }
 
   const canFormat = computed(() => !!content.value.trim() && !!FORMATTERS[language.value])
@@ -207,6 +215,7 @@ export function useSnippetDraft({ editing, onClose, onSaved }) {
     toggleReveal,
     saving,
     initialTags,
+    tags,
     setTags,
     chosenLanguage,
     language,

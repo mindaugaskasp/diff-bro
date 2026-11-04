@@ -80,3 +80,31 @@ test('a Mermaid hexagon is not a template tag, and copies without a fill-in', as
   await docActions(page).getByRole('button', { name: 'Copy', exact: true }).click()
   await expect(page.getByRole('dialog', { name: /Fill in/ })).toHaveCount(0)
 })
+
+test('a snippet with no fill-ins shows no template tags control', async ({ page }) => {
+  await openNewSnippet(page)
+  const doc = page.getByRole('region', { name: 'New snippet' })
+  await doc.locator('.editor').click()
+  await page.keyboard.insertText('kubectl rollout restart deployment/api')
+  await expect(bar(page)).toContainText(/1 line/)
+  await expect(bar(page).getByRole('button', { name: /template tag/i })).toHaveCount(0)
+
+  await page.keyboard.insertText(' --namespace {{env}}')
+  await expect(bar(page).getByRole('button', { name: /1 template tag/ })).toBeVisible()
+})
+
+// toBeVisible ignores an ancestor's overflow clip, so the popover is hit-tested.
+test('clicking template tags opens a popover that is not clipped', async ({ page }) => {
+  await openSnippet(page)
+  await bar(page)
+    .getByRole('button', { name: /template tags/ })
+    .click()
+  const pop = page.getByRole('dialog', { name: 'Template tags' })
+  await expect(pop).toBeVisible()
+  const isHit = await pop.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + 12)
+    return el.contains(hit)
+  })
+  expect(isHit).toBe(true)
+})

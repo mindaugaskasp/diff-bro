@@ -17,6 +17,7 @@ const emit = defineEmits(['close'])
 const store = useSnippetStore()
 const entry = computed(() => store.entries.find((e) => e.id === props.snippetId))
 const rows = computed(() => versionRows(entry.value))
+const hasEarlier = computed(() => rows.value.length > 1)
 const language = computed(() => languageOf(entry.value))
 
 // A secret's history opens masked, like its editor; reveal is per-open.
@@ -101,14 +102,15 @@ const { width, start, reset } = useHistoryResize(
       </li>
     </ol>
     <div class="hist-band band">
-      <span v-if="selected === -1" class="hb-text">
+      <span v-if="!hasEarlier" class="hb-text">{{ $t('snippetHistoryDialog.noEarlier') }}</span>
+      <span v-else-if="selected === -1" class="hb-text">
         {{ $t('snippetHistoryDialog.isCurrent') }}
       </span>
       <span v-else class="hb-text">
         <strong>{{ selectedRow && rowLabel(selectedRow) }}</strong>
         <span class="hb-meta">{{ $t('snippetHistoryDialog.toCurrent') }}</span>
       </span>
-      <span v-if="stats && !masked" class="hb-stats">
+      <span v-if="stats && !masked && hasEarlier" class="hb-stats">
         <span class="add">{{ $t('snippetHistoryDialog.added', { n: stats.additions }) }}</span>
         <span class="del">{{ $t('snippetHistoryDialog.removed', { n: stats.deletions }) }}</span>
       </span>

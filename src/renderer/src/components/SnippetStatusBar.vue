@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { MOD } from '../keys'
 import { useUiStore } from '../stores/uiStore'
 import { contentStats } from '../utils/contentStats'
-import { acceptsFills, fillVars } from '../utils/templateVars'
+import { fillVars } from '../utils/templateVars'
 import { zoomLabel } from '../utils/diffZoom'
 import AppIcon from './AppIcon.vue'
 import TemplateTagsPopover from './TemplateTagsPopover.vue'
@@ -34,11 +34,12 @@ const fills = computed(() => fillVars(props.language, props.content))
         {{ $t('openWith.openedFrom', { folder: openedFrom }) }} ·
       </span>
       <span v-if="editing && cursor">{{ $t('statusBar.position', cursor) }} ·</span>
-      <span>
+      <span class="es-counts">
         {{ $t('statusBar.lines', stats.lines) }} ·
-        {{ $t('statusBar.characters', stats.characters) }} ·
+        {{ $t('statusBar.characters', stats.characters) }}
+        <template v-if="fills.length">·</template>
       </span>
-      <TemplateTagsPopover v-if="acceptsFills(language)" :fills="fills" />
+      <TemplateTagsPopover v-if="fills.length" :fills="fills" />
     </span>
     <span class="es-side">
       <span

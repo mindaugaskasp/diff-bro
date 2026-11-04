@@ -12,6 +12,10 @@ const settings = useSettingsStore()
       {{ $t('settingsDialog.showTagsOnSidebarRows') }}
     </SettingToggle>
     <p class="hint">{{ $t('settingsAppearance.rowTagsHint') }}</p>
+    <SettingToggle :checked="settings.nestMultiTag" @change="settings.setNestMultiTag">
+      {{ $t('settingsDialog.nestMultiTag') }}
+    </SettingToggle>
+    <p class="hint">{{ $t('settingsAppearance.nestMultiTagHint') }}</p>
     <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
       {{ $t('settingsDialog.playAShutterSoundWhen') }}
     </SettingToggle>

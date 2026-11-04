@@ -41,6 +41,7 @@ const fillTags = computed(() => props.fills.map((name) => `{{${name}}}`))
       :class="{ on: open }"
       :aria-expanded="open"
       data-tour="template-tags"
+      @click="show"
     >
       <span class="tt-glyph" aria-hidden="true">{ }</span>
       {{
