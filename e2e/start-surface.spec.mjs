@@ -13,19 +13,19 @@ async function comparePasted(page) {
 test('a cold window opens on the start surface, with no tab drawn for it', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toBeVisible()
   await expect(strip(page).getByRole('tab')).toHaveCount(0)
-  await expect(plus(page)).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('a comparison started from it becomes a tab, and + returns to the surface', async ({
-  page
-}) => {
+test('+ always opens a new Untitled tab on the start surface', async ({ page }) => {
   await comparePasted(page)
   await expect(strip(page).getByRole('tab')).toHaveCount(1)
-  await expect(plus(page)).toHaveAttribute('aria-pressed', 'false')
 
   await plus(page).click()
   await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toBeVisible()
-  await expect(strip(page).getByRole('tab')).toHaveCount(1)
+  await expect(strip(page).getByRole('tab')).toHaveCount(2)
+  await expect(strip(page).getByRole('tab', { selected: true })).toHaveText('Untitled')
+
+  await plus(page).click()
+  await expect(strip(page).getByRole('tab', { name: 'Untitled' })).toHaveCount(2)
 
   await strip(page).getByRole('tab').first().click()
   await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toHaveCount(0)

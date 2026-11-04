@@ -4,10 +4,12 @@ import { execFile as nodeExecFile, spawn as nodeSpawn } from 'node:child_process
 import { homedir } from 'node:os'
 import { win32 } from 'node:path'
 import { STOP_AFTER_MINUTES } from '../shared/snippetLanguages'
+import { parseCurlCommand } from './curlCommand'
 
 const LANGUAGES = new Map([
   ['php', { args: [], version: /^PHP (\d+\.\d+\.\d+)/m }],
-  ['python', { args: ['-u', '-'], version: /^Python (\d+\.\d+\.\d+)/m }]
+  ['python', { args: ['-u', '-'], version: /^Python (\d+\.\d+\.\d+)/m }],
+  ['curl', { args: ['--no-progress-meter'], version: /^curl (\d+\.\d+\.\d+)/m }]
 ])
 
 const DEFAULT_LIMITS = {
@@ -32,6 +34,15 @@ export const stripAnsi = (text) => text.replace(ANSI, '')
 export function preparedCode(language, code) {
   if (language !== 'php' || code.trimStart().startsWith('<?')) return code
   return `<?php\n${code}`
+}
+
+/** @returns {{ args: string[], stdin: string } | { error: string, char?: string }} */
+export function invocationFor(language, code) {
+  if (language !== 'curl')
+    return { args: interpreterArgs(language), stdin: preparedCode(language, code) }
+  const parsed = parseCurlCommand(code)
+  if (parsed.error) return parsed
+  return { args: [...interpreterArgs(language), ...parsed.args], stdin: '' }
 }
 
 export function parseVersion(language, output) {
@@ -108,7 +119,7 @@ function pipeOutput(child, meter) {
  * @param {string} o.code
  * @param {(chunk: { stream: 'out'|'err', text: string }) => void} o.onOutput
  * @param {(exit: { reason: string, code: number|null, signal: string|null, ms: number }) => void} o.onExit
- * @param {string[]} [o.args]  defaults to the language's own
+ * @param {string[]} [o.args]  defaults to invocationFor's
  * @param {{ timeoutMs?: number, maxOutputBytes?: number }} [o.limits]  timeoutMs 0 is no limit
  * @param {typeof nodeSpawn} [o.spawn]
  * @param {string} [o.platform]
@@ -120,12 +131,13 @@ export function startRun({
   code,
   onOutput,
   onExit,
-  args = interpreterArgs(language),
+  args,
   limits = {},
   spawn = nodeSpawn,
   platform = process.platform
 }) {
   const { timeoutMs, maxOutputBytes } = { ...DEFAULT_LIMITS, ...limits }
+  const invocation = invocationFor(language, code)
   const startedAt = Date.now()
   let reason = 'exit'
   let reported = false
@@ -133,7 +145,7 @@ export function startRun({
   let exited = false
   let timer = null
 
-  const child = spawn(exe, args, {
+  const child = spawn(exe, args ?? invocation.args, {
     ...childPlacement(),
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true,
@@ -167,7 +179,7 @@ export function startRun({
   child.on('close', (exitCode, signal) => reportExit({ code: exitCode, signal }))
   // A script that exits without reading stdin closes the pipe under us.
   child.stdin.on('error', () => {})
-  child.stdin.end(preparedCode(language, code))
+  child.stdin.end(invocation.stdin)
   if (timeoutMs > 0) timer = setTimeout(() => terminate('timeout'), timeoutMs)
 
   return { stop: () => terminate('stopped') }

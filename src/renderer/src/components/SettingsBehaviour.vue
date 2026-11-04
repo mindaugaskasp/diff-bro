@@ -15,7 +15,6 @@ const settings = useSettingsStore()
     <SettingToggle :checked="settings.nestMultiTag" @change="settings.setNestMultiTag">
       {{ $t('settingsDialog.nestMultiTag') }}
     </SettingToggle>
-    <p class="hint">{{ $t('settingsAppearance.nestMultiTagHint') }}</p>
     <SettingToggle :checked="settings.shutterSound" @change="settings.setShutterSound">
       {{ $t('settingsDialog.playAShutterSoundWhen') }}
     </SettingToggle>

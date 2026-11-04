@@ -176,14 +176,21 @@ export async function openSettingsPage(page, name) {
   return dialog
 }
 
-// Settings edits are a draft: Save writes them and the dialog then closes
-// without asking. Found by role-free locators, so it works in any locale.
+// Settings edits are a draft: Save writes them, so Close then leaves without
+// asking. Found by role-free locators, so it works in any locale.
 export async function saveSettings(page) {
   const panel = page.locator('[data-tour="settings"]')
   const save = panel.locator(':scope > .dialog-actions .btn-primary')
-  if (await save.isEnabled()) await save.click()
-  await page.keyboard.press('Escape')
+  if (await save.isEnabled()) {
+    await save.click()
+    await expect(save).toBeDisabled()
+  }
+  await closeSettings(page)
   await expect(panel).toBeHidden()
+}
+
+export async function closeSettings(page) {
+  await page.locator('[data-tour="settings"] > .dialog-actions .btn-ghost').click()
 }
 
 // The four display toggles live behind the toolbar's View button, so anything

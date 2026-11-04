@@ -18,6 +18,7 @@ export const SNIPPET_LANGUAGES = [
   { id: 'yaml', labelKey: 'language.yaml' },
   { id: 'python', labelKey: 'language.python' },
   { id: 'shell', labelKey: 'language.shell' },
+  { id: 'curl', labelKey: 'language.curl' },
   { id: 'php', labelKey: 'language.php' },
   { id: 'javascript', labelKey: 'language.javascript' },
   { id: 'typescript', labelKey: 'language.typescript' },
@@ -31,7 +32,7 @@ export const SNIPPET_LANGUAGES = [
 ]
 
 // The ones a snippet can be run in; main keeps each one's argv and version check.
-export const RUNNABLE_LANGUAGES = ['php', 'python']
+export const RUNNABLE_LANGUAGES = ['php', 'python', 'curl']
 
 // A day at most: past 2^31 ms, setTimeout fires at once instead of never. 0 is no limit.
 export const STOP_AFTER_MINUTES = { fallback: 2, max: 24 * 60 }

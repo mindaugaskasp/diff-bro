@@ -64,6 +64,11 @@ export const snippetTabActions = {
   showStart() {
     this.newTab()
   },
+  newUntitledTab() {
+    const id = this.open(blankSnapshot(this._liveDoc().snapshot), { reuseBlank: false })
+    if (id) this.active.untitled = true
+    return id
+  },
   /**
    * @param {string} id
    * @param {{ title?: string, dirty?: boolean, snippetId?: string }} meta

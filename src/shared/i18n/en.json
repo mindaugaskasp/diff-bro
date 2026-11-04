@@ -416,6 +416,7 @@
     "jira": "Jira / Confluence",
     "yaml": "YAML / Kubernetes",
     "python": "Python",
+    "curl": "curl",
     "shell": "Bash / Shell",
     "php": "PHP",
     "javascript": "JavaScript",
@@ -657,7 +658,8 @@
     "diagramPreview": "Diagram preview",
     "expand": "Expand",
     "dragToResize": "Drag to resize the preview",
-    "dragToResizeTip": "Drag to resize · double-click to reset"
+    "dragToResizeTip": "Drag to resize · double-click to reset",
+    "resetZoom": "Reset zoom · drag to pan, scroll to zoom"
   },
   "mermaidViewerDialog": {
     "zoomOut": "Zoom out",
@@ -1645,8 +1647,7 @@
     "groundDark": "Dark",
     "interfaceLanguage": "Interface language",
     "behaviour": "Behaviour",
-    "rowTagsHint": "The tag shelf and the search box still filter by tag.",
-    "nestMultiTagHint": "Off: it is listed under each of its tags."
+    "rowTagsHint": "The tag shelf and the search box still filter by tag."
   },
   "settingsTours": {
     "title": "Tours",
@@ -1863,6 +1864,12 @@
     "run": "Run",
     "stop": "Stop",
     "secretTip": "Secret snippets can't run",
+    "curl": {
+      "notCurl": "A curl snippet is one curl command, starting with curl.",
+      "shellSyntax": "{char} is shell syntax, and curl snippets run without a shell. Quote it if it belongs to a value.",
+      "severalCommands": "A curl snippet runs one curl command.",
+      "unclosedQuote": "A quote is never closed."
+    },
     "pane": {
       "output": "Output",
       "running": "Running",

@@ -379,7 +379,7 @@ app reaches that command.
 
 ## Running a snippet
 
-Off by default. Settings ▸ Integrations ▸ Languages enables PHP or Python: main
+Off by default. Settings ▸ Integrations ▸ Languages enables PHP, Python or curl: main
 asks first, then looks for the program itself and takes the newest version it
 finds, or opens its own file dialog when it finds none. Every program must
 answer `--version` as that language.
@@ -413,6 +413,13 @@ The first run ever says so in a dialog from main, then never asks again.
   no plaintext lands in a temp file. It starts in your home folder, never the
   folder the app was launched from: Python puts its working directory first on
   `sys.path`, so a launch folder could otherwise plant a module.
+- curl reads no program, so a curl snippet's own words are its argv
+  (`curlCommand.js`), after a fixed `--no-progress-meter`. Main splits them the
+  way a shell splits words (quotes, backslashes, continued lines) and refuses
+  anything a shell would act on instead: `| & ; < > ( ) $` and backticks outside
+  single quotes, a second command, an unclosed quote. Nothing is expanded, and
+  still no shell runs. curl's own options can read and write files (`-d @file`,
+  `-o`), as a Python script can.
 - Changing the program never turns a language on, on or off; turning one on is
   always main's warning first.
 - A run belongs to the window that started it, which alone can stop it.

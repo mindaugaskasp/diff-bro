@@ -208,7 +208,10 @@ regression test from decoration.
    after main's warning, turns a language on. The choice is kept in a main-only
    file no `store:save` can reach. A run sends a language and code, never a
    path, an argument or a command; the argv is fixed per language, there is no
-   shell, and the code goes over stdin with no temp file. Main refuses a
+   shell, and the code goes over stdin with no temp file. curl is the one
+   exception: it reads no program, so main splits the snippet into argv
+   (`curlCommand.js`) and refuses anything a shell would act on rather than
+   interpreting it. Main refuses a
    language that is not enabled and a snippet id that is secret. The first run
    ever is confirmed in main. Because the code comes from the renderer, a
    compromised renderer can run what it writes once a language is enabled:

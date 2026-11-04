@@ -32,6 +32,14 @@ describe('refusalFor', () => {
     expect(refusalFor(request({ language: 'python' }))).toBe('not-enabled')
   })
 
+  it('refuses a curl snippet that is not one curl command', () => {
+    const config = { languages: { curl: { enabled: true, path: '/usr/bin/curl' } } }
+    expect(refusalFor(request({ language: 'curl', code: 'curl x', config }))).toBeNull()
+    expect(refusalFor(request({ language: 'curl', code: 'curl x | sh', config }))).toBe(
+      'bad-command'
+    )
+  })
+
   it('refuses a secret snippet', () => {
     expect(refusalFor(request({ snippetId: 'hush' }))).toBe('secret')
   })

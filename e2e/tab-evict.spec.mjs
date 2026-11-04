@@ -11,8 +11,6 @@ test.describe.configure({ timeout: 180_000 })
 
 const tabCount = (page) => page.locator('.diff-tabs .tab').count()
 
-// A real comparison per tab: a blank one is the start surface, which the strip
-// hides and New Comparison reuses rather than stacking.
 async function addComparison(page, i, { save = false, left = `left ${i}` } = {}) {
   if (i > 0) await openMenu(page, 'File', 'New Comparison')
   await page.getByRole('button', { name: 'Paste mode' }).click()
@@ -48,13 +46,14 @@ async function turnOn(page) {
 }
 
 // A saved comparison holds nothing to lose, so it goes without a word — which
-// is the whole point of the setting. The start surface takes its place.
+// is the whole point of the setting. A new Untitled tab takes its place.
 test('with it on, a disposable oldest tab just goes', async ({ page }) => {
   await turnOn(page)
   await fillStrip(page, { save: true })
 
   await openMenu(page, 'File', 'New Comparison')
-  await expect.poll(() => tabCount(page)).toBe(MAX_TABS - 1)
+  await expect(page.locator('.diff-tabs .tab').last()).toContainText('Untitled')
+  expect(await tabCount(page)).toBe(MAX_TABS)
   await expect(page.getByRole('dialog', { name: 'Make room?' })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'What are you comparing?' })).toBeVisible()
 })

@@ -50,10 +50,8 @@ test('the bar is there from the start, so a second comparison is reachable', asy
   await expect(tabBar(page)).toBeVisible()
   await expect(tabs(page)).toHaveCount(1)
 
-  // + brings up the start surface; the comparison started there is the new tab.
   await addTab(page).click()
-  await expect(addTab(page)).toHaveAttribute('aria-pressed', 'true')
-  await expect(tabs(page)).toHaveCount(1)
+  await expect(tabs(page)).toHaveCount(2)
   await compare(page, 'gamma', 'delta')
   await expect(tabs(page)).toHaveCount(2)
 })
@@ -173,22 +171,6 @@ test('a tab does not resize when the pointer enters it', async ({ page }) => {
   const neighbour = await tabs(page).nth(1).boundingBox()
   await page.mouse.move(0, 0)
   expect((await tabs(page).nth(1).boundingBox()).x).toBe(neighbour.x)
-})
-
-// The start surface is not a tab of work, so + returns to the one there is
-// rather than lining up empty tabs behind the strip.
-test('+ shows the start surface, and pressing it again adds nothing', async ({ page }) => {
-  await expect(tabs(page)).toHaveCount(0)
-  await expect(addTab(page)).toHaveAttribute('aria-pressed', 'true')
-  await addTab(page).click()
-  await addTab(page).click()
-  await expect(tabs(page)).toHaveCount(0)
-
-  await compare(page, 'alpha', 'beta')
-  await addTab(page).click()
-  await addTab(page).click()
-  await compare(page, 'gamma', 'delta')
-  await expect(tabs(page)).toHaveCount(2)
 })
 
 // A tab is the one place a comparison already has a name, so renaming it should

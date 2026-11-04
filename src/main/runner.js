@@ -2,6 +2,7 @@
 import { app, dialog, ipcMain } from 'electron'
 import { readConfig, timeoutMsOf, writeConfig } from './runnerConfig'
 import { createRuns, refusalFor } from './runnerRuns'
+import { invocationFor } from './runnerCore'
 import { configFile, registerRunnerSettingsIpc, windowOf } from './runnerSettings'
 import { readSnippetStore } from './appData'
 import { parseStore } from './storeEntries'
@@ -31,6 +32,19 @@ function sendIfAlive(sender, channel, payload) {
   if (!sender.isDestroyed()) sender.send(channel, payload)
 }
 
+const CURL_ERROR_KEYS = {
+  'not-curl': 'runner.curl.notCurl',
+  'shell-syntax': 'runner.curl.shellSyntax',
+  'several-commands': 'runner.curl.severalCommands',
+  'unclosed-quote': 'runner.curl.unclosedQuote'
+}
+
+function refusalReply(refusal, { language, code }) {
+  if (refusal !== 'bad-command') return { error: refusal }
+  const { error, char } = invocationFor(language, code)
+  return { error: refusal, message: t(CURL_ERROR_KEYS[error], { char }) }
+}
+
 function vetRequest(request) {
   const config = readConfig(configFile())
   return { config, refusal: refusalFor({ ...request, config, store: readSnippets() }) }
@@ -46,7 +60,7 @@ function stopRunsWhenGone(sender) {
 async function start(e, { key, language, code, snippetId } = {}) {
   const request = { language, code, snippetId }
   const before = vetRequest(request)
-  if (before.refusal) return { error: before.refusal }
+  if (before.refusal) return refusalReply(before.refusal, request)
   if (!(await confirmFirstRun(windowOf(e), before.config))) return { canceled: true }
   // Read again after the dialog: the language may have been turned off meanwhile.
   const { config, refusal } = vetRequest(request)

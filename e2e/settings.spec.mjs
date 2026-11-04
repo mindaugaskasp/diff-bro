@@ -95,3 +95,10 @@ test('the pane that scrolls says so: a real gutter and a visible bar', async ({ 
   // there is more below" this test exists to prevent.
   expect(metrics.barWidth).toBeGreaterThanOrEqual(6)
 })
+
+test('Escape does not close Settings', async ({ page }) => {
+  await openSettings(page)
+  const dialog = page.getByRole('dialog', { name: 'Settings' })
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+})

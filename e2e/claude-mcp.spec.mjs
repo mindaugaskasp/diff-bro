@@ -14,7 +14,8 @@ import {
   openSettingsPage,
   showPanel,
   docActions,
-  markSecret
+  markSecret,
+  closeSettings
 } from './fixtures.mjs'
 import { workerEnv } from './workerEnv.mjs'
 
@@ -107,7 +108,7 @@ test('Claude reads allowed snippets, never a secret, and its proposal is reviewe
   await createSnippet(page, 'Deploy notes', 'kubectl rollout restart')
   await createSnippet(page, 'Prod token', 'sk-live-0123', { secret: true })
   await enableWith(page, ['Read snippets', 'Offer new snippets'])
-  await page.keyboard.press('Escape')
+  await closeSettings(page)
 
   const client = mcpClient(userDataDir)
   try {
@@ -166,7 +167,7 @@ test('proposed comparisons wait atop Diffs and are accepted together', async ({
   userDataDir
 }) => {
   await enableWith(page, ['Offer new comparisons'])
-  await page.keyboard.press('Escape')
+  await closeSettings(page)
   const client = mcpClient(userDataDir)
   try {
     await grantReaches(client, ['propose_comparison'])

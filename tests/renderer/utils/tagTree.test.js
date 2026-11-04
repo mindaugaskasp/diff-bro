@@ -129,6 +129,16 @@ describe('buildTagTree', () => {
     expect(ids(tree.untagged)).toEqual(['m'])
   })
 
+  it('scoped to a format tag, places the item under it', () => {
+    const notFormat = (e) => e.tags.filter((t) => t !== e.lang)
+    const tree = buildTagTree([{ id: 'p', tags: ['php'], lang: 'php' }], {
+      within: 'php',
+      tagsOf: notFormat
+    })
+    expect(tree.sections.map((n) => n.path)).toEqual(['php'])
+    expect(ids(tree.sections[0].items)).toEqual(['p'])
+  })
+
   it('places a tag deeper than three levels at its third', () => {
     const deep = buildTagTree([item('deep', ['a/b/c/d'])])
     const c = deep.sections[0].children[0].children[0]

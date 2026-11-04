@@ -1,6 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { test, expect, enablePython, PYTHON, stubMessageBox } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  closeSettings,
+  enablePython,
+  PYTHON,
+  stubMessageBox
+} from './fixtures.mjs'
 import { languageRow as row, openLanguages } from './runnerPrograms.mjs'
 
 test.skip(!PYTHON, 'needs python3 on the machine')
@@ -27,7 +34,7 @@ async function setStopAfter(page, minutes) {
   await input.fill(String(minutes))
   await input.press('Tab')
   await expect(input).toHaveValue(String(minutes))
-  await page.keyboard.press('Escape')
+  await closeSettings(page)
   await expect(dialog).toBeHidden()
 }
 

@@ -85,6 +85,7 @@ function looksLikeCss(t) {
   return CSS_AT_RULE.test(t) || CSS_RULE.test(t)
 }
 
+const CURL_START = /^curl(\.exe)?\s+\S/
 const SQL_START =
   /^(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+(TABLE|INDEX|VIEW|DATABASE)|ALTER\s+TABLE|DROP\s+(TABLE|INDEX|VIEW|DATABASE)|WITH\s+\w+\s+AS)\b/i
 
@@ -177,6 +178,7 @@ function looksLikeShell(t) {
 // file is too big to parse inside the window — else its quoted markup names it.
 const DETECTORS = [
   detectShebang,
+  (t) => (CURL_START.test(t) ? 'curl' : null),
   (t) => (!jsonShaped(t) && PHP_RE.test(t) ? 'php' : null),
   (t) => (XML_DECL_RE.test(t) ? 'xml' : null),
   (t) => (!jsonShaped(t) && HTML_RE.test(t) ? 'html' : null),

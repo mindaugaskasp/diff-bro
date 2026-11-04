@@ -72,6 +72,69 @@ test('dragging the preview up makes the diagram bigger', async ({ page }) => {
   await expect.poll(svgHeight).toBeGreaterThan(before.svg)
 })
 
+test('the preview floats on the snippet ground, with no panel strip around it', async ({
+  page
+}) => {
+  await page
+    .locator('aside.saved')
+    .getByText('Example — Mermaid diagram', { exact: true })
+    .first()
+    .click()
+  const doc = page.locator('.snippet-doc:visible')
+  await expect(doc.locator('.mmd-preview .mermaid-diagram svg').first()).toBeVisible()
+
+  const probe = await doc.evaluate((root) => {
+    const groundAt = (x, y) => {
+      for (let el = document.elementFromPoint(x, y); el; el = el.parentElement) {
+        const bg = getComputedStyle(el).backgroundColor
+        if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg
+      }
+      return ''
+    }
+    const head = root.querySelector('.mmd-preview-head')
+    const card = head.parentElement.getBoundingClientRect()
+    const below = head.getBoundingClientRect().bottom
+    return {
+      ground: getComputedStyle(root.querySelector('.doc-head')).backgroundColor,
+      above: groundAt(card.left + 20, card.top - 4),
+      beside: groundAt(card.left - 4, card.top + card.height / 2),
+      underHead: groundAt(card.left + 10, below + 2),
+      shadow: getComputedStyle(head.parentElement).boxShadow
+    }
+  })
+  expect(probe.above).toBe(probe.ground)
+  expect(probe.beside).toBe(probe.ground)
+  expect(probe.underHead).toBe(probe.ground)
+  expect(probe.shadow).not.toBe('none')
+})
+
+test('the preview zooms on the wheel and pans on a drag', async ({ page }) => {
+  await page
+    .locator('aside.saved')
+    .getByText('Example — Mermaid diagram', { exact: true })
+    .first()
+    .click()
+  const preview = page.locator('.snippet-doc:visible .mmd-preview')
+  await expect(preview.locator('.mermaid-diagram svg').first()).toBeVisible()
+  const stage = preview.locator('.mmd-preview-body')
+  const transform = () => preview.locator('.transform').evaluate((el) => el.style.transform)
+  const box = await stage.boundingBox()
+  const x = box.x + box.width / 2
+  const y = box.y + box.height / 2
+
+  await page.mouse.move(x, y)
+  await page.mouse.wheel(0, -200)
+  await expect.poll(transform).not.toContain('scale(1)')
+
+  await page.mouse.down()
+  await page.mouse.move(x + 60, y + 30, { steps: 5 })
+  await page.mouse.up()
+  await expect.poll(transform).toContain('translate(60px, 30px)')
+
+  await preview.getByRole('button', { name: /^\d+%$/ }).click()
+  await expect.poll(transform).toBe('translate(0px, 0px) scale(1)')
+})
+
 test('an invalid diagram shows its error in the preview, not the error dialog', async ({
   page
 }) => {

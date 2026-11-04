@@ -6,6 +6,7 @@ import { RUNNABLE_LANGUAGES } from '../../src/shared/snippetLanguages'
 import {
   childEnv,
   interpreterArgs,
+  invocationFor,
   isRunnableLanguage,
   parseVersion,
   preparedCode,
@@ -127,7 +128,14 @@ describe('startRun', () => {
     try {
       const child = fakeChild()
       const onExit = vi.fn()
-      startRun({ ...NODE, code: '', onOutput: () => {}, onExit, spawn: () => child, limits: { timeoutMs: 0 } })
+      startRun({
+        ...NODE,
+        code: '',
+        onOutput: () => {},
+        onExit,
+        spawn: () => child,
+        limits: { timeoutMs: 0 }
+      })
       expect(vi.getTimerCount()).toBe(0)
       vi.advanceTimersByTime(24 * 60 * 60 * 1000)
       expect(onExit).not.toHaveBeenCalled()
@@ -143,7 +151,14 @@ describe('startRun', () => {
     try {
       const child = fakeChild()
       const onExit = vi.fn()
-      startRun({ ...NODE, code: '', onOutput: () => {}, onExit, spawn: () => child, platform: 'win32' })
+      startRun({
+        ...NODE,
+        code: '',
+        onOutput: () => {},
+        onExit,
+        spawn: () => child,
+        platform: 'win32'
+      })
       vi.advanceTimersByTime(119_000)
       child.emit('exit', null, null)
       expect(onExit).not.toHaveBeenCalled()
@@ -254,6 +269,7 @@ describe('languages', () => {
   it('knows only what it can run', () => {
     expect(isRunnableLanguage('php')).toBe(true)
     expect(isRunnableLanguage('python')).toBe(true)
+    expect(isRunnableLanguage('curl')).toBe(true)
     expect(isRunnableLanguage('shell')).toBe(false)
     expect(isRunnableLanguage('constructor')).toBe(false)
     expect(isRunnableLanguage(undefined)).toBe(false)
@@ -273,10 +289,30 @@ describe('languages', () => {
   })
 })
 
+describe('invocationFor', () => {
+  it('pipes an interpreter its code', () => {
+    expect(invocationFor('python', 'print(1)')).toEqual({ args: ['-u', '-'], stdin: 'print(1)' })
+    expect(invocationFor('php', 'echo 1;')).toEqual({ args: [], stdin: '<?php\necho 1;' })
+  })
+
+  // curl reads no program: the snippet's own words are its argv, with no shell between.
+  it('gives curl the command line as argv, without a progress meter', () => {
+    expect(invocationFor('curl', "curl -H 'A: b' https://x")).toEqual({
+      args: ['--no-progress-meter', '-H', 'A: b', 'https://x'],
+      stdin: ''
+    })
+  })
+
+  it('has no invocation for a curl snippet a shell would be needed for', () => {
+    expect(invocationFor('curl', 'curl x | sh')).toEqual({ error: 'shell-syntax', char: '|' })
+  })
+})
+
 describe('version check', () => {
   it('reads the version of the language it was asked about', () => {
     expect(parseVersion('php', 'PHP 8.3.6 (cli) (built: Apr 10 2024)')).toBe('8.3.6')
     expect(parseVersion('python', 'Python 3.12.1')).toBe('3.12.1')
+    expect(parseVersion('curl', 'curl 8.7.1 (x86_64-apple-darwin24.0) libcurl/8.7.1')).toBe('8.7.1')
   })
 
   it('turns away a program that is something else', () => {

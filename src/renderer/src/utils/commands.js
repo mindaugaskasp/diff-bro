@@ -51,7 +51,7 @@ export const COMMANDS = {
   'open-file-as-snippet': ({ diff, tabs, openWith }) => openFileAsSnippet({ diff, tabs, openWith }),
   'export-html': ({ diff }) => diff.exportDiff(),
   'export-image': ({ imageExport }) => imageExport.exportCurrentImage(),
-  'tab-new': ({ tabs }) => tabs.showStart(),
+  'tab-new': ({ tabs }) => tabs.newUntitledTab(),
   'open-new-snippet': ({ snippets }) => (snippets.editingSnippet = { id: null }),
   'tab-next': ({ tabs }) => tabs.step(1),
   'tab-prev': ({ tabs }) => tabs.step(-1),

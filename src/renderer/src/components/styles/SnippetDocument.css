@@ -77,9 +77,6 @@
 .doc-main > .required-hint {
   margin: var(--space-2) var(--space-4) 0;
 }
-.doc-main > .mmd-preview {
-  margin: var(--space-3) var(--space-4);
-}
 .visually-hidden {
   position: absolute;
   width: 1px;

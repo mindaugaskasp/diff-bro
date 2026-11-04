@@ -210,6 +210,12 @@ describe('detectSnippetLanguage — programming languages', () => {
     expect(detect('for f in *.txt; do\n  echo "$f"\ndone')).toBe('shell')
     expect(detect('export API_KEY=secret')).toBe('shell')
   })
+
+  it('detects a pasted curl command, continued lines included', () => {
+    expect(detect('curl -s https://example.com')).toBe('curl')
+    expect(detect('curl -X POST \\\n  -H "Accept: x" \\\n  https://api.test/v1')).toBe('curl')
+    expect(detect('curling is a sport')).not.toBe('curl')
+  })
 })
 
 // Detection runs on content nobody here wrote: restoreBundle feeds an imported

@@ -29,6 +29,7 @@ const draft = useSettingsDraft({ close: () => (ui.showSettingsDialog = false) })
   <BaseDialog
     width="870px"
     tour="settings"
+    :escape-closes="false"
     :title="$t('settingsDialog.settings')"
     @close="draft.requestClose()"
   >

@@ -1,39 +1,61 @@
 .mmd-preview {
   position: relative;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg);
+}
+.mmd-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--tile-edge);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
   overflow: hidden;
 }
 .mmd-preview-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
   padding: 6px 8px 6px 10px;
   background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
   font-size: var(--font-sm);
   color: var(--text-dim);
 }
+.mmd-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.mmd-pct {
+  min-width: 52px;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+/* --bg, never the panel tint: Mermaid's light-theme node fill nearly matches the
+   floating-canvas tint and dissolves into it. */
 .mmd-preview-body {
-  padding: 8px;
-  overflow: auto;
-  /* Render the diagram on the base surface, never the panel/canvas tint. Mermaid's
-     light theme fills nodes with a pale lavender that is nearly the floating-canvas
-     tint, so on the tinted panel the diagram dissolved into it. --bg is the plain
-     light/dark ground Mermaid's themes are tuned for — the same surface the full
-     viewer uses — so a diagram always reads as a diagram. */
+  overflow: hidden;
+  display: flex;
+  cursor: grab;
+  touch-action: none;
   background: var(--bg);
 }
-/* A pinned diagram grounds the padded BODY, not just the host inside it — the
-   8px inset was otherwise a gutter of the app's ground around the sheet. */
+.mmd-preview-body:active {
+  cursor: grabbing;
+}
 .mmd-preview-body[data-paper='light'] {
   background: var(--diagram-paper-light);
 }
 .mmd-preview-body[data-paper='dark'] {
   background: var(--diagram-paper-dark);
+}
+.transform {
+  transform-origin: center center;
+  transition: transform 0.04s linear;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
 }
 
 /* Drag-to-heighten: hit area on the top edge, unmarked until pointed at. */

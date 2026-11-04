@@ -7,7 +7,8 @@ import {
   freshUserDataDir,
   launchApp,
   openSettings,
-  openSettingsPage
+  openSettingsPage,
+  closeSettings
 } from './fixtures.mjs'
 
 // The registry ships no release tour, so fixtures are pushed into the store through Pinia.
@@ -98,7 +99,7 @@ test('a release tour is offered once, bottom right; Later keeps it New', async (
     await expect(
       settings(page).locator('[data-tour-row="fixture-snippet"] .new-badge')
     ).toBeVisible()
-    await page.keyboard.press('Escape')
+    await closeSettings(page)
     await expect(settings(page)).toHaveCount(0)
     await page.waitForTimeout(500)
     await expect(card(page)).toHaveCount(0)
@@ -141,7 +142,7 @@ test('the card waits for an open dialog to close', async () => {
     await shipReleaseTours(page, [NEW_SNIPPET])
     await page.waitForTimeout(300)
     await expect(card(page)).toHaveCount(0)
-    await page.keyboard.press('Escape')
+    await closeSettings(page)
     await expect(settings(page)).toHaveCount(0)
     await expect(card(page)).toBeVisible()
   } finally {

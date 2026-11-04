@@ -27,6 +27,14 @@ const section = (page, path) => page.locator(`.snippets-section .ts-head[data-pa
 const rowsUnder = (page, path) =>
   page.locator(`.snippets-section .ts-head[data-path="${path}"] + .ts-rows > .row`)
 
+async function setNesting(page, on) {
+  const dialog = await openSettingsPage(page, 'Behaviour')
+  await dialog
+    .getByRole('checkbox', { name: 'List an item with several tags once, nested by its tags' })
+    .setChecked(on)
+  await saveSettings(page)
+}
+
 test.beforeEach(async ({ page }) => {
   await snippetWith(page, 'Restart api', ['ops/k8s/prod'])
   await snippetWith(page, 'Tail pod logs', ['ops/k8s'])
@@ -37,6 +45,8 @@ test.beforeEach(async ({ page }) => {
 test('tag paths become nested sections, and a parent counts what is inside it', async ({
   page
 }) => {
+  test.setTimeout(120_000)
+  await setNesting(page, false)
   await expect(section(page, 'ops').locator('.ts-count')).toHaveText('3')
   await expect(section(page, 'ops/k8s').locator('.ts-count')).toHaveText('3')
   await expect(section(page, 'ops/k8s/prod').locator('.ts-count')).toHaveText('2')
@@ -94,21 +104,14 @@ test('clicking the empty search lists the tags; typing narrows them and the rows
   await expect(box).toHaveValue('dat')
 })
 
-test('with nesting on, an item with several tags is listed once, under them nested', async ({
-  page
-}) => {
+test('by default an item with several tags is listed once, under them nested', async ({ page }) => {
   test.setTimeout(120_000)
   const vacuum = page.locator('.snippets-section .row', { hasText: 'Postgres vacuum' })
-  await expect(vacuum).toHaveCount(2)
-
-  const dialog = await openSettingsPage(page, 'Behaviour')
-  await dialog
-    .getByRole('checkbox', { name: 'List an item with several tags once, nested by its tags' })
-    .check()
-  await saveSettings(page)
-
   await expect(vacuum).toHaveCount(1)
   await expect(rowsUnder(page, 'data/prod/ops/k8s/prod')).toHaveText(/Postgres vacuum/)
+
+  await setNesting(page, false)
+  await expect(vacuum).toHaveCount(2)
 })
 
 test('a closed section stays closed after a reload', async ({ page }) => {
