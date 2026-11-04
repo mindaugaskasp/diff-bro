@@ -115,6 +115,46 @@ describe('startRun', () => {
     expect(exit.reason).toBe('timeout')
   })
 
+  it('arms no timer when the time limit is zero', async () => {
+    const { exit } = await run('setTimeout(() => console.log("late"), 300)', {
+      limits: { timeoutMs: 0 }
+    })
+    expect(exit.reason).toBe('exit')
+  })
+
+  it('lets a run with no time limit go on for as long as it takes', () => {
+    vi.useFakeTimers()
+    try {
+      const child = fakeChild()
+      const onExit = vi.fn()
+      startRun({ ...NODE, code: '', onOutput: () => {}, onExit, spawn: () => child, limits: { timeoutMs: 0 } })
+      expect(vi.getTimerCount()).toBe(0)
+      vi.advanceTimersByTime(24 * 60 * 60 * 1000)
+      expect(onExit).not.toHaveBeenCalled()
+      child.emit('close', 0, null)
+      expect(onExit).toHaveBeenCalledWith(expect.objectContaining({ reason: 'exit', code: 0 }))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stops after two minutes when no limit is given', () => {
+    vi.useFakeTimers()
+    try {
+      const child = fakeChild()
+      const onExit = vi.fn()
+      startRun({ ...NODE, code: '', onOutput: () => {}, onExit, spawn: () => child, platform: 'win32' })
+      vi.advanceTimersByTime(119_000)
+      child.emit('exit', null, null)
+      expect(onExit).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(1000)
+      child.emit('close', null, 'SIGKILL')
+      expect(onExit).toHaveBeenCalledWith(expect.objectContaining({ reason: 'timeout' }))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('cuts flooding output at a whole character, never through one', async () => {
     const { chunks } = await run('process.stdout.write("é".repeat(10))', {
       limits: { maxOutputBytes: 5 }

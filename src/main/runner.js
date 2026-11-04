@@ -1,6 +1,6 @@
 // Electron glue over runnerCore.js: runs a snippet with the program main holds for its language.
 import { app, dialog, ipcMain } from 'electron'
-import { readConfig, writeConfig } from './runnerConfig'
+import { readConfig, timeoutMsOf, writeConfig } from './runnerConfig'
 import { createRuns, refusalFor } from './runnerRuns'
 import { configFile, registerRunnerSettingsIpc, windowOf } from './runnerSettings'
 import { readSnippetStore } from './appData'
@@ -53,18 +53,19 @@ async function start(e, { key, language, code, snippetId } = {}) {
   if (refusal) return { error: refusal }
 
   const { sender } = e
-  const { path, version } = config.languages[language]
+  const settings = config.languages[language]
   stopRunsWhenGone(sender)
   const runId = runs.begin({
     owner: sender.id,
     key,
-    exe: path,
+    exe: settings.path,
     language,
     code,
+    limits: { timeoutMs: timeoutMsOf(settings) },
     onOutput: (chunk) => sendIfAlive(sender, 'run:output', { key, runId, ...chunk }),
     onExit: (exit) => sendIfAlive(sender, 'run:exit', { key, runId, ...exit })
   })
-  return { runId, version }
+  return { runId, version: settings.version, stopAfterMinutes: settings.stopAfterMinutes }
 }
 
 export function registerRunnerIpc() {

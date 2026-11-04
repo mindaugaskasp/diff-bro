@@ -3,15 +3,18 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  DEFAULT_STOP_AFTER_MINUTES,
   isEnabled,
+  isStopAfterMinutes,
   rendererStatus,
   readConfig,
   sanitizeConfig,
   withLanguage,
+  timeoutMsOf,
   writeConfig
 } from '../../src/main/runnerConfig'
 
-const OFF = { enabled: false, path: null, version: null }
+const OFF = { enabled: false, path: null, version: null, stopAfterMinutes: 2 }
 
 describe('sanitizeConfig', () => {
   it('starts with every language off and nothing confirmed', () => {
@@ -22,7 +25,7 @@ describe('sanitizeConfig', () => {
   })
 
   it('keeps a well-formed language', () => {
-    const php = { enabled: true, path: '/bin/php', version: '8.3.6' }
+    const php = { enabled: true, path: '/bin/php', version: '8.3.6', stopAfterMinutes: 5 }
     expect(sanitizeConfig({ languages: { php }, confirmed: true })).toEqual({
       languages: { php, python: OFF },
       confirmed: true
@@ -47,6 +50,42 @@ describe('sanitizeConfig', () => {
 
   it('takes only a literal true as confirmed', () => {
     expect(sanitizeConfig({ confirmed: 'true' }).confirmed).toBe(false)
+  })
+})
+
+describe('stop after', () => {
+  it('defaults to two minutes', () => {
+    expect(DEFAULT_STOP_AFTER_MINUTES).toBe(2)
+    expect(sanitizeConfig(null).languages.python.stopAfterMinutes).toBe(2)
+  })
+
+  it('keeps zero, which means no limit', () => {
+    const python = { stopAfterMinutes: 0 }
+    expect(sanitizeConfig({ languages: { python } }).languages.python.stopAfterMinutes).toBe(0)
+  })
+
+  it.each([[-1], [1.5], ['3'], [null], [Number.NaN], [Infinity], [1441]])(
+    'reads a hand-edited %j as the default',
+    (stopAfterMinutes) => {
+      const python = { stopAfterMinutes }
+      expect(sanitizeConfig({ languages: { python } }).languages.python.stopAfterMinutes).toBe(2)
+    }
+  )
+
+  it.each([[0], [1], [2], [1440]])('accepts %j minutes', (minutes) => {
+    expect(isStopAfterMinutes(minutes)).toBe(true)
+  })
+
+  it.each([[-1], [0.5], ['2'], [null], [undefined], [Number.NaN], [Infinity], [1441], [true]])(
+    'refuses %j minutes',
+    (minutes) => {
+      expect(isStopAfterMinutes(minutes)).toBe(false)
+    }
+  )
+
+  it('turns minutes into the run time limit, and zero into none', () => {
+    expect(timeoutMsOf({ stopAfterMinutes: 2 })).toBe(120_000)
+    expect(timeoutMsOf({ stopAfterMinutes: 0 })).toBe(0)
   })
 })
 

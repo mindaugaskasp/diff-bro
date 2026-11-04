@@ -60,6 +60,9 @@ export const useRunnerStore = defineStore('runner', {
     async disable(language) {
       this.applySettingsReply(language, await window.api.runDisable(language))
     },
+    async setStopAfter(language, minutes) {
+      this.applySettingsReply(language, await window.api.runSetStopAfter(language, minutes))
+    },
     listen() {
       if (this.listening) return
       this.listening = true
@@ -75,6 +78,7 @@ export const useRunnerStore = defineStore('runner', {
         language,
         blocks: [],
         version: null,
+        stopAfterMinutes: null,
         line,
         lastLine
       }
@@ -93,7 +97,9 @@ export const useRunnerStore = defineStore('runner', {
         return
       }
       if (!isStillShown || pending.stopAsked) window.api.runStop(reply.runId)
-      if (isStillShown) Object.assign(pending, { runId: reply.runId, version: reply.version })
+      if (!isStillShown) return
+      const { runId, version, stopAfterMinutes } = reply
+      Object.assign(pending, { runId, version, stopAfterMinutes })
     },
     appendOutput({ key, runId, stream, text }) {
       const run = this.liveRun(key, runId)

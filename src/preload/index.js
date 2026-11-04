@@ -164,6 +164,7 @@ contextBridge.exposeInMainWorld('api', {
   runUsePath: (language, path) => ipcRenderer.invoke('run:usePath', language, path),
   runFindAgain: (language) => ipcRenderer.invoke('run:findAgain', language),
   runDisable: (language) => ipcRenderer.invoke('run:disable', language),
+  runSetStopAfter: (language, minutes) => ipcRenderer.invoke('run:setStopAfter', language, minutes),
   runStart: (request) => ipcRenderer.invoke('run:start', request),
   runStop: (runId) => ipcRenderer.invoke('run:stop', runId),
   onRunOutput: (handler) => {

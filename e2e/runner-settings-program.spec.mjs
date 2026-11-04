@@ -2,11 +2,13 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { test, expect, firstReadyPage, freshUserDataDir, launchApp, PYTHON } from './fixtures.mjs'
 import {
+  expectProgram,
   failOpenDialog,
   fakeProgram,
   languageRow as row,
   messageBoxes,
   openLanguages,
+  programField,
   recordMessageBoxes,
   rememberProgram
 } from './runnerPrograms.mjs'
@@ -36,13 +38,13 @@ test.describe('a language turned off', () => {
     rmSync(program.dir, { recursive: true, force: true })
   })
 
-  test('shows the program it remembers, dimmed, with Change… still there', async () => {
+  test('shows the program it remembers, greyed, with Browse… still there', async () => {
     const dialog = await openLanguages(session.page)
     const php = row(dialog, 'PHP')
     await expect(php.getByRole('checkbox')).not.toBeChecked()
-    await expect(php.locator('.lang-path')).toHaveText(`${program.file} · 8.3.6`)
-    await expect(php.locator('.lang-path')).toHaveClass(/is-off/)
-    await expect(php.getByRole('button', { name: 'Change…' })).toBeEnabled()
+    await expectProgram(php, program.file, '8.3.6')
+    await expect(php).toHaveClass(/is-off/)
+    await expect(php.getByRole('button', { name: 'Browse…' })).toBeEnabled()
   })
 
   test('turns back on with that program, without asking for it again', async () => {
@@ -51,8 +53,8 @@ test.describe('a language turned off', () => {
     const dialog = await openLanguages(session.page)
     await row(dialog, 'PHP').getByRole('checkbox').check()
     await expect(row(dialog, 'PHP').getByRole('checkbox')).toBeChecked()
-    await expect(row(dialog, 'PHP').locator('.lang-path')).not.toHaveClass(/is-off/)
-    await expect(row(dialog, 'PHP').locator('.lang-path')).toHaveText(`${program.file} · 8.3.6`)
+    await expect(row(dialog, 'PHP')).not.toHaveClass(/is-off/)
+    await expectProgram(row(dialog, 'PHP'), program.file, '8.3.6')
     expect(await messageBoxes(session.app)).toHaveLength(1)
   })
 })
@@ -67,16 +69,15 @@ test.describe('a typed path', () => {
   async function typePath(page, path) {
     const dialog = await openLanguages(page)
     const php = row(dialog, 'PHP')
-    await php.getByRole('button', { name: 'Change…' }).click()
-    await php.getByRole('textbox', { name: 'Path to the program' }).fill(path)
-    await php.getByRole('button', { name: 'Use', exact: true }).click()
+    await programField(php).fill(path)
+    await programField(php).press('Enter')
     return php
   }
 
   test('is confirmed in main, showing the path, then adopted', async ({ app, page }) => {
     await recordMessageBoxes(app, 1)
     const php = await typePath(page, program.file)
-    await expect(php.locator('.lang-path')).toHaveText(`${program.file} · 8.3.6`)
+    await expectProgram(php, program.file, '8.3.6')
     const [confirm] = await messageBoxes(app)
     expect(confirm.detail).toContain(program.file)
     await expect(php.getByRole('checkbox')).not.toBeChecked()
@@ -86,7 +87,9 @@ test.describe('a typed path', () => {
     await recordMessageBoxes(app, 0)
     const php = await typePath(page, program.file)
     await expect.poll(() => messageBoxes(app)).toHaveLength(1)
-    await expect(php.locator('.lang-path')).toHaveText('Off')
+    await expect(php.locator('.lang-version')).toHaveCount(0)
+    await page.reload()
+    await expect(programField(row(await openLanguages(page), 'PHP'))).toHaveValue('')
     expect(program.wasRun()).toBe(false)
   })
 
@@ -110,7 +113,7 @@ test.describe('a typed path', () => {
       await recordMessageBoxes(app, 1)
       const php = await typePath(page, python.file)
       await expect(php.getByText("That program isn't PHP.")).toBeVisible()
-      await expect(php.locator('.lang-path')).toHaveText('Off')
+      await expect(php.locator('.lang-version')).toHaveCount(0)
     } finally {
       rmSync(python.dir, { recursive: true, force: true })
     }
@@ -135,7 +138,8 @@ test.describe('detection', () => {
       await expect(python.getByRole('status')).toHaveText(
         'The program you had picked is gone, so Diff Bro found this one.'
       )
-      await expect(python.locator('.lang-path')).not.toContainText(gone)
+      await expect(programField(python)).not.toHaveValue(gone)
+      await expect(programField(python)).toHaveValue(/python3$/)
     } finally {
       await app.close()
       rmSync(dir, { recursive: true, force: true })
@@ -149,15 +153,18 @@ test.describe('detection', () => {
     const python = row(dialog, 'Python')
     await python.getByRole('checkbox').check()
     await expect(python.getByRole('checkbox')).toBeChecked()
-    await python.getByRole('button', { name: 'Change…' }).click()
-    const found = python.getByRole('combobox', { name: 'Found on this computer' })
-    await expect(found.locator('option').first()).toHaveText(/^3\.\d+\.\d+ · \//)
-    const shown = await python.locator('.lang-path').textContent()
-    expect(shown).toContain(
-      await found.locator('option:checked').evaluate((o) => o.text.split(' · ')[1])
-    )
-    await python.getByRole('button', { name: 'Find again' }).click()
-    await expect(found.locator('option')).not.toHaveCount(0)
+    await python.getByRole('button', { name: 'Found on this computer' }).click()
+    const menu = python.getByRole('menu', { name: 'Found on this computer' })
+    const found = menu.getByRole('menuitemradio')
+    await expect(found.first().locator('.version')).toHaveText(/^3\.\d+\.\d+$/)
+    const current = menu.getByRole('menuitemradio', { checked: true })
+    await expect(current).toHaveCount(1)
+    await expect(programField(python)).toHaveValue(await current.locator('.path').textContent())
+    await menu.getByRole('menuitem', { name: 'Find again' }).click()
+    await expect(found).not.toHaveCount(0)
     await expect(python.getByRole('alert')).toHaveCount(0)
+    await found.first().click()
+    await expect(menu).toHaveCount(0)
+    await expect(programField(python)).toHaveValue(/python3$/)
   })
 })

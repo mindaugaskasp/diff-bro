@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { openSettingsPage } from './fixtures.mjs'
+import { expect, openSettingsPage } from './fixtures.mjs'
 
 // A shell script that answers --version, and leaves a mark once it has been run.
 export function fakeProgram(answer) {
@@ -20,6 +20,12 @@ export function rememberProgram(userDataDir, languages) {
 export const openLanguages = (page) => openSettingsPage(page, 'Languages')
 
 export const languageRow = (dialog, name) => dialog.locator('.lang-row', { hasText: name })
+export const programField = (row) => row.getByRole('textbox', { name: 'Path to the program' })
+
+export async function expectProgram(row, path, version) {
+  await expect(programField(row)).toHaveValue(path)
+  await expect(row.locator('.lang-version')).toHaveText(version)
+}
 
 // Answers every confirm with `response`, and keeps what each one said.
 export async function recordMessageBoxes(app, response) {

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 5 / 35 steps |
+| **Progress** | 9 / 35 steps |
 | **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips` (see Delivery) |
 | **Started** | 2026-11-03 |
 | **Finished** | — |
@@ -169,6 +169,7 @@ The halo is the only open risk. If the sweep shows it reading as a glow on neon,
   - main's own Browse… dialog
   - a typed path that main checks and confirms natively
   Rule 7's wording already covers it.
+- **Stop after (#219)** adds one IPC handler, `run:setStopAfter`. The renderer sends a language and a number, main refuses anything but whole minutes from 0 to 1440, and the value lives in main-only `runners.json`. 0 arms no timer; Stop, tab close and quit still end the run, and the 1 MB output cap stays.
 - **Rule 8 (no injection sinks):** tip and tour copy comes from the catalogue through `<i18n-t>` and interpolation; no `v-html`.
 - **No new dependency.**
 
@@ -236,7 +237,7 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`, and ea
 | # | slice | branch | base | PR | status |
 |---|---|---|---|---|---|
 | 1 | Spec + Settings in collapsible groups (#214) | `improvement/settings-groups` | `main` | | committed |
-| 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | | |
+| 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | | committed |
 | 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | |
 | 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | |
 | 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | |
@@ -254,10 +255,10 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 - [x] 5. Theme sweep surface `settings-nav`; `npm run check`.
 
 **Slice 2: Languages row inline (#215)**
-- [ ] 6. Tests for the inline row first; remove the Off text and Change….
-- [ ] 7. The path field, with the version, Enter to use, the chevron menu (found plus Find again) and Browse…; greyed when off.
-- [ ] 8. *Stop after [2] min* per language (#219): an integer input, where 0 means no limit and 2 is the default. Main validates a non-negative integer and stores it in `runners.json`, and `startRun` takes `timeoutMs` from it, with no timer when it is 0. Unit tests for the validation and the core, plus an e2e that a 0-minute run outlives the old 30 s.
-- [ ] 9. Update `e2e/runner-settings*.spec.mjs`; sweep `settings-languages`; `docs/security.md` drops the fixed 30 s in favour of the per-language time.
+- [x] 6. Tests for the inline row first; remove the Off text and Change….
+- [x] 7. The path field, with the version, Enter to use, the chevron menu (found plus Find again) and Browse…; greyed when off.
+- [x] 8. *Stop after [2] min* per language (#219): an integer input, where 0 means no limit and 2 is the default. Main validates a non-negative integer and stores it in `runners.json`, and `startRun` takes `timeoutMs` from it, with no timer when it is 0. Unit tests for the validation and the core, plus an e2e that a 0-minute run outlives the old 30 s.
+- [x] 9. Update `e2e/runner-settings*.spec.mjs`; sweep `settings-languages`; `docs/security.md` drops the fixed 30 s in favour of the per-language time.
 
 **Slice 3: Tour engine + core tour**
 - [ ] 10. `features/onboarding/tourRegistry.js` (`{ id, introducedIn, steps }`), plus `tourPlan.js` with fresh-install and existing-user detection; tests first.
@@ -328,6 +329,13 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 | 2026-11-03 | The nav rail is 152px (was 128); labels are one line with an ellipsis | indented children and the `en-XA` group names fit at a fixed control height | wrapping labels |
 | 2026-11-03 | Nav ink: group rows `--text` at weight 500, pages `--text-meta` at 400, the active page at weight 600 on `--btn-face`, hover `--btn-face-hover` | the old `--text-dim` / `--bg-hover` failed the sweep (4.5:1 on solar, nord, sepia and bloom; the 1.15 hover step on 13 themes) | keep the old ink |
 | 2026-11-03 | Group rows carry `aria-expanded` and the active page `aria-current="page"` | the state is readable and testable | — |
+| 2026-11-03 | *Stop after* is capped at 1440 minutes (a day); main refuses more, and a hand-edited value falls back to 2 | past 2^31 ms `setTimeout` fires at once, so a huge number would kill a run immediately; 0 already gives no limit | no cap; the 35 791-minute `setTimeout` ceiling |
+| 2026-11-03 | The chevron is shown only when its menu has something in it: found programs, or Find again while on | an off language with nothing found would open an empty menu | always show it |
+| 2026-11-03 | The field keeps what was typed until main adopts a program; the version shows only while the field holds the program it belongs to; Enter on the program already in use sends nothing | a refused path stays to correct, and a stale version never sits beside another path | revert on blur |
+| 2026-11-03 | The *Stop after* input sits on a second line under the field; a value main would refuse is put back, not sent; "0 for no limit" is its tooltip | one row stays one line wide; the renderer never sends what main refuses | a separate column; a "no limit" checkbox |
+| 2026-11-03 | The pane's timeout note reads "stopped after {n} min", with the minutes main answered to Run | the limit is per language now, so a fixed "30 seconds" would be wrong | derive minutes from the run's ms |
+| 2026-11-03 | `ProgramPicker.vue` is replaced by `ProgramMenu.vue` (the chevron's menu); `runner.settings.off`, `change` and `use` are removed | the picker's three controls fold into the row | keep the picker behind the chevron |
+| 2026-11-03 | The 0-minute e2e speeds up main's long timers (≥10 s run 1000× faster) instead of adding a test seam to `runnerCore` | the real `startRun` timer path is what is proven, with no test-only code shipped | a `timeoutMs` override through IPC or env |
 
 ## Validation
 

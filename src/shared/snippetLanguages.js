@@ -33,6 +33,9 @@ export const SNIPPET_LANGUAGES = [
 // The ones a snippet can be run in; main keeps each one's argv and version check.
 export const RUNNABLE_LANGUAGES = ['php', 'python']
 
+// A day at most: past 2^31 ms, setTimeout fires at once instead of never. 0 is no limit.
+export const STOP_AFTER_MINUTES = { fallback: 2, max: 24 * 60 }
+
 export const labelKeyOf = (id) => SNIPPET_LANGUAGES.find((l) => l.id === id)?.labelKey
 
 // 'auto' is the request to detect, not a syntax to offer.

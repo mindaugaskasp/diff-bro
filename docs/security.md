@@ -418,10 +418,14 @@ The first run ever says so in a dialog from main, then never asks again.
 - A run belongs to the window that started it, which alone can stop it.
 - Secret snippets do not run: main refuses a secret's id, because a script could
   print or write what it holds.
-- A run is stopped after 30 seconds or 1 MB of output, and on tab close and quit,
+- A run is stopped after the minutes set for its language (2 by default; 0 is
+  no limit, and Stop ends it), or at 1 MB of output, and on tab close and quit,
   with the process tree killed: a process group on macOS and Linux, `taskkill`
   from System32 on Windows. A grandchild that leaves its group, or any child
   when the app crashes, can outlive it.
+- The window sets that time by sending a language and a number. Main refuses
+  anything but whole minutes from 0 to 1440 (past 2^31 ms a timer would fire at
+  once), and a hand-edited `runners.json` falls back to 2.
 
 **What it does not stop.** Any snippet that is not secret can run, including a
 Claude proposal or an import, so after the first confirmation code from elsewhere

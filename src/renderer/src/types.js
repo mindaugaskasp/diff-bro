@@ -424,6 +424,7 @@ export {}
  * @property {boolean} enabled
  * @property {string|null} path     the program the user picked
  * @property {string|null} version  what it answered to --version
+ * @property {number} stopAfterMinutes  0 is no limit
  * @property {{ path: string, version: string }[]} candidates  what main found, newest first
  */
 
@@ -435,6 +436,7 @@ export {}
  * @property {string} language
  * @property {{ stream: 'out'|'err', text: string }[]} blocks
  * @property {string|null} version
+ * @property {number|null} stopAfterMinutes  how long main lets it go on, 0 for no limit
  * @property {number|null} line      the gutter line pressed, null for the whole snippet
  * @property {number|null} lastLine  the last line that ran, null for the whole snippet
  * @property {boolean} [stopAsked]   Stop came before main answered
