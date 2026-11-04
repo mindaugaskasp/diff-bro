@@ -19,7 +19,7 @@ const OFF = { enabled: false, path: null, version: null, stopAfterMinutes: 2 }
 describe('sanitizeConfig', () => {
   it('starts with every language off and nothing confirmed', () => {
     expect(sanitizeConfig(null)).toEqual({
-      languages: { php: OFF, python: OFF },
+      languages: { php: OFF, python: OFF, curl: OFF },
       confirmed: false
     })
   })
@@ -27,7 +27,7 @@ describe('sanitizeConfig', () => {
   it('keeps a well-formed language', () => {
     const php = { enabled: true, path: '/bin/php', version: '8.3.6', stopAfterMinutes: 5 }
     expect(sanitizeConfig({ languages: { php }, confirmed: true })).toEqual({
-      languages: { php, python: OFF },
+      languages: { php, python: OFF, curl: OFF },
       confirmed: true
     })
   })
@@ -109,7 +109,11 @@ describe('isEnabled', () => {
 describe('rendererStatus', () => {
   it('shows the renderer each language, and not whether the warning was seen', () => {
     const status = rendererStatus(sanitizeConfig({ confirmed: true }))
-    expect(status).toEqual({ php: { ...OFF, candidates: [] }, python: { ...OFF, candidates: [] } })
+    expect(status).toEqual({
+      php: { ...OFF, candidates: [] },
+      python: { ...OFF, candidates: [] },
+      curl: { ...OFF, candidates: [] }
+    })
   })
 
   it('adds the programs main found for each language', () => {

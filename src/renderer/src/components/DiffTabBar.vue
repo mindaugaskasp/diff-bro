@@ -11,7 +11,6 @@ import {
   MAX_TAB_NAME,
   adjacentTabId,
   holdsContent,
-  isBlank,
   isSnippetTab,
   stripTabs,
   tabLabel
@@ -29,8 +28,6 @@ const tabs = useTabsStore()
 const diff = useDiffStore()
 const live = computed(() => ({ activeId: tabs.activeId, hasContent: holdsContent(diff) }))
 const strip = computed(() => stripTabs(tabs.tabs, live.value))
-const onStart = computed(() => !isSnippetTab(tabs.active) && !holdsContent(diff))
-const canStart = computed(() => tabs.canAdd || tabs.tabs.some(isBlank))
 
 // The label follows the live comparison, so a tab stops saying "Untitled" the
 // moment a file lands in it.
@@ -182,12 +179,10 @@ function onTabKey(e, tab) {
 
     <button
       class="add"
-      :class="{ on: onStart }"
-      :aria-pressed="onStart"
-      :disabled="!canStart"
-      :data-tip="canStart ? $t('diffTabBar.startTip', { mod: MOD }) : tabsFullNotice(tabs.tabs)"
+      :disabled="!tabs.canAdd"
+      :data-tip="tabs.canAdd ? $t('diffTabBar.startTip', { mod: MOD }) : tabsFullNotice(tabs.tabs)"
       :aria-label="$t('diffTabBar.newComparison')"
-      @click="tabs.showStart()"
+      @click="tabs.newUntitledTab()"
     >
       <AppIcon name="plus" />
     </button>

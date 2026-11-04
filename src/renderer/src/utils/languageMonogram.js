@@ -44,6 +44,7 @@ const MAP = {
   php: ['PHP', 'code'],
   ruby: ['RB', 'code'],
   shell: ['SH', 'code'],
+  curl: ['CURL', 'code'],
   dockerfile: ['DKR', 'code'],
   markdown: ['MD', 'docs'],
   plaintext: ['TXT', 'docs']

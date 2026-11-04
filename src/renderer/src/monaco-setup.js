@@ -8,6 +8,10 @@ import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import { registerMermaidLanguage } from './monaco-mermaid'
 import { registerJiraLanguage } from './monaco-jira'
+import {
+  conf as shellConf,
+  language as shellGrammar
+} from 'monaco-editor/esm/vs/basic-languages/shell/shell'
 import { EXPLICIT_LANGUAGES } from '../../shared/snippetLanguages'
 
 // Mermaid and Jira/Confluence wiki markup have no built-in Monaco grammar;
@@ -15,6 +19,9 @@ import { EXPLICIT_LANGUAGES } from '../../shared/snippetLanguages'
 // ids come from utils/detectLanguage.js).
 registerMermaidLanguage(monaco)
 registerJiraLanguage(monaco)
+monaco.languages.register({ id: 'curl' })
+monaco.languages.setMonarchTokensProvider('curl', shellGrammar)
+monaco.languages.setLanguageConfiguration('curl', shellConf)
 
 // Monaco loads a language's rules, indent-on-Enter among them, on its first model. The
 // keystroke that reveals a snippet's language comes just before Enter, so load them now.

@@ -131,6 +131,41 @@ describe('candidatePaths', () => {
   })
 })
 
+describe('curl', () => {
+  it("prefers Homebrew's keg-only curl on macOS, then the system one", () => {
+    const dirs = searchDirs({ language: 'curl', platform: 'darwin', env: {}, home: '/Users/me' })
+    expect(dirs).toEqual([
+      '/opt/homebrew/opt/curl/bin',
+      '/usr/local/opt/curl/bin',
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+      '/usr/bin'
+    ])
+  })
+
+  it('finds the curl.exe Windows ships in System32', () => {
+    const paths = candidatePaths({
+      language: 'curl',
+      platform: 'win32',
+      env: { SystemRoot: 'C:\\Windows' },
+      home: 'C:\\Users\\me',
+      readdir: () => []
+    })
+    expect(paths).toContain('C:\\Windows\\System32\\curl.exe')
+  })
+
+  it('looks in the usual Linux folders', () => {
+    const paths = candidatePaths({
+      language: 'curl',
+      platform: 'linux',
+      env: {},
+      home: '/home/me',
+      readdir: () => []
+    })
+    expect(paths).toEqual(['/usr/bin/curl', '/usr/local/bin/curl'])
+  })
+})
+
 describe('isTrap', () => {
   it('skips the Windows Store alias', () => {
     const fs = fakeFs()

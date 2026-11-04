@@ -86,6 +86,7 @@ export const closingActions = {
       }
       target.entryId = null
       target.sample = false
+      target.untitled = false
       target.snapshot = fresh
       target.diffSaved = false
       target.title = tabTitle(fresh)

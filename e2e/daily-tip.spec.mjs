@@ -7,7 +7,8 @@ import {
   freshUserDataDir,
   launchApp,
   openSettingsPage,
-  saveSettings
+  saveSettings,
+  closeSettings
 } from './fixtures.mjs'
 import { expectRinged } from './onboardingTour.mjs'
 
@@ -145,7 +146,7 @@ test('a tip waits for a dialog to close', async () => {
   await frontOn(page, '2030-01-01')
   await page.waitForTimeout(300)
   await expect(card(page)).toHaveCount(0)
-  await page.keyboard.press('Escape')
+  await closeSettings(page)
   await expect(settings(page)).toHaveCount(0)
   await expect(card(page)).toBeVisible()
 })

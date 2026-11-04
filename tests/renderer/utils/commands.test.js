@@ -49,6 +49,7 @@ const stores = () => ({
   tabs: {
     newTab: spy(),
     showStart: spy(),
+    newUntitledTab: spy(),
     step: spy(),
     requestActiveClose: spy(),
     canHost: () => true,

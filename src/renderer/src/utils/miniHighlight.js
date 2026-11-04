@@ -6,7 +6,13 @@
 import Prism from '../prism-setup'
 
 // Snippet language ids are Monaco's; a few differ from Prism's.
-const GRAMMARS = { shell: 'bash', dockerfile: 'docker', html: 'markup', xml: 'markup' }
+const GRAMMARS = {
+  shell: 'bash',
+  curl: 'bash',
+  dockerfile: 'docker',
+  html: 'markup',
+  xml: 'markup'
+}
 
 // Prism's token types → the five roles the --syn-* tokens paint. Anything
 // unlisted stays plain: identifiers and punctuation are most of a line, and

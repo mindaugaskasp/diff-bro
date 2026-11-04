@@ -62,6 +62,7 @@ describe('miniSpans — what it colours', () => {
     ])
     expect(rolesOf(miniSpans('if true; then # here', 'shell'))[0]).toEqual(['keyword', 'if'])
     expect(rolesOf(miniSpans('def f(): # here', 'python'))[0]).toEqual(['keyword', 'def'])
+    expect(rolesOf(miniSpans('curl x # go', 'curl')).at(-1)).toEqual(['comment', '# go'])
   })
 
   it('does not treat a # inside a string as a comment', () => {

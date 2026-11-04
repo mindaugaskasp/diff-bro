@@ -70,6 +70,7 @@ const LANG_EXT = {
   typescript: 'ts',
   python: 'py',
   shell: 'sh',
+  curl: 'sh',
   plaintext: 'txt',
   mermaid: 'mmd'
 }

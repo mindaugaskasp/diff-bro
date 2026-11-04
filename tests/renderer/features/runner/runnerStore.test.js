@@ -222,6 +222,16 @@ describe('runnerStore runs', () => {
     expect(store.runFor('tab')).toBeNull()
   })
 
+  it('shows why main would not run the command, as a failed run', async () => {
+    const store = useRunnerStore()
+    window.api.runStart = vi.fn(async () => ({ error: 'bad-command', message: 'No pipes.' }))
+    await start(store)
+    expect(store.runFor('tab')).toMatchObject({
+      state: 'failed',
+      blocks: [{ stream: 'err', text: 'No pipes.' }]
+    })
+  })
+
   it('stops through main, and closing a running pane stops it too', async () => {
     const store = useRunnerStore()
     await start(store)

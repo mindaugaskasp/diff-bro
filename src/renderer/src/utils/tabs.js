@@ -218,14 +218,14 @@ export const holdsContent = (s) =>
 
 /**
  * The tabs the strip draws: a blank comparison is the start surface, not a tab
- * of work. The active tab's stored copy is stale while it is worked in, so the
- * live document answers for it.
+ * of work, unless + made it. The live document answers for the active tab.
  * @param {DiffTab[]} tabs
  * @param {{ activeId: string, hasContent: boolean }} [live]
  */
+const isShownLive = (t, live) => isSnippetTab(t) || live.hasContent
 export const stripTabs = (tabs, live) =>
-  (tabs ?? []).filter((t) =>
-    live && t.id === live.activeId ? isSnippetTab(t) || live.hasContent : !isBlank(t)
+  (tabs ?? []).filter(
+    (t) => t.untitled || (live && t.id === live.activeId ? isShownLive(t, live) : !isBlank(t))
   )
 
 // A real state to be IN, but not one to come back to: after a restart the

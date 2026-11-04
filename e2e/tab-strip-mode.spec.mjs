@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 // The strip asked the active tab "anything in THIS mode?" and every other tab
-// "anything at all?". Switching mode on a loaded comparison hid it, + opened a
-// tab behind it, and the old one came back under its name, then vanished on click.
+// "anything at all?". Switching mode on a loaded comparison hid it, and the old
+// one came back under its name, then vanished on click.
 
 const tabs = (page) => page.locator('.diff-tabs .tab')
 const addTab = (page) =>
@@ -29,8 +29,9 @@ test('switching to paste mode on a file comparison keeps its tab, and + opens a 
     await expect(tabs(page).first()).toContainText('alpha.txt')
 
     await addTab(page).click()
+    await expect(tabs(page)).toHaveCount(2)
     await tabs(page).first().locator('.tab-open').click()
-    await expect(tabs(page)).toHaveCount(1)
+    await expect(tabs(page).first()).toContainText('alpha.txt')
     await expect(tabs(page).first()).toHaveClass(/active/)
   } finally {
     rmSync(dir, { recursive: true, force: true })

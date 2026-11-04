@@ -1,7 +1,7 @@
 // What may run, and which runs are going. No Electron, so both are unit-tested.
 import { randomUUID } from 'node:crypto'
 import { isEnabled } from './runnerConfig'
-import { isRunnableLanguage, startRun } from './runnerCore'
+import { invocationFor, isRunnableLanguage, startRun } from './runnerCore'
 import { entriesOf, isSecretEntry } from './storeEntries'
 
 const MAX_CODE_CHARS = 8 * 1024 * 1024
@@ -10,7 +10,7 @@ const isSecretId = (store, id) => entriesOf(store).some((e) => e.id === id && is
 
 /**
  * @param {object} request
- * @returns {'bad-request'|'not-enabled'|'secret'|null}
+ * @returns {'bad-request'|'bad-command'|'not-enabled'|'secret'|null}
  */
 export function refusalFor({ language, code, snippetId, config, store }) {
   if (!isRunnableLanguage(language)) return 'bad-request'
@@ -18,7 +18,7 @@ export function refusalFor({ language, code, snippetId, config, store }) {
   if (!isEnabled(config, language)) return 'not-enabled'
   // Its promise is that the contents land nowhere readable; a script can print them.
   if (snippetId && isSecretId(store, snippetId)) return 'secret'
-  return null
+  return invocationFor(language, code).error ? 'bad-command' : null
 }
 
 const BATCH_MS = 50

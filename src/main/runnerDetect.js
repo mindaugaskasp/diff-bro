@@ -4,13 +4,16 @@ import { posix, win32 } from 'node:path'
 const pathsFor = (platform) => (platform === 'win32' ? win32 : posix)
 
 const PROGRAM_NAMES = {
-  posix: { php: ['php'], python: ['python3'] },
-  win32: { php: ['php.exe'], python: ['python.exe', 'py.exe'] }
+  posix: { php: ['php'], python: ['python3'], curl: ['curl'] },
+  win32: { php: ['php.exe'], python: ['python.exe', 'py.exe'], curl: ['curl.exe'] }
 }
 
 // A Dock launch on macOS gets a PATH without Homebrew, so its folders are listed outright.
 function darwinDirs(language, { home }) {
   const shared = ['/opt/homebrew/bin', '/usr/local/bin']
+  if (language === 'curl') {
+    return ['/opt/homebrew/opt/curl/bin', '/usr/local/opt/curl/bin', ...shared, '/usr/bin']
+  }
   if (language === 'php') {
     return [...shared, `${home}/.phpenv/shims`, `${home}/Library/Application Support/Herd/bin`]
   }
@@ -24,12 +27,16 @@ function darwinDirs(language, { home }) {
 
 function linuxDirs(language, { home }) {
   const shared = ['/usr/bin', '/usr/local/bin']
-  return language === 'php' ? shared : [...shared, `${home}/.pyenv/shims`, `${home}/.local/bin`]
+  if (language !== 'python') return shared
+  return [...shared, `${home}/.pyenv/shims`, `${home}/.local/bin`]
 }
 
 function windowsDirs(language, { home, env }) {
   const scoop = win32.join(home, 'scoop', 'shims')
   const choco = win32.join(env.ProgramData ?? 'C:\\ProgramData', 'chocolatey', 'bin')
+  if (language === 'curl') {
+    return [win32.join(env.SystemRoot ?? 'C:\\Windows', 'System32'), scoop, choco]
+  }
   if (language === 'php') {
     return ['C:\\php', 'C:\\xampp\\php', 'C:\\laragon\\bin\\php\\*', scoop, choco]
   }

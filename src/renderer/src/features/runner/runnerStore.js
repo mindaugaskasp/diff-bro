@@ -92,6 +92,13 @@ export const useRunnerStore = defineStore('runner', {
     // Main answers after the first-run dialog: a Stop or a close may already have come.
     bindStartReply(key, pending, reply) {
       const isStillShown = this.runs[key] === pending
+      if (reply?.message && isStillShown) {
+        Object.assign(pending, {
+          state: 'failed',
+          blocks: [{ stream: 'err', text: reply.message }]
+        })
+        return
+      }
       if (!reply?.runId) {
         if (isStillShown) delete this.runs[key]
         return

@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useDiffStore } from '../../../src/renderer/src/stores/diffStore'
 import { useTabsStore } from '../../../src/renderer/src/stores/tabsStore'
-import { MAX_TABS, isBlank, isSnippetTab, stripTabs } from '../../../src/renderer/src/utils/tabs'
+import {
+  MAX_TABS,
+  isBlank,
+  isSnippetTab,
+  stripTabs,
+  tabLabel
+} from '../../../src/renderer/src/utils/tabs'
 
 const FILE = (name) => ({ path: `/tmp/${name}`, name, content: 'x' })
 const comparison = (l, r) => ({ mode: 'files', left: FILE(l), right: FILE(r) })
@@ -103,6 +109,31 @@ describe('closing the only tab', () => {
 })
 
 describe('the start surface', () => {
+  it('+ always adds a new Untitled tab, and the strip shows each one', () => {
+    const tabs = withTabs(comparison('a', 'b'))
+    const first = tabs.newUntitledTab()
+    const second = tabs.newUntitledTab()
+    expect(first).not.toBe(second)
+    expect(tabs.activeId).toBe(second)
+    expect(tabs.tabs).toHaveLength(3)
+    expect(stripTabs(tabs.tabs).map(tabLabel)).toEqual(['a ↔ b', 'Untitled', 'Untitled'])
+  })
+
+  it('closing the last Untitled tab returns to the hidden start surface', () => {
+    const tabs = withTabs(comparison('a', 'b'))
+    const untitled = tabs.newUntitledTab()
+    tabs.close(tabs.tabs[0].id)
+    tabs.close(untitled)
+    expect(tabs.tabs).toHaveLength(1)
+    expect(stripTabs(tabs.tabs)).toHaveLength(0)
+  })
+
+  it('+ refuses past the tab limit', () => {
+    const tabs = withTabs()
+    for (let i = 0; i < MAX_TABS + 2; i++) tabs.newUntitledTab()
+    expect(tabs.tabs).toHaveLength(MAX_TABS)
+  })
+
   it('is a blank comparison, and + returns to it rather than making another', () => {
     const tabs = withTabs(comparison('a', 'b'))
     tabs.showStart()

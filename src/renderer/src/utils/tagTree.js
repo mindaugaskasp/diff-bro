@@ -50,6 +50,13 @@ function placeEntry(roots, entry, tags, nest) {
   return tags.map((tag) => place(roots, entry, partsOf(tag)))
 }
 
+// Scoped to a tag tagsOf leaves out (a format tag), the item is placed by it.
+function placingTags(entry, tagsOf, inScope, within) {
+  const own = tagsOf(entry).filter(inScope)
+  if (own.length || !within) return own
+  return (entry.tags ?? []).filter(inScope)
+}
+
 function finish(nodes) {
   return [...nodes.values()]
     .map(({ path, label, items, children, all }) => ({
@@ -67,7 +74,8 @@ function finish(nodes) {
  * the order given (or, with `nest`, once, under all their tags nested in name
  * order); anything with no tag in Untagged. `within` (the # scope)
  * keeps one branch: an item is placed only under its tags inside it. `tagsOf`
- * picks which of an item's tags place it (a snippet's format tag does not).
+ * picks which of an item's tags place it (a snippet's format tag does not,
+ * unless the scope is that tag).
  * @template {{ tags?: string[], favorite?: boolean }} T
  * @param {T[]} items
  * @param {{ within?: string, nest?: boolean, tagsOf?: (item: T) => string[] }} [opts]
@@ -89,7 +97,7 @@ export function buildTagTree(
       favorites.push(entry)
       continue
     }
-    const placed = placeEntry(roots, entry, tagsOf(entry).filter(inScope), nest)
+    const placed = placeEntry(roots, entry, placingTags(entry, tagsOf, inScope, within), nest)
     if (!within && !placed.some(Boolean)) untagged.push(entry)
   }
   return { favorites, sections: finish(roots), untagged }
