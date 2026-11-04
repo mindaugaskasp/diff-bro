@@ -1,16 +1,16 @@
 # Snippet fixes
 
-|                                         |                      |
-| --------------------------------------- | -------------------- |
-| **Status**                              | in-progress          |
-| **Progress**                            | 0 / 15 steps         |
-| **Branch**                              | `fix/snippet-fixes`  |
-| **Issue**                               | #233                 |
-| **Started**                             | 2026-11-04           |
-| **Finished**                            | —                    |
-| **Bugs found and fixed this iteration** | 0 / 11               |
-| **Token baseline**                      | 2026-11-04T11:57:57Z |
-| **Claude tokens used**                  | not measured yet     |
+|                                         |                                                              |
+| --------------------------------------- | ------------------------------------------------------------ |
+| **Status**                              | shipped                                                      |
+| **Progress**                            | 0 / 15 steps                                                 |
+| **Branch**                              | `fix/snippet-fixes`                                          |
+| **Issue**                               | #233                                                         |
+| **Started**                             | 2026-11-04                                                   |
+| **Finished**                            | —                                                            |
+| **Bugs found and fixed this iteration** | 0 / 11                                                       |
+| **Token baseline**                      | 2026-11-04T11:57:57Z                                         |
+| **Claude tokens used**                  | 89,717,462 processed, from the build start (see Token usage) |
 
 ## Problem
 
@@ -207,8 +207,7 @@ One branch, as the user asked; the git-spice stack is not used for this change.
       build. All green.
 - [x] Red → green: every new unit test failed first; the ten new e2e tests failed on a build of
       the unchanged source (`git stash push -- src/`), and pass now.
-- [x] `make e2e`: 769 passed, 9 failed, 4 skipped on the first run. The nine failures were the
-      + button shrinking the top bar (fixed with vertical margin) and specs written for the old
+- [x] `make e2e`: 769 passed, 9 failed, 4 skipped on the first run. The nine failures were the + button shrinking the top bar (fixed with vertical margin) and specs written for the old
       behaviour (Plain-first drafts, always-on template tags). The 57 tests in those 8 specs
       pass after the fixes.
 - [x] `make theme-sweep`: 5259 measurements across 20 themes, ok, with `new-tab +` (4.5) and
@@ -218,4 +217,20 @@ One branch, as the user asked; the git-spice stack is not used for this change.
       (Cancel moves nothing, Proceed moves, Use default asks) and `useDataDirMove.test.js` went
       red → green; `e2e/data-folder.spec.mjs` fails on the old main (the app restarts) and passes.
 - [x] Docs-impact "yes" rows done.
-- [ ] Token usage: not measured.
+- [x] Token usage measured (below).
+
+### Token usage
+
+`token-usage.mjs --since 2026-11-04T11:57:57Z`, run in a `--network none` container with
+`~/.claude/projects` mounted read-only (the host has no Node). 244 requests, 11:57–14:37 UTC.
+
+| category    |         tokens |
+| ----------- | -------------: |
+| input       |            514 |
+| output      |        137,042 |
+| cache write |        968,614 |
+| cache read  |     88,611,292 |
+| **total**   | **89,717,462** |
+
+The window opens at the branch, so the issue, grilling, canvas and option renders before it
+are not counted.
