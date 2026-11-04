@@ -368,6 +368,9 @@ test('Email it opens an UNADDRESSED draft carrying the fingerprint, key staged f
   }
 })
 
+// The picker opens after one or two IPC round trips, so a click resolves before it.
+const pickersOpened = (app) => app.evaluate(() => globalThis.__pickers)
+
 // A key that arrived through a chat app is text on the clipboard. It must be
 // OFFERED through the same naming dialog a picked file gets — never silently
 // added — and junk must fall through to the picker without a word.
@@ -389,8 +392,8 @@ test('a clipboard key is offered for verification; junk falls through to the pic
     // Junk on the clipboard: straight to the picker, no dialog, no notice.
     await app.evaluate(({ clipboard }) => clipboard.writeText('not a key at all'))
     await addTrustedKeyFromPanel(page)
+    await expect.poll(() => pickersOpened(app)).toBe(1)
     await expect(page.getByRole('dialog', { name: 'Add Trusted Key' })).toHaveCount(0)
-    expect(await app.evaluate(() => globalThis.__pickers)).toBe(1)
 
     // A real key, wrapped the way Slack pastes it.
     const peer = realKey()
@@ -408,7 +411,7 @@ test('a clipboard key is offered for verification; junk falls through to the pic
     // The way out: Choose a file instead skips the peek and opens the picker.
     await confirm.getByRole('button', { name: 'Choose a file instead…' }).click()
     await expect(confirm).toBeHidden()
-    expect(await app.evaluate(() => globalThis.__pickers)).toBe(2)
+    await expect.poll(() => pickersOpened(app)).toBe(2)
 
     // Round two, this time trusting it: the name field prefills from the key's
     // own label and Add lands it in the sidebar's trusted keys.

@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Status** | in-progress (all six slices committed; PRs open, not yet merged) |
+| **Status** | shipped (v0.16.0, 2026-11-04) |
 | **Progress** | 35 / 35 steps |
-| **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips` (see Delivery) |
+| **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips`, merged as #224–#229 (see Delivery) |
 | **Started** | 2026-11-03 |
 | **Finished** | 2026-11-04 |
 | **Bugs found and fixed this iteration** | 3 / 3 (the tip card's top over the toolbar; its footer overflowing in `en-XA`; `ActionMenu` dropping attributes) |
@@ -236,12 +236,12 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`, and ea
 
 | # | slice | branch | base | PR | status |
 |---|---|---|---|---|---|
-| 1 | Spec + Settings in collapsible groups (#214) | `improvement/settings-groups` | `main` | | committed |
-| 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | | committed |
-| 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | committed |
-| 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | committed |
-| 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | committed |
-| 6 | Daily tips | `feat/daily-tips` | slice 5 | | committed |
+| 1 | Spec + Settings in collapsible groups (#214) | `improvement/settings-groups` | `main` | #224 | merged |
+| 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | #225 | merged |
+| 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | #226 | merged |
+| 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | #227 | merged |
+| 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | #228 | merged |
+| 6 | Daily tips | `feat/daily-tips` | slice 5 | #229 | merged |
 
 Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replaces it, so no slice leaves the tour unreachable.
 
