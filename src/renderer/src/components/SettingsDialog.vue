@@ -13,7 +13,7 @@ import StorageSettings from './StorageSettings.vue'
 import { EmailSettings } from '../features/email'
 import { ClaudeSettings } from '../features/claude'
 import { LanguagesSettings } from '../features/runner'
-import { useOnboardingStore } from '../features/onboarding'
+import { ToursSettings, useOnboardingStore } from '../features/onboarding'
 import { useUiStore } from '../stores/uiStore'
 import { useSettingsDraft } from '../composables/useSettingsDraft'
 import { useSettingsNav } from '../composables/useSettingsNav'
@@ -45,9 +45,11 @@ const draft = useSettingsDraft({ close: () => (ui.showSettingsDialog = false) })
       <div class="settings-pane">
         <SettingsAppearance v-if="nav.page === 'appearance'" />
 
-        <SettingsBehaviour
-          v-else-if="nav.page === 'behaviour'"
-          @replay-tour="draft.requestClose(() => tour.replay())"
+        <SettingsBehaviour v-else-if="nav.page === 'behaviour'" />
+
+        <ToursSettings
+          v-else-if="nav.page === 'tours'"
+          @take="(id) => draft.requestClose(() => tour.take(id))"
         />
 
         <section v-else-if="nav.page === 'shortcuts'">

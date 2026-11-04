@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TOURS, tourById } from '../../../../src/renderer/src/features/onboarding/tourRegistry'
+import { ICONS } from '../../../../src/renderer/src/icons'
 import EN from '../../../../src/shared/i18n/en.json'
 
 const hasKey = (key) => key.split('.').reduce((node, part) => node?.[part], EN) !== undefined
@@ -13,6 +14,7 @@ const allSteps = () => TOURS.flatMap((t) => t.steps)
 const copyKeys = (tour) => [
   tour.labelKey,
   tour.nameKey,
+  tour.summaryKey,
   tour.doneCard?.titleKey,
   tour.doneCard?.bodyKey,
   ...tour.steps.flatMap((s) => [s.titleKey, s.bodyKey, s.actionKey, s.nameKey]),
@@ -27,6 +29,19 @@ describe('the tour registry', () => {
       expect(tour.labelKey).toBeTruthy()
       expect(tour.steps.length).toBeGreaterThan(0)
     }
+  })
+
+  it('gives every tour a row on the Tours page: a name, a line, a hue and an icon', () => {
+    for (const tour of TOURS) {
+      expect(tour.nameKey, tour.id).toBeTruthy()
+      expect(tour.summaryKey, tour.id).toBeTruthy()
+      expect(['diff', 'snippet', 'inspect']).toContain(tour.hue)
+      expect(ICONS[tour.icon], tour.icon).toBeTruthy()
+    }
+  })
+
+  it('ships no release tour yet: the first three are never New', () => {
+    expect(TOURS.filter((t) => t.release)).toEqual([])
   })
 
   it('keeps tour ids unique', () => {

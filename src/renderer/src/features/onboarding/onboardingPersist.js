@@ -10,7 +10,9 @@ export function readProgress() {
   return readOnboarding(loadPersistedJson(KEY, null), library)
 }
 
-/** @param {{ showTips: boolean, tours: Record<string, string>, offer: boolean }} state */
+/** @param {import('../../types').OnboardingState} state */
 export function saveProgress(state) {
   savePersisted(KEY, JSON.stringify(storedOnboarding(state)))
 }
+
+export const appVersion = () => window.api?.appVersion ?? '0.0.0'

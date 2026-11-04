@@ -241,11 +241,49 @@ async function closeOpenedTabs(page) {
   }
 }
 
-// The core tour, summoned by Help ▸ Show Tour, which puts the start screen and
+// The core tour, started from Settings ▸ Tours, which puts the start screen and
 // its sample offer up in a blank tab.
 async function showTourOffer(page) {
-  await pickMenuItem(page, 'Help', 'Show Tour')
+  await pickMenuItem(page, 'Help', 'Tours…')
+  await page.locator('[data-tour-row="core"] .btn').click()
   await page.locator('.sample-offer').waitFor()
+}
+
+// A fixture release tour, pushed into the running store (the registry ships
+// none), with the profile set back to before it was offered.
+const RELEASE_FIXTURE = {
+  id: 'fixture-release',
+  introducedIn: '0.10.0',
+  release: true,
+  nameKey: 'onboarding.snippets.new.title',
+  summaryKey: 'onboarding.snippets.new.body',
+  hue: 'snippet',
+  icon: 'code',
+  labelKey: 'onboarding.snippets.label',
+  steps: [{ id: 'new', advanceOn: 'fixture-never', target: '[data-tour="snippet-new"]' }]
+}
+const shipReleaseTour = (page, { offered }) =>
+  page.evaluate(
+    ({ tour, offered }) => {
+      const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+      const store = pinia._s.get('onboarding')
+      if (!store.tourOf(tour.id)) store.registry.push(tour)
+      store.known = []
+      store.tours = { ...store.tours, core: 'done' }
+      store.version = offered ? globalThis.api.appVersion : '0.9.0'
+    },
+    { tour: RELEASE_FIXTURE, offered }
+  )
+
+async function showReleaseCard(page) {
+  await shipReleaseTour(page, { offered: false })
+  await page.locator('[data-release-card]').waitFor()
+}
+
+async function showToursPage(page) {
+  await shipReleaseTour(page, { offered: true })
+  await pickMenuItem(page, 'Help', 'Tours…')
+  await page.locator('[data-tour-row="fixture-release"] .new-badge').waitFor()
 }
 
 async function showSaveStep(page) {
@@ -254,11 +292,22 @@ async function showSaveStep(page) {
   await page.locator('.coach-mark').waitFor()
 }
 
+// The saved sample would fill the Diffs section that sidebar-affordances needs empty.
+const forgetSavedSamples = (page) =>
+  page.evaluate(() => {
+    const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+    const vault = pinia._s.get('vault')
+    for (const entry of vault.entries.filter((e) => e.tags?.includes('example'))) {
+      vault.remove(entry.id)
+    }
+  })
+
 // Skip, then close the sample tab, which never asks: the structure diff the
 // sweep started on is on screen again.
 async function leaveTour(page) {
   const skip = page.locator('.coach-mark').getByRole('button', { name: 'Skip' })
   if (await skip.count()) await skip.click()
+  await forgetSavedSamples(page)
   await page.locator('.diff-tabs .tab.active .tab-close').click()
   await page.locator('.status-band').waitFor()
 }
@@ -302,6 +351,7 @@ async function showDropZone(page) {
 // behind a follow-on tour, and twenty themes of them would fill the strip.
 async function leaveFollowOnTour(page) {
   await page.locator('.coach-mark').getByRole('button', { name: 'Skip' }).click()
+  await forgetSavedSamples(page)
   const opened = page.locator('.diff-tabs .tab', {
     hasText: /config-v1\.json|Example —|Untitled/
   })
@@ -1650,6 +1700,45 @@ const SURFACES = [
     }
   },
   {
+    name: 'tours-page',
+    open: showToursPage,
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'detached' })
+    },
+    probes: {
+      heading: ['.tours-settings h4', TEXT],
+      intro: ['.tours-settings .ts-intro', TEXT],
+      'tour name': ['.tour-row .tr-name', TEXT],
+      'tour line': ['.tour-row .tr-summary', TEXT],
+      'glyph on its well': ['.tour-row .glyph-well', TEXT],
+      done: ['.tour-row .tr-state', TEXT],
+      'new badge': ['.tour-row .new-badge', TEXT],
+      'sub-heading': ['.tours-settings .ts-sub', TEXT],
+      'start button': ['.tour-row .btn', TEXT],
+      'start face, hovered': ['.tour-row .btn', HOVER_STEP, 'step', 'hover'],
+      'start label, hovered': ['.tour-row .btn', TEXT, 'text', 'hover'],
+      'switch label': ['.tours-settings .setting-toggle span', TEXT]
+    }
+  },
+  {
+    name: 'release-card',
+    open: showReleaseCard,
+    close: async (page) => {
+      await page.locator('[data-release-card]').getByRole('button', { name: 'Later' }).click()
+      await page.locator('[data-release-card]').waitFor({ state: 'detached' })
+    },
+    probes: {
+      kicker: ['.release-card .rc-kicker', TEXT],
+      sparkle: ['.release-card .rc-kicker .app-icon', DIM],
+      title: ['.release-card .rc-title', TEXT],
+      body: ['.release-card .rc-body', TEXT],
+      later: ['.release-card .btn-ghost', TEXT],
+      'show me': ['.release-card .btn-primary', TEXT],
+      close: ['.release-card .btn-icon', DIM]
+    }
+  },
+  {
     name: 'tour-done-card',
     open: finishCoreTour,
     close: async (page) => {
@@ -1660,6 +1749,7 @@ const SURFACES = [
     probes: {
       title: ['.tour-done .td-title', TEXT],
       line: ['.tour-done .td-body', TEXT],
+      'where line': ['.tour-done .td-foot', TEXT],
       'tour chip': ['.tour-done .td-next .btn', TEXT],
       'tour chip, hovered': ['.tour-done .td-next .btn', TEXT, 'text', 'hover'],
       close: ['.tour-done .btn-icon', DIM]
@@ -1788,7 +1878,7 @@ async function main() {
   })
   writeFileSync(join(userDataDir, 'trusted-keys.json'), JSON.stringify(keys, null, 2))
   // An existing user's profile, so the core tour's offer stays off the start
-  // screen; the tour surfaces summon it through Help ▸ Show Tour.
+  // screen; the tour surfaces start it from Settings ▸ Tours.
   writeFileSync(join(userDataDir, 'onboarding.json'), JSON.stringify({ showTips: false }))
 
   const app = await electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`] })

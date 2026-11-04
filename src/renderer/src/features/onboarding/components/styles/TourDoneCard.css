@@ -20,7 +20,8 @@
 }
 .td-title,
 .td-body,
-.td-next {
+.td-next,
+.td-foot {
   margin: 0;
 }
 .td-title {
@@ -40,4 +41,9 @@
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-1);
+}
+.td-foot {
+  margin-top: var(--space-1);
+  font-size: var(--font-sm);
+  color: var(--text-meta);
 }

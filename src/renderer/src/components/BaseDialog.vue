@@ -4,6 +4,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { shaped } from '../utils/props'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useUiStore } from '../stores/uiStore'
 import { useDialogResize } from '../composables/useDialogResize'
 import { useBackdropClose } from '../composables/useBackdropClose'
 import { RESIZE_HANDLES } from '../utils/dialogResize'
@@ -89,8 +90,15 @@ function onKeydown(e) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown, true))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown, true))
+const ui = useUiStore()
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown, true)
+  ui.noteDialog(true)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown, true)
+  ui.noteDialog(false)
+})
 </script>
 
 <template>

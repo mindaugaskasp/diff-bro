@@ -6,6 +6,7 @@ const GROUPS = [
     pages: [
       { id: 'appearance', labelKey: 'settingsDialog.tab.appearance' },
       { id: 'behaviour', labelKey: 'settingsDialog.tab.behaviour' },
+      { id: 'tours', labelKey: 'settingsDialog.tab.tours' },
       { id: 'shortcuts', labelKey: 'settingsDialog.tab.shortcuts' },
       { id: 'desktop', labelKey: 'settingsDialog.tab.desktop', windowsOnly: true }
     ]

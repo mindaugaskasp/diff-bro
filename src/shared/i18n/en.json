@@ -142,7 +142,7 @@
     "help": {
       "title": "Help",
       "shortcuts": "Keyboard Shortcuts",
-      "showTour": "Show Tour",
+      "tours": "Tours…",
       "terminal": "Terminal Commands & Setup…",
       "reportIssue": "Report an Issue…"
     }
@@ -800,14 +800,10 @@
     "theme": "Theme",
     "showTagsOnSidebarRows": "Show tags on sidebar rows",
     "playAShutterSoundWhen": "Play a shutter sound when a diff image is captured",
-    "showTipsAfterAnUpdate": "Show tips after an update",
-    "showTour": "Show tour",
     "quickLookUp": "Quick look-up",
     "aFloatingSearchThatFinds": "A floating search that finds any snippet or saved diff without raising the main window — it works even when Diff Bro is minimized. Click the field, then press the key combination you want.",
     "rotateTheAppThemeDaily": "Rotate the app theme daily — a new random theme each day",
     "offByDefaultWhenOff": "Off by default. When off, Diff Bro uses the theme you picked above. The daily theme is the same all day and changes at midnight.",
-    "theTourIsRunning": "The tour is running",
-    "runTheTourAgain": "Run the tour again from the start",
     "useTheme": "Use the {name} theme",
     "maximizeToolSnippet": "Maximize tool & snippet windows (turn off to restore each one's size)",
     "desktop": "Desktop",
@@ -823,6 +819,7 @@
     "tab": {
       "appearance": "Appearance",
       "behaviour": "Behaviour",
+      "tours": "Tours",
       "shortcuts": "Shortcuts",
       "desktop": "Desktop",
       "languages": "Languages",
@@ -1249,6 +1246,8 @@
     "tryIt": "Try it · {step} of {count}",
     "skip": "Skip",
     "core": {
+      "name": "Compare, keep, find",
+      "summary": "{count} steps · about 20 seconds",
       "drop": {
         "title": "No files handy? Drag these two into the window.",
         "load": "Load them for me"
@@ -1264,11 +1263,13 @@
       "done": {
         "title": "That’s the core: compare, keep, find.",
         "close": "Close",
-        "more": "Two more, a minute each, whenever you like:"
+        "more": "Two more, a minute each, whenever you like:",
+        "where": "Every tour is in Settings ▸ Tours."
       }
     },
     "snippets": {
       "name": "Snippets",
+      "summary": "Keep text you reuse, with blanks to fill in",
       "label": "Snippets · {step} of {count}",
       "new": {
         "title": "Keep text you reuse",
@@ -1294,6 +1295,7 @@
     },
     "diagrams": {
       "name": "Diagrams",
+      "summary": "Compare two versions as a picture",
       "label": "Diagrams · {step} of {count}",
       "open": {
         "title": "Open the example diagram",
@@ -1311,6 +1313,14 @@
         "title": "Every change, marked on the picture",
         "body": "Added, removed and changed nodes are coloured. Drop any two snippets on the sides to compare them."
       }
+    },
+    "release": {
+      "newIn": "New in {version}",
+      "close": "Close",
+      "later": "Later",
+      "showMe": "Show me · {n} step | Show me · {n} steps",
+      "many": "{n} new tours since you last opened Diff Bro",
+      "showTours": "Show tours"
     }
   },
   "pasteToCompare": {
@@ -1630,6 +1640,17 @@
     "interfaceLanguage": "Interface language",
     "behaviour": "Behaviour",
     "rowTagsHint": "The tag shelf and the search box still filter by tag."
+  },
+  "settingsTours": {
+    "title": "Tours",
+    "intro": "Short walk-throughs you do yourself, on sample content.",
+    "newIn": "New in {version}",
+    "afterUpdate": "After an update",
+    "offerTours": "Offer new tours after an update",
+    "done": "Done",
+    "new": "New",
+    "start": "Start",
+    "replay": "Replay"
   },
   "cli": {
     "compare": {

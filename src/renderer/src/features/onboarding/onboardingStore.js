@@ -2,15 +2,19 @@ import { defineStore } from 'pinia'
 import { useTabsStore } from '../../stores/tabsStore'
 import { useUiStore } from '../../stores/uiStore'
 import { writeTabContent } from '../../utils/tabContent'
-import { SAMPLE_LINE, tourById } from './tourRegistry'
-import { endedTours, isOfferOpen } from './tourPlan'
-import { readProgress, saveProgress } from './onboardingPersist'
+import { SAMPLE_LINE, TOURS } from './tourRegistry'
+import { endedTours, isOfferOpen, pendingReleases, settledReleases, tourRows } from './tourPlan'
+import { appVersion, readProgress, saveProgress } from './onboardingPersist'
 import { openSample } from './tourSample'
 import { prepareTour } from './tourPrep'
 
 export const useOnboardingStore = defineStore('onboarding', {
   state: () => ({
     ...readProgress(),
+    /** @type {import('../../types').Tour[]} */
+    registry: [...TOURS],
+    /** @type {string[]|null} the release tours the card is offering */
+    releaseCard: null,
     /** @type {{ id: string, index: number, tabId: string|null }|null} */
     running: null,
     /** @type {{ tabId: string, files: { name: string, content: string }[] }|null} */
@@ -23,26 +27,34 @@ export const useOnboardingStore = defineStore('onboarding', {
     doneCard: null
   }),
   getters: {
-    tour: (s) => (s.running ? tourById(s.running.id) : null),
+    tourOf: (s) => (id) => s.registry.find((t) => t.id === id) ?? null,
+    tour() {
+      return this.running ? this.tourOf(this.running.id) : null
+    },
     /** @returns {import('../../types').TourStep|null} */
     step() {
       return this.tour?.steps[this.running.index] ?? null
     },
     stepNumber: (s) => (s.running?.index ?? 0) + 1,
     stepCount() {
-      return (this.tour ?? tourById('core')).steps.length
+      return (this.tour ?? this.tourOf('core')).steps.length
     },
     labelKey() {
-      return (this.tour ?? tourById('core')).labelKey
+      return (this.tour ?? this.tourOf('core')).labelKey
     },
     tourTabId: (s) => s.running?.tabId ?? null,
     isRunning: (s) => !!s.running,
     isOffering: (s) =>
-      s.running ? s.running.id === 'core' && s.running.index === 0 : isOfferOpen(s)
+      s.running ? s.running.id === 'core' && s.running.index === 0 : isOfferOpen(s),
+    pendingReleases: (s) => pendingReleases(s, s.registry, appVersion()),
+    tourRows: (s) => tourRows(s, s.registry, appVersion())
   },
   actions: {
     init() {
-      if (!this.current) this.persist()
+      const settled = settledReleases(this, this.registry, appVersion())
+      const moved = settled.version !== this.version || settled.known.length !== this.known.length
+      Object.assign(this, settled)
+      if (!this.current || moved) this.persist()
     },
     persist() {
       saveProgress(this)
@@ -57,6 +69,11 @@ export const useOnboardingStore = defineStore('onboarding', {
       this.snippetId = null
       this.doneCard = null
       useUiStore().prefillFillDates = id === 'snippets'
+    },
+    /** @param {string} id */
+    async take(id) {
+      if (id === 'core') this.replay()
+      else await this.startTour(id)
     },
     replay() {
       useUiStore().showSettingsDialog = false
@@ -129,9 +146,32 @@ export const useOnboardingStore = defineStore('onboarding', {
     dismissDone() {
       this.doneCard = null
     },
-    setShowTips(value) {
-      this.showTips = value !== false
+    setOfferTours(value) {
+      this.offerTours = value !== false
       this.persist()
+    },
+    /** @param {string[]} ids */
+    presentReleases(ids) {
+      this.releaseCard = ids
+      this.version = appVersion()
+      this.persist()
+    },
+    laterReleases() {
+      this.releaseCard = null
+    },
+    dismissReleases() {
+      this.known = [...new Set([...this.known, ...(this.releaseCard ?? [])])]
+      this.releaseCard = null
+      this.persist()
+    },
+    async showReleaseTour() {
+      const [id] = this.releaseCard ?? []
+      this.releaseCard = null
+      if (id) await this.take(id)
+    },
+    openReleaseTours() {
+      this.releaseCard = null
+      useUiStore().openSettings('tours')
     }
   }
 })

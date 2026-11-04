@@ -108,7 +108,7 @@ export const helpMenu = ({ send, version, onReportIssue }) => ({
     { label: `Diff Bro v${version}`, enabled: false },
     { type: 'separator' },
     { label: t('menu.help.shortcuts'), click: () => send('shortcuts') },
-    { label: t('menu.help.showTour'), click: () => send('show-tour') },
+    { label: t('menu.help.tours'), click: () => send('settings-tours') },
     // Lands on the Settings pane that lists the `diffbro` subcommands.
     { label: t('menu.help.terminal'), click: () => send('settings-cli') },
     { type: 'separator' },
