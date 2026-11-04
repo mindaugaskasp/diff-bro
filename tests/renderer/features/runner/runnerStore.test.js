@@ -282,7 +282,11 @@ describe('runnerStore stop after', () => {
   })
 
   it('keeps how long a run may go on from main’s answer to Run', async () => {
-    window.api.runStart = vi.fn(async () => ({ runId: 'r1', version: '8.3.6', stopAfterMinutes: 5 }))
+    window.api.runStart = vi.fn(async () => ({
+      runId: 'r1',
+      version: '8.3.6',
+      stopAfterMinutes: 5
+    }))
     window.api.onRunOutput = vi.fn()
     window.api.onRunExit = vi.fn()
     const store = useRunnerStore()

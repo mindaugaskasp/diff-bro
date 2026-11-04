@@ -1,7 +1,7 @@
 # Roadmap
 
 <img src="brand/roadmap.svg" width="100%"
-     alt="Roadmap board — eight tracks. Claude connection, shipped: read the library over stdio, proposals wait in Snippets and Diffs. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred.">
+     alt="Roadmap board — nine tracks. Claude connection, shipped: read the library over stdio, proposals wait in Snippets and Diffs. Developer workflow, shipped: dependencies as lockfiles, compare a git revision, a three-way merge view. Spreadsheet · finance: amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves. Diagrams: sequence · gantt · pie, click a change to pan to it. Comparing more: folder compare, image pairs — a decision first. Signing: macOS Developer ID, Windows deferred. Onboarding, shipped: tours you do, a release offers its own tour, one tip a day.">
 
 <sup>Board is `docs/brand/roadmap.svg` — hand-authored, edit it alongside the
 sections below.</sup>
@@ -253,40 +253,27 @@ flowchart LR
 ```mermaid
 stateDiagram-v2
   [*] --> launch
-  launch --> consent: not started, or an update added steps
-  launch --> tour: started earlier, resumes
-  launch --> app: done, or tips off
-  consent --> tour: Start tour
-  consent --> app: No thanks, tips off for good
-  consent --> app: Escape (re-asks once, then stops)
-  tour --> app: eight steps, or Escape / Skip tips
-  app --> tour: Help ▸ Show Tour, ignores every flag
+  launch --> offer: fresh install
+  launch --> app: existing profile
+  offer --> core: drag the samples in, or Load them for me
+  offer --> app: Skip, or two files of your own
+  core --> app: compare, save, find; or Skip
+  app --> tour: Settings ▸ General ▸ Tours, Help ▸ Tours…
+  app --> releaseCard: an update ships a tour
+  releaseCard --> tour: Show me
+  app --> tip: first front on a new day, once quiet
+  tip --> showMe: Show me
 ```
 
-Done. A consent dialog, then eight anchored coach marks over the real controls.
+Done. Tours you do, a release card, and daily tips (#114).
 
-- A step's command fires on NEXT, never on entry: the step points at the
-  control, Next performs the action, the step after it lands inside what opened
-- Steps name a `data-tour` attribute; the overlay measures it at run time. A
-  target that is not on screen still gets its card, centred and ringless — the
-  tour must not wedge on a collapsed sidebar or a platform without a menu bar
-- Veil is TWO layers: tint is one clipped element, blur is four rectangles —
-  `backdrop-filter` resolves before `clip-path`
-- Blur, not just scrim: a black scrim moves a dark ground 1.00–1.17× (beacon is
-  `#000000`)
-- Callout is `--bg-elevated` + `--btn-edge`; the pair swaps roles by ground
-- Run two is offered by a dialog immediately, never deferred to a launch that
-  may be a month away
-- Everything the tour opens leaves with it: the demo's scratch tab, the example
-  snippet it saved, the Settings dialog, the editor, the search it typed —
-  whether the run finished or was walked out of
-- Back steps one at a time. A step has four bookends — `advance` on Next,
-  `enter` on arrival, `leave` in either direction, `undo` for Back — so Settings
-  closes again rather than covering the control the step returns to
-- A step's hole is blocked unless it declares `live`: a click on a file slot
-  mid-tour opened a picker over the card that was pointing at it
-- Open: the diagram step still points at the Snippets section rather than a
-  loaded diagram diff
+- Done. Each step rings one control and advances on its event; no Next, no Back, only Skip ends a tour
+- Done. Core, Snippets and Diagrams tours; seen state per tour id in `onboarding.json`
+- Done. A release tour is offered once, merged across skipped versions; never on a fresh install
+- Done. One tip a day, top right; ×, Knew this already, Don’t show tips again; Show me rings the control
+- Done. A release's tips go first while it runs (`release`, `introducedIn`)
+- Done. Settings ▸ General ▸ Tours holds every tour and both switches
+- Open. A Share tour, once a sample contact exists
 
 ---
 

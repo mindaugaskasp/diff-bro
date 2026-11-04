@@ -2,14 +2,14 @@
 
 | | |
 |---|---|
-| **Status** | in-progress |
-| **Progress** | 24 / 35 steps |
+| **Status** | in-progress (all six slices committed; PRs open, not yet merged) |
+| **Progress** | 35 / 35 steps |
 | **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips` (see Delivery) |
 | **Started** | 2026-11-03 |
-| **Finished** | — |
-| **Bugs found and fixed this iteration** | 0 / 0 |
+| **Finished** | 2026-11-04 |
+| **Bugs found and fixed this iteration** | 3 / 3 (the tip card's top over the toolbar; its footer overflowing in `en-XA`; `ActionMenu` dropping attributes) |
 | **Token baseline** | 2026-11-03T17:52:43Z |
-| **Claude tokens used** | not measured |
+| **Claude tokens used** | 333,664,543 (see Token usage) |
 
 Issues: #114 (onboarding, tours, tips), #214 (Settings groups), #215 (inline Languages row), #219 (per-language stop-after time, in the same row).
 Every decision below was asked and answered on those issues on 2026-11-03.
@@ -241,7 +241,7 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`, and ea
 | 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | committed |
 | 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | committed |
 | 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | committed |
-| 6 | Daily tips | `feat/daily-tips` | slice 5 | | |
+| 6 | Daily tips | `feat/daily-tips` | slice 5 | | committed |
 
 Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replaces it, so no slice leaves the tour unreachable.
 
@@ -282,19 +282,19 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 - [x] 24. `e2e/tours-settings.spec.mjs`; sweep `tours-page` and `release-card`.
 
 **Slice 6: Daily tips**
-- [ ] 25. `features/onboarding/tips.js`: the five tips in order (hash-scope-search, snippet-colour, name-placeholders, quick-look-tools, mermaid-repair), each with copy keys and a Show me target.
-- [ ] 26. `tipSchedule.js`: first focus on a new local date, waiting while a dialog or tour is open, ×, Knew this already, off and reset. A date seam for tests.
-- [ ] 27. `DailyTipCard.vue` at the top right; Show me reuses `TargetRing`; any click dismisses it.
-- [ ] 28. *Show a tip each day* and *Bring back tips I said I knew* on the Tours page.
-- [ ] 29. Remove `PlaceholderTip.vue`, its `placeholderTip` copy and its dismissed state, and the e2e that covers it.
-- [ ] 30. `e2e/daily-tip.spec.mjs`; sweep `daily-tip`.
+- [x] 25. `features/onboarding/tips.js`: the five tips in order (hash-scope-search, snippet-colour, name-placeholders, quick-look-tools, mermaid-repair), each with copy keys and a Show me target.
+- [x] 26. `tipSchedule.js`: first focus on a new local date, waiting while a dialog or tour is open, ×, Knew this already, off and reset. A date seam for tests.
+- [x] 27. `DailyTipCard.vue` at the top right; Show me reuses `TargetRing`; any click dismisses it.
+- [x] 28. *Show a tip each day* and *Bring back tips I said I knew* on the Tours page.
+- [x] 29. Remove `PlaceholderTip.vue`, its `placeholderTip` copy and its dismissed state, and the e2e that covers it.
+- [x] 30. `e2e/daily-tip.spec.mjs`; sweep `daily-tip`.
 
 **Across the stack**
-- [ ] 31. i18n: every new string in `en.json`; regenerate `en-XA`; check `e2e/locale.spec.mjs` for clipping in the coach mark and cards.
-- [ ] 32. Docs: `features.md`, `glossary.md`, `README.md`, `docs/roadmap.md` and `docs/brand/roadmap.svg`.
-- [ ] 33. `make screenshots SHOTS="empty-state"` in the container, then look at the frame.
-- [ ] 34. Full 20-theme sweep over all new surfaces.
-- [ ] 35. `/validate`, then fill in Validation.
+- [x] 31. i18n: every new string in `en.json`; regenerate `en-XA`; check `e2e/locale.spec.mjs` for clipping in the coach mark and cards.
+- [x] 32. Docs: `features.md`, `glossary.md`, `README.md`, `docs/roadmap.md` and `docs/brand/roadmap.svg`.
+- [x] 33. `make screenshots SHOTS="empty-state"` in the container, then look at the frame.
+- [x] 34. Full 20-theme sweep over all new surfaces.
+- [x] 35. `/validate`, then fill in Validation.
 
 ## Decisions
 
@@ -382,30 +382,50 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 | 2026-11-04 | The DAILY TIPS controls are left to slice 6, which adds its section after *After an update* in `ToursSettings.vue` | no dead controls ship | disabled placeholders |
 | 2026-11-04 | The theme sweep starts the core tour from Settings ▸ Tours, and its tour surfaces delete the saved sample on close (found while sweeping: from the second theme on, the saved sample filled the Diffs section `sidebar-affordances` needs empty, a break since slice 3) | the full 20-theme sweep runs to the end again | sweeping the tour surfaces alone |
 | 2026-11-04 | `useCommands().runFromMenu` loses its guard on the old tour's `active`, which no longer existed, so the guard never fired | dead code left by slice 3 | keep the import alive |
+| 2026-11-04 | Tip state lives in `onboarding.json` as `tips: { on, known, seen, shownOn, since }`, read in `readProgress` and kept by the onboarding store; `tipSchedule.js` holds the pure rules and `useDailyTip` / `useTipShowMe` the events | the plan's "seen state persists through the existing onboarding store", no new store name in main's allowlist, and no import cycle with `tourPlan.js` | a `tips.json` store; a second Pinia store writing the same file |
+| 2026-11-04 | A tip counts as seen when it is shown, so × and simply leaving it both advance to the next tip the next day; Knew this already also adds it to `known` | one tip a day, in order, as the plan says | × repeating the same tip tomorrow |
+| 2026-11-04 | Bring back clears `known` and takes those tips out of `seen`, so they return to the queue in their order; a tip closed with × stays seen | otherwise Knew this already and × would be the same act | clearing `known` only, which would bring nothing back |
+| 2026-11-04 | A pending release card goes first: the tip waits while a release is pending or its card is up, and shows the same day once the card is gone | one card at a time, and the tip is not lost for the day | the tip waiting for another day |
+| 2026-11-04 | A fresh install records `since` (its first local date). That day the tip waits while the core tour is offered or running, and shows once it is done or skipped; after that day the offer no longer holds it | the first minute stays the tour's; an ignored offer never blocks tips for good | holding tips while the offer is open on any day |
+| 2026-11-04 | The date seam is the store's `today()` action; e2e and the theme sweep replace it through Pinia (`#app.__vue_app__`) and dispatch `focus`, and the e2e profile starts with `shownOn` set to the real date so the launch's own focus brings none | the same seam the release-tour fixtures use, with no test-only code shipped | Playwright's clock; an env var |
+| 2026-11-04 | A day is due when the window gets `focus`, `visibilitychange` to visible, or launches already focused; a card already up when a new day comes is left as it is | never while in the background | replacing an open card with the next tip |
+| 2026-11-04 | A release tip is `{ release: true, introducedIn }`, left out until the app reaches it; the tips of the running release's major.minor go first, newest first; v1 tips carry no version, like the v1 tours | a 0.16.0 tip must not vanish in a 0.15.x build, and a patch release keeps its release's tips in front | `introducedIn` on every tip |
+| 2026-11-04 | Show me: hash-scope-search opens the sidebar (switching to Snippets when the panel has no tag search) and rings the search; snippet-colour opens Snippets, clears the search and tag filter, and rings the first row, offered only when a snippet exists; name-placeholders rings the status bar's Template tags (new `data-tour="template-tags"`) and mermaid-repair the ⋯ menu (`data-tour="snippet-repair"`, set only on a Mermaid snippet), each offered only while that control is on screen; quick-look-tools has no Show me and names the Quick Look shortcut in its body | a Show me that rings nothing is worse than none; the shortcut is what the reader needs to try it | a Show me that opens a new snippet; ringing the Quick Look shortcut in Settings |
+| 2026-11-04 | `ActionMenu` passes its attributes to its trigger (`inheritAttrs: false`) | it has two roots, so a `data-tour` on it went nowhere | a wrapper element |
+| 2026-11-04 | Show me's note reuses `coachPlacement`, which gains `top` (pointer down) for the status bar; any `pointerdown` anywhere ends it | "any click anywhere dismisses it"; the status bar sits at the window's foot | Escape or a timeout |
+| 2026-11-04 | The card's top follows the comparison pane's top plus 16px each frame while it is up | the pane's top is not known at first paint (found while testing: a one-off measure put the card over the toolbar) | a fixed offset |
+| 2026-11-04 | The card's footer wraps: in `en-XA` *Don't show tips again* sits on its own line above the two buttons (found by the new `locale.spec` check) | 390px cannot hold the three at +40% | a wider card |
+| 2026-11-04 | The tip switch is a Settings draft, restored on discard; Bring back acts at once and its notice "Those tips will show again." sits beside the button for 2.5 s; the button is disabled while nothing is known | a switch is a setting; Bring back is an action | Bring back as a draft |
+| 2026-11-04 | e2e and the sweep profiles start with tips off (`SEEN_ONBOARDING.tips.on = false`); `daily-tip.spec` and the sweep's two surfaces turn them on | a tip at the top right would cover controls in every other spec | per-spec opt-outs |
+| 2026-11-04 | The README's `empty-state` frame stays the existing user's start screen with tips off: `recapture-screenshots.mjs` seeds a library, which already rules out the sample offer, and now also writes `tips: { on: false }` and fails if a tip shows | the README shows the app at work, not the first-minute offer; a tip would date the frame | a fresh-profile frame with the sample offer |
+| 2026-11-04 | `PlaceholderTip` goes with its copy (`snippetDocument.placeholderTip`, `dontShowThisAgain`), the `placeholderTip` setting, `dismissPlaceholderTip`, the sweep surface and `snippet-placeholder-tip.spec`; `SnippetDocumentHead` loses its `isNew` prop | decided on #114 | — |
+| 2026-11-04 | The roadmap board gains a ninth card, Onboarding (shipped), on a taller plate; the glossary's old-tour terms (consent dialog, tips vs tour, live step, veil, advance command, the stage) are replaced by *tour*, *coach mark*, *target ring*, *zone step*, *release card* and *daily tip* | the old terms describe code slice 3 deleted | keeping them as history |
 
 ## Validation
 
 Recorded as fact, not intention.
 
-- [ ] `/validate`: summary below, full report in `quality-audit.md`
-- [ ] `npm run check`: paste the real result
-- [ ] UI seen running (Docker / `make e2e`)
-- [ ] every Docs-impact "yes" done, or which is deferred and why
-- [ ] `make local-seed`: no new format, so not needed
-- [ ] token usage measured, header row filled
+- [x] `/validate`: run over the whole stack against `main` (186 files). Pass 1 cut thirteen files' multi-line prose comments to one "why" line or nothing; passes 2 and 3 found the three bugs in the header, all fixed, plus two stale Settings paths in the docs; no hard rule is touched (no new IPC, dependency, `openExternal` or sink). Full record in `quality-audit.md` (Run: 2026-11-04), **Open: none**.
+- [x] `npm run check`: exit 0. Lint clean, style tokens ok (155 stylesheets), theme depth ok (20 themes), structure clean (622 files, 4 baselined cycles, 19 legacy size entries), i18n 1499 keys / 1499 used, raw text 0, **4597 passed / 2 skipped** in 327 files; coverage 95.56% statements, 88.83% branches, 96.3% functions, 96.6% lines.
+- [x] UI seen running (Docker): full e2e suite 765 passed, 4 skipped, 2 failed. `release-tour-card` "several skipped releases" expected the old section list and now lists *Daily tips* (green on rerun). `tab-overflow` "the chevrons move the active comparison" is intermittent and fails on the slice's base too (1 in 8 there, 1 in 3 here); trace kept in `e2e-failures/slice6/`. Full theme sweep: ok, 5280 measurements across 20 themes, `daily-tip` and `tip-show-me` included.
+- [x] every Docs-impact "yes" done: `README.md` (a *Learn by doing* row), `docs/features.md` (Tours you do, Daily tips, Settings in groups; Settings paths fixed; the Languages row and stop-after were already there), `docs/glossary.md` (old-tour terms replaced), `docs/roadmap.md` and `docs/brand/roadmap.svg` (onboarding shipped, a ninth card), `docs/security.md` (Claude's Settings path). `docs/screenshots/empty-state.png` recaptured: the existing user's start screen, by decision.
+- [x] `make local-seed`: no new format, so not needed.
+- [x] token usage measured, header row filled. The transcripts live on the host (`~/.claude/projects`), so the 25 since the baseline were copied into the container for the run and removed after, with `--root /Users/mindkasp/Projects/diff-bro`.
 
 ### Token usage
 
 ```sh
-node .claude/skills/implement/token-usage.mjs --since <token baseline>
+node .claude/skills/implement/token-usage.mjs --since 2026-11-03T17:52:43Z --root /Users/mindkasp/Projects/diff-bro
 ```
+
+Window 2026-11-03T17:52:43Z → the run; 518 requests.
 
 | category | tokens |
 |---|---:|
-| input | |
-| output | |
-| cache write | |
-| cache read | |
-| **total** | |
+| input | 1,262 |
+| output | 308,539 |
+| cache write | 673,163 |
+| cache read | 332,681,579 |
+| **total** | **333,664,543** |
 
-**Outcome:**
+**Outcome:** all six slices built; slice 6 is built and not committed. Tours you do, the release card, daily tips and the regrouped Settings are in, and the old tour and `PlaceholderTip` are gone.

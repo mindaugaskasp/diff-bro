@@ -53,6 +53,7 @@ app — see [packaging](docs/packaging.md).
 | **Share safely**     | Send a sealed file only the people you chose can open, and it expires on its own.                                     |
 | **Tools**            | Format JSON, decode a token, convert a timestamp and more, without a website.                                         |
 | **Make it yours**    | A System theme that follows your OS, twenty more, nested tags, and a quick search that finds anything in a keystroke. |
+| **Learn by doing**   | Short tours you do yourself on sample files, and one tip a day about what no button says.                             |
 
 Everything in detail: [features](docs/features.md).
 

@@ -1,5 +1,4 @@
-// What each open snippet tab shows now, keyed by tab id. Plain module state: a
-// mounted SnippetDocument registers a reader (and a writer) and removes them on unmount.
+// Plain module state: a mounted SnippetDocument registers its reader and writer by tab id.
 
 /**
  * @typedef {object} TabContent

@@ -142,14 +142,6 @@ describe('settingsStore', () => {
     expect(useSettingsStore().restoreSession).toBe(true)
   })
 
-  it('teaches placeholders until the tip is dismissed, and remembers that', () => {
-    const s = useSettingsStore()
-    expect(s.placeholderTip).toBe(true)
-    s.dismissPlaceholderTip()
-    setActivePinia(createPinia())
-    expect(useSettingsStore().placeholderTip).toBe(false)
-  })
-
   it('persists the maximize-dialogs toggle', () => {
     const s = useSettingsStore()
     expect(s.maximizeDialogs).toBe(false)

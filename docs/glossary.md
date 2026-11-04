@@ -134,37 +134,23 @@ where the concept lives in this repo.
   the OS and follows it live; a named theme or Toggle Light/Dark replaces it.
   It's a choice, not a palette, so it isn't one of the 20 in `THEMES` and is
   never a day's rotation (`SYSTEM_TILE` in `utils/themes.js`).
-- **Tips vs tour** — two different things, and the copy leans on the
-  difference. **Tips** are the automatic ones: offered by the consent dialog on
-  a first launch and after an update, and `showTips` turns them off for good. The **tour** is the
-  same steps summoned deliberately (Help ▸ Show Tour, Settings, the palette); it
-  ignores every flag and never switches tips back on.
-- **Consent dialog** — what every unrequested tour starts with. Start tour
-  plays it, No thanks turns tips off, and closing it defers: it asks once more
-  on a later launch, then stops.
+- **Tour** — a short walk-through the user does on sample content. Each step
+  names one action and advances only when it is performed; only Skip ends a
+  tour. A tour is data, `{ id, introducedIn, steps }`, with its seen state kept
+  per id (`features/onboarding/tourRegistry.js`).
+- **Coach mark** — a tour step's card beside the control it rings. It never
+  dims or blocks the window, and hides while its target is off screen or
+  covered.
+- **Target ring** — the accent keyline drawn around the control a coach mark
+  or a tip's Show me points at. The pointer passes through it.
 - **Zone step** — a step whose target is an area rather than a control (the
-  comparison pane, showing a diagram diff). Ringed dashed, and its callout
-  sits inside it.
-- **Live step** — the exception. A step's hole is cut so its target stays sharp,
-  but the pointer stops at the veil unless the step says `live`: a click on a
-  start link mid-tour opens a picker over the card pointing at it. Exactly one
-  step asks for the press it rings, and that is the one ringing Save.
-- **Context region** — what a step is ABOUT when that is not the control it
-  points at. The Share step rings a button but is about the whole comparison, so
-  that is stroked and the veil softened over it — a diff blurred past reading
-  cannot be the thing being sealed.
-- **Point** — the one control inside a large target that the ring and the beak
-  belong on. The library step cuts the whole sidebar out so the list is seen
-  filtering, and points at the search box being typed into.
-- **Advance command** — what a step's Next runs before moving on. The step
-  points at the control, the press performs the action, and the following step
-  lands inside whatever opened. Firing on ENTRY instead is what made windows
-  appear out of the blue. Its twin is the **undo**, which Back runs so a step
-  returned to is not looking at a control the next step's window is covering.
-- **The stage** — everything the tour puts on screen for itself: the demo
-  comparison in its own scratch tab, the example snippet, the search it types.
-  All of it is removed when the tour ends, finished or walked out of — it was
-  the tour's, never the user's library.
+  right pane a snippet is dropped on). Ringed dashed, with its mark inside it.
+- **Release card** — the bottom-right card that offers a release's own tour
+  once, after an update. Never on a fresh install.
+- **Daily tip** — the "Did you know?" card at the top right, one a day, the
+  first time the window comes to the front on a new local date. It waits for
+  tours, cards and dialogs. Knew this already drops it for good; **Show me**
+  rings the control it means (`features/onboarding/tips.js`).
 
 ## Union view
 

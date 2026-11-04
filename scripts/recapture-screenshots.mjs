@@ -204,8 +204,17 @@ async function seed(page) {
       await window.api.storeSave('snippets', JSON.stringify({ tags, entries: snippetEntries }))
       await window.api.storeSave('vault', JSON.stringify({ entries: vaultEntries }))
       await window.api.storeSave('theme', 'dark')
-      // A throwaway profile is a fresh install; this makes it an existing one.
-      await window.api.storeSave('onboarding', JSON.stringify({ showTips: false }))
+      // A throwaway profile is a fresh install; this makes it an existing one, with no daily tip.
+      await window.api.storeSave(
+        'onboarding',
+        JSON.stringify({
+          schema: 2,
+          offerTours: true,
+          tours: {},
+          offer: false,
+          tips: { on: false }
+        })
+      )
     },
     { snippets: SNIPPETS, diffs: [...savedDiffs(now), ...externalDiffs(now)], palette: TAG_PALETTE }
   )
@@ -213,8 +222,8 @@ async function seed(page) {
   await page.locator('.home-row').first().waitFor({ state: 'visible' })
   // Fail loudly rather than shipping a set of veiled frames that look plausible
   // in the terminal and wrong in the README.
-  if (await page.locator('.coach-mark, .sample-offer').count()) {
-    throw new Error('the onboarding tour is showing — screenshots would carry it')
+  if (await page.locator('.coach-mark, .sample-offer, .daily-tip').count()) {
+    throw new Error('the onboarding tour or a daily tip is showing — screenshots would carry it')
   }
 }
 

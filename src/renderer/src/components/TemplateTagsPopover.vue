@@ -35,7 +35,13 @@ const fillTags = computed(() => props.fills.map((name) => `{{${name}}}`))
     @focusout="leave"
     @keydown="onKeydown"
   >
-    <button type="button" class="tt-trigger" :class="{ on: open }" :aria-expanded="open">
+    <button
+      type="button"
+      class="tt-trigger"
+      :class="{ on: open }"
+      :aria-expanded="open"
+      data-tour="template-tags"
+    >
       <span class="tt-glyph" aria-hidden="true">{ }</span>
       {{
         fills.length ? $t('statusBar.templateTags', fills.length) : $t('snippetTemplates.tokens')

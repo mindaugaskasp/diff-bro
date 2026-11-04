@@ -12,7 +12,13 @@ describe('runDetails', () => {
   })
 
   it('says after how many minutes a run was stopped', () => {
-    const run = ended({ state: 'failed', reason: 'timeout', code: null, ms: 5, stopAfterMinutes: 5 })
+    const run = ended({
+      state: 'failed',
+      reason: 'timeout',
+      code: null,
+      ms: 5,
+      stopAfterMinutes: 5
+    })
     expect(runDetails(run)[0]).toEqual({ key: 'runner.pane.timeout', params: { minutes: 5 } })
   })
 

@@ -49,6 +49,7 @@ const readDraft = (s) =>
     font: s.font.$state,
     email: s.email.$state,
     offerTours: s.tour.offerTours,
+    showTips: s.tour.tips.on,
     zoom: s.ui.diffZoom
   })
 
@@ -60,6 +61,7 @@ function restoreDraft(s, start, locale) {
   s.font.$patch(was.font)
   s.email.$patch(was.email)
   s.tour.offerTours = was.offerTours
+  s.tour.tips = { ...s.tour.tips, on: was.showTips }
   s.ui.diffZoom = was.zoom
   s.settings.resolveActiveTheme()
   if (activeLocale() !== locale) {

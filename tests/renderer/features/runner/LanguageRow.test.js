@@ -40,7 +40,8 @@ async function mountRow(id, status) {
 }
 
 const field = () => el.querySelector('input.lang-path')
-const button = (name) => [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === name)
+const button = (name) =>
+  [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === name)
 const chevron = () => el.querySelector('.lang-chevron')
 const menuRows = () => [...el.querySelectorAll('[role="menu"] .popover-row')]
 

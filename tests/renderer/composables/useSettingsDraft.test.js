@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useSettingsDraft } from '../../../src/renderer/src/composables/useSettingsDraft'
 import { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
 import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
+import { useOnboardingStore } from '../../../src/renderer/src/features/onboarding'
 
 let files
 let pinia
@@ -97,5 +98,19 @@ describe('useSettingsDraft', () => {
     useSettingsStore().setShowRowTags(false)
     unmount()
     expect(useSettingsStore().showRowTags).toBe(true)
+  })
+
+  it('the daily tip switch is a draft, and Bring back is kept even on a discard', () => {
+    const tour = useOnboardingStore()
+    tour.tips = { ...tour.tips, known: ['snippet-colour'], seen: ['snippet-colour'] }
+    const { draft } = mountDraft()
+    tour.setShowTips(false)
+    tour.bringBackTips()
+    expect(files.onboarding).toBeUndefined()
+    expect(draft.isDirty.value).toBe(true)
+    draft.requestClose()
+    draft.answer('discard')
+    expect(tour.tips.on).toBe(true)
+    expect(JSON.parse(files.onboarding).tips).toMatchObject({ on: true, known: [], seen: [] })
   })
 })

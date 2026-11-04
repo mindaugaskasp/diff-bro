@@ -1,12 +1,10 @@
 <script setup>
-import PlaceholderTip from './PlaceholderTip.vue'
 import { ref } from 'vue'
 import SnippetNameField from './SnippetNameField.vue'
 import SnippetNameHint from './SnippetNameHint.vue'
 import TagChipRow from './TagChipRow.vue'
 
 defineProps({
-  isNew: { type: Boolean, default: false },
   initialTags: { type: Array, default: () => [] },
   editMode: { type: Boolean, default: false },
   needsName: { type: Boolean, default: false },
@@ -63,7 +61,6 @@ defineExpose({
       @change="emit('tagsChange', $event)"
     />
   </header>
-  <PlaceholderTip v-if="isNew" />
 </template>
 
 <style scoped src="./styles/SnippetEditor.css"></style>

@@ -100,7 +100,6 @@ export const useSettingsStore = defineStore('settings', {
           maxExportHeightPx: this.maxExportHeightPx,
           dialogSizes: this.dialogSizes,
           maximizeDialogs: this.maximizeDialogs,
-          placeholderTip: this.placeholderTip,
           locale: this.locale,
           shutterSound: this.shutterSound,
           restoreSession: this.restoreSession,
@@ -159,10 +158,6 @@ export const useSettingsStore = defineStore('settings', {
     },
     setMaximizeDialogs(value) {
       this.maximizeDialogs = !!value
-      this.persist()
-    },
-    dismissPlaceholderTip() {
-      this.placeholderTip = false
       this.persist()
     },
     setFileSizeLimitMb(type, value) {

@@ -21,11 +21,11 @@ function zonePlacement(rect, height) {
 
 /**
  * Where a coach mark sits beside its target, and where along its edge the
- * pointer meets the target's centre. `bottom` points up; `right` points left;
+ * pointer meets the target's centre. `bottom` points up; `top` points down; `right` points left;
  * `inside` sits in a wide target beside its first line; `zone` sits low in a
  * drop zone with no pointer.
  * @param {{ rect: import('../../types').ScreenRect, side?: string, height: number, stage: { w: number, h: number } }} args
- * @returns {{ left: number, top: number, pointer: 'up'|'left'|'none', offset: number }}
+ * @returns {{ left: number, top: number, pointer: 'up'|'down'|'left'|'none', offset: number }}
  */
 export function coachPlacement({ rect, side, height, stage }) {
   if (side === 'inside') return insidePlacement(rect)
@@ -39,5 +39,6 @@ export function coachPlacement({ rect, side, height, stage }) {
   }
   const left = clamp(cx - COACH_W / 2, EDGE, Math.max(EDGE, stage.w - COACH_W - EDGE))
   const offset = clamp(cx - left, POINTER_INSET, COACH_W - POINTER_INSET)
+  if (side === 'top') return { left, top: rect.y - height - GAP, pointer: 'down', offset }
   return { left, top: rect.y + rect.h + GAP, pointer: 'up', offset }
 }

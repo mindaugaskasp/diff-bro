@@ -48,11 +48,7 @@ test('the Terminal pane is styled like every other Settings pane', async ({ page
   expect(cliBox).toEqual(storageBox)
 })
 
-// The dialog resized under the pointer as you moved down the rail: 364px on
-// the old Fun pane, 720px on Storage. The rail is a fixed target, so the window jumping
-// 356px between two clicks moves the next item out from under the cursor.
-// `.settings-pane` already carried a min-height meant to prevent exactly this;
-// it was 232px, shorter than every pane that shipped after it was written.
+// A dialog that resized between pages moved the next rail item out from under the pointer.
 test('the dialog keeps one height across every pane', async ({ page }) => {
   await openSettings(page)
   const dialog = page.getByRole('dialog', { name: 'Settings' })

@@ -16,3 +16,13 @@
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
+.ts-bring-back {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+.ts-notice {
+  font-size: var(--font-sm);
+  color: var(--text-meta);
+}

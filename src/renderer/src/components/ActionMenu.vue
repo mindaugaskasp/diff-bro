@@ -16,6 +16,7 @@ defineProps({
   triggerClass: { type: String, default: 'row-btn' }
 })
 const emit = defineEmits(['pick'])
+defineOptions({ inheritAttrs: false })
 
 const trigger = ref(null)
 const menu = ref(null)
@@ -41,6 +42,7 @@ function pick(action) {
 <template>
   <button
     ref="trigger"
+    v-bind="$attrs"
     type="button"
     :class="triggerClass"
     aria-haspopup="menu"

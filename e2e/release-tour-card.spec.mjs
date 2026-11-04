@@ -10,8 +10,7 @@ import {
   openSettingsPage
 } from './fixtures.mjs'
 
-// The registry ships no release tour, so these push fixture tours into the
-// running onboarding store through the Vue app's Pinia instance.
+// The registry ships no release tour, so fixtures are pushed into the store through Pinia.
 const fixtureTour = (id, introducedIn, copy) => ({
   id,
   introducedIn,
@@ -43,7 +42,14 @@ const shipReleaseTours = (page, tours) =>
 
 const card = (page) => page.locator('[data-release-card]')
 const settings = (page) => page.getByRole('dialog', { name: 'Settings' })
-const EXISTING_USER = { schema: 2, offerTours: true, tours: {}, offer: false, version: '0.9.0' }
+const EXISTING_USER = {
+  schema: 2,
+  offerTours: true,
+  tours: {},
+  offer: false,
+  version: '0.9.0',
+  tips: { on: false }
+}
 
 async function launchProfile(dir) {
   const app = await launchApp(dir)
@@ -164,7 +170,8 @@ test('several skipped releases give one card that opens Settings ▸ Tours', asy
     await expect(settings(page).locator('.ts-sub')).toHaveText([
       'New in 0.11.0',
       'New in 0.10.0',
-      'After an update'
+      'After an update',
+      'Daily tips'
     ])
     await expect(settings(page).locator('.new-badge')).toHaveCount(2)
   } finally {
