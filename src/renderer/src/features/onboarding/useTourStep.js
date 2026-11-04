@@ -7,6 +7,7 @@ import { useVaultStore } from '../../stores/vaultStore'
 import { useOnboardingStore } from './onboardingStore'
 import { isSampleFound } from './tourPlan'
 import { isSampleOnScreen } from './tourSample'
+import { watchDiagramsTour, watchSnippetsTour, watchTourTab } from './tourWatchers'
 
 const isOnScreen = (r) =>
   r.width > 0 &&
@@ -70,12 +71,33 @@ function watchSearch(tour) {
   )
 }
 
+/** `{example}` and `{v2}` become the Diagrams tour's snippet ids. */
+export const resolveSelector = (selector, examples) =>
+  selector.replace(/\{(\w+)\}/g, (_, key) => examples?.[key] ?? '')
+
+/**
+ * Where the coach mark goes and what it rings. A step's `alt` wins while its
+ * target is on screen: the Fill in dialog takes over from the Copy button.
+ */
+function placeStep(step, examples, measure) {
+  const altRect = step.alt && measure(step.alt.target)
+  if (altRect) return { step: { ...step, ...step.alt }, rect: altRect, rings: [] }
+  const rect = measure(resolveSelector(step.target, examples))
+  if (!rect) return null
+  const own = step.ring === false ? [] : [{ rect, zone: !!step.zone }]
+  const also = (step.also ?? [])
+    .map((selector) => measure(resolveSelector(selector, examples)))
+    .filter(Boolean)
+    .map((box) => ({ rect: box, zone: false }))
+  return { step, rect, rings: [...own, ...also] }
+}
+
 function useTargetRect(tour, step, measure) {
   const tabs = useTabsStore()
-  const rect = ref(null)
-  const isOnItsTab = () => !step.value?.onSample || tabs.activeId === tour.sample?.tabId
+  const place = ref(null)
+  const isOnItsTab = () => !step.value?.onTab || tabs.activeId === tour.tourTabId
   function remeasure() {
-    rect.value = step.value && isOnItsTab() ? measure(step.value.target) : null
+    place.value = step.value && isOnItsTab() ? placeStep(step.value, tour.examples, measure) : null
   }
   let frame = 0
   const follow = () => {
@@ -87,17 +109,17 @@ function useTargetRect(tour, step, measure) {
     (current) => {
       cancelAnimationFrame(frame)
       if (current) follow()
-      else rect.value = null
+      else place.value = null
     },
     { immediate: true }
   )
   onScopeDispose(() => cancelAnimationFrame(frame))
-  return { rect, remeasure }
+  return { place, remeasure }
 }
 
 /**
- * Drives the running tour: each step advances on its own event, the sample
- * tab closing early ends it as skipped, and the coach mark follows its target
+ * Drives the running tour: each step advances on its own event, closing the
+ * tab a step needs ends it as skipped, and the coach mark follows its target
  * and hides while it is off screen. Escape is deliberately not handled.
  * @param {{ measure?: (selector: string) => import('../../types').ScreenRect|null }} [opts]
  */
@@ -106,8 +128,14 @@ export function useTourStep({ measure = measureTarget } = {}) {
   tour.init()
   watchSample(tour)
   watchSearch(tour)
-  const step = computed(() => (tour.step && !tour.step.inline ? tour.step : null))
-  const { rect, remeasure } = useTargetRect(tour, step, measure)
+  watchSnippetsTour(tour)
+  watchDiagramsTour(tour)
+  watchTourTab(tour)
+  const current = computed(() => (tour.step && !tour.step.inline ? tour.step : null))
+  const { place, remeasure } = useTargetRect(tour, current, measure)
+  const step = computed(() => place.value?.step ?? current.value)
+  const rect = computed(() => place.value?.rect ?? null)
+  const rings = computed(() => place.value?.rings ?? [])
   const visible = computed(() => !!step.value && !!rect.value)
-  return { step, rect, visible, remeasure }
+  return { step, rect, rings, visible, remeasure }
 }

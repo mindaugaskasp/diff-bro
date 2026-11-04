@@ -89,7 +89,7 @@ describe('advancing', () => {
     ui.sidebarQuery = 'conf'
     await nextTick()
     expect(tour.isRunning).toBe(false)
-    expect(tour.doneCard).toBe(true)
+    expect(tour.doneCard).toBe('core')
   })
 
   it('does not finish while a panel that lists no diffs is open', async () => {
@@ -114,7 +114,7 @@ describe('going off script', () => {
     const tour = useOnboardingStore()
     expect(tour.isRunning).toBe(false)
     expect(tour.tours.core).toBe('skipped')
-    expect(tour.doneCard).toBe(false)
+    expect(tour.doneCard).toBeNull()
   })
 
   it('closing the only tab, which blanks it, also ends the tour', async () => {

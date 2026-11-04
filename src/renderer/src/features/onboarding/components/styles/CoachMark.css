@@ -71,3 +71,21 @@
 .cm-body {
   margin-top: 2px;
 }
+.coach-mark {
+  pointer-events: none;
+}
+.coach-mark button {
+  pointer-events: auto;
+}
+.cm-token {
+  font-family: var(--font-mono);
+  font-size: var(--font-xs);
+  color: var(--text);
+}
+.cm-name {
+  font-weight: 600;
+}
+.cm-actions {
+  margin: 0;
+  margin-left: calc(var(--space-1) * -1);
+}

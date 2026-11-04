@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 // gets a real answer. A past bug shipped an invisible diagram in this very
 // viewer; these assertions keep it visible.
 test('a Mermaid snippet opens a rendered SVG in the diagram viewer', async ({ page }) => {
-  const row = page.getByText('Example — Mermaid diagram')
+  const row = page.getByText('Example — Mermaid diagram', { exact: true })
   await expect(row).toBeVisible() // the seeded example
 
   // Row actions reveal on hover; hover the name, then open the viewer.
@@ -30,7 +30,11 @@ test('a Mermaid snippet opens a rendered SVG in the diagram viewer', async ({ pa
 })
 
 test('editing a Mermaid snippet shows a live diagram preview', async ({ page }) => {
-  await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+  await page
+    .locator('aside.saved')
+    .getByText('Example — Mermaid diagram', { exact: true })
+    .first()
+    .click()
 
   // Existing snippets open read-only ("Snippet"); the preview renders here too.
   const editor = page.getByRole('region', { name: 'Snippet', exact: true })
@@ -43,7 +47,11 @@ test('editing a Mermaid snippet shows a live diagram preview', async ({ page }) 
 })
 
 test('dragging the preview up makes the diagram bigger', async ({ page }) => {
-  await page.locator('aside.saved').getByText('Example — Mermaid diagram').first().click()
+  await page
+    .locator('aside.saved')
+    .getByText('Example — Mermaid diagram', { exact: true })
+    .first()
+    .click()
   const preview = page.locator('.snippet-doc:visible .mmd-preview')
   const svg = preview.locator('.mermaid-diagram svg').first()
   await expect(svg).toBeVisible()

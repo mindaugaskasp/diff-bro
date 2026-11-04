@@ -60,7 +60,7 @@ function onDragStart(e) {
     class="row"
     :class="[rowState, reorder.classFor(group, index)]"
     :data-new-row="isNew ? entry.id : null"
-    :data-tour="isDiagram ? 'snippet-diagram' : null"
+    :data-snippet-id="entry.id"
     :data-color="rowColorId(entry.color)"
     :style="colorHex ? { '--snip-color': colorHex } : null"
     :draggable="!isSecret(entry)"

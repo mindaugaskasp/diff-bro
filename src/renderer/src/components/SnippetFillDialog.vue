@@ -1,34 +1,19 @@
 <script setup>
-// Fill a snippet's {{variables}} before copying it; the resolved text goes straight
-// to the clipboard. A placeholder left blank is copied as written.
-import { ref } from 'vue'
-import { useSnippetStore } from '../stores/snippetStore'
-import { useDiffStore } from '../stores/diffStore'
-import { parseTemplateVars, fillTemplate } from '../utils/templateVars'
+import { useSnippetFill } from '../composables/useSnippetFill'
 import BaseDialog from './BaseDialog.vue'
-import { t } from '../i18n'
 
-const store = useSnippetStore()
-const diff = useDiffStore()
-const name = store.pendingFill?.name ?? 'snippet'
-const content = store.pendingFill?.content ?? ''
-const vars = parseTemplateVars(content)
-const values = ref(Object.fromEntries(vars.map((v) => [v, ''])))
+const { name, vars, values, copyFilled, close } = useSnippetFill()
 // Held in script so the literal braces don't prematurely close the mustache.
 const marker = '{{…}}'
-
-async function copyFilled() {
-  await window.api.copyText(fillTemplate(content, values.value))
-  diff.showNotice(t('snippetFillDialog.copied', { name }))
-  close()
-}
-function close() {
-  store.pendingFill = null
-}
 </script>
 
 <template>
-  <BaseDialog width="440px" :title="$t('snippetFillDialog.fillInTitle', { name })" @close="close">
+  <BaseDialog
+    width="440px"
+    tour="fill-dialog"
+    :title="$t('snippetFillDialog.fillInTitle', { name })"
+    @close="close"
+  >
     <form class="dialog-form" @submit.prevent="copyFilled">
       <p class="dialog-note">
         {{ $t('snippetFillDialog.thisPromptHasPlaceholdersFill') }}

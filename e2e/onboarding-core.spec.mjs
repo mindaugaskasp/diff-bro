@@ -1,6 +1,7 @@
 import { rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test, expect, firstReadyPage, freshUserDataDir, launchApp } from './fixtures.mjs'
+import { expectRinged } from './onboardingTour.mjs'
 
 test.use({ tips: true })
 
@@ -18,15 +19,6 @@ async function dragChipIn(page) {
     .dragTo(page.locator('.content'))
   await expect(page.locator('.pane-label[data-side="left"]')).toHaveText('config-v1.json')
   await expect(page.locator('.pane-label[data-side="right"]')).toHaveText('config-v2.json')
-}
-
-async function expectRinged(page, target) {
-  const box = await target.boundingBox()
-  const around = await ring(page).boundingBox()
-  expect(around.x).toBeLessThan(box.x)
-  expect(around.y).toBeLessThan(box.y)
-  expect(around.x + around.width).toBeGreaterThan(box.x + box.width)
-  expect(around.y + around.height).toBeGreaterThan(box.y + box.height)
 }
 
 const storedVault = (page) => page.evaluate(() => JSON.parse(window.api.storeLoad('vault')).entries)
@@ -68,6 +60,11 @@ test('drag, save and find: the whole core tour on a fresh install', async ({ pag
   await expect(coach(page)).toHaveCount(0)
   const done = page.locator('.tour-done')
   await expect(done).toContainText('That’s the core: compare, keep, find.')
+  await expect(done).toContainText('Two more, a minute each, whenever you like:')
+  await expect(done.getByRole('button', { name: /^(Snippets|Diagrams)$/ })).toHaveText([
+    'Snippets',
+    'Diagrams'
+  ])
   await done.getByRole('button', { name: 'Close' }).click()
   await expect(done).toHaveCount(0)
 })

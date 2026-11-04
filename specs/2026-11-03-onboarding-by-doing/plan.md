@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 16 / 35 steps |
+| **Progress** | 20 / 35 steps |
 | **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips` (see Delivery) |
 | **Started** | 2026-11-03 |
 | **Finished** | — |
@@ -239,7 +239,7 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`, and ea
 | 1 | Spec + Settings in collapsible groups (#214) | `improvement/settings-groups` | `main` | | committed |
 | 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | | committed |
 | 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | committed |
-| 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | |
+| 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | committed |
 | 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | |
 | 6 | Daily tips | `feat/daily-tips` | slice 5 | | |
 
@@ -270,10 +270,10 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 - [x] 16. `e2e/onboarding-core.spec.mjs`; delete the old tour specs; sweep `coach-mark` and `start-sample-chips`.
 
 **Slice 4: Snippets and Diagrams tours**
-- [ ] 17. Seed *Example — Mermaid diagram, v2* in `seedExamples` (fresh installs only), with a test.
-- [ ] 18. The Snippets tour: +, a `{{…}}` typed (the *Use a sample* line), name and Save, then Copy and Copy filled.
-- [ ] 19. The Diagrams tour: open the example, Compare with…, drop v2 on the right side; the done card.
-- [ ] 20. `e2e/onboarding-snippets.spec.mjs` and `e2e/onboarding-diagrams.spec.mjs`.
+- [x] 17. Seed *Example — Mermaid diagram, v2* in `seedExamples` (fresh installs only), with a test.
+- [x] 18. The Snippets tour: +, a `{{…}}` typed (the *Use a sample* line), name and Save, then Copy and Copy filled.
+- [x] 19. The Diagrams tour: open the example, Compare with…, drop v2 on the right side; the done card.
+- [x] 20. `e2e/onboarding-snippets.spec.mjs` and `e2e/onboarding-diagrams.spec.mjs`.
 
 **Slice 5: Tours page + release offer**
 - [ ] 21. `ToursSettings.vue` at General ▸ Tours: rows with Start / Replay, Done, and New.
@@ -353,6 +353,22 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 | 2026-11-03 | Help ▸ Show Tour and Settings ▸ Behaviour ▸ Show tour replay the core tour on a start tab; *Show tips after an update* now gates nothing and stays for slice 5 to replace | no slice leaves the tour unreachable | remove the switch now |
 | 2026-11-03 | A replay that is skipped keeps a finished tour `done` | a replay must not rewrite history | record the last outcome |
 | 2026-11-03 | `useSpotlight`, `utils/spotlight` and `useTourCommands` go with the old tour | the old overlay was their only user | keep them for the new coach mark |
+| 2026-11-03 | v2 is seeded before the original, so the newest-first list shows the original above it; the first-run seed moved out of `App.vue` into `composables/useFirstRunExamples.js`, and a profile already marked `examplesSeeded` never gains v2 | the seed order is the display order, and the fresh-only rule is now tested | seeding v2 last, which lists it on top |
+| 2026-11-03 | Starting the Diagrams tour puts either example back if it is missing, found by its name in the current locale and the `example` tag | a profile without v2 (an existing user starting it from slice 5's Tours page) can still take the tour | hide the tour; let step 1 wait for a row that is not there |
+| 2026-11-03 | Starting Snippets or Diagrams closes Settings, opens the sidebar on the Snippets panel and clears the search and tag filter | the core tour ends with `conf` typed in the search, which hides every snippet a step rings | leave the sidebar as it was |
+| 2026-11-03 | The Fill in dialog fills date and clock tokens (`{{today}}`, `{{now}}` …) in for every snippet, still editable; its logic moved to `composables/useSnippetFill.js` | the design's "The date is already there"; until now `{{today}}` was asked for like any blank | prefill only during the tour |
+| 2026-11-03 | Copy filled is told to the tour through `ui.lastSnippetFill = { snippetId }`; `pendingFill` now carries the snippet id; only a fill of the snippet saved in step 3 finishes the tour, and Cancel records nothing, so the step waits | state, not DOM, and the core may not import a slice | finish on any Copy filled |
+| 2026-11-03 | Step 2 reads the editor through the tab-content registry, which gained a writer for *Use a sample*; the check waits until the tab is dirty, because the registry is not reactive before the document mounts | no second copy of the draft text, no polling | a draft-text field on the tab; reading it in the frame loop |
+| 2026-11-03 | `onTab` replaces `onSample`. For Snippets and Diagrams, closing the tab the current step needs (the snippet for Snippets 2 to 4, the example for Diagrams 2, the comparison for Diagrams 3) ends the tour as skipped, the last step included | each of those steps happens in that tab; the core's last step does not need its tab, so it keeps its rule | the core's "before the last step" for every tour |
+| 2026-11-03 | Step 1 of Snippets counts only a new editor that opens while it waits; a draft already open does not | the step is "press +", not "have a draft" | any open new snippet |
+| 2026-11-03 | The Snippets tour ends with no card; core and Diagrams have one. `doneCard` holds the finished tour's id and each card's copy lives in the registry; the core card's chips are plain `.btn .btn-sm` | Snippets' last coach mark already says the tour is done | a card per tour |
+| 2026-11-03 | Two Mermaid sides already open in the diagram view (`shouldOpenSemantic` via `canCompareDiagram`), so the drop switches nothing; the unit test asserts `comparableKind === 'diagram'` and the e2e the diagram viewer | it is already the default | forcing `semanticView` on the drop |
+| 2026-11-03 | New placements: `inside` for step 2 (420px into the editor, past the sample line, pointer at line 1), `zone` for Diagrams 3 (three quarters down the right pane, no pointer, clear of the pane's own drop slot and hint), and an `alt` that moves the Copy step beside the Fill in dialog while it is open | "beside the empty editor", "in the right pane", "moves beside the dialog" | a pointer-up mark under the editor's first line |
+| 2026-11-03 | The coach mark lets the pointer through everywhere but its buttons | a v2 dropped on the mark in the right pane must land on the pane | a drop handler on the mark |
+| 2026-11-03 | A row is targeted by `[data-snippet-id="{example}"]`, resolved from the ids the tour found; SnippetRow's unused `data-tour="snippet-diagram"` became `data-snippet-id`. New `data-tour` targets: `snippet-name`, `snippet-body`, `snippet-copy`, `snippet-compare`, `fill-dialog`, `pane-right` | one selector per row, and the registry stays data | a `data-tour` per example |
+| 2026-11-03 | The blank step's braces are `<i18n-t>` slots (`{service}`, `{today}`) drawn as `.ql-kbd` chips; each tour has its own step label (`Snippets · 2 of 4`) | no literal `{{` in the catalogue, where it would be interpolation | vue-i18n literal escapes |
+| 2026-11-03 | The sample offer's link style became the shared `.link-btn` in `ui.css`, used by *Use a sample* too | a class two components need lives in `ui.css` | a second scoped copy |
+| 2026-11-03 | The theme sweep gains `snippets-coach-mark` (step 2: label, title, body, blank chip, *Use a sample* at rest and hovered, keyline) and `tour-drop-zone` (the dashed zone, the v2 row ring, the mark's copy); `tour-done-card` also measures the line and the chips | every new colour pair, on all 20 themes | — |
 
 ## Validation
 

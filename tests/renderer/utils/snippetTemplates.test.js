@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   TEMPLATE_TOKENS,
   expandTemplates,
-  hasTemplate
+  hasTemplate,
+  presetFills
 } from '../../../src/renderer/src/utils/snippetTemplates'
 
 // Wednesday 5 August 2026, 14:32 local.
@@ -102,5 +103,16 @@ describe('TEMPLATE_TOKENS', () => {
     for (const spec of TEMPLATE_TOKENS) {
       expect(expand(`{{${spec.token}}}`)).not.toBe(`{{${spec.token}}}`)
     }
+  })
+})
+
+describe('presetFills', () => {
+  it('fills the date tokens in and leaves every other blank empty', () => {
+    const values = presetFills(['service', 'today', 'Weekday'], { now: AT, locale: 'en-GB' })
+    expect(values).toEqual({ service: '', today: '2026-08-05', Weekday: 'Wednesday' })
+  })
+
+  it('is empty for no blanks', () => {
+    expect(presetFills([], { now: AT })).toEqual({})
   })
 })

@@ -16,6 +16,8 @@ process.env.E2E_HIDDEN = '0'
 test.skip(process.platform !== 'darwin', 'macOS-only: elsewhere the app quits with its last window')
 
 const EXAMPLE = 'Example — Mermaid diagram'
+// Not its v2, whose name starts the same.
+const EXAMPLE_ROW = /Example — Mermaid diagram(?!, v2)/
 
 const windows = (app) =>
   app.evaluate(({ BrowserWindow }) =>
@@ -58,7 +60,7 @@ test('dock activation reopens the main window when only the warm launcher is lef
   app,
   page
 }) => {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   await closeMainWindow(app)
   expect(await windows(app)).toEqual([])
 
@@ -74,13 +76,13 @@ test('choosing a launcher result reopens the main window and still delivers it',
   app,
   page
 }) => {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   await closeMainWindow(app)
 
   const ql = await launcherAlone(app)
   await expect(ql.locator('.ql-input')).toBeVisible()
   await ql.locator('.ql-input').fill('Mermaid')
-  await expect(ql.locator('.ql-res', { hasText: EXAMPLE })).toBeVisible()
+  await expect(ql.locator('.ql-res', { hasText: EXAMPLE_ROW })).toBeVisible()
 
   const [main] = await Promise.all([app.waitForEvent('window'), ql.keyboard.press('Enter')])
   await main.waitForLoadState('domcontentloaded')

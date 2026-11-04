@@ -3,16 +3,33 @@ const GAP = 14
 const EDGE = 8
 const POINTER_INSET = 18
 const RIGHT_LEAD = 26
+// Past a typed line like the Snippets tour's sample, so the mark never covers it.
+const INSIDE_LEAD = 420
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n))
 
+function insidePlacement(rect) {
+  const lead = clamp(rect.x + INSIDE_LEAD, rect.x + EDGE, rect.x + rect.w - COACH_W - GAP)
+  return { left: lead, top: rect.y + EDGE, pointer: 'left', offset: POINTER_INSET }
+}
+
+// Low in the zone, clear of the drop slot and hint a pane centres for itself.
+function zonePlacement(rect, height) {
+  const left = rect.x + (rect.w - COACH_W) / 2
+  return { left, top: rect.y + (rect.h * 3) / 4 - height / 2, pointer: 'none', offset: 0 }
+}
+
 /**
  * Where a coach mark sits beside its target, and where along its edge the
- * pointer meets the target's centre. `bottom` points up; `right` points left.
+ * pointer meets the target's centre. `bottom` points up; `right` points left;
+ * `inside` sits in a wide target beside its first line; `zone` sits low in a
+ * drop zone with no pointer.
  * @param {{ rect: import('../../types').ScreenRect, side?: string, height: number, stage: { w: number, h: number } }} args
- * @returns {{ left: number, top: number, pointer: 'up'|'left', offset: number }}
+ * @returns {{ left: number, top: number, pointer: 'up'|'left'|'none', offset: number }}
  */
 export function coachPlacement({ rect, side, height, stage }) {
+  if (side === 'inside') return insidePlacement(rect)
+  if (side === 'zone') return zonePlacement(rect, height)
   const cx = rect.x + rect.w / 2
   const cy = rect.y + rect.h / 2
   if (side === 'right') {

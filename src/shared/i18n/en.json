@@ -1263,7 +1263,53 @@
       },
       "done": {
         "title": "That’s the core: compare, keep, find.",
-        "close": "Close"
+        "close": "Close",
+        "more": "Two more, a minute each, whenever you like:"
+      }
+    },
+    "snippets": {
+      "name": "Snippets",
+      "label": "Snippets · {step} of {count}",
+      "new": {
+        "title": "Keep text you reuse",
+        "body": "Press + to start a snippet."
+      },
+      "blank": {
+        "title": "Leave a blank to fill in later",
+        "body": "Type anything with a blank in double braces, like {service}. {today} fills in the date by itself.",
+        "sample": "Use a sample"
+      },
+      "save": {
+        "title": "Name it, then Save",
+        "body": "Any name you will search for later. It joins the sidebar, and the quick look-up finds it too."
+      },
+      "copy": {
+        "title": "Copy it, and fill the blank",
+        "body": "Press Copy. Diff Bro asks for the blank, then copies the text ready to paste."
+      },
+      "fill": {
+        "title": "Fill it, then Copy filled",
+        "body": "The date is already there. Copy filled puts the finished line on your clipboard, and the tour is done."
+      }
+    },
+    "diagrams": {
+      "name": "Diagrams",
+      "label": "Diagrams · {step} of {count}",
+      "open": {
+        "title": "Open the example diagram",
+        "body": "A Mermaid snippet draws itself as you type."
+      },
+      "compare": {
+        "title": "Compare it with another version",
+        "body": "Press Compare with…. This diagram goes on the left side."
+      },
+      "drop": {
+        "title": "Drop v2 here",
+        "body": "Drag {name} from the sidebar onto this side."
+      },
+      "done": {
+        "title": "Every change, marked on the picture",
+        "body": "Added, removed and changed nodes are coloured. Drop any two snippets on the sides to compare them."
       }
     }
   },
@@ -1400,6 +1446,7 @@
   "snippetNotices": {
     "untitledSnippet": "Untitled snippet",
     "exampleMermaidDiagram": "Example — Mermaid diagram",
+    "exampleMermaidDiagramV2": "Example — Mermaid diagram, v2",
     "exampleClaudeReviewPrompt": "Example — Claude review prompt",
     "signedButNotByAny": "Signed, but not by any of your trusted keys — treat these snippets as untrusted.",
     "signedByTrustedKey": "Signed by trusted key “{label}”."

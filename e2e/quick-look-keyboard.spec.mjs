@@ -11,7 +11,7 @@ import { test, expect } from './fixtures.mjs'
 const EXAMPLE = 'Example — Mermaid diagram'
 
 async function summon(app, page) {
-  await expect(page.getByText(EXAMPLE)).toBeVisible()
+  await expect(page.getByText(EXAMPLE, { exact: true })).toBeVisible()
   const [ql] = await Promise.all([
     app.waitForEvent('window'),
     page.evaluate(() => window.api.quickLookToggle())

@@ -126,7 +126,10 @@ test('the show button is centred on the collapsed sidebar, with a snippet open',
   page
 }) => {
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Mermaid diagram' }).first().click()
+  await page
+    .locator('li.row', { hasText: /Example — Mermaid diagram(?!, v2)/ })
+    .first()
+    .click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   await collapse(page)
   await expect.poll(() => widthOf(page)).toBeLessThan(2)

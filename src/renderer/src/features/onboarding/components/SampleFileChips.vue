@@ -24,10 +24,10 @@ const tour = useOnboardingStore()
       </li>
     </ul>
     <p class="so-actions">
-      <button type="button" class="so-link" @click="tour.loadSample()">
+      <button type="button" class="link-btn" @click="tour.loadSample()">
         {{ $t('onboarding.core.drop.load') }}
       </button>
-      <button type="button" class="so-link" @click="tour.skip()">
+      <button type="button" class="link-btn" @click="tour.skip()">
         {{ $t('onboarding.skip') }}
       </button>
     </p>

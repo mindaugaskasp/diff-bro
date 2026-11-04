@@ -80,3 +80,15 @@ export function expandTemplates(text, { now = new Date(), locale = 'en' } = {}) 
 
 /** Whether this text has anything to expand — drives the live hint. */
 export const hasTemplate = (text) => typeof text === 'string' && ANY_PLACEHOLDER.test(text)
+
+/**
+ * A Fill in dialog's starting values: a date or clock token is already filled
+ * in, and every other blank is empty.
+ * @param {string[]} names
+ * @param {{ now?: Date, locale?: string }} [opts]
+ * @returns {Record<string, string>}
+ */
+export const presetFills = (names, { now = new Date(), locale = 'en' } = {}) =>
+  Object.fromEntries(
+    names.map((name) => [name, BY_TOKEN.get(name.toLowerCase())?.resolve(now, locale) ?? ''])
+  )

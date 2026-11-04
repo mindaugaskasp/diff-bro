@@ -21,7 +21,7 @@ export function useSnippetRowActions(entry) {
     const content = await store.load(entry().id)
     if (content == null) return
     if (fillVars(languageOf(entry()), content).length) {
-      store.pendingFill = { name: entry().name, content }
+      store.pendingFill = { name: entry().name, content, snippetId: entry().id }
       return
     }
     const res = await window.api.copyText(content)

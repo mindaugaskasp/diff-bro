@@ -15,7 +15,10 @@ import {
   languageOf,
   useSnippetStore
 } from '../../../src/renderer/src/stores/snippetStore'
-import { EXAMPLE_SNIPPET } from '../../../src/renderer/src/utils/snippetExamples'
+import {
+  EXAMPLE_SNIPPET,
+  EXAMPLE_SNIPPET_V2
+} from '../../../src/renderer/src/utils/snippetExamples'
 import { useUiStore } from '../../../src/renderer/src/stores/uiStore'
 import { createTranslator } from '../../../src/shared/i18n'
 
@@ -49,17 +52,26 @@ beforeEach(() => {
 })
 
 describe('snippetStore — first-run examples', () => {
-  it('seeds both examples through the normal encrypted add path', async () => {
+  it('seeds the examples through the normal encrypted add path', async () => {
     const store = useSnippetStore()
     expect(await store.seedExamples()).toBe(true)
-    expect(store.entries).toHaveLength(2)
-    const [entry] = store.entries
+    expect(store.entries).toHaveLength(3)
+    const entry = store.entries.find((e) => e.name === t(EXAMPLE_SNIPPET.nameKey))
     expect(entry.name).toBe(t(EXAMPLE_SNIPPET.nameKey))
     expect(languageOf(entry)).toBe('mermaid')
     // stored encrypted, decrypts back to the example content
     const raw = localStorage.getItem('diffbro.snippets')
     expect(raw).not.toContain('flowchart')
     await expect(store.load(entry.id)).resolves.toBe(EXAMPLE_SNIPPET.content)
+  })
+
+  it('seeds a second version of the diagram for the Diagrams tour, tagged example', async () => {
+    const store = useSnippetStore()
+    await store.seedExamples()
+    const v2 = store.entries.find((e) => e.name === 'Example — Mermaid diagram, v2')
+    expect(v2.tags).toContain('example')
+    expect(languageOf(v2)).toBe('mermaid')
+    await expect(store.load(v2.id)).resolves.toBe(EXAMPLE_SNIPPET_V2.content)
   })
 
   // A seeded row is not one the user made, so it must not wear the new-row mark.

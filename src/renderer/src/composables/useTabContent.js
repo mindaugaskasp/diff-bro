@@ -29,13 +29,17 @@ export function startTabDrag(e, tabId) {
  */
 export function useTabContent(tab, { name, content, language, secret }, editing) {
   const tabs = useTabsStore()
-  registerTabContent(tab.id, () => ({
-    name: name.value.trim() || tab.title || '',
-    content: content.value,
-    language: language.value,
-    secret: secret.value,
-    snippetId: editing.id && !tabs.unsaved(tab) ? editing.id : null
-  }))
+  registerTabContent(
+    tab.id,
+    () => ({
+      name: name.value.trim() || tab.title || '',
+      content: content.value,
+      language: language.value,
+      secret: secret.value,
+      snippetId: editing.id && !tabs.unsaved(tab) ? editing.id : null
+    }),
+    (text) => (content.value = text)
+  )
   onBeforeUnmount(() => unregisterTabContent(tab.id))
   return { saveAsFile: () => saveTabAsFile(tab.id) }
 }

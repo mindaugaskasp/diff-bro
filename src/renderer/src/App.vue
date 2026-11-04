@@ -36,7 +36,7 @@ import { useTabsStore } from './stores/tabsStore'
 import FormatHintBanner from './components/FormatHintBanner.vue'
 import DiskChangeNotice from './components/DiskChangeNotice.vue'
 import AppUpdatedNotice from './components/AppUpdatedNotice.vue'
-import { useSnippetStore } from './stores/snippetStore'
+import { seedFirstRunExamples } from './composables/useFirstRunExamples'
 import { useDiagramWarmup } from './composables/useDiagramWarmup'
 import { useUiStore } from './stores/uiStore'
 import { usePresentationKeys } from './composables/usePresentationKeys'
@@ -48,7 +48,6 @@ const ui = useUiStore()
 const imageExport = useImageExportStore()
 const tabs = useTabsStore()
 tabs.init()
-const snippets = useSnippetStore()
 const settings = useSettingsStore()
 
 // One side loaded: which one is still wanted.
@@ -71,13 +70,7 @@ onMounted(async () => {
   window.api.cliReady()
 })
 
-// First run only: seed the example snippets into an empty library, once.
-onMounted(async () => {
-  if (settings.examplesSeeded) return
-  // Vault key not ready — retry next launch rather than record them as seeded.
-  if (snippets.entries.length === 0 && !(await snippets.seedExamples())) return
-  settings.markExamplesSeeded()
-})
+onMounted(seedFirstRunExamples)
 
 const { activeSnippetTab, snippetTabs } = useSnippetTabs()
 // Window-level file drops stand down while a document or pane handles its own.

@@ -4,7 +4,8 @@ import { shaped } from '../../../utils/props'
 
 const props = defineProps({
   /** @type {import('vue').PropType<import('../../../types').ScreenRect>} */
-  rect: { type: Object, required: true, validator: shaped('x', 'y', 'w', 'h') }
+  rect: { type: Object, required: true, validator: shaped('x', 'y', 'w', 'h') },
+  zone: { type: Boolean, default: false }
 })
 const OUTSET = 4
 const style = computed(() => ({
@@ -16,7 +17,7 @@ const style = computed(() => ({
 </script>
 
 <template>
-  <div class="target-ring" :style="style" aria-hidden="true"></div>
+  <div class="target-ring" :class="{ zone }" :style="style" aria-hidden="true"></div>
 </template>
 
 <style scoped src="./styles/TargetRing.css"></style>

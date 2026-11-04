@@ -45,7 +45,11 @@ describe('useSnippetRowActions', () => {
     const { store, actions } = withContent({ id: 'a', name: 'Review', language }, 'Review {{file}}')
     await actions.copySnippet()
     expect(api.copyText).not.toHaveBeenCalled()
-    expect(store.pendingFill).toEqual({ name: 'Review', content: 'Review {{file}}' })
+    expect(store.pendingFill).toEqual({
+      name: 'Review',
+      content: 'Review {{file}}',
+      snippetId: 'a'
+    })
   })
 
   it('opens a diagram in the viewer under the snippet name', async () => {

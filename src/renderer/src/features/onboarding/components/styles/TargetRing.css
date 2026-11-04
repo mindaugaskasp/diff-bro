@@ -6,3 +6,8 @@
   box-shadow: 0 0 0 5px var(--tour-halo);
   pointer-events: none;
 }
+.target-ring.zone {
+  border-style: dashed;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}

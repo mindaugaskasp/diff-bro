@@ -47,6 +47,9 @@ export const useUiStore = defineStore('ui', {
     // room. Transient by design, like the diagram viewer's own zoom: it is a
     // "let me look closer at this", not a setting.
     diffZoom: ZOOM_DEFAULT,
+    // The Snippets tour's hooks into Fill in, here because the core may not import a slice.
+    lastSnippetFill: null,
+    prefillFillDates: false,
     // ⌘S with a snippet in front: the snippet document that is showing answers it.
     snippetSaveRequest: 0,
     // Presentation mode: the comparison with every other surface hidden, for

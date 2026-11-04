@@ -53,29 +53,9 @@
   align-items: center;
   gap: var(--space-1);
 }
-.so-link + .so-link::before {
+.link-btn + .link-btn::before {
   content: '·';
   display: inline-block;
   margin-right: var(--space-2);
   text-decoration: none;
-}
-.so-link {
-  height: var(--control-h-sm);
-  padding: 0 var(--space-1);
-  border: 0;
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--text-meta);
-  font: inherit;
-  font-size: var(--font-md);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-.so-link:hover {
-  background: var(--row-hover);
-  color: var(--text);
-}
-.so-link:focus-visible {
-  outline: 2px solid var(--focus-ring);
 }

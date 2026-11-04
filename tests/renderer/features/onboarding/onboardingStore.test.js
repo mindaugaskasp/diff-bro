@@ -117,10 +117,10 @@ describe('running the core tour', () => {
     tour.noteSampleSaved('entry-1')
     tour.advance('sample-found')
     expect(tour.isRunning).toBe(false)
-    expect(tour.doneCard).toBe(true)
+    expect(tour.doneCard).toBe('core')
     expect(stored()).toMatchObject({ offer: false, tours: { core: 'done' } })
     tour.dismissDone()
-    expect(tour.doneCard).toBe(false)
+    expect(tour.doneCard).toBeNull()
   })
 
   it('Skip ends a running tour and records it', async () => {
@@ -143,6 +143,60 @@ describe('running the core tour', () => {
     await tour.loadSample()
     tour.noteOwnComparison()
     expect(tour.step.id).toBe('save')
+  })
+})
+
+describe('the tours after the core one', () => {
+  async function finishedCore() {
+    const tour = setup()
+    await tour.loadSample()
+    tour.noteSampleSaved('entry-1')
+    tour.advance('sample-found')
+    return tour
+  }
+
+  it('a chip on the core done card starts the Snippets tour and closes the card', async () => {
+    const tour = await finishedCore()
+    await tour.startTour('snippets')
+    expect(tour.doneCard).toBeNull()
+    expect(tour.running).toMatchObject({ id: 'snippets', index: 0 })
+    expect(tour.isOffering).toBe(false)
+  })
+
+  it('a chip starts the Diagrams tour', async () => {
+    const tour = await finishedCore()
+    await tour.startTour('diagrams')
+    expect(tour.running?.id).toBe('diagrams')
+  })
+
+  it('a comparison of one’s own does not end a Snippets tour', async () => {
+    const tour = await finishedCore()
+    await tour.startTour('snippets')
+    tour.noteOwnComparison()
+    expect(tour.running?.id).toBe('snippets')
+  })
+
+  it('the Snippets tour fills the date in for its blanks, and stops once it ends', async () => {
+    const tour = await finishedCore()
+    const ui = useUiStore()
+    expect(ui.prefillFillDates).toBe(false)
+    await tour.startTour('snippets')
+    expect(ui.prefillFillDates).toBe(true)
+    tour.skip()
+    expect(ui.prefillFillDates).toBe(false)
+  })
+
+  it('other tours leave the Fill in dialog as it is', async () => {
+    const tour = await finishedCore()
+    await tour.startTour('diagrams')
+    expect(useUiStore().prefillFillDates).toBe(false)
+  })
+
+  it('records the outcome under the tour that ran', async () => {
+    const tour = await finishedCore()
+    await tour.startTour('snippets')
+    tour.skip()
+    expect(stored().tours).toEqual({ core: 'done', snippets: 'skipped' })
   })
 })
 

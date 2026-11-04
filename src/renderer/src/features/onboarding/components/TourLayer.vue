@@ -11,7 +11,7 @@ import TourDoneCard from './TourDoneCard.vue'
 
 const tour = useOnboardingStore()
 const settings = useSettingsStore()
-const { step, rect, visible } = useTourStep()
+const { step, rect, rings, visible } = useTourStep()
 const keys = computed(() =>
   step.value?.id === 'save' ? [MOD, 'S'] : acceleratorKeys(settings.quickLookShortcut, isMac)
 )
@@ -19,15 +19,22 @@ const keys = computed(() =>
 
 <template>
   <template v-if="visible">
-    <TargetRing :rect="rect" />
+    <TargetRing v-for="(ring, i) in rings" :key="i" :rect="ring.rect" :zone="ring.zone" />
     <CoachMark
       :step="step"
+      :label-key="tour.labelKey"
       :number="tour.stepNumber"
       :count="tour.stepCount"
       :rect="rect"
       :keys="keys"
       @skip="tour.skip()"
+      @action="tour.fillSample()"
     />
   </template>
-  <TourDoneCard v-if="tour.doneCard" @close="tour.dismissDone()" />
+  <TourDoneCard
+    v-if="tour.doneCard"
+    :tour-id="tour.doneCard"
+    @close="tour.dismissDone()"
+    @start="tour.startTour($event)"
+  />
 </template>

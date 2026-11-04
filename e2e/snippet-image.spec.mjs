@@ -21,6 +21,8 @@ test.beforeEach(async ({ page }) => {
 
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const DIAGRAM = 'Example — Mermaid diagram'
+// Not its v2, whose name starts the same.
+const DIAGRAM_ROW = /Example — Mermaid diagram(?!, v2)/
 
 // Capture lives in the snippet's view window — the row's hover actions carry
 // copy/delete only, so the shot starts from where the contents are shown.
@@ -194,14 +196,14 @@ test('a secret snippet offers no capture action', async ({ page }) => {
   // ...while an ordinary snippet's view offers it. The ghost Close by its
   // text — the header × carries the same accessible name.
   await closeSnippet(page)
-  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).first().click()
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM_ROW }).first().click()
   await expect(docActions(page).getByRole('button', { name: 'Capture', exact: true })).toBeVisible()
 })
 
 // Capture moved into the view window; the hover row keeps copy/delete only, so
 // the common action never shares a narrow strip with the rare one.
 test('the row hover actions carry no capture button', async ({ page }) => {
-  const row = page.locator('.snippets-section .row', { hasText: DIAGRAM }).first()
+  const row = page.locator('.snippets-section .row', { hasText: DIAGRAM_ROW }).first()
   await row.hover()
   await expect(row.getByRole('button', { name: 'Copy to clipboard' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Export as image' })).toHaveCount(0)
@@ -239,7 +241,7 @@ test('a snippet is captured from the view its contents are shown in', async ({ p
 })
 
 test('the capture action is disabled while editing', async ({ page }) => {
-  await page.locator('.snippets-section .row', { hasText: DIAGRAM }).first().click()
+  await page.locator('.snippets-section .row', { hasText: DIAGRAM_ROW }).first().click()
   await expect(page.getByRole('region', { name: 'Snippet', exact: true })).toBeVisible()
   const capture = docActions(page).getByRole('button', { name: 'Capture', exact: true })
   await expect(capture).toBeEnabled()

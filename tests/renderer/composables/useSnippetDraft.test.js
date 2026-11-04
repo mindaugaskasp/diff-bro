@@ -267,7 +267,11 @@ describe('useSnippetDraft — copy', () => {
     const { snippets, draft } = draftWith('Review {{file}}')
     expect(await draft.copyContent()).toBe(false)
     expect(window.api.copyText).not.toHaveBeenCalled()
-    expect(snippets.pendingFill).toEqual({ name: 'Review', content: 'Review {{file}}' })
+    expect(snippets.pendingFill).toEqual({
+      name: 'Review',
+      content: 'Review {{file}}',
+      snippetId: null
+    })
   })
 
   it('has nothing to copy from an empty draft', async () => {

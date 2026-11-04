@@ -119,7 +119,10 @@ test('no Run until the language is enabled, and none for other languages', async
   await enablePython(app, page)
   await page.reload()
   await showPanel(page, 'snippets')
-  await page.locator('li.row', { hasText: 'Example — Mermaid diagram' }).first().click()
+  await page
+    .locator('li.row', { hasText: /Example — Mermaid diagram(?!, v2)/ })
+    .first()
+    .click()
   await expect(page.locator('.snippet-doc:visible')).toBeVisible()
   await expect(runButton(page)).toHaveCount(0)
 })
