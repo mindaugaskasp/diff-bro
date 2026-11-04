@@ -1,10 +1,22 @@
 <script setup>
+import { onBeforeUnmount, ref } from 'vue'
 import SettingToggle from '../../../components/SettingToggle.vue'
 import { useOnboardingStore } from '../onboardingStore'
 import TourRow from './TourRow.vue'
 
 const tour = useOnboardingStore()
 defineEmits(['take'])
+
+const NOTICE_MS = 2500
+const broughtBack = ref(false)
+let timer = 0
+function bringBack() {
+  tour.bringBackTips()
+  broughtBack.value = true
+  clearTimeout(timer)
+  timer = setTimeout(() => (broughtBack.value = false), NOTICE_MS)
+}
+onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>
@@ -32,6 +44,23 @@ defineEmits(['take'])
     <SettingToggle :checked="tour.offerTours" @change="tour.setOfferTours">
       {{ $t('settingsTours.offerTours') }}
     </SettingToggle>
+    <h5 class="ts-sub">{{ $t('settingsTours.dailyTips') }}</h5>
+    <SettingToggle :checked="tour.tips.on" @change="tour.setShowTips">
+      {{ $t('settingsTours.showTips') }}
+    </SettingToggle>
+    <p class="ts-bring-back">
+      <button
+        type="button"
+        class="btn btn-sm"
+        :disabled="!tour.tips.known.length"
+        @click="bringBack"
+      >
+        {{ $t('settingsTours.bringBack') }}
+      </button>
+      <span v-if="broughtBack" class="ts-notice" role="status">
+        {{ $t('settingsTours.broughtBack') }}
+      </span>
+    </p>
   </section>
 </template>
 

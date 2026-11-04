@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { parseTemplateVars, fillTemplate, fillVars, acceptsFills } from '../../../src/renderer/src/utils/templateVars'
+import {
+  parseTemplateVars,
+  fillTemplate,
+  fillVars,
+  acceptsFills
+} from '../../../src/renderer/src/utils/templateVars'
 
 describe('parseTemplateVars', () => {
   it('returns distinct names in first-seen order, tolerating inner whitespace', () => {

@@ -1,4 +1,3 @@
-// The Languages row's program field, its found-programs menu and its stop-after minutes.
 import { STOP_AFTER_MINUTES } from '../../../../shared/snippetLanguages'
 
 /** @returns {string|null} a path for main to check, or null when there is nothing new */

@@ -100,3 +100,47 @@ test('no control clips its label in a longer language', async ({ page }) => {
   expect(examined, 'visible controls the check actually measured').toBeGreaterThan(5)
   expect(clipped, 'controls whose label overflows its box').toEqual([])
 })
+
+const isClipped = (locator) =>
+  locator.evaluateAll((els) =>
+    els
+      .filter((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)
+      .map((el) => `${el.className}: ${el.textContent.trim().slice(0, 40)}`)
+  )
+
+test('the daily tip, its Show me and the Tours page fit a longer language', async () => {
+  const dir = freshUserDataDir()
+  const app = await launchApp(dir)
+  try {
+    const page = await firstReadyPage(app)
+    await chooseLocale(page, 'en-XA')
+    await page.locator('.settings-nav .nav-item').filter({ hasText: /Ţōūřş/u }).click()
+    await expect(page.locator('.ts-bring-back .btn')).toBeVisible()
+    expect(
+      await isClipped(page.locator('.tours-settings .btn, .tours-settings .setting-toggle'))
+    ).toEqual([])
+    await closeDialog(page)
+
+    await page.evaluate(() => {
+      const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+      const store = pinia._s.get('onboarding')
+      store.tips = { ...store.tips, on: true, shownOn: null }
+      store.noteFront(store.today())
+    })
+    const card = page.locator('.daily-tip')
+    await expect(card).toBeVisible()
+    expect(await isClipped(card.locator('.btn, .link-btn, .dt-foot, .dt-head'))).toEqual([])
+    const box = await card.boundingBox()
+    const view = await page.evaluate(() => ({ w: innerWidth, h: innerHeight }))
+    expect(box.x + box.width).toBeLessThanOrEqual(view.w)
+    expect(box.y + box.height).toBeLessThanOrEqual(view.h)
+
+    await card.locator('.btn-primary').click()
+    const note = page.locator('.tip-note')
+    await expect(note).toBeVisible()
+    expect(await isClipped(note)).toEqual([])
+  } finally {
+    await app.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

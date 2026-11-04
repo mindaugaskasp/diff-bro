@@ -1,0 +1,58 @@
+.daily-tip {
+  position: fixed;
+  right: var(--space-4);
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 390px;
+  padding: var(--space-2) var(--space-2) var(--space-3) var(--space-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--dialog-edge);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+}
+.dt-head,
+.dt-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.dt-foot {
+  flex-wrap: wrap;
+}
+.dt-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-meta);
+}
+.dt-kicker .app-icon {
+  font-size: var(--font-md);
+  color: var(--accent);
+}
+.dt-title {
+  margin: 0;
+  padding-right: var(--space-2);
+  font-size: var(--font-md);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+.dt-body {
+  padding-right: var(--space-2);
+}
+.dt-off {
+  margin-left: calc(var(--space-1) * -1);
+  font-size: var(--font-sm);
+  white-space: nowrap;
+}
+.dt-actions {
+  display: inline-flex;
+  margin-left: auto;
+  gap: var(--space-2);
+  padding-right: var(--space-2);
+}

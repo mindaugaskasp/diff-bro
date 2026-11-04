@@ -47,7 +47,8 @@ describe('the offer', () => {
       tours: {},
       offer: false,
       version: '0.18.0',
-      known: []
+      known: [],
+      tips: { on: true, known: [], seen: [], shownOn: null, since: null }
     })
   })
 

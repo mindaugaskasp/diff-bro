@@ -25,8 +25,7 @@ export function watchSnippetsTour(tour) {
       if (opened) tour.noteTourTab(opened.id, 'snippet-opened')
     }
   )
-  // Read only once the tab is dirty: the reader is not reactive until the
-  // document mounts, and nothing can hold a blank before it is typed.
+  // The reader is not reactive until the document mounts, so wait for a dirty tab.
   watch(
     () =>
       waitingFor(tour, 'snippet-blank') &&

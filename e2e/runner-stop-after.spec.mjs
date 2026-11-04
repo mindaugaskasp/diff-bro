@@ -7,8 +7,7 @@ test.skip(!PYTHON, 'needs python3 on the machine')
 
 const SPEEDUP = 1000
 
-// Main's clock runs SPEEDUP times faster for long waits, so a minute passes in 60 ms
-// while the runner's own setTimeout path is the one under test.
+// Main's long timers run SPEEDUP times faster, so the real setTimeout path is what runs.
 async function speedUpLongTimers(app) {
   await app.evaluate((_electron, speedup) => {
     const realSetTimeout = globalThis.setTimeout

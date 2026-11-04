@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useOnboardingStore } from '../onboardingStore'
 import { useTourStep } from '../useTourStep'
+import { useTipShowMe } from '../useTipShowMe'
 import { useSettingsStore } from '../../../stores/settingsStore'
 import { acceleratorKeys } from '../../../utils/accelerator'
 import { MOD, isMac } from '../../../keys'
@@ -9,10 +10,13 @@ import CoachMark from './CoachMark.vue'
 import TargetRing from './TargetRing.vue'
 import TourDoneCard from './TourDoneCard.vue'
 import ReleaseTourCard from './ReleaseTourCard.vue'
+import DailyTipCard from './DailyTipCard.vue'
+import TipShowMe from './TipShowMe.vue'
 
 const tour = useOnboardingStore()
 const settings = useSettingsStore()
 const { step, rect, rings, visible } = useTourStep()
+const showMe = useTipShowMe()
 const keys = computed(() =>
   step.value?.id === 'save' ? [MOD, 'S'] : acceleratorKeys(settings.quickLookShortcut, isMac)
 )
@@ -39,4 +43,6 @@ const keys = computed(() =>
     @start="tour.startTour($event)"
   />
   <ReleaseTourCard />
+  <DailyTipCard :can-show="showMe.canShow.value" />
+  <TipShowMe v-if="showMe.visible.value" :tip="showMe.tip.value" :rect="showMe.rect.value" />
 </template>

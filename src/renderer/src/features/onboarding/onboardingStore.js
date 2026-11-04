@@ -7,6 +7,16 @@ import { endedTours, isOfferOpen, pendingReleases, settledReleases, tourRows } f
 import { appVersion, readProgress, saveProgress } from './onboardingPersist'
 import { openSample } from './tourSample'
 import { prepareTour } from './tourPrep'
+import { TIPS } from './tips'
+import { prepareTip } from './tipPrep'
+import {
+  broughtBackTips,
+  isTipDue,
+  knewTip,
+  localDay,
+  presentedTips,
+  tipQueue
+} from './tipSchedule'
 
 export const useOnboardingStore = defineStore('onboarding', {
   state: () => ({
@@ -24,7 +34,15 @@ export const useOnboardingStore = defineStore('onboarding', {
     examples: null,
     snippetId: null,
     /** @type {string|null} the tour whose closing card is up */
-    doneCard: null
+    doneCard: null,
+    /** @type {import('../../types').Tip[]} */
+    tipRegistry: [...TIPS],
+    /** @type {string|null} the day a tip came due, waiting for a quiet moment */
+    tipDue: null,
+    /** @type {string|null} */
+    tipCard: null,
+    /** @type {string|null} the tip whose control Show me is lighting */
+    tipShowMe: null
   }),
   getters: {
     tourOf: (s) => (id) => s.registry.find((t) => t.id === id) ?? null,
@@ -47,7 +65,9 @@ export const useOnboardingStore = defineStore('onboarding', {
     isOffering: (s) =>
       s.running ? s.running.id === 'core' && s.running.index === 0 : isOfferOpen(s),
     pendingReleases: (s) => pendingReleases(s, s.registry, appVersion()),
-    tourRows: (s) => tourRows(s, s.registry, appVersion())
+    tourRows: (s) => tourRows(s, s.registry, appVersion()),
+    tipOf: (s) => (id) => s.tipRegistry.find((t) => t.id === id) ?? null,
+    tipQueue: (s) => tipQueue(s.tips, s.tipRegistry, appVersion())
   },
   actions: {
     init() {
@@ -172,6 +192,45 @@ export const useOnboardingStore = defineStore('onboarding', {
     openReleaseTours() {
       this.releaseCard = null
       useUiStore().openSettings('tours')
+    },
+    today: () => localDay(new Date()),
+    /** @param {string} day  the window came to the front on this local date */
+    noteFront(day) {
+      if (!this.tipCard && isTipDue(this.tips, day) && this.tipQueue.length) this.tipDue = day
+    },
+    presentTip() {
+      const [id] = this.tipQueue
+      if (id) this.tips = presentedTips(this.tips, id, this.tipDue)
+      this.tipCard = id ?? null
+      this.tipDue = null
+      this.persist()
+    },
+    closeTip() {
+      this.tipCard = null
+    },
+    knowTip() {
+      this.tips = knewTip(this.tips, this.tipCard)
+      this.tipCard = null
+      this.persist()
+    },
+    setShowTips(value) {
+      this.tips = { ...this.tips, on: value !== false }
+      if (!this.tips.on) Object.assign(this, { tipCard: null, tipDue: null })
+      this.persist()
+    },
+    bringBackTips() {
+      this.tips = broughtBackTips(this.tips)
+      this.persist()
+    },
+    showTip() {
+      const tip = this.tipOf(this.tipCard)
+      this.tipCard = null
+      if (!tip?.show) return
+      prepareTip(tip.show.prepare)
+      this.tipShowMe = tip.id
+    },
+    endShowMe() {
+      this.tipShowMe = null
     }
   }
 })

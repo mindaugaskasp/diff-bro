@@ -1,6 +1,4 @@
-// Tours as data. A step waits for `advanceOn`, rings `target`, and names its
-// copy by literal keys so check-i18n can see them. `{example}` and `{v2}` in a
-// selector stand for the Diagrams tour's two example snippets.
+// Literal copy keys, so check:i18n sees them; `{example}` and `{v2}` stand for the Diagrams snippets.
 
 /** What *Use a sample* puts in the Snippets tour's editor. */
 export const SAMPLE_LINE = 'Deploying {{service}} to staging on {{today}}'

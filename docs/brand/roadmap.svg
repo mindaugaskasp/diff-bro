@@ -5,7 +5,7 @@
      sidebar. Track hues are real theme accents from src/renderer/src/utils/themes.js
      (Dim, Bloom, Neon, Beacon) — colour depth encodes sequence: solid now, faded
      later. Keep this in step with the items in docs/roadmap.md. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-label="Diff Bro roadmap — eight tracks: developer workflow (dependencies, compare a git revision, a conflicts list and three-way merge) shipped, spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing, snippets (an editable rendered view for Markdown and Jira, snippets open as tabs), OS integration (Open with), Claude connection (read the library over stdio, proposals wait on Home)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 920" width="1200" height="920" role="img" aria-label="Diff Bro roadmap — nine tracks: developer workflow (dependencies, compare a git revision, a conflicts list and three-way merge) shipped, spreadsheet · finance (amounts read as amounts, delta and net variance, reading a big diff, caps that announce themselves), diagrams, comparing more, signing, snippets (an editable rendered view for Markdown and Jira, snippets open as tabs), OS integration (Open with), Claude connection (read the library over stdio, proposals wait on Home), onboarding (tours you do, a card when a release ships a tour, one tip a day) shipped">
   <defs>
     <linearGradient id="field" x1="0" y1="0" x2="0.55" y2="1">
       <stop offset="0" stop-color="#2f2a1c"/>
@@ -16,18 +16,18 @@
       <stop offset="1" stop-color="#e8a13a" stop-opacity="0"/>
     </radialGradient>
     <clipPath id="plate">
-      <rect x="0" y="0" width="1200" height="700" rx="18"/>
+      <rect x="0" y="0" width="1200" height="920" rx="18"/>
     </clipPath>
   </defs>
 
   <g clip-path="url(#plate)">
-    <rect width="1200" height="700" fill="url(#field)"/>
+    <rect width="1200" height="920" fill="url(#field)"/>
     <rect width="1200" height="580" fill="url(#glow)"/>
   </g>
 
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
     <text x="30" y="76" font-size="40" font-weight="700" letter-spacing="-1" fill="#f4ede0">Diff Bro <tspan fill="#d9a441">roadmap</tspan></text>
-    <text x="31" y="104" font-size="14" fill="#a99a7f">Eight tracks. Depth of colour is sequence — solid first, faded last.</text>
+    <text x="31" y="104" font-size="14" fill="#a99a7f">Nine tracks. Depth of colour is sequence — solid first, faded last.</text>
 
     <rect x="1016" y="52" width="154" height="28" rx="14" fill="none" stroke="#f4ede0" stroke-opacity="0.22"/>
     <text x="1093" y="70" font-size="11" letter-spacing="1.8" text-anchor="middle"
@@ -176,18 +176,37 @@
     <line x1="45" y1="574" x2="288" y2="574" stroke="#ddd0b6" stroke-dasharray="3 3"/>
     <text x="45" y="593" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">main/mcp.js · mcpGrant.js</text>
 
+    <!-- ============ card 9 · onboarding (shipped) ============ -->
+    <rect x="319" y="607" width="273" height="223" rx="12" fill="#f6f0e4"/>
+    <text x="334" y="645" font-size="15" font-weight="600" letter-spacing="-0.15" fill="#221e16">Onboarding</text>
+    <text x="577" y="645" font-size="12" text-anchor="end"
+          font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">3</text>
+    <rect x="334" y="659" width="243" height="2" fill="#6ed2c0"/>
+
+    <rect x="334" y="670" width="243" height="30" rx="5" fill="#6ed2c0"/>
+    <text x="344" y="689" font-size="12.5" fill="#1c1710">Tours you do, on sample files</text>
+
+    <rect x="334" y="707" width="243" height="30" rx="5" fill="#6ed2c0"/>
+    <text x="344" y="726" font-size="12.5" fill="#1c1710">A release offers its own tour</text>
+
+    <rect x="334" y="744" width="243" height="30" rx="5" fill="#6ed2c0"/>
+    <text x="344" y="763" font-size="12.5" fill="#1c1710">One tip a day, top right</text>
+
+    <line x1="334" y1="792" x2="577" y2="792" stroke="#ddd0b6" stroke-dasharray="3 3"/>
+    <text x="334" y="811" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#8d8168">features/onboarding/</text>
+
     <!-- ============ rail ============ -->
-    <line x1="30" y1="630" x2="1170" y2="630" stroke="#f4ede0" stroke-opacity="0.14"/>
+    <line x1="30" y1="850" x2="1170" y2="850" stroke="#f4ede0" stroke-opacity="0.14"/>
 
-    <rect x="30" y="656" width="22" height="8" rx="3" fill="#d9a441"/>
-    <text x="60" y="664" font-size="12.5" fill="#a99a7f">now</text>
+    <rect x="30" y="876" width="22" height="8" rx="3" fill="#d9a441"/>
+    <text x="60" y="884" font-size="12.5" fill="#a99a7f">now</text>
 
-    <rect x="110" y="656" width="22" height="8" rx="3" fill="#e9ce9b"/>
-    <text x="140" y="664" font-size="12.5" fill="#a99a7f">next</text>
+    <rect x="110" y="876" width="22" height="8" rx="3" fill="#e9ce9b"/>
+    <text x="140" y="884" font-size="12.5" fill="#a99a7f">next</text>
 
-    <rect x="192" y="656" width="22" height="8" rx="3" fill="#f0dfc0"/>
-    <text x="222" y="664" font-size="12.5" fill="#a99a7f">later</text>
+    <rect x="192" y="876" width="22" height="8" rx="3" fill="#f0dfc0"/>
+    <text x="222" y="884" font-size="12.5" fill="#a99a7f">later</text>
 
-    <text x="1170" y="664" font-size="12.5" text-anchor="end" fill="#a99a7f">Each card ends with the file the work starts from.</text>
+    <text x="1170" y="884" font-size="12.5" text-anchor="end" fill="#a99a7f">Each card ends with the file the work starts from.</text>
   </g>
 </svg>

@@ -1,5 +1,3 @@
-// Who is offered the core tour, and what each tour's seen state is. Pure: the
-// store hands in what is stored and what the library holds.
 import { EXAMPLE_TAG } from '../../utils/snippetExamples'
 
 export const SCHEMA = 2
@@ -45,13 +43,14 @@ export function readOnboarding(stored, library) {
 }
 
 /** @param {import('../../types').OnboardingState} state */
-export const storedOnboarding = ({ offerTours, tours, offer, version, known }) => ({
+export const storedOnboarding = ({ offerTours, tours, offer, version, known, tips }) => ({
   schema: SCHEMA,
   offerTours,
   tours,
   offer,
   version,
-  known
+  known,
+  tips
 })
 
 /** @returns {'done'|'skipped'|'never'} */

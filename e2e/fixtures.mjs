@@ -14,10 +14,14 @@ const MAIN = join(ROOT, 'build', 'main', 'index.js')
 // vault/keys/snippets, and its single-instance lock never collides with a
 // Diff Bro that's already open.
 //
-// Every profile is cold, which is what the core tour's inline offer is for, so
-// by default it starts as an existing user's: no offer.
-// `{ tips: true }` leaves it a fresh install.
-export const SEEN_ONBOARDING = { schema: 2, offerTours: true, tours: {}, offer: false }
+// An existing user's profile by default: no sample offer, no daily tip. `{ tips: true }` is a fresh install.
+export const SEEN_ONBOARDING = {
+  schema: 2,
+  offerTours: true,
+  tours: {},
+  offer: false,
+  tips: { on: false }
+}
 
 export const freshUserDataDir = ({ tips = false } = {}) => {
   const dir = mkdtempSync(join(tmpdir(), 'diffbro-e2e-'))
@@ -159,8 +163,6 @@ const SETTINGS_GROUP_OF = Object.fromEntries(
   )
 )
 
-// Settings pages sit in collapsible groups: open Settings if needed, unfold the
-// page's group, then show the page.
 export async function openSettingsPage(page, name) {
   const group = SETTINGS_GROUP_OF[name]
   if (!group) throw new Error(`no Settings page named ${name}`)

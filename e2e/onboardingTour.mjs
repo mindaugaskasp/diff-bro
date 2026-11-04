@@ -1,8 +1,5 @@
 import { expect } from './fixtures.mjs'
 
-// Shared by the onboarding specs: the core tour run to its done card, and the
-// ring check every step makes.
-
 export async function expectRinged(page, target, ring = page.locator('.target-ring').first()) {
   const box = await target.boundingBox()
   const around = await ring.boundingBox()

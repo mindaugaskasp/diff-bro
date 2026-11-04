@@ -58,4 +58,12 @@ describe('coachPlacement', () => {
     expect(at.left + COACH_W / 2).toBe(rect.x + rect.w / 2)
     expect(at.top + 70).toBe(rect.y + 450)
   })
+
+  it('sits above a target at the bottom of the window, pointing down', () => {
+    const rect = { x: 400, y: 760, w: 120, h: 20 }
+    const at = coachPlacement({ rect, side: 'top', height: 60, stage })
+    expect(at.pointer).toBe('down')
+    expect(at.top + 60).toBe(rect.y - 14)
+    expect(at.left + at.offset).toBe(rect.x + rect.w / 2)
+  })
 })

@@ -1,5 +1,4 @@
-// The core tour's sample pair, shipped as content: main writes nothing and the
-// renderer never names a file.
+// Shipped as content: main writes nothing and the renderer never names a file.
 const SAMPLE_FILES = [
   {
     name: 'config-v1.json',

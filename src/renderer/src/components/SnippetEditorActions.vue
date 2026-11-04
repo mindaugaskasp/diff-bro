@@ -137,6 +137,7 @@ defineExpose({ flash: () => flash('text') })
     <AppIcon :name="copiedText ? 'check' : 'copy'" />
   </button>
   <ActionMenu
+    :data-tour="isMermaid ? 'snippet-repair' : undefined"
     :label="$t('snippetEditorActions.moreActions')"
     :items="menuItems"
     trigger-class="btn btn-icon"

@@ -1,0 +1,27 @@
+.tip-body {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text);
+}
+.tip-body .ql-kbd {
+  font-family: inherit;
+  font-size: var(--font-xs);
+  color: var(--text);
+  vertical-align: middle;
+}
+.tip-body .tip-token {
+  font-family: var(--font-mono);
+}
+.tip-keys {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: middle;
+}
+.tip-more {
+  vertical-align: middle;
+}
+strong {
+  font-weight: 600;
+}

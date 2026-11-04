@@ -345,6 +345,28 @@
  * @property {boolean} offer        the core tour's inline offer on a fresh install
  * @property {string|null} version  the version the user was last offered release tours at
  * @property {string[]} known       release tours closed with ×, or there before the install
+ * @property {TipState} tips
+ */
+
+/**
+ * @typedef {object} TipState
+ * @property {boolean} on
+ * @property {string[]} known          tips closed with Knew this already
+ * @property {string[]} seen           tips already shown
+ * @property {string|null} shownOn     the local date a tip last showed
+ * @property {string|null} since       the day a fresh install began
+ */
+
+/**
+ * One daily tip. Show me rings `target`, after `prepare` opens what it needs.
+ * @typedef {object} Tip
+ * @property {string} id
+ * @property {boolean} [release]       a release's own tip, first in line while that release runs
+ * @property {string} [introducedIn]
+ * @property {string} titleKey
+ * @property {string} bodyKey
+ * @property {string[]} [tokens]       blanks the body shows as `{{token}}` chips
+ * @property {{ target: string, noteKey: string, prepare?: 'search'|'snippets', side?: string }} [show]
  */
 
 /**

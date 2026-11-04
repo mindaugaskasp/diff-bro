@@ -241,16 +241,13 @@ async function closeOpenedTabs(page) {
   }
 }
 
-// The core tour, started from Settings ▸ Tours, which puts the start screen and
-// its sample offer up in a blank tab.
 async function showTourOffer(page) {
   await pickMenuItem(page, 'Help', 'Tours…')
   await page.locator('[data-tour-row="core"] .btn').click()
   await page.locator('.sample-offer').waitFor()
 }
 
-// A fixture release tour, pushed into the running store (the registry ships
-// none), with the profile set back to before it was offered.
+// The registry ships no release tour, so a fixture is pushed into the store.
 const RELEASE_FIXTURE = {
   id: 'fixture-release',
   introducedIn: '0.10.0',
@@ -286,6 +283,31 @@ async function showToursPage(page) {
   await page.locator('[data-tour-row="fixture-release"] .new-badge').waitFor()
 }
 
+// The profile starts with tips off so no other surface carries one.
+const bringDailyTip = (page) =>
+  page.evaluate(() => {
+    const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+    const store = pinia._s.get('onboarding')
+    store.tips = { ...store.tips, on: true, seen: [], known: [], shownOn: null }
+    store.noteFront(store.today())
+  })
+const putTipsAway = (page) =>
+  page.evaluate(() => {
+    const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+    pinia._s.get('onboarding').setShowTips(false)
+  })
+
+async function showDailyTip(page) {
+  await bringDailyTip(page)
+  await page.locator('.daily-tip').waitFor()
+}
+
+async function showTipShowMe(page) {
+  await showDailyTip(page)
+  await page.locator('.daily-tip').getByRole('button', { name: 'Show me' }).click()
+  await page.locator('.tip-note').waitFor()
+}
+
 async function showSaveStep(page) {
   await showTourOffer(page)
   await page.locator('.sample-offer').getByRole('button', { name: 'Load them for me' }).click()
@@ -302,8 +324,7 @@ const forgetSavedSamples = (page) =>
     }
   })
 
-// Skip, then close the sample tab, which never asks: the structure diff the
-// sweep started on is on screen again.
+// The sample tab never asks to close, so the starting structure diff returns.
 async function leaveTour(page) {
   const skip = page.locator('.coach-mark').getByRole('button', { name: 'Skip' })
   if (await skip.count()) await skip.click()
@@ -322,8 +343,6 @@ async function finishCoreTour(page) {
   await page.locator('.tour-done').waitFor()
 }
 
-// A follow-on tour, started from the core done card's chip, which clears the
-// search and shows the Snippets panel itself.
 async function startFollowOnTour(page, name) {
   await finishCoreTour(page)
   await page.locator('.tour-done').getByRole('button', { name, exact: true }).click()
@@ -347,8 +366,7 @@ async function showDropZone(page) {
   await page.locator('.target-ring.zone').waitFor()
 }
 
-// Skip, then close every tab the tours opened: the core sample stays open
-// behind a follow-on tour, and twenty themes of them would fill the strip.
+// Twenty themes of leftover tour tabs would fill the strip.
 async function leaveFollowOnTour(page) {
   await page.locator('.coach-mark').getByRole('button', { name: 'Skip' }).click()
   await forgetSavedSamples(page)
@@ -629,23 +647,6 @@ const SURFACES = [
     probes: {
       'expiry, disabled': ['.dialog select:disabled', DIM],
       note: ['.secure-note span:not(.off)', TEXT]
-    }
-  },
-  {
-    name: 'placeholder-tip',
-    open: async (page) => {
-      await showPanel(page, 'snippets')
-      await page.locator('[data-tour="snippet-new"]').click()
-      await page.locator('.placeholder-tip').waitFor()
-    },
-    close: async (page) => {
-      await page.locator('.diff-tabs .tab.active .tab-close').click()
-      await page.locator('.placeholder-tip').waitFor({ state: 'detached' })
-    },
-    probes: {
-      tip: ['.placeholder-tip', TEXT],
-      token: ['.placeholder-tip code', TEXT],
-      exit: ['.tip-exit', TEXT]
     }
   },
   {
@@ -1739,6 +1740,41 @@ const SURFACES = [
     }
   },
   {
+    name: 'daily-tip',
+    open: showDailyTip,
+    close: async (page) => {
+      await page.locator('.daily-tip').getByRole('button', { name: 'Close' }).click()
+      await page.locator('.daily-tip').waitFor({ state: 'detached' })
+      await putTipsAway(page)
+    },
+    probes: {
+      kicker: ['.daily-tip .dt-kicker', TEXT],
+      bulb: ['.daily-tip .dt-kicker .app-icon', DIM],
+      title: ['.daily-tip .dt-title', TEXT],
+      body: ['.daily-tip .tip-body', TEXT],
+      'key chip': ['.daily-tip .tip-body .ql-kbd', TEXT],
+      'off link': ['.daily-tip .dt-off', TEXT],
+      'off link, hovered': ['.daily-tip .dt-off', TEXT, 'text', 'hover'],
+      knew: ['.daily-tip .btn-ghost', TEXT],
+      'show me': ['.daily-tip .btn-primary', TEXT],
+      close: ['.daily-tip .btn-icon', DIM]
+    }
+  },
+  {
+    name: 'tip-show-me',
+    open: showTipShowMe,
+    close: async (page) => {
+      await page.evaluate(() => globalThis.dispatchEvent(new Event('pointerdown')))
+      await page.locator('.tip-note').waitFor({ state: 'detached' })
+      await putTipsAway(page)
+    },
+    probes: {
+      note: ['.tip-note .tn-text', TEXT],
+      keyline: ['.tip-note', DIM, 'border'],
+      ring: ['.target-ring', DIM, 'border']
+    }
+  },
+  {
     name: 'tour-done-card',
     open: finishCoreTour,
     close: async (page) => {
@@ -1877,9 +1913,11 @@ async function main() {
     return { ...k, sign, box, fingerprint: fingerprint(sign, box) }
   })
   writeFileSync(join(userDataDir, 'trusted-keys.json'), JSON.stringify(keys, null, 2))
-  // An existing user's profile, so the core tour's offer stays off the start
-  // screen; the tour surfaces start it from Settings ▸ Tours.
-  writeFileSync(join(userDataDir, 'onboarding.json'), JSON.stringify({ showTips: false }))
+  // An existing user's profile: no sample offer and no daily tip.
+  writeFileSync(
+    join(userDataDir, 'onboarding.json'),
+    JSON.stringify({ schema: 2, offerTours: true, tours: {}, offer: false, tips: { on: false } })
+  )
 
   const app = await electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`] })
   const findings = []

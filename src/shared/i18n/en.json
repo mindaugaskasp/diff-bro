@@ -1650,7 +1650,11 @@
     "done": "Done",
     "new": "New",
     "start": "Start",
-    "replay": "Replay"
+    "replay": "Replay",
+    "dailyTips": "Daily tips",
+    "showTips": "Show a tip each day",
+    "bringBack": "Bring back tips I said I knew",
+    "broughtBack": "Those tips will show again."
   },
   "cli": {
     "compare": {
@@ -1888,8 +1892,6 @@
     "runUpToLine": "Run up to line {n}"
   },
   "snippetDocument": {
-    "placeholderTip": "Did you know you can use {token} to replace text when copying a snippet!",
-    "dontShowThisAgain": "Don't show this again",
     "compareWith": "Compare with…",
     "clickToEdit": "Click to edit"
   },
@@ -1930,5 +1932,36 @@
     "fillsHint": "You’re asked for these when you copy it. Type {example} anywhere to add one.",
     "builtIn": "Built in",
     "builtInHint": "Use them in the name; saving now would put in:"
+  },
+  "tips": {
+    "kicker": "Did you know?",
+    "close": "Close",
+    "off": "Don’t show tips again",
+    "knew": "Knew this already",
+    "showMe": "Show me",
+    "hashScope": {
+      "title": "Type # to search one tag",
+      "body": "Start a sidebar search with {hash} and a tag name to show only that tag and the tags nested under it.",
+      "note": "Type # and a tag name here."
+    },
+    "snippetColour": {
+      "title": "Colour a snippet to spot it fast",
+      "body": "Right-click a snippet row and pick {colour}. The whole row is tinted, so related snippets stand out across tags.",
+      "note": "Right-click a row like this one."
+    },
+    "namePlaceholders": {
+      "title": "Dates in a snippet name fill themselves",
+      "body": "Name a snippet “Standup {today}” and the date goes in when you save. The status bar lists {now}, {week}, {weekday} and more.",
+      "note": "Every template tag is listed here."
+    },
+    "quickLookTools": {
+      "title": "Reach the tools from the quick look-up",
+      "body": "In the quick look-up ({keys}), press → on the tools row to step into the tools. Press ← to step back out."
+    },
+    "mermaidRepair": {
+      "title": "Fix a diagram pasted from Word",
+      "body": "Mermaid copied from Word or Confluence often breaks on curly quotes and long dashes. {more} ▸ {repair} on the snippet puts them right.",
+      "note": "Repair is in this menu."
+    }
   }
 }
