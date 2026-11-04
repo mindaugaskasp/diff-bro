@@ -1,4 +1,4 @@
-import { test, expect, openSettings, stubMessageBox } from './fixtures.mjs'
+import { test, expect, openSettingsPage, stubMessageBox } from './fixtures.mjs'
 
 // Installing the `diffbro` shim from Settings. The buttons reach window.api,
 // which only exists on the real preload — and a Vue TEMPLATE does not resolve
@@ -7,8 +7,7 @@ import { test, expect, openSettings, stubMessageBox } from './fixtures.mjs'
 test('the terminal-command buttons actually reach the installer', async ({ app, page }) => {
   // Installing writes an executable onto PATH, so main confirms first.
   await stubMessageBox(app)
-  await openSettings(page)
-  await page.locator('.settings-nav .nav-item', { hasText: 'Terminal' }).click()
+  await openSettingsPage(page, 'Terminal')
 
   const install = page.getByRole('button', { name: /^(Install|Reinstall)$/ })
   await expect(install).toBeVisible()

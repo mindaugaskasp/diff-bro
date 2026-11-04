@@ -385,12 +385,17 @@ async function openConflictList(page, userDataDir) {
   await page.locator('.cf-row.done').first().waitFor({ timeout: 10000 })
 }
 
-async function openIntegrationsPane(page) {
+async function openSettingsPage(page, group, name) {
   await pickMenuItem(page, 'File', 'Settings…')
   const dlg = page.getByRole('dialog', { name: 'Settings' })
-  await dlg.getByRole('button', { name: 'Integrations', exact: true }).click()
+  await dlg.waitFor()
+  const item = dlg.locator('.settings-nav').getByRole('button', { name, exact: true })
+  if (!(await item.isVisible())) await dlg.getByRole('button', { name: group, exact: true }).click()
+  await item.click()
   return dlg
 }
+const openLanguagesPane = (page) => openSettingsPage(page, 'Integrations', 'Languages')
+const openClaudePane = (page) => openSettingsPage(page, 'Integrations', 'Claude')
 
 // A real failing run, so the pane is measured with stderr on its wash.
 async function openRunPane(page, { app }) {
@@ -399,7 +404,7 @@ async function openRunPane(page, { app }) {
     dialog.showMessageBox = async () => ({ response: 1 })
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] })
   }, python)
-  const settings = await openIntegrationsPane(page)
+  const settings = await openLanguagesPane(page)
   const pythonToggle = settings.locator('.lang-row', { hasText: 'Python' }).getByRole('checkbox')
   if (!(await pythonToggle.isChecked())) await pythonToggle.click()
   await settings
@@ -462,7 +467,7 @@ async function proposeOverMcp(userDataDir) {
 let claudeInboxSeeded = false
 async function seedClaudeInbox(page, userDataDir) {
   if (claudeInboxSeeded) return
-  const dlg = await openIntegrationsPane(page)
+  const dlg = await openClaudePane(page)
   await dlg.getByLabel('Enable Claude MCP connection').check()
   await dlg.getByRole('alertdialog').getByRole('button', { name: 'Enable', exact: true }).click()
   await dlg.getByLabel('Offer new snippets').check()
@@ -547,7 +552,7 @@ const SURFACES = [
   {
     name: 'settings-languages',
     open: async (page) => {
-      await openIntegrationsPane(page)
+      await openLanguagesPane(page)
       await page.locator('.lang-row').first().waitFor()
     },
     close: async (page) => {
@@ -562,7 +567,7 @@ const SURFACES = [
   {
     name: 'settings-program-picker',
     open: async (page) => {
-      const settings = await openIntegrationsPane(page)
+      const settings = await openLanguagesPane(page)
       await settings
         .locator('.lang-row', { hasText: 'PHP' })
         .getByRole('button', { name: 'Change…' })
@@ -677,9 +682,7 @@ const SURFACES = [
   {
     name: 'editor-text',
     open: async (page) => {
-      await pickMenuItem(page, 'File', 'Settings…')
-      const dlg = page.getByRole('dialog', { name: 'Settings' })
-      await dlg.getByRole('button', { name: 'Appearance', exact: true }).click()
+      const dlg = await openSettingsPage(page, 'General', 'Appearance')
       await dlg.locator('.font-preview').scrollIntoViewIfNeeded()
     },
     close: async (page) => {
@@ -1142,7 +1145,7 @@ const SURFACES = [
   {
     name: 'claude-settings',
     open: async (page) => {
-      const dlg = await openIntegrationsPane(page)
+      const dlg = await openClaudePane(page)
       const master = dlg.getByLabel('Enable Claude MCP connection')
       if (await master.isChecked()) await master.uncheck()
       await master.check()
@@ -1163,7 +1166,7 @@ const SURFACES = [
   {
     name: 'claude-connect',
     open: async (page) => {
-      const dlg = await openIntegrationsPane(page)
+      const dlg = await openClaudePane(page)
       const master = dlg.getByLabel('Enable Claude MCP connection')
       if (!(await master.isChecked())) {
         await master.check()
@@ -1360,9 +1363,7 @@ const SURFACES = [
   {
     name: 'settings-email',
     open: async (page) => {
-      await pickMenuItem(page, 'File', 'Settings…')
-      const dlg = page.getByRole('dialog', { name: 'Settings' })
-      await dlg.getByRole('button', { name: 'Email', exact: true }).click()
+      const dlg = await openSettingsPage(page, 'Integrations', 'Email')
       await dlg.locator('.email-settings').waitFor()
     },
     close: (page) => page.keyboard.press('Escape'),
@@ -1374,6 +1375,25 @@ const SURFACES = [
     }
   },
   {
+    name: 'settings-nav',
+    open: async (page) => {
+      await openSettingsPage(page, 'Integrations', 'Claude')
+      await page.locator('.settings-nav .nav-child.active').waitFor()
+    },
+    close: async (page) => {
+      await page.keyboard.press('Escape')
+      await page.getByRole('dialog', { name: 'Settings' }).waitFor({ state: 'hidden' })
+    },
+    probes: {
+      'group label': ['.settings-nav .nav-group-row', TEXT],
+      chevron: ['.settings-nav .nav-group-row .nav-chevron', DIM],
+      'page label': ['.settings-nav .nav-child:not(.active)', TEXT],
+      'active page label': ['.settings-nav .nav-child.active', TEXT],
+      'page face, hovered': ['.settings-nav .nav-child:not(.active)', HOVER_STEP, 'step', 'hover'],
+      'page label, hovered': ['.settings-nav .nav-child:not(.active)', TEXT, 'text', 'hover']
+    }
+  },
+  {
     name: 'settings-appearance',
     // The theme picker. Its numbers were a table in a proposal; this is what
     // re-measures them. The tile label is --text on --bg-raised, the group
@@ -1381,9 +1401,7 @@ const SURFACES = [
     // weakest of the fourteen at 3.52, which is why selection also thickens
     // the label rather than trusting colour alone.
     open: async (page) => {
-      await pickMenuItem(page, 'File', 'Settings…')
-      await page.getByRole('dialog', { name: 'Settings' }).waitFor()
-      await page.locator('.settings-nav .nav-item', { hasText: 'Appearance' }).click()
+      await openSettingsPage(page, 'General', 'Appearance')
       await page.locator('.theme-tile.active').waitFor()
     },
     close: async (page) => {

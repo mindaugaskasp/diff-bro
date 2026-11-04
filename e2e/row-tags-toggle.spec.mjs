@@ -4,7 +4,7 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openSettings,
+  openSettingsPage,
   openNewSnippet,
   pickTag,
   showPanel,
@@ -57,7 +57,7 @@ async function seedDiff(page, name, tags) {
 }
 
 async function setRowTags(page, on) {
-  await openSettings(page)
+  await openSettingsPage(page, 'Behaviour')
   const toggle = page.getByText(TOGGLE)
   await expect(toggle).toBeVisible()
   const box = page.locator('.setting-toggle', { hasText: TOGGLE }).locator('input')

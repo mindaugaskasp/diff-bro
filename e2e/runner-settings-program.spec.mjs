@@ -6,7 +6,7 @@ import {
   fakeProgram,
   languageRow as row,
   messageBoxes,
-  openIntegrations,
+  openLanguages,
   recordMessageBoxes,
   rememberProgram
 } from './runnerPrograms.mjs'
@@ -37,7 +37,7 @@ test.describe('a language turned off', () => {
   })
 
   test('shows the program it remembers, dimmed, with Change… still there', async () => {
-    const dialog = await openIntegrations(session.page)
+    const dialog = await openLanguages(session.page)
     const php = row(dialog, 'PHP')
     await expect(php.getByRole('checkbox')).not.toBeChecked()
     await expect(php.locator('.lang-path')).toHaveText(`${program.file} · 8.3.6`)
@@ -48,7 +48,7 @@ test.describe('a language turned off', () => {
   test('turns back on with that program, without asking for it again', async () => {
     await recordMessageBoxes(session.app, 1)
     await failOpenDialog(session.app)
-    const dialog = await openIntegrations(session.page)
+    const dialog = await openLanguages(session.page)
     await row(dialog, 'PHP').getByRole('checkbox').check()
     await expect(row(dialog, 'PHP').getByRole('checkbox')).toBeChecked()
     await expect(row(dialog, 'PHP').locator('.lang-path')).not.toHaveClass(/is-off/)
@@ -65,7 +65,7 @@ test.describe('a typed path', () => {
   test.afterEach(() => rmSync(program.dir, { recursive: true, force: true }))
 
   async function typePath(page, path) {
-    const dialog = await openIntegrations(page)
+    const dialog = await openLanguages(page)
     const php = row(dialog, 'PHP')
     await php.getByRole('button', { name: 'Change…' }).click()
     await php.getByRole('textbox', { name: 'Path to the program' }).fill(path)
@@ -128,7 +128,7 @@ test.describe('detection', () => {
     try {
       await recordMessageBoxes(app, 1)
       await failOpenDialog(app)
-      const dialog = await openIntegrations(page)
+      const dialog = await openLanguages(page)
       const python = row(dialog, 'Python')
       await python.getByRole('checkbox').check()
       await expect(python.getByRole('checkbox')).toBeChecked()
@@ -145,7 +145,7 @@ test.describe('detection', () => {
   test('lists what it found to switch between, and can look again', async ({ app, page }) => {
     await recordMessageBoxes(app, 1)
     await failOpenDialog(app)
-    const dialog = await openIntegrations(page)
+    const dialog = await openLanguages(page)
     const python = row(dialog, 'Python')
     await python.getByRole('checkbox').check()
     await expect(python.getByRole('checkbox')).toBeChecked()

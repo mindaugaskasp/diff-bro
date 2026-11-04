@@ -1,4 +1,4 @@
-import { test, expect, openSettings, showPanel } from './fixtures.mjs'
+import { test, expect, openSettingsPage, showPanel } from './fixtures.mjs'
 
 test('Home search with no match says so, rather than "nothing here yet"', async ({ page }) => {
   await showPanel(page, 'home')
@@ -19,9 +19,7 @@ test('the delete confirm keeps a space between its sentences', async ({ page }) 
 })
 
 test('Settings ▸ Storage lays out its backup row and hint like the rest', async ({ page }) => {
-  await openSettings(page)
-  const settings = page.getByRole('dialog', { name: 'Settings' })
-  await settings.getByRole('button', { name: 'Storage' }).click()
+  const settings = await openSettingsPage(page, 'Storage')
   const row = settings.locator('.every')
   await expect(row).toBeVisible()
   const label = await row.locator('span').boundingBox()

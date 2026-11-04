@@ -6,7 +6,7 @@ import {
   launchApp,
   freshUserDataDir,
   firstReadyPage,
-  openSettings,
+  openSettingsPage,
   closeComparison,
   saveSettings
 } from './fixtures.mjs'
@@ -86,8 +86,7 @@ test('turning the setting off forgets the session and stops storing one', async 
     await compare(page, 'private-left', 'private-right')
     await sessionOnDisk(userDataDir)
 
-    await openSettings(page)
-    await page.getByRole('button', { name: 'Storage', exact: true }).click()
+    await openSettingsPage(page, 'Storage')
     await reopenToggle(page).click()
     // Off forgets what was already stored, rather than only skipping the next write.
     await expect
@@ -106,8 +105,7 @@ test('turning the setting off forgets the session and stops storing one', async 
     page = await firstReadyPage(app)
     await expect(page.getByText('What are you comparing?')).toBeVisible()
     // And the choice itself survived the quit.
-    await openSettings(page)
-    await page.getByRole('button', { name: 'Storage', exact: true }).click()
+    await openSettingsPage(page, 'Storage')
     await expect(reopenToggle(page)).not.toBeChecked()
     await app.close()
   } finally {

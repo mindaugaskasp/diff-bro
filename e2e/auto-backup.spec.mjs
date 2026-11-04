@@ -1,4 +1,4 @@
-import { test, expect, openSettings } from './fixtures.mjs'
+import { test, expect, openSettingsPage } from './fixtures.mjs'
 
 // A backup is written by the MAIN process off the back of a real store write,
 // so nothing about it is visible without launching the app: the hook, the
@@ -35,8 +35,7 @@ test('a store save takes a backup', async ({ page }) => {
 
 test('the Storage pane offers it on by default, and can restore', async ({ page }) => {
   await saveKeptDiff(page, 'E2E restorable')
-  await openSettings(page)
-  await page.getByRole('button', { name: 'Storage' }).click()
+  await openSettingsPage(page, 'Storage')
 
   // On by default — the failure it covers gives no warning.
   await expect(page.getByText('Back up automatically')).toBeVisible()
@@ -59,8 +58,7 @@ test('the Storage pane offers it on by default, and can restore', async ({ page 
 // deleting files by hand in the folder that holds the reader's keys.
 test('the storage pane reports what backups cost and offers the age back', async ({ page }) => {
   await saveKeptDiff(page, 'Uses space')
-  await openSettings(page)
-  await page.getByRole('button', { name: /Storage/ }).click()
+  await openSettingsPage(page, 'Storage')
 
   // The size is real, not a placeholder.
   const line = page.locator('.hint', { hasText: 'on disk' })
