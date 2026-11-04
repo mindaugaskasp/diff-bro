@@ -35,8 +35,8 @@ export const blankSnapshot = (view = {}) => ({
  * @property {string} [customTitle] a name typed by the reader; wins over `title`
  * @property {import('../types').DiffSnapshot} snapshot
  * @property {boolean} diffSaved  whether this comparison is already in the vault
- * @property {boolean} [transient] git handed this one over; both sides are
- *                     throwaway copies, so it may be recycled when tabs run out
+ * @property {boolean} [transient] git's throwaway copies, recycled when tabs run out
+ * @property {boolean} [sample]   the core tour's sample pair: never restored, never asks to close
  */
 
 // What an empty comparison calls itself.

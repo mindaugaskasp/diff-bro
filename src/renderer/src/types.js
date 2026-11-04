@@ -303,36 +303,32 @@
  */
 
 /**
- * One beat of the onboarding tour. `advance` runs when NEXT is pressed, so the
- * step points at a control and the press performs the action; `enter` is the
- * rare effect that belongs on arrival, and only ever happens INSIDE the ring.
+ * One step of a tour: it rings `target` and moves on when `advanceOn` fires.
  * @typedef {object} TourStep
  * @property {string} id
- * @property {string} since         app version that introduced it
+ * @property {'sample-opened'|'sample-saved'|'sample-found'} advanceOn
  * @property {string} target        a `[data-tour="…"]` selector
- * @property {'top'|'bottom'|'left'|'right'} [side]  preferred callout side
- * @property {string} labelKey
- * @property {string} body          `{shortcut}` / `{settingsKey}` are filled in
- * @property {string} [advance]     command the step's Next runs
- * @property {string} [enter]       command run as the step arrives
- * @property {string} [leave]       command run when the step is left, either way
- * @property {string} [undo]        command Back runs to reverse this step's advance
- * @property {string} [context]     a region the step is ABOUT: stroked, veil softened
- * @property {string} [point]       the control inside a large target the ring belongs on
- * @property {string} [nextLabel]   what the primary says when it does something
- * @property {boolean} [zone]       an area, not a control: dashed, callout inside
- * @property {boolean} [live]       the hole accepts the pointer; blocked by default
- * @property {boolean} [reveal]     drop the veil for a beat before advancing
+ * @property {'top'|'bottom'|'left'|'right'} [side]  where the coach mark sits
+ * @property {boolean} [inline]     drawn by its own surface, not as a coach mark
+ * @property {boolean} [onSample]   shown only while the sample tab is on screen
+ * @property {string} titleKey
+ * @property {string} [bodyKey]
  */
 
 /**
- * What `tourPlan` needs to decide what plays now.
- * @typedef {object} TourState
- * @property {boolean} showTips
- * @property {number} tourStep      index of the next unseen step
- * @property {string} seenVersion   '' until the tour has been walked
- * @property {number} [tourDeferred] how many times the consent dialog was dismissed
- * @property {TourStep[]} [allSteps] the list to plan over; defaults to TOUR_STEPS
+ * @typedef {object} Tour
+ * @property {string} id
+ * @property {string} introducedIn  the release that shipped it
+ * @property {TourStep[]} steps
+ */
+
+/**
+ * A measured box on screen, in viewport pixels.
+ * @typedef {object} ScreenRect
+ * @property {number} x
+ * @property {number} y
+ * @property {number} w
+ * @property {number} h
  */
 
 /**

@@ -57,11 +57,6 @@ async function pickMenuItem(page, top, label) {
   await page.locator('.menubar .menu > .dropdown').getByText(label, { exact: true }).click()
 }
 
-async function setOnboarding(page, state) {
-  await page.evaluate((s) => globalThis.api.storeSave('onboarding', JSON.stringify(s)), state)
-  await page.reload()
-}
-
 async function showPanel(page, panel) {
   if (panel === 'keys') {
     await page.locator('.menubar').getByRole('button', { name: 'Security', exact: true }).click()
@@ -244,6 +239,28 @@ async function closeOpenedTabs(page) {
     }
     await page.waitForTimeout(150)
   }
+}
+
+// The core tour, summoned by Help ▸ Show Tour, which puts the start screen and
+// its sample offer up in a blank tab.
+async function showTourOffer(page) {
+  await pickMenuItem(page, 'Help', 'Show Tour')
+  await page.locator('.sample-offer').waitFor()
+}
+
+async function showSaveStep(page) {
+  await showTourOffer(page)
+  await page.locator('.sample-offer').getByRole('button', { name: 'Load them for me' }).click()
+  await page.locator('.coach-mark').waitFor()
+}
+
+// Skip, then close the sample tab, which never asks: the structure diff the
+// sweep started on is on screen again.
+async function leaveTour(page) {
+  const skip = page.locator('.coach-mark').getByRole('button', { name: 'Skip' })
+  if (await skip.count()) await skip.click()
+  await page.locator('.diff-tabs .tab.active .tab-close').click()
+  await page.locator('.status-band').waitFor()
 }
 
 // Each surface: how to open it, and the pairs that carry meaning once open.
@@ -741,25 +758,6 @@ const SURFACES = [
     }
   },
   {
-    name: 'tour-consent',
-    // Only a cold profile asks, so the sweep makes this one cold and reloads.
-    open: async (page) => {
-      await setOnboarding(page, { showTips: true, tourStep: 0, layout: 2 })
-      await page.getByRole('dialog', { name: 'Take a one-minute tour?' }).waitFor()
-    },
-    close: async (page) => {
-      await setOnboarding(page, { showTips: false, layout: 2 })
-      await page.locator('[data-tour="pane"]').waitFor()
-    },
-    probes: {
-      intro: ['.dialog .dialog-note', TEXT],
-      topic: ['.tour-topics li', TEXT],
-      'topic glyph': ['.tour-topics .glyph-well', TEXT],
-      'start later': ['.tour-later', TEXT],
-      'no thanks': ['.dialog .btn-ghost', TEXT]
-    }
-  },
-  {
     name: 'update-notice',
     open: async (page, { app }) => {
       await app.evaluate(({ BrowserWindow }) => {
@@ -951,26 +949,6 @@ const SURFACES = [
       'task label': ['.rendered-editor .ji-task', TEXT],
       'view switch (on)': ['.es-view .es-btn.on', TEXT],
       'view switch (off)': ['.es-view .es-btn:not(.on)', TEXT]
-    }
-  },
-  {
-    name: 'tour-callout',
-    // Summoned rather than waited for: the tour has usually been seen and
-    // recorded by the time the sweep runs.
-    open: async (page) => {
-      await pickMenuItem(page, 'Help', 'Show Tour')
-      await page.locator('.tour-callout').waitFor()
-    },
-    close: (page) => page.keyboard.press('Escape'),
-    probes: {
-      // The step counter reads as words, so it takes the reading floor — which
-      // is what moved it off --text-dim (2.92 nord / 2.82 sepia on this face).
-      'step counter': ['.tour-callout .tour-step-n', TEXT],
-      'callout title': ['.tour-callout h6', TEXT],
-      'callout body': ['.tour-callout .tour-body', TEXT],
-      // The ring is the load-bearing cue on the seven dark themes, where the
-      // scrim moves the ground by as little as 1.00 (beacon).
-      'spotlight ring': ['.tour-ring', DIM]
     }
   },
   {
@@ -1571,6 +1549,66 @@ const SURFACES = [
       'side name': ['.owp-name', TEXT],
       'side keyline': ['.owp-side', SEPARATOR, 'border']
     }
+  },
+  {
+    name: 'start-sample-chips',
+    open: showTourOffer,
+    close: async (page) => {
+      await page.locator('.sample-offer').getByRole('button', { name: 'Skip' }).click()
+      await page.locator('.sample-offer').waitFor({ state: 'detached' })
+    },
+    probes: {
+      'step label': ['.sample-offer .so-label', TEXT],
+      'offer title': ['.sample-offer .so-title', TEXT],
+      'chip name': ['.sample-offer .so-chip', TEXT],
+      'chip glyph': ['.sample-offer .so-chip svg', DIM],
+      'chip keyline': ['.sample-offer .so-chip', SEPARATOR, 'border'],
+      'load link': ['.sample-offer .so-link', TEXT],
+      'load link, hovered': ['.sample-offer .so-link', TEXT, 'text', 'hover']
+    }
+  },
+  {
+    name: 'coach-mark',
+    open: showSaveStep,
+    close: leaveTour,
+    probes: {
+      'step label': ['.coach-mark .cm-label', TEXT],
+      title: ['.coach-mark .cm-title', TEXT],
+      body: ['.coach-mark .cm-body', TEXT],
+      'key chip': ['.coach-mark .ql-kbd', TEXT],
+      skip: ['.coach-mark .btn-ghost', TEXT],
+      keyline: ['.coach-mark', DIM, 'border']
+    }
+  },
+  {
+    name: 'target-ring',
+    open: showSaveStep,
+    close: leaveTour,
+    probes: {
+      ring: ['.target-ring', DIM, 'border'],
+      halo: ['.target-ring', 1, 'shadow']
+    }
+  },
+  {
+    name: 'tour-done-card',
+    open: async (page) => {
+      await showSaveStep(page)
+      await page.locator('[data-tour="save"]').click()
+      const dialog = page.getByRole('dialog', { name: 'Save diff' })
+      await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+      await dialog.waitFor({ state: 'detached' })
+      await page.locator('.usb-top input[type="search"]').fill('conf')
+      await page.locator('.tour-done').waitFor()
+    },
+    close: async (page) => {
+      await page.locator('.tour-done').getByRole('button', { name: 'Close' }).click()
+      await page.locator('.usb-top input[type="search"]').fill('')
+      await leaveTour(page)
+    },
+    probes: {
+      title: ['.tour-done .td-title', TEXT],
+      close: ['.tour-done .btn-icon', DIM]
+    }
   }
 ]
 
@@ -1668,10 +1706,8 @@ async function main() {
     return { ...k, sign, box, fingerprint: fingerprint(sign, box) }
   })
   writeFileSync(join(userDataDir, 'trusted-keys.json'), JSON.stringify(keys, null, 2))
-  // Every profile here is cold, which is what the onboarding tour fires on, and
-  // its tint takes the pointer for the whole window — the sweep never got past
-  // its first click. The tour-callout surface below summons the tour itself, so
-  // nothing is lost by starting without it. Same reason e2e/fixtures.mjs does it.
+  // An existing user's profile, so the core tour's offer stays off the start
+  // screen; the tour surfaces summon it through Help ▸ Show Tour.
   writeFileSync(join(userDataDir, 'onboarding.json'), JSON.stringify({ showTips: false }))
 
   const app = await electron.launch({ args: [MAIN, `--user-data-dir=${userDataDir}`] })

@@ -27,9 +27,11 @@ defineEmits(['replayTour'])
       </SettingToggle>
       <button
         class="btn btn-sm"
-        :disabled="tour.active"
+        :disabled="tour.isRunning"
         :data-tip="
-          tour.active ? $t('settingsDialog.theTourIsRunning') : $t('settingsDialog.runTheTourAgain')
+          tour.isRunning
+            ? $t('settingsDialog.theTourIsRunning')
+            : $t('settingsDialog.runTheTourAgain')
         "
         @click="$emit('replayTour')"
       >

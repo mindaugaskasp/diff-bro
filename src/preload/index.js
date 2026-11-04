@@ -136,7 +136,7 @@ contextBridge.exposeInMainWorld('api', {
   // Data-location settings.
   dataDirGet: () => ipcRenderer.invoke('datadir:get'),
   // The tour's demo pair, contents and all. Nothing is passed in.
-  demoFiles: (kind) => ipcRenderer.invoke('demo:files', kind),
+  demoFiles: () => ipcRenderer.invoke('demo:files'),
   dataDirChoose: () => ipcRenderer.invoke('datadir:choose'),
   dataDirReset: () => ipcRenderer.invoke('datadir:reset'),
   dataDirReveal: () => ipcRenderer.invoke('datadir:reveal'),

@@ -31,6 +31,11 @@ const tab = (id, over = {}) => ({
 const roundTrip = (...args) => readSession(JSON.stringify(packSession(...args)))
 
 describe('packSession', () => {
+  it('never keeps the tour’s sample tab, saved or not', () => {
+    const tabs = [tab('tab-1', { sample: true }), tab('tab-2', { sample: true, diffSaved: true })]
+    expect(packSession(tabs, 'tab-1')).toBeNull()
+  })
+
   it('keeps every non-blank tab and marks the active one', () => {
     const tabs = [tab('tab-1'), tab('tab-2')]
     const packed = packSession(tabs, 'tab-2')

@@ -71,16 +71,7 @@ const stores = () => ({
   share: { shareCurrent: spy(), importShared: spy(), addTrustedKey: spy(), openKeysPanel: spy() },
   imageExport: { exportCurrentImage: spy() },
   configBackup: { open: spy(), pendingPath: null },
-  onboarding: {
-    replay: spy(),
-    openDemo: spy(),
-    openSnippet: spy(),
-    closeSnippet: spy(),
-    typeSearch: spy(),
-    clearSearch: spy(),
-    clearFilters: spy(),
-    showSnippets: spy()
-  }
+  onboarding: { replay: spy() }
 })
 
 describe('the registry covers every surface that dispatches into it', () => {

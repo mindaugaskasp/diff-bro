@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   acceleratorFromEvent,
   isValidAccelerator,
-  acceleratorLabel
+  acceleratorLabel,
+  acceleratorKeys
 } from '../../../src/renderer/src/utils/accelerator'
 
 // A minimal keydown: the util reads e.code and the modifier flags.
@@ -64,5 +65,21 @@ describe('acceleratorLabel', () => {
   })
   it('tolerates an empty value', () => {
     expect(acceleratorLabel('', true)).toBe('')
+  })
+})
+
+describe('acceleratorKeys', () => {
+  it('gives one label per key, for key chips', () => {
+    expect(acceleratorKeys('CommandOrControl+Shift+Space', false)).toEqual([
+      'Ctrl',
+      'Shift',
+      'Space'
+    ])
+    expect(acceleratorKeys('CommandOrControl+Shift+Space', true)).toEqual(['⌘', '⇧', 'Space'])
+  })
+
+  it('is empty for nothing', () => {
+    expect(acceleratorKeys('', false)).toEqual([])
+    expect(acceleratorKeys(null, true)).toEqual([])
   })
 })

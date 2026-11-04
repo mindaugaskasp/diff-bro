@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   DIFF_DRAG_TYPE,
   DRAG_TYPE,
+  SAMPLE_DRAG_TYPE,
   dragIdsFrom,
+  isSampleDrag,
+  setSampleDragPayload,
   setRowDragPayload,
   snippetSource
 } from '../../../src/renderer/src/utils/snippetSource'
@@ -122,5 +125,21 @@ describe('setRowDragPayload', () => {
 
   it('does nothing without a dataTransfer', () => {
     expect(() => setRowDragPayload(null, DRAG_TYPE, ['x'])).not.toThrow()
+  })
+})
+
+describe('the sample chips’ drag', () => {
+  it('carries only its own flavour, never a file or a path', () => {
+    const data = new Map()
+    const transfer = { setData: (type, value) => data.set(type, value), effectAllowed: 'all' }
+    setSampleDragPayload(transfer)
+    expect([...data.keys()]).toEqual([SAMPLE_DRAG_TYPE])
+    expect(transfer.effectAllowed).toBe('copy')
+  })
+
+  it('is recognised by its type alone, as dragenter sees it', () => {
+    expect(isSampleDrag({ types: [SAMPLE_DRAG_TYPE] })).toBe(true)
+    expect(isSampleDrag({ types: ['Files'] })).toBe(false)
+    expect(isSampleDrag(null)).toBe(false)
   })
 })

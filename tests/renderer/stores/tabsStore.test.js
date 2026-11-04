@@ -659,6 +659,24 @@ describe('requestClose', () => {
     expect(tabs.tabs).toHaveLength(1)
   })
 
+  it('closes the tour’s unsaved sample without asking', () => {
+    const tabs = withTabs(comparison('keep.txt', 'keep2.txt'), comparison('v1.json', 'v2.json'))
+    tabs.active.sample = true
+
+    tabs.requestClose(tabs.activeId)
+    expect(tabs.pendingClose).toBeNull()
+    expect(tabs.tabs).toHaveLength(1)
+  })
+
+  it('drops the sample mark when the last tab is closed and blanked', () => {
+    const tabs = withTabs(comparison('v1.json', 'v2.json'))
+    tabs.active.sample = true
+
+    tabs.close(tabs.activeId)
+    expect(tabs.tabs).toHaveLength(1)
+    expect(tabs.active.sample).toBe(false)
+  })
+
   it('asks about a background tab from its snapshot, and ignores one that is gone', () => {
     const tabs = withTabs(comparison('a.txt', 'a2.txt'))
     const first = tabs.activeId

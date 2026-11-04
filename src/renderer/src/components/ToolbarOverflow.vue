@@ -34,6 +34,7 @@ const group = ref(null)
 const host = computed(() => group.value?.closest('.options') ?? null)
 
 const rows = computed(() => toolbarActions(props.state))
+const TOUR_ANCHOR = { 'share-current': 'share', save: 'save' }
 // A re-measure is needed when the row SET or the WORDS in it change, not on
 // every state tick. The locale is part of that and cannot be left out: a
 // language switch changes what every control measures without changing the size
@@ -77,7 +78,7 @@ function activate(id) {
       class="btn btn-sm"
       :class="{ 'btn-primary': row.id === 'save', 'btn-square': !row.labelled, active: row.active }"
       :data-action="row.id"
-      :data-tour="row.id === 'share-current' ? 'share' : undefined"
+      :data-tour="TOUR_ANCHOR[row.id]"
       :data-tip="$t(row.tipKey, { mod: MOD })"
       :aria-label="$t(row.labelKey)"
       :disabled="row.disabled"

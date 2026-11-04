@@ -4,6 +4,7 @@ import { useWindowFileDrop } from '../../../src/renderer/src/composables/useFile
 import {
   DIFF_DRAG_TYPE,
   DRAG_TYPE,
+  SAMPLE_DRAG_TYPE,
   TAB_DRAG_TYPE
 } from '../../../src/renderer/src/utils/snippetSource'
 import {
@@ -16,6 +17,8 @@ vi.mock('../../../src/renderer/src/composables/useSavedDiffOpen', () => ({
   openSavedDiff: vi.fn()
 }))
 vi.mock('../../../src/renderer/src/i18n', () => ({ t: (k) => k }))
+const tour = vi.hoisted(() => ({ loadSample: vi.fn() }))
+vi.mock('../../../src/renderer/src/features/onboarding', () => ({ useOnboardingStore: () => tour }))
 
 const store = () => ({ dropSnippets: vi.fn(), dropFiles: vi.fn() })
 
@@ -211,5 +214,35 @@ describe('useWindowFileDrop — an open snippet tab', () => {
     await useWindowFileDrop(s, ref(false)).onDrop(tabDrop(false))
     expect(s.dropFiles).not.toHaveBeenCalled()
     unregisterTabContent('tab-1')
+  })
+})
+
+describe('useWindowFileDrop — the tour’s sample chips', () => {
+  const sampleDrag = (region) => ({
+    dataTransfer: { types: [SAMPLE_DRAG_TYPE], files: [], getData: () => 'core' },
+    target: targetIn(region)
+  })
+
+  it('lights the window up like a file drag', () => {
+    const drop = useWindowFileDrop(store(), ref(false))
+    drop.onDragEnter(sampleDrag(false))
+    expect(drop.active.value).toBe(true)
+    expect(drop.needsDiffRegion.value).toBe(false)
+  })
+
+  it('loads the sample pair wherever it lands, and reads no file', async () => {
+    tour.loadSample.mockClear()
+    const s = store()
+    const drop = useWindowFileDrop(s, ref(false))
+    await drop.onDrop(sampleDrag(true))
+    expect(tour.loadSample).toHaveBeenCalledOnce()
+    expect(s.dropFiles).not.toHaveBeenCalled()
+  })
+
+  it('stands down while a dialog owns drops', async () => {
+    tour.loadSample.mockClear()
+    const drop = useWindowFileDrop(store(), ref(true))
+    await drop.onDrop(sampleDrag(true))
+    expect(tour.loadSample).not.toHaveBeenCalled()
   })
 })

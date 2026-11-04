@@ -17,20 +17,17 @@ const tabs = useTabsStore()
 // A comparison already in the vault is rewritten, not saved a second time.
 const { isUpdate, initial, commit } = useSaveDiffTarget()
 
-const name = ref('')
+// Read before the tag field mounts: it takes its chips from `initial` once.
+const start = initial()
+const name = ref(start.name)
 // Secure = auto-expiring (the app's default). Off keeps the diff indefinitely.
-const secure = ref(true)
-const ttl = ref(1)
-const startTags = ref([])
+const secure = ref(start.secure)
+const ttl = ref(start.ttl)
+const startTags = start.tags
 const nameInput = ref(null)
 const tagField = ref(null)
 
 onMounted(async () => {
-  const start = initial()
-  name.value = start.name
-  secure.value = start.secure
-  ttl.value = start.ttl
-  startTags.value = start.tags
   nameInput.value?.focus()
   await nextTick()
   nameInput.value?.select()

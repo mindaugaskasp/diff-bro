@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | in-progress |
-| **Progress** | 9 / 35 steps |
+| **Progress** | 16 / 35 steps |
 | **Branch** | stack of six, `improvement/settings-groups` → `feat/daily-tips` (see Delivery) |
 | **Started** | 2026-11-03 |
 | **Finished** | — |
@@ -238,7 +238,7 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`, and ea
 |---|---|---|---|---|---|
 | 1 | Spec + Settings in collapsible groups (#214) | `improvement/settings-groups` | `main` | | committed |
 | 2 | Languages row inline (#215) + stop-after minutes (#219) | `improvement/languages-row-inline` | slice 1 | | committed |
-| 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | |
+| 3 | Tour engine + core tour, old tour removed | `feat/tours-by-doing` | slice 2 | | committed |
 | 4 | Snippets and Diagrams tours, v2 example | `feat/snippets-diagrams-tours` | slice 3 | | |
 | 5 | Settings ▸ Tours page + the release-tour offer | `feat/tours-page` | slice 4 | | |
 | 6 | Daily tips | `feat/daily-tips` | slice 5 | | |
@@ -261,13 +261,13 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 - [x] 9. Update `e2e/runner-settings*.spec.mjs`; sweep `settings-languages`; `docs/security.md` drops the fixed 30 s in favour of the per-language time.
 
 **Slice 3: Tour engine + core tour**
-- [ ] 10. `features/onboarding/tourRegistry.js` (`{ id, introducedIn, steps }`), plus `tourPlan.js` with fresh-install and existing-user detection; tests first.
-- [ ] 11. `useTourStep.js`: advance on the step's event, hide and return with the target, closing the sample tab skips, Escape is ignored.
-- [ ] 12. `CoachMark.vue` and `TargetRing.vue` with `styles/`; new icons in `icons.js`.
-- [ ] 13. `SampleFileChips.vue` on `StartSurface` (fresh install, empty screen only), an in-app drag type, and *Load them for me*.
-- [ ] 14. The core tour's three steps; the sample diff is saved tagged `example`; the sample tab is not restored or prompted on quit.
-- [ ] 15. Delete the old tour: `tourSteps.js`, `tourCopy.js`, `TourOverlay`, `TourCallout`, `TourConsentDialog`, the demo stage in `tourDemo.js`, the old state keys and the `tour.*` and `onboarding.tourConsent.*` copy.
-- [ ] 16. `e2e/onboarding-core.spec.mjs`; delete the old tour specs; sweep `coach-mark` and `start-sample-chips`.
+- [x] 10. `features/onboarding/tourRegistry.js` (`{ id, introducedIn, steps }`), plus `tourPlan.js` with fresh-install and existing-user detection; tests first.
+- [x] 11. `useTourStep.js`: advance on the step's event, hide and return with the target, closing the sample tab skips, Escape is ignored.
+- [x] 12. `CoachMark.vue` and `TargetRing.vue` with `styles/`; new icons in `icons.js`.
+- [x] 13. `SampleFileChips.vue` on `StartSurface` (fresh install, empty screen only), an in-app drag type, and *Load them for me*.
+- [x] 14. The core tour's three steps; the sample diff is saved tagged `example`; the sample tab is not restored or prompted on quit.
+- [x] 15. Delete the old tour: `tourSteps.js`, `tourCopy.js`, `TourOverlay`, `TourCallout`, `TourConsentDialog`, the demo stage in `tourDemo.js`, the old state keys and the `tour.*` and `onboarding.tourConsent.*` copy.
+- [x] 16. `e2e/onboarding-core.spec.mjs`; delete the old tour specs; sweep `coach-mark` and `start-sample-chips`.
 
 **Slice 4: Snippets and Diagrams tours**
 - [ ] 17. Seed *Example — Mermaid diagram, v2* in `seedExamples` (fresh installs only), with a test.
@@ -336,6 +336,23 @@ Slice 1 keeps Show tour working under General ▸ Behaviour until slice 5 replac
 | 2026-11-03 | The pane's timeout note reads "stopped after {n} min", with the minutes main answered to Run | the limit is per language now, so a fixed "30 seconds" would be wrong | derive minutes from the run's ms |
 | 2026-11-03 | `ProgramPicker.vue` is replaced by `ProgramMenu.vue` (the chevron's menu); `runner.settings.off`, `change` and `use` are removed | the picker's three controls fold into the row | keep the picker behind the chevron |
 | 2026-11-03 | The 0-minute e2e speeds up main's long timers (≥10 s run 1000× faster) instead of adding a test seam to `runnerCore` | the real `startRun` timer path is what is proven, with no test-only code shipped | a `timeoutMs` override through IPC or env |
+| 2026-11-03 | `onboarding.json` is `{ schema: 2, showTips, tours, offer }`, with `tours` holding `done` or `skipped` per id; a file without `schema: 2` is an older version's, so that profile is an existing user. `showTips` is carried over, everything else is dropped | one shape, and the old file is the existing-user signal (#113) | migrating `tourStep` / `seenVersion` |
+| 2026-11-03 | The fresh-install decision is written on first launch, so a library that grows later does not take the offer away; only Skip, finishing, or a comparison of one's own does | the rule names those three exits and no other | re-deciding on every launch |
+| 2026-11-03 | The `example` tag is prefilled in the Save dialog, not added on save | the user sees it and can remove it | adding it silently on save |
+| 2026-11-03 | The Save dialog opens on the sample with Secure off, so it is kept until deleted; the user can still tick it | the sample stays in the library, and Secure's 1-hour default deleted it within the hour | keep the Secure default |
+| 2026-11-03 | The Save dialog reads its start values at setup, not in `onMounted` (found while building: the tag field had already taken its chips, so a prefilled tag never showed and an update's own tags were dropped on re-save) | the prefill needs it, and it fixes the update path | — |
+| 2026-11-03 | Either chip brings both files, wherever a file drop works | one gesture teaches the drop; a per-side fill added nothing on an empty start screen | left then right, one chip per side |
+| 2026-11-03 | The sample pair is `config-v1.json` / `config-v2.json`, sent as contents with `path: null`; main no longer writes a `demo/` folder, and the diagram demo pair is gone | contents, never paths, and nothing used the files on disk | keep writing the old `demo-*.json` |
+| 2026-11-03 | The sample tab carries a `sample` mark: never restored, never asks to close. The mark goes when the tab is closed and blanked, or its sides are replaced with other files, which also ends step 2 quietly as skipped | a replaced sample is the user's own comparison | ask before closing the sample |
+| 2026-11-03 | The sample's format hint is dismissed on load | the banner covered the comparison the coach mark is about | leave it |
+| 2026-11-03 | Step 3 is found when the search (not a `#` scope) is part of the saved sample's name while Home or Diffs is open | state, not DOM, so it is unit-testable | waiting for its row to render |
+| 2026-11-03 | A coach mark hides when its target is missing, has no size, is off the window, or is not what sits at its centre (a dialog or popover covers it); step 2 also hides while another tab is on screen | the hide-and-return rule, measured | listening for each dialog |
+| 2026-11-03 | `useTourStep` lives in the slice (`features/onboarding/useTourStep.js`), tested under `tests/renderer/features/onboarding/` | in `composables/` it would import the slice whose `TourLayer` imports it, a cycle | `composables/useTourStep.js` |
+| 2026-11-03 | The halo is off on neon, nyan and matrix (`--tour-halo: transparent`); the 2px keyline stays | the screenshots show it as a glow on those accents | keep it everywhere |
+| 2026-11-03 | The done card ships its title and × only; the Snippets / Diagrams chips arrive with slice 4 and the Settings ▸ Tours line with slice 5 | no dead chips or links | render them disabled |
+| 2026-11-03 | Help ▸ Show Tour and Settings ▸ Behaviour ▸ Show tour replay the core tour on a start tab; *Show tips after an update* now gates nothing and stays for slice 5 to replace | no slice leaves the tour unreachable | remove the switch now |
+| 2026-11-03 | A replay that is skipped keeps a finished tour `done` | a replay must not rewrite history | record the last outcome |
+| 2026-11-03 | `useSpotlight`, `utils/spotlight` and `useTourCommands` go with the old tour | the old overlay was their only user | keep them for the new coach mark |
 
 ## Validation
 

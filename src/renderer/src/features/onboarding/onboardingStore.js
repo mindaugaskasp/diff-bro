@@ -1,221 +1,93 @@
 import { defineStore } from 'pinia'
-import { useSettingsStore } from '../../stores/settingsStore'
+import { useTabsStore } from '../../stores/tabsStore'
 import { useUiStore } from '../../stores/uiStore'
-import { TOUR_STEPS, TOUR_VERSION, tourPlan } from '../../utils/tourSteps'
-import * as demo from './tourDemo'
-import { MAX_DEFER, clampInt, readProgress, saveProgress } from './onboardingPersist'
-
-// The beat after step one: the veil lifts so the comparison it just loaded is
-// actually SEEN rather than described through a blur. Just long enough to
-// register — past about half a second the next card reads as late.
-const REVEAL_MS = 450
-
-function readState() {
-  return {
-    ...readProgress(),
-    // Live, not persisted.
-    steps: [],
-    index: 0,
-    active: false,
-    promptOpen: false,
-    promptKind: '',
-    promptSteps: [],
-    // A dismissed prompt stays quiet for the rest of this session.
-    asked: false,
-    revealTimer: null,
-    // Veil down, tour still running: a pause to look at what step one loaded.
-    revealing: false,
-    // A step's command, waiting for useTourCommands to run it.
-    pendingCommand: null,
-    // What the tour opened and therefore has to put back. `editorOwned` holds
-    // the demo-named snippets that predate it, so cleanup spares only those.
-    demoTabId: null,
-    demoKind: '',
-    editorOwned: null,
-    sidebarWasCollapsed: false,
-    filters: null,
-    // A replay does not advance the recorded progress.
-    replaying: false
-  }
-}
+import { tourById } from './tourRegistry'
+import { endedTours, isOfferOpen } from './tourPlan'
+import { readProgress, saveProgress } from './onboardingPersist'
+import { openSample } from './tourSample'
 
 export const useOnboardingStore = defineStore('onboarding', {
-  state: () => readState(),
+  state: () => ({
+    ...readProgress(),
+    /** @type {{ id: string, index: number }|null} */
+    running: null,
+    /** @type {{ tabId: string, files: { name: string, content: string }[] }|null} */
+    sample: null,
+    sampleEntryId: null,
+    doneCard: false
+  }),
   getters: {
-    currentStep: (s) => s.steps[s.index] ?? null,
-    stepCount: (s) => s.steps.length,
-    stepNumber: (s) => s.index + 1
+    tour: (s) => (s.running ? tourById(s.running.id) : null),
+    /** @returns {import('../../types').TourStep|null} */
+    step() {
+      return this.tour?.steps[this.running.index] ?? null
+    },
+    stepNumber: (s) => (s.running?.index ?? 0) + 1,
+    stepCount: () => tourById('core').steps.length,
+    isRunning: (s) => !!s.running,
+    isOffering: (s) => (s.running ? s.running.index === 0 : isOfferOpen(s))
   },
   actions: {
+    init() {
+      if (!this.current) this.persist()
+    },
     persist() {
       saveProgress(this)
+      this.current = true
     },
-    // Consulted once per launch. Never starts a tour unannounced.
-    begin() {
-      if (this.active || this.promptOpen || this.asked) return
-      const plan = tourPlan({
-        showTips: this.showTips,
-        tourStep: this.tourStep,
-        seenVersion: this.seenVersion,
-        tourDeferred: this.deferred
-      })
-      if (plan.mode === 'steps') this._open(plan.steps)
-      if (plan.mode !== 'prompt') return
-      this.promptKind = plan.kind
-      this.promptSteps = plan.steps
-      this.promptOpen = true
+    /** @param {string} id */
+    start(id) {
+      this.running = { id, index: 0 }
+      this.sample = null
+      this.sampleEntryId = null
+      this.doneCard = false
     },
-    _open(steps) {
-      if (!steps.length) return
-      // A run summoned during step one's reveal beat would otherwise inherit
-      // both the raised veil and the timer that is about to advance it.
-      clearTimeout(this.revealTimer)
-      this.revealing = false
-      const settings = useSettingsStore()
-      // Half the run points into the sidebar; collapsed, it teaches nothing.
-      this.sidebarWasCollapsed = settings.sidebarCollapsed
-      settings.setSidebarCollapsed(false)
-      this.filters = demo.takeFilters()
-      this.steps = steps
-      this.index = 0
-      this.active = true
-      this.promptOpen = false
-      this._dispatch(this.currentStep?.enter)
+    replay() {
+      useUiStore().showSettingsDialog = false
+      useTabsStore().showStart()
+      this.start('core')
     },
-    // Reaching the registry from here would close a cycle through this slice's
-    // index, so useTourCommands watches and dispatches. A fresh object each
-    // time, or the same command twice would look like no change.
-    _dispatch(action) {
-      if (action) this.pendingCommand = { action }
+    async loadSample() {
+      if (!this.running) this.start('core')
+      if (this.step?.advanceOn !== 'sample-opened') return
+      const sample = await openSample()
+      if (!sample) return
+      this.sample = sample
+      this.advance('sample-opened')
     },
-    // Next PERFORMS the step's action, rather than the next step arriving to
-    // find a window already open.
-    next() {
-      if (!this.active || this.revealing) return
-      const step = this.currentStep
-      this._dispatch(step?.advance)
-      this._dispatch(step?.leave)
-      if (step?.reveal) {
-        this.revealing = true
-        this.revealTimer = setTimeout(() => {
-          this.revealing = false
-          this._step()
-        }, REVEAL_MS)
-        return
-      }
-      this._step()
+    /** @param {string} event */
+    advance(event) {
+      if (!this.step || this.step.advanceOn !== event) return
+      if (this.running.index < this.tour.steps.length - 1) this.running.index += 1
+      else this.finish()
     },
-    // A step whose Next opened something carries the `undo` that closes it
-    // again: without it, Back left Settings over the control it returns to.
-    back() {
-      if (!this.active || this.revealing || this.index === 0) return
-      // A step is left the same way in both directions: what it did on arrival
-      // is undone whether you move on or step back off it.
-      this._dispatch(this.currentStep?.leave)
-      this.index -= 1
-      this._dispatch(this.currentStep?.undo)
-      this._dispatch(this.currentStep?.enter)
-      if (!this.replaying) this._advanceTo(this.tourStep - 1)
+    /** @param {string} entryId */
+    noteSampleSaved(entryId) {
+      this.sampleEntryId = entryId
+      this.advance('sample-saved')
     },
-    _step() {
-      if (this.index < this.steps.length - 1) {
-        this.index += 1
-        this._dispatch(this.currentStep?.enter)
-        if (!this.replaying) this._advanceTo(this.tourStep + 1)
-        return
-      }
-      this.finish()
-    },
-    // Record progress as the user moves, so quitting mid-run resumes there.
-    _advanceTo(step) {
-      this.tourStep = clampInt(step, 0, TOUR_STEPS.length)
-      this.persist()
+    skip() {
+      this._end('skipped')
     },
     finish() {
-      const wasReplaying = this.replaying
-      this._tidy()
-      this.active = false
-      this.steps = []
-      this.index = 0
-      this.replaying = false
-      if (wasReplaying) return
-      this.tourStep = TOUR_STEPS.length
-      this.seenVersion = TOUR_VERSION
+      this._end('done')
+      this.doneCard = true
+    },
+    _end(outcome) {
+      this.tours = endedTours(this.tours, this.running?.id ?? 'core', outcome)
+      this.offer = false
+      this.running = null
       this.persist()
     },
-    // Leaving early is an answer, not a pause — including for every later version.
-    // Guarded because Escape reaches here from a listener that outlives the
-    // tour: without it, every Escape in the app turned tips off and wrote.
-    skip() {
-      if (!this.active) return
-      this._tidy()
-      clearTimeout(this.revealTimer)
-      this.revealing = false
-      this.active = false
-      this.promptOpen = false
-      this.steps = []
-      this.index = 0
-      this.replaying = false
-      this.showTips = false
-      this.persist()
+    noteOwnComparison() {
+      if (this.running?.index === 0) this.skip()
+      else if (!this.running && this.offer) {
+        this.offer = false
+        this.persist()
+      }
     },
-    _tidy() {
-      demo.clearStage(this)
-      this.demoTabId = null
-      this.demoKind = ''
-      this.editorOwned = null
-      this.sidebarWasCollapsed = false
-      this.filters = null
-    },
-    // Something to point AT: an empty comparison teaches nothing,
-    // and the diagram step cannot show a diagram CHANGE by describing one. The
-    // scratch tab is REUSED for a second pair — a replay plays both steps in
-    // one run, and two tabs would be two things to put back.
-    async openDemo(kind = 'config') {
-      if (this.demoTabId && this.demoKind === kind) return
-      this.demoKind = kind
-      this.demoTabId = await demo.showPair(this.demoTabId, kind)
-    },
-    openSnippet() {
-      // Keeps the FIRST ownership record across a back-and-forward: it is the
-      // list cleanup spares, and re-taking it after a save would spare that too.
-      const owned = demo.openSnippet()
-      if (owned && !this.editorOwned) this.editorOwned = owned
-    },
-    closeSnippet() {
-      demo.closeSnippet()
-    },
-    typeSearch: () => demo.typeSearch(),
-    clearSearch: () => demo.clearSearch(),
-    clearFilters: () => demo.clearFilters(),
-    showSnippets: () => demo.showSnippets(),
-    acceptPrompt() {
-      this.promptOpen = false
-      this.deferred = 0
-      this.persist()
-      this._open(this.promptSteps)
-    },
-    declinePrompt() {
-      this.promptOpen = false
-      this.showTips = false
-      this.persist()
-    },
-    // One reminder is a reminder; two is pestering. `asked` keeps it quiet for
-    // the rest of THIS session as well.
-    deferPrompt() {
-      this.promptOpen = false
-      this.asked = true
-      this.deferred = Math.min(this.deferred + 1, MAX_DEFER)
-      this.persist()
-    },
-    // Summoned deliberately: plays everything, ignores every flag, and does not
-    // read a request to see it once as consent to automatic tips.
-    replay() {
-      // Both ways in are inside Settings — its own button, and the shortcut the
-      // tour then points at — so leaving it open puts step one behind it.
-      useUiStore().showSettingsDialog = false
-      this.replaying = true
-      this._open([...TOUR_STEPS])
+    dismissDone() {
+      this.doneCard = false
     },
     setShowTips(value) {
       this.showTips = value !== false
