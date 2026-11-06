@@ -4,6 +4,8 @@
 //
 // Rule 8: elements are BUILT, never parsed from a string.
 
+import { isLooseNode } from './domToBlocks'
+
 const INLINE_TAG = { bold: 'STRONG', italic: 'EM', strike: 'S', code: 'CODE' }
 const HEADING_LEVEL = { h1: 1, h2: 2, h3: 3 }
 const LIST_KIND = { bullet: 'UL', numbered: 'OL', task: 'UL' }
@@ -17,14 +19,36 @@ function rangeIn(root) {
   return root.contains(range.startContainer) ? range : null
 }
 
+function topLevelNode(root, range) {
+  let node = range.startContainer
+  if (node === root) return root.childNodes[range.startOffset] ?? root.lastChild
+  while (node.parentNode !== root) node = node.parentNode
+  return node
+}
+
+// The loose run domToBlocks reads as one paragraph becomes that paragraph, so it can be retagged.
+function wrapLooseRun(root, node) {
+  let first = node
+  while (first.previousSibling && isLooseNode(first.previousSibling)) first = first.previousSibling
+  let last = node
+  while (last.nextSibling && isLooseNode(last.nextSibling)) last = last.nextSibling
+  const paragraph = root.ownerDocument.createElement('p')
+  paragraph.className = 'ji-p'
+  root.insertBefore(paragraph, first)
+  for (let n = first, next; n; n = next) {
+    next = n === last ? null : n.nextSibling
+    paragraph.appendChild(n)
+  }
+  return paragraph
+}
+
 // Always a direct child of the root — that is what domToBlocks walks.
 function blockIn(root) {
   const range = rangeIn(root)
   if (!range) return null
-  let node = range.startContainer
-  if (node.nodeType !== 1) node = node.parentElement
-  while (node && node.parentElement !== root) node = node.parentElement
-  return node
+  const top = topLevelNode(root, range)
+  if (!top) return null
+  return isLooseNode(top) ? wrapLooseRun(root, top) : top
 }
 
 const listItemIn = (root) => {
@@ -158,11 +182,18 @@ const ACTIONS = {
       el.className = 'ji-link'
       el.setAttribute('title', '')
     }),
-  quote,
   codeblock: codeBlock,
   table,
   indent: (root) => nest(root, true),
   outdent: (root) => nest(root, false)
+}
+
+// Moving a node out of its parent collapses the selection, so it is put back where it was.
+function keepingCaret(root, retagBlock) {
+  const { startContainer: node, startOffset: offset } = rangeIn(root)
+  const changed = retagBlock()
+  if (changed && node !== root && node.isConnected) selectionIn(root).collapse(node, offset)
+  return changed
 }
 
 /**
@@ -177,7 +208,8 @@ export function applyDomFormat(root, id) {
       if (id === 'code') el.className = 'ji-mono'
     })
   }
-  if (HEADING_LEVEL[id]) return heading(root, id)
-  if (LIST_KIND[id]) return list(root, id)
+  if (HEADING_LEVEL[id]) return keepingCaret(root, () => heading(root, id))
+  if (LIST_KIND[id]) return keepingCaret(root, () => list(root, id))
+  if (id === 'quote') return keepingCaret(root, () => quote(root))
   return ACTIONS[id]?.(root) ?? false
 }

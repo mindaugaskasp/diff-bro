@@ -160,23 +160,47 @@ describe('applyDomFormat — guards', () => {
   })
 })
 
-describe('applyDomFormat — no block under the caret', () => {
-  // No block element to retag, so every block action declines rather than throws.
-  const bareCaret = () => {
+// Typing into an empty contenteditable leaves its text loose under the root.
+describe('applyDomFormat — loose text under the caret', () => {
+  const looseCaret = () => {
     root = document.createElement('div')
     root.className = 'jira-rendered'
-    root.appendChild(document.createTextNode('loose'))
+    root.append(document.createTextNode('loose'), document.createElement('div'))
+    root.lastChild.textContent = 'next'
     document.body.replaceChildren(root)
     caretIn(root.firstChild, 1)
   }
 
-  it.each(['h1', 'quote', 'bullet', 'numbered', 'task', 'codeblock', 'table'])(
-    '%s declines',
-    (id) => {
-      bareCaret()
-      expect(applyDomFormat(root, id)).toBe(false)
+  it.each([
+    ['h1', '# loose\n\nnext'],
+    ['quote', '> loose\n\nnext'],
+    ['bullet', '- loose\n\nnext'],
+    ['numbered', '1. loose\n\nnext'],
+    ['task', '- [ ] loose\n\nnext']
+  ])('%s takes the loose line as its block', (id, expected) => {
+    looseCaret()
+    expect(applyDomFormat(root, id)).toBe(true)
+    expect(markup()).toBe(expected)
+  })
+})
+
+describe('applyDomFormat — the caret', () => {
+  const caretAfterRetag = (setup, id) => {
+    const text = setup()
+    caretIn(text, 2)
+    applyDomFormat(root, id)
+    const range = window.getSelection().getRangeAt(0)
+    return { node: range.startContainer, offset: range.startOffset, text }
+  }
+
+  it.each(['bullet', 'h1', 'quote'])('stays where it was in the text after %s', (id) => {
+    const fromParagraph = () => mount('<p class="ji-p">abc</p>').querySelector('p').firstChild
+    const fromLoose = () => mount('').appendChild(document.createTextNode('abc'))
+    for (const setup of [fromParagraph, fromLoose]) {
+      const { node, offset, text } = caretAfterRetag(setup, id)
+      expect({ same: node === text, offset }).toEqual({ same: true, offset: 2 })
     }
-  )
+  })
 })
 
 describe('applyDomFormat — root and caret guards', () => {

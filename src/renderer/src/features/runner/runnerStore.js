@@ -69,7 +69,10 @@ export const useRunnerStore = defineStore('runner', {
       window.api.onRunOutput((chunk) => this.appendOutput(chunk))
       window.api.onRunExit((exit) => this.markExited(exit))
     },
-    async start(key, { language, code, snippetId, line = null, lastLine = null }) {
+    async start(
+      key,
+      { language, code, snippetId, line = null, firstLine = null, lastLine = null }
+    ) {
       this.listen()
       this.stop(key)
       this.runs[key] = {
@@ -80,6 +83,7 @@ export const useRunnerStore = defineStore('runner', {
         version: null,
         stopAfterMinutes: null,
         line,
+        firstLine,
         lastLine
       }
       const pending = this.runs[key]

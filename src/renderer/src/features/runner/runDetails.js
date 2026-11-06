@@ -14,13 +14,32 @@ function outcomeDetails({ reason, code, ms, stopAfterMinutes }) {
   return details
 }
 
+const PANE_SCOPE = {
+  one: 'runner.pane.line',
+  upTo: 'runner.pane.upToLine',
+  span: 'runner.pane.lines'
+}
+const BUTTON_SCOPE = { one: 'runner.runLine', upTo: 'runner.runUpToLine', span: 'runner.runLines' }
+
+function scopeOf(keys, { firstLine, lastLine }) {
+  if (firstLine === lastLine) return { key: keys.one, params: { n: lastLine } }
+  if (firstLine === 1) return { key: keys.upTo, params: { n: lastLine } }
+  return { key: keys.span, params: { from: firstLine, to: lastLine } }
+}
+
+/**
+ * @param {import('../../types').LineRange} range
+ * @returns {{ key: string, params: object }}
+ */
+export const runButtonLabel = (range) => scopeOf(BUTTON_SCOPE, range)
+
 /**
  * @param {import('../../types').RunState} run
  * @param {{ elapsedSeconds?: number }} [clock]  seconds so far, while it runs
  * @returns {{ key: string, params?: object }[]}
  */
 export function runDetails(run, { elapsedSeconds = 0 } = {}) {
-  const scope = run.lastLine ? [{ key: 'runner.pane.upToLine', params: { n: run.lastLine } }] : []
+  const scope = run.lastLine ? [scopeOf(PANE_SCOPE, run)] : []
   if (run.state === 'running') {
     return [...scope, { key: 'runner.pane.seconds', params: { seconds: elapsedSeconds } }]
   }

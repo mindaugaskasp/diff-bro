@@ -469,10 +469,18 @@ export {}
  */
 
 /**
+ * The lines a press on the run gutter runs, 1-based and inclusive.
+ * @typedef {object} LineRange
+ * @property {number} firstLine
+ * @property {number} lastLine
+ */
+
+/**
  * Where the run-a-line button sits: on the hovered line's number, in viewport px.
  * @typedef {object} RunGutterSpot
  * @property {number} line   the line pressed
- * @property {number|null} lastLine  the last line a press runs
+ * @property {number} firstLine
+ * @property {number} lastLine  the last line a press runs
  * @property {number} top
  * @property {number} left
  * @property {number} width
@@ -499,6 +507,7 @@ export {}
  * @property {string|null} version
  * @property {number|null} stopAfterMinutes  how long main lets it go on, 0 for no limit
  * @property {number|null} line      the gutter line pressed, null for the whole snippet
+ * @property {number|null} firstLine  the first line that ran, null for the whole snippet
  * @property {number|null} lastLine  the last line that ran, null for the whole snippet
  * @property {boolean} [stopAsked]   Stop came before main answered
  * @property {string} [reason]       why it ended: exit, stopped, timeout, output-limit, spawn-error
@@ -514,7 +523,7 @@ export {}
  * @property {import('vue').ComputedRef<boolean>} hasCode
  * @property {import('vue').ComputedRef<boolean>} isRunning
  * @property {import('vue').ComputedRef<Set<number>>} runnableLines  lines that get a play button
- * @property {(line: number) => number|null} lastLineFor
+ * @property {(line: number) => LineRange|null} lineRangeFor
  * @property {() => void} start
  * @property {(line: number) => void} startLine
  * @property {() => void} runAgain  the way it ran last: whole, or up to the same line

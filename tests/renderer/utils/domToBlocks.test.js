@@ -15,6 +15,24 @@ describe('domToBlocks', () => {
     expect(domToBlocks(null)).toEqual([])
   })
 
+  it('reads text loose under the root as a paragraph of its own', () => {
+    const el = root('<div>world</div>')
+    el.prepend(document.createTextNode('hello'), document.createElement('strong'))
+    el.children[0].textContent = '!'
+    expect(domToBlocks(el)).toEqual([
+      {
+        type: 'paragraph',
+        lines: [
+          [
+            { type: 'text', value: 'hello' },
+            { type: 'strong', inlines: [{ type: 'text', value: '!' }] }
+          ]
+        ]
+      },
+      { type: 'paragraph', lines: [[{ type: 'text', value: 'world' }]] }
+    ])
+  })
+
   it('reads a heading and its level', () => {
     const blocks = domToBlocks(root('<h2 class="ji-h">Title</h2>'))
     expect(blocks).toEqual([

@@ -1885,7 +1885,9 @@
       "runAgain": "Run again",
       "copyOutput": "Copy output",
       "clear": "Clear",
-      "upToLine": "Up to line {n}"
+      "upToLine": "Up to line {n}",
+      "line": "Line {n}",
+      "lines": "Lines {from}–{to}"
     },
     "settings": {
       "languages": "Languages",
@@ -1903,7 +1905,9 @@
       "notAProgram": "There's no program Diff Bro can run at that path.",
       "noneFound": "Diff Bro found no {language} on this computer."
     },
-    "runUpToLine": "Run up to line {n}"
+    "runUpToLine": "Run up to line {n}",
+    "runLine": "Run line {n}",
+    "runLines": "Run lines {from}–{to}"
   },
   "snippetDocument": {
     "compareWith": "Compare with…",
