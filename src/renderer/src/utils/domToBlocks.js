@@ -7,6 +7,22 @@ const TEXT_NODE = 3
 const ELEMENT_NODE = 1
 
 const WRAPPERS = { STRONG: 'strong', EM: 'em', U: 'ins', S: 'del' }
+const INLINE_NAMES = new Set([
+  '#text',
+  'STRONG',
+  'EM',
+  'U',
+  'S',
+  'B',
+  'I',
+  'CODE',
+  'SPAN',
+  'A',
+  'BR'
+])
+
+// Typing into an empty contenteditable puts its first line straight under the root, in no block.
+export const isLooseNode = (node) => INLINE_NAMES.has(node.nodeName)
 
 const textOf = (node) => node.textContent ?? ''
 
@@ -35,9 +51,9 @@ function inlineOf(child) {
 const inlinesOf = (el) => [...(el.childNodes ?? [])].map(inlineOf).filter(Boolean)
 
 // <br>s are breaks inside ONE block, so children are cut into runs.
-function paragraphLines(el) {
+function paragraphLines(nodes) {
   const lines = [[]]
-  for (const child of el.childNodes ?? []) {
+  for (const child of nodes) {
     if (child.nodeName === 'BR') {
       lines.push([])
       continue
@@ -89,8 +105,25 @@ function blockOf(el) {
     return { type: 'quote', children: domToBlocks(el.querySelector('.jira-rendered') ?? el) }
   }
   if (el.querySelector?.('table')) return tableBlock(el)
-  return { type: 'paragraph', lines: paragraphLines(el) }
+  return { type: 'paragraph', lines: paragraphLines(el.childNodes ?? []) }
 }
+
+// Each block element on its own, each run of loose nodes between them as one paragraph.
+function topLevelGroups(root) {
+  const groups = []
+  for (const node of root.childNodes ?? []) {
+    if (!isLooseNode(node)) {
+      if (node.nodeType === ELEMENT_NODE) groups.push(node)
+      continue
+    }
+    const last = groups.at(-1)
+    if (Array.isArray(last)) last.push(node)
+    else groups.push([node])
+  }
+  return groups.filter((g) => !Array.isArray(g) || g.some(hasInk))
+}
+
+const hasInk = (node) => node.nodeName === 'BR' || !!textOf(node).trim()
 
 const isEmpty = (block) => block.type === 'paragraph' && !block.lines.some((line) => line.length)
 
@@ -100,5 +133,9 @@ const isEmpty = (block) => block.type === 'paragraph' && !block.lines.some((line
  */
 export function domToBlocks(root) {
   if (!root) return []
-  return [...(root.children ?? [])].map(blockOf).filter((b) => !isEmpty(b))
+  return topLevelGroups(root)
+    .map((group) =>
+      Array.isArray(group) ? { type: 'paragraph', lines: paragraphLines(group) } : blockOf(group)
+    )
+    .filter((b) => !isEmpty(b))
 }

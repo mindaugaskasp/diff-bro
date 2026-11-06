@@ -182,3 +182,29 @@ test('the rendered view of a saved snippet is not editable until Edit', async ({
   await editInPlace(page)
   await expect(reopened.locator('.rendered-editor')).toBeVisible()
 })
+
+async function typeIntoNewJira(page, text) {
+  await openNewSnippet(page)
+  await editorDialog(page)
+    .locator('.editor-status')
+    .getByRole('combobox', { name: 'Syntax' })
+    .selectOption('jira')
+  await renderedView(page).click()
+  await page.keyboard.type(text)
+}
+
+test('text typed into a new Jira snippet survives the switch to Plain', async ({ page }) => {
+  await typeIntoNewJira(page, 'keep me')
+  expect(await readSource(page)).toBe('keep me')
+})
+
+test('Bullet list turns the line typed into a new Jira snippet into a bullet', async ({ page }) => {
+  await typeIntoNewJira(page, 'abc')
+  await snippetDoc(page)
+    .getByRole('button', { name: /^Bullet list/ })
+    .click()
+  await expect(renderedView(page).locator('li')).toHaveText('abc')
+  await page.keyboard.type('d')
+  await expect(renderedView(page).locator('li')).toHaveText('abcd')
+  expect(await readSource(page)).toBe('* abcd')
+})

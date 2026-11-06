@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  codeThrough,
-  lastLineFor,
+  codeForLine,
+  lineRangeFor,
   lineScanFor,
   runnableLines
 } from '../../../../src/renderer/src/features/runner/runRange'
@@ -35,16 +35,17 @@ describe('runnableLines — python', () => {
   })
 })
 
-describe('codeThrough — python', () => {
+describe('codeForLine — python', () => {
   it('runs lines 1 to N', () => {
-    expect(codeThrough('python', ORDERS, 5)).toEqual({
+    expect(codeForLine('python', ORDERS, 5)).toEqual({
       code: ORDERS.split('\n').slice(0, 5).join('\n'),
+      firstLine: 1,
       lastLine: 5
     })
   })
 
   it('runs a block to its end from the line that opens it', () => {
-    expect(codeThrough('python', ORDERS, 6).lastLine).toBe(7)
+    expect(codeForLine('python', ORDERS, 6).lastLine).toBe(7)
   })
 
   it('runs a block line to the end of what sits deeper under it', () => {
@@ -55,35 +56,35 @@ describe('codeThrough — python', () => {
       '    print("-")',
       'print("end")'
     )
-    expect(codeThrough('python', text, 2).lastLine).toBe(3)
-    expect(codeThrough('python', text, 4).lastLine).toBe(4)
+    expect(codeForLine('python', text, 2).lastLine).toBe(3)
+    expect(codeForLine('python', text, 4).lastLine).toBe(4)
   })
 
   it('crosses blank lines inside a block but stops before trailing ones', () => {
     const text = py('for x in xs:', '    a = x', '', '    print(a)', '', 'print("end")')
-    expect(codeThrough('python', text, 1).lastLine).toBe(4)
+    expect(codeForLine('python', text, 1).lastLine).toBe(4)
   })
 
   it('carries an open bracket through to its close', () => {
     const text = py('total = sum(', '    x for x in nums', ')', 'print(total)')
-    expect(codeThrough('python', text, 1).lastLine).toBe(3)
-    expect(codeThrough('python', text, 2).lastLine).toBe(3)
+    expect(codeForLine('python', text, 1).lastLine).toBe(3)
+    expect(codeForLine('python', text, 2).lastLine).toBe(3)
   })
 
   it('carries a decorator through the definition under it', () => {
     const text = py('@dataclass', 'class Order:', '    id: str', 'print(Order)')
-    expect(codeThrough('python', text, 1).lastLine).toBe(3)
+    expect(codeForLine('python', text, 1).lastLine).toBe(3)
   })
 
   it('carries a triple-quoted string to its close', () => {
     const text = py('note = """', 'not code', '"""', 'print(note)')
-    expect(codeThrough('python', text, 1).lastLine).toBe(3)
+    expect(codeForLine('python', text, 1).lastLine).toBe(3)
   })
 
   it('answers null for a line with no code', () => {
-    expect(codeThrough('python', ORDERS, 2)).toBeNull()
-    expect(codeThrough('python', ORDERS, 8)).toBeNull()
-    expect(codeThrough('python', ORDERS, 99)).toBeNull()
+    expect(codeForLine('python', ORDERS, 2)).toBeNull()
+    expect(codeForLine('python', ORDERS, 8)).toBeNull()
+    expect(codeForLine('python', ORDERS, 99)).toBeNull()
   })
 })
 
@@ -109,31 +110,81 @@ describe('runnableLines — php', () => {
   })
 })
 
-describe('codeThrough — php', () => {
+describe('codeForLine — php', () => {
   it('runs a braced block to its close, from inside it too', () => {
-    expect(codeThrough('php', PHP, 4).lastLine).toBe(6)
-    expect(codeThrough('php', PHP, 5).lastLine).toBe(6)
+    expect(codeForLine('php', PHP, 4).lastLine).toBe(6)
+    expect(codeForLine('php', PHP, 5).lastLine).toBe(6)
   })
 
   it('ignores braces inside a string', () => {
-    expect(codeThrough('php', PHP, 9).lastLine).toBe(9)
+    expect(codeForLine('php', PHP, 9).lastLine).toBe(9)
   })
 
   it('carries a statement with no braces until its semicolon', () => {
     const text = py('<?php', 'if ($x)', '    echo 1;', 'echo 2;')
-    expect(codeThrough('php', text, 2).lastLine).toBe(3)
+    expect(codeForLine('php', text, 2).lastLine).toBe(3)
   })
 
   it('stops at the last line when a block never closes', () => {
     const text = py('<?php', 'foreach ($a as $b) {', '    echo $b;')
-    expect(codeThrough('php', text, 2).lastLine).toBe(3)
+    expect(codeForLine('php', text, 2).lastLine).toBe(3)
+  })
+})
+
+const CURLS = py(
+  '# health checks',
+  'curl -fsS https://example.com/health',
+  '',
+  'curl -X POST https://example.com/api \\',
+  "  -H 'Content-Type: application/json' \\",
+  '  -d \'{"a": 1}\'',
+  "curl -d 'two",
+  "lines' https://example.com",
+  '-H oops'
+)
+
+describe('runnableLines — curl', () => {
+  it('offers each line that starts a curl command, not its continuations', () => {
+    expect([...runnableLines('curl', CURLS)]).toEqual([2, 4, 7])
+  })
+
+  it('offers curl.exe too', () => {
+    expect([...runnableLines('curl', 'curl.exe https://example.com')]).toEqual([1])
+  })
+})
+
+describe('codeForLine — curl', () => {
+  it('runs that one command, not the ones above it', () => {
+    expect(codeForLine('curl', CURLS, 2)).toEqual({
+      code: 'curl -fsS https://example.com/health',
+      firstLine: 2,
+      lastLine: 2
+    })
+  })
+
+  it('carries a command through its backslash continuations', () => {
+    expect(codeForLine('curl', CURLS, 4)).toEqual({
+      code: CURLS.split('\n').slice(3, 6).join('\n'),
+      firstLine: 4,
+      lastLine: 6
+    })
+  })
+
+  it('carries a quote open across lines to its close', () => {
+    expect(lineRangeFor('curl', CURLS, 7)).toEqual({ firstLine: 7, lastLine: 8 })
+  })
+
+  it('answers null for a continuation, a comment or a line that is not curl', () => {
+    expect(codeForLine('curl', CURLS, 1)).toBeNull()
+    expect(codeForLine('curl', CURLS, 5)).toBeNull()
+    expect(codeForLine('curl', CURLS, 9)).toBeNull()
   })
 })
 
 describe('other languages', () => {
   it('offer no lines', () => {
     expect([...runnableLines('javascript', 'console.log(1)')]).toEqual([])
-    expect(codeThrough('javascript', 'console.log(1)', 1)).toBeNull()
+    expect(codeForLine('javascript', 'console.log(1)', 1)).toBeNull()
   })
 })
 
@@ -149,9 +200,9 @@ describe('scanning', () => {
   })
 })
 
-describe('lastLineFor', () => {
+describe('lineRangeFor', () => {
   it('answers the last line a press runs, or null for a line with no button', () => {
-    expect(lastLineFor('python', ORDERS, 6)).toBe(7)
-    expect(lastLineFor('python', ORDERS, 2)).toBeNull()
+    expect(lineRangeFor('python', ORDERS, 6)).toEqual({ firstLine: 1, lastLine: 7 })
+    expect(lineRangeFor('python', ORDERS, 2)).toBeNull()
   })
 })

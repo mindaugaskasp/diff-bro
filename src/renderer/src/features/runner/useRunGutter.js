@@ -4,12 +4,12 @@ import * as monaco from 'monaco-editor'
 const LEAVE_GRACE_MS = 120
 
 /** @returns {import('../../types').RunGutterSpot} where the line's number sits on screen */
-function spotFor(editor, line, lastLine) {
+function spotFor(editor, line, range) {
   const box = editor.getDomNode().getBoundingClientRect()
   const layout = editor.getLayoutInfo()
   return {
     line,
-    lastLine,
+    ...range,
     top: box.top + editor.getTopForLineNumber(line) - editor.getScrollTop(),
     left: box.left + layout.lineNumbersLeft,
     width: layout.lineNumbersWidth,
@@ -23,10 +23,10 @@ function spotFor(editor, line, lastLine) {
  * @param {() => object|null} o.editorInstance
  * @param {import('vue').Ref<boolean>} o.ready
  * @param {import('vue').Ref<Set<number>>} o.runnableLines
- * @param {(line: number) => number|null} o.lastLineFor
+ * @param {(line: number) => import('../../types').LineRange|null} o.lineRangeFor
  * @param {(line: number) => void} o.startLine
  */
-export function useRunGutter({ editorInstance, ready, runnableLines, lastLineFor, startLine }) {
+export function useRunGutter({ editorInstance, ready, runnableLines, lineRangeFor, startLine }) {
   const spot = ref(null)
   let subscriptions = []
   let isPointerOnButton = false
@@ -36,7 +36,7 @@ export function useRunGutter({ editorInstance, ready, runnableLines, lastLineFor
   function onMove(e) {
     const line = e.target?.position?.lineNumber
     if (line && runnableLines.value.has(line)) {
-      spot.value = spotFor(editorInstance(), line, lastLineFor(line))
+      spot.value = spotFor(editorInstance(), line, lineRangeFor(line))
     } else if (!isPointerOnButton) hide()
   }
   function onLeave() {

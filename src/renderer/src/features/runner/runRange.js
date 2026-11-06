@@ -13,11 +13,18 @@ const SYNTAX = {
     block: ['/*', '*/'],
     quotes: ['"', "'"],
     multilineQuotes: ['"', "'"]
+  },
+  curl: {
+    comments: ['#'],
+    block: null,
+    quotes: ['"', "'"],
+    multilineQuotes: ['"', "'"]
   }
 }
 const OPENERS = '([{'
 const CLOSERS = ')]}'
 const PHP_OPEN_TAG = /^\s*<\?php\b/
+const CURL_START = /^\s*curl(\.exe)?(\s|$)/
 
 /**
  * What one line leaves behind for the next.
@@ -105,13 +112,16 @@ export function lineScanFor(language, text) {
   return memo.scans
 }
 
+const endsInBackslash = (scan) => scan.text.trimEnd().endsWith('\\')
+const continuesFrom = (above) => !!above && (above.openAtEnd || endsInBackslash(above))
+const isOpen = (scan) => scan.depth > 0 || scan.openAtEnd || endsInBackslash(scan)
+
 function isRunnable(language, scans, n) {
   const scan = scans[n]
   if (!scan?.hasCode || scan.startsInside) return false
+  if (language === 'curl') return CURL_START.test(scan.text) && !continuesFrom(scans[n - 1])
   return !(language === 'php' && PHP_OPEN_TAG.test(scan.text))
 }
-
-const isOpen = (scan) => scan.depth > 0 || scan.openAtEnd || scan.text.trimEnd().endsWith('\\')
 
 function continuationEnd(scans, from) {
   let n = from
@@ -158,7 +168,16 @@ function phpStatementEnd(scans, n) {
   return last
 }
 
-const STATEMENT_END = { python: pythonStatementEnd, php: phpStatementEnd }
+// Brackets are not counted: an unquoted URL glob like [1-3] is no reason to read on.
+function curlCommandEnd(scans, n) {
+  let last = n
+  while (last < scans.length - 1 && continuesFrom(scans[last])) last++
+  return last
+}
+
+const STATEMENT_END = { python: pythonStatementEnd, php: phpStatementEnd, curl: curlCommandEnd }
+// Each curl command stands alone, so a press runs only its own; the others run what leads up to it.
+const STANDS_ALONE = new Set(['curl'])
 
 /**
  * @param {string} language
@@ -177,22 +196,28 @@ export function runnableLines(language, text) {
  * @param {string} language
  * @param {string} text
  * @param {number} line  the 1-based line pressed
- * @returns {number|null} the last line a press runs, null when that line gets no button
+ * @returns {import('../../types').LineRange | null} null when that line gets no button
  */
-export function lastLineFor(language, text, line) {
+export function lineRangeFor(language, text, line) {
   if (!SYNTAX[language]) return null
   const scans = lineScanFor(language, text)
-  return isRunnable(language, scans, line) ? STATEMENT_END[language](scans, line) : null
+  if (!isRunnable(language, scans, line)) return null
+  const firstLine = STANDS_ALONE.has(language) ? line : 1
+  return { firstLine, lastLine: STATEMENT_END[language](scans, line) }
 }
 
 /**
  * @param {string} language
  * @param {string} text
  * @param {number} line  the 1-based line pressed
- * @returns {{ code: string, lastLine: number } | null} null when that line gets no button
+ * @returns {{ code: string, firstLine: number, lastLine: number } | null}
  */
-export function codeThrough(language, text, line) {
-  const lastLine = lastLineFor(language, text, line)
-  if (lastLine === null) return null
-  return { code: text.split('\n').slice(0, lastLine).join('\n'), lastLine }
+export function codeForLine(language, text, line) {
+  const range = lineRangeFor(language, text, line)
+  if (!range) return null
+  const code = text
+    .split('\n')
+    .slice(range.firstLine - 1, range.lastLine)
+    .join('\n')
+  return { code, ...range }
 }

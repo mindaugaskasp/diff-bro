@@ -69,3 +69,15 @@ test('shell syntax is refused with a reason, and nothing runs', async () => {
   await expect(outputPane(page)).toContainText('| is shell syntax')
   await expect(outputPane(page)).not.toContainText('arg:')
 })
+
+test('a line runs only its own curl command, continuations included', async () => {
+  await openNewSnippet(page)
+  const editor = page.getByRole('region', { name: 'New snippet' })
+  await editor.locator('.editor').click()
+  await page.keyboard.insertText('curl https://a.test\ncurl -X POST \\\n  https://b.test')
+  await editor.locator('.line-numbers').filter({ hasText: /^2$/ }).hover()
+  await page.getByRole('button', { name: 'Run lines 2–3' }).click()
+  await expect(outputPane(page)).toContainText('Lines 2–3')
+  await expect(outputPane(page)).toContainText('arg:-X arg:POST arg:https://b.test')
+  await expect(outputPane(page)).not.toContainText('a.test')
+})

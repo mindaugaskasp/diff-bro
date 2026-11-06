@@ -8,8 +8,8 @@ vi.mock('monaco-editor', () => ({ editor: { EditorOption: { lineHeight: 'lineHei
 
 const SCRIPT = ['# totals', 'for x in [1, 2]:', '    print(x)', 'print("end")'].join('\n')
 
-function setup({ language = 'python', secret = false } = {}) {
-  const draft = { language: ref(language), content: ref(SCRIPT), secret: ref(secret) }
+function setup({ language = 'python', secret = false, content = SCRIPT } = {}) {
+  const draft = { language: ref(language), content: ref(content), secret: ref(secret) }
   const snippetRun = useSnippetRun({
     tab: { id: 'tab' },
     draft,
@@ -18,7 +18,7 @@ function setup({ language = 'python', secret = false } = {}) {
     ready: ref(false)
   })
   const store = useRunnerStore()
-  store.status = { python: { enabled: true }, php: { enabled: false } }
+  store.status = { python: { enabled: true }, php: { enabled: false }, curl: { enabled: true } }
   store.start = vi.fn()
   return { snippetRun, store }
 }
@@ -38,8 +38,8 @@ describe('useSnippetRun — a line', () => {
     expect(setup({ language: 'php' }).snippetRun.runnableLines.value.size).toBe(0)
   })
 
-  it('says how far a press would run', () => {
-    expect(setup().snippetRun.lastLineFor(2)).toBe(3)
+  it('says which lines a press would run', () => {
+    expect(setup().snippetRun.lineRangeFor(2)).toEqual({ firstLine: 1, lastLine: 3 })
   })
 
   it('runs lines 1 to the block end, remembering the line pressed', () => {
@@ -50,7 +50,24 @@ describe('useSnippetRun — a line', () => {
       code: SCRIPT.split('\n').slice(0, 3).join('\n'),
       snippetId: 'snip',
       line: 2,
+      firstLine: 1,
       lastLine: 3
+    })
+  })
+
+  it('runs only the pressed curl command', () => {
+    const { snippetRun, store } = setup({
+      language: 'curl',
+      content: 'curl https://a.example\ncurl https://b.example'
+    })
+    snippetRun.startLine(2)
+    expect(store.start).toHaveBeenCalledWith('tab', {
+      language: 'curl',
+      code: 'curl https://b.example',
+      snippetId: 'snip',
+      line: 2,
+      firstLine: 2,
+      lastLine: 2
     })
   })
 
