@@ -33,16 +33,16 @@
     "check:rawtext": "node scripts/check-raw-text.mjs"
   },
   "dependencies": {
-    "@intlify/core": "^11.4.8",
-    "chardet": "^2.0.0",
+    "@intlify/core": "^11.4.18",
+    "chardet": "^2.2.0",
     "fflate": "^0.8.3",
-    "mermaid": "^11.16.1",
-    "pinia": "^2.2.6",
+    "mermaid": "^11.17.2",
+    "pinia": "^2.3.1",
     "prismjs": "1.30.0",
-    "saxen": "^11.1.0",
-    "vue": "^3.5.13",
-    "vue-i18n": "^11.4.8",
-    "yaml": "^2.9.0"
+    "saxen": "^11.2.0",
+    "vue": "^3.5.45",
+    "vue-i18n": "^11.4.18",
+    "yaml": "^2.9.1"
   },
   "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows. global-agent: ^3 (via electron-builder) pulls an unpatched sprintf-js; v4 drops it, and only loads under ELECTRON_GET_USE_PROXY.",
   "overrides": {
