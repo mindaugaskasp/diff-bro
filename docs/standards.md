@@ -696,7 +696,10 @@ system-ui, sans-serif`, at `--font-md` 13px, `--font-sm` 12px and
   works everywhere over one guarded by `process.platform`: spawn `process.execPath`
   against a package's own `bin`, compare generated text line-ending agnostically.
   E2E stays Linux-only (it needs Xvfb), so a Windows INTERACTION bug still has to
-  be found by hand.
+  be found by hand. Windows runs every guard and test (`check:static`, `npm test`,
+  the build) without coverage instrumentation: coverage is a measurement, not a
+  test, and its floors are enforced on ubuntu. A separate `packaged` job builds
+  the real exe and runs both smokes in parallel.
 
 - **macOS-only E2E runs on the Mac, not in Docker.** Some window-lifecycle bugs
   cannot exist on Linux — closing the last window quits the app there
