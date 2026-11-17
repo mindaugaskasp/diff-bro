@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { lanApi } from './lanApi'
 
 contextBridge.exposeInMainWorld('api', {
+  ...lanApi(ipcRenderer),
   openFile: (side) => ipcRenderer.invoke('file:open', side),
   readClipboardFiles: () => ipcRenderer.invoke('clipboard:readFiles'),
   readFile: (path, opts) => ipcRenderer.invoke('file:read', path, opts),

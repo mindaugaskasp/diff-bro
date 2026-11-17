@@ -34,6 +34,7 @@ import { discardDraftFile, readDraftFile, sweepDraftFiles, writeDraftFile } from
 import { loadLocale, t } from './i18n'
 import { startMcp } from './mcp'
 import { registerClaudeIpc } from './claude'
+import { registerLanIpc, stopLanSharing } from './lan/lanIpc'
 import { registerRunnerIpc } from './runner'
 import { watchForBundleUpdate } from './bundleUpdate'
 import { batchOpenFiles } from './openFileBatch'
@@ -125,7 +126,10 @@ async function boot() {
     routeCliArgv(argv, cwd, draft ? { name: 'new-snippet', draft } : null)
   })
 
-  app.whenReady().then(() => startApp(draftPath))
+  app
+    .whenReady()
+    .then(() => startApp(draftPath))
+    .then(() => registerLanIpc({ log: (message) => appendLog({ source: 'lan', message }) }))
 }
 
 function startApp(draftPath) {
@@ -195,6 +199,7 @@ else boot()
 // Every route out of the app passes through here first, so the close handler
 // knows this one is a real quit and lets the window go (see trayCore).
 app.on('before-quit', markQuitting)
+app.on('will-quit', () => stopLanSharing())
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

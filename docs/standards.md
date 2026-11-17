@@ -76,6 +76,22 @@ regression test from decoration.
    pick the program. See `specs/2026-11-01-snippet-runner/plan.md` and
    docs/security.md.
 
+   **Sharing on the local network is the one place main opens sockets, and
+   it is fenced.** While Settings ▸ Integrations ▸ Network ▸ Share on this
+   network is on (the default), main opens an mDNS socket (UDP 5353, TTL 1) and
+   one TCP listener. The fences:
+   - Both live in `src/main/lan/` and nowhere else: `net` and `dgram` are
+     lint-banned outside it, and `http`, `https`, `http2` and `tls` everywhere.
+   - They bind to private interface addresses only, never `0.0.0.0`.
+   - A connection from a non-private address is dropped before a byte is read,
+     and every frame is size-checked before it is buffered.
+   - Nothing reaches the internet, and turning the setting off closes both.
+
+   What travels is a public key or the same sealed envelope a `.diffbro`
+   carries. The maintainer accepted this amendment on 2026-11-17, over a
+   shared-folder drop box that would have kept the rule whole. See
+   `specs/2026-11-17-lan-sharing/plan.md` and docs/security.md.
+
 2. **New dependencies need a network audit.** Before adding any package:
    confirm it makes no runtime network calls, then run `npm audit`. Prefer
    zero new production dependencies. `yaml` (structure-aware comparison) passed

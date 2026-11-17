@@ -832,7 +832,8 @@
       "email": "Email",
       "storage": "Storage",
       "limits": "Limits",
-      "logs": "Logs"
+      "logs": "Logs",
+      "network": "Network"
     }
   },
   "settingsLimits": {
@@ -1983,6 +1984,22 @@
       "title": "Fix a diagram pasted from Word",
       "body": "Mermaid copied from Word or Confluence often breaks on curly quotes and long dashes. {more} ▸ {repair} on the snippet puts them right.",
       "note": "Repair is in this menu."
+    }
+  },
+  "lan": {
+    "settings": {
+      "title": "Network",
+      "share": "Share on this network",
+      "shareNote": "People running Diff Bro on the same network can add you. Once you have added each other, you can send diffs and snippets.",
+      "visible": "Show me to others",
+      "visibleNote": "When off, nobody new can add you. People you have already added can still send to you.",
+      "popups": "Show popups",
+      "popupsNote": "When off, add requests and shared items wait under the bell.",
+      "name": "Name others see",
+      "people": "People on this network",
+      "noNetwork": "Not connected to a network.",
+      "noOne": "No one found on this network.",
+      "trusted": "Trusted"
     }
   }
 }

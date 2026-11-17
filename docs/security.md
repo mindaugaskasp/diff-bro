@@ -20,6 +20,27 @@ rejected rather than shipped, because the kill switch would not have caught it:
 it filters `session.defaultSession.webRequest`, which is Chromium traffic only,
 so a main-process `tls.connect` would have been invisible to it.
 
+**Sharing on the local network is the one exception.** While Settings ▸
+Integrations ▸ Network ▸ Share on this network is on (the default), Diff Bro
+opens two sockets in the main process:
+
+- **Discovery:** mDNS, UDP 5353 on `224.0.0.251`, multicast TTL 1, so
+  announcements do not leave the subnet.
+- **Delivery:** one TCP listener on a random port.
+
+Both bind only to private interface addresses (RFC 1918, link-local), never
+`0.0.0.0`, and a connection from any other address is dropped before it is
+read. The announcement carries the name you chose (by default the computer's
+name), your key's fingerprint and the port. It never carries an email address
+or a key.
+
+- **Show me to others** off stops announcing.
+- **Share on this network** off closes both sockets.
+
+macOS and Windows may ask once whether Diff Bro may accept incoming
+connections. IT can allow-list the service type `_diffbro._tcp`. See
+[Sharing on the local network](#sharing-on-the-local-network).
+
 **Connecting a Claude app does not change it either.** `diffbro mcp` speaks
 MCP over **stdio**: the Claude app launches it and talks through its stdin and
 stdout, so Diff Bro opens no socket and listens on no port. What Claude reads
@@ -440,6 +461,28 @@ is one click away. And since the code comes from the renderer, a compromised
 renderer can run what it writes once a language is enabled, and can leave out a
 secret's id. Enabling a language is the fence for that case, which is why it
 belongs to main and is off by default.
+
+## Sharing on the local network
+
+Diff Bro instances on the same network find each other and exchange keys, diffs
+and snippets directly. The sockets, and what fences them, are in the
+[Offline guarantee](#offline-guarantee).
+
+- **Adding someone** stores their public key exactly as importing a
+  `.diffbrokey` does. They prove it is theirs with a one-time pairing code:
+  - their screen shows the code, and you type or paste it;
+  - the code is derived from both keys and two nonces, the adder committing
+    to its nonce first, so someone in the middle gets one guess per request;
+  - a wrong code cancels the request;
+  - the code is never stored.
+- **Sending** seals the diff or snippet exactly as Share does, then sends the
+  sealed envelope. The recipient opens it with the same checks a `.diffbro`
+  file gets (signature, audience, expiry). Secret snippets are never sent.
+- **Receiving** accepts items only from keys you trust, rate-limited per
+  sender, capped in size before they are read. Anything waiting is kept as the
+  sealed bytes, no new encryption, until the sender's expiry.
+- **Stop sharing** removes the other person's key and tells them with a
+  notice signed by your key, so nobody else on the network can forge it.
 
 ## Copy as file, and the plaintext window it opens
 
