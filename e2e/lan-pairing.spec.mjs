@@ -11,7 +11,6 @@ import {
 // Two launches per test.
 test.describe.configure({ timeout: 90_000 })
 
-// Ben adds Ana: Ana's screen shows the pairing code, Ben types or pastes it.
 // Unique per run: parallel workers share the network, and each starts its own Ana and Ben.
 const RUN = Math.random().toString(36).slice(2, 7)
 
