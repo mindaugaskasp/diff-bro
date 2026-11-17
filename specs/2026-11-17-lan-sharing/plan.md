@@ -331,12 +331,12 @@ one tag.
 
 **Slice 3: pure cores** (`src/main/lan/*`, no sockets, no Electron)
 
-- [ ] 6. `pairingCode.js` + tests (red first).
-- [ ] 7. `frames.js` (length-prefixed JSON header + body, caps, validation) + tests.
-- [ ] 8. `privateAddress.js` + tests.
-- [ ] 9. `dnsSd.js` (PTR/SRV/TXT/A/AAAA encode/decode for `_diffbro._tcp.local`; compression with a loop guard) + tests with captured packets in `tests/data/mdns/`.
-- [ ] 10. `peers.js` (discovery table) + `offers.js` (rate limits, add-request lifecycle, popup queue) + tests.
-- [ ] 11. `lanSettings.js` (defaults incl. computer name via `os.hostname()` plus macOS `scutil --get ComputerName` through `execFile`, silence arithmetic) + tests; add the files to the coverage set; the coverage floor holds.
+- [x] 6. `pairingCode.js` + tests (red first).
+- [x] 7. `frames.js` (length-prefixed JSON header + body, caps, validation) + tests.
+- [x] 8. `privateAddress.js` + tests.
+- [x] 9. `dnsSd.js` (PTR/SRV/TXT/A/AAAA encode/decode for `_diffbro._tcp.local`; compression with a loop guard) + tests with hand-built packets (compression pointers, loops, truncation, invalid UTF-8); no real captures were available, so packets from macOS/Windows/Avahi are exercised in e2e instead.
+- [x] 10. `peers.js` (discovery table) + `rateLimit.js` + tests. (Amended: the add-request lifecycle moved to `pairing.js` in slice 5, and the popup queue to the renderer store in slice 6, where each is used.)
+- [x] 11. `lanSettings.js` (defaults, computer-name cleaning, silence arithmetic) + tests (reading the computer name is glue and moved to slice 4); add the files to the coverage set; the coverage floor holds.
 
 **Slice 4: transport + Network page**
 
@@ -426,6 +426,7 @@ one tag.
 | 2026-11-17 | Settings ▸ Integrations ▸ Network is a nav page with the app's checkbox toggles                                                                                                                                             | the live render; Settings has no tabs or switches                                                                                                                                                                                                    | tabs, switches                                                           |
 | 2026-11-17 | the destructive-button contrast defect is fixed as its own slice before Stop sharing ships                                                                                                                                  | it is the Stop sharing button; pre-existing on light, dark, nord                                                                                                                                                                                     | shipping on a 3.35:1 label                                               |
 | 2026-11-17 | the label on the red fill gets its own token, `--text-on-danger` (default `--danger-text`), like `--text-on-accent`; light `--danger-bg` `#cf222e`, dark label `#0d1117`, nord `--danger-bg` `#e0848b` with label `#2e3440` | `--danger-text` is also used as text on the panel (`.claude-error`, `.dg-error`), so changing it would break those. Red: `onDanger/danger` 3.35 light, 3.35 dark, 3.55 nord; green: 5.36, 5.65, 4.66; four baselined pairs now clear and were pruned | darkening red on dark (as-text use drops 5.16 → 3.75)                    |
+| 2026-11-17 | bug: `dnsSd.readName` advanced by the decoded label's byte length, which drifts on invalid UTF-8                                                                                                                            | red: `keeps its place after a label that is not valid UTF-8` failed; green after advancing by the raw length byte                                                                                                                                    | —                                                                        |
 | 2026-11-17 | `.claude-error` and `.dg-error` paint `--danger-text` (white on light) on the panel: unreadable on light. Pre-existing, outside this feature; not fixed here                                                                | scope                                                                                                                                                                                                                                                | —                                                                        |
 
 ## Validation
