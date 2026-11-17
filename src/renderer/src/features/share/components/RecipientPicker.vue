@@ -19,7 +19,7 @@ const props = defineProps({
   },
   showEmail: { type: Boolean, default: false },
   // A Set of fingerprints on the network, or null when sharing on the network is off.
-  reachable: { type: Object, default: null }
+  reachable: { type: Object, default: null, validator: (v) => v === null || v instanceof Set }
 })
 const isOff = (fp) => !!props.reachable && !props.reachable.has(fp)
 defineEmits(['submit', 'close', 'add'])

@@ -50,3 +50,27 @@ export const itemSummary = ({ id, receivedAt }, { entry, from, fp }) => ({
   receivedAt,
   expiresAt: entry.expiresAt
 })
+
+const FP = /^[0-9a-f]{32}$/
+
+export const cleanFps = (fps) =>
+  Array.isArray(fps) ? [...new Set(fps)].filter((fp) => typeof fp === 'string' && FP.test(fp)) : []
+
+export function resolveRecipients(fps, trusted) {
+  const recipients = fps.map((fp) => trusted.find((t) => t.fingerprint === fp))
+  return recipients.some((r) => !r) ? { error: 'unknown-recipient' } : { recipients }
+}
+
+export const ackResult = (header) =>
+  header?.type === 'item-ack' && header.ok
+    ? { ok: true }
+    : { ok: false, reason: header?.reason ?? 'refused' }
+
+export function deliveryReport(results, trusted) {
+  const label = (fp) => trusted.find((t) => t.fingerprint === fp)?.label ?? fp
+  return {
+    ok: true,
+    sent: results.filter((r) => r.ok).map((r) => label(r.fp)),
+    failed: results.filter((r) => !r.ok).map((r) => ({ name: label(r.fp), reason: r.reason }))
+  }
+}

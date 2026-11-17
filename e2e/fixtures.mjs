@@ -23,8 +23,7 @@ export const SEEN_ONBOARDING = {
   tips: { on: false }
 }
 
-// Sharing on the network is on by default and disables people who are not on it in
-// the Share dialog; the file and email sharing specs run with it off.
+// Network sharing (on by default) disables offline people in the Share dialog.
 export const withoutLan = (dir) => {
   writeFileSync(join(dir, 'lan.json'), JSON.stringify({ enabled: false }))
   return dir

@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import BaseDialog from '../../../components/BaseDialog.vue'
 import AppIcon from '../../../components/AppIcon.vue'
 import SilenceMenu from './SilenceMenu.vue'
@@ -10,11 +10,13 @@ const lan = useLanStore()
 const item = computed(() => lan.currentOffer)
 const isSnippet = computed(() => item.value.kind === 'snippet')
 const days = computed(() => daysLeft(item.value.expiresAt, Date.now()))
+const menuOpen = ref(false)
 </script>
 
 <template>
   <BaseDialog
     width="460px"
+    :escape-closes="!menuOpen"
     :title="$t(isSnippet ? 'lan.items.sharedSnippet' : 'lan.items.sharedDiff', { name: item.from })"
     @close="lan.dismissOffers()"
   >
@@ -31,7 +33,7 @@ const days = computed(() => daysLeft(item.value.expiresAt, Date.now()))
       </span>
     </div>
     <template #actions>
-      <SilenceMenu />
+      <SilenceMenu @open="menuOpen = $event" />
       <span class="spacer" />
       <button type="button" class="btn btn-ghost" @click="lan.declineItem(item.id)">
         {{ $t('lan.items.decline') }}

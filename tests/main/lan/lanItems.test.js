@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   ITEM_LIMITS,
+  ackResult,
+  cleanFps,
+  deliveryReport,
+  resolveRecipients,
   SNIPPET_TTL_MS,
   isValidItemEntry,
   itemSummary,
@@ -84,6 +88,53 @@ describe('itemSummary', () => {
       fp: 'bb'.repeat(16),
       receivedAt: 5,
       expiresAt: 2
+    })
+  })
+})
+
+describe('sending helpers', () => {
+  const A = 'aa'.repeat(16)
+  const B = 'bb'.repeat(16)
+  const trusted = [
+    { fingerprint: A, label: 'Ana' },
+    { fingerprint: B, label: 'Ben' }
+  ]
+
+  it('keeps each well-formed fingerprint once', () => {
+    expect(cleanFps([A, A, 'nope', 7, B])).toEqual([A, B])
+    expect(cleanFps('not a list')).toEqual([])
+  })
+
+  it('resolves recipients only when every one is trusted', () => {
+    expect(resolveRecipients([A, B], trusted).recipients.map((r) => r.label)).toEqual([
+      'Ana',
+      'Ben'
+    ])
+    expect(resolveRecipients([A, 'cc'.repeat(16)], trusted)).toEqual({ error: 'unknown-recipient' })
+  })
+
+  it('reads an acknowledgement', () => {
+    expect(ackResult({ type: 'item-ack', ok: true })).toEqual({ ok: true })
+    expect(ackResult({ type: 'item-ack', ok: false, reason: 'inbox-full' })).toEqual({
+      ok: false,
+      reason: 'inbox-full'
+    })
+    expect(ackResult({ type: 'add-reveal' })).toEqual({ ok: false, reason: 'refused' })
+    expect(ackResult(undefined)).toEqual({ ok: false, reason: 'refused' })
+  })
+
+  it('reports who it reached and who it did not, by name', () => {
+    const report = deliveryReport(
+      [
+        { fp: A, ok: true },
+        { fp: B, ok: false, reason: 'offline' }
+      ],
+      trusted
+    )
+    expect(report).toEqual({
+      ok: true,
+      sent: ['Ana'],
+      failed: [{ name: 'Ben', reason: 'offline' }]
     })
   })
 })

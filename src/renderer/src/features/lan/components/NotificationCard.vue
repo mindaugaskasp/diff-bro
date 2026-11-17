@@ -4,10 +4,21 @@ import AppIcon from '../../../components/AppIcon.vue'
 import { useCountdown } from '../../../composables/useCountdown'
 import { relativeAge } from '../../../utils/countdown'
 import { useLanStore } from '../lanStore'
+import { shaped } from '../../../utils/props'
 
 const props = defineProps({
-  item: { type: Object, default: null },
-  request: { type: Object, default: null }
+  /** @type {import('vue').PropType<import('../../../types').LanItem|null>} */
+  item: {
+    type: Object,
+    default: null,
+    validator: (v) => v === null || shaped('id', 'kind', 'name', 'from', 'receivedAt')(v)
+  },
+  /** @type {import('vue').PropType<import('../../../types').LanPairingView|null>} */
+  request: {
+    type: Object,
+    default: null,
+    validator: (v) => v === null || shaped('id', 'stage', 'name', 'expiresAt')(v)
+  }
 })
 const lan = useLanStore()
 const isLive = computed(() => props.request?.stage === 'show-code')

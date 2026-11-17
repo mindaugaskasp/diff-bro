@@ -1,7 +1,15 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { isItemId, listItems, readItem, removeItem, removeItemsFrom, writeItem } from './lanInbox'
-import { isValidItemEntry, itemSummary, snippetEntry } from './lanItems'
+import {
+  ackResult,
+  cleanFps,
+  deliveryReport,
+  isValidItemEntry,
+  itemSummary,
+  resolveRecipients,
+  snippetEntry
+} from './lanItems'
 import { FRAME_LIMITS } from './frames'
 import { createRateLimit } from './rateLimit'
 import { connectTo } from './server'
@@ -11,7 +19,6 @@ import { decryptionIdentities, getIdentity } from '../share'
 import { readSnippetStore } from '../appData'
 import { entriesOf, isSecretEntry, parseStore } from '../storeEntries'
 
-const FP = /^[0-9a-f]{32}$/
 const ACK_MS = 30_000
 const inboxDir = () => join(app.getPath('userData'), 'lan-inbox')
 const send = (channel, payload) => {
@@ -92,11 +99,7 @@ function deliver(fp, header, body) {
       onFrame: ({ header: h }, conn) => {
         clearTimeout(timer)
         conn.close()
-        done(
-          h.type === 'item-ack' && h.ok
-            ? { ok: true }
-            : { ok: false, reason: h.reason ?? 'refused' }
-        )
+        done(ackResult(h))
       },
       onClose: () => done({ ok: false, reason: 'closed' })
     })
@@ -106,26 +109,20 @@ function deliver(fp, header, body) {
 }
 
 async function sendItem(req) {
-  const fps = Array.isArray(req?.fps) ? [...new Set(req.fps)].filter((fp) => FP.test(fp)) : []
+  const fps = cleanFps(req?.fps)
   const { entry, error } = entryFor(req)
   if (error) return { error }
   if (!fps.length || !isValidItemEntry(entry) || ttlError(entry)) return { error: 'bad-request' }
   const trusted = await readTrusted()
-  const recipients = fps.map((fp) => trusted.find((t) => t.fingerprint === fp))
-  if (recipients.some((r) => !r)) return { error: 'unknown-recipient' }
+  const resolved = resolveRecipients(fps, trusted)
+  if (resolved.error) return resolved
   const { priv, pub } = await getIdentity()
-  const body = Buffer.from(
-    JSON.stringify(sealEntry(entry, { priv, fingerprint: pub.fingerprint }, recipients))
-  )
+  const sender = { priv, fingerprint: pub.fingerprint }
+  const body = Buffer.from(JSON.stringify(sealEntry(entry, sender, resolved.recipients)))
   if (body.length > FRAME_LIMITS.item) return { error: 'too-large' }
   const header = { type: 'item', kind: entry.kind, name: entry.name, fp: pub.fingerprint }
   const results = await Promise.all(fps.map((fp) => deliver(fp, header, body)))
-  const label = (fp) => trusted.find((t) => t.fingerprint === fp).label
-  return {
-    ok: true,
-    sent: results.filter((r) => r.ok).map((r) => label(r.fp)),
-    failed: results.filter((r) => !r.ok).map((r) => ({ name: label(r.fp), reason: r.reason }))
-  }
+  return deliveryReport(results, trusted)
 }
 
 export const forgetItemsFrom = (fp) => removeItemsFrom(inboxDir(), fp)

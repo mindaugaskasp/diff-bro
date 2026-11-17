@@ -1416,8 +1416,7 @@ button.tag-chip:hover .usb-tct {
   outline: 2px solid var(--focus-ring);
 }
 
-/* A received-hue band over a tab that holds something someone else sent: a
-   Claude proposal under review, or an item shared on the network. */
+/* A tab holding something someone else sent: a Claude proposal or a network item. */
 .received-band {
   flex: none;
   gap: var(--space-3);

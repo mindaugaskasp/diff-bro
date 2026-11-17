@@ -13,7 +13,6 @@ export const lanApi = (ipcRenderer) => ({
   onLanPairing: (handler) => {
     ipcRenderer.on('lan:pairing', (_e, view) => handler(view))
   },
-  // Items: main seals and sends; the renderer gets summaries and, on Open, the entry.
   lanSend: (request) => ipcRenderer.invoke('lan:send', request),
   lanItems: () => ipcRenderer.invoke('lan:items'),
   lanOpenItem: (id) => ipcRenderer.invoke('lan:openItem', String(id)),

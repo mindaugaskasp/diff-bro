@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import AppIcon from '../../../components/AppIcon.vue'
 import { useLanStore } from '../lanStore'
 import { SILENCE_CHOICES } from '../silenceChoices'
@@ -9,6 +9,8 @@ const lan = useLanStore()
 const trigger = ref(null)
 const menu = ref(null)
 const at = ref(null)
+const emit = defineEmits(['open'])
+watch(at, (value) => emit('open', !!value))
 
 async function toggle() {
   if (at.value) return (at.value = null)
