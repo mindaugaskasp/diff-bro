@@ -24,6 +24,12 @@ test('a snippet sent on the network opens in a tab under the received band', asy
     const band = ben.page.getByRole('region', { name: `From ${ana.name}` })
     await expect(band).toBeVisible()
     await expect(band.getByRole('button', { name: 'Save snippet' })).toBeVisible()
+    await band.getByRole('button', { name: 'Save snippet' }).click()
+    const lanTag = ben.page.locator('.snippets-section').getByText('lan', { exact: true })
+    await expect(lanTag).toBeVisible()
+    await expect(
+      ben.page.locator('.snippets-section').getByText(ana.name.toLowerCase(), { exact: true })
+    ).toBeVisible()
   } finally {
     await stop(ana, ben)
   }

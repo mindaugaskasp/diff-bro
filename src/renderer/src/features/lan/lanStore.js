@@ -108,7 +108,7 @@ export const useLanStore = defineStore('lan', {
       this.bellOpen = false
       const res = await window.api.lanOpenItem(id)
       if (!res?.ok) return useDiffStore().showNotice(t('lan.items.gone'))
-      const tabId = openReceivedEntry(res.entry)
+      const tabId = openReceivedEntry(res.entry, res.from ?? item?.from)
       if (tabId)
         this.received = {
           ...this.received,
