@@ -1,27 +1,8 @@
-import { rmSync } from 'node:fs'
-import {
-  test,
-  expect,
-  launchApp,
-  freshUserDataDir,
-  firstReadyPage,
-  openSettingsPage
-} from './fixtures.mjs'
+import { test, expect, openSettingsPage } from './fixtures.mjs'
+import { startPeer, stop } from './lanPeers.mjs'
 
 // Two launches per test.
 test.describe.configure({ timeout: 90_000 })
-
-// Unique per run: parallel workers share the network, and each starts its own Ana and Ben.
-const RUN = Math.random().toString(36).slice(2, 7)
-
-async function startPeer(base) {
-  const name = `${base} ${RUN}${Math.random().toString(36).slice(2, 4)}`
-  const dir = freshUserDataDir()
-  const app = await launchApp(dir)
-  const page = await firstReadyPage(app)
-  await page.evaluate((n) => window.api.lanUpdate({ name: n }), name)
-  return { dir, app, page, name }
-}
 
 async function benAddsAna() {
   const ana = await startPeer('Ana')
@@ -35,13 +16,6 @@ async function benAddsAna() {
   const adding = ben.page.getByRole('dialog', { name: `Add ${ana.name}` })
   await expect(adding).toBeVisible()
   return { ana, ben, settings, anaRow, shown, adding }
-}
-
-async function stop(...peers) {
-  for (const peer of peers) {
-    await peer.app.close()
-    rmSync(peer.dir, { recursive: true, force: true })
-  }
 }
 
 test('the code copied on one screen and pasted on the other adds the key', async () => {
