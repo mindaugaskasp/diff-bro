@@ -59,6 +59,8 @@ export default defineConfig({
         'src/main/lan/lanStore.js',
         'src/main/lan/computerName.js',
         'src/main/lan/pairing.js',
+        'src/main/lan/lanItems.js',
+        'src/main/lan/lanInbox.js',
         'src/main/runnerCore.js',
         'src/main/runnerConfig.js',
         'src/main/runnerRuns.js',

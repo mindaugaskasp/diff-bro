@@ -125,6 +125,7 @@ const viewMenu = (send, isDev) => ({
       click: () => toggleQuickLook()
     },
     viewItem(send, 'mergeConflicts', 'CmdOrCtrl+Shift+K', 'merge-conflicts'),
+    viewItem(send, 'notifications', undefined, 'notifications'),
     { type: 'separator' },
     {
       label: t('menu.view.zoom'),

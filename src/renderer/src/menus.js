@@ -83,6 +83,7 @@ const viewSection = (run) => ({
       keys: `${MOD}+Shift+K`,
       run: () => run('merge-conflicts')
     },
+    { label: t('menu.view.notifications'), run: () => run('notifications') },
     { sep: true },
     { label: t('menu.view.zoom'), items: zoomItems(run) },
     { sep: true, devOnly: true },

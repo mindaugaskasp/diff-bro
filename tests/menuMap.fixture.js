@@ -35,6 +35,7 @@ export const MENU_MAP = [
   'View ▸ Presentation Mode',
   'View ▸ Quick Look-up',
   'View ▸ Merge Conflicts…',
+  'View ▸ Notifications',
   'View ▸ Zoom ▸ Zoom In',
   'View ▸ Zoom ▸ Zoom Out',
   'View ▸ Zoom ▸ Reset Zoom',

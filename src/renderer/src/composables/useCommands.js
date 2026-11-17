@@ -13,6 +13,7 @@ import { useImageExportStore } from '../features/imageExport'
 import { useShareStore } from '../features/share'
 import { useConflictsStore, useMergeStore } from '../features/merge'
 import { useOpenWithStore } from '../features/openWith'
+import { useLanStore } from '../features/lan'
 
 const bundle = () => ({
   diff: useDiffStore(),
@@ -25,7 +26,8 @@ const bundle = () => ({
   share: useShareStore(),
   merge: useMergeStore(),
   conflicts: useConflictsStore(),
-  openWith: useOpenWithStore()
+  openWith: useOpenWithStore(),
+  lan: useLanStore()
 })
 
 export function useCommands() {

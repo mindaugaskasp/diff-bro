@@ -21,6 +21,7 @@ const spy = () => vi.fn()
 // Shaped like the real bundle useCommands supplies, since a handler that
 // destructures the wrong store throws only when it runs. Nine of them did.
 const stores = () => ({
+  lan: { toggleBell: vi.fn() },
   diff: {
     hasUnsavedWork: true,
     canCompareStructure: true,

@@ -137,3 +137,28 @@
 .spacer {
   flex: 1;
 }
+
+.recipient.off {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rc-net {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-xs);
+  color: var(--text-meta);
+}
+.rc-net::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid var(--text-meta);
+}
+.rc-net.on::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}

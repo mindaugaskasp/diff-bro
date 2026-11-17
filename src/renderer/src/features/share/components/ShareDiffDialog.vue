@@ -3,8 +3,9 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useShareStore } from '../shareStore'
 import { useRecipientPicker } from '../../../composables/useRecipientPicker'
 import BaseDialog from '../../../components/BaseDialog.vue'
-import AppIcon from '../../../components/AppIcon.vue'
 import RecipientPicker from './RecipientPicker.vue'
+import ShareActions from './ShareActions.vue'
+import { useShareNetwork } from '../useShareNetwork'
 
 // Recipient picker with built-in first-time key-exchange setup (reusing the
 // Security-menu flows). Keys are generated automatically on first use.
@@ -13,6 +14,7 @@ const share = useShareStore()
 const recipients = ref([])
 const myFingerprint = ref('')
 const picker = useRecipientPicker(recipients)
+const { network, reachable, networkNote } = useShareNetwork(picker, () => !!share.shareSnippet)
 
 // BaseDialog listens for Escape on WINDOW in the capture phase and stops the
 // event, so a handler on the search input never sees it — which is why this
@@ -62,7 +64,7 @@ function submit() {
   <BaseDialog
     v-if="recipients.length"
     width="452px"
-    :title="$t('share.diffDialog.shareDiff')"
+    :title="$t(share.shareSnippet ? 'lan.share.titleSnippet' : 'share.diffDialog.shareDiff')"
     :escape-closes="false"
     @close="close"
   >
@@ -70,52 +72,27 @@ function submit() {
       <div class="field-label">{{ $t('share.diffDialog.sealFor') }}</div>
       <RecipientPicker
         :picker="picker"
+        :reachable="reachable"
         show-email
         @submit="submit"
         @close="close"
         @add="share.addTrustedKey()"
       />
-      <p class="dialog-note">
+      <p v-if="networkNote" class="dialog-note">{{ $t(networkNote) }}</p>
+      <p v-else class="dialog-note">
         {{ $t('share.diffDialog.sealedFor', picker.picked.value.length) }}
         {{ $t('share.diffDialog.sameExpiry') }}
       </p>
-      <div class="dialog-actions">
-        <!-- The primary is what the user can actually do now: a disabled primary
-             that never explains itself is how a toolbar comes to look switched off. -->
-        <button
-          v-if="picker.everyPickedHasEmail.value"
-          type="button"
-          class="btn btn-primary"
-          @click="emailIt"
-        >
-          <AppIcon name="mail" />
-          {{ $t('share.diffDialog.emailThisDiff') }}
-        </button>
-        <button
-          type="button"
-          :class="
-            picker.everyPickedHasEmail.value
-              ? $t('shareDiffDialog.btnBtnSm')
-              : $t('shareDiffDialog.btnBtnPrimary')
-          "
-          :disabled="!picker.canSubmit.value"
-          @click="saveFile"
-        >
-          {{ $t('share.diffDialog.createFile') }}
-        </button>
-        <button
-          v-if="picker.canSubmit.value && !picker.everyPickedHasEmail.value"
-          type="button"
-          class="btn btn-sm"
-          @click="share.showTrustedKeysDialog = true"
-        >
-          {{ $t('share.diffDialog.addAnAddress') }}
-        </button>
-        <span class="spacer" />
-        <button type="button" class="btn btn-ghost" @click="close">
-          {{ $t('common.cancel') }}
-        </button>
-      </div>
+      <ShareActions
+        :picker="picker"
+        :network="network"
+        :snippet="!!share.shareSnippet"
+        @send="share.sendTo(picker.selected.value)"
+        @email="emailIt"
+        @file="saveFile"
+        @address="share.showTrustedKeysDialog = true"
+        @close="close"
+      />
     </form>
   </BaseDialog>
 

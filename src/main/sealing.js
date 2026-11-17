@@ -368,5 +368,5 @@ export function openSealed(file, me, trustedList, now = Date.now()) {
   const ttl = ttlError(entry, now)
   if (ttl) return { error: ttl, from: trusted.label }
 
-  return { ok: true, entry, from: trusted.label }
+  return { ok: true, entry, from: trusted.label, signer: trusted.fingerprint }
 }

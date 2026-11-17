@@ -7,3 +7,4 @@ export { default as TrustedKeysDialog } from './components/TrustedKeysDialog.vue
 export { default as KeysPanel } from './components/KeysPanel.vue'
 export { default as AddTrustedKeyDialog } from './components/AddTrustedKeyDialog.vue'
 export { default as RemoveTrustedKeyDialog } from './components/RemoveTrustedKeyDialog.vue'
+export { default as SendFailedDialog } from './components/SendFailedDialog.vue'
