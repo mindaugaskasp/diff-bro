@@ -62,12 +62,13 @@ function parseHeader(bytes) {
 }
 
 function takeFrame(state) {
-  const { buf } = state
+  const { buf, accept } = state
   if (buf.length < 4) return null
   const headerLength = buf.readUInt32BE(0)
   if (headerLength > FRAME_LIMITS.header) throw new Error('frame-too-large')
   if (buf.length < 8 + headerLength) return null
   const header = parseHeader(buf.subarray(4, 4 + headerLength))
+  if (!accept(header)) throw new Error('not-accepted')
   const bodyLength = buf.readUInt32BE(4 + headerLength)
   if (bodyLength > bodyLimit(header.type)) throw new Error('frame-too-large')
   const end = 8 + headerLength + bodyLength
@@ -77,8 +78,8 @@ function takeFrame(state) {
   return { header, body }
 }
 
-export function createFrameReader() {
-  const state = { buf: Buffer.alloc(0) }
+export function createFrameReader({ accept = () => true } = {}) {
+  const state = { buf: Buffer.alloc(0), accept }
   return {
     push(chunk) {
       state.buf = state.buf.length ? Buffer.concat([state.buf, chunk]) : chunk

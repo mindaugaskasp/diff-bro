@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createPeerTable } from '../../../src/main/lan/peers'
+import { MAX_PEERS, createPeerTable } from '../../../src/main/lan/peers'
 
 const A = 'aa'.repeat(16)
 const B = 'bb'.repeat(16)
@@ -60,5 +60,11 @@ describe('peer table', () => {
     expect(table.list().map((p) => p.name)).toEqual(['Ana', 'Zed'])
     table.clear()
     expect(table.list()).toEqual([])
+  })
+
+  it('holds a bounded number of peers, so announcements cannot grow it without limit', () => {
+    const table = createPeerTable()
+    for (let i = 0; i < MAX_PEERS + 50; i++) table.saw(seen(i.toString(16).padStart(32, '0')), 0)
+    expect(table.list()).toHaveLength(MAX_PEERS)
   })
 })

@@ -45,6 +45,15 @@ describe('encode and read', () => {
 })
 
 describe('refusals', () => {
+  it('lets the caller refuse a frame on its header, before the body is buffered', () => {
+    const header = Buffer.from(JSON.stringify({ type: 'item', kind: 'diff', name: 'n', fp: FP }))
+    const parts = [Buffer.alloc(4), header, Buffer.alloc(4)]
+    parts[0].writeUInt32BE(header.length)
+    parts[2].writeUInt32BE(FRAME_LIMITS.item)
+    const reader = createFrameReader({ accept: (h) => h.fp !== FP })
+    expect(() => reader.push(Buffer.concat(parts))).toThrow('not-accepted')
+  })
+
   it('refuses a header declared over the cap before reading it', () => {
     const reader = createFrameReader()
     const prefix = Buffer.alloc(4)
