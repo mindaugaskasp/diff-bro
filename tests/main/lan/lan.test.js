@@ -29,7 +29,7 @@ beforeEach(() => {
   sockets.discovery = {
     announce: vi.fn(),
     query: vi.fn(),
-    sendRaw: vi.fn(async () => {}),
+    sendEach: vi.fn(async () => {}),
     close: vi.fn(async () => {})
   }
 })

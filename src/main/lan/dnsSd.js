@@ -63,9 +63,15 @@ function txtData(entries) {
   )
 }
 
-export function encodeAnnouncement({ fp, name, port, ttl = ANNOUNCE_TTL }) {
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/
+
+// addr names the sender's own interface: a router relaying mDNS between subnets
+// replaces the packet's source with its own address, which has nothing listening.
+export function encodeAnnouncement({ fp, name, port, ttl = ANNOUNCE_TTL, addr }) {
   const instance = `${fp}.${SERVICE}`
-  const txt = txtData(['v=1', `fp=${fp}`, `name=${fitName(name)}`, `port=${port}`])
+  const fields = ['v=1', `fp=${fp}`, `name=${fitName(name)}`, `port=${port}`]
+  if (IPV4.test(addr ?? '')) fields.push(`addr=${addr}`)
+  const txt = txtData(fields)
   const srv = Buffer.concat([u16(0), u16(0), u16(port), encodeName(`${fp}.local`)])
   return Buffer.concat([
     header({ response: true, answers: 3 }),
@@ -179,7 +185,8 @@ function peerFromTxt(txt, ttl) {
   const ok =
     txt.v === '1' && FP.test(txt.fp ?? '') && Number.isInteger(port) && port > 0 && port < 65536
   if (!ok || typeof txt.name !== 'string') return null
-  return { fp: txt.fp, name: cleanPeerName(txt.name, NAME_CHARS), port, version: 1, ttl }
+  const peer = { fp: txt.fp, name: cleanPeerName(txt.name, NAME_CHARS), port, version: 1, ttl }
+  return IPV4.test(txt.addr ?? '') ? { ...peer, addr: txt.addr } : peer
 }
 
 export function announcementsFrom(packet) {

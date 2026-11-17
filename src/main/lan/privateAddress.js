@@ -49,3 +49,5 @@ export function privateInterfaceAddresses(table) {
   }
   return out
 }
+
+export const reachableAt = (named, source) => (named && isPrivateAddress(named) ? named : source)

@@ -49,7 +49,9 @@ function peer(fp, name, extra = {}) {
   const events = []
   const stored = []
   const timers = fakeTimers()
+  const logged = []
   const pairing = createPairing({
+    log: (message) => logged.push(message),
     identity: { fp, keyText: `key-${fp}`, name: () => name },
     parseKey: (text) => {
       if (!text.startsWith('key-')) throw new Error('bad key')
@@ -63,7 +65,7 @@ function peer(fp, name, extra = {}) {
     now: () => 1000,
     ...extra
   })
-  return { fp, name, pairing, events, stored, timers, last: () => events.at(-1) }
+  return { fp, name, pairing, events, stored, timers, logged, last: () => events.at(-1) }
 }
 
 const A = 'aa'.repeat(16)
@@ -282,5 +284,42 @@ describe('a hostile network', () => {
   it('drops direction overrides from the name a request carries', async () => {
     const { ana } = await startAdding({}, '\u202eBen\u200b')
     expect(ana.last().name).toBe('Ben')
+  })
+})
+
+describe('when adding fails, the log says why', () => {
+  it('names the connection error and the address it dialled', async () => {
+    const refused = Object.assign(new Error('connect ECONNREFUSED'), {
+      code: 'ECONNREFUSED',
+      address: '192.168.1.1',
+      port: 51000
+    })
+    const ben = peer(B, 'Ben', { connect: async () => Promise.reject(refused) })
+    await ben.pairing.add(A, 'Ana')
+    expect(ben.logged.join('\n')).toMatch(/ECONNREFUSED 192\.168\.1\.1:51000/)
+  })
+
+  it('names why a holder turned a request away', () => {
+    const ana = peer(A, 'Ana', { allowRequest: () => false })
+    const [conn] = linkedConns('192.168.1.66')
+    ana.pairing.onRequest(
+      { header: { type: 'add-request', key: `key-${B}`, name: 'Ben', commit: 'c' } },
+      conn
+    )
+    expect(ana.logged.join('\n')).toMatch(/192\.168\.1\.66.*rate-limited/)
+  })
+
+  it('names a connection that closed before the code step', async () => {
+    const ben = peer(B, 'Ben', {
+      connect: async (_fp, handlers) => {
+        const [mine] = linkedConns()
+        mine.handlers = handlers
+        setTimeout(() => handlers.onClose(mine), 0)
+        return mine
+      }
+    })
+    await ben.pairing.add(A, 'Ana')
+    await flush()
+    expect(ben.logged.join('\n')).toMatch(/closed before/)
   })
 })

@@ -1,5 +1,5 @@
 import dgram from 'dgram'
-import { isPrivateAddress } from './privateAddress'
+import { isPrivateAddress, reachableAt } from './privateAddress'
 import { announcementsFrom, asksForService, decodePacket, encodeQuery } from './dnsSd'
 
 const GROUP = '224.0.0.251'
@@ -17,8 +17,7 @@ function closeOnce(socket) {
   })
 }
 
-export function createDiscovery({ addresses, announcement, onPeer }) {
-  const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
+function multicastSender(socket, addresses) {
   const sendVia = (address, buf) =>
     new Promise((done) => {
       try {
@@ -29,10 +28,21 @@ export function createDiscovery({ addresses, announcement, onPeer }) {
       }
     })
   const send = (buf) => Promise.all(addresses.map((address) => sendVia(address, buf)))
-  const announce = () => {
-    const packet = announcement()
-    if (packet) send(packet)
-  }
+  // One packet per interface, each naming that interface's own address.
+  const sendEach = (build) =>
+    Promise.all(
+      addresses.map((address) => {
+        const packet = build(address)
+        return packet ? sendVia(address, packet) : null
+      })
+    )
+  return { send, sendEach }
+}
+
+export function createDiscovery({ addresses, announcement, onPeer }) {
+  const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
+  const { send, sendEach } = multicastSender(socket, addresses)
+  const announce = () => sendEach(announcement)
   // A flood of queries gets one answer per gap; dropping the rest would hide this peer for a minute.
   let answering = null
   const answer = () => {
@@ -45,7 +55,9 @@ export function createDiscovery({ addresses, announcement, onPeer }) {
     if (!isPrivateAddress(rinfo.address)) return
     const packet = decodePacket(msg)
     if (asksForService(packet)) return answer()
-    for (const peer of announcementsFrom(packet)) onPeer({ ...peer, address: rinfo.address })
+    for (const peer of announcementsFrom(packet)) {
+      onPeer({ ...peer, address: reachableAt(peer.addr, rinfo.address), source: rinfo.address })
+    }
   })
   socket.on('error', () => closeOnce(socket))
   return new Promise((resolve, reject) => {
@@ -63,7 +75,7 @@ export function createDiscovery({ addresses, announcement, onPeer }) {
       resolve({
         announce,
         query: () => send(encodeQuery()),
-        sendRaw: send,
+        sendEach,
         close: () => {
           clearTimeout(answering)
           return closeOnce(socket)
