@@ -6,6 +6,7 @@ const FULL = green(
   'quick',
   'check (ubuntu-latest)',
   'check (windows-latest)',
+  'packaged',
   'e2e-build',
   'e2e (1)',
   'e2e (2)'
@@ -28,6 +29,10 @@ describe('releaseVerdict', () => {
     expect(releaseVerdict(FULL.filter((r) => r.name !== 'check (windows-latest)')).verified).toBe(
       false
     )
+  })
+
+  it('retests when the packaged-app job is missing, so a broken package is never reused', () => {
+    expect(releaseVerdict(FULL.filter((r) => r.name !== 'packaged')).verified).toBe(false)
   })
 
   it('ignores check runs from other workflows', () => {

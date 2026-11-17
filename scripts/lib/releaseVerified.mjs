@@ -1,5 +1,5 @@
-const OURS = /^(quick|check|e2e)\b/
-const REQUIRED = ['check (ubuntu', 'check (windows', 'e2e (']
+const OURS = /^(quick|check|packaged|e2e)\b/
+const REQUIRED = ['check (ubuntu', 'check (windows', 'packaged', 'e2e (']
 
 // Judges CI on the tagged commit itself, so nothing is assumed about how it was merged.
 export function releaseVerdict(checkRuns) {
