@@ -49,6 +49,13 @@ export default defineConfig({
         lines: 96
       },
       include: [
+        'src/main/lan/pairingCode.js',
+        'src/main/lan/frames.js',
+        'src/main/lan/privateAddress.js',
+        'src/main/lan/dnsSd.js',
+        'src/main/lan/peers.js',
+        'src/main/lan/rateLimit.js',
+        'src/main/lan/lanSettings.js',
         'src/main/runnerCore.js',
         'src/main/runnerConfig.js',
         'src/main/runnerRuns.js',
