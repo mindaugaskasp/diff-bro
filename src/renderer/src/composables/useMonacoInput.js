@@ -17,6 +17,8 @@ import { indentStyleFor } from '../utils/indentStyle'
  */
 const FONT_PX = 12.5
 const BASE_OPTIONS = {
+  // Monaco 0.55+ types through EditContext; paste, focus and the input tests need the textarea.
+  editContext: false,
   theme: MONACO_THEME,
   automaticLayout: true,
   minimap: { enabled: false },

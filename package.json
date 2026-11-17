@@ -10,11 +10,11 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "build": "node --max-old-space-size=4096 node_modules/electron-vite/bin/electron-vite.js build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:e2e": "electron-vite build && playwright test",
+    "test:e2e": "npm run build && playwright test",
     "lint": "eslint . --max-warnings 0",
     "check:styles": "node scripts/check-style-tokens.mjs",
     "check:themes": "node scripts/check-theme-depth.mjs",
@@ -47,7 +47,10 @@
   "//overrides": "brace-expansion: an EXACT pin here (5.0.8) closed CVE-2026-14257 and then became the vulnerability itself when GHSA-rgw5-rvv9-x895 landed as its bypass — and being exact, npm audit fix could not move it. A caret so a patch flows. global-agent: ^3 (via electron-builder) pulls an unpatched sprintf-js; v4 drops it, and only loads under ELECTRON_GET_USE_PROXY.",
   "overrides": {
     "brace-expansion": "^5.0.12",
-    "global-agent": "^4.1.7"
+    "global-agent": "^4.1.7",
+    "monaco-editor": {
+      "dompurify": "^3.4.17"
+    }
   },
   "devDependencies": {
     "@emnapi/core": "^1.11.3",
@@ -66,7 +69,7 @@
     "eslint-plugin-vue": "^10.12.0",
     "globals": "^17.14.0",
     "jsdom": "^29.1.1",
-    "monaco-editor": "^0.52.0",
+    "monaco-editor": "^0.57.0",
     "prettier": "^3.9.10",
     "vitest": "^4.1.12"
   },

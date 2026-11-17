@@ -1,17 +1,17 @@
 // Vite worker wiring for Monaco. The editor worker is enough for the diff
 // view; language workers add rich support for json/css/html/ts files.
 import * as monaco from 'monaco-editor'
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+import editorWorker from 'monaco-editor/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/language/json/json.worker?worker'
+import cssWorker from 'monaco-editor/language/css/css.worker?worker'
+import htmlWorker from 'monaco-editor/language/html/html.worker?worker'
+import tsWorker from 'monaco-editor/language/typescript/ts.worker?worker'
 import { registerMermaidLanguage } from './monaco-mermaid'
 import { registerJiraLanguage } from './monaco-jira'
 import {
   conf as shellConf,
   language as shellGrammar
-} from 'monaco-editor/esm/vs/basic-languages/shell/shell'
+} from 'monaco-editor/languages/definitions/shell/shell'
 import { EXPLICIT_LANGUAGES } from '../../shared/snippetLanguages'
 
 // Mermaid and Jira/Confluence wiki markup have no built-in Monaco grammar;
@@ -49,8 +49,8 @@ monaco.editor.addKeybindingRules?.([
 // consumes symbols: there is no outline, no breadcrumbs, and the palette that
 // would offer Go to Symbol is unbound above. setModeConfiguration REPLACES, so
 // the rest of the features have to be carried across.
-const htmlDefaults = monaco.languages.html?.htmlDefaults
-htmlDefaults?.setModeConfiguration({
+const { htmlDefaults } = monaco.html
+htmlDefaults.setModeConfiguration({
   ...htmlDefaults.modeConfiguration,
   documentSymbols: false
 })

@@ -23,6 +23,8 @@ export const diffEditorOptions = ({
   theme: MONACO_THEME,
   automaticLayout: true,
   readOnly: true,
+  // Monaco 0.55+ types through EditContext; paste, focus and the input tests need the textarea.
+  editContext: false,
   originalEditable: false,
   renderSideBySide,
   // Monaco goes INLINE on its own below `renderSideBySideInlineBreakpoint`

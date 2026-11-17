@@ -98,6 +98,11 @@ regression test from decoration.
    this: zero runtime deps, no network/`eval`/`child_process` in its shipped
    code, no install scripts, clean audit. Parsing runs with `maxAliasCount` so
    an anchor bomb cannot expand.
+   `monaco-editor` 0.57 brought `marked` and an exact `dompurify@3.4.15` into
+   the bundle. Both are pure, with no network and no install scripts. npm hoisted
+   that pinned copy over Mermaid's, which put a critical DOMPurify advisory into
+   shipped code. The `overrides` entry gives Monaco the patched version; drop it
+   once Monaco's own pin is past the advisory.
 3. **Renderer never touches Node or Electron.** All fs, dialog, and crypto
    work lives in the main process behind small, validated IPC handlers.
    The renderer talks only to `window.api` (preload). ESLint enforces this
