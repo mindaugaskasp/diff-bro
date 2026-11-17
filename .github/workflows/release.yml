@@ -181,6 +181,13 @@ jobs:
 
       - run: npm run ${{ matrix.build-script }}
 
+      # Launches what is about to ship, never build/: see scripts/packaged-smoke.mjs.
+      - name: Packaged app starts clean
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a node scripts/packaged-smoke.mjs dist
+          else node scripts/packaged-smoke.mjs dist; fi
+
       - uses: actions/upload-artifact@v6
         with:
           name: installer-${{ matrix.os }}

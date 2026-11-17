@@ -69,6 +69,7 @@ export default defineConfig({
         'src/main/runnerDetect.js',
         'src/main/runnerProgram.js',
         'src/main/sealing.js',
+        'src/main/startSteps.js',
         'src/main/shareCore.js',
         'src/main/dataFiles.js',
         'src/main/snippetSealing.js',

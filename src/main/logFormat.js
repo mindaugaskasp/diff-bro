@@ -35,10 +35,14 @@ export function isLogFileName(name) {
 
 // One block per error, always starting at column 0 with "[timestamp]" (capLog
 // splits on that).
-export function formatLogEntry(record = {}, now = new Date()) {
+function headLine(record, now) {
   const source = oneLine(record.source || 'app', 40)
-  const head = `[${now.toISOString()}] [${source}] ${oneLine(record.message, MAX_MESSAGE)}`
-  const lines = [head]
+  const level = record.level === 'info' ? ' [info]' : ''
+  return `[${now.toISOString()}] [${source}]${level} ${oneLine(record.message, MAX_MESSAGE)}`
+}
+
+export function formatLogEntry(record = {}, now = new Date()) {
+  const lines = [headLine(record, now)]
   if (record.context) lines.push(`  context: ${oneLine(record.context, MAX_CONTEXT)}`)
   if (record.appVersion || record.platform) {
     lines.push(`  env: ${oneLine(`${record.appVersion ?? ''} ${record.platform ?? ''}`, 100)}`)

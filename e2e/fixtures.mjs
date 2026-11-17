@@ -1,10 +1,11 @@
 import { test as base, _electron as electron, expect } from '@playwright/test'
 import { execSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workerEnv } from './workerEnv.mjs'
+import { loggedErrors } from '../scripts/lib/packagedSmoke.mjs'
 import { settingsGroups } from '../src/renderer/src/utils/settingsNav.js'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -70,6 +71,20 @@ export async function firstReadyPage(app) {
 
 // Fixtures for the common case: one fresh app + its window, torn down (and the
 // temp profile removed) after the test.
+// Renderer lines are the page fixture's to judge; everything else in the log is main's.
+function readLogs(logDir) {
+  try {
+    return readdirSync(logDir).map((name) => readFileSync(join(logDir, name), 'utf8'))
+  } catch {
+    return []
+  }
+}
+
+function mainProcessErrors(logDir, since) {
+  const text = readLogs(logDir).join('\n')
+  return loggedErrors(text, since).filter((line) => !line.startsWith('[renderer] '))
+}
+
 export const test = base.extend({
   // Per-file: `test.use({ tips: true })` launches as a fresh install.
   tips: [false, { option: true }],
@@ -79,7 +94,9 @@ export const test = base.extend({
     rmSync(dir, { recursive: true, force: true })
   },
   app: async ({ userDataDir }, use) => {
+    const since = Date.now()
     const app = await launchApp(userDataDir)
+    const logDir = await app.evaluate(({ app: electronApp }) => electronApp.getPath('logs'))
     // Trace the whole run (with screenshots); keep it only when the test fails,
     // attached so it shows up in the HTML report and as a CI artifact. Electron
     // has its own BrowserContext, so tracing is wired here rather than via the
@@ -92,6 +109,10 @@ export const test = base.extend({
     await app.context().tracing.stop(failed ? { path: tracePath } : {})
     if (failed) await info.attach('trace', { path: tracePath, contentType: 'application/zip' })
     await app.close()
+    const logged = mainProcessErrors(logDir, since)
+    if (logged.length && !failed) {
+      throw new Error(`the main process logged an error during this test: ${logged.join(' · ')}`)
+    }
   },
   // Every test is also a detector for an uncaught renderer error. Nothing here
   // asserts it on purpose — the point is the ones that slip through a flow

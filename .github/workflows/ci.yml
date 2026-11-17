@@ -60,6 +60,11 @@ jobs:
         run: |
           npx electron-builder --win --dir --publish never
           node scripts/mcp-smoke.mjs "dist/win-unpacked/Diff Bro.exe"
+      # The GUI launch of the same package: e2e runs build/ from the repo, so a file
+      # the package leaves out or a Windows-only startup step is invisible to it.
+      - name: Packaged app starts clean
+        if: runner.os == 'Windows'
+        run: node scripts/packaged-smoke.mjs dist
 
   # End-to-end tests drive the app's OWN Electron (Playwright `_electron`) under a
   # virtual display — no bundled browser, no network, same as the Docker test env.
@@ -119,6 +124,14 @@ jobs:
         # job-total, not a literal: the shard count can only be wrong in one
         # place, and adding a shard to the matrix is the whole edit.
         run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - name: Packaged app starts clean
+        if: matrix.shard == 1
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          DISPLAY: ':100'
+        run: |
+          npx electron-builder --linux dir --publish never
+          node scripts/packaged-smoke.mjs dist
       # Report + per-failure traces (with screenshots) for inspection after the run.
       - name: Upload Playwright report and traces
         if: always()

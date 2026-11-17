@@ -60,7 +60,18 @@ export default [
   // `.claude/` holds agent worktrees — whole checkouts of this repo, nested
   // inside it. Linting them makes `npm run check` report someone else's
   // half-finished code as this tree's failure.
-  { ignores: ['build/**', 'dist/**', 'node_modules/**', '.claude/**'] },
+  // Playwright's output: traces copy page scripts, and a kept failure would fail every later check.
+  {
+    ignores: [
+      'build/**',
+      'dist/**',
+      'node_modules/**',
+      '.claude/**',
+      'test-results/**',
+      'playwright-report/**',
+      'e2e-failures/**'
+    ]
+  },
 
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
