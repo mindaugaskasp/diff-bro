@@ -53,7 +53,7 @@ export function useSaveDiffTarget() {
       name: tabs.active?.customTitle || derivedName(),
       secure: !tabs.active?.sample,
       ttl: DEFAULT_TTL_HOURS,
-      tags: tabs.active?.sample ? [EXAMPLE_TAG] : []
+      tags: [...(tabs.active?.suggestedTags ?? []), ...(tabs.active?.sample ? [EXAMPLE_TAG] : [])]
     }
   }
 

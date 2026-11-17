@@ -1,19 +1,26 @@
 import { blankSnapshot } from '../../utils/tabs'
+import { cleanTag } from '../../utils/snippetState'
 import { useTabsStore } from '../../stores/tabsStore'
 
-const snippetDraft = ({ name, snippet }) => ({
+// `lan/<sender>`: the sender nests under lan, and a slash in their name must not nest deeper.
+export const receivedTag = (from) => cleanTag(`lan/${String(from ?? '').replace(/\//g, '-')}`)
+
+const snippetDraft = ({ name, snippet }, tags) => ({
   id: null,
   initialName: name,
   initialContent: snippet.content,
   initialLanguage: snippet.language ?? 'auto',
-  initialTags: snippet.tags ?? []
+  initialTags: [...(snippet.tags ?? []), ...tags]
 })
 
-export function openReceivedEntry(entry) {
+export function openReceivedEntry(entry, from) {
   const tabs = useTabsStore()
-  return entry.kind === 'snippet'
-    ? tabs.openSnippet(snippetDraft(entry), entry.name)
-    : tabs.open({ ...blankSnapshot(), ...entry.snapshot }, { name: entry.name })
+  const tags = from ? [receivedTag(from)] : []
+  if (entry.kind === 'snippet') return tabs.openSnippet(snippetDraft(entry, tags), entry.name)
+  const id = tabs.open({ ...blankSnapshot(), ...entry.snapshot }, { name: entry.name })
+  const tab = tabs.tabs.find((t) => t.id === id)
+  if (tab) tab.suggestedTags = tags
+  return id
 }
 
 export const arePopupsShown = ({ popups, silencedUntil }, now = Date.now()) =>

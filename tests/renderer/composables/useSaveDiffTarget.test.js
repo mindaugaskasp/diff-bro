@@ -34,6 +34,13 @@ async function openSaved({ ttlHours = 1, tags = [] } = {}) {
 }
 
 describe('where a save lands', () => {
+  it('offers the tags the tab suggests, such as who sent it', () => {
+    const tabs = useTabsStore()
+    tabs.init()
+    tabs.active.suggestedTags = ['lan/ana']
+    expect(useSaveDiffTarget().initial().tags).toEqual(['lan/ana'])
+  })
+
   it('offers the tour’s sample with the example tag', () => {
     const tabs = useTabsStore()
     tabs.init()

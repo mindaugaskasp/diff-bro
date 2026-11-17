@@ -175,10 +175,14 @@ function onReveal(ctx, { header }, conn) {
   ctx.emit(view(s))
 }
 
-function onResult(ctx, { header }, conn) {
+// Asking someone you already added to add you back is what made adding each other loop.
+async function onResult(ctx, { header }, conn) {
   const s = ctx.byConn.get(conn)
   if (!s || s.role !== 'holder') return conn.destroy()
-  finish(ctx, s, RESULT_STAGE[header.result])
+  // The adder closes right after sending this; the close must not win the trust lookup.
+  s.resulting = true
+  const isBack = header.result === 'matched' && (await ctx.isTrusted?.(s.peerFp))
+  finish(ctx, s, isBack ? 'added-back' : RESULT_STAGE[header.result])
 }
 
 export function createPairing(deps) {
@@ -198,7 +202,7 @@ export function createPairing(deps) {
     onResult: (frame, conn) => onResult(ctx, frame, conn),
     onClosed: (conn) => {
       const s = ctx.byConn.get(conn)
-      if (s) finish(ctx, s, 'connection-lost')
+      if (s && !s.resulting) finish(ctx, s, 'connection-lost')
     },
     cancelAll: () => [...ctx.sessions.values()].forEach((s) => finish(ctx, s, 'connection-lost'))
   }

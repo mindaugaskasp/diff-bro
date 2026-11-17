@@ -6,6 +6,7 @@ import { connectTo } from './server'
 import { pairingKeyText, parsePairingKey } from '../keyText'
 import { checkedTrustedName, storeTrusted } from '../trustedKeys'
 import { appendLog } from '../logger'
+import { readTrusted } from '../trustedKeys'
 
 const FP = /^[0-9a-f]{32}$/
 let pairing = null
@@ -35,6 +36,7 @@ export function setUpPairing({ lan, identity, onTrustChanged }) {
       return endpoint ? connectTo(endpoint, handlers) : Promise.reject(new Error('gone'))
     },
     parseKey: parsePairingKey,
+    isTrusted: async (fp) => (await readTrusted()).some((t) => t.fingerprint === fp),
     storeKey: async (key, fp, name) => {
       await storeTrusted(key, fp, await labelFor(fp, name))
       onTrustChanged()
