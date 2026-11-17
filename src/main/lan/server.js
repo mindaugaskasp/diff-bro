@@ -68,11 +68,15 @@ export async function listenOnPrivate(addresses, { onFrame, onClose, accept }) {
   }
 }
 
-export function connectTo({ address, port }, onFrame) {
+export function connectTo({ address, port }, { onFrame, onClose }) {
   return new Promise((resolve, reject) => {
     if (!isPrivateAddress(address)) return reject(new Error('not-private'))
     const socket = net.connect({ host: address, port })
-    socket.once('connect', () => resolve({ ...wrapSocket(socket, onFrame), socket }))
+    socket.once('connect', () => {
+      const conn = wrapSocket(socket, onFrame)
+      socket.on('close', () => onClose?.(conn))
+      resolve(conn)
+    })
     socket.once('error', reject)
   })
 }

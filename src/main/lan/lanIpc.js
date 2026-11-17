@@ -8,6 +8,7 @@ import { readComputerName } from './computerName'
 import { readLanSettings, writeLanSettings } from './lanStore'
 import { normalizeLanSettings, setPopups } from './lanSettings'
 import { getIdentity } from '../share'
+import { cancelPairing, registerPairingIpc, setUpPairing } from './pairingIpc'
 import { readTrusted } from '../trustedKeys'
 
 const settingsFile = () => join(app.getPath('userData'), 'lan.json')
@@ -54,6 +55,7 @@ export async function startLanSharing() {
     selfFp: identity.pub.fingerprint,
     onChange: () => broadcastLan().catch(() => {})
   })
+  setUpPairing({ lan, identity, onTrustChanged: () => broadcastLan().catch(() => {}) })
   await lan.start()
 }
 
@@ -73,6 +75,7 @@ export async function updateLanSettings(patch) {
   let next = normalizeLanSettings({ ...current, ...cleanPatch(patch) }, computerName)
   if (typeof patch?.popups === 'boolean') next = setPopups(next, patch.popups)
   settings = next
+  if (!next.enabled) cancelPairing()
   writeLanSettings(settingsFile(), next)
   await lan?.apply(next)
   return lanSnapshot()
@@ -81,5 +84,6 @@ export async function updateLanSettings(patch) {
 export function registerLanIpc({ log }) {
   ipcMain.handle('lan:state', () => lanSnapshot())
   ipcMain.handle('lan:update', (_e, patch) => updateLanSettings(patch))
+  registerPairingIpc({ nameOf: (fp) => lan?.peers().find((p) => p.fp === fp)?.name ?? fp })
   startLanSharing().catch((err) => log(err.message))
 }

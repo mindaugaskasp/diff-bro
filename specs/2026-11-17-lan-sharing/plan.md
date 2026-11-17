@@ -304,17 +304,16 @@ One PR per design change, stacked with git-spice. Slice 1 targets `main`;
 each later slice targets the one below. Each is green alone and released as
 one tag.
 
-| #   | slice                                                                | branch                       | base    | PR  | status |
-| --- | -------------------------------------------------------------------- | ---------------------------- | ------- | --- | ------ |
-| 1   | spec, render script, canvas link                                     | `feat/lan-sharing-spec`      | `main`  |     |        |
-| 2   | destructive button label ≥ 4.5 on every theme                        | `fix/danger-button-contrast` | slice 1 |     |        |
-| 3   | pure cores: code, frames, addresses, DNS-SD, peers, offers, settings | `feat/lan-core`              | slice 2 |     |        |
-| 4   | sockets, fence, rule 1 amendment, Network settings page, presence    | `feat/lan-transport`         | slice 3 |     |        |
-| 5   | adding someone: pairing flow end to end                              | `feat/lan-pairing`           | slice 4 |     |        |
-| 6   | sending and receiving items, inbox on disk                           | `feat/lan-send`              | slice 5 |     |        |
-| 7   | the bell, its list, silencing                                        | `feat/lan-bell`              | slice 6 |     |        |
-| 8   | stop sharing and the signed notice                                   | `feat/lan-stop-sharing`      | slice 7 |     |        |
-| 9   | docs, theme sweep probes, roadmap                                    | `feat/lan-docs`              | slice 8 |     |        |
+| #   | slice                                                                    | branch                       | base    | PR   | status |
+| --- | ------------------------------------------------------------------------ | ---------------------------- | ------- | ---- | ------ |
+| 1   | spec, render script, canvas link                                         | `feat/lan-sharing-spec`      | `main`  | #244 | open   |
+| 2   | destructive button label ≥ 4.5 on every theme                            | `fix/danger-button-contrast` | slice 1 | #245 | open   |
+| 3   | pure cores: code, frames, addresses, DNS-SD, peers, rate limit, settings | `feat/lan-core`              | slice 2 | #247 | open   |
+| 4   | sockets, fence, rule 1 amendment, Network settings page, presence        | `feat/lan-transport`         | slice 3 | #248 | open   |
+| 5   | adding someone: pairing flow end to end                                  | `feat/lan-pairing`           | slice 4 |      | open   |
+| 6   | sending and receiving items, the bell, silencing (slices 6 and 7 merged) | `feat/lan-send`              | slice 5 |      |        |
+| 7   | stop sharing and the signed notice                                       | `feat/lan-stop-sharing`      | slice 6 |      |        |
+| 8   | docs, theme sweep probes, roadmap                                        | `feat/lan-docs`              | slice 7 |      |        |
 
 ## Implementation plan
 
@@ -349,10 +348,10 @@ one tag.
 
 **Slice 5: pairing**
 
-- [ ] 18. Main: `pairing.js` session (adder and holder roles, commit-reveal, 2-minute timer, one try, cancel, connection lost) wired to `storeTrusted`; tests.
-- [ ] 19. `lan:add`, `lan:submitCode`, `lan:cancel`, `lan:pasteCode` (main reads the clipboard, returns only a code-shaped value), events `lan:pairing`.
-- [ ] 20. `AddDialog.vue`, `ShowCodeDialog.vue` (click to copy via `window.api.copyText`, live countdown), result dialogs (didn't match, expired ×2, cancelled, connection lost, "Add them too?"); `usePasteCode`, `useCopyCode`, `useCountdown` composables + tests.
-- [ ] 21. Add buttons on the Network page rows; e2e `lan-pairing.spec.mjs`.
+- [x] 18. Main: `pairing.js` session (adder and holder roles, commit-reveal, 2-minute timer, one try, cancel, connection lost) wired to `storeTrusted`; tests.
+- [x] 19. `lan:add`, `lan:submitCode`, `lan:cancel`, `lan:pasteCode` (main reads the clipboard, returns only a code-shaped value), events `lan:pairing`.
+- [x] 20. `AddDialog.vue`, `ShowCodeDialog.vue` (click to copy via `window.api.copyText`, live countdown), result dialogs (didn't match, expired ×2, cancelled, connection lost, "Add them too?"); `usePasteCode`, `useCopyCode`, `useCountdown` composables + tests.
+- [x] 21. Add buttons on the Network page rows; e2e `lan-pairing.spec.mjs`.
 
 **Slice 6: send and receive**
 
@@ -362,20 +361,20 @@ one tag.
 - [ ] 25. `ItemOfferDialog.vue` (1 of 3, Decline / Open, X → later); Open → existing open-sealed path in memory → tab with the received band (`ReceivedBar.vue`, reusing ProposalBar's CSS through a shared class).
 - [ ] 26. e2e `lan-send.spec.mjs`.
 
-**Slice 7: bell + silencing**
+**Slice 6 (continued): bell + silencing**
 
 - [ ] 27. `NotificationBell.vue` in the toolbar beside the gear (macOS) and in the menu strip's right end (Windows/Linux), shown when items wait or popups are silenced; View ▸ Notifications in both menus (`menus.js`, `src/main/index.js`, `commands.js` row).
 - [ ] 28. `NotificationList.vue` (cards, hover actions, Nothing waiting, header "3 waiting" / "Silenced until 15:40"); add `--hairline` / `--hairline-soft` to `tokens.css`.
 - [ ] 29. `SilenceMenu.vue` in the item dialog; `lan:silence(minutes | 'forever')`; Forever flips Show popups.
 - [ ] 30. e2e `lan-silence.spec.mjs`.
 
-**Slice 8: stop sharing**
+**Slice 7: stop sharing**
 
 - [ ] 31. `revoke.js` (sign, verify, pending notice for offline peers, one per peer, a week) + tests.
 - [ ] 32. `lan:stopSharing(fp)`: `removeTrusted`, delete inbox items by sender, send or queue the notice; receiver shows "… stopped sharing with you".
 - [ ] 33. Stop sharing button + `.btn-destructive` confirm on the Network page; e2e `lan-stop-sharing.spec.mjs`.
 
-**Slice 9: docs**
+**Slice 8: docs**
 
 - [ ] 34. README lines 12 and 62 + feature row.
 - [ ] 35. `docs/features.md`, `docs/architecture.md`, `docs/glossary.md`.
@@ -435,6 +434,13 @@ one tag.
 | 2026-11-17 | `--hairline` / `--hairline-soft` were added in slice 4, where the Network list first uses them                                                                                                                              | a slice may not use a token a later slice defines                                                                                                                                                                                                    | —                                                                        |
 | 2026-11-17 | the "off closes the port" e2e reads the main process's open listening handles from the test, adding no hook to the app                                                                                                      | no test-only code in the shipped app                                                                                                                                                                                                                 | an env var for a fixed port                                              |
 | 2026-11-17 | e2e asserts by name, never "the list is empty": the container's own interactive DiffBro is on the same network                                                                                                              | found when the first run saw a third peer                                                                                                                                                                                                            | —                                                                        |
+| 2026-11-17 | the side whose 2-minute timer fires first sends `add-result: expired` before closing                                                                                                                                        | otherwise the other side saw "Connection lost" instead of "Code expired"; found while writing the pairing tests                                                                                                                                      | independent timers only                                                  |
+| 2026-11-17 | one add request per requester is rate-limited at 3 a minute, not 1                                                                                                                                                          | Try again after a wrong code must work at once                                                                                                                                                                                                       | 1 a minute                                                               |
+| 2026-11-17 | the code normalising lives in `src/shared/pairingCodeText.js`, read by main and the renderer                                                                                                                                | one rule for what counts as a code on both sides of the boundary                                                                                                                                                                                     | a copy in each process                                                   |
+| 2026-11-17 | the adder's success is a one-line notice ("Added Ana Petrauskė"), not a dialog; the person then shows as Trusted                                                                                                            | the design drew no success dialog for the adder; the holder's "Add them too?" is the dialog                                                                                                                                                          | a success dialog                                                         |
+| 2026-11-17 | the pairing dialogs mount from `AppDialogs` and start the LAN store themselves                                                                                                                                              | an add request must reach someone who never opened Settings; found in e2e (Ana never saw the code)                                                                                                                                                   | starting it from the Network page                                        |
+| 2026-11-17 | slices 6 (send/receive) and 7 (bell/silence) merge into one slice                                                                                                                                                           | an item dismissed with X, or received with popups off, has nowhere to go without the bell; a slice may not leave half-built UI                                                                                                                       | shipping receive without the bell                                        |
+| 2026-11-17 | `openSealed` also returns the signer's fingerprint (`signer`)                                                                                                                                                               | a received item must be tied to its signer for Stop sharing; the label alone is not unique. Amends "sealing.js untouched": one returned field, with its test, and the share roundtrip re-verified                                                    | matching the signer by label                                             |
 
 ## Validation
 

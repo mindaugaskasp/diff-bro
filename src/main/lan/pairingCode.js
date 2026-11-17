@@ -1,8 +1,8 @@
 // The adder commits before seeing the holder's nonce, so a man in the middle gets one guess.
 import { createHash, randomBytes, timingSafeEqual } from 'crypto'
+import { CODE_ALPHABET, CODE_LENGTH, normalizeCode } from '../../shared/pairingCodeText'
 
-export const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ'
-export const CODE_LENGTH = 6
+export { CODE_ALPHABET, CODE_LENGTH, formatCode, normalizeCode } from '../../shared/pairingCodeText'
 export const NONCE_BYTES = 32
 
 const sha256 = (...parts) => {
@@ -41,17 +41,8 @@ export function pairingCode({ holderFp, adderFp, holderNonce, adderNonce }) {
   return code
 }
 
-export function normalizeCode(text) {
-  if (typeof text !== 'string') return null
-  const code = text.toUpperCase().replace(/[\s-]/g, '')
-  if (code.length !== CODE_LENGTH) return null
-  return [...code].every((ch) => CODE_ALPHABET.includes(ch)) ? code : null
-}
-
 export function codesMatch(expected, typed) {
   const a = normalizeCode(expected)
   const b = normalizeCode(typed)
   return a !== null && b !== null && isSameBytes(Buffer.from(a), Buffer.from(b))
 }
-
-export const formatCode = (code) => `${code.slice(0, 3)} ${code.slice(3)}`
