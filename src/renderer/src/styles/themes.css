@@ -45,8 +45,8 @@
   --warning-bg: #f0b429;
   --warning-border: #bf8700;
   --warning-text: #3b2900;
-  --danger-bg: #f85149;
-  --danger-border: #cf222e;
+  --danger-bg: #cf222e;
+  --danger-border: #a40e26;
   --danger-text: #ffffff;
   /* "this parsed / these lines were added" green — readable on both panels. */
   --success-text: #1a7f37;
@@ -131,6 +131,7 @@
   --danger-bg: #f85149;
   --danger-border: #da3633;
   --danger-text: #ffffff;
+  --text-on-danger: #0d1117;
   --success-text: #3fb950;
   --scrim: rgba(0, 0, 0, 0.5);
   --favorite: #d29922;
@@ -220,9 +221,10 @@
   --warning-bg: #ebcb8b;
   --warning-border: #d0a85f;
   --warning-text: #2e3440;
-  --danger-bg: #bf616a;
+  --danger-bg: #e0848b;
   --danger-border: #a54c55;
   --danger-text: #eceff4;
+  --text-on-danger: #2e3440;
   --success-text: #a3be8c;
   --scrim: rgba(0, 0, 0, 0.5);
   --favorite: #ebcb8b;
