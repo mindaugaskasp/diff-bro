@@ -310,10 +310,10 @@ one tag.
 | 2   | destructive button label ≥ 4.5 on every theme                            | `fix/danger-button-contrast` | slice 1 | #245 | open   |
 | 3   | pure cores: code, frames, addresses, DNS-SD, peers, rate limit, settings | `feat/lan-core`              | slice 2 | #247 | open   |
 | 4   | sockets, fence, rule 1 amendment, Network settings page, presence        | `feat/lan-transport`         | slice 3 | #248 | open   |
-| 5   | adding someone: pairing flow end to end                                  | `feat/lan-pairing`           | slice 4 |      | open   |
-| 6   | sending and receiving items, the bell, silencing (slices 6 and 7 merged) | `feat/lan-send`              | slice 5 |      |        |
-| 7   | stop sharing and the signed notice                                       | `feat/lan-stop-sharing`      | slice 6 |      |        |
-| 8   | docs, theme sweep probes, roadmap                                        | `feat/lan-docs`              | slice 7 |      |        |
+| 5   | adding someone: pairing flow end to end                                  | `feat/lan-pairing`           | slice 4 | #249 | open   |
+| 6   | sending and receiving items, the bell, silencing (slices 6 and 7 merged) | `feat/lan-send`              | slice 5 | #250 | open   |
+| 7   | stop sharing and the signed notice                                       | `feat/lan-stop-sharing`      | slice 6 | #251 | open   |
+| 8   | docs, theme sweep probes, roadmap                                        | `feat/lan-docs`              | slice 7 | #252 | open   |
 
 ## Implementation plan
 
