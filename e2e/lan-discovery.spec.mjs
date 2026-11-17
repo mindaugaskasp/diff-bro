@@ -1,12 +1,5 @@
-import { rmSync } from 'node:fs'
-import {
-  test,
-  expect,
-  launchApp,
-  freshUserDataDir,
-  firstReadyPage,
-  openSettingsPage
-} from './fixtures.mjs'
+import { test, expect, openSettingsPage } from './fixtures.mjs'
+import { startPeer, stop } from './lanPeers.mjs'
 
 // Other instances may share the network (the container's own app), so assertions name the peer.
 const listeningServers = (app) =>
@@ -15,18 +8,6 @@ const listeningServers = (app) =>
       process._getActiveHandles().filter((h) => h?.constructor?.name === 'Server' && h.listening)
         .length
   )
-
-// Unique per run: parallel workers share the network, and each starts its own Ana and Ben.
-const RUN = Math.random().toString(36).slice(2, 7)
-
-async function startPeer(base) {
-  const name = `${base} ${RUN}${Math.random().toString(36).slice(2, 4)}`
-  const dir = freshUserDataDir()
-  const app = await launchApp(dir)
-  const page = await firstReadyPage(app)
-  await page.evaluate((n) => window.api.lanUpdate({ name: n }), name)
-  return { dir, app, page, name }
-}
 
 test('instances on the same network find each other, and off closes the port', async () => {
   const ana = await startPeer('Ana')
@@ -41,10 +22,7 @@ test('instances on the same network find each other, and off closes the port', a
     await expect(settings.getByText(ben.name, { exact: true })).toHaveCount(0, { timeout: 20_000 })
     expect(await listeningServers(ben.app)).toBe(0)
   } finally {
-    for (const peer of [ana, ben]) {
-      await peer.app.close()
-      rmSync(peer.dir, { recursive: true, force: true })
-    }
+    await stop(ana, ben)
   }
 })
 
@@ -58,7 +36,6 @@ test('the Network page shows the name and the switches', async () => {
     await expect(settings.getByRole('checkbox', { name: 'Show me to others' })).toBeDisabled()
     await expect(settings.getByText('People on this network')).toHaveCount(0)
   } finally {
-    await solo.app.close()
-    rmSync(solo.dir, { recursive: true, force: true })
+    await stop(solo)
   }
 })
