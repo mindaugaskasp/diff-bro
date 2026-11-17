@@ -8,6 +8,9 @@ directories:
   buildResources: resources
 files:
   - build/**
+  # Main loads these at runtime through electron-vite's ?asset imports.
+  - resources/icon.png
+  - resources/tray.png
 # Ship the app inside an ASAR and flip the Electron fuses that harden the
 # packaged binary (electron-builder rewrites the fuse bits at pack time, before
 # any signing step, so the flipped bits are what gets signed):
