@@ -1,8 +1,8 @@
 name: CI
 
 # Lint + tests on every push and PR to main, so a broken build is caught before
-# it can ever be tagged for release. The release workflow re-runs `npm run check`
-# too, but this gives fast feedback and blocks merges.
+# it can ever be tagged for release. A release reuses this run on the commit it
+# tags when every job passed, and re-runs the suite itself otherwise.
 on:
   push:
     branches: [main]
@@ -10,6 +10,23 @@ on:
     branches: [main]
 
 jobs:
+  # The first signal, in about 90 s: lint, the guards and the unit tests, without
+  # coverage or a build. `check` below still runs the whole gate.
+  quick:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11 --no-fund --no-audit
+      - run: npm ci --no-fund
+      - run: npm run lint
+      - run: npm run check:styles && npm run check:themes && npm run check:structure
+      - run: npm run check:i18n && npm run check:rawtext
+      - run: npm test
+
   # Both platforms the app ships on. Windows is here because the release build
   # used to be the ONLY job that ran `npm run check` there, and v0.4.10 walked
   # into three Windows-only failures one tag at a time — a deprecation the
@@ -66,26 +83,42 @@ jobs:
         if: runner.os == 'Windows'
         run: node scripts/packaged-smoke.mjs dist
 
+  # One bundle for every shard: building in each shard was most of its fixed cost.
+  e2e-build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11 --no-fund --no-audit
+      - run: npm ci --no-fund
+      - run: npm run build
+      - uses: actions/upload-artifact@v6
+        with:
+          name: e2e-build
+          path: build/
+          retention-days: 1
+
   # End-to-end tests drive the app's OWN Electron (Playwright `_electron`) under a
   # virtual display — no bundled browser, no network, same as the Docker test env.
   # 22.04 keeps the pre-t64 apt package names the app's Electron links against.
   #
-  # E2E is the behavioural source of truth: it runs as the merge gate on pull
-  # requests to main only (not on post-merge pushes — main is reached through a
-  # PR). Make it a required status check in the branch-protection rule for main
-  # so a red run blocks the merge.
+  # E2E is the behavioural source of truth. It gates pull requests, and it runs
+  # again on the merge commit: that is the commit a release tags, and the release
+  # reuses this result instead of re-running it (scripts/release-verified.mjs).
   e2e:
-    if: github.event_name == 'pull_request'
+    needs: e2e-build
     runs-on: ubuntu-22.04
     strategy:
       # Every shard reports: a cancelled sibling hides which slice actually broke.
       fail-fast: false
       matrix:
-        # Playwright splits by FILE, the same axis the suite already parallelises
-        # on, so a spec's internal order — which the relaunch tests depend on —
-        # is preserved. Setup + build is ~1.2 min per shard and does not divide,
-        # so past ~6 shards the fixed cost starts eating the gain.
-        shard: [1, 2, 3, 4]
+        # Playwright splits by FILE, so a spec's internal order, which the
+        # relaunch tests depend on, is kept. With the bundle built once, a
+        # shard's fixed cost is ~40 s of setup, which is what makes 12 pay.
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     env:
       # Never let Playwright pull Chromium/Firefox/WebKit — the suite uses none.
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
@@ -120,10 +153,14 @@ jobs:
       # which starts a single display and owns DISPLAY itself.
       - name: Start a virtual display per worker
         run: bash scripts/e2e-displays.sh
+      - uses: actions/download-artifact@v6
+        with:
+          name: e2e-build
+          path: build/
       - name: Run end-to-end tests
         # job-total, not a literal: the shard count can only be wrong in one
         # place, and adding a shard to the matrix is the whole edit.
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
       - name: Packaged app starts clean
         if: matrix.shard == 1
         env:
