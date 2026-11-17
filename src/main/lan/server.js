@@ -3,9 +3,10 @@ import { isPrivateAddress } from './privateAddress'
 import { createFrameReader, encodeFrame } from './frames'
 
 export const IDLE_MS = 150_000
+export const MAX_CONNECTIONS = 32
 
-export function wrapSocket(socket, onFrame) {
-  const reader = createFrameReader()
+export function wrapSocket(socket, onFrame, accept) {
+  const reader = createFrameReader({ accept })
   const conn = {
     remote: socket.remoteAddress,
     send: (header, body) => socket.write(encodeFrame(header, body)),
@@ -31,18 +32,19 @@ function listenOne(address, port, onSocket) {
       onSocket(socket)
       socket.resume()
     })
+    server.maxConnections = MAX_CONNECTIONS
     server.once('error', reject)
     server.listen({ host: address, port, exclusive: true }, () => resolve(server))
   })
 }
 
-export async function listenOnPrivate(addresses, { onFrame, onClose }) {
+export async function listenOnPrivate(addresses, { onFrame, onClose, accept }) {
   const servers = []
   const sockets = new Set()
   let port = 0
   const handle = (socket) => {
     sockets.add(socket)
-    const conn = wrapSocket(socket, onFrame)
+    const conn = wrapSocket(socket, onFrame, accept)
     socket.on('close', () => {
       sockets.delete(socket)
       onClose?.(conn)

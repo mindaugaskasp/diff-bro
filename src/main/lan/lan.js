@@ -30,7 +30,10 @@ function onFrame(ctx, frame, conn) {
 async function open(ctx) {
   ctx.addresses = ipv4Addresses()
   if (!ctx.addresses.length) return
-  ctx.server = await listenOnPrivate(ctx.addresses, { onFrame: (f, c) => onFrame(ctx, f, c) })
+  ctx.server = await listenOnPrivate(ctx.addresses, {
+    onFrame: (f, c) => onFrame(ctx, f, c),
+    accept: (header) => (ctx.acceptors.get(header.type) ?? (() => true))(header)
+  })
   ctx.discovery = await createDiscovery({
     addresses: ctx.addresses,
     announcement: () => announcement(ctx),
@@ -109,6 +112,7 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     onChange,
     now,
     handlers: new Map(),
+    acceptors: new Map(),
     addresses: [],
     server: null,
     discovery: null,
@@ -120,6 +124,7 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     stop: () => stop(ctx),
     apply: (next) => apply(ctx, next),
     on: (type, handler) => ctx.handlers.set(type, handler),
+    accept: (type, check) => ctx.acceptors.set(type, check),
     endpointOf: (fp) => ctx.peers.endpointOf(fp),
     peers: () => ctx.peers.list(),
     isOnline: () => ctx.addresses.length > 0,
