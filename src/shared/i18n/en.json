@@ -2012,7 +2012,8 @@
       "noCodeOnClipboard": "The clipboard doesn’t hold a pairing code.",
       "add": "Add",
       "button": "Add",
-      "added": "Added {name}"
+      "added": "Added {name}",
+      "addedBack": "{name} added you back"
     },
     "code": {
       "title": "{name} wants to add you",

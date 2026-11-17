@@ -323,3 +323,12 @@ describe('when adding fails, the log says why', () => {
     expect(ben.logged.join('\n')).toMatch(/closed before/)
   })
 })
+
+describe('adding back', () => {
+  it('tells the holder they were added back when it already trusts the adder, with no new Add back', async () => {
+    const { ana, ben, started } = await startAdding({ isTrusted: async (fp) => fp === B })
+    await ben.pairing.submitCode(started.id, ana.last().code)
+    await flush()
+    expect(ana.last()).toMatchObject({ stage: 'added-back', name: 'Ben', fp: B })
+  })
+})

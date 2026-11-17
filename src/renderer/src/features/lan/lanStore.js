@@ -56,9 +56,10 @@ export const useLanStore = defineStore('lan', {
     },
     showPairing(view) {
       if (this.holdRequest(view)) return
-      if (view?.stage !== 'added') return (this.pairing = view)
+      const notice = { added: 'lan.add.added', 'added-back': 'lan.add.addedBack' }[view?.stage]
+      if (!notice) return (this.pairing = view)
       this.pairing = null
-      useDiffStore().showNotice(t('lan.add.added', { name: view.name }))
+      useDiffStore().showNotice(t(notice, { name: view.name }))
     },
     async add({ fp, name }) {
       this.pairing = { role: 'adder', stage: 'connecting', fp, name }

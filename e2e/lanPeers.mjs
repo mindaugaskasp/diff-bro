@@ -33,8 +33,12 @@ export async function addPeer(adder, holder) {
   await adding.getByTestId('lan-code-input').fill(code)
   await adding.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(row.getByText('Trusted')).toBeVisible()
-  const back = holder.page.getByRole('dialog', { name: `${adder.name} added you` })
-  await back.locator('.dialog-actions').getByRole('button', { name: 'Not now' }).click()
+  const asked = holder.page.getByRole('dialog', { name: `${adder.name} added you` })
+  const addedBack = holder.page.getByText(`${adder.name} added you back`)
+  await expect(asked.or(addedBack)).toBeVisible()
+  if (await asked.isVisible()) {
+    await asked.locator('.dialog-actions').getByRole('button', { name: 'Not now' }).click()
+  }
   await closeSettings(adder.page)
 }
 

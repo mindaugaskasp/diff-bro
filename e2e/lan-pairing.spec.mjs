@@ -101,3 +101,24 @@ test('a key named before names were capped still adds, in both directions', asyn
     await stop(ana, ben)
   }
 })
+
+test('adding back ends it: neither side is asked to add the other again', async () => {
+  const ana = await startPeer('Ana')
+  const ben = await startPeer('Ben')
+  try {
+    await addPeer(ben, ana)
+    const settings = await openSettingsPage(ana.page, 'Network')
+    const benRow = settings.locator('.person', { hasText: ben.name })
+    await benRow.getByRole('button', { name: 'Add' }).click()
+    const shown = ben.page.getByRole('dialog', { name: `${ana.name} wants to add you` })
+    const code = (await shown.getByTestId('lan-code').innerText()).replace(/\W/g, '').slice(0, 6)
+    const adding = ana.page.getByRole('dialog', { name: `Add ${ben.name}` })
+    await adding.getByTestId('lan-code-input').fill(code)
+    await adding.getByRole('button', { name: 'Add', exact: true }).click()
+    await expect(benRow.getByText('Trusted')).toBeVisible()
+    await expect(ben.page.getByText(`${ana.name} added you back`)).toBeVisible()
+    await expect(ben.page.getByRole('dialog', { name: `${ana.name} added you` })).toHaveCount(0)
+  } finally {
+    await stop(ana, ben)
+  }
+})
