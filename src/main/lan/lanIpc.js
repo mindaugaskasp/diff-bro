@@ -15,6 +15,7 @@ import { getIdentity } from '../share'
 import { cancelPairing, registerPairingIpc, setUpPairing } from './pairingIpc'
 import { readTrusted } from '../trustedKeys'
 import { appendLog } from '../logger'
+import { onIdentityPersisted } from '../identityEvents'
 
 const settingsFile = () => join(app.getPath('userData'), 'lan.json')
 const run = async (cmd, args) => (await promisify(execFile)(cmd, args)).stdout
@@ -56,6 +57,7 @@ export async function startLanSharing() {
   })
   settings = readLanSettings(settingsFile(), computerName)
   const identity = await getIdentity()
+  startedFp = identity.pub.fingerprint
   lan = createLan({
     settings,
     selfFp: identity.pub.fingerprint,
@@ -70,6 +72,17 @@ export async function startLanSharing() {
 }
 
 export const stopLanSharing = () => lan?.stop()
+
+let startedFp = null
+
+// Pairing, announcements and notices all use the key sharing started with; a new key restarts it.
+async function restartOnNewKey() {
+  const { pub } = await getIdentity()
+  if (!lan || pub.fingerprint === startedFp) return
+  cancelPairing()
+  await stopLanSharing()
+  await startLanSharing()
+}
 
 const PATCH_KEYS = { enabled: 'boolean', visible: 'boolean', popups: 'boolean', name: 'string' }
 
@@ -108,4 +121,5 @@ export function registerLanIpc({ log }) {
   registerRevokeIpc()
   registerPairingIpc({ nameOf: (fp) => lan?.peers().find((p) => p.fp === fp)?.name ?? fp })
   startLanSharing().catch((err) => log(err.message))
+  onIdentityPersisted(() => restartOnNewKey().catch((err) => log(err.message)))
 }

@@ -22,7 +22,7 @@ export async function startPeer(base) {
   return { dir, app, page, name }
 }
 
-async function add(adder, holder) {
+export async function addPeer(adder, holder) {
   const settings = await openSettingsPage(adder.page, 'Network')
   const row = settings.locator('.person', { hasText: holder.name })
   await expect(row).toBeVisible({ timeout: 20_000 })
@@ -41,8 +41,8 @@ async function add(adder, holder) {
 export async function pairBoth() {
   const ana = await startPeer('Ana')
   const ben = await startPeer('Ben')
-  await add(ben, ana)
-  await add(ana, ben)
+  await addPeer(ben, ana)
+  await addPeer(ana, ben)
   return { ana, ben }
 }
 

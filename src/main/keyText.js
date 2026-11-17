@@ -3,7 +3,13 @@
 // the clipboard; this decides whether the text is a key. The fingerprint is
 // always recomputed from the material — a stated one is never trusted.
 import { importedKeyName } from '../shared/keyName'
-import { decodePublicKey, fingerprint, isAcceptedKeyFormat, rebuiltPublicKey } from './sealing'
+import {
+  decodePublicKey,
+  encodePublicKey,
+  fingerprint,
+  isAcceptedKeyFormat,
+  rebuiltPublicKey
+} from './sealing'
 
 export const MAX_KEY_TEXT_BYTES = 64 * 1024
 
@@ -34,3 +40,16 @@ export function parseKeyText(text) {
     defaultLabel: importedKeyName(key.label)
   }
 }
+
+// Pairing saves a key under the name the user clicked, so the name inside it is never
+// read: one stored before names were capped at 40 must not make the key unusable.
+function withoutLabel(key) {
+  const copy = { ...key }
+  delete copy.label
+  return copy
+}
+
+export const parsePairingKey = (text) =>
+  parseKeyText(encodePublicKey(withoutLabel(decodePublicKey(text))))
+
+export const pairingKeyText = (pub) => encodePublicKey(withoutLabel(pub))

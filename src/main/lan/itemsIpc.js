@@ -30,6 +30,7 @@ const send = (channel, payload) => {
 
 let lan = null
 let trustedFps = new Set()
+let trustRefresh = null
 const TRUST_REFRESH_MS = 30_000
 
 async function openStored(record) {
@@ -134,7 +135,8 @@ export function setUpItems(service) {
   lan.accept('item', (header) => trustedFps.has(header.fp))
   lan.on('item', onItem)
   refreshTrustedFps().catch(() => {})
-  setInterval(() => refreshTrustedFps().catch(() => {}), TRUST_REFRESH_MS)
+  clearInterval(trustRefresh)
+  trustRefresh = setInterval(() => refreshTrustedFps().catch(() => {}), TRUST_REFRESH_MS)
 }
 
 export function registerItemsIpc() {

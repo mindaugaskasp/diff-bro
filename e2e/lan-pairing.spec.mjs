@@ -1,5 +1,7 @@
-import { test, expect, openSettingsPage } from './fixtures.mjs'
-import { startPeer, stop } from './lanPeers.mjs'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { test, expect, openSettingsPage, launchApp, firstReadyPage } from './fixtures.mjs'
+import { addPeer, startPeer, stop } from './lanPeers.mjs'
 
 // Two launches per test.
 test.describe.configure({ timeout: 90_000 })
@@ -72,6 +74,29 @@ test('the clipboard holding no code says so', async () => {
     await adding.getByRole('button', { name: 'Paste' }).click()
     await expect(adding.getByText('The clipboard doesn’t hold a pairing code.')).toBeVisible()
     await expect(adding.getByRole('button', { name: 'Add', exact: true })).toBeDisabled()
+  } finally {
+    await stop(ana, ben)
+  }
+})
+
+// Keys made before names were capped at 40 (#124) still carry the longer name.
+async function withLegacyKeyName(peer) {
+  await peer.app.close()
+  const file = join(peer.dir, 'identity.pub')
+  const pub = JSON.parse(readFileSync(file, 'utf8'))
+  writeFileSync(file, JSON.stringify({ ...pub, label: 'ASSSS'.repeat(16) }))
+  peer.app = await launchApp(peer.dir)
+  peer.page = await firstReadyPage(peer.app)
+  await peer.page.evaluate((n) => window.api.lanUpdate({ name: n }), peer.name)
+}
+
+test('a key named before names were capped still adds, in both directions', async () => {
+  const ana = await startPeer('Ana')
+  await withLegacyKeyName(ana)
+  const ben = await startPeer('Ben')
+  try {
+    await addPeer(ben, ana)
+    await addPeer(ana, ben)
   } finally {
     await stop(ana, ben)
   }
