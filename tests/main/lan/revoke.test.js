@@ -55,3 +55,21 @@ describe('the stopped-sharing notice', () => {
     expect(check(frame(jonas, { sig: '!!' }))).toBeNull()
   })
 })
+
+describe('a notice from before you added them back', () => {
+  it('is ignored, so a replayed old notice cannot cut off a renewed share', () => {
+    const at = Date.now() - 60_000
+    const frame = signRevoke({
+      priv: jonas.priv,
+      fp: jonas.pub.fingerprint,
+      to: ana.pub.fingerprint,
+      at
+    })
+    const readded = [
+      { fingerprint: jonas.pub.fingerprint, label: 'Jonas', sign: jonas.pub.sign, addedAt: at + 1 }
+    ]
+    expect(
+      verifyRevoke(frame, { trusted: readded, me: ana.pub.fingerprint, now: Date.now() })
+    ).toBeNull()
+  })
+})

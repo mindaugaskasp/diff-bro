@@ -49,16 +49,20 @@ async function open(ctx) {
 }
 
 async function close(ctx) {
-  const goodbye = announcement(ctx, 0)
-  if (goodbye) await ctx.discovery?.sendRaw(goodbye)
-  await ctx.discovery?.close()
-  await ctx.server?.close()
+  const { discovery, server } = ctx
   Object.assign(ctx, { discovery: null, server: null, addresses: [] })
   ctx.peers.clear()
+  try {
+    const goodbye = announcement({ ...ctx, discovery, server }, 0)
+    if (goodbye) await discovery?.sendRaw(goodbye)
+    await discovery?.close()
+  } finally {
+    await server?.close()
+  }
 }
 
 async function pollInterfaces(ctx) {
-  if (ipv4Addresses().join() === ctx.addresses.join()) return
+  if (!ctx.settings.enabled || ipv4Addresses().join() === ctx.addresses.join()) return
   await close(ctx)
   await open(ctx)
   ctx.onChange()
@@ -68,8 +72,14 @@ function startTimers(ctx) {
   ctx.timers = [
     setInterval(() => ctx.discovery?.announce(), REANNOUNCE_MS),
     setInterval(() => ctx.peers.expire(ctx.now()) && ctx.onChange(), EXPIRE_MS),
-    setInterval(() => pollInterfaces(ctx).catch(() => {}), INTERFACE_POLL_MS)
+    setInterval(() => serially(ctx, () => pollInterfaces(ctx)).catch(() => {}), INTERFACE_POLL_MS)
   ]
+}
+
+// Opening awaits; without one queue a quick off can run while the sockets are still opening.
+function serially(ctx, task) {
+  ctx.queue = ctx.queue.catch(() => {}).then(task)
+  return ctx.queue
 }
 
 async function start(ctx) {
@@ -124,12 +134,13 @@ export function createLan({ settings, selfFp, onChange, now = Date.now }) {
     server: null,
     discovery: null,
     peers: createPeerTable({ self: selfFp }),
-    timers: []
+    timers: [],
+    queue: Promise.resolve()
   }
   return {
-    start: () => start(ctx),
-    stop: () => stop(ctx),
-    apply: (next) => apply(ctx, next),
+    start: () => serially(ctx, () => start(ctx)),
+    stop: () => serially(ctx, () => stop(ctx)),
+    apply: (next) => serially(ctx, () => apply(ctx, next)),
     on: (type, handler) => ctx.handlers.set(type, handler),
     accept: (type, check) => ctx.acceptors.set(type, check),
     onClosed: (handler) => ctx.closeHandlers.push(handler),

@@ -14,8 +14,10 @@ const SHAPES = {
   item: { fp: (v) => FP.test(v) },
   'item-ack': {
     ok: (v) => typeof v === 'boolean',
-    reason: (v) => v === undefined || isText(v, 64)
+    reason: (v) => v === undefined || isText(v, 64),
+    sig: (v) => isText(v, 200)
   },
+  'revoke-ack': { sig: (v) => isText(v, 200) },
   revoke: { fp: (v) => FP.test(v), at: Number.isSafeInteger, sig: (v) => isText(v, 512) }
 }
 
@@ -24,10 +26,10 @@ const bodyLimit = (type) => (type === 'item' ? FRAME_LIMITS.item : 0)
 export function validateHeader(header) {
   if (!header || typeof header !== 'object' || Object.getPrototypeOf(header) !== Object.prototype)
     return false
+  if (!Object.hasOwn(SHAPES, header.type)) return false
   const shape = SHAPES[header.type]
-  if (!shape) return false
   const keys = Object.keys(header).filter((k) => k !== 'type')
-  if (keys.some((k) => !(k in shape))) return false
+  if (keys.some((k) => !Object.hasOwn(shape, k))) return false
   return Object.entries(shape).every(([k, ok]) => ok(header[k]))
 }
 
@@ -57,31 +59,51 @@ function parseHeader(bytes) {
   return header
 }
 
-function takeFrame(state) {
-  const { buf, accept } = state
-  if (buf.length < 4) return null
-  const headerLength = buf.readUInt32BE(0)
+// Chunks are joined once the bytes a step needs have all arrived, never on every chunk.
+function flatten(state, n) {
+  if (state.size < n) return null
+  if (state.chunks[0].length < n) state.chunks = [Buffer.concat(state.chunks)]
+  return state.chunks[0]
+}
+
+function readHead(state) {
+  const start = flatten(state, 4)
+  if (!start) return null
+  const headerLength = start.readUInt32BE(0)
   if (headerLength > FRAME_LIMITS.header) throw new Error('frame-too-large')
-  if (buf.length < 8 + headerLength) return null
-  const header = parseHeader(buf.subarray(4, 4 + headerLength))
-  if (!accept(header)) throw new Error('not-accepted')
-  const bodyLength = buf.readUInt32BE(4 + headerLength)
+  const head = flatten(state, 8 + headerLength)
+  if (!head) return null
+  const header = parseHeader(head.subarray(4, 4 + headerLength))
+  if (!state.accept(header)) throw new Error('not-accepted')
+  const bodyLength = head.readUInt32BE(4 + headerLength)
   if (bodyLength > bodyLimit(header.type)) throw new Error('frame-too-large')
-  const end = 8 + headerLength + bodyLength
-  if (buf.length < end) return null
-  const body = bodyLength ? Buffer.from(buf.subarray(8 + headerLength, end)) : null
-  state.buf = buf.subarray(end)
-  return { header, body }
+  return { header, bodyStart: 8 + headerLength, end: 8 + headerLength + bodyLength }
+}
+
+function takeFrame(state) {
+  state.pending ??= readHead(state)
+  const { pending } = state
+  const buf = pending && flatten(state, pending.end)
+  if (!buf) return null
+  const body =
+    pending.end > pending.bodyStart
+      ? Buffer.from(buf.subarray(pending.bodyStart, pending.end))
+      : null
+  const rest = buf.subarray(pending.end)
+  Object.assign(state, { chunks: rest.length ? [rest] : [], size: rest.length, pending: null })
+  return { header: pending.header, body }
 }
 
 export function createFrameReader({ accept = () => true } = {}) {
-  const state = { buf: Buffer.alloc(0), accept }
+  const state = { chunks: [], size: 0, pending: null, accept }
   return {
     push(chunk) {
-      state.buf = state.buf.length ? Buffer.concat([state.buf, chunk]) : chunk
+      state.chunks.push(chunk)
+      state.size += chunk.length
       const frames = []
       for (let frame = takeFrame(state); frame; frame = takeFrame(state)) frames.push(frame)
       return frames
-    }
+    },
+    isMidFrame: () => state.size > 0
   }
 }

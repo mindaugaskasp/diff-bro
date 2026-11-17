@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   FRAME_LIMITS,
   createFrameReader,
@@ -108,7 +108,8 @@ describe('validateHeader', () => {
     [{ type: 'add-reply', key: KEY, name: 'Ana', nonce: NONCE }],
     [{ type: 'add-reveal', nonce: NONCE }],
     [{ type: 'add-result', result: 'mismatched' }],
-    [{ type: 'item-ack', ok: false, reason: 'not-trusted' }],
+    [{ type: 'item-ack', ok: false, reason: 'not-trusted', sig: 'c2ln' }],
+    [{ type: 'revoke-ack', sig: 'c2ln' }],
     [{ type: 'revoke', fp: FP, at: 1, sig: 'c2ln' }]
   ])('accepts %j', (h) => expect(validateHeader(h)).toBe(true))
 
@@ -120,7 +121,33 @@ describe('validateHeader', () => {
     [{ type: 'add-request', key: KEY, name: 'Ben', commit: 'short' }],
     [{ type: 'add-result', result: 'maybe' }],
     [{ type: 'item', fp: 'zz' }],
+    [{ type: 'item-ack', ok: true }],
+    [{ type: 'revoke-ack' }],
     [{ type: 'revoke', fp: FP, at: 'yesterday', sig: 'c2ln' }],
     [{ type: 'add-reveal', nonce: NONCE, __proto__: { polluted: true }, extra: 1 }]
   ])('refuses %j', (h) => expect(validateHeader(h)).toBe(false))
+})
+
+describe('hostile input', () => {
+  it.each([
+    [{ type: '__proto__' }],
+    [{ type: 'constructor' }],
+    [{ type: 'add-reveal', nonce: NONCE, constructor: {} }],
+    [{ type: 'add-reveal', nonce: NONCE, toString: 'x' }]
+  ])('refuses %j: shapes are own keys only', (h) => expect(validateHeader(h)).toBe(false))
+
+  it('buffers a body in small chunks without re-copying it on every chunk', () => {
+    const body = Buffer.alloc(2 * 1024 * 1024, 7)
+    const bytes = encodeFrame({ type: 'item', fp: FP }, body)
+    const concat = vi.spyOn(Buffer, 'concat')
+    const reader = createFrameReader()
+    const frames = []
+    for (let at = 0; at < bytes.length; at += 1460)
+      frames.push(...reader.push(bytes.subarray(at, at + 1460)))
+    const calls = concat.mock.calls.length
+    concat.mockRestore()
+    expect(frames).toHaveLength(1)
+    expect(frames[0].body.equals(body)).toBe(true)
+    expect(calls).toBeLessThan(10)
+  })
 })

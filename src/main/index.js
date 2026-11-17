@@ -36,6 +36,7 @@ import { startMcp } from './mcp'
 import { registerClaudeIpc } from './claude'
 import { registerLanIpc, stopLanSharing } from './lan/lanIpc'
 import { runSteps } from './startSteps'
+import { isDebugLaunch } from './launchGuard'
 import { reportWhenSmokeTested } from './smoke'
 import { registerRunnerIpc } from './runner'
 import { watchForBundleUpdate } from './bundleUpdate'
@@ -230,7 +231,9 @@ function startApp(draftPath) {
   )
 }
 
-if (cold.command?.name === 'mcp') startMcp()
+// DevTools would drive the renderer and window.api with it; e2e runs unpackaged and needs the port.
+if (app.isPackaged && isDebugLaunch((name) => app.commandLine.hasSwitch(name))) app.exit(1)
+else if (cold.command?.name === 'mcp') startMcp()
 else boot()
 
 // Every route out of the app passes through here first, so the close handler

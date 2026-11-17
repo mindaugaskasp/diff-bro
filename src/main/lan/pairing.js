@@ -1,7 +1,11 @@
 import { randomUUID } from 'crypto'
 import { codesMatch, commitmentOf, isRevealValid, newNonce, pairingCode } from './pairingCode'
+import { cleanPeerName } from './peerName'
 
 export const PAIRING_MS = 120_000
+// A request that never reveals must not hold the one holder slot for two minutes.
+export const REVEAL_MS = 10_000
+const NAME_CHARS = 64
 
 const RESULT_STAGE = {
   matched: 'added-you',
@@ -24,6 +28,7 @@ function finish(ctx, s, stage, { silent = false } = {}) {
   if (s.done) return
   s.done = true
   ctx.timers.clear(s.timer)
+  ctx.timers.clear(s.revealTimer)
   s.stage = stage
   ctx.sessions.delete(s.id)
   s.conn?.close()
@@ -57,7 +62,7 @@ function onAdderFrame(ctx, s, { header }) {
   const parsed = header.type === 'add-reply' && parsedOrNull(ctx, header.key)
   if (s.stage !== 'connecting' || !parsed || parsed.fp !== s.peerFp)
     return finish(ctx, s, 'connection-lost')
-  Object.assign(s, { holderKey: parsed.key, name: header.name, stage: 'enter-code' })
+  Object.assign(s, { holderKey: parsed.key, stage: 'enter-code' })
   s.expected = pairingCode({
     holderFp: s.peerFp,
     adderFp: ctx.identity.fp,
@@ -80,7 +85,10 @@ async function add(ctx, peerFp, name) {
     finish(ctx, s, 'connection-lost', { silent: true })
     return { error: 'not-reachable' }
   }
-  if (s.done) return { error: 'not-reachable' }
+  if (s.done) {
+    s.conn.close()
+    return { error: 'not-reachable' }
+  }
   const { keyText, name: myName } = ctx.identity
   s.conn.send({ type: 'add-request', key: keyText, name: myName(), commit: commitmentOf(s.nonce) })
   ctx.emit(view(s))
@@ -114,11 +122,14 @@ function onRequest(ctx, { header }, conn) {
     role: 'holder',
     conn,
     peerFp: parsed.fp,
-    name: header.name,
+    name: cleanPeerName(header.name, NAME_CHARS),
     commit: header.commit,
     nonce: newNonce(),
     stage: 'waiting'
   })
+  s.revealTimer = ctx.timers.set(() => {
+    if (s.stage === 'waiting') finish(ctx, s, 'connection-lost', { silent: true })
+  }, REVEAL_MS)
   const { keyText, name } = ctx.identity
   conn.send({ type: 'add-reply', key: keyText, name: name(), nonce: s.nonce })
 }

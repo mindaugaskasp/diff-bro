@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { PAIRING_MS, createPairing } from '../../../src/main/lan/pairing'
+import { PAIRING_MS, REVEAL_MS, createPairing } from '../../../src/main/lan/pairing'
 import { formatCode, normalizeCode } from '../../../src/main/lan/pairingCode'
 
 const flush = () => new Promise((r) => setTimeout(r, 0))
@@ -7,13 +7,15 @@ const flush = () => new Promise((r) => setTimeout(r, 0))
 function fakeTimers() {
   const pending = new Set()
   return {
-    set: (fn) => {
-      const t = { fn }
+    set: (fn, ms) => {
+      const t = { fn, ms }
       pending.add(t)
       return t
     },
     clear: (t) => pending.delete(t),
-    fireAll: () => [...pending].forEach((t) => (pending.delete(t), t.fn()))
+    fireAll: () => [...pending].forEach((t) => (pending.delete(t), t.fn())),
+    fire: (ms) =>
+      [...pending].filter((t) => t.ms === ms).forEach((t) => (pending.delete(t), t.fn()))
   }
 }
 
@@ -86,9 +88,9 @@ function connectHolder(holder) {
   }
 }
 
-async function startAdding(extraHolder = {}) {
+async function startAdding(extraHolder = {}, benName = 'Ben') {
   const ana = peer(A, 'Ana', extraHolder)
-  const ben = peer(B, 'Ben', { connect: connectHolder(ana) })
+  const ben = peer(B, benName, { connect: connectHolder(ana) })
   const started = await ben.pairing.add(A, 'Ana')
   await flush()
   return { ana, ben, started }
@@ -235,5 +237,50 @@ describe('the holder refuses', () => {
     ana.pairing.onReveal({ header: { type: 'add-reveal', nonce: 'n' } }, { destroy })
     ana.pairing.onResult({ header: { type: 'add-result', result: 'matched' } }, { destroy })
     expect(destroy).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('a hostile network', () => {
+  it('saves the key under the name you clicked, whatever name the reply carries', async () => {
+    const ana = peer(A, 'Ana')
+    const relay = connectHolder(ana)
+    const ben = peer(B, 'Ben', {
+      connect: async (fp, handlers) =>
+        relay(fp, {
+          ...handlers,
+          onFrame: (frame, conn) =>
+            handlers.onFrame(
+              frame.header.type === 'add-reply'
+                ? { header: { ...frame.header, name: 'Carol' } }
+                : frame,
+              conn
+            )
+        })
+    })
+    const started = await ben.pairing.add(A, 'Ana')
+    await flush()
+    await ben.pairing.submitCode(started.id, ana.last().code)
+    expect(ben.stored).toEqual([{ key: { text: `key-${A}` }, keyFp: A, label: 'Ana' }])
+  })
+
+  it('frees the holder when a request never reveals, so one stalled request cannot block everyone', () => {
+    const ana = peer(A, 'Ana')
+    const request = (remote) => {
+      const [conn] = linkedConns(remote)
+      ana.pairing.onRequest(
+        { header: { type: 'add-request', key: `key-${B}`, name: 'Ben', commit: 'c' } },
+        conn
+      )
+      return conn
+    }
+    request('192.168.1.66')
+    ana.timers.fire(REVEAL_MS)
+    const second = request('192.168.1.9')
+    expect(second.sent.map((h) => h.type)).toContain('add-reply')
+  })
+
+  it('drops direction overrides from the name a request carries', async () => {
+    const { ana } = await startAdding({}, '\u202eBen\u200b')
+    expect(ana.last().name).toBe('Ben')
   })
 })

@@ -4,6 +4,18 @@ import { announcementsFrom, asksForService, decodePacket, encodeQuery } from './
 
 const GROUP = '224.0.0.251'
 const PORT = 5353
+const ANSWER_GAP_MS = 250
+
+// An 'error' has already closed it, and closing a closed dgram socket throws.
+function closeOnce(socket) {
+  return new Promise((done) => {
+    try {
+      socket.close(() => done())
+    } catch {
+      done()
+    }
+  })
+}
 
 export function createDiscovery({ addresses, announcement, onPeer }) {
   const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
@@ -21,13 +33,21 @@ export function createDiscovery({ addresses, announcement, onPeer }) {
     const packet = announcement()
     if (packet) send(packet)
   }
+  // A flood of queries gets one answer per gap; dropping the rest would hide this peer for a minute.
+  let answering = null
+  const answer = () => {
+    answering ??= setTimeout(() => {
+      answering = null
+      announce()
+    }, ANSWER_GAP_MS)
+  }
   socket.on('message', (msg, rinfo) => {
     if (!isPrivateAddress(rinfo.address)) return
     const packet = decodePacket(msg)
-    if (asksForService(packet)) return announce()
+    if (asksForService(packet)) return answer()
     for (const peer of announcementsFrom(packet)) onPeer({ ...peer, address: rinfo.address })
   })
-  socket.on('error', () => socket.close())
+  socket.on('error', () => closeOnce(socket))
   return new Promise((resolve, reject) => {
     socket.once('error', reject)
     socket.bind(PORT, () => {
@@ -44,7 +64,10 @@ export function createDiscovery({ addresses, announcement, onPeer }) {
         announce,
         query: () => send(encodeQuery()),
         sendRaw: send,
-        close: () => new Promise((done) => socket.close(() => done()))
+        close: () => {
+          clearTimeout(answering)
+          return closeOnce(socket)
+        }
       })
     })
   })

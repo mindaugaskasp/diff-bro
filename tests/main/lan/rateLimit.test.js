@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { createRateLimit } from '../../../src/main/lan/rateLimit'
+import { describe, expect, it, vi } from 'vitest'
+import { createRateLimit, coalesce } from '../../../src/main/lan/rateLimit'
 
 describe('rate limit', () => {
   it('allows up to the limit inside the window, per key', () => {
@@ -22,5 +22,18 @@ describe('rate limit', () => {
     for (let i = 0; i < 100; i++) limit.allow(`k${i}`, 0)
     limit.allow('fresh', 5000)
     expect(limit.size()).toBe(1)
+  })
+})
+
+describe('coalesce', () => {
+  it('runs once for a burst of calls, after the burst', () => {
+    vi.useFakeTimers()
+    const run = vi.fn()
+    const later = coalesce(run, 100)
+    for (let i = 0; i < 256; i++) later()
+    expect(run).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(100)
+    expect(run).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
   })
 })

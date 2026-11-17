@@ -59,7 +59,7 @@ describe('format versioning / revocation', () => {
 
   it('the current sealed format still opens (sanity)', () => {
     const { seal, bob, bobTrustsAlice } = makePeers()
-    expect(openSealed(seal(), bob, bobTrustsAlice).ok).toBe(true)
+    expect(openSealed(seal(), bob, bobTrustsAlice, NOW).ok).toBe(true)
     expect(SHARE_FORMAT).toBe('diffbro-share/4')
   })
 })
@@ -150,6 +150,16 @@ describe('ttlError', () => {
   })
   it('rejects lifetimes past the ceiling', () => {
     expect(ttlError(makeEntry({ expiresAt: NOW + MAX_TTL_MS + 1 }), NOW)).toBe('invalid-ttl')
+  })
+  it('rejects an entry dated in the future, so the ceiling holds from now and not from createdAt', () => {
+    const day = 24 * 3600 * 1000
+    expect(ttlError(makeEntry({ createdAt: NOW + 30 * day, expiresAt: NOW + 37 * day }), NOW)).toBe(
+      'invalid-ttl'
+    )
+  })
+  it('tolerates a few minutes of clock skew between sender and recipient', () => {
+    const skewed = makeEntry({ createdAt: NOW + 60_000, expiresAt: NOW + 60_000 + MAX_TTL_MS })
+    expect(ttlError(skewed, NOW)).toBeNull()
   })
   it('rejects missing or non-numeric timestamps', () => {
     expect(ttlError(makeEntry({ createdAt: undefined }), NOW)).toBe('invalid-ttl')
@@ -567,7 +577,7 @@ describe('openSealedWith', () => {
       { priv: sender.priv, fingerprint: sender.pub.fingerprint },
       [trusted(me, 'me')]
     )
-    const out = openSealedWith(file, [me], [trusted(sender, 'sender')])
+    const out = openSealedWith(file, [me], [trusted(sender, 'sender')], NOW)
     expect(out.error).toBeUndefined()
     expect(out.entry.name).toBe(makeEntry().name)
   })
@@ -585,7 +595,9 @@ describe('openSealedWith', () => {
     )
 
     expect(openSealed(file, current, [trusted(sender, 's')]).error).toBe('not-for-you')
-    expect(openSealedWith(file, [current, retired], [trusted(sender, 's')]).error).toBeUndefined()
+    expect(
+      openSealedWith(file, [current, retired], [trusted(sender, 's')], NOW).error
+    ).toBeUndefined()
   })
 
   // A real verdict about the file must not be masked by trying more keys.
@@ -599,7 +611,7 @@ describe('openSealedWith', () => {
       [trusted(me, 'me')]
     )
     file.ciphertext = Buffer.from('tampered').toString('base64')
-    expect(openSealedWith(file, [me, spare], [trusted(sender, 's')]).error).toBe('tampered')
+    expect(openSealedWith(file, [me, spare], [trusted(sender, 's')], NOW).error).toBe('tampered')
   })
 
   it('says "not for you" when none of this machine’s keys is addressed', () => {
@@ -610,7 +622,7 @@ describe('openSealedWith', () => {
       { priv: sender.priv, fingerprint: sender.pub.fingerprint },
       [trusted(them, 'them')]
     )
-    expect(openSealedWith(file, [createIdentityKeys()], [trusted(sender, 's')]).error).toBe(
+    expect(openSealedWith(file, [createIdentityKeys()], [trusted(sender, 's')], NOW).error).toBe(
       'not-for-you'
     )
     expect(openSealedWith(file, [], []).error).toBe('not-for-you')

@@ -8,7 +8,7 @@ export const LEGACY_SIZE = {
   'src/main/files.js': { fn: 82 },
   'src/main/hashDiff.js': { file: 335 },
   'src/main/lineIndexCore.js': { fn: 67 },
-  'src/main/sealing.js': { file: 372 },
+  'src/main/sealing.js': { file: 365 },
   'src/main/share.js': { fn: 179, file: 504 },
   'src/main/window.js': { fn: 69 },
   'src/renderer/src/composables/useMatrixRain.js': { fn: 96 },
