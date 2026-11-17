@@ -55,10 +55,7 @@ export const securityMenu = (send) => ({
       item(send, 'security.sharePublicKey', null, 'export-pubkey'),
       item(send, 'security.replaceKey', null, 'rotate-key')
     ]),
-    group('security.trustedKeys', [
-      item(send, 'security.addTrustedKey', null, 'add-trusted-key'),
-      item(send, 'security.manageTrustedKeys', null, 'manage-keys')
-    ]),
+    group('security.trustedKeys', [item(send, 'security.addTrustedKey', null, 'add-trusted-key')]),
     { type: 'separator' },
     group('security.configuration', [
       item(send, 'security.backUp', null, 'config-backup'),

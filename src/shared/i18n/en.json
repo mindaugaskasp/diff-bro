@@ -73,10 +73,8 @@
       "newComparison": "New Comparison",
       "newSnippet": "New Snippet",
       "closeComparison": "Close Comparison",
-      "nextComparison": "Next Comparison",
-      "prevComparison": "Previous Comparison",
       "settings": "Settings…",
-      "quit": "Quit"
+      "exit": "Exit"
     },
     "edit": {
       "title": "Edit",
@@ -116,7 +114,6 @@
       "replaceKey": "Replace My Key…",
       "trustedKeys": "Trusted Keys",
       "addTrustedKey": "Add Trusted Key…",
-      "manageTrustedKeys": "Manage Trusted Keys…",
       "configuration": "Configuration",
       "backUp": "Back Up…",
       "restore": "Restore…"
@@ -863,6 +860,7 @@
     "diffs": "Diffs",
     "snippets": "Snippets",
     "tools": "Tools",
+    "keys": "Keys",
     "hide": "Hide the sidebar",
     "hideTip": "Hide the sidebar ({mod}+B)",
     "show": "Show the sidebar",

@@ -1,7 +1,14 @@
 import { rmSync, writeFileSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { join } from 'node:path'
-import { test, expect, launchApp, freshUserDataDir, firstReadyPage, openMenu } from './fixtures.mjs'
+import {
+  test,
+  expect,
+  launchApp,
+  freshUserDataDir,
+  firstReadyPage,
+  showPanel
+} from './fixtures.mjs'
 
 // The single-key trust round-trip is covered in sharing.spec. This one stresses
 // the *manager* UI: does it stay stable and usable with a realistic org's worth
@@ -33,7 +40,7 @@ test('Escape cancels an in-progress edit and leaves the list in place', async ()
   const page = await firstReadyPage(app)
 
   try {
-    await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
+    await showPanel(page, 'keys')
     const mgr = page.locator('.keys-panel')
     await expect(mgr).toBeVisible()
 
@@ -68,7 +75,7 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
   let page = await firstReadyPage(app)
 
   try {
-    await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
+    await showPanel(page, 'keys')
     const mgr = page.locator('.keys-panel')
     await expect(mgr).toBeVisible()
 
@@ -118,7 +125,7 @@ test('the trusted-keys manager stays stable with 15 keys', async () => {
     await app.close()
     app = await launchApp(dir)
     page = await firstReadyPage(app)
-    await openMenu(page, 'Security', 'Trusted Keys', 'Manage Trusted Keys')
+    await showPanel(page, 'keys')
     const mgr2 = page.locator('.keys-panel')
     await expect(mgr2.locator('li.key')).toHaveCount(N - 2)
     await expect(mgr2.getByText('Teammate 08 — laptop')).toBeVisible()

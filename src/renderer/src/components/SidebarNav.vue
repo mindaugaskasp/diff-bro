@@ -1,5 +1,5 @@
 <script setup>
-// The sidebar's four places as one segmented control (#144), in a fixed order.
+// The sidebar's five places as one segmented control (#144, #263), in a fixed order.
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -11,7 +11,8 @@ const PLACES = [
   { value: 'home', icon: 'home', labelKey: 'sidebarNav.home' },
   { value: 'diffs', icon: 'diff', labelKey: 'sidebarNav.diffs' },
   { value: 'snippets', icon: 'code', labelKey: 'sidebarNav.snippets' },
-  { value: 'tools', icon: 'grid', labelKey: 'sidebarNav.tools' }
+  { value: 'tools', icon: 'grid', labelKey: 'sidebarNav.tools' },
+  { value: 'keys', icon: 'key', labelKey: 'sidebarNav.keys' }
 ]
 
 const { t } = useI18n()

@@ -13,10 +13,7 @@ export const securityItems = (run) => [
   },
   {
     label: t('menu.security.trustedKeys'),
-    items: [
-      { label: t('menu.security.addTrustedKey'), run: () => run('add-trusted-key') },
-      { label: t('menu.security.manageTrustedKeys'), run: () => run('manage-keys') }
-    ]
+    items: [{ label: t('menu.security.addTrustedKey'), run: () => run('add-trusted-key') }]
   },
   { sep: true },
   {

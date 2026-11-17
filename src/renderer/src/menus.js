@@ -163,20 +163,10 @@ const fileSection = (run) => ({
       keys: `${MOD}+Shift+W`,
       run: () => run('tab-close')
     },
-    {
-      label: t('menu.file.nextComparison'),
-      keys: 'Ctrl+Tab',
-      run: () => run('tab-next')
-    },
-    {
-      label: t('menu.file.prevComparison'),
-      keys: 'Ctrl+Shift+Tab',
-      run: () => run('tab-prev')
-    },
     { sep: true },
     { label: t('menu.file.settings'), keys: `${MOD}+,`, run: () => run('settings') },
     { sep: true },
-    { label: t('menu.file.quit'), paletteHidden: true, run: () => window.api.quit() }
+    { label: t('menu.file.exit'), paletteHidden: true, run: () => window.api.quit() }
   ]
 })
 

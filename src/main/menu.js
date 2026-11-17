@@ -174,12 +174,12 @@ const fileMenu = (send, isMac) => ({
     fileItem(send, 'newComparison', 'CmdOrCtrl+Shift+T', 'tab-new'),
     fileItem(send, 'newSnippet', null, 'open-new-snippet'),
     fileItem(send, 'closeComparison', 'CmdOrCtrl+Shift+W', 'tab-close'),
-    fileItem(send, 'nextComparison', 'Ctrl+Tab', 'tab-next'),
-    fileItem(send, 'prevComparison', 'Ctrl+Shift+Tab', 'tab-prev'),
     { type: 'separator' },
     settingsItem(send),
     { type: 'separator' },
-    isMac ? { role: 'close' } : { role: 'quit' }
+    ...(isMac ? [{ role: 'close' }] : []),
+    // Quits outright: closing the window only hides it to the tray (Windows) or the Dock (macOS).
+    { label: t('menu.file.exit'), click: () => app.quit() }
   ]
 })
 
