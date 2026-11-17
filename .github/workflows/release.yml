@@ -8,13 +8,49 @@ on:
       - 'v*.*.*'
 
 jobs:
-  # Fail the whole release fast, on one cheap runner, if any known
-  # vulnerability is present — before spending Windows/macOS build minutes.
-  # E2E is the behavioural source of truth. On PRs it's the merge gate (see
-  # ci.yml); at release time we re-run it as a safety net so a tag can never
-  # ship without it — a direct push to main or a tag on an arbitrary commit
-  # would otherwise bypass the PR gate entirely. Same setup as ci.yml's e2e job.
+  # Always runs. The audit is never reused: an advisory can appear after CI ran.
+  # The tests are reused only when CI passed every job on the tagged commit itself
+  # (ci.yml runs the full suite on every push to main). A direct push, a tag on
+  # an arbitrary commit, or anything not green re-runs them here.
+  gate:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+    outputs:
+      verified: ${{ steps.ci.outputs.verified }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # Blocks the release when npm audit finds a vulnerability at or above the
+      # threshold in what the app SHIPS. Dev tools are deliberately out: a build
+      # tool's advisory can have no fix but a major its dependents cannot take,
+      # and overriding those is ruled out (docs/standards.md). So nothing here
+      # sees an advisory in eslint or electron-builder, at any severity.
+      # `--audit-level=low` fails on any advisory at all.
+      #
+      # FIRST, and --package-lock-only: this reads the lock and needs no
+      # node_modules at all. It used to be its own job that installed the whole
+      # 872MB tree to run a one-second check. Here it still fails the release
+      # before a single build minute is spent, ~15s in.
+      - name: Audit dependencies for known vulnerabilities
+        run: npm audit --package-lock-only --omit=dev --audit-level=moderate
+
+      - name: Reuse CI on this commit if every job passed
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-verified.mjs
+
+  # E2E is the behavioural source of truth. It runs here only when the gate could
+  # not reuse CI's run on the tagged commit. Same setup as ci.yml's e2e job.
   e2e:
+    needs: gate
+    if: needs.gate.outputs.verified != 'true'
     runs-on: ubuntu-22.04
     strategy:
       # Every shard reports: a cancelled sibling hides which slice actually broke.
@@ -82,6 +118,8 @@ jobs:
   # and ci.yml runs it on ubuntu AND windows for every push to main, which is the
   # commit a tag points at.
   check:
+    needs: gate
+    if: needs.gate.outputs.verified != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -90,26 +128,18 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Blocks the release when npm audit finds a vulnerability at or above the
-      # threshold in what the app SHIPS. Dev tools are deliberately out: a build
-      # tool's advisory can have no fix but a major its dependents cannot take,
-      # and overriding those is ruled out (docs/standards.md). So nothing here
-      # sees an advisory in eslint or electron-builder, at any severity.
-      # `--audit-level=low` fails on any advisory at all.
-      #
-      # FIRST, and --package-lock-only: this reads the lock and needs no
-      # node_modules at all. It used to be its own job that installed the whole
-      # 872MB tree to run a one-second check. Here it still fails the release
-      # before a single build minute is spent, ~15s in.
-      - name: Audit dependencies for known vulnerabilities
-        run: npm audit --package-lock-only --omit=dev --audit-level=moderate
-
       - run: npm install -g npm@11 --no-fund --no-audit
       - run: npm ci --no-fund
       - run: npm run check
 
   build:
-    needs: [e2e, check]
+    needs: [gate, e2e, check]
+    # e2e and check are skipped when the gate reused CI; a skipped need would
+    # otherwise skip this job too.
+    if: >-
+      !cancelled() && needs.gate.result == 'success' &&
+      (needs.gate.outputs.verified == 'true' ||
+      (needs.e2e.result == 'success' && needs.check.result == 'success'))
     strategy:
       fail-fast: false
       matrix:
@@ -196,6 +226,7 @@ jobs:
 
   release:
     needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     # Explicit here rather than relying on the repo's default token
     # permissions, which may be read-only.
@@ -229,6 +260,7 @@ jobs:
   # the App. Needs repo secret SYNC_APP_PRIVATE_KEY (the App's .pem).
   sync-version:
     needs: release
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Mint a token for the version-sync App
@@ -274,6 +306,7 @@ jobs:
   # the release itself never fails on it.
   homebrew:
     needs: release
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
